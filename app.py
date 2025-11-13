@@ -75,12 +75,19 @@ if HAS_SECURITY_LIBS:
         strategy="fixed-window"
     )
     
-    # Minimal Talisman setup - disable HTTPS redirect for Railway
-    # Railway handles HTTPS at the edge
+    # Minimal Talisman setup for Railway
+    # Permissive CSP to allow Leaflet, Tailwind and map tiles
     Talisman(
         app,
         force_https=False,
-        content_security_policy=None,
+        content_security_policy={
+            'default-src': "'self'",
+            'script-src': ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://unpkg.com"],
+            'style-src': ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+            'img-src': ["'self'", "data:", "https:", "http:"],
+            'font-src': ["'self'", "data:"],
+            'connect-src': ["'self'"]
+        },
         content_security_policy_nonce_in=None
     )
     
