@@ -31,6 +31,15 @@ except ImportError:
     HAS_SECURITY_LIBS = False
     print("[WARNUNG] Flask-Limiter oder Flask-Talisman nicht verfügbar, Security Features deaktiviert")
 
+# --- Email imports ---
+try:
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+    HAS_SENDGRID = True
+except ImportError:
+    HAS_SENDGRID = False
+    print("[WARNUNG] SendGrid nicht verfügbar, E-Mails werden nur in Logs ausgegeben")
+
 # --- Import unserer ML- und Geo-Logik ---
 import data_enricher
 import ml_models
@@ -63,6 +72,11 @@ app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1MB max request size
 APP_BASE_URL = os.getenv('APP_BASE_URL', 'http://localhost:5003')
 SITE_URL = APP_BASE_URL.rstrip('/')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+# --- Email Configuration ---
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
+FROM_EMAIL = os.getenv('FROM_EMAIL', 'noreply@badenleg.ch')
+EMAIL_ENABLED = HAS_SENDGRID and SENDGRID_API_KEY
 
 # --- Rate Limiting & Security (Minimal for Railway) ---
 if HAS_SECURITY_LIBS:
@@ -243,26 +257,53 @@ def find_buildings_by_email(email):
     return matches
 
 def send_verification_email(email, confirmation_url, unsubscribe_url):
-        message_body = (
+    """Sendet Verifizierungs-E-Mail via SendGrid oder gibt sie in Logs aus"""
+    subject = "BadenLEG – Bitte bestätigen Sie Ihre Teilnahme"
+    message_body = (
         "Willkommen bei BadenLEG!\n\n"
         "Bitte bestätigen Sie, dass wir Ihre Kontaktdaten mit interessierten Nachbarinnen "
         "und Nachbarn teilen dürfen. Sobald Sie bestätigen, informieren wir alle passenden "
         "Haushalte und senden eine Übersicht mit Adresse und E-Mail aller bestätigten Teilnehmer:innen.\n\n"
-        f"Klicken Sie hier zur Bestätigung: {confirmation_url}\n\n"
+        f"Klicken Sie hier zur Bestätigung:\n{confirmation_url}\n\n"
         "Mit dem Klick stimmen Sie dem Austausch Ihrer Kontaktdaten mit passenden Nachbarn zu.\n\n"
         f"Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n"
-        f"{unsubscribe_url}"
+        f"{unsubscribe_url}\n\n"
+        "Ihr BadenLEG-Team"
     )
 
-    print(f"\n--- [EMAIL VERIFIKATION] ---")
-    print(f"AN: {email}")
-    print(message_body)
-    print("-----------------------------\n")
+    if EMAIL_ENABLED:
+        try:
+            message = Mail(
+                from_email=FROM_EMAIL,
+                to_emails=email,
+                subject=subject,
+                plain_text_content=message_body
+            )
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            response = sg.send(message)
+            logger.info(f"[EMAIL] Verifizierung gesendet an {email} (Status: {response.status_code})")
+        except Exception as e:
+            logger.error(f"[EMAIL] Fehler beim Senden an {email}: {e}")
+            # Fallback: Log in Console
+            print(f"\n--- [EMAIL VERIFIKATION - FEHLER] ---")
+            print(f"AN: {email}")
+            print(message_body)
+            print("--------------------------------------\n")
+    else:
+        # Development Mode: Log to console
+        print(f"\n--- [EMAIL VERIFIKATION] ---")
+        print(f"AN: {email}")
+        print(f"BETREFF: {subject}")
+        print(message_body)
+        print("-----------------------------\n")
 
 def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
+    """Sendet Cluster-Kontaktübersicht via SendGrid oder gibt sie in Logs aus"""
     autarky = cluster_info.get('autarky_percent', 0.0)
+    subject = f"BadenLEG – Ihre Nachbarn für die LEG-Gründung"
+    
     header = (
-        f"BadenLEG – Kontaktübersicht für Cluster {cluster_id}\n"
+        f"BadenLEG – Kontaktübersicht\n"
         f"Autarkie-Potenzial: {autarky:.1f}%\n\n"
         "Die folgenden Haushalte haben ihre Teilnahme bestätigt. Nutzen Sie die Kontaktdaten, "
         "um direkt miteinander in den Austausch zu gehen.\n\n"
@@ -287,15 +328,38 @@ def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
         if not unsubscribe_url:
             token = issue_unsubscribe_token(contact['building_id'])
             unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{token}"
+        
         body = (
             base_body +
             "Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n"
             f"{unsubscribe_url}"
         )
-        print(f"\n--- [EMAIL KONTAKTÜBERSICHT] ---")
-        print(f"AN: {recipient}")
-        print(body)
-        print("---------------------------------\n")
+        
+        if EMAIL_ENABLED:
+            try:
+                message = Mail(
+                    from_email=FROM_EMAIL,
+                    to_emails=recipient,
+                    subject=subject,
+                    plain_text_content=body
+                )
+                sg = SendGridAPIClient(SENDGRID_API_KEY)
+                response = sg.send(message)
+                logger.info(f"[EMAIL] Kontaktübersicht gesendet an {recipient} (Status: {response.status_code})")
+            except Exception as e:
+                logger.error(f"[EMAIL] Fehler beim Senden an {recipient}: {e}")
+                # Fallback: Log in Console
+                print(f"\n--- [EMAIL KONTAKTÜBERSICHT - FEHLER] ---")
+                print(f"AN: {recipient}")
+                print(body)
+                print("------------------------------------------\n")
+        else:
+            # Development Mode: Log to console
+            print(f"\n--- [EMAIL KONTAKTÜBERSICHT] ---")
+            print(f"AN: {recipient}")
+            print(f"BETREFF: {subject}")
+            print(body)
+            print("---------------------------------\n")
 
 def notify_cluster_contacts(buildings_with_clusters):
     pending_notifications = []

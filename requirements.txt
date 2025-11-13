@@ -13,6 +13,9 @@ bleach==6.1.0
 email-validator==2.1.0
 redis==5.0.1
 
+# Email
+sendgrid==6.11.0
+
 # Optional: For production
 gunicorn==21.2.0
 requests==2.31.0
