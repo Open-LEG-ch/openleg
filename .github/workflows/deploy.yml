@@ -1,4 +1,4 @@
-name: Deploy to Infomaniak (FTPS)
+name: Deploy to Railway
 
 on:
   push:
@@ -7,38 +7,23 @@ on:
 
 jobs:
   deploy:
-    name: Upload via FTPS to badenleg.ch
+    name: Deploy to Railway (badenleg.ch)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
-      - name: Create Passenger restart file
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          mkdir -p tmp
-          date > tmp/restart.txt
-
-      - name: Deploy via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          protocol: ftps
-          local-dir: ./
-          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
-          log-level: standard
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/venv/**
-            **/__pycache__/**
-            **/*.log
-            **/.DS_Store
-            .env
-            env.example
-
+          railway up --service ${{ secrets.RAILWAY_SERVICE_ID }} --detach
