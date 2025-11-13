@@ -37,11 +37,11 @@ import ml_models
 import security_utils
 
 # --- Logging Setup ---
+# Simplified logging for Railway (no file logging)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('badenleg_security.log'),
         logging.StreamHandler()
     ]
 )
@@ -64,35 +64,30 @@ APP_BASE_URL = os.getenv('APP_BASE_URL', 'http://localhost:5003')
 SITE_URL = APP_BASE_URL.rstrip('/')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# --- Rate Limiting ---
+# --- Rate Limiting & Security (Minimal for Railway) ---
 if HAS_SECURITY_LIBS:
+    # Simplified rate limiting
     limiter = Limiter(
         get_remote_address,
         app=app,
-        default_limits=["200 per hour", "50 per minute"],
-        storage_uri=os.getenv('RATELIMIT_STORAGE_URL', 'memory://'),
+        default_limits=["500 per hour"],
+        storage_uri='memory://',
         strategy="fixed-window"
     )
     
-    # Security Headers via Talisman
-    # Only enable HTTPS redirect in production
-    force_https = os.getenv('FLASK_ENV', 'development') == 'production'
-    
+    # Minimal Talisman setup - disable HTTPS redirect for Railway
+    # Railway handles HTTPS at the edge
     Talisman(
         app,
-        force_https=force_https,
-        strict_transport_security=True,
-        strict_transport_security_max_age=31536000,
-        content_security_policy=security_utils.CSP_POLICY,
-        content_security_policy_nonce_in=['script-src'],
-        frame_options='DENY',
-        referrer_policy='strict-origin-when-cross-origin'
+        force_https=False,
+        content_security_policy=None,
+        content_security_policy_nonce_in=None
     )
     
-    logger.info("Security features (Rate Limiting, Security Headers) aktiviert")
+    logger.info("Basic security features aktiviert")
 else:
     limiter = None
-    logger.warning("Security features nicht verfügbar - NUR FÜR ENTWICKLUNG!")
+    logger.warning("Security features deaktiviert")
 
 # --- Security Helpers ---
 def log_security_event(event_type, details, level='INFO'):
@@ -108,15 +103,9 @@ def log_security_event(event_type, details, level='INFO'):
 
 
 @app.after_request
-def apply_additional_security_headers(response):
-    """Ensure additional security headers that Talisman doesn't cover are set"""
-    extra_headers = {
-        'X-Content-Type-Options': 'nosniff',
-        'Permissions-Policy': security_utils.SECURITY_HEADERS.get('Permissions-Policy', '')
-    }
-    for header, value in extra_headers.items():
-        if value:
-            response.headers.setdefault(header, value)
+def apply_basic_security_headers(response):
+    """Apply minimal security headers"""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
 
 
