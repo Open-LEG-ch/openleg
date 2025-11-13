@@ -27,11 +27,12 @@ def mock_get_plz_stats(plz):
 
 # --- Echte API-Funktionen (Opendata) ---
 def get_address_suggestions(query_string, limit=10):
-    """Fragt Swisstopo API ab, um Adressvorschläge zu erhalten."""
+    """Fragt Swisstopo API ab, um Adressvorschläge zu erhalten (nur Kanton Aargau)."""
     if not query_string or len(query_string) < 2:
         return []
     
-    params = {'searchText': query_string, 'type': 'locations', 'limit': limit}
+    # Erhöhe Limit für API, da wir nachher filtern
+    params = {'searchText': query_string, 'type': 'locations', 'limit': limit * 3}
     try:
         response = requests.get(GEO_API_URL, params=params, timeout=5)
         response.raise_for_status()
@@ -41,6 +42,32 @@ def get_address_suggestions(query_string, limit=10):
         for result in results:
             attrs = result.get('attrs', {})
             label = attrs.get('label', '')
+            
+            # Filter: Nur Kanton Aargau (PLZ 5000-5999)
+            plz = attrs.get('plz')
+            if plz:
+                try:
+                    plz_int = int(plz)
+                    # Aargau PLZ-Bereich: 5000-5999
+                    if not (5000 <= plz_int <= 5999):
+                        continue
+                except (ValueError, TypeError):
+                    # Wenn PLZ nicht als Integer konvertierbar, aus Label versuchen
+                    plz_match = re.search(r'\b(5\d{3})\b', label)
+                    if not plz_match:
+                        continue  # Keine Aargau PLZ gefunden, überspringen
+                    plz_int = int(plz_match.group(1))
+                    if not (5000 <= plz_int <= 5999):
+                        continue
+            else:
+                # Kein PLZ-Attribut, versuche aus Label zu extrahieren
+                plz_match = re.search(r'\b(5\d{3})\b', label)
+                if not plz_match:
+                    continue  # Keine PLZ gefunden, überspringen
+                plz_int = int(plz_match.group(1))
+                if not (5000 <= plz_int <= 5999):
+                    continue
+            
             # Entferne HTML-Tags aus dem Label
             if label:
                 clean_label = re.sub(r'<[^>]+>', '', label)  # Entferne HTML-Tags
@@ -48,8 +75,13 @@ def get_address_suggestions(query_string, limit=10):
                     'label': clean_label,
                     'lat': attrs.get('lat'),
                     'lon': attrs.get('lon'),
-                    'plz': attrs.get('plz') if 'plz' in attrs else None
+                    'plz': plz if plz else plz_int
                 })
+                
+                # Limit beachten nach Filterung
+                if len(suggestions) >= limit:
+                    break
+        
         return suggestions
     except Exception as e:
         print(f"  [GEO FEHLER bei Vorschlägen] {e}")

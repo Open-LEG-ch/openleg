@@ -208,7 +208,7 @@ def _invalidate_tokens_for_building(building_id):
 
 def issue_verification_token(building_id):
     invalidate_verification_tokens(building_id)
-    token = str(uuid.uuid4())
+        token = str(uuid.uuid4())
     DB_VERIFICATION_TOKENS[token] = {'building_id': building_id}
     return token
 
@@ -219,7 +219,7 @@ def issue_unsubscribe_token(building_id):
 
 def remove_building(building_id):
     removed = False
-    with db_lock:
+        with db_lock:
         if DB_BUILDINGS.pop(building_id, None):
             removed = True
         if DB_INTEREST_POOL.pop(building_id, None):
@@ -243,7 +243,7 @@ def find_buildings_by_email(email):
     return matches
 
 def send_verification_email(email, confirmation_url, unsubscribe_url):
-    message_body = (
+        message_body = (
         "Willkommen bei BadenLEG!\n\n"
         "Bitte bestätigen Sie, dass wir Ihre Kontaktdaten mit interessierten Nachbarinnen "
         "und Nachbarn teilen dürfen. Sobald Sie bestätigen, informieren wir alle passenden "
@@ -572,11 +572,14 @@ def api_suggest_addresses():
     
     # Mehr Ergebnisse für längere Queries (bessere Filterung)
     limit = 15 if len(query) < 5 else 10
-    suggestions = data_enricher.get_address_suggestions(query, limit=limit)
-    print(f"[API] {len(suggestions)} Vorschläge gefunden")
+    suggestions_raw = data_enricher.get_address_suggestions(query, limit=limit)
+    print(f"[API] {len(suggestions_raw)} Vorschläge gefunden (nur Kanton Aargau)")
+    
+    # Extract labels from suggestion dictionaries
+    suggestions = [s.get('label', '') if isinstance(s, dict) else str(s) for s in suggestions_raw]
     
     # Security: Sanitize output
-    suggestions = [security_utils.sanitize_string(s, max_length=200) for s in suggestions]
+    suggestions = [security_utils.sanitize_string(s, max_length=200) for s in suggestions if s]
     
     return jsonify({"suggestions": suggestions})
 
