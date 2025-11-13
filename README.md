@@ -57,6 +57,48 @@ python app.py
 
 Visit: http://localhost:5003
 
+## Development Workflow
+
+### Branch Structure
+
+- **`main`**: Production branch - automatically deploys to badenleg.ch
+- **`develop`**: Development branch - integration branch for features
+- **`feature/*`**: Feature branches - individual feature development
+
+### Workflow
+
+1. **Start a new feature**:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Develop and commit**:
+   ```bash
+   # Make your changes
+   git add .
+   git commit -m "Add feature description"
+   git push origin feature/your-feature-name
+   ```
+
+3. **Create Pull Request**:
+   - Go to GitHub: https://github.com/wgusta/badenleg
+   - Create PR: `feature/your-feature-name` → `develop`
+   - Request review and merge after approval
+
+4. **Deploy to Production**:
+   ```bash
+   git checkout main
+   git pull origin main
+   git merge develop
+   git push origin main
+   ```
+   - GitHub Actions automatically deploys to Infomaniak
+   - Site updates at https://badenleg.ch
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+
 ## Project Structure
 
 ```

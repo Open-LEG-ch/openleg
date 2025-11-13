@@ -537,6 +537,15 @@ def sitemap_xml():
     xml = render_template("sitemap.xml", site_url=SITE_URL, pages=pages)
     return Response(xml, mimetype="application/xml")
 
+@app.route("/health")
+def health_check():
+    """Einfache Health-Check-Route für Deployment-Überwachung"""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": time.time(),
+        "version": "1.0.0"
+    })
+
 @app.route("/api/suggest_addresses")
 @limiter.limit("30 per minute") if limiter else lambda f: f
 def api_suggest_addresses():

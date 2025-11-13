@@ -1,0 +1,75 @@
+name: Deploy to Infomaniak
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    name: Deploy to badenleg.ch
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      
+      - name: Deploy to Infomaniak via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.INFOMANIAK_HOST }}
+          username: ${{ secrets.INFOMANIAK_USER }}
+          key: ${{ secrets.INFOMANIAK_SSH_KEY }}
+          port: ${{ secrets.INFOMANIAK_SSH_PORT || 22 }}
+          script: |
+            set -e  # Exit on error
+            
+            echo "🚀 Starting deployment to badenleg.ch..."
+            
+            # Navigate to deployment directory
+            cd ${{ secrets.INFOMANIAK_DEPLOY_PATH || '~/www/badenleg' }}
+            
+            # Pull latest code from main branch
+            echo "📥 Pulling latest code from main branch..."
+            git fetch origin
+            git checkout main
+            git pull origin main
+            
+            # Activate virtual environment and update dependencies
+            echo "📦 Updating dependencies..."
+            source venv/bin/activate || python3 -m venv venv && source venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt --quiet
+            
+            # Create tmp directory if it doesn't exist
+            mkdir -p tmp
+            
+            # Touch restart file to trigger Passenger reload
+            echo "🔄 Restarting application..."
+            touch tmp/restart.txt
+            
+            # Verify deployment
+            echo "✅ Deployment completed successfully!"
+            echo "🌐 Site should be live at https://badenleg.ch"
+            
+            # Optional: Check if application is responding
+            sleep 2
+            if curl -f -s -o /dev/null -w "%{http_code}" https://badenleg.ch/health > /dev/null 2>&1; then
+              echo "✅ Health check passed"
+            else
+              echo "⚠️  Health check failed (this may be normal if /health endpoint doesn't exist)"
+            fi
+      
+      - name: Deployment Summary
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment to badenleg.ch completed successfully!"
+          else
+            echo "❌ Deployment failed. Check logs above for details."
+            exit 1
+          fi
+
