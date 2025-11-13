@@ -86,9 +86,7 @@ if HAS_SECURITY_LIBS:
         content_security_policy=security_utils.CSP_POLICY,
         content_security_policy_nonce_in=['script-src'],
         frame_options='DENY',
-        content_type_options=True,
-        referrer_policy='strict-origin-when-cross-origin',
-        feature_policy=security_utils.SECURITY_HEADERS.get('Permissions-Policy', '')
+        referrer_policy='strict-origin-when-cross-origin'
     )
     
     logger.info("Security features (Rate Limiting, Security Headers) aktiviert")
@@ -107,6 +105,19 @@ def log_security_event(event_type, details, level='INFO'):
         logger.error(log_message)
     else:
         logger.info(log_message)
+
+
+@app.after_request
+def apply_additional_security_headers(response):
+    """Ensure additional security headers that Talisman doesn't cover are set"""
+    extra_headers = {
+        'X-Content-Type-Options': 'nosniff',
+        'Permissions-Policy': security_utils.SECURITY_HEADERS.get('Permissions-Policy', '')
+    }
+    for header, value in extra_headers.items():
+        if value:
+            response.headers.setdefault(header, value)
+    return response
 
 
 # --- Simulierte In-Memory-Datenbank ---
