@@ -341,23 +341,43 @@
         
         <button id="reset-button" class="text-center text-gray-500 text-sm mt-4 w-full hidden hover:text-gray-700">Neue Adresse prüfen</button>
 
-        <!-- Footer: Impressum / Datenschutz -->
-        <div class="mt-6 pt-3 border-t border-gray-200 text-xs text-gray-500">
-            <div class="flex flex-col gap-2">
-                <div>
-                <strong class="text-gray-700">Mehr erfahren:</strong><br>
-                <a href="/leg" class="underline hover:text-gray-700">LEG</a> ·
-                <a href="/evl" class="underline hover:text-gray-700">EVL/vEVL</a> ·
-                <a href="/zev" class="underline hover:text-gray-700">ZEV/vZEV</a> ·
-                <a href="/vergleich-leg-evl-zev" class="underline hover:text-gray-700">Modelle vergleichen</a>
+        <!-- Footer: Mehr erfahren & Links -->
+        <div class="mt-6 pt-4 border-t border-gray-200">
+            
+            <!-- Mehr erfahren Section -->
+            <div class="mb-4">
+                <h3 class="text-sm font-bold text-gray-800 mb-3">Entdecken Sie Ihr Energiemodell:</h3>
+                <div class="flex flex-col gap-2 text-sm">
+                    <a href="/leg" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
+                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ LEG</span>
+                        <span class="text-xs text-gray-600">– Lokale Elektrizitätsgemeinschaft ab 2026</span>
+                    </a>
+                    <a href="/evl" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
+                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ EVL</span>
+                        <span class="text-xs text-gray-600">– Eigenverbrauchslösung für Mehrfamilienhäuser</span>
+                    </a>
+                    <a href="/zev" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
+                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ ZEV</span>
+                        <span class="text-xs text-gray-600">– Zusammenschluss zum Eigenverbrauch</span>
+                    </a>
+                    <a href="/vergleich-leg-evl-zev" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
+                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ Vergleich</span>
+                        <span class="text-xs text-gray-600">– Welches Modell passt zu mir?</span>
+                    </a>
                 </div>
-                <div>
-                <a href="/impressum" class="underline hover:text-gray-700">Impressum</a> ·
-                <a href="/datenschutz" class="underline hover:text-gray-700">Datenschutz</a> ·
-                <a href="/unsubscribe" class="underline hover:text-gray-700">Ich möchte mich von diesem Service abmelden</a>
-                </div>
-                <div>
-                Kontakt: <a href="mailto:leg@sihliconvalley.ch" class="underline hover:text-gray-700">leg@sihliconvalley.ch</a>
+            </div>
+
+            <!-- Legal & Contact Links -->
+            <div class="pt-3 border-t border-gray-100 text-xs text-gray-500">
+                <div class="flex flex-col gap-2">
+                    <div>
+                        <a href="/impressum" class="underline hover:text-gray-700">Impressum</a> ·
+                        <a href="/datenschutz" class="underline hover:text-gray-700">Datenschutz</a> ·
+                        <a href="/unsubscribe" class="underline hover:text-gray-700">Abmelden</a>
+                    </div>
+                    <div>
+                        Kontakt: <a href="mailto:leg@sihliconvalley.ch" class="underline hover:text-gray-700">leg@sihliconvalley.ch</a>
+                    </div>
                 </div>
             </div>
         </div>
