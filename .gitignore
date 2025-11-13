@@ -22,37 +22,59 @@ wheels/
 
 # Virtual Environment
 venv/
-env/
 ENV/
+env/
 .venv
 
-# Flask
-instance/
-.webassets-cache
-
-# Environment variables
+# Environment Variables
 .env
 .env.local
-.env*.local
+.env.production
 
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-Thumbs.db
 
 # Logs
 *.log
+badenleg_security.log
+badenleg_security.log.*
+
+# Flask
+instance/
+.webassets-cache
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+.tox/
 
-# Misc
+# Database (if you add one later)
+*.db
+*.sqlite
+*.sqlite3
+
+# Sensitive Data
+secrets/
+certificates/
 *.pem
+*.key
+*.crt
+
+# Temporary Files
+*.tmp
+*.bak
+*.swp
+*.swo
+.cache/
+temp/
+tmp/
+
+# OS Files
+Thumbs.db
+.DS_Store

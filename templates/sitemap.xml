@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{% for path, priority, freq in pages %}
+  <url>
+    <loc>{{ site_url }}{{ path }}</loc>
+    <changefreq>{{ freq }}</changefreq>
+    <priority>{{ priority }}</priority>
+  </url>
+{% endfor %}
+</urlset>
+

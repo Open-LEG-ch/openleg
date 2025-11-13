@@ -1,134 +1,320 @@
-# badenleg.ch - MVP
+# BadenLEG - Lokale Elektrizitätsgemeinschaft Platform
 
-Ein "Blue Ocean" MVP für lokale Energiegemeinschaften (LEG/ZEV) in der Region Baden/Limmattal (Schweiz).
-
-## Projektbeschreibung
-
-badenleg.ch löst das "Henne-Ei-Problem" für die Gründung von lokalen Energiegemeinschaften durch einen zweistufigen "Interessen-Pool". Die Plattform ermöglicht es Nutzern, passende Energie-Partner in der Nachbarschaft zu finden, ohne sofortige Registrierung zu erfordern.
+BadenLEG is a web platform that helps residents of Baden, Switzerland find neighbors to form Local Electricity Communities (LEG - Lokale Elektrizitätsgemeinschaft) starting January 1, 2026.
 
 ## Features
 
-- **Map-First Design**: Interaktive Karte mit Leaflet.js
-- **Mobile-First**: Optimiert für mobile Geräte
-- **Speed-Optimiert**: Asynchrone ML-Analyse im Hintergrund
-- **Blue Ocean Strategie**: Zweistufiger Interessen-Pool (anonym → registriert)
-- **ML-basiertes Matching**: DBSCAN-Clustering für optimale Gemeinschaften
-- **SMS-Benachrichtigungen**: Twilio-Integration für anonyme Nutzer
+- **Address-based matching**: Find potential LEG partners in your neighborhood
+- **Interactive map**: Visualize existing interest clusters and potential communities
+- **Privacy-first**: Coordinates are anonymized with 120m radius jittering
+- **Email verification**: Two-step confirmation process for contact exchange
+- **ML-powered clustering**: DBSCAN algorithm for optimal community formation
+- **Educational content**: Comprehensive explanations of LEG, EVL/vEVL, and ZEV/vZEV
+- **Security hardened**: Multiple layers of security (rate limiting, input validation, secure headers)
+- **GDPR compliant**: Right to be forgotten, data minimization, explicit consent
 
-## Technologie-Stack
+## Technology Stack
 
-- **Backend**: Python (Flask)
-- **ML**: Scikit-learn (DBSCAN), Pandas, Numpy
-- **Frontend**: Single HTML-Datei mit Leaflet.js, TailwindCSS, Vanilla JavaScript
-- **APIs**: Requests (für Opendata), Twilio (für SMS)
-- **Geo-Daten**: geo.admin.ch, sonnendach.ch (simuliert für MVP)
+- **Backend**: Flask (Python 3.11+)
+- **Frontend**: HTML, TailwindCSS, Leaflet.js
+- **ML**: scikit-learn (DBSCAN clustering)
+- **Security**: Flask-Limiter, Flask-Talisman, bleach, email-validator
+- **Data**: pandas, numpy, scipy
 
-## Setup & Installation
+## Quick Start
 
-### 1. Voraussetzungen
-
-- Python 3.8 oder höher
-- pip (Python Package Manager)
-
-### 2. Dependencies installieren
+### 1. Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourorg/badenleg.git
+cd badenleg
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Twilio-Konfiguration (Optional)
-
-Für SMS-Benachrichtigungen benötigen Sie ein Twilio-Konto:
-
-1. Erstellen Sie ein (kostenloses) Twilio-Konto auf [twilio.com](https://www.twilio.com)
-2. Holen Sie sich ACCOUNT_SID, AUTH_TOKEN und eine PHONE_NUMBER
-3. Setzen Sie die Umgebungsvariablen:
+### 2. Configuration
 
 ```bash
-# Linux/macOS
-export TWILIO_ACCOUNT_SID='IHRE_SID'
-export TWILIO_AUTH_TOKEN='IHR_TOKEN'
-export TWILIO_PHONE_NUMBER='+41IHRENUMMER'
+# Copy environment template
+cp env.example .env
 
-# Windows CMD
-set TWILIO_ACCOUNT_SID=IHRE_SID
-set TWILIO_AUTH_TOKEN=IHR_TOKEN
-set TWILIO_PHONE_NUMBER=+41IHRENUMMER
+# Edit .env and set at minimum:
+# SECRET_KEY=<generate-a-secure-key>
+# APP_BASE_URL=http://localhost:5003
 ```
 
-**Hinweis**: Ohne Twilio-Konfiguration funktioniert die App, aber SMS-Benachrichtigungen werden nur simuliert (in der Konsole ausgegeben).
-
-### 4. Anwendung starten
+### 3. Run Development Server
 
 ```bash
-# Option 1: Mit Flask CLI
-export FLASK_APP=app.py
-flask run
-
-# Option 2: Direkt mit Python
 python app.py
 ```
 
-Die Anwendung läuft dann auf [http://localhost:5002](http://localhost:5002)
+Visit: http://localhost:5003
 
-## Projektstruktur
+## Project Structure
 
 ```
 badenleg/
-├── app.py                 # Flask-Backend (Haupt-Controller)
-├── ml_models.py           # ML-Service (DBSCAN, Autarkie-Simulation)
-├── data_enricher.py       # Opendata-Service (Geo-APIs, Mock-Daten)
-├── requirements.txt        # Python-Dependencies
-├── templates/
-│   └── index.html         # Frontend (Single-Page-App)
-└── README.md              # Diese Datei
+├── app.py                      # Main Flask application
+├── security_utils.py           # Security validation and sanitization
+├── data_enricher.py            # Address geocoding and energy profile estimation
+├── ml_models.py                # DBSCAN clustering for community formation
+├── requirements.txt            # Python dependencies
+├── env.example                 # Environment variables template
+├── .gitignore                  # Git ignore patterns
+├── SECURITY.md                 # Security documentation
+├── DEPLOYMENT.md               # Deployment guide
+├── README.md                   # This file
+└── templates/
+    ├── index.html              # Main UI
+    ├── leg.html                # LEG explanation page
+    ├── evl.html                # EVL/vEVL explanation page
+    ├── zev.html                # ZEV/vZEV explanation page
+    ├── vergleich.html          # Comparison page
+    ├── impressum.html          # Imprint/legal
+    ├── datenschutz.html        # Privacy policy
+    └── unsubscribe.html        # Unsubscribe form
 ```
 
-## Nutzer-Flow
+## Security Features
 
-1. **Karte laden**: Nutzer öffnet badenleg.ch, Karte wird sofort geladen
-2. **Marker laden**: Asynchron werden existierende Nutzer-Pins geladen
-3. **Potenzial-Check**: Nutzer gibt Adresse ein und klickt "Prüfen"
-4. **Backend-Anreicherung**: Adresse wird mit Opendata-APIs angereichert
-5. **ML-Matching (FAST)**: Schnelle Geo-Distanz-Abfrage für provisorische Matches
-6. **Interaktive Antwort**: 
-   - **Szenario A**: Kein Match → "Anonymer Pool"-Popup
-   - **Szenario B**: Match gefunden → "Registrieren"-Popup mit Partner-Pins
-7. **Registrierung**: Nutzer registriert sich (anonym oder voll)
-8. **Hintergrund-Task**: Langsame DBSCAN-Analyse läuft asynchron
-9. **SMS-Trigger**: Bei neuem Match wird SMS an anonyme Nutzer gesendet
+### Implemented
 
-## API-Endpunkte
+✅ **Input Validation**: All inputs validated and sanitized  
+✅ **Rate Limiting**: Protection against DoS and brute force  
+✅ **Security Headers**: CSP, HSTS, X-Frame-Options, etc.  
+✅ **HTTPS Enforcement**: Automatic redirect in production  
+✅ **Session Security**: Secure, HTTPOnly, SameSite cookies  
+✅ **Request Size Limits**: 1MB max to prevent memory exhaustion  
+✅ **Data Anonymization**: 120m coordinate jittering  
+✅ **Security Logging**: All events logged for forensics  
+✅ **Token-Based Actions**: UUIDs for email confirmation/unsubscribe  
+✅ **Email Validation**: RFC-compliant with normalization  
 
-- `GET /` - Frontend (index.html)
-- `GET /api/get_all_buildings` - Alle bekannten Gebäudepositionen
-- `POST /api/check_potential` - Adresse prüfen und Matches finden
-- `POST /api/register_anonymous` - Anonyme Registrierung (Pool)
-- `POST /api/register_full` - Vollständige Registrierung
-- `GET /confirm/<token>` - SMS-Bestätigungslink
+See [SECURITY.md](SECURITY.md) for detailed security documentation.
 
-## Entwicklung
+## API Endpoints
 
-### Mock-Modus
+### Public Endpoints
 
-Die Anwendung verwendet standardmäßig `get_mock_energy_profile_for_address()` für schnelle Entwicklung. Um echte APIs zu verwenden, ändern Sie in `app.py`:
+- `GET /` - Main application UI
+- `GET /leg` - LEG explanation page
+- `GET /evl` - EVL/vEVL explanation page
+- `GET /zev` - ZEV/vZEV explanation page
+- `GET /vergleich-leg-evl-zev` - Model comparison
+- `GET /impressum` - Imprint
+- `GET /datenschutz` - Privacy policy
+- `GET /unsubscribe` - Unsubscribe form
+- `GET /unsubscribe/<token>` - Direct unsubscribe via email link
+- `GET /confirm/<token>` - Email confirmation
 
-```python
-# Zeile ~200: Von Mock zu Echt
-estimates, profiles = data_enricher.get_energy_profile_for_address(address)
+### API Endpoints
+
+- `GET /api/suggest_addresses?q=<query>` - Address autocomplete
+- `GET /api/get_all_buildings` - Get all registered building locations (anonymized)
+- `GET /api/get_all_clusters` - Get all cluster polygons
+- `POST /api/check_potential` - Check if address has potential matches
+- `POST /api/register_anonymous` - Register interest (email only)
+- `POST /api/register_full` - Full registration
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive deployment guide.
+
+### Quick Production Deployment
+
+```bash
+# Install security dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp env.example .env
+# Edit .env with production values
+
+# Run with Gunicorn
+gunicorn -w 4 -b 0.0.0.0:8000 --timeout 120 app:app
 ```
 
-### Testing
+### Docker Deployment
 
-Testen Sie den Flow mit verschiedenen Adressen in der Region Baden:
-- "Stadtturm, 5400 Baden"
-- "Bahnhofstrasse, 5430 Wettingen"
-- "Limmattalstrasse, 5400 Baden"
+```bash
+docker-compose up -d
+```
 
-## Lizenz
+## Development
 
-Dieses Projekt ist ein MVP für Demonstrationszwecke.
+### Running Tests
 
-## Kontakt
+```bash
+# Install dev dependencies
+pip install pytest pytest-flask
 
-Für Fragen oder Anregungen öffnen Sie bitte ein Issue.
+# Run tests
+pytest
+```
+
+### Code Style
+
+```bash
+# Install formatters
+pip install black flake8
+
+# Format code
+black .
+
+# Lint
+flake8 app.py security_utils.py
+```
+
+## Configuration
+
+### Environment Variables
+
+See `env.example` for all available configuration options.
+
+**Critical for Production:**
+
+```bash
+SECRET_KEY=<generate-with-secrets.token_hex(32)>
+FLASK_ENV=production
+FLASK_DEBUG=False
+APP_BASE_URL=https://badenleg.ch
+SESSION_COOKIE_SECURE=True
+```
+
+## Data Privacy
+
+BadenLEG is designed with privacy as a core principle:
+
+- **Data minimization**: Only email and approximate location collected
+- **Anonymization**: Coordinates jittered by 120m before display
+- **Explicit consent**: Two-step email confirmation required
+- **Right to be forgotten**: One-click unsubscribe
+- **No third-party sharing**: Data never shared outside the platform
+- **Transparent**: Clear privacy policy at /datenschutz
+
+## GDPR Compliance
+
+✅ Lawful basis: Explicit consent  
+✅ Data minimization: Only essential data  
+✅ Purpose limitation: Only for LEG matching  
+✅ Storage limitation: Unsubscribe removes all data  
+✅ Integrity and confidentiality: Multiple security layers  
+✅ Accountability: Logging and audit trail  
+✅ Rights of data subjects: Access, rectification, erasure, portability  
+
+## FAQ
+
+### What is a LEG?
+
+A Local Electricity Community (Lokale Elektrizitätsgemeinschaft) is a new model starting January 1, 2026 that allows neighbors to share locally produced solar electricity within a community or municipality.
+
+See [/leg](http://localhost:5003/leg) for detailed explanation.
+
+### How does the matching work?
+
+1. Enter your address
+2. System analyzes energy profile and finds potential matches using DBSCAN clustering
+3. If matches found, register with email
+4. Confirm via email (2-step verification)
+5. Once confirmed, receive contact details of all confirmed neighbors in your cluster
+
+### Is my address publicly visible?
+
+No. Addresses are:
+- Never displayed publicly
+- Coordinates are jittered by 120m radius on the map
+- Only shared after mutual email confirmation
+- Can be removed anytime via unsubscribe
+
+### What's the difference between LEG, EVL, and ZEV?
+
+- **LEG**: Entire neighborhood/municipality (available 2026)
+- **EVL/vEVL**: Single building or direct neighbors (available now, simple billing)
+- **ZEV/vZEV**: Single building or area (available now, self-managed billing)
+
+See [comparison page](http://localhost:5003/vergleich-leg-evl-zev) for details.
+
+## Support
+
+- **Email**: leg@sihliconvalley.ch
+- **Website**: badenleg.ch
+- **Issues**: [GitHub Issues](https://github.com/yourorg/badenleg/issues)
+
+## License
+
+[To be determined]
+
+## Credits
+
+**Developed by**: Sihl Icon Valley @ sihliconvalley.ch
+
+**Powered by**:
+- City of Baden energy data
+- OpenStreetMap for geocoding
+- Regionalwerke Baden for LEG framework
+
+## Contributing
+
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+## Changelog
+
+### v1.0.0 (2024-11)
+
+- Initial release
+- Address-based matching
+- Interactive map with clusters
+- Email-based verification (2-step)
+- Educational content pages (LEG/EVL/ZEV)
+- Comprehensive security implementation
+- GDPR-compliant data handling
+- Unsubscribe functionality
+- Security logging
+- Rate limiting
+- Input validation
+
+## Roadmap
+
+### v1.1 (Planned)
+
+- [ ] Real SMTP integration
+- [ ] Database persistence (PostgreSQL)
+- [ ] Admin dashboard
+- [ ] Email templates (HTML)
+- [ ] Multi-language support (DE/FR/IT)
+
+### v2.0 (Future)
+
+- [ ] User accounts with login
+- [ ] Chat/messaging between confirmed neighbors
+- [ ] Document sharing
+- [ ] Event organization
+- [ ] Integration with Regionalwerke Baden API
+
+## Acknowledgments
+
+Thank you to:
+- City of Baden for supporting local energy communities
+- Regionalwerke Baden for LEG framework and technical support
+- All early adopters helping test the platform
+
+---
+
+**BadenLEG** - Gemeinsam nachhaltig
+
+Last updated: November 2024

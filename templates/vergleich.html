@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vergleich: LEG, EVL/vEVL und ZEV/vZEV – Was passt zu mir?</title>
+    <meta name="description" content="Vergleich: LEG, EVL/vEVL und ZEV/vZEV. Finden Sie heraus, welches Modell für Ihre Nachbarschaft in Baden am besten passt. Unterschiede bei Ausdehnung, Abrechnung, Kosten und mehr.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ site_url }}/vergleich-leg-evl-zev">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Vergleich: LEG, EVL/vEVL und ZEV/vZEV – Was passt zu mir?">
+    <meta property="og:description" content="LEG, EVL/vEVL oder ZEV/vZEV? Hier finden Sie einen verständlichen Vergleich der Stromgemeinschaftsmodelle in Baden.">
+    <meta property="og:url" content="{{ site_url }}/vergleich-leg-evl-zev">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --brand-color: #c7021a;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .brand-color {
+            color: var(--brand-color);
+        }
+        .brand-bg {
+            background-color: var(--brand-color);
+        }
+        @media (max-width: 768px) {
+            .comparison-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-6">
+            <a href="/" class="text-sm underline hover:text-gray-600">← Zurück zu BadenLEG</a>
+        </div>
+
+        <!-- Title -->
+        <h1 class="text-3xl md:text-4xl font-bold brand-color mb-4">
+            Vergleich: LEG, EVL/vEVL und ZEV/vZEV
+        </h1>
+        <p class="text-xl text-gray-600 mb-8">
+            Welches Modell passt zu Ihrer Situation?
+        </p>
+
+        <!-- Quick Guide -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Schnellentscheidung</h2>
+            <div class="grid md:grid-cols-3 gap-4">
+                <div class="border-l-4 pl-4" style="border-color: var(--brand-color);">
+                    <h3 class="font-semibold mb-2"><a href="/leg" class="underline hover:text-gray-600">LEG</a></h3>
+                    <p class="text-sm text-gray-700 mb-2">Am besten für:</p>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Grössere Nachbarschaften</li>
+                        <li>• Mehrere Gebäude in der Gemeinde</li>
+                        <li>• Start ab 2026</li>
+                    </ul>
+                </div>
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <h3 class="font-semibold mb-2"><a href="/evl" class="underline hover:text-gray-600">EVL/vEVL</a></h3>
+                    <p class="text-sm text-gray-700 mb-2">Am besten für:</p>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Gebäude oder direkte Nachbarschaft</li>
+                        <li>• Einfache Abrechnung gewünscht</li>
+                        <li>• Bereits heute möglich</li>
+                    </ul>
+                </div>
+                <div class="border-l-4 border-green-500 pl-4">
+                    <h3 class="font-semibold mb-2"><a href="/zev" class="underline hover:text-gray-600">ZEV/vZEV</a></h3>
+                    <p class="text-sm text-gray-700 mb-2">Am besten für:</p>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Gebäude oder Areal</li>
+                        <li>• Eigene Abrechnung gewünscht</li>
+                        <li>• Bereits heute möglich</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Comparison Table -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8 overflow-x-auto">
+            <h2 class="text-2xl font-semibold mb-4">Detaillierter Vergleich</h2>
+            <table class="w-full text-sm border-collapse comparison-table">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="p-3 text-left border font-semibold">Kriterium</th>
+                        <th class="p-3 text-left border font-semibold" style="color: var(--brand-color);">
+                            <a href="/leg" class="underline">LEG</a>
+                        </th>
+                        <th class="p-3 text-left border font-semibold text-blue-700">
+                            <a href="/evl" class="underline">EVL/vEVL</a>
+                        </th>
+                        <th class="p-3 text-left border font-semibold text-green-700">
+                            <a href="/zev" class="underline">ZEV/vZEV</a>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Ausdehnung -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Ausdehnung</td>
+                        <td class="p-3 border">
+                            Gesamte Nachbarschaft oder Gemeinde
+                        </td>
+                        <td class="p-3 border">
+                            <strong>EVL:</strong> Gleiches Gebäude/Grundstück<br>
+                            <strong>vEVL:</strong> Virtuelle Nachbarschaft
+                        </td>
+                        <td class="p-3 border">
+                            <strong>ZEV:</strong> Gleiches Gebäude/Areal<br>
+                            <strong>vZEV:</strong> Virtuelle Nachbarschaft
+                        </td>
+                    </tr>
+                    
+                    <!-- Verfügbarkeit -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Verfügbarkeit</td>
+                        <td class="p-3 border">
+                            <strong>Ab 1. Januar 2026</strong><br>
+                            <span class="text-xs text-gray-600">Jetzt Registrierung möglich</span>
+                        </td>
+                        <td class="p-3 border">
+                            <strong>Bereits heute möglich</strong><br>
+                            <span class="text-xs text-gray-600">vEVL seit 2025</span>
+                        </td>
+                        <td class="p-3 border">
+                            <strong>Bereits heute möglich</strong>
+                        </td>
+                    </tr>
+                    
+                    <!-- Technische Voraussetzungen -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Technische Voraussetzungen</td>
+                        <td class="p-3 border">
+                            • Gleiche Verteilnetzbetreiberin<br>
+                            • Gleiche Gemeinde<br>
+                            • Gleiche Netzebene<br>
+                            • Mind. 5% Produktionsleistung<br>
+                            • Smart Meter
+                        </td>
+                        <td class="p-3 border">
+                            • Smart Meter für alle Teilnehmer<br>
+                            • EVL: gleicher Netzanschlusspunkt<br>
+                            • vEVL: technische Nähe
+                        </td>
+                        <td class="p-3 border">
+                            • Smart Meter für alle Teilnehmer<br>
+                            • ZEV: gleicher Netzanschlusspunkt<br>
+                            • vZEV: technische Nähe
+                        </td>
+                    </tr>
+                    
+                    <!-- Messung -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Messung</td>
+                        <td class="p-3 border">
+                            Durch Regionalwerke Baden mit Smart Meter
+                        </td>
+                        <td class="p-3 border">
+                            Durch Regionalwerke Baden mit Smart Meter
+                        </td>
+                        <td class="p-3 border">
+                            Durch Regionalwerke Baden mit Smart Meter
+                        </td>
+                    </tr>
+                    
+                    <!-- Abrechnung -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Abrechnung</td>
+                        <td class="p-3 border">
+                            Kann von der LEG selbst organisiert werden
+                        </td>
+                        <td class="p-3 border">
+                            <strong>✓ Komplett durch Regionalwerke</strong><br>
+                            <span class="text-xs text-green-600">Kein Aufwand für Anlagenbetreiber</span>
+                        </td>
+                        <td class="p-3 border">
+                            Durch externen Dienstleister<br>
+                            <span class="text-xs text-gray-600">Regionalwerke liefern nur Messdaten</span>
+                        </td>
+                    </tr>
+                    
+                    <!-- Aufwand -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Aufwand für Betreiber</td>
+                        <td class="p-3 border">
+                            Mittel<br>
+                            <span class="text-xs text-gray-600">Je nach gewähltem Abrechnungsmodell</span>
+                        </td>
+                        <td class="p-3 border">
+                            <strong>Gering</strong><br>
+                            <span class="text-xs text-green-600">Regionalwerke übernehmen alles</span>
+                        </td>
+                        <td class="p-3 border">
+                            Hoch<br>
+                            <span class="text-xs text-gray-600">Eigene Abrechnung nötig</span>
+                        </td>
+                    </tr>
+                    
+                    <!-- Kosten -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Kosten/Gebühren</td>
+                        <td class="p-3 border">
+                            In Bearbeitung<br>
+                            <span class="text-xs text-gray-600">Richtwerte folgen</span>
+                        </td>
+                        <td class="p-3 border">
+                            Nach individuellem Angebot<br>
+                            <span class="text-xs text-gray-600">Kontakt: 056 200 22 09</span>
+                        </td>
+                        <td class="p-3 border">
+                            Nach individuellem Angebot + Dienstleister-Kosten
+                        </td>
+                    </tr>
+                    
+                    <!-- Energiebeschaffung -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Reststrom (wenn Sonne nicht scheint)</td>
+                        <td class="p-3 border">
+                            Von Regionalwerke Baden oder freier Markt
+                        </td>
+                        <td class="p-3 border">
+                            Von Regionalwerke Baden oder freier Markt
+                        </td>
+                        <td class="p-3 border">
+                            Von Regionalwerke Baden oder freier Markt
+                        </td>
+                    </tr>
+                    
+                    <!-- Preisgestaltung -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Preisgestaltung Solarstrom</td>
+                        <td class="p-3 border">
+                            Durch Anlagenbetreiber + reduzierter Netznutzungstarif
+                        </td>
+                        <td class="p-3 border">
+                            Durch Anlagenbetreiber
+                        </td>
+                        <td class="p-3 border">
+                            Durch Anlagenbetreiber
+                        </td>
+                    </tr>
+                    
+                    <!-- Rechtliche Grundlage -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Rechtliche Grundlage</td>
+                        <td class="p-3 border">
+                            EnG Art. 17a (neu ab 2026)
+                        </td>
+                        <td class="p-3 border">
+                            EnG, StromVV
+                        </td>
+                        <td class="p-3 border">
+                            EnG Art. 17, StromVG
+                        </td>
+                    </tr>
+                    
+                    <!-- Flexibilität -->
+                    <tr>
+                        <td class="p-3 border font-semibold bg-gray-50">Flexibilität</td>
+                        <td class="p-3 border">
+                            Hoch (grössere Ausdehnung möglich)
+                        </td>
+                        <td class="p-3 border">
+                            Mittel (begrenzt auf Nachbarschaft)
+                        </td>
+                        <td class="p-3 border">
+                            Mittel (begrenzt auf Areal)
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Entscheidungshilfe -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Welches Modell ist das richtige für mich?</h2>
+            
+            <div class="space-y-6">
+                <!-- LEG -->
+                <div class="border-l-4 pl-4 py-2" style="border-color: var(--brand-color);">
+                    <h3 class="text-lg font-semibold mb-2">
+                        <a href="/leg" class="underline brand-color">LEG - Lokale Elektrizitätsgemeinschaft</a>
+                    </h3>
+                    <p class="mb-3 text-gray-700">Wählen Sie eine LEG, wenn:</p>
+                    <ul class="space-y-2 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="brand-color mr-2">✓</span>
+                            <span>Sie eine grössere Nachbarschaft oder mehrere Gebäude zusammenschliessen möchten</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="brand-color mr-2">✓</span>
+                            <span>Sie Zeit haben (Start ab 2026) und die neue Möglichkeit nutzen möchten</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="brand-color mr-2">✓</span>
+                            <span>Sie eine hohe Autarkie vom Stromnetz und maximale PV-Nutzung anstreben</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="brand-color mr-2">✓</span>
+                            <span>Sie bereits jetzt Nachbarn finden und sich organisieren möchten</span>
+                        </li>
+                    </ul>
+                    <p class="mt-3">
+                        <a href="/" class="inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition text-sm">
+                            Jetzt Nachbarn finden →
+                        </a>
+                    </p>
+                </div>
+
+                <!-- EVL/vEVL -->
+                <div class="border-l-4 border-blue-500 pl-4 py-2">
+                    <h3 class="text-lg font-semibold mb-2">
+                        <a href="/evl" class="underline text-blue-700">EVL/vEVL - Eigenverbrauchslösung</a>
+                    </h3>
+                    <p class="mb-3 text-gray-700">Wählen Sie eine EVL/vEVL, wenn:</p>
+                    <ul class="space-y-2 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">✓</span>
+                            <span>Sie bereits heute starten möchten (nicht bis 2026 warten)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">✓</span>
+                            <span>Sie eine einfache Lösung mit minimalem Aufwand suchen</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">✓</span>
+                            <span>Sie die Abrechnung komplett den Regionalwerken überlassen möchten</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">✓</span>
+                            <span>Ihre Teilnehmer im gleichen Gebäude oder in direkter Nachbarschaft sind</span>
+                        </li>
+                    </ul>
+                    <p class="mt-3">
+                        <a href="/evl" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm">
+                            Mehr erfahren →
+                        </a>
+                    </p>
+                </div>
+
+                <!-- ZEV/vZEV -->
+                <div class="border-l-4 border-green-500 pl-4 py-2">
+                    <h3 class="text-lg font-semibold mb-2">
+                        <a href="/zev" class="underline text-green-700">ZEV/vZEV - Zusammenschluss zum Eigenverbrauch</a>
+                    </h3>
+                    <p class="mb-3 text-gray-700">Wählen Sie einen ZEV/vZEV, wenn:</p>
+                    <ul class="space-y-2 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>Sie mehr Kontrolle über die Abrechnung wünschen</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>Sie spezielle Anforderungen haben, die EVL/vEVL nicht erfüllt</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>Sie bereits einen Abrechnungsdienstleister haben oder finden können</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>Sie den zusätzlichen Aufwand in Kauf nehmen möchten</span>
+                        </li>
+                    </ul>
+                    <p class="mt-3">
+                        <a href="/zev" class="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition text-sm">
+                            Mehr erfahren →
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Häufige Fragen</h2>
+            
+            <div class="space-y-4">
+                <details class="border-b pb-3">
+                    <summary class="font-semibold cursor-pointer hover:text-gray-600">
+                        Kann ich von einer EVL/vEVL zu einer LEG wechseln?
+                    </summary>
+                    <p class="mt-2 text-gray-700 text-sm">
+                        Ja, wenn Sie aktuell eine EVL oder vEVL betreiben, können Sie ab 2026 zu einer LEG wechseln, falls Sie mehr Teilnehmer aus der Nachbarschaft einbinden möchten. Sprechen Sie mit den Regionalwerken Baden über die Details.
+                    </p>
+                </details>
+
+                <details class="border-b pb-3">
+                    <summary class="font-semibold cursor-pointer hover:text-gray-600">
+                        Welches Modell ist am günstigsten?
+                    </summary>
+                    <p class="mt-2 text-gray-700 text-sm">
+                        Das hängt von Ihrer Situation ab. EVL/vEVL haben meist niedrigere laufende Kosten, da die Regionalwerke die Abrechnung übernehmen. Bei ZEV/vZEV kommen Kosten für den Abrechnungsdienstleister hinzu. Die Kosten für LEG werden noch definiert.
+                    </p>
+                </details>
+
+                <details class="border-b pb-3">
+                    <summary class="font-semibold cursor-pointer hover:text-gray-600">
+                        Brauche ich für alle Modelle eine Solaranlage?
+                    </summary>
+                    <p class="mt-2 text-gray-700 text-sm">
+                        Nein, Sie können auch ohne eigene Solaranlage teilnehmen und Strom von Nachbarn beziehen. Mindestens ein Teilnehmer in der Gemeinschaft muss aber eine Produktionsanlage (meist Solaranlage) haben.
+                    </p>
+                </details>
+
+                <details class="border-b pb-3">
+                    <summary class="font-semibold cursor-pointer hover:text-gray-600">
+                        Was passiert, wenn die Sonne nicht scheint?
+                    </summary>
+                    <p class="mt-2 text-gray-700 text-sm">
+                        Bei allen Modellen beziehen Sie automatisch Reststrom aus dem Netz der Regionalwerke Baden, wenn Ihre lokale Produktion nicht ausreicht. Sie bezahlen dafür die normalen Strompreise.
+                    </p>
+                </details>
+
+                <details class="border-b pb-3">
+                    <summary class="font-semibold cursor-pointer hover:text-gray-600">
+                        Wie werde ich unabhängig vom Stromnetz?
+                    </summary>
+                    <p class="mt-2 text-gray-700 text-sm">
+                        Vollständige Unabhängigkeit ist kaum möglich und auch nicht das Ziel dieser Modelle. Aber Sie erhöhen Ihre Autarkie, indem Sie einen grossen Teil Ihres Stroms lokal produzieren und nutzen. Mit Batteriespeichern können Sie die Autarkie zusätzlich steigern.
+                    </p>
+                </details>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="brand-bg text-white rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-3">Bereit für eine LEG?</h2>
+            <p class="mb-4">
+                Registrieren Sie sich kostenlos auf BadenLEG und finden Sie interessierte Nachbarinnen und Nachbarn für Ihre Lokale Elektrizitätsgemeinschaft!
+            </p>
+            <a href="/" class="inline-block bg-white brand-color px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+                Jetzt registrieren →
+            </a>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-sm text-gray-500 border-t pt-4">
+            <p class="mb-2">
+                <a href="/impressum" class="underline hover:text-gray-700">Impressum</a> ·
+                <a href="/datenschutz" class="underline hover:text-gray-700">Datenschutz</a> ·
+                <a href="/" class="underline hover:text-gray-700">Zurück zur Startseite</a>
+            </p>
+            <p>Kontakt: <a href="mailto:leg@sihliconvalley.ch" class="underline hover:text-gray-700">leg@sihliconvalley.ch</a></p>
+        </div>
+    </div>
+</body>
+</html>
+

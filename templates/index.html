@@ -3,8 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>badenleg.ch - Energie-Partner finden</title>
-    
+    <title>BadenLEG – Lokale Elektrizitätsgemeinschaft in Baden finden</title>
+    <meta name="description" content="BadenLEG verbindet Hauseigentümerinnen und Hauseigentümer in Baden, die ab 01.01.2026 eine Lokale Elektrizitätsgemeinschaft (LEG) gründen möchten. Adresse prüfen, Nachbarn finden, Strom lokal teilen.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ site_url }}/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="BadenLEG – Lokale Elektrizitätsgemeinschaft in Baden finden">
+    <meta property="og:description" content="Finden Sie interessierte Nachbarn in Baden und gründen Sie ab 01.01.2026 eine Lokale Elektrizitätsgemeinschaft (LEG).">
+    <meta property="og:url" content="{{ site_url }}/">
+    <meta property="og:locale" content="de_CH">
+    <meta name="twitter:card" content="summary">
+
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -89,8 +98,8 @@
         }
         /* Farben */
         :root {
-            --brand-color: #007a5e; /* badenleg.ch Grün */
-            --warn-color: #f59e0b;  /* Orange für "Pool" */
+            --brand-color: #c7021a; /* Stadt Baden Rot */
+            --warn-color: #f59e0b;  /* Sekundärfarbe für Hinweise */
         }
         .loader {
             border: 4px solid #f3f3f3;
@@ -136,8 +145,73 @@
         .cluster-popup h3 {
             font-size: 1.1em;
         }
+
+        .map-control-button a,
+        .map-zoom-stack a {
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            display: block;
+            color: #0f172a;
+            font-size: 18px;
+            background: #ffffff;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .map-control-button a:hover,
+        .map-zoom-stack a:hover {
+            background: rgba(199, 2, 26, 0.12);
+            color: #c7021a;
+        }
+
+        .map-zoom-stack a:first-child {
+            border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+        }
+
+        .existing-dot-marker {
+            width: 210px;
+            height: 210px;
+            border-radius: 50%;
+            background: rgba(199, 2, 26, 0.18);
+            border: 4px solid rgba(199, 2, 26, 0.45);
+            box-shadow: 0 0 55px rgba(199, 2, 26, 0.35);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .existing-dot-marker:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 75px rgba(199, 2, 26, 0.5);
+        }
+        .existing-tooltip {
+            background: rgba(199, 2, 26, 0.92);
+            color: #ffffff;
+            border: none;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+        }
         .cluster-popup details summary {
             user-select: none;
+        }
+
+        .map-home-control {
+            background: #ffffff;
+            border: 1px solid #d4d4d8;
+            border-radius: 6px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+            font-size: 18px;
+            color: #111827;
+        }
+        .map-home-control:hover {
+            background: #f1f5f9;
         }
         
         /* Desktop: Verbesserte Sidebar-Scrollbarkeit */
@@ -182,24 +256,49 @@
     <div id="control-panel">
 
         <div class="text-center mb-4">
-            <h1 class="text-3xl font-bold text-gray-800">badenleg<span style="color: var(--brand-color);">.ch</span></h1>
-            <p class="text-md sm:text-lg text-gray-600 mt-1">Ihr Energie-Matchmaker für Baden & Limmattal</p>
+            <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
+            <p class="text-md sm:text-lg text-gray-600 mt-1">Finden Sie in Baden interessierte Nachbarn, um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</p>
         </div>
+
+        <!-- Info-Akkordeon -->
+        <details class="mt-3 mb-4 border rounded-md bg-white shadow-sm info-accordion">
+            <summary class="flex items-center gap-2 px-3 py-2 cursor-pointer select-none">
+                <span class="text-white rounded-full w-6 h-6 flex items-center justify-center" style="background-color: var(--brand-color);" aria-hidden="true">i</span>
+                <span class="text-sm font-medium text-gray-800">Hinweis: So interpretieren wir die Zonen</span>
+            </summary>
+            <div class="px-3 pb-3 text-sm text-gray-700 leading-relaxed">
+                Aufgrund öffentlicher verfügbarer Daten haben wir im Hintergrund Zonen modelliert, die Ihnen als Hauseigentümerin oder Hauseigentümer eine maximale Autarkie vom Stromnetz bei gleichzeitig hoher Nutzung Ihrer Photovoltaikanlage ermöglichen.
+                <div class="mt-3 text-xs">
+                    <a href="/leg" class="underline hover:text-gray-900">→ Was ist eine LEG?</a> ·
+                    <a href="/evl" class="underline hover:text-gray-900">→ Was ist eine EVL?</a> ·
+                    <a href="/vergleich-leg-evl-zev" class="underline hover:text-gray-900">→ Modelle vergleichen</a>
+                </div>
+            </div>
+        </details>
 
         <div id="check-step">
             <p class="text-gray-600 mb-4 text-center text-sm sm:text-base">Geben Sie Ihre Adresse ein, um passende Energie-Partner in der Nachbarschaft zu finden.</p>
             
             <div class="flex flex-col sm:flex-row gap-2">
                 <div class="flex-grow relative">
-                    <input type="text" id="address-input" placeholder="z.B. Rathausgasse 20, Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600" autocomplete="off" required>
+                    <input type="text" id="address-input" placeholder="z.B. Brown Boveri Platz, 5400 Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600" autocomplete="off" required>
                     <div id="address-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
                 </div>
-                <button type="button" id="check-button" class="bg-green-700 text-white font-bold py-3 px-4 rounded-md hover:bg-green-800 transition duration-300" style="background-color: var(--brand-color);">
+                <button type="button" id="check-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
                     Prüfen
                 </button>
             </div>
             <div id="check-loader" class="loader mx-auto my-4 hidden"></div>
             <p id="check-message" class="text-center text-red-600 mt-4 font-medium"></p>
+            
+            <div class="mt-6 border border-gray-200 rounded-md bg-gray-50 p-4">
+                <h3 class="text-base font-semibold text-gray-800 mb-2">So funktioniert es</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                    Wir gleichen Ihre Adresse mit anonymisierten Nachbarprofilen in Baden ab. Falls bereits Interessierte in Ihrer Nähe vorhanden sind,
+                    laden wir Sie per E-Mail zur Teilnahme ein. Nach Ihrer Bestätigung erhalten alle bestätigten Haushalte eine Übersicht mit Adresse
+                    und E-Mail, damit Sie direkt in Kontakt treten können.
+                </p>
+            </div>
         </div>
 
         <div id="result-step" class="hidden">
@@ -207,24 +306,25 @@
             <div id="no-match-box" class="hidden">
                 <h2 class="text-2xl font-semibold text-yellow-600 mb-4" style="color: var(--warn-color);">Kein direktes Match</h2>
                 <p class="text-gray-600 mb-4 text-sm sm:text-base">Leider gibt es noch keine Partner in Ihrer Zone. Werden Sie der Erste!</p>
-                <p class="text-gray-600 mb-4 text-sm sm:text-base">Tragen Sie sich **anonym** in den Interessen-Pool ein. Wir benachrichtigen Sie per **SMS**, sobald ein passender Nachbar Interesse zeigt.</p>
+                <p class="text-gray-600 mb-4 text-sm sm:text-base">Tragen Sie sich anonym in den Interessen-Pool ein. Wir informieren Sie per E-Mail und halten Sie über passende Nachbarinnen und Nachbarn auf dem Laufenden.</p>
                 
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="tel" id="phone-input" placeholder="Mobile-Nummer (z.B. +4179...)" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-600">
+                <div class="flex flex-col gap-2">
+                    <input type="email" id="pool-email-input" placeholder="Ihre E-Mail-Adresse" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-600" autocomplete="email" required>
+                    <input type="tel" id="pool-phone-input" placeholder="Optional: Mobile-Nummer (z.B. +4179...)" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-600" autocomplete="tel">
                     <button id="register-anon-button" class="bg-yellow-600 text-white font-bold py-3 px-4 rounded-md hover:bg-yellow-700 transition duration-300" style="background-color: var(--warn-color);">
-                        In Pool eintragen
+                        Interesse vormerken
                     </button>
                 </div>
             </div>
 
             <div id="match-box" class="hidden">
-                <h2 class="text-2xl font-semibold text-green-700 mb-4" style="color: var(--brand-color);">Potenzial gefunden!</h2>
+                <h2 class="text-2xl font-semibold text-red-700 mb-4" style="color: var(--brand-color);">Potenzial gefunden!</h2>
                 <p id="match-message" class="text-gray-600 mb-4"></p>
-                <p class="text-gray-600 mb-4 text-sm sm:text-base">Vervollständigen Sie Ihre Registrierung. Wir benachrichtigen die Partner (ggf. per SMS), um das Match zu bestätigen.</p>
+                <p class="text-gray-600 mb-4 text-sm sm:text-base">Tragen Sie Ihre E-Mail ein. Wir senden Ihnen einen Bestätigungslink. Nach Ihrer Bestätigung erhalten alle interessierten Nachbarn automatisch eine Kontaktübersicht mit Adresse und E-Mail.</p>
                 
                 <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="email" id="email-input" placeholder="Ihre E-Mail-Adresse" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600">
-                    <button id="register-full-button" class="bg-green-700 text-white font-bold py-3 px-4 rounded-md hover:bg-green-800 transition duration-300" style="background-color: var(--brand-color);">
+                    <input type="email" id="email-input" placeholder="Ihre E-Mail-Adresse" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
+                    <button id="register-full-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
                         Registrieren & Matchen
                     </button>
                 </div>
@@ -235,11 +335,32 @@
         </div>
 
         <div id="success-step" class="hidden">
-             <h2 class="text-2xl font-semibold text-green-700 mb-4" style="color: var(--brand-color);">Erfolgreich!</h2>
+             <h2 class="text-2xl font-semibold text-red-700 mb-4" style="color: var(--brand-color);">Erfolgreich!</h2>
              <p id="success-message" class="text-gray-600 text-sm sm:text-base"></p>
         </div>
         
         <button id="reset-button" class="text-center text-gray-500 text-sm mt-4 w-full hidden hover:text-gray-700">Neue Adresse prüfen</button>
+
+        <!-- Footer: Impressum / Datenschutz -->
+        <div class="mt-6 pt-3 border-t border-gray-200 text-xs text-gray-500">
+            <div class="flex flex-col gap-2">
+                <div>
+                <strong class="text-gray-700">Mehr erfahren:</strong><br>
+                <a href="/leg" class="underline hover:text-gray-700">LEG</a> ·
+                <a href="/evl" class="underline hover:text-gray-700">EVL/vEVL</a> ·
+                <a href="/zev" class="underline hover:text-gray-700">ZEV/vZEV</a> ·
+                <a href="/vergleich-leg-evl-zev" class="underline hover:text-gray-700">Modelle vergleichen</a>
+                </div>
+                <div>
+                <a href="/impressum" class="underline hover:text-gray-700">Impressum</a> ·
+                <a href="/datenschutz" class="underline hover:text-gray-700">Datenschutz</a> ·
+                <a href="/unsubscribe" class="underline hover:text-gray-700">Ich möchte mich von diesem Service abmelden</a>
+                </div>
+                <div>
+                Kontakt: <a href="mailto:leg@sihliconvalley.ch" class="underline hover:text-gray-700">leg@sihliconvalley.ch</a>
+                </div>
+            </div>
+        </div>
     </div>
 
 
@@ -252,6 +373,16 @@
         let clusterMarkers = L.layerGroup(); // Layer für Cluster-Pins
         let existingMarkers = L.layerGroup(); // Layer für bestehende Nutzer
         let clusterPolygons = null; // Wird in initMap() initialisiert
+        const MAP_DEFAULT_CENTER = [47.473, 8.308];
+        const MAP_DEFAULT_ZOOM = 14;
+        const MAP_BOUNDS = [
+            [47.40, 8.20],
+            [47.58, 8.46]
+        ];
+        const MAP_LATLNG_BOUNDS = L.latLngBounds(
+            L.latLng(MAP_BOUNDS[0][0], MAP_BOUNDS[0][1]),
+            L.latLng(MAP_BOUNDS[1][0], MAP_BOUNDS[1][1])
+        );
 
         // --- UI-Elemente ---
         const controlPanel = document.getElementById('control-panel');
@@ -270,14 +401,15 @@
         let suggestionTimeout = null;
         let currentSuggestions = [];
         let selectedSuggestionIndex = -1;
-        let clusterPolygons = null; // Wird in initMap() initialisiert
+        const interestedTooltipText = 'In diesem Gebiet gibt es interessierte Nachbarn';
 
         const noMatchBox = document.getElementById('no-match-box');
         const matchBox = document.getElementById('match-box');
         const matchMessage = document.getElementById('match-message');
         
         const registerAnonButton = document.getElementById('register-anon-button');
-        const phoneInput = document.getElementById('phone-input');
+        const poolEmailInput = document.getElementById('pool-email-input');
+        const poolPhoneInput = document.getElementById('pool-phone-input');
         
         const registerFullButton = document.getElementById('register-full-button');
         const emailInput = document.getElementById('email-input');
@@ -298,8 +430,9 @@
         });
         const existingIcon = L.divIcon({
             className: 'existing-dot',
-            html: '<div style="background-color: #9CA3AF; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #4B5563;"></div>',
-            iconSize: [8, 8], iconAnchor: [4, 4]
+            html: '<div class="existing-dot-marker"></div>',
+            iconSize: [210, 210],
+            iconAnchor: [105, 105]
         });
 
         // --- 1. Initialisierung ---
@@ -331,14 +464,88 @@
 
         function initMap() {
             map = L.map('map', {
-                zoomControl: false
-            }).setView([47.473, 8.308], 14);
+                zoomControl: false,
+                maxBounds: MAP_LATLNG_BOUNDS,
+                maxBoundsViscosity: 0.85,
+                minZoom: 11,
+                maxZoom: 18
+            }).setView(MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM);
             
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; OpenStreetMap &copy; CARTO',
                 subdomains: 'abcd',
                 maxZoom: 20
             }).addTo(map);
+
+            L.control.scale({
+                metric: true,
+                imperial: false,
+                position: 'bottomleft'
+            }).addTo(map);
+
+            const homeControl = L.control({ position: 'topleft' });
+            homeControl.onAdd = function () {
+                const container = L.DomUtil.create('div', 'leaflet-bar map-control-button');
+                const button = L.DomUtil.create('a', '', container);
+                button.href = '#';
+                button.title = 'Zurück zur Ansicht Baden';
+                button.innerHTML = '⌂';
+                L.DomEvent.disableClickPropagation(button);
+                L.DomEvent.disableScrollPropagation(button);
+                L.DomEvent.on(button, 'click', (e) => {
+                    e.preventDefault();
+                    map.flyTo(MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM);
+                });
+                return container;
+            };
+            homeControl.addTo(map);
+
+            const boundsControl = L.control({ position: 'topleft' });
+            boundsControl.onAdd = function () {
+                const container = L.DomUtil.create('div', 'leaflet-bar map-control-button');
+                const button = L.DomUtil.create('a', '', container);
+                button.href = '#';
+                button.title = 'Versorgungsgebiet anzeigen';
+                button.innerHTML = '⤢';
+                L.DomEvent.disableClickPropagation(button);
+                L.DomEvent.disableScrollPropagation(button);
+                L.DomEvent.on(button, 'click', (e) => {
+                    e.preventDefault();
+                    map.fitBounds(MAP_LATLNG_BOUNDS, { padding: [40, 40] });
+                });
+                return container;
+            };
+            boundsControl.addTo(map);
+
+            const zoomControl = L.control({ position: 'topright' });
+            zoomControl.onAdd = function () {
+                const container = L.DomUtil.create('div', 'leaflet-bar map-zoom-stack');
+
+                const zoomInBtn = L.DomUtil.create('a', '', container);
+                zoomInBtn.href = '#';
+                zoomInBtn.title = 'Vergrößern';
+                zoomInBtn.innerHTML = '+';
+                L.DomEvent.disableClickPropagation(zoomInBtn);
+                L.DomEvent.disableScrollPropagation(zoomInBtn);
+                L.DomEvent.on(zoomInBtn, 'click', (e) => {
+                    e.preventDefault();
+                    map.zoomIn();
+                });
+
+                const zoomOutBtn = L.DomUtil.create('a', '', container);
+                zoomOutBtn.href = '#';
+                zoomOutBtn.title = 'Verkleinern';
+                zoomOutBtn.innerHTML = '−';
+                L.DomEvent.disableClickPropagation(zoomOutBtn);
+                L.DomEvent.disableScrollPropagation(zoomOutBtn);
+                L.DomEvent.on(zoomOutBtn, 'click', (e) => {
+                    e.preventDefault();
+                    map.zoomOut();
+                });
+
+                return container;
+            };
+            zoomControl.addTo(map);
             
             clusterMarkers.addTo(map);
             existingMarkers.addTo(map);
@@ -355,12 +562,18 @@
                 existingMarkers.clearLayers();
                 buildingsData.buildings.forEach(b => {
                     if (b.type === 'anonymous' || b.type === 'registered') {
-                        L.marker([b.lat, b.lon], { 
-                            icon: existingIcon, 
-                            zIndexOffset: -100, 
-                            interactive: false, // Macht die Punkte nicht klickbar
-                            opacity: 0.7 
-                        }).addTo(existingMarkers);
+                        const marker = L.marker([b.lat, b.lon], {
+                            icon: existingIcon,
+                            zIndexOffset: -50,
+                            riseOnHover: true
+                        });
+                        marker.addTo(existingMarkers)
+                              .bindTooltip(interestedTooltipText, {
+                                  direction: 'top',
+                                  offset: [0, -18],
+                                  className: 'existing-tooltip',
+                                  sticky: true
+                              });
                     }
                 });
                 
@@ -438,7 +651,6 @@
                 // Tooltip mit Cluster-Info (beim Hover)
                 const tooltipText = `ZEV/LEG Cluster ${cluster.cluster_id}<br>` +
                                    `${cluster.num_members} Mitglieder<br>` +
-                                   `Autarkie: ${autarky.toFixed(1)}%<br>` +
                                    `<small>Klicken für Details</small>`;
                 
                 polygon.bindTooltip(tooltipText, {
@@ -448,35 +660,17 @@
                 });
                 
                 // Popup mit detaillierten Informationen (beim Klick)
-                const members = cluster.members || [];
-                const membersList = members.length > 0 
-                    ? members.map(m => 
-                        `• Gebäude ${m.building_id ? m.building_id.slice(-6) : 'N/A'} (${m.lat ? m.lat.toFixed(4) : 'N/A'}, ${m.lon ? m.lon.toFixed(4) : 'N/A'})`
-                      ).join('<br>')
-                    : 'Keine Mitglieder';
-                
                 const popupContent = `
                     <div style="min-width: 250px;">
                         <h3 style="margin: 0 0 10px 0; color: ${color};">
                             🏘️ ZEV/LEG Cluster ${cluster.cluster_id}
                         </h3>
                         <div style="margin-bottom: 10px;">
-                            <strong>Autarkie:</strong> <span style="color: ${color}; font-size: 1.2em; font-weight: bold;">${autarky.toFixed(1)}%</span>
-                        </div>
-                        <div style="margin-bottom: 10px;">
                             <strong>Mitglieder:</strong> ${cluster.num_members} Gebäude
                         </div>
-                        ${members.length > 0 ? `
-                        <details style="margin-top: 10px;">
-                            <summary style="cursor: pointer; color: #666;">Mitglieder anzeigen</summary>
-                            <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
-                                ${membersList}
-                            </div>
-                        </details>
-                        ` : ''}
                         <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd;">
                             <small style="color: #666;">
-                                💡 Dies ist ein potenzieller Zusammenschluss zum Eigenverbrauch (ZEV) oder eine Lokale Energiegemeinschaft (LEG)
+                                💡 Dies ist ein potenzieller Zusammenschluss zum Eigenverbrauch (<a href="/zev" style="text-decoration: underline;">ZEV</a>) oder eine Lokale Energiegemeinschaft (<a href="/leg" style="text-decoration: underline;">LEG</a>)
                             </small>
                         </div>
                     </div>
@@ -660,7 +854,7 @@
                     // Szenario B: Match gefunden
                     matchBox.classList.remove('hidden');
                     noMatchBox.classList.add('hidden');
-                    matchMessage.innerHTML = `Grossartig! Unser System hat <b>${data.cluster_info.num_members - 1} Partner</b> identifiziert. <br>Potenzielle Autarkie: <b>${data.cluster_info.autarky_percent.toFixed(1)}%</b>.`;
+                    matchMessage.innerHTML = `Grossartig! Unser System hat <b>${data.cluster_info.num_members - 1} Partner</b> identifiziert.`;
                     
                     // Zeichne den Cluster
                     drawCluster(data.cluster_info.members);
@@ -682,67 +876,81 @@
 
         // --- 3. Registrierungs-Flows ---
         async function handleRegisterAnonymous() {
-            const phone = phoneInput.value;
-            if (!phone) {
-                registerMessage.textContent = "Bitte geben Sie eine Telefonnummer ein.";
+            const email = poolEmailInput.value.trim();
+            const phone = poolPhoneInput.value.trim();
+            if (!email) {
+                registerMessage.textContent = "Bitte geben Sie eine E-Mail-Adresse an.";
                 return;
             }
+            registerMessage.textContent = "";
             uiStartLoading(registerAnonButton, registerLoader, registerMessage);
             
             try {
                 const response = await fetch('/api/register_anonymous', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: phone, profile: userProfileSummary })
+                    body: JSON.stringify({
+                        email: email,
+                        phone: phone || null,
+                        profile: userProfileSummary
+                    })
                 });
-                const data = await response.json(); // Bekommt alle Gebäude zurück
-                if (!response.ok) throw new Error("Fehler bei der Registrierung.");
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || "Fehler bei der Registrierung.");
+                }
 
-                // UI-Abschluss
                 resultStep.classList.add('hidden');
                 successStep.classList.remove('hidden');
-                successMessage.textContent = "Erfolgreich im Pool eingetragen! Wir benachrichtigen Sie per SMS, sobald sich ein Partner findet.";
-                
-                // Karte mit neuem Punkt aktualisieren
+                successMessage.textContent = "Vielen Dank! Bitte bestätigen Sie die E-Mail in Ihrem Posteingang. Danach erhalten alle passenden Nachbarn eine Übersicht mit Adresse und E-Mail.";
+
                 drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'anonymous');
-                // Lade alle anderen Marker neu
                 updateExistingMarkers(data.buildings);
-                
+
+                poolEmailInput.value = "";
+                poolPhoneInput.value = "";
             } catch (err) {
                 registerMessage.textContent = err.message;
+            } finally {
                 uiStopLoading(registerAnonButton, registerLoader);
             }
         }
 
         async function handleRegisterFull() {
-            const email = emailInput.value;
+            const email = emailInput.value.trim();
             if (!email) {
-                registerMessage.textContent = "Bitte geben Sie eine E-Mail ein.";
+                registerMessage.textContent = "Bitte geben Sie eine E-Mail-Adresse an.";
                 return;
             }
+            registerMessage.textContent = "";
             uiStartLoading(registerFullButton, registerLoader, registerMessage);
 
             try {
                 const response = await fetch('/api/register_full', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, profile: userProfileSummary })
+                    body: JSON.stringify({
+                        email: email,
+                        phone: null,
+                        profile: userProfileSummary
+                    })
                 });
-                const data = await response.json(); // Bekommt alle Gebäude zurück
-                if (!response.ok) throw new Error("Fehler bei der Registrierung.");
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || "Fehler bei der Registrierung.");
+                }
                 
-                // UI-Abschluss
                 resultStep.classList.add('hidden');
                 successStep.classList.remove('hidden');
-                successMessage.textContent = "Registrierung erfolgreich! Wir haben Ihre Partner benachrichtigt und melden uns in Kürze per E-Mail.";
+                successMessage.textContent = "Vielen Dank! Bitte bestätigen Sie die E-Mail. Nach Ihrer Bestätigung senden wir allen passenden Nachbarn eine Kontaktübersicht mit Adresse und E-Mail.";
 
-                // Karte mit neuem Punkt aktualisieren (als "registriert")
                 drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'registered');
-                // Lade alle anderen Marker neu
                 updateExistingMarkers(data.buildings);
 
+                emailInput.value = "";
             } catch (err) {
                 registerMessage.textContent = err.message;
+            } finally {
                 uiStopLoading(registerFullButton, registerLoader);
             }
         }
@@ -756,7 +964,19 @@
                     return; 
                 }
                 if (b.type === 'anonymous' || b.type === 'registered') {
-                    L.marker([b.lat, b.lon], { icon: existingIcon, zIndexOffset: -100, interactive: false }).addTo(existingMarkers);
+                    const marker = L.marker([b.lat, b.lon], {
+                        icon: existingIcon,
+                        zIndexOffset: -50,
+                        riseOnHover: true
+                    });
+                    marker.addTo(existingMarkers)
+                          .bindTooltip(interestedTooltipText, {
+                              direction: 'top',
+                                  offset: [0, -120],
+                              offset: [0, -120],
+                              className: 'existing-tooltip',
+                              sticky: true
+                          });
                 }
             });
         }
@@ -836,8 +1056,11 @@
                 checkStep.classList.remove('hidden');
                 resetButton.classList.add('hidden');
                 addressInput.value = "";
+                if (poolEmailInput) poolEmailInput.value = "";
+                if (poolPhoneInput) poolPhoneInput.value = "";
+                if (emailInput) emailInput.value = "";
                 // Zoom zurück auf Baden
-                map.flyTo([47.473, 8.308], 14);
+                map.flyTo(MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM);
             }
             
             checkMessage.textContent = "";
