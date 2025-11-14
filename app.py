@@ -351,16 +351,16 @@ def find_buildings_by_building_id(building_id):
             return True
     return False
 
-def send_verification_email(email, confirmation_url, unsubscribe_url):
-    """Sendet Verifizierungs-E-Mail via SendGrid oder gibt sie in Logs aus"""
-    subject = "BadenLEG – Bitte bestätigen Sie Ihre Teilnahme"
+def send_confirmation_email(email, unsubscribe_url):
+    """Sendet Bestätigungs-E-Mail via SendGrid oder gibt sie in Logs aus"""
+    subject = "BadenLEG – Sie sind jetzt registriert"
     message_body = (
         "Willkommen bei BadenLEG!\n\n"
-        "Bitte bestätigen Sie, dass wir Ihre Kontaktdaten mit interessierten Nachbarinnen "
-        "und Nachbarn teilen dürfen. Sobald Sie bestätigen, informieren wir alle passenden "
-        "Haushalte und senden eine Übersicht mit Adresse und E-Mail aller bestätigten Teilnehmer:innen.\n\n"
-        f"Klicken Sie hier zur Bestätigung:\n{confirmation_url}\n\n"
-        "Mit dem Klick stimmen Sie dem Austausch Ihrer Kontaktdaten mit passenden Nachbarn zu.\n\n"
+        "Sie sind jetzt für eine Lokale Elektrizitätsgemeinschaft (LEG) in Baden registriert.\n\n"
+        "Wir informieren Sie automatisch per E-Mail, wenn sich neue Interessenten in Ihrer Zone anmelden. "
+        "Sie erhalten dann eine Kontaktübersicht mit Adresse und E-Mail aller Interessenten in Ihrer Zone.\n\n"
+        "Mit Ihrer Registrierung stimmen Sie zu, dass wir Ihre Kontaktdaten (Adresse, E-Mail, optional: Telefonnummer) "
+        "mit anderen Interessenten in Ihrer Zone teilen, damit Sie direkt miteinander in Kontakt treten können.\n\n"
         f"Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n"
         f"{unsubscribe_url}\n\n"
         "Ihr BadenLEG-Team"
@@ -376,17 +376,17 @@ def send_verification_email(email, confirmation_url, unsubscribe_url):
             )
             sg = SendGridAPIClient(SENDGRID_API_KEY)
             response = sg.send(message)
-            logger.info(f"[EMAIL] Verifizierung gesendet an {email} (Status: {response.status_code})")
+            logger.info(f"[EMAIL] Bestätigung gesendet an {email} (Status: {response.status_code})")
         except Exception as e:
             logger.error(f"[EMAIL] Fehler beim Senden an {email}: {e}")
             # Fallback: Log in Console
-            print(f"\n--- [EMAIL VERIFIKATION - FEHLER] ---")
+            print(f"\n--- [EMAIL BESTÄTIGUNG - FEHLER] ---")
             print(f"AN: {email}")
             print(message_body)
             print("--------------------------------------\n")
     else:
         # Development Mode: Log to console
-        print(f"\n--- [EMAIL VERIFIKATION] ---")
+        print(f"\n--- [EMAIL BESTÄTIGUNG] ---")
         print(f"AN: {email}")
         print(f"BETREFF: {subject}")
         print(message_body)
@@ -1405,25 +1405,29 @@ def api_register_anonymous():
         log_security_event("INVALID_COORDINATES", f"register_anonymous: {coords_error}", 'WARNING')
         return jsonify({"error": coords_error}), 400
     with db_lock:
-        # Tokens werden jetzt wiederverwendet (siehe issue_verification_token)
+        # Person wird sofort als registriert markiert (keine Verifizierung nötig)
         entry = {
             "profile": profile,
             "registered_at": time.time(),
             "email": email,
-            "verified": False,
-            "verification_sent_at": time.time()
+            "verified": True,  # Sofort verifiziert
+            "verified_at": time.time()
         }
         if phone:
             entry["phone"] = phone
         DB_INTEREST_POOL[building_id] = entry
-        verification_token = issue_verification_token(building_id)
         unsubscribe_token = issue_unsubscribe_token(building_id)
     
-    confirmation_url = f"{APP_BASE_URL}/confirm/{verification_token}"
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
-    send_verification_email(email, confirmation_url, unsubscribe_url)
+    
+    # Sende Bestätigungs-E-Mail (ohne Verifizierungslink)
+    threading.Thread(
+        target=send_confirmation_email,
+        args=(email, unsubscribe_url),
+        daemon=True
+    ).start()
 
-    print(f"[DB] Anonymer Nutzer {building_id} gespeichert (Mail: {email}, Tel: {phone}).")
+    print(f"[DB] Anonymer Nutzer {building_id} gespeichert und verifiziert (Mail: {email}, Tel: {phone}).")
     print(f"  Aktuelle Pool-Grösse: {len(DB_INTEREST_POOL)}")
     
     # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
@@ -1431,6 +1435,13 @@ def api_register_anonymous():
     threading.Thread(
         target=check_and_handle_duplicates,
         args=(email, phone, address, building_id),
+        daemon=True
+    ).start()
+    
+    # Benachrichtige sofort alle bestehenden Interessenten in derselben Zone
+    threading.Thread(
+        target=notify_existing_interested_persons,
+        args=(building_id, entry),
         daemon=True
     ).start()
     
@@ -1501,25 +1512,29 @@ def api_register_full():
         log_security_event("INVALID_COORDINATES", f"register_full: {coords_error}", 'WARNING')
         return jsonify({"error": coords_error}), 400
     with db_lock:
-        # Tokens werden jetzt wiederverwendet (siehe issue_verification_token)
+        # Person wird sofort als registriert markiert (keine Verifizierung nötig)
         entry = {
             "profile": profile,
             "registered_at": time.time(),
             "email": email,
-            "verified": False,
-            "verification_sent_at": time.time()
+            "verified": True,  # Sofort verifiziert
+            "verified_at": time.time()
         }
         if phone:
             entry["phone"] = phone
         DB_BUILDINGS[building_id] = entry
-        verification_token = issue_verification_token(building_id)
         unsubscribe_token = issue_unsubscribe_token(building_id)
     
-    confirmation_url = f"{APP_BASE_URL}/confirm/{verification_token}"
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
-    send_verification_email(email, confirmation_url, unsubscribe_url)
+    
+    # Sende Bestätigungs-E-Mail (ohne Verifizierungslink)
+    threading.Thread(
+        target=send_confirmation_email,
+        args=(email, unsubscribe_url),
+        daemon=True
+    ).start()
 
-    print(f"[DB] Voll registrierter Nutzer {building_id} gespeichert (Mail: {email}, Tel: {phone}).")
+    print(f"[DB] Voll registrierter Nutzer {building_id} gespeichert und verifiziert (Mail: {email}, Tel: {phone}).")
     print(f"  Aktuelle DB-Grösse: {len(DB_BUILDINGS)}")
 
     # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
@@ -1527,6 +1542,13 @@ def api_register_full():
     threading.Thread(
         target=check_and_handle_duplicates,
         args=(email, phone, address, building_id),
+        daemon=True
+    ).start()
+    
+    # Benachrichtige sofort alle bestehenden Interessenten in derselben Zone
+    threading.Thread(
+        target=notify_existing_interested_persons,
+        args=(building_id, entry),
         daemon=True
     ).start()
 
@@ -1549,84 +1571,50 @@ def api_register_full():
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def confirm_match(token):
     """
-    Wird von Nutzerinnen und Nutzern aufgerufen, um den Austausch der Kontaktdaten zu bestätigen.
+    DEPRECATED: Wird nicht mehr für neue Registrierungen verwendet.
+    Nur für Rückwärtskompatibilität mit alten Links.
+    Neue Registrierungen werden sofort als verifiziert markiert.
     """
-    # Security: Validate token format
-    is_valid_token, token_error = security_utils.validate_token(token)
-    if not is_valid_token:
-        log_security_event("INVALID_TOKEN", f"confirm: {token_error}", 'WARNING')
-        return "<h1>Ungültiger Link</h1><p>Der Bestätigungslink hat ein ungültiges Format.</p>", 400
-    
-    # OPTIMIERUNG: Prüfe zuerst, ob Token existiert und hole building_id
+    # Prüfe, ob Token existiert (für alte Registrierungen)
     with db_lock:
-        token_info = DB_VERIFICATION_TOKENS.get(token)  # Nicht pop, nur get
+        token_info = DB_VERIFICATION_TOKENS.get(token)
     
-    building_id = None
     if token_info:
         building_id = token_info.get('building_id')
-        print(f"[CONFIRM] Token gefunden für building_id: {building_id}")
-    else:
-        print(f"[CONFIRM] Token nicht gefunden in DB_VERIFICATION_TOKENS (Anzahl: {len(DB_VERIFICATION_TOKENS)})")
-        # Prüfe Token-Historie (für Tokens, die bereits verwendet wurden)
-        history_key = f'verification_{token}'
-        if history_key in _token_history:
-            building_id = _token_history[history_key]
-            print(f"[CONFIRM] Token in Historie gefunden für building_id: {building_id}")
-    
-    # MITIGATION: Wenn Token nicht existiert, prüfe ob Person bereits verifiziert ist
-    # (z.B. nach App-Neustart, aber Person war bereits verifiziert)
-    if not building_id:
-        # Token existiert weder in aktiven Tokens noch in Historie
-        log_security_event("TOKEN_NOT_FOUND", f"confirm: Token not found in tokens or history", 'INFO')
-        return "<h1>Link ungültig</h1><p>Dieser Bestätigungslink ist ungültig oder wurde bereits verwendet. Falls Sie sich bereits registriert haben, sollten Sie bereits eine Kontaktübersicht erhalten haben.</p>", 404
-    
-    # Prüfe VOR dem Token-Pop, ob bereits verifiziert (verhindert "Link ungültig" bei bereits verifizierten)
-    with db_lock:
         record, source = _get_record_for_building_no_lock(building_id)
-        if not record:
-            return "<h1>Profil nicht gefunden</h1><p>Der zugehörige Eintrag existiert nicht mehr.</p>", 404
-        if record.get('verified'):
-            # Token entfernen (Cleanup), aber zeige Erfolgsmeldung
+        if record and not record.get('verified'):
+            # Alte Registrierung - verifiziere jetzt
+            record['verified'] = True
+            record['verified_at'] = time.time()
+            if source == 'registered':
+                DB_BUILDINGS[building_id] = record
+            elif source == 'anonymous':
+                DB_INTEREST_POOL[building_id] = record
+            
+            # Cleanup Token
             DB_VERIFICATION_TOKENS.pop(token, None)
             _token_created_at.pop(f'verification_{token}', None)
-            # Speichere Token in Historie (falls noch nicht vorhanden)
-            history_key = f'verification_{token}'
-            if history_key not in _token_history:
-                _token_history[history_key] = building_id
-            _save_tokens_async()
-            return "<h1>Bereits bestätigt</h1><p>Sie haben Ihre Teilnahme bereits bestätigt. Wir informieren Ihre Nachbarn bei Änderungen automatisch.</p>"
+            
+            # Benachrichtige andere
+            threading.Thread(target=notify_existing_interested_persons, args=(building_id, record), daemon=True).start()
+            threading.Thread(target=run_full_ml_task, daemon=True).start()
+            
+            return (
+                "<h1>Vielen Dank!</h1>"
+                "<p>Ihre Registrierung wurde bestätigt. Wir informieren Sie automatisch, wenn sich neue Interessenten in Ihrer Zone anmelden.</p>"
+            )
+        elif record and record.get('verified'):
+            return (
+                "<h1>Bereits bestätigt</h1>"
+                "<p>Sie sind bereits registriert. Wir informieren Sie automatisch, wenn sich neue Interessenten in Ihrer Zone anmelden.</p>"
+            )
     
-    # Token ist gültig und Person ist noch nicht verifiziert - entferne Token jetzt
-    # ABER: Speichere Token in Historie, damit wir später prüfen können
-    with db_lock:
-        DB_VERIFICATION_TOKENS.pop(token, None)
-        _token_created_at.pop(f'verification_{token}', None)
-        # Speichere Token in Historie für spätere Prüfung
-        _token_history[f'verification_{token}'] = building_id
-        _save_tokens_async()
-    
-    log_security_event("EMAIL_CONFIRMED", f"Building ID: {building_id}", 'INFO')
-    
-    # Setze verified Flag
-    with db_lock:
-        record['verified'] = True
-        record['verified_at'] = time.time()
-
-        if source == 'registered':
-            DB_BUILDINGS[building_id] = record
-        elif source == 'anonymous':
-            DB_INTEREST_POOL[building_id] = record
-
-    # Benachrichtige alle bestehenden verifizierten Interessenten in derselben Zone
-    threading.Thread(target=notify_existing_interested_persons, args=(building_id, record), daemon=True).start()
-    
-    # Nach erfolgreicher Verifizierung Cluster neu berechnen und Kontakte informieren
-    threading.Thread(target=run_full_ml_task, daemon=True).start()
-    
+    # Token nicht gefunden oder ungültig
     return (
-        "<h1>Vielen Dank!</h1>"
-        "<p>Ihre Zustimmung wurde gespeichert. Wir senden Ihnen und allen passenden Nachbarinnen und Nachbarn "
-        "in Kürze eine E-Mail mit Adresse und E-Mail aller bestätigten Haushalte.</p>"
+        "<h1>Link nicht mehr gültig</h1>"
+        "<p>Dieser Bestätigungslink ist nicht mehr gültig. Neue Registrierungen werden automatisch aktiviert. "
+        "Falls Sie sich bereits registriert haben, sollten Sie bereits eine Bestätigungs-E-Mail erhalten haben.</p>"
+        "<p>Falls Sie Fragen haben, schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch'>hallo@badenleg.ch</a>.</p>"
     )
 
 

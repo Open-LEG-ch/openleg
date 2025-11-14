@@ -1135,7 +1135,7 @@
 
                 resultStep.classList.add('hidden');
                 successStep.classList.remove('hidden');
-                successMessage.textContent = "Vielen Dank! Bitte bestätigen Sie die E-Mail in Ihrem Posteingang. Danach erhalten alle passenden Nachbarn eine Übersicht mit Adresse und E-Mail.";
+                successMessage.innerHTML = "Vielen Dank! Sie sind jetzt registriert. Wir haben Ihnen eine Bestätigungs-E-Mail gesendet. Sie werden automatisch informiert, wenn sich neue Interessenten in Ihrer Zone anmelden.<br><br><span class='text-sm text-gray-500'>Nichts erhalten? Prüfen Sie Ihren Spam-Ordner oder schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch' class='underline hover:text-gray-700'>hallo@badenleg.ch</a>.</span>";
 
                 drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'anonymous');
                 updateExistingMarkers(data.buildings);
@@ -1175,7 +1175,7 @@
                 
                 resultStep.classList.add('hidden');
                 successStep.classList.remove('hidden');
-                successMessage.textContent = "Vielen Dank! Bitte bestätigen Sie die E-Mail. Nach Ihrer Bestätigung senden wir allen passenden Nachbarn eine Kontaktübersicht mit Adresse und E-Mail.";
+                successMessage.innerHTML = "Vielen Dank! Sie sind jetzt registriert. Wir haben Ihnen eine Bestätigungs-E-Mail gesendet. Sie werden automatisch informiert, wenn sich neue Interessenten in Ihrer Zone anmelden.<br><br><span class='text-sm text-gray-500'>Nichts erhalten? Prüfen Sie Ihren Spam-Ordner oder schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch' class='underline hover:text-gray-700'>hallo@badenleg.ch</a>.</span>";
 
                 drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'registered');
                 updateExistingMarkers(data.buildings);
