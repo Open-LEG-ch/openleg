@@ -299,15 +299,54 @@ def remove_building(building_id):
     return removed
 
 def find_buildings_by_email(email):
+    """Findet alle building_ids mit dieser E-Mail-Adresse."""
     matches = []
-    needle = email.lower()
+    needle = email.lower().strip()
+    if not needle:
+        return matches
     with db_lock:
         for store in (DB_BUILDINGS, DB_INTEREST_POOL):
             for building_id, data in store.items():
-                value = (data.get('email') or '').lower()
+                value = (data.get('email') or '').lower().strip()
                 if value == needle:
                     matches.append(building_id)
     return matches
+
+def find_buildings_by_phone(phone):
+    """Findet alle building_ids mit dieser Telefonnummer."""
+    matches = []
+    needle = phone.strip()
+    if not needle:
+        return matches
+    with db_lock:
+        for store in (DB_BUILDINGS, DB_INTEREST_POOL):
+            for building_id, data in store.items():
+                value = (data.get('phone') or '').strip()
+                if value == needle:
+                    matches.append(building_id)
+    return matches
+
+def find_buildings_by_address(address):
+    """Findet alle building_ids mit dieser Adresse (normalisiert)."""
+    matches = []
+    needle = address.strip().lower()
+    if not needle:
+        return matches
+    with db_lock:
+        for store in (DB_BUILDINGS, DB_INTEREST_POOL):
+            for building_id, data in store.items():
+                profile = data.get('profile', {})
+                value = (profile.get('address') or '').strip().lower()
+                if value == needle:
+                    matches.append(building_id)
+    return matches
+
+def find_buildings_by_building_id(building_id):
+    """Prüft, ob diese building_id bereits existiert."""
+    with db_lock:
+        if building_id in DB_BUILDINGS or building_id in DB_INTEREST_POOL:
+            return True
+    return False
 
 def send_verification_email(email, confirmation_url, unsubscribe_url):
     """Sendet Verifizierungs-E-Mail via SendGrid oder gibt sie in Logs aus"""
@@ -349,6 +388,182 @@ def send_verification_email(email, confirmation_url, unsubscribe_url):
         print(f"BETREFF: {subject}")
         print(message_body)
         print("-----------------------------\n")
+
+def check_duplicates_background(email, phone, address, building_id):
+    """
+    Prüft auf Duplikate im Hintergrund und gibt detaillierte Informationen zurück.
+    Returns: (has_duplicates, duplicate_type, duplicate_info, message)
+    """
+    duplicates = {
+        'email': [],
+        'phone': [],
+        'address': [],
+        'building_id': False
+    }
+    
+    # Prüfe E-Mail (ausschließen der aktuellen building_id)
+    if email:
+        email_matches = find_buildings_by_email(email)
+        # Entferne die aktuelle building_id aus den Matches
+        email_matches = [bid for bid in email_matches if bid != building_id]
+        if email_matches:
+            duplicates['email'] = email_matches
+    
+    # Prüfe Telefonnummer (ausschließen der aktuellen building_id)
+    if phone:
+        phone_matches = find_buildings_by_phone(phone)
+        phone_matches = [bid for bid in phone_matches if bid != building_id]
+        if phone_matches:
+            duplicates['phone'] = phone_matches
+    
+    # Prüfe Adresse (ausschließen der aktuellen building_id)
+    if address:
+        address_matches = find_buildings_by_address(address)
+        address_matches = [bid for bid in address_matches if bid != building_id]
+        if address_matches:
+            duplicates['address'] = address_matches
+    
+    # Prüfe building_id (aber nur wenn es nicht die aktuelle ist)
+    # Diese Prüfung ist eigentlich überflüssig, da wir building_id bereits haben
+    
+    # Bestimme Duplikat-Typ und erstelle Nachricht
+    has_duplicates = any(duplicates['email']) or any(duplicates['phone']) or any(duplicates['address'])
+    
+    if not has_duplicates:
+        return False, None, None, None
+    
+    # Priorität: email + address > email > address > phone
+    if any(duplicates['email']) and any(duplicates['address']):
+        # Gleiche E-Mail UND Adresse - exaktes Duplikat
+        return True, 'exact_duplicate', duplicates, "Sie haben sich bereits mit dieser E-Mail-Adresse und Adresse registriert."
+    
+    if any(duplicates['email']):
+        # Gleiche E-Mail - prüfe ob auch gleiche Adresse
+        email_building_ids = duplicates['email']
+        same_address = False
+        for bid in email_building_ids:
+            with db_lock:
+                record, _ = _get_record_for_building_no_lock(bid)
+                if record:
+                    profile = record.get('profile', {})
+                    existing_address = (profile.get('address') or '').strip().lower()
+                    if existing_address == address.strip().lower():
+                        same_address = True
+                        break
+        
+        if same_address:
+            return True, 'exact_duplicate', duplicates, "Sie haben sich bereits mit dieser E-Mail-Adresse und Adresse registriert."
+        else:
+            return True, 'email_different_address', duplicates, "Diese E-Mail-Adresse ist bereits mit einer anderen Adresse registriert."
+    
+    if any(duplicates['address']):
+        return True, 'address_duplicate', duplicates, "Diese Adresse ist bereits registriert."
+    
+    if any(duplicates['phone']):
+        return True, 'phone_duplicate', duplicates, "Diese Telefonnummer ist bereits registriert."
+    
+    return True, 'unknown_duplicate', duplicates, "Ein Duplikat wurde gefunden."
+
+def send_duplicate_email(email, duplicate_type, duplicate_info, message, building_id):
+    """Sendet E-Mail bei Duplikat-Erkennung."""
+    subject = "BadenLEG – Duplikat-Erkennung"
+    
+    if duplicate_type == 'exact_duplicate':
+        body = (
+            f"Sie haben sich bereits mit dieser E-Mail-Adresse und Adresse registriert.\n\n"
+            f"Falls Sie den Bestätigungslink nicht erhalten haben, prüfen Sie bitte Ihr Spam-Ordner.\n\n"
+            f"Falls Sie sich abmelden möchten, verwenden Sie den Abmeldelink aus der ursprünglichen E-Mail.\n\n"
+            f"Ihr BadenLEG-Team"
+        )
+    elif duplicate_type == 'email_different_address':
+        # Finde unsubscribe URL für alte Adresse
+        old_building_ids = duplicate_info.get('email', [])
+        unsubscribe_urls = []
+        for bid in old_building_ids:
+            with db_lock:
+                record, _ = _get_record_for_building_no_lock(bid)
+                if record:
+                    token = issue_unsubscribe_token(bid)
+                    unsubscribe_urls.append(f"{APP_BASE_URL}/unsubscribe/{token}")
+        
+        unsubscribe_text = "\n".join(unsubscribe_urls) if unsubscribe_urls else "Bitte melden Sie sich über die Website ab."
+        
+        body = (
+            f"Sie haben versucht, sich mit einer neuen Adresse zu registrieren, "
+            f"aber diese E-Mail-Adresse ist bereits mit einer anderen Adresse registriert.\n\n"
+            f"Bitte melden Sie sich zuerst von der alten Adresse ab:\n{unsubscribe_text}\n\n"
+            f"Danach können Sie sich mit der neuen Adresse registrieren.\n\n"
+            f"Da dies eine nicht kommerzielle Lösung ist, bitten wir Sie uns etwas zu helfen. Danke!\n\n"
+            f"Ihr BadenLEG-Team"
+        )
+    elif duplicate_type == 'address_duplicate':
+        body = (
+            f"Sie haben versucht, sich mit einer Adresse zu registrieren, "
+            f"die bereits registriert ist.\n\n"
+            f"Bitte verwenden Sie eine andere E-Mail-Adresse oder melden Sie sich von der bestehenden Registrierung ab.\n\n"
+            f"Ihr BadenLEG-Team"
+        )
+    elif duplicate_type == 'phone_duplicate':
+        body = (
+            f"Sie haben versucht, sich mit einer Telefonnummer zu registrieren, "
+            f"die bereits registriert ist.\n\n"
+            f"Bitte verwenden Sie eine andere Telefonnummer oder melden Sie sich von der bestehenden Registrierung ab.\n\n"
+            f"Ihr BadenLEG-Team"
+        )
+    else:
+        body = message
+    
+    if EMAIL_ENABLED:
+        try:
+            message_obj = Mail(
+                from_email=FROM_EMAIL,
+                to_emails=email,
+                subject=subject,
+                plain_text_content=body
+            )
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            response = sg.send(message_obj)
+            logger.info(f"[EMAIL] Duplikat-Benachrichtigung gesendet an {email} (Status: {response.status_code})")
+        except Exception as e:
+            logger.error(f"[EMAIL] Fehler beim Senden an {email}: {e}")
+            print(f"\n--- [EMAIL DUPLIKAT - FEHLER] ---")
+            print(f"AN: {email}")
+            print(body)
+            print("----------------------------------\n")
+    else:
+        print(f"\n--- [EMAIL DUPLIKAT] ---")
+        print(f"AN: {email}")
+        print(f"BETREFF: {subject}")
+        print(body)
+        print("-------------------------\n")
+
+def check_and_handle_duplicates(email, phone, address, building_id):
+    """
+    Prüft Duplikate im Hintergrund und sendet E-Mail bei Bedarf.
+    Wird nach erfolgreicher Registrierung aufgerufen.
+    """
+    try:
+        has_duplicates, dup_type, dup_info, dup_message = check_duplicates_background(
+            email, phone, address, building_id
+        )
+        
+        if has_duplicates:
+            print(f"[DUPLIKAT] Duplikat gefunden für building_id {building_id}: {dup_type}")
+            print(f"[DUPLIKAT] E-Mail: {email}, Adresse: {address}")
+            
+            # Sende E-Mail-Benachrichtigung
+            send_duplicate_email(email, dup_type, dup_info, dup_message, building_id)
+            
+            # Optional: Markiere den Eintrag als Duplikat (für spätere Analyse)
+            # Wir löschen den Eintrag NICHT automatisch, da der Benutzer bereits die Verifizierungs-E-Mail erhalten hat
+            # Der Benutzer kann sich selbst entscheiden, ob er sich abmelden möchte
+        else:
+            print(f"[DUPLIKAT] Keine Duplikate gefunden für building_id {building_id}")
+            
+    except Exception as e:
+        print(f"[DUPLIKAT] Fehler beim Prüfen von Duplikaten: {e}")
+        import traceback
+        traceback.print_exc()
 
 def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
     """Sendet Cluster-Kontaktübersicht via SendGrid oder gibt sie in Logs aus"""
@@ -1208,6 +1423,14 @@ def api_register_anonymous():
     print(f"[DB] Anonymer Nutzer {building_id} gespeichert (Mail: {email}, Tel: {phone}).")
     print(f"  Aktuelle Pool-Grösse: {len(DB_INTEREST_POOL)}")
     
+    # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
+    address = profile.get('address', '')
+    threading.Thread(
+        target=check_and_handle_duplicates,
+        args=(email, phone, address, building_id),
+        daemon=True
+    ).start()
+    
     # Hintergrund-Analyse anstoßen
     threading.Thread(target=run_full_ml_task, args=(building_id,)).start()
     
@@ -1295,6 +1518,14 @@ def api_register_full():
 
     print(f"[DB] Voll registrierter Nutzer {building_id} gespeichert (Mail: {email}, Tel: {phone}).")
     print(f"  Aktuelle DB-Grösse: {len(DB_BUILDINGS)}")
+
+    # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
+    address = profile.get('address', '')
+    threading.Thread(
+        target=check_and_handle_duplicates,
+        args=(email, phone, address, building_id),
+        daemon=True
+    ).start()
 
     # Hintergrund-Analyse anstoßen
     threading.Thread(target=run_full_ml_task, args=(building_id,)).start()
