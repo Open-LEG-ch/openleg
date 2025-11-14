@@ -150,7 +150,14 @@ ANONYMITY_RADIUS_METERS = 120  # Radius für Karten-Darstellung zur Wahrung der 
 
 # Lade Tokens aus persistenter Speicherung
 print(f"[INIT] Lade Tokens aus persistenter Speicherung...")
-DB_VERIFICATION_TOKENS, DB_UNSUBSCRIBE_TOKENS, _token_created_at = token_persistence.load_tokens()
+try:
+    DB_VERIFICATION_TOKENS, DB_UNSUBSCRIBE_TOKENS, _token_created_at, _token_history = token_persistence.load_tokens()
+except Exception as e:
+    print(f"[INIT] Fehler beim Laden der Tokens: {e}")
+    DB_VERIFICATION_TOKENS = {}
+    DB_UNSUBSCRIBE_TOKENS = {}
+    _token_created_at = {}
+    _token_history = {}
 
 print(f"[INIT] Leere Datenbank und ML-Cache initialisiert.")
 
@@ -213,8 +220,9 @@ def _save_tokens_async():
     verification_tokens = dict(DB_VERIFICATION_TOKENS)
     unsubscribe_tokens = dict(DB_UNSUBSCRIBE_TOKENS)
     created_at = dict(_token_created_at)
+    token_history = dict(_token_history)
     
-    token_persistence.save_tokens_async(verification_tokens, unsubscribe_tokens, created_at)
+    token_persistence.save_tokens_async(verification_tokens, unsubscribe_tokens, created_at, token_history)
 
 def invalidate_verification_tokens(building_id):
     tokens_to_remove = [
@@ -1322,14 +1330,20 @@ def confirm_match(token):
     building_id = None
     if token_info:
         building_id = token_info.get('building_id')
+        print(f"[CONFIRM] Token gefunden für building_id: {building_id}")
+    else:
+        print(f"[CONFIRM] Token nicht gefunden in DB_VERIFICATION_TOKENS (Anzahl: {len(DB_VERIFICATION_TOKENS)})")
+        # Prüfe Token-Historie (für Tokens, die bereits verwendet wurden)
+        history_key = f'verification_{token}'
+        if history_key in _token_history:
+            building_id = _token_history[history_key]
+            print(f"[CONFIRM] Token in Historie gefunden für building_id: {building_id}")
     
-    # MITIGATION: Wenn Token nicht existiert, prüfe ob building_id bereits verifiziert ist
+    # MITIGATION: Wenn Token nicht existiert, prüfe ob Person bereits verifiziert ist
     # (z.B. nach App-Neustart, aber Person war bereits verifiziert)
     if not building_id:
-        # Versuche building_id aus dem Token zu extrahieren (falls es in der DB gespeichert ist)
-        # Oder: Prüfe alle verifizierten Einträge (nicht ideal, aber Fallback)
-        # Für jetzt: Zeige "Link ungültig", aber mit besserer Nachricht
-        log_security_event("TOKEN_NOT_FOUND", f"confirm: Token not found", 'INFO')
+        # Token existiert weder in aktiven Tokens noch in Historie
+        log_security_event("TOKEN_NOT_FOUND", f"confirm: Token not found in tokens or history", 'INFO')
         return "<h1>Link ungültig</h1><p>Dieser Bestätigungslink ist ungültig oder wurde bereits verwendet. Falls Sie sich bereits registriert haben, sollten Sie bereits eine Kontaktübersicht erhalten haben.</p>", 404
     
     # Prüfe VOR dem Token-Pop, ob bereits verifiziert (verhindert "Link ungültig" bei bereits verifizierten)
@@ -1341,13 +1355,20 @@ def confirm_match(token):
             # Token entfernen (Cleanup), aber zeige Erfolgsmeldung
             DB_VERIFICATION_TOKENS.pop(token, None)
             _token_created_at.pop(f'verification_{token}', None)
+            # Speichere Token in Historie (falls noch nicht vorhanden)
+            history_key = f'verification_{token}'
+            if history_key not in _token_history:
+                _token_history[history_key] = building_id
             _save_tokens_async()
             return "<h1>Bereits bestätigt</h1><p>Sie haben Ihre Teilnahme bereits bestätigt. Wir informieren Ihre Nachbarn bei Änderungen automatisch.</p>"
     
     # Token ist gültig und Person ist noch nicht verifiziert - entferne Token jetzt
+    # ABER: Speichere Token in Historie, damit wir später prüfen können
     with db_lock:
         DB_VERIFICATION_TOKENS.pop(token, None)
         _token_created_at.pop(f'verification_{token}', None)
+        # Speichere Token in Historie für spätere Prüfung
+        _token_history[f'verification_{token}'] = building_id
         _save_tokens_async()
     
     log_security_event("EMAIL_CONFIRMED", f"Building ID: {building_id}", 'INFO')

@@ -30,7 +30,7 @@ def _get_token_file_path():
 def load_tokens():
     """
     Lädt Tokens aus der JSON-Datei.
-    Gibt (verification_tokens, unsubscribe_tokens, created_at) zurück.
+    Gibt (verification_tokens, unsubscribe_tokens, created_at, token_history) zurück.
     Räumt automatisch abgelaufene Tokens auf.
     """
     file_path = _get_token_file_path()
@@ -38,7 +38,7 @@ def load_tokens():
     if not os.path.exists(file_path):
         print(f"[TOKEN DB] Keine existierende Token-Datei gefunden bei {file_path}")
         print(f"[TOKEN DB] Starte mit leerer Token-Datenbank")
-        return {}, {}, {}
+        return {}, {}, {}, {}
     
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -47,6 +47,7 @@ def load_tokens():
         verification_tokens = data.get('verification_tokens', {})
         unsubscribe_tokens = data.get('unsubscribe_tokens', {})
         created_at = data.get('created_at', {})
+        token_history = data.get('token_history', {})
         
         # Räume abgelaufene Tokens auf
         current_time = time.time()
@@ -80,19 +81,20 @@ def load_tokens():
         
         print(f"[TOKEN DB] {len(verification_tokens)} Verification-Tokens geladen")
         print(f"[TOKEN DB] {len(unsubscribe_tokens)} Unsubscribe-Tokens geladen")
+        print(f"[TOKEN DB] {len(token_history)} Token-Historie-Einträge geladen")
         
-        return verification_tokens, unsubscribe_tokens, created_at
+        return verification_tokens, unsubscribe_tokens, created_at, token_history
         
     except json.JSONDecodeError as e:
         print(f"[TOKEN DB] Fehler beim Lesen der Token-Datei: {e}")
         print(f"[TOKEN DB] Starte mit leerer Token-Datenbank")
-        return {}, {}, {}
+        return {}, {}, {}, {}
     except Exception as e:
         print(f"[TOKEN DB] Unerwarteter Fehler beim Laden: {e}")
         print(f"[TOKEN DB] Starte mit leerer Token-Datenbank")
-        return {}, {}, {}
+        return {}, {}, {}, {}
 
-def save_tokens(verification_tokens, unsubscribe_tokens, created_at=None):
+def save_tokens(verification_tokens, unsubscribe_tokens, created_at=None, token_history=None):
     """
     Speichert Tokens in die JSON-Datei (ATOMIC WRITE).
     Verwendet temporäre Datei + rename für Sicherheit.
@@ -110,10 +112,23 @@ def save_tokens(verification_tokens, unsubscribe_tokens, created_at=None):
             except:
                 created_at = {}
     
+    if token_history is None:
+        # Lade Token-Historie (für verifizierte Tokens, die bereits gelöscht wurden)
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+                    token_history = existing_data.get('token_history', {})
+            except:
+                token_history = {}
+        else:
+            token_history = {}
+    
     data = {
         'verification_tokens': verification_tokens,
         'unsubscribe_tokens': unsubscribe_tokens,
         'created_at': created_at,
+        'token_history': token_history,  # Speichert Token -> building_id Mappings auch nach Löschen
         'last_updated': time.time()
     }
     
@@ -136,14 +151,14 @@ def save_tokens(verification_tokens, unsubscribe_tokens, created_at=None):
             pass
         return False
 
-def save_tokens_async(verification_tokens, unsubscribe_tokens, created_at=None):
+def save_tokens_async(verification_tokens, unsubscribe_tokens, created_at=None, token_history=None):
     """
     Speichert Tokens asynchron im Hintergrund-Thread.
     Verhindert Blockierung der Haupt-Threads.
     """
     def _save():
         with _persistence_lock:
-            save_tokens(verification_tokens, unsubscribe_tokens, created_at)
+            save_tokens(verification_tokens, unsubscribe_tokens, created_at, token_history)
     
     threading.Thread(target=_save, daemon=True).start()
 
