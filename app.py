@@ -221,12 +221,23 @@ def _invalidate_tokens_for_building(building_id):
     invalidate_unsubscribe_tokens(building_id)
 
 def issue_verification_token(building_id):
-    invalidate_verification_tokens(building_id)
+    # Prüfe, ob bereits ein Token für diese building_id existiert
+    for token, info in DB_VERIFICATION_TOKENS.items():
+        if info.get('building_id') == building_id:
+            return token  # Wiederverwende bestehenden Token
+    
+    # Erstelle neuen Token, wenn keiner existiert
     token = str(uuid.uuid4())
     DB_VERIFICATION_TOKENS[token] = {'building_id': building_id}
     return token
 
 def issue_unsubscribe_token(building_id):
+    # Prüfe, ob bereits ein Token für diese building_id existiert
+    for token, info in DB_UNSUBSCRIBE_TOKENS.items():
+        if info.get('building_id') == building_id:
+            return token  # Wiederverwende bestehenden Token
+    
+    # Erstelle neuen Token, wenn keiner existiert
     token = str(uuid.uuid4())
     DB_UNSUBSCRIBE_TOKENS[token] = {'building_id': building_id}
     return token
@@ -965,7 +976,7 @@ def api_register_anonymous():
         log_security_event("INVALID_COORDINATES", f"register_anonymous: {coords_error}", 'WARNING')
         return jsonify({"error": coords_error}), 400
     with db_lock:
-        _invalidate_tokens_for_building(building_id)
+        # Tokens werden jetzt wiederverwendet (siehe issue_verification_token)
         entry = {
             "profile": profile,
             "registered_at": time.time(),
@@ -1053,7 +1064,7 @@ def api_register_full():
         log_security_event("INVALID_COORDINATES", f"register_full: {coords_error}", 'WARNING')
         return jsonify({"error": coords_error}), 400
     with db_lock:
-        _invalidate_tokens_for_building(building_id)
+        # Tokens werden jetzt wiederverwendet (siehe issue_verification_token)
         entry = {
             "profile": profile,
             "registered_at": time.time(),
