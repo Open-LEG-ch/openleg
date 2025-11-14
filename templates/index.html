@@ -134,6 +134,16 @@
         .suggestion-item:last-child {
             border-bottom: none;
         }
+        .suggestion-item.loading {
+            color: #666;
+            font-style: italic;
+            cursor: wait;
+        }
+        .suggestion-item.error {
+            color: #c7021a;
+            font-style: italic;
+            cursor: default;
+        }
         /* Cluster-Polygon Styles */
         .cluster-polygon-clickable {
             cursor: pointer;
@@ -725,6 +735,7 @@
         async function handleAddressInput(e) {
             const query = e.target.value.trim();
             selectedSuggestionIndex = -1;
+            selectedSuggestionData = null;
             
             // Schließe Dropdown bei leerem Input
             if (query.length < 2) {
@@ -733,7 +744,11 @@
                 return;
             }
             
-            // Debounce: Warte 200ms nach letztem Tastendruck (schneller für bessere UX)
+            // Zeige Loading-State während der Suche
+            addressSuggestions.innerHTML = '<div class="suggestion-item loading">Suche Adressen...</div>';
+            addressSuggestions.classList.remove('hidden');
+            
+            // Debounce: Warte 300ms nach letztem Tastendruck
             clearTimeout(suggestionTimeout);
             suggestionTimeout = setTimeout(async () => {
                 try {
@@ -747,16 +762,30 @@
                     currentSuggestions = data.suggestions || [];
                     console.log('[AUTOCOMPLETE] Gefunden:', currentSuggestions.length, 'Vorschläge');
                     
+                    // Filtere leere Labels
+                    currentSuggestions = currentSuggestions.filter(s => {
+                        if (typeof s === 'string') {
+                            return s && s.trim();
+                        }
+                        return s && s.label && s.label.trim();
+                    });
+                    
                     // Nur anzeigen, wenn der Input noch der gleiche ist (verhindert Race Conditions)
                     if (addressInput.value.trim() === query) {
-                        displaySuggestions(currentSuggestions);
+                        if (currentSuggestions.length > 0) {
+                            displaySuggestions(currentSuggestions);
+                        } else {
+                            addressSuggestions.innerHTML = '<div class="suggestion-item">Keine Adressen gefunden</div>';
+                            addressSuggestions.classList.remove('hidden');
+                        }
                     }
                 } catch (err) {
                     console.error("Fehler beim Abrufen von Adressvorschlägen:", err);
-                    addressSuggestions.classList.add('hidden');
+                    addressSuggestions.innerHTML = '<div class="suggestion-item error">Fehler beim Laden der Adressen</div>';
+                    addressSuggestions.classList.remove('hidden');
                     currentSuggestions = [];
                 }
-            }, 200);
+            }, 300);
         }
         
         function displaySuggestions(suggestions) {
@@ -770,28 +799,58 @@
             
             // Zeige max. 8 Vorschläge für bessere UX
             const maxSuggestions = Math.min(suggestions.length, 8);
+            let displayedCount = 0;
             
-            for (let i = 0; i < maxSuggestions; i++) {
+            for (let i = 0; i < suggestions.length && displayedCount < maxSuggestions; i++) {
                 const suggestion = suggestions[i];
+                
+                // Normalisiere: Handle sowohl String als auch Objekt
+                const label = typeof suggestion === 'string' ? suggestion : (suggestion.label || '');
+                
+                // Überspringe leere Labels
+                if (!label || !label.trim()) {
+                    continue;
+                }
+                
                 const item = document.createElement('div');
                 item.className = 'suggestion-item';
-                item.textContent = suggestion.label || 'Unbekannte Adresse';
+                item.textContent = label;
                 item.addEventListener('mousedown', (e) => {
                     e.preventDefault(); // Verhindert, dass das Input-Feld den Focus verliert
+                    // Speichere vollständiges Objekt wenn vorhanden
+                    if (typeof suggestion === 'object' && suggestion.label) {
+                        selectedSuggestionData = suggestion;
+                    } else {
+                        selectedSuggestionData = { label: label };
+                    }
                     selectSuggestion(suggestion);
                 });
                 addressSuggestions.appendChild(item);
+                displayedCount++;
             }
             
-            addressSuggestions.classList.remove('hidden');
-            console.log('[AUTOCOMPLETE] Dropdown angezeigt');
+            if (displayedCount > 0) {
+                addressSuggestions.classList.remove('hidden');
+                console.log('[AUTOCOMPLETE] Dropdown angezeigt');
+            } else {
+                addressSuggestions.classList.add('hidden');
+            }
         }
         
         function selectSuggestion(suggestion) {
-            addressInput.value = suggestion.label;
+            // Normalisiere: Handle sowohl String als auch Objekt
+            const label = typeof suggestion === 'string' ? suggestion : (suggestion.label || '');
+            addressInput.value = label;
             addressSuggestions.classList.add('hidden');
             currentSuggestions = [];
             selectedSuggestionIndex = -1;
+            
+            // Speichere vollständiges Objekt für späteren Gebrauch
+            if (typeof suggestion === 'object' && suggestion.label) {
+                selectedSuggestionData = suggestion;
+            } else {
+                selectedSuggestionData = { label: label };
+            }
         }
         
         function handleAddressKeydown(e) {

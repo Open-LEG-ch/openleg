@@ -650,11 +650,19 @@ def api_suggest_addresses():
     suggestions_raw = data_enricher.get_address_suggestions(query, limit=limit)
     print(f"[API] {len(suggestions_raw)} Vorschläge gefunden (nur Kanton Aargau)")
     
-    # Extract labels from suggestion dictionaries
-    suggestions = [s.get('label', '') if isinstance(s, dict) else str(s) for s in suggestions_raw]
-    
-    # Security: Sanitize output
-    suggestions = [security_utils.sanitize_string(s, max_length=200) for s in suggestions if s]
+    # Filtere leere Labels und gib vollständige Objekte zurück
+    suggestions = []
+    for s in suggestions_raw:
+        if isinstance(s, dict) and s.get('label') and s.get('label').strip():
+            # Security: Sanitize label
+            label = security_utils.sanitize_string(s.get('label', ''), max_length=200)
+            if label:
+                suggestions.append({
+                    'label': label,
+                    'lat': s.get('lat'),
+                    'lon': s.get('lon'),
+                    'plz': s.get('plz')
+                })
     
     return jsonify({"suggestions": suggestions})
 
