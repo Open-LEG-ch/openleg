@@ -152,8 +152,11 @@ ANONYMITY_RADIUS_METERS = 120  # Radius für Karten-Darstellung zur Wahrung der 
 print(f"[INIT] Lade Tokens aus persistenter Speicherung...")
 try:
     DB_VERIFICATION_TOKENS, DB_UNSUBSCRIBE_TOKENS, _token_created_at, _token_history = token_persistence.load_tokens()
+    print(f"[INIT] Tokens geladen: {len(DB_VERIFICATION_TOKENS)} Verification, {len(DB_UNSUBSCRIBE_TOKENS)} Unsubscribe, {len(_token_history)} Historie")
 except Exception as e:
     print(f"[INIT] Fehler beim Laden der Tokens: {e}")
+    import traceback
+    traceback.print_exc()
     DB_VERIFICATION_TOKENS = {}
     DB_UNSUBSCRIBE_TOKENS = {}
     _token_created_at = {}

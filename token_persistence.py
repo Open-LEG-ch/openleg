@@ -34,6 +34,8 @@ def load_tokens():
     Räumt automatisch abgelaufene Tokens auf.
     """
     file_path = _get_token_file_path()
+    print(f"[TOKEN DB] Versuche Token-Datei zu laden von: {file_path}")
+    print(f"[TOKEN DB] Datei existiert: {os.path.exists(file_path)}")
     
     if not os.path.exists(file_path):
         print(f"[TOKEN DB] Keine existierende Token-Datei gefunden bei {file_path}")
@@ -133,6 +135,9 @@ def save_tokens(verification_tokens, unsubscribe_tokens, created_at=None, token_
     }
     
     try:
+        print(f"[TOKEN DB] Speichere Tokens in: {file_path}")
+        print(f"[TOKEN DB] Verification-Tokens: {len(verification_tokens)}, Unsubscribe-Tokens: {len(unsubscribe_tokens)}, Historie: {len(token_history)}")
+        
         # Atomic write: Schreibe zuerst in temporäre Datei
         with open(temp_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -140,9 +145,12 @@ def save_tokens(verification_tokens, unsubscribe_tokens, created_at=None, token_
         # Rename ist atomic auf den meisten Dateisystemen
         os.replace(temp_file, file_path)
         
+        print(f"[TOKEN DB] Tokens erfolgreich gespeichert")
         return True
     except Exception as e:
         print(f"[TOKEN DB] Fehler beim Speichern: {e}")
+        import traceback
+        traceback.print_exc()
         # Versuche temporäre Datei zu löschen
         try:
             if os.path.exists(temp_file):
