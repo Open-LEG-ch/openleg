@@ -100,6 +100,14 @@
             z-index: 10;
         }
         
+        /* Mobile: Karte vollständig anzeigen, Control-Panel liegt darüber */
+        @media (max-width: 1023px) {
+            #map {
+                height: 100vh;
+                width: 100%;
+            }
+        }
+        
         /* Desktop: Karte nimmt linke Seite ein */
         @media (min-width: 1024px) {
             #map {
@@ -107,38 +115,96 @@
             }
         }
         
+        /* Mobile Logo oben links */
+        .mobile-logo {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 1000;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-shadow: 0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.6);
+            pointer-events: none;
+        }
+        .mobile-logo span:first-child {
+            color: var(--brand-color);
+        }
+        .mobile-logo span:last-child {
+            color: #1f2937;
+        }
+        
+        /* Desktop: Logo verstecken */
+        @media (min-width: 1024px) {
+            .mobile-logo {
+                display: none;
+            }
+        }
+        
         /* Style für das Control-Panel (Mobile-First) */
         #control-panel {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             z-index: 20;
             background: white;
             padding: 1rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            width: auto;
-            max-width: 500px;
-            max-height: calc(100vh - 20px);
+            border-radius: 1rem 1rem 0 0;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+            width: 100%;
+            max-height: 40vh;
             overflow-y: auto;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+        
+        /* Mobile: Control-Panel minimiert zeigen (nur Adressfeld) */
+        @media (max-width: 1023px) {
+            #control-panel {
+                max-height: 35vh;
+                padding: 1rem 1rem 1.5rem 1rem;
+            }
             
-            /* Tablet: Zentriert */
-            @media (min-width: 640px) and (max-width: 1023px) {
+            #control-panel header,
+            #control-panel article,
+            #control-panel .mt-6 {
+                display: none;
+            }
+            
+            #control-panel #check-step {
+                margin-top: 0;
+            }
+            
+            #control-panel #check-step::before {
+                content: "Geben Sie Ihre Adresse ein, um passende Energie-Partner zu finden.";
+                display: block;
+                font-size: 0.875rem;
+                color: #6b7280;
+                margin-bottom: 0.75rem;
+                text-align: center;
+                line-height: 1.4;
+            }
+        }
+        
+        /* Tablet: Zentriert */
+        @media (min-width: 640px) and (max-width: 1023px) {
+            #control-panel {
                 left: 50%;
                 transform: translateX(-50%);
                 width: 90%;
                 max-width: 600px;
                 padding: 1.5rem;
-                top: 20px;
             }
-            
-            /* Desktop: Rechte Sidebar, sticky, volle Höhe */
-            @media (min-width: 1024px) {
+        }
+        
+        /* Desktop: Rechte Sidebar, sticky, volle Höhe */
+        @media (min-width: 1024px) {
+            #control-panel {
                 position: fixed;
                 top: 0;
                 right: 0;
                 left: auto;
+                bottom: auto;
                 width: 450px;
                 min-width: 350px;
                 max-width: 450px;
@@ -149,6 +215,12 @@
                 padding: 2rem;
                 transform: none;
                 z-index: 1000; /* Sehr hoch, damit Sidebar über allem liegt */
+            }
+            
+            #control-panel header,
+            #control-panel article,
+            #control-panel .mt-6 {
+                display: block;
             }
         }
         /* Farben */
@@ -315,6 +387,11 @@
     </style>
 </head>
 <body class="bg-gray-100">
+
+    <!-- Mobile Logo oben links -->
+    <div class="mobile-logo">
+        <span>Baden</span><span>LEG</span>
+    </div>
 
     <div id="map"></div>
 
