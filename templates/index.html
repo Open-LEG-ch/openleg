@@ -3,17 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BadenLEG – Lokale Elektrizitätsgemeinschaft in Baden finden</title>
-    <meta name="description" content="BadenLEG verbindet Hauseigentümerinnen und Hauseigentümer in Baden, die ab 01.01.2026 eine Lokale Elektrizitätsgemeinschaft (LEG) gründen möchten. Adresse prüfen, Nachbarn finden, Strom lokal teilen.">
+    <title>LEG Baden 2026 – Lokale Elektrizitätsgemeinschaft gründen | BadenLEG</title>
+    <meta name="description" content="Finden Sie Nachbarn in Baden für eine Lokale Elektrizitätsgemeinschaft (LEG) ab 2026. Kostenlos registrieren, passende Energie-Partner finden, LEG gründen. Jetzt Adresse prüfen!">
+    <meta name="keywords" content="LEG Baden, Lokale Elektrizitätsgemeinschaft Baden, LEG gründen Baden, Energiegemeinschaft Aargau, Strom teilen Baden, LEG 2026, Regionalwerke Baden, LEG Nachbarn finden">
     <meta name="robots" content="index, follow">
+    <meta name="geo.region" content="CH-AG">
+    <meta name="geo.placename" content="Baden">
+    <meta name="geo.position" content="47.473;8.308">
+    <meta name="ICBM" content="47.473, 8.308">
     <link rel="canonical" href="{{ site_url }}/">
+    <link rel="alternate" hreflang="de-CH" href="{{ site_url }}/">
+    <link rel="alternate" hreflang="x-default" href="{{ site_url }}/">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="BadenLEG – Lokale Elektrizitätsgemeinschaft in Baden finden">
-    <meta property="og:description" content="Finden Sie interessierte Nachbarn in Baden und gründen Sie ab 01.01.2026 eine Lokale Elektrizitätsgemeinschaft (LEG).">
+    <meta property="og:title" content="LEG Baden 2026 – Lokale Elektrizitätsgemeinschaft gründen">
+    <meta property="og:description" content="Finden Sie Nachbarn in Baden für eine Lokale Elektrizitätsgemeinschaft (LEG) ab 2026. Kostenlos registrieren und LEG gründen.">
     <meta property="og:url" content="{{ site_url }}/">
     <meta property="og:locale" content="de_CH">
-    <meta name="twitter:card" content="summary">
+    <meta property="og:site_name" content="BadenLEG">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LEG Baden 2026 – Lokale Elektrizitätsgemeinschaft gründen">
+    <meta name="twitter:description" content="Finden Sie Nachbarn in Baden für eine LEG ab 2026. Kostenlos registrieren und LEG gründen.">
+    
+    <!-- Structured Data: WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "BadenLEG",
+      "description": "Finden Sie interessierte Nachbarn in Baden für eine Lokale Elektrizitätsgemeinschaft (LEG) ab 2026",
+      "url": "{{ site_url }}",
+      "applicationCategory": "UtilityApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "CHF"
+      },
+      "areaServed": {
+        "@type": "City",
+        "name": "Baden",
+        "addressRegion": "Aargau",
+        "addressCountry": "CH"
+      }
+    }
+    </script>
+    
+    <!-- Structured Data: LocalBusiness -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "BadenLEG",
+      "description": "Lokale Elektrizitätsgemeinschaft (LEG) für Baden und Umgebung",
+      "url": "{{ site_url }}",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Baden",
+        "addressRegion": "Aargau",
+        "addressCountry": "CH"
+      }
+    }
+    </script>
 
+    <!-- Preconnect für externe Ressourcen (Performance) -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -265,10 +320,17 @@
 
     <div id="control-panel">
 
-        <div class="text-center mb-4">
+        <header class="text-center mb-4">
             <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
-            <p class="text-md sm:text-lg text-gray-600 mt-1">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</p>
-        </div>
+            <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
+        </header>
+        
+        <article>
+            <section>
+                <h3 class="sr-only">LEG Baden – So funktioniert's</h3>
+                <p class="text-gray-600 mb-4 text-center text-sm sm:text-base">Geben Sie Ihre Adresse in Baden ein, um passende Energie-Partner in Ihrer Nachbarschaft zu finden und eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> zu gründen.</p>
+            </section>
+        </article>
 
         <!-- Info-Akkordeon -->
         <details class="mt-3 mb-4 border rounded-md bg-white shadow-sm info-accordion">
@@ -302,11 +364,11 @@
             <p id="check-message" class="text-center text-red-600 mt-4 font-medium"></p>
             
             <div class="mt-6 border border-gray-200 rounded-md bg-gray-50 p-4">
-                <h3 class="text-base font-semibold text-gray-800 mb-2">So funktioniert es</h3>
+                <h3 class="text-base font-semibold text-gray-800 mb-2">LEG Baden – So funktioniert's</h3>
                 <p class="text-sm text-gray-600 leading-relaxed">
-                    Wir gleichen Ihre Adresse mit anonymisierten Nachbarprofilen in Baden ab. Falls bereits Interessierte in Ihrer Nähe vorhanden sind,
+                    Wir gleichen Ihre Adresse in Baden mit anonymisierten Nachbarprofilen ab. Falls bereits Interessierte für eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> in Ihrer Nähe vorhanden sind,
                     laden wir Sie per E-Mail zur Teilnahme ein. Nach Ihrer Bestätigung erhalten alle bestätigten Haushalte eine Übersicht mit Adresse
-                    und E-Mail, damit Sie direkt in Kontakt treten können.
+                    und E-Mail, damit Sie direkt in Kontakt treten und gemeinsam eine <strong>LEG in Baden</strong> gründen können.
                 </p>
             </div>
         </div>
@@ -350,6 +412,39 @@
         </div>
         
         <button id="reset-button" class="text-center text-gray-500 text-sm mt-4 w-full hidden hover:text-gray-700">Neue Adresse prüfen</button>
+
+        <!-- FAQ Section mit Schema.org -->
+        <section itemscope itemtype="https://schema.org/FAQPage" class="mt-6 pt-4 border-t border-gray-200">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">Häufige Fragen zu LEG in Baden</h2>
+            
+            <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
+                <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Was ist eine LEG in Baden?</h3>
+                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                    <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> in Baden ermöglicht es Hauseigentümern, gemeinsam Solarstrom zu produzieren und zu verbrauchen. Ab 2026 ist dies in der gesamten Schweiz möglich. Erfahren Sie mehr über <a href="/leg" class="underline hover:text-gray-800">LEG in Baden</a>.</p>
+                </div>
+            </div>
+            
+            <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
+                <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Wie finde ich Nachbarn für eine LEG in Baden?</h3>
+                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                    <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Mit BadenLEG können Sie kostenlos Ihre Adresse in Baden eingeben. Wir finden automatisch passende Nachbarn in Ihrer Nähe, die ebenfalls an einer <strong>Lokalen Elektrizitätsgemeinschaft (LEG)</strong> interessiert sind.</p>
+                </div>
+            </div>
+            
+            <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
+                <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Wann kann ich eine LEG in Baden gründen?</h3>
+                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                    <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Ab dem 01.01.2026 können Hauseigentümerinnen und Hauseigentümer in Baden eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> gründen. Jetzt ist der richtige Zeitpunkt, um sich zu registrieren und passende Nachbarn zu finden.</p>
+                </div>
+            </div>
+            
+            <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
+                <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Was ist der Unterschied zwischen LEG, EVL und ZEV in Baden?</h3>
+                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                    <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Eine <strong>LEG (Lokale Elektrizitätsgemeinschaft)</strong> ist für mehrere Gebäude gedacht, eine <strong>EVL (Eigenverbrauchslösung)</strong> für Mehrfamilienhäuser und ein <strong>ZEV (Zusammenschluss zum Eigenverbrauch)</strong> für ein einzelnes Gebäude. Erfahren Sie mehr im <a href="/vergleich-leg-evl-zev" class="underline hover:text-gray-800">Vergleich der Modelle</a>.</p>
+                </div>
+            </div>
+        </section>
 
         <!-- Footer: Mehr erfahren & Links -->
         <div class="mt-6 pt-4 border-t border-gray-200">

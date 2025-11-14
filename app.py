@@ -227,7 +227,7 @@ def issue_verification_token(building_id):
             return token  # Wiederverwende bestehenden Token
     
     # Erstelle neuen Token, wenn keiner existiert
-    token = str(uuid.uuid4())
+        token = str(uuid.uuid4())
     DB_VERIFICATION_TOKENS[token] = {'building_id': building_id}
     return token
 
@@ -598,6 +598,10 @@ def robots_txt():
     lines = [
         "User-agent: *",
         "Allow: /",
+        "Disallow: /api/",
+        "Disallow: /admin/",
+        "Disallow: /confirm/",
+        "Disallow: /unsubscribe/",
         f"Sitemap: {SITE_URL}/sitemap.xml"
     ]
     return Response("\n".join(lines) + "\n", mimetype="text/plain")
@@ -607,14 +611,13 @@ def robots_txt():
 def sitemap_xml():
     """Einfaches Sitemap XML"""
     pages = [
-        ("/", "1.0", "daily"),
-        ("/leg", "0.9", "weekly"),
-        ("/evl", "0.8", "weekly"),
-        ("/zev", "0.8", "weekly"),
-        ("/vergleich-leg-evl-zev", "0.8", "weekly"),
-        ("/impressum", "0.3", "yearly"),
-        ("/datenschutz", "0.3", "yearly"),
-        ("/unsubscribe", "0.2", "monthly"),
+        ("/", "1.0", "daily"),  # Homepage: Höchste Priorität
+        ("/leg", "0.9", "weekly"),  # LEG-Seite: Sehr wichtig für SEO
+        ("/evl", "0.8", "weekly"),  # EVL-Seite
+        ("/zev", "0.8", "weekly"),  # ZEV-Seite
+        ("/vergleich-leg-evl-zev", "0.8", "weekly"),  # Vergleichsseite
+        ("/impressum", "0.3", "yearly"),  # Legal: Niedrige Priorität
+        ("/datenschutz", "0.3", "yearly"),  # Legal: Niedrige Priorität
     ]
     xml = render_template("sitemap.xml", site_url=SITE_URL, pages=pages)
     return Response(xml, mimetype="application/xml")
@@ -967,7 +970,7 @@ def api_register_anonymous():
     if not profile:
         log_security_event("INVALID_REQUEST", "register_anonymous: No profile data", 'WARNING')
         return jsonify({"error": "Profildaten fehlen."}), 400
-
+        
     building_id = profile.get('building_id')
     
     # Security: Validate building_id
@@ -1147,7 +1150,7 @@ def confirm_match(token):
 
     # Nach erfolgreicher Verifizierung Cluster neu berechnen und Kontakte informieren
     threading.Thread(target=run_full_ml_task, daemon=True).start()
-
+    
     return (
         "<h1>Vielen Dank!</h1>"
         "<p>Ihre Zustimmung wurde gespeichert. Wir senden Ihnen und allen passenden Nachbarinnen und Nachbarn "
