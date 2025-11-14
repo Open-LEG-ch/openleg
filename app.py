@@ -370,6 +370,161 @@ def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
             print(body)
             print("---------------------------------\n")
 
+def notify_existing_interested_persons(new_building_id, new_record):
+    """
+    Benachrichtigt alle bestehenden verifizierten Interessenten in derselben Zone,
+    dass sich ein neuer Interessent eingetragen hat.
+    Sendet die vollständige Kontaktübersicht (inklusive dem neuen Interessenten).
+    """
+    try:
+        new_profile = new_record.get('profile', {})
+        new_lat = new_profile.get('lat')
+        new_lon = new_profile.get('lon')
+        new_email = new_record.get('email')
+        
+        if not new_lat or not new_lon or not new_email:
+            print(f"[NOTIFY] Keine vollständigen Daten für building_id {new_building_id}")
+            return
+        
+        # Finde alle verifizierten Personen in einem 150m Radius
+        verified_contacts = []
+        with db_lock:
+            # Durchsuche DB_BUILDINGS
+            for building_id, record in DB_BUILDINGS.items():
+                if building_id == new_building_id:
+                    continue  # Überspringe die neue Person
+                if not record.get('verified') or not record.get('email'):
+                    continue
+                profile = record.get('profile', {})
+                p_lat = profile.get('lat')
+                p_lon = profile.get('lon')
+                if not p_lat or not p_lon:
+                    continue
+                
+                # Berechne Distanz
+                distance = ml_models.calculate_distance(new_lat, new_lon, p_lat, p_lon)
+                if distance <= 150:  # 150m Radius
+                    unsubscribe_token = issue_unsubscribe_token(building_id)
+                    verified_contacts.append({
+                        'building_id': building_id,
+                        'email': record.get('email'),
+                        'address': profile.get('address', ''),
+                        'phone': record.get('phone', ''),
+                        'unsubscribe_url': f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
+                    })
+            
+            # Durchsuche DB_INTEREST_POOL
+            for building_id, record in DB_INTEREST_POOL.items():
+                if building_id == new_building_id:
+                    continue  # Überspringe die neue Person
+                if not record.get('verified') or not record.get('email'):
+                    continue
+                profile = record.get('profile', {})
+                p_lat = profile.get('lat')
+                p_lon = profile.get('lon')
+                if not p_lat or not p_lon:
+                    continue
+                
+                # Berechne Distanz
+                distance = ml_models.calculate_distance(new_lat, new_lon, p_lat, p_lon)
+                if distance <= 150:  # 150m Radius
+                    unsubscribe_token = issue_unsubscribe_token(building_id)
+                    verified_contacts.append({
+                        'building_id': building_id,
+                        'email': record.get('email'),
+                        'address': profile.get('address', ''),
+                        'phone': record.get('phone', ''),
+                        'unsubscribe_url': f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
+                    })
+        
+        # Wenn keine bestehenden Interessenten gefunden wurden, nichts tun
+        if len(verified_contacts) == 0:
+            print(f"[NOTIFY] Keine bestehenden verifizierten Interessenten in der Zone für building_id {new_building_id}")
+            return
+        
+        # Füge den neuen Interessenten zur Liste hinzu
+        new_unsubscribe_token = issue_unsubscribe_token(new_building_id)
+        all_contacts = verified_contacts + [{
+            'building_id': new_building_id,
+            'email': new_email,
+            'address': new_profile.get('address', ''),
+            'phone': new_record.get('phone', ''),
+            'unsubscribe_url': f"{APP_BASE_URL}/unsubscribe/{new_unsubscribe_token}",
+            'is_new': True  # Markiere den neuen Interessenten
+        }]
+        
+        # Sende E-Mail an alle bestehenden Interessenten
+        subject = "BadenLEG – Neuer Interessent für LEG-Gründung in Ihrer Zone"
+        
+        header = (
+            f"BadenLEG – Neuer Interessent\n\n"
+            f"Ein neuer Interessent für eine Lokale Elektrizitätsgemeinschaft (LEG) hat sich in Ihrer Zone eingetragen.\n\n"
+            f"Aktuelle Kontaktübersicht aller verifizierten Interessenten in Ihrer Zone:\n\n"
+        )
+        
+        table_header = "Adresse".ljust(40) + "E-Mail".ljust(35) + "Mobile"
+        table_separator = "-" * 40 + " " + "-" * 35 + " " + "-" * 20
+        rows = []
+        for contact in all_contacts:
+            address = (contact.get('address') or "Adresse unbekannt").strip()
+            email = contact.get('email') or "keine E-Mail angegeben"
+            phone = contact.get('phone') or "-"
+            marker = " (NEU)" if contact.get('is_new') else ""
+            rows.append(f"{address}{marker}".ljust(42) + email.ljust(37) + phone)
+        
+        base_body = header + table_header + "\n" + table_separator + "\n" + "\n".join(rows) + "\n\n"
+        base_body += "Nutzen Sie die Kontaktdaten, um direkt miteinander in den Austausch zu gehen.\n\n"
+        base_body += "Viel Erfolg beim Aufbau Ihrer lokalen Elektrizitätsgemeinschaft!\nIhr BadenLEG-Team\n\n"
+        
+        # Sende E-Mail an alle bestehenden Interessenten (nicht an den neuen)
+        for contact in verified_contacts:
+            recipient = contact.get('email')
+            if not recipient:
+                continue
+            
+            unsubscribe_url = contact.get('unsubscribe_url')
+            if not unsubscribe_url:
+                token = issue_unsubscribe_token(contact['building_id'])
+                unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{token}"
+            
+            body = (
+                base_body +
+                "Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n"
+                f"{unsubscribe_url}"
+            )
+            
+            if EMAIL_ENABLED:
+                try:
+                    message = Mail(
+                        from_email=FROM_EMAIL,
+                        to_emails=recipient,
+                        subject=subject,
+                        plain_text_content=body
+                    )
+                    sg = SendGridAPIClient(SENDGRID_API_KEY)
+                    response = sg.send(message)
+                    logger.info(f"[EMAIL] Neuer Interessent-Benachrichtigung gesendet an {recipient} (Status: {response.status_code})")
+                except Exception as e:
+                    logger.error(f"[EMAIL] Fehler beim Senden an {recipient}: {e}")
+                    print(f"\n--- [EMAIL NEUER INTERESSENT - FEHLER] ---")
+                    print(f"AN: {recipient}")
+                    print(body)
+                    print("------------------------------------------\n")
+            else:
+                # Development Mode: Log to console
+                print(f"\n--- [EMAIL NEUER INTERESSENT] ---")
+                print(f"AN: {recipient}")
+                print(f"BETREFF: {subject}")
+                print(body)
+                print("---------------------------------\n")
+        
+        print(f"[NOTIFY] {len(verified_contacts)} bestehende Interessenten über neuen Interessenten benachrichtigt")
+        
+    except Exception as e:
+        print(f"[NOTIFY] Fehler beim Benachrichtigen bestehender Interessenten: {e}")
+        import traceback
+        traceback.print_exc()
+
 def notify_cluster_contacts(buildings_with_clusters):
     pending_notifications = []
     with db_lock:
@@ -1146,6 +1301,9 @@ def confirm_match(token):
         elif source == 'anonymous':
             DB_INTEREST_POOL[building_id] = record
 
+    # Benachrichtige alle bestehenden verifizierten Interessenten in derselben Zone
+    threading.Thread(target=notify_existing_interested_persons, args=(building_id, record), daemon=True).start()
+    
     # Nach erfolgreicher Verifizierung Cluster neu berechnen und Kontakte informieren
     threading.Thread(target=run_full_ml_task, daemon=True).start()
     
