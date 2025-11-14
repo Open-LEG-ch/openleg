@@ -221,13 +221,11 @@ def _invalidate_tokens_for_building(building_id):
     invalidate_unsubscribe_tokens(building_id)
 
 def issue_verification_token(building_id):
-    # Prüfe, ob bereits ein Token für diese building_id existiert
-    for token, info in DB_VERIFICATION_TOKENS.items():
-        if info.get('building_id') == building_id:
-            return token  # Wiederverwende bestehenden Token
+    # Invalidiere alte Tokens für diese building_id (verhindert, dass mehrere E-Mails den gleichen Token haben)
+    invalidate_verification_tokens(building_id)
     
-    # Erstelle neuen Token, wenn keiner existiert
-        token = str(uuid.uuid4())
+    # Erstelle neuen Token
+    token = str(uuid.uuid4())
     DB_VERIFICATION_TOKENS[token] = {'building_id': building_id}
     return token
 
