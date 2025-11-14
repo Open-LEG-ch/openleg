@@ -474,7 +474,7 @@ def send_duplicate_email(email, duplicate_type, duplicate_info, message, buildin
     if duplicate_type == 'exact_duplicate':
         body = (
             f"Sie haben sich bereits mit dieser E-Mail-Adresse und Adresse registriert.\n\n"
-            f"Falls Sie den Bestätigungslink nicht erhalten haben, prüfen Sie bitte Ihr Spam-Ordner.\n\n"
+            f"Falls Sie die Registrierungs-E-Mail nicht erhalten haben, prüfen Sie bitte Ihr Spam-Ordner.\n\n"
             f"Falls Sie sich abmelden möchten, verwenden Sie den Abmeldelink aus der ursprünglichen E-Mail.\n\n"
             f"Ihr BadenLEG-Team"
         )
@@ -576,7 +576,7 @@ def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
     header = (
         f"BadenLEG – Kontaktübersicht\n"
         f"Autarkie-Potenzial: {autarky:.1f}%\n\n"
-        "Die folgenden Haushalte haben ihre Teilnahme bestätigt. Nutzen Sie die Kontaktdaten, "
+        "Die folgenden Haushalte sind für eine LEG-Gründung in Ihrer Zone registriert. Nutzen Sie die Kontaktdaten, "
         "um direkt miteinander in den Austausch zu gehen.\n\n"
     )
 
@@ -721,7 +721,7 @@ def notify_existing_interested_persons(new_building_id, new_record):
         header = (
             f"BadenLEG – Neuer Interessent\n\n"
             f"Ein neuer Interessent für eine Lokale Elektrizitätsgemeinschaft (LEG) hat sich in Ihrer Zone eingetragen.\n\n"
-            f"Aktuelle Kontaktübersicht aller verifizierten Interessenten in Ihrer Zone:\n\n"
+            f"Aktuelle Kontaktübersicht aller registrierten Interessenten in Ihrer Zone:\n\n"
         )
         
         table_header = "Adresse".ljust(40) + "E-Mail".ljust(35) + "Mobile"
