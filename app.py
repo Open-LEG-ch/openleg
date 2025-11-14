@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# --- Token Persistence ---
+import token_persistence
+
 try:
     from scipy.spatial import ConvexHull
     HAS_SCIPY = True
@@ -145,6 +148,10 @@ db_lock = threading.Lock() # Verhindert Race Conditions
 
 ANONYMITY_RADIUS_METERS = 120  # Radius für Karten-Darstellung zur Wahrung der Privatsphäre
 
+# Lade Tokens aus persistenter Speicherung
+print(f"[INIT] Lade Tokens aus persistenter Speicherung...")
+DB_VERIFICATION_TOKENS, DB_UNSUBSCRIBE_TOKENS, _token_created_at = token_persistence.load_tokens()
+
 print(f"[INIT] Leere Datenbank und ML-Cache initialisiert.")
 
 
@@ -200,6 +207,15 @@ def _get_record_for_building_no_lock(building_id):
         return DB_INTEREST_POOL[building_id], 'anonymous'
     return None, None
 
+def _save_tokens_async():
+    """Speichert Tokens asynchron im Hintergrund."""
+    # Erstelle Kopien für Thread-Sicherheit
+    verification_tokens = dict(DB_VERIFICATION_TOKENS)
+    unsubscribe_tokens = dict(DB_UNSUBSCRIBE_TOKENS)
+    created_at = dict(_token_created_at)
+    
+    token_persistence.save_tokens_async(verification_tokens, unsubscribe_tokens, created_at)
+
 def invalidate_verification_tokens(building_id):
     tokens_to_remove = [
         token for token, info in DB_VERIFICATION_TOKENS.items()
@@ -207,6 +223,11 @@ def invalidate_verification_tokens(building_id):
     ]
     for token in tokens_to_remove:
         DB_VERIFICATION_TOKENS.pop(token, None)
+        _token_created_at.pop(f'verification_{token}', None)
+    
+    # Speichere asynchron
+    if tokens_to_remove:
+        _save_tokens_async()
 
 def invalidate_unsubscribe_tokens(building_id):
     tokens_to_remove = [
@@ -215,6 +236,11 @@ def invalidate_unsubscribe_tokens(building_id):
     ]
     for token in tokens_to_remove:
         DB_UNSUBSCRIBE_TOKENS.pop(token, None)
+        _token_created_at.pop(f'unsubscribe_{token}', None)
+    
+    # Speichere asynchron
+    if tokens_to_remove:
+        _save_tokens_async()
 
 def _invalidate_tokens_for_building(building_id):
     invalidate_verification_tokens(building_id)
@@ -227,6 +253,11 @@ def issue_verification_token(building_id):
     # Erstelle neuen Token
     token = str(uuid.uuid4())
     DB_VERIFICATION_TOKENS[token] = {'building_id': building_id}
+    _token_created_at[f'verification_{token}'] = time.time()
+    
+    # Speichere asynchron
+    _save_tokens_async()
+    
     return token
 
 def issue_unsubscribe_token(building_id):
@@ -238,6 +269,11 @@ def issue_unsubscribe_token(building_id):
     # Erstelle neuen Token, wenn keiner existiert
     token = str(uuid.uuid4())
     DB_UNSUBSCRIBE_TOKENS[token] = {'building_id': building_id}
+    _token_created_at[f'unsubscribe_{token}'] = time.time()
+    
+    # Speichere asynchron
+    _save_tokens_async()
+    
     return token
 
 def remove_building(building_id):
@@ -894,6 +930,9 @@ def unsubscribe_token(token):
     
     with db_lock:
         token_info = DB_UNSUBSCRIBE_TOKENS.pop(token, None)
+        if token_info:
+            _token_created_at.pop(f'unsubscribe_{token}', None)
+            _save_tokens_async()
 
     if not token_info:
         log_security_event("TOKEN_NOT_FOUND", f"unsubscribe: Token not found or already used", 'INFO')
@@ -1276,23 +1315,45 @@ def confirm_match(token):
         log_security_event("INVALID_TOKEN", f"confirm: {token_error}", 'WARNING')
         return "<h1>Ungültiger Link</h1><p>Der Bestätigungslink hat ein ungültiges Format.</p>", 400
     
+    # OPTIMIERUNG: Prüfe zuerst, ob Token existiert und hole building_id
     with db_lock:
-        token_info = DB_VERIFICATION_TOKENS.pop(token, None)
+        token_info = DB_VERIFICATION_TOKENS.get(token)  # Nicht pop, nur get
     
-    if not token_info:
-        log_security_event("TOKEN_NOT_FOUND", f"confirm: Token not found or already used", 'INFO')
-        return "<h1>Link ungültig</h1><p>Dieser Bestätigungslink ist ungültig oder wurde bereits verwendet.</p>", 404
-        
-    building_id = token_info['building_id']
+    building_id = None
+    if token_info:
+        building_id = token_info.get('building_id')
     
-    log_security_event("EMAIL_CONFIRMED", f"Building ID: {building_id}", 'INFO')
-        
+    # MITIGATION: Wenn Token nicht existiert, prüfe ob building_id bereits verifiziert ist
+    # (z.B. nach App-Neustart, aber Person war bereits verifiziert)
+    if not building_id:
+        # Versuche building_id aus dem Token zu extrahieren (falls es in der DB gespeichert ist)
+        # Oder: Prüfe alle verifizierten Einträge (nicht ideal, aber Fallback)
+        # Für jetzt: Zeige "Link ungültig", aber mit besserer Nachricht
+        log_security_event("TOKEN_NOT_FOUND", f"confirm: Token not found", 'INFO')
+        return "<h1>Link ungültig</h1><p>Dieser Bestätigungslink ist ungültig oder wurde bereits verwendet. Falls Sie sich bereits registriert haben, sollten Sie bereits eine Kontaktübersicht erhalten haben.</p>", 404
+    
+    # Prüfe VOR dem Token-Pop, ob bereits verifiziert (verhindert "Link ungültig" bei bereits verifizierten)
     with db_lock:
         record, source = _get_record_for_building_no_lock(building_id)
         if not record:
             return "<h1>Profil nicht gefunden</h1><p>Der zugehörige Eintrag existiert nicht mehr.</p>", 404
         if record.get('verified'):
+            # Token entfernen (Cleanup), aber zeige Erfolgsmeldung
+            DB_VERIFICATION_TOKENS.pop(token, None)
+            _token_created_at.pop(f'verification_{token}', None)
+            _save_tokens_async()
             return "<h1>Bereits bestätigt</h1><p>Sie haben Ihre Teilnahme bereits bestätigt. Wir informieren Ihre Nachbarn bei Änderungen automatisch.</p>"
+    
+    # Token ist gültig und Person ist noch nicht verifiziert - entferne Token jetzt
+    with db_lock:
+        DB_VERIFICATION_TOKENS.pop(token, None)
+        _token_created_at.pop(f'verification_{token}', None)
+        _save_tokens_async()
+    
+    log_security_event("EMAIL_CONFIRMED", f"Building ID: {building_id}", 'INFO')
+    
+    # Setze verified Flag
+    with db_lock:
         record['verified'] = True
         record['verified_at'] = time.time()
 
