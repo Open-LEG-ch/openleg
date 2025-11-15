@@ -472,6 +472,12 @@
 
     <div id="control-panel">
 
+        <!-- Desktop Header (nur auf Desktop sichtbar) -->
+        <header class="hidden lg:block text-center mb-4">
+            <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
+            <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
+        </header>
+
         <div id="check-step">
             <div class="flex flex-col sm:flex-row gap-2">
                 <div class="flex-grow relative">
@@ -535,6 +541,30 @@
 
         <!-- Footer: Links -->
         <div class="mt-6 pt-4 border-t border-gray-200">
+            <!-- Desktop: Links mit Text (nur auf Desktop sichtbar) -->
+            <div class="hidden lg:block mb-4">
+                <h3 class="text-sm font-bold text-gray-800 mb-3">Entdecken Sie Ihr Energiemodell:</h3>
+                <div class="flex flex-col gap-2 text-sm">
+                    <a href="/leg" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
+                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ LEG</span>
+                        <span class="text-xs text-gray-600">– Lokale Elektrizitätsgemeinschaft ab 2026</span>
+                    </a>
+                    <a href="/evl" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
+                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ EVL</span>
+                        <span class="text-xs text-gray-600">– Eigenverbrauchslösung für Mehrfamilienhäuser</span>
+                    </a>
+                    <a href="/zev" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
+                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ ZEV</span>
+                        <span class="text-xs text-gray-600">– Zusammenschluss zum Eigenverbrauch</span>
+                    </a>
+                    <a href="/vergleich-leg-evl-zev" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
+                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ Vergleich</span>
+                        <span class="text-xs text-gray-600">– Welches Modell passt zu mir?</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Mobile/Desktop: Kompakte Links -->
             <div class="text-xs text-gray-500">
                 <div class="flex flex-wrap gap-2 mb-2">
                     <a href="/leg" class="underline hover:text-gray-700">LEG</a> |
