@@ -285,7 +285,7 @@ See [comparison page](http://localhost:5003/vergleich-leg-evl-zev) for details.
 
 ## Support
 
-- **Email**: leg@sihliconvalley.ch
+- **Email**: hallo@badenleg.ch
 - **Website**: badenleg.ch
 - **Issues**: [GitHub Issues](https://github.com/yourorg/badenleg/issues)
 

@@ -264,7 +264,7 @@ Monitor `badenleg_security.log` for:
 
 If you discover a security vulnerability, please email:
 
-**leg@sihliconvalley.ch**
+**hallo@badenleg.ch**
 
 Please do NOT publicly disclose security issues without coordination.
 
@@ -289,7 +289,7 @@ Please do NOT publicly disclose security issues without coordination.
 ## Security Contacts
 
 - **Technical Lead**: Sihl Icon Valley
-- **Email**: leg@sihliconvalley.ch
+- **Email**: hallo@badenleg.ch
 - **Emergency**: Use email above
 
 ## Version History

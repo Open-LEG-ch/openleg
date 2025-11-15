@@ -20,9 +20,30 @@
     <meta property="og:url" content="{{ site_url }}/">
     <meta property="og:locale" content="de_CH">
     <meta property="og:site_name" content="BadenLEG">
+    <meta property="og:image" content="{{ site_url }}/static/images/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="LEG Baden 2026 – Lokale Elektrizitätsgemeinschaft gründen">
     <meta name="twitter:description" content="Finden Sie Nachbarn in Baden für eine LEG ab 2026. Kostenlos registrieren und LEG gründen.">
+    <meta name="twitter:image" content="{{ site_url }}/static/images/og-image.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ site_url }}/static/favicon.ico">
+    <link rel="apple-touch-icon" href="{{ site_url }}/static/apple-touch-icon.png">
+    
+    <!-- Google Analytics 4 (placeholder - replace with your GA4 measurement ID) -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script> -->
+    
+    <!-- Google Search Console Verification (placeholder - replace with your verification code) -->
+    <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE" /> -->
     
     <!-- Structured Data: WebApplication -->
     <script type="application/ld+json">
@@ -61,7 +82,36 @@
         "addressLocality": "Baden",
         "addressRegion": "Aargau",
         "addressCountry": "CH"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "hallo@badenleg.ch",
+        "contactType": "customer service"
       }
+    }
+    </script>
+    
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "BadenLEG",
+      "url": "{{ site_url }}",
+      "logo": "{{ site_url }}/static/images/og-image.png",
+      "description": "Platform für Lokale Elektrizitätsgemeinschaften (LEG) in Baden, Schweiz",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Baden",
+        "addressRegion": "Aargau",
+        "addressCountry": "CH"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "hallo@badenleg.ch",
+        "contactType": "customer service"
+      },
+      "sameAs": []
     }
     </script>
 
@@ -541,7 +591,7 @@
                         <a href="/unsubscribe" class="underline hover:text-gray-700">Abmelden</a>
                     </div>
                     <div>
-                        Kontakt: <a href="mailto:leg@sihliconvalley.ch" class="underline hover:text-gray-700">leg@sihliconvalley.ch</a>
+                        Kontakt: <a href="mailto:hallo@badenleg.ch" class="underline hover:text-gray-700">hallo@badenleg.ch</a>
                     </div>
                 </div>
             </div>

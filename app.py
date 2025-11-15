@@ -94,9 +94,11 @@ if HAS_SECURITY_LIBS:
     
     # Minimal Talisman setup for Railway
     # Permissive CSP to allow Leaflet, Tailwind and map tiles
+    # Enable HTTPS enforcement in production (when APP_BASE_URL starts with https://)
+    force_https = APP_BASE_URL.startswith('https://') if APP_BASE_URL else False
     Talisman(
         app,
-        force_https=False,
+        force_https=force_https,
         content_security_policy={
             'default-src': "'self'",
             'script-src': ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://unpkg.com"],
@@ -1024,15 +1026,19 @@ def robots_txt():
 
 @app.route("/sitemap.xml")
 def sitemap_xml():
-    """Einfaches Sitemap XML"""
+    """Einfaches Sitemap XML mit lastmod"""
+    from datetime import datetime
+    # Format: (path, priority, changefreq, lastmod)
+    # lastmod format: YYYY-MM-DD
+    current_date = datetime.now().strftime("%Y-%m-%d")
     pages = [
-        ("/", "1.0", "daily"),  # Homepage: Höchste Priorität
-        ("/leg", "0.9", "weekly"),  # LEG-Seite: Sehr wichtig für SEO
-        ("/evl", "0.8", "weekly"),  # EVL-Seite
-        ("/zev", "0.8", "weekly"),  # ZEV-Seite
-        ("/vergleich-leg-evl-zev", "0.8", "weekly"),  # Vergleichsseite
-        ("/impressum", "0.3", "yearly"),  # Legal: Niedrige Priorität
-        ("/datenschutz", "0.3", "yearly"),  # Legal: Niedrige Priorität
+        ("/", "1.0", "daily", current_date),  # Homepage: Höchste Priorität
+        ("/leg", "0.9", "weekly", current_date),  # LEG-Seite: Sehr wichtig für SEO
+        ("/evl", "0.8", "weekly", current_date),  # EVL-Seite
+        ("/zev", "0.8", "weekly", current_date),  # ZEV-Seite
+        ("/vergleich-leg-evl-zev", "0.8", "weekly", current_date),  # Vergleichsseite
+        ("/impressum", "0.3", "yearly", "2024-11-01"),  # Legal: Niedrige Priorität
+        ("/datenschutz", "0.3", "yearly", "2024-11-01"),  # Legal: Niedrige Priorität
     ]
     xml = render_template("sitemap.xml", site_url=SITE_URL, pages=pages)
     return Response(xml, mimetype="application/xml")
