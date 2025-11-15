@@ -400,19 +400,19 @@ def send_confirmation_email(email, unsubscribe_url, building_id=None, address=No
 
     if EMAIL_ENABLED:
         try:
+            # E-Mail an User senden (OHNE BCC)
             message = Mail(
                 from_email=FROM_EMAIL,
                 to_emails=email,
                 subject=subject,
-                plain_text_content=message_body,
-                bcc=[ADMIN_EMAIL]  # Send copy to admin
+                plain_text_content=message_body
             )
             sg = SendGridAPIClient(SENDGRID_API_KEY)
             response = sg.send(message)
             logger.info(f"[EMAIL] Bestätigung gesendet an {email} (Status: {response.status_code})")
             
-            # Send activity notification
-            activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}"
+            # Separate Activity Notification an Admin senden (mit E-Mail-Inhalt)
+            activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}\n\nE-Mail-Inhalt:\n{message_body}"
             send_activity_notification("Neue Registrierung", activity_details)
         except Exception as e:
             logger.error(f"[EMAIL] Fehler beim Senden an {email}: {e}")
@@ -429,8 +429,8 @@ def send_confirmation_email(email, unsubscribe_url, building_id=None, address=No
         print(message_body)
         print("-----------------------------\n")
         
-        # Send activity notification even in dev mode
-        activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}"
+        # Send activity notification even in dev mode (mit E-Mail-Inhalt)
+        activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}\n\nE-Mail-Inhalt:\n{message_body}"
         send_activity_notification("Neue Registrierung", activity_details)
 
 def check_duplicates_background(email, phone, address, building_id):
@@ -559,19 +559,19 @@ def send_duplicate_email(email, duplicate_type, duplicate_info, message, buildin
     
     if EMAIL_ENABLED:
         try:
+            # E-Mail an User senden (OHNE BCC)
             message_obj = Mail(
                 from_email=FROM_EMAIL,
                 to_emails=email,
                 subject=subject,
-                plain_text_content=body,
-                bcc=[ADMIN_EMAIL]  # Send copy to admin
+                plain_text_content=body
             )
             sg = SendGridAPIClient(SENDGRID_API_KEY)
             response = sg.send(message_obj)
             logger.info(f"[EMAIL] Duplikat-Benachrichtigung gesendet an {email} (Status: {response.status_code})")
             
-            # Send activity notification
-            activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}"
+            # Separate Activity Notification an Admin senden (mit E-Mail-Inhalt)
+            activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}\n\nE-Mail-Inhalt:\n{body}"
             send_activity_notification("Duplikat erkannt", activity_details)
         except Exception as e:
             logger.error(f"[EMAIL] Fehler beim Senden an {email}: {e}")
@@ -586,8 +586,8 @@ def send_duplicate_email(email, duplicate_type, duplicate_info, message, buildin
         print(body)
         print("-------------------------\n")
         
-        # Send activity notification even in dev mode
-        activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}"
+        # Send activity notification even in dev mode (mit E-Mail-Inhalt)
+        activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}\n\nE-Mail-Inhalt:\n{body}"
         send_activity_notification("Duplikat erkannt", activity_details)
 
 def check_and_handle_duplicates(email, phone, address, building_id):
@@ -624,8 +624,7 @@ def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
     subject = f"BadenLEG – Ihre Nachbarn für die LEG-Gründung"
     
     header = (
-        f"BadenLEG – Kontaktübersicht\n"
-        f"Autarkie-Potenzial: {autarky:.1f}%\n\n"
+        f"BadenLEG – Kontaktübersicht\n\n"
         "Die folgenden Haushalte sind für eine LEG-Gründung in Ihrer Zone registriert. Nutzen Sie die Kontaktdaten, "
         "um direkt miteinander in den Austausch zu gehen.\n\n"
     )
@@ -658,12 +657,12 @@ def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
         
         if EMAIL_ENABLED:
             try:
+                # E-Mail an User senden (OHNE BCC)
                 message = Mail(
                     from_email=FROM_EMAIL,
                     to_emails=recipient,
                     subject=subject,
-                    plain_text_content=body,
-                    bcc=[ADMIN_EMAIL]  # Send copy to admin
+                    plain_text_content=body
                 )
                 sg = SendGridAPIClient(SENDGRID_API_KEY)
                 response = sg.send(message)
@@ -683,8 +682,25 @@ def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
             print(body)
             print("---------------------------------\n")
     
-    # Send activity notification for cluster contact emails
-    activity_details = f"Cluster-Kontaktübersicht gesendet:\nCluster ID: {cluster_id}\nAutarkie: {autarky:.1f}%\nAnzahl Kontakte: {len(verified_contacts)}"
+    # Send activity notification for cluster contact emails with participant details and email content
+    participant_list = []
+    for contact in verified_contacts:
+        address = (contact.get('address') or "Adresse unbekannt").strip()
+        email = contact.get('email') or "keine E-Mail angegeben"
+        phone = contact.get('phone') or "keine Telefonnummer"
+        participant_list.append(f"  - {address} | {email} | Tel: {phone}")
+    
+    # Erstelle Beispiel-E-Mail-Inhalt für Activity Notification
+    example_body = base_body + "Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n[Unsubscribe URL]"
+    
+    activity_details = (
+        f"Cluster-Kontaktübersicht gesendet:\n"
+        f"Cluster ID: {cluster_id}\n"
+        f"Autarkie: {autarky:.1f}%\n"
+        f"Anzahl Kontakte: {len(verified_contacts)}\n\n"
+        f"Teilnehmer:\n" + "\n".join(participant_list) + "\n\n"
+        f"E-Mail-Inhalt (Beispiel):\n{example_body}"
+    )
     send_activity_notification("Cluster-Kontaktübersicht", activity_details)
 
 def notify_existing_interested_persons(new_building_id, new_record):
@@ -812,12 +828,12 @@ def notify_existing_interested_persons(new_building_id, new_record):
             
             if EMAIL_ENABLED:
                 try:
+                    # E-Mail an User senden (OHNE BCC)
                     message = Mail(
                         from_email=FROM_EMAIL,
                         to_emails=recipient,
                         subject=subject,
-                        plain_text_content=body,
-                        bcc=[ADMIN_EMAIL]  # Send copy to admin
+                        plain_text_content=body
                     )
                     sg = SendGridAPIClient(SENDGRID_API_KEY)
                     response = sg.send(message)
@@ -838,8 +854,16 @@ def notify_existing_interested_persons(new_building_id, new_record):
         
         print(f"[NOTIFY] {len(verified_contacts)} bestehende Interessenten über neuen Interessenten benachrichtigt")
         
-        # Send activity notification
-        activity_details = f"Neuer Interessent benachrichtigt:\nNeuer Building ID: {new_building_id}\nE-Mail: {new_email}\nAdresse: {new_profile.get('address', 'N/A')}\nBenachrichtigte bestehende Interessenten: {len(verified_contacts)}"
+        # Send activity notification (mit E-Mail-Inhalt)
+        example_body = base_body + "Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n[Unsubscribe URL]"
+        activity_details = (
+            f"Neuer Interessent benachrichtigt:\n"
+            f"Neuer Building ID: {new_building_id}\n"
+            f"E-Mail: {new_email}\n"
+            f"Adresse: {new_profile.get('address', 'N/A')}\n"
+            f"Benachrichtigte bestehende Interessenten: {len(verified_contacts)}\n\n"
+            f"E-Mail-Inhalt (Beispiel):\n{example_body}"
+        )
         send_activity_notification("Neuer Interessent", activity_details)
         
     except Exception as e:

@@ -132,15 +132,8 @@
         html, body {
             height: 100%;
             margin: 0;
+            overflow: hidden; /* Verhindert Scrollen der Seite */
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        }
-        
-        /* Enable scrolling on mobile */
-        @media (max-width: 1023px) {
-            html, body {
-                overflow: auto;
-                height: auto;
-            }
         }
         
         /* Desktop Layout: Flexbox für Side-by-Side */
@@ -216,108 +209,45 @@
             transition: transform 0.3s ease;
         }
         
-        /* Mobile: Control-Panel mit scrollbarem Inhalt und sticky search bar */
+        /* Mobile: Control-Panel minimiert zeigen (nur Adressfeld + Akkordeon) */
         @media (max-width: 1023px) {
             #control-panel {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                width: 100%;
-                max-height: 100vh;
-                height: 100vh;
-                padding: 0;
-                border-radius: 0;
-                box-shadow: none;
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
+                max-height: 35vh;
+                padding: 1rem 1rem 1.5rem 1rem;
             }
             
-            /* Sticky search bar container */
-            #mobile-search-bar {
-                position: sticky;
-                top: 0;
-                z-index: 100;
-                background: white;
-                padding: 1rem;
-                border-bottom: 1px solid #e5e7eb;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            }
-            
-            /* Scrollable content area */
-            #mobile-content {
-                flex: 1;
-                overflow-y: auto;
-                padding: 1rem;
-                padding-bottom: 2rem;
-            }
-            
-            /* Show all content on mobile */
             #control-panel header,
-            #control-panel article,
-            #control-panel .mt-6 {
-                display: block;
+            #control-panel article {
+                display: none;
+            }
+            
+            /* Hide desktop accordion on mobile */
+            #control-panel details.mt-6 {
+                display: none;
             }
             
             #control-panel #check-step {
-                margin-top: 1rem;
+                margin-top: 0;
             }
             
-            /* Remove the ::before pseudo-element content */
             #control-panel #check-step::before {
-                content: none;
-                display: none;
-            }
-            
-            /* Hide desktop check-step on mobile */
-            #check-step-desktop {
-                display: none;
-            }
-        }
-        
-        /* Desktop: Hide mobile wrapper elements and show normal layout */
-        @media (min-width: 1024px) {
-            #mobile-search-bar {
-                display: none;
-            }
-            
-            #mobile-content {
+                content: "Geben Sie Ihre Adresse ein, um passende Energie-Partner zu finden.";
                 display: block;
-                padding: 0;
-                overflow: visible;
+                font-size: 0.875rem;
+                color: #6b7280;
+                margin-bottom: 0.75rem;
+                text-align: center;
+                line-height: 1.4;
             }
             
-            /* Hide mobile check-step, show desktop version */
-            #check-step {
-                display: none;
+            /* Mobile accordion - shown after lazy load */
+            #mobile-content-accordion {
+                margin-top: 1rem;
+                display: none; /* Initially hidden, shown after lazy load */
             }
             
-            #check-step-desktop {
+            #mobile-content-accordion.loaded {
                 display: block;
-            }
-            
-            /* Restore normal control-panel layout on desktop */
-            #control-panel {
-                position: fixed;
-                top: 0;
-                right: 0;
-                left: auto;
-                bottom: auto;
-                width: 450px;
-                min-width: 350px;
-                max-width: 450px;
-                height: 100vh;
-                max-height: 100vh;
-                border-radius: 0;
-                box-shadow: -4px 0 12px rgba(0,0,0,0.15);
-                padding: 2rem;
-                transform: none;
-                z-index: 1000;
-                display: block;
-                flex-direction: row;
-                overflow-y: auto;
             }
         }
         
@@ -486,6 +416,24 @@
             background: #f1f5f9;
         }
         
+        /* Accordion styling */
+        details summary {
+            list-style: none;
+        }
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+        details summary::before {
+            content: "▶ ";
+            display: inline-block;
+            margin-right: 0.5rem;
+            transition: transform 0.2s;
+            color: var(--brand-color);
+        }
+        details[open] summary::before {
+            transform: rotate(90deg);
+        }
+        
         /* Desktop: Verbesserte Sidebar-Scrollbarkeit */
         @media (min-width: 1024px) {
             #control-panel {
@@ -531,56 +479,94 @@
     <div id="map"></div>
 
     <div id="control-panel">
-        <!-- Mobile: Scrollable content area -->
-        <div id="mobile-content">
-            <!-- Mobile: Sticky search bar at top of scrollable content -->
-            <div id="mobile-search-bar">
-                <div id="check-step">
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <div class="flex-grow relative">
-                            <input type="text" id="address-input" placeholder="z.B. Brown Boveri Platz, 5400 Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600" autocomplete="off" required>
-                            <div id="address-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
-                        </div>
-                        <button type="button" id="check-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
-                            Prüfen
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <header class="text-center mb-4">
-                <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
-                <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokale Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
-            </header>
-            
-            <article>
-                <section>
-                    <h3 class="sr-only">LEG Baden – So funktioniert's</h3>
-                    <p class="text-gray-600 mb-4 text-center text-sm sm:text-base">Geben Sie Ihre Adresse in Baden ein, um passende Energie-Partner in Ihrer Nachbarschaft zu finden und eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> zu gründen.</p>
-                </section>
-            </article>
 
-            <div id="check-step-desktop">
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <div class="flex-grow relative">
-                        <input type="text" id="address-input-desktop" placeholder="z.B. Brown Boveri Platz, 5400 Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600" autocomplete="off" required>
-                        <div id="address-suggestions-desktop" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
-                    </div>
-                    <button type="button" id="check-button-desktop" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
-                        Prüfen
-                    </button>
+        <header class="text-center mb-4">
+            <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
+            <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
+        </header>
+        
+        <article>
+            <section>
+                <h3 class="sr-only">LEG Baden – So funktioniert's</h3>
+                <p class="text-gray-600 mb-4 text-center text-sm sm:text-base">Geben Sie Ihre Adresse in Baden ein, um passende Energie-Partner in Ihrer Nachbarschaft zu finden und eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> zu gründen.</p>
+            </section>
+        </article>
+
+        <div id="check-step">
+            <div class="flex flex-col sm:flex-row gap-2">
+                <div class="flex-grow relative">
+                    <input type="text" id="address-input" placeholder="z.B. Brown Boveri Platz, 5400 Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600" autocomplete="off" required>
+                    <div id="address-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
                 </div>
+                <button type="button" id="check-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
+                    Prüfen
+                </button>
+            </div>
             <div id="check-loader" class="loader mx-auto my-4 hidden"></div>
             <p id="check-message" class="text-center text-red-600 mt-4 font-medium"></p>
             
-            <div class="mt-6 border border-gray-200 rounded-md bg-gray-50 p-4">
-                <h3 class="text-base font-semibold text-gray-800 mb-2">LEG Baden - So funktioniert's</h3>
-                <p class="text-sm text-gray-600 leading-relaxed">
-                    Wir gleichen Ihre Adresse in Baden mit anonymisierten Nachbarprofilen ab. Falls bereits Interessierte für eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> in Ihrer Nähe vorhanden sind,
-                    informieren wir Sie per E-Mail. Alle registrierten Haushalte erhalten automatisch eine Übersicht mit Adresse
-                    und E-Mail, damit Sie direkt in Kontakt treten und gemeinsam eine <strong>LEG in Baden</strong> gründen können.
-                </p>
+            <!-- Mobile Accordion (lazy loaded) -->
+            <div id="mobile-content-accordion">
+                <details class="mt-4 border border-gray-200 rounded-md bg-gray-50">
+                    <summary class="text-base font-semibold text-gray-800 p-4 cursor-pointer hover:bg-gray-100 transition-colors list-none">
+                        Mehr Informationen
+                    </summary>
+                    <div class="px-4 pb-4 pt-2 space-y-4">
+                        <!-- Header Content -->
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800 mb-2"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
+                            <h2 class="text-sm text-gray-600 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
+                        </div>
+                        
+                        <!-- Article Content -->
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-800 mb-2">LEG Baden – So funktioniert's</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                Geben Sie Ihre Adresse in Baden ein, um passende Energie-Partner in Ihrer Nachbarschaft zu finden und eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> zu gründen.
+                            </p>
+                        </div>
+                        
+                        <!-- FAQ Content -->
+                        <div class="border-t border-gray-200 pt-4">
+                            <h3 class="text-sm font-semibold text-gray-800 mb-3">Häufige Fragen</h3>
+                            <div class="space-y-3 text-sm text-gray-600">
+                                <div>
+                                    <strong class="text-gray-800">Was ist eine LEG?</strong>
+                                    <p class="mt-1">Eine Lokale Elektrizitätsgemeinschaft (LEG) ermöglicht es Nachbarn, gemeinsam erneuerbare Energie zu produzieren und zu teilen.</p>
+                                </div>
+                                <div>
+                                    <strong class="text-gray-800">Wie funktioniert die Registrierung?</strong>
+                                    <p class="mt-1">Geben Sie einfach Ihre Adresse ein. Wir finden passende Nachbarn und informieren Sie per E-Mail.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- LEG Info -->
+                        <div class="border-t border-gray-200 pt-4">
+                            <h3 class="text-sm font-semibold text-gray-800 mb-2">LEG Baden - So funktioniert's</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                Wir gleichen Ihre Adresse in Baden mit anonymisierten Nachbarprofilen ab. Falls bereits Interessierte für eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> in Ihrer Nähe vorhanden sind,
+                                informieren wir Sie per E-Mail. Alle registrierten Haushalte erhalten automatisch eine Übersicht mit Adresse
+                                und E-Mail, damit Sie direkt in Kontakt treten und gemeinsam eine <strong>LEG in Baden</strong> gründen können.
+                            </p>
+                        </div>
+                    </div>
+                </details>
             </div>
+            
+            <!-- Desktop Accordion (always visible on desktop) -->
+            <details class="mt-6 border border-gray-200 rounded-md bg-gray-50">
+                <summary class="text-base font-semibold text-gray-800 p-4 cursor-pointer hover:bg-gray-100 transition-colors list-none">
+                    LEG Baden - So funktioniert's
+                </summary>
+                <div class="px-4 pb-4 pt-2">
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        Wir gleichen Ihre Adresse in Baden mit anonymisierten Nachbarprofilen ab. Falls bereits Interessierte für eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> in Ihrer Nähe vorhanden sind,
+                        informieren wir Sie per E-Mail. Alle registrierten Haushalte erhalten automatisch eine Übersicht mit Adresse
+                        und E-Mail, damit Sie direkt in Kontakt treten und gemeinsam eine <strong>LEG in Baden</strong> gründen können.
+                    </p>
+                </div>
+            </details>
         </div>
 
         <div id="result-step" class="hidden">
@@ -696,7 +682,6 @@
                 </div>
             </div>
         </div>
-        </div>
     </div>
 
 
@@ -729,28 +714,10 @@
         const resetButton = document.getElementById('reset-button');
         
         const checkButton = document.getElementById('check-button');
-        const checkButtonDesktop = document.getElementById('check-button-desktop');
         const checkLoader = document.getElementById('check-loader');
         const checkMessage = document.getElementById('check-message');
         const addressInput = document.getElementById('address-input');
-        const addressInputDesktop = document.getElementById('address-input-desktop');
         const addressSuggestions = document.getElementById('address-suggestions');
-        const addressSuggestionsDesktop = document.getElementById('address-suggestions-desktop');
-        
-        // Sync desktop and mobile inputs
-        if (addressInput && addressInputDesktop) {
-            addressInput.addEventListener('input', () => {
-                addressInputDesktop.value = addressInput.value;
-            });
-            addressInputDesktop.addEventListener('input', () => {
-                addressInput.value = addressInputDesktop.value;
-            });
-        }
-        
-        // Use mobile input as primary, fallback to desktop
-        const primaryAddressInput = addressInput || addressInputDesktop;
-        const primaryAddressSuggestions = addressSuggestions || addressSuggestionsDesktop;
-        const primaryCheckButton = checkButton || checkButtonDesktop;
         
         let suggestionTimeout = null;
         let currentSuggestions = [];
@@ -789,41 +756,55 @@
             iconAnchor: [105, 105]
         });
 
+        // Mobile Content lazy loading
+        function loadMobileContent() {
+            const mobileAccordion = document.getElementById('mobile-content-accordion');
+            if (mobileAccordion) {
+                mobileAccordion.classList.add('loaded');
+                console.log('[MOBILE] Content-Akkordeon geladen');
+            }
+        }
+        
         // --- 1. Initialisierung ---
         document.addEventListener('DOMContentLoaded', () => {
+            // PRIORITÄT 1: Karte und Funktionalität zuerst laden
             initMap();
             setTimeout(loadInitialData, 500);
             
-            // Adress-Autovervollständigung - use primary input
-            if (primaryAddressInput) {
-                primaryAddressInput.addEventListener('input', handleAddressInput);
-                primaryAddressInput.addEventListener('keydown', handleAddressKeydown);
-                primaryAddressInput.addEventListener('blur', () => {
-                    setTimeout(() => {
-                        if (document.activeElement !== primaryAddressInput && 
-                            primaryAddressSuggestions && !primaryAddressSuggestions.contains(document.activeElement)) {
-                            if (primaryAddressSuggestions) primaryAddressSuggestions.classList.add('hidden');
-                            if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
-                        }
-                    }, 250);
-                });
-            }
+            // Adress-Autovervollständigung
+            addressInput.addEventListener('input', handleAddressInput);
+            addressInput.addEventListener('keydown', handleAddressKeydown);
+            addressInput.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (document.activeElement !== addressInput && 
+                        !addressSuggestions.contains(document.activeElement)) {
+                        addressSuggestions.classList.add('hidden');
+                    }
+                }, 250);
+            });
             
-            if (primaryAddressSuggestions) {
-                primaryAddressSuggestions.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                });
-            }
+            addressSuggestions.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
             
-            if (primaryCheckButton) {
-                primaryCheckButton.addEventListener('click', handleAddressSubmit);
-            }
-            if (checkButtonDesktop) {
-                checkButtonDesktop.addEventListener('click', handleAddressSubmit);
-            }
+            checkButton.addEventListener('click', handleAddressSubmit);
             registerAnonButton.addEventListener('click', handleRegisterAnonymous);
             registerFullButton.addEventListener('click', handleRegisterFull);
             resetButton.addEventListener('click', () => resetUI(true));
+            
+            // PRIORITÄT 2: Content auf Mobile sekundär laden (nach Karte und Funktionalität)
+            if (window.innerWidth <= 1023) {
+                // Lade Content nach kurzer Verzögerung, damit Karte und Funktionalität zuerst fertig sind
+                setTimeout(() => {
+                    loadMobileContent();
+                }, 1000); // 1 Sekunde nach initialem Laden
+            } else {
+                // Desktop: Content ist bereits im DOM, nichts zu tun
+                const mobileAccordion = document.getElementById('mobile-content-accordion');
+                if (mobileAccordion) {
+                    mobileAccordion.style.display = 'none';
+                }
+            }
         });
 
         function initMap() {
@@ -1067,15 +1048,7 @@
         
         // --- Adress-Autovervollständigung ---
         async function handleAddressInput(e) {
-            const query = (e.target.value || primaryAddressInput?.value || '').trim();
-            // Sync to other input
-            if (addressInput && addressInputDesktop) {
-                if (e.target === addressInput) {
-                    addressInputDesktop.value = query;
-                } else {
-                    addressInput.value = query;
-                }
-            }
+            const query = e.target.value.trim();
             selectedSuggestionIndex = -1;
             selectedSuggestionData = null;
             
@@ -1113,25 +1086,18 @@
                     });
                     
                     // Nur anzeigen, wenn der Input noch der gleiche ist (verhindert Race Conditions)
-                    const currentValue = primaryAddressInput?.value?.trim() || '';
-                    if (currentValue === query) {
+                    if (addressInput.value.trim() === query) {
                         if (currentSuggestions.length > 0) {
                             displaySuggestions(currentSuggestions);
                         } else {
-                            const suggestionsEl = primaryAddressSuggestions || addressSuggestionsDesktop;
-                            if (suggestionsEl) {
-                                suggestionsEl.innerHTML = '<div class="suggestion-item">Keine Adressen gefunden</div>';
-                                suggestionsEl.classList.remove('hidden');
-                            }
+                            addressSuggestions.innerHTML = '<div class="suggestion-item">Keine Adressen gefunden</div>';
+                            addressSuggestions.classList.remove('hidden');
                         }
                     }
                 } catch (err) {
                     console.error("Fehler beim Abrufen von Adressvorschlägen:", err);
-                    const suggestionsEl = primaryAddressSuggestions || addressSuggestionsDesktop;
-                    if (suggestionsEl) {
-                        suggestionsEl.innerHTML = '<div class="suggestion-item error">Fehler beim Laden der Adressen</div>';
-                        suggestionsEl.classList.remove('hidden');
-                    }
+                    addressSuggestions.innerHTML = '<div class="suggestion-item error">Fehler beim Laden der Adressen</div>';
+                    addressSuggestions.classList.remove('hidden');
                     currentSuggestions = [];
                 }
             }, 300);
@@ -1140,19 +1106,11 @@
         function displaySuggestions(suggestions) {
             console.log('[AUTOCOMPLETE] Zeige', suggestions.length, 'Vorschläge');
             if (suggestions.length === 0) {
-                if (primaryAddressSuggestions) primaryAddressSuggestions.classList.add('hidden');
-                if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
+                addressSuggestions.classList.add('hidden');
                 return;
             }
             
-            const targetSuggestions = primaryAddressSuggestions || addressSuggestionsDesktop;
-            if (!targetSuggestions) return;
-            
-            targetSuggestions.innerHTML = '';
-            // Also update desktop if it exists
-            if (addressSuggestionsDesktop && addressSuggestionsDesktop !== targetSuggestions) {
-                addressSuggestionsDesktop.innerHTML = '';
-            }
+            addressSuggestions.innerHTML = '';
             
             // Zeige max. 8 Vorschläge für bessere UX
             const maxSuggestions = Math.min(suggestions.length, 8);
@@ -1182,43 +1140,23 @@
                     }
                     selectSuggestion(suggestion);
                 });
-                targetSuggestions.appendChild(item);
-                // Also add to desktop if different
-                if (addressSuggestionsDesktop && addressSuggestionsDesktop !== targetSuggestions) {
-                    const itemDesktop = item.cloneNode(true);
-                    itemDesktop.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
-                        if (typeof suggestion === 'object' && suggestion.label) {
-                            selectedSuggestionData = suggestion;
-                        } else {
-                            selectedSuggestionData = { label: label };
-                        }
-                        selectSuggestion(suggestion);
-                    });
-                    addressSuggestionsDesktop.appendChild(itemDesktop);
-                }
+                addressSuggestions.appendChild(item);
                 displayedCount++;
             }
             
             if (displayedCount > 0) {
-                if (targetSuggestions) targetSuggestions.classList.remove('hidden');
-                if (addressSuggestionsDesktop && addressSuggestionsDesktop !== targetSuggestions) {
-                    addressSuggestionsDesktop.classList.remove('hidden');
-                }
+                addressSuggestions.classList.remove('hidden');
                 console.log('[AUTOCOMPLETE] Dropdown angezeigt');
             } else {
-                if (targetSuggestions) targetSuggestions.classList.add('hidden');
-                if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
+                addressSuggestions.classList.add('hidden');
             }
         }
         
         function selectSuggestion(suggestion) {
             // Normalisiere: Handle sowohl String als auch Objekt
             const label = typeof suggestion === 'string' ? suggestion : (suggestion.label || '');
-            if (primaryAddressInput) primaryAddressInput.value = label;
-            if (addressInputDesktop) addressInputDesktop.value = label;
-            if (primaryAddressSuggestions) primaryAddressSuggestions.classList.add('hidden');
-            if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
+            addressInput.value = label;
+            addressSuggestions.classList.add('hidden');
             currentSuggestions = [];
             selectedSuggestionIndex = -1;
             
@@ -1231,8 +1169,7 @@
         }
         
         function handleAddressKeydown(e) {
-            const suggestionsEl = primaryAddressSuggestions || addressSuggestionsDesktop;
-            if (suggestionsEl && !suggestionsEl.classList.contains('hidden') && currentSuggestions.length > 0) {
+            if (!addressSuggestions.classList.contains('hidden') && currentSuggestions.length > 0) {
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, currentSuggestions.length - 1);
@@ -1251,9 +1188,7 @@
         }
         
         function updateSuggestionHighlight() {
-            const suggestionsEl = primaryAddressSuggestions || addressSuggestionsDesktop;
-            if (!suggestionsEl) return;
-            const items = suggestionsEl.querySelectorAll('.suggestion-item');
+            const items = addressSuggestions.querySelectorAll('.suggestion-item');
             items.forEach((item, index) => {
                 if (index === selectedSuggestionIndex) {
                     item.classList.add('active');
@@ -1266,7 +1201,7 @@
         
         // --- 2. Adress-Prüfung ---
         async function handleAddressSubmit() {
-            const address = (primaryAddressInput?.value || '').trim();
+            const address = addressInput.value.trim();
             if (!address) {
                 checkMessage.textContent = "Bitte geben Sie eine Adresse ein.";
                 return;
@@ -1505,8 +1440,7 @@
             }
             
             // Schließe Dropdown
-            if (primaryAddressSuggestions) primaryAddressSuggestions.classList.add('hidden');
-            if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
+            addressSuggestions.classList.add('hidden');
             currentSuggestions = [];
             selectedSuggestionIndex = -1;
             
