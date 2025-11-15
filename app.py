@@ -5,7 +5,10 @@ import math
 import hashlib
 import threading
 import logging
+import json
+import shutil
 from datetime import timedelta
+from pathlib import Path
 from flask import Flask, request, jsonify, render_template, abort, Response
 import pandas as pd
 import numpy as np
@@ -136,6 +139,21 @@ def apply_basic_security_headers(response):
     return response
 
 
+# --- Persistenz-Konfiguration ---
+# Railway Volume Mount Path (oder lokales Verzeichnis für Development)
+DATA_DIR = Path(os.getenv('DATA_DIR', '/data'))
+if not DATA_DIR.exists():
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        logger.info(f"[PERSISTENCE] Datenverzeichnis erstellt: {DATA_DIR}")
+    except Exception as e:
+        logger.warning(f"[PERSISTENCE] Konnte Datenverzeichnis nicht erstellen: {e}, verwende /tmp")
+        DATA_DIR = Path('/tmp/badenleg_data')
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+DB_FILE = DATA_DIR / 'database.json'
+BACKUP_FILE = DATA_DIR / 'database.backup.json'
+
 # --- Simulierte In-Memory-Datenbank ---
 DB_BUILDINGS = {} # Vollständig registrierte Gebäude
 DB_INTEREST_POOL = {} # Anonyme Interessenten (Schlüssel: building_id)
@@ -148,6 +166,103 @@ CLUSTER_CONTACT_STATE = {} # cluster_id -> Set der zuletzt benachrichtigten Geb�
 DB_CLUSTERS = {} # z.B. {'building_abc': 1, 'building_xyz': 1}
 DB_CLUSTER_INFO = {} # z.B. {1: {'autarky_percent': 75.2, ...}}
 db_lock = threading.Lock() # Verhindert Race Conditions
+
+# --- Persistenz-Funktionen ---
+_save_timer = None
+_save_lock = threading.Lock()
+
+def load_database():
+    """Lädt Daten aus JSON-Datei beim Start"""
+    global DB_BUILDINGS, DB_INTEREST_POOL, DB_VERIFICATION_TOKENS, DB_UNSUBSCRIBE_TOKENS, CLUSTER_CONTACT_STATE, DB_CLUSTERS
+    
+    if DB_FILE.exists():
+        try:
+            with open(DB_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                DB_BUILDINGS = data.get('buildings', {})
+                DB_INTEREST_POOL = data.get('interest_pool', {})
+                DB_VERIFICATION_TOKENS = data.get('verification_tokens', {})
+                DB_UNSUBSCRIBE_TOKENS = data.get('unsubscribe_tokens', {})
+                # Sets aus Listen wiederherstellen
+                CLUSTER_CONTACT_STATE = {
+                    k: set(v) if isinstance(v, list) else v 
+                    for k, v in data.get('cluster_contact_state', {}).items()
+                }
+                DB_CLUSTERS = data.get('clusters', {})
+                logger.info(f"[PERSISTENCE] Daten geladen: {len(DB_BUILDINGS)} Gebäude, {len(DB_INTEREST_POOL)} Interessenten, {len(DB_CLUSTERS)} Cluster")
+        except Exception as e:
+            logger.error(f"[PERSISTENCE] Fehler beim Laden: {e}")
+            import traceback
+            traceback.print_exc()
+            # Fallback: Leere Datenstrukturen
+            DB_BUILDINGS = {}
+            DB_INTEREST_POOL = {}
+            DB_VERIFICATION_TOKENS = {}
+            DB_UNSUBSCRIBE_TOKENS = {}
+            CLUSTER_CONTACT_STATE = {}
+            DB_CLUSTERS = {}
+    else:
+        logger.info("[PERSISTENCE] Keine bestehende Datenbank gefunden, starte mit leeren Daten")
+
+def save_database():
+    """Speichert Daten in JSON-Datei (thread-safe)"""
+    global _save_timer
+    with _save_lock:
+        try:
+            # Backup erstellen (nur wenn Datei existiert)
+            if DB_FILE.exists():
+                try:
+                    shutil.copy(DB_FILE, BACKUP_FILE)
+                except Exception as e:
+                    logger.warning(f"[PERSISTENCE] Backup konnte nicht erstellt werden: {e}")
+            
+            # Daten serialisieren (Sets zu Listen konvertieren)
+            data = {
+                'buildings': DB_BUILDINGS,
+                'interest_pool': DB_INTEREST_POOL,
+                'verification_tokens': DB_VERIFICATION_TOKENS,
+                'unsubscribe_tokens': DB_UNSUBSCRIBE_TOKENS,
+                'cluster_contact_state': {
+                    k: list(v) if isinstance(v, set) else v 
+                    for k, v in CLUSTER_CONTACT_STATE.items()
+                },
+                'clusters': DB_CLUSTERS,
+                'last_saved': time.time()
+            }
+            
+            # Atomisches Schreiben (erst temp, dann rename)
+            temp_file = DB_FILE.with_suffix('.tmp')
+            with open(temp_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            # Atomisches Replace
+            if os.name == 'nt':  # Windows
+                if DB_FILE.exists():
+                    DB_FILE.unlink()
+                temp_file.rename(DB_FILE)
+            else:  # Unix/Linux
+                temp_file.replace(DB_FILE)
+            
+            logger.debug(f"[PERSISTENCE] Daten gespeichert: {len(DB_BUILDINGS)} Gebäude, {len(DB_INTEREST_POOL)} Interessenten")
+        except Exception as e:
+            logger.error(f"[PERSISTENCE] Fehler beim Speichern: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            _save_timer = None
+
+def schedule_save():
+    """Plant Speicherung nach kurzer Verzögerung (Debouncing)"""
+    global _save_timer
+    with _save_lock:
+        if _save_timer:
+            _save_timer.cancel()
+        _save_timer = threading.Timer(5.0, save_database)  # 5 Sekunden Verzögerung
+        _save_timer.daemon = True
+        _save_timer.start()
+
+# Beim Start Daten laden
+load_database()
 
 ANONYMITY_RADIUS_METERS = 120  # Radius für Karten-Darstellung zur Wahrung der Privatsphäre
 
@@ -271,6 +386,7 @@ def issue_verification_token(building_id):
     
     # Speichere asynchron
     _save_tokens_async()
+    schedule_save()  # Persistiere auch in JSON-Datei
     
     return token
 
@@ -287,6 +403,7 @@ def issue_unsubscribe_token(building_id):
     
     # Speichere asynchron
     _save_tokens_async()
+    schedule_save()  # Persistiere auch in JSON-Datei
     
     return token
 
@@ -300,6 +417,7 @@ def remove_building(building_id):
         if removed:
             _invalidate_tokens_for_building(building_id)
             CLUSTER_CONTACT_STATE.clear()
+            schedule_save()  # Persistiere Löschung
     if removed:
         threading.Thread(target=run_full_ml_task, daemon=True).start()
     return removed
@@ -904,6 +1022,7 @@ def notify_cluster_contacts(buildings_with_clusters):
                 continue
 
             CLUSTER_CONTACT_STATE[cluster_id] = member_set
+            schedule_save()  # Persistiere Cluster-Contact-State
             pending_notifications.append((cluster_id, cluster_info, verified_contacts))
 
     for cluster_id, cluster_info, contacts in pending_notifications:
@@ -998,6 +1117,7 @@ def run_full_ml_task(new_building_id=None):
                 building_id = row.get('building_id')
                 if building_id:
                     DB_CLUSTERS[building_id] = row.get('cluster', -1)
+            schedule_save()  # Persistiere Cluster-Zuordnungen
             
         for community in ranked_communities:
             DB_CLUSTER_INFO[community['community_id']] = community
@@ -1248,6 +1368,7 @@ def unsubscribe_token(token):
         if token_info:
             _token_created_at.pop(f'unsubscribe_{token}', None)
             _save_tokens_async()
+            schedule_save()  # Persistiere Token-Cleanup
 
     if not token_info:
         log_security_event("TOKEN_NOT_FOUND", f"unsubscribe: Token not found or already used", 'INFO')
@@ -1505,6 +1626,7 @@ def api_register_anonymous():
         if phone:
             entry["phone"] = phone
         DB_INTEREST_POOL[building_id] = entry
+        schedule_save()  # Persistiere neue Registrierung
         unsubscribe_token = issue_unsubscribe_token(building_id)
     
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
@@ -1621,6 +1743,7 @@ def api_register_full():
         if phone:
             entry["phone"] = phone
         DB_BUILDINGS[building_id] = entry
+        schedule_save()  # Persistiere neue Registrierung
         unsubscribe_token = issue_unsubscribe_token(building_id)
     
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
@@ -1697,10 +1820,12 @@ def confirm_match(token):
                 DB_BUILDINGS[building_id] = record
             elif source == 'anonymous':
                 DB_INTEREST_POOL[building_id] = record
+            schedule_save()  # Persistiere Verifizierung
             
             # Cleanup Token
             DB_VERIFICATION_TOKENS.pop(token, None)
             _token_created_at.pop(f'verification_{token}', None)
+            schedule_save()  # Persistiere Token-Cleanup
             
             # Benachrichtige andere
             threading.Thread(target=notify_existing_interested_persons, args=(building_id, record), daemon=True).start()

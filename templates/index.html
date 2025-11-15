@@ -249,6 +249,70 @@
             #mobile-content-accordion.loaded {
                 display: block;
             }
+            
+            /* Mobile Fullscreen Content Overlay */
+            #mobile-fullscreen-content {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                height: 100vh;
+                background: white;
+                z-index: 10000;
+                overflow-y: auto;
+                padding: 1rem;
+                padding-top: 3.5rem; /* Platz für Close-Button */
+            }
+            
+            #mobile-fullscreen-content.active {
+                display: block;
+            }
+            
+            /* Hide map and control panel when fullscreen content is active */
+            body.mobile-content-open #map {
+                display: none !important;
+            }
+            
+            body.mobile-content-open #control-panel {
+                display: none !important;
+            }
+            
+            body.mobile-content-open .mobile-logo {
+                display: none !important;
+            }
+            
+            /* Close button */
+            #mobile-close-button {
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                z-index: 10001;
+                background: var(--brand-color);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 48px;
+                height: 48px;
+                font-size: 1.5rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            
+            #mobile-close-button:hover {
+                transform: scale(1.1);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+            
+            #mobile-close-button:active {
+                transform: scale(0.95);
+            }
         }
         
         /* Tablet: Zentriert */
@@ -505,53 +569,73 @@
             <div id="check-loader" class="loader mx-auto my-4 hidden"></div>
             <p id="check-message" class="text-center text-red-600 mt-4 font-medium"></p>
             
-            <!-- Mobile Accordion (lazy loaded) -->
+            <!-- Mobile Accordion Button (lazy loaded) -->
             <div id="mobile-content-accordion">
-                <details class="mt-4 border border-gray-200 rounded-md bg-gray-50">
-                    <summary class="text-base font-semibold text-gray-800 p-4 cursor-pointer hover:bg-gray-100 transition-colors list-none">
-                        Mehr Informationen
-                    </summary>
-                    <div class="px-4 pb-4 pt-2 space-y-4">
-                        <!-- Header Content -->
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-800 mb-2"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
-                            <h2 class="text-sm text-gray-600 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
-                        </div>
-                        
-                        <!-- Article Content -->
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-800 mb-2">LEG Baden – So funktioniert's</h3>
-                            <p class="text-sm text-gray-600 leading-relaxed">
+                <button id="mobile-info-button" class="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-4 px-4 rounded-md transition-colors border border-gray-200">
+                    Mehr Informationen
+                </button>
+            </div>
+            
+            <!-- Mobile Fullscreen Content Overlay -->
+            <div id="mobile-fullscreen-content">
+                <button id="mobile-close-button" aria-label="Schließen">×</button>
+                
+                <div class="space-y-6">
+                    <!-- Header Content -->
+                    <header class="text-center">
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
+                        <h2 class="text-base text-gray-600 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
+                    </header>
+                    
+                    <!-- Article Content -->
+                    <article>
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">LEG Baden – So funktioniert's</h3>
+                            <p class="text-base text-gray-600 leading-relaxed mb-4">
                                 Geben Sie Ihre Adresse in Baden ein, um passende Energie-Partner in Ihrer Nachbarschaft zu finden und eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> zu gründen.
                             </p>
-                        </div>
-                        
-                        <!-- FAQ Content -->
-                        <div class="border-t border-gray-200 pt-4">
-                            <h3 class="text-sm font-semibold text-gray-800 mb-3">Häufige Fragen</h3>
-                            <div class="space-y-3 text-sm text-gray-600">
-                                <div>
-                                    <strong class="text-gray-800">Was ist eine LEG?</strong>
-                                    <p class="mt-1">Eine Lokale Elektrizitätsgemeinschaft (LEG) ermöglicht es Nachbarn, gemeinsam erneuerbare Energie zu produzieren und zu teilen.</p>
-                                </div>
-                                <div>
-                                    <strong class="text-gray-800">Wie funktioniert die Registrierung?</strong>
-                                    <p class="mt-1">Geben Sie einfach Ihre Adresse ein. Wir finden passende Nachbarn und informieren Sie per E-Mail.</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- LEG Info -->
-                        <div class="border-t border-gray-200 pt-4">
-                            <h3 class="text-sm font-semibold text-gray-800 mb-2">LEG Baden - So funktioniert's</h3>
-                            <p class="text-sm text-gray-600 leading-relaxed">
+                            <p class="text-base text-gray-600 leading-relaxed">
                                 Wir gleichen Ihre Adresse in Baden mit anonymisierten Nachbarprofilen ab. Falls bereits Interessierte für eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> in Ihrer Nähe vorhanden sind,
                                 informieren wir Sie per E-Mail. Alle registrierten Haushalte erhalten automatisch eine Übersicht mit Adresse
                                 und E-Mail, damit Sie direkt in Kontakt treten und gemeinsam eine <strong>LEG in Baden</strong> gründen können.
                             </p>
+                        </section>
+                    </article>
+                    
+                    <!-- FAQ Content -->
+                    <div class="border-t border-gray-200 pt-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Häufige Fragen</h3>
+                        <div class="space-y-4 text-base text-gray-600">
+                            <div>
+                                <strong class="text-gray-800 block mb-2">Was ist eine LEG?</strong>
+                                <p>Eine Lokale Elektrizitätsgemeinschaft (LEG) ermöglicht es Nachbarn, gemeinsam erneuerbare Energie zu produzieren und zu teilen.</p>
+                            </div>
+                            <div>
+                                <strong class="text-gray-800 block mb-2">Wie funktioniert die Registrierung?</strong>
+                                <p>Geben Sie einfach Ihre Adresse ein. Wir finden passende Nachbarn und informieren Sie per E-Mail.</p>
+                            </div>
                         </div>
                     </div>
-                </details>
+                    
+                    <!-- Footer Content -->
+                    <footer class="border-t border-gray-200 pt-6 mt-6">
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <div>
+                                <a href="/leg" class="underline hover:text-gray-800">Was ist eine LEG?</a> |
+                                <a href="/evl" class="underline hover:text-gray-800">EVL</a> |
+                                <a href="/zev" class="underline hover:text-gray-800">ZEV</a> |
+                                <a href="/vergleich-leg-evl-zev" class="underline hover:text-gray-800">Vergleich</a>
+                            </div>
+                            <div>
+                                <a href="/impressum" class="underline hover:text-gray-800">Impressum</a> |
+                                <a href="/datenschutz" class="underline hover:text-gray-800">Datenschutz</a>
+                            </div>
+                            <div>
+                                Kontakt: <a href="mailto:hallo@badenleg.ch" class="underline hover:text-gray-800">hallo@badenleg.ch</a>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
             </div>
             
             <!-- Desktop Accordion (always visible on desktop) -->
@@ -762,6 +846,35 @@
             if (mobileAccordion) {
                 mobileAccordion.classList.add('loaded');
                 console.log('[MOBILE] Content-Akkordeon geladen');
+                
+                // Setup Mobile Fullscreen Content Toggle
+                const mobileInfoButton = document.getElementById('mobile-info-button');
+                const mobileFullscreenContent = document.getElementById('mobile-fullscreen-content');
+                const mobileCloseButton = document.getElementById('mobile-close-button');
+                
+                if (mobileInfoButton && mobileFullscreenContent) {
+                    mobileInfoButton.addEventListener('click', () => {
+                        mobileFullscreenContent.classList.add('active');
+                        document.body.classList.add('mobile-content-open');
+                        // Prevent body scroll when overlay is open
+                        document.body.style.overflow = 'hidden';
+                    });
+                }
+                
+                if (mobileCloseButton && mobileFullscreenContent) {
+                    mobileCloseButton.addEventListener('click', () => {
+                        mobileFullscreenContent.classList.remove('active');
+                        document.body.classList.remove('mobile-content-open');
+                        document.body.style.overflow = '';
+                    });
+                    
+                    // Also close on Escape key
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && mobileFullscreenContent.classList.contains('active')) {
+                            mobileCloseButton.click();
+                        }
+                    });
+                }
             }
         }
         
