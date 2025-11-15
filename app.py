@@ -833,28 +833,49 @@ def notify_existing_interested_persons(new_building_id, new_record):
         new_lon = new_profile.get('lon')
         new_email = new_record.get('email')
         
+        print(f"[NOTIFY] Starte Benachrichtigung für building_id {new_building_id}")
+        print(f"[NOTIFY] Neue Person - Lat: {new_lat}, Lon: {new_lon}, Email: {new_email}")
+        
         if not new_lat or not new_lon or not new_email:
             print(f"[NOTIFY] Keine vollständigen Daten für building_id {new_building_id}")
             return
         
+        # Warte kurz, damit der vorherige db_lock freigegeben wird und Dictionary-Einträge vollständig geschrieben sind
+        # Dies verhindert Race Conditions zwischen Threads
+        time.sleep(0.1)  # 100ms Verzögerung
+        
         # Finde alle verifizierten Personen in einem 150m Radius
         verified_contacts = []
         with db_lock:
+            print(f"[NOTIFY] Durchsuche DB_BUILDINGS ({len(DB_BUILDINGS)} Einträge) und DB_INTEREST_POOL ({len(DB_INTEREST_POOL)} Einträge)")
+            
             # Durchsuche DB_BUILDINGS
             for building_id, record in DB_BUILDINGS.items():
                 if building_id == new_building_id:
+                    print(f"[NOTIFY] Überspringe neue Person in DB_BUILDINGS: {building_id}")
                     continue  # Überspringe die neue Person
-                if not record.get('verified') or not record.get('email'):
-                    continue
+                
+                is_verified = record.get('verified')
+                has_email = bool(record.get('email'))
                 profile = record.get('profile', {})
                 p_lat = profile.get('lat')
                 p_lon = profile.get('lon')
+                
+                print(f"[NOTIFY] DB_BUILDINGS: Prüfe building_id {building_id}: verified={is_verified}, email={has_email}, lat={p_lat}, lon={p_lon}")
+                
+                if not is_verified or not has_email:
+                    print(f"[NOTIFY] DB_BUILDINGS: Überspringe {building_id}: nicht verifiziert oder keine E-Mail")
+                    continue
                 if not p_lat or not p_lon:
+                    print(f"[NOTIFY] DB_BUILDINGS: Überspringe {building_id}: keine Koordinaten")
                     continue
                 
                 # Berechne Distanz
                 distance = ml_models.calculate_distance(new_lat, new_lon, p_lat, p_lon)
+                print(f"[NOTIFY] DB_BUILDINGS: building_id {building_id}: Distanz = {distance:.2f}m")
+                
                 if distance <= 150:  # 150m Radius
+                    print(f"[NOTIFY] ✓ DB_BUILDINGS: Gefunden {building_id} in {distance:.2f}m Entfernung")
                     unsubscribe_token = issue_unsubscribe_token(building_id)
                     verified_contacts.append({
                         'building_id': building_id,
@@ -867,18 +888,30 @@ def notify_existing_interested_persons(new_building_id, new_record):
             # Durchsuche DB_INTEREST_POOL
             for building_id, record in DB_INTEREST_POOL.items():
                 if building_id == new_building_id:
+                    print(f"[NOTIFY] Überspringe neue Person in DB_INTEREST_POOL: {building_id}")
                     continue  # Überspringe die neue Person
-                if not record.get('verified') or not record.get('email'):
-                    continue
+                
+                is_verified = record.get('verified')
+                has_email = bool(record.get('email'))
                 profile = record.get('profile', {})
                 p_lat = profile.get('lat')
                 p_lon = profile.get('lon')
+                
+                print(f"[NOTIFY] DB_INTEREST_POOL: Prüfe building_id {building_id}: verified={is_verified}, email={has_email}, lat={p_lat}, lon={p_lon}")
+                
+                if not is_verified or not has_email:
+                    print(f"[NOTIFY] DB_INTEREST_POOL: Überspringe {building_id}: nicht verifiziert oder keine E-Mail")
+                    continue
                 if not p_lat or not p_lon:
+                    print(f"[NOTIFY] DB_INTEREST_POOL: Überspringe {building_id}: keine Koordinaten")
                     continue
                 
                 # Berechne Distanz
                 distance = ml_models.calculate_distance(new_lat, new_lon, p_lat, p_lon)
+                print(f"[NOTIFY] DB_INTEREST_POOL: building_id {building_id}: Distanz = {distance:.2f}m")
+                
                 if distance <= 150:  # 150m Radius
+                    print(f"[NOTIFY] ✓ DB_INTEREST_POOL: Gefunden {building_id} in {distance:.2f}m Entfernung")
                     unsubscribe_token = issue_unsubscribe_token(building_id)
                     verified_contacts.append({
                         'building_id': building_id,
@@ -887,6 +920,8 @@ def notify_existing_interested_persons(new_building_id, new_record):
                         'phone': record.get('phone', ''),
                         'unsubscribe_url': f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
                     })
+        
+        print(f"[NOTIFY] Gesamt gefunden: {len(verified_contacts)} bestehende Interessenten")
         
         # Wenn keine bestehenden Interessenten gefunden wurden, nichts tun
         if len(verified_contacts) == 0:
@@ -1210,6 +1245,12 @@ def index():
         os.makedirs('templates')
         print("WARNUNG: 'templates'-Ordner wurde erstellt. Bitte 'index.html' dort ablegen.")
     return render_template('index.html', site_url=SITE_URL)
+
+@app.route("/info")
+@limiter.limit("30 per minute") if limiter else lambda f: f
+def info():
+    """Info-Seite mit allen Informationen über LEG Baden"""
+    return render_template('info.html', site_url=SITE_URL)
 
 
 @app.route("/robots.txt")
