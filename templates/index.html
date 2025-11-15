@@ -571,8 +571,8 @@
             
             <!-- Mobile Accordion Button (lazy loaded) -->
             <div id="mobile-content-accordion">
-                <button id="mobile-info-button" class="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-4 px-4 rounded-md transition-colors border border-gray-200">
-                    Mehr Informationen
+                <button id="mobile-info-button" type="button" class="mt-4 w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-800 font-semibold py-4 px-4 rounded-md transition-colors border border-gray-200">
+                    ℹ️ Über LEG Baden
                 </button>
             </div>
             
@@ -651,6 +651,39 @@
                     </p>
                 </div>
             </details>
+            
+            <!-- FAQ Section mit Schema.org -->
+            <section itemscope itemtype="https://schema.org/FAQPage" class="mt-6 pt-4 border-t border-gray-200">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Häufige Fragen zu LEG in Baden</h2>
+                
+                <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
+                    <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Was ist eine LEG in Baden?</h3>
+                    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> in Baden ermöglicht es Hauseigentümern, gemeinsam Solarstrom zu produzieren und zu verbrauchen. Ab 2026 ist dies in der gesamten Schweiz möglich. Erfahren Sie mehr über <a href="/leg" class="underline hover:text-gray-800">LEG in Baden</a>.</p>
+                    </div>
+                </div>
+                
+                <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
+                    <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Wie finde ich Nachbarn für eine LEG in Baden?</h3>
+                    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Mit BadenLEG können Sie kostenlos Ihre Adresse in Baden eingeben. Wir finden automatisch passende Nachbarn in Ihrer Nähe, die ebenfalls an einer <strong>Lokalen Elektrizitätsgemeinschaft (LEG)</strong> interessiert sind.</p>
+                    </div>
+                </div>
+                
+                <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
+                    <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Wann kann ich eine LEG in Baden gründen?</h3>
+                    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Ab dem 01.01.2026 können Hauseigentümerinnen und Hauseigentümer in Baden eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> gründen. Jetzt ist der richtige Zeitpunkt, um sich zu registrieren und passende Nachbarn zu finden.</p>
+                    </div>
+                </div>
+                
+                <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
+                    <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Was ist der Unterschied zwischen LEG, EVL und ZEV in Baden?</h3>
+                    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Eine <strong>LEG (Lokale Elektrizitätsgemeinschaft)</strong> ist für mehrere Gebäude gedacht, eine <strong>EVL (Eigenverbrauchslösung)</strong> für Mehrfamilienhäuser und ein <strong>ZEV (Zusammenschluss zum Eigenverbrauch)</strong> für ein einzelnes Gebäude. Erfahren Sie mehr im <a href="/vergleich-leg-evl-zev" class="underline hover:text-gray-800">Vergleich der Modelle</a>.</p>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <div id="result-step" class="hidden">
@@ -692,39 +725,6 @@
         </div>
         
         <button id="reset-button" class="text-center text-gray-500 text-sm mt-4 w-full hidden hover:text-gray-700">Neue Adresse prüfen</button>
-
-        <!-- FAQ Section mit Schema.org -->
-        <section itemscope itemtype="https://schema.org/FAQPage" class="mt-6 pt-4 border-t border-gray-200">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">Häufige Fragen zu LEG in Baden</h2>
-            
-            <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
-                <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Was ist eine LEG in Baden?</h3>
-                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-                    <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> in Baden ermöglicht es Hauseigentümern, gemeinsam Solarstrom zu produzieren und zu verbrauchen. Ab 2026 ist dies in der gesamten Schweiz möglich. Erfahren Sie mehr über <a href="/leg" class="underline hover:text-gray-800">LEG in Baden</a>.</p>
-                </div>
-            </div>
-            
-            <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
-                <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Wie finde ich Nachbarn für eine LEG in Baden?</h3>
-                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-                    <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Mit BadenLEG können Sie kostenlos Ihre Adresse in Baden eingeben. Wir finden automatisch passende Nachbarn in Ihrer Nähe, die ebenfalls an einer <strong>Lokalen Elektrizitätsgemeinschaft (LEG)</strong> interessiert sind.</p>
-                </div>
-            </div>
-            
-            <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
-                <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Wann kann ich eine LEG in Baden gründen?</h3>
-                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-                    <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Ab dem 01.01.2026 können Hauseigentümerinnen und Hauseigentümer in Baden eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> gründen. Jetzt ist der richtige Zeitpunkt, um sich zu registrieren und passende Nachbarn zu finden.</p>
-                </div>
-            </div>
-            
-            <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" class="mb-4">
-                <h3 itemprop="name" class="text-base font-semibold text-gray-800 mb-2">Was ist der Unterschied zwischen LEG, EVL und ZEV in Baden?</h3>
-                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-                    <p itemprop="text" class="text-sm text-gray-600 leading-relaxed">Eine <strong>LEG (Lokale Elektrizitätsgemeinschaft)</strong> ist für mehrere Gebäude gedacht, eine <strong>EVL (Eigenverbrauchslösung)</strong> für Mehrfamilienhäuser und ein <strong>ZEV (Zusammenschluss zum Eigenverbrauch)</strong> für ein einzelnes Gebäude. Erfahren Sie mehr im <a href="/vergleich-leg-evl-zev" class="underline hover:text-gray-800">Vergleich der Modelle</a>.</p>
-                </div>
-            </div>
-        </section>
 
         <!-- Footer: Mehr erfahren & Links -->
         <div class="mt-6 pt-4 border-t border-gray-200">
@@ -840,6 +840,67 @@
             iconAnchor: [105, 105]
         });
 
+        // Setup Mobile Fullscreen Content Toggle (wird sofort beim DOMContentLoaded aufgerufen)
+        function setupMobileFullscreen() {
+            const mobileInfoButton = document.getElementById('mobile-info-button');
+            const mobileFullscreenContent = document.getElementById('mobile-fullscreen-content');
+            const mobileCloseButton = document.getElementById('mobile-close-button');
+            
+            if (mobileInfoButton && mobileFullscreenContent) {
+                // Entferne eventuelle alte Event Listener
+                const newButton = mobileInfoButton.cloneNode(true);
+                mobileInfoButton.parentNode.replaceChild(newButton, mobileInfoButton);
+                
+                // Füge neuen Event Listener hinzu
+                newButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[MOBILE] Button geklickt, öffne Fullscreen');
+                    mobileFullscreenContent.classList.add('active');
+                    document.body.classList.add('mobile-content-open');
+                    document.body.style.overflow = 'hidden';
+                });
+                
+                // Touch Event für bessere Mobile-Unterstützung
+                newButton.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[MOBILE] Button berührt, öffne Fullscreen');
+                    mobileFullscreenContent.classList.add('active');
+                    document.body.classList.add('mobile-content-open');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+            
+            if (mobileCloseButton && mobileFullscreenContent) {
+                mobileCloseButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    mobileFullscreenContent.classList.remove('active');
+                    document.body.classList.remove('mobile-content-open');
+                    document.body.style.overflow = '';
+                });
+                
+                // Touch Event für Close Button
+                mobileCloseButton.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    mobileFullscreenContent.classList.remove('active');
+                    document.body.classList.remove('mobile-content-open');
+                    document.body.style.overflow = '';
+                });
+                
+                // Also close on Escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && mobileFullscreenContent.classList.contains('active')) {
+                        mobileFullscreenContent.classList.remove('active');
+                        document.body.classList.remove('mobile-content-open');
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
+        }
+        
         // Mobile Content lazy loading
         function loadMobileContent() {
             const mobileAccordion = document.getElementById('mobile-content-accordion');
@@ -847,34 +908,8 @@
                 mobileAccordion.classList.add('loaded');
                 console.log('[MOBILE] Content-Akkordeon geladen');
                 
-                // Setup Mobile Fullscreen Content Toggle
-                const mobileInfoButton = document.getElementById('mobile-info-button');
-                const mobileFullscreenContent = document.getElementById('mobile-fullscreen-content');
-                const mobileCloseButton = document.getElementById('mobile-close-button');
-                
-                if (mobileInfoButton && mobileFullscreenContent) {
-                    mobileInfoButton.addEventListener('click', () => {
-                        mobileFullscreenContent.classList.add('active');
-                        document.body.classList.add('mobile-content-open');
-                        // Prevent body scroll when overlay is open
-                        document.body.style.overflow = 'hidden';
-                    });
-                }
-                
-                if (mobileCloseButton && mobileFullscreenContent) {
-                    mobileCloseButton.addEventListener('click', () => {
-                        mobileFullscreenContent.classList.remove('active');
-                        document.body.classList.remove('mobile-content-open');
-                        document.body.style.overflow = '';
-                    });
-                    
-                    // Also close on Escape key
-                    document.addEventListener('keydown', (e) => {
-                        if (e.key === 'Escape' && mobileFullscreenContent.classList.contains('active')) {
-                            mobileCloseButton.click();
-                        }
-                    });
-                }
+                // Setup Event Listeners nach dem Lazy Load
+                setupMobileFullscreen();
             }
         }
         
@@ -905,11 +940,16 @@
             registerFullButton.addEventListener('click', handleRegisterFull);
             resetButton.addEventListener('click', () => resetUI(true));
             
+            // Setup Mobile Fullscreen Button sofort (auch wenn noch nicht geladen)
+            setupMobileFullscreen();
+            
             // PRIORITÄT 2: Content auf Mobile sekundär laden (nach Karte und Funktionalität)
             if (window.innerWidth <= 1023) {
                 // Lade Content nach kurzer Verzögerung, damit Karte und Funktionalität zuerst fertig sind
                 setTimeout(() => {
                     loadMobileContent();
+                    // Setup nochmal nach Lazy Load (falls Button neu gerendert wurde)
+                    setupMobileFullscreen();
                 }, 1000); // 1 Sekunde nach initialem Laden
             } else {
                 // Desktop: Content ist bereits im DOM, nichts zu tun
