@@ -79,6 +79,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 # --- Email Configuration ---
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
 FROM_EMAIL = os.getenv('FROM_EMAIL', 'noreply@badenleg.ch')
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'hallo@badenleg.ch')
 EMAIL_ENABLED = HAS_SENDGRID and SENDGRID_API_KEY
 
 # --- Rate Limiting & Security (Minimal for Railway) ---
@@ -353,7 +354,36 @@ def find_buildings_by_building_id(building_id):
             return True
     return False
 
-def send_confirmation_email(email, unsubscribe_url):
+def send_activity_notification(activity_type, details):
+    """Sendet Aktivitäts-Benachrichtigung an Admin-E-Mail"""
+    subject = f"BadenLEG Aktivität: {activity_type}"
+    message_body = f"Neue Aktivität auf BadenLEG:\n\nTyp: {activity_type}\n\nDetails:\n{details}\n\n---\nAutomatische Benachrichtigung von BadenLEG"
+    
+    if EMAIL_ENABLED:
+        try:
+            message = Mail(
+                from_email=FROM_EMAIL,
+                to_emails=ADMIN_EMAIL,
+                subject=subject,
+                plain_text_content=message_body
+            )
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            response = sg.send(message)
+            logger.info(f"[ACTIVITY] Benachrichtigung gesendet an {ADMIN_EMAIL} (Status: {response.status_code})")
+        except Exception as e:
+            logger.error(f"[ACTIVITY] Fehler beim Senden an {ADMIN_EMAIL}: {e}")
+            print(f"\n--- [ACTIVITY NOTIFICATION - FEHLER] ---")
+            print(f"AN: {ADMIN_EMAIL}")
+            print(message_body)
+            print("----------------------------------------\n")
+    else:
+        print(f"\n--- [ACTIVITY NOTIFICATION] ---")
+        print(f"AN: {ADMIN_EMAIL}")
+        print(f"BETREFF: {subject}")
+        print(message_body)
+        print("--------------------------------\n")
+
+def send_confirmation_email(email, unsubscribe_url, building_id=None, address=None):
     """Sendet Bestätigungs-E-Mail via SendGrid oder gibt sie in Logs aus"""
     subject = "BadenLEG – Sie sind jetzt registriert"
     message_body = (
@@ -374,11 +404,16 @@ def send_confirmation_email(email, unsubscribe_url):
                 from_email=FROM_EMAIL,
                 to_emails=email,
                 subject=subject,
-                plain_text_content=message_body
+                plain_text_content=message_body,
+                bcc=[ADMIN_EMAIL]  # Send copy to admin
             )
             sg = SendGridAPIClient(SENDGRID_API_KEY)
             response = sg.send(message)
             logger.info(f"[EMAIL] Bestätigung gesendet an {email} (Status: {response.status_code})")
+            
+            # Send activity notification
+            activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}"
+            send_activity_notification("Neue Registrierung", activity_details)
         except Exception as e:
             logger.error(f"[EMAIL] Fehler beim Senden an {email}: {e}")
             # Fallback: Log in Console
@@ -393,6 +428,10 @@ def send_confirmation_email(email, unsubscribe_url):
         print(f"BETREFF: {subject}")
         print(message_body)
         print("-----------------------------\n")
+        
+        # Send activity notification even in dev mode
+        activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}"
+        send_activity_notification("Neue Registrierung", activity_details)
 
 def check_duplicates_background(email, phone, address, building_id):
     """
@@ -524,11 +563,16 @@ def send_duplicate_email(email, duplicate_type, duplicate_info, message, buildin
                 from_email=FROM_EMAIL,
                 to_emails=email,
                 subject=subject,
-                plain_text_content=body
+                plain_text_content=body,
+                bcc=[ADMIN_EMAIL]  # Send copy to admin
             )
             sg = SendGridAPIClient(SENDGRID_API_KEY)
             response = sg.send(message_obj)
             logger.info(f"[EMAIL] Duplikat-Benachrichtigung gesendet an {email} (Status: {response.status_code})")
+            
+            # Send activity notification
+            activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}"
+            send_activity_notification("Duplikat erkannt", activity_details)
         except Exception as e:
             logger.error(f"[EMAIL] Fehler beim Senden an {email}: {e}")
             print(f"\n--- [EMAIL DUPLIKAT - FEHLER] ---")
@@ -541,6 +585,10 @@ def send_duplicate_email(email, duplicate_type, duplicate_info, message, buildin
         print(f"BETREFF: {subject}")
         print(body)
         print("-------------------------\n")
+        
+        # Send activity notification even in dev mode
+        activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}"
+        send_activity_notification("Duplikat erkannt", activity_details)
 
 def check_and_handle_duplicates(email, phone, address, building_id):
     """
@@ -614,7 +662,8 @@ def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
                     from_email=FROM_EMAIL,
                     to_emails=recipient,
                     subject=subject,
-                    plain_text_content=body
+                    plain_text_content=body,
+                    bcc=[ADMIN_EMAIL]  # Send copy to admin
                 )
                 sg = SendGridAPIClient(SENDGRID_API_KEY)
                 response = sg.send(message)
@@ -633,6 +682,10 @@ def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
             print(f"BETREFF: {subject}")
             print(body)
             print("---------------------------------\n")
+    
+    # Send activity notification for cluster contact emails
+    activity_details = f"Cluster-Kontaktübersicht gesendet:\nCluster ID: {cluster_id}\nAutarkie: {autarky:.1f}%\nAnzahl Kontakte: {len(verified_contacts)}"
+    send_activity_notification("Cluster-Kontaktübersicht", activity_details)
 
 def notify_existing_interested_persons(new_building_id, new_record):
     """
@@ -763,7 +816,8 @@ def notify_existing_interested_persons(new_building_id, new_record):
                         from_email=FROM_EMAIL,
                         to_emails=recipient,
                         subject=subject,
-                        plain_text_content=body
+                        plain_text_content=body,
+                        bcc=[ADMIN_EMAIL]  # Send copy to admin
                     )
                     sg = SendGridAPIClient(SENDGRID_API_KEY)
                     response = sg.send(message)
@@ -783,6 +837,10 @@ def notify_existing_interested_persons(new_building_id, new_record):
                 print("---------------------------------\n")
         
         print(f"[NOTIFY] {len(verified_contacts)} bestehende Interessenten über neuen Interessenten benachrichtigt")
+        
+        # Send activity notification
+        activity_details = f"Neuer Interessent benachrichtigt:\nNeuer Building ID: {new_building_id}\nE-Mail: {new_email}\nAdresse: {new_profile.get('address', 'N/A')}\nBenachrichtigte bestehende Interessenten: {len(verified_contacts)}"
+        send_activity_notification("Neuer Interessent", activity_details)
         
     except Exception as e:
         print(f"[NOTIFY] Fehler beim Benachrichtigen bestehender Interessenten: {e}")
@@ -826,6 +884,7 @@ def notify_cluster_contacts(buildings_with_clusters):
 
     for cluster_id, cluster_info, contacts in pending_notifications:
         send_cluster_contact_email(cluster_id, cluster_info, contacts)
+        # Activity notification is sent inside send_cluster_contact_email
 
 def collect_building_locations(exclude_building_id=None):
     """
@@ -1427,17 +1486,26 @@ def api_register_anonymous():
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
     
     # Sende Bestätigungs-E-Mail (ohne Verifizierungslink)
+    address = profile.get('address', '')
     threading.Thread(
         target=send_confirmation_email,
-        args=(email, unsubscribe_url),
+        args=(email, unsubscribe_url, building_id, address),
         daemon=True
     ).start()
 
     print(f"[DB] Anonymer Nutzer {building_id} gespeichert und verifiziert (Mail: {email}, Tel: {phone}).")
     print(f"  Aktuelle Pool-Grösse: {len(DB_INTEREST_POOL)}")
     
-    # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
+    # Send activity notification for registration
     address = profile.get('address', '')
+    activity_details = f"Anonyme Registrierung:\nE-Mail: {email}\nTelefon: {phone or 'N/A'}\nBuilding ID: {building_id}\nAdresse: {address}"
+    threading.Thread(
+        target=send_activity_notification,
+        args=("Anonyme Registrierung", activity_details),
+        daemon=True
+    ).start()
+    
+    # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
     threading.Thread(
         target=check_and_handle_duplicates,
         args=(email, phone, address, building_id),
@@ -1534,17 +1602,26 @@ def api_register_full():
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
     
     # Sende Bestätigungs-E-Mail (ohne Verifizierungslink)
+    address = profile.get('address', '')
     threading.Thread(
         target=send_confirmation_email,
-        args=(email, unsubscribe_url),
+        args=(email, unsubscribe_url, building_id, address),
         daemon=True
     ).start()
 
     print(f"[DB] Voll registrierter Nutzer {building_id} gespeichert und verifiziert (Mail: {email}, Tel: {phone}).")
     print(f"  Aktuelle DB-Grösse: {len(DB_BUILDINGS)}")
 
-    # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
+    # Send activity notification for registration
     address = profile.get('address', '')
+    activity_details = f"Vollständige Registrierung:\nE-Mail: {email}\nTelefon: {phone or 'N/A'}\nBuilding ID: {building_id}\nAdresse: {address}"
+    threading.Thread(
+        target=send_activity_notification,
+        args=("Vollständige Registrierung", activity_details),
+        daemon=True
+    ).start()
+
+    # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
     threading.Thread(
         target=check_and_handle_duplicates,
         args=(email, phone, address, building_id),

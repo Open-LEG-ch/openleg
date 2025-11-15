@@ -132,8 +132,15 @@
         html, body {
             height: 100%;
             margin: 0;
-            overflow: hidden; /* Verhindert Scrollen der Seite */
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        /* Enable scrolling on mobile */
+        @media (max-width: 1023px) {
+            html, body {
+                overflow: auto;
+                height: auto;
+            }
         }
         
         /* Desktop Layout: Flexbox für Side-by-Side */
@@ -209,31 +216,108 @@
             transition: transform 0.3s ease;
         }
         
-        /* Mobile: Control-Panel minimiert zeigen (nur Adressfeld) */
+        /* Mobile: Control-Panel mit scrollbarem Inhalt und sticky search bar */
         @media (max-width: 1023px) {
             #control-panel {
-                max-height: 35vh;
-                padding: 1rem 1rem 1.5rem 1rem;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                max-height: 100vh;
+                height: 100vh;
+                padding: 0;
+                border-radius: 0;
+                box-shadow: none;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
             }
             
+            /* Sticky search bar container */
+            #mobile-search-bar {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                background: white;
+                padding: 1rem;
+                border-bottom: 1px solid #e5e7eb;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+            
+            /* Scrollable content area */
+            #mobile-content {
+                flex: 1;
+                overflow-y: auto;
+                padding: 1rem;
+                padding-bottom: 2rem;
+            }
+            
+            /* Show all content on mobile */
             #control-panel header,
             #control-panel article,
             #control-panel .mt-6 {
-                display: none;
+                display: block;
             }
             
             #control-panel #check-step {
-                margin-top: 0;
+                margin-top: 1rem;
             }
             
+            /* Remove the ::before pseudo-element content */
             #control-panel #check-step::before {
-                content: "Geben Sie Ihre Adresse ein, um passende Energie-Partner zu finden.";
+                content: none;
+                display: none;
+            }
+            
+            /* Hide desktop check-step on mobile */
+            #check-step-desktop {
+                display: none;
+            }
+        }
+        
+        /* Desktop: Hide mobile wrapper elements and show normal layout */
+        @media (min-width: 1024px) {
+            #mobile-search-bar {
+                display: none;
+            }
+            
+            #mobile-content {
                 display: block;
-                font-size: 0.875rem;
-                color: #6b7280;
-                margin-bottom: 0.75rem;
-                text-align: center;
-                line-height: 1.4;
+                padding: 0;
+                overflow: visible;
+            }
+            
+            /* Hide mobile check-step, show desktop version */
+            #check-step {
+                display: none;
+            }
+            
+            #check-step-desktop {
+                display: block;
+            }
+            
+            /* Restore normal control-panel layout on desktop */
+            #control-panel {
+                position: fixed;
+                top: 0;
+                right: 0;
+                left: auto;
+                bottom: auto;
+                width: 450px;
+                min-width: 350px;
+                max-width: 450px;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+                padding: 2rem;
+                transform: none;
+                z-index: 1000;
+                display: block;
+                flex-direction: row;
+                overflow-y: auto;
             }
         }
         
@@ -447,29 +531,45 @@
     <div id="map"></div>
 
     <div id="control-panel">
-
-        <header class="text-center mb-4">
-            <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
-            <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
-        </header>
-        
-        <article>
-            <section>
-                <h3 class="sr-only">LEG Baden – So funktioniert's</h3>
-                <p class="text-gray-600 mb-4 text-center text-sm sm:text-base">Geben Sie Ihre Adresse in Baden ein, um passende Energie-Partner in Ihrer Nachbarschaft zu finden und eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> zu gründen.</p>
-            </section>
-        </article>
-
-        <div id="check-step">
-            <div class="flex flex-col sm:flex-row gap-2">
-                <div class="flex-grow relative">
-                    <input type="text" id="address-input" placeholder="z.B. Brown Boveri Platz, 5400 Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600" autocomplete="off" required>
-                    <div id="address-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
+        <!-- Mobile: Scrollable content area -->
+        <div id="mobile-content">
+            <!-- Mobile: Sticky search bar at top of scrollable content -->
+            <div id="mobile-search-bar">
+                <div id="check-step">
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <div class="flex-grow relative">
+                            <input type="text" id="address-input" placeholder="z.B. Brown Boveri Platz, 5400 Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600" autocomplete="off" required>
+                            <div id="address-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
+                        </div>
+                        <button type="button" id="check-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
+                            Prüfen
+                        </button>
+                    </div>
                 </div>
-                <button type="button" id="check-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
-                    Prüfen
-                </button>
             </div>
+            
+            <header class="text-center mb-4">
+                <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
+                <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokale Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
+            </header>
+            
+            <article>
+                <section>
+                    <h3 class="sr-only">LEG Baden – So funktioniert's</h3>
+                    <p class="text-gray-600 mb-4 text-center text-sm sm:text-base">Geben Sie Ihre Adresse in Baden ein, um passende Energie-Partner in Ihrer Nachbarschaft zu finden und eine <strong>Lokale Elektrizitätsgemeinschaft (LEG)</strong> zu gründen.</p>
+                </section>
+            </article>
+
+            <div id="check-step-desktop">
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <div class="flex-grow relative">
+                        <input type="text" id="address-input-desktop" placeholder="z.B. Brown Boveri Platz, 5400 Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600" autocomplete="off" required>
+                        <div id="address-suggestions-desktop" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
+                    </div>
+                    <button type="button" id="check-button-desktop" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
+                        Prüfen
+                    </button>
+                </div>
             <div id="check-loader" class="loader mx-auto my-4 hidden"></div>
             <p id="check-message" class="text-center text-red-600 mt-4 font-medium"></p>
             
@@ -596,6 +696,7 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
 
 
@@ -628,10 +729,28 @@
         const resetButton = document.getElementById('reset-button');
         
         const checkButton = document.getElementById('check-button');
+        const checkButtonDesktop = document.getElementById('check-button-desktop');
         const checkLoader = document.getElementById('check-loader');
         const checkMessage = document.getElementById('check-message');
         const addressInput = document.getElementById('address-input');
+        const addressInputDesktop = document.getElementById('address-input-desktop');
         const addressSuggestions = document.getElementById('address-suggestions');
+        const addressSuggestionsDesktop = document.getElementById('address-suggestions-desktop');
+        
+        // Sync desktop and mobile inputs
+        if (addressInput && addressInputDesktop) {
+            addressInput.addEventListener('input', () => {
+                addressInputDesktop.value = addressInput.value;
+            });
+            addressInputDesktop.addEventListener('input', () => {
+                addressInput.value = addressInputDesktop.value;
+            });
+        }
+        
+        // Use mobile input as primary, fallback to desktop
+        const primaryAddressInput = addressInput || addressInputDesktop;
+        const primaryAddressSuggestions = addressSuggestions || addressSuggestionsDesktop;
+        const primaryCheckButton = checkButton || checkButtonDesktop;
         
         let suggestionTimeout = null;
         let currentSuggestions = [];
@@ -675,23 +794,33 @@
             initMap();
             setTimeout(loadInitialData, 500);
             
-            // Adress-Autovervollständigung
-            addressInput.addEventListener('input', handleAddressInput);
-            addressInput.addEventListener('keydown', handleAddressKeydown);
-            addressInput.addEventListener('blur', () => {
-                setTimeout(() => {
-                    if (document.activeElement !== addressInput && 
-                        !addressSuggestions.contains(document.activeElement)) {
-                        addressSuggestions.classList.add('hidden');
-                    }
-                }, 250);
-            });
+            // Adress-Autovervollständigung - use primary input
+            if (primaryAddressInput) {
+                primaryAddressInput.addEventListener('input', handleAddressInput);
+                primaryAddressInput.addEventListener('keydown', handleAddressKeydown);
+                primaryAddressInput.addEventListener('blur', () => {
+                    setTimeout(() => {
+                        if (document.activeElement !== primaryAddressInput && 
+                            primaryAddressSuggestions && !primaryAddressSuggestions.contains(document.activeElement)) {
+                            if (primaryAddressSuggestions) primaryAddressSuggestions.classList.add('hidden');
+                            if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
+                        }
+                    }, 250);
+                });
+            }
             
-            addressSuggestions.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-            });
+            if (primaryAddressSuggestions) {
+                primaryAddressSuggestions.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                });
+            }
             
-            checkButton.addEventListener('click', handleAddressSubmit);
+            if (primaryCheckButton) {
+                primaryCheckButton.addEventListener('click', handleAddressSubmit);
+            }
+            if (checkButtonDesktop) {
+                checkButtonDesktop.addEventListener('click', handleAddressSubmit);
+            }
             registerAnonButton.addEventListener('click', handleRegisterAnonymous);
             registerFullButton.addEventListener('click', handleRegisterFull);
             resetButton.addEventListener('click', () => resetUI(true));
@@ -938,7 +1067,15 @@
         
         // --- Adress-Autovervollständigung ---
         async function handleAddressInput(e) {
-            const query = e.target.value.trim();
+            const query = (e.target.value || primaryAddressInput?.value || '').trim();
+            // Sync to other input
+            if (addressInput && addressInputDesktop) {
+                if (e.target === addressInput) {
+                    addressInputDesktop.value = query;
+                } else {
+                    addressInput.value = query;
+                }
+            }
             selectedSuggestionIndex = -1;
             selectedSuggestionData = null;
             
@@ -976,18 +1113,25 @@
                     });
                     
                     // Nur anzeigen, wenn der Input noch der gleiche ist (verhindert Race Conditions)
-                    if (addressInput.value.trim() === query) {
+                    const currentValue = primaryAddressInput?.value?.trim() || '';
+                    if (currentValue === query) {
                         if (currentSuggestions.length > 0) {
                             displaySuggestions(currentSuggestions);
                         } else {
-                            addressSuggestions.innerHTML = '<div class="suggestion-item">Keine Adressen gefunden</div>';
-                            addressSuggestions.classList.remove('hidden');
+                            const suggestionsEl = primaryAddressSuggestions || addressSuggestionsDesktop;
+                            if (suggestionsEl) {
+                                suggestionsEl.innerHTML = '<div class="suggestion-item">Keine Adressen gefunden</div>';
+                                suggestionsEl.classList.remove('hidden');
+                            }
                         }
                     }
                 } catch (err) {
                     console.error("Fehler beim Abrufen von Adressvorschlägen:", err);
-                    addressSuggestions.innerHTML = '<div class="suggestion-item error">Fehler beim Laden der Adressen</div>';
-                    addressSuggestions.classList.remove('hidden');
+                    const suggestionsEl = primaryAddressSuggestions || addressSuggestionsDesktop;
+                    if (suggestionsEl) {
+                        suggestionsEl.innerHTML = '<div class="suggestion-item error">Fehler beim Laden der Adressen</div>';
+                        suggestionsEl.classList.remove('hidden');
+                    }
                     currentSuggestions = [];
                 }
             }, 300);
@@ -996,11 +1140,19 @@
         function displaySuggestions(suggestions) {
             console.log('[AUTOCOMPLETE] Zeige', suggestions.length, 'Vorschläge');
             if (suggestions.length === 0) {
-                addressSuggestions.classList.add('hidden');
+                if (primaryAddressSuggestions) primaryAddressSuggestions.classList.add('hidden');
+                if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
                 return;
             }
             
-            addressSuggestions.innerHTML = '';
+            const targetSuggestions = primaryAddressSuggestions || addressSuggestionsDesktop;
+            if (!targetSuggestions) return;
+            
+            targetSuggestions.innerHTML = '';
+            // Also update desktop if it exists
+            if (addressSuggestionsDesktop && addressSuggestionsDesktop !== targetSuggestions) {
+                addressSuggestionsDesktop.innerHTML = '';
+            }
             
             // Zeige max. 8 Vorschläge für bessere UX
             const maxSuggestions = Math.min(suggestions.length, 8);
@@ -1030,23 +1182,43 @@
                     }
                     selectSuggestion(suggestion);
                 });
-                addressSuggestions.appendChild(item);
+                targetSuggestions.appendChild(item);
+                // Also add to desktop if different
+                if (addressSuggestionsDesktop && addressSuggestionsDesktop !== targetSuggestions) {
+                    const itemDesktop = item.cloneNode(true);
+                    itemDesktop.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        if (typeof suggestion === 'object' && suggestion.label) {
+                            selectedSuggestionData = suggestion;
+                        } else {
+                            selectedSuggestionData = { label: label };
+                        }
+                        selectSuggestion(suggestion);
+                    });
+                    addressSuggestionsDesktop.appendChild(itemDesktop);
+                }
                 displayedCount++;
             }
             
             if (displayedCount > 0) {
-                addressSuggestions.classList.remove('hidden');
+                if (targetSuggestions) targetSuggestions.classList.remove('hidden');
+                if (addressSuggestionsDesktop && addressSuggestionsDesktop !== targetSuggestions) {
+                    addressSuggestionsDesktop.classList.remove('hidden');
+                }
                 console.log('[AUTOCOMPLETE] Dropdown angezeigt');
             } else {
-                addressSuggestions.classList.add('hidden');
+                if (targetSuggestions) targetSuggestions.classList.add('hidden');
+                if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
             }
         }
         
         function selectSuggestion(suggestion) {
             // Normalisiere: Handle sowohl String als auch Objekt
             const label = typeof suggestion === 'string' ? suggestion : (suggestion.label || '');
-            addressInput.value = label;
-            addressSuggestions.classList.add('hidden');
+            if (primaryAddressInput) primaryAddressInput.value = label;
+            if (addressInputDesktop) addressInputDesktop.value = label;
+            if (primaryAddressSuggestions) primaryAddressSuggestions.classList.add('hidden');
+            if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
             currentSuggestions = [];
             selectedSuggestionIndex = -1;
             
@@ -1059,7 +1231,8 @@
         }
         
         function handleAddressKeydown(e) {
-            if (!addressSuggestions.classList.contains('hidden') && currentSuggestions.length > 0) {
+            const suggestionsEl = primaryAddressSuggestions || addressSuggestionsDesktop;
+            if (suggestionsEl && !suggestionsEl.classList.contains('hidden') && currentSuggestions.length > 0) {
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, currentSuggestions.length - 1);
@@ -1078,7 +1251,9 @@
         }
         
         function updateSuggestionHighlight() {
-            const items = addressSuggestions.querySelectorAll('.suggestion-item');
+            const suggestionsEl = primaryAddressSuggestions || addressSuggestionsDesktop;
+            if (!suggestionsEl) return;
+            const items = suggestionsEl.querySelectorAll('.suggestion-item');
             items.forEach((item, index) => {
                 if (index === selectedSuggestionIndex) {
                     item.classList.add('active');
@@ -1091,7 +1266,7 @@
         
         // --- 2. Adress-Prüfung ---
         async function handleAddressSubmit() {
-            const address = addressInput.value.trim();
+            const address = (primaryAddressInput?.value || '').trim();
             if (!address) {
                 checkMessage.textContent = "Bitte geben Sie eine Adresse ein.";
                 return;
@@ -1330,7 +1505,8 @@
             }
             
             // Schließe Dropdown
-            addressSuggestions.classList.add('hidden');
+            if (primaryAddressSuggestions) primaryAddressSuggestions.classList.add('hidden');
+            if (addressSuggestionsDesktop) addressSuggestionsDesktop.classList.add('hidden');
             currentSuggestions = [];
             selectedSuggestionIndex = -1;
             
