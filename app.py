@@ -223,7 +223,7 @@ def save_database():
                 'verification_tokens': DB_VERIFICATION_TOKENS,
                 'unsubscribe_tokens': DB_UNSUBSCRIBE_TOKENS,
                 'cluster_contact_state': {
-                    k: list(v) if isinstance(v, set) else v 
+                    k: list(v) if isinstance(v, (set, frozenset)) else v 
                     for k, v in CLUSTER_CONTACT_STATE.items()
                 },
                 'clusters': DB_CLUSTERS,
