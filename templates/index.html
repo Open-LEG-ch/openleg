@@ -198,7 +198,7 @@
             left: 0;
             right: 0;
             z-index: 20;
-            background: white;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
             padding: 1rem;
             border-radius: 1rem 1rem 0 0;
             box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
@@ -283,6 +283,25 @@
         :root {
             --brand-color: #c7021a; /* Stadt Baden Rot */
             --warn-color: #f59e0b;  /* Sekundärfarbe für Hinweise */
+        }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 9999px;
+            background: #f3f4f6;
+            color: #111827;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 1px solid #e5e7eb;
+        }
+        .micro-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 0.9rem 1rem;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
         }
         .loader {
             border: 4px solid #f3f3f3;
@@ -476,6 +495,21 @@
         <header class="hidden lg:block text-center mb-4">
             <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
             <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-left">
+                <div class="pill justify-center">⚡ 2-Minuten Adress-Check</div>
+                <div class="pill justify-center">🧭 EVU-ready: Export für Regionalwerke/Eniwa</div>
+                <div class="pill justify-center">🔒 Datenschutz & klare Einwilligung</div>
+            </div>
+
+            <div class="micro-card text-left mt-4">
+                <p class="text-sm text-gray-800 font-semibold mb-2">Schneller als Standard-Versorger-Formulare:</p>
+                <ul class="text-sm text-gray-600 space-y-1 list-disc pl-5">
+                    <li>Sofort sehen, ob Nachbarn Interesse haben (keine Warteschleifen)</li>
+                    <li>Klare Schritte: Adresse → Match → EVU-Anfrage</li>
+                    <li>Bereit für Jan 2026: LEG-Unterstützung mit lokalem Fokus</li>
+                </ul>
+            </div>
         </header>
 
         <div id="check-step">
@@ -491,6 +525,21 @@
             <div id="check-loader" class="loader mx-auto my-4 hidden"></div>
             <p id="check-message" class="text-center text-red-600 mt-4 font-medium"></p>
             
+            <div class="hidden lg:grid grid-cols-3 gap-3 mt-6 text-sm text-left">
+                <div class="micro-card">
+                    <p class="font-semibold text-gray-800">1. Adresse prüfen</p>
+                    <p class="text-gray-600">Ohne Konto, ohne Telefon-Warteschleife.</p>
+                </div>
+                <div class="micro-card">
+                    <p class="font-semibold text-gray-800">2. Match & Einwilligung</p>
+                    <p class="text-gray-600">Klare Zustimmung für Nachbarn + EVU, sofort sichtbare Nachbarschaft.</p>
+                </div>
+                <div class="micro-card">
+                    <p class="font-semibold text-gray-800">3. EVU-ready Export</p>
+                    <p class="text-gray-600">Alle Daten als Paket für Regionalwerke Baden/Eniwa vorbereitbar.</p>
+                </div>
+            </div>
+
             <!-- Link zu Info-Seite -->
             <div class="mt-6 text-center">
                 <a href="/info" class="inline-block w-full sm:w-auto px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-md transition-colors border border-gray-200">
@@ -509,6 +558,20 @@
                 <div class="flex flex-col gap-2">
                     <input type="email" id="pool-email-input" placeholder="Ihre E-Mail-Adresse" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-600" autocomplete="email" required>
                     <input type="tel" id="pool-phone-input" placeholder="Optional: Mobile-Nummer (z.B. +4179...)" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-600" autocomplete="tel">
+                    <div class="bg-yellow-50 border border-yellow-100 rounded-md p-3 text-sm text-gray-700 space-y-2">
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" id="consent-neighbors-anon" class="mt-1">
+                            <span>Ich stimme zu, dass BadenLEG meine Kontaktdaten mit passenden Nachbarinnen und Nachbarn teilt (LEG-Bildung).</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" id="consent-utility-anon" class="mt-1">
+                            <span>Ich stimme zu, dass BadenLEG meine Angaben an das lokale EVU (z.B. Regionalwerke Baden/Eniwa) weitergeben darf, um LEG-Anfragen zu prüfen.</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" id="consent-updates-anon" class="mt-1">
+                            <span>Ich möchte Updates/Tipps per E-Mail erhalten (optional).</span>
+                        </label>
+                    </div>
                     <button id="register-anon-button" class="bg-yellow-600 text-white font-bold py-3 px-4 rounded-md hover:bg-yellow-700 transition duration-300" style="background-color: var(--warn-color);">
                         Interesse vormerken
                     </button>
@@ -520,13 +583,27 @@
                 <p id="match-message" class="text-gray-600 mb-4"></p>
                 <p class="text-gray-600 mb-4 text-sm sm:text-base">Tragen Sie Ihre E-Mail ein. Wir senden Ihnen eine Bestätigungs-E-Mail. Alle interessierten Nachbarn erhalten automatisch eine Kontaktübersicht mit Adresse und E-Mail.</p>
                 
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="email" id="email-input" placeholder="Ihre E-Mail-Adresse" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
-                    <button id="register-full-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
-                        Registrieren & Matchen
-                    </button>
-                </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input type="email" id="email-input" placeholder="Ihre E-Mail-Adresse" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
+                <button id="register-full-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
+                    Registrieren & Matchen
+                </button>
             </div>
+            <div class="bg-red-50 border border-red-100 rounded-md p-3 text-sm text-gray-700 space-y-2 mt-3">
+                <label class="flex items-start gap-2">
+                    <input type="checkbox" id="consent-neighbors-full" class="mt-1">
+                    <span>Ich stimme zu, dass BadenLEG meine Kontaktdaten mit passenden Nachbarinnen und Nachbarn teilt (LEG-Bildung).</span>
+                </label>
+                <label class="flex items-start gap-2">
+                    <input type="checkbox" id="consent-utility-full" class="mt-1">
+                    <span>Ich stimme zu, dass BadenLEG meine Angaben an das lokale EVU (z.B. Regionalwerke Baden/Eniwa) weitergeben darf, um LEG-Anfragen zu prüfen.</span>
+                </label>
+                <label class="flex items-start gap-2">
+                    <input type="checkbox" id="consent-updates-full" class="mt-1">
+                    <span>Ich möchte Updates/Tipps per E-Mail erhalten (optional).</span>
+                </label>
+            </div>
+        </div>
 
             <div id="register-loader" class="loader mx-auto my-4 hidden"></div>
             <p id="register-message" class="text-center text-blue-600 mt-4 font-medium"></p>
@@ -630,9 +707,15 @@
         const registerAnonButton = document.getElementById('register-anon-button');
         const poolEmailInput = document.getElementById('pool-email-input');
         const poolPhoneInput = document.getElementById('pool-phone-input');
+        const consentNeighborsAnon = document.getElementById('consent-neighbors-anon');
+        const consentUtilityAnon = document.getElementById('consent-utility-anon');
+        const consentUpdatesAnon = document.getElementById('consent-updates-anon');
         
         const registerFullButton = document.getElementById('register-full-button');
         const emailInput = document.getElementById('email-input');
+        const consentNeighborsFull = document.getElementById('consent-neighbors-full');
+        const consentUtilityFull = document.getElementById('consent-utility-full');
+        const consentUpdatesFull = document.getElementById('consent-updates-full');
 
         const registerLoader = document.getElementById('register-loader');
         const registerMessage = document.getElementById('register-message');
@@ -1153,6 +1236,10 @@
                 registerMessage.textContent = "Bitte geben Sie eine E-Mail-Adresse an.";
                 return;
             }
+            if (!consentNeighborsAnon.checked || !consentUtilityAnon.checked) {
+                registerMessage.textContent = "Bitte bestätigen Sie die Weitergabe an Nachbarn und das lokale EVU.";
+                return;
+            }
             registerMessage.textContent = "";
             uiStartLoading(registerAnonButton, registerLoader, registerMessage);
             
@@ -1163,7 +1250,12 @@
                     body: JSON.stringify({
                         email: email,
                         phone: phone || null,
-                        profile: userProfileSummary
+                        profile: userProfileSummary,
+                        consents: {
+                            share_with_neighbors: consentNeighborsAnon.checked,
+                            share_with_utility: consentUtilityAnon.checked,
+                            updates_opt_in: consentUpdatesAnon.checked
+                        }
                     })
                 });
                 const data = await response.json();
@@ -1180,6 +1272,9 @@
 
                 poolEmailInput.value = "";
                 poolPhoneInput.value = "";
+                consentNeighborsAnon.checked = false;
+                consentUtilityAnon.checked = false;
+                consentUpdatesAnon.checked = false;
             } catch (err) {
                 registerMessage.textContent = err.message;
             } finally {
@@ -1193,6 +1288,10 @@
                 registerMessage.textContent = "Bitte geben Sie eine E-Mail-Adresse an.";
                 return;
             }
+            if (!consentNeighborsFull.checked || !consentUtilityFull.checked) {
+                registerMessage.textContent = "Bitte bestätigen Sie die Weitergabe an Nachbarn und das lokale EVU.";
+                return;
+            }
             registerMessage.textContent = "";
             uiStartLoading(registerFullButton, registerLoader, registerMessage);
 
@@ -1203,7 +1302,12 @@
                     body: JSON.stringify({
                         email: email,
                         phone: null,
-                        profile: userProfileSummary
+                        profile: userProfileSummary,
+                        consents: {
+                            share_with_neighbors: consentNeighborsFull.checked,
+                            share_with_utility: consentUtilityFull.checked,
+                            updates_opt_in: consentUpdatesFull.checked
+                        }
                     })
                 });
                 const data = await response.json();
@@ -1219,6 +1323,9 @@
                 updateExistingMarkers(data.buildings);
 
                 emailInput.value = "";
+                consentNeighborsFull.checked = false;
+                consentUtilityFull.checked = false;
+                consentUpdatesFull.checked = false;
             } catch (err) {
                 registerMessage.textContent = err.message;
             } finally {
@@ -1330,6 +1437,12 @@
                 if (poolEmailInput) poolEmailInput.value = "";
                 if (poolPhoneInput) poolPhoneInput.value = "";
                 if (emailInput) emailInput.value = "";
+                if (consentNeighborsAnon) consentNeighborsAnon.checked = false;
+                if (consentUtilityAnon) consentUtilityAnon.checked = false;
+                if (consentUpdatesAnon) consentUpdatesAnon.checked = false;
+                if (consentNeighborsFull) consentNeighborsFull.checked = false;
+                if (consentUtilityFull) consentUtilityFull.checked = false;
+                if (consentUpdatesFull) consentUpdatesFull.checked = false;
                 // Zoom zurück auf Baden
                 map.flyTo(MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM);
             }
@@ -1341,4 +1454,3 @@
     </script>
 </body>
 </html>
-

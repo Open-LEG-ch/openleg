@@ -6,6 +6,8 @@ import hashlib
 import threading
 import logging
 import json
+import csv
+import io
 import shutil
 from datetime import timedelta
 from pathlib import Path
@@ -84,6 +86,7 @@ SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
 FROM_EMAIL = os.getenv('FROM_EMAIL', 'noreply@badenleg.ch')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'hallo@badenleg.ch')
 EMAIL_ENABLED = HAS_SENDGRID and SENDGRID_API_KEY
+ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
 
 # --- Rate Limiting & Security (Minimal for Railway) ---
 if HAS_SECURITY_LIBS:
@@ -138,6 +141,47 @@ def apply_basic_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
 
+# --- Audit & Consent Helpers ---
+CONSENT_VERSION = "2024-12-21"
+
+def _coerce_bool(value):
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() in ('1', 'true', 'yes', 'ja', 'on')
+    return False
+
+def parse_consents(raw_consents):
+    """Normalize consent flags and stamp with version + timestamp."""
+    consents = raw_consents or {}
+    parsed = {
+        'share_with_neighbors': _coerce_bool(consents.get('share_with_neighbors')),
+        'share_with_utility': _coerce_bool(consents.get('share_with_utility')),
+        'updates_opt_in': _coerce_bool(consents.get('updates_opt_in')),
+        'consent_version': consents.get('consent_version') or CONSENT_VERSION,
+        'consent_timestamp': time.time()
+    }
+    return parsed
+
+def write_audit_event(event_type, details=None, payload=None):
+    """Persist a minimal audit trail for registrations/exports."""
+    entry = {
+        "ts": time.time(),
+        "type": event_type,
+        "details": details or "",
+        "payload": payload or {}
+    }
+    try:
+        AUDIT_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(AUDIT_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        logger.warning(f"[AUDIT] Konnte Audit-Event nicht schreiben: {e}")
+
 
 # --- Persistenz-Konfiguration ---
 # Railway Volume Mount Path (oder lokales Verzeichnis für Development)
@@ -166,6 +210,7 @@ CLUSTER_CONTACT_STATE = {} # cluster_id -> Set der zuletzt benachrichtigten Geb�
 DB_CLUSTERS = {} # z.B. {'building_abc': 1, 'building_xyz': 1}
 DB_CLUSTER_INFO = {} # z.B. {1: {'autarky_percent': 75.2, ...}}
 db_lock = threading.Lock() # Verhindert Race Conditions
+AUDIT_LOG_FILE = DATA_DIR / 'audit.log'
 
 # --- Persistenz-Funktionen ---
 _save_timer = None
@@ -1287,6 +1332,54 @@ def sitemap_xml():
     xml = render_template("sitemap.xml", site_url=SITE_URL, pages=pages)
     return Response(xml, mimetype="application/xml")
 
+def _require_admin():
+    if not ADMIN_TOKEN:
+        abort(404)
+    token = request.headers.get('X-Admin-Token') or request.args.get('token') or ''
+    if token != ADMIN_TOKEN:
+        log_security_event("ADMIN_ACCESS_DENIED", "Ungültiger Admin-Token", 'WARNING')
+        abort(403)
+
+def _get_consent_stats():
+    stats = {
+        "total_records": 0,
+        "share_with_utility": 0,
+        "share_with_neighbors": 0,
+        "updates_opt_in": 0
+    }
+    for store in (DB_BUILDINGS, DB_INTEREST_POOL):
+        for record in store.values():
+            consents = record.get('consents') or {}
+            stats["total_records"] += 1
+            stats["share_with_utility"] += int(bool(consents.get('share_with_utility')))
+            stats["share_with_neighbors"] += int(bool(consents.get('share_with_neighbors')))
+            stats["updates_opt_in"] += int(bool(consents.get('updates_opt_in')))
+    return stats
+
+def _collect_export_records(include_without_consent=False):
+    """Erstellt exportierbare Datensätze für EVU-Handoff."""
+    rows = []
+    for store_name, store in (("registered", DB_BUILDINGS), ("interest_pool", DB_INTEREST_POOL)):
+        for building_id, record in store.items():
+            consents = record.get('consents') or {}
+            if not include_without_consent and not consents.get('share_with_utility'):
+                continue
+            profile = record.get('profile') or {}
+            rows.append({
+                "status": store_name,
+                "building_id": building_id,
+                "email": record.get('email'),
+                "phone": record.get('phone'),
+                "address": profile.get('address'),
+                "lat": profile.get('lat'),
+                "lon": profile.get('lon'),
+                "consent_share_utility": bool(consents.get('share_with_utility')),
+                "consent_neighbors": bool(consents.get('share_with_neighbors')),
+                "consent_updates": bool(consents.get('updates_opt_in')),
+                "profile_json": json.dumps(profile, ensure_ascii=False)
+            })
+    return rows
+
 @app.route("/health")
 def health_check():
     """Einfache Health-Check-Route für Deployment-Überwachung"""
@@ -1295,6 +1388,65 @@ def health_check():
         "timestamp": time.time(),
         "version": "1.0.0"
     })
+
+@app.route("/admin/overview")
+def admin_overview():
+    """Kompaktes Admin-Dashboard (token-geschützt) für Status & Exporte."""
+    _require_admin()
+    with db_lock:
+        payload = {
+            "buildings": len(DB_BUILDINGS),
+            "interest_pool": len(DB_INTEREST_POOL),
+            "verification_tokens": len(DB_VERIFICATION_TOKENS),
+            "unsubscribe_tokens": len(DB_UNSUBSCRIBE_TOKENS),
+            "clusters_cached": len(DB_CLUSTERS),
+            "consents": _get_consent_stats(),
+            "last_saved": DB_FILE.stat().st_mtime if DB_FILE.exists() else None,
+            "data_dir": str(DATA_DIR)
+        }
+    audit_tail = []
+    if AUDIT_LOG_FILE.exists():
+        try:
+            with open(AUDIT_LOG_FILE, "r", encoding="utf-8") as f:
+                lines = f.readlines()[-20:]
+                audit_tail = [line.strip() for line in lines if line.strip()]
+        except Exception as e:
+            logger.warning(f"[ADMIN] Audit-Log konnte nicht gelesen werden: {e}")
+    payload["audit_tail"] = audit_tail
+    return jsonify(payload)
+
+@app.route("/admin/export")
+def admin_export():
+    """Exportiert registrierte Datensätze (nur mit Admin-Token)."""
+    _require_admin()
+    fmt = (request.args.get("format") or "json").lower()
+    include_all = request.args.get("all") == "1"
+    with db_lock:
+        rows = _collect_export_records(include_without_consent=include_all)
+    write_audit_event("admin_export", details=f"format={fmt}, include_all={include_all}", payload={"count": len(rows)})
+    if fmt == "csv":
+        output = io.StringIO()
+        fieldnames = [
+            "status",
+            "building_id",
+            "email",
+            "phone",
+            "address",
+            "lat",
+            "lon",
+            "consent_share_utility",
+            "consent_neighbors",
+            "consent_updates",
+            "profile_json",
+        ]
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+        response = Response(output.getvalue(), mimetype="text/csv")
+        response.headers["Content-Disposition"] = "attachment; filename=badenleg_export.csv"
+        return response
+    return jsonify({"records": rows, "count": len(rows)})
 
 @app.route("/api/suggest_addresses")
 @limiter.limit("30 per minute") if limiter else lambda f: f
@@ -1610,6 +1762,9 @@ def api_register_anonymous():
     (Schnell) Speichert Nutzer im anonymen Pool und
     löst den langsamen ML-Task im Hintergrund aus.
     """
+    if not request.json:
+        log_security_event("INVALID_REQUEST", "register_anonymous: No JSON body", 'WARNING')
+        return jsonify({"error": "Keine Daten empfangen."}), 400
     # Security: Check request size
     is_valid_size, size_error = security_utils.check_request_size(request)
     if not is_valid_size:
@@ -1655,12 +1810,19 @@ def api_register_anonymous():
     if not is_valid_coords:
         log_security_event("INVALID_COORDINATES", f"register_anonymous: {coords_error}", 'WARNING')
         return jsonify({"error": coords_error}), 400
+
+    consents = parse_consents(request.json.get('consents'))
+    if not consents.get('share_with_neighbors') or not consents.get('share_with_utility'):
+        log_security_event("CONSENT_MISSING", "register_anonymous: required consent not provided", 'WARNING')
+        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe an Nachbarn und das lokale EVU für LEG-Anfragen zu."}), 400
+
     with db_lock:
         # Person wird sofort als registriert markiert (keine Verifizierung nötig)
         entry = {
             "profile": profile,
             "registered_at": time.time(),
             "email": email,
+            "consents": consents,
             "verified": True,  # Sofort verifiziert
             "verified_at": time.time()
         }
@@ -1669,6 +1831,16 @@ def api_register_anonymous():
         DB_INTEREST_POOL[building_id] = entry
         schedule_save()  # Persistiere neue Registrierung
         unsubscribe_token = issue_unsubscribe_token(building_id)
+    write_audit_event(
+        "register_anonymous",
+        details=f"building_id={building_id}",
+        payload={
+            "email": email,
+            "phone": bool(phone),
+            "consent_share_utility": consents.get('share_with_utility'),
+            "consent_neighbors": consents.get('share_with_neighbors')
+        }
+    )
     
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
     
@@ -1727,6 +1899,9 @@ def api_register_full():
     (Schnell) Speichert Nutzer in der DB und
     löst den langsamen ML-Task im Hintergrund aus.
     """
+    if not request.json:
+        log_security_event("INVALID_REQUEST", "register_full: No JSON body", 'WARNING')
+        return jsonify({"error": "Keine Daten empfangen."}), 400
     # Security: Check request size
     is_valid_size, size_error = security_utils.check_request_size(request)
     if not is_valid_size:
@@ -1772,12 +1947,19 @@ def api_register_full():
     if not is_valid_coords:
         log_security_event("INVALID_COORDINATES", f"register_full: {coords_error}", 'WARNING')
         return jsonify({"error": coords_error}), 400
+
+    consents = parse_consents(request.json.get('consents'))
+    if not consents.get('share_with_neighbors') or not consents.get('share_with_utility'):
+        log_security_event("CONSENT_MISSING", "register_full: required consent not provided", 'WARNING')
+        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe an Nachbarn und das lokale EVU für LEG-Anfragen zu."}), 400
+
     with db_lock:
         # Person wird sofort als registriert markiert (keine Verifizierung nötig)
         entry = {
             "profile": profile,
             "registered_at": time.time(),
             "email": email,
+            "consents": consents,
             "verified": True,  # Sofort verifiziert
             "verified_at": time.time()
         }
@@ -1786,6 +1968,16 @@ def api_register_full():
         DB_BUILDINGS[building_id] = entry
         schedule_save()  # Persistiere neue Registrierung
         unsubscribe_token = issue_unsubscribe_token(building_id)
+    write_audit_event(
+        "register_full",
+        details=f"building_id={building_id}",
+        payload={
+            "email": email,
+            "phone": bool(phone),
+            "consent_share_utility": consents.get('share_with_utility'),
+            "consent_neighbors": consents.get('share_with_neighbors')
+        }
+    )
     
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
     
@@ -1929,4 +2121,3 @@ if __name__ == "__main__":
     threading.Thread(target=initial_ml_analysis, daemon=True).start()
     
     app.run(debug=True, port=5003, host='127.0.0.1')
-
