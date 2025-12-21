@@ -355,6 +355,16 @@ Thank you to:
 - Regionalwerke Baden for LEG framework and technical support
 - All early adopters helping test the platform
 
+## Activity Log
+
+This section is automatically updated by GitHub Actions when commits are pushed to main or develop branches.
+
+Last 10 commits (auto-generated):
+
+(Awaiting first automated update)
+
+View full commit history: [GitHub Commits](https://github.com/wgusta/badenleg/commits)
+
 ---
 
 **BadenLEG** - Gemeinsam nachhaltig

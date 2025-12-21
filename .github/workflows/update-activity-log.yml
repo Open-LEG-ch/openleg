@@ -1,0 +1,61 @@
+name: Update Activity Log
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  update-activity-log:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history to get commits
+
+      - name: Extract last 10 commits
+        id: commits
+        run: |
+          echo "Extracting last 10 commits..."
+          git log -10 --pretty=format:"- **%s** (%h) - %ar by %an" > commits.txt
+          cat commits.txt
+
+      - name: Update README Activity Log
+        run: |
+          # Check if Activity Log section exists
+          if grep -q "## Activity Log" README.md; then
+            echo "Activity Log section found, updating..."
+            # Create temp file with everything before Activity Log
+            sed -n '/## Activity Log/q;p' README.md > temp_readme.md
+            # Add Activity Log header and content
+            echo "## Activity Log" >> temp_readme.md
+            echo "" >> temp_readme.md
+            echo "Last 10 commits (auto-generated):" >> temp_readme.md
+            echo "" >> temp_readme.md
+            cat commits.txt >> temp_readme.md
+            echo "" >> temp_readme.md
+            echo "" >> temp_readme.md
+            echo "View full commit history: [GitHub Commits](https://github.com/wgusta/badenleg/commits)" >> temp_readme.md
+            # Add everything after Activity Log section (if exists)
+            sed -n '/## Activity Log/,${/## Activity Log/!{/^## /,$p}}' README.md >> temp_readme.md
+            mv temp_readme.md README.md
+          else
+            echo "Activity Log section not found, skipping update."
+          fi
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.md
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update Activity Log [skip ci]"
+            git push
+          fi
