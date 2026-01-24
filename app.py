@@ -53,6 +53,10 @@ import data_enricher
 import ml_models
 import security_utils
 
+# --- PostgreSQL Database ---
+import database as db
+USE_POSTGRES = db.is_db_available()
+
 # --- Logging Setup ---
 # Simplified logging for Railway (no file logging)
 logging.basicConfig(
@@ -1289,7 +1293,28 @@ def index():
     if not os.path.exists('templates'):
         os.makedirs('templates')
         print("WARNUNG: 'templates'-Ordner wurde erstellt. Bitte 'index.html' dort ablegen.")
-    return render_template('index.html', site_url=SITE_URL)
+
+    # Get user count for social proof
+    if USE_POSTGRES:
+        stats = db.get_stats()
+        user_count = stats.get('total_buildings', 0)
+    else:
+        with db_lock:
+            user_count = len(DB_BUILDINGS) + len(DB_INTEREST_POOL)
+
+    # Get referrer info from URL if present
+    referral_code = request.args.get('ref', '')
+    referrer_info = None
+    if referral_code and USE_POSTGRES:
+        referrer_info = db.get_building_by_referral_code(referral_code)
+
+    return render_template('index.html',
+        site_url=SITE_URL,
+        user_count=user_count,
+        ga4_id=os.getenv('GA4_MEASUREMENT_ID', ''),
+        referral_code=referral_code,
+        referrer_street=referrer_info.get('address', '').split(',')[0] if referrer_info else ''
+    )
 
 @app.route("/info")
 @limiter.limit("30 per minute") if limiter else lambda f: f
@@ -1773,8 +1798,17 @@ def api_register_anonymous():
     
     phone = (request.json.get('phone') or '').strip()
     email = (request.json.get('email') or '').strip()
-    profile = request.json.get('profile') 
-    
+    profile = request.json.get('profile')
+    referral_code = (request.json.get('referral_code') or '').strip()
+
+    # Resolve referrer from referral code
+    referrer_id = None
+    if referral_code and USE_POSTGRES:
+        referrer = db.get_building_by_referral_code(referral_code)
+        if referrer:
+            referrer_id = referrer.get('building_id')
+            logger.info(f"[REFERRAL] Registration via referral: {referral_code}")
+
     # Security: Validate email
     is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email)
     if not is_valid_email:
@@ -1883,10 +1917,19 @@ def api_register_anonymous():
     
     cluster_info = build_match_result(profile)
     locations = collect_building_locations(exclude_building_id=building_id)
+
+    # Get referral link for this user
+    referral_link = None
+    if USE_POSTGRES:
+        user_referral_code = db.get_referral_code(building_id)
+        if user_referral_code:
+            referral_link = f"{APP_BASE_URL}/?ref={user_referral_code}"
+
     response_payload = {
         "buildings": locations,
         "match_found": bool(cluster_info),
-        "verification_email_sent": True
+        "verification_email_sent": True,
+        "referral_link": referral_link
     }
     if cluster_info:
         response_payload["cluster_info"] = cluster_info
@@ -1911,15 +1954,24 @@ def api_register_full():
     profile = request.json.get('profile')
     email = (request.json.get('email') or '').strip()
     phone = (request.json.get('phone') or '').strip()
-    
+    referral_code = (request.json.get('referral_code') or '').strip()
+
+    # Resolve referrer from referral code
+    referrer_id = None
+    if referral_code and USE_POSTGRES:
+        referrer = db.get_building_by_referral_code(referral_code)
+        if referrer:
+            referrer_id = referrer.get('building_id')
+            logger.info(f"[REFERRAL] Full registration via referral: {referral_code}")
+
     # Security: Validate email
     is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email)
     if not is_valid_email:
         log_security_event("INVALID_EMAIL", f"register_full: {email_error}", 'WARNING')
         return jsonify({"error": email_error}), 400
-    
+
     email = normalized_email
-    
+
     # Security: Validate phone (optional)
     if phone:
         is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(phone)
@@ -1927,7 +1979,7 @@ def api_register_full():
             log_security_event("INVALID_PHONE", f"register_full: {phone_error}", 'WARNING')
             return jsonify({"error": phone_error}), 400
         phone = normalized_phone
-    
+
     if not profile:
         log_security_event("INVALID_REQUEST", "register_full: No profile data", 'WARNING')
         return jsonify({"error": "Profildaten fehlen."}), 400
@@ -2017,13 +2069,22 @@ def api_register_full():
 
     # Hintergrund-Analyse anstoßen
     threading.Thread(target=run_full_ml_task, args=(building_id,)).start()
-    
+
     cluster_info = build_match_result(profile)
     locations = collect_building_locations(exclude_building_id=building_id)
+
+    # Get referral link for this user
+    referral_link = None
+    if USE_POSTGRES:
+        user_referral_code = db.get_referral_code(building_id)
+        if user_referral_code:
+            referral_link = f"{APP_BASE_URL}/?ref={user_referral_code}"
+
     response_payload = {
         "buildings": locations,
         "match_found": bool(cluster_info),
-        "verification_email_sent": True
+        "verification_email_sent": True,
+        "referral_link": referral_link
     }
     if cluster_info:
         response_payload["cluster_info"] = cluster_info
@@ -2106,6 +2167,83 @@ def page_zev():
 def page_vergleich():
     """Vergleicht LEG, EVL und ZEV"""
     return render_template("vergleich.html", site_url=SITE_URL)
+
+
+# ===============================
+# Referral System API
+# ===============================
+
+@app.route("/api/referral/stats/<building_id>")
+def api_referral_stats(building_id):
+    """Get referral statistics for a user."""
+    if not USE_POSTGRES:
+        return jsonify({"error": "Referral system requires PostgreSQL"}), 503
+
+    stats = db.get_referral_stats(building_id)
+    referral_code = db.get_referral_code(building_id)
+
+    return jsonify({
+        "referral_code": referral_code,
+        "referral_link": f"{APP_BASE_URL}/?ref={referral_code}" if referral_code else None,
+        "total_referrals": stats.get('total_referrals', 0)
+    })
+
+
+@app.route("/api/referral/leaderboard")
+def api_referral_leaderboard():
+    """Get top referrers for gamification."""
+    if not USE_POSTGRES:
+        return jsonify({"leaderboard": []})
+
+    leaderboard = db.get_referral_leaderboard(limit=10)
+    # Anonymize for privacy: show only first name of street
+    for entry in leaderboard:
+        street = entry.get('street', '')
+        entry['display_name'] = street[:15] + '...' if len(street) > 15 else street
+
+    return jsonify({"leaderboard": leaderboard})
+
+
+@app.route("/api/stats/public")
+def api_public_stats():
+    """Public statistics for the landing page."""
+    if USE_POSTGRES:
+        stats = db.get_stats()
+        return jsonify({
+            "total_users": stats.get('total_buildings', 0),
+            "registrations_today": stats.get('registrations_today', 0)
+        })
+    else:
+        with db_lock:
+            total = len(DB_BUILDINGS) + len(DB_INTEREST_POOL)
+        return jsonify({
+            "total_users": total,
+            "registrations_today": 0
+        })
+
+
+@app.route("/api/migrate", methods=['POST'])
+def api_migrate_to_postgres():
+    """Admin endpoint to migrate JSON data to PostgreSQL."""
+    _require_admin()
+
+    if not USE_POSTGRES:
+        return jsonify({"error": "PostgreSQL not available"}), 503
+
+    # Load current JSON data
+    with db_lock:
+        json_data = {
+            'buildings': DB_BUILDINGS.copy(),
+            'interest_pool': DB_INTEREST_POOL.copy()
+        }
+
+    success, errors = db.migrate_from_json(json_data)
+
+    return jsonify({
+        "message": "Migration completed",
+        "success_count": success,
+        "error_count": errors
+    })
 
 
 if __name__ == "__main__":

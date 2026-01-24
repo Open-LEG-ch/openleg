@@ -33,14 +33,19 @@
     <link rel="icon" type="image/x-icon" href="{{ site_url }}/static/favicon.ico">
     <link rel="apple-touch-icon" href="{{ site_url }}/static/apple-touch-icon.png">
     
-    <!-- Google Analytics 4 (placeholder - replace with your GA4 measurement ID) -->
-    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
-    </script> -->
+        gtag('config', '{{ ga4_id }}');
+
+        // Track key events
+        function trackEvent(eventName, params) {
+            gtag('event', eventName, params || {});
+        }
+    </script>
     
     <!-- Google Search Console Verification (placeholder - replace with your verification code) -->
     <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE" /> -->
@@ -494,25 +499,57 @@
         <!-- Desktop Header (nur auf Desktop sichtbar) -->
         <header class="hidden lg:block text-center mb-4">
             <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
-            <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie in Baden interessierte Nachbarn,<br>um sich ab 01.01.2026 zu einer <a href="/leg" class="underline hover:text-gray-800">Lokalen Elektrizitätsgemeinschaft (LEG)</a> zusammenzuschliessen.</h2>
-            
+
+            <!-- Urgency Banner -->
+            <div class="bg-green-100 border border-green-300 rounded-lg p-2 mt-2 mb-3">
+                <p class="text-green-800 font-semibold text-sm">LEG ist jetzt legal! Seit 1. Januar 2026 können Sie Strom mit Nachbarn teilen.</p>
+            </div>
+
+            <!-- Live Counter -->
+            <div class="bg-gray-100 rounded-lg p-3 mb-3">
+                <p class="text-2xl font-bold" style="color: var(--brand-color);"><span id="user-count">{{ user_count }}</span> Haushalte</p>
+                <p class="text-sm text-gray-600">haben sich bereits in Baden registriert</p>
+            </div>
+
+            <!-- Savings Callout -->
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-3 text-left">
+                <p class="text-yellow-800 font-semibold">Sparen Sie CHF 500 bis 800 pro Jahr</p>
+                <p class="text-sm text-yellow-700">durch lokalen Stromhandel mit Ihren Nachbarn</p>
+            </div>
+
+            <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie interessierte Nachbarn in Baden für eine <a href="/leg" class="underline hover:text-gray-800">Lokale Elektrizitätsgemeinschaft (LEG)</a>.</h2>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-left">
-                <div class="pill justify-center">⚡ 2-Minuten Adress-Check</div>
-                <div class="pill justify-center">🧭 EVU-ready: Export für Regionalwerke/Eniwa</div>
-                <div class="pill justify-center">🔒 Datenschutz & klare Einwilligung</div>
+                <div class="pill justify-center">⚡ 2-Minuten Registrierung</div>
+                <div class="pill justify-center">🏠 100% lokal in Baden</div>
+                <div class="pill justify-center">🔒 Daten bleiben in der Schweiz</div>
             </div>
 
             <div class="micro-card text-left mt-4">
-                <p class="text-sm text-gray-800 font-semibold mb-2">Schneller als Standard-Versorger-Formulare:</p>
+                <p class="text-sm text-gray-800 font-semibold mb-2">So funktioniert es:</p>
                 <ul class="text-sm text-gray-600 space-y-1 list-disc pl-5">
-                    <li>Sofort sehen, ob Nachbarn Interesse haben (keine Warteschleifen)</li>
-                    <li>Klare Schritte: Adresse → Match → EVU-Anfrage</li>
-                    <li>Bereit für Jan 2026: LEG-Unterstützung mit lokalem Fokus</li>
+                    <li>Adresse eingeben und sofort sehen, ob Nachbarn Interesse haben</li>
+                    <li>E-Mail hinterlassen und automatisch gematcht werden</li>
+                    <li>Gemeinsam LEG gründen und Stromkosten senken</li>
                 </ul>
             </div>
         </header>
 
         <div id="check-step">
+            <!-- Referral Welcome Banner (shown when arriving via referral link) -->
+            {% if referrer_street %}
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-center">
+                <p class="text-blue-800 font-semibold">Eingeladen von einem Nachbarn auf {{ referrer_street }}</p>
+                <p class="text-sm text-blue-600">Registrieren Sie sich, um gemeinsam eine LEG zu gründen!</p>
+            </div>
+            {% endif %}
+
+            <!-- Mobile: Savings callout (shown only on mobile) -->
+            <div class="lg:hidden bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 text-left">
+                <p class="text-yellow-800 font-semibold text-sm">Sparen Sie CHF 500 bis 800 pro Jahr</p>
+                <p class="text-xs text-yellow-700">durch lokalen Stromhandel mit Ihren Nachbarn</p>
+            </div>
+
             <div class="flex flex-col sm:flex-row gap-2">
                 <div class="flex-grow relative">
                     <input type="text" id="address-input" placeholder="z.B. Brown Boveri Platz, 5400 Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600" autocomplete="off" required>
@@ -672,6 +709,16 @@
         let clusterPolygons = null; // Wird in initMap() initialisiert
         const MAP_DEFAULT_CENTER = [47.473, 8.308];
         const MAP_DEFAULT_ZOOM = 14;
+
+        // --- Referral Tracking ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const referralCode = urlParams.get('ref') || '';
+        if (referralCode) {
+            console.log('[REFERRAL] Tracking referral:', referralCode);
+            // Store in sessionStorage for persistence across page reloads
+            sessionStorage.setItem('badenleg_referral', referralCode);
+        }
+        const storedReferral = sessionStorage.getItem('badenleg_referral') || referralCode;
         const MAP_BOUNDS = [
             [47.40, 8.20],
             [47.58, 8.46]
@@ -1194,7 +1241,15 @@
                 }
 
                 userProfileSummary = data.profile_summary;
-                
+
+                // Track address check event
+                if (typeof trackEvent === 'function') {
+                    trackEvent('address_check', {
+                        has_match: data.potential,
+                        has_referral: !!storedReferral
+                    });
+                }
+
                 // Karte aktualisieren
                 drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address);
                 map.flyTo([userProfileSummary.lat, userProfileSummary.lon], 17); // Zoom auf Adresse
@@ -1251,6 +1306,7 @@
                         email: email,
                         phone: phone || null,
                         profile: userProfileSummary,
+                        referral_code: storedReferral,
                         consents: {
                             share_with_neighbors: consentNeighborsAnon.checked,
                             share_with_utility: consentUtilityAnon.checked,
@@ -1263,9 +1319,35 @@
                     throw new Error(data.error || "Fehler bei der Registrierung.");
                 }
 
+                // Track registration event
+                if (typeof trackEvent === 'function') {
+                    trackEvent('registration', {
+                        type: 'anonymous',
+                        has_referral: !!storedReferral
+                    });
+                }
+
+                // Clear referral after successful registration
+                sessionStorage.removeItem('badenleg_referral');
+
                 resultStep.classList.add('hidden');
                 successStep.classList.remove('hidden');
-                successMessage.innerHTML = "Vielen Dank! Sie sind jetzt registriert. Wir haben Ihnen eine Bestätigungs-E-Mail gesendet. Sie werden automatisch informiert, wenn sich neue Interessenten in Ihrer Zone anmelden.<br><br><span class='text-sm text-gray-500'>Nichts erhalten? Prüfen Sie Ihren Spam-Ordner oder schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch' class='underline hover:text-gray-700'>hallo@badenleg.ch</a>.</span>";
+
+                // Build success message with referral link
+                const referralLink = data.referral_link || '';
+                let successHtml = "Vielen Dank! Sie sind jetzt registriert. Wir haben Ihnen eine Bestätigungs-E-Mail gesendet. Sie werden automatisch informiert, wenn sich neue Interessenten in Ihrer Zone anmelden.";
+
+                if (referralLink) {
+                    successHtml += `<br><br><div class='bg-green-50 border border-green-200 rounded-lg p-3 mt-3'>
+                        <p class='font-semibold text-green-800'>Laden Sie Ihre Nachbarn ein!</p>
+                        <p class='text-sm text-green-700 mb-2'>Teilen Sie diesen Link und erhalten Sie Priorität bei der LEG-Gründung:</p>
+                        <input type='text' readonly value='${referralLink}' class='w-full p-2 border rounded text-sm' onclick='this.select()'>
+                    </div>`;
+                }
+
+                successHtml += "<br><span class='text-sm text-gray-500'>Nichts erhalten? Prüfen Sie Ihren Spam-Ordner oder schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch' class='underline hover:text-gray-700'>hallo@badenleg.ch</a>.</span>";
+
+                successMessage.innerHTML = successHtml;
 
                 drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'anonymous');
                 updateExistingMarkers(data.buildings);
@@ -1303,6 +1385,7 @@
                         email: email,
                         phone: null,
                         profile: userProfileSummary,
+                        referral_code: storedReferral,
                         consents: {
                             share_with_neighbors: consentNeighborsFull.checked,
                             share_with_utility: consentUtilityFull.checked,
@@ -1314,10 +1397,37 @@
                 if (!response.ok) {
                     throw new Error(data.error || "Fehler bei der Registrierung.");
                 }
-                
+
+                // Track registration event
+                if (typeof trackEvent === 'function') {
+                    trackEvent('registration', {
+                        type: 'full',
+                        has_match: true,
+                        has_referral: !!storedReferral
+                    });
+                }
+
+                // Clear referral after successful registration
+                sessionStorage.removeItem('badenleg_referral');
+
                 resultStep.classList.add('hidden');
                 successStep.classList.remove('hidden');
-                successMessage.innerHTML = "Vielen Dank! Sie sind jetzt registriert. Wir haben Ihnen eine Bestätigungs-E-Mail gesendet. Sie werden automatisch informiert, wenn sich neue Interessenten in Ihrer Zone anmelden.<br><br><span class='text-sm text-gray-500'>Nichts erhalten? Prüfen Sie Ihren Spam-Ordner oder schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch' class='underline hover:text-gray-700'>hallo@badenleg.ch</a>.</span>";
+
+                // Build success message with referral link
+                const referralLink = data.referral_link || '';
+                let successHtml = "Vielen Dank! Sie sind jetzt registriert. Wir haben Ihnen eine Bestätigungs-E-Mail gesendet. Sie werden automatisch informiert, wenn sich neue Interessenten in Ihrer Zone anmelden.";
+
+                if (referralLink) {
+                    successHtml += `<br><br><div class='bg-green-50 border border-green-200 rounded-lg p-3 mt-3'>
+                        <p class='font-semibold text-green-800'>Laden Sie Ihre Nachbarn ein!</p>
+                        <p class='text-sm text-green-700 mb-2'>Teilen Sie diesen Link und erhalten Sie Priorität bei der LEG-Gründung:</p>
+                        <input type='text' readonly value='${referralLink}' class='w-full p-2 border rounded text-sm' onclick='this.select()'>
+                    </div>`;
+                }
+
+                successHtml += "<br><span class='text-sm text-gray-500'>Nichts erhalten? Prüfen Sie Ihren Spam-Ordner oder schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch' class='underline hover:text-gray-700'>hallo@badenleg.ch</a>.</span>";
+
+                successMessage.innerHTML = successHtml;
 
                 drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'registered');
                 updateExistingMarkers(data.buildings);

@@ -16,9 +16,12 @@ BadenLEG is a web platform that helps residents of Baden, Switzerland find neigh
 ## Technology Stack
 
 - **Backend**: Flask (Python 3.11+)
+- **Database**: PostgreSQL (with JSON fallback)
 - **Frontend**: HTML, TailwindCSS, Leaflet.js
 - **ML**: scikit-learn (DBSCAN clustering)
 - **Security**: Flask-Limiter, Flask-Talisman, bleach, email-validator
+- **Email**: SendGrid
+- **Analytics**: Google Analytics 4
 - **Data**: pandas, numpy, scipy
 
 ## Quick Start
@@ -104,17 +107,22 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 ```
 badenleg/
 ├── app.py                      # Main Flask application
+├── database.py                 # PostgreSQL database layer
 ├── security_utils.py           # Security validation and sanitization
 ├── data_enricher.py            # Address geocoding and energy profile estimation
 ├── ml_models.py                # DBSCAN clustering for community formation
+├── token_persistence.py        # Token storage (JSON fallback)
 ├── requirements.txt            # Python dependencies
-├── env.example                 # Environment variables template
+├── .env.example                # Environment variables template
+├── railway.toml                # Railway deployment config
 ├── .gitignore                  # Git ignore patterns
 ├── SECURITY.md                 # Security documentation
 ├── DEPLOYMENT.md               # Deployment guide
+├── METRICS-DASHBOARD.md        # Weekly metrics tracking template
+├── ACQUISITION-STRATEGY-16112025.md  # Business strategy
 ├── README.md                   # This file
 └── templates/
-    ├── index.html              # Main UI
+    ├── index.html              # Main UI (with GA4, referral tracking)
     ├── leg.html                # LEG explanation page
     ├── evl.html                # EVL/vEVL explanation page
     ├── zev.html                # ZEV/vZEV explanation page
@@ -164,6 +172,14 @@ See [SECURITY.md](SECURITY.md) for detailed security documentation.
 - `POST /api/check_potential` - Check if address has potential matches
 - `POST /api/register_anonymous` - Register interest (email only)
 - `POST /api/register_full` - Full registration
+- `GET /api/stats/public` - Public statistics (user count)
+- `GET /api/referral/leaderboard` - Top referrers
+- `GET /api/referral/stats/<building_id>` - Referral stats for a user
+
+### Admin Endpoints (require X-Admin-Token header)
+
+- `GET /admin/dashboard` - Admin statistics
+- `POST /api/migrate` - Migrate JSON data to PostgreSQL
 
 ## Deployment
 
@@ -316,6 +332,24 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Changelog
 
+### v1.2.0 (2026-01-24)
+
+- PostgreSQL database layer with connection pooling
+- Referral system with unique links and tracking
+- Google Analytics 4 integration with event tracking
+- Landing page optimization (urgency, social proof, savings callout)
+- Live user counter
+- Referral leaderboard API
+- Public stats API
+- Migration endpoint for JSON to PostgreSQL
+
+### v1.1.0 (2025-12)
+
+- SendGrid email integration
+- Railway deployment with persistent volumes
+- Admin dashboard
+- Security hardening
+
 ### v1.0.0 (2024-11)
 
 - Initial release
@@ -332,20 +366,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Roadmap
 
-### v1.1 (Planned)
+### v1.3 (Planned: Q1 2026)
 
-- [ ] Real SMTP integration
-- [ ] Database persistence (PostgreSQL)
-- [ ] Admin dashboard
-- [ ] Email templates (HTML)
-- [ ] Multi-language support (DE/FR/IT)
+- [ ] Formation wizard (Stage 2)
+- [ ] Community agreement templates
+- [ ] DSO submission workflow
+- [ ] Formation fee payments (CHF 199)
 
-### v2.0 (Future)
+### v2.0 (Future: Q2 2026)
 
-- [ ] User accounts with login
+- [ ] Billing calculator (15-min intervals)
+- [ ] Smart meter integration
 - [ ] Chat/messaging between confirmed neighbors
 - [ ] Document sharing
-- [ ] Event organization
 - [ ] Integration with Regionalwerke Baden API
 
 ## Acknowledgments
@@ -369,4 +402,4 @@ View full commit history: [GitHub Commits](https://github.com/wgusta/badenleg/co
 
 **BadenLEG** - Gemeinsam nachhaltig
 
-Last updated: November 2024
+Last updated: January 2026

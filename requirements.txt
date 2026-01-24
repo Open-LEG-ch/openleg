@@ -13,6 +13,9 @@ bleach==6.1.0
 email-validator==2.1.0
 redis==5.0.1
 
+# Database
+psycopg2-binary==2.9.9
+
 # Email
 sendgrid==6.11.0
 
