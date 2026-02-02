@@ -249,6 +249,21 @@ def _create_tables():
                 )
             """)
 
+            # Scheduled emails table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS scheduled_emails (
+                    id SERIAL PRIMARY KEY,
+                    building_id VARCHAR(64) REFERENCES buildings(building_id) ON DELETE CASCADE,
+                    email VARCHAR(255) NOT NULL,
+                    template_key VARCHAR(64) NOT NULL,
+                    send_at TIMESTAMP NOT NULL,
+                    sent_at TIMESTAMP,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    error_message TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             # Street leaderboard cache table
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS street_stats (
@@ -277,6 +292,9 @@ def _create_tables():
             cur.execute("CREATE INDEX IF NOT EXISTS idx_community_members_building ON community_members(building_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_webhooks_type ON webhooks(webhook_type)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(active)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_scheduled_emails_status ON scheduled_emails(status)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_scheduled_emails_send_at ON scheduled_emails(send_at)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_scheduled_emails_building ON scheduled_emails(building_id)")
 
             logger.info("[DB] Tables and indexes created successfully")
 
@@ -786,6 +804,160 @@ def migrate_from_json(json_data: Dict) -> Tuple[int, int]:
 
     logger.info(f"[MIGRATION] Completed: {success} success, {errors} errors")
     return success, errors
+
+
+# === Email Queue Operations ===
+
+def schedule_email(building_id: str, email: str, template_key: str, send_at_timestamp: float) -> bool:
+    """Schedule an email for future delivery."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                # Skip if same template already scheduled/sent for this building
+                cur.execute("""
+                    SELECT id FROM scheduled_emails
+                    WHERE building_id = %s AND template_key = %s AND status IN ('pending', 'sent')
+                """, (building_id, template_key))
+                if cur.fetchone():
+                    return False
+                cur.execute("""
+                    INSERT INTO scheduled_emails (building_id, email, template_key, send_at)
+                    VALUES (%s, %s, %s, to_timestamp(%s))
+                """, (building_id, email, template_key, send_at_timestamp))
+                return True
+    except Exception as e:
+        logger.error(f"[DB] Error scheduling email: {e}")
+        return False
+
+
+def get_pending_emails(limit: int = 50) -> List[Dict]:
+    """Get emails ready to send (send_at <= now, status = pending)."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT se.id, se.building_id, se.email, se.template_key, se.send_at,
+                           b.address, b.lat, b.lon, b.plz
+                    FROM scheduled_emails se
+                    JOIN buildings b ON se.building_id = b.building_id
+                    WHERE se.status = 'pending' AND se.send_at <= CURRENT_TIMESTAMP
+                    ORDER BY se.send_at ASC
+                    LIMIT %s
+                """, (limit,))
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting pending emails: {e}")
+        return []
+
+
+def mark_email_sent(email_id: int) -> bool:
+    """Mark a scheduled email as sent."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE scheduled_emails
+                    SET status = 'sent', sent_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """, (email_id,))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error marking email sent: {e}")
+        return False
+
+
+def mark_email_failed(email_id: int, error: str) -> bool:
+    """Mark a scheduled email as failed."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE scheduled_emails
+                    SET status = 'failed', error_message = %s
+                    WHERE id = %s
+                """, (error, email_id))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error marking email failed: {e}")
+        return False
+
+
+def cancel_emails_for_building(building_id: str) -> int:
+    """Cancel all pending emails for a building (e.g. on unsubscribe)."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE scheduled_emails
+                    SET status = 'cancelled'
+                    WHERE building_id = %s AND status = 'pending'
+                """, (building_id,))
+                return cur.rowcount
+    except Exception as e:
+        logger.error(f"[DB] Error cancelling emails: {e}")
+        return 0
+
+
+def get_email_stats() -> Dict:
+    """Get email queue statistics."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT status, COUNT(*) as count
+                    FROM scheduled_emails
+                    GROUP BY status
+                """)
+                stats = {}
+                for row in cur.fetchall():
+                    stats[row['status']] = row['count']
+                return stats
+    except Exception as e:
+        logger.error(f"[DB] Error getting email stats: {e}")
+        return {}
+
+
+def get_neighbor_count_near(lat: float, lon: float, radius_km: float = 0.5) -> int:
+    """Count verified buildings within radius of a point."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                # Approximate degree offset for radius
+                lat_offset = radius_km / 111.0
+                lon_offset = radius_km / (111.0 * 0.7)  # rough cos(47)
+                cur.execute("""
+                    SELECT COUNT(*) as count FROM buildings
+                    WHERE verified = TRUE
+                    AND lat BETWEEN %s AND %s
+                    AND lon BETWEEN %s AND %s
+                """, (lat - lat_offset, lat + lat_offset,
+                      lon - lon_offset, lon + lon_offset))
+                row = cur.fetchone()
+                return row['count'] if row else 0
+    except Exception as e:
+        logger.error(f"[DB] Error counting neighbors: {e}")
+        return 0
+
+
+def get_building_for_dashboard(building_id: str) -> Optional[Dict]:
+    """Get full building data for dashboard display."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT b.*, c.share_with_neighbors, c.share_with_utility,
+                           c.updates_opt_in, c.consent_version,
+                           (SELECT COUNT(*) FROM referrals WHERE referrer_id = b.building_id) as referral_count,
+                           (SELECT COUNT(*) FROM community_members WHERE building_id = b.building_id AND status = 'confirmed') as community_count
+                    FROM buildings b
+                    LEFT JOIN consents c ON b.building_id = c.building_id
+                    WHERE b.building_id = %s
+                """, (building_id,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting dashboard data: {e}")
+        return None
 
 
 # === Initialization check ===

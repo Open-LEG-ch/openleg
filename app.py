@@ -57,6 +57,12 @@ import security_utils
 import database as db
 USE_POSTGRES = db.is_db_available()
 
+# --- Email Automation ---
+import email_automation
+
+# --- Cron Secret ---
+CRON_SECRET = os.getenv('CRON_SECRET', '').strip()
+
 # --- Logging Setup ---
 # Simplified logging for Railway (no file logging)
 logging.basicConfig(
@@ -1914,7 +1920,15 @@ def api_register_anonymous():
     
     # Hintergrund-Analyse anstoßen
     threading.Thread(target=run_full_ml_task, args=(building_id,)).start()
-    
+
+    # Schedule email nurture sequence
+    if USE_POSTGRES:
+        threading.Thread(
+            target=email_automation.schedule_sequence_for_user,
+            args=(building_id, email),
+            daemon=True
+        ).start()
+
     cluster_info = build_match_result(profile)
     locations = collect_building_locations(exclude_building_id=building_id)
 
@@ -2070,6 +2084,14 @@ def api_register_full():
     # Hintergrund-Analyse anstoßen
     threading.Thread(target=run_full_ml_task, args=(building_id,)).start()
 
+    # Schedule email nurture sequence
+    if USE_POSTGRES:
+        threading.Thread(
+            target=email_automation.schedule_sequence_for_user,
+            args=(building_id, email),
+            daemon=True
+        ).start()
+
     cluster_info = build_match_result(profile)
     locations = collect_building_locations(exclude_building_id=building_id)
 
@@ -2220,6 +2242,162 @@ def api_public_stats():
             "total_users": total,
             "registrations_today": 0
         })
+
+
+@app.route("/api/stats/live")
+def api_live_stats():
+    """Lightweight live counter for landing page hero section."""
+    if USE_POSTGRES:
+        stats = db.get_stats()
+        total_users = stats.get('total_buildings', 0)
+        registrations_today = stats.get('registrations_today', 0)
+    else:
+        with db_lock:
+            total_users = len(DB_BUILDINGS) + len(DB_INTEREST_POOL)
+        registrations_today = 0
+
+    return jsonify({
+        "total_registered": total_users,
+        "last_24h": registrations_today,
+        # Placeholder values until community tracking is wired
+        "clusters_ready": 0,
+        "avg_savings_chf": 520
+    })
+
+
+@app.route("/dashboard")
+def dashboard():
+    """User dashboard with readiness score and community status."""
+    building_id = request.args.get('bid', '').strip()
+    if not building_id:
+        return render_template('dashboard.html', error="Kein Profil angegeben.", user=None, site_url=SITE_URL)
+
+    if USE_POSTGRES:
+        user = db.get_building_for_dashboard(building_id)
+    else:
+        with db_lock:
+            record, rtype = _get_record_for_building_no_lock(building_id)
+            if record:
+                user = {
+                    'building_id': building_id,
+                    'email': record.get('email', ''),
+                    'address': record.get('profile', {}).get('address', ''),
+                    'user_type': rtype,
+                    'verified': record.get('verified', False),
+                    'annual_consumption_kwh': record.get('profile', {}).get('annual_consumption_kwh'),
+                    'potential_pv_kwp': record.get('profile', {}).get('potential_pv_kwp'),
+                    'share_with_neighbors': record.get('consents', {}).get('share_with_neighbors', False),
+                    'share_with_utility': record.get('consents', {}).get('share_with_utility', False),
+                    'referral_count': 0,
+                    'community_count': 0,
+                }
+            else:
+                user = None
+
+    if not user:
+        return render_template('dashboard.html', error="Profil nicht gefunden.", user=None, site_url=SITE_URL)
+
+    # Calculate readiness score
+    score = 0
+    checks = []
+    if user.get('verified'):
+        score += 25
+        checks.append(('E-Mail bestätigt', True))
+    else:
+        checks.append(('E-Mail bestätigt', False))
+
+    if user.get('annual_consumption_kwh'):
+        score += 25
+        checks.append(('Verbrauchsdaten hinterlegt', True))
+    else:
+        checks.append(('Verbrauchsdaten hinterlegt', False))
+
+    if user.get('share_with_utility'):
+        score += 25
+        checks.append(('EVU-Einwilligung erteilt', True))
+    else:
+        checks.append(('EVU-Einwilligung erteilt', False))
+
+    if user.get('share_with_neighbors'):
+        score += 25
+        checks.append(('Nachbar-Einwilligung erteilt', True))
+    else:
+        checks.append(('Nachbar-Einwilligung erteilt', False))
+
+    # Get neighbor count and referral link
+    neighbor_count = 0
+    referral_link = ''
+    if USE_POSTGRES:
+        lat = user.get('lat')
+        lon = user.get('lon')
+        if lat and lon:
+            neighbor_count = db.get_neighbor_count_near(float(lat), float(lon))
+        ref_code = db.get_referral_code(building_id)
+        if ref_code:
+            referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
+
+    return render_template('dashboard.html',
+        user=user,
+        readiness_score=score,
+        checks=checks,
+        neighbor_count=neighbor_count,
+        referral_link=referral_link,
+        site_url=SITE_URL,
+        error=None,
+    )
+
+
+@app.route("/api/cron/process-emails", methods=['POST'])
+def api_cron_process_emails():
+    """Cron endpoint: process scheduled email queue."""
+    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
+    if CRON_SECRET and secret != CRON_SECRET:
+        abort(403)
+    if not USE_POSTGRES:
+        return jsonify({"error": "PostgreSQL not available"}), 503
+    result = email_automation.process_email_queue(app=app)
+    return jsonify(result)
+
+
+@app.route("/api/calculate_savings", methods=['POST'])
+def api_calculate_savings():
+    """Estimate annual savings for a household joining a LEG."""
+    data = request.json or {}
+    consumption = float(data.get('consumption_kwh', 4500))
+    has_solar = bool(data.get('has_solar', False))
+    pv_kwp = float(data.get('pv_kwp', 0))
+
+    # Base savings from local energy trading (grid fee reduction)
+    base_rate_saving = 0.04  # CHF/kWh saved via local tariff
+    annual_base = consumption * base_rate_saving
+
+    # Solar production bonus
+    solar_savings = 0
+    if has_solar and pv_kwp > 0:
+        annual_production = pv_kwp * 950  # kWh/kWp in Baden region
+        self_consumption_rate = 0.35
+        export_to_leg = annual_production * (1 - self_consumption_rate)
+        solar_savings = export_to_leg * 0.08  # premium over grid feed-in
+
+    total_annual = annual_base + solar_savings
+    total_annual = min(total_annual, 1200)  # cap estimate
+
+    return jsonify({
+        "annual_savings_chf": round(total_annual, 2),
+        "monthly_savings_chf": round(total_annual / 12, 2),
+        "five_year_total_chf": round(total_annual * 5, 2),
+        "has_solar_bonus": has_solar and pv_kwp > 0,
+        "consumption_kwh": consumption,
+    })
+
+
+@app.route("/api/email/stats")
+def api_email_stats():
+    """Admin: email queue statistics."""
+    _require_admin()
+    if not USE_POSTGRES:
+        return jsonify({"error": "PostgreSQL not available"}), 503
+    return jsonify(db.get_email_stats())
 
 
 @app.route("/api/migrate", methods=['POST'])

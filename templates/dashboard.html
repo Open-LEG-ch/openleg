@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mein Dashboard | BadenLEG</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="{{ site_url }}/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --brand-color: #c7021a; }
+        .progress-bar { transition: width 0.6s ease; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+    <header class="bg-white border-b border-gray-200">
+        <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/" class="text-xl font-bold"><span style="color:var(--brand-color);">Baden</span>LEG</a>
+            <a href="/" class="text-sm text-gray-500 hover:text-gray-800">Zur Startseite</a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-8">
+        {% if error %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <p class="text-red-800 font-semibold">{{ error }}</p>
+            <a href="/" class="inline-block mt-4 px-6 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900">Zur Startseite</a>
+        </div>
+        {% elif user %}
+
+        <!-- Readiness Score -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h1 class="text-2xl font-bold mb-1">Ihre LEG-Bereitschaft</h1>
+            <p class="text-sm text-gray-500 mb-4">{{ user.address }}</p>
+
+            <div class="flex items-end gap-3 mb-4">
+                <span class="text-5xl font-bold" style="color:var(--brand-color);">{{ readiness_score }}%</span>
+                <span class="text-gray-500 text-sm pb-2">bereit für die LEG-Gründung</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3 mb-6">
+                <div class="h-3 rounded-full progress-bar" style="width:{{ readiness_score }}%;background:var(--brand-color);"></div>
+            </div>
+
+            <ul class="space-y-3">
+                {% for label, done in checks %}
+                <li class="flex items-center gap-3 text-sm">
+                    {% if done %}
+                    <span class="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center flex-shrink-0 font-bold">&#10003;</span>
+                    <span class="text-gray-800">{{ label }}</span>
+                    {% else %}
+                    <span class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center flex-shrink-0 font-bold">!</span>
+                    <span class="text-gray-600">{{ label }}</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Neighbor Count -->
+        {% if neighbor_count > 0 %}
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-3">
+            <span class="text-2xl">🏘</span>
+            <div>
+                <p class="font-semibold text-green-800">{{ neighbor_count }} Haushalte in Ihrer Nähe registriert</p>
+                <p class="text-sm text-green-700">Je mehr Nachbarn mitmachen, desto schneller wird Ihre LEG Realität.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Energy Profile Form -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-bold mb-4">Energieprofil ergänzen</h2>
+            <form id="energy-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Jährlicher Stromverbrauch (kWh)</label>
+                    <input type="number" id="consumption" placeholder="z.B. 4500" value="{{ user.annual_consumption_kwh or '' }}" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
+                    <p class="text-xs text-gray-500 mt-1">Steht auf Ihrer letzten Stromrechnung von Regionalwerke Baden.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Haben Sie eine Solaranlage?</label>
+                    <select id="has-solar" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
+                        <option value="">Bitte wählen</option>
+                        <option value="yes" {% if user.potential_pv_kwp and user.potential_pv_kwp > 0 %}selected{% endif %}>Ja</option>
+                        <option value="no">Nein</option>
+                        <option value="planned">Geplant</option>
+                    </select>
+                </div>
+                <div id="pv-field" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Leistung Ihrer Anlage (kWp)</label>
+                    <input type="number" id="pv-kwp" step="0.1" placeholder="z.B. 8.5" value="{{ user.potential_pv_kwp or '' }}" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
+                </div>
+                <button type="button" id="calc-btn" class="w-full py-3 text-white font-bold rounded-md" style="background:var(--brand-color);">Ersparnis berechnen</button>
+            </form>
+            <div id="savings-result" class="hidden mt-4 bg-yellow-50 border border-yellow-300 rounded-lg p-4 text-center">
+                <p class="text-sm text-yellow-800">Geschätzte jährliche Ersparnis:</p>
+                <p class="text-3xl font-bold text-yellow-900" id="savings-amount"></p>
+                <p class="text-xs text-yellow-700 mt-1">Schätzung basierend auf Ihrem Verbrauchsprofil. Tatsächliche Werte können abweichen.</p>
+            </div>
+        </div>
+
+        <!-- Referral Section -->
+        {% if referral_link %}
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-bold mb-2">Nachbarn einladen</h2>
+            <p class="text-sm text-gray-600 mb-3">Teilen Sie diesen Link, um Ihre LEG-Gemeinschaft schneller zu bilden:</p>
+            <div class="flex gap-2">
+                <input type="text" readonly value="{{ referral_link }}" id="ref-link" class="flex-grow p-3 border border-gray-300 rounded-md text-sm bg-gray-50" onclick="this.select()">
+                <button onclick="navigator.clipboard.writeText(document.getElementById('ref-link').value);this.textContent='Kopiert!';setTimeout(()=>this.textContent='Kopieren',2000)" class="px-4 py-3 bg-gray-800 text-white text-sm font-semibold rounded-md hover:bg-gray-900 whitespace-nowrap">Kopieren</button>
+            </div>
+            {% if user.referral_count is defined and user.referral_count > 0 %}
+            <p class="text-sm text-green-700 mt-3 font-medium">{{ user.referral_count }} Nachbar(n) über Ihren Link beigetreten!</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Quick Links -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-lg font-bold mb-3">Nützliche Links</h2>
+            <div class="space-y-2 text-sm">
+                <a href="/leg" class="block text-gray-700 hover:text-gray-900 py-1">Was ist eine LEG?</a>
+                <a href="/vergleich-leg-evl-zev" class="block text-gray-700 hover:text-gray-900 py-1">LEG vs. EVL vs. ZEV: Vergleich</a>
+                <a href="mailto:hallo@badenleg.ch" class="block text-gray-700 hover:text-gray-900 py-1">Kontakt: hallo@badenleg.ch</a>
+            </div>
+        </div>
+
+        {% endif %}
+    </main>
+
+    <footer class="text-center text-xs text-gray-400 py-8">
+        <a href="/impressum" class="hover:text-gray-600">Impressum</a> &middot;
+        <a href="/datenschutz" class="hover:text-gray-600">Datenschutz</a>
+    </footer>
+
+    <script>
+        const solarSelect = document.getElementById('has-solar');
+        const pvField = document.getElementById('pv-field');
+        if (solarSelect) {
+            solarSelect.addEventListener('change', () => {
+                pvField.classList.toggle('hidden', solarSelect.value !== 'yes');
+            });
+            if (solarSelect.value === 'yes') pvField.classList.remove('hidden');
+        }
+
+        const calcBtn = document.getElementById('calc-btn');
+        if (calcBtn) {
+            calcBtn.addEventListener('click', async () => {
+                const consumption = parseFloat(document.getElementById('consumption').value) || 4500;
+                const hasSolar = solarSelect.value === 'yes';
+                const pvKwp = parseFloat(document.getElementById('pv-kwp').value) || 0;
+
+                try {
+                    const res = await fetch('/api/calculate_savings', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({consumption_kwh: consumption, has_solar: hasSolar, pv_kwp: pvKwp})
+                    });
+                    const data = await res.json();
+                    document.getElementById('savings-amount').textContent = 'CHF ' + data.annual_savings_chf.toLocaleString('de-CH');
+                    document.getElementById('savings-result').classList.remove('hidden');
+                } catch (e) {
+                    console.error('Savings calc error', e);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ihre LEG kann starten</title>
+<style>
+body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
+.wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
+.header { background: #c7021a; padding: 24px; text-align: center; }
+.header h1 { color: #fff; font-size: 22px; margin: 0; }
+.content { padding: 32px 24px; }
+.content h2 { font-size: 20px; margin: 0 0 16px; }
+.content p { font-size: 15px; line-height: 1.6; margin: 0 0 16px; color: #374151; }
+.cta { display: inline-block; background: #c7021a; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px 0; }
+.timeline { margin: 24px 0; }
+.timeline-item { display: flex; gap: 12px; margin-bottom: 16px; }
+.timeline-dot { width: 28px; height: 28px; border-radius: 50%; background: #c7021a; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.timeline-text { font-size: 14px; line-height: 1.5; }
+.timeline-text strong { display: block; color: #1f2937; }
+.timeline-text span { color: #6b7280; }
+.referral-box { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 16px; margin: 24px 0; }
+.referral-box p { margin: 0 0 8px; }
+.referral-link { background: #fff; border: 1px solid #d1d5db; border-radius: 4px; padding: 10px; font-size: 13px; word-break: break-all; color: #374151; }
+.footer { padding: 24px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; }
+.footer a { color: #9ca3af; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>BadenLEG</h1>
+  </div>
+  <div class="content">
+    <h2>Ihre LEG-Gemeinschaft kann starten!</h2>
+    <p>Zwei Wochen sind vergangen und wir haben genug Interessenten in Ihrer Zone gefunden. Jetzt geht es an die Gründung.</p>
+
+    <p><strong>So läuft die LEG-Gründung ab:</strong></p>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot">1</div>
+        <div class="timeline-text">
+          <strong>Gemeinschaft bilden</strong>
+          <span>Ihre Nachbarn bestätigen die Teilnahme. Wir koordinieren die Kontaktaufnahme.</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">2</div>
+        <div class="timeline-text">
+          <strong>Vertrag unterzeichnen</strong>
+          <span>Einfacher Gemeinschaftsvertrag, den alle Teilnehmer digital unterzeichnen.</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">3</div>
+        <div class="timeline-text">
+          <strong>Anmeldung beim Netzbetreiber</strong>
+          <span>Wir erstellen die Unterlagen für Regionalwerke Baden. Sie müssen nur unterschreiben.</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">4</div>
+        <div class="timeline-text">
+          <strong>Strom teilen und sparen</strong>
+          <span>Nach Genehmigung starten Sie sofort mit dem lokalen Stromhandel.</span>
+        </div>
+      </div>
+    </div>
+
+    <p style="text-align:center;">
+      <a href="{{ dashboard_url }}" class="cta">Gründung starten</a>
+    </p>
+
+    {% if referral_link %}
+    <div class="referral-box">
+      <p><strong>Noch mehr Nachbarn einladen?</strong></p>
+      <p style="font-size:14px;">Grössere Gemeinschaften sparen mehr. Teilen Sie den Link:</p>
+      <div class="referral-link">{{ referral_link }}</div>
+    </div>
+    {% endif %}
+
+    <p style="font-size:13px;color:#6b7280;">Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns: <a href="mailto:hallo@badenleg.ch" style="color:#c7021a;">hallo@badenleg.ch</a></p>
+  </div>
+  <div class="footer">
+    <p>BadenLEG &middot; Lokale Elektrizitätsgemeinschaft für Baden</p>
+    <p><a href="{{ unsubscribe_url }}">Abmelden</a> &middot; <a href="{{ site_url }}/datenschutz">Datenschutz</a></p>
+  </div>
+</div>
+</body>
+</html>
