@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 # Check for psycopg2
 try:
-    import psycopg2
-    from psycopg2.extras import RealDictCursor
-    from psycopg2 import pool
+    import psycopg2  # type: ignore
+    from psycopg2.extras import RealDictCursor  # type: ignore
+    from psycopg2 import pool  # type: ignore
     HAS_POSTGRES = True
 except ImportError:
     HAS_POSTGRES = False
@@ -172,6 +172,94 @@ def _create_tables():
                 )
             """)
 
+            # Communities table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS communities (
+                    community_id VARCHAR(64) PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    admin_building_id VARCHAR(64) REFERENCES buildings(building_id),
+                    distribution_model VARCHAR(20) DEFAULT 'simple',
+                    description TEXT,
+                    status VARCHAR(32) DEFAULT 'interested',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    formation_started_at TIMESTAMP,
+                    dso_submitted_at TIMESTAMP,
+                    dso_approved_at TIMESTAMP,
+                    activated_at TIMESTAMP
+                )
+            """)
+
+            # Community members table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS community_members (
+                    id SERIAL PRIMARY KEY,
+                    community_id VARCHAR(64) REFERENCES communities(community_id) ON DELETE CASCADE,
+                    building_id VARCHAR(64) REFERENCES buildings(building_id) ON DELETE CASCADE,
+                    role VARCHAR(20) DEFAULT 'member',
+                    status VARCHAR(20) DEFAULT 'invited',
+                    invited_by VARCHAR(64),
+                    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    confirmed_at TIMESTAMP,
+                    UNIQUE(community_id, building_id)
+                )
+            """)
+
+            # Community documents table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS community_documents (
+                    community_id VARCHAR(64) PRIMARY KEY REFERENCES communities(community_id) ON DELETE CASCADE,
+                    documents JSONB DEFAULT '{}',
+                    generated_at TIMESTAMP
+                )
+            """)
+
+            # Webhooks table for utility integration
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS webhooks (
+                    id SERIAL PRIMARY KEY,
+                    webhook_type VARCHAR(32) NOT NULL,
+                    url VARCHAR(512) NOT NULL,
+                    secret VARCHAR(255),
+                    events JSONB DEFAULT '[]',
+                    active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_triggered_at TIMESTAMP,
+                    failure_count INTEGER DEFAULT 0
+                )
+            """)
+
+            # White-label configuration table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS white_label_configs (
+                    id SERIAL PRIMARY KEY,
+                    territory VARCHAR(64) UNIQUE NOT NULL,
+                    utility_name VARCHAR(255),
+                    logo_url VARCHAR(512),
+                    primary_color VARCHAR(7),
+                    secondary_color VARCHAR(7),
+                    contact_email VARCHAR(255),
+                    contact_phone VARCHAR(32),
+                    legal_entity VARCHAR(255),
+                    dso_contact VARCHAR(255),
+                    active BOOLEAN DEFAULT TRUE,
+                    config JSONB DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Street leaderboard cache table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS street_stats (
+                    street_name VARCHAR(255) PRIMARY KEY,
+                    building_count INTEGER DEFAULT 0,
+                    community_count INTEGER DEFAULT 0,
+                    total_referrals INTEGER DEFAULT 0,
+                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             # Create indexes for common queries
             cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_email ON buildings(email)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_user_type ON buildings(user_type)")
@@ -183,6 +271,12 @@ def _create_tables():
             cur.execute("CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_analytics_type ON analytics_events(event_type)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_analytics_created ON analytics_events(created_at)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_communities_status ON communities(status)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_communities_admin ON communities(admin_building_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_community_members_community ON community_members(community_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_community_members_building ON community_members(building_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_webhooks_type ON webhooks(webhook_type)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(active)")
 
             logger.info("[DB] Tables and indexes created successfully")
 
@@ -190,8 +284,8 @@ def _create_tables():
 # === Building Operations ===
 
 def save_building(building_id: str, email: str, profile: Dict, consents: Dict,
-                  user_type: str = 'anonymous', phone: str = None,
-                  referrer_id: str = None) -> bool:
+                  user_type: str = 'anonymous', phone: Optional[str] = None,
+                  referrer_id: Optional[str] = None) -> bool:
     """Save or update a building record."""
     try:
         with get_connection() as conn:
@@ -220,7 +314,7 @@ def save_building(building_id: str, email: str, profile: Dict, consents: Dict,
                 """, (
                     building_id,
                     email,
-                    phone,
+                    phone or '',
                     profile.get('address', ''),
                     profile.get('lat'),
                     profile.get('lon'),
@@ -232,7 +326,7 @@ def save_building(building_id: str, email: str, profile: Dict, consents: Dict,
                     True,  # verified immediately for now
                     time.time(),
                     user_type,
-                    referrer_id,
+                    referrer_id or '',
                     referral_code
                 ))
 
@@ -424,7 +518,7 @@ def use_token(token: str) -> bool:
         return False
 
 
-def delete_tokens_for_building(building_id: str, token_type: str = None) -> int:
+def delete_tokens_for_building(building_id: str, token_type: Optional[str] = None) -> int:
     """Delete tokens for a building."""
     try:
         with get_connection() as conn:
@@ -586,7 +680,7 @@ def get_referral_leaderboard(limit: int = 10) -> List[Dict]:
 
 # === Analytics Operations ===
 
-def track_event(event_type: str, building_id: str = None, data: Dict = None) -> bool:
+def track_event(event_type: str, building_id: Optional[str] = None, data: Optional[Dict] = None) -> bool:
     """Track an analytics event."""
     try:
         import json
@@ -595,7 +689,7 @@ def track_event(event_type: str, building_id: str = None, data: Dict = None) -> 
                 cur.execute("""
                     INSERT INTO analytics_events (event_type, building_id, data)
                     VALUES (%s, %s, %s)
-                """, (event_type, building_id, json.dumps(data or {})))
+                """, (event_type, building_id or '', json.dumps(data if data is not None else {})))
                 return True
     except Exception as e:
         logger.error(f"[DB] Error tracking event: {e}")
