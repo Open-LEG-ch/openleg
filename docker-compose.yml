@@ -1,0 +1,76 @@
+services:
+  flask:
+    build: .
+    container_name: badenleg-flask
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - DATABASE_URL=postgresql://badenleg:${POSTGRES_PASSWORD}@postgres:5432/badenleg
+    volumes:
+      - flask_data:/data
+    networks:
+      - web
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: badenleg-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=badenleg
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=badenleg
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U badenleg"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - web
+
+  openclaw:
+    build:
+      context: ./openclaw
+      dockerfile: Dockerfile
+    container_name: openclaw-gateway
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
+      - DATABASE_URL=postgresql://badenleg:${POSTGRES_PASSWORD}@postgres:5432/badenleg
+      - BRAVE_API_KEY=${BRAVE_API_KEY}
+      - OPENCLAW_READONLY=${OPENCLAW_READONLY:-false}
+    networks:
+      - web
+
+  caddy:
+    image: caddy:latest
+    container_name: badenleg-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - web
+
+volumes:
+  flask_data:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  web:

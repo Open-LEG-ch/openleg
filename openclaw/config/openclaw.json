@@ -1,0 +1,47 @@
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-haiku-4-5",
+        "fallbacks": ["anthropic/claude-sonnet-4-5"]
+      },
+      "models": {
+        "anthropic/claude-haiku-4-5": { "alias": "Haiku" },
+        "anthropic/claude-sonnet-4-5": { "alias": "Sonnet" }
+      },
+      "workspace": "/home/node/.openclaw/workspace"
+    }
+  },
+
+  "gateway": {
+    "port": 18789,
+    "bind": "lan",
+    "auth": {
+      "token": "${OPENCLAW_GATEWAY_TOKEN}"
+    }
+  },
+
+  "env": {
+    "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
+  },
+
+  "mcpServers": {
+    "badenleg": {
+      "command": "node",
+      "args": ["/opt/mcp-badenleg-server/server.mjs"],
+      "env": {
+        "DATABASE_URL": "postgresql://badenleg:${POSTGRES_PASSWORD}@postgres:5432/badenleg",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    }
+  },
+
+  "tools": {
+    "profile": "full"
+  },
+
+  "session": {
+    "dmScope": "per-channel-peer",
+    "reset": { "mode": "daily", "atHour": 4 }
+  }
+}

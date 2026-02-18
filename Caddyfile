@@ -1,0 +1,7 @@
+badenleg.ch, www.badenleg.ch {
+    reverse_proxy flask:5000
+}
+
+openclaw.badenleg.ch {
+    reverse_proxy openclaw:18789
+}
