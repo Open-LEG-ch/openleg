@@ -40,13 +40,7 @@ except ImportError:
     print("[WARNUNG] Flask-Limiter oder Flask-Talisman nicht verfügbar, Security Features deaktiviert")
 
 # --- Email imports ---
-try:
-    from sendgrid import SendGridAPIClient
-    from sendgrid.helpers.mail import Mail
-    HAS_SENDGRID = True
-except ImportError:
-    HAS_SENDGRID = False
-    print("[WARNUNG] SendGrid nicht verfügbar, E-Mails werden nur in Logs ausgegeben")
+from email_utils import send_email, EMAIL_ENABLED, FROM_EMAIL
 
 # --- Import unserer ML- und Geo-Logik ---
 import data_enricher
@@ -92,10 +86,7 @@ SITE_URL = APP_BASE_URL.rstrip('/')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # --- Email Configuration ---
-SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
-FROM_EMAIL = os.getenv('FROM_EMAIL', 'noreply@badenleg.ch')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'hallo@badenleg.ch')
-EMAIL_ENABLED = HAS_SENDGRID and SENDGRID_API_KEY
 ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
 
 # --- Rate Limiting & Security (Minimal for Railway) ---
@@ -118,11 +109,11 @@ if HAS_SECURITY_LIBS:
         force_https=force_https,
         content_security_policy={
             'default-src': "'self'",
-            'script-src': ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://unpkg.com"],
+            'script-src': ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://www.googletagmanager.com"],
             'style-src': ["'self'", "'unsafe-inline'", "https://unpkg.com"],
             'img-src': ["'self'", "data:", "https:", "http:"],
             'font-src': ["'self'", "data:"],
-            'connect-src': ["'self'"]
+            'connect-src': ["'self'", "https://www.google-analytics.com", "https://www.googletagmanager.com"]
         },
         content_security_policy_nonce_in=None
     )
@@ -531,33 +522,10 @@ def send_activity_notification(activity_type, details):
     """Sendet Aktivitäts-Benachrichtigung an Admin-E-Mail"""
     subject = f"BadenLEG Aktivität: {activity_type}"
     message_body = f"Neue Aktivität auf BadenLEG:\n\nTyp: {activity_type}\n\nDetails:\n{details}\n\n---\nAutomatische Benachrichtigung von BadenLEG"
-    
-    if EMAIL_ENABLED:
-        try:
-            message = Mail(
-                from_email=FROM_EMAIL,
-                to_emails=ADMIN_EMAIL,
-                subject=subject,
-                plain_text_content=message_body
-            )
-            sg = SendGridAPIClient(SENDGRID_API_KEY)
-            response = sg.send(message)
-            logger.info(f"[ACTIVITY] Benachrichtigung gesendet an {ADMIN_EMAIL} (Status: {response.status_code})")
-        except Exception as e:
-            logger.error(f"[ACTIVITY] Fehler beim Senden an {ADMIN_EMAIL}: {e}")
-            print(f"\n--- [ACTIVITY NOTIFICATION - FEHLER] ---")
-            print(f"AN: {ADMIN_EMAIL}")
-            print(message_body)
-            print("----------------------------------------\n")
-    else:
-        print(f"\n--- [ACTIVITY NOTIFICATION] ---")
-        print(f"AN: {ADMIN_EMAIL}")
-        print(f"BETREFF: {subject}")
-        print(message_body)
-        print("--------------------------------\n")
+    send_email(ADMIN_EMAIL, subject, message_body)
 
 def send_confirmation_email(email, unsubscribe_url, building_id=None, address=None):
-    """Sendet Bestätigungs-E-Mail via SendGrid oder gibt sie in Logs aus"""
+    """Sendet Bestätigungs-E-Mail"""
     subject = "BadenLEG – Sie sind jetzt registriert"
     message_body = (
         "Willkommen bei BadenLEG!\n\n"
@@ -571,40 +539,9 @@ def send_confirmation_email(email, unsubscribe_url, building_id=None, address=No
         "Ihr BadenLEG-Team"
     )
 
-    if EMAIL_ENABLED:
-        try:
-            # E-Mail an User senden (OHNE BCC)
-            message = Mail(
-                from_email=FROM_EMAIL,
-                to_emails=email,
-                subject=subject,
-                plain_text_content=message_body
-            )
-            sg = SendGridAPIClient(SENDGRID_API_KEY)
-            response = sg.send(message)
-            logger.info(f"[EMAIL] Bestätigung gesendet an {email} (Status: {response.status_code})")
-            
-            # Separate Activity Notification an Admin senden (mit E-Mail-Inhalt)
-            activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}\n\nE-Mail-Inhalt:\n{message_body}"
-            send_activity_notification("Neue Registrierung", activity_details)
-        except Exception as e:
-            logger.error(f"[EMAIL] Fehler beim Senden an {email}: {e}")
-            # Fallback: Log in Console
-            print(f"\n--- [EMAIL BESTÄTIGUNG - FEHLER] ---")
-            print(f"AN: {email}")
-            print(message_body)
-            print("--------------------------------------\n")
-    else:
-        # Development Mode: Log to console
-        print(f"\n--- [EMAIL BESTÄTIGUNG] ---")
-        print(f"AN: {email}")
-        print(f"BETREFF: {subject}")
-        print(message_body)
-        print("-----------------------------\n")
-        
-        # Send activity notification even in dev mode (mit E-Mail-Inhalt)
-        activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}\n\nE-Mail-Inhalt:\n{message_body}"
-        send_activity_notification("Neue Registrierung", activity_details)
+    send_email(email, subject, message_body)
+    activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}\n\nE-Mail-Inhalt:\n{message_body}"
+    send_activity_notification("Neue Registrierung", activity_details)
 
 def check_duplicates_background(email, phone, address, building_id):
     """
@@ -730,38 +667,9 @@ def send_duplicate_email(email, duplicate_type, duplicate_info, message, buildin
     else:
         body = message
     
-    if EMAIL_ENABLED:
-        try:
-            # E-Mail an User senden (OHNE BCC)
-            message_obj = Mail(
-                from_email=FROM_EMAIL,
-                to_emails=email,
-                subject=subject,
-                plain_text_content=body
-            )
-            sg = SendGridAPIClient(SENDGRID_API_KEY)
-            response = sg.send(message_obj)
-            logger.info(f"[EMAIL] Duplikat-Benachrichtigung gesendet an {email} (Status: {response.status_code})")
-            
-            # Separate Activity Notification an Admin senden (mit E-Mail-Inhalt)
-            activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}\n\nE-Mail-Inhalt:\n{body}"
-            send_activity_notification("Duplikat erkannt", activity_details)
-        except Exception as e:
-            logger.error(f"[EMAIL] Fehler beim Senden an {email}: {e}")
-            print(f"\n--- [EMAIL DUPLIKAT - FEHLER] ---")
-            print(f"AN: {email}")
-            print(body)
-            print("----------------------------------\n")
-    else:
-        print(f"\n--- [EMAIL DUPLIKAT] ---")
-        print(f"AN: {email}")
-        print(f"BETREFF: {subject}")
-        print(body)
-        print("-------------------------\n")
-        
-        # Send activity notification even in dev mode (mit E-Mail-Inhalt)
-        activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}\n\nE-Mail-Inhalt:\n{body}"
-        send_activity_notification("Duplikat erkannt", activity_details)
+    send_email(email, subject, body)
+    activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}\n\nE-Mail-Inhalt:\n{body}"
+    send_activity_notification("Duplikat erkannt", activity_details)
 
 def check_and_handle_duplicates(email, phone, address, building_id):
     """
@@ -792,7 +700,7 @@ def check_and_handle_duplicates(email, phone, address, building_id):
         traceback.print_exc()
 
 def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
-    """Sendet Cluster-Kontaktübersicht via SendGrid oder gibt sie in Logs aus"""
+    """Sendet Cluster-Kontaktübersicht"""
     autarky = cluster_info.get('autarky_percent', 0.0)
     subject = f"BadenLEG – Ihre Nachbarn für die LEG-Gründung"
     
@@ -828,33 +736,8 @@ def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
             f"{unsubscribe_url}"
         )
         
-        if EMAIL_ENABLED:
-            try:
-                # E-Mail an User senden (OHNE BCC)
-                message = Mail(
-                    from_email=FROM_EMAIL,
-                    to_emails=recipient,
-                    subject=subject,
-                    plain_text_content=body
-                )
-                sg = SendGridAPIClient(SENDGRID_API_KEY)
-                response = sg.send(message)
-                logger.info(f"[EMAIL] Kontaktübersicht gesendet an {recipient} (Status: {response.status_code})")
-            except Exception as e:
-                logger.error(f"[EMAIL] Fehler beim Senden an {recipient}: {e}")
-                # Fallback: Log in Console
-                print(f"\n--- [EMAIL KONTAKTÜBERSICHT - FEHLER] ---")
-                print(f"AN: {recipient}")
-                print(body)
-                print("------------------------------------------\n")
-        else:
-            # Development Mode: Log to console
-            print(f"\n--- [EMAIL KONTAKTÜBERSICHT] ---")
-            print(f"AN: {recipient}")
-            print(f"BETREFF: {subject}")
-            print(body)
-            print("---------------------------------\n")
-    
+        send_email(recipient, subject, body)
+
     # Send activity notification for cluster contact emails with participant details and email content
     participant_list = []
     for contact in verified_contacts:
@@ -1034,31 +917,7 @@ def notify_existing_interested_persons(new_building_id, new_record):
                 f"{unsubscribe_url}"
             )
             
-            if EMAIL_ENABLED:
-                try:
-                    # E-Mail an User senden (OHNE BCC)
-                    message = Mail(
-                        from_email=FROM_EMAIL,
-                        to_emails=recipient,
-                        subject=subject,
-                        plain_text_content=body
-                    )
-                    sg = SendGridAPIClient(SENDGRID_API_KEY)
-                    response = sg.send(message)
-                    logger.info(f"[EMAIL] Neuer Interessent-Benachrichtigung gesendet an {recipient} (Status: {response.status_code})")
-                except Exception as e:
-                    logger.error(f"[EMAIL] Fehler beim Senden an {recipient}: {e}")
-                    print(f"\n--- [EMAIL NEUER INTERESSENT - FEHLER] ---")
-                    print(f"AN: {recipient}")
-                    print(body)
-                    print("------------------------------------------\n")
-            else:
-                # Development Mode: Log to console
-                print(f"\n--- [EMAIL NEUER INTERESSENT] ---")
-                print(f"AN: {recipient}")
-                print(f"BETREFF: {subject}")
-                print(body)
-                print("---------------------------------\n")
+            send_email(recipient, subject, body)
         
         print(f"[NOTIFY] {len(verified_contacts)} bestehende Interessenten über neuen Interessenten benachrichtigt")
         

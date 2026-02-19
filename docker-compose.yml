@@ -44,9 +44,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
       - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
-      - DATABASE_URL=postgresql://badenleg:${POSTGRES_PASSWORD}@postgres:5432/badenleg
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - BRAVE_API_KEY=${BRAVE_API_KEY}
       - OPENCLAW_READONLY=${OPENCLAW_READONLY:-false}
     networks:

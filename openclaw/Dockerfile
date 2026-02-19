@@ -11,15 +11,17 @@ COPY mcp-badenleg-server/package.json ./
 RUN npm install --production
 COPY mcp-badenleg-server/ ./
 
-# Set up config directory
+# Set up config directory and entrypoint
 COPY config/ /home/node/.openclaw/
+COPY entrypoint.sh /opt/entrypoint.sh
 
 # Permissions
-RUN chown -R node:node /home/node /opt/mcp-badenleg-server
+RUN chown -R node:node /home/node /opt/mcp-badenleg-server /opt/entrypoint.sh \
+    && chmod +x /opt/entrypoint.sh
 
 USER node
 WORKDIR /home/node
 
 EXPOSE 18789
 
-CMD ["openclaw", "gateway", "--allow-unconfigured", "--bind", "lan"]
+ENTRYPOINT ["/opt/entrypoint.sh"]

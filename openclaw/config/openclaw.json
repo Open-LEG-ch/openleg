@@ -2,15 +2,35 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "anthropic/claude-haiku-4-5",
-        "fallbacks": ["anthropic/claude-sonnet-4-5"]
+        "primary": "groq/qwen3-32b",
+        "fallbacks": ["groq/llama-3.3-70b"]
       },
       "models": {
-        "anthropic/claude-haiku-4-5": { "alias": "Haiku" },
-        "anthropic/claude-sonnet-4-5": { "alias": "Sonnet" }
+        "groq/qwen3-32b": { "alias": "Qwen3" },
+        "groq/llama-3.3-70b": { "alias": "Llama" }
       },
       "workspace": "/home/node/.openclaw/workspace"
     }
+  },
+
+  "models": {
+    "providers": [
+      {
+        "baseUrl": "https://api.groq.com/openai/v1",
+        "apiKey": "${GROQ_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "qwen-qwen3-32b",
+            "name": "groq/qwen3-32b"
+          },
+          {
+            "id": "llama-3.3-70b-versatile",
+            "name": "groq/llama-3.3-70b"
+          }
+        ]
+      }
+    ]
   },
 
   "gateway": {
@@ -19,10 +39,6 @@
     "auth": {
       "token": "${OPENCLAW_GATEWAY_TOKEN}"
     }
-  },
-
-  "env": {
-    "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
   },
 
   "mcpServers": {

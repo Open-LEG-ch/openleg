@@ -9,21 +9,12 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-try:
-    from sendgrid import SendGridAPIClient
-    from sendgrid.helpers.mail import Mail
-    HAS_SENDGRID = True
-except ImportError:
-    HAS_SENDGRID = False
-
 from flask import render_template
 
 import database as db
+from email_utils import send_email, EMAIL_ENABLED
 
-SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
-FROM_EMAIL = os.getenv('FROM_EMAIL', 'noreply@badenleg.ch')
 APP_BASE_URL = os.getenv('APP_BASE_URL', 'http://localhost:5003').rstrip('/')
-EMAIL_ENABLED = HAS_SENDGRID and bool(SENDGRID_API_KEY)
 
 # Email sequence: template_key -> (delay_days, subject)
 EMAIL_SEQUENCE = {
@@ -119,7 +110,7 @@ def process_email_queue(app=None):
             db.mark_email_sent(email_id)
             sent += 1
         else:
-            db.mark_email_failed(email_id, "SendGrid delivery failed")
+            db.mark_email_failed(email_id, "SMTP delivery failed")
             failed += 1
 
     logger.info(f"[EMAIL_AUTO] Processed queue: {sent} sent, {failed} failed, {len(pending)} total")
@@ -127,22 +118,5 @@ def process_email_queue(app=None):
 
 
 def _send_email(to_email: str, subject: str, html_body: str) -> bool:
-    """Send a single email via SendGrid."""
-    if not EMAIL_ENABLED:
-        logger.info(f"[EMAIL_AUTO] (dev mode) Would send to {to_email}: {subject}")
-        return True
-
-    try:
-        message = Mail(
-            from_email=FROM_EMAIL,
-            to_emails=to_email,
-            subject=subject,
-            html_content=html_body,
-        )
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-        logger.info(f"[EMAIL_AUTO] Sent to {to_email} (status {response.status_code})")
-        return response.status_code in (200, 201, 202)
-    except Exception as e:
-        logger.error(f"[EMAIL_AUTO] Failed to send to {to_email}: {e}")
-        return False
+    """Send a single email via SMTP."""
+    return send_email(to_email, subject, html_body, html=True)
