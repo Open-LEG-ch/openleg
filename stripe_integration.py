@@ -1,5 +1,6 @@
 """Stripe billing integration for OpenLEG utility clients."""
 import os
+import logging
 import stripe
 
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -89,8 +90,8 @@ def _activate_subscription(client_id, subscription_id, customer_id):
         database.update_utility_client_stripe(
             int(client_id), subscription_id, customer_id, status="active"
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logging.getLogger(__name__).error(f"[STRIPE] activate_subscription failed: {e}")
 
 
 def _deactivate_subscription(subscription_id):
@@ -98,8 +99,8 @@ def _deactivate_subscription(subscription_id):
     try:
         import database
         database.deactivate_utility_by_subscription(subscription_id)
-    except Exception:
-        pass
+    except Exception as e:
+        logging.getLogger(__name__).error(f"[STRIPE] deactivate_subscription failed: {e}")
 
 
 def _flag_payment_failed(subscription_id):
@@ -107,5 +108,5 @@ def _flag_payment_failed(subscription_id):
     try:
         import database
         database.flag_utility_payment_failed(subscription_id)
-    except Exception:
-        pass
+    except Exception as e:
+        logging.getLogger(__name__).error(f"[STRIPE] flag_payment_failed failed: {e}")

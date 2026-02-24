@@ -88,9 +88,10 @@ def get_signing_status(document_id):
 
 
 def _update_formation_status(document_id, status):
-    """Update formation step based on signing event. Placeholder for DB integration."""
+    """Update formation step based on signing event."""
     try:
         import database
         database.update_document_signing_status(document_id, status)
-    except Exception:
-        pass
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"[DEEPSIGN] update_formation_status failed: {e}")

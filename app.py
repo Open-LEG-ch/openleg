@@ -995,5 +995,31 @@ def api_email_stats():
     return jsonify(db.get_email_stats())
 
 
+# --- Webhooks ---
+
+@app.route("/webhook/stripe", methods=['POST'])
+def webhook_stripe():
+    """Handle Stripe webhook events (subscription lifecycle)."""
+    import stripe_integration
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature', '')
+    result = stripe_integration.handle_webhook(payload, sig_header)
+    if result.get("status") == "error":
+        logger.warning(f"[STRIPE] Webhook error: {result.get('message')}")
+        return jsonify(result), 400
+    logger.info(f"[STRIPE] Webhook processed: {result.get('event_type')}")
+    return jsonify(result), 200
+
+
+@app.route("/webhook/deepsign", methods=['POST'])
+def webhook_deepsign():
+    """Handle DeepSign e-signature webhook callbacks."""
+    import deepsign_integration
+    payload = request.get_json(silent=True) or {}
+    result = deepsign_integration.handle_webhook(payload)
+    logger.info(f"[DEEPSIGN] Webhook: {result.get('action')} for {result.get('document_id')}")
+    return jsonify(result), 200
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5003, host='127.0.0.1')

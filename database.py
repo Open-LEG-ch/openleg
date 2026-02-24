@@ -492,6 +492,80 @@ def _create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS billing_periods (
+                    id SERIAL PRIMARY KEY,
+                    community_id INTEGER NOT NULL,
+                    period_start TIMESTAMP NOT NULL,
+                    period_end TIMESTAMP NOT NULL,
+                    total_production_kwh DECIMAL(12, 4) DEFAULT 0,
+                    total_allocated_kwh DECIMAL(12, 4) DEFAULT 0,
+                    total_surplus_kwh DECIMAL(12, 4) DEFAULT 0,
+                    total_network_discount_chf DECIMAL(10, 2) DEFAULT 0,
+                    distribution_model VARCHAR(32) DEFAULT 'proportional',
+                    network_level VARCHAR(16) DEFAULT 'same',
+                    status VARCHAR(32) DEFAULT 'draft',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS billing_line_items (
+                    id SERIAL PRIMARY KEY,
+                    billing_period_id INTEGER REFERENCES billing_periods(id),
+                    participant_id VARCHAR(64) NOT NULL,
+                    consumption_kwh DECIMAL(12, 4) DEFAULT 0,
+                    allocated_kwh DECIMAL(12, 4) DEFAULT 0,
+                    self_supply_ratio DECIMAL(5, 4) DEFAULT 0,
+                    internal_cost_chf DECIMAL(10, 2) DEFAULT 0,
+                    network_discount_chf DECIMAL(10, 2) DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoices (
+                    id SERIAL PRIMARY KEY,
+                    billing_period_id INTEGER REFERENCES billing_periods(id),
+                    community_id INTEGER NOT NULL,
+                    invoice_number VARCHAR(64) UNIQUE,
+                    total_chf DECIMAL(10, 2) DEFAULT 0,
+                    status VARCHAR(32) DEFAULT 'draft',
+                    issued_at TIMESTAMP,
+                    paid_at TIMESTAMP,
+                    pdf_url TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS leg_documents (
+                    id SERIAL PRIMARY KEY,
+                    community_id INTEGER NOT NULL,
+                    doc_type VARCHAR(64) NOT NULL,
+                    filename VARCHAR(255),
+                    pdf_data BYTEA,
+                    signing_status VARCHAR(32) DEFAULT 'unsigned',
+                    deepsign_document_id VARCHAR(128),
+                    signed_pdf_url TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Migration: add stripe_subscription_id to utility_clients if missing
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'utility_clients' AND column_name = 'stripe_subscription_id'
+                    ) THEN
+                        ALTER TABLE utility_clients ADD COLUMN stripe_subscription_id VARCHAR(128);
+                    END IF;
+                END $$
+            """)
+
             # Migration: add city_id to existing buildings table if missing
             cur.execute("""
                 DO $$
@@ -2168,6 +2242,128 @@ def get_vnb_pipeline_stats() -> Dict:
     except Exception as e:
         logger.error(f"[DB] Error getting VNB pipeline stats: {e}")
         return {}
+
+
+def update_utility_client_stripe(client_id: int, subscription_id: str, customer_id: str, status: str = "active") -> bool:
+    """Update utility client with Stripe subscription and customer IDs."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE utility_clients
+                    SET stripe_subscription_id = %s, stripe_customer_id = %s, status = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """, (subscription_id, customer_id, status, client_id))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error updating utility client Stripe: {e}")
+        return False
+
+
+def deactivate_utility_by_subscription(subscription_id: str) -> bool:
+    """Deactivate utility client by Stripe subscription ID."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE utility_clients SET status = 'inactive', updated_at = CURRENT_TIMESTAMP
+                    WHERE stripe_subscription_id = %s
+                """, (subscription_id,))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error deactivating utility by subscription: {e}")
+        return False
+
+
+def flag_utility_payment_failed(subscription_id: str) -> bool:
+    """Flag payment failure for a utility client."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE utility_clients SET status = 'payment_failed', updated_at = CURRENT_TIMESTAMP
+                    WHERE stripe_subscription_id = %s
+                """, (subscription_id,))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error flagging payment failure: {e}")
+        return False
+
+
+def update_document_signing_status(deepsign_document_id: str, status: str) -> bool:
+    """Update LEG document signing status from DeepSign webhook."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE leg_documents SET signing_status = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE deepsign_document_id = %s
+                """, (status, deepsign_document_id))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error updating document signing status: {e}")
+        return False
+
+
+def store_leg_document(community_id: int, doc_type: str, pdf_bytes: bytes, filename: str) -> int:
+    """Store generated LEG document PDF."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO leg_documents (community_id, doc_type, filename, pdf_data)
+                    VALUES (%s, %s, %s, %s) RETURNING id
+                """, (community_id, doc_type, filename, pdf_bytes))
+                return cur.fetchone()[0]
+    except Exception as e:
+        logger.error(f"[DB] Error storing leg document: {e}")
+        return 0
+
+
+def list_leg_documents(community_id: int) -> List[Dict]:
+    """List all documents for a community."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, doc_type, filename, signing_status, deepsign_document_id, created_at
+                    FROM leg_documents WHERE community_id = %s ORDER BY created_at DESC
+                """, (community_id,))
+                cols = [d[0] for d in cur.description]
+                return [dict(zip(cols, row)) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing leg documents: {e}")
+        return []
+
+
+def save_billing_period(community_id: int, period_start, period_end, summary: dict) -> int:
+    """Save billing period and line items from billing engine output."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO billing_periods
+                    (community_id, period_start, period_end, total_production_kwh, total_allocated_kwh,
+                     total_surplus_kwh, total_network_discount_chf, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'final') RETURNING id
+                """, (community_id, period_start, period_end,
+                      summary['total_production_kwh'], summary['total_allocated_kwh'],
+                      summary.get('total_surplus_kwh', 0), summary['total_network_discount_chf']))
+                period_id = cur.fetchone()[0]
+
+                for p in summary.get('participants', []):
+                    cur.execute("""
+                        INSERT INTO billing_line_items
+                        (billing_period_id, participant_id, consumption_kwh, allocated_kwh,
+                         self_supply_ratio, internal_cost_chf, network_discount_chf)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """, (period_id, p['id'], p['consumption_kwh'], p['allocated_kwh'],
+                          p['self_supply_ratio'], p['internal_cost_chf'], p['network_discount_chf']))
+
+                return period_id
+    except Exception as e:
+        logger.error(f"[DB] Error saving billing period: {e}")
+        return 0
 
 
 def is_db_available() -> bool:
