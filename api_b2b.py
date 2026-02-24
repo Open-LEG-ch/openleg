@@ -17,8 +17,8 @@ b2b_bp = Blueprint('b2b', __name__, url_prefix='/api/insights')
 # Tier access levels
 TIER_ACCESS = {
     'starter': ['load_profiles', 'solar_index'],
-    'professional': ['load_profiles', 'solar_index', 'flexibility', 'community_signals'],
-    'enterprise': ['load_profiles', 'solar_index', 'flexibility', 'community_signals', 'raw_export'],
+    'professional': ['load_profiles', 'solar_index', 'flexibility', 'community_signals', 'formation_pipeline', 'community_benchmarks'],
+    'enterprise': ['load_profiles', 'solar_index', 'flexibility', 'community_signals', 'formation_pipeline', 'community_benchmarks', 'grid_optimization', 'raw_export'],
 }
 
 
@@ -129,6 +129,42 @@ def community_signals():
 
     data = insights_engine.compute_community_signals()
     return _track_and_respond('/api/insights/community-signals', data)
+
+
+@b2b_bp.route('/formation-pipeline')
+@require_api_key
+def formation_pipeline():
+    """B2B: LEG formation pipeline stages and counts."""
+    if not _check_tier_access('formation_pipeline'):
+        return jsonify({"error": "Upgrade your plan for access to this endpoint."}), 403
+
+    kanton = request.args.get('kanton', 'ZH')
+    data = insights_engine.compute_formation_pipeline(kanton=kanton)
+    return _track_and_respond('/api/insights/formation-pipeline', data, {'kanton': kanton})
+
+
+@b2b_bp.route('/grid-optimization')
+@require_api_key
+def grid_optimization():
+    """B2B: Grid optimization recommendations based on LEG data."""
+    if not _check_tier_access('grid_optimization'):
+        return jsonify({"error": "Upgrade your plan for access to this endpoint."}), 403
+
+    kanton = request.args.get('kanton', 'ZH')
+    data = insights_engine.compute_grid_optimization(kanton=kanton)
+    return _track_and_respond('/api/insights/grid-optimization', data, {'kanton': kanton})
+
+
+@b2b_bp.route('/community-benchmarks')
+@require_api_key
+def community_benchmarks():
+    """B2B: Aggregated community performance benchmarks."""
+    if not _check_tier_access('community_benchmarks'):
+        return jsonify({"error": "Upgrade your plan for access to this endpoint."}), 403
+
+    kanton = request.args.get('kanton', 'ZH')
+    data = insights_engine.compute_community_benchmarks(kanton=kanton)
+    return _track_and_respond('/api/insights/community-benchmarks', data, {'kanton': kanton})
 
 
 @b2b_bp.route('/status')

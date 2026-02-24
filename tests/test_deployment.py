@@ -47,8 +47,8 @@ class TestDockerCompose:
         with open(path) as f:
             self.config = yaml.safe_load(f)
 
-    def test_four_services(self):
-        assert len(self.config["services"]) == 4
+    def test_five_services(self):
+        assert len(self.config["services"]) == 5
 
     def test_flask_healthcheck(self):
         flask = self.config["services"]["flask"]

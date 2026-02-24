@@ -431,6 +431,15 @@ def admin_overview():
     })
 
 
+@app.route("/admin/pipeline")
+def admin_pipeline():
+    _require_admin()
+    status_filter = request.args.get("status")
+    entries = db.get_vnb_pipeline(status_filter=status_filter)
+    stats = db.get_vnb_pipeline_stats()
+    return jsonify({"entries": entries, "stats": stats})
+
+
 @app.route("/admin/export")
 def admin_export():
     _require_admin()

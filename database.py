@@ -702,6 +702,43 @@ def get_all_buildings(city_id: Optional[str] = None) -> List[Dict]:
         return []
 
 
+def get_vnb_pipeline(status_filter: Optional[str] = None) -> List[Dict]:
+    """Get VNB pipeline entries, optionally filtered by status."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                if status_filter:
+                    cur.execute("SELECT * FROM vnb_pipeline WHERE status = %s ORDER BY score DESC NULLS LAST", (status_filter,))
+                else:
+                    cur.execute("SELECT * FROM vnb_pipeline ORDER BY score DESC NULLS LAST")
+                cols = [d[0] for d in cur.description] if cur.description else []
+                return [dict(zip(cols, row)) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"get_vnb_pipeline error: {e}")
+        return []
+
+
+def get_vnb_pipeline_stats() -> Dict:
+    """Get pipeline funnel counts."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT status, COUNT(*)::int as count
+                    FROM vnb_pipeline GROUP BY status
+                """)
+                result = {"total": 0}
+                for stage in ["lead", "contacted", "demo", "trial", "paid", "churned"]:
+                    result[stage] = 0
+                for row in cur.fetchall():
+                    result[row[0]] = row[1]
+                    result["total"] += row[1]
+                return result
+    except Exception as e:
+        logger.error(f"get_vnb_pipeline_stats error: {e}")
+        return {"total": 0}
+
+
 def get_all_building_profiles(city_id: Optional[str] = None) -> List[Dict]:
     """Get all building profiles for ML clustering, optionally scoped by city_id."""
     try:

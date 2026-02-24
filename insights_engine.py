@@ -176,3 +176,93 @@ def refresh_all_insights():
 
     logger.info(f"[INSIGHTS] Refreshed all insights: {results}")
     return results
+
+
+def compute_formation_pipeline(kanton: str = None) -> Dict:
+    """Aggregate LEG formation pipeline by stage.
+
+    Returns: {stages: {stage: count}, total_communities: int, avg_formation_days: float}
+    """
+    try:
+        communities = db.list_communities_by_kanton(kanton) if kanton else db.list_all_communities()
+    except Exception:
+        communities = []
+
+    stage_counts = {
+        "interested": 0, "formation_started": 0, "dso_submitted": 0,
+        "dso_approved": 0, "active": 0
+    }
+    for c in communities:
+        status = c.get("status", "interested")
+        if status in stage_counts:
+            stage_counts[status] += 1
+
+    return {
+        "stages": stage_counts,
+        "total_communities": len(communities),
+        "avg_formation_days": 0,  # TODO: compute from timestamps
+        "kanton": kanton or "all",
+    }
+
+
+def compute_grid_optimization(kanton: str = "ZH") -> Dict:
+    """Compute grid optimization recommendations from LEG data.
+
+    Returns: peak reduction potential, self-consumption ratio, recommendations
+    """
+    try:
+        profiles = db.get_all_municipality_profiles()
+        profiles = [p for p in profiles if p.get("kanton") == kanton] if kanton else profiles
+    except Exception:
+        profiles = []
+
+    total_consumption = sum(p.get("electricity_consumption_mwh", 0) for p in profiles)
+    total_production = sum(p.get("renewable_production_mwh", 0) for p in profiles)
+    self_supply = (total_production / total_consumption * 100) if total_consumption > 0 else 0
+
+    actions = []
+    if self_supply < 20:
+        actions.append("Increase PV installations in low-penetration municipalities")
+    if self_supply > 30:
+        actions.append("Deploy battery storage to reduce grid feed-in peaks")
+    actions.append("Optimize LEG boundaries to maximize self-consumption")
+
+    return {
+        "kanton": kanton,
+        "total_consumption_mwh": round(total_consumption, 0),
+        "total_production_mwh": round(total_production, 0),
+        "self_supply_ratio_pct": round(self_supply, 1),
+        "peak_reduction_potential_pct": round(min(self_supply * 0.4, 25), 1),
+        "recommended_actions": actions,
+    }
+
+
+def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
+    """Aggregate community performance benchmarks.
+
+    Returns: avg members, avg self-supply ratio, top communities
+    """
+    try:
+        communities = db.list_communities_by_kanton(kanton) if kanton else db.list_all_communities()
+    except Exception:
+        communities = []
+
+    if not communities:
+        return {
+            "kanton": kanton,
+            "avg_members": 0,
+            "avg_self_supply_ratio": 0,
+            "total_communities": 0,
+            "top_communities": [],
+        }
+
+    member_counts = [c.get("member_count", 0) for c in communities]
+    avg_members = sum(member_counts) / len(member_counts) if member_counts else 0
+
+    return {
+        "kanton": kanton,
+        "avg_members": round(avg_members, 1),
+        "avg_self_supply_ratio": 0,  # TODO: compute from billing data
+        "total_communities": len(communities),
+        "top_communities": sorted(communities, key=lambda c: c.get("member_count", 0), reverse=True)[:5],
+    }
