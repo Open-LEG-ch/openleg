@@ -1036,6 +1036,96 @@ server.tool(
   }
 );
 
+// ============================================================
+// Sales Pipeline Tools
+// ============================================================
+
+server.tool(
+  'get_vnb_pipeline',
+  'Get VNB sales pipeline entries. Optional status filter.',
+  {
+    status: z.string().optional().describe('Filter: lead, contacted, demo, trial, paid, churned'),
+    limit: z.number().default(50).describe('Max results')
+  },
+  async ({ status, limit }) => {
+    let sql = 'SELECT * FROM vnb_pipeline';
+    const params = [];
+    if (status) {
+      sql += ' WHERE status = $1';
+      params.push(status);
+    }
+    sql += ' ORDER BY score DESC NULLS LAST LIMIT $' + (params.length + 1);
+    params.push(limit);
+    const res = await query(sql, params);
+    return txt(res.rows);
+  }
+);
+
+server.tool(
+  'update_vnb_status',
+  'Update VNB pipeline entry status and notes.',
+  {
+    vnb_id: z.number().describe('Pipeline entry ID'),
+    status: z.string().describe('New status: lead, contacted, demo, trial, paid, churned'),
+    notes: z.string().optional().describe('Notes about the status change')
+  },
+  async ({ vnb_id, status, notes }) => {
+    const guard = readonlyGuard();
+    if (guard) return guard;
+    const validStages = ['lead', 'contacted', 'demo', 'trial', 'paid', 'churned'];
+    if (!validStages.includes(status)) return txt({ error: 'Invalid status' });
+    const res = await query(
+      `UPDATE vnb_pipeline SET status = $2, notes = COALESCE($3, notes), updated_at = NOW() WHERE id = $1 RETURNING *`,
+      [vnb_id, status, notes || null]
+    );
+    return txt(res.rows[0] || { error: 'Not found' });
+  }
+);
+
+server.tool(
+  'add_vnb_lead',
+  'Add a new VNB to the sales pipeline.',
+  {
+    vnb_name: z.string().describe('Name of the VNB/utility'),
+    municipality: z.string().optional().describe('Primary municipality'),
+    bfs_number: z.number().optional().describe('BFS municipality number'),
+    population: z.number().optional().describe('Population served'),
+    score: z.number().optional().describe('Lead score 0-100'),
+    notes: z.string().optional().describe('Research notes')
+  },
+  async ({ vnb_name, municipality, bfs_number, population, score, notes }) => {
+    const guard = readonlyGuard();
+    if (guard) return guard;
+    const res = await query(
+      `INSERT INTO vnb_pipeline (vnb_name, municipality, bfs_number, population, score, notes, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'lead', NOW(), NOW()) RETURNING *`,
+      [vnb_name, municipality || null, bfs_number || null, population || null, score || null, notes || null]
+    );
+    return txt(res.rows[0]);
+  }
+);
+
+server.tool(
+  'get_pipeline_dashboard',
+  'Get pipeline funnel metrics: counts per stage, avg score, conversion rate.',
+  {},
+  async () => {
+    const res = await query(`
+      SELECT status, COUNT(*)::int as count, ROUND(AVG(score)::numeric, 1) as avg_score
+      FROM vnb_pipeline GROUP BY status ORDER BY
+        CASE status WHEN 'lead' THEN 1 WHEN 'contacted' THEN 2 WHEN 'demo' THEN 3
+        WHEN 'trial' THEN 4 WHEN 'paid' THEN 5 WHEN 'churned' THEN 6 END
+    `);
+    const total = res.rows.reduce((s, r) => s + r.count, 0);
+    const paid = res.rows.find(r => r.status === 'paid')?.count || 0;
+    return txt({
+      funnel: res.rows,
+      total,
+      conversion_rate: total > 0 ? Math.round(paid / total * 1000) / 10 : 0
+    });
+  }
+);
+
 // Start server
 const transport = new StdioServerTransport();
 await server.connect(transport);

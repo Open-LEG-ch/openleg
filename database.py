@@ -476,6 +476,22 @@ def _create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS vnb_pipeline (
+                    id SERIAL PRIMARY KEY,
+                    vnb_name VARCHAR(255) NOT NULL,
+                    municipality VARCHAR(255),
+                    bfs_number INTEGER,
+                    population INTEGER,
+                    score DECIMAL(5, 1),
+                    status VARCHAR(32) DEFAULT 'lead',
+                    notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(vnb_name)
+                )
+            """)
+
             # Migration: add city_id to existing buildings table if missing
             cur.execute("""
                 DO $$

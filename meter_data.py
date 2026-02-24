@@ -126,6 +126,81 @@ def _parse_decimal(value: str) -> float:
     return float(cleaned)
 
 
+def detect_format(file_content: str) -> str:
+    """Auto-detect CSV format from header line.
+
+    Returns: ekz, ewz, ckw, bkw, or generic
+    """
+    first_line = file_content.split('\n')[0].lower().strip() if file_content else ""
+
+    if 'zeitstempel' in first_line and ';' in first_line:
+        return "ekz"
+    elif 'timestamp' in first_line and ';' in first_line:
+        return "ewz"
+    elif 'datum' in first_line and 'zeit' in first_line and 'bezug' in first_line:
+        return "ckw"
+    elif 'zeitpunkt' in first_line and ',' in first_line:
+        return "bkw"
+    return "generic"
+
+
+def _parse_ckw_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
+    """Parse CKW format with separate Datum and Zeit columns."""
+    readings = []
+    errors = []
+    try:
+        reader = csv.reader(io.StringIO(file_content), delimiter=';')
+        header = next(reader, None)
+        if not header:
+            return [], ["Leere Datei"]
+
+        header_clean = [h.strip().lower() for h in header]
+        date_col = next((i for i, h in enumerate(header_clean) if 'datum' in h), None)
+        time_col = next((i for i, h in enumerate(header_clean) if h == 'zeit'), None)
+        bezug_col = next((i for i, h in enumerate(header_clean) if 'bezug' in h), None)
+        rueck_col = next((i for i, h in enumerate(header_clean) if 'rücklieferung' in h or 'ruecklieferung' in h or 'einspeisung' in h), None)
+
+        if date_col is None or bezug_col is None:
+            return [], ["CKW-Format: Datum oder Bezug Spalte fehlt"]
+
+        for i, row in enumerate(reader, start=2):
+            if not row or all(c.strip() == '' for c in row):
+                continue
+            try:
+                date_str = row[date_col].strip()
+                time_str = row[time_col].strip() if time_col is not None else "00:00"
+                ts = _parse_timestamp(f"{date_str} {time_str}")
+                if not ts:
+                    errors.append(f"Zeile {i}: Ungültiger Zeitstempel")
+                    continue
+                consumption = _parse_decimal(row[bezug_col])
+                feed_in = _parse_decimal(row[rueck_col]) if rueck_col is not None else 0.0
+                readings.append((ts, consumption, 0.0, feed_in))
+            except (IndexError, ValueError) as e:
+                errors.append(f"Zeile {i}: {str(e)}")
+    except Exception as e:
+        errors.append(f"CKW Parse-Fehler: {str(e)}")
+
+    return readings, errors
+
+
+def parse_meter_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
+    """Auto-detect format and parse any Swiss utility CSV.
+
+    Returns: (readings, errors)
+    """
+    if not file_content or not file_content.strip():
+        return [], ["Leere Datei"]
+
+    fmt = detect_format(file_content)
+
+    if fmt == "ckw":
+        return _parse_ckw_csv(file_content)
+    else:
+        # ekz, ewz, bkw, generic all handled by the generic parser
+        return parse_ekz_csv(file_content)
+
+
 def ingest_csv(building_id: str, file_content: str, source: str = 'csv') -> Dict:
     """Parse and store meter readings from CSV upload.
 
