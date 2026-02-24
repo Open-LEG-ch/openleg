@@ -1,339 +1,371 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenLEG – Die Intelligenz hinter dem Netz | LEG-Plattform für Schweizer Gemeinden</title>
-    <meta name="description" content="OpenLEG hilft Schweizer Gemeinden, Lokale Elektrizitätsgemeinschaften (LEG) zu gründen und zu optimieren. Smart Meter Daten, KI-gestützte Analyse, B2B Insights.">
-    <link rel="canonical" href="{{ site_url }}/">
-    <meta property="og:title" content="OpenLEG – Die Intelligenz hinter dem Netz">
-    <meta property="og:description" content="LEG-Plattform für Schweizer Gemeinden. Smart Meter Intelligence für Energieversorger.">
-    <meta property="og:url" content="{{ site_url }}/">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    {% if ga4_id %}
-    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '{{ ga4_id }}');
-    </script>
-    {% endif %}
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { DEFAULT: '#6366f1', light: '#818cf8', dark: '#4f46e5' },
-                        accent: '#f59e0b',
-                    }
-                }
-            }
-        }
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenLEG - LEG-ready fuer EVU/VNB | Gemeinde & Bewohner Plattform</title>
+  <meta name="description" content="OpenLEG macht EVU/VNB LEG-ready: Formation, Dokumente, 15-Minuten-Logik. Gemeinden und Bewohner starten ohne Projektaufwand.">
+  <link rel="canonical" href="{{ site_url }}/">
+  <meta property="og:title" content="OpenLEG - LEG-ready fuer EVU/VNB">
+  <meta property="og:description" content="Turnkey LEG-Plattform: Formation, Dokumente, 15-Minuten-Logik. Gemeinden und Bewohner starten sofort.">
+  <meta property="og:image" content="{{ site_url }}/static/images/og-image.png">
+  <meta property="og:url" content="{{ site_url }}/">
+  {% include 'partials/tailwind_brand.html' %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  {% if ga4_id %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ ga4_id }}');
+  </script>
+  {% endif %}
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
 
-    <!-- Nav -->
-    <nav class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold text-brand">OpenLEG</a>
-            <div class="hidden md:flex space-x-6 text-sm">
-                <a href="#wie-es-funktioniert" class="hover:text-brand">So funktioniert's</a>
-                <a href="#registrieren" class="hover:text-brand">Registrieren</a>
-                <a href="/gemeinde/onboarding" class="hover:text-brand">Für Gemeinden</a>
-                <a href="/how-it-works" class="hover:text-brand">Mehr erfahren</a>
-            </div>
-            <a href="/gemeinde/onboarding" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Gemeinde anmelden</a>
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(0deg,rgba(15,23,42,0.06)_1px,transparent_1px)] bg-[size:42px_42px]"></div>
+    <div class="absolute inset-0 bg-gradient-to-br from-white/80 via-transparent to-amber-50/70"></div>
+    <div class="relative max-w-6xl mx-auto px-4 py-16 md:py-20 grid md:grid-cols-2 gap-10 items-center">
+      <div>
+        <div class="inline-flex items-center rounded-full border border-slate-300/60 bg-white/70 p-1 text-sm shadow-sm" role="tablist" aria-label="Zielgruppe">
+          <button class="px-4 py-2 rounded-full" data-seg-tab="evu" role="tab" aria-selected="true">EVU/VNB</button>
+          <button class="px-4 py-2 rounded-full" data-seg-tab="gemeinde" role="tab" aria-selected="false">Gemeinde</button>
+          <button class="px-4 py-2 rounded-full" data-seg-tab="bewohner" role="tab" aria-selected="false">Bewohner</button>
         </div>
-    </nav>
 
-    <!-- Hero -->
-    <section class="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-20">
-        <div class="max-w-4xl mx-auto px-4 text-center">
-            <h1 class="text-5xl md:text-6xl font-bold mb-4">OpenLEG</h1>
-            <p class="text-xl md:text-2xl text-indigo-200 mb-2">Die Intelligenz hinter dem Netz.</p>
-            <p class="text-lg text-indigo-300 mb-8 max-w-2xl mx-auto">Die Plattform für Lokale Elektrizitätsgemeinschaften im Kanton {{ kanton }}. Gemeinden gründen LEGs, Bewohner teilen Strom, Energieversorger gewinnen Insights.</p>
-            {% if user_count > 0 %}
-            <p class="text-indigo-200 mb-6">Bereits <strong class="text-white text-xl">{{ user_count }}</strong> Haushalte registriert</p>
-            {% endif %}
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="#registrieren" class="bg-amber-500 text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-amber-400 text-lg">Jetzt Adresse prüfen</a>
-                <a href="/gemeinde/onboarding" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-700 text-lg">Gemeinde registrieren</a>
+        <div class="mt-6" aria-live="polite">
+          <div data-seg-panel="evu">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">LEG-ready. Ohne ERP. Ohne Projekt.</h1>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Turnkey Plattform fuer Gemeindewerke &amp; kleine DSOs: Formation, Dokumente, 15-Minuten-Logik.</p>
+            <div class="mt-6 flex flex-col sm:flex-row gap-3">
+              <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">EVU registrieren</a>
+              <a href="/utility/login" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Utility Login</a>
             </div>
+            <div class="mt-6 flex flex-wrap gap-2 text-xs">
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Seit 01.01.2026 Pflicht (LEG)</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">15-Minuten-Intervalle</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Swiss-hosted</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Ab CHF 500/Monat</span>
+            </div>
+          </div>
+
+          <div data-seg-panel="gemeinde" class="hidden">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Gemeinde-Portal fuer LEG-Start.</h1>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Registrierungen, Matching, Dashboard - kostenlos starten, spaeter skalieren.</p>
+            <div class="mt-6 flex flex-col sm:flex-row gap-3">
+              <a href="/gemeinde/onboarding" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Gemeinde anmelden</a>
+              <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">So funktioniert's</a>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-2 text-xs">
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Live in Ihrer Gemeinde</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">White-Label Subdomain</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Datenschutz (DSG)</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Kostenloser Einstieg</span>
+            </div>
+          </div>
+
+          <div data-seg-panel="bewohner" class="hidden">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Pruefen. Finden. Starten.</h1>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Adresse pruefen und LEG-Nachbarn in Ihrer Zone finden - Sie kontrollieren Ihre Daten.</p>
+            <div class="mt-6 flex flex-col sm:flex-row gap-3">
+              <a href="#registrieren" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse pruefen</a>
+              <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Mehr erfahren</a>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-2 text-xs">
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Anonymisierte Karte</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Einwilligung in 3 Stufen</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Jederzeit widerrufbar</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Schweizer Kontext</span>
+            </div>
+          </div>
         </div>
-    </section>
+      </div>
 
-    <!-- How it works -->
-    <section id="wie-es-funktioniert" class="py-16 bg-white">
-        <div class="max-w-5xl mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12">So funktioniert OpenLEG</h2>
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="text-center p-6">
-                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl font-bold text-brand">1</span>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Gemeinde registriert sich</h3>
-                    <p class="text-gray-600">Ihre Gemeinde meldet sich an und erhält eine eigene OpenLEG-Instanz mit LEG-Dashboard und KPIs.</p>
-                </div>
-                <div class="text-center p-6">
-                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl font-bold text-brand">2</span>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Bewohner treten bei</h3>
-                    <p class="text-gray-600">Hauseigentümer registrieren sich, laden Smart-Meter-Daten hoch und finden LEG-Nachbarn.</p>
-                </div>
-                <div class="text-center p-6">
-                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl font-bold text-brand">3</span>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Intelligenz entsteht</h3>
-                    <p class="text-gray-600">Aus aggregierten Daten entstehen Insights: Lastprofile, Solar-Index, Flexibilitätspotenzial.</p>
-                </div>
-            </div>
+      <div class="relative">
+        <div class="grid grid-cols-2 grid-rows-2 gap-3">
+          <div class="col-span-1 row-span-2 overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
+            <img src="/static/images/landing/urban.png" alt="Urbaner Alltag" class="h-full w-full object-cover" loading="lazy">
+          </div>
+          <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
+            <img src="/static/images/landing/suburban.png" alt="Vorort Alltag" class="h-full w-full object-cover" loading="lazy">
+          </div>
+          <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
+            <img src="/static/images/landing/rural.png" alt="Laendlicher Alltag" class="h-full w-full object-cover" loading="lazy">
+          </div>
         </div>
-    </section>
+        <div class="mt-3 text-xs text-ink-muted">Bewegung in Stadt, Vorort und Land - echte Lebensraeume.</div>
+      </div>
+    </div>
+  </section>
 
-    <!-- Map + Registration -->
-    <section id="registrieren" class="py-16 bg-gray-50">
-        <div class="max-w-5xl mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-8">Adresse prüfen &amp; registrieren</h2>
-            <div class="grid md:grid-cols-2 gap-8">
-                <!-- Map -->
-                <div>
-                    <div id="map" class="w-full h-96 rounded-lg shadow-md z-0"></div>
-                    <p class="text-xs text-gray-500 mt-2">Registrierte Haushalte (anonymisiert)</p>
-                </div>
-                <!-- Form -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div id="step-address">
-                        <label class="block text-sm font-medium mb-1">Ihre Adresse</label>
-                        <input type="text" id="address-input" placeholder="Strasse, PLZ Ort" class="w-full border rounded-lg px-3 py-2 mb-1 focus:ring-2 focus:ring-brand focus:outline-none" autocomplete="off">
-                        <div id="suggestions" class="bg-white border rounded-lg max-h-48 overflow-y-auto hidden"></div>
-                        <div id="profile-summary" class="text-sm text-gray-600 mt-2 hidden"></div>
-                        <button id="btn-check" class="w-full bg-brand text-white py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark disabled:opacity-50" disabled>Adresse prüfen</button>
-                    </div>
-                    <div id="step-register" class="hidden">
-                        <div id="match-info" class="bg-indigo-50 p-3 rounded-lg mb-3 text-sm"></div>
-                        <label class="block text-sm font-medium mb-1">E-Mail</label>
-                        <input type="email" id="email-input" placeholder="ihre@email.ch" class="w-full border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-brand focus:outline-none">
-                        <label class="block text-sm font-medium mb-1">Telefon (optional)</label>
-                        <input type="tel" id="phone-input" placeholder="+41 79 ..." class="w-full border rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-brand focus:outline-none">
-                        <div class="space-y-2 mb-4 text-sm">
-                            <label class="flex items-start gap-2"><input type="checkbox" id="consent-neighbors" class="mt-1"> Ich stimme zu, meine Kontaktdaten mit LEG-Nachbarn zu teilen.</label>
-                            <label class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1"> Ich stimme zu, meine Daten für LEG-Anfragen an den Netzbetreiber weiterzugeben.</label>
-                            <label class="flex items-start gap-2"><input type="checkbox" id="consent-updates"> Ich möchte Updates per E-Mail erhalten.</label>
-                        </div>
-                        <button id="btn-register" class="w-full bg-amber-500 text-gray-900 py-2 rounded-lg font-semibold hover:bg-amber-400">Jetzt registrieren</button>
-                    </div>
-                    <div id="step-success" class="hidden text-center py-6">
-                        <div class="text-4xl mb-3">&#9889;</div>
-                        <h3 class="text-lg font-semibold mb-2">Registrierung erfolgreich!</h3>
-                        <p class="text-gray-600 mb-4">Sie erhalten eine Bestätigung per E-Mail.</p>
-                        <div id="referral-link-box" class="bg-gray-50 p-3 rounded-lg text-sm hidden">
-                            <p class="font-medium mb-1">Teilen Sie Ihren Einladungslink:</p>
-                            <input type="text" id="referral-link" class="w-full border rounded px-2 py-1 text-xs" readonly>
-                        </div>
-                    </div>
-                    <div id="form-error" class="text-red-600 text-sm mt-2 hidden"></div>
-                </div>
-            </div>
+  <!-- EVU/VNB Section -->
+  <section id="evu" class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+        <div>
+          <h2 class="text-3xl font-bold">Fuer EVU/VNB: Compliance, die sich verkaufen laesst.</h2>
+          <p class="text-ink-muted mt-2 max-w-2xl">Keine Integrationsprojekte. Keine Beratungsschleifen. Einfach starten, dann skalieren.</p>
         </div>
-    </section>
+        <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">EVU registrieren</a>
+      </div>
 
-    <!-- Value props -->
-    <section class="py-16 bg-white">
-        <div class="max-w-5xl mx-auto px-4">
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="border rounded-lg p-6">
-                    <h3 class="font-semibold text-lg mb-2 text-brand">Für Gemeinden</h3>
-                    <ul class="text-gray-600 space-y-1 text-sm">
-                        <li>&#10003; LEG-Gründung digital begleiten</li>
-                        <li>&#10003; Eigenes Dashboard mit KPIs</li>
-                        <li>&#10003; White-Label unter gemeinde.openleg.ch</li>
-                        <li>&#10003; Kostenloser Einstieg</li>
-                    </ul>
-                </div>
-                <div class="border rounded-lg p-6">
-                    <h3 class="font-semibold text-lg mb-2 text-brand">Für Bewohner</h3>
-                    <ul class="text-gray-600 space-y-1 text-sm">
-                        <li>&#10003; LEG-Nachbarn in der Umgebung finden</li>
-                        <li>&#10003; Smart-Meter-Daten hochladen</li>
-                        <li>&#10003; Ersparnisse berechnen</li>
-                        <li>&#10003; Datenkontrolle in 3 Stufen</li>
-                    </ul>
-                </div>
-                <div class="border rounded-lg p-6">
-                    <h3 class="font-semibold text-lg mb-2 text-brand">Für Energieversorger</h3>
-                    <ul class="text-gray-600 space-y-1 text-sm">
-                        <li>&#10003; Lastprofile nach PLZ</li>
-                        <li>&#10003; Solar-Adoptions-Index</li>
-                        <li>&#10003; Flexibilitätspotenzial</li>
-                        <li>&#10003; API-Zugang (insights.openleg.ch)</li>
-                    </ul>
-                </div>
-            </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <h3 class="font-semibold text-lg mb-2">Sofort startklar</h3>
+          <p class="text-ink-muted">Registrieren -> Magic Link -> Dashboard -> API-Key.</p>
         </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-400 py-8">
-        <div class="max-w-5xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <span class="text-white font-bold text-lg">OpenLEG</span>
-                <span class="text-sm ml-2">Die Intelligenz hinter dem Netz.</span>
-            </div>
-            <div class="flex gap-6 text-sm">
-                <a href="/impressum" class="hover:text-white">Impressum</a>
-                <a href="/datenschutz" class="hover:text-white">Datenschutz</a>
-                <a href="/how-it-works" class="hover:text-white">So funktioniert's</a>
-                <a href="/pricing" class="hover:text-white">Preise</a>
-            </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <h3 class="font-semibold text-lg mb-2">Dokumente inklusive</h3>
+          <p class="text-ink-muted">Gemeinschaftsvereinbarung, Teilnehmervertrag, DSO-Anmeldung (PDF).</p>
         </div>
-    </footer>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <h3 class="font-semibold text-lg mb-2">15-Minuten-Betrieb</h3>
+          <p class="text-ink-muted">Daten &amp; Abrechnung auf Viertelstunden-Basis (gesetzeskonform).</p>
+        </div>
+      </div>
 
-    <script>
-    // Map
-    const map = L.map('map').setView([{{ map_center_lat }}, {{ map_center_lon }}], {{ map_zoom }});
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18, attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+      <div class="mt-10 bg-amber-50 border border-amber-200 rounded-xl p-6">
+        <div class="font-semibold">Pilot in 30 Tagen</div>
+        <div class="mt-3 grid sm:grid-cols-4 gap-3 text-sm">
+          <div class="bg-white rounded-lg border border-amber-200 px-3 py-2">1) Registrieren</div>
+          <div class="bg-white rounded-lg border border-amber-200 px-3 py-2">2) Branding + API-Key</div>
+          <div class="bg-white rounded-lg border border-amber-200 px-3 py-2">3) Erste Formation</div>
+          <div class="bg-white rounded-lg border border-amber-200 px-3 py-2">4) Dokumente + Preview</div>
+        </div>
+        <div class="mt-4 flex flex-col sm:flex-row gap-3">
+          <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">EVU registrieren</a>
+          <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Pilot%20EVU" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Pilot anfragen</a>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    let selectedProfile = null;
-    let addressTimeout = null;
+  <!-- Proof Bar -->
+  <section class="py-12 bg-[#f6f4ef]">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="grid md:grid-cols-4 gap-4">
+        <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
+          <div class="text-sm text-ink-muted">Pflicht seit 01.01.2026</div>
+          <div class="text-lg font-semibold">631 DSOs</div>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
+          <div class="text-sm text-ink-muted">Smart Meter Frist</div>
+          <div class="text-lg font-semibold">Innert 3 Monaten</div>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
+          <div class="text-sm text-ink-muted">Netznutzung</div>
+          <div class="text-lg font-semibold">40% / 20% Rabatt</div>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
+          <div class="text-sm text-ink-muted">Billing Basis</div>
+          <div class="text-lg font-semibold">15-Minuten-Intervalle</div>
+        </div>
+      </div>
+      <div class="mt-3 text-xs text-ink-muted">Keine Rechtsberatung. Umsetzung gemaess StromVG/StromVV.</div>
+    </div>
+  </section>
 
-    // Address autocomplete
-    const addressInput = document.getElementById('address-input');
-    const suggestionsDiv = document.getElementById('suggestions');
-    const btnCheck = document.getElementById('btn-check');
+  <!-- Gemeinde -->
+  <section id="gemeinde" class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <h2 class="text-3xl font-bold">Gemeinde: klarer Einstieg, spaeter skalierbar.</h2>
+          <p class="text-ink-muted mt-3">Eine Instanz pro Gemeinde, mit Registrierung, Matching und Dashboard.</p>
+          <ul class="mt-4 space-y-2 text-ink-muted list-disc list-inside">
+            <li>White-Label Subdomain mit Branding</li>
+            <li>Registrierungen, Status, KPIs</li>
+            <li>Dokumente &amp; DSO-Anmeldung</li>
+          </ul>
+          <a href="/gemeinde/onboarding" class="inline-block mt-6 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Gemeinde anmelden</a>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-amber-50 p-6">
+          <div class="text-sm text-ink-muted">Kurz gesagt</div>
+          <div class="mt-2 text-2xl font-semibold">Start in Tagen, nicht in Monaten.</div>
+          <div class="mt-3 text-ink-muted">Kostenlos starten. Kein Projekt, kein ERP, kein Integrationsstress.</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    addressInput.addEventListener('input', function() {
-        clearTimeout(addressTimeout);
-        const q = this.value.trim();
-        if (q.length < 3) { suggestionsDiv.classList.add('hidden'); return; }
-        addressTimeout = setTimeout(async () => {
-            const res = await fetch(`/api/suggest_addresses?q=${encodeURIComponent(q)}`);
-            const data = await res.json();
-            if (data.suggestions && data.suggestions.length > 0) {
-                suggestionsDiv.innerHTML = data.suggestions.map(s =>
-                    `<div class="px-3 py-2 hover:bg-indigo-50 cursor-pointer text-sm border-b" data-lat="${s.lat}" data-lon="${s.lon}" data-plz="${s.plz}" data-label="${s.label}">${s.label}</div>`
-                ).join('');
-                suggestionsDiv.classList.remove('hidden');
-                suggestionsDiv.querySelectorAll('div').forEach(el => {
-                    el.addEventListener('click', function() {
-                        addressInput.value = this.dataset.label;
-                        suggestionsDiv.classList.add('hidden');
-                        btnCheck.disabled = false;
-                    });
-                });
-            } else {
-                suggestionsDiv.classList.add('hidden');
-            }
-        }, 300);
-    });
+  <!-- Bewohner -->
+  <section id="bewohner" class="py-16 bg-[#f6f4ef]">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="mb-6">
+        <h2 class="text-3xl font-bold">Bewohner: Interesse sichtbar machen (anonymisiert)</h2>
+        <p class="text-ink-muted mt-2">Pruefen Sie Ihre Adresse und zeigen Sie Nachfrage in Ihrer Zone.</p>
+        {% if user_count > 0 %}
+        <p class="text-ink-muted mt-2">Bereits <strong class="text-ink">{{ user_count }}</strong> Haushalte registriert</p>
+        {% endif %}
+      </div>
 
-    // Check potential
-    btnCheck.addEventListener('click', async function() {
-        this.disabled = true;
-        this.textContent = 'Prüfe...';
-        document.getElementById('form-error').classList.add('hidden');
-        try {
-            const res = await fetch('/api/check_potential', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({address: addressInput.value})
-            });
-            const data = await res.json();
-            if (data.error) {
-                document.getElementById('form-error').textContent = data.error;
-                document.getElementById('form-error').classList.remove('hidden');
-                this.disabled = false;
-                this.textContent = 'Adresse prüfen';
-                return;
-            }
-            selectedProfile = data.profile_summary;
-            const matchInfo = document.getElementById('match-info');
-            if (data.potential) {
-                const ci = data.cluster_info;
-                matchInfo.innerHTML = `<strong>${ci.num_members} Nachbarn gefunden!</strong> Autarkie-Potenzial: ${ci.autarky_percent.toFixed(0)}%`;
-                if (selectedProfile && selectedProfile.lat) {
-                    L.marker([selectedProfile.lat, selectedProfile.lon]).addTo(map).bindPopup('Ihr Standort');
-                    map.setView([selectedProfile.lat, selectedProfile.lon], 16);
-                }
-            } else {
-                matchInfo.innerHTML = 'Noch keine Nachbarn in der Nähe. Seien Sie der Erste in Ihrer Zone!';
-                if (selectedProfile && selectedProfile.lat) {
-                    L.marker([selectedProfile.lat, selectedProfile.lon]).addTo(map).bindPopup('Ihr Standort');
-                    map.setView([selectedProfile.lat, selectedProfile.lon], 15);
-                }
-            }
-            document.getElementById('step-address').classList.add('hidden');
-            document.getElementById('step-register').classList.remove('hidden');
-        } catch (e) {
-            document.getElementById('form-error').textContent = 'Fehler bei der Adressprüfung.';
-            document.getElementById('form-error').classList.remove('hidden');
-        }
-        this.disabled = false;
-        this.textContent = 'Adresse prüfen';
-    });
+      <div id="registrieren" class="grid md:grid-cols-2 gap-8">
+        <!-- Map -->
+        <div>
+          <div id="map" class="w-full h-96 rounded-xl shadow-md z-0"></div>
+          <p class="text-xs text-ink-muted mt-2">Registrierte Haushalte (anonymisiert)</p>
+        </div>
+        <!-- Form -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <div id="step-address">
+            <label class="block text-sm font-medium mb-1">Ihre Adresse</label>
+            <input type="text" id="address-input" placeholder="Strasse, PLZ Ort" class="w-full border rounded-lg px-3 py-2 mb-1 focus:ring-2 focus:ring-brand focus:outline-none" autocomplete="off">
+            <div id="suggestions" class="bg-white border rounded-lg max-h-48 overflow-y-auto hidden"></div>
+            <div id="profile-summary" class="text-sm text-ink-muted mt-2 hidden"></div>
+            <button id="btn-check" class="w-full bg-brand text-white py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark disabled:opacity-50" disabled>Adresse pruefen</button>
+          </div>
+          <div id="step-register" class="hidden">
+            <div id="match-info" class="bg-indigo-50 p-3 rounded-lg mb-3 text-sm"></div>
+            <label class="block text-sm font-medium mb-1">E-Mail</label>
+            <input type="email" id="email-input" placeholder="ihre@email.ch" class="w-full border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-brand focus:outline-none">
+            <label class="block text-sm font-medium mb-1">Telefon (optional)</label>
+            <input type="tel" id="phone-input" placeholder="+41 79 ..." class="w-full border rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-brand focus:outline-none">
+            <div class="space-y-2 mb-4 text-sm">
+              <label class="flex items-start gap-2"><input type="checkbox" id="consent-neighbors" class="mt-1"> Ich stimme zu, meine Kontaktdaten mit LEG-Nachbarn zu teilen.</label>
+              <label class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1"> Ich stimme zu, meine Daten fuer LEG-Anfragen an den Netzbetreiber weiterzugeben.</label>
+              <label class="flex items-start gap-2"><input type="checkbox" id="consent-updates"> Ich moechte Updates per E-Mail erhalten.</label>
+            </div>
+            <button id="btn-register" class="w-full bg-amber-500 text-ink py-2 rounded-lg font-semibold hover:bg-amber-400">Jetzt registrieren</button>
+          </div>
+          <div id="step-success" class="hidden text-center py-6">
+            <div class="text-4xl mb-3">&#9889;</div>
+            <h3 class="text-lg font-semibold mb-2">Registrierung erfolgreich!</h3>
+            <p class="text-ink-muted mb-4">Sie erhalten eine Bestaetigung per E-Mail.</p>
+            <div id="referral-link-box" class="bg-gray-50 p-3 rounded-lg text-sm hidden">
+              <p class="font-medium mb-1">Teilen Sie Ihren Einladungslink:</p>
+              <input type="text" id="referral-link" class="w-full border rounded px-2 py-1 text-xs" readonly>
+            </div>
+          </div>
+          <div id="form-error" class="text-red-600 text-sm mt-2 hidden"></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    // Register
-    document.getElementById('btn-register').addEventListener('click', async function() {
-        const email = document.getElementById('email-input').value.trim();
-        const phone = document.getElementById('phone-input').value.trim();
-        const cn = document.getElementById('consent-neighbors').checked;
-        const cu = document.getElementById('consent-utility').checked;
-        const co = document.getElementById('consent-updates').checked;
-        if (!email) { alert('Bitte E-Mail eingeben.'); return; }
-        if (!cn || !cu) { alert('Bitte stimmen Sie beiden Datenweitergaben zu.'); return; }
-        this.disabled = true;
-        this.textContent = 'Registriere...';
-        try {
-            const res = await fetch('/api/register_anonymous', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    email: email, phone: phone, profile: selectedProfile,
-                    referral_code: '{{ referral_code }}',
-                    consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co}
-                })
-            });
-            const data = await res.json();
-            if (data.error) {
-                document.getElementById('form-error').textContent = data.error;
-                document.getElementById('form-error').classList.remove('hidden');
-            } else {
-                document.getElementById('step-register').classList.add('hidden');
-                document.getElementById('step-success').classList.remove('hidden');
-                if (data.referral_link) {
-                    document.getElementById('referral-link').value = data.referral_link;
-                    document.getElementById('referral-link-box').classList.remove('hidden');
-                }
-                // Update map
-                if (data.buildings) {
-                    data.buildings.forEach(b => {
-                        L.circleMarker([b.lat, b.lon], {radius: 5, color: b.type === 'registered' ? '#6366f1' : '#94a3b8', fillOpacity: 0.6}).addTo(map);
-                    });
-                }
-            }
-        } catch(e) {
-            document.getElementById('form-error').textContent = 'Registrierung fehlgeschlagen.';
-            document.getElementById('form-error').classList.remove('hidden');
-        }
-        this.disabled = false;
-        this.textContent = 'Jetzt registrieren';
-    });
+  {% include 'partials/site_footer.html' %}
 
-    // Load existing buildings
-    fetch('/api/get_all_buildings').then(r => r.json()).then(data => {
-        if (data.buildings) {
-            data.buildings.forEach(b => {
-                L.circleMarker([b.lat, b.lon], {radius: 4, color: b.type === 'registered' ? '#6366f1' : '#94a3b8', fillOpacity: 0.5}).addTo(map);
-            });
-        }
-    });
-    </script>
+  <script src="/static/js/landing_segments.js"></script>
+
+  <script>
+  // Map
+  const map = L.map('map').setView([{{ map_center_lat }}, {{ map_center_lon }}], {{ map_zoom }});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18, attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  let selectedProfile = null;
+  let addressTimeout = null;
+
+  // Address autocomplete
+  const addressInput = document.getElementById('address-input');
+  const suggestionsDiv = document.getElementById('suggestions');
+  const btnCheck = document.getElementById('btn-check');
+
+  addressInput.addEventListener('input', function() {
+      clearTimeout(addressTimeout);
+      const q = this.value.trim();
+      if (q.length < 3) { suggestionsDiv.classList.add('hidden'); return; }
+      addressTimeout = setTimeout(async () => {
+          const res = await fetch(`/api/suggest_addresses?q=${encodeURIComponent(q)}`);
+          const data = await res.json();
+          if (data.suggestions && data.suggestions.length > 0) {
+              suggestionsDiv.innerHTML = data.suggestions.map(s =>
+                  `<div class="px-3 py-2 hover:bg-indigo-50 cursor-pointer text-sm border-b" data-lat="${s.lat}" data-lon="${s.lon}" data-plz="${s.plz}" data-label="${s.label}">${s.label}</div>`
+              ).join('');
+              suggestionsDiv.classList.remove('hidden');
+              suggestionsDiv.querySelectorAll('div').forEach(el => {
+                  el.addEventListener('click', function() {
+                      addressInput.value = this.dataset.label;
+                      suggestionsDiv.classList.add('hidden');
+                      btnCheck.disabled = false;
+                  });
+              });
+          } else {
+              suggestionsDiv.classList.add('hidden');
+          }
+      }, 300);
+  });
+
+  // Check potential
+  btnCheck.addEventListener('click', async function() {
+      this.disabled = true;
+      this.textContent = 'Pruefe...';
+      document.getElementById('form-error').classList.add('hidden');
+      try {
+          const res = await fetch('/api/check_potential', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({address: addressInput.value})
+          });
+          const data = await res.json();
+          if (data.error) {
+              document.getElementById('form-error').textContent = data.error;
+              document.getElementById('form-error').classList.remove('hidden');
+              this.disabled = false;
+              this.textContent = 'Adresse pruefen';
+              return;
+          }
+          selectedProfile = data.profile_summary;
+          const matchInfo = document.getElementById('match-info');
+          if (data.potential) {
+              const ci = data.cluster_info;
+              matchInfo.innerHTML = `<strong>${ci.num_members} Nachbarn gefunden!</strong> Autarkie-Potenzial: ${ci.autarky_percent.toFixed(0)}%`;
+          } else {
+              matchInfo.innerHTML = '<strong>Noch keine Nachbarn gefunden.</strong> Sie koennen trotzdem registrieren.';
+          }
+          document.getElementById('step-address').classList.add('hidden');
+          document.getElementById('step-register').classList.remove('hidden');
+      } catch(e) {
+          document.getElementById('form-error').textContent = 'Netzwerkfehler. Bitte erneut versuchen.';
+          document.getElementById('form-error').classList.remove('hidden');
+          this.disabled = false;
+          this.textContent = 'Adresse pruefen';
+      }
+  });
+
+  // Register
+  document.getElementById('btn-register').addEventListener('click', async function() {
+      const email = document.getElementById('email-input').value;
+      const phone = document.getElementById('phone-input').value;
+      const cn = document.getElementById('consent-neighbors').checked;
+      const cu = document.getElementById('consent-utility').checked;
+      const co = document.getElementById('consent-updates').checked;
+      if (!email) {
+          document.getElementById('form-error').textContent = 'Bitte E-Mail angeben.';
+          document.getElementById('form-error').classList.remove('hidden');
+          return;
+      }
+      try {
+          const res = await fetch('/api/register_interest', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                  email, phone, profile_summary: selectedProfile,
+                  consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co}
+              })
+          });
+          const data = await res.json();
+          if (data.success) {
+              document.getElementById('step-register').classList.add('hidden');
+              document.getElementById('step-success').classList.remove('hidden');
+              if (data.referral_link) {
+                  document.getElementById('referral-link').value = data.referral_link;
+                  document.getElementById('referral-link-box').classList.remove('hidden');
+              }
+          } else {
+              document.getElementById('form-error').textContent = data.error || 'Registrierung fehlgeschlagen.';
+              document.getElementById('form-error').classList.remove('hidden');
+          }
+      } catch(e) {
+          document.getElementById('form-error').textContent = 'Netzwerkfehler.';
+          document.getElementById('form-error').classList.remove('hidden');
+      }
+  });
+  </script>
 </body>
 </html>

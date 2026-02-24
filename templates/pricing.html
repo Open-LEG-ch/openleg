@@ -1,75 +1,74 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preise | OpenLEG Insights API</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preise | OpenLEG</title>
+  {% include 'partials/tailwind_brand.html' %}
 </head>
-<body class="bg-gray-50">
-    <nav class="bg-white shadow-sm">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold text-indigo-600">OpenLEG</a>
-        </div>
-    </nav>
-    <div class="max-w-5xl mx-auto px-4 py-12">
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold mb-2">OpenLEG Insights</h1>
-            <p class="text-xl text-gray-600">Aggregierte Energie-Intelligence für Schweizer Versorger</p>
-        </div>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
 
-        <div class="grid md:grid-cols-3 gap-6">
-            <!-- Starter -->
-            <div class="bg-white rounded-lg shadow-md p-6 border-t-4 border-gray-300">
-                <h3 class="text-xl font-bold mb-1">Starter</h3>
-                <div class="text-3xl font-bold mb-1">CHF 990<span class="text-base font-normal text-gray-500">/Monat</span></div>
-                <p class="text-sm text-gray-500 mb-4">1 Kanton, Basis-Profile</p>
-                <ul class="text-sm space-y-2 mb-6">
-                    <li>&#10003; Lastprofile nach PLZ</li>
-                    <li>&#10003; Solar-Adoptions-Index</li>
-                    <li>&#10003; 100 API-Calls/Stunde</li>
-                    <li>&#10003; 1 Kanton</li>
-                </ul>
-                <a href="mailto:hallo@openleg.ch?subject=OpenLEG Insights Starter" class="block text-center bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200">Kontakt aufnehmen</a>
-            </div>
-
-            <!-- Professional -->
-            <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-indigo-600 relative">
-                <span class="absolute -top-3 right-4 bg-indigo-600 text-white text-xs px-2 py-1 rounded">Empfohlen</span>
-                <h3 class="text-xl font-bold mb-1">Professional</h3>
-                <div class="text-3xl font-bold mb-1">CHF 2'990<span class="text-base font-normal text-gray-500">/Monat</span></div>
-                <p class="text-sm text-gray-500 mb-4">Multi-Kanton, Echtzeit-API</p>
-                <ul class="text-sm space-y-2 mb-6">
-                    <li>&#10003; Alles aus Starter</li>
-                    <li>&#10003; Flexibilitätspotenzial</li>
-                    <li>&#10003; Community-Signale</li>
-                    <li>&#10003; 1'000 API-Calls/Stunde</li>
-                    <li>&#10003; Multi-Kanton</li>
-                </ul>
-                <a href="mailto:hallo@openleg.ch?subject=OpenLEG Insights Professional" class="block text-center bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700">Kontakt aufnehmen</a>
-            </div>
-
-            <!-- Enterprise -->
-            <div class="bg-white rounded-lg shadow-md p-6 border-t-4 border-amber-500">
-                <h3 class="text-xl font-bold mb-1">Enterprise</h3>
-                <div class="text-3xl font-bold mb-1">CHF 9'900<span class="text-base font-normal text-gray-500">/Monat</span></div>
-                <p class="text-sm text-gray-500 mb-4">API-Zugang, Custom Reports</p>
-                <ul class="text-sm space-y-2 mb-6">
-                    <li>&#10003; Alles aus Professional</li>
-                    <li>&#10003; Raw Data Feeds</li>
-                    <li>&#10003; Custom Reports</li>
-                    <li>&#10003; Unlimitierte API-Calls</li>
-                    <li>&#10003; Dedizierter Support</li>
-                </ul>
-                <a href="mailto:hallo@openleg.ch?subject=OpenLEG Insights Enterprise" class="block text-center bg-amber-500 text-gray-900 py-2 rounded-lg font-medium hover:bg-amber-400">Kontakt aufnehmen</a>
-            </div>
-        </div>
-
-        <div class="text-center mt-12">
-            <h2 class="text-2xl font-bold mb-4">Gemeinden starten kostenlos</h2>
-            <p class="text-gray-600 mb-6">Die LEG-Plattform für Gemeinden ist kostenlos. Premium-Features ab CHF 490/Monat.</p>
-            <a href="/gemeinde/onboarding" class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700">Gemeinde registrieren</a>
-        </div>
+  <div class="max-w-5xl mx-auto px-4 py-12">
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-bold mb-2">OpenLEG Preise</h1>
+      <p class="text-ink-muted">EVU/VNB starten ab <strong>CHF 500/Monat</strong>. Insights API separat.</p>
     </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Starter -->
+      <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-gray-300">
+        <h3 class="text-xl font-bold mb-1">Starter</h3>
+        <div class="text-3xl font-bold mb-1">CHF 990<span class="text-base font-normal text-ink-muted">/Monat</span></div>
+        <p class="text-sm text-ink-muted mb-4">1 Kanton, Basis-Profile</p>
+        <ul class="text-sm space-y-2 mb-6 text-ink-muted">
+          <li>&#10003; Lastprofile nach PLZ</li>
+          <li>&#10003; Solar-Adoptions-Index</li>
+          <li>&#10003; 100 API-Calls/Stunde</li>
+          <li>&#10003; 1 Kanton</li>
+        </ul>
+        <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Insights%20Starter" class="block text-center bg-gray-100 text-ink py-2 rounded-lg font-medium hover:bg-gray-200">Kontakt aufnehmen</a>
+      </div>
+
+      <!-- Professional -->
+      <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-brand relative">
+        <span class="absolute -top-3 right-4 bg-brand text-white text-xs px-2 py-1 rounded">Empfohlen</span>
+        <h3 class="text-xl font-bold mb-1">Professional</h3>
+        <div class="text-3xl font-bold mb-1">CHF 2'990<span class="text-base font-normal text-ink-muted">/Monat</span></div>
+        <p class="text-sm text-ink-muted mb-4">Multi-Kanton, Echtzeit-API</p>
+        <ul class="text-sm space-y-2 mb-6 text-ink-muted">
+          <li>&#10003; Alles aus Starter</li>
+          <li>&#10003; Flexibilitaetspotenzial</li>
+          <li>&#10003; Community-Signale</li>
+          <li>&#10003; 1'000 API-Calls/Stunde</li>
+          <li>&#10003; Multi-Kanton</li>
+        </ul>
+        <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Insights%20Professional" class="block text-center bg-brand text-white py-2 rounded-lg font-medium hover:bg-brand-dark">Kontakt aufnehmen</a>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-amber-500">
+        <h3 class="text-xl font-bold mb-1">Enterprise</h3>
+        <div class="text-3xl font-bold mb-1">CHF 9'900<span class="text-base font-normal text-ink-muted">/Monat</span></div>
+        <p class="text-sm text-ink-muted mb-4">API-Zugang, Custom Reports</p>
+        <ul class="text-sm space-y-2 mb-6 text-ink-muted">
+          <li>&#10003; Alles aus Professional</li>
+          <li>&#10003; Raw Data Feeds</li>
+          <li>&#10003; Custom Reports</li>
+          <li>&#10003; Unlimitierte API-Calls</li>
+          <li>&#10003; Dedizierter Support</li>
+        </ul>
+        <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Insights%20Enterprise" class="block text-center bg-amber-500 text-ink py-2 rounded-lg font-medium hover:bg-amber-400">Kontakt aufnehmen</a>
+      </div>
+    </div>
+
+    <div class="text-center mt-12">
+      <h2 class="text-2xl font-bold mb-3">LEG-Plattform fuer Gemeinden</h2>
+      <p class="text-ink-muted mb-6">Kostenlos starten. Premium-Features ab <strong>CHF 490/Monat</strong>.</p>
+      <a href="/gemeinde/onboarding" class="bg-brand text-white px-8 py-3 rounded-lg font-semibold hover:bg-brand-dark">Gemeinde registrieren</a>
+    </div>
+  </div>
+
+  {% include 'partials/site_footer.html' %}
 </body>
 </html>
