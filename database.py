@@ -2366,6 +2366,54 @@ def save_billing_period(community_id: int, period_start, period_end, summary: di
         return 0
 
 
+def get_active_communities() -> List[Dict]:
+    """Get all communities with status='active'."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM communities WHERE status = 'active'")
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting active communities: {e}")
+        return []
+
+
+def get_community_for_building(building_id: str) -> Optional[Dict]:
+    """Get community for a building via community_members join."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT c.* FROM communities c
+                    JOIN community_members cm ON c.community_id = cm.community_id
+                    WHERE cm.building_id = %s AND c.status = 'active'
+                    LIMIT 1
+                """, (building_id,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting community for building: {e}")
+        return None
+
+
+def get_billing_period(period_id: int) -> Optional[Dict]:
+    """Get billing period with line items."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM billing_periods WHERE id = %s", (period_id,))
+                period = cur.fetchone()
+                if not period:
+                    return None
+                result = dict(period)
+                cur.execute("SELECT * FROM billing_line_items WHERE billing_period_id = %s", (period_id,))
+                result['line_items'] = [dict(row) for row in cur.fetchall()]
+                return result
+    except Exception as e:
+        logger.error(f"[DB] Error getting billing period: {e}")
+        return None
+
+
 def is_db_available() -> bool:
     """Check if PostgreSQL database is available."""
     global _db_initialized

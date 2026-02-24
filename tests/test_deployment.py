@@ -70,6 +70,29 @@ class TestDockerCompose:
         assert len(db_urls) > 0
 
 
+class TestDeployScript:
+    """Validate deploy.sh hardening."""
+
+    @pytest.fixture(autouse=True)
+    def load_deploy(self):
+        path = os.path.join(PROJECT_ROOT, "deploy.sh")
+        with open(path) as f:
+            self.content = f.read()
+
+    def test_rebuilds_openclaw(self):
+        assert "--build openclaw" in self.content
+
+    def test_openclaw_after_flask_healthy(self):
+        flask_pos = self.content.index("Flask healthy")
+        openclaw_pos = self.content.index("--build openclaw")
+        assert openclaw_pos > flask_pos
+
+    def test_pg_dump_before_rsync(self):
+        dump_pos = self.content.index("pg_dump")
+        rsync_pos = self.content.index("rsync")
+        assert dump_pos < rsync_pos
+
+
 class TestDockerfile:
     """Validate Dockerfile build config."""
 

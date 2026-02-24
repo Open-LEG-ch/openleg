@@ -97,7 +97,7 @@ if HAS_SECURITY_LIBS:
         get_remote_address,
         app=app,
         default_limits=["500 per hour"],
-        storage_uri='memory://',
+        storage_uri=os.getenv('REDIS_URL', 'redis://redis:6379/1'),
         strategy="fixed-window"
     )
     force_https = APP_BASE_URL.startswith('https://') if APP_BASE_URL else False
@@ -1022,6 +1022,43 @@ def webhook_deepsign():
     result = deepsign_integration.handle_webhook(payload)
     logger.info(f"[DEEPSIGN] Webhook: {result.get('action')} for {result.get('document_id')}")
     return jsonify(result), 200
+
+
+# --- Billing Cron ---
+@app.route("/api/cron/process-billing", methods=['POST'])
+def api_cron_process_billing():
+    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
+    if CRON_SECRET and secret != CRON_SECRET:
+        abort(403)
+    import billing_engine
+    communities = db.get_active_communities()
+    processed = 0
+    for community in communities:
+        cid = community['community_id']
+        # TODO: fetch real readings per community; placeholder for now
+        processed += 1
+    return jsonify({"processed": processed, "communities": len(communities)})
+
+
+@app.route("/api/billing/community/<community_id>/period/<int:period_id>")
+def api_billing_period(community_id, period_id):
+    _require_admin()
+    period = db.get_billing_period(period_id)
+    if not period:
+        return jsonify({"error": "Period not found"}), 404
+    return jsonify(period)
+
+
+# --- Metrics ---
+@app.route("/metrics")
+def metrics():
+    stats = db.get_stats()
+    communities = db.get_active_communities()
+    return jsonify({
+        "active_communities": len(communities),
+        "total_buildings": stats.get('total_buildings', 0),
+        "registrations_today": stats.get('registrations_today', 0),
+    })
 
 
 if __name__ == "__main__":
