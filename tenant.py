@@ -7,11 +7,14 @@ import logging
 from typing import Dict, Optional
 from flask import g, request
 
+import cache
+
 logger = logging.getLogger(__name__)
 
-# In-memory cache: territory -> (config_dict, fetched_at)
+# In-memory fallback cache (used when Redis is down)
 _tenant_cache: Dict[str, tuple] = {}
 CACHE_TTL_SECONDS = 300  # 5 min
+REDIS_TENANT_TTL = 300  # 5 min Redis TTL
 
 DEFAULT_TENANT = {
     "territory": "zurich",
@@ -70,39 +73,46 @@ def resolve_tenant(hostname: str) -> str:
 
 
 def get_tenant_config(territory: str, db=None) -> Dict:
-    """Load tenant config from DB with in-memory cache. Falls back to DEFAULT_TENANT."""
+    """Load tenant config: Redis -> DB -> defaults. Graceful fallback at each layer."""
+    redis_key = f"tenant:{territory}"
+
+    # 1. Try Redis
+    cached = cache.cache_get(redis_key)
+    if cached and isinstance(cached, dict):
+        return cached
+
+    # 2. Try in-memory fallback (for when Redis is down)
     now = time.time()
-
-    # Check cache
     if territory in _tenant_cache:
-        cached, fetched_at = _tenant_cache[territory]
+        mem_cached, fetched_at = _tenant_cache[territory]
         if now - fetched_at < CACHE_TTL_SECONDS:
-            return cached
+            return mem_cached
 
-    # Try DB lookup
+    # 3. Try DB lookup
     if db is not None:
         try:
             row = _load_tenant_from_db(territory, db)
             if row:
                 config = _merge_tenant_row(row)
+                cache.cache_set(redis_key, config, ttl=REDIS_TENANT_TTL)
                 _tenant_cache[territory] = (config, now)
                 return config
         except Exception as e:
             logger.warning(f"[TENANT] DB lookup failed for {territory}: {e}")
 
-    # Fallback: if territory is zurich, return defaults
+    # 4. Fallback to defaults
     if territory == "zurich":
-        _tenant_cache[territory] = (DEFAULT_TENANT.copy(), now)
-        return DEFAULT_TENANT.copy()
+        config = DEFAULT_TENANT.copy()
+    else:
+        config = DEFAULT_TENANT.copy()
+        config["territory"] = territory
+        config["city_name"] = territory.capitalize()
+        config["platform_name"] = "OpenLEG"
+        config["brand_prefix"] = "OpenLEG"
 
-    # Unknown territory: return defaults with territory name substituted
-    fallback = DEFAULT_TENANT.copy()
-    fallback["territory"] = territory
-    fallback["city_name"] = territory.capitalize()
-    fallback["platform_name"] = "OpenLEG"
-    fallback["brand_prefix"] = "OpenLEG"
-    _tenant_cache[territory] = (fallback, now)
-    return fallback
+    cache.cache_set(redis_key, config, ttl=REDIS_TENANT_TTL)
+    _tenant_cache[territory] = (config, now)
+    return config
 
 
 def _load_tenant_from_db(territory: str, db) -> Optional[Dict]:
@@ -161,11 +171,13 @@ def _merge_tenant_row(row: Dict) -> Dict:
 
 
 def invalidate_cache(territory: Optional[str] = None):
-    """Clear tenant cache. Pass territory for single entry, None for all."""
+    """Clear tenant cache (Redis + in-memory). Pass territory for single entry, None for all."""
     if territory:
         _tenant_cache.pop(territory, None)
+        cache.cache_delete(f"tenant:{territory}")
     else:
         _tenant_cache.clear()
+        cache.cache_clear_prefix("tenant:")
 
 
 def init_tenant_middleware(app, db=None):

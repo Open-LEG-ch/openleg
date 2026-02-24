@@ -7,13 +7,29 @@ health_bp = Blueprint("health", __name__)
 
 @health_bp.route("/health")
 def health():
+    status = {"status": "healthy"}
+
+    # Check DB
     try:
         with db.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT 1")
-        return jsonify({"status": "healthy", "db": "connected"}), 200
+        status["db"] = "connected"
     except Exception:
-        return jsonify({"status": "degraded", "db": "disconnected"}), 503
+        status["db"] = "disconnected"
+        status["status"] = "degraded"
+
+    # Check Redis
+    try:
+        import cache
+        r = cache._get_redis()
+        r.ping()
+        status["redis"] = "connected"
+    except Exception:
+        status["redis"] = "disconnected"
+
+    code = 200 if status["status"] == "healthy" else 503
+    return jsonify(status), code
 
 
 @health_bp.route("/livez")

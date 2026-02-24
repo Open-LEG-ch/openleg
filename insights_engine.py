@@ -197,10 +197,29 @@ def compute_formation_pipeline(kanton: str = None) -> Dict:
         if status in stage_counts:
             stage_counts[status] += 1
 
+    # Compute avg formation days from communities with both timestamps
+    formation_days = []
+    for c in communities:
+        started = c.get("formation_started_at")
+        approved = c.get("dso_approved_at")
+        if started and approved:
+            try:
+                from datetime import datetime
+                if isinstance(started, str):
+                    started = datetime.fromisoformat(started)
+                if isinstance(approved, str):
+                    approved = datetime.fromisoformat(approved)
+                delta = (approved - started).days
+                if delta > 0:
+                    formation_days.append(delta)
+            except Exception:
+                pass
+    avg_days = round(sum(formation_days) / len(formation_days), 1) if formation_days else 0
+
     return {
         "stages": stage_counts,
         "total_communities": len(communities),
-        "avg_formation_days": 0,  # TODO: compute from timestamps
+        "avg_formation_days": avg_days,
         "kanton": kanton or "all",
     }
 
@@ -259,10 +278,30 @@ def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
     member_counts = [c.get("member_count", 0) for c in communities]
     avg_members = sum(member_counts) / len(member_counts) if member_counts else 0
 
+    # Compute avg self-supply ratio from billing data
+    avg_self_supply = 0
+    try:
+        community_ids = [c.get("community_id") for c in communities if c.get("community_id")]
+        if community_ids:
+            with db.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT AVG(bli.self_supply_ratio) as avg_ratio
+                        FROM billing_line_items bli
+                        JOIN billing_periods bp ON bli.billing_period_id = bp.id
+                        WHERE bp.community_id = ANY(%s)
+                          AND bli.self_supply_ratio IS NOT NULL
+                    """, (community_ids,))
+                    row = cur.fetchone()
+                    if row and row.get("avg_ratio"):
+                        avg_self_supply = round(float(row["avg_ratio"]), 3)
+    except Exception as e:
+        logger.debug(f"[INSIGHTS] Could not compute avg_self_supply_ratio: {e}")
+
     return {
         "kanton": kanton,
         "avg_members": round(avg_members, 1),
-        "avg_self_supply_ratio": 0,  # TODO: compute from billing data
+        "avg_self_supply_ratio": avg_self_supply,
         "total_communities": len(communities),
         "top_communities": sorted(communities, key=lambda c: c.get("member_count", 0), reverse=True)[:5],
     }

@@ -437,6 +437,9 @@ def admin_pipeline():
     status_filter = request.args.get("status")
     entries = db.get_vnb_pipeline(status_filter=status_filter)
     stats = db.get_vnb_pipeline_stats()
+
+    if 'text/html' in (request.headers.get('Accept') or ''):
+        return render_template('admin/pipeline.html', entries=entries, stats=stats)
     return jsonify({"entries": entries, "stats": stats})
 
 

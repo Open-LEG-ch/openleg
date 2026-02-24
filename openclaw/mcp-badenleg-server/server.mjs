@@ -1126,6 +1126,145 @@ server.tool(
   }
 );
 
+// ============================================================
+// LEG Document & Billing Tools
+// ============================================================
+
+server.tool(
+  'generate_leg_document',
+  'Generate a LEG document (Gründungsvertrag, Reglement, Tarifblatt) for a community. Calls Flask endpoint.',
+  {
+    community_id: z.string().describe('Community UUID'),
+    doc_type: z.enum(['gruendungsvertrag', 'reglement', 'tarifblatt']).describe('Document type')
+  },
+  async ({ community_id, doc_type }) => {
+    const blocked = readonlyGuard(); if (blocked) return blocked;
+    try {
+      const flaskUrl = process.env.FLASK_URL || 'http://flask:5000';
+      const res = await fetch(`${flaskUrl}/api/formation/generate-document`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ community_id, doc_type })
+      });
+      const data = await res.json();
+      return txt(data);
+    } catch (e) {
+      return txt({ error: e.message });
+    }
+  }
+);
+
+server.tool(
+  'list_documents',
+  'List all LEG documents for a community from leg_documents table.',
+  {
+    community_id: z.string().describe('Community UUID')
+  },
+  async ({ community_id }) => {
+    const result = await query(
+      `SELECT id, community_id, doc_type, status, file_path, created_at, signed_at
+       FROM leg_documents WHERE community_id = $1 ORDER BY created_at DESC`,
+      [community_id]
+    );
+    return txt(result.rows);
+  }
+);
+
+server.tool(
+  'run_billing_period',
+  'Query billing periods for a community within a date range.',
+  {
+    community_id: z.string().describe('Community UUID'),
+    start_date: z.string().describe('Start date (YYYY-MM-DD)'),
+    end_date: z.string().describe('End date (YYYY-MM-DD)')
+  },
+  async ({ community_id, start_date, end_date }) => {
+    const result = await query(
+      `SELECT id, community_id, period_start, period_end, status, total_consumption_kwh,
+              total_production_kwh, self_consumption_kwh, grid_import_kwh, created_at
+       FROM billing_periods
+       WHERE community_id = $1 AND period_start >= $2 AND period_end <= $3
+       ORDER BY period_start`,
+      [community_id, start_date, end_date]
+    );
+    return txt(result.rows);
+  }
+);
+
+server.tool(
+  'get_billing_summary',
+  'Get billing line items summary for a community in a given month.',
+  {
+    community_id: z.string().describe('Community UUID'),
+    month: z.string().describe('Month (YYYY-MM)')
+  },
+  async ({ community_id, month }) => {
+    const result = await query(
+      `SELECT bli.building_id, bli.consumption_kwh, bli.production_kwh,
+              bli.self_supply_kwh, bli.grid_import_kwh, bli.amount_chf,
+              bli.self_supply_ratio, bp.period_start, bp.period_end
+       FROM billing_line_items bli
+       JOIN billing_periods bp ON bli.billing_period_id = bp.id
+       WHERE bp.community_id = $1 AND to_char(bp.period_start, 'YYYY-MM') = $2
+       ORDER BY bli.building_id`,
+      [community_id, month]
+    );
+    const total = result.rows.reduce((acc, r) => ({
+      consumption: acc.consumption + parseFloat(r.consumption_kwh || 0),
+      production: acc.production + parseFloat(r.production_kwh || 0),
+      amount: acc.amount + parseFloat(r.amount_chf || 0),
+      count: acc.count + 1
+    }), { consumption: 0, production: 0, amount: 0, count: 0 });
+    return txt({ month, community_id, line_items: result.rows, totals: total });
+  }
+);
+
+server.tool(
+  'score_vnb',
+  'Score a VNB/utility as expansion target. Pure computation, no DB needed.',
+  {
+    population: z.number().describe('Municipality population'),
+    solar_potential_pct: z.number().describe('Solar potential percentage (0-100)'),
+    has_leghub: z.boolean().describe('Whether VNB is on LEGHub platform'),
+    smart_meter_rollout_pct: z.number().describe('Smart meter rollout percentage (0-100)')
+  },
+  async ({ population, solar_potential_pct, has_leghub, smart_meter_rollout_pct }) => {
+    let score = 0;
+    // Population: larger = more potential (max 30pts)
+    if (population > 50000) score += 30;
+    else if (population > 20000) score += 25;
+    else if (population > 10000) score += 20;
+    else if (population > 5000) score += 15;
+    else score += 10;
+    // Solar potential (max 25pts)
+    score += Math.min(25, Math.round(solar_potential_pct * 0.25));
+    // LEGHub readiness (max 20pts)
+    score += has_leghub ? 20 : 0;
+    // Smart meter rollout (max 25pts)
+    score += Math.min(25, Math.round(smart_meter_rollout_pct * 0.25));
+
+    const tier = score >= 80 ? 'hot' : score >= 60 ? 'warm' : score >= 40 ? 'medium' : 'cold';
+    return txt({ score, tier, breakdown: { population_pts: score > 80 ? 30 : 'varies', solar_pts: Math.min(25, Math.round(solar_potential_pct * 0.25)), leghub_pts: has_leghub ? 20 : 0, smart_meter_pts: Math.min(25, Math.round(smart_meter_rollout_pct * 0.25)) } });
+  }
+);
+
+server.tool(
+  'draft_outreach',
+  'Draft a VNB outreach email for sales pipeline. Returns German text.',
+  {
+    vnb_name: z.string().describe('Name of the VNB/utility'),
+    population: z.number().describe('Municipality population'),
+    value_gap_rp: z.number().describe('Value gap in Rp/kWh vs LEG tariff'),
+    solar_potential_pct: z.number().describe('Solar potential percentage')
+  },
+  async ({ vnb_name, population, value_gap_rp, solar_potential_pct }) => {
+    const savingsPerHousehold = Math.round(value_gap_rp * 45);
+    const potentialHouseholds = Math.round(population * 0.02);
+    const email = `Betreff: LEG-Partnerschaft mit ${vnb_name}\n\nSehr geehrte Damen und Herren\n\nIm Versorgungsgebiet von ${vnb_name} (${population.toLocaleString('de-CH')} Einwohner) sehen wir erhebliches Potenzial für Lokale Elektrizitätsgemeinschaften.\n\nKernzahlen:\n- Solarpotenzial: ${solar_potential_pct}% der Dachflächen geeignet\n- Tarif-Differenz: ${value_gap_rp} Rp/kWh Einsparpotenzial gegenüber Standardtarif\n- Geschätzte Ersparnis: CHF ${savingsPerHousehold} pro Haushalt und Jahr\n- Potenzial: ca. ${potentialHouseholds} Haushalte in LEG-Gemeinschaften\n\nOpenLEG bietet die Plattform für Gründung, Abrechnung und Verwaltung von LEGs. Gerne zeigen wir Ihnen in einer kurzen Demo, wie ${vnb_name} davon profitieren kann.\n\nFreundliche Grüsse\nOpenLEG Team\nhallo@openleg.ch`;
+    return txt({ email, metadata: { vnb_name, potential_households: potentialHouseholds, savings_per_household_chf: savingsPerHousehold } });
+  }
+);
+
 // Start server
 const transport = new StdioServerTransport();
 await server.connect(transport);
