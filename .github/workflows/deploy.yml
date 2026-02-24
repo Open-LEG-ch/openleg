@@ -1,29 +1,43 @@
-name: Deploy to Railway
+name: Tests
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  deploy:
-    name: Deploy to Railway (badenleg.ch)
+  test:
+    name: Run tests
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
+    services:
+      postgres:
+        image: postgres:16-alpine
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          railway up --service ${{ secrets.RAILWAY_SERVICE_ID }} --detach
+          POSTGRES_USER: badenleg
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: badenleg
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U badenleg"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://badenleg:testpass@localhost:5432/badenleg
+        run: pytest tests/ -v

@@ -1,14 +1,24 @@
-# OpenClaw AI gateway (must be before wildcard)
-openclaw.openleg.ch {
+# OpenClaw AI gateway
+claw.openleg.ch {
     reverse_proxy openclaw:18789
 }
 
-# B2B insights subdomain -> Flask (same app, routed via Blueprint)
+# B2B insights API
 insights.openleg.ch {
     reverse_proxy flask:5000
 }
 
-# All subdomains + bare domain -> Flask multi-tenant app
-*.openleg.ch, openleg.ch, www.openleg.ch {
+# Public API
+api.openleg.ch {
     reverse_proxy flask:5000
+}
+
+# Main site
+openleg.ch {
+    reverse_proxy flask:5000
+}
+
+# www redirect
+www.openleg.ch {
+    redir https://openleg.ch{uri} permanent
 }

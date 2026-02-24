@@ -112,6 +112,7 @@ def app(mock_db):
          patch('database.seed_default_tenant', return_value=True):
         # Import after mocking
         from api_public import public_api_bp
+        from health import health_bp
         from flask import Flask
 
         test_app = Flask(__name__, template_folder=os.path.join(
@@ -119,6 +120,7 @@ def app(mock_db):
         ))
         test_app.config['TESTING'] = True
         test_app.register_blueprint(public_api_bp)
+        test_app.register_blueprint(health_bp)
         yield test_app
 
 

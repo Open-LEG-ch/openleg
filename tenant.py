@@ -55,7 +55,7 @@ def resolve_tenant(hostname: str) -> str:
     hostname = hostname.lower().split(":")[0]  # strip port
 
     # Skip known non-tenant subdomains
-    skip = {"www", "openclaw", "api", "admin", "insights"}
+    skip = {"www", "openclaw", "claw", "api", "admin", "insights"}
 
     if hostname in ("openleg.ch", "www.openleg.ch", "localhost", "127.0.0.1"):
         return "zurich"

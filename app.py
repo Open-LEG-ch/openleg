@@ -58,6 +58,7 @@ import email_automation
 from municipality import municipality_bp
 from api_b2b import b2b_bp
 from api_public import public_api_bp
+from health import health_bp
 
 # --- Cron Secret ---
 CRON_SECRET = os.getenv('CRON_SECRET', '').strip()
@@ -120,6 +121,7 @@ else:
 app.register_blueprint(municipality_bp)
 app.register_blueprint(b2b_bp)
 app.register_blueprint(public_api_bp)
+app.register_blueprint(health_bp)
 
 # --- Multi-tenant middleware ---
 tenant_module.init_tenant_middleware(app, db=db)
@@ -397,9 +399,7 @@ def sitemap_xml():
     return Response(xml, mimetype="application/xml")
 
 
-@app.route("/health")
-def health_check():
-    return jsonify({"status": "healthy", "timestamp": time.time(), "version": "2.0.0", "brand": "openleg"})
+## Health endpoints registered via health_bp
 
 
 # --- Admin ---
