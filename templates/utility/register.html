@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVU registrieren | OpenLEG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-indigo-600">OpenLEG</a>
+            <div class="flex space-x-4 text-sm">
+                <span class="text-gray-500">Utility Portal</span>
+                <a href="/utility/login" class="text-indigo-600 hover:underline">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-xl mx-auto px-4 py-12">
+        <h1 class="text-3xl font-bold mb-2">Energieversorger registrieren</h1>
+        <p class="text-gray-600 mb-8">Registrieren Sie Ihr EVU/VNB und erhalten Sie Zugang zur OpenLEG White-Label Plattform fuer LEG-Management.</p>
+
+        <form id="register-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Firmenname *</label>
+                <input type="text" id="company_name" placeholder="z.B. Regionalwerke AG Baden" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">VNB/DSO Name</label>
+                <input type="text" id="vnb_name" placeholder="z.B. Regionalwerke AG Baden Verteilnetz" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Kanton</label>
+                    <select id="kanton" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="">Waehlen...</option>
+                        <option value="ZH">Zuerich</option>
+                        <option value="BE">Bern</option>
+                        <option value="AG">Aargau</option>
+                        <option value="LU">Luzern</option>
+                        <option value="SG">St. Gallen</option>
+                        <option value="BS">Basel-Stadt</option>
+                        <option value="BL">Basel-Landschaft</option>
+                        <option value="SO">Solothurn</option>
+                        <option value="TG">Thurgau</option>
+                        <option value="GR">Graubuenden</option>
+                        <option value="VS">Wallis</option>
+                        <option value="VD">Waadt</option>
+                        <option value="GE">Genf</option>
+                        <option value="TI">Tessin</option>
+                        <option value="FR">Freiburg</option>
+                        <option value="NE">Neuenburg</option>
+                        <option value="JU">Jura</option>
+                        <option value="SH">Schaffhausen</option>
+                        <option value="AR">Appenzell A.Rh.</option>
+                        <option value="AI">Appenzell I.Rh.</option>
+                        <option value="GL">Glarus</option>
+                        <option value="ZG">Zug</option>
+                        <option value="SZ">Schwyz</option>
+                        <option value="NW">Nidwalden</option>
+                        <option value="OW">Obwalden</option>
+                        <option value="UR">Uri</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Versorgte Einwohner</label>
+                    <input type="number" id="population" placeholder="z.B. 50000" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+            <hr class="my-2">
+            <div>
+                <label class="block text-sm font-medium mb-1">Ansprechperson</label>
+                <input type="text" id="contact_name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Geschaeftliche E-Mail *</label>
+                <input type="email" id="contact_email" placeholder="kontakt@evu.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Telefon</label>
+                <input type="tel" id="contact_phone" placeholder="+41 56 200 00 00" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <div class="bg-indigo-50 p-4 rounded-lg text-sm">
+                <h4 class="font-medium mb-2">Was Sie erhalten:</h4>
+                <ul class="text-gray-700 space-y-1">
+                    <li>&#10003; White-Label LEG-Plattform unter Ihrem Branding</li>
+                    <li>&#10003; Automatisierte LEG-Gruendung und Dokumentenerstellung</li>
+                    <li>&#10003; Smart Meter Daten-Pipeline und Abrechnung</li>
+                    <li>&#10003; B2B API fuer Netzintegration</li>
+                    <li>&#10003; KI-gestuetzte Formation und Optimierung</li>
+                </ul>
+            </div>
+
+            <div class="bg-amber-50 p-4 rounded-lg text-sm">
+                <h4 class="font-medium mb-1">Preise ab CHF 500/Monat</h4>
+                <p class="text-gray-600">Starter (kleine EVU), Professional, Enterprise. 30 Tage kostenlos testen.</p>
+            </div>
+
+            <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700">Kostenlos registrieren</button>
+            <div id="form-error" class="text-red-600 text-sm hidden"></div>
+            <div id="form-success" class="text-green-600 text-sm hidden"></div>
+        </form>
+
+        <p class="text-center text-sm text-gray-500 mt-6">Bereits registriert? <a href="/utility/login" class="text-indigo-600 hover:underline">Einloggen</a></p>
+    </div>
+
+    <script>
+    document.getElementById('register-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('form-error');
+        const sucEl = document.getElementById('form-success');
+        errEl.classList.add('hidden');
+        sucEl.classList.add('hidden');
+
+        const body = {
+            company_name: document.getElementById('company_name').value,
+            vnb_name: document.getElementById('vnb_name').value,
+            kanton: document.getElementById('kanton').value,
+            population: document.getElementById('population').value,
+            contact_name: document.getElementById('contact_name').value,
+            contact_email: document.getElementById('contact_email').value,
+            contact_phone: document.getElementById('contact_phone').value,
+        };
+
+        if (!body.company_name || !body.contact_email) {
+            errEl.textContent = 'Firmenname und E-Mail sind Pflichtfelder.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch('/utility/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                sucEl.textContent = data.message;
+                sucEl.classList.remove('hidden');
+                this.reset();
+            } else {
+                errEl.textContent = data.error || 'Registrierung fehlgeschlagen.';
+                errEl.classList.remove('hidden');
+            }
+        } catch(e) {
+            errEl.textContent = 'Netzwerkfehler. Bitte erneut versuchen.';
+            errEl.classList.remove('hidden');
+        }
+    });
+    </script>
+</body>
+</html>

@@ -423,6 +423,59 @@ def _create_tables():
                 )
             """)
 
+            # Utility clients (B2B SaaS customers)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS utility_clients (
+                    id SERIAL PRIMARY KEY,
+                    client_id VARCHAR(64) UNIQUE NOT NULL,
+                    company_name VARCHAR(255) NOT NULL,
+                    contact_name VARCHAR(255),
+                    contact_email VARCHAR(255) NOT NULL,
+                    contact_phone VARCHAR(32),
+                    vnb_name VARCHAR(255),
+                    population INTEGER,
+                    kanton VARCHAR(2),
+                    tier VARCHAR(32) DEFAULT 'starter',
+                    api_key_hash VARCHAR(128) UNIQUE,
+                    status VARCHAR(32) DEFAULT 'pending',
+                    magic_link_token VARCHAR(128),
+                    magic_link_expires_at TIMESTAMP,
+                    branding JSONB DEFAULT '{}',
+                    billing_email VARCHAR(255),
+                    stripe_customer_id VARCHAR(128),
+                    onboarding_step INTEGER DEFAULT 0,
+                    last_login_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # VNB research pipeline
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS vnb_research (
+                    id SERIAL PRIMARY KEY,
+                    vnb_name VARCHAR(255) NOT NULL,
+                    bfs_numbers JSONB DEFAULT '[]',
+                    kanton VARCHAR(2),
+                    population_served INTEGER,
+                    website VARCHAR(512),
+                    contact_email VARCHAR(255),
+                    contact_phone VARCHAR(32),
+                    has_leg_offering BOOLEAN DEFAULT FALSE,
+                    leg_offering_details TEXT,
+                    competitor_status VARCHAR(64),
+                    priority_score DECIMAL(5, 2) DEFAULT 0,
+                    pipeline_status VARCHAR(32) DEFAULT 'researched',
+                    outreach_notes TEXT,
+                    last_contacted_at TIMESTAMP,
+                    last_response_at TIMESTAMP,
+                    research_data JSONB DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(vnb_name)
+                )
+            """)
+
             # Migration: add city_id to existing buildings table if missing
             cur.execute("""
                 DO $$
@@ -475,6 +528,16 @@ def _create_tables():
             cur.execute("CREATE INDEX IF NOT EXISTS idx_municipality_profiles_bfs ON municipality_profiles(bfs_number)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_municipality_profiles_kanton ON municipality_profiles(kanton)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_sonnendach_municipal_bfs ON sonnendach_municipal(bfs_number)")
+
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_email ON utility_clients(contact_email)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_status ON utility_clients(status)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_tier ON utility_clients(tier)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_kanton ON utility_clients(kanton)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_magic_token ON utility_clients(magic_link_token)")
+
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_research_kanton ON vnb_research(kanton)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_research_status ON vnb_research(pipeline_status)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_research_priority ON vnb_research(priority_score DESC)")
 
             logger.info("[DB] Tables and indexes created successfully")
 
@@ -1740,6 +1803,318 @@ def get_sonnendach_municipal(bfs_number: int) -> Optional[Dict]:
     except Exception as e:
         logger.error(f"[DB] Error getting sonnendach data: {e}")
         return None
+
+
+# === Utility Client Operations ===
+
+def save_utility_client(client_id: str, company_name: str, contact_email: str,
+                        contact_name: str = '', contact_phone: str = '',
+                        vnb_name: str = '', population: int = None,
+                        kanton: str = '', tier: str = 'starter') -> bool:
+    """Create or update a utility client."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO utility_clients (
+                        client_id, company_name, contact_name, contact_email,
+                        contact_phone, vnb_name, population, kanton, tier, status
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+                    ON CONFLICT (client_id) DO UPDATE SET
+                        company_name = EXCLUDED.company_name,
+                        contact_name = EXCLUDED.contact_name,
+                        contact_email = EXCLUDED.contact_email,
+                        contact_phone = EXCLUDED.contact_phone,
+                        vnb_name = EXCLUDED.vnb_name,
+                        population = EXCLUDED.population,
+                        kanton = EXCLUDED.kanton,
+                        tier = EXCLUDED.tier,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (client_id, company_name, contact_name, contact_email,
+                      contact_phone, vnb_name, population, kanton, tier))
+                return True
+    except Exception as e:
+        logger.error(f"[DB] Error saving utility client: {e}")
+        return False
+
+
+def get_utility_client(client_id: str) -> Optional[Dict]:
+    """Get a utility client by client_id."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM utility_clients WHERE client_id = %s", (client_id,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting utility client: {e}")
+        return None
+
+
+def get_utility_client_by_email(email: str) -> Optional[Dict]:
+    """Get a utility client by contact email."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM utility_clients WHERE LOWER(contact_email) = LOWER(%s)", (email,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting utility client by email: {e}")
+        return None
+
+
+def get_utility_client_by_magic_token(token: str) -> Optional[Dict]:
+    """Get utility client by magic link token (only if not expired)."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT * FROM utility_clients
+                    WHERE magic_link_token = %s AND magic_link_expires_at > CURRENT_TIMESTAMP
+                """, (token,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting utility client by magic token: {e}")
+        return None
+
+
+def set_utility_magic_token(client_id: str, token: str, ttl_seconds: int = 900) -> bool:
+    """Set a magic link token for a utility client (default 15min TTL)."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE utility_clients
+                    SET magic_link_token = %s,
+                        magic_link_expires_at = CURRENT_TIMESTAMP + INTERVAL '%s seconds',
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE client_id = %s
+                """, (token, ttl_seconds, client_id))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error setting magic token: {e}")
+        return False
+
+
+def clear_utility_magic_token(client_id: str) -> bool:
+    """Clear magic link token after use and update last_login_at."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE utility_clients
+                    SET magic_link_token = NULL, magic_link_expires_at = NULL,
+                        last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                    WHERE client_id = %s
+                """, (client_id,))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error clearing magic token: {e}")
+        return False
+
+
+def update_utility_client_status(client_id: str, status: str) -> bool:
+    """Update utility client status."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE utility_clients SET status = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE client_id = %s
+                """, (status, client_id))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error updating utility client status: {e}")
+        return False
+
+
+def update_utility_client_api_key(client_id: str, api_key_hash: str) -> bool:
+    """Set API key hash for a utility client."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE utility_clients SET api_key_hash = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE client_id = %s
+                """, (api_key_hash, client_id))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error updating utility client API key: {e}")
+        return False
+
+
+def get_all_utility_clients(status: str = None) -> List[Dict]:
+    """Get all utility clients, optionally filtered by status."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                if status:
+                    cur.execute("SELECT * FROM utility_clients WHERE status = %s ORDER BY created_at DESC", (status,))
+                else:
+                    cur.execute("SELECT * FROM utility_clients ORDER BY created_at DESC")
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting utility clients: {e}")
+        return []
+
+
+def get_utility_client_stats() -> Dict:
+    """Get utility client statistics."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        COUNT(*) as total,
+                        COUNT(*) FILTER (WHERE status = 'active') as active,
+                        COUNT(*) FILTER (WHERE status = 'pending') as pending,
+                        COUNT(*) FILTER (WHERE status = 'trial') as trial,
+                        COUNT(*) FILTER (WHERE tier = 'starter') as tier_starter,
+                        COUNT(*) FILTER (WHERE tier = 'professional') as tier_professional,
+                        COUNT(*) FILTER (WHERE tier = 'enterprise') as tier_enterprise
+                    FROM utility_clients
+                """)
+                return dict(cur.fetchone())
+    except Exception as e:
+        logger.error(f"[DB] Error getting utility client stats: {e}")
+        return {}
+
+
+# === VNB Research Operations ===
+
+def save_vnb_research(vnb_name: str, data: Dict) -> bool:
+    """Upsert VNB research record."""
+    try:
+        import json
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO vnb_research (
+                        vnb_name, bfs_numbers, kanton, population_served, website,
+                        contact_email, contact_phone, has_leg_offering, leg_offering_details,
+                        competitor_status, priority_score, pipeline_status, research_data
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (vnb_name) DO UPDATE SET
+                        bfs_numbers = EXCLUDED.bfs_numbers,
+                        kanton = EXCLUDED.kanton,
+                        population_served = EXCLUDED.population_served,
+                        website = EXCLUDED.website,
+                        contact_email = EXCLUDED.contact_email,
+                        contact_phone = EXCLUDED.contact_phone,
+                        has_leg_offering = EXCLUDED.has_leg_offering,
+                        leg_offering_details = EXCLUDED.leg_offering_details,
+                        competitor_status = EXCLUDED.competitor_status,
+                        priority_score = EXCLUDED.priority_score,
+                        pipeline_status = EXCLUDED.pipeline_status,
+                        research_data = EXCLUDED.research_data,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (
+                    vnb_name,
+                    json.dumps(data.get('bfs_numbers', [])),
+                    data.get('kanton', ''),
+                    data.get('population_served'),
+                    data.get('website', ''),
+                    data.get('contact_email', ''),
+                    data.get('contact_phone', ''),
+                    data.get('has_leg_offering', False),
+                    data.get('leg_offering_details', ''),
+                    data.get('competitor_status', ''),
+                    data.get('priority_score', 0),
+                    data.get('pipeline_status', 'researched'),
+                    json.dumps(data.get('research_data', {}))
+                ))
+                return True
+    except Exception as e:
+        logger.error(f"[DB] Error saving VNB research: {e}")
+        return False
+
+
+def get_vnb_research(vnb_name: str) -> Optional[Dict]:
+    """Get VNB research by name."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM vnb_research WHERE vnb_name = %s", (vnb_name,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting VNB research: {e}")
+        return None
+
+
+def get_all_vnb_research(pipeline_status: str = None, kanton: str = None,
+                         order_by: str = 'priority_score') -> List[Dict]:
+    """Get all VNB research records, optionally filtered."""
+    allowed_orders = {'priority_score', 'vnb_name', 'population_served', 'updated_at'}
+    if order_by not in allowed_orders:
+        order_by = 'priority_score'
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                query = "SELECT * FROM vnb_research WHERE 1=1"
+                params = []
+                if pipeline_status:
+                    query += " AND pipeline_status = %s"
+                    params.append(pipeline_status)
+                if kanton:
+                    query += " AND kanton = %s"
+                    params.append(kanton)
+                query += f" ORDER BY {order_by} DESC"
+                cur.execute(query, params)
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting VNB research: {e}")
+        return []
+
+
+def update_vnb_pipeline_status(vnb_name: str, status: str, notes: str = None) -> bool:
+    """Update VNB pipeline status."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                if notes:
+                    cur.execute("""
+                        UPDATE vnb_research
+                        SET pipeline_status = %s, outreach_notes = %s, updated_at = CURRENT_TIMESTAMP
+                        WHERE vnb_name = %s
+                    """, (status, notes, vnb_name))
+                else:
+                    cur.execute("""
+                        UPDATE vnb_research
+                        SET pipeline_status = %s, updated_at = CURRENT_TIMESTAMP
+                        WHERE vnb_name = %s
+                    """, (status, vnb_name))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error updating VNB pipeline status: {e}")
+        return False
+
+
+def get_vnb_pipeline_stats() -> Dict:
+    """Get VNB pipeline statistics."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        COUNT(*) as total,
+                        COUNT(*) FILTER (WHERE pipeline_status = 'researched') as researched,
+                        COUNT(*) FILTER (WHERE pipeline_status = 'contacted') as contacted,
+                        COUNT(*) FILTER (WHERE pipeline_status = 'responded') as responded,
+                        COUNT(*) FILTER (WHERE pipeline_status = 'demo') as demo,
+                        COUNT(*) FILTER (WHERE pipeline_status = 'pilot') as pilot,
+                        COUNT(*) FILTER (WHERE pipeline_status = 'signed') as signed,
+                        COUNT(*) FILTER (WHERE pipeline_status = 'active') as active,
+                        COUNT(*) FILTER (WHERE has_leg_offering = TRUE) as has_leg,
+                        AVG(priority_score) as avg_priority
+                    FROM vnb_research
+                """)
+                return dict(cur.fetchone())
+    except Exception as e:
+        logger.error(f"[DB] Error getting VNB pipeline stats: {e}")
+        return {}
 
 
 def is_db_available() -> bool:

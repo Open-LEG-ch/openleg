@@ -59,6 +59,7 @@ from municipality import municipality_bp
 from api_b2b import b2b_bp
 from api_public import public_api_bp
 from health import health_bp
+from utility_portal import utility_bp
 
 # --- Cron Secret ---
 CRON_SECRET = os.getenv('CRON_SECRET', '').strip()
@@ -122,6 +123,7 @@ app.register_blueprint(municipality_bp)
 app.register_blueprint(b2b_bp)
 app.register_blueprint(public_api_bp)
 app.register_blueprint(health_bp)
+app.register_blueprint(utility_bp)
 
 # --- Multi-tenant middleware ---
 tenant_module.init_tenant_middleware(app, db=db)

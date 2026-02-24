@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | OpenLEG Utility Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-indigo-600">OpenLEG</a>
+            <span class="text-sm text-gray-500">Utility Portal</span>
+        </div>
+    </nav>
+
+    <div class="max-w-md mx-auto px-4 py-16">
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <h1 class="text-2xl font-bold mb-2 text-center">Login</h1>
+            <p class="text-gray-600 text-sm text-center mb-6">Wir senden Ihnen einen sicheren Login-Link per E-Mail.</p>
+
+            {% if registered %}
+            <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 text-sm text-green-800">
+                Registrierung erfolgreich! Pruefen Sie Ihre E-Mail fuer den Login-Link.
+            </div>
+            {% endif %}
+
+            {% if error %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-sm text-red-800">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Geschaeftliche E-Mail</label>
+                    <input type="email" id="email" placeholder="kontakt@evu.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required autofocus>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700">Login-Link senden</button>
+                <div id="form-error" class="text-red-600 text-sm hidden"></div>
+                <div id="form-success" class="text-green-600 text-sm hidden"></div>
+            </form>
+
+            <p class="text-center text-sm text-gray-500 mt-6">Noch kein Konto? <a href="/utility/register" class="text-indigo-600 hover:underline">Registrieren</a></p>
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('form-error');
+        const sucEl = document.getElementById('form-success');
+        errEl.classList.add('hidden');
+        sucEl.classList.add('hidden');
+
+        const email = document.getElementById('email').value;
+        if (!email) return;
+
+        try {
+            const res = await fetch('/utility/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email})
+            });
+            const data = await res.json();
+            if (data.success) {
+                sucEl.textContent = data.message;
+                sucEl.classList.remove('hidden');
+            } else {
+                errEl.textContent = data.error || 'Fehler beim Login.';
+                errEl.classList.remove('hidden');
+            }
+        } catch(e) {
+            errEl.textContent = 'Netzwerkfehler.';
+            errEl.classList.remove('hidden');
+        }
+    });
+    </script>
+</body>
+</html>
