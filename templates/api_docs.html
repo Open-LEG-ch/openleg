@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenLEG API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+    <style>
+        body { margin: 0; padding: 0; }
+        .topbar { display: none; }
+        .swagger-ui .info { margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+    const spec = {
+        openapi: "3.0.3",
+        info: {
+            title: "OpenLEG Public API",
+            version: "1.0.0",
+            description: "Open-source Swiss energy data API. Aggregates public government data (ElCom tariffs, Sonnendach solar potential, Energie Reporter) into clean, queryable endpoints. Plus LEG formation toolkit.\n\nAll endpoints return JSON. No authentication required. Rate limited to 60 requests/minute per IP.\n\n**Data Sources:** ElCom (LINDAS SPARQL), BFE Sonnendach, Energie Reporter, Swisstopo\n\n**License:** Open data, DSG-compliant. No PII.",
+            contact: { name: "OpenLEG", url: "https://openleg.ch", email: "hallo@openleg.ch" }
+        },
+        servers: [{ url: "/api/v1", description: "Production" }],
+        tags: [
+            { name: "Municipalities", description: "Municipality energy profiles and data" },
+            { name: "LEG Toolkit", description: "LEG formation tools: value-gap, clustering, financial model" },
+            { name: "Address", description: "Address lookup and energy profiles" }
+        ],
+        paths: {
+            "/municipalities": {
+                get: {
+                    tags: ["Municipalities"], summary: "List all municipalities",
+                    parameters: [
+                        { name: "kanton", in: "query", schema: { type: "string", default: "ZH" }, description: "Canton code" },
+                        { name: "order_by", in: "query", schema: { type: "string", enum: ["name", "population", "energy_transition_score", "leg_value_gap_chf"] } }
+                    ],
+                    responses: { "200": { description: "List of municipality profiles" } }
+                }
+            },
+            "/municipalities/{bfs}": {
+                get: {
+                    tags: ["Municipalities"], summary: "Get municipality profile",
+                    parameters: [{ name: "bfs", in: "path", required: true, schema: { type: "integer" }, description: "BFS municipality number" }],
+                    responses: { "200": { description: "Municipality profile" }, "404": { description: "Not found" } }
+                }
+            },
+            "/municipalities/{bfs}/tariffs": {
+                get: {
+                    tags: ["Municipalities"], summary: "ElCom tariffs",
+                    parameters: [
+                        { name: "bfs", in: "path", required: true, schema: { type: "integer" } },
+                        { name: "year", in: "query", schema: { type: "integer", default: 2026 } }
+                    ],
+                    responses: { "200": { description: "Tariff records" } }
+                }
+            },
+            "/municipalities/{bfs}/solar": {
+                get: {
+                    tags: ["Municipalities"], summary: "Sonnendach solar data",
+                    parameters: [{ name: "bfs", in: "path", required: true, schema: { type: "integer" } }],
+                    responses: { "200": { description: "Solar potential data" }, "404": { description: "No data" } }
+                }
+            },
+            "/municipalities/{bfs}/score": {
+                get: {
+                    tags: ["Municipalities"], summary: "Energy transition score breakdown",
+                    parameters: [{ name: "bfs", in: "path", required: true, schema: { type: "integer" } }],
+                    responses: { "200": { description: "Score with component breakdown" } }
+                }
+            },
+            "/municipalities/{bfs}/leg-potential": {
+                get: {
+                    tags: ["Municipalities"], summary: "LEG value-gap analysis",
+                    parameters: [
+                        { name: "bfs", in: "path", required: true, schema: { type: "integer" } },
+                        { name: "year", in: "query", schema: { type: "integer", default: 2026 } },
+                        { name: "grid_reduction_pct", in: "query", schema: { type: "number", default: 40.0 } },
+                        { name: "participants", in: "query", schema: { type: "integer", default: 10 } }
+                    ],
+                    responses: { "200": { description: "Value-gap calculation" }, "404": { description: "No H4 tariff" } }
+                }
+            },
+            "/tariffs": {
+                get: {
+                    tags: ["Municipalities"], summary: "Tariffs across municipalities",
+                    parameters: [
+                        { name: "kanton", in: "query", schema: { type: "string", default: "ZH" } },
+                        { name: "year", in: "query", schema: { type: "integer", default: 2026 } }
+                    ],
+                    responses: { "200": { description: "All tariffs" } }
+                }
+            },
+            "/rankings": {
+                get: {
+                    tags: ["Municipalities"], summary: "Ranked municipalities",
+                    parameters: [
+                        { name: "kanton", in: "query", schema: { type: "string", default: "ZH" } },
+                        { name: "metric", in: "query", schema: { type: "string", enum: ["energy_transition_score", "leg_value_gap_chf", "population"] } },
+                        { name: "limit", in: "query", schema: { type: "integer", default: 20 } }
+                    ],
+                    responses: { "200": { description: "Ranked list" } }
+                }
+            },
+            "/search": {
+                get: {
+                    tags: ["Municipalities"], summary: "Search municipalities",
+                    parameters: [{ name: "q", in: "query", required: true, schema: { type: "string" }, description: "Search query (min 2 chars)" }],
+                    responses: { "200": { description: "Search results" }, "400": { description: "Query too short" } }
+                }
+            },
+            "/leg/value-gap": {
+                post: {
+                    tags: ["LEG Toolkit"], summary: "Calculate LEG value gap",
+                    requestBody: {
+                        required: true,
+                        content: { "application/json": { schema: {
+                            type: "object",
+                            required: ["bfs_number"],
+                            properties: {
+                                bfs_number: { type: "integer", example: 261 },
+                                num_participants: { type: "integer", default: 10 },
+                                avg_consumption_kwh: { type: "number", default: 4500 },
+                                pv_kwp: { type: "number", default: 0 },
+                                grid_level: { type: "string", enum: ["NE7", "NE5"], default: "NE7" }
+                            }
+                        }}}
+                    },
+                    responses: { "200": { description: "Value-gap analysis" } }
+                }
+            },
+            "/leg/cluster": {
+                post: {
+                    tags: ["LEG Toolkit"], summary: "Cluster buildings for LEG",
+                    requestBody: {
+                        required: true,
+                        content: { "application/json": { schema: {
+                            type: "object",
+                            properties: {
+                                buildings: { type: "array", items: {
+                                    type: "object",
+                                    properties: { lat: { type: "number" }, lon: { type: "number" }, consumption_kwh: { type: "number" }, pv_kwp: { type: "number" } }
+                                }}
+                            }
+                        }}}
+                    },
+                    responses: { "200": { description: "Cluster assignments" } }
+                }
+            },
+            "/leg/financial-model": {
+                post: {
+                    tags: ["LEG Toolkit"], summary: "10-year financial projection",
+                    requestBody: {
+                        required: true,
+                        content: { "application/json": { schema: {
+                            type: "object",
+                            properties: {
+                                bfs_number: { type: "integer" },
+                                scenario: { type: "object", properties: {
+                                    num_legs: { type: "integer", default: 1 },
+                                    community_size: { type: "integer", default: 10 },
+                                    pv_kwp: { type: "number", default: 30 },
+                                    consumption_kwh: { type: "number", default: 4500 }
+                                }}
+                            }
+                        }}}
+                    },
+                    responses: { "200": { description: "Financial projections" } }
+                }
+            },
+            "/leg/templates": {
+                get: {
+                    tags: ["LEG Toolkit"], summary: "LEG contract templates",
+                    responses: { "200": { description: "Available templates" } }
+                }
+            },
+            "/address/suggest": {
+                get: {
+                    tags: ["Address"], summary: "Address autocomplete",
+                    parameters: [
+                        { name: "q", in: "query", required: true, schema: { type: "string" } },
+                        { name: "plz_range", in: "query", schema: { type: "string" }, description: "PLZ range e.g. 8000-8999" }
+                    ],
+                    responses: { "200": { description: "Address suggestions" } }
+                }
+            },
+            "/address/profile": {
+                get: {
+                    tags: ["Address"], summary: "Address energy profile",
+                    parameters: [{ name: "address", in: "query", required: true, schema: { type: "string" } }],
+                    responses: { "200": { description: "Building energy profile" } }
+                }
+            }
+        }
+    };
+
+    SwaggerUIBundle({
+        spec: spec,
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+        layout: "BaseLayout"
+    });
+    </script>
+</body>
+</html>

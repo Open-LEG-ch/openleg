@@ -1,5 +1,5 @@
 """
-Security utilities for BadenLEG application
+Security utilities for OpenLEG application
 Provides input validation, sanitization, and security helpers
 """
 

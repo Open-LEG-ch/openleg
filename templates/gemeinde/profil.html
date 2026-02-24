@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile.name }} – Energieprofil | OpenLEG</title>
+    <meta name="description" content="Energieprofil und LEG-Potenzial für {{ profile.name }}: Stromtarife, Solarpotenzial, Energiewende-Score.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { brand: { DEFAULT: '#6366f1', light: '#818cf8', dark: '#4f46e5' }, accent: '#f59e0b' } } }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-brand">OpenLEG</a>
+            <div class="hidden md:flex space-x-6 text-sm">
+                <a href="/gemeinde/verzeichnis" class="hover:text-brand">Gemeindeverzeichnis</a>
+                <a href="/api/v1/docs" class="hover:text-brand">API</a>
+                <a href="/gemeinde/onboarding" class="hover:text-brand">Gemeinde anmelden</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <p class="text-sm text-gray-500 mb-1">
+                <a href="/gemeinde/verzeichnis" class="hover:text-brand">Gemeindeverzeichnis</a> / {{ profile.kanton }}
+            </p>
+            <h1 class="text-3xl font-bold">{{ profile.name }}</h1>
+            <p class="text-gray-600 mt-1">Kanton {{ profile.kanton }}{% if profile.population %} · {{ "{:,}".format(profile.population|int).replace(",", "'") }} Einwohner{% endif %}</p>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {% if h4_tariff %}
+            <div class="bg-white rounded-xl p-4 shadow-sm border">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">H4 Stromtarif</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.1f"|format(h4_tariff.total_rp_kwh|float) }} <span class="text-sm font-normal">Rp/kWh</span></p>
+            </div>
+            {% endif %}
+            {% if value_gap %}
+            <div class="bg-brand/5 rounded-xl p-4 shadow-sm border border-brand/20">
+                <p class="text-xs text-brand uppercase tracking-wide">LEG Ersparnis</p>
+                <p class="text-2xl font-bold text-brand mt-1">CHF {{ "%.0f"|format(value_gap.annual_savings_chf) }} <span class="text-sm font-normal">/Jahr</span></p>
+            </div>
+            {% endif %}
+            {% if profile.solar_potential_pct %}
+            <div class="bg-white rounded-xl p-4 shadow-sm border">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Solarnutzung</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.0f"|format(profile.solar_potential_pct|float) }}%</p>
+            </div>
+            {% endif %}
+            <div class="bg-white rounded-xl p-4 shadow-sm border">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Energiewende-Score</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.0f"|format(profile.energy_transition_score|default(0)|float) }} <span class="text-sm font-normal">/100</span></p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Tariff Breakdown -->
+            {% if tariffs %}
+            <div class="bg-white rounded-xl p-6 shadow-sm border">
+                <h2 class="text-lg font-semibold mb-4">Stromtarife (ElCom {{ tariffs[0].year if tariffs else 2026 }})</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b text-left text-gray-500">
+                                <th class="py-2">Kategorie</th>
+                                <th class="py-2 text-right">Total</th>
+                                <th class="py-2 text-right">Energie</th>
+                                <th class="py-2 text-right">Netz</th>
+                                <th class="py-2 text-right">Abgaben</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in tariffs %}
+                            <tr class="border-b hover:bg-gray-50 {{ 'bg-brand/5 font-medium' if t.category is defined and t.category.startswith('H4') }}">
+                                <td class="py-2">{{ t.category }}</td>
+                                <td class="py-2 text-right">{{ "%.1f"|format(t.total_rp_kwh|float) }}</td>
+                                <td class="py-2 text-right">{{ "%.1f"|format(t.energy_rp_kwh|default(0)|float) }}</td>
+                                <td class="py-2 text-right">{{ "%.1f"|format(t.grid_rp_kwh|default(0)|float) }}</td>
+                                <td class="py-2 text-right">{{ "%.1f"|format((t.municipality_fee_rp_kwh|default(0)|float) + (t.kev_rp_kwh|default(0)|float)) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-gray-400 mt-2">Alle Angaben in Rp/kWh. Quelle: ElCom / LINDAS</p>
+            </div>
+            {% endif %}
+
+            <!-- Solar Potential Chart -->
+            <div class="bg-white rounded-xl p-6 shadow-sm border">
+                <h2 class="text-lg font-semibold mb-4">Solarpotenzial</h2>
+                {% if solar %}
+                <canvas id="solarChart" height="200"></canvas>
+                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-gray-500">Gesamtdachfläche</p>
+                        <p class="font-medium">{{ "{:,.0f}".format(solar.total_roof_area_m2|float).replace(",", "'") }} m²</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Geeignete Fläche</p>
+                        <p class="font-medium">{{ "{:,.0f}".format(solar.suitable_roof_area_m2|float).replace(",", "'") }} m²</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Potenzial</p>
+                        <p class="font-medium">{{ "{:,.0f}".format(solar.potential_kwp|float).replace(",", "'") }} kWp</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Auslastung</p>
+                        <p class="font-medium">{{ "%.1f"|format(solar.utilization_pct|default(0)|float) }}%</p>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-gray-500">Noch keine Sonnendach-Daten verfügbar.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- LEG Value Gap -->
+        {% if value_gap %}
+        <div class="mt-8 bg-gradient-to-r from-brand/10 to-accent/10 rounded-xl p-6 border border-brand/20">
+            <h2 class="text-lg font-semibold mb-2">LEG-Potenzial für {{ profile.name }}</h2>
+            <p class="text-gray-600 mb-4">Mit einer Lokalen Elektrizitätsgemeinschaft (LEG) können Haushalte in {{ profile.name }} Netzgebühren einsparen.</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <p class="text-sm text-gray-500">Netzgebühr aktuell</p>
+                    <p class="font-bold text-lg">{{ "%.1f"|format(value_gap.grid_fee_rp_kwh) }} Rp/kWh</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Reduktion in LEG</p>
+                    <p class="font-bold text-lg text-green-600">{{ "%.1f"|format(value_gap.savings_rp_kwh) }} Rp/kWh</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Ersparnis pro Haushalt</p>
+                    <p class="font-bold text-lg text-brand">CHF {{ "%.0f"|format(value_gap.annual_savings_chf) }}/Jahr</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Sparanteil</p>
+                    <p class="font-bold text-lg">{{ "%.0f"|format(value_gap.savings_pct) }}%</p>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-4">Basierend auf H4 Tarif (4'500 kWh/Jahr), {{ "%.0f"|format(value_gap.grid_reduction_pct) }}% Netzgebühren-Reduktion (NE7)</p>
+        </div>
+        {% endif %}
+
+        <!-- API + CTA -->
+        <div class="mt-8 grid md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl p-6 shadow-sm border">
+                <h3 class="font-semibold mb-2">API-Zugang</h3>
+                <p class="text-sm text-gray-600 mb-3">Alle Daten auf dieser Seite sind über unsere offene API verfügbar.</p>
+                <code class="block bg-gray-100 rounded p-3 text-xs mb-3">GET /api/v1/municipalities/{{ profile.bfs_number }}</code>
+                <a href="/api/v1/docs" class="text-brand text-sm font-medium hover:underline">API-Dokumentation &rarr;</a>
+            </div>
+            <div class="bg-brand rounded-xl p-6 text-white">
+                <h3 class="font-semibold mb-2">LEG-Beratung für {{ profile.name }}</h3>
+                <p class="text-sm text-white/80 mb-3">OpenLEG unterstützt Ihre Gemeinde bei der Gründung und Verwaltung von LEGs.</p>
+                <a href="/gemeinde/onboarding" class="inline-block bg-white text-brand px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100">Kontakt aufnehmen</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t mt-16 py-8 text-center text-sm text-gray-400">
+        <p>&copy; 2026 OpenLEG · <a href="/impressum" class="hover:text-gray-600">Impressum</a> · <a href="/datenschutz" class="hover:text-gray-600">Datenschutz</a> · <a href="/api/v1/docs" class="hover:text-gray-600">API</a></p>
+    </footer>
+
+    {% if solar %}
+    <script>
+    const ctx = document.getElementById('solarChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Genutzt', 'Ungenutzt (geeignet)', 'Nicht geeignet'],
+            datasets: [{
+                data: [
+                    {{ solar.utilization_pct|default(0)|float }},
+                    {{ ((solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100) - solar.utilization_pct|default(0)|float)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }},
+                    {{ (100 - solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }}
+                ],
+                backgroundColor: ['#6366f1', '#f59e0b', '#e5e7eb'],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom', labels: { font: { size: 12 } } } }
+        }
+    });
+    </script>
+    {% endif %}
+</body>
+</html>

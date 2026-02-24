@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemeinde Dashboard | OpenLEG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-indigo-600">OpenLEG</a>
+            <span class="text-sm text-gray-500">Gemeinde Dashboard</span>
+        </div>
+    </nav>
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        {% if error %}
+        <div class="bg-red-50 text-red-700 p-4 rounded-lg mb-6">{{ error }}</div>
+        {% elif municipality %}
+        <h1 class="text-3xl font-bold mb-2">{{ municipality.name }}</h1>
+        <p class="text-gray-500 mb-8">Netzbetreiber: {{ municipality.dso_name or 'EKZ' }} | Status: {{ municipality.onboarding_status }}</p>
+
+        <div class="grid md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-3xl font-bold text-indigo-600">{{ stats.total_buildings if stats else 0 }}</div>
+                <div class="text-sm text-gray-500">Registrierte Haushalte</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-3xl font-bold text-indigo-600">{{ stats.registrations_today if stats else 0 }}</div>
+                <div class="text-sm text-gray-500">Heute registriert</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-3xl font-bold text-amber-500">0</div>
+                <div class="text-sm text-gray-500">Aktive LEGs</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-3xl font-bold text-green-600">0</div>
+                <div class="text-sm text-gray-500">Meter-Uploads</div>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-semibold text-lg mb-4">Nächste Schritte</h3>
+                <ul class="space-y-2 text-sm">
+                    <li class="flex items-center gap-2"><span class="text-green-500">&#10003;</span> Gemeinde registriert</li>
+                    <li class="flex items-center gap-2"><span class="text-gray-300">&#9675;</span> Datenverarbeitungsvertrag unterzeichnen</li>
+                    <li class="flex items-center gap-2"><span class="text-gray-300">&#9675;</span> Bewohner zur Registrierung einladen</li>
+                    <li class="flex items-center gap-2"><span class="text-gray-300">&#9675;</span> Erste LEG gründen</li>
+                </ul>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-semibold text-lg mb-4">Einladungslink</h3>
+                <p class="text-sm text-gray-600 mb-3">Teilen Sie diesen Link mit Bewohnern Ihrer Gemeinde:</p>
+                <input type="text" value="{{ request.host_url }}" class="w-full border rounded px-3 py-2 text-sm" readonly>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <h2 class="text-2xl font-bold mb-4">Kein Dashboard verfügbar</h2>
+            <p class="text-gray-600 mb-6">Bitte registrieren Sie zuerst Ihre Gemeinde.</p>
+            <a href="/gemeinde/onboarding" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700">Gemeinde registrieren</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

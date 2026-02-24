@@ -31,7 +31,7 @@ function txt(data) {
 }
 
 const server = new McpServer({
-  name: 'badenleg',
+  name: 'openleg',
   version: '1.0.0'
 });
 
@@ -543,6 +543,134 @@ server.tool(
 );
 
 // ============================================================
+// Tenant Management Tools
+// ============================================================
+
+server.tool(
+  'list_tenants',
+  'List all tenant configs (active and inactive) from white_label_configs.',
+  { active_only: z.boolean().default(true).describe('Only show active tenants') },
+  async ({ active_only }) => {
+    let sql = `SELECT id, territory, utility_name, primary_color, contact_email, active, config, created_at, updated_at FROM white_label_configs`;
+    if (active_only) sql += ` WHERE active = TRUE`;
+    sql += ` ORDER BY territory`;
+    const result = await query(sql);
+    return txt(result.rows);
+  }
+);
+
+server.tool(
+  'get_tenant',
+  'Get full tenant config by territory slug.',
+  { territory: z.string().describe('Territory slug (e.g. "baden", "schaffhausen")') },
+  async ({ territory }) => {
+    const result = await query(
+      `SELECT * FROM white_label_configs WHERE territory = $1`, [territory]
+    );
+    if (result.rows.length === 0) return txt({ error: 'Tenant not found' });
+    return txt(result.rows[0]);
+  }
+);
+
+server.tool(
+  'upsert_tenant',
+  'Create or update a tenant/city config. Confirm with user before executing. Config JSONB stores: city_name, kanton, kanton_code, platform_name, brand_prefix, map_center_lat, map_center_lon, map_zoom, map_bounds_sw, map_bounds_ne, plz_ranges, solar_kwh_per_kwp, site_url, ga4_id.',
+  {
+    territory: z.string().describe('Territory slug (lowercase, no spaces, e.g. "schaffhausen")'),
+    utility_name: z.string().describe('Local utility/VNB name'),
+    primary_color: z.string().default('#c7021a').describe('Hex color'),
+    secondary_color: z.string().default('#f59e0b').describe('Hex color'),
+    contact_email: z.string().default('').describe('Contact email'),
+    legal_entity: z.string().default('').describe('Legal entity name'),
+    dso_contact: z.string().default('').describe('DSO contact name'),
+    active: z.boolean().default(true),
+    config: z.object({
+      city_name: z.string().describe('Display name of the city'),
+      kanton: z.string().describe('Canton name'),
+      kanton_code: z.string().describe('Canton code (2 letters)'),
+      platform_name: z.string().describe('Platform name (e.g. "SchaffhausenLEG")'),
+      brand_prefix: z.string().describe('Brand prefix'),
+      map_center_lat: z.number().describe('Map center latitude'),
+      map_center_lon: z.number().describe('Map center longitude'),
+      map_zoom: z.number().default(14).describe('Map zoom level'),
+      plz_ranges: z.array(z.array(z.number())).describe('PLZ ranges [[from, to], ...]'),
+      solar_kwh_per_kwp: z.number().default(950).describe('Regional solar yield kWh/kWp')
+    }).describe('JSONB config object')
+  },
+  async ({ territory, config: configObj, ...fields }) => {
+    const blocked = readonlyGuard(); if (blocked) return blocked;
+    const result = await query(
+      `INSERT INTO white_label_configs (territory, utility_name, primary_color, secondary_color, contact_email, legal_entity, dso_contact, active, config, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+       ON CONFLICT (territory) DO UPDATE SET
+         utility_name = EXCLUDED.utility_name,
+         primary_color = EXCLUDED.primary_color,
+         secondary_color = EXCLUDED.secondary_color,
+         contact_email = EXCLUDED.contact_email,
+         legal_entity = EXCLUDED.legal_entity,
+         dso_contact = EXCLUDED.dso_contact,
+         active = EXCLUDED.active,
+         config = EXCLUDED.config,
+         updated_at = NOW()
+       RETURNING *`,
+      [territory, fields.utility_name, fields.primary_color, fields.secondary_color,
+       fields.contact_email, fields.legal_entity, fields.dso_contact, fields.active,
+       JSON.stringify(configObj)]
+    );
+    return txt(result.rows[0]);
+  }
+);
+
+server.tool(
+  'get_tenant_stats',
+  'Get registration stats per tenant/city_id.',
+  {},
+  async () => {
+    const result = await query(`
+      SELECT city_id, COUNT(*) as total, COUNT(*) FILTER (WHERE verified = true) as verified
+      FROM buildings
+      GROUP BY city_id
+      ORDER BY total DESC
+    `);
+    return txt(result.rows);
+  }
+);
+
+server.tool(
+  'research_vnb',
+  'Research a Swiss VNB/utility: search web for their LEG offerings, check if on LEGHub, find PLZ coverage. Use this to evaluate expansion targets.',
+  {
+    utility_name: z.string().describe('Name of the utility/VNB to research'),
+    municipality: z.string().optional().describe('Municipality name for context')
+  },
+  async ({ utility_name, municipality }) => {
+    if (!BRAVE_API_KEY) return txt({ error: 'BRAVE_API_KEY not configured' });
+    const searches = [
+      `"${utility_name}" LEG Lokale Elektrizitätsgemeinschaft`,
+      `"${utility_name}" leghub.ch`,
+      municipality ? `"${utility_name}" ${municipality} PLZ Versorgungsgebiet` : null
+    ].filter(Boolean);
+
+    const results = {};
+    for (const q of searches) {
+      const params = new URLSearchParams({ q, count: 5 });
+      try {
+        const res = await fetch(`https://api.search.brave.com/res/v1/web/search?${params}`, {
+          headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          results[q] = (data.web?.results || []).map(r => ({ title: r.title, url: r.url, description: r.description }));
+        }
+      } catch (e) {
+        results[q] = { error: e.message };
+      }
+    }
+    return txt(results);
+  }
+);
+
+// ============================================================
 // Web Search
 // ============================================================
 
@@ -563,6 +691,348 @@ server.tool(
     const data = await res.json();
     const results = (data.web?.results || []).map(r => ({ title: r.title, url: r.url, description: r.description }));
     return txt(results);
+  }
+);
+
+// ============================================================
+// Public Data Tools
+// ============================================================
+
+server.tool(
+  'fetch_elcom_tariffs',
+  'Fetch ElCom electricity tariffs for a municipality from LINDAS SPARQL endpoint. Caches results in elcom_tariffs table.',
+  {
+    bfs_number: z.number().describe('BFS municipality number (e.g. 261 for Dietikon)'),
+    year: z.number().default(2026).describe('Tariff year')
+  },
+  async ({ bfs_number, year }) => {
+    const sparql = `
+      PREFIX schema: <http://schema.org/>
+      PREFIX cube: <https://cube.link/>
+      PREFIX elcom: <https://energy.ld.admin.ch/elcom/electricityprice/dimension/>
+      SELECT ?operator ?category ?total ?energy ?grid ?municipality_fee ?kev
+      WHERE {
+        ?obs a cube:Observation ;
+             elcom:municipality <https://ld.admin.ch/municipality/${bfs_number}> ;
+             elcom:period "${year}"^^<http://www.w3.org/2001/XMLSchema#gYear> ;
+             elcom:operator ?operatorUri ;
+             elcom:category ?categoryUri ;
+             elcom:total ?total .
+        OPTIONAL { ?obs elcom:gridusage ?grid }
+        OPTIONAL { ?obs elcom:energy ?energy }
+        OPTIONAL { ?obs elcom:charge ?municipality_fee }
+        OPTIONAL { ?obs elcom:aidfee ?kev }
+        ?operatorUri schema:name ?operator .
+        ?categoryUri schema:name ?category .
+      } ORDER BY ?operator ?category
+    `;
+    try {
+      const res = await fetch('https://lindas.admin.ch/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/sparql-results+json' },
+        body: `query=${encodeURIComponent(sparql)}`
+      });
+      if (!res.ok) throw new Error(`SPARQL ${res.status}`);
+      const data = await res.json();
+      const bindings = data.results?.bindings || [];
+      const tariffs = bindings.map(b => ({
+        bfs_number, year,
+        operator_name: b.operator?.value || '',
+        category: b.category?.value || '',
+        total_rp_kwh: parseFloat(b.total?.value || 0),
+        energy_rp_kwh: parseFloat(b.energy?.value || 0),
+        grid_rp_kwh: parseFloat(b.grid?.value || 0),
+        municipality_fee_rp_kwh: parseFloat(b.municipality_fee?.value || 0),
+        kev_rp_kwh: parseFloat(b.kev?.value || 0)
+      }));
+
+      // Cache in DB
+      for (const t of tariffs) {
+        await query(
+          `INSERT INTO elcom_tariffs (bfs_number, operator_name, year, category, total_rp_kwh, energy_rp_kwh, grid_rp_kwh, municipality_fee_rp_kwh, kev_rp_kwh)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (bfs_number, operator_name, year, category) DO UPDATE SET
+             total_rp_kwh = EXCLUDED.total_rp_kwh, energy_rp_kwh = EXCLUDED.energy_rp_kwh,
+             grid_rp_kwh = EXCLUDED.grid_rp_kwh, municipality_fee_rp_kwh = EXCLUDED.municipality_fee_rp_kwh,
+             kev_rp_kwh = EXCLUDED.kev_rp_kwh, fetched_at = NOW()`,
+          [t.bfs_number, t.operator_name, t.year, t.category, t.total_rp_kwh, t.energy_rp_kwh, t.grid_rp_kwh, t.municipality_fee_rp_kwh, t.kev_rp_kwh]
+        );
+      }
+      return txt({ bfs_number, year, tariffs_count: tariffs.length, tariffs });
+    } catch (e) {
+      return txt({ error: e.message, bfs_number, year });
+    }
+  }
+);
+
+server.tool(
+  'fetch_energie_reporter',
+  'Download Energie Reporter CSV from opendata.swiss. Parse per-municipality energy transition data. Upsert into municipality_profiles.',
+  {
+    kanton: z.string().default('ZH').describe('Canton code to filter')
+  },
+  async ({ kanton }) => {
+    try {
+      const metaRes = await fetch('https://opendata.swiss/api/3/action/package_show?id=energie-reporter');
+      const meta = await metaRes.json();
+      const csvResource = meta.result?.resources?.find(r => r.format?.toUpperCase() === 'CSV');
+      if (!csvResource) return txt({ error: 'No CSV resource found' });
+
+      const csvRes = await fetch(csvResource.url);
+      const csvText = await csvRes.text();
+      const lines = csvText.split('\n');
+      const headers = lines[0]?.split(';').map(h => h.trim()) || [];
+      let count = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const vals = lines[i]?.split(';');
+        if (!vals || vals.length < headers.length) continue;
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = vals[idx]?.trim(); });
+
+        const bfs = parseInt(row.BFS_NR || row.bfs_nr || row.gemeinde_bfs);
+        const k = row.KANTON || row.kanton || '';
+        if (!bfs || (kanton && k.toUpperCase() !== kanton.toUpperCase())) continue;
+
+        await query(
+          `INSERT INTO municipality_profiles (bfs_number, name, kanton, solar_potential_pct, ev_share_pct, renewable_heating_pct, electricity_consumption_mwh, renewable_production_mwh, data_sources)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (bfs_number) DO UPDATE SET
+             name = EXCLUDED.name, solar_potential_pct = EXCLUDED.solar_potential_pct,
+             ev_share_pct = EXCLUDED.ev_share_pct, renewable_heating_pct = EXCLUDED.renewable_heating_pct,
+             electricity_consumption_mwh = EXCLUDED.electricity_consumption_mwh,
+             renewable_production_mwh = EXCLUDED.renewable_production_mwh,
+             data_sources = municipality_profiles.data_sources || EXCLUDED.data_sources,
+             updated_at = NOW()`,
+          [bfs, row.GEMEINDENAME || row.gemeindename || '', k,
+           parseFloat(row.anteil_dachflaechen_solar || 0) || null,
+           parseFloat(row.anteil_ev || 0) || null,
+           parseFloat(row.anteil_erneuerbar_heizen || 0) || null,
+           parseFloat(row.stromverbrauch_mwh || 0) || null,
+           parseFloat(row.erneuerbare_produktion_mwh || 0) || null,
+           JSON.stringify({ energie_reporter: true, fetched_at: new Date().toISOString() })]
+        );
+        count++;
+      }
+      return txt({ kanton, municipalities_upserted: count });
+    } catch (e) {
+      return txt({ error: e.message });
+    }
+  }
+);
+
+server.tool(
+  'fetch_sonnendach_data',
+  'Fetch solar potential from BFE Sonnendach (opendata.swiss) for municipalities. Cache in sonnendach_municipal table.',
+  {
+    bfs_number: z.number().optional().describe('Specific BFS number, or omit for all')
+  },
+  async ({ bfs_number }) => {
+    try {
+      const metaRes = await fetch('https://opendata.swiss/api/3/action/package_show?id=sonnendach-ch');
+      const meta = await metaRes.json();
+      const csvResource = meta.result?.resources?.find(r =>
+        r.format?.toUpperCase() === 'CSV' && (r.name?.toLowerCase().includes('gemeinde') || r.name?.toLowerCase().includes('municipal'))
+      ) || meta.result?.resources?.find(r => r.format?.toUpperCase() === 'CSV');
+
+      if (!csvResource) return txt({ error: 'No CSV resource found' });
+
+      const csvRes = await fetch(csvResource.url);
+      const csvText = await csvRes.text();
+      const lines = csvText.split('\n');
+      const headers = lines[0]?.split(';').map(h => h.trim()) || [];
+      let count = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const vals = lines[i]?.split(';');
+        if (!vals || vals.length < headers.length) continue;
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = vals[idx]?.trim(); });
+
+        const bfs = parseInt(row.BFS_NR || row.bfs_nr || row.gemeinde_bfs);
+        if (!bfs) continue;
+        if (bfs_number && bfs !== bfs_number) continue;
+
+        await query(
+          `INSERT INTO sonnendach_municipal (bfs_number, total_roof_area_m2, suitable_roof_area_m2, potential_kwh_year, potential_kwp, utilization_pct)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (bfs_number) DO UPDATE SET
+             total_roof_area_m2 = EXCLUDED.total_roof_area_m2, suitable_roof_area_m2 = EXCLUDED.suitable_roof_area_m2,
+             potential_kwh_year = EXCLUDED.potential_kwh_year, potential_kwp = EXCLUDED.potential_kwp,
+             utilization_pct = EXCLUDED.utilization_pct, fetched_at = NOW()`,
+          [bfs,
+           parseFloat(row.dachflaeche_total_m2 || 0) || null,
+           parseFloat(row.dachflaeche_geeignet_m2 || 0) || null,
+           parseFloat(row.potenzial_kwh_jahr || 0) || null,
+           parseFloat(row.potenzial_kwp || 0) || null,
+           parseFloat(row.auslastung_pct || 0) || null]
+        );
+        count++;
+      }
+      return txt({ municipalities_upserted: count, bfs_number: bfs_number || 'all' });
+    } catch (e) {
+      return txt({ error: e.message });
+    }
+  }
+);
+
+server.tool(
+  'scan_vnb_leg_offerings',
+  'Search web for a VNB/utility LEG product pages. Extract: offers_leg, pricing_model, platform, partnership.',
+  {
+    utility_name: z.string().describe('Name of the VNB/utility'),
+  },
+  async ({ utility_name }) => {
+    if (!BRAVE_API_KEY) return txt({ error: 'BRAVE_API_KEY not configured' });
+    const searches = [
+      `"${utility_name}" LEG Lokale Elektrizitätsgemeinschaft Angebot`,
+      `"${utility_name}" GemeinsamStrom OR LEGhub`,
+      `"${utility_name}" Netzgebühren LEG Reduktion`
+    ];
+
+    const results = {};
+    for (const q of searches) {
+      try {
+        const res = await fetch(`https://api.search.brave.com/res/v1/web/search?${new URLSearchParams({ q, count: 5 })}`, {
+          headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          results[q] = (data.web?.results || []).map(r => ({ title: r.title, url: r.url, description: r.description }));
+        }
+      } catch (e) {
+        results[q] = { error: e.message };
+      }
+    }
+    return txt({ utility_name, searches: results });
+  }
+);
+
+server.tool(
+  'monitor_leghub_partners',
+  'Scrape leghub.ch partner list. Compare with previous scan to detect new/removed partners.',
+  {},
+  async () => {
+    if (!BRAVE_API_KEY) return txt({ error: 'BRAVE_API_KEY not configured' });
+    try {
+      const res = await fetch(`https://api.search.brave.com/res/v1/web/search?${new URLSearchParams({ q: 'site:leghub.ch partner', count: 10 })}`, {
+        headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY }
+      });
+      if (!res.ok) throw new Error(`Brave API ${res.status}`);
+      const data = await res.json();
+      const partners = (data.web?.results || []).map(r => ({ title: r.title, url: r.url, description: r.description }));
+
+      // Check previous scan
+      const prevRes = await query(`SELECT data FROM insights_cache WHERE insight_type = 'leghub_partners' ORDER BY computed_at DESC LIMIT 1`);
+      const previous = prevRes.rows[0]?.data?.partners || [];
+
+      const prevUrls = new Set(previous.map(p => p.url));
+      const newPartners = partners.filter(p => !prevUrls.has(p.url));
+
+      // Save current scan
+      await query(
+        `INSERT INTO insights_cache (insight_type, scope, period, data, expires_at)
+         VALUES ('leghub_partners', 'CH', 'current', $1, NOW() + INTERVAL '30 days')
+         ON CONFLICT (insight_type, scope, period) DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), expires_at = EXCLUDED.expires_at`,
+        [JSON.stringify({ partners, scanned_at: new Date().toISOString() })]
+      );
+
+      return txt({ total_partners: partners.length, new_since_last_scan: newPartners.length, new_partners: newPartners, all_partners: partners });
+    } catch (e) {
+      return txt({ error: e.message });
+    }
+  }
+);
+
+server.tool(
+  'refresh_municipality_data',
+  'Orchestrate all fetches for a municipality: ElCom tariffs, compute scores, update profile. End-to-end refresh.',
+  {
+    bfs_number: z.number().describe('BFS municipality number')
+  },
+  async ({ bfs_number }) => {
+    const result = { bfs_number, steps: {} };
+
+    // 1. Fetch ElCom tariffs
+    try {
+      const sparql = `
+        PREFIX schema: <http://schema.org/>
+        PREFIX cube: <https://cube.link/>
+        PREFIX elcom: <https://energy.ld.admin.ch/elcom/electricityprice/dimension/>
+        SELECT ?operator ?category ?total ?energy ?grid ?municipality_fee ?kev
+        WHERE {
+          ?obs a cube:Observation ;
+               elcom:municipality <https://ld.admin.ch/municipality/${bfs_number}> ;
+               elcom:period "2026"^^<http://www.w3.org/2001/XMLSchema#gYear> ;
+               elcom:operator ?operatorUri ;
+               elcom:category ?categoryUri ;
+               elcom:total ?total .
+          OPTIONAL { ?obs elcom:gridusage ?grid }
+          OPTIONAL { ?obs elcom:energy ?energy }
+          OPTIONAL { ?obs elcom:charge ?municipality_fee }
+          OPTIONAL { ?obs elcom:aidfee ?kev }
+          ?operatorUri schema:name ?operator .
+          ?categoryUri schema:name ?category .
+        }
+      `;
+      const sparqlRes = await fetch('https://lindas.admin.ch/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/sparql-results+json' },
+        body: `query=${encodeURIComponent(sparql)}`
+      });
+      const sparqlData = await sparqlRes.json();
+      const bindings = sparqlData.results?.bindings || [];
+      result.steps.elcom = { tariffs: bindings.length };
+
+      // Cache tariffs
+      for (const b of bindings) {
+        await query(
+          `INSERT INTO elcom_tariffs (bfs_number, operator_name, year, category, total_rp_kwh, energy_rp_kwh, grid_rp_kwh, municipality_fee_rp_kwh, kev_rp_kwh)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (bfs_number, operator_name, year, category) DO UPDATE SET
+             total_rp_kwh = EXCLUDED.total_rp_kwh, energy_rp_kwh = EXCLUDED.energy_rp_kwh,
+             grid_rp_kwh = EXCLUDED.grid_rp_kwh, municipality_fee_rp_kwh = EXCLUDED.municipality_fee_rp_kwh,
+             kev_rp_kwh = EXCLUDED.kev_rp_kwh, fetched_at = NOW()`,
+          [bfs_number, b.operator?.value || '', 2026, b.category?.value || '',
+           parseFloat(b.total?.value || 0), parseFloat(b.energy?.value || 0),
+           parseFloat(b.grid?.value || 0), parseFloat(b.municipality_fee?.value || 0),
+           parseFloat(b.kev?.value || 0)]
+        );
+      }
+
+      // 2. Compute value gap from H4 tariff
+      const h4 = bindings.find(b => (b.category?.value || '').startsWith('H4'));
+      if (h4) {
+        const gridFee = parseFloat(h4.grid?.value || 0);
+        const savingsRp = gridFee * 0.4;
+        const annualSavings = savingsRp * 4500 / 100;
+        result.steps.value_gap = { grid_fee_rp: gridFee, annual_savings_chf: Math.round(annualSavings * 100) / 100 };
+
+        // 3. Update profile with value gap and score
+        const profileRes = await query(`SELECT * FROM municipality_profiles WHERE bfs_number = $1`, [bfs_number]);
+        const existing = profileRes.rows[0] || {};
+
+        const solar = parseFloat(existing.solar_potential_pct || 0) / 100;
+        const ev = Math.min(parseFloat(existing.ev_share_pct || 0), 30) / 30;
+        const heating = parseFloat(existing.renewable_heating_pct || 0) / 100;
+        const consumption = parseFloat(existing.electricity_consumption_mwh || 0);
+        const production = parseFloat(existing.renewable_production_mwh || 0);
+        const prodRatio = consumption > 0 ? Math.min(production / consumption, 1) : 0;
+        const score = Math.round((solar * 30 + ev * 20 + heating * 25 + prodRatio * 25) * 10) / 10;
+
+        await query(
+          `UPDATE municipality_profiles SET leg_value_gap_chf = $2, energy_transition_score = $3,
+           data_sources = data_sources || $4, updated_at = NOW() WHERE bfs_number = $1`,
+          [bfs_number, annualSavings, score,
+           JSON.stringify({ elcom: true, last_refresh: new Date().toISOString() })]
+        );
+        result.steps.profile = { score, value_gap_chf: annualSavings };
+      }
+    } catch (e) {
+      result.steps.error = e.message;
+    }
+
+    return txt(result);
   }
 );
 

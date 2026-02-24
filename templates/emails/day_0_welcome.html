@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Willkommen bei BadenLEG</title>
+<title>Willkommen bei {{ platform_name }}</title>
 <style>
 body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
 .wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
-.header { background: #c7021a; padding: 24px; text-align: center; }
+.header { background: {{ primary_color }}; padding: 24px; text-align: center; }
 .header h1 { color: #fff; font-size: 22px; margin: 0; }
 .content { padding: 32px 24px; }
 .content h2 { font-size: 20px; margin: 0 0 16px; }
 .content p { font-size: 15px; line-height: 1.6; margin: 0 0 16px; color: #374151; }
 .highlight { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0; }
 .highlight p { margin: 0; font-weight: 600; color: #92400e; }
-.cta { display: inline-block; background: #c7021a; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px 0; }
+.cta { display: inline-block; background: {{ primary_color }}; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px 0; }
 .steps { margin: 20px 0; }
 .steps li { margin-bottom: 12px; font-size: 15px; line-height: 1.5; }
 .referral-box { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 16px; margin: 24px 0; }
@@ -27,11 +27,11 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
 <body>
 <div class="wrapper">
   <div class="header">
-    <h1>BadenLEG</h1>
+    <h1>{{ platform_name }}</h1>
   </div>
   <div class="content">
-    <h2>Willkommen bei BadenLEG!</h2>
-    <p>Sie haben sich erfolgreich registriert. Seit dem 1. Januar 2026 können Haushalte in Baden eine Lokale Elektrizitätsgemeinschaft (LEG) gründen und gemeinsam Strom teilen.</p>
+    <h2>Willkommen bei {{ platform_name }}!</h2>
+    <p>Sie haben sich erfolgreich registriert. Seit dem 1. Januar 2026 können Haushalte in {{ city_name }} eine Lokale Elektrizitätsgemeinschaft (LEG) gründen und gemeinsam Strom teilen.</p>
 
     {% if neighbor_count > 0 %}
     <div class="highlight">
@@ -59,7 +59,7 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     {% endif %}
   </div>
   <div class="footer">
-    <p>BadenLEG &middot; Lokale Elektrizitätsgemeinschaft für Baden</p>
+    <p>{{ platform_name }} &middot; LEG für {{ city_name }}</p>
     <p><a href="{{ unsubscribe_url }}">Abmelden</a> &middot; <a href="{{ site_url }}/datenschutz">Datenschutz</a></p>
   </div>
 </div>

@@ -26,62 +26,65 @@ def mock_get_plz_stats(plz):
     else: return 5.0, 0.9 # Umland
 
 # --- Echte API-Funktionen (Opendata) ---
-def get_address_suggestions(query_string, limit=10):
-    """Fragt Swisstopo API ab, um Adressvorschläge zu erhalten (nur Kanton Aargau)."""
+def _plz_in_ranges(plz_int, plz_ranges=None):
+    """Check if a PLZ falls within any of the given ranges. Default: Zürich (8000-8999)."""
+    if plz_ranges is None:
+        plz_ranges = [[8000, 8999]]
+    return any(lo <= plz_int <= hi for lo, hi in plz_ranges)
+
+
+def get_address_suggestions(query_string, limit=10, plz_ranges=None):
+    """Fragt Swisstopo API ab, um Adressvorschläge zu erhalten (gefiltert nach PLZ-Bereichen)."""
     if not query_string or len(query_string) < 2:
         return []
-    
+
     # Erhöhe Limit für API, da wir nachher filtern
     params = {'searchText': query_string, 'type': 'locations', 'limit': limit * 3}
     try:
         response = requests.get(GEO_API_URL, params=params, timeout=5)
         response.raise_for_status()
         results = response.json().get('results', [])
-        
+
         suggestions = []
         for result in results:
             attrs = result.get('attrs', {})
             label = attrs.get('label', '')
-            
-            # Filter: Nur Kanton Aargau (PLZ 5000-5999)
+
+            # Filter by PLZ ranges
             plz = attrs.get('plz')
             if plz:
                 try:
                     plz_int = int(plz)
-                    # Aargau PLZ-Bereich: 5000-5999
-                    if not (5000 <= plz_int <= 5999):
+                    if not _plz_in_ranges(plz_int, plz_ranges):
                         continue
                 except (ValueError, TypeError):
-                    # Wenn PLZ nicht als Integer konvertierbar, aus Label versuchen
-                    plz_match = re.search(r'\b(5\d{3})\b', label)
+                    plz_match = re.search(r'\b(\d{4})\b', label)
                     if not plz_match:
-                        continue  # Keine Aargau PLZ gefunden, überspringen
+                        continue
                     plz_int = int(plz_match.group(1))
-                    if not (5000 <= plz_int <= 5999):
+                    if not _plz_in_ranges(plz_int, plz_ranges):
                         continue
             else:
-                # Kein PLZ-Attribut, versuche aus Label zu extrahieren
-                plz_match = re.search(r'\b(5\d{3})\b', label)
+                plz_match = re.search(r'\b(\d{4})\b', label)
                 if not plz_match:
-                    continue  # Keine PLZ gefunden, überspringen
-                plz_int = int(plz_match.group(1))
-                if not (5000 <= plz_int <= 5999):
                     continue
-            
+                plz_int = int(plz_match.group(1))
+                if not _plz_in_ranges(plz_int, plz_ranges):
+                    continue
+
             # Entferne HTML-Tags aus dem Label
             if label:
-                clean_label = re.sub(r'<[^>]+>', '', label)  # Entferne HTML-Tags
+                clean_label = re.sub(r'<[^>]+>', '', label)
                 suggestions.append({
                     'label': clean_label,
                     'lat': attrs.get('lat'),
                     'lon': attrs.get('lon'),
                     'plz': plz if plz else plz_int
                 })
-                
-                # Limit beachten nach Filterung
+
                 if len(suggestions) >= limit:
                     break
-        
+
         return suggestions
     except Exception as e:
         print(f"  [GEO FEHLER bei Vorschlägen] {e}")

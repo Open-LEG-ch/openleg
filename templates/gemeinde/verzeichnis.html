@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemeindeverzeichnis – Energieprofile Schweizer Gemeinden | OpenLEG</title>
+    <meta name="description" content="Schweizer Gemeinden im Energiewende-Vergleich: Stromtarife, Solarpotenzial, LEG-Ersparnis. Offene Daten von ElCom, Sonnendach, Energie Reporter.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { brand: { DEFAULT: '#6366f1', light: '#818cf8', dark: '#4f46e5' }, accent: '#f59e0b' } } }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-brand">OpenLEG</a>
+            <div class="hidden md:flex space-x-6 text-sm">
+                <a href="/gemeinde/verzeichnis" class="text-brand font-medium">Gemeindeverzeichnis</a>
+                <a href="/api/v1/docs" class="hover:text-brand">API</a>
+                <a href="/gemeinde/onboarding" class="hover:text-brand">Gemeinde anmelden</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-2">Gemeindeverzeichnis</h1>
+        <p class="text-gray-600 mb-6">Energieprofile Schweizer Gemeinden: Stromtarife, LEG-Potenzial, Energiewende-Score.</p>
+
+        <!-- Search + Filter -->
+        <div class="flex flex-col md:flex-row gap-4 mb-6">
+            <form class="flex-1 flex gap-2" method="get">
+                <input type="text" name="q" value="{{ query }}" placeholder="Gemeinde suchen..."
+                    class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                <input type="hidden" name="kanton" value="{{ kanton }}">
+                <input type="hidden" name="sort" value="{{ sort }}">
+                <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Suchen</button>
+            </form>
+            <div class="flex gap-2">
+                <select onchange="location.href='?kanton='+this.value+'&q={{ query }}&sort={{ sort }}'" class="border rounded-lg px-3 py-2 text-sm bg-white">
+                    <option value="ZH" {{ 'selected' if kanton == 'ZH' }}>Zürich</option>
+                    <option value="BE" {{ 'selected' if kanton == 'BE' }}>Bern</option>
+                    <option value="AG" {{ 'selected' if kanton == 'AG' }}>Aargau</option>
+                    <option value="SG" {{ 'selected' if kanton == 'SG' }}>St. Gallen</option>
+                    <option value="LU" {{ 'selected' if kanton == 'LU' }}>Luzern</option>
+                </select>
+                <select onchange="location.href='?sort='+this.value+'&kanton={{ kanton }}&q={{ query }}'" class="border rounded-lg px-3 py-2 text-sm bg-white">
+                    <option value="energy_transition_score" {{ 'selected' if sort == 'energy_transition_score' }}>Score</option>
+                    <option value="leg_value_gap_chf" {{ 'selected' if sort == 'leg_value_gap_chf' }}>LEG-Ersparnis</option>
+                    <option value="population" {{ 'selected' if sort == 'population' }}>Einwohner</option>
+                    <option value="name" {{ 'selected' if sort == 'name' }}>Name</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Results -->
+        {% if profiles %}
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for p in profiles %}
+            <a href="/gemeinde/profil/{{ p.bfs_number }}" class="bg-white rounded-xl p-5 shadow-sm border hover:shadow-md hover:border-brand/30 transition-all group">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h2 class="font-semibold text-lg group-hover:text-brand">{{ p.name }}</h2>
+                        <p class="text-sm text-gray-500">{{ p.kanton }}{% if p.population %} · {{ "{:,}".format(p.population|int).replace(",", "'") }}{% endif %}</p>
+                    </div>
+                    <div class="bg-brand/10 text-brand text-sm font-bold px-2 py-1 rounded">
+                        {{ "%.0f"|format(p.energy_transition_score|default(0)|float) }}
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    {% if p.leg_value_gap_chf %}
+                    <div>
+                        <p class="text-gray-400">LEG-Ersparnis</p>
+                        <p class="font-medium text-green-600">CHF {{ "%.0f"|format(p.leg_value_gap_chf|float) }}</p>
+                    </div>
+                    {% endif %}
+                    {% if p.solar_potential_pct %}
+                    <div>
+                        <p class="text-gray-400">Solar</p>
+                        <p class="font-medium">{{ "%.0f"|format(p.solar_potential_pct|float) }}%</p>
+                    </div>
+                    {% endif %}
+                    {% if p.ev_share_pct %}
+                    <div>
+                        <p class="text-gray-400">E-Mobilität</p>
+                        <p class="font-medium">{{ "%.0f"|format(p.ev_share_pct|float) }}%</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <p class="text-sm text-gray-400 mt-6">{{ profiles|length }} Gemeinden gefunden. Daten: ElCom, BFE Sonnendach, Energie Reporter (opendata.swiss).</p>
+        {% else %}
+        <div class="bg-white rounded-xl p-8 text-center shadow-sm border">
+            <p class="text-gray-500 mb-2">Keine Gemeinden gefunden{% if query %} für "{{ query }}"{% endif %}.</p>
+            <p class="text-sm text-gray-400">Daten werden wöchentlich aktualisiert. <a href="/api/v1/docs" class="text-brand hover:underline">API nutzen</a></p>
+        </div>
+        {% endif %}
+
+        <!-- API CTA -->
+        <div class="mt-8 bg-gray-100 rounded-xl p-6 border">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h3 class="font-semibold">Diese Daten programmatisch nutzen</h3>
+                    <p class="text-sm text-gray-600">Alle Gemeindedaten sind frei über unsere REST API verfügbar. Kein API-Key nötig.</p>
+                </div>
+                <a href="/api/v1/docs" class="bg-brand text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark whitespace-nowrap">API-Dokumentation</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t mt-16 py-8 text-center text-sm text-gray-400">
+        <p>&copy; 2026 OpenLEG · <a href="/impressum" class="hover:text-gray-600">Impressum</a> · <a href="/datenschutz" class="hover:text-gray-600">Datenschutz</a></p>
+    </footer>
+</body>
+</html>

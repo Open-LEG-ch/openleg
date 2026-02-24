@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart-Meter-Daten hochladen | OpenLEG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-indigo-600">OpenLEG</a>
+        </div>
+    </nav>
+    <div class="max-w-xl mx-auto px-4 py-12">
+        <h1 class="text-3xl font-bold mb-2">Smart-Meter-Daten hochladen</h1>
+        <p class="text-gray-600 mb-6">Laden Sie Ihren EKZ-CSV-Export hoch. Die Daten werden verschlüsselt gespeichert und nur gemäss Ihrer Einwilligung verwendet.</p>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Building ID</label>
+                <input type="text" id="building-id" placeholder="Ihre Building ID" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">CSV-Datei</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors cursor-pointer" id="drop-zone">
+                    <input type="file" id="csv-file" accept=".csv" class="hidden">
+                    <p class="text-gray-500">Datei hierher ziehen oder <span class="text-indigo-600 underline" onclick="document.getElementById('csv-file').click()">auswählen</span></p>
+                    <p class="text-xs text-gray-400 mt-1">EKZ CSV-Export, max. 10 MB</p>
+                </div>
+                <p id="file-name" class="text-sm text-gray-600 mt-2 hidden"></p>
+            </div>
+
+            <div class="bg-indigo-50 p-4 rounded-lg text-sm mb-4">
+                <h4 class="font-medium mb-1">Datenschutz-Stufen:</h4>
+                <div class="space-y-2">
+                    <label class="flex items-start gap-2"><input type="radio" name="tier" value="1" checked class="mt-1"> <div><strong>Stufe 1:</strong> Nur LEG-Teilnahme, Daten mit Nachbarn und Gemeinde teilen</div></label>
+                    <label class="flex items-start gap-2"><input type="radio" name="tier" value="2" class="mt-1"> <div><strong>Stufe 2:</strong> Anonymisiert für Forschung freigeben</div></label>
+                    <label class="flex items-start gap-2"><input type="radio" name="tier" value="3" class="mt-1"> <div><strong>Stufe 3:</strong> Aggregierte Insights für Energieversorger freigeben</div></label>
+                </div>
+            </div>
+
+            <button id="btn-upload" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50" disabled>Daten hochladen</button>
+            <div id="upload-result" class="mt-4 hidden"></div>
+        </div>
+
+        <div class="mt-6 bg-white rounded-lg shadow-md p-6">
+            <h3 class="font-semibold mb-2">So exportieren Sie Ihre EKZ-Daten:</h3>
+            <ol class="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                <li>Melden Sie sich im EKZ-Kundenportal an</li>
+                <li>Gehen Sie zu "Mein Verbrauch" oder "Messdaten"</li>
+                <li>Wählen Sie den gewünschten Zeitraum</li>
+                <li>Klicken Sie auf "CSV exportieren"</li>
+                <li>Laden Sie die Datei hier hoch</li>
+            </ol>
+        </div>
+    </div>
+    <script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('csv-file');
+    const btnUpload = document.getElementById('btn-upload');
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-indigo-400', 'bg-indigo-50'); });
+    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-indigo-400', 'bg-indigo-50'); });
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('border-indigo-400', 'bg-indigo-50'); if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; showFileName(); } });
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', showFileName);
+
+    function showFileName() {
+        if (fileInput.files.length) {
+            document.getElementById('file-name').textContent = fileInput.files[0].name;
+            document.getElementById('file-name').classList.remove('hidden');
+            btnUpload.disabled = false;
+        }
+    }
+
+    btnUpload.addEventListener('click', async function() {
+        const bid = document.getElementById('building-id').value.trim();
+        const file = fileInput.files[0];
+        const tier = document.querySelector('input[name="tier"]:checked').value;
+        if (!bid) { alert('Bitte Building ID eingeben.'); return; }
+        if (!file) return;
+        this.disabled = true;
+        this.textContent = 'Lade hoch...';
+        const text = await file.text();
+        try {
+            const res = await fetch('/api/meter-data/upload', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({building_id: bid, csv_content: text, tier: parseInt(tier)})
+            });
+            const data = await res.json();
+            const resultDiv = document.getElementById('upload-result');
+            resultDiv.classList.remove('hidden');
+            if (data.success) {
+                resultDiv.innerHTML = `<div class="bg-green-50 text-green-700 p-3 rounded-lg"><strong>${data.readings_count} Messwerte</strong> erfolgreich importiert.</div>`;
+            } else {
+                resultDiv.innerHTML = `<div class="bg-red-50 text-red-700 p-3 rounded-lg">Fehler: ${(data.errors || []).join(', ')}</div>`;
+            }
+        } catch(e) {
+            document.getElementById('upload-result').innerHTML = '<div class="bg-red-50 text-red-700 p-3 rounded-lg">Upload fehlgeschlagen.</div>';
+            document.getElementById('upload-result').classList.remove('hidden');
+        }
+        this.disabled = false;
+        this.textContent = 'Daten hochladen';
+    });
+    </script>
+</body>
+</html>

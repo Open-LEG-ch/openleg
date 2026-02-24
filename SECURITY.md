@@ -1,8 +1,8 @@
-# Security Documentation - BadenLEG
+# Security Documentation - OpenLEG
 
 ## Overview
 
-BadenLEG implements multiple layers of security to protect user data and prevent common web vulnerabilities. This document outlines the security measures implemented and deployment recommendations.
+OpenLEG implements multiple layers of security to protect user data and prevent common web vulnerabilities. This document outlines the security measures implemented and deployment recommendations.
 
 ## Implemented Security Features
 
@@ -68,7 +68,7 @@ Comprehensive security headers via Flask-Talisman:
 
 ### 8. Security Logging
 
-All security events are logged to `badenleg_security.log`:
+All security events are logged to `openleg_security.log`:
 
 - Invalid input attempts
 - Token validation failures
@@ -101,7 +101,7 @@ SECRET_KEY=generate-a-strong-random-key-here
 # Application
 FLASK_ENV=production
 FLASK_DEBUG=False
-APP_BASE_URL=https://badenleg.ch
+APP_BASE_URL=https://openleg.ch
 
 # Security
 SESSION_COOKIE_SECURE=True
@@ -114,7 +114,7 @@ RATELIMIT_STORAGE_URL=redis://localhost:6379
 # SMTP (if using real email)
 SMTP_HOST=smtp.yourprovider.com
 SMTP_PORT=587
-SMTP_USER=noreply@badenleg.ch
+SMTP_USER=noreply@openleg.ch
 SMTP_PASSWORD=your-secure-password
 ```
 
@@ -138,7 +138,7 @@ print(secrets.token_hex(32))
 - [ ] Configure SMTP for real email sending
 - [ ] Review and restrict `ALLOWED_HOSTS`
 - [ ] Enable `SESSION_COOKIE_SECURE=True`
-- [ ] Set up log rotation for `badenleg_security.log`
+- [ ] Set up log rotation for `openleg_security.log`
 - [ ] Configure firewall rules
 - [ ] Set up automated backups (if using persistent storage)
 
@@ -163,7 +163,7 @@ Use Nginx or Apache as a reverse proxy:
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name badenleg.ch;
+    server_name openleg.ch;
     
     ssl_certificate /path/to/cert.pem;
     ssl_certificate_key /path/to/key.pem;
@@ -212,7 +212,7 @@ sudo ufw enable
 
 ### Security Logs
 
-Monitor `badenleg_security.log` for:
+Monitor `openleg_security.log` for:
 
 - Repeated invalid input attempts (potential attacks)
 - Rate limit violations (DoS attempts)
@@ -222,8 +222,8 @@ Monitor `badenleg_security.log` for:
 ### Log Rotation
 
 ```bash
-# /etc/logrotate.d/badenleg
-/path/to/badenleg_security.log {
+# /etc/logrotate.d/openleg
+/path/to/openleg_security.log {
     daily
     rotate 30
     compress
@@ -264,7 +264,7 @@ Monitor `badenleg_security.log` for:
 
 If you discover a security vulnerability, please email:
 
-**hallo@badenleg.ch**
+**hallo@openleg.ch**
 
 Please do NOT publicly disclose security issues without coordination.
 
@@ -289,7 +289,7 @@ Please do NOT publicly disclose security issues without coordination.
 ## Security Contacts
 
 - **Technical Lead**: Sihl Icon Valley
-- **Email**: hallo@badenleg.ch
+- **Email**: hallo@openleg.ch
 - **Emergency**: Use email above
 
 ## Version History

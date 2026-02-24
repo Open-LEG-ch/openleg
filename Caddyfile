@@ -1,7 +1,14 @@
-badenleg.ch, www.badenleg.ch {
+# OpenClaw AI gateway (must be before wildcard)
+openclaw.openleg.ch {
+    reverse_proxy openclaw:18789
+}
+
+# B2B insights subdomain -> Flask (same app, routed via Blueprint)
+insights.openleg.ch {
     reverse_proxy flask:5000
 }
 
-openclaw.badenleg.ch {
-    reverse_proxy openclaw:18789
+# All subdomains + bare domain -> Flask multi-tenant app
+*.openleg.ch, openleg.ch, www.openleg.ch {
+    reverse_proxy flask:5000
 }

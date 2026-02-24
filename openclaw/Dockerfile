@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 # Install openclaw globally
 RUN npm install -g openclaw@latest
 
-# Install MCP BadenLEG server
+# Install MCP OpenLEG server
 WORKDIR /opt/mcp-badenleg-server
 COPY mcp-badenleg-server/package.json ./
 RUN npm install --production

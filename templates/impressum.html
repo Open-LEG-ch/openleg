@@ -2,14 +2,14 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Impressum – BadenLEG</title>
+    <title>Impressum – {{ platform_name }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Impressum von BadenLEG – Kontakt und rechtliche Hinweise zum kostenlosen Service für Lokale Elektrizitätsgemeinschaften in Baden.">
+    <meta name="description" content="Impressum von {{ platform_name }} – Kontakt und rechtliche Hinweise zum kostenlosen Service für Lokale Elektrizitätsgemeinschaften in {{ city_name }}.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="{{ site_url }}/impressum">
     <meta property="og:type" content="article">
-    <meta property="og:title" content="Impressum – BadenLEG">
-    <meta property="og:description" content="Kontakt und rechtliche Hinweise zum kostenlosen BadenLEG-Service.">
+    <meta property="og:title" content="Impressum – {{ platform_name }}">
+    <meta property="og:description" content="Kontakt und rechtliche Hinweise zum kostenlosen {{ platform_name }}-Service.">
     <meta property="og:url" content="{{ site_url }}/impressum">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -17,19 +17,19 @@
 <div class="max-w-3xl mx-auto px-4 py-8">
     <h1 class="text-2xl font-bold mb-4">Impressum</h1>
     <p class="mb-4">
-        <strong>BadenLEG</strong> von Güney Usta<br>
+        <strong>{{ platform_name }}</strong> von Güney Usta<br>
         Eine Applikation von <a href="https://sihliconvalley.ch" class="underline hover:text-gray-900" target="_blank" rel="noopener noreferrer">Sihl Icon Valley</a> (sihliconvalley.ch)
     </p>
     
     <p class="mb-2"><strong>Verantwortlich für den Inhalt</strong></p>
     <p class="mb-4">
-        BadenLEG<br>
-        Sihl Icon Valley @ <a href="mailto:hallo@badenleg.ch" class="underline">hallo@badenleg.ch</a>
+        {{ platform_name }}<br>
+        Sihl Icon Valley @ <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
     </p>
 
     <p class="mb-2"><strong>Kontakt</strong></p>
     <p class="mb-4">
-        E‑Mail: <a href="mailto:hallo@badenleg.ch" class="underline">hallo@badenleg.ch</a>
+        E‑Mail: <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
     </p>
 
     <p class="mb-2"><strong>Haftungsausschluss</strong></p>
@@ -47,7 +47,7 @@
 
     <p class="mb-2"><strong>Nutzungshinweis</strong></p>
     <p class="mb-4">
-        Dies ist ein kostenloser Service. Ihre Daten werden ausschließlich für das Matching innerhalb von BadenLEG verwendet
+        Dies ist ein kostenloser Service. Ihre Daten werden ausschließlich für das Matching innerhalb von {{ platform_name }} verwendet
         und nicht an Dritte weitergegeben.
     </p>
 

@@ -8,10 +8,10 @@ import logging
 import json
 import csv
 import io
-import shutil
 from datetime import timedelta
 from pathlib import Path
-from flask import Flask, request, jsonify, render_template, abort, Response
+from flask import Flask, request, jsonify, render_template, abort, Response, g
+from jinja2 import TemplateNotFound
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
@@ -19,15 +19,11 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# --- Token Persistence ---
-import token_persistence
-
 try:
     from scipy.spatial import ConvexHull
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
-    print("[WARNUNG] scipy nicht verfügbar, verwende einfache Polygon-Generierung")
 
 # --- Security imports ---
 try:
@@ -37,12 +33,11 @@ try:
     HAS_SECURITY_LIBS = True
 except ImportError:
     HAS_SECURITY_LIBS = False
-    print("[WARNUNG] Flask-Limiter oder Flask-Talisman nicht verfügbar, Security Features deaktiviert")
 
 # --- Email imports ---
 from email_utils import send_email, EMAIL_ENABLED, FROM_EMAIL
 
-# --- Import unserer ML- und Geo-Logik ---
+# --- Core modules ---
 import data_enricher
 import ml_models
 import security_utils
@@ -50,48 +45,52 @@ import security_utils
 # --- PostgreSQL Database ---
 import database as db
 USE_POSTGRES = db.is_db_available()
+if not USE_POSTGRES:
+    raise RuntimeError("PostgreSQL required. Set DATABASE_URL.")
+
+# --- Multi-tenant ---
+import tenant as tenant_module
 
 # --- Email Automation ---
 import email_automation
 
+# --- Blueprints ---
+from municipality import municipality_bp
+from api_b2b import b2b_bp
+from api_public import public_api_bp
+
 # --- Cron Secret ---
 CRON_SECRET = os.getenv('CRON_SECRET', '').strip()
 
-# --- Logging Setup ---
-# Simplified logging for Railway (no file logging)
+# --- Logging ---
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
+    handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 
-# --- App-Konfiguration ---
+# --- App ---
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
-
-# Security Configuration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', os.urandom(32).hex())
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=int(os.getenv('PERMANENT_SESSION_LIFETIME', 3600)))
-app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1MB max request size
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB for CSV uploads
 
-# --- Basis-URL für Bestätigungslinks ---
+# --- Basis-URL ---
 APP_BASE_URL = os.getenv('APP_BASE_URL', 'http://localhost:5003')
 SITE_URL = APP_BASE_URL.rstrip('/')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# --- Email Configuration ---
-ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'hallo@badenleg.ch')
+# --- Email ---
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'hallo@openleg.ch')
 ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
 
-# --- Rate Limiting & Security (Minimal for Railway) ---
+# --- Rate Limiting & Security ---
 if HAS_SECURITY_LIBS:
-    # Simplified rate limiting
     limiter = Limiter(
         get_remote_address,
         app=app,
@@ -99,33 +98,48 @@ if HAS_SECURITY_LIBS:
         storage_uri='memory://',
         strategy="fixed-window"
     )
-    
-    # Minimal Talisman setup for Railway
-    # Permissive CSP to allow Leaflet, Tailwind and map tiles
-    # Enable HTTPS enforcement in production (when APP_BASE_URL starts with https://)
     force_https = APP_BASE_URL.startswith('https://') if APP_BASE_URL else False
     Talisman(
         app,
         force_https=force_https,
         content_security_policy={
             'default-src': "'self'",
-            'script-src': ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://www.googletagmanager.com"],
-            'style-src': ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+            'script-src': ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://cdn.jsdelivr.net", "https://www.googletagmanager.com"],
+            'style-src': ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
             'img-src': ["'self'", "data:", "https:", "http:"],
             'font-src': ["'self'", "data:"],
             'connect-src': ["'self'", "https://www.google-analytics.com", "https://www.googletagmanager.com"]
         },
         content_security_policy_nonce_in=None
     )
-    
-    logger.info("Basic security features aktiviert")
+    logger.info("Security features enabled")
 else:
     limiter = None
-    logger.warning("Security features deaktiviert")
+
+# --- Register Blueprints ---
+app.register_blueprint(municipality_bp)
+app.register_blueprint(b2b_bp)
+app.register_blueprint(public_api_bp)
+
+# --- Multi-tenant middleware ---
+tenant_module.init_tenant_middleware(app, db=db)
+
+
+def render_city_template(template_name, **kwargs):
+    """Render a per-city template with fallback to default."""
+    tenant = getattr(g, 'tenant', tenant_module.DEFAULT_TENANT)
+    kwargs.setdefault('tenant', tenant)
+    kwargs.setdefault('site_url', SITE_URL)
+    kwargs.setdefault('ga4_id', tenant.get('ga4_id') or os.getenv('GA4_MEASUREMENT_ID', ''))
+    city_path = f"cities/{tenant['territory']}/{template_name}"
+    try:
+        return render_template(city_path, **kwargs)
+    except TemplateNotFound:
+        return render_template(template_name, **kwargs)
+
 
 # --- Security Helpers ---
 def log_security_event(event_type, details, level='INFO'):
-    """Log security-relevant events"""
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     log_message = f"[SECURITY] {event_type} | IP: {ip} | {details}"
     if level == 'WARNING':
@@ -138,12 +152,12 @@ def log_security_event(event_type, details, level='INFO'):
 
 @app.after_request
 def apply_basic_security_headers(response):
-    """Apply minimal security headers"""
     response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
 
-# --- Audit & Consent Helpers ---
-CONSENT_VERSION = "2024-12-21"
+
+# --- Consent Helpers ---
+CONSENT_VERSION = "2026-01-01"
 
 def _coerce_bool(value):
     if isinstance(value, bool):
@@ -157,200 +171,22 @@ def _coerce_bool(value):
     return False
 
 def parse_consents(raw_consents):
-    """Normalize consent flags and stamp with version + timestamp."""
     consents = raw_consents or {}
-    parsed = {
+    return {
         'share_with_neighbors': _coerce_bool(consents.get('share_with_neighbors')),
         'share_with_utility': _coerce_bool(consents.get('share_with_utility')),
         'updates_opt_in': _coerce_bool(consents.get('updates_opt_in')),
         'consent_version': consents.get('consent_version') or CONSENT_VERSION,
         'consent_timestamp': time.time()
     }
-    return parsed
-
-def write_audit_event(event_type, details=None, payload=None):
-    """Persist a minimal audit trail for registrations/exports."""
-    entry = {
-        "ts": time.time(),
-        "type": event_type,
-        "details": details or "",
-        "payload": payload or {}
-    }
-    try:
-        AUDIT_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(AUDIT_LOG_FILE, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    except Exception as e:
-        logger.warning(f"[AUDIT] Konnte Audit-Event nicht schreiben: {e}")
 
 
-# --- Persistenz-Konfiguration ---
-# Railway Volume Mount Path (oder lokales Verzeichnis für Development)
-DATA_DIR = Path(os.getenv('DATA_DIR', '/data'))
-if not DATA_DIR.exists():
-    try:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        logger.info(f"[PERSISTENCE] Datenverzeichnis erstellt: {DATA_DIR}")
-    except Exception as e:
-        logger.warning(f"[PERSISTENCE] Konnte Datenverzeichnis nicht erstellen: {e}, verwende /tmp")
-        DATA_DIR = Path('/tmp/badenleg_data')
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-DB_FILE = DATA_DIR / 'database.json'
-BACKUP_FILE = DATA_DIR / 'database.backup.json'
-
-# --- Simulierte In-Memory-Datenbank ---
-DB_BUILDINGS = {} # Vollständig registrierte Gebäude
-DB_INTEREST_POOL = {} # Anonyme Interessenten (Schlüssel: building_id)
-DB_VERIFICATION_TOKENS = {} # Tokens für Verifizierungslinks
-DB_UNSUBSCRIBE_TOKENS = {} # Tokens für Abmeldelinks
-CLUSTER_CONTACT_STATE = {} # cluster_id -> Set der zuletzt benachrichtigten Gebäude
-
-# --- NEU: Cache für ML-Ergebnisse ---
-# Hält das Ergebnis des letzten langsamen ML-Laufs
-DB_CLUSTERS = {} # z.B. {'building_abc': 1, 'building_xyz': 1}
-DB_CLUSTER_INFO = {} # z.B. {1: {'autarky_percent': 75.2, ...}}
-db_lock = threading.Lock() # Verhindert Race Conditions
-AUDIT_LOG_FILE = DATA_DIR / 'audit.log'
-
-# --- Persistenz-Funktionen ---
-_save_timer = None
-_save_lock = threading.Lock()
-
-def load_database():
-    """Lädt Daten aus JSON-Datei beim Start"""
-    global DB_BUILDINGS, DB_INTEREST_POOL, DB_VERIFICATION_TOKENS, DB_UNSUBSCRIBE_TOKENS, CLUSTER_CONTACT_STATE, DB_CLUSTERS
-    
-    if DB_FILE.exists():
-        try:
-            with open(DB_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                DB_BUILDINGS = data.get('buildings', {})
-                DB_INTEREST_POOL = data.get('interest_pool', {})
-                DB_VERIFICATION_TOKENS = data.get('verification_tokens', {})
-                DB_UNSUBSCRIBE_TOKENS = data.get('unsubscribe_tokens', {})
-                # Sets aus Listen wiederherstellen
-                CLUSTER_CONTACT_STATE = {
-                    k: set(v) if isinstance(v, list) else v 
-                    for k, v in data.get('cluster_contact_state', {}).items()
-                }
-                DB_CLUSTERS = data.get('clusters', {})
-                logger.info(f"[PERSISTENCE] Daten geladen: {len(DB_BUILDINGS)} Gebäude, {len(DB_INTEREST_POOL)} Interessenten, {len(DB_CLUSTERS)} Cluster")
-        except Exception as e:
-            logger.error(f"[PERSISTENCE] Fehler beim Laden: {e}")
-            import traceback
-            traceback.print_exc()
-            # Fallback: Leere Datenstrukturen
-            DB_BUILDINGS = {}
-            DB_INTEREST_POOL = {}
-            DB_VERIFICATION_TOKENS = {}
-            DB_UNSUBSCRIBE_TOKENS = {}
-            CLUSTER_CONTACT_STATE = {}
-            DB_CLUSTERS = {}
-    else:
-        logger.info("[PERSISTENCE] Keine bestehende Datenbank gefunden, starte mit leeren Daten")
-
-def save_database():
-    """Speichert Daten in JSON-Datei (thread-safe)"""
-    global _save_timer
-    with _save_lock:
-        try:
-            # Backup erstellen (nur wenn Datei existiert)
-            if DB_FILE.exists():
-                try:
-                    shutil.copy(DB_FILE, BACKUP_FILE)
-                except Exception as e:
-                    logger.warning(f"[PERSISTENCE] Backup konnte nicht erstellt werden: {e}")
-            
-            # Daten serialisieren (Sets zu Listen konvertieren)
-            data = {
-                'buildings': DB_BUILDINGS,
-                'interest_pool': DB_INTEREST_POOL,
-                'verification_tokens': DB_VERIFICATION_TOKENS,
-                'unsubscribe_tokens': DB_UNSUBSCRIBE_TOKENS,
-                'cluster_contact_state': {
-                    k: list(v) if isinstance(v, (set, frozenset)) else v 
-                    for k, v in CLUSTER_CONTACT_STATE.items()
-                },
-                'clusters': DB_CLUSTERS,
-                'last_saved': time.time()
-            }
-            
-            # Atomisches Schreiben (erst temp, dann rename)
-            temp_file = DB_FILE.with_suffix('.tmp')
-            with open(temp_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            
-            # Atomisches Replace
-            if os.name == 'nt':  # Windows
-                if DB_FILE.exists():
-                    DB_FILE.unlink()
-                temp_file.rename(DB_FILE)
-            else:  # Unix/Linux
-                temp_file.replace(DB_FILE)
-            
-            logger.debug(f"[PERSISTENCE] Daten gespeichert: {len(DB_BUILDINGS)} Gebäude, {len(DB_INTEREST_POOL)} Interessenten")
-        except Exception as e:
-            logger.error(f"[PERSISTENCE] Fehler beim Speichern: {e}")
-            import traceback
-            traceback.print_exc()
-        finally:
-            _save_timer = None
-
-def schedule_save():
-    """Plant Speicherung nach kurzer Verzögerung (Debouncing)"""
-    global _save_timer
-    with _save_lock:
-        if _save_timer:
-            _save_timer.cancel()
-        _save_timer = threading.Timer(5.0, save_database)  # 5 Sekunden Verzögerung
-        _save_timer.daemon = True
-        _save_timer.start()
-
-# Beim Start Daten laden
-load_database()
-
-ANONYMITY_RADIUS_METERS = 120  # Radius für Karten-Darstellung zur Wahrung der Privatsphäre
-
-# Lade Tokens aus persistenter Speicherung
-print(f"[INIT] Lade Tokens aus persistenter Speicherung...")
-try:
-    DB_VERIFICATION_TOKENS, DB_UNSUBSCRIBE_TOKENS, _token_created_at, _token_history = token_persistence.load_tokens()
-    print(f"[INIT] Tokens geladen: {len(DB_VERIFICATION_TOKENS)} Verification, {len(DB_UNSUBSCRIBE_TOKENS)} Unsubscribe, {len(_token_history)} Historie")
-except Exception as e:
-    print(f"[INIT] Fehler beim Laden der Tokens: {e}")
-    import traceback
-    traceback.print_exc()
-    DB_VERIFICATION_TOKENS = {}
-    DB_UNSUBSCRIBE_TOKENS = {}
-    _token_created_at = {}
-    _token_history = {}
-
-print(f"[INIT] Leere Datenbank und ML-Cache initialisiert.")
-
-
-# --- Kernfunktionen ---
-
-def get_all_known_profiles():
-    """Hilfsfunktion: Sammelt alle Profile aus DB und Pool."""
-    all_profiles = []
-    with db_lock:
-        for building in DB_BUILDINGS.values():
-            all_profiles.append(building['profile'])
-        for building in DB_INTEREST_POOL.values():
-            all_profiles.append(building['profile'])
-    return all_profiles
+# --- Anonymity ---
+ANONYMITY_RADIUS_METERS = 120
 
 def jitter_coordinates(lat, lon, radius_meters=ANONYMITY_RADIUS_METERS, seed=None):
-    """
-    Verschleiert die Koordinaten, indem ein zufälliger Offset innerhalb des angegebenen Radius
-    angewendet wird. Der Offset ist deterministisch pro seed, damit Marker nicht bei jedem Reload
-    springen.
-    """
     if lat is None or lon is None or radius_meters <= 0:
         return lat, lon
-
-    # Seed deterministisch aus building_id ableiten
     if seed is not None:
         if not isinstance(seed, str):
             seed = str(seed)
@@ -358,846 +194,188 @@ def jitter_coordinates(lat, lon, radius_meters=ANONYMITY_RADIUS_METERS, seed=Non
         seed_value = int(seed_hash, 16)
     else:
         seed_value = None
-
     rng = np.random.default_rng(seed_value)
-    # Gleichverteilung über Kreisfläche sicherstellen
     distance = radius_meters * math.sqrt(rng.random())
     angle = rng.uniform(0, 2 * math.pi)
-
-    earth_radius = 6_378_137.0  # Meter
+    earth_radius = 6_378_137.0
     lat_rad = math.radians(lat)
     delta_lat = (distance * math.cos(angle)) / earth_radius
     denom = earth_radius * math.cos(lat_rad)
     if abs(denom) < 1e-9:
         denom = earth_radius
     delta_lon = (distance * math.sin(angle)) / denom
-
     return lat + math.degrees(delta_lat), lon + math.degrees(delta_lon)
 
-def _get_record_for_building_no_lock(building_id):
-    if building_id in DB_BUILDINGS:
-        return DB_BUILDINGS[building_id], 'registered'
-    if building_id in DB_INTEREST_POOL:
-        return DB_INTEREST_POOL[building_id], 'anonymous'
-    return None, None
 
-def _save_tokens_async():
-    """Speichert Tokens asynchron im Hintergrund."""
-    # Erstelle Kopien für Thread-Sicherheit
-    verification_tokens = dict(DB_VERIFICATION_TOKENS)
-    unsubscribe_tokens = dict(DB_UNSUBSCRIBE_TOKENS)
-    created_at = dict(_token_created_at)
-    token_history = dict(_token_history)
-    
-    token_persistence.save_tokens_async(verification_tokens, unsubscribe_tokens, created_at, token_history)
+def _tenant_name():
+    try:
+        return getattr(g, 'tenant', {}).get('platform_name', 'OpenLEG')
+    except RuntimeError:
+        return 'OpenLEG'
 
-def invalidate_verification_tokens(building_id):
-    tokens_to_remove = [
-        token for token, info in DB_VERIFICATION_TOKENS.items()
-        if info.get('building_id') == building_id
-    ]
-    for token in tokens_to_remove:
-        DB_VERIFICATION_TOKENS.pop(token, None)
-        _token_created_at.pop(f'verification_{token}', None)
-    
-    # Speichere asynchron
-    if tokens_to_remove:
-        _save_tokens_async()
-
-def invalidate_unsubscribe_tokens(building_id):
-    tokens_to_remove = [
-        token for token, info in DB_UNSUBSCRIBE_TOKENS.items()
-        if info.get('building_id') == building_id
-    ]
-    for token in tokens_to_remove:
-        DB_UNSUBSCRIBE_TOKENS.pop(token, None)
-        _token_created_at.pop(f'unsubscribe_{token}', None)
-    
-    # Speichere asynchron
-    if tokens_to_remove:
-        _save_tokens_async()
-
-def _invalidate_tokens_for_building(building_id):
-    invalidate_verification_tokens(building_id)
-    invalidate_unsubscribe_tokens(building_id)
-
-def issue_verification_token(building_id):
-    # Invalidiere alte Tokens für diese building_id (verhindert, dass mehrere E-Mails den gleichen Token haben)
-    invalidate_verification_tokens(building_id)
-    
-    # Erstelle neuen Token
-    token = str(uuid.uuid4())
-    DB_VERIFICATION_TOKENS[token] = {'building_id': building_id}
-    _token_created_at[f'verification_{token}'] = time.time()
-    
-    # Speichere asynchron
-    _save_tokens_async()
-    schedule_save()  # Persistiere auch in JSON-Datei
-    
-    return token
-
-def issue_unsubscribe_token(building_id):
-    # Prüfe, ob bereits ein Token für diese building_id existiert
-    for token, info in DB_UNSUBSCRIBE_TOKENS.items():
-        if info.get('building_id') == building_id:
-            return token  # Wiederverwende bestehenden Token
-    
-    # Erstelle neuen Token, wenn keiner existiert
-    token = str(uuid.uuid4())
-    DB_UNSUBSCRIBE_TOKENS[token] = {'building_id': building_id}
-    _token_created_at[f'unsubscribe_{token}'] = time.time()
-    
-    # Speichere asynchron
-    _save_tokens_async()
-    schedule_save()  # Persistiere auch in JSON-Datei
-    
-    return token
-
-def remove_building(building_id):
-    removed = False
-    with db_lock:
-        if DB_BUILDINGS.pop(building_id, None):
-            removed = True
-        if DB_INTEREST_POOL.pop(building_id, None):
-            removed = True
-        if removed:
-            _invalidate_tokens_for_building(building_id)
-            CLUSTER_CONTACT_STATE.clear()
-            schedule_save()  # Persistiere Löschung
-    if removed:
-        threading.Thread(target=run_full_ml_task, daemon=True).start()
-    return removed
-
-def find_buildings_by_email(email):
-    """Findet alle building_ids mit dieser E-Mail-Adresse."""
-    matches = []
-    needle = email.lower().strip()
-    if not needle:
-        return matches
-    with db_lock:
-        for store in (DB_BUILDINGS, DB_INTEREST_POOL):
-            for building_id, data in store.items():
-                value = (data.get('email') or '').lower().strip()
-                if value == needle:
-                    matches.append(building_id)
-    return matches
-
-def find_buildings_by_phone(phone):
-    """Findet alle building_ids mit dieser Telefonnummer."""
-    matches = []
-    needle = phone.strip()
-    if not needle:
-        return matches
-    with db_lock:
-        for store in (DB_BUILDINGS, DB_INTEREST_POOL):
-            for building_id, data in store.items():
-                value = (data.get('phone') or '').strip()
-                if value == needle:
-                    matches.append(building_id)
-    return matches
-
-def find_buildings_by_address(address):
-    """Findet alle building_ids mit dieser Adresse (normalisiert)."""
-    matches = []
-    needle = address.strip().lower()
-    if not needle:
-        return matches
-    with db_lock:
-        for store in (DB_BUILDINGS, DB_INTEREST_POOL):
-            for building_id, data in store.items():
-                profile = data.get('profile', {})
-                value = (profile.get('address') or '').strip().lower()
-                if value == needle:
-                    matches.append(building_id)
-    return matches
-
-def find_buildings_by_building_id(building_id):
-    """Prüft, ob diese building_id bereits existiert."""
-    with db_lock:
-        if building_id in DB_BUILDINGS or building_id in DB_INTEREST_POOL:
-            return True
-    return False
 
 def send_activity_notification(activity_type, details):
-    """Sendet Aktivitäts-Benachrichtigung an Admin-E-Mail"""
-    subject = f"BadenLEG Aktivität: {activity_type}"
-    message_body = f"Neue Aktivität auf BadenLEG:\n\nTyp: {activity_type}\n\nDetails:\n{details}\n\n---\nAutomatische Benachrichtigung von BadenLEG"
+    name = _tenant_name()
+    subject = f"{name}: {activity_type}"
+    message_body = f"Neue Aktivität auf {name}:\n\nTyp: {activity_type}\n\nDetails:\n{details}"
     send_email(ADMIN_EMAIL, subject, message_body)
 
+
 def send_confirmation_email(email, unsubscribe_url, building_id=None, address=None):
-    """Sendet Bestätigungs-E-Mail"""
-    subject = "BadenLEG – Sie sind jetzt registriert"
+    name = _tenant_name()
+    try:
+        city = getattr(g, 'tenant', {}).get('city_name', 'Zürich')
+    except RuntimeError:
+        city = 'Zürich'
+    subject = f"{name}: Registrierung bestätigt"
     message_body = (
-        "Willkommen bei BadenLEG!\n\n"
-        "Sie sind jetzt für eine Lokale Elektrizitätsgemeinschaft (LEG) in Baden registriert.\n\n"
-        "Wir informieren Sie automatisch per E-Mail, wenn sich neue Interessenten in Ihrer Zone anmelden. "
-        "Sie erhalten dann eine Kontaktübersicht mit Adresse und E-Mail aller Interessenten in Ihrer Zone.\n\n"
-        "Mit Ihrer Registrierung stimmen Sie zu, dass wir Ihre Kontaktdaten (Adresse, E-Mail, optional: Telefonnummer) "
-        "mit anderen Interessenten in Ihrer Zone teilen, damit Sie direkt miteinander in Kontakt treten können.\n\n"
-        f"Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n"
-        f"{unsubscribe_url}\n\n"
-        "Ihr BadenLEG-Team"
+        f"Willkommen bei {name}!\n\n"
+        f"Sie sind jetzt für eine Lokale Elektrizitätsgemeinschaft (LEG) in {city} registriert.\n\n"
+        "Wir informieren Sie per E-Mail, sobald sich neue Interessenten in Ihrer Zone anmelden.\n\n"
+        f"Abmelden:\n{unsubscribe_url}\n\n"
+        f"Ihr {name}-Team"
     )
-
     send_email(email, subject, message_body)
-    activity_details = f"Registrierung:\nE-Mail: {email}\nBuilding ID: {building_id or 'N/A'}\nAdresse: {address or 'N/A'}\n\nE-Mail-Inhalt:\n{message_body}"
-    send_activity_notification("Neue Registrierung", activity_details)
 
-def check_duplicates_background(email, phone, address, building_id):
-    """
-    Prüft auf Duplikate im Hintergrund und gibt detaillierte Informationen zurück.
-    Returns: (has_duplicates, duplicate_type, duplicate_info, message)
-    """
-    duplicates = {
-        'email': [],
-        'phone': [],
-        'address': [],
-        'building_id': False
-    }
-    
-    # Prüfe E-Mail (ausschließen der aktuellen building_id)
-    if email:
-        email_matches = find_buildings_by_email(email)
-        # Entferne die aktuelle building_id aus den Matches
-        email_matches = [bid for bid in email_matches if bid != building_id]
-        if email_matches:
-            duplicates['email'] = email_matches
-    
-    # Prüfe Telefonnummer (ausschließen der aktuellen building_id)
-    if phone:
-        phone_matches = find_buildings_by_phone(phone)
-        phone_matches = [bid for bid in phone_matches if bid != building_id]
-        if phone_matches:
-            duplicates['phone'] = phone_matches
-    
-    # Prüfe Adresse (ausschließen der aktuellen building_id)
-    if address:
-        address_matches = find_buildings_by_address(address)
-        address_matches = [bid for bid in address_matches if bid != building_id]
-        if address_matches:
-            duplicates['address'] = address_matches
-    
-    # Prüfe building_id (aber nur wenn es nicht die aktuelle ist)
-    # Diese Prüfung ist eigentlich überflüssig, da wir building_id bereits haben
-    
-    # Bestimme Duplikat-Typ und erstelle Nachricht
-    has_duplicates = any(duplicates['email']) or any(duplicates['phone']) or any(duplicates['address'])
-    
-    if not has_duplicates:
-        return False, None, None, None
-    
-    # Priorität: email + address > email > address > phone
-    if any(duplicates['email']) and any(duplicates['address']):
-        # Gleiche E-Mail UND Adresse - exaktes Duplikat
-        return True, 'exact_duplicate', duplicates, "Sie haben sich bereits mit dieser E-Mail-Adresse und Adresse registriert."
-    
-    if any(duplicates['email']):
-        # Gleiche E-Mail - prüfe ob auch gleiche Adresse
-        email_building_ids = duplicates['email']
-        same_address = False
-        for bid in email_building_ids:
-            with db_lock:
-                record, _ = _get_record_for_building_no_lock(bid)
-                if record:
-                    profile = record.get('profile', {})
-                    existing_address = (profile.get('address') or '').strip().lower()
-                    if existing_address == address.strip().lower():
-                        same_address = True
-                        break
-        
-        if same_address:
-            return True, 'exact_duplicate', duplicates, "Sie haben sich bereits mit dieser E-Mail-Adresse und Adresse registriert."
-        else:
-            return True, 'email_different_address', duplicates, "Diese E-Mail-Adresse ist bereits mit einer anderen Adresse registriert."
-    
-    if any(duplicates['address']):
-        return True, 'address_duplicate', duplicates, "Diese Adresse ist bereits registriert."
-    
-    if any(duplicates['phone']):
-        return True, 'phone_duplicate', duplicates, "Diese Telefonnummer ist bereits registriert."
-    
-    return True, 'unknown_duplicate', duplicates, "Ein Duplikat wurde gefunden."
 
-def send_duplicate_email(email, duplicate_type, duplicate_info, message, building_id):
-    """Sendet E-Mail bei Duplikat-Erkennung."""
-    subject = "BadenLEG – Duplikat-Erkennung"
-    
-    if duplicate_type == 'exact_duplicate':
-        body = (
-            f"Sie haben sich bereits mit dieser E-Mail-Adresse und Adresse registriert.\n\n"
-            f"Falls Sie die Registrierungs-E-Mail nicht erhalten haben, prüfen Sie bitte Ihr Spam-Ordner.\n\n"
-            f"Falls Sie sich abmelden möchten, verwenden Sie den Abmeldelink aus der ursprünglichen E-Mail.\n\n"
-            f"Ihr BadenLEG-Team"
-        )
-    elif duplicate_type == 'email_different_address':
-        # Finde unsubscribe URL für alte Adresse
-        old_building_ids = duplicate_info.get('email', [])
-        unsubscribe_urls = []
-        for bid in old_building_ids:
-            with db_lock:
-                record, _ = _get_record_for_building_no_lock(bid)
-                if record:
-                    token = issue_unsubscribe_token(bid)
-                    unsubscribe_urls.append(f"{APP_BASE_URL}/unsubscribe/{token}")
-        
-        unsubscribe_text = "\n".join(unsubscribe_urls) if unsubscribe_urls else "Bitte melden Sie sich über die Website ab."
-        
-        body = (
-            f"Sie haben versucht, sich mit einer neuen Adresse zu registrieren, "
-            f"aber diese E-Mail-Adresse ist bereits mit einer anderen Adresse registriert.\n\n"
-            f"Bitte melden Sie sich zuerst von der alten Adresse ab:\n{unsubscribe_text}\n\n"
-            f"Danach können Sie sich mit der neuen Adresse registrieren.\n\n"
-            f"Da dies eine nicht kommerzielle Lösung ist, bitten wir Sie uns etwas zu helfen. Danke!\n\n"
-            f"Ihr BadenLEG-Team"
-        )
-    elif duplicate_type == 'address_duplicate':
-        body = (
-            f"Sie haben versucht, sich mit einer Adresse zu registrieren, "
-            f"die bereits registriert ist.\n\n"
-            f"Bitte verwenden Sie eine andere E-Mail-Adresse oder melden Sie sich von der bestehenden Registrierung ab.\n\n"
-            f"Ihr BadenLEG-Team"
-        )
-    elif duplicate_type == 'phone_duplicate':
-        body = (
-            f"Sie haben versucht, sich mit einer Telefonnummer zu registrieren, "
-            f"die bereits registriert ist.\n\n"
-            f"Bitte verwenden Sie eine andere Telefonnummer oder melden Sie sich von der bestehenden Registrierung ab.\n\n"
-            f"Ihr BadenLEG-Team"
-        )
-    else:
-        body = message
-    
-    send_email(email, subject, body)
-    activity_details = f"Duplikat erkannt:\nTyp: {duplicate_type}\nE-Mail: {email}\nBuilding ID: {building_id}\nNachricht: {message}\n\nE-Mail-Inhalt:\n{body}"
-    send_activity_notification("Duplikat erkannt", activity_details)
-
-def check_and_handle_duplicates(email, phone, address, building_id):
-    """
-    Prüft Duplikate im Hintergrund und sendet E-Mail bei Bedarf.
-    Wird nach erfolgreicher Registrierung aufgerufen.
-    """
-    try:
-        has_duplicates, dup_type, dup_info, dup_message = check_duplicates_background(
-            email, phone, address, building_id
-        )
-        
-        if has_duplicates:
-            print(f"[DUPLIKAT] Duplikat gefunden für building_id {building_id}: {dup_type}")
-            print(f"[DUPLIKAT] E-Mail: {email}, Adresse: {address}")
-            
-            # Sende E-Mail-Benachrichtigung
-            send_duplicate_email(email, dup_type, dup_info, dup_message, building_id)
-            
-            # Optional: Markiere den Eintrag als Duplikat (für spätere Analyse)
-            # Wir löschen den Eintrag NICHT automatisch, da der Benutzer bereits die Verifizierungs-E-Mail erhalten hat
-            # Der Benutzer kann sich selbst entscheiden, ob er sich abmelden möchte
-        else:
-            print(f"[DUPLIKAT] Keine Duplikate gefunden für building_id {building_id}")
-            
-    except Exception as e:
-        print(f"[DUPLIKAT] Fehler beim Prüfen von Duplikaten: {e}")
-        import traceback
-        traceback.print_exc()
-
-def send_cluster_contact_email(cluster_id, cluster_info, verified_contacts):
-    """Sendet Cluster-Kontaktübersicht"""
-    autarky = cluster_info.get('autarky_percent', 0.0)
-    subject = f"BadenLEG – Ihre Nachbarn für die LEG-Gründung"
-    
-    header = (
-        f"BadenLEG – Kontaktübersicht\n\n"
-        "Die folgenden Haushalte sind für eine LEG-Gründung in Ihrer Zone registriert. Nutzen Sie die Kontaktdaten, "
-        "um direkt miteinander in den Austausch zu gehen.\n\n"
-    )
-
-    table_header = "Adresse".ljust(45) + "E-Mail"
-    table_separator = "-" * 45 + " " + "-" * 45
-    rows = []
-    for contact in verified_contacts:
-        address = (contact.get('address') or "Adresse unbekannt").strip()
-        email = contact.get('email') or "keine E-Mail angegeben"
-        rows.append(address.ljust(45) + email)
-
-    base_body = header + table_header + "\n" + table_separator + "\n" + "\n".join(rows) + "\n\n"
-    base_body += "Viel Erfolg beim Aufbau Ihrer lokalen Elektrizitätsgemeinschaft!\nIhr BadenLEG-Team\n\n"
-
-    for contact in verified_contacts:
-        recipient = contact.get('email')
-        if not recipient:
-            continue
-        unsubscribe_url = contact.get('unsubscribe_url')
-        if not unsubscribe_url:
-            token = issue_unsubscribe_token(contact['building_id'])
-            unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{token}"
-        
-        body = (
-            base_body +
-            "Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n"
-            f"{unsubscribe_url}"
-        )
-        
-        send_email(recipient, subject, body)
-
-    # Send activity notification for cluster contact emails with participant details and email content
-    participant_list = []
-    for contact in verified_contacts:
-        address = (contact.get('address') or "Adresse unbekannt").strip()
-        email = contact.get('email') or "keine E-Mail angegeben"
-        phone = contact.get('phone') or "keine Telefonnummer"
-        participant_list.append(f"  - {address} | {email} | Tel: {phone}")
-    
-    # Erstelle Beispiel-E-Mail-Inhalt für Activity Notification
-    example_body = base_body + "Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n[Unsubscribe URL]"
-    
-    activity_details = (
-        f"Cluster-Kontaktübersicht gesendet:\n"
-        f"Cluster ID: {cluster_id}\n"
-        f"Autarkie: {autarky:.1f}%\n"
-        f"Anzahl Kontakte: {len(verified_contacts)}\n\n"
-        f"Teilnehmer:\n" + "\n".join(participant_list) + "\n\n"
-        f"E-Mail-Inhalt (Beispiel):\n{example_body}"
-    )
-    send_activity_notification("Cluster-Kontaktübersicht", activity_details)
-
-def notify_existing_interested_persons(new_building_id, new_record):
-    """
-    Benachrichtigt alle bestehenden verifizierten Interessenten in derselben Zone,
-    dass sich ein neuer Interessent eingetragen hat.
-    Sendet die vollständige Kontaktübersicht (inklusive dem neuen Interessenten).
-    """
-    try:
-        new_profile = new_record.get('profile', {})
-        new_lat = new_profile.get('lat')
-        new_lon = new_profile.get('lon')
-        new_email = new_record.get('email')
-        
-        print(f"[NOTIFY] Starte Benachrichtigung für building_id {new_building_id}")
-        print(f"[NOTIFY] Neue Person - Lat: {new_lat}, Lon: {new_lon}, Email: {new_email}")
-        
-        if not new_lat or not new_lon or not new_email:
-            print(f"[NOTIFY] Keine vollständigen Daten für building_id {new_building_id}")
-            return
-        
-        # Warte kurz, damit der vorherige db_lock freigegeben wird und Dictionary-Einträge vollständig geschrieben sind
-        # Dies verhindert Race Conditions zwischen Threads
-        time.sleep(0.1)  # 100ms Verzögerung
-        
-        # Finde alle verifizierten Personen in einem 150m Radius
-        verified_contacts = []
-        with db_lock:
-            print(f"[NOTIFY] Durchsuche DB_BUILDINGS ({len(DB_BUILDINGS)} Einträge) und DB_INTEREST_POOL ({len(DB_INTEREST_POOL)} Einträge)")
-            
-            # Durchsuche DB_BUILDINGS
-            for building_id, record in DB_BUILDINGS.items():
-                if building_id == new_building_id:
-                    print(f"[NOTIFY] Überspringe neue Person in DB_BUILDINGS: {building_id}")
-                    continue  # Überspringe die neue Person
-                
-                is_verified = record.get('verified')
-                has_email = bool(record.get('email'))
-                profile = record.get('profile', {})
-                p_lat = profile.get('lat')
-                p_lon = profile.get('lon')
-                
-                print(f"[NOTIFY] DB_BUILDINGS: Prüfe building_id {building_id}: verified={is_verified}, email={has_email}, lat={p_lat}, lon={p_lon}")
-                
-                if not is_verified or not has_email:
-                    print(f"[NOTIFY] DB_BUILDINGS: Überspringe {building_id}: nicht verifiziert oder keine E-Mail")
-                    continue
-                if not p_lat or not p_lon:
-                    print(f"[NOTIFY] DB_BUILDINGS: Überspringe {building_id}: keine Koordinaten")
-                    continue
-                
-                # Berechne Distanz
-                distance = ml_models.calculate_distance(new_lat, new_lon, p_lat, p_lon)
-                print(f"[NOTIFY] DB_BUILDINGS: building_id {building_id}: Distanz = {distance:.2f}m")
-                
-                if distance <= 150:  # 150m Radius
-                    print(f"[NOTIFY] ✓ DB_BUILDINGS: Gefunden {building_id} in {distance:.2f}m Entfernung")
-                    unsubscribe_token = issue_unsubscribe_token(building_id)
-                    verified_contacts.append({
-                        'building_id': building_id,
-                        'email': record.get('email'),
-                        'address': profile.get('address', ''),
-                        'phone': record.get('phone', ''),
-                        'unsubscribe_url': f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
-                    })
-            
-            # Durchsuche DB_INTEREST_POOL
-            for building_id, record in DB_INTEREST_POOL.items():
-                if building_id == new_building_id:
-                    print(f"[NOTIFY] Überspringe neue Person in DB_INTEREST_POOL: {building_id}")
-                    continue  # Überspringe die neue Person
-                
-                is_verified = record.get('verified')
-                has_email = bool(record.get('email'))
-                profile = record.get('profile', {})
-                p_lat = profile.get('lat')
-                p_lon = profile.get('lon')
-                
-                print(f"[NOTIFY] DB_INTEREST_POOL: Prüfe building_id {building_id}: verified={is_verified}, email={has_email}, lat={p_lat}, lon={p_lon}")
-                
-                if not is_verified or not has_email:
-                    print(f"[NOTIFY] DB_INTEREST_POOL: Überspringe {building_id}: nicht verifiziert oder keine E-Mail")
-                    continue
-                if not p_lat or not p_lon:
-                    print(f"[NOTIFY] DB_INTEREST_POOL: Überspringe {building_id}: keine Koordinaten")
-                    continue
-                
-                # Berechne Distanz
-                distance = ml_models.calculate_distance(new_lat, new_lon, p_lat, p_lon)
-                print(f"[NOTIFY] DB_INTEREST_POOL: building_id {building_id}: Distanz = {distance:.2f}m")
-                
-                if distance <= 150:  # 150m Radius
-                    print(f"[NOTIFY] ✓ DB_INTEREST_POOL: Gefunden {building_id} in {distance:.2f}m Entfernung")
-                    unsubscribe_token = issue_unsubscribe_token(building_id)
-                    verified_contacts.append({
-                        'building_id': building_id,
-                        'email': record.get('email'),
-                        'address': profile.get('address', ''),
-                        'phone': record.get('phone', ''),
-                        'unsubscribe_url': f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
-                    })
-        
-        print(f"[NOTIFY] Gesamt gefunden: {len(verified_contacts)} bestehende Interessenten")
-        
-        # Wenn keine bestehenden Interessenten gefunden wurden, nichts tun
-        if len(verified_contacts) == 0:
-            print(f"[NOTIFY] Keine bestehenden verifizierten Interessenten in der Zone für building_id {new_building_id}")
-            return
-        
-        # Füge den neuen Interessenten zur Liste hinzu
-        new_unsubscribe_token = issue_unsubscribe_token(new_building_id)
-        all_contacts = verified_contacts + [{
-            'building_id': new_building_id,
-            'email': new_email,
-            'address': new_profile.get('address', ''),
-            'phone': new_record.get('phone', ''),
-            'unsubscribe_url': f"{APP_BASE_URL}/unsubscribe/{new_unsubscribe_token}",
-            'is_new': True  # Markiere den neuen Interessenten
-        }]
-        
-        # Sende E-Mail an alle bestehenden Interessenten
-        subject = "BadenLEG – Neuer Interessent für LEG-Gründung in Ihrer Zone"
-        
-        header = (
-            f"BadenLEG – Neuer Interessent\n\n"
-            f"Ein neuer Interessent für eine Lokale Elektrizitätsgemeinschaft (LEG) hat sich in Ihrer Zone eingetragen.\n\n"
-            f"Aktuelle Kontaktübersicht aller registrierten Interessenten in Ihrer Zone:\n\n"
-        )
-        
-        table_header = "Adresse".ljust(40) + "E-Mail".ljust(35) + "Mobile"
-        table_separator = "-" * 40 + " " + "-" * 35 + " " + "-" * 20
-        rows = []
-        for contact in all_contacts:
-            address = (contact.get('address') or "Adresse unbekannt").strip()
-            email = contact.get('email') or "keine E-Mail angegeben"
-            phone = contact.get('phone') or "-"
-            marker = " (NEU)" if contact.get('is_new') else ""
-            rows.append(f"{address}{marker}".ljust(42) + email.ljust(37) + phone)
-        
-        base_body = header + table_header + "\n" + table_separator + "\n" + "\n".join(rows) + "\n\n"
-        base_body += "Nutzen Sie die Kontaktdaten, um direkt miteinander in den Austausch zu gehen.\n\n"
-        base_body += "Viel Erfolg beim Aufbau Ihrer lokalen Elektrizitätsgemeinschaft!\nIhr BadenLEG-Team\n\n"
-        
-        # Sende E-Mail an alle bestehenden Interessenten (nicht an den neuen)
-        for contact in verified_contacts:
-            recipient = contact.get('email')
-            if not recipient:
-                continue
-            
-            unsubscribe_url = contact.get('unsubscribe_url')
-            if not unsubscribe_url:
-                token = issue_unsubscribe_token(contact['building_id'])
-                unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{token}"
-            
-            body = (
-                base_body +
-                "Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n"
-                f"{unsubscribe_url}"
-            )
-            
-            send_email(recipient, subject, body)
-        
-        print(f"[NOTIFY] {len(verified_contacts)} bestehende Interessenten über neuen Interessenten benachrichtigt")
-        
-        # Send activity notification (mit E-Mail-Inhalt)
-        example_body = base_body + "Ich bin nicht mehr an einem LEG-Zusammenschluss interessiert und melde mich hiermit ab:\n[Unsubscribe URL]"
-        activity_details = (
-            f"Neuer Interessent benachrichtigt:\n"
-            f"Neuer Building ID: {new_building_id}\n"
-            f"E-Mail: {new_email}\n"
-            f"Adresse: {new_profile.get('address', 'N/A')}\n"
-            f"Benachrichtigte bestehende Interessenten: {len(verified_contacts)}\n\n"
-            f"E-Mail-Inhalt (Beispiel):\n{example_body}"
-        )
-        send_activity_notification("Neuer Interessent", activity_details)
-        
-    except Exception as e:
-        print(f"[NOTIFY] Fehler beim Benachrichtigen bestehender Interessenten: {e}")
-        import traceback
-        traceback.print_exc()
-
-def notify_cluster_contacts(buildings_with_clusters):
-    pending_notifications = []
-    with db_lock:
-        for cluster_id, cluster_info in DB_CLUSTER_INFO.items():
-            cluster_members = buildings_with_clusters[buildings_with_clusters['cluster'] == cluster_id]
-            if cluster_members.empty:
-                continue
-
-            verified_contacts = []
-            for _, row in cluster_members.iterrows():
-                building_id = row.get('building_id')
-                if not building_id:
-                    continue
-                record, _ = _get_record_for_building_no_lock(building_id)
-                if not record or not record.get('email') or not record.get('verified'):
-                    continue
-                profile = record.get('profile', {})
-                unsubscribe_token = issue_unsubscribe_token(building_id)
-                verified_contacts.append({
-                    'building_id': building_id,
-                    'email': record.get('email'),
-                    'address': profile.get('address'),
-                    'unsubscribe_url': f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
-                })
-
-            if len(verified_contacts) < 2:
-                continue
-
-            member_set = frozenset(sorted(contact['building_id'] for contact in verified_contacts))
-            if CLUSTER_CONTACT_STATE.get(cluster_id) == member_set:
-                continue
-
-            CLUSTER_CONTACT_STATE[cluster_id] = member_set
-            schedule_save()  # Persistiere Cluster-Contact-State
-            pending_notifications.append((cluster_id, cluster_info, verified_contacts))
-
-    for cluster_id, cluster_info, contacts in pending_notifications:
-        send_cluster_contact_email(cluster_id, cluster_info, contacts)
-        # Activity notification is sent inside send_cluster_contact_email
-
-def collect_building_locations(exclude_building_id=None):
-    """
-    Erstellt die Liste aller bekannten Standorte mit anonymisierter Position.
-    Optional kann eine building_id ausgeschlossen werden (z.B. aktueller Nutzer).
-    """
+def collect_building_locations(city_id=None, exclude_building_id=None):
+    """Get all verified building locations with jittered coordinates."""
+    buildings = db.get_all_buildings(city_id=city_id)
     locations = []
-    with db_lock:
-        for building_id, profile_data in DB_INTEREST_POOL.items():
-            if exclude_building_id and building_id == exclude_building_id:
-                continue
-            profile = profile_data.get('profile', {})
-            lat = profile.get('lat')
-            lon = profile.get('lon')
-            if lat is None or lon is None:
-                continue
-            jitter_lat, jitter_lon = jitter_coordinates(
-                lat,
-                lon,
-                radius_meters=ANONYMITY_RADIUS_METERS,
-                seed=profile.get('building_id') or building_id
-            )
-            locations.append({
-                'lat': jitter_lat,
-                'lon': jitter_lon,
-                'type': 'anonymous'
-            })
-        for building_id, profile_data in DB_BUILDINGS.items():
-            if exclude_building_id and building_id == exclude_building_id:
-                continue
-            profile = profile_data.get('profile', {})
-            lat = profile.get('lat')
-            lon = profile.get('lon')
-            if lat is None or lon is None:
-                continue
-            jitter_lat, jitter_lon = jitter_coordinates(
-                lat,
-                lon,
-                radius_meters=ANONYMITY_RADIUS_METERS,
-                seed=profile.get('building_id') or building_id
-            )
-            locations.append({
-                'lat': jitter_lat,
-                'lon': jitter_lon,
-                'type': 'registered'
-            })
+    for b in buildings:
+        if exclude_building_id and b.get('building_id') == exclude_building_id:
+            continue
+        lat = b.get('lat')
+        lon = b.get('lon')
+        if lat is None or lon is None:
+            continue
+        jlat, jlon = jitter_coordinates(float(lat), float(lon), seed=b.get('building_id'))
+        locations.append({
+            'lat': jlat,
+            'lon': jlon,
+            'type': b.get('user_type', 'anonymous')
+        })
     return locations
 
-def run_full_ml_task(new_building_id=None):
-    """
-    (ASYNC-TASK) Führt die langsame, vollständige ML-Analyse im Hintergrund aus.
-    Aktualisiert den globalen Cache und stößt E-Mail-Matchings an.
-    
-    Args:
-        new_building_id: Optional. Die building_id des neu registrierten Nutzers.
-                        Wird aktuell nur geloggt.
-    """
-    print("\n[ASYNC-TASK] Starte langsame ML-Neuberechnung im Hintergrund...")
-    
-    all_profiles_list = get_all_known_profiles()
-    
-    if len(all_profiles_list) < 2:
-        print("[ASYNC-TASK] -> Nicht genügend Nutzer für Clustering. Breche ab.")
+
+def run_full_ml_task(new_building_id=None, city_id=None):
+    """Background ML clustering task using PostgreSQL data."""
+    logger.info("[ML] Starting background clustering...")
+    profiles = db.get_all_building_profiles(city_id=city_id)
+    if len(profiles) < 2:
+        logger.info("[ML] Not enough buildings for clustering.")
         return
 
-    # Erstelle DataFrame mit normalem Index, um Index-Probleme zu vermeiden
-    building_data = pd.DataFrame(all_profiles_list)
-    # Stelle sicher, dass wir einen normalen RangeIndex haben
-    if not isinstance(building_data.index, pd.RangeIndex):
-        building_data = pd.DataFrame(building_data.to_dict('records'))
-    
-    # 1. Langsame ML-Analyse ausführen
+    building_data = pd.DataFrame(profiles)
     ranked_communities, buildings_with_clusters = ml_models.find_optimal_communities(
-        building_data,
-        radius_meters=150,
-        min_community_size=2
+        building_data, radius_meters=150, min_community_size=2
     )
-    
-    # 2. Globalen Cache aktualisieren
-    with db_lock:
-        DB_CLUSTERS.clear()
-        DB_CLUSTER_INFO.clear()
-        
-        # Stelle sicher, dass building_id vorhanden ist
-        if 'building_id' in buildings_with_clusters.columns:
-            for _, row in buildings_with_clusters.iterrows():
-                building_id = row.get('building_id')
-                if building_id:
-                    DB_CLUSTERS[building_id] = row.get('cluster', -1)
-            schedule_save()  # Persistiere Cluster-Zuordnungen
-            
-        for community in ranked_communities:
-            DB_CLUSTER_INFO[community['community_id']] = community
-            
-    print(f"[ASYNC-TASK] -> ML-Cache aktualisiert: {len(ranked_communities)} Cluster gefunden.")
 
-    # 3. Matches prüfen und Kontaktdaten versenden
-    print("[ASYNC-TASK] -> Aktualisiere Kontaktübersichten für bestätigte Cluster...")
-    notify_cluster_contacts(buildings_with_clusters)
-    
-    print("[ASYNC-TASK] -> Hintergrund-Task abgeschlossen.\n")
+    # Save clusters to DB
+    if 'building_id' in buildings_with_clusters.columns:
+        for _, row in buildings_with_clusters.iterrows():
+            bid = row.get('building_id')
+            cid = row.get('cluster', -1)
+            if bid and cid >= 0:
+                db.save_cluster(bid, cid)
+
+    for community in ranked_communities:
+        db.save_cluster_info(community['community_id'], community)
+
+    logger.info(f"[ML] Clustering done: {len(ranked_communities)} clusters")
 
 
 def find_provisional_matches(new_profile):
-    """
-    (FAST-TASK) Findet schnelle "provisorische" Matches für die sofortige API-Antwort.
-    Prüft nur die Distanz, führt KEIN DBSCAN aus.
-    """
-    print("[API] Starte schnelle, provisorische Match-Suche...")
-    all_profiles = get_all_known_profiles()
-    
-    if not all_profiles:
-        return None # Der erste Nutzer findet nie ein Match
-        
+    """Fast provisional match search (distance only, no DBSCAN)."""
+    profiles = db.get_all_building_profiles()
+    if not profiles:
+        return None
+
     new_coords = (new_profile['lat'], new_profile['lon'])
-    provisional_cluster_profiles = [new_profile] # Starte Cluster mit neuem Nutzer
-    
-    for profile in all_profiles:
-        existing_coords = (profile['lat'], profile['lon'])
-        distance = ml_models.calculate_distance(new_coords[0], new_coords[1], existing_coords[0], existing_coords[1])
-        
-        if distance <= 150: # (Hardcodierter Radius)
-            provisional_cluster_profiles.append(profile)
-            
-    if len(provisional_cluster_profiles) < 2:
-        print("[API] -> Provisorische Suche: Keine Nachbarn gefunden.")
-        return None # Kein Match
-        
-    print(f"[API] -> Provisorische Suche: {len(provisional_cluster_profiles)-1} Nachbarn gefunden.")
-    
-    # Erstelle einen temporären DataFrame, um Autarkie zu simulieren
-    # Verwende to_dict('records') um sicherzustellen, dass wir einen normalen Index haben
-    community_df = pd.DataFrame(provisional_cluster_profiles)
-    # Stelle sicher, dass der Index normal ist
-    if not isinstance(community_df.index, pd.RangeIndex):
-        community_df = pd.DataFrame(community_df.to_dict('records'))
-    
-    # Simuliere Autarkie für DIESE KLEINE GRUPPE
+    provisional = [new_profile]
+
+    for p in profiles:
+        dist = ml_models.calculate_distance(new_coords[0], new_coords[1], float(p['lat']), float(p['lon']))
+        if dist <= 150:
+            provisional.append(p)
+
+    if len(provisional) < 2:
+        return None
+
+    community_df = pd.DataFrame(provisional)
     autarky_score, _, _ = ml_models.calculate_community_autarky(community_df, None)
-    
-    # Baue Cluster-Info für die API-Antwort (ohne ML-Clustering-ID)
-    members = [{
-        'building_id': p['building_id'], 
-        'lat': p['lat'], 
-        'lon': p['lon']} for p in provisional_cluster_profiles
-    ]
-    
-    cluster_info = {
-        'community_id': 'provisional', # Kennzeichnen als provisorisch
+
+    members = [{'building_id': p.get('building_id', ''), 'lat': float(p['lat']), 'lon': float(p['lon'])} for p in provisional]
+    return {
+        'community_id': 'provisional',
         'num_members': len(members),
         'members': members,
         'autarky_percent': autarky_score * 100,
     }
-    
-    return cluster_info
-
-def build_match_result(profile):
-    """
-    Liefert provisorische Cluster-Informationen für die Sofort-Anzeige im Frontend.
-    Kontaktdaten werden erst nach beidseitiger Bestätigung per E-Mail verschickt.
-    """
-    cluster_info = find_provisional_matches(profile)
-    if not cluster_info:
-        return None
-
-    return {
-        'community_id': cluster_info.get('community_id'),
-        'num_members': cluster_info.get('num_members'),
-        'autarky_percent': float(cluster_info.get('autarky_percent', 0.0)),
-        'members': cluster_info.get('members', [])
-    }
 
 
-# --- API-Endpunkte ---
+def create_simple_polygon(coords):
+    if len(coords) < 3:
+        if len(coords) == 1:
+            lat, lon = coords[0]
+            o = 0.0005
+            return [[lat-o, lon-o], [lat+o, lon-o], [lat+o, lon+o], [lat-o, lon+o], [lat-o, lon-o]]
+        elif len(coords) == 2:
+            lat1, lon1 = coords[0]
+            lat2, lon2 = coords[1]
+            o = 0.0003
+            return [[lat1-o, lon1-o], [lat2+o, lon1-o], [lat2+o, lon2+o], [lat1-o, lon2+o], [lat1-o, lon1-o]]
+    if HAS_SCIPY:
+        try:
+            points = np.array(coords)
+            hull = ConvexHull(points)
+            polygon = [coords[i] for i in hull.vertices]
+            polygon.append(polygon[0])
+            return polygon
+        except:
+            pass
+    lats = [c[0] for c in coords]
+    lons = [c[1] for c in coords]
+    o = 0.0003
+    return [[min(lats)-o, min(lons)-o], [max(lats)+o, min(lons)-o],
+            [max(lats)+o, max(lons)+o], [min(lats)-o, max(lons)+o], [min(lats)-o, min(lons)-o]]
+
+
+# ===========================
+# Routes
+# ===========================
 
 @app.route("/")
 def index():
-    """Zeigt das HTML-Frontend an."""
-    if not os.path.exists('templates'):
-        os.makedirs('templates')
-        print("WARNUNG: 'templates'-Ordner wurde erstellt. Bitte 'index.html' dort ablegen.")
-
-    # Get user count for social proof
-    if USE_POSTGRES:
-        stats = db.get_stats()
-        user_count = stats.get('total_buildings', 0)
-    else:
-        with db_lock:
-            user_count = len(DB_BUILDINGS) + len(DB_INTEREST_POOL)
-
-    # Get referrer info from URL if present
+    city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') else 'zurich'
+    stats = db.get_stats(city_id=city_id)
+    user_count = stats.get('total_buildings', 0)
     referral_code = request.args.get('ref', '')
     referrer_info = None
-    if referral_code and USE_POSTGRES:
+    if referral_code:
         referrer_info = db.get_building_by_referral_code(referral_code)
-
-    return render_template('index.html',
-        site_url=SITE_URL,
+    return render_city_template('index.html',
         user_count=user_count,
-        ga4_id=os.getenv('GA4_MEASUREMENT_ID', ''),
         referral_code=referral_code,
-        referrer_street=referrer_info.get('address', '').split(',')[0] if referrer_info else ''
+        referrer_street=referrer_info.get('address', '').split(',')[0] if referrer_info else '',
     )
 
-@app.route("/info")
-@limiter.limit("30 per minute") if limiter else lambda f: f
-def info():
-    """Info-Seite mit allen Informationen über LEG Baden"""
-    return render_template('info.html', site_url=SITE_URL)
+
+@app.route("/how-it-works")
+def how_it_works():
+    return render_city_template('how-it-works.html')
+
+
+@app.route("/pricing")
+def pricing():
+    return render_city_template('pricing.html')
 
 
 @app.route("/robots.txt")
 def robots_txt():
-    """Liefert robots.txt für Suchmaschinen."""
     lines = [
-        "User-agent: *",
-        "Allow: /",
-        "Disallow: /api/",
-        "Disallow: /admin/",
-        "Disallow: /confirm/",
-        "Disallow: /unsubscribe/",
+        "User-agent: *", "Allow: /",
+        "Disallow: /api/", "Disallow: /admin/", "Disallow: /confirm/", "Disallow: /unsubscribe/",
         f"Sitemap: {SITE_URL}/sitemap.xml"
     ]
     return Response("\n".join(lines) + "\n", mimetype="text/plain")
@@ -1205,195 +383,375 @@ def robots_txt():
 
 @app.route("/sitemap.xml")
 def sitemap_xml():
-    """Einfaches Sitemap XML mit lastmod"""
     from datetime import datetime
-    # Format: (path, priority, changefreq, lastmod)
-    # lastmod format: YYYY-MM-DD
     current_date = datetime.now().strftime("%Y-%m-%d")
     pages = [
-        ("/", "1.0", "daily", current_date),  # Homepage: Höchste Priorität
-        ("/leg", "0.9", "weekly", current_date),  # LEG-Seite: Sehr wichtig für SEO
-        ("/evl", "0.8", "weekly", current_date),  # EVL-Seite
-        ("/zev", "0.8", "weekly", current_date),  # ZEV-Seite
-        ("/vergleich-leg-evl-zev", "0.8", "weekly", current_date),  # Vergleichsseite
-        ("/impressum", "0.3", "yearly", "2024-11-01"),  # Legal: Niedrige Priorität
-        ("/datenschutz", "0.3", "yearly", "2024-11-01"),  # Legal: Niedrige Priorität
+        ("/", "1.0", "daily", current_date),
+        ("/how-it-works", "0.8", "weekly", current_date),
+        ("/pricing", "0.7", "monthly", current_date),
+        ("/gemeinde/onboarding", "0.9", "weekly", current_date),
+        ("/impressum", "0.3", "yearly", "2026-01-01"),
+        ("/datenschutz", "0.3", "yearly", "2026-01-01"),
     ]
     xml = render_template("sitemap.xml", site_url=SITE_URL, pages=pages)
     return Response(xml, mimetype="application/xml")
 
+
+@app.route("/health")
+def health_check():
+    return jsonify({"status": "healthy", "timestamp": time.time(), "version": "2.0.0", "brand": "openleg"})
+
+
+# --- Admin ---
 def _require_admin():
     if not ADMIN_TOKEN:
         abort(404)
     token = request.headers.get('X-Admin-Token') or request.args.get('token') or ''
     if token != ADMIN_TOKEN:
-        log_security_event("ADMIN_ACCESS_DENIED", "Ungültiger Admin-Token", 'WARNING')
+        log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", 'WARNING')
         abort(403)
 
-def _get_consent_stats():
-    stats = {
-        "total_records": 0,
-        "share_with_utility": 0,
-        "share_with_neighbors": 0,
-        "updates_opt_in": 0
-    }
-    for store in (DB_BUILDINGS, DB_INTEREST_POOL):
-        for record in store.values():
-            consents = record.get('consents') or {}
-            stats["total_records"] += 1
-            stats["share_with_utility"] += int(bool(consents.get('share_with_utility')))
-            stats["share_with_neighbors"] += int(bool(consents.get('share_with_neighbors')))
-            stats["updates_opt_in"] += int(bool(consents.get('updates_opt_in')))
-    return stats
-
-def _collect_export_records(include_without_consent=False):
-    """Erstellt exportierbare Datensätze für EVU-Handoff."""
-    rows = []
-    for store_name, store in (("registered", DB_BUILDINGS), ("interest_pool", DB_INTEREST_POOL)):
-        for building_id, record in store.items():
-            consents = record.get('consents') or {}
-            if not include_without_consent and not consents.get('share_with_utility'):
-                continue
-            profile = record.get('profile') or {}
-            rows.append({
-                "status": store_name,
-                "building_id": building_id,
-                "email": record.get('email'),
-                "phone": record.get('phone'),
-                "address": profile.get('address'),
-                "lat": profile.get('lat'),
-                "lon": profile.get('lon'),
-                "consent_share_utility": bool(consents.get('share_with_utility')),
-                "consent_neighbors": bool(consents.get('share_with_neighbors')),
-                "consent_updates": bool(consents.get('updates_opt_in')),
-                "profile_json": json.dumps(profile, ensure_ascii=False)
-            })
-    return rows
-
-@app.route("/health")
-def health_check():
-    """Einfache Health-Check-Route für Deployment-Überwachung"""
-    return jsonify({
-        "status": "healthy",
-        "timestamp": time.time(),
-        "version": "1.0.0"
-    })
 
 @app.route("/admin/overview")
 def admin_overview():
-    """Kompaktes Admin-Dashboard (token-geschützt) für Status & Exporte."""
     _require_admin()
-    with db_lock:
-        payload = {
-            "buildings": len(DB_BUILDINGS),
-            "interest_pool": len(DB_INTEREST_POOL),
-            "verification_tokens": len(DB_VERIFICATION_TOKENS),
-            "unsubscribe_tokens": len(DB_UNSUBSCRIBE_TOKENS),
-            "clusters_cached": len(DB_CLUSTERS),
-            "consents": _get_consent_stats(),
-            "last_saved": DB_FILE.stat().st_mtime if DB_FILE.exists() else None,
-            "data_dir": str(DATA_DIR)
-        }
-    audit_tail = []
-    if AUDIT_LOG_FILE.exists():
-        try:
-            with open(AUDIT_LOG_FILE, "r", encoding="utf-8") as f:
-                lines = f.readlines()[-20:]
-                audit_tail = [line.strip() for line in lines if line.strip()]
-        except Exception as e:
-            logger.warning(f"[ADMIN] Audit-Log konnte nicht gelesen werden: {e}")
-    payload["audit_tail"] = audit_tail
-    return jsonify(payload)
+    stats = db.get_stats()
+    email_stats = db.get_email_stats()
+    consented = db.count_consented_buildings()
+    municipalities = db.get_all_municipalities()
+    return jsonify({
+        "platform": "OpenLEG",
+        "stats": stats,
+        "email_stats": email_stats,
+        "consented_buildings": consented,
+        "municipalities": len(municipalities),
+        "db_available": USE_POSTGRES
+    })
+
 
 @app.route("/admin/export")
 def admin_export():
-    """Exportiert registrierte Datensätze (nur mit Admin-Token)."""
     _require_admin()
     fmt = (request.args.get("format") or "json").lower()
-    include_all = request.args.get("all") == "1"
-    with db_lock:
-        rows = _collect_export_records(include_without_consent=include_all)
-    write_audit_event("admin_export", details=f"format={fmt}, include_all={include_all}", payload={"count": len(rows)})
+    city_id = request.args.get("city_id")
+
+    buildings = db.get_all_building_profiles(city_id=city_id)
     if fmt == "csv":
         output = io.StringIO()
-        fieldnames = [
-            "status",
-            "building_id",
-            "email",
-            "phone",
-            "address",
-            "lat",
-            "lon",
-            "consent_share_utility",
-            "consent_neighbors",
-            "consent_updates",
-            "profile_json",
-        ]
-        writer = csv.DictWriter(output, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
+        if buildings:
+            writer = csv.DictWriter(output, fieldnames=buildings[0].keys())
+            writer.writeheader()
+            for row in buildings:
+                writer.writerow(row)
         response = Response(output.getvalue(), mimetype="text/csv")
-        response.headers["Content-Disposition"] = "attachment; filename=badenleg_export.csv"
+        response.headers["Content-Disposition"] = "attachment; filename=openleg_export.csv"
         return response
-    return jsonify({"records": rows, "count": len(rows)})
+    return jsonify({"records": buildings, "count": len(buildings)})
 
+
+# --- Address API ---
 @app.route("/api/suggest_addresses")
 @limiter.limit("30 per minute") if limiter else lambda f: f
 def api_suggest_addresses():
-    """
-    (Schnell) Gibt Adressvorschläge basierend auf einem Suchbegriff zurück.
-    Je länger der Query, desto spezifischer die Ergebnisse.
-    """
     query = request.args.get('q', '').strip()
-    
-    # Security: Sanitize query
     query = security_utils.sanitize_string(query, max_length=100)
-    
-    print(f"[API] Adressvorschläge angefragt für: '{query}'")
-    
     if not query or len(query) < 2:
         return jsonify({"suggestions": []})
-    
-    # Mehr Ergebnisse für längere Queries (bessere Filterung)
     limit = 15 if len(query) < 5 else 10
-    suggestions_raw = data_enricher.get_address_suggestions(query, limit=limit)
-    print(f"[API] {len(suggestions_raw)} Vorschläge gefunden (nur Kanton Aargau)")
-    
-    # Filtere leere Labels und gib vollständige Objekte zurück
+    plz_ranges = g.tenant.get('plz_ranges') if hasattr(g, 'tenant') else None
+    suggestions_raw = data_enricher.get_address_suggestions(query, limit=limit, plz_ranges=plz_ranges)
     suggestions = []
     for s in suggestions_raw:
         if isinstance(s, dict) and s.get('label') and s.get('label').strip():
-            # Security: Sanitize label
             label = security_utils.sanitize_string(s.get('label', ''), max_length=200)
             if label:
-                suggestions.append({
-                    'label': label,
-                    'lat': s.get('lat'),
-                    'lon': s.get('lon'),
-                    'plz': s.get('plz')
-                })
-    
+                suggestions.append({'label': label, 'lat': s.get('lat'), 'lon': s.get('lon'), 'plz': s.get('plz')})
     return jsonify({"suggestions": suggestions})
+
 
 @app.route("/api/get_all_buildings")
 def api_get_all_buildings():
-    """
-    (Schnell) Gibt die Koordinaten aller bekannten (anonymen
-    und registrierten) Gebäude zurück, um die Karte zu füllen.
-    """
-    print("[API] Lade alle bekannten Gebäudepositionen...")
-    locations = collect_building_locations()
-    print(f"  -> {len(locations)} Gebäude gefunden.")
+    city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    locations = collect_building_locations(city_id=city_id)
     return jsonify({"buildings": locations})
 
+
+@app.route("/api/get_all_clusters")
+def api_get_all_clusters():
+    clusters_raw = db.get_all_clusters()
+    clusters = []
+    for ci in clusters_raw:
+        members = ci.get('members', [])
+        if not members or len(members) < 2:
+            continue
+        coords = []
+        member_list = []
+        for mid in members:
+            b = db.get_building(mid)
+            if b and b.get('lat') and b.get('lon'):
+                coords.append([float(b['lat']), float(b['lon'])])
+                member_list.append({'building_id': mid, 'lat': float(b['lat']), 'lon': float(b['lon'])})
+        if len(coords) >= 2:
+            clusters.append({
+                'cluster_id': ci.get('cluster_id'),
+                'members': member_list,
+                'polygon': create_simple_polygon(coords),
+                'autarky_percent': float(ci.get('autarky_percent', 0)),
+                'num_members': len(member_list)
+            })
+    return jsonify({"clusters": clusters})
+
+
+# --- Check Potential ---
+@app.route("/api/check_potential", methods=['POST'])
+@limiter.limit("10 per minute") if limiter else lambda f: f
+def api_check_potential():
+    try:
+        is_valid_size, size_error = security_utils.check_request_size(request)
+        if not is_valid_size:
+            return jsonify({"error": size_error}), 413
+        if not request.json:
+            return jsonify({"error": "Keine Daten empfangen."}), 400
+        address = request.json.get('address', '').strip()
+        is_valid, sanitized_address, error_msg = security_utils.validate_address(address)
+        if not is_valid:
+            return jsonify({"error": error_msg}), 400
+        address = sanitized_address
+
+        estimates, profiles = None, None
+        try:
+            estimates, profiles = data_enricher.get_energy_profile_for_address(address)
+            if not estimates:
+                estimates, profiles = data_enricher.get_mock_energy_profile_for_address(address)
+        except Exception:
+            estimates, profiles = data_enricher.get_mock_energy_profile_for_address(address)
+
+        if not estimates:
+            return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
+    except Exception as e:
+        return jsonify({"error": f"Server-Fehler: {str(e)}"}), 500
+
+    cluster_info = find_provisional_matches(estimates)
+    if not cluster_info:
+        return jsonify({"potential": False, "message": "Keine direkten Partner gefunden.", "profile_summary": estimates})
+    return jsonify({"potential": True, "message": "Partner gefunden!", "cluster_info": cluster_info, "profile_summary": estimates})
+
+
+# --- Registration ---
+@app.route("/api/register_anonymous", methods=['POST'])
+@limiter.limit("5 per minute") if limiter else lambda f: f
+def api_register_anonymous():
+    if not request.json:
+        return jsonify({"error": "Keine Daten empfangen."}), 400
+    is_valid_size, size_error = security_utils.check_request_size(request)
+    if not is_valid_size:
+        return jsonify({"error": size_error}), 413
+
+    phone = (request.json.get('phone') or '').strip()
+    email = (request.json.get('email') or '').strip()
+    profile = request.json.get('profile')
+    referral_code = (request.json.get('referral_code') or '').strip()
+
+    referrer_id = None
+    if referral_code:
+        referrer = db.get_building_by_referral_code(referral_code)
+        if referrer:
+            referrer_id = referrer.get('building_id')
+
+    is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email)
+    if not is_valid_email:
+        return jsonify({"error": email_error}), 400
+    email = normalized_email
+
+    if phone:
+        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(phone)
+        if not is_valid_phone:
+            return jsonify({"error": phone_error}), 400
+        phone = normalized_phone
+
+    if not profile:
+        return jsonify({"error": "Profildaten fehlen."}), 400
+    building_id = profile.get('building_id')
+    is_valid_id, id_error = security_utils.validate_building_id(building_id)
+    if not is_valid_id:
+        return jsonify({"error": id_error}), 400
+
+    lat = profile.get('lat')
+    lon = profile.get('lon')
+    is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
+    if not is_valid_coords:
+        return jsonify({"error": coords_error}), 400
+
+    consents = parse_consents(request.json.get('consents'))
+    if not consents.get('share_with_neighbors') or not consents.get('share_with_utility'):
+        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe zu."}), 400
+
+    city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') else 'zurich'
+
+    # Save to PostgreSQL
+    db.save_building(
+        building_id=building_id, email=email, profile=profile,
+        consents=consents, user_type='anonymous', phone=phone,
+        referrer_id=referrer_id, city_id=city_id
+    )
+
+    # Create unsubscribe token
+    unsub_token = str(uuid.uuid4())
+    db.save_token(unsub_token, building_id, 'unsubscribe')
+    unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
+
+    # Background tasks
+    threading.Thread(target=send_confirmation_email, args=(email, unsubscribe_url, building_id, profile.get('address', '')), daemon=True).start()
+    threading.Thread(target=run_full_ml_task, args=(building_id, city_id), daemon=True).start()
+    threading.Thread(target=email_automation.schedule_sequence_for_user, args=(building_id, email), daemon=True).start()
+
+    db.track_event('registration', building_id, {'type': 'anonymous', 'city_id': city_id})
+
+    # Build response
+    cluster_info = find_provisional_matches(profile)
+    locations = collect_building_locations(city_id=city_id, exclude_building_id=building_id)
+    referral_link = None
+    ref_code = db.get_referral_code(building_id)
+    if ref_code:
+        referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
+
+    payload = {
+        "buildings": locations,
+        "match_found": bool(cluster_info),
+        "verification_email_sent": True,
+        "referral_link": referral_link
+    }
+    if cluster_info:
+        payload["cluster_info"] = cluster_info
+    return jsonify(payload)
+
+
+@app.route("/api/register_full", methods=['POST'])
+@limiter.limit("5 per minute") if limiter else lambda f: f
+def api_register_full():
+    if not request.json:
+        return jsonify({"error": "Keine Daten empfangen."}), 400
+    is_valid_size, size_error = security_utils.check_request_size(request)
+    if not is_valid_size:
+        return jsonify({"error": size_error}), 413
+
+    profile = request.json.get('profile')
+    email = (request.json.get('email') or '').strip()
+    phone = (request.json.get('phone') or '').strip()
+    referral_code = (request.json.get('referral_code') or '').strip()
+
+    referrer_id = None
+    if referral_code:
+        referrer = db.get_building_by_referral_code(referral_code)
+        if referrer:
+            referrer_id = referrer.get('building_id')
+
+    is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email)
+    if not is_valid_email:
+        return jsonify({"error": email_error}), 400
+    email = normalized_email
+
+    if phone:
+        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(phone)
+        if not is_valid_phone:
+            return jsonify({"error": phone_error}), 400
+        phone = normalized_phone
+
+    if not profile:
+        return jsonify({"error": "Profildaten fehlen."}), 400
+    building_id = profile.get('building_id')
+    is_valid_id, id_error = security_utils.validate_building_id(building_id)
+    if not is_valid_id:
+        return jsonify({"error": id_error}), 400
+
+    lat = profile.get('lat')
+    lon = profile.get('lon')
+    is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
+    if not is_valid_coords:
+        return jsonify({"error": coords_error}), 400
+
+    consents = parse_consents(request.json.get('consents'))
+    if not consents.get('share_with_neighbors') or not consents.get('share_with_utility'):
+        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe zu."}), 400
+
+    city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') else 'zurich'
+
+    db.save_building(
+        building_id=building_id, email=email, profile=profile,
+        consents=consents, user_type='registered', phone=phone,
+        referrer_id=referrer_id, city_id=city_id
+    )
+
+    unsub_token = str(uuid.uuid4())
+    db.save_token(unsub_token, building_id, 'unsubscribe')
+    unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
+
+    threading.Thread(target=send_confirmation_email, args=(email, unsubscribe_url, building_id, profile.get('address', '')), daemon=True).start()
+    threading.Thread(target=run_full_ml_task, args=(building_id, city_id), daemon=True).start()
+    threading.Thread(target=email_automation.schedule_sequence_for_user, args=(building_id, email), daemon=True).start()
+
+    db.track_event('registration', building_id, {'type': 'registered', 'city_id': city_id})
+
+    cluster_info = find_provisional_matches(profile)
+    locations = collect_building_locations(city_id=city_id, exclude_building_id=building_id)
+    referral_link = None
+    ref_code = db.get_referral_code(building_id)
+    if ref_code:
+        referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
+
+    payload = {
+        "buildings": locations,
+        "match_found": bool(cluster_info),
+        "verification_email_sent": True,
+        "referral_link": referral_link
+    }
+    if cluster_info:
+        payload["cluster_info"] = cluster_info
+    return jsonify(payload)
+
+
+# --- Meter Data Upload ---
+@app.route("/api/meter-data/upload", methods=['POST'])
+@limiter.limit("10 per minute") if limiter else lambda f: f
+def api_meter_data_upload():
+    import meter_data
+    data = request.json or {}
+    building_id = data.get('building_id', '').strip()
+    csv_content = data.get('csv_content', '')
+    tier = int(data.get('tier', 1))
+
+    if not building_id or not csv_content:
+        return jsonify({"error": "building_id und csv_content erforderlich."}), 400
+
+    # Verify building exists
+    building = db.get_building(building_id)
+    if not building:
+        return jsonify({"error": "Gebäude nicht gefunden."}), 404
+
+    # Save consent tier
+    db.save_data_consent(building_id, tier=tier,
+        share_municipality=True,
+        share_research=(tier >= 2),
+        share_providers=(tier >= 3))
+
+    result = meter_data.ingest_csv(building_id, csv_content, source='csv_upload')
+    return jsonify(result)
+
+
+@app.route("/meter-upload")
+def meter_upload_page():
+    return render_city_template('meter_upload.html')
+
+
+# --- Unsubscribe ---
 @app.route("/impressum")
 def impressum():
-    return render_template("impressum.html", site_url=SITE_URL)
+    return render_city_template("impressum.html")
 
 @app.route("/datenschutz")
 def datenschutz():
-    return render_template("datenschutz.html", site_url=SITE_URL)
+    return render_city_template("datenschutz.html")
+
 
 @app.route("/unsubscribe", methods=["GET", "POST"])
 @limiter.limit("5 per minute") if limiter else lambda f: f
@@ -1404,665 +762,98 @@ def unsubscribe_page():
 
     if request.method == "POST":
         email_value = (request.form.get("email") or "").strip()
-        
-        # Security: Validate email
         is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email_value)
         if not is_valid_email:
             status = "error"
             message = email_error
-            log_security_event("INVALID_EMAIL", f"unsubscribe: {email_error}", 'WARNING')
         else:
             email_value = normalized_email
-            matches = find_buildings_by_email(email_value)
+            matches = db.get_building_by_email(email_value)
             if not matches:
                 status = "info"
                 message = "Für diese E-Mail-Adresse wurde kein Eintrag gefunden."
             else:
-                removed_any = False
-                for building_id in matches:
-                    removed_any = remove_building(building_id) or removed_any
-                if removed_any:
-                    status = "success"
-                    message = "Ihre Daten wurden erfolgreich abgemeldet."
-                    log_security_event("UNSUBSCRIBED", f"Email: {email_value}", 'INFO')
-                else:
-                    status = "info"
-                    message = "Für diese E-Mail-Adresse wurde kein aktiver Eintrag gefunden."
+                for m in matches:
+                    db.delete_building(m['building_id'])
+                status = "success"
+                message = "Ihre Daten wurden erfolgreich gelöscht."
 
-    return render_template(
-        "unsubscribe.html",
-        status=status,
-        message=message,
-        email=email_value,
-        site_url=SITE_URL
-    )
+    return render_city_template("unsubscribe.html", status=status, message=message, email=email_value)
+
 
 @app.route("/unsubscribe/<token>")
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def unsubscribe_token(token):
-    # Security: Validate token format
     is_valid_token, token_error = security_utils.validate_token(token)
     if not is_valid_token:
-        log_security_event("INVALID_TOKEN", f"unsubscribe: {token_error}", 'WARNING')
-        return "<h1>Ungültiger Link</h1><p>Der Abmeldelink hat ein ungültiges Format.</p>", 400
-    
-    with db_lock:
-        token_info = DB_UNSUBSCRIBE_TOKENS.pop(token, None)
-        if token_info:
-            _token_created_at.pop(f'unsubscribe_{token}', None)
-            _save_tokens_async()
-            schedule_save()  # Persistiere Token-Cleanup
+        return "<h1>Ungültiger Link</h1>", 400
 
+    token_info = db.get_token(token)
     if not token_info:
-        log_security_event("TOKEN_NOT_FOUND", f"unsubscribe: Token not found or already used", 'INFO')
-        return "<h1>Link ungültig</h1><p>Dieser Abmeldelink ist ungültig oder wurde bereits verwendet.</p>", 404
+        return "<h1>Link ungültig oder bereits verwendet</h1>", 404
 
     building_id = token_info['building_id']
-    removed = remove_building(building_id)
-    if removed:
-        log_security_event("UNSUBSCRIBED_VIA_TOKEN", f"Building ID: {building_id}", 'INFO')
-        return "<h1>Abmeldung erfolgreich</h1><p>Ihre Daten wurden gelöscht. Sie können sich jederzeit erneut registrieren.</p>"
-
-    return "<h1>Kein Eintrag gefunden</h1><p>Für diesen Link konnte kein aktiver Eintrag ermittelt werden.</p>", 404
-
-@app.route("/api/get_all_clusters")
-def api_get_all_clusters():
-    """
-    (Schnell) Gibt alle existierenden ZEV/LEG-Cluster als Polygone zurück.
-    """
-    print("[API] Lade alle Cluster...")
-    clusters = []
-    
-    try:
-        with db_lock:
-            for cluster_id, cluster_info in DB_CLUSTER_INFO.items():
-                if cluster_id == 'provisional':
-                    continue  # Überspringe provisorische Cluster
-                
-                # Erstelle Polygon-Koordinaten aus den Mitgliedern
-                members = cluster_info.get('members', [])
-                if len(members) < 2:
-                    continue
-                
-                # Erstelle ein einfaches Polygon (Convex Hull) um die Punkte
-                try:
-                    coords = [[m.get('lat'), m.get('lon')] for m in members if m.get('lat') and m.get('lon')]
-                    if len(coords) < 2:
-                        continue
-                    
-                    # Einfacher Convex Hull Algorithmus
-                    polygon_coords = create_simple_polygon(coords)
-                    
-                    clusters.append({
-                        'cluster_id': cluster_id,
-                        'members': members,
-                        'polygon': polygon_coords,
-                        'autarky_percent': cluster_info.get('autarky_percent', 0),
-                        'num_members': cluster_info.get('num_members', len(members))
-                    })
-                except Exception as e:
-                    print(f"  [API] Fehler beim Erstellen des Polygons für Cluster {cluster_id}: {e}")
-                    continue
-        
-        print(f"  -> {len(clusters)} Cluster gefunden.")
-        return jsonify({"clusters": clusters})
-    except Exception as e:
-        print(f"[API] Fehler in api_get_all_clusters: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"clusters": [], "error": str(e)}), 500
-
-def create_simple_polygon(coords):
-    """
-    Erstellt ein einfaches Polygon um die gegebenen Koordinaten.
-    Verwendet einen einfachen Convex Hull Ansatz.
-    """
-    if len(coords) < 3:
-        # Wenn weniger als 3 Punkte, erstelle ein kleines Quadrat um den Punkt
-        if len(coords) == 1:
-            lat, lon = coords[0]
-            offset = 0.0005  # ~50m
-            return [
-                [lat - offset, lon - offset],
-                [lat + offset, lon - offset],
-                [lat + offset, lon + offset],
-                [lat - offset, lon + offset],
-                [lat - offset, lon - offset]  # Schließe Polygon
-            ]
-        elif len(coords) == 2:
-            # Erstelle ein Rechteck zwischen den beiden Punkten
-            lat1, lon1 = coords[0]
-            lat2, lon2 = coords[1]
-            offset = 0.0003  # ~30m
-            return [
-                [lat1 - offset, lon1 - offset],
-                [lat2 + offset, lon1 - offset],
-                [lat2 + offset, lon2 + offset],
-                [lat1 - offset, lon2 + offset],
-                [lat1 - offset, lon1 - offset]
-            ]
-    
-    # Für 3+ Punkte: Convex Hull oder einfaches Rechteck
-    if HAS_SCIPY:
-        try:
-            points = np.array(coords)
-            hull = ConvexHull(points)
-            polygon = [coords[i] for i in hull.vertices]
-            polygon.append(polygon[0])  # Schließe Polygon
-            return polygon
-        except:
-            pass
-    
-    # Fallback: Einfaches Rechteck um alle Punkte
-    lats = [c[0] for c in coords]
-    lons = [c[1] for c in coords]
-    min_lat, max_lat = min(lats), max(lats)
-    min_lon, max_lon = min(lons), max(lons)
-    offset = 0.0003
-    return [
-        [min_lat - offset, min_lon - offset],
-        [max_lat + offset, min_lon - offset],
-        [max_lat + offset, max_lon + offset],
-        [min_lat - offset, max_lon + offset],
-        [min_lat - offset, min_lon - offset]
-    ]
+    db.use_token(token)
+    db.delete_building(building_id)
+    db.cancel_emails_for_building(building_id)
+    return "<h1>Abmeldung erfolgreich</h1><p>Ihre Daten wurden gelöscht.</p>"
 
 
-@app.route("/api/check_potential", methods=['POST'])
-@limiter.limit("10 per minute") if limiter else lambda f: f
-def api_check_potential():
-    """
-    (Schnell) Nimmt eine Adresse entgegen, reichert sie an und
-    findet provisorische Matches.
-    """
-    try:
-        # Security: Check request size
-        is_valid_size, size_error = security_utils.check_request_size(request)
-        if not is_valid_size:
-            log_security_event("REQUEST_TOO_LARGE", f"check_potential: {size_error}", 'WARNING')
-            return jsonify({"error": size_error}), 413
-        
-        if not request.json:
-            log_security_event("INVALID_REQUEST", "check_potential: No JSON data", 'WARNING')
-            return jsonify({"error": "Keine Daten empfangen."}), 400
-            
-        address = request.json.get('address', '').strip()
-        
-        # Security: Validate and sanitize address
-        is_valid, sanitized_address, error_msg = security_utils.validate_address(address)
-        if not is_valid:
-            log_security_event("INVALID_INPUT", f"check_potential: {error_msg}", 'WARNING')
-            return jsonify({"error": error_msg}), 400
-        
-        address = sanitized_address
-            
-        # 1. Adresse anreichern (verwende echte API, da wir die richtige URL haben)
-        print(f"[API] Analysiere Adresse: '{address}'")
-        estimates = None
-        profiles = None
-        
-        try:
-            estimates, profiles = data_enricher.get_energy_profile_for_address(address)
-            if not estimates:
-                # Fallback auf Mock, falls echte API fehlschlägt
-                print(f"[API] Echte API fehlgeschlagen, verwende Mock für: '{address}'")
-                estimates, profiles = data_enricher.get_mock_energy_profile_for_address(address)
-        except Exception as e:
-            print(f"[API] Fehler bei Adress-Analyse: {e}")
-            import traceback
-            traceback.print_exc()
-            # Fallback auf Mock
-            try:
-                estimates, profiles = data_enricher.get_mock_energy_profile_for_address(address)
-            except Exception as mock_error:
-                print(f"[API] Auch Mock fehlgeschlagen: {mock_error}")
-                return jsonify({"error": f"Adresse konnte nicht verarbeitet werden: {str(e)}"}), 500
-        
-        if not estimates:
-            return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
-    except Exception as e:
-        print(f"[API] Unerwarteter Fehler in api_check_potential: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"Server-Fehler: {str(e)}"}), 500
-        
-    # 2. Schnelle, provisorische Match-Suche
-    cluster_info = find_provisional_matches(estimates)
-            
-    if not cluster_info:
-        # Szenario A: Kein Match
-        return jsonify({
-            "potential": False,
-            "message": "Keine direkten Partner gefunden.",
-            "profile_summary": estimates
-        })
+# --- Dashboard ---
+@app.route("/dashboard")
+def dashboard():
+    building_id = request.args.get('bid', '').strip()
+    if not building_id:
+        return render_city_template('dashboard.html', error="Kein Profil angegeben.", user=None)
+
+    user = db.get_building_for_dashboard(building_id)
+    if not user:
+        return render_city_template('dashboard.html', error="Profil nicht gefunden.", user=None)
+
+    score = 0
+    checks = []
+    if user.get('verified'):
+        score += 25
+        checks.append(('E-Mail bestätigt', True))
     else:
-        # Szenario B: Match gefunden!
-        return jsonify({
-            "potential": True,
-            "message": "Partner gefunden! Wir haben passende Nachbarn identifiziert.",
-            "cluster_info": cluster_info, # Enthält jetzt Koordinaten
-            "profile_summary": estimates
-        })
+        checks.append(('E-Mail bestätigt', False))
+    if user.get('annual_consumption_kwh'):
+        score += 25
+        checks.append(('Verbrauchsdaten hinterlegt', True))
+    else:
+        checks.append(('Verbrauchsdaten hinterlegt', False))
+    if user.get('share_with_utility'):
+        score += 25
+        checks.append(('EVU-Einwilligung erteilt', True))
+    else:
+        checks.append(('EVU-Einwilligung erteilt', False))
+    if user.get('share_with_neighbors'):
+        score += 25
+        checks.append(('Nachbar-Einwilligung erteilt', True))
+    else:
+        checks.append(('Nachbar-Einwilligung erteilt', False))
 
-@app.route("/api/register_anonymous", methods=['POST'])
-@limiter.limit("5 per minute") if limiter else lambda f: f
-def api_register_anonymous():
-    """
-    (Schnell) Speichert Nutzer im anonymen Pool und
-    löst den langsamen ML-Task im Hintergrund aus.
-    """
-    if not request.json:
-        log_security_event("INVALID_REQUEST", "register_anonymous: No JSON body", 'WARNING')
-        return jsonify({"error": "Keine Daten empfangen."}), 400
-    # Security: Check request size
-    is_valid_size, size_error = security_utils.check_request_size(request)
-    if not is_valid_size:
-        log_security_event("REQUEST_TOO_LARGE", f"register_anonymous: {size_error}", 'WARNING')
-        return jsonify({"error": size_error}), 413
-    
-    phone = (request.json.get('phone') or '').strip()
-    email = (request.json.get('email') or '').strip()
-    profile = request.json.get('profile')
-    referral_code = (request.json.get('referral_code') or '').strip()
+    neighbor_count = 0
+    referral_link = ''
+    lat = user.get('lat')
+    lon = user.get('lon')
+    city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    if lat and lon:
+        neighbor_count = db.get_neighbor_count_near(float(lat), float(lon), city_id=city_id)
+    ref_code = db.get_referral_code(building_id)
+    if ref_code:
+        referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
 
-    # Resolve referrer from referral code
-    referrer_id = None
-    if referral_code and USE_POSTGRES:
-        referrer = db.get_building_by_referral_code(referral_code)
-        if referrer:
-            referrer_id = referrer.get('building_id')
-            logger.info(f"[REFERRAL] Registration via referral: {referral_code}")
-
-    # Security: Validate email
-    is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email)
-    if not is_valid_email:
-        log_security_event("INVALID_EMAIL", f"register_anonymous: {email_error}", 'WARNING')
-        return jsonify({"error": email_error}), 400
-    
-    email = normalized_email
-    
-    # Security: Validate phone (optional)
-    if phone:
-        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(phone)
-        if not is_valid_phone:
-            log_security_event("INVALID_PHONE", f"register_anonymous: {phone_error}", 'WARNING')
-            return jsonify({"error": phone_error}), 400
-        phone = normalized_phone
-    
-    if not profile:
-        log_security_event("INVALID_REQUEST", "register_anonymous: No profile data", 'WARNING')
-        return jsonify({"error": "Profildaten fehlen."}), 400
-        
-    building_id = profile.get('building_id')
-    
-    # Security: Validate building_id
-    is_valid_id, id_error = security_utils.validate_building_id(building_id)
-    if not is_valid_id:
-        log_security_event("INVALID_BUILDING_ID", f"register_anonymous: {id_error}", 'WARNING')
-        return jsonify({"error": id_error}), 400
-    
-    # Security: Validate coordinates in profile
-    lat = profile.get('lat')
-    lon = profile.get('lon')
-    is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
-    if not is_valid_coords:
-        log_security_event("INVALID_COORDINATES", f"register_anonymous: {coords_error}", 'WARNING')
-        return jsonify({"error": coords_error}), 400
-
-    consents = parse_consents(request.json.get('consents'))
-    if not consents.get('share_with_neighbors') or not consents.get('share_with_utility'):
-        log_security_event("CONSENT_MISSING", "register_anonymous: required consent not provided", 'WARNING')
-        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe an Nachbarn und das lokale EVU für LEG-Anfragen zu."}), 400
-
-    with db_lock:
-        # Person wird sofort als registriert markiert (keine Verifizierung nötig)
-        entry = {
-            "profile": profile,
-            "registered_at": time.time(),
-            "email": email,
-            "consents": consents,
-            "verified": True,  # Sofort verifiziert
-            "verified_at": time.time()
-        }
-        if phone:
-            entry["phone"] = phone
-        DB_INTEREST_POOL[building_id] = entry
-        schedule_save()  # Persistiere neue Registrierung
-        unsubscribe_token = issue_unsubscribe_token(building_id)
-    write_audit_event(
-        "register_anonymous",
-        details=f"building_id={building_id}",
-        payload={
-            "email": email,
-            "phone": bool(phone),
-            "consent_share_utility": consents.get('share_with_utility'),
-            "consent_neighbors": consents.get('share_with_neighbors')
-        }
-    )
-    
-    unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
-    
-    # Sende Bestätigungs-E-Mail (ohne Verifizierungslink)
-    address = profile.get('address', '')
-    threading.Thread(
-        target=send_confirmation_email,
-        args=(email, unsubscribe_url, building_id, address),
-        daemon=True
-    ).start()
-
-    print(f"[DB] Anonymer Nutzer {building_id} gespeichert und verifiziert (Mail: {email}, Tel: {phone}).")
-    print(f"  Aktuelle Pool-Grösse: {len(DB_INTEREST_POOL)}")
-    
-    # Send activity notification for registration
-    address = profile.get('address', '')
-    activity_details = f"Anonyme Registrierung:\nE-Mail: {email}\nTelefon: {phone or 'N/A'}\nBuilding ID: {building_id}\nAdresse: {address}"
-    threading.Thread(
-        target=send_activity_notification,
-        args=("Anonyme Registrierung", activity_details),
-        daemon=True
-    ).start()
-    
-    # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
-    threading.Thread(
-        target=check_and_handle_duplicates,
-        args=(email, phone, address, building_id),
-        daemon=True
-    ).start()
-    
-    # Benachrichtige sofort alle bestehenden Interessenten in derselben Zone
-    threading.Thread(
-        target=notify_existing_interested_persons,
-        args=(building_id, entry),
-        daemon=True
-    ).start()
-    
-    # Hintergrund-Analyse anstoßen
-    threading.Thread(target=run_full_ml_task, args=(building_id,)).start()
-
-    # Schedule email nurture sequence
-    if USE_POSTGRES:
-        threading.Thread(
-            target=email_automation.schedule_sequence_for_user,
-            args=(building_id, email),
-            daemon=True
-        ).start()
-
-    cluster_info = build_match_result(profile)
-    locations = collect_building_locations(exclude_building_id=building_id)
-
-    # Get referral link for this user
-    referral_link = None
-    if USE_POSTGRES:
-        user_referral_code = db.get_referral_code(building_id)
-        if user_referral_code:
-            referral_link = f"{APP_BASE_URL}/?ref={user_referral_code}"
-
-    response_payload = {
-        "buildings": locations,
-        "match_found": bool(cluster_info),
-        "verification_email_sent": True,
-        "referral_link": referral_link
-    }
-    if cluster_info:
-        response_payload["cluster_info"] = cluster_info
-    return jsonify(response_payload)
-
-@app.route("/api/register_full", methods=['POST'])
-@limiter.limit("5 per minute") if limiter else lambda f: f
-def api_register_full():
-    """
-    (Schnell) Speichert Nutzer in der DB und
-    löst den langsamen ML-Task im Hintergrund aus.
-    """
-    if not request.json:
-        log_security_event("INVALID_REQUEST", "register_full: No JSON body", 'WARNING')
-        return jsonify({"error": "Keine Daten empfangen."}), 400
-    # Security: Check request size
-    is_valid_size, size_error = security_utils.check_request_size(request)
-    if not is_valid_size:
-        log_security_event("REQUEST_TOO_LARGE", f"register_full: {size_error}", 'WARNING')
-        return jsonify({"error": size_error}), 413
-    
-    profile = request.json.get('profile')
-    email = (request.json.get('email') or '').strip()
-    phone = (request.json.get('phone') or '').strip()
-    referral_code = (request.json.get('referral_code') or '').strip()
-
-    # Resolve referrer from referral code
-    referrer_id = None
-    if referral_code and USE_POSTGRES:
-        referrer = db.get_building_by_referral_code(referral_code)
-        if referrer:
-            referrer_id = referrer.get('building_id')
-            logger.info(f"[REFERRAL] Full registration via referral: {referral_code}")
-
-    # Security: Validate email
-    is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email)
-    if not is_valid_email:
-        log_security_event("INVALID_EMAIL", f"register_full: {email_error}", 'WARNING')
-        return jsonify({"error": email_error}), 400
-
-    email = normalized_email
-
-    # Security: Validate phone (optional)
-    if phone:
-        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(phone)
-        if not is_valid_phone:
-            log_security_event("INVALID_PHONE", f"register_full: {phone_error}", 'WARNING')
-            return jsonify({"error": phone_error}), 400
-        phone = normalized_phone
-
-    if not profile:
-        log_security_event("INVALID_REQUEST", "register_full: No profile data", 'WARNING')
-        return jsonify({"error": "Profildaten fehlen."}), 400
-        
-    building_id = profile.get('building_id')
-    
-    # Security: Validate building_id
-    is_valid_id, id_error = security_utils.validate_building_id(building_id)
-    if not is_valid_id:
-        log_security_event("INVALID_BUILDING_ID", f"register_full: {id_error}", 'WARNING')
-        return jsonify({"error": id_error}), 400
-    
-    # Security: Validate coordinates in profile
-    lat = profile.get('lat')
-    lon = profile.get('lon')
-    is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
-    if not is_valid_coords:
-        log_security_event("INVALID_COORDINATES", f"register_full: {coords_error}", 'WARNING')
-        return jsonify({"error": coords_error}), 400
-
-    consents = parse_consents(request.json.get('consents'))
-    if not consents.get('share_with_neighbors') or not consents.get('share_with_utility'):
-        log_security_event("CONSENT_MISSING", "register_full: required consent not provided", 'WARNING')
-        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe an Nachbarn und das lokale EVU für LEG-Anfragen zu."}), 400
-
-    with db_lock:
-        # Person wird sofort als registriert markiert (keine Verifizierung nötig)
-        entry = {
-            "profile": profile,
-            "registered_at": time.time(),
-            "email": email,
-            "consents": consents,
-            "verified": True,  # Sofort verifiziert
-            "verified_at": time.time()
-        }
-        if phone:
-            entry["phone"] = phone
-        DB_BUILDINGS[building_id] = entry
-        schedule_save()  # Persistiere neue Registrierung
-        unsubscribe_token = issue_unsubscribe_token(building_id)
-    write_audit_event(
-        "register_full",
-        details=f"building_id={building_id}",
-        payload={
-            "email": email,
-            "phone": bool(phone),
-            "consent_share_utility": consents.get('share_with_utility'),
-            "consent_neighbors": consents.get('share_with_neighbors')
-        }
-    )
-    
-    unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsubscribe_token}"
-    
-    # Sende Bestätigungs-E-Mail (ohne Verifizierungslink)
-    address = profile.get('address', '')
-    threading.Thread(
-        target=send_confirmation_email,
-        args=(email, unsubscribe_url, building_id, address),
-        daemon=True
-    ).start()
-
-    print(f"[DB] Voll registrierter Nutzer {building_id} gespeichert und verifiziert (Mail: {email}, Tel: {phone}).")
-    print(f"  Aktuelle DB-Grösse: {len(DB_BUILDINGS)}")
-
-    # Send activity notification for registration
-    address = profile.get('address', '')
-    activity_details = f"Vollständige Registrierung:\nE-Mail: {email}\nTelefon: {phone or 'N/A'}\nBuilding ID: {building_id}\nAdresse: {address}"
-    threading.Thread(
-        target=send_activity_notification,
-        args=("Vollständige Registrierung", activity_details),
-        daemon=True
-    ).start()
-
-    # Duplikat-Check im Hintergrund (nach erfolgreicher Registrierung)
-    threading.Thread(
-        target=check_and_handle_duplicates,
-        args=(email, phone, address, building_id),
-        daemon=True
-    ).start()
-    
-    # Benachrichtige sofort alle bestehenden Interessenten in derselben Zone
-    threading.Thread(
-        target=notify_existing_interested_persons,
-        args=(building_id, entry),
-        daemon=True
-    ).start()
-
-    # Hintergrund-Analyse anstoßen
-    threading.Thread(target=run_full_ml_task, args=(building_id,)).start()
-
-    # Schedule email nurture sequence
-    if USE_POSTGRES:
-        threading.Thread(
-            target=email_automation.schedule_sequence_for_user,
-            args=(building_id, email),
-            daemon=True
-        ).start()
-
-    cluster_info = build_match_result(profile)
-    locations = collect_building_locations(exclude_building_id=building_id)
-
-    # Get referral link for this user
-    referral_link = None
-    if USE_POSTGRES:
-        user_referral_code = db.get_referral_code(building_id)
-        if user_referral_code:
-            referral_link = f"{APP_BASE_URL}/?ref={user_referral_code}"
-
-    response_payload = {
-        "buildings": locations,
-        "match_found": bool(cluster_info),
-        "verification_email_sent": True,
-        "referral_link": referral_link
-    }
-    if cluster_info:
-        response_payload["cluster_info"] = cluster_info
-    return jsonify(response_payload)
+    return render_city_template('dashboard.html',
+        user=user, readiness_score=score, checks=checks,
+        neighbor_count=neighbor_count, referral_link=referral_link, error=None)
 
 
-@app.route("/confirm/<token>")
-@limiter.limit("10 per minute") if limiter else lambda f: f
-def confirm_match(token):
-    """
-    DEPRECATED: Wird nicht mehr für neue Registrierungen verwendet.
-    Nur für Rückwärtskompatibilität mit alten Links.
-    Neue Registrierungen werden sofort als verifiziert markiert.
-    """
-    # Prüfe, ob Token existiert (für alte Registrierungen)
-    with db_lock:
-        token_info = DB_VERIFICATION_TOKENS.get(token)
-    
-    if token_info:
-        building_id = token_info.get('building_id')
-        record, source = _get_record_for_building_no_lock(building_id)
-        if record and not record.get('verified'):
-            # Alte Registrierung - verifiziere jetzt
-            record['verified'] = True
-            record['verified_at'] = time.time()
-            if source == 'registered':
-                DB_BUILDINGS[building_id] = record
-            elif source == 'anonymous':
-                DB_INTEREST_POOL[building_id] = record
-            schedule_save()  # Persistiere Verifizierung
-            
-            # Cleanup Token
-            DB_VERIFICATION_TOKENS.pop(token, None)
-            _token_created_at.pop(f'verification_{token}', None)
-            schedule_save()  # Persistiere Token-Cleanup
-            
-            # Benachrichtige andere
-            threading.Thread(target=notify_existing_interested_persons, args=(building_id, record), daemon=True).start()
-            threading.Thread(target=run_full_ml_task, daemon=True).start()
-            
-            return (
-                "<h1>Vielen Dank!</h1>"
-                "<p>Ihre Registrierung wurde bestätigt. Wir informieren Sie automatisch, wenn sich neue Interessenten in Ihrer Zone anmelden.</p>"
-            )
-        elif record and record.get('verified'):
-            return (
-                "<h1>Bereits bestätigt</h1>"
-                "<p>Sie sind bereits registriert. Wir informieren Sie automatisch, wenn sich neue Interessenten in Ihrer Zone anmelden.</p>"
-            )
-    
-    # Token nicht gefunden oder ungültig
-    return (
-        "<h1>Link nicht mehr gültig</h1>"
-        "<p>Dieser Bestätigungslink ist nicht mehr gültig. Neue Registrierungen werden automatisch aktiviert. "
-        "Falls Sie sich bereits registriert haben, sollten Sie bereits eine Bestätigungs-E-Mail erhalten haben.</p>"
-        "<p>Falls Sie Fragen haben, schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch'>hallo@badenleg.ch</a>.</p>"
-    )
-
-
-# ===============================
-# Informationsseiten
-# ===============================
-
-@app.route("/leg")
-def page_leg():
-    """Erklärt Lokale Elektrizitätsgemeinschaft (LEG)"""
-    return render_template("leg.html", site_url=SITE_URL)
-
-@app.route("/evl")
-def page_evl():
-    """Erklärt Eigenverbrauchslösung (EVL) und virtuelle EVL (vEVL)"""
-    return render_template("evl.html", site_url=SITE_URL)
-
-@app.route("/zev")
-def page_zev():
-    """Erklärt Zusammenschluss zum Eigenverbrauch (ZEV) und vZEV"""
-    return render_template("zev.html", site_url=SITE_URL)
-
-@app.route("/vergleich-leg-evl-zev")
-def page_vergleich():
-    """Vergleicht LEG, EVL und ZEV"""
-    return render_template("vergleich.html", site_url=SITE_URL)
-
-
-# ===============================
-# Referral System API
-# ===============================
-
+# --- Referral System ---
 @app.route("/api/referral/stats/<building_id>")
 def api_referral_stats(building_id):
-    """Get referral statistics for a user."""
-    if not USE_POSTGRES:
-        return jsonify({"error": "Referral system requires PostgreSQL"}), 503
-
     stats = db.get_referral_stats(building_id)
     referral_code = db.get_referral_code(building_id)
-
     return jsonify({
         "referral_code": referral_code,
         "referral_link": f"{APP_BASE_URL}/?ref={referral_code}" if referral_code else None,
@@ -2072,175 +863,54 @@ def api_referral_stats(building_id):
 
 @app.route("/api/referral/leaderboard")
 def api_referral_leaderboard():
-    """Get top referrers for gamification."""
-    if not USE_POSTGRES:
-        return jsonify({"leaderboard": []})
-
-    leaderboard = db.get_referral_leaderboard(limit=10)
-    # Anonymize for privacy: show only first name of street
+    city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    leaderboard = db.get_referral_leaderboard(limit=10, city_id=city_id)
     for entry in leaderboard:
         street = entry.get('street', '')
         entry['display_name'] = street[:15] + '...' if len(street) > 15 else street
-
     return jsonify({"leaderboard": leaderboard})
 
 
 @app.route("/api/stats/public")
 def api_public_stats():
-    """Public statistics for the landing page."""
-    if USE_POSTGRES:
-        stats = db.get_stats()
-        return jsonify({
-            "total_users": stats.get('total_buildings', 0),
-            "registrations_today": stats.get('registrations_today', 0)
-        })
-    else:
-        with db_lock:
-            total = len(DB_BUILDINGS) + len(DB_INTEREST_POOL)
-        return jsonify({
-            "total_users": total,
-            "registrations_today": 0
-        })
+    city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    stats = db.get_stats(city_id=city_id)
+    return jsonify({
+        "total_users": stats.get('total_buildings', 0),
+        "registrations_today": stats.get('registrations_today', 0)
+    })
 
 
 @app.route("/api/stats/live")
 def api_live_stats():
-    """Lightweight live counter for landing page hero section."""
-    if USE_POSTGRES:
-        stats = db.get_stats()
-        total_users = stats.get('total_buildings', 0)
-        registrations_today = stats.get('registrations_today', 0)
-    else:
-        with db_lock:
-            total_users = len(DB_BUILDINGS) + len(DB_INTEREST_POOL)
-        registrations_today = 0
-
+    city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') else None
+    stats = db.get_stats(city_id=city_id)
     return jsonify({
-        "total_registered": total_users,
-        "last_24h": registrations_today,
-        # Placeholder values until community tracking is wired
+        "total_registered": stats.get('total_buildings', 0),
+        "last_24h": stats.get('registrations_today', 0),
         "clusters_ready": 0,
         "avg_savings_chf": 520
     })
 
 
-@app.route("/dashboard")
-def dashboard():
-    """User dashboard with readiness score and community status."""
-    building_id = request.args.get('bid', '').strip()
-    if not building_id:
-        return render_template('dashboard.html', error="Kein Profil angegeben.", user=None, site_url=SITE_URL)
-
-    if USE_POSTGRES:
-        user = db.get_building_for_dashboard(building_id)
-    else:
-        with db_lock:
-            record, rtype = _get_record_for_building_no_lock(building_id)
-            if record:
-                user = {
-                    'building_id': building_id,
-                    'email': record.get('email', ''),
-                    'address': record.get('profile', {}).get('address', ''),
-                    'user_type': rtype,
-                    'verified': record.get('verified', False),
-                    'annual_consumption_kwh': record.get('profile', {}).get('annual_consumption_kwh'),
-                    'potential_pv_kwp': record.get('profile', {}).get('potential_pv_kwp'),
-                    'share_with_neighbors': record.get('consents', {}).get('share_with_neighbors', False),
-                    'share_with_utility': record.get('consents', {}).get('share_with_utility', False),
-                    'referral_count': 0,
-                    'community_count': 0,
-                }
-            else:
-                user = None
-
-    if not user:
-        return render_template('dashboard.html', error="Profil nicht gefunden.", user=None, site_url=SITE_URL)
-
-    # Calculate readiness score
-    score = 0
-    checks = []
-    if user.get('verified'):
-        score += 25
-        checks.append(('E-Mail bestätigt', True))
-    else:
-        checks.append(('E-Mail bestätigt', False))
-
-    if user.get('annual_consumption_kwh'):
-        score += 25
-        checks.append(('Verbrauchsdaten hinterlegt', True))
-    else:
-        checks.append(('Verbrauchsdaten hinterlegt', False))
-
-    if user.get('share_with_utility'):
-        score += 25
-        checks.append(('EVU-Einwilligung erteilt', True))
-    else:
-        checks.append(('EVU-Einwilligung erteilt', False))
-
-    if user.get('share_with_neighbors'):
-        score += 25
-        checks.append(('Nachbar-Einwilligung erteilt', True))
-    else:
-        checks.append(('Nachbar-Einwilligung erteilt', False))
-
-    # Get neighbor count and referral link
-    neighbor_count = 0
-    referral_link = ''
-    if USE_POSTGRES:
-        lat = user.get('lat')
-        lon = user.get('lon')
-        if lat and lon:
-            neighbor_count = db.get_neighbor_count_near(float(lat), float(lon))
-        ref_code = db.get_referral_code(building_id)
-        if ref_code:
-            referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
-
-    return render_template('dashboard.html',
-        user=user,
-        readiness_score=score,
-        checks=checks,
-        neighbor_count=neighbor_count,
-        referral_link=referral_link,
-        site_url=SITE_URL,
-        error=None,
-    )
-
-
-@app.route("/api/cron/process-emails", methods=['POST'])
-def api_cron_process_emails():
-    """Cron endpoint: process scheduled email queue."""
-    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
-    if CRON_SECRET and secret != CRON_SECRET:
-        abort(403)
-    if not USE_POSTGRES:
-        return jsonify({"error": "PostgreSQL not available"}), 503
-    result = email_automation.process_email_queue(app=app)
-    return jsonify(result)
-
-
+# --- Savings Calculator ---
 @app.route("/api/calculate_savings", methods=['POST'])
 def api_calculate_savings():
-    """Estimate annual savings for a household joining a LEG."""
     data = request.json or {}
     consumption = float(data.get('consumption_kwh', 4500))
     has_solar = bool(data.get('has_solar', False))
     pv_kwp = float(data.get('pv_kwp', 0))
 
-    # Base savings from local energy trading (grid fee reduction)
-    base_rate_saving = 0.04  # CHF/kWh saved via local tariff
+    base_rate_saving = 0.04
     annual_base = consumption * base_rate_saving
-
-    # Solar production bonus
     solar_savings = 0
     if has_solar and pv_kwp > 0:
-        annual_production = pv_kwp * 950  # kWh/kWp in Baden region
-        self_consumption_rate = 0.35
-        export_to_leg = annual_production * (1 - self_consumption_rate)
-        solar_savings = export_to_leg * 0.08  # premium over grid feed-in
+        solar_yield = g.tenant.get('solar_kwh_per_kwp', 1000) if hasattr(g, 'tenant') else 1000
+        annual_production = pv_kwp * solar_yield
+        export_to_leg = annual_production * 0.65
+        solar_savings = export_to_leg * 0.08
 
-    total_annual = annual_base + solar_savings
-    total_annual = min(total_annual, 1200)  # cap estimate
-
+    total_annual = min(annual_base + solar_savings, 1200)
     return jsonify({
         "annual_savings_chf": round(total_annual, 2),
         "monthly_savings_chf": round(total_annual / 12, 2),
@@ -2250,49 +920,69 @@ def api_calculate_savings():
     })
 
 
+# --- Formation API ---
+@app.route("/api/formation/optimize", methods=['POST'])
+def api_formation_optimize():
+    """LEG optimization endpoint."""
+    import formation_wizard
+    data = request.json or {}
+    building_id = data.get('building_id', '').strip()
+    if not building_id:
+        return jsonify({"error": "building_id required"}), 400
+
+    clusters = formation_wizard.get_formable_clusters(db, building_id)
+    return jsonify({"clusters": clusters})
+
+
+@app.route("/api/formation/financial-model", methods=['POST'])
+def api_formation_financial_model():
+    """Savings projection for a LEG."""
+    import formation_wizard
+    data = request.json or {}
+    consumption = float(data.get('consumption_kwh', 4500))
+    pv_kwp = float(data.get('pv_kwp', 0))
+    community_size = int(data.get('community_size', 5))
+    solar_kwh = g.tenant.get('solar_kwh_per_kwp', 1000) if hasattr(g, 'tenant') else 1000
+
+    result = formation_wizard.calculate_savings_estimate(consumption, pv_kwp, community_size, solar_kwh)
+    return jsonify(result)
+
+
+# --- Cron ---
+@app.route("/api/cron/process-emails", methods=['POST'])
+def api_cron_process_emails():
+    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
+    if CRON_SECRET and secret != CRON_SECRET:
+        abort(403)
+    result = email_automation.process_email_queue(app=app)
+    return jsonify(result)
+
+
+@app.route("/api/cron/refresh-public-data", methods=['POST'])
+def api_cron_refresh_public_data():
+    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
+    if CRON_SECRET and secret != CRON_SECRET:
+        abort(403)
+    import public_data
+    result = public_data.refresh_canton('ZH')
+    return jsonify(result)
+
+
+@app.route("/api/cron/refresh-insights", methods=['POST'])
+def api_cron_refresh_insights():
+    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
+    if CRON_SECRET and secret != CRON_SECRET:
+        abort(403)
+    import insights_engine
+    result = insights_engine.refresh_all_insights()
+    return jsonify(result)
+
+
 @app.route("/api/email/stats")
 def api_email_stats():
-    """Admin: email queue statistics."""
     _require_admin()
-    if not USE_POSTGRES:
-        return jsonify({"error": "PostgreSQL not available"}), 503
     return jsonify(db.get_email_stats())
 
 
-@app.route("/api/migrate", methods=['POST'])
-def api_migrate_to_postgres():
-    """Admin endpoint to migrate JSON data to PostgreSQL."""
-    _require_admin()
-
-    if not USE_POSTGRES:
-        return jsonify({"error": "PostgreSQL not available"}), 503
-
-    # Load current JSON data
-    with db_lock:
-        json_data = {
-            'buildings': DB_BUILDINGS.copy(),
-            'interest_pool': DB_INTEREST_POOL.copy()
-        }
-
-    success, errors = db.migrate_from_json(json_data)
-
-    return jsonify({
-        "message": "Migration completed",
-        "success_count": success,
-        "error_count": errors
-    })
-
-
 if __name__ == "__main__":
-    # Führe initiale ML-Analyse aus, falls bereits Gebäude vorhanden sind
-    def initial_ml_analysis():
-        time.sleep(2)  # Warte kurz, damit Server vollständig gestartet ist
-        all_profiles = get_all_known_profiles()
-        if len(all_profiles) >= 2:
-            print("[INIT] Führe initiale ML-Analyse für vorhandene Gebäude durch...")
-            run_full_ml_task()
-    
-    # Starte initiale Analyse im Hintergrund
-    threading.Thread(target=initial_ml_analysis, daemon=True).start()
-    
     app.run(debug=True, port=5003, host='127.0.0.1')

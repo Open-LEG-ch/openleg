@@ -2,1590 +2,338 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LEG Baden 2026 – Lokale Elektrizitätsgemeinschaft gründen | BadenLEG</title>
-    <meta name="description" content="Finden Sie Nachbarn in Baden für eine Lokale Elektrizitätsgemeinschaft (LEG) ab 2026. Kostenlos registrieren, passende Energie-Partner finden, LEG gründen. Jetzt Adresse prüfen!">
-    <meta name="keywords" content="LEG Baden, Lokale Elektrizitätsgemeinschaft Baden, LEG gründen Baden, Energiegemeinschaft Aargau, Strom teilen Baden, LEG 2026, Regionalwerke Baden, LEG Nachbarn finden">
-    <meta name="robots" content="index, follow">
-    <meta name="geo.region" content="CH-AG">
-    <meta name="geo.placename" content="Baden">
-    <meta name="geo.position" content="47.473;8.308">
-    <meta name="ICBM" content="47.473, 8.308">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenLEG – Die Intelligenz hinter dem Netz | LEG-Plattform für Schweizer Gemeinden</title>
+    <meta name="description" content="OpenLEG hilft Schweizer Gemeinden, Lokale Elektrizitätsgemeinschaften (LEG) zu gründen und zu optimieren. Smart Meter Daten, KI-gestützte Analyse, B2B Insights.">
     <link rel="canonical" href="{{ site_url }}/">
-    <link rel="alternate" hreflang="de-CH" href="{{ site_url }}/">
-    <link rel="alternate" hreflang="x-default" href="{{ site_url }}/">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="LEG Baden 2026 – Lokale Elektrizitätsgemeinschaft gründen">
-    <meta property="og:description" content="Finden Sie Nachbarn in Baden für eine Lokale Elektrizitätsgemeinschaft (LEG) ab 2026. Kostenlos registrieren und LEG gründen.">
+    <meta property="og:title" content="OpenLEG – Die Intelligenz hinter dem Netz">
+    <meta property="og:description" content="LEG-Plattform für Schweizer Gemeinden. Smart Meter Intelligence für Energieversorger.">
     <meta property="og:url" content="{{ site_url }}/">
-    <meta property="og:locale" content="de_CH">
-    <meta property="og:site_name" content="BadenLEG">
-    <meta property="og:image" content="{{ site_url }}/static/images/og-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:type" content="image/png">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="LEG Baden 2026 – Lokale Elektrizitätsgemeinschaft gründen">
-    <meta name="twitter:description" content="Finden Sie Nachbarn in Baden für eine LEG ab 2026. Kostenlos registrieren und LEG gründen.">
-    <meta name="twitter:image" content="{{ site_url }}/static/images/og-image.png">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ site_url }}/static/favicon.ico">
-    <link rel="apple-touch-icon" href="{{ site_url }}/static/apple-touch-icon.png">
-    
-    <!-- Google Analytics 4 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {% if ga4_id %}
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', '{{ ga4_id }}');
-
-        // Track key events
-        function trackEvent(eventName, params) {
-            gtag('event', eventName, params || {});
-        }
     </script>
-    
-    <!-- Google Search Console Verification (placeholder - replace with your verification code) -->
-    <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE" /> -->
-    
-    <!-- Structured Data: WebApplication -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "BadenLEG",
-      "description": "Finden Sie interessierte Nachbarn in Baden für eine Lokale Elektrizitätsgemeinschaft (LEG) ab 2026",
-      "url": "{{ site_url }}",
-      "applicationCategory": "UtilityApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "CHF"
-      },
-      "areaServed": {
-        "@type": "City",
-        "name": "Baden",
-        "addressRegion": "Aargau",
-        "addressCountry": "CH"
-      }
-    }
-    </script>
-    
-    <!-- Structured Data: LocalBusiness -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "BadenLEG",
-      "description": "Lokale Elektrizitätsgemeinschaft (LEG) für Baden und Umgebung",
-      "url": "{{ site_url }}",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Baden",
-        "addressRegion": "Aargau",
-        "addressCountry": "CH"
-      },
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "email": "hallo@badenleg.ch",
-        "contactType": "customer service"
-      }
-    }
-    </script>
-    
-    <!-- Structured Data: Organization -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "BadenLEG",
-      "url": "{{ site_url }}",
-      "logo": "{{ site_url }}/static/images/og-image.png",
-      "description": "Platform für Lokale Elektrizitätsgemeinschaften (LEG) in Baden, Schweiz",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Baden",
-        "addressRegion": "Aargau",
-        "addressCountry": "CH"
-      },
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "email": "hallo@badenleg.ch",
-        "contactType": "customer service"
-      },
-      "sameAs": []
-    }
-    </script>
-
-    <!-- Preconnect für externe Ressourcen (Performance) -->
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
-    <link rel="preconnect" href="https://unpkg.com">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% endif %}
     <script>
-      // Expose live stats endpoint so we can update the counter without page reloads
-      async function refreshLiveCounter() {
-        try {
-          const res = await fetch('/api/stats/live');
-          const data = await res.json();
-          const elTotal = document.getElementById('live-total');
-          const elToday = document.getElementById('live-today');
-          if (elTotal) elTotal.textContent = data.total_registered?.toLocaleString('de-CH');
-          if (elToday) elToday.textContent = data.last_24h?.toLocaleString('de-CH');
-        } catch (err) {
-          console.error('Live counter failed', err);
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { DEFAULT: '#6366f1', light: '#818cf8', dark: '#4f46e5' },
+                        accent: '#f59e0b',
+                    }
+                }
+            }
         }
-      }
-      document.addEventListener('DOMContentLoaded', () => {
-        refreshLiveCounter();
-        setInterval(refreshLiveCounter, 30000);
-      });
     </script>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
-
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            overflow: hidden; /* Verhindert Scrollen der Seite */
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        }
-        
-        /* Desktop Layout: Flexbox für Side-by-Side */
-        @media (min-width: 1024px) {
-            body {
-                display: flex;
-                flex-direction: row;
-            }
-        }
-        
-        #map {
-            height: 100vh;
-            width: 100%;
-            z-index: 10;
-        }
-        
-        /* Mobile: Karte vollständig anzeigen, Control-Panel liegt darüber */
-        @media (max-width: 1023px) {
-            #map {
-                height: 100vh;
-                width: 100%;
-            }
-        }
-        
-        /* Desktop: Karte nimmt linke Seite ein */
-        @media (min-width: 1024px) {
-            #map {
-                width: calc(100% - 450px);
-            }
-        }
-        
-        /* Mobile Logo oben zentriert */
-        .mobile-logo {
-            position: absolute;
-            top: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            font-size: 1.1rem;
-            font-weight: bold;
-            text-shadow: 0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.6);
-            pointer-events: none;
-        }
-        .mobile-logo span:first-child {
-            color: var(--brand-color);
-        }
-        .mobile-logo span:last-child {
-            color: #1f2937;
-        }
-        
-        /* Desktop: Logo verstecken */
-        @media (min-width: 1024px) {
-            .mobile-logo {
-                display: none;
-            }
-        }
-        
-        /* Style für das Control-Panel (Mobile-First) */
-        #control-panel {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 20;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            padding: 1rem;
-            border-radius: 1rem 1rem 0 0;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
-            width: 100%;
-            max-height: 40vh;
-            overflow-y: auto;
-            transform: translateY(0);
-            transition: transform 0.3s ease;
-        }
-        
-        /* Mobile: Control-Panel minimiert zeigen (nur Adressfeld + Akkordeon) */
-        @media (max-width: 1023px) {
-            #control-panel {
-                max-height: 35vh;
-                padding: 1rem 1rem 1.5rem 1rem;
-            }
-            
-            #control-panel header,
-            #control-panel article {
-                display: none;
-            }
-            
-            /* Hide desktop accordion on mobile */
-            #control-panel details.mt-6 {
-                display: none;
-            }
-            
-            #control-panel #check-step {
-                margin-top: 0;
-            }
-            
-            #control-panel #check-step::before {
-                content: "Geben Sie Ihre Adresse ein, um passende Energie-Partner zu finden.";
-                display: block;
-                font-size: 0.875rem;
-                color: #6b7280;
-                margin-bottom: 0.75rem;
-                text-align: center;
-                line-height: 1.4;
-            }
-            
-        }
-        
-        /* Tablet: Zentriert */
-        @media (min-width: 640px) and (max-width: 1023px) {
-            #control-panel {
-                left: 50%;
-                transform: translateX(-50%);
-                width: 90%;
-                max-width: 600px;
-                padding: 1.5rem;
-            }
-        }
-        
-        /* Desktop: Rechte Sidebar, sticky, volle Höhe */
-        @media (min-width: 1024px) {
-            #control-panel {
-                position: fixed;
-                top: 0;
-                right: 0;
-                left: auto;
-                bottom: auto;
-                width: 450px;
-                min-width: 350px;
-                max-width: 450px;
-                height: 100vh;
-                max-height: 100vh;
-                border-radius: 0;
-                box-shadow: -4px 0 12px rgba(0,0,0,0.15);
-                padding: 2rem;
-                transform: none;
-                z-index: 1000; /* Sehr hoch, damit Sidebar über allem liegt */
-            }
-            
-            #control-panel header,
-            #control-panel article,
-            #control-panel .mt-6 {
-                display: block;
-            }
-        }
-        /* Farben */
-        :root {
-            --brand-color: #c7021a; /* Stadt Baden Rot */
-            --warn-color: #f59e0b;  /* Sekundärfarbe für Hinweise */
-        }
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 9999px;
-            background: #f3f4f6;
-            color: #111827;
-            font-weight: 600;
-            font-size: 0.9rem;
-            border: 1px solid #e5e7eb;
-        }
-        .micro-card {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            padding: 0.9rem 1rem;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-        }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--brand-color);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* Adressvorschläge Dropdown */
-        #address-suggestions {
-            z-index: 1000;
-            top: 100%;
-            left: 0;
-            right: 0;
-        }
-        .suggestion-item {
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-            border-bottom: 1px solid #e5e7eb;
-            transition: background-color 0.15s;
-            font-size: 0.95rem;
-        }
-        .suggestion-item:hover,
-        .suggestion-item.active {
-            background-color: #d1fae5;
-        }
-        .suggestion-item:last-child {
-            border-bottom: none;
-        }
-        .suggestion-item.loading {
-            color: #666;
-            font-style: italic;
-            cursor: wait;
-        }
-        .suggestion-item.error {
-            color: #c7021a;
-            font-style: italic;
-            cursor: default;
-        }
-        /* Cluster-Polygon Styles */
-        .cluster-polygon-clickable {
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .cluster-popup {
-            font-family: 'Inter', system-ui, sans-serif;
-        }
-        .cluster-popup h3 {
-            font-size: 1.1em;
-        }
-
-        .map-control-button a,
-        .map-zoom-stack a {
-            width: 32px;
-            height: 32px;
-            line-height: 32px;
-            text-align: center;
-            display: block;
-            color: #0f172a;
-            font-size: 18px;
-            background: #ffffff;
-            transition: background-color 0.15s ease, color 0.15s ease;
-        }
-
-        .map-control-button a:hover,
-        .map-zoom-stack a:hover {
-            background: rgba(199, 2, 26, 0.12);
-            color: #c7021a;
-        }
-
-        .map-zoom-stack a:first-child {
-            border-bottom: 1px solid rgba(15, 23, 42, 0.12);
-        }
-
-        .existing-dot-marker {
-            width: 210px;
-            height: 210px;
-            border-radius: 50%;
-            background: rgba(199, 2, 26, 0.18);
-            border: 4px solid rgba(199, 2, 26, 0.45);
-            box-shadow: 0 0 55px rgba(199, 2, 26, 0.35);
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .existing-dot-marker:hover {
-            transform: scale(1.03);
-            box-shadow: 0 0 75px rgba(199, 2, 26, 0.5);
-        }
-        .existing-tooltip {
-            background: rgba(199, 2, 26, 0.92);
-            color: #ffffff;
-            border: none;
-            border-radius: 999px;
-            padding: 6px 10px;
-            font-size: 0.85rem;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-        }
-        .cluster-popup details summary {
-            user-select: none;
-        }
-
-        .map-home-control {
-            background: #ffffff;
-            border: 1px solid #d4d4d8;
-            border-radius: 6px;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
-            font-size: 18px;
-            color: #111827;
-        }
-        .map-home-control:hover {
-            background: #f1f5f9;
-        }
-        
-        /* Accordion styling */
-        details summary {
-            list-style: none;
-        }
-        details summary::-webkit-details-marker {
-            display: none;
-        }
-        details summary::before {
-            content: "▶ ";
-            display: inline-block;
-            margin-right: 0.5rem;
-            transition: transform 0.2s;
-            color: var(--brand-color);
-        }
-        details[open] summary::before {
-            transform: rotate(90deg);
-        }
-        
-        /* Desktop: Verbesserte Sidebar-Scrollbarkeit */
-        @media (min-width: 1024px) {
-            #control-panel {
-                scrollbar-width: thin;
-                scrollbar-color: #cbd5e1 #f1f5f9;
-            }
-            
-            #control-panel::-webkit-scrollbar {
-                width: 8px;
-            }
-            
-            #control-panel::-webkit-scrollbar-track {
-                background: #f1f5f9;
-            }
-            
-            #control-panel::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
-                border-radius: 4px;
-            }
-            
-            #control-panel::-webkit-scrollbar-thumb:hover {
-                background: #94a3b8;
-            }
-            
-            /* Größere Schrift auf Desktop */
-            #control-panel h1 {
-                font-size: 2.5rem;
-            }
-            
-            #control-panel p {
-                font-size: 1rem;
-            }
-            
-        }
-    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 text-gray-900">
 
-    <!-- Mobile Logo oben links -->
-    <div class="mobile-logo">
-        <span>Baden</span><span>LEG</span>
-    </div>
-
-    <div id="map"></div>
-
-    <div id="control-panel">
-
-        <!-- Desktop Header (nur auf Desktop sichtbar) -->
-        <header class="hidden lg:block text-center mb-4">
-            <h1 class="text-3xl font-bold text-gray-800"><span style="color: var(--brand-color);">Baden</span>LEG</h1>
-
-            <!-- Urgency Banner -->
-            <div class="bg-green-100 border border-green-300 rounded-lg p-2 mt-2 mb-3">
-                <p class="text-green-800 font-semibold text-sm">LEG ist jetzt legal! Seit 1. Januar 2026 können Sie Strom mit Nachbarn teilen.</p>
+    <!-- Nav -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-brand">OpenLEG</a>
+            <div class="hidden md:flex space-x-6 text-sm">
+                <a href="#wie-es-funktioniert" class="hover:text-brand">So funktioniert's</a>
+                <a href="#registrieren" class="hover:text-brand">Registrieren</a>
+                <a href="/gemeinde/onboarding" class="hover:text-brand">Für Gemeinden</a>
+                <a href="/how-it-works" class="hover:text-brand">Mehr erfahren</a>
             </div>
+            <a href="/gemeinde/onboarding" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Gemeinde anmelden</a>
+        </div>
+    </nav>
 
-            <!-- Live Counter (updates every 30s via /api/stats/live) -->
-            <div class="bg-gray-100 rounded-lg p-3 mb-3">
-                <p class="text-2xl font-bold" style="color: var(--brand-color);">
-                    <span id="live-total">{{ user_count }}</span> Haushalte
-                </p>
-                <p class="text-sm text-gray-600 flex items-center gap-2">
-                    <span>haben sich bereits in Baden registriert</span>
-                    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">Live</span>
-                </p>
-                <p class="text-xs text-gray-500" id="live-today-label">Heute neu: <span id="live-today">–</span></p>
-            </div>
-
-            <!-- Savings Callout -->
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-3 text-left">
-                <p class="text-yellow-800 font-semibold">Sparen Sie CHF 500 bis 800 pro Jahr</p>
-                <p class="text-sm text-yellow-700">durch lokalen Stromhandel mit Ihren Nachbarn</p>
-            </div>
-
-            <h2 class="text-md sm:text-lg text-gray-600 mt-1 font-normal">Finden Sie interessierte Nachbarn in Baden für eine <a href="/leg" class="underline hover:text-gray-800">Lokale Elektrizitätsgemeinschaft (LEG)</a>.</h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-left">
-                <div class="pill justify-center">⚡ 2-Minuten Registrierung</div>
-                <div class="pill justify-center">🏠 100% lokal in Baden</div>
-                <div class="pill justify-center">🔒 Daten bleiben in der Schweiz</div>
-            </div>
-
-            <div class="micro-card text-left mt-4">
-                <p class="text-sm text-gray-800 font-semibold mb-2">So funktioniert es:</p>
-                <ul class="text-sm text-gray-600 space-y-1 list-disc pl-5">
-                    <li>Adresse eingeben und sofort sehen, ob Nachbarn Interesse haben</li>
-                    <li>E-Mail hinterlassen und automatisch gematcht werden</li>
-                    <li>Gemeinsam LEG gründen und Stromkosten senken</li>
-                </ul>
-            </div>
-        </header>
-
-        <div id="check-step">
-            <!-- Referral Welcome Banner (shown when arriving via referral link) -->
-            {% if referrer_street %}
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-center">
-                <p class="text-blue-800 font-semibold">Eingeladen von einem Nachbarn auf {{ referrer_street }}</p>
-                <p class="text-sm text-blue-600">Registrieren Sie sich, um gemeinsam eine LEG zu gründen!</p>
-            </div>
+    <!-- Hero -->
+    <section class="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-20">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h1 class="text-5xl md:text-6xl font-bold mb-4">OpenLEG</h1>
+            <p class="text-xl md:text-2xl text-indigo-200 mb-2">Die Intelligenz hinter dem Netz.</p>
+            <p class="text-lg text-indigo-300 mb-8 max-w-2xl mx-auto">Die Plattform für Lokale Elektrizitätsgemeinschaften im Kanton {{ kanton }}. Gemeinden gründen LEGs, Bewohner teilen Strom, Energieversorger gewinnen Insights.</p>
+            {% if user_count > 0 %}
+            <p class="text-indigo-200 mb-6">Bereits <strong class="text-white text-xl">{{ user_count }}</strong> Haushalte registriert</p>
             {% endif %}
-
-            <!-- Mobile: Savings callout (shown only on mobile) -->
-            <div class="lg:hidden bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 text-left">
-                <p class="text-yellow-800 font-semibold text-sm">Sparen Sie CHF 500 bis 800 pro Jahr</p>
-                <p class="text-xs text-yellow-700">durch lokalen Stromhandel mit Ihren Nachbarn</p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-2">
-                <div class="flex-grow relative">
-                    <input type="text" id="address-input" placeholder="z.B. Brown Boveri Platz, 5400 Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600" autocomplete="off" required>
-                    <div id="address-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
-                </div>
-                <button type="button" id="check-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
-                    Prüfen
-                </button>
-            </div>
-            <div id="check-loader" class="loader mx-auto my-4 hidden"></div>
-            <p id="check-message" class="text-center text-red-600 mt-4 font-medium"></p>
-            
-            <div class="hidden lg:grid grid-cols-3 gap-3 mt-6 text-sm text-left">
-                <div class="micro-card">
-                    <p class="font-semibold text-gray-800">1. Adresse prüfen</p>
-                    <p class="text-gray-600">Ohne Konto, ohne Telefon-Warteschleife.</p>
-                </div>
-                <div class="micro-card">
-                    <p class="font-semibold text-gray-800">2. Match & Einwilligung</p>
-                    <p class="text-gray-600">Klare Zustimmung für Nachbarn + EVU, sofort sichtbare Nachbarschaft.</p>
-                </div>
-                <div class="micro-card">
-                    <p class="font-semibold text-gray-800">3. EVU-ready Export</p>
-                    <p class="text-gray-600">Alle Daten als Paket für Regionalwerke Baden/Eniwa vorbereitbar.</p>
-                </div>
-            </div>
-
-            <!-- Link zu Info-Seite -->
-            <div class="mt-6 text-center">
-                <a href="/info" class="inline-block w-full sm:w-auto px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-md transition-colors border border-gray-200">
-                    ℹ️ Über BadenLEG
-                </a>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="#registrieren" class="bg-amber-500 text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-amber-400 text-lg">Jetzt Adresse prüfen</a>
+                <a href="/gemeinde/onboarding" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-700 text-lg">Gemeinde registrieren</a>
             </div>
         </div>
+    </section>
 
-        <div id="result-step" class="hidden">
-            
-            <div id="no-match-box" class="hidden">
-                <h2 class="text-2xl font-semibold text-yellow-600 mb-4" style="color: var(--warn-color);">Kein direktes Match</h2>
-                <p class="text-gray-600 mb-4 text-sm sm:text-base">Leider gibt es noch keine Partner in Ihrer Zone. Werden Sie der Erste!</p>
-                <p class="text-gray-600 mb-4 text-sm sm:text-base">Tragen Sie sich anonym in den Interessen-Pool ein. Wir informieren Sie per E-Mail und halten Sie über passende Nachbarinnen und Nachbarn auf dem Laufenden.</p>
-                
-                <div class="flex flex-col gap-2">
-                    <input type="email" id="pool-email-input" placeholder="Ihre E-Mail-Adresse" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-600" autocomplete="email" required>
-                    <input type="tel" id="pool-phone-input" placeholder="Optional: Mobile-Nummer (z.B. +4179...)" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-600" autocomplete="tel">
-                    <div class="bg-yellow-50 border border-yellow-100 rounded-md p-3 text-sm text-gray-700 space-y-2">
-                        <label class="flex items-start gap-2">
-                            <input type="checkbox" id="consent-neighbors-anon" class="mt-1">
-                            <span>Ich stimme zu, dass BadenLEG meine Kontaktdaten mit passenden Nachbarinnen und Nachbarn teilt (LEG-Bildung).</span>
-                        </label>
-                        <label class="flex items-start gap-2">
-                            <input type="checkbox" id="consent-utility-anon" class="mt-1">
-                            <span>Ich stimme zu, dass BadenLEG meine Angaben an das lokale EVU (z.B. Regionalwerke Baden/Eniwa) weitergeben darf, um LEG-Anfragen zu prüfen.</span>
-                        </label>
-                        <label class="flex items-start gap-2">
-                            <input type="checkbox" id="consent-updates-anon" class="mt-1">
-                            <span>Ich möchte Updates/Tipps per E-Mail erhalten (optional).</span>
-                        </label>
+    <!-- How it works -->
+    <section id="wie-es-funktioniert" class="py-16 bg-white">
+        <div class="max-w-5xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12">So funktioniert OpenLEG</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-brand">1</span>
                     </div>
-                    <button id="register-anon-button" class="bg-yellow-600 text-white font-bold py-3 px-4 rounded-md hover:bg-yellow-700 transition duration-300" style="background-color: var(--warn-color);">
-                        Interesse vormerken
-                    </button>
+                    <h3 class="font-semibold text-lg mb-2">Gemeinde registriert sich</h3>
+                    <p class="text-gray-600">Ihre Gemeinde meldet sich an und erhält eine eigene OpenLEG-Instanz mit LEG-Dashboard und KPIs.</p>
                 </div>
-            </div>
-
-            <div id="match-box" class="hidden">
-                <h2 class="text-2xl font-semibold text-red-700 mb-4" style="color: var(--brand-color);">Potenzial gefunden!</h2>
-                <p id="match-message" class="text-gray-600 mb-4"></p>
-                <p class="text-gray-600 mb-4 text-sm sm:text-base">Tragen Sie Ihre E-Mail ein. Wir senden Ihnen eine Bestätigungs-E-Mail. Alle interessierten Nachbarn erhalten automatisch eine Kontaktübersicht mit Adresse und E-Mail.</p>
-                
-            <div class="flex flex-col sm:flex-row gap-2">
-                <input type="email" id="email-input" placeholder="Ihre E-Mail-Adresse" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
-                <button id="register-full-button" class="bg-red-700 text-white font-bold py-3 px-4 rounded-md hover:bg-red-800 transition duration-300" style="background-color: var(--brand-color);">
-                    Registrieren & Matchen
-                </button>
-            </div>
-            <div class="bg-red-50 border border-red-100 rounded-md p-3 text-sm text-gray-700 space-y-2 mt-3">
-                <label class="flex items-start gap-2">
-                    <input type="checkbox" id="consent-neighbors-full" class="mt-1">
-                    <span>Ich stimme zu, dass BadenLEG meine Kontaktdaten mit passenden Nachbarinnen und Nachbarn teilt (LEG-Bildung).</span>
-                </label>
-                <label class="flex items-start gap-2">
-                    <input type="checkbox" id="consent-utility-full" class="mt-1">
-                    <span>Ich stimme zu, dass BadenLEG meine Angaben an das lokale EVU (z.B. Regionalwerke Baden/Eniwa) weitergeben darf, um LEG-Anfragen zu prüfen.</span>
-                </label>
-                <label class="flex items-start gap-2">
-                    <input type="checkbox" id="consent-updates-full" class="mt-1">
-                    <span>Ich möchte Updates/Tipps per E-Mail erhalten (optional).</span>
-                </label>
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-brand">2</span>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Bewohner treten bei</h3>
+                    <p class="text-gray-600">Hauseigentümer registrieren sich, laden Smart-Meter-Daten hoch und finden LEG-Nachbarn.</p>
+                </div>
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-brand">3</span>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Intelligenz entsteht</h3>
+                    <p class="text-gray-600">Aus aggregierten Daten entstehen Insights: Lastprofile, Solar-Index, Flexibilitätspotenzial.</p>
+                </div>
             </div>
         </div>
+    </section>
 
-            <div id="register-loader" class="loader mx-auto my-4 hidden"></div>
-            <p id="register-message" class="text-center text-blue-600 mt-4 font-medium"></p>
-        </div>
-
-        <div id="success-step" class="hidden">
-             <h2 class="text-2xl font-semibold text-red-700 mb-4" style="color: var(--brand-color);">Erfolgreich!</h2>
-             <p id="success-message" class="text-gray-600 text-sm sm:text-base"></p>
-        </div>
-        
-        <button id="reset-button" class="text-center text-gray-500 text-sm mt-4 w-full hidden hover:text-gray-700">Neue Adresse prüfen</button>
-
-        <!-- Footer: Links -->
-        <div class="mt-6 pt-4 border-t border-gray-200">
-            <!-- Desktop: Links mit Text (nur auf Desktop sichtbar) -->
-            <div class="hidden lg:block mb-4">
-                <h3 class="text-sm font-bold text-gray-800 mb-3">Entdecken Sie Ihr Energiemodell:</h3>
-                <div class="flex flex-col gap-2 text-sm">
-                    <a href="/leg" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
-                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ LEG</span>
-                        <span class="text-xs text-gray-600">– Lokale Elektrizitätsgemeinschaft ab 2026</span>
-                    </a>
-                    <a href="/evl" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
-                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ EVL</span>
-                        <span class="text-xs text-gray-600">– Eigenverbrauchslösung für Mehrfamilienhäuser</span>
-                    </a>
-                    <a href="/zev" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
-                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ ZEV</span>
-                        <span class="text-xs text-gray-600">– Zusammenschluss zum Eigenverbrauch</span>
-                    </a>
-                    <a href="/vergleich-leg-evl-zev" class="flex items-start gap-2 text-gray-700 hover:text-gray-900 transition-colors group">
-                        <span class="font-semibold group-hover:underline" style="color: var(--brand-color);">→ Vergleich</span>
-                        <span class="text-xs text-gray-600">– Welches Modell passt zu mir?</span>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Mobile/Desktop: Kompakte Links -->
-            <div class="text-xs text-gray-500">
-                <div class="flex flex-wrap gap-2 mb-2">
-                    <a href="/leg" class="underline hover:text-gray-700">LEG</a> |
-                    <a href="/evl" class="underline hover:text-gray-700">EVL</a> |
-                    <a href="/zev" class="underline hover:text-gray-700">ZEV</a> |
-                    <a href="/vergleich-leg-evl-zev" class="underline hover:text-gray-700">Vergleich</a>
-                </div>
-                <div class="flex flex-wrap gap-2 mb-2">
-                    <a href="/impressum" class="underline hover:text-gray-700">Impressum</a> |
-                    <a href="/datenschutz" class="underline hover:text-gray-700">Datenschutz</a>
-                </div>
+    <!-- Map + Registration -->
+    <section id="registrieren" class="py-16 bg-gray-50">
+        <div class="max-w-5xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">Adresse prüfen &amp; registrieren</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Map -->
                 <div>
-                    Kontakt: <a href="mailto:hallo@badenleg.ch" class="underline hover:text-gray-700">hallo@badenleg.ch</a>
+                    <div id="map" class="w-full h-96 rounded-lg shadow-md z-0"></div>
+                    <p class="text-xs text-gray-500 mt-2">Registrierte Haushalte (anonymisiert)</p>
+                </div>
+                <!-- Form -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div id="step-address">
+                        <label class="block text-sm font-medium mb-1">Ihre Adresse</label>
+                        <input type="text" id="address-input" placeholder="Strasse, PLZ Ort" class="w-full border rounded-lg px-3 py-2 mb-1 focus:ring-2 focus:ring-brand focus:outline-none" autocomplete="off">
+                        <div id="suggestions" class="bg-white border rounded-lg max-h-48 overflow-y-auto hidden"></div>
+                        <div id="profile-summary" class="text-sm text-gray-600 mt-2 hidden"></div>
+                        <button id="btn-check" class="w-full bg-brand text-white py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark disabled:opacity-50" disabled>Adresse prüfen</button>
+                    </div>
+                    <div id="step-register" class="hidden">
+                        <div id="match-info" class="bg-indigo-50 p-3 rounded-lg mb-3 text-sm"></div>
+                        <label class="block text-sm font-medium mb-1">E-Mail</label>
+                        <input type="email" id="email-input" placeholder="ihre@email.ch" class="w-full border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-brand focus:outline-none">
+                        <label class="block text-sm font-medium mb-1">Telefon (optional)</label>
+                        <input type="tel" id="phone-input" placeholder="+41 79 ..." class="w-full border rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-brand focus:outline-none">
+                        <div class="space-y-2 mb-4 text-sm">
+                            <label class="flex items-start gap-2"><input type="checkbox" id="consent-neighbors" class="mt-1"> Ich stimme zu, meine Kontaktdaten mit LEG-Nachbarn zu teilen.</label>
+                            <label class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1"> Ich stimme zu, meine Daten für LEG-Anfragen an den Netzbetreiber weiterzugeben.</label>
+                            <label class="flex items-start gap-2"><input type="checkbox" id="consent-updates"> Ich möchte Updates per E-Mail erhalten.</label>
+                        </div>
+                        <button id="btn-register" class="w-full bg-amber-500 text-gray-900 py-2 rounded-lg font-semibold hover:bg-amber-400">Jetzt registrieren</button>
+                    </div>
+                    <div id="step-success" class="hidden text-center py-6">
+                        <div class="text-4xl mb-3">&#9889;</div>
+                        <h3 class="text-lg font-semibold mb-2">Registrierung erfolgreich!</h3>
+                        <p class="text-gray-600 mb-4">Sie erhalten eine Bestätigung per E-Mail.</p>
+                        <div id="referral-link-box" class="bg-gray-50 p-3 rounded-lg text-sm hidden">
+                            <p class="font-medium mb-1">Teilen Sie Ihren Einladungslink:</p>
+                            <input type="text" id="referral-link" class="w-full border rounded px-2 py-1 text-xs" readonly>
+                        </div>
+                    </div>
+                    <div id="form-error" class="text-red-600 text-sm mt-2 hidden"></div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
+    <!-- Value props -->
+    <section class="py-16 bg-white">
+        <div class="max-w-5xl mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="border rounded-lg p-6">
+                    <h3 class="font-semibold text-lg mb-2 text-brand">Für Gemeinden</h3>
+                    <ul class="text-gray-600 space-y-1 text-sm">
+                        <li>&#10003; LEG-Gründung digital begleiten</li>
+                        <li>&#10003; Eigenes Dashboard mit KPIs</li>
+                        <li>&#10003; White-Label unter gemeinde.openleg.ch</li>
+                        <li>&#10003; Kostenloser Einstieg</li>
+                    </ul>
+                </div>
+                <div class="border rounded-lg p-6">
+                    <h3 class="font-semibold text-lg mb-2 text-brand">Für Bewohner</h3>
+                    <ul class="text-gray-600 space-y-1 text-sm">
+                        <li>&#10003; LEG-Nachbarn in der Umgebung finden</li>
+                        <li>&#10003; Smart-Meter-Daten hochladen</li>
+                        <li>&#10003; Ersparnisse berechnen</li>
+                        <li>&#10003; Datenkontrolle in 3 Stufen</li>
+                    </ul>
+                </div>
+                <div class="border rounded-lg p-6">
+                    <h3 class="font-semibold text-lg mb-2 text-brand">Für Energieversorger</h3>
+                    <ul class="text-gray-600 space-y-1 text-sm">
+                        <li>&#10003; Lastprofile nach PLZ</li>
+                        <li>&#10003; Solar-Adoptions-Index</li>
+                        <li>&#10003; Flexibilitätspotenzial</li>
+                        <li>&#10003; API-Zugang (insights.openleg.ch)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
 
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 py-8">
+        <div class="max-w-5xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <span class="text-white font-bold text-lg">OpenLEG</span>
+                <span class="text-sm ml-2">Die Intelligenz hinter dem Netz.</span>
+            </div>
+            <div class="flex gap-6 text-sm">
+                <a href="/impressum" class="hover:text-white">Impressum</a>
+                <a href="/datenschutz" class="hover:text-white">Datenschutz</a>
+                <a href="/how-it-works" class="hover:text-white">So funktioniert's</a>
+                <a href="/pricing" class="hover:text-white">Preise</a>
+            </div>
+        </div>
+    </footer>
 
     <script>
-        // --- Globaler State ---
-        let userProfileSummary = null;
-        let map;
-        let userMarker;
-        let clusterMarkers = L.layerGroup(); // Layer für Cluster-Pins
-        let existingMarkers = L.layerGroup(); // Layer für bestehende Nutzer
-        let clusterPolygons = null; // Wird in initMap() initialisiert
-        const MAP_DEFAULT_CENTER = [47.473, 8.308];
-        const MAP_DEFAULT_ZOOM = 14;
+    // Map
+    const map = L.map('map').setView([{{ map_center_lat }}, {{ map_center_lon }}], {{ map_zoom }});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18, attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
 
-        // --- Referral Tracking ---
-        const urlParams = new URLSearchParams(window.location.search);
-        const referralCode = urlParams.get('ref') || '';
-        if (referralCode) {
-            console.log('[REFERRAL] Tracking referral:', referralCode);
-            // Store in sessionStorage for persistence across page reloads
-            sessionStorage.setItem('badenleg_referral', referralCode);
-        }
-        const storedReferral = sessionStorage.getItem('badenleg_referral') || referralCode;
-        const MAP_BOUNDS = [
-            [47.40, 8.20],
-            [47.58, 8.46]
-        ];
-        const MAP_LATLNG_BOUNDS = L.latLngBounds(
-            L.latLng(MAP_BOUNDS[0][0], MAP_BOUNDS[0][1]),
-            L.latLng(MAP_BOUNDS[1][0], MAP_BOUNDS[1][1])
-        );
+    let selectedProfile = null;
+    let addressTimeout = null;
 
-        // --- UI-Elemente ---
-        const controlPanel = document.getElementById('control-panel');
-        const checkStep = document.getElementById('check-step');
-        const resultStep = document.getElementById('result-step');
-        const successStep = document.getElementById('success-step');
-        const successMessage = document.getElementById('success-message');
-        const resetButton = document.getElementById('reset-button');
-        
-        const checkButton = document.getElementById('check-button');
-        const checkLoader = document.getElementById('check-loader');
-        const checkMessage = document.getElementById('check-message');
-        const addressInput = document.getElementById('address-input');
-        const addressSuggestions = document.getElementById('address-suggestions');
-        
-        let suggestionTimeout = null;
-        let currentSuggestions = [];
-        let selectedSuggestionIndex = -1;
-        const interestedTooltipText = 'In diesem Gebiet gibt es interessierte Nachbarn';
+    // Address autocomplete
+    const addressInput = document.getElementById('address-input');
+    const suggestionsDiv = document.getElementById('suggestions');
+    const btnCheck = document.getElementById('btn-check');
 
-        const noMatchBox = document.getElementById('no-match-box');
-        const matchBox = document.getElementById('match-box');
-        const matchMessage = document.getElementById('match-message');
-        
-        const registerAnonButton = document.getElementById('register-anon-button');
-        const poolEmailInput = document.getElementById('pool-email-input');
-        const poolPhoneInput = document.getElementById('pool-phone-input');
-        const consentNeighborsAnon = document.getElementById('consent-neighbors-anon');
-        const consentUtilityAnon = document.getElementById('consent-utility-anon');
-        const consentUpdatesAnon = document.getElementById('consent-updates-anon');
-        
-        const registerFullButton = document.getElementById('register-full-button');
-        const emailInput = document.getElementById('email-input');
-        const consentNeighborsFull = document.getElementById('consent-neighbors-full');
-        const consentUtilityFull = document.getElementById('consent-utility-full');
-        const consentUpdatesFull = document.getElementById('consent-updates-full');
-
-        const registerLoader = document.getElementById('register-loader');
-        const registerMessage = document.getElementById('register-message');
-        
-        // --- Custom Icons ---
-        const userIcon = L.icon({
-            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-        });
-        const clusterIcon = L.icon({
-            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwN2E1ZSIgd2lkdGg9IjMwcHgiIGhlaWdodD0iMzBweCI+PHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDljMCA1LjI1IDcuNDIgMTUgNyAxNWw3LTE1YzAtMy44Ny0zLjEzLTctNy03em0wIDkuNWMtMS4xMiAwLTIuNS0xLjEyLTIuNS0yLjVzMS4xMi0yLjUgMi41LTIuNSAyLjUgMS4xMiAyLjUgMi41LTEuMTIgMi41LTIuNSAyLjV6Ii8+PC9zdmc+',
-            iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28]
-        });
-        const existingIcon = L.divIcon({
-            className: 'existing-dot',
-            html: '<div class="existing-dot-marker"></div>',
-            iconSize: [210, 210],
-            iconAnchor: [105, 105]
-        });
-
-        
-        // --- 1. Initialisierung ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // PRIORITÄT 1: Karte und Funktionalität zuerst laden
-            initMap();
-            setTimeout(loadInitialData, 500);
-            
-            // Adress-Autovervollständigung
-            addressInput.addEventListener('input', handleAddressInput);
-            addressInput.addEventListener('keydown', handleAddressKeydown);
-            addressInput.addEventListener('blur', () => {
-                setTimeout(() => {
-                    if (document.activeElement !== addressInput && 
-                        !addressSuggestions.contains(document.activeElement)) {
-                        addressSuggestions.classList.add('hidden');
-                    }
-                }, 250);
-            });
-            
-            addressSuggestions.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-            });
-            
-            checkButton.addEventListener('click', handleAddressSubmit);
-            registerAnonButton.addEventListener('click', handleRegisterAnonymous);
-            registerFullButton.addEventListener('click', handleRegisterFull);
-            resetButton.addEventListener('click', () => resetUI(true));
-        });
-
-        function initMap() {
-            map = L.map('map', {
-                zoomControl: false,
-                maxBounds: MAP_LATLNG_BOUNDS,
-                maxBoundsViscosity: 0.85,
-                minZoom: 11,
-                maxZoom: 18
-            }).setView(MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM);
-            
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO',
-                subdomains: 'abcd',
-                maxZoom: 20
-            }).addTo(map);
-
-            L.control.scale({
-                metric: true,
-                imperial: false,
-                position: 'bottomleft'
-            }).addTo(map);
-
-            const homeControl = L.control({ position: 'topleft' });
-            homeControl.onAdd = function () {
-                const container = L.DomUtil.create('div', 'leaflet-bar map-control-button');
-                const button = L.DomUtil.create('a', '', container);
-                button.href = '#';
-                button.title = 'Zurück zur Ansicht Baden';
-                button.innerHTML = '⌂';
-                L.DomEvent.disableClickPropagation(button);
-                L.DomEvent.disableScrollPropagation(button);
-                L.DomEvent.on(button, 'click', (e) => {
-                    e.preventDefault();
-                    map.flyTo(MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM);
-                });
-                return container;
-            };
-            homeControl.addTo(map);
-
-            const boundsControl = L.control({ position: 'topleft' });
-            boundsControl.onAdd = function () {
-                const container = L.DomUtil.create('div', 'leaflet-bar map-control-button');
-                const button = L.DomUtil.create('a', '', container);
-                button.href = '#';
-                button.title = 'Versorgungsgebiet anzeigen';
-                button.innerHTML = '⤢';
-                L.DomEvent.disableClickPropagation(button);
-                L.DomEvent.disableScrollPropagation(button);
-                L.DomEvent.on(button, 'click', (e) => {
-                    e.preventDefault();
-                    map.fitBounds(MAP_LATLNG_BOUNDS, { padding: [40, 40] });
-                });
-                return container;
-            };
-            boundsControl.addTo(map);
-
-            const zoomControl = L.control({ position: 'topright' });
-            zoomControl.onAdd = function () {
-                const container = L.DomUtil.create('div', 'leaflet-bar map-zoom-stack');
-
-                const zoomInBtn = L.DomUtil.create('a', '', container);
-                zoomInBtn.href = '#';
-                zoomInBtn.title = 'Vergrößern';
-                zoomInBtn.innerHTML = '+';
-                L.DomEvent.disableClickPropagation(zoomInBtn);
-                L.DomEvent.disableScrollPropagation(zoomInBtn);
-                L.DomEvent.on(zoomInBtn, 'click', (e) => {
-                    e.preventDefault();
-                    map.zoomIn();
-                });
-
-                const zoomOutBtn = L.DomUtil.create('a', '', container);
-                zoomOutBtn.href = '#';
-                zoomOutBtn.title = 'Verkleinern';
-                zoomOutBtn.innerHTML = '−';
-                L.DomEvent.disableClickPropagation(zoomOutBtn);
-                L.DomEvent.disableScrollPropagation(zoomOutBtn);
-                L.DomEvent.on(zoomOutBtn, 'click', (e) => {
-                    e.preventDefault();
-                    map.zoomOut();
-                });
-
-                return container;
-            };
-            zoomControl.addTo(map);
-            
-            clusterMarkers.addTo(map);
-            existingMarkers.addTo(map);
-            clusterPolygons = L.layerGroup();
-            clusterPolygons.addTo(map);
-        }
-
-        async function loadInitialData() {
-            try {
-                // Lade Gebäude
-                const buildingsResponse = await fetch('/api/get_all_buildings');
-                const buildingsData = await buildingsResponse.json();
-                
-                existingMarkers.clearLayers();
-                buildingsData.buildings.forEach(b => {
-                    if (b.type === 'anonymous' || b.type === 'registered') {
-                        const marker = L.marker([b.lat, b.lon], {
-                            icon: existingIcon,
-                            zIndexOffset: -50,
-                            riseOnHover: true
-                        });
-                        marker.addTo(existingMarkers)
-                              .bindTooltip(interestedTooltipText, {
-                                  direction: 'top',
-                                  offset: [0, -18],
-                                  className: 'existing-tooltip',
-                                  sticky: true
-                              });
-                    }
-                });
-                
-                // Lade Cluster (ZEV/LEG) als Polygone
-                try {
-                    const clustersResponse = await fetch('/api/get_all_clusters');
-                    if (clustersResponse.ok) {
-                        const clustersData = await clustersResponse.json();
-                        
-                        if (clusterPolygons) {
-                            clusterPolygons.clearLayers();
-                            clustersData.clusters.forEach(cluster => {
-                                drawClusterPolygon(cluster, clusterPolygons);
-                            });
-                        }
-                        
-                        console.log(`[INIT] ${buildingsData.buildings.length} Gebäude und ${clustersData.clusters.length} Cluster geladen`);
-                    } else {
-                        console.warn("[INIT] Cluster-API antwortete mit Fehler:", clustersResponse.status);
-                    }
-                } catch (clusterErr) {
-                    console.warn("[INIT] Fehler beim Laden der Cluster:", clusterErr);
-                    // Nicht kritisch, Seite sollte trotzdem funktionieren
-                }
-            } catch (err) {
-                console.error("Konnte initiale Daten nicht laden:", err);
-            }
-        }
-        
-        function drawClusterPolygon(cluster, targetLayerGroup) {
-            if (!targetLayerGroup || !cluster || !cluster.polygon) {
-                console.warn("[CLUSTER] Kann Polygon nicht zeichnen:", cluster);
-                return;
-            }
-            
-            try {
-                // Farben basierend auf Autarkie-Prozent
-                const autarky = cluster.autarky_percent || 0;
-                let color = '#10b981'; // Grün (hohe Autarkie)
-                let fillColor = '#10b981';
-                let fillOpacity = 0.3;
-                
-                if (autarky < 50) {
-                    color = '#f59e0b'; // Orange (mittlere Autarkie)
-                    fillColor = '#f59e0b';
-                } else if (autarky < 70) {
-                    color = '#3b82f6'; // Blau (gute Autarkie)
-                    fillColor = '#3b82f6';
-                }
-                
-                // Konvertiere Polygon-Koordinaten für Leaflet (lat, lon)
-                const polygonCoords = cluster.polygon.map(coord => {
-                    if (Array.isArray(coord) && coord.length >= 2) {
-                        return [coord[0], coord[1]];
-                    }
-                    return null;
-                }).filter(c => c !== null);
-                
-                if (polygonCoords.length < 3) {
-                    console.warn("[CLUSTER] Zu wenige Polygon-Koordinaten:", polygonCoords);
-                    return;
-                }
-                
-                // Erstelle Polygon mit interaktiven Optionen
-                const polygon = L.polygon(polygonCoords, {
-                    color: color,
-                    weight: 3,
-                    fillColor: fillColor,
-                    fillOpacity: fillOpacity,
-                    opacity: 0.8,
-                    interactive: true, // Macht Polygon klickbar
-                    className: 'cluster-polygon-clickable'
-                }).addTo(targetLayerGroup);
-                
-                // Tooltip mit Cluster-Info (beim Hover)
-                const tooltipText = `ZEV/LEG Cluster ${cluster.cluster_id}<br>` +
-                                   `${cluster.num_members} Mitglieder<br>` +
-                                   `<small>Klicken für Details</small>`;
-                
-                polygon.bindTooltip(tooltipText, {
-                    permanent: false,
-                    direction: 'center',
-                    className: 'cluster-tooltip'
-                });
-                
-                // Popup mit detaillierten Informationen (beim Klick)
-                const popupContent = `
-                    <div style="min-width: 250px;">
-                        <h3 style="margin: 0 0 10px 0; color: ${color};">
-                            🏘️ ZEV/LEG Cluster ${cluster.cluster_id}
-                        </h3>
-                        <div style="margin-bottom: 10px;">
-                            <strong>Mitglieder:</strong> ${cluster.num_members} Gebäude
-                        </div>
-                        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd;">
-                            <small style="color: #666;">
-                                💡 Dies ist ein potenzieller Zusammenschluss zum Eigenverbrauch (<a href="/zev" style="text-decoration: underline;">ZEV</a>) oder eine Lokale Energiegemeinschaft (<a href="/leg" style="text-decoration: underline;">LEG</a>)
-                            </small>
-                        </div>
-                    </div>
-                `;
-                
-                polygon.bindPopup(popupContent, {
-                    maxWidth: 300,
-                    className: 'cluster-popup'
-                });
-                
-                // Hover-Effekt: Ändere Opacity beim Hover
-                polygon.on('mouseover', function() {
-                    this.setStyle({
-                        fillOpacity: fillOpacity + 0.2,
-                        weight: 4
+    addressInput.addEventListener('input', function() {
+        clearTimeout(addressTimeout);
+        const q = this.value.trim();
+        if (q.length < 3) { suggestionsDiv.classList.add('hidden'); return; }
+        addressTimeout = setTimeout(async () => {
+            const res = await fetch(`/api/suggest_addresses?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+            if (data.suggestions && data.suggestions.length > 0) {
+                suggestionsDiv.innerHTML = data.suggestions.map(s =>
+                    `<div class="px-3 py-2 hover:bg-indigo-50 cursor-pointer text-sm border-b" data-lat="${s.lat}" data-lon="${s.lon}" data-plz="${s.plz}" data-label="${s.label}">${s.label}</div>`
+                ).join('');
+                suggestionsDiv.classList.remove('hidden');
+                suggestionsDiv.querySelectorAll('div').forEach(el => {
+                    el.addEventListener('click', function() {
+                        addressInput.value = this.dataset.label;
+                        suggestionsDiv.classList.add('hidden');
+                        btnCheck.disabled = false;
                     });
                 });
-                
-                polygon.on('mouseout', function() {
-                    this.setStyle({
-                        fillOpacity: fillOpacity,
-                        weight: 3
-                    });
-                });
-                
-            } catch (err) {
-                console.error("[CLUSTER] Fehler beim Zeichnen des Polygons:", err, cluster);
-            }
-        }
-        
-        // --- Adress-Autovervollständigung ---
-        async function handleAddressInput(e) {
-            const query = e.target.value.trim();
-            selectedSuggestionIndex = -1;
-            selectedSuggestionData = null;
-            
-            // Schließe Dropdown bei leerem Input
-            if (query.length < 2) {
-                addressSuggestions.classList.add('hidden');
-                currentSuggestions = [];
-                return;
-            }
-            
-            // Zeige Loading-State während der Suche
-            addressSuggestions.innerHTML = '<div class="suggestion-item loading">Suche Adressen...</div>';
-            addressSuggestions.classList.remove('hidden');
-            
-            // Debounce: Warte 300ms nach letztem Tastendruck
-            clearTimeout(suggestionTimeout);
-            suggestionTimeout = setTimeout(async () => {
-                try {
-                    const url = `/api/suggest_addresses?q=${encodeURIComponent(query)}`;
-                    console.log('[AUTOCOMPLETE] Suche nach:', query);
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    currentSuggestions = data.suggestions || [];
-                    console.log('[AUTOCOMPLETE] Gefunden:', currentSuggestions.length, 'Vorschläge');
-                    
-                    // Filtere leere Labels
-                    currentSuggestions = currentSuggestions.filter(s => {
-                        if (typeof s === 'string') {
-                            return s && s.trim();
-                        }
-                        return s && s.label && s.label.trim();
-                    });
-                    
-                    // Nur anzeigen, wenn der Input noch der gleiche ist (verhindert Race Conditions)
-                    if (addressInput.value.trim() === query) {
-                        if (currentSuggestions.length > 0) {
-                            displaySuggestions(currentSuggestions);
-                        } else {
-                            addressSuggestions.innerHTML = '<div class="suggestion-item">Keine Adressen gefunden</div>';
-                            addressSuggestions.classList.remove('hidden');
-                        }
-                    }
-                } catch (err) {
-                    console.error("Fehler beim Abrufen von Adressvorschlägen:", err);
-                    addressSuggestions.innerHTML = '<div class="suggestion-item error">Fehler beim Laden der Adressen</div>';
-                    addressSuggestions.classList.remove('hidden');
-                    currentSuggestions = [];
-                }
-            }, 300);
-        }
-        
-        function displaySuggestions(suggestions) {
-            console.log('[AUTOCOMPLETE] Zeige', suggestions.length, 'Vorschläge');
-            if (suggestions.length === 0) {
-                addressSuggestions.classList.add('hidden');
-                return;
-            }
-            
-            addressSuggestions.innerHTML = '';
-            
-            // Zeige max. 8 Vorschläge für bessere UX
-            const maxSuggestions = Math.min(suggestions.length, 8);
-            let displayedCount = 0;
-            
-            for (let i = 0; i < suggestions.length && displayedCount < maxSuggestions; i++) {
-                const suggestion = suggestions[i];
-                
-                // Normalisiere: Handle sowohl String als auch Objekt
-                const label = typeof suggestion === 'string' ? suggestion : (suggestion.label || '');
-                
-                // Überspringe leere Labels
-                if (!label || !label.trim()) {
-                    continue;
-                }
-                
-                const item = document.createElement('div');
-                item.className = 'suggestion-item';
-                item.textContent = label;
-                item.addEventListener('mousedown', (e) => {
-                    e.preventDefault(); // Verhindert, dass das Input-Feld den Focus verliert
-                    // Speichere vollständiges Objekt wenn vorhanden
-                    if (typeof suggestion === 'object' && suggestion.label) {
-                        selectedSuggestionData = suggestion;
-                    } else {
-                        selectedSuggestionData = { label: label };
-                    }
-                    selectSuggestion(suggestion);
-                });
-                addressSuggestions.appendChild(item);
-                displayedCount++;
-            }
-            
-            if (displayedCount > 0) {
-                addressSuggestions.classList.remove('hidden');
-                console.log('[AUTOCOMPLETE] Dropdown angezeigt');
             } else {
-                addressSuggestions.classList.add('hidden');
+                suggestionsDiv.classList.add('hidden');
             }
-        }
-        
-        function selectSuggestion(suggestion) {
-            // Normalisiere: Handle sowohl String als auch Objekt
-            const label = typeof suggestion === 'string' ? suggestion : (suggestion.label || '');
-            addressInput.value = label;
-            addressSuggestions.classList.add('hidden');
-            currentSuggestions = [];
-            selectedSuggestionIndex = -1;
-            
-            // Speichere vollständiges Objekt für späteren Gebrauch
-            if (typeof suggestion === 'object' && suggestion.label) {
-                selectedSuggestionData = suggestion;
+        }, 300);
+    });
+
+    // Check potential
+    btnCheck.addEventListener('click', async function() {
+        this.disabled = true;
+        this.textContent = 'Prüfe...';
+        document.getElementById('form-error').classList.add('hidden');
+        try {
+            const res = await fetch('/api/check_potential', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({address: addressInput.value})
+            });
+            const data = await res.json();
+            if (data.error) {
+                document.getElementById('form-error').textContent = data.error;
+                document.getElementById('form-error').classList.remove('hidden');
+                this.disabled = false;
+                this.textContent = 'Adresse prüfen';
+                return;
+            }
+            selectedProfile = data.profile_summary;
+            const matchInfo = document.getElementById('match-info');
+            if (data.potential) {
+                const ci = data.cluster_info;
+                matchInfo.innerHTML = `<strong>${ci.num_members} Nachbarn gefunden!</strong> Autarkie-Potenzial: ${ci.autarky_percent.toFixed(0)}%`;
+                if (selectedProfile && selectedProfile.lat) {
+                    L.marker([selectedProfile.lat, selectedProfile.lon]).addTo(map).bindPopup('Ihr Standort');
+                    map.setView([selectedProfile.lat, selectedProfile.lon], 16);
+                }
             } else {
-                selectedSuggestionData = { label: label };
-            }
-        }
-        
-        function handleAddressKeydown(e) {
-            if (!addressSuggestions.classList.contains('hidden') && currentSuggestions.length > 0) {
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, currentSuggestions.length - 1);
-                    updateSuggestionHighlight();
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
-                    updateSuggestionHighlight();
-                } else if (e.key === 'Enter' && selectedSuggestionIndex >= 0) {
-                    e.preventDefault();
-                    selectSuggestion(currentSuggestions[selectedSuggestionIndex]);
-                } else if (e.key === 'Escape') {
-                    addressSuggestions.classList.add('hidden');
+                matchInfo.innerHTML = 'Noch keine Nachbarn in der Nähe. Seien Sie der Erste in Ihrer Zone!';
+                if (selectedProfile && selectedProfile.lat) {
+                    L.marker([selectedProfile.lat, selectedProfile.lon]).addTo(map).bindPopup('Ihr Standort');
+                    map.setView([selectedProfile.lat, selectedProfile.lon], 15);
                 }
             }
+            document.getElementById('step-address').classList.add('hidden');
+            document.getElementById('step-register').classList.remove('hidden');
+        } catch (e) {
+            document.getElementById('form-error').textContent = 'Fehler bei der Adressprüfung.';
+            document.getElementById('form-error').classList.remove('hidden');
         }
-        
-        function updateSuggestionHighlight() {
-            const items = addressSuggestions.querySelectorAll('.suggestion-item');
-            items.forEach((item, index) => {
-                if (index === selectedSuggestionIndex) {
-                    item.classList.add('active');
-                    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                } else {
-                    item.classList.remove('active');
+        this.disabled = false;
+        this.textContent = 'Adresse prüfen';
+    });
+
+    // Register
+    document.getElementById('btn-register').addEventListener('click', async function() {
+        const email = document.getElementById('email-input').value.trim();
+        const phone = document.getElementById('phone-input').value.trim();
+        const cn = document.getElementById('consent-neighbors').checked;
+        const cu = document.getElementById('consent-utility').checked;
+        const co = document.getElementById('consent-updates').checked;
+        if (!email) { alert('Bitte E-Mail eingeben.'); return; }
+        if (!cn || !cu) { alert('Bitte stimmen Sie beiden Datenweitergaben zu.'); return; }
+        this.disabled = true;
+        this.textContent = 'Registriere...';
+        try {
+            const res = await fetch('/api/register_anonymous', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    email: email, phone: phone, profile: selectedProfile,
+                    referral_code: '{{ referral_code }}',
+                    consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co}
+                })
+            });
+            const data = await res.json();
+            if (data.error) {
+                document.getElementById('form-error').textContent = data.error;
+                document.getElementById('form-error').classList.remove('hidden');
+            } else {
+                document.getElementById('step-register').classList.add('hidden');
+                document.getElementById('step-success').classList.remove('hidden');
+                if (data.referral_link) {
+                    document.getElementById('referral-link').value = data.referral_link;
+                    document.getElementById('referral-link-box').classList.remove('hidden');
                 }
+                // Update map
+                if (data.buildings) {
+                    data.buildings.forEach(b => {
+                        L.circleMarker([b.lat, b.lon], {radius: 5, color: b.type === 'registered' ? '#6366f1' : '#94a3b8', fillOpacity: 0.6}).addTo(map);
+                    });
+                }
+            }
+        } catch(e) {
+            document.getElementById('form-error').textContent = 'Registrierung fehlgeschlagen.';
+            document.getElementById('form-error').classList.remove('hidden');
+        }
+        this.disabled = false;
+        this.textContent = 'Jetzt registrieren';
+    });
+
+    // Load existing buildings
+    fetch('/api/get_all_buildings').then(r => r.json()).then(data => {
+        if (data.buildings) {
+            data.buildings.forEach(b => {
+                L.circleMarker([b.lat, b.lon], {radius: 4, color: b.type === 'registered' ? '#6366f1' : '#94a3b8', fillOpacity: 0.5}).addTo(map);
             });
         }
-        
-        // --- 2. Adress-Prüfung ---
-        async function handleAddressSubmit() {
-            const address = addressInput.value.trim();
-            if (!address) {
-                checkMessage.textContent = "Bitte geben Sie eine Adresse ein.";
-                return;
-            }
-
-            // Schließe Dropdown
-            addressSuggestions.classList.add('hidden');
-
-            // UI-Steuerung
-            uiStartLoading(checkButton, checkLoader, checkMessage);
-            checkMessage.textContent = ""; // Lösche vorherige Fehler
-            resetUI(false); // Nur Marker löschen, nicht das Panel
-
-            try {
-                console.log('[SUBMIT] Sende Adresse:', address);
-                const response = await fetch('/api/check_potential', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ address: address })
-                });
-
-                console.log('[SUBMIT] Response Status:', response.status);
-                const data = await response.json();
-                console.log('[SUBMIT] Response Data:', data);
-
-                if (!response.ok) {
-                    const errorMsg = data.error || data.message || "Ein Fehler ist aufgetreten.";
-                    console.error('[SUBMIT] Fehler:', errorMsg);
-                    throw new Error(errorMsg);
-                }
-
-                userProfileSummary = data.profile_summary;
-
-                // Track address check event
-                if (typeof trackEvent === 'function') {
-                    trackEvent('address_check', {
-                        has_match: data.potential,
-                        has_referral: !!storedReferral
-                    });
-                }
-
-                // Karte aktualisieren
-                drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address);
-                map.flyTo([userProfileSummary.lat, userProfileSummary.lon], 17); // Zoom auf Adresse
-
-                // UI aktualisieren
-                checkStep.classList.add('hidden'); // Verstecke Schritt 1
-                resultStep.classList.remove('hidden');
-                resetButton.classList.remove('hidden'); // NEU: Reset-Knopf anzeigen
-
-                if (data.potential) {
-                    // Szenario B: Match gefunden
-                    matchBox.classList.remove('hidden');
-                    noMatchBox.classList.add('hidden');
-                    matchMessage.innerHTML = `Grossartig! Unser System hat <b>${data.cluster_info.num_members - 1} Partner</b> identifiziert.`;
-                    
-                    // Zeichne den Cluster
-                    drawCluster(data.cluster_info.members);
-                } else {
-                    // Szenario A: Kein Match
-                    matchBox.classList.add('hidden');
-                    noMatchBox.classList.remove('hidden');
-                }
-
-            } catch (err) {
-                console.error('[SUBMIT] Vollständiger Fehler:', err);
-                const errorMessage = err.message || "Ein unerwarteter Fehler ist aufgetreten.";
-                checkMessage.textContent = errorMessage;
-                checkMessage.style.color = '#dc2626'; // Rot
-            } finally {
-                uiStopLoading(checkButton, checkLoader);
-            }
-        }
-
-        // --- 3. Registrierungs-Flows ---
-        async function handleRegisterAnonymous() {
-            const email = poolEmailInput.value.trim();
-            const phone = poolPhoneInput.value.trim();
-            if (!email) {
-                registerMessage.textContent = "Bitte geben Sie eine E-Mail-Adresse an.";
-                return;
-            }
-            if (!consentNeighborsAnon.checked || !consentUtilityAnon.checked) {
-                registerMessage.textContent = "Bitte bestätigen Sie die Weitergabe an Nachbarn und das lokale EVU.";
-                return;
-            }
-            registerMessage.textContent = "";
-            uiStartLoading(registerAnonButton, registerLoader, registerMessage);
-            
-            try {
-                const response = await fetch('/api/register_anonymous', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: email,
-                        phone: phone || null,
-                        profile: userProfileSummary,
-                        referral_code: storedReferral,
-                        consents: {
-                            share_with_neighbors: consentNeighborsAnon.checked,
-                            share_with_utility: consentUtilityAnon.checked,
-                            updates_opt_in: consentUpdatesAnon.checked
-                        }
-                    })
-                });
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || "Fehler bei der Registrierung.");
-                }
-
-                // Track registration event
-                if (typeof trackEvent === 'function') {
-                    trackEvent('registration', {
-                        type: 'anonymous',
-                        has_referral: !!storedReferral
-                    });
-                }
-
-                // Clear referral after successful registration
-                sessionStorage.removeItem('badenleg_referral');
-
-                resultStep.classList.add('hidden');
-                successStep.classList.remove('hidden');
-
-                // Build success message with referral link
-                const referralLink = data.referral_link || '';
-                let successHtml = "Vielen Dank! Sie sind jetzt registriert. Wir haben Ihnen eine Bestätigungs-E-Mail gesendet. Sie werden automatisch informiert, wenn sich neue Interessenten in Ihrer Zone anmelden.";
-
-                if (referralLink) {
-                    successHtml += `<br><br><div class='bg-green-50 border border-green-200 rounded-lg p-3 mt-3'>
-                        <p class='font-semibold text-green-800'>Laden Sie Ihre Nachbarn ein!</p>
-                        <p class='text-sm text-green-700 mb-2'>Teilen Sie diesen Link und erhalten Sie Priorität bei der LEG-Gründung:</p>
-                        <input type='text' readonly value='${referralLink}' class='w-full p-2 border rounded text-sm' onclick='this.select()'>
-                    </div>`;
-                }
-
-                successHtml += "<br><span class='text-sm text-gray-500'>Nichts erhalten? Prüfen Sie Ihren Spam-Ordner oder schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch' class='underline hover:text-gray-700'>hallo@badenleg.ch</a>.</span>";
-
-                successMessage.innerHTML = successHtml;
-
-                drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'anonymous');
-                updateExistingMarkers(data.buildings);
-
-                poolEmailInput.value = "";
-                poolPhoneInput.value = "";
-                consentNeighborsAnon.checked = false;
-                consentUtilityAnon.checked = false;
-                consentUpdatesAnon.checked = false;
-            } catch (err) {
-                registerMessage.textContent = err.message;
-            } finally {
-                uiStopLoading(registerAnonButton, registerLoader);
-            }
-        }
-
-        async function handleRegisterFull() {
-            const email = emailInput.value.trim();
-            if (!email) {
-                registerMessage.textContent = "Bitte geben Sie eine E-Mail-Adresse an.";
-                return;
-            }
-            if (!consentNeighborsFull.checked || !consentUtilityFull.checked) {
-                registerMessage.textContent = "Bitte bestätigen Sie die Weitergabe an Nachbarn und das lokale EVU.";
-                return;
-            }
-            registerMessage.textContent = "";
-            uiStartLoading(registerFullButton, registerLoader, registerMessage);
-
-            try {
-                const response = await fetch('/api/register_full', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: email,
-                        phone: null,
-                        profile: userProfileSummary,
-                        referral_code: storedReferral,
-                        consents: {
-                            share_with_neighbors: consentNeighborsFull.checked,
-                            share_with_utility: consentUtilityFull.checked,
-                            updates_opt_in: consentUpdatesFull.checked
-                        }
-                    })
-                });
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || "Fehler bei der Registrierung.");
-                }
-
-                // Track registration event
-                if (typeof trackEvent === 'function') {
-                    trackEvent('registration', {
-                        type: 'full',
-                        has_match: true,
-                        has_referral: !!storedReferral
-                    });
-                }
-
-                // Clear referral after successful registration
-                sessionStorage.removeItem('badenleg_referral');
-
-                resultStep.classList.add('hidden');
-                successStep.classList.remove('hidden');
-
-                // Build success message with referral link
-                const referralLink = data.referral_link || '';
-                let successHtml = "Vielen Dank! Sie sind jetzt registriert. Wir haben Ihnen eine Bestätigungs-E-Mail gesendet. Sie werden automatisch informiert, wenn sich neue Interessenten in Ihrer Zone anmelden.";
-
-                if (referralLink) {
-                    successHtml += `<br><br><div class='bg-green-50 border border-green-200 rounded-lg p-3 mt-3'>
-                        <p class='font-semibold text-green-800'>Laden Sie Ihre Nachbarn ein!</p>
-                        <p class='text-sm text-green-700 mb-2'>Teilen Sie diesen Link und erhalten Sie Priorität bei der LEG-Gründung:</p>
-                        <input type='text' readonly value='${referralLink}' class='w-full p-2 border rounded text-sm' onclick='this.select()'>
-                    </div>`;
-                }
-
-                successHtml += "<br><span class='text-sm text-gray-500'>Nichts erhalten? Prüfen Sie Ihren Spam-Ordner oder schreiben Sie uns auf <a href='mailto:hallo@badenleg.ch' class='underline hover:text-gray-700'>hallo@badenleg.ch</a>.</span>";
-
-                successMessage.innerHTML = successHtml;
-
-                drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'registered');
-                updateExistingMarkers(data.buildings);
-
-                emailInput.value = "";
-                consentNeighborsFull.checked = false;
-                consentUtilityFull.checked = false;
-                consentUpdatesFull.checked = false;
-            } catch (err) {
-                registerMessage.textContent = err.message;
-            } finally {
-                uiStopLoading(registerFullButton, registerLoader);
-            }
-        }
-        
-        // --- NEUE HILFSFUNKTION ---
-        function updateExistingMarkers(buildings) {
-             existingMarkers.clearLayers();
-             buildings.forEach(b => {
-                // Zeichne nicht den aktuellen Nutzer, der hat seinen eigenen Marker
-                if (userProfileSummary && b.lat === userProfileSummary.lat && b.lon === userProfileSummary.lon) {
-                    return; 
-                }
-                if (b.type === 'anonymous' || b.type === 'registered') {
-                    const marker = L.marker([b.lat, b.lon], {
-                        icon: existingIcon,
-                        zIndexOffset: -50,
-                        riseOnHover: true
-                    });
-                    marker.addTo(existingMarkers)
-                          .bindTooltip(interestedTooltipText, {
-                              direction: 'top',
-                                  offset: [0, -120],
-                              offset: [0, -120],
-                              className: 'existing-tooltip',
-                              sticky: true
-                          });
-                }
-            });
-        }
-
-        // --- Karten-Hilfsfunktionen ---
-        function drawUserPin(lat, lon, address, type = 'user') {
-            if (userMarker) {
-                map.removeLayer(userMarker);
-            }
-            let icon = userIcon;
-            if (type === 'anonymous') icon = existingIcon;
-            // Zeige registrierte Nutzer als Cluster-Pin, da sie jetzt "aktiv" sind
-            if (type === 'registered') icon = clusterIcon; 
-            
-            userMarker = L.marker([lat, lon], { icon: icon, zIndexOffset: 1000 }) // Immer im Vordergrund
-                .addTo(map)
-                .bindPopup(`<b>Ihr Standort</b><br>${address}`)
-                .openPopup();
-        }
-
-        function drawCluster(members) {
-            clusterMarkers.clearLayers();
-            const latLngs = [];
-            
-            members.forEach(member => {
-                // Zeichne nicht den Nutzer selbst, der hat schon einen Pin
-                if (userProfileSummary && member.building_id === userProfileSummary.building_id) return;
-
-                L.marker([member.lat, member.lon], { icon: clusterIcon })
-                    .addTo(clusterMarkers)
-                    .bindPopup(`<b>Potenzieller Partner</b><br>(ID: ...${member.building_id.slice(-4)})`);
-                
-                latLngs.push([member.lat, member.lon]);
-            });
-
-            // Füge den Nutzer selbst zur Linie hinzu
-            if (userProfileSummary) {
-                latLngs.push([userProfileSummary.lat, userProfileSummary.lon]);
-            }
-            
-            // Zeichne eine Linie, die das Cluster verbindet
-            if (latLngs.length > 1) {
-                L.polyline(latLngs, { color: 'var(--brand-color)', weight: 2, opacity: 0.7, dashArray: '5, 5' }).addTo(clusterMarkers);
-            }
-        }
-
-        // --- UI-Hilfsfunktionen ---
-        function uiStartLoading(button, loader, messageElement) {
-            button.disabled = true;
-            button.style.opacity = '0.5';
-            loader.classList.remove('hidden');
-            messageElement.textContent = "";
-        }
-
-        function uiStopLoading(button, loader) {
-            button.disabled = false;
-            button.style.opacity = '1';
-            loader.classList.add('hidden');
-        }
-
-        function resetUI(fullReset = true) {
-            // Setzt die UI zurück, falls der Nutzer eine neue Adresse eingibt
-            clusterMarkers.clearLayers();
-            if(userMarker) {
-                map.removeLayer(userMarker);
-                userMarker = null;
-            }
-            
-            // Schließe Dropdown
-            addressSuggestions.classList.add('hidden');
-            currentSuggestions = [];
-            selectedSuggestionIndex = -1;
-            
-            if (fullReset) { // Nur Panel zurücksetzen, wenn "Neue Suche" geklickt wird
-                resultStep.classList.add('hidden');
-                successStep.classList.add('hidden');
-                checkStep.classList.remove('hidden');
-                resetButton.classList.add('hidden');
-                addressInput.value = "";
-                if (poolEmailInput) poolEmailInput.value = "";
-                if (poolPhoneInput) poolPhoneInput.value = "";
-                if (emailInput) emailInput.value = "";
-                if (consentNeighborsAnon) consentNeighborsAnon.checked = false;
-                if (consentUtilityAnon) consentUtilityAnon.checked = false;
-                if (consentUpdatesAnon) consentUpdatesAnon.checked = false;
-                if (consentNeighborsFull) consentNeighborsFull.checked = false;
-                if (consentUtilityFull) consentUtilityFull.checked = false;
-                if (consentUpdatesFull) consentUpdatesFull.checked = false;
-                // Zoom zurück auf Baden
-                map.flyTo(MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM);
-            }
-            
-            checkMessage.textContent = "";
-            registerMessage.textContent = "";
-        }
-
+    });
     </script>
 </body>
 </html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemeinde registrieren | OpenLEG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-indigo-600">OpenLEG</a>
+            <span class="text-sm text-gray-500">Gemeinde-Onboarding</span>
+        </div>
+    </nav>
+    <div class="max-w-xl mx-auto px-4 py-12">
+        <h1 class="text-3xl font-bold mb-2">Gemeinde registrieren</h1>
+        <p class="text-gray-600 mb-8">Melden Sie Ihre Gemeinde an und erhalten Sie eine eigene OpenLEG-Instanz für LEG-Gründungen.</p>
+
+        <form id="onboarding-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Gemeinde auswählen</label>
+                <select id="municipality-select" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <option value="">Gemeinde wählen...</option>
+                    {% for m in municipalities %}
+                    <option value="{{ m.bfs }}" data-name="{{ m.name }}" data-dso="{{ m.dso }}">{{ m.name }} ({{ m.dso }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Kontakt E-Mail (Gemeindeverwaltung)</label>
+                <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Ansprechperson</label>
+                <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div class="bg-indigo-50 p-4 rounded-lg text-sm">
+                <h4 class="font-medium mb-1">Was Sie erhalten:</h4>
+                <ul class="text-gray-700 space-y-1">
+                    <li>&#10003; Eigene Instanz unter <span id="subdomain-preview" class="font-mono text-indigo-600">gemeinde.openleg.ch</span></li>
+                    <li>&#10003; LEG-Formation Dashboard mit KPIs</li>
+                    <li>&#10003; Bewohner-Registrierung und Matching</li>
+                    <li>&#10003; Kostenloses Starterpaket</li>
+                </ul>
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700">Gemeinde registrieren</button>
+            <div id="form-error" class="text-red-600 text-sm hidden"></div>
+            <div id="form-success" class="text-green-600 text-sm hidden"></div>
+        </form>
+    </div>
+    <script>
+    const select = document.getElementById('municipality-select');
+    select.addEventListener('change', function() {
+        const opt = this.options[this.selectedIndex];
+        const name = opt.dataset.name || '';
+        const subdomain = name.toLowerCase().replace(/\s+/g, '-').replace(/ü/g, 'ue').replace(/ä/g, 'ae').replace(/ö/g, 'oe');
+        document.getElementById('subdomain-preview').textContent = subdomain ? `${subdomain}.openleg.ch` : 'gemeinde.openleg.ch';
+    });
+    document.getElementById('onboarding-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const opt = select.options[select.selectedIndex];
+        const bfs = select.value;
+        const name = opt.dataset.name || '';
+        const email = document.getElementById('admin-email').value;
+        if (!bfs || !email) { document.getElementById('form-error').textContent = 'Bitte alle Felder ausfüllen.'; document.getElementById('form-error').classList.remove('hidden'); return; }
+        try {
+            const res = await fetch('/gemeinde/register', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({bfs_number: parseInt(bfs), name: name, admin_email: email})
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('form-success').textContent = `Registrierung erfolgreich! Ihre Instanz: ${data.subdomain}.openleg.ch`;
+                document.getElementById('form-success').classList.remove('hidden');
+                document.getElementById('form-error').classList.add('hidden');
+            } else {
+                document.getElementById('form-error').textContent = data.error || 'Fehler bei der Registrierung.';
+                document.getElementById('form-error').classList.remove('hidden');
+            }
+        } catch(e) {
+            document.getElementById('form-error').textContent = 'Netzwerkfehler.';
+            document.getElementById('form-error').classList.remove('hidden');
+        }
+    });
+    </script>
+</body>
+</html>

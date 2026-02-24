@@ -2,14 +2,14 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Datenschutz – BadenLEG</title>
+    <title>Datenschutz – {{ platform_name }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Datenschutzerklärung von BadenLEG – Erfahren Sie, wie Ihre Daten geschützt und für das Matching von Lokalen Elektrizitätsgemeinschaften genutzt werden.">
+    <meta name="description" content="Datenschutzerklärung von {{ platform_name }} – Erfahren Sie, wie Ihre Daten geschützt und für das Matching von Lokalen Elektrizitätsgemeinschaften genutzt werden.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="{{ site_url }}/datenschutz">
     <meta property="og:type" content="article">
-    <meta property="og:title" content="Datenschutz – BadenLEG">
-    <meta property="og:description" content="Transparente Informationen zum Datenschutz des BadenLEG-Services.">
+    <meta property="og:title" content="Datenschutz – {{ platform_name }}">
+    <meta property="og:description" content="Transparente Informationen zum Datenschutz des {{ platform_name }}-Services.">
     <meta property="og:url" content="{{ site_url }}/datenschutz">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -19,13 +19,13 @@
 
     <p class="mb-4">
         Diese Datenschutzerklärung informiert Sie über Art, Umfang und Zweck der Verarbeitung
-        personenbezogener Daten bei der Nutzung von BadenLEG.
+        personenbezogener Daten bei der Nutzung von {{ platform_name }}.
     </p>
 
     <h2 class="text-xl font-semibold mt-6 mb-2">1. Verantwortliche Stelle</h2>
     <p class="mb-4">
-        BadenLEG<br>
-        Sihl Icon Valley @ <a href="mailto:hallo@badenleg.ch" class="underline">hallo@badenleg.ch</a>
+        {{ platform_name }}<br>
+        Sihl Icon Valley @ <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
     </p>
 
     <h2 class="text-xl font-semibold mt-6 mb-2">2. Verarbeitete Daten</h2>
@@ -74,7 +74,7 @@
 
     <h2 class="text-xl font-semibold mt-6 mb-2">9. Kontakt</h2>
     <p class="mb-4">
-        Für Anfragen wenden Sie sich bitte an: <a href="mailto:hallo@badenleg.ch" class="underline">hallo@badenleg.ch</a>
+        Für Anfragen wenden Sie sich bitte an: <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
     </p>
 
     <a href="/" class="inline-block mt-6 text-sm underline">Zurück zur Startseite</a>

@@ -14,8 +14,8 @@
   },
 
   "models": {
-    "providers": [
-      {
+    "providers": {
+      "groq": {
         "baseUrl": "https://api.groq.com/openai/v1",
         "apiKey": "${GROQ_API_KEY}",
         "api": "openai-completions",
@@ -30,7 +30,7 @@
           }
         ]
       }
-    ]
+    }
   },
 
   "gateway": {
@@ -38,17 +38,6 @@
     "bind": "lan",
     "auth": {
       "token": "${OPENCLAW_GATEWAY_TOKEN}"
-    }
-  },
-
-  "mcpServers": {
-    "badenleg": {
-      "command": "node",
-      "args": ["/opt/mcp-badenleg-server/server.mjs"],
-      "env": {
-        "DATABASE_URL": "postgresql://badenleg:${POSTGRES_PASSWORD}@postgres:5432/badenleg",
-        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
-      }
     }
   },
 
