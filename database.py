@@ -423,13 +423,6 @@ def _create_tables():
                 )
             """)
 
-            # Create indexes for common queries
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_email ON buildings(email)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_user_type ON buildings(user_type)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_verified ON buildings(verified)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_referrer ON buildings(referrer_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_city_id ON buildings(city_id)")
-
             # Migration: add city_id to existing buildings table if missing
             cur.execute("""
                 DO $$
@@ -442,6 +435,13 @@ def _create_tables():
                     END IF;
                 END $$;
             """)
+
+            # Create indexes for common queries
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_email ON buildings(email)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_user_type ON buildings(user_type)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_verified ON buildings(verified)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_referrer ON buildings(referrer_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_city_id ON buildings(city_id)")
 
             cur.execute("CREATE INDEX IF NOT EXISTS idx_tokens_building ON tokens(building_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_tokens_type ON tokens(token_type)")
