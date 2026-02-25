@@ -629,6 +629,19 @@ def _create_tables():
             cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_research_status ON vnb_research(pipeline_status)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_research_priority ON vnb_research(priority_score DESC)")
 
+            # LEA autonomous reports
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS lea_reports (
+                    id SERIAL PRIMARY KEY,
+                    job_name VARCHAR(128) NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    summary_text TEXT,
+                    status VARCHAR(32) DEFAULT 'ok'
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_lea_reports_job ON lea_reports(job_name)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_lea_reports_created ON lea_reports(created_at DESC)")
+
             logger.info("[DB] Tables and indexes created successfully")
 
 
@@ -2367,6 +2380,38 @@ def get_billing_period(period_id: int) -> Optional[Dict]:
     except Exception as e:
         logger.error(f"[DB] Error getting billing period: {e}")
         return None
+
+
+def save_lea_report(job_name: str, summary_text: str, status: str = 'ok') -> bool:
+    """Save an autonomous LEA report from a cron job webhook."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO lea_reports (job_name, summary_text, status)
+                    VALUES (%s, %s, %s)
+                """, (job_name, summary_text, status))
+                return True
+    except Exception as e:
+        logger.error(f"[DB] Error saving LEA report: {e}")
+        return False
+
+
+def get_lea_reports(limit: int = 50) -> List[Dict]:
+    """Get recent LEA reports, newest first."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, job_name, created_at, summary_text, status
+                    FROM lea_reports
+                    ORDER BY created_at DESC
+                    LIMIT %s
+                """, (limit,))
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting LEA reports: {e}")
+        return []
 
 
 def is_db_available() -> bool:

@@ -89,6 +89,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 # --- Email ---
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'hallo@openleg.ch')
 ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
+INTERNAL_TOKEN = os.getenv('INTERNAL_TOKEN', '').strip()
 
 # --- Rate Limiting & Security ---
 if HAS_SECURITY_LIBS:
@@ -464,6 +465,27 @@ def admin_export():
         response.headers["Content-Disposition"] = "attachment; filename=openleg_export.csv"
         return response
     return jsonify({"records": buildings, "count": len(buildings)})
+
+
+# --- LEA Reports ---
+@app.route("/api/internal/lea-report", methods=['POST'])
+def api_internal_lea_report():
+    token = request.headers.get('X-Internal-Token') or ''
+    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
+        abort(403)
+    data = request.get_json(silent=True) or {}
+    job_name = data.get('job_name', 'unknown')
+    summary = data.get('summary', '')
+    status = data.get('status', 'ok')
+    db.save_lea_report(job_name, summary, status)
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/lea-reports")
+def admin_lea_reports():
+    _require_admin()
+    reports = db.get_lea_reports(limit=50)
+    return jsonify({"reports": reports})
 
 
 # --- Address API ---
