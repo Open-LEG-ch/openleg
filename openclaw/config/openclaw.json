@@ -54,5 +54,10 @@
   "session": {
     "dmScope": "per-channel-peer",
     "reset": { "mode": "daily", "atHour": 4 }
+  },
+
+  "cron": {
+    "enabled": true,
+    "jobsFile": "cron/jobs.json"
   }
 }

@@ -1,0 +1,54 @@
+[
+  {
+    "name": "daily-health-check",
+    "schedule": { "expr": "0 7 * * *", "tz": "Europe/Zurich" },
+    "sessionTarget": "isolated",
+    "payload": {
+      "kind": "agentTurn",
+      "message": "Run daily community health check: get_stats, list_communities, check stuck formations >7d, check pending emails. Report active/blocked formations and today's registrations."
+    },
+    "delivery": {
+      "mode": "webhook",
+      "to": "https://openleg.ch/api/internal/lea-report"
+    }
+  },
+  {
+    "name": "weekly-municipality-seeding",
+    "schedule": { "expr": "0 6 * * 1", "tz": "Europe/Zurich" },
+    "sessionTarget": "isolated",
+    "payload": {
+      "kind": "agentTurn",
+      "message": "Seed 50 new municipalities: use get_unseeded_municipalities to find top candidates by value gap and solar potential, then upsert_tenant for each. Report seeded count and any failures."
+    },
+    "delivery": {
+      "mode": "webhook",
+      "to": "https://openleg.ch/api/internal/lea-report"
+    }
+  },
+  {
+    "name": "weekly-data-refresh",
+    "schedule": { "expr": "0 3 * * 3", "tz": "Europe/Zurich" },
+    "sessionTarget": "isolated",
+    "payload": {
+      "kind": "agentTurn",
+      "message": "Refresh public data for all seeded municipalities: fetch_elcom_tariffs, fetch_energie_reporter, fetch_sonnendach_data, then refresh_municipality_data. Report updated count and data gaps."
+    },
+    "delivery": {
+      "mode": "webhook",
+      "to": "https://openleg.ch/api/internal/lea-report"
+    }
+  },
+  {
+    "name": "monthly-vnb-transparency",
+    "schedule": { "expr": "0 5 1 * *", "tz": "Europe/Zurich" },
+    "sessionTarget": "isolated",
+    "payload": {
+      "kind": "agentTurn",
+      "message": "Monthly VNB transparency run: scan_vnb_leg_offerings for all major VNBs, monitor_leghub_partners for changes, compute transparency scores, publish updated rankings. Report VNBs scored and changes detected."
+    },
+    "delivery": {
+      "mode": "webhook",
+      "to": "https://openleg.ch/api/internal/lea-report"
+    }
+  }
+]

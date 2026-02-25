@@ -26,6 +26,27 @@ class TestServerMjsIntegration:
             assert len(name) > 0
 
 
+class TestDockerfileCron:
+    def test_dockerfile_copies_cron(self):
+        with open(os.path.join(PROJECT_ROOT, "openclaw", "Dockerfile")) as f:
+            content = f.read()
+        # config/ COPY includes config/cron/
+        assert "COPY config/" in content
+
+
+class TestDatabaseSchema:
+    def test_database_has_lea_reports_table(self):
+        with open(os.path.join(PROJECT_ROOT, "database.py")) as f:
+            content = f.read()
+        assert "lea_reports" in content
+
+    def test_database_has_lea_report_functions(self):
+        with open(os.path.join(PROJECT_ROOT, "database.py")) as f:
+            content = f.read()
+        assert "def save_lea_report" in content
+        assert "def get_lea_reports" in content
+
+
 class TestAdminPipelineHTML:
     def test_pipeline_returns_html_with_accept(self):
         with patch.dict(os.environ, {"DATABASE_URL": "postgresql://x:x@localhost/x", "ADMIN_TOKEN": "test123"}):
