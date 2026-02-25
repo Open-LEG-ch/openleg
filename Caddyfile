@@ -3,11 +3,6 @@ claw.openleg.ch {
     reverse_proxy openclaw:18789
 }
 
-# B2B insights API
-insights.openleg.ch {
-    reverse_proxy flask:5000
-}
-
 # Public API
 api.openleg.ch {
     reverse_proxy flask:5000

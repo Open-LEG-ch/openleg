@@ -2244,51 +2244,6 @@ def get_vnb_pipeline_stats() -> Dict:
         return {}
 
 
-def update_utility_client_stripe(client_id: int, subscription_id: str, customer_id: str, status: str = "active") -> bool:
-    """Update utility client with Stripe subscription and customer IDs."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    UPDATE utility_clients
-                    SET stripe_subscription_id = %s, stripe_customer_id = %s, status = %s, updated_at = CURRENT_TIMESTAMP
-                    WHERE id = %s
-                """, (subscription_id, customer_id, status, client_id))
-                return cur.rowcount > 0
-    except Exception as e:
-        logger.error(f"[DB] Error updating utility client Stripe: {e}")
-        return False
-
-
-def deactivate_utility_by_subscription(subscription_id: str) -> bool:
-    """Deactivate utility client by Stripe subscription ID."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    UPDATE utility_clients SET status = 'inactive', updated_at = CURRENT_TIMESTAMP
-                    WHERE stripe_subscription_id = %s
-                """, (subscription_id,))
-                return cur.rowcount > 0
-    except Exception as e:
-        logger.error(f"[DB] Error deactivating utility by subscription: {e}")
-        return False
-
-
-def flag_utility_payment_failed(subscription_id: str) -> bool:
-    """Flag payment failure for a utility client."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    UPDATE utility_clients SET status = 'payment_failed', updated_at = CURRENT_TIMESTAMP
-                    WHERE stripe_subscription_id = %s
-                """, (subscription_id,))
-                return cur.rowcount > 0
-    except Exception as e:
-        logger.error(f"[DB] Error flagging payment failure: {e}")
-        return False
-
 
 def update_document_signing_status(deepsign_document_id: str, status: str) -> bool:
     """Update LEG document signing status from DeepSign webhook."""

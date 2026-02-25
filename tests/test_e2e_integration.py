@@ -64,3 +64,40 @@ class TestHealthRedisKey:
         with open(os.path.join(PROJECT_ROOT, "health.py")) as f:
             content = f.read()
         assert "redis" in content
+
+
+class TestB2BApiRemoved:
+    def test_no_b2b_import_in_app(self):
+        with open(os.path.join(PROJECT_ROOT, "app.py")) as f:
+            content = f.read()
+        assert "api_b2b" not in content
+        assert "b2b_bp" not in content
+
+    def test_no_refresh_insights_cron(self):
+        with open(os.path.join(PROJECT_ROOT, "app.py")) as f:
+            content = f.read()
+        assert "refresh-insights" not in content
+
+    def test_no_insights_subdomain_in_caddy(self):
+        with open(os.path.join(PROJECT_ROOT, "Caddyfile")) as f:
+            content = f.read()
+        assert "insights.openleg.ch" not in content
+
+
+class TestStripeRemoved:
+    def test_no_stripe_webhook_route(self):
+        with open(os.path.join(PROJECT_ROOT, "app.py")) as f:
+            content = f.read()
+        assert "webhook/stripe" not in content
+
+    def test_no_stripe_import_in_app(self):
+        with open(os.path.join(PROJECT_ROOT, "app.py")) as f:
+            content = f.read()
+        assert "stripe_integration" not in content
+
+    def test_no_stripe_crud_in_database(self):
+        with open(os.path.join(PROJECT_ROOT, "database.py")) as f:
+            content = f.read()
+        assert "update_utility_client_stripe" not in content
+        assert "deactivate_utility_by_subscription" not in content
+        assert "flag_utility_payment_failed" not in content

@@ -43,4 +43,8 @@ class TestFormationConfig:
 
     def test_formation_fee(self):
         from formation_wizard import FORMATION_CONFIG
-        assert FORMATION_CONFIG["formation_fee_chf"] == 199
+        assert FORMATION_CONFIG["formation_fee_chf"] == 0
+
+    def test_servicing_fee(self):
+        from formation_wizard import FORMATION_CONFIG
+        assert FORMATION_CONFIG["servicing_fee_monthly_chf"] == 0

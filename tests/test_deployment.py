@@ -27,8 +27,8 @@ class TestCaddyfile:
     def test_has_api_subdomain(self):
         assert "api.openleg.ch" in self.content
 
-    def test_has_insights_subdomain(self):
-        assert "insights.openleg.ch" in self.content
+    def test_no_insights_subdomain(self):
+        assert "insights.openleg.ch" not in self.content
 
     def test_has_bare_domain(self):
         assert "openleg.ch" in self.content

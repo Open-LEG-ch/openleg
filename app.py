@@ -56,7 +56,6 @@ import email_automation
 
 # --- Blueprints ---
 from municipality import municipality_bp
-from api_b2b import b2b_bp
 from api_public import public_api_bp
 from health import health_bp
 from utility_portal import utility_bp
@@ -120,7 +119,6 @@ else:
 
 # --- Register Blueprints ---
 app.register_blueprint(municipality_bp)
-app.register_blueprint(b2b_bp)
 app.register_blueprint(public_api_bp)
 app.register_blueprint(health_bp)
 app.register_blueprint(utility_bp)
@@ -982,15 +980,6 @@ def api_cron_refresh_public_data():
     return jsonify(result)
 
 
-@app.route("/api/cron/refresh-insights", methods=['POST'])
-def api_cron_refresh_insights():
-    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
-    if CRON_SECRET and secret != CRON_SECRET:
-        abort(403)
-    import insights_engine
-    result = insights_engine.refresh_all_insights()
-    return jsonify(result)
-
 
 @app.route("/api/email/stats")
 def api_email_stats():
@@ -999,19 +988,6 @@ def api_email_stats():
 
 
 # --- Webhooks ---
-
-@app.route("/webhook/stripe", methods=['POST'])
-def webhook_stripe():
-    """Handle Stripe webhook events (subscription lifecycle)."""
-    import stripe_integration
-    payload = request.get_data()
-    sig_header = request.headers.get('Stripe-Signature', '')
-    result = stripe_integration.handle_webhook(payload, sig_header)
-    if result.get("status") == "error":
-        logger.warning(f"[STRIPE] Webhook error: {result.get('message')}")
-        return jsonify(result), 400
-    logger.info(f"[STRIPE] Webhook processed: {result.get('event_type')}")
-    return jsonify(result), 200
 
 
 @app.route("/webhook/deepsign", methods=['POST'])

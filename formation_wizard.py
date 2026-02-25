@@ -34,8 +34,8 @@ class DistributionModel(Enum):
 FORMATION_CONFIG = {
     "min_community_size": 3,
     "max_community_size": 50,
-    "formation_fee_chf": 199,
-    "servicing_fee_monthly_chf": 14.90,
+    "formation_fee_chf": 0,
+    "servicing_fee_monthly_chf": 0,
     "dso_response_days": 30,
     "signature_timeout_days": 14,
 }
