@@ -41,6 +41,14 @@ def get_email_sequence(platform_name="OpenLEG"):
         },
     }
 
+# Standalone trigger templates (not part of drip sequence)
+TRIGGER_TEMPLATES = {
+    "formation_nudge": {
+        "subject": "Ihre LEG-Gründung wartet",
+        "template": "emails/formation_nudge.html",
+    },
+}
+
 # Default sequence (backward compatible)
 EMAIL_SEQUENCE = get_email_sequence()
 

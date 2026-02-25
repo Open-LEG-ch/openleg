@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ihre LEG-Gründung wartet</title>
+<style>
+body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
+.wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
+.header { background: {{ primary_color }}; padding: 24px; text-align: center; }
+.header h1 { color: #fff; font-size: 22px; margin: 0; }
+.content { padding: 32px 24px; }
+.content h2 { font-size: 20px; margin: 0 0 16px; }
+.content p { font-size: 15px; line-height: 1.6; margin: 0 0 16px; color: #374151; }
+.cta { display: inline-block; background: {{ primary_color }}; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px 0; }
+.status-box { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin: 24px 0; }
+.status-box p { margin: 0 0 8px; }
+.footer { padding: 24px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; }
+.footer a { color: #9ca3af; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>{{ platform_name }}</h1>
+  </div>
+  <div class="content">
+    <h2>Ihre LEG-Gründung wartet</h2>
+    <p>Hallo,</p>
+    <p>Ihre Gemeinschaft <strong>{{ community_name }}</strong> steht aktuell im Status <strong>{{ current_status }}</strong> und hat sich seit {{ days_stuck }} Tagen nicht bewegt.</p>
+
+    <div class="status-box">
+      <p><strong>Nächster Schritt:</strong></p>
+      <p>{{ next_step_description }}</p>
+    </div>
+
+    <p>Wir helfen Ihnen gerne, den nächsten Schritt zu machen.</p>
+
+    <p style="text-align: center;">
+      <a href="{{ dashboard_url }}" class="cta">Gründung fortsetzen</a>
+    </p>
+
+    <p>Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+  </div>
+  <div class="footer">
+    <p>{{ platform_name }} &middot; Kostenlose LEG-Infrastruktur</p>
+    <p><a href="{{ unsubscribe_url }}">Abmelden</a></p>
+  </div>
+</div>
+</body>
+</html>
