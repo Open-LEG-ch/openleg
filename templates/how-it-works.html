@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>So funktioniert OpenLEG | Schritt für Schritt erklärt</title>
+  <title>So funktioniert's | OpenLEG</title>
   {% include 'partials/tailwind_brand.html' %}
 </head>
 <body class="bg-[#f6f4ef] text-ink">
@@ -16,43 +16,91 @@
   </div>
 
   <div class="max-w-4xl mx-auto px-4 py-12">
-    <h1 class="text-4xl font-bold mb-4">So funktioniert OpenLEG</h1>
-    <p class="text-ink-muted mb-8">Energieversorger starten sofort, Gemeinden und Bewohner folgen ohne grossen Aufwand.</p>
+    <h1 class="text-4xl font-bold mb-4">So funktioniert eine Stromgemeinschaft</h1>
+    <p class="text-ink-muted mb-8">Von der Idee zur aktiven LEG: was Bewohner und Gemeinden wissen müssen.</p>
 
     <div class="space-y-10">
-      <section>
-        <h2 class="text-2xl font-semibold mb-3">Für Energieversorger</h2>
-        <p class="text-ink-muted mb-3">Alles, was Sie brauchen, um lokale Stromgemeinschaften (LEG) gesetzeskonform anzubieten.</p>
-        <ul class="list-disc list-inside text-ink-muted space-y-2">
-          <li>Registrieren, Login Link erhalten, Dashboard und Schnittstelle einrichten</li>
-          <li>Fertige Dokumente: Gemeinschaftsvereinbarung, Teilnehmervertrag, Anmeldung beim Netzbetreiber</li>
-          <li>Verbrauchsdaten alle 15 Minuten als Basis für die Abrechnung</li>
-        </ul>
+      <!-- Step 1 -->
+      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
+        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">1</div>
+        <div>
+          <h2 class="text-2xl font-semibold mb-2">Adresse prüfen</h2>
+          <p class="text-ink-muted">Geben Sie Ihre Adresse auf openleg.ch ein. Das System prüft Ihr Solarpotenzial (via BFE Sonnendach) und zeigt, ob Nachbarn in Ihrer Nähe ebenfalls Interesse haben. Alles anonymisiert.</p>
+        </div>
       </section>
 
-      <section>
-        <h2 class="text-2xl font-semibold mb-3">Für Gemeinden</h2>
-        <p class="text-ink-muted mb-3">Eigene Seite für Ihre Gemeinde, mit Anmeldungen und Fortschritt auf einen Blick.</p>
-        <ul class="list-disc list-inside text-ink-muted space-y-2">
-          <li>Eigene Webseite mit Ihrem Gemeinde Branding</li>
-          <li>Bewohner melden sich an, das System findet passende Nachbarn</li>
-          <li>Anmeldung beim Netzbetreiber per Klick</li>
-        </ul>
+      <!-- Step 2 -->
+      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
+        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">2</div>
+        <div>
+          <h2 class="text-2xl font-semibold mb-2">Nachbarn finden</h2>
+          <p class="text-ink-muted">Registrieren Sie sich mit E-Mail. Das System findet automatisch Haushalte in Ihrem Umkreis (max. 150m), die ebenfalls mitmachen wollen. Sobald genug Nachbarn zusammen kommen, kann die Gründung starten.</p>
+        </div>
       </section>
 
-      <section>
-        <h2 class="text-2xl font-semibold mb-3">Für Bewohner</h2>
-        <p class="text-ink-muted mb-3">Adresse eingeben, Nachbarn finden, selber entscheiden, was Sie teilen möchten.</p>
-        <ul class="list-disc list-inside text-ink-muted space-y-2">
-          <li>Prüfen Sie, ob Ihre Adresse in Frage kommt</li>
-          <li>Sehen Sie, wer in Ihrer Nähe ebenfalls mitmachen will</li>
-          <li>Einwilligung in 3 Stufen, jederzeit widerrufbar</li>
-        </ul>
+      <!-- Step 3 -->
+      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
+        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">3</div>
+        <div>
+          <h2 class="text-2xl font-semibold mb-2">Stromgemeinschaft gründen</h2>
+          <p class="text-ink-muted">Wählen Sie ein Verteilmodell (gleichmässig, proportional, individuell). OpenLEG generiert automatisch alle nötigen Dokumente: Gemeinschaftsvereinbarung, Teilnehmerverträge, Anmeldung beim Netzbetreiber.</p>
+        </div>
+      </section>
+
+      <!-- Step 4 -->
+      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
+        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">4</div>
+        <div>
+          <h2 class="text-2xl font-semibold mb-2">Netzbetreiber melden</h2>
+          <p class="text-ink-muted">Die Anmeldung geht direkt an Ihren Netzbetreiber. Dieser muss innert 3 Monaten einen Smart Meter installieren (Art. 17e StromVG). OpenLEG überwacht den Status und erinnert bei Verzögerungen.</p>
+        </div>
+      </section>
+
+      <!-- Step 5 -->
+      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
+        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">5</div>
+        <div>
+          <h2 class="text-2xl font-semibold mb-2">Strom teilen, Geld sparen</h2>
+          <p class="text-ink-muted">Ihre LEG ist aktiv. Solarstrom wird lokal geteilt, alle 15 Minuten abgerechnet. Sie sparen bis 40% auf Netzgebühren (gleiche Netzebene) oder 20% (mit Ebenenwechsel). Auf einem typischen Haushalt (4'500 kWh/Jahr) sind das CHF 90 bis 270 pro Jahr.</p>
+        </div>
       </section>
     </div>
 
+    <!-- Legal context -->
+    <div class="mt-12 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-3">Rechtsgrundlage</h2>
+      <div class="text-ink-muted space-y-2">
+        <p>Lokale Elektrizitätsgemeinschaften (LEG) sind seit dem 1. Januar 2026 in der gesamten Schweiz möglich. Die Rechtsgrundlage bilden Art. 17d und 17e des Stromversorgungsgesetzes (StromVG) sowie Art. 19e bis 19h der Stromversorgungsverordnung (StromVV).</p>
+        <p>Voraussetzungen: alle Teilnehmer in der gleichen Gemeinde, beim gleichen Netzbetreiber, auf Niederspannungsebene (max. NE5/NE7, unter 36 kV). Mindestens 5% der Gesamtanschlussleistung als erneuerbare Erzeugung.</p>
+        <p>Die Regelung ist Bundesrecht und gilt einheitlich in allen 26 Kantonen.</p>
+      </div>
+    </div>
+
+    <!-- For Gemeinden -->
+    <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-6">
+      <h2 class="text-2xl font-bold mb-3">Für Gemeinden</h2>
+      <p class="text-ink-muted mb-3">Jede Gemeinde kann kostenlos eine eigene OpenLEG-Instanz erhalten. Bewohner registrieren sich auf gemeinde.openleg.ch, das System findet passende Nachbarn und begleitet die Gründung.</p>
+      <ul class="list-disc list-inside text-ink-muted space-y-1 mb-4">
+        <li>Eigene Webseite mit Gemeinde-Branding</li>
+        <li>Automatisches Nachbarschafts-Matching</li>
+        <li>Dokumentengenerierung und Netzbetreiber-Anmeldung</li>
+        <li>Übersicht über alle Anmeldungen und Fortschritt</li>
+      </ul>
+      <a href="/gemeinde/onboarding" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Gemeinde anmelden</a>
+    </div>
+
+    <!-- Data sovereignty -->
+    <div class="mt-6 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-3">Ihre Daten, Ihre Kontrolle</h2>
+      <div class="text-ink-muted space-y-2">
+        <p>OpenLEG verkauft keine Daten. Nicht an Energieversorger, nicht an Dritte, nicht in aggregierter Form. Ihre Smart-Meter-Daten bleiben in Ihrer Stromgemeinschaft.</p>
+        <p>Die Plattform ist Open Source (AGPL-3.0). Der gesamte Code ist auf GitHub einsehbar. Sie können jederzeit alle Ihre Daten exportieren oder löschen lassen.</p>
+        <p>Gehostet auf Schweizer Infrastruktur (Infomaniak), konform mit dem neuen Datenschutzgesetz (nDSG).</p>
+      </div>
+    </div>
+
     <div class="mt-10 flex flex-col sm:flex-row gap-3">
-      <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Jetzt starten</a>
+      <a href="/#registrieren" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse prüfen</a>
       <a href="/gemeinde/onboarding" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Gemeinde anmelden</a>
     </div>
   </div>

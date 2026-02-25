@@ -3,40 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energieversorger registrieren | OpenLEG</title>
+    <title>Netzbetreiber-Zugang | OpenLEG</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <nav class="bg-white shadow-sm">
         <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold text-indigo-600">OpenLEG</a>
+            <a href="/" class="text-2xl font-bold text-gray-900">OpenLEG</a>
             <div class="flex space-x-4 text-sm">
-                <span class="text-gray-500">Utility Portal</span>
-                <a href="/utility/login" class="text-indigo-600 hover:underline">Login</a>
+                <span class="text-gray-500">Netzbetreiber-Portal</span>
+                <a href="/utility/login" class="text-gray-700 hover:underline">Login</a>
             </div>
         </div>
     </nav>
 
     <div class="max-w-xl mx-auto px-4 py-12">
         <div class="overflow-hidden rounded-xl border border-gray-200 shadow-md mb-8">
-            <img src="/static/images/subpages/utility-register.png" alt="EVU Registrierung Kontext" class="w-full aspect-[3/1] object-cover" loading="lazy">
+            <img src="/static/images/subpages/utility-register.png" alt="EVU Registrierung" class="w-full aspect-[3/1] object-cover" loading="lazy">
         </div>
-        <h1 class="text-3xl font-bold mb-2">Energieversorger registrieren</h1>
-        <p class="text-gray-600 mb-8">Registrieren Sie sich und erhalten Sie Zugang zur OpenLEG Plattform, um lokale Stromgemeinschaften (LEG) in Ihrem Versorgungsgebiet anzubieten.</p>
+        <h1 class="text-3xl font-bold mb-2">Netzbetreiber-Zugang</h1>
+        <p class="text-gray-600 mb-8">Registrieren Sie sich, um LEG-Anmeldungen aus Ihrem Versorgungsgebiet zu empfangen und den Formationsstatus zu verfolgen. Kostenlos.</p>
 
         <form id="register-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Firmenname *</label>
-                <input type="text" id="company_name" placeholder="z.B. Regionalwerke AG Baden" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                <input type="text" id="company_name" placeholder="z.B. Regionalwerke AG Baden" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" required>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Name des Netzbetreibers</label>
-                <input type="text" id="vnb_name" placeholder="z.B. Regionalwerke AG Baden Verteilnetz" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <input type="text" id="vnb_name" placeholder="z.B. Regionalwerke AG Baden Verteilnetz" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">Kanton</label>
-                    <select id="kanton" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <select id="kanton" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
                         <option value="">Waehlen...</option>
                         <option value="ZH">Zuerich</option>
                         <option value="BE">Bern</option>
@@ -68,44 +68,44 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Versorgte Einwohner</label>
-                    <input type="number" id="population" placeholder="z.B. 50000" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <input type="number" id="population" placeholder="z.B. 50000" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
                 </div>
             </div>
             <hr class="my-2">
             <div>
                 <label class="block text-sm font-medium mb-1">Ansprechperson</label>
-                <input type="text" id="contact_name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <input type="text" id="contact_name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Geschaeftliche E-Mail *</label>
-                <input type="email" id="contact_email" placeholder="kontakt@evu.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                <input type="email" id="contact_email" placeholder="kontakt@evu.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" required>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Telefon</label>
-                <input type="tel" id="contact_phone" placeholder="+41 56 200 00 00" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <input type="tel" id="contact_phone" placeholder="+41 56 200 00 00" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
             </div>
 
-            <div class="bg-indigo-50 p-4 rounded-lg text-sm">
-                <h4 class="font-medium mb-2">Was Sie erhalten:</h4>
+            <div class="bg-gray-50 p-4 rounded-lg text-sm">
+                <h4 class="font-medium mb-2">Als Netzbetreiber erhalten Sie:</h4>
                 <ul class="text-gray-700 space-y-1">
-                    <li>&#10003; Eigene Plattform mit Ihrem Branding</li>
-                    <li>&#10003; Automatische Gründung und Dokumentenerstellung</li>
-                    <li>&#10003; Smart Meter Datenverarbeitung und Abrechnung</li>
-                    <li>&#10003; Schnittstelle für Ihre bestehenden Systeme</li>
+                    <li>&#10003; LEG-Anmeldungen aus Ihrem Gebiet empfangen</li>
+                    <li>&#10003; Formationsstatus verfolgen</li>
+                    <li>&#10003; Dokumentengenerierung (Gemeinschaftsvereinbarung, Teilnehmervertrag, DSO-Anmeldung)</li>
+                    <li>&#10003; API-Zugang für Ihre bestehenden Systeme</li>
                 </ul>
             </div>
 
-            <div class="bg-amber-50 p-4 rounded-lg text-sm">
-                <h4 class="font-medium mb-1">Preise ab CHF 500/Monat</h4>
-                <p class="text-gray-600">Starter (kleine EVU), Professional, Enterprise. 30 Tage kostenlos testen.</p>
+            <div class="bg-green-50 p-4 rounded-lg text-sm">
+                <h4 class="font-medium mb-1">Kostenlos</h4>
+                <p class="text-gray-600">OpenLEG ist Open Source und kostenlos. Keine Abonnements, keine versteckten Kosten.</p>
             </div>
 
-            <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700">Kostenlos registrieren</button>
+            <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800">Registrieren</button>
             <div id="form-error" class="text-red-600 text-sm hidden"></div>
             <div id="form-success" class="text-green-600 text-sm hidden"></div>
         </form>
 
-        <p class="text-center text-sm text-gray-500 mt-6">Bereits registriert? <a href="/utility/login" class="text-indigo-600 hover:underline">Einloggen</a></p>
+        <p class="text-center text-sm text-gray-500 mt-6">Bereits registriert? <a href="/utility/login" class="text-gray-700 hover:underline">Einloggen</a></p>
     </div>
 
     <script>

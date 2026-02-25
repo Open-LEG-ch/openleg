@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemeinde registrieren | OpenLEG</title>
+    <title>Gemeinde anmelden | OpenLEG</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <nav class="bg-white shadow-sm">
         <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold text-indigo-600">OpenLEG</a>
-            <span class="text-sm text-gray-500">Gemeinde-Onboarding</span>
+            <a href="/" class="text-2xl font-bold text-gray-900">OpenLEG</a>
+            <span class="text-sm text-gray-500">Gemeinde-Anmeldung</span>
         </div>
     </nav>
     <div class="max-w-xl mx-auto px-4 py-12">
         <div class="overflow-hidden rounded-xl border border-gray-200 shadow-md mb-8">
-            <img src="/static/images/subpages/gemeinde-onboarding.png" alt="Gemeinde Onboarding Kontext" class="w-full aspect-[3/1] object-cover" loading="lazy">
+            <img src="/static/images/subpages/gemeinde-onboarding.png" alt="Gemeinde Onboarding" class="w-full aspect-[3/1] object-cover" loading="lazy">
         </div>
-        <h1 class="text-3xl font-bold mb-2">Gemeinde registrieren</h1>
-        <p class="text-gray-600 mb-8">Melden Sie Ihre Gemeinde an und erhalten Sie eine eigene Seite, auf der Bewohner sich für eine lokale Stromgemeinschaft (LEG) registrieren können.</p>
+        <h1 class="text-3xl font-bold mb-2">Gemeinde anmelden</h1>
+        <p class="text-gray-600 mb-8">Melden Sie Ihre Gemeinde an und ermöglichen Sie Bewohnern, lokale Stromgemeinschaften zu gründen. Kostenlos, kein IT Aufwand.</p>
 
         <form id="onboarding-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Gemeinde auswählen</label>
-                <select id="municipality-select" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <select id="municipality-select" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
                     <option value="">Gemeinde wählen...</option>
                     {% for m in municipalities %}
                     <option value="{{ m.bfs }}" data-name="{{ m.name }}" data-dso="{{ m.dso }}">{{ m.name }} ({{ m.dso }})</option>
@@ -32,22 +32,23 @@
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Kontakt E-Mail (Gemeindeverwaltung)</label>
-                <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" required>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Ansprechperson</label>
-                <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
             </div>
-            <div class="bg-indigo-50 p-4 rounded-lg text-sm">
-                <h4 class="font-medium mb-1">Was Sie erhalten:</h4>
+            <div class="bg-gray-50 p-4 rounded-lg text-sm">
+                <h4 class="font-medium mb-1">Was Sie erhalten (kostenlos):</h4>
                 <ul class="text-gray-700 space-y-1">
-                    <li>&#10003; Eigene Instanz unter <span id="subdomain-preview" class="font-mono text-indigo-600">gemeinde.openleg.ch</span></li>
-                    <li>&#10003; Übersicht über Anmeldungen und Fortschritt</li>
-                    <li>&#10003; Bewohner-Registrierung und Matching</li>
-                    <li>&#10003; Kostenloses Starterpaket</li>
+                    <li>&#10003; Eigene Instanz unter <span id="subdomain-preview" class="font-mono text-gray-900">gemeinde.openleg.ch</span></li>
+                    <li>&#10003; Bewohner-Registrierung und automatisches Matching</li>
+                    <li>&#10003; Übersicht über Anmeldungen und Formationsfortschritt</li>
+                    <li>&#10003; Alle Dokumente inklusive (Vereinbarung, Verträge, DSO-Anmeldung)</li>
+                    <li>&#10003; Keine versteckten Kosten, kein Abo, kein Vendor Lock-in</li>
                 </ul>
             </div>
-            <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700">Gemeinde registrieren</button>
+            <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800">Gemeinde anmelden</button>
             <div id="form-error" class="text-red-600 text-sm hidden"></div>
             <div id="form-success" class="text-green-600 text-sm hidden"></div>
         </form>
