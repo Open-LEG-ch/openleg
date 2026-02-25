@@ -374,7 +374,10 @@ def fuer_gemeinden():
 
 @app.route("/fuer-bewohner")
 def fuer_bewohner():
-    return render_city_template('fuer_bewohner.html')
+    city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') and g.tenant else 'zurich'
+    stats = db.get_stats(city_id=city_id)
+    user_count = stats.get('total_buildings', 0)
+    return render_city_template('fuer_bewohner.html', user_count=user_count)
 
 
 @app.route("/pricing")
