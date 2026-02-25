@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Für Gemeinden | OpenLEG</title>
+  {% include 'partials/tailwind_brand.html' %}
+</head>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
+
+  <div class="max-w-5xl mx-auto px-4 pt-10">
+    <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
+      <img src="/static/images/subpages/gemeinde-onboarding.png" alt="OpenLEG für Gemeinden" class="w-full aspect-[3/1] object-cover" loading="lazy">
+    </div>
+  </div>
+
+  <main class="max-w-5xl mx-auto px-4 py-12">
+    <header class="text-center mb-10">
+      <h1 class="text-4xl font-bold mb-2">OpenLEG für Gemeinden</h1>
+      <p class="text-ink-muted max-w-2xl mx-auto">Zwei Wege, ein Ziel: funktionierende Lokale Elektrizitätsgemeinschaften. Plattform-Kern kostenlos und Open Source.</p>
+    </header>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-ink/20 flex flex-col">
+        <h2 class="text-xl font-bold mb-1">Selbst betreiben</h2>
+        <p class="text-sm text-ink-muted mb-4">Für IT-Teams mit eigener Infrastruktur.</p>
+        <ul class="text-sm space-y-2 mb-6 text-ink-muted flex-1">
+          <li>&#10003; Open Source (AGPL-3.0)</li>
+          <li>&#10003; Volle Datenhoheit</li>
+          <li>&#10003; Transparente Weiterentwicklung via GitHub</li>
+        </ul>
+        <pre class="bg-ink text-slate-300 rounded-lg p-4 text-sm overflow-x-auto mb-4"><code>git clone https://github.com/openleg/openleg.git
+cd openleg
+docker compose up -d</code></pre>
+        <a href="https://github.com/openleg/openleg" target="_blank" rel="noopener" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Code auf GitHub</a>
+      </section>
+
+      <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand flex flex-col">
+        <h2 class="text-xl font-bold mb-1">Gehostet mit optionalem Projektsupport</h2>
+        <p class="text-sm text-ink-muted mb-4">Plattform-Kern kostenlos. Support nach Aufwand, projektbasiert.</p>
+        <ul class="text-sm space-y-2 mb-6 text-ink-muted flex-1">
+          <li>&#10003; Setup und Betrieb durch uns (SLA optional)</li>
+          <li>&#10003; Schulungen, Onboarding, SDAT-CH Integration (optional)</li>
+          <li>&#10003; Keine Abopflicht, kein Datenverkauf</li>
+        </ul>
+        <a href="/gemeinde/onboarding" class="block text-center bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark mb-2">Gemeinde anmelden</a>
+        <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Gemeinde%20Projektsupport" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Projektsupport anfragen</a>
+      </section>
+    </div>
+
+    <div class="mt-10 bg-indigo-50 p-4 rounded-xl text-sm text-ink-muted">
+      Entscheidungsfilter: hilft es einer Gemeinde, eine LEG zu starten oder zu verbessern? Ja: bauen. Nein: lassen.
+    </div>
+  </main>
+
+  {% include 'partials/site_footer.html' %}
+</body>
+</html>
+

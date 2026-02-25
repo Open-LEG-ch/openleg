@@ -367,6 +367,10 @@ def index():
 def how_it_works():
     return render_city_template('how-it-works.html')
 
+@app.route("/fuer-gemeinden")
+def fuer_gemeinden():
+    return render_city_template('fuer_gemeinden.html')
+
 
 @app.route("/pricing")
 def pricing():
@@ -390,6 +394,7 @@ def sitemap_xml():
     pages = [
         ("/", "1.0", "daily", current_date),
         ("/how-it-works", "0.8", "weekly", current_date),
+        ("/fuer-gemeinden", "0.8", "weekly", current_date),
         ("/pricing", "0.7", "monthly", current_date),
         ("/gemeinde/onboarding", "0.9", "weekly", current_date),
         ("/impressum", "0.3", "yearly", "2026-01-01"),
