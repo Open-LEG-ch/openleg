@@ -1250,18 +1250,141 @@ server.tool(
 
 server.tool(
   'draft_outreach',
-  'Draft a VNB outreach email for sales pipeline. Returns German text.',
+  'Draft a municipality outreach email informing about free LEG infrastructure. Returns German text.',
   {
-    vnb_name: z.string().describe('Name of the VNB/utility'),
-    population: z.number().describe('Municipality population'),
-    value_gap_rp: z.number().describe('Value gap in Rp/kWh vs LEG tariff'),
-    solar_potential_pct: z.number().describe('Solar potential percentage')
+    municipality_name: z.string().describe('Name of the Gemeinde'),
+    bfs_number: z.number().describe('BFS number of the municipality'),
+    value_gap_chf: z.number().describe('Annual savings potential per household in CHF'),
+    solar_potential_pct: z.number().describe('Solar potential percentage of suitable roofs')
   },
-  async ({ vnb_name, population, value_gap_rp, solar_potential_pct }) => {
-    const savingsPerHousehold = Math.round(value_gap_rp * 45);
-    const potentialHouseholds = Math.round(population * 0.02);
-    const email = `Betreff: LEG-Partnerschaft mit ${vnb_name}\n\nSehr geehrte Damen und Herren\n\nIm Versorgungsgebiet von ${vnb_name} (${population.toLocaleString('de-CH')} Einwohner) sehen wir erhebliches Potenzial für Lokale Elektrizitätsgemeinschaften.\n\nKernzahlen:\n- Solarpotenzial: ${solar_potential_pct}% der Dachflächen geeignet\n- Tarif-Differenz: ${value_gap_rp} Rp/kWh Einsparpotenzial gegenüber Standardtarif\n- Geschätzte Ersparnis: CHF ${savingsPerHousehold} pro Haushalt und Jahr\n- Potenzial: ca. ${potentialHouseholds} Haushalte in LEG-Gemeinschaften\n\nOpenLEG bietet die Plattform für Gründung, Abrechnung und Verwaltung von LEGs. Gerne zeigen wir Ihnen in einer kurzen Demo, wie ${vnb_name} davon profitieren kann.\n\nFreundliche Grüsse\nOpenLEG Team\nhallo@openleg.ch`;
-    return txt({ email, metadata: { vnb_name, potential_households: potentialHouseholds, savings_per_household_chf: savingsPerHousehold } });
+  async ({ municipality_name, bfs_number, value_gap_chf, solar_potential_pct }) => {
+    const profileUrl = `https://openleg.ch/gemeinde/${bfs_number}/profil`;
+    const onboardingUrl = `https://openleg.ch/gemeinde/${bfs_number}/onboarding`;
+    const email = `Betreff: Kostenlose LEG-Infrastruktur für ${municipality_name}\n\nSehr geehrte Gemeindeverantwortliche\n\nDie Gemeinde ${municipality_name} verfügt über ein hohes Potenzial für Lokale Elektrizitätsgemeinschaften (LEG).\n\nKennzahlen:\n- Solarpotenzial: ${solar_potential_pct}% der Dachflächen geeignet\n- Einsparpotenzial: ca. CHF ${value_gap_chf} pro Haushalt und Jahr\n\nOpenLEG stellt kostenlose, quelloffene Infrastruktur für die Gründung und Verwaltung von LEGs bereit. Kein Datenverkauf, keine Gebühren.\n\nGemeindeprofil: ${profileUrl}\nOnboarding starten: ${onboardingUrl}\n\nFreundliche Grüsse\nOpenLEG\nhallo@openleg.ch`;
+    return txt({ email, metadata: { municipality_name, bfs_number, value_gap_chf, solar_potential_pct } });
+  }
+);
+
+// ============================================================
+// Seeding Tools
+// ============================================================
+
+server.tool(
+  'get_unseeded_municipalities',
+  'List municipalities without tenant config, ranked by value gap and solar potential. Use for weekly seeding runs.',
+  {
+    kanton: z.string().optional().describe('Filter by kanton code (e.g. ZH, BE, AG)'),
+    limit: z.number().default(50).describe('Max results')
+  },
+  async ({ kanton, limit }) => {
+    let sql = `
+      SELECT mp.bfs_number, mp.name, mp.kanton, mp.solar_potential_pct, mp.leg_value_gap_chf
+      FROM municipality_profiles mp
+      LEFT JOIN white_label_configs wlc ON LOWER(mp.name) = wlc.territory
+      WHERE wlc.territory IS NULL
+    `;
+    const params = [];
+    if (kanton) {
+      params.push(kanton);
+      sql += ` AND mp.kanton = $${params.length}`;
+    }
+    sql += ` ORDER BY mp.leg_value_gap_chf DESC NULLS LAST, mp.solar_potential_pct DESC NULLS LAST`;
+    params.push(limit);
+    sql += ` LIMIT $${params.length}`;
+    const result = await query(sql, params);
+    return txt({ count: result.rowCount, municipalities: result.rows });
+  }
+);
+
+server.tool(
+  'get_all_swiss_municipalities',
+  'Query LINDAS SPARQL endpoint for all Swiss municipalities. Returns BFS number, name, kanton, population.',
+  {
+    kanton: z.string().optional().describe('Filter by kanton URI suffix (e.g. ZH, BE)')
+  },
+  async ({ kanton }) => {
+    const kantonFilter = kanton ? `FILTER(STRENDS(STR(?canton), "${kanton}"))` : '';
+    const sparqlQuery = `
+      PREFIX schema: <http://schema.org/>
+      PREFIX admin: <https://schema.ld.admin.ch/>
+      SELECT ?bfs ?name ?canton ?population WHERE {
+        ?municipality a admin:Municipality ;
+          schema:identifier ?bfs ;
+          schema:name ?name ;
+          admin:canton ?canton .
+        OPTIONAL { ?municipality schema:population ?population }
+        ${kantonFilter}
+      }
+      ORDER BY ?name
+    `;
+    try {
+      const resp = await fetch('https://lindas.admin.ch/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/sparql-results+json'
+        },
+        body: `query=${encodeURIComponent(sparqlQuery)}`
+      });
+      if (!resp.ok) return txt({ error: `SPARQL query failed: ${resp.status}` });
+      const data = await resp.json();
+      const rows = (data.results?.bindings || []).map(b => ({
+        bfs_number: parseInt(b.bfs?.value || '0'),
+        name: b.name?.value || '',
+        kanton: (b.canton?.value || '').split('/').pop(),
+        population: parseInt(b.population?.value || '0')
+      }));
+      return txt({ count: rows.length, municipalities: rows });
+    } catch (e) {
+      return txt({ error: `SPARQL fetch error: ${e.message}` });
+    }
+  }
+);
+
+// ============================================================
+// Formation Monitoring Tools
+// ============================================================
+
+server.tool(
+  'get_stuck_formations',
+  'Find communities stuck at the same status for N days. Returns community details with admin contact for nudging.',
+  {
+    days_threshold: z.number().default(7).describe('Minimum days stuck at same status')
+  },
+  async ({ days_threshold }) => {
+    const result = await query(`
+      SELECT c.community_id, c.name, c.status,
+        EXTRACT(DAY FROM NOW() - c.updated_at)::int as days_stuck,
+        b.email as admin_email
+      FROM communities c
+      JOIN buildings b ON c.admin_building_id = b.building_id
+      WHERE c.status NOT IN ('active', 'rejected')
+      AND c.updated_at < NOW() - make_interval(days => $1)
+      ORDER BY c.updated_at ASC
+    `, [days_threshold]);
+    return txt({ count: result.rowCount, stuck_formations: result.rows });
+  }
+);
+
+server.tool(
+  'get_outreach_candidates',
+  'Find seeded municipalities with no registrations and no contact email. Candidates for outreach.',
+  {
+    limit: z.number().default(50).describe('Max results')
+  },
+  async ({ limit }) => {
+    const result = await query(`
+      SELECT wlc.territory, wlc.config->>'city_name' as city_name, wlc.config->>'kanton' as kanton
+      FROM white_label_configs wlc
+      LEFT JOIN buildings b ON b.city_id = wlc.territory
+      WHERE wlc.active = true
+      GROUP BY wlc.id, wlc.territory, wlc.config
+      HAVING COUNT(b.building_id) = 0
+      AND (wlc.contact_email IS NULL OR wlc.contact_email = '')
+      ORDER BY wlc.created_at ASC
+      LIMIT $1
+    `, [limit]);
+    return txt({ count: result.rowCount, candidates: result.rows });
   }
 );
 

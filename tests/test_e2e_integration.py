@@ -14,16 +14,28 @@ class TestServerMjsIntegration:
         with open(path) as f:
             self.content = f.read()
 
-    def test_tool_count_at_least_40(self):
+    def test_tool_count_at_least_44(self):
         count = len(re.findall(r'server\.tool\(', self.content))
-        assert count >= 40
+        assert count >= 44
 
     def test_new_tools_have_descriptions(self):
         """Verify server.mjs tool calls include description strings."""
         matches = re.findall(r"server\.tool\(\s*['\"](\w+)['\"]", self.content)
-        assert len(matches) >= 40
+        assert len(matches) >= 44
         for name in matches:
             assert len(name) > 0
+
+
+class TestDraftOutreachMunicipalityFocus:
+    def test_draft_outreach_is_municipality_focused(self):
+        with open(os.path.join(PROJECT_ROOT, "openclaw", "mcp-badenleg-server", "server.mjs")) as f:
+            content = f.read()
+        # Extract content around draft_outreach tool
+        idx = content.find("'draft_outreach'")
+        assert idx > 0
+        block = content[idx:idx+1500]
+        assert "Gemeinde" in block
+        assert "LEG-Partnerschaft" not in block
 
 
 class TestDockerfileCron:
