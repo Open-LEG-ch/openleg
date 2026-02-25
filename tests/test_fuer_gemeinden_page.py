@@ -32,4 +32,4 @@ class TestFuerGemeindenPage:
                 assert "OpenLEG für Gemeinden" in html
                 assert "Selbst betreiben" in html
                 assert "Gehostet" in html
-                assert "github.com/openleg/openleg" in html
+                assert "github.com/wgusta/openleg" in html
