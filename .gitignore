@@ -104,3 +104,10 @@ SOUL.md
 PIVOT.md
 PLAN.md
 outreach/
+
+# Local-only deployment and internal workspace docs
+deploy.sh
+grants/
+output/imagegen/
+openclaw/config/workspace/AGENTS.md
+openclaw/config/workspace/SOUL.md

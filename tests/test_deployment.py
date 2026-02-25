@@ -71,26 +71,24 @@ class TestDockerCompose:
 
 
 class TestDeployScript:
-    """Validate deploy.sh hardening."""
+    """Validate deploy.example.sh public deploy template."""
 
     @pytest.fixture(autouse=True)
     def load_deploy(self):
-        path = os.path.join(PROJECT_ROOT, "deploy.sh")
+        path = os.path.join(PROJECT_ROOT, "deploy.example.sh")
         with open(path) as f:
             self.content = f.read()
 
-    def test_rebuilds_openclaw(self):
-        assert "--build openclaw" in self.content
+    def test_has_required_env_contract(self):
+        assert "DEPLOY_HOST" in self.content
+        assert "REMOTE_DIR" in self.content
 
-    def test_openclaw_after_flask_healthy(self):
-        flask_pos = self.content.index("Flask healthy")
-        openclaw_pos = self.content.index("--build openclaw")
-        assert openclaw_pos > flask_pos
+    def test_uses_rsync(self):
+        assert "rsync -az --delete" in self.content
 
-    def test_pg_dump_before_rsync(self):
-        dump_pos = self.content.index("pg_dump")
-        rsync_pos = self.content.index("rsync")
-        assert dump_pos < rsync_pos
+    def test_runs_compose_build(self):
+        assert "docker compose" in self.content
+        assert "--build" in self.content
 
 
 class TestDockerfile:

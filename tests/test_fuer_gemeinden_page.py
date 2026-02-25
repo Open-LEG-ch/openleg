@@ -15,7 +15,18 @@ class TestFuerGemeindenPage:
                     pytest.skip("App import requires live DB")
 
                 client = app.test_client()
-                resp = client.get("/fuer-gemeinden")
+                hooks = list(app.before_request_funcs.get(None, []))
+                app.before_request_funcs[None] = [
+                    hook for hook in hooks
+                    if not (
+                        getattr(hook, "__module__", "").startswith("flask_limiter")
+                        or getattr(hook, "__name__", "") == "_check_request_limit"
+                    )
+                ]
+                try:
+                    resp = client.get("/fuer-gemeinden")
+                finally:
+                    app.before_request_funcs[None] = hooks
                 assert resp.status_code == 200
                 html = resp.data.decode("utf-8", errors="ignore")
                 assert "OpenLEG für Gemeinden" in html

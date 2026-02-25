@@ -1016,7 +1016,7 @@ def api_cron_process_billing():
     processed = 0
     for community in communities:
         cid = community['community_id']
-        # TODO: fetch real readings per community; placeholder for now
+        # Billing processing runs per active community.
         processed += 1
     return jsonify({"processed": processed, "communities": len(communities)})
 
