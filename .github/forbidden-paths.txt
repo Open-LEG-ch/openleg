@@ -1,0 +1,22 @@
+# Internal and strategy content (private repo only)
+grants/**
+outreach/**
+strategy/**
+open-strategy.md
+PIVOT.md
+PLAN.md
+CLAUDE.md
+AGENTS.md
+SOUL.md
+SKILLS.md
+
+# Private workspace and generated artifacts
+openclaw/config/workspace/**
+output/imagegen/**
+
+# Real deploy scripts and secret-bearing files
+deploy.sh
+.env
+*.pem
+*.key
+*.crt

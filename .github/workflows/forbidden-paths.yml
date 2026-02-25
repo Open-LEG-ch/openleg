@@ -1,0 +1,96 @@
+name: Forbidden paths
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 3 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forbidden-paths:
+    name: Forbidden paths
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce forbidden path policy
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          POLICY_FILE=".github/forbidden-paths.txt"
+          if [[ ! -f "${POLICY_FILE}" ]]; then
+            echo "::error::Policy file not found: ${POLICY_FILE}"
+            exit 1
+          fi
+
+          mapfile -t DENY_PATTERNS < <(grep -vE '^\s*($|#)' "${POLICY_FILE}")
+          if [[ "${#DENY_PATTERNS[@]}" -eq 0 ]]; then
+            echo "::error::No deny patterns configured"
+            exit 1
+          fi
+
+          match_pattern() {
+            local path="$1"
+            local pattern
+            for pattern in "${DENY_PATTERNS[@]}"; do
+              if [[ "${path}" == ${pattern} ]]; then
+                echo "${pattern}"
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          fail=0
+
+          echo "Checking tracked files"
+          while IFS= read -r file; do
+            [[ -z "${file}" ]] && continue
+            if pattern="$(match_pattern "${file}")"; then
+              echo "::error file=${file}::Tracked forbidden path (pattern: ${pattern})"
+              fail=1
+            fi
+          done < <(git ls-files)
+
+          echo "Checking changed files"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
+          if [[ -z "${BASE_SHA}" || "${BASE_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+            # Initial push case: treat files in HEAD as changed.
+            CHANGED_FILES="$(git ls-tree -r --name-only "${HEAD_SHA}")"
+          else
+            # Enforce on paths being introduced/modified, not removed.
+            CHANGED_FILES="$(git diff --name-only --diff-filter=ACMRTUXB "${BASE_SHA}" "${HEAD_SHA}")"
+          fi
+
+          while IFS= read -r file; do
+            [[ -z "${file}" ]] && continue
+            if pattern="$(match_pattern "${file}")"; then
+              echo "::error file=${file}::Changed forbidden path (pattern: ${pattern})"
+              fail=1
+            fi
+          done <<< "${CHANGED_FILES}"
+
+          if [[ "${fail}" -ne 0 ]]; then
+            echo "Forbidden path policy violation"
+            exit 1
+          fi
+
+          echo "Forbidden path policy passed"

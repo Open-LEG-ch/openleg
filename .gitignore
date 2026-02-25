@@ -109,5 +109,4 @@ outreach/
 deploy.sh
 grants/
 output/imagegen/
-openclaw/config/workspace/AGENTS.md
-openclaw/config/workspace/SOUL.md
+openclaw/config/workspace/

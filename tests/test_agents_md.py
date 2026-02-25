@@ -2,6 +2,7 @@
 import os
 import json
 import re
+import subprocess
 import pytest
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -58,25 +59,17 @@ class TestCronJobs:
             assert "lea-report" in job["delivery"]["to"]
 
 
-class TestAgentsMd:
-    @pytest.fixture(autouse=True)
-    def load_agents(self):
-        path = os.path.join(PROJECT_ROOT, "openclaw", "config", "workspace", "AGENTS.md")
-        with open(path) as f:
-            self.content = f.read()
-
-    def test_agents_md_has_cron_section(self):
-        assert "Autonomous Schedules" in self.content or ("Cron" in self.content and "daily" in self.content)
-
-    def test_agents_md_has_seeding_tools(self):
-        assert "get_unseeded_municipalities" in self.content
-        assert "get_all_swiss_municipalities" in self.content
-
-    def test_agents_md_has_stuck_formations_tool(self):
-        assert "get_stuck_formations" in self.content
-
-    def test_agents_md_has_outreach_candidates_tool(self):
-        assert "get_outreach_candidates" in self.content
+class TestWorkspaceRepoBoundary:
+    def test_workspace_docs_not_tracked(self):
+        result = subprocess.run(
+            ["git", "ls-files", "openclaw/config/workspace"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        tracked = [line for line in result.stdout.splitlines() if line.strip()]
+        assert tracked == []
 
 
 class TestServerMjs:
