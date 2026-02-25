@@ -18,17 +18,24 @@
   <main class="max-w-5xl mx-auto px-4 py-12">
     <header class="text-center mb-10">
       <h1 class="text-4xl font-bold mb-2">OpenLEG für Gemeinden</h1>
-      <p class="text-ink-muted max-w-2xl mx-auto">Zwei Wege, ein Ziel: funktionierende Lokale Elektrizitätsgemeinschaften. Plattform-Kern kostenlos und Open Source.</p>
+      <p class="text-ink-muted max-w-3xl mx-auto">
+        Zwei Wege, ein Ziel: funktionierende Lokale Elektrizitätsgemeinschaften mit klarer Zuständigkeit zwischen
+        Gemeinde, Bewohnern und Technikbetrieb. Der Plattform-Kern bleibt kostenlos und Open Source.
+      </p>
     </header>
 
     <div class="grid md:grid-cols-2 gap-6">
       <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-ink/20 flex flex-col">
         <h2 class="text-xl font-bold mb-1">Selbst betreiben</h2>
-        <p class="text-sm text-ink-muted mb-4">Für IT-Teams mit eigener Infrastruktur.</p>
+        <p class="text-sm text-ink-muted mb-4">
+          Für Gemeinden, Verbünde oder kantonale IT-Teams mit eigener Infrastruktur und internem Betrieb.
+          Sie nutzen OpenLEG als frei verfügbare Basis und steuern Roadmap, Hosting und Integrationen selbst.
+        </p>
         <ul class="text-sm space-y-2 mb-6 text-ink-muted flex-1">
           <li>&#10003; Open Source (AGPL-3.0)</li>
           <li>&#10003; Volle Datenhoheit</li>
           <li>&#10003; Transparente Weiterentwicklung via GitHub</li>
+          <li>&#10003; Eigene Erweiterungen und Prozesse möglich</li>
         </ul>
         <pre class="bg-ink text-slate-300 rounded-lg p-4 text-sm overflow-x-auto mb-4"><code>git clone https://github.com/openleg/openleg.git
 cd openleg
@@ -38,16 +45,42 @@ docker compose up -d</code></pre>
 
       <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand flex flex-col">
         <h2 class="text-xl font-bold mb-1">Gehostet mit optionalem Projektsupport</h2>
-        <p class="text-sm text-ink-muted mb-4">Plattform-Kern kostenlos. Support nach Aufwand, projektbasiert.</p>
+        <p class="text-sm text-ink-muted mb-4">
+          Für Gemeinden, die schnell starten wollen. Der Kern bleibt kostenlos, dazu kommt bei Bedarf
+          projektbasierte Unterstützung für Einführung, Schulung und Schnittstellen.
+        </p>
         <ul class="text-sm space-y-2 mb-6 text-ink-muted flex-1">
           <li>&#10003; Setup und Betrieb durch uns (SLA optional)</li>
           <li>&#10003; Schulungen, Onboarding, SDAT-CH Integration (optional)</li>
           <li>&#10003; Keine Abopflicht, kein Datenverkauf</li>
+          <li>&#10003; Fokus auf schnelle kommunale Umsetzung</li>
         </ul>
         <a href="/gemeinde/onboarding" class="block text-center bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark mb-2">Gemeinde anmelden</a>
         <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Gemeinde%20Projektsupport" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Projektsupport anfragen</a>
       </section>
     </div>
+
+    <section class="mt-6 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-3">Was Gemeinden im Alltag entlastet</h2>
+      <div class="grid md:grid-cols-2 gap-6 text-ink-muted">
+        <div>
+          <h3 class="font-semibold text-ink mb-1">Kommunikation und Beteiligung</h3>
+          <p>Eine zentrale Gemeinde-Seite bündelt Information, Teilnahme und Projektstatus. Das reduziert Rückfragen und macht Fortschritt für Bevölkerung und Verwaltung sichtbar.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-ink mb-1">Prozesssicherheit</h3>
+          <p>OpenLEG führt durch die standardisierten LEG-Schritte mit dokumentierten Übergaben. So sinkt das Risiko von Lücken zwischen Interessensphase, Vertragsphase und Netzbetreiber-Anmeldung.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-6">
+      <h2 class="text-2xl font-bold mb-3">Klare Abgrenzung</h2>
+      <p class="text-ink-muted">
+        OpenLEG verkauft keine Bewohnerdaten und keine B2B-Datensets. Der Wert entsteht durch funktionierende
+        LEG-Projekte vor Ort, nicht durch Weitergabe von Energiedaten.
+      </p>
+    </section>
 
   </main>
 

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Für Bewohner | OpenLEG</title>
+  {% include 'partials/tailwind_brand.html' %}
+</head>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
+
+  <div class="max-w-5xl mx-auto px-4 pt-10">
+    <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
+      <img src="/static/images/subpages/how-it-works.png" alt="OpenLEG für Bewohner" class="w-full aspect-[3/1] object-cover" loading="lazy">
+    </div>
+  </div>
+
+  <main class="max-w-5xl mx-auto px-4 py-12">
+    <header class="text-center mb-10">
+      <h1 class="text-4xl font-bold mb-2">OpenLEG für Bewohner</h1>
+      <p class="text-ink-muted max-w-3xl mx-auto">
+        Sie wollen lokalen Solarstrom nutzen, Nachbarn zusammenbringen und die neue LEG-Regelung konkret umsetzen.
+        OpenLEG führt Sie vom ersten Adresscheck bis zur laufenden Stromgemeinschaft.
+      </p>
+    </header>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand">
+        <h2 class="text-xl font-bold mb-2">Für Eigentümer mit PV</h2>
+        <p class="text-sm text-ink-muted mb-4">
+          Sie haben eine Anlage oder planen eine. OpenLEG hilft, passende Haushalte im zulässigen Radius zu finden,
+          Verträge aufzusetzen und die Anmeldung beim Netzbetreiber sauber einzureichen.
+        </p>
+        <ul class="text-sm space-y-2 text-ink-muted">
+          <li>&#10003; Adress- und Radiusprüfung nach LEG-Regeln</li>
+          <li>&#10003; Teilnehmer-Matching mit Einwilligungslogik</li>
+          <li>&#10003; Vertrags- und Anmeldepaket automatisch erzeugt</li>
+          <li>&#10003; Klarer Status bis zur Inbetriebnahme</li>
+        </ul>
+      </section>
+
+      <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-ink/20">
+        <h2 class="text-xl font-bold mb-2">Für Mieter und Haushalte ohne eigene PV</h2>
+        <p class="text-sm text-ink-muted mb-4">
+          Auch ohne eigene Solaranlage können Sie teilnehmen. Sie registrieren Ihr Interesse, sehen den Fortschritt
+          in Ihrer Nachbarschaft und werden informiert, sobald eine tragfähige Gemeinschaft entsteht.
+        </p>
+        <ul class="text-sm space-y-2 text-ink-muted">
+          <li>&#10003; Niedrige Einstiegshürde ohne Technikaufwand</li>
+          <li>&#10003; Transparente Kommunikation mit Initiatoren</li>
+          <li>&#10003; Nachvollziehbarer Prozess statt Einzelabsprachen</li>
+          <li>&#10003; Datenschutzkonforme Teilnahmeverwaltung</li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="mt-6 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-3">Was Sie konkret bekommen</h2>
+      <div class="grid md:grid-cols-2 gap-6 text-ink-muted">
+        <div>
+          <h3 class="font-semibold text-ink mb-1">Von der Idee zur Anmeldung</h3>
+          <p>
+            Statt Chats, Tabellen und manueller Dokumentsuche erhalten Sie einen klaren Ablauf mit den nächsten
+            Schritten, Pflichtdaten und Vorlagen für Vereinbarung, Teilnehmerverträge und Netzbetreiber-Anmeldung.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-ink mb-1">Betrieb mit Überblick</h3>
+          <p>
+            Nach der Gründung bleiben Verbrauch, Rollen und Status pro Teilnehmer nachvollziehbar. So bleibt die
+            Gemeinschaft auch nach dem Start organisatorisch stabil und skalierbar.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-6">
+      <h2 class="text-2xl font-bold mb-3">Kosten und Daten</h2>
+      <div class="text-ink-muted space-y-2">
+        <p>Der Plattform-Kern ist kostenlos und Open Source. Keine Registrierungsgebühr, keine Paywall im Grundprozess.</p>
+        <p>Ihre Daten bleiben im LEG-Kontext. Kein Datenverkauf an Dritte oder Energievertrieb.</p>
+      </div>
+    </section>
+
+    <div class="mt-10 flex flex-col sm:flex-row gap-3">
+      <a href="/#registrieren" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Jetzt Adresse prüfen</a>
+      <a href="/fuer-gemeinden" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Angebot für Gemeinden</a>
+    </div>
+  </main>
+
+  {% include 'partials/site_footer.html' %}
+</body>
+</html>

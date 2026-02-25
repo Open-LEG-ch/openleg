@@ -43,7 +43,7 @@
             <p class="mt-4 text-lg text-ink-muted max-w-xl">Gründen Sie eine lokale Stromgemeinschaft (LEG) und sparen Sie bis 40% auf Netzgebühren. Kostenlos, Open Source, Ihre Daten bleiben bei Ihnen.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
               <a href="#registrieren" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse prüfen</a>
-              <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">So funktioniert's</a>
+              <a href="/fuer-bewohner" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Mehr für Bewohner</a>
             </div>
             <div class="mt-6 flex flex-wrap gap-2 text-xs">
               <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Kostenlos, für immer</span>
@@ -118,12 +118,12 @@
       <div class="grid md:grid-cols-2 gap-10 items-center">
         <div>
           <h2 class="text-3xl font-bold">Für Gemeinden: die Energiewende vor Ort ermöglichen.</h2>
-          <p class="text-ink-muted mt-3">Jede Gemeinde bekommt kostenlos ihre eigene Seite. Bewohner melden sich an, das System findet passende Nachbarn, Stromgemeinschaften entstehen.</p>
+          <p class="text-ink-muted mt-3">Gemeinden erhalten eine eigene Seite, klare Prozesse und eine laufende Übersicht. So wird aus einzelnen Interessenten ein belastbares LEG-Projekt mit nachvollziehbaren Schritten für Verwaltung und Bevölkerung.</p>
           <ul class="mt-4 space-y-2 text-ink-muted list-disc list-inside">
-            <li>Eigene Webseite unter gemeinde.openleg.ch</li>
-            <li>Automatisches Nachbarschafts-Matching</li>
-            <li>Alle Dokumente: Vereinbarung, Verträge, Netzbetreiber-Anmeldung</li>
-            <li>Fortschritt und Anmeldungen auf einen Blick</li>
+            <li>Kommunale Seite für Anmeldung, Information und Fortschritt</li>
+            <li>Automatisches Matching passender Haushalte</li>
+            <li>Dokumente und Netzbetreiber-Anmeldung strukturiert vorbereitet</li>
+            <li>Optionaler Projektsupport für Einführung und Betrieb</li>
           </ul>
           <a href="/fuer-gemeinden" class="inline-block mt-6 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Wie Ihre Gemeinde teilnimmt</a>
         </div>
@@ -137,11 +137,12 @@
   </section>
 
   <!-- Bewohner -->
-  <section id="bewohner" class="py-16 bg-[#f6f4ef]">
+  <section class="py-16 bg-[#f6f4ef]">
     <div class="max-w-6xl mx-auto px-4">
       <div class="mb-6">
-        <h2 class="text-3xl font-bold">Nachbarn finden, Stromgemeinschaft gründen</h2>
-        <p class="text-ink-muted mt-2">Geben Sie Ihre Adresse ein und sehen Sie, wer in Ihrer Nähe ebenfalls mitmachen will. Alles anonymisiert, Ihre Daten bleiben bei Ihnen.</p>
+        <h2 class="text-3xl font-bold">Start für Bewohner: Adresse prüfen und loslegen</h2>
+        <p class="text-ink-muted mt-2">Sie können direkt starten oder zuerst den vollständigen Ablauf lesen. Beide Wege führen zum selben Registrierungsprozess.</p>
+        <a href="/fuer-bewohner" class="inline-block mt-3 border border-ink/20 text-ink px-4 py-2 rounded-lg font-medium hover:bg-white">Detaillierte Bewohner-Seite</a>
         {% if user_count > 0 %}
         <p class="text-ink-muted mt-2">Bereits <strong class="text-ink">{{ user_count }}</strong> Haushalte registriert</p>
         {% endif %}
