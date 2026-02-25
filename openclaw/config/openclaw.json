@@ -57,7 +57,6 @@
   },
 
   "cron": {
-    "enabled": true,
-    "jobsFile": "cron/jobs.json"
+    "enabled": true
   }
 }
