@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenLEG - LEG-ready für EVU/VNB | Gemeinde & Bewohner Plattform</title>
-  <meta name="description" content="OpenLEG macht EVU/VNB LEG-ready: Formation, Dokumente, 15-Minuten-Logik. Gemeinden und Bewohner starten ohne Projektaufwand.">
+  <title>OpenLEG: Lokale Stromgemeinschaften einfach gründen</title>
+  <meta name="description" content="OpenLEG hilft Energieversorgern, Gemeinden und Bewohnern, lokale Stromgemeinschaften (LEG) zu gründen, ganz ohne komplizierte IT Projekte.">
   <link rel="canonical" href="{{ site_url }}/">
-  <meta property="og:title" content="OpenLEG - LEG-ready für EVU/VNB">
-  <meta property="og:description" content="Turnkey LEG-Plattform: Formation, Dokumente, 15‑Minuten‑Logik. Gemeinden und Bewohner starten sofort.">
+  <meta property="og:title" content="OpenLEG: Lokale Stromgemeinschaften einfach gründen">
+  <meta property="og:description" content="Energieversorger, Gemeinden und Bewohner starten ihre lokale Stromgemeinschaft (LEG) in wenigen Tagen, nicht Monaten.">
   <meta property="og:image" content="{{ site_url }}/static/images/og-image.png">
   <meta property="og:url" content="{{ site_url }}/">
   {% include 'partials/tailwind_brand.html' %}
@@ -33,24 +33,24 @@
     <div class="relative max-w-6xl mx-auto px-4 py-16 md:py-20 grid md:grid-cols-2 gap-10 items-center">
       <div>
         <div class="inline-flex items-center rounded-full border border-slate-300/60 bg-white/70 p-1 text-sm shadow-sm" role="tablist" aria-label="Zielgruppe">
-          <button class="px-4 py-2 rounded-full" data-seg-tab="evu" role="tab" aria-selected="true">EVU/VNB</button>
+          <button class="px-4 py-2 rounded-full" data-seg-tab="evu" role="tab" aria-selected="true">Energieversorger</button>
           <button class="px-4 py-2 rounded-full" data-seg-tab="gemeinde" role="tab" aria-selected="false">Gemeinde</button>
           <button class="px-4 py-2 rounded-full" data-seg-tab="bewohner" role="tab" aria-selected="false">Bewohner</button>
         </div>
 
         <div class="mt-6" aria-live="polite">
           <div data-seg-panel="evu">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">LEG-ready. Ohne ERP. Ohne Projekt.</h1>
-            <p class="mt-4 text-lg text-ink-muted max-w-xl">Plattform für Gemeindewerke &amp; Netzbetreiber (EVU/VNB): LEGs führen, Dokumente erzeugen, 15-Minuten-Daten nutzen.</p>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Lokale Stromgemeinschaften starten. Einfach so.</h1>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Die Plattform für Energieversorger: lokale Stromgemeinschaften (LEG) gründen, Dokumente erstellen und Verbrauchsdaten nutzen, ohne grosses IT Projekt.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
-              <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">EVU registrieren</a>
-              <a href="/utility/login" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Utility Login</a>
+              <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Jetzt starten</a>
+              <a href="/utility/login" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Login</a>
             </div>
           </div>
 
           <div data-seg-panel="gemeinde" class="hidden">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Gemeinde-Portal für LEG-Start.</h1>
-            <p class="mt-4 text-lg text-ink-muted max-w-xl">Registrierungen, Matching, Dashboard - kostenlos starten, später skalieren.</p>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Ihre Gemeinde startet eine Stromgemeinschaft.</h1>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Bewohner registrieren sich, finden passende Nachbarn und sehen den Fortschritt live. Kostenlos starten, später erweitern.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
               <a href="/gemeinde/onboarding" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Gemeinde anmelden</a>
               <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">So funktioniert's</a>
@@ -64,8 +64,8 @@
           </div>
 
           <div data-seg-panel="bewohner" class="hidden">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Prüfen. Finden. Starten.</h1>
-            <p class="mt-4 text-lg text-ink-muted max-w-xl">Adresse prüfen und LEG-Nachbarn in Ihrer Umgebung finden - Sie kontrollieren Ihre Daten.</p>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Schauen Sie, wer in Ihrer Nähe mitmacht.</h1>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Adresse eingeben, Nachbarn finden, gemeinsam eine lokale Stromgemeinschaft (LEG) gründen. Sie behalten die Kontrolle über Ihre Daten.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
               <a href="#registrieren" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse prüfen</a>
               <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Mehr erfahren</a>
@@ -92,7 +92,7 @@
             <img src="/static/images/landing/rural.png" alt="Ländlicher Alltag" class="h-full w-full object-cover" loading="lazy">
           </div>
         </div>
-        <div class="mt-3 text-xs text-ink-muted">Bewegung in Stadt, Vorort und Land - echte Lebensräume.</div>
+        <div class="mt-3 text-xs text-ink-muted">Stromgemeinschaften in Stadt, Vorort und auf dem Land.</div>
       </div>
     </div>
   </section>
@@ -102,24 +102,24 @@
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
         <div>
-          <h2 class="text-3xl font-bold">Für EVU/VNB: Compliance, die sich verkaufen lässt.</h2>
-          <p class="text-ink-muted mt-2 max-w-2xl">Keine Integrationsprojekte. Keine Beratungsschleifen. Einfach starten, dann skalieren.</p>
+          <h2 class="text-3xl font-bold">Für Energieversorger: gesetzeskonform und sofort einsatzbereit.</h2>
+          <p class="text-ink-muted mt-2 max-w-2xl">Keine langen IT Projekte, keine Beratungsschleifen. Registrieren, einrichten, loslegen.</p>
         </div>
-        <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">EVU registrieren</a>
+        <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Jetzt starten</a>
       </div>
 
       <div class="grid md:grid-cols-3 gap-6">
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <h3 class="font-semibold text-lg mb-2">Sofort startklar</h3>
-          <p class="text-ink-muted">Registrieren -> Magic Link -> Dashboard -> API-Key.</p>
+          <p class="text-ink-muted">Registrieren, Login Link erhalten, Dashboard einrichten, fertig.</p>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <h3 class="font-semibold text-lg mb-2">Dokumente inklusive</h3>
-          <p class="text-ink-muted">Gemeinschaftsvereinbarung, Teilnehmervertrag, DSO-Anmeldung (PDF).</p>
+          <h3 class="font-semibold text-lg mb-2">Alle Dokumente dabei</h3>
+          <p class="text-ink-muted">Gemeinschaftsvereinbarung, Teilnehmervertrag, Anmeldung beim Netzbetreiber: alles als PDF.</p>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <h3 class="font-semibold text-lg mb-2">15-Minuten-Betrieb</h3>
-          <p class="text-ink-muted">Daten &amp; Abrechnung auf Viertelstunden-Basis (gesetzeskonform).</p>
+          <h3 class="font-semibold text-lg mb-2">Viertelstunden Abrechnung</h3>
+          <p class="text-ink-muted">Verbrauchsdaten und Abrechnung alle 15 Minuten, wie es das Gesetz verlangt.</p>
         </div>
       </div>
 
@@ -132,7 +132,7 @@
           <div class="bg-white rounded-lg border border-amber-200 px-3 py-2">4) Dokumente + Preview</div>
         </div>
         <div class="mt-4 flex flex-col sm:flex-row gap-3">
-          <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">EVU registrieren</a>
+          <a href="/utility/register" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Jetzt starten</a>
           <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Pilot%20EVU" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Pilot anfragen</a>
         </div>
       </div>
@@ -144,23 +144,23 @@
     <div class="max-w-6xl mx-auto px-4">
       <div class="grid md:grid-cols-4 gap-4">
         <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
-          <div class="text-sm text-ink-muted">Pflicht seit 01.01.2026</div>
-          <div class="text-lg font-semibold">631 DSOs</div>
+          <div class="text-sm text-ink-muted">Seit 1. Januar 2026</div>
+          <div class="text-lg font-semibold">631 Netzbetreiber betroffen</div>
         </div>
         <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
-          <div class="text-sm text-ink-muted">Smart Meter Frist</div>
-          <div class="text-lg font-semibold">Innert 3 Monaten</div>
+          <div class="text-sm text-ink-muted">Smart Meter</div>
+          <div class="text-lg font-semibold">Innert 3 Monaten installiert</div>
         </div>
         <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
-          <div class="text-sm text-ink-muted">Netznutzung</div>
-          <div class="text-lg font-semibold">40% / 20% Rabatt</div>
+          <div class="text-sm text-ink-muted">Netzgebühren Rabatt</div>
+          <div class="text-lg font-semibold">Bis 40% günstiger</div>
         </div>
         <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
-          <div class="text-sm text-ink-muted">Billing Basis</div>
-          <div class="text-lg font-semibold">15-Minuten-Intervalle</div>
+          <div class="text-sm text-ink-muted">Abrechnung</div>
+          <div class="text-lg font-semibold">Alle 15 Minuten</div>
         </div>
       </div>
-      <div class="mt-3 text-xs text-ink-muted">Keine Rechtsberatung. Umsetzung gemäss StromVG/StromVV.</div>
+      <div class="mt-3 text-xs text-ink-muted">Keine Rechtsberatung. Umsetzung gemäss Stromversorgungsgesetz und Stromversorgungsverordnung.</div>
     </div>
   </section>
 
@@ -169,19 +169,19 @@
     <div class="max-w-6xl mx-auto px-4">
       <div class="grid md:grid-cols-2 gap-10 items-center">
         <div>
-          <h2 class="text-3xl font-bold">Gemeinde: klarer Einstieg, später skalierbar.</h2>
-          <p class="text-ink-muted mt-3">Eine Instanz pro Gemeinde, mit Registrierung, Matching und Dashboard.</p>
+          <h2 class="text-3xl font-bold">Für Gemeinden: einfach starten, später erweitern.</h2>
+          <p class="text-ink-muted mt-3">Jede Gemeinde bekommt ihre eigene Seite mit Anmeldung, Nachbarschafts Matching und Übersicht.</p>
           <ul class="mt-4 space-y-2 text-ink-muted list-disc list-inside">
-            <li>White-Label Subdomain mit Branding</li>
-            <li>Registrierungen, Status, KPIs</li>
-            <li>Dokumente &amp; DSO-Anmeldung</li>
+            <li>Eigene Webseite mit Ihrem Gemeinde Branding</li>
+            <li>Anmeldungen und Fortschritt auf einen Blick</li>
+            <li>Alle Dokumente und Netzbetreiber Anmeldung inklusive</li>
           </ul>
           <a href="/gemeinde/onboarding" class="inline-block mt-6 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Gemeinde anmelden</a>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-amber-50 p-6">
           <div class="text-sm text-ink-muted">Kurz gesagt</div>
-          <div class="mt-2 text-2xl font-semibold">Start in Tagen, nicht in Monaten.</div>
-          <div class="mt-3 text-ink-muted">Kostenlos starten. Kein Projekt, kein ERP, kein Integrationsstress.</div>
+          <div class="mt-2 text-2xl font-semibold">In Tagen live, nicht in Monaten.</div>
+          <div class="mt-3 text-ink-muted">Kostenlos starten. Kein IT Projekt, kein Stress mit Schnittstellen.</div>
         </div>
       </div>
     </div>
@@ -191,8 +191,8 @@
   <section id="bewohner" class="py-16 bg-[#f6f4ef]">
     <div class="max-w-6xl mx-auto px-4">
       <div class="mb-6">
-        <h2 class="text-3xl font-bold">Bewohner: Interesse sichtbar machen (anonymisiert)</h2>
-        <p class="text-ink-muted mt-2">Prüfen Sie Ihre Adresse und zeigen Sie Nachfrage in Ihrer Umgebung.</p>
+        <h2 class="text-3xl font-bold">Für Bewohner: zeigen Sie Interesse, finden Sie Nachbarn</h2>
+        <p class="text-ink-muted mt-2">Geben Sie Ihre Adresse ein und sehen Sie, wer in Ihrer Nähe ebenfalls mitmachen will. Alles anonymisiert.</p>
         {% if user_count > 0 %}
         <p class="text-ink-muted mt-2">Bereits <strong class="text-ink">{{ user_count }}</strong> Haushalte registriert</p>
         {% endif %}
