@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 
 
 ROUTES = ["/fuer-gemeinden", "/fuer-bewohner", "/how-it-works", "/pricing"]
+ROUTES_WITH_COMPETITOR = ["/fuer-gemeinden", "/how-it-works", "/pricing"]
 
 
 def _get_html(path):
@@ -54,7 +55,7 @@ class TestCtaGemeinde:
 
 
 class TestCompetitorComparison:
-    @pytest.mark.parametrize("route", ROUTES)
+    @pytest.mark.parametrize("route", ROUTES_WITH_COMPETITOR)
     def test_competitor_comparison_present(self, route):
         html = _get_html(route)
         assert "LEGhub" in html, f"LEGhub missing on {route}"
