@@ -66,9 +66,9 @@
     fetch('/api/v1/municipalities/'+bfs+'/leg-potential').then(function(r){
       if(!r.ok)throw new Error('Nicht gefunden');return r.json()
     }).then(function(d){
-      document.getElementById('sw-savings').textContent='CHF '+(d.estimated_savings_chf_year||d.savings||'–');
-      document.getElementById('sw-solar').textContent=(d.solar_potential_percent||d.solar||'–')+'%';
-      document.getElementById('sw-gap').textContent=(d.tariff_gap_rp_kwh||d.gap||'–')+' Rp';
+      document.getElementById('sw-savings').textContent='CHF '+(d.annual_savings_chf||'–');
+      document.getElementById('sw-solar').textContent=(d.savings_pct||'–')+'%';
+      document.getElementById('sw-gap').textContent=(d.savings_rp_kwh||'–')+' Rp';
       document.getElementById('sw-result').classList.remove('hidden');
     }).catch(function(){
       document.getElementById('sw-error').textContent='Daten nicht verfügbar für diese Gemeinde';
