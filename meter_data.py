@@ -271,3 +271,79 @@ def validate_readings_quality(readings: List[tuple]) -> Dict:
         "date_range": f"{timestamps[0]} bis {timestamps[-1]}",
         "issues": issues
     }
+
+
+def score_meter_profile_usability(
+    readings: List[tuple],
+    expected_interval_minutes: int = 15,
+    expected_points: Optional[int] = None,
+) -> Dict:
+    """Score whether meter readings are usable for simulation."""
+    if not readings:
+        return {
+            "usable_for_simulation": False,
+            "coverage_ratio": 0.0,
+            "quality_score": 0.0,
+            "gap_count": 0,
+            "duplicate_count": 0,
+            "negative_count": 0,
+            "outlier_count": 0,
+            "total_points": 0,
+            "expected_points": expected_points or 0,
+        }
+
+    interval_seconds = expected_interval_minutes * 60
+    timestamps = [r[0] for r in readings]
+    unique_timestamps = set(timestamps)
+    duplicate_count = len(timestamps) - len(unique_timestamps)
+
+    sorted_ts = sorted(unique_timestamps)
+    gap_count = 0
+    for i in range(1, len(sorted_ts)):
+        diff = (sorted_ts[i] - sorted_ts[i - 1]).total_seconds()
+        if diff > interval_seconds * 1.5:
+            gap_count += 1
+
+    negative_count = sum(
+        1 for r in readings
+        if (r[1] or 0) < 0 or (r[2] or 0) < 0 or (r[3] or 0) < 0
+    )
+
+    # 20 kWh in 15 minutes is an intentionally strict outlier threshold.
+    outlier_threshold_kwh = 20.0
+    outlier_count = sum(
+        1 for r in readings
+        if (r[1] or 0) > outlier_threshold_kwh
+        or (r[2] or 0) > outlier_threshold_kwh
+        or (r[3] or 0) > outlier_threshold_kwh
+    )
+
+    if expected_points is None:
+        span_seconds = max((sorted_ts[-1] - sorted_ts[0]).total_seconds(), 0)
+        expected_points = int(span_seconds / interval_seconds) + 1 if sorted_ts else 0
+    expected_points = max(expected_points, 1)
+
+    total_points = len(unique_timestamps)
+    coverage_ratio = min(total_points / expected_points, 1.0)
+
+    quality_score = coverage_ratio
+    quality_score -= min(gap_count * 0.01, 0.2)
+    quality_score -= min(duplicate_count * 0.005, 0.1)
+    quality_score -= min(negative_count * 0.1, 0.4)
+    quality_score -= min(outlier_count * 0.05, 0.3)
+    quality_score = max(0.0, min(1.0, quality_score))
+
+    critical_issues = negative_count > 0 or outlier_count > 0
+    usable_for_simulation = coverage_ratio >= 0.70 and not critical_issues
+
+    return {
+        "usable_for_simulation": usable_for_simulation,
+        "coverage_ratio": round(coverage_ratio, 4),
+        "quality_score": round(quality_score, 4),
+        "gap_count": gap_count,
+        "duplicate_count": duplicate_count,
+        "negative_count": negative_count,
+        "outlier_count": outlier_count,
+        "total_points": total_points,
+        "expected_points": expected_points,
+    }

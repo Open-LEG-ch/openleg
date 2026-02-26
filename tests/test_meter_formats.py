@@ -1,6 +1,13 @@
 """TDD tests for multi-format smart meter parsing."""
 import pytest
-from meter_data import parse_ekz_csv, detect_format, parse_meter_csv, _parse_decimal, _parse_timestamp
+from meter_data import (
+    parse_ekz_csv,
+    detect_format,
+    parse_meter_csv,
+    _parse_decimal,
+    _parse_timestamp,
+    score_meter_profile_usability,
+)
 
 
 class TestFormatDetection:
@@ -217,3 +224,44 @@ class TestGapDetection:
         readings, _ = parse_meter_csv(csv)
         quality = validate_readings_quality(readings)
         assert any('negative' in i for i in quality['issues'])
+
+
+class TestSimulationUsability:
+    """Meter profile quality score for hybrid simulation."""
+
+    def test_usable_with_good_coverage(self):
+        csv = (
+            "Zeitstempel;Verbrauch (kWh);Produktion (kWh);Einspeisung (kWh)\n"
+            "01.01.2026 00:00;0,25;0,00;0,00\n"
+            "01.01.2026 00:15;0,30;0,00;0,00\n"
+            "01.01.2026 00:30;0,22;0,00;0,00\n"
+            "01.01.2026 00:45;0,28;0,00;0,00"
+        )
+        readings, _ = parse_meter_csv(csv)
+        score = score_meter_profile_usability(readings, expected_points=4)
+        assert score["usable_for_simulation"] is True
+        assert score["coverage_ratio"] == 1.0
+
+    def test_not_usable_with_low_coverage(self):
+        csv = (
+            "Zeitstempel;Verbrauch (kWh);Produktion (kWh);Einspeisung (kWh)\n"
+            "01.01.2026 00:00;0,25;0,00;0,00\n"
+            "01.01.2026 01:00;0,22;0,00;0,00"
+        )
+        readings, _ = parse_meter_csv(csv)
+        score = score_meter_profile_usability(readings, expected_points=8)
+        assert score["usable_for_simulation"] is False
+        assert score["coverage_ratio"] < 0.7
+
+    def test_not_usable_with_negative_values(self):
+        csv = (
+            "Zeitstempel;Verbrauch (kWh);Produktion (kWh);Einspeisung (kWh)\n"
+            "01.01.2026 00:00;-0,25;0,00;0,00\n"
+            "01.01.2026 00:15;0,30;0,00;0,00\n"
+            "01.01.2026 00:30;0,22;0,00;0,00\n"
+            "01.01.2026 00:45;0,28;0,00;0,00"
+        )
+        readings, _ = parse_meter_csv(csv)
+        score = score_meter_profile_usability(readings, expected_points=4)
+        assert score["usable_for_simulation"] is False
+        assert score["negative_count"] > 0

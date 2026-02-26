@@ -145,6 +145,8 @@ def _create_tables():
                     cluster_id INTEGER PRIMARY KEY,
                     autarky_percent DECIMAL(5, 2),
                     num_members INTEGER,
+                    confidence_percent DECIMAL(5, 2),
+                    profile_data_mix VARCHAR(16),
                     polygon JSONB,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -423,6 +425,19 @@ def _create_tables():
                 )
             """)
 
+            # ML simulation cache (community signature keyed)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS simulation_cache (
+                    cache_key VARCHAR(128) PRIMARY KEY,
+                    city_id VARCHAR(64),
+                    building_ids_hash VARCHAR(128),
+                    sim_version VARCHAR(32),
+                    result_json JSONB NOT NULL,
+                    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP
+                )
+            """)
+
             # Utility clients (B2B SaaS customers)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS utility_clients (
@@ -579,6 +594,25 @@ def _create_tables():
                 END $$;
             """)
 
+            # Migration: add confidence/profile columns to cluster_info if missing
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'cluster_info' AND column_name = 'confidence_percent'
+                    ) THEN
+                        ALTER TABLE cluster_info ADD COLUMN confidence_percent DECIMAL(5, 2);
+                    END IF;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'cluster_info' AND column_name = 'profile_data_mix'
+                    ) THEN
+                        ALTER TABLE cluster_info ADD COLUMN profile_data_mix VARCHAR(16);
+                    END IF;
+                END $$
+            """)
+
             # Create indexes for common queries
             cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_email ON buildings(email)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_user_type ON buildings(user_type)")
@@ -612,6 +646,9 @@ def _create_tables():
             cur.execute("CREATE INDEX IF NOT EXISTS idx_api_usage_client ON api_usage(client_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_api_usage_called ON api_usage(called_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_insights_cache_type ON insights_cache(insight_type)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_simulation_cache_city ON simulation_cache(city_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_simulation_cache_expires ON simulation_cache(expires_at)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_simulation_cache_building_hash ON simulation_cache(building_ids_hash)")
 
             cur.execute("CREATE INDEX IF NOT EXISTS idx_elcom_tariffs_bfs ON elcom_tariffs(bfs_number)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_elcom_tariffs_year ON elcom_tariffs(year)")
@@ -837,6 +874,7 @@ def get_all_building_profiles(city_id: Optional[str] = None) -> List[Dict]:
                                annual_consumption_kwh, potential_pv_kwp, user_type
                         FROM buildings
                         WHERE verified = TRUE AND city_id = %s
+                        ORDER BY building_id ASC
                     """, (city_id,))
                 else:
                     cur.execute("""
@@ -844,6 +882,7 @@ def get_all_building_profiles(city_id: Optional[str] = None) -> List[Dict]:
                                annual_consumption_kwh, potential_pv_kwp, user_type
                         FROM buildings
                         WHERE verified = TRUE
+                        ORDER BY building_id ASC
                     """)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
@@ -975,6 +1014,26 @@ def save_cluster(building_id: str, cluster_id: int) -> bool:
         return False
 
 
+def clear_clusters_for_city(city_id: Optional[str] = None) -> int:
+    """Delete cluster assignments, optionally scoped to a city."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                if city_id:
+                    cur.execute("""
+                        DELETE FROM clusters
+                        WHERE building_id IN (
+                            SELECT building_id FROM buildings WHERE city_id = %s
+                        )
+                    """, (city_id,))
+                else:
+                    cur.execute("DELETE FROM clusters")
+                return cur.rowcount
+    except Exception as e:
+        logger.error(f"[DB] Error clearing clusters: {e}")
+        return 0
+
+
 def save_cluster_info(cluster_id: int, info: Dict) -> bool:
     """Save cluster metadata."""
     try:
@@ -982,17 +1041,23 @@ def save_cluster_info(cluster_id: int, info: Dict) -> bool:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO cluster_info (cluster_id, autarky_percent, num_members, polygon)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO cluster_info (
+                        cluster_id, autarky_percent, num_members, confidence_percent, profile_data_mix, polygon
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     ON CONFLICT (cluster_id) DO UPDATE SET
                         autarky_percent = EXCLUDED.autarky_percent,
                         num_members = EXCLUDED.num_members,
+                        confidence_percent = EXCLUDED.confidence_percent,
+                        profile_data_mix = EXCLUDED.profile_data_mix,
                         polygon = EXCLUDED.polygon,
                         updated_at = CURRENT_TIMESTAMP
                 """, (
                     cluster_id,
                     info.get('autarky_percent'),
                     info.get('num_members'),
+                    info.get('confidence_percent'),
+                    info.get('profile_data_mix'),
                     json.dumps(info.get('polygon', []))
                 ))
                 return True
@@ -1007,11 +1072,13 @@ def get_all_clusters() -> List[Dict]:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon,
+                    SELECT ci.cluster_id, ci.autarky_percent, ci.num_members,
+                           ci.confidence_percent, ci.profile_data_mix, ci.polygon,
                            array_agg(c.building_id) as members
                     FROM cluster_info ci
                     LEFT JOIN clusters c ON ci.cluster_id = c.cluster_id
-                    GROUP BY ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon
+                    GROUP BY ci.cluster_id, ci.autarky_percent, ci.num_members,
+                             ci.confidence_percent, ci.profile_data_mix, ci.polygon
                 """)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
@@ -1595,6 +1662,31 @@ def get_meter_readings(building_id, start=None, end=None, limit=1000):
         return []
 
 
+def get_meter_profile_15min(building_id, start=None, end=None):
+    """Get meter readings as ascending 15-minute series in kWh per interval."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                query = """
+                    SELECT timestamp, consumption_kwh, production_kwh, feed_in_kwh
+                    FROM meter_readings
+                    WHERE building_id = %s
+                """
+                params = [building_id]
+                if start:
+                    query += " AND timestamp >= %s"
+                    params.append(start)
+                if end:
+                    query += " AND timestamp <= %s"
+                    params.append(end)
+                query += " ORDER BY timestamp ASC"
+                cur.execute(query, params)
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting meter profile 15min: {e}")
+        return []
+
+
 def get_meter_reading_stats(building_id):
     try:
         with get_connection() as conn:
@@ -1764,6 +1856,83 @@ def get_insight(insight_type, scope=None, period=None):
     except Exception as e:
         logger.error(f"[DB] Error getting insight: {e}")
         return None
+
+
+def get_simulation_cache(cache_key: str) -> Optional[Dict]:
+    """Read non-expired cached simulation by deterministic key."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT cache_key, city_id, building_ids_hash, sim_version, result_json,
+                           computed_at, expires_at
+                    FROM simulation_cache
+                    WHERE cache_key = %s
+                      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+                """, (cache_key,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting simulation cache: {e}")
+        return None
+
+
+def set_simulation_cache(cache_key: str, result: Dict, ttl_seconds: int = 86400,
+                         city_id: Optional[str] = None,
+                         building_ids_hash: Optional[str] = None,
+                         sim_version: str = 'v2') -> bool:
+    """Upsert simulation cache entry with TTL."""
+    try:
+        import json
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO simulation_cache
+                        (cache_key, city_id, building_ids_hash, sim_version, result_json, expires_at)
+                    VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP + (%s * INTERVAL '1 second'))
+                    ON CONFLICT (cache_key) DO UPDATE SET
+                        city_id = EXCLUDED.city_id,
+                        building_ids_hash = EXCLUDED.building_ids_hash,
+                        sim_version = EXCLUDED.sim_version,
+                        result_json = EXCLUDED.result_json,
+                        computed_at = CURRENT_TIMESTAMP,
+                        expires_at = EXCLUDED.expires_at
+                """, (
+                    cache_key,
+                    city_id,
+                    building_ids_hash,
+                    sim_version,
+                    json.dumps(result),
+                    ttl_seconds
+                ))
+                return True
+    except Exception as e:
+        logger.error(f"[DB] Error setting simulation cache: {e}")
+        return False
+
+
+def purge_simulation_cache(city_id: Optional[str] = None) -> int:
+    """Delete expired simulation cache entries, optionally scoped to city."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                if city_id:
+                    cur.execute("""
+                        DELETE FROM simulation_cache
+                        WHERE city_id = %s
+                          AND expires_at IS NOT NULL
+                          AND expires_at <= CURRENT_TIMESTAMP
+                    """, (city_id,))
+                else:
+                    cur.execute("""
+                        DELETE FROM simulation_cache
+                        WHERE expires_at IS NOT NULL
+                          AND expires_at <= CURRENT_TIMESTAMP
+                    """)
+                return cur.rowcount
+    except Exception as e:
+        logger.error(f"[DB] Error purging simulation cache: {e}")
+        return 0
 
 
 # === Initialization check ===

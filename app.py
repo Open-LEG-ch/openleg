@@ -41,6 +41,7 @@ from email_utils import send_email, EMAIL_ENABLED, FROM_EMAIL
 import data_enricher
 import ml_models
 import security_utils
+import cache as redis_cache
 
 # --- PostgreSQL Database ---
 import database as db
@@ -70,6 +71,10 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
+SIMULATION_CACHE_TTL_SECONDS = int(os.getenv("SIMULATION_CACHE_TTL_SECONDS", "86400"))
+SIMULATION_CACHE_VERSION = os.getenv("SIMULATION_CACHE_VERSION", "v2")
+PROVISIONAL_SIM_NUM_INTERVALS = int(os.getenv("PROVISIONAL_SIM_NUM_INTERVALS", "672"))
+PROVISIONAL_SIM_START = os.getenv("PROVISIONAL_SIM_START", "2025-01-01 00:00:00")
 
 # --- App ---
 app = Flask(__name__)
@@ -261,18 +266,62 @@ def collect_building_locations(city_id=None, exclude_building_id=None):
     return locations
 
 
+def _sim_redis_key(cache_key):
+    return f"sim:{cache_key}"
+
+
+def _build_sim_cache_backend(city_id=None, sim_version=SIMULATION_CACHE_VERSION):
+    def _get(cache_key):
+        redis_value = redis_cache.cache_get(_sim_redis_key(cache_key))
+        if isinstance(redis_value, dict):
+            return redis_value
+        row = db.get_simulation_cache(cache_key)
+        if isinstance(row, dict):
+            payload = row.get("result_json", row)
+            if isinstance(payload, dict):
+                redis_cache.cache_set(_sim_redis_key(cache_key), payload, ttl=3600)
+                return payload
+        return None
+
+    def _set(cache_key, result, ttl_seconds):
+        ttl = max(int(ttl_seconds or SIMULATION_CACHE_TTL_SECONDS), 1)
+        db_ok = db.set_simulation_cache(
+            cache_key=cache_key,
+            result=result,
+            ttl_seconds=ttl,
+            city_id=city_id,
+            building_ids_hash=cache_key,
+            sim_version=sim_version,
+        )
+        redis_cache.cache_set(_sim_redis_key(cache_key), result, ttl=min(ttl, 3600))
+        return db_ok
+
+    return {"get": _get, "set": _set}
+
+
 def run_full_ml_task(new_building_id=None, city_id=None):
     """Background ML clustering task using PostgreSQL data."""
     logger.info("[ML] Starting background clustering...")
+    db.purge_simulation_cache(city_id=city_id)
     profiles = db.get_all_building_profiles(city_id=city_id)
     if len(profiles) < 2:
         logger.info("[ML] Not enough buildings for clustering.")
         return
 
+    cache_backend = _build_sim_cache_backend(city_id=city_id, sim_version=SIMULATION_CACHE_VERSION)
     building_data = pd.DataFrame(profiles)
     ranked_communities, buildings_with_clusters = ml_models.find_optimal_communities(
-        building_data, radius_meters=150, min_community_size=2
+        building_data,
+        radius_meters=150,
+        min_community_size=2,
+        city_id=city_id,
+        sim_version=SIMULATION_CACHE_VERSION,
+        cache_backend=cache_backend,
+        cache_ttl_seconds=SIMULATION_CACHE_TTL_SECONDS,
+        strategy="hybrid",
     )
+
+    db.clear_clusters_for_city(city_id=city_id)
 
     # Save clusters to DB
     if 'building_id' in buildings_with_clusters.columns:
@@ -288,9 +337,9 @@ def run_full_ml_task(new_building_id=None, city_id=None):
     logger.info(f"[ML] Clustering done: {len(ranked_communities)} clusters")
 
 
-def find_provisional_matches(new_profile):
+def find_provisional_matches(new_profile, city_id=None):
     """Fast provisional match search (distance only, no DBSCAN)."""
-    profiles = db.get_all_building_profiles()
+    profiles = db.get_all_building_profiles(city_id=city_id)
     if not profiles:
         return None
 
@@ -306,14 +355,36 @@ def find_provisional_matches(new_profile):
         return None
 
     community_df = pd.DataFrame(provisional)
-    autarky_score, _, _ = ml_models.calculate_community_autarky(community_df, None)
+    cache_backend = _build_sim_cache_backend(city_id=city_id, sim_version=SIMULATION_CACHE_VERSION)
+    window = {
+        "start": PROVISIONAL_SIM_START,
+        "num_intervals": PROVISIONAL_SIM_NUM_INTERVALS,
+    }
+    cache_key = ml_models.build_community_signature(
+        community_df,
+        city_id=city_id,
+        sim_version=f"{SIMULATION_CACHE_VERSION}-provisional",
+    )
+    details = ml_models.calculate_community_autarky_details(
+        community_buildings_df=community_df,
+        all_profiles=None,
+        profile_provider=None,
+        cache_backend=cache_backend,
+        cache_key=cache_key,
+        cache_ttl_seconds=min(SIMULATION_CACHE_TTL_SECONDS, 3600),
+        strategy="hybrid",
+        window=window,
+    )
 
     members = [{'building_id': p.get('building_id', ''), 'lat': float(p['lat']), 'lon': float(p['lon'])} for p in provisional]
     return {
         'community_id': 'provisional',
         'num_members': len(members),
         'members': members,
-        'autarky_percent': autarky_score * 100,
+        'autarky_percent': details.get('autarky_score', 0.0) * 100,
+        'confidence_percent': details.get('confidence_percent', 0.0),
+        'profile_data_mix': details.get('profile_data_mix', 'mock'),
+        'cache_hit': details.get('cache_hit', False),
     }
 
 
@@ -544,7 +615,9 @@ def api_get_all_clusters():
                 'members': member_list,
                 'polygon': create_simple_polygon(coords),
                 'autarky_percent': float(ci.get('autarky_percent', 0)),
-                'num_members': len(member_list)
+                'num_members': len(member_list),
+                'confidence_percent': float(ci.get('confidence_percent', 0) or 0),
+                'profile_data_mix': ci.get('profile_data_mix') or 'mock',
             })
     return jsonify({"clusters": clusters})
 
@@ -578,7 +651,8 @@ def api_check_potential():
     except Exception as e:
         return jsonify({"error": f"Server-Fehler: {str(e)}"}), 500
 
-    cluster_info = find_provisional_matches(estimates)
+    city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    cluster_info = find_provisional_matches(estimates, city_id=city_id)
     if not cluster_info:
         return jsonify({"potential": False, "message": "Keine direkten Partner gefunden.", "profile_summary": estimates})
     return jsonify({"potential": True, "message": "Partner gefunden!", "cluster_info": cluster_info, "profile_summary": estimates})
@@ -655,7 +729,7 @@ def api_register_anonymous():
     db.track_event('registration', building_id, {'type': 'anonymous', 'city_id': city_id})
 
     # Build response
-    cluster_info = find_provisional_matches(profile)
+    cluster_info = find_provisional_matches(profile, city_id=city_id)
     locations = collect_building_locations(city_id=city_id, exclude_building_id=building_id)
     referral_link = None
     ref_code = db.get_referral_code(building_id)
@@ -739,7 +813,7 @@ def api_register_full():
 
     db.track_event('registration', building_id, {'type': 'registered', 'city_id': city_id})
 
-    cluster_info = find_provisional_matches(profile)
+    cluster_info = find_provisional_matches(profile, city_id=city_id)
     locations = collect_building_locations(city_id=city_id, exclude_building_id=building_id)
     referral_link = None
     ref_code = db.get_referral_code(building_id)

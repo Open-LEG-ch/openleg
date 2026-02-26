@@ -164,6 +164,11 @@ def estimate_ev_kwh(building_type, plz_stats):
     print(f"  [ESTIMATE] EV-Bedarf: Nein (Chance: {probability*100:.1f}%)")
     return 0.0
 
+
+def normalize_building_archetype(building_type):
+    """Normalize building_type to ML simulation archetype."""
+    return ml_models.normalize_building_archetype(building_type)
+
 # --- Haupt-Wrapper-Funktionen ---
 
 def get_energy_profile_for_address(address_string):
@@ -201,6 +206,7 @@ def get_energy_profile_for_address(address_string):
         "lat": lat,
         "lon": lon,
         "building_type": gwr_data[0],
+        "simulation_archetype": normalize_building_archetype(gwr_data[0]),
         "annual_consumption_kwh": base_consumption_kwh_pa + ev_kwh_pa,
         "potential_pv_kwp": pv_kwp
     }
@@ -243,6 +249,7 @@ def get_mock_energy_profile_for_address(address_string):
         "lat": lat,
         "lon": lon,
         "building_type": building_type,
+        "simulation_archetype": normalize_building_archetype(building_type),
         "annual_consumption_kwh": annual_consumption_kwh,
         "potential_pv_kwp": potential_pv_kwp
     }
@@ -263,4 +270,3 @@ if __name__ == "__main__":
     estimates, _ = get_energy_profile_for_address("Stadtturm, 5400 Baden")
     print("\nErgebnis des Testaufrufs:")
     print(estimates)
-
