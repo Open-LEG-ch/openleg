@@ -7,7 +7,7 @@
   <meta name="description" content="OpenLEG ist die kostenlose Open Source Plattform für Lokale Elektrizitätsgemeinschaften (LEG) in der Schweiz. Nachbarn finden, Stromgemeinschaft gründen, Netzgebühren sparen.">
   <link rel="canonical" href="{{ site_url }}/">
   <meta property="og:title" content="OpenLEG: Freie Infrastruktur für Schweizer Stromgemeinschaften">
-  <meta property="og:description" content="Kostenlos, Open Source, gehostet in der Schweiz. Gründen Sie Ihre lokale Stromgemeinschaft und sparen Sie bis 40% auf Netzgebühren.">
+  <meta property="og:description" content="Kostenlos, Open Source, gehostet in der Schweiz. Gründen Sie Ihre lokale Stromgemeinschaft und sparen Sie bis zu CHF 270/Jahr auf Netzgebühren.">
   <meta property="og:image" content="{{ site_url }}/static/images/og-image.png">
   <meta property="og:url" content="{{ site_url }}/">
   {% include 'partials/tailwind_brand.html' %}
@@ -41,7 +41,7 @@
         <div class="mt-6" aria-live="polite">
           <div data-seg-panel="bewohner">
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Ihr Strom. Ihre Nachbarn. Ihre Gemeinschaft.</h1>
-            <p class="mt-4 text-lg text-ink-muted max-w-xl">Gründen Sie eine lokale Stromgemeinschaft (LEG) und sparen Sie bis 40% auf Netzgebühren. Kostenlos, Open Source, Ihre Daten bleiben bei Ihnen.</p>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Gründen Sie eine lokale Stromgemeinschaft (LEG) und sparen Sie bis zu CHF 270/Jahr auf Netzgebühren. Kostenlos seit 2026, Open Source, Ihre Daten bleiben bei Ihnen.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
               <a href="#registrieren" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse prüfen</a>
               <a href="/fuer-bewohner" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Mehr für Bewohner</a>
@@ -56,7 +56,7 @@
 
           <div data-seg-panel="gemeinde" class="hidden">
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Ihre Gemeinde ermöglicht die Energiewende.</h1>
-            <p class="mt-4 text-lg text-ink-muted max-w-xl">Eigene Seite für Ihre Gemeinde, Bewohner finden Nachbarn, Stromgemeinschaften entstehen. Kostenlos, kein IT Projekt.</p>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Eigene Seite für Ihre Gemeinde, Bewohner finden Nachbarn, Stromgemeinschaften entstehen. Sie füllen ein Formular aus, wir übernehmen Technik und Betrieb.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
               <a href="/gemeinde/onboarding" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Gemeinde anmelden</a>
               <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">So funktioniert's</a>
@@ -98,7 +98,7 @@
         </div>
         <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
           <div class="text-sm text-ink-muted">Netzgebühren sparen</div>
-          <div class="text-lg font-semibold">Bis 40% Rabatt in Ihrer LEG</div>
+          <div class="text-lg font-semibold">Bis CHF 270/Jahr in Ihrer LEG</div>
         </div>
         <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
           <div class="text-sm text-ink-muted">Smart Meter</div>
@@ -131,7 +131,7 @@
         <div class="rounded-2xl border border-slate-200 bg-amber-50 p-6">
           <div class="text-sm text-ink-muted">Kurz gesagt</div>
           <div class="mt-2 text-2xl font-semibold">In Tagen live, nicht in Monaten.</div>
-          <div class="mt-3 text-ink-muted">Kostenlos. Kein IT Projekt. Kein Aufwand für Ihre Verwaltung. Wir übernehmen Technik und Betrieb.</div>
+          <div class="mt-3 text-ink-muted">Kostenlos. Sie füllen ein Formular aus, wir übernehmen Technik und Betrieb.</div>
         </div>
       </div>
     </div>
@@ -175,7 +175,7 @@
               <label class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1"> Meine Daten dürfen für die LEG-Anmeldung beim Netzbetreiber verwendet werden.</label>
               <label class="flex items-start gap-2"><input type="checkbox" id="consent-updates"> Ich möchte Updates per E-Mail erhalten.</label>
             </div>
-            <p class="text-xs text-ink-muted mb-3">Ihre Daten werden nicht verkauft und nicht an Dritte weitergegeben. Sie können jederzeit alles löschen.</p>
+            <p class="text-xs text-ink-muted mb-3">Wir verkaufen Ihre Daten nicht und geben sie nicht an Dritte weiter. Sie können jederzeit alles löschen.</p>
             <button id="btn-register" class="w-full bg-amber-500 text-ink py-2 rounded-lg font-semibold hover:bg-amber-400">Jetzt registrieren</button>
           </div>
           <div id="step-success" class="hidden text-center py-6">
@@ -230,12 +230,6 @@
   <!-- Savings Widget -->
   <section class="max-w-xl mx-auto px-4 py-8">
     {% include 'partials/savings_widget.html' %}
-  </section>
-
-  <!-- Competitor Comparison -->
-  <section class="max-w-4xl mx-auto px-4 pb-12">
-    <h2 class="text-2xl font-bold text-center mb-6">Kostenlos vs. Konkurrenz</h2>
-    {% include 'partials/competitor_comparison.html' %}
   </section>
 
   {% include 'partials/cta_gemeinde.html' %}
