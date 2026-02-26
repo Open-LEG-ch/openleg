@@ -8,6 +8,7 @@
 </head>
 <body class="bg-[#f6f4ef] text-ink">
   {% include 'partials/site_nav.html' %}
+  {% include 'partials/trust_bar.html' %}
 
   <div class="max-w-5xl mx-auto px-4 pt-8">
     <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
@@ -95,6 +96,18 @@ docker compose up -d</code></pre>
     </div>
   </div>
 
+  <!-- Competitor Comparison (prominent) -->
+  <section class="max-w-4xl mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold mb-4">Kostenlos vs. Konkurrenz</h2>
+    {% include 'partials/competitor_comparison.html' %}
+  </section>
+
+  <!-- Savings Widget -->
+  <section class="max-w-xl mx-auto px-4 pb-12">
+    {% include 'partials/savings_widget.html' %}
+  </section>
+
+  {% include 'partials/cta_gemeinde.html' %}
   {% include 'partials/site_footer.html' %}
 </body>
 </html>

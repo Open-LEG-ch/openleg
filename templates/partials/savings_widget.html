@@ -1,0 +1,79 @@
+<!-- Savings Calculator Widget -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+  <h3 class="font-bold text-lg mb-3">Sparpotenzial Ihrer Gemeinde</h3>
+  <div class="flex gap-2 mb-4">
+    <input id="sw-input" type="text" placeholder="Gemeinde oder BFS-Nr." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" autocomplete="off">
+    <button onclick="swSearch()" class="bg-brand text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brand-dark">Prüfen</button>
+  </div>
+  <ul id="sw-suggestions" class="text-sm border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-40 overflow-y-auto hidden"></ul>
+  <div id="sw-result" class="hidden">
+    <div class="grid grid-cols-3 gap-3 text-center">
+      <div>
+        <div id="sw-savings" class="text-2xl font-bold text-green-700"></div>
+        <div class="text-xs text-ink-muted">CHF/Jahr Einsparpotenzial</div>
+      </div>
+      <div>
+        <div id="sw-solar" class="text-2xl font-bold text-amber-600"></div>
+        <div class="text-xs text-ink-muted">Solarpotenzial</div>
+      </div>
+      <div>
+        <div id="sw-gap" class="text-2xl font-bold text-brand"></div>
+        <div class="text-xs text-ink-muted">Tariflücke</div>
+      </div>
+    </div>
+    <a id="sw-cta" href="/gemeinde/onboarding" class="block text-center mt-4 bg-brand text-white text-sm font-semibold py-2 rounded-lg hover:bg-brand-dark">Gemeinde anmelden</a>
+  </div>
+  <div id="sw-error" class="hidden text-sm text-red-600 mt-2"></div>
+</div>
+<script>
+(function(){
+  var input=document.getElementById('sw-input'),sugBox=document.getElementById('sw-suggestions');
+  var cache=null,debounce=null;
+  function loadMunis(){
+    if(cache)return Promise.resolve(cache);
+    return fetch('/api/v1/municipalities').then(function(r){return r.json()}).then(function(d){cache=d.municipalities||d;return cache});
+  }
+  input.addEventListener('input',function(){
+    clearTimeout(debounce);
+    debounce=setTimeout(function(){
+      var q=input.value.trim().toLowerCase();
+      if(q.length<2){sugBox.classList.add('hidden');return}
+      loadMunis().then(function(munis){
+        var hits=munis.filter(function(m){return(m.name||'').toLowerCase().indexOf(q)>-1||String(m.bfs_number||m.bfs||'').indexOf(q)>-1}).slice(0,8);
+        if(!hits.length){sugBox.classList.add('hidden');return}
+        sugBox.innerHTML=hits.map(function(m){return'<li class="px-3 py-2 cursor-pointer hover:bg-slate-50" data-bfs="'+(m.bfs_number||m.bfs)+'">'+m.name+' ('+(m.bfs_number||m.bfs)+')</li>'}).join('');
+        sugBox.classList.remove('hidden');
+        sugBox.querySelectorAll('li').forEach(function(li){
+          li.onclick=function(){input.value=li.textContent;sugBox.classList.add('hidden');swFetch(li.dataset.bfs)};
+        });
+      });
+    },200);
+  });
+  document.addEventListener('click',function(e){if(!sugBox.contains(e.target)&&e.target!==input)sugBox.classList.add('hidden')});
+  window.swSearch=function(){
+    var v=input.value.trim();
+    if(!v)return;
+    if(/^\d+$/.test(v)){swFetch(v);return}
+    loadMunis().then(function(munis){
+      var m=munis.find(function(x){return(x.name||'').toLowerCase()===v.toLowerCase()});
+      if(m)swFetch(m.bfs_number||m.bfs);
+      else{document.getElementById('sw-error').textContent='Gemeinde nicht gefunden';document.getElementById('sw-error').classList.remove('hidden')}
+    });
+  };
+  function swFetch(bfs){
+    document.getElementById('sw-error').classList.add('hidden');
+    document.getElementById('sw-result').classList.add('hidden');
+    fetch('/api/v1/municipalities/'+bfs+'/leg-potential').then(function(r){
+      if(!r.ok)throw new Error('Nicht gefunden');return r.json()
+    }).then(function(d){
+      document.getElementById('sw-savings').textContent='CHF '+(d.estimated_savings_chf_year||d.savings||'–');
+      document.getElementById('sw-solar').textContent=(d.solar_potential_percent||d.solar||'–')+'%';
+      document.getElementById('sw-gap').textContent=(d.tariff_gap_rp_kwh||d.gap||'–')+' Rp';
+      document.getElementById('sw-result').classList.remove('hidden');
+    }).catch(function(){
+      document.getElementById('sw-error').textContent='Daten nicht verfügbar für diese Gemeinde';
+      document.getElementById('sw-error').classList.remove('hidden');
+    });
+  }
+})();
+</script>

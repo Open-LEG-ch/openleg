@@ -1,0 +1,25 @@
+<!-- Sticky CTA: Gemeinde onboarding -->
+<div id="cta-gemeinde" class="fixed bottom-0 left-0 right-0 z-50 translate-y-full transition-transform duration-300">
+  <div class="bg-ink text-white shadow-lg border-t border-slate-700">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <p class="text-sm hidden sm:block">Ihre Gemeinde in 10 Minuten anmelden</p>
+      <div class="flex items-center gap-3 flex-1 sm:flex-none justify-between sm:justify-end">
+        <a href="/gemeinde/onboarding" class="bg-brand hover:bg-brand-dark text-white text-sm font-semibold px-5 py-2 rounded-lg whitespace-nowrap">Gemeinde anmelden</a>
+        <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Gespräch" class="text-slate-300 hover:text-white text-sm underline whitespace-nowrap">Gespräch vereinbaren</a>
+        <button onclick="dismissCta()" class="text-slate-400 hover:text-white ml-2" aria-label="Schliessen">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var key='openleg_cta_dismissed',el=document.getElementById('cta-gemeinde');
+  if(!el)return;
+  if(localStorage.getItem(key))return;
+  setTimeout(function(){el.classList.remove('translate-y-full')},1500);
+  window.dismissCta=function(){
+    el.classList.add('translate-y-full');
+    localStorage.setItem(key,'1');
+  };
+})();
+</script>
