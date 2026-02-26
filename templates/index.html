@@ -302,16 +302,32 @@
               this.textContent = 'Adresse prüfen';
               return;
           }
-          selectedProfile = data.profile_summary;
-          const matchInfo = document.getElementById('match-info');
-          if (data.potential) {
-              const ci = data.cluster_info;
-              matchInfo.innerHTML = `<strong>${ci.num_members} Nachbarn gefunden!</strong> Autarkie-Potenzial: ${ci.autarky_percent.toFixed(0)}%`;
-          } else {
-              matchInfo.innerHTML = '<strong>Noch keine Nachbarn gefunden.</strong> Sie können trotzdem registrieren.';
-          }
-          document.getElementById('step-address').classList.add('hidden');
-          document.getElementById('step-register').classList.remove('hidden');
+	          selectedProfile = data.profile_summary;
+	          const matchInfo = document.getElementById('match-info');
+	          if (data.potential) {
+	              const ci = data.cluster_info;
+	              const mix = String(ci.profile_data_mix || 'mock');
+	              const dataBasis = ({
+	                  real: 'Smart-Meter-Daten',
+	                  hybrid: 'Messdaten + Standardprofile',
+	                  mock: 'Standardprofile (Gebäudetyp)'
+	              })[mix] || 'Standardprofile (Gebäudetyp)';
+	              const autarky = Number.isFinite(+ci.autarky_percent) ? Math.round(+ci.autarky_percent) : 0;
+	              const confidence = Number.isFinite(+ci.confidence_percent) ? Math.round(+ci.confidence_percent) : null;
+	              const tooltip = 'Vertrauensgrad = Indikator für Datenabdeckung und Plausibilität. Höher = belastbarere Schätzung.';
+	              const detailsLine = confidence === null
+	                  ? `Datenbasis: ${dataBasis}`
+	                  : `Datenbasis: ${dataBasis} · <span title="${tooltip}">Vertrauensgrad: ${confidence}%</span>`;
+	              matchInfo.innerHTML = `
+	                  <div><strong>${ci.num_members} Nachbarn gefunden!</strong></div>
+	                  <div>Autarkie-Potenzial: ${autarky}%</div>
+	                  <div class="text-xs text-slate-600 mt-1">${detailsLine}</div>
+	              `;
+	          } else {
+	              matchInfo.innerHTML = '<strong>Noch keine Nachbarn gefunden.</strong> Sie können trotzdem registrieren.';
+	          }
+	          document.getElementById('step-address').classList.add('hidden');
+	          document.getElementById('step-register').classList.remove('hidden');
       } catch(e) {
           document.getElementById('form-error').textContent = 'Netzwerkfehler. Bitte erneut versuchen.';
           document.getElementById('form-error').classList.remove('hidden');
