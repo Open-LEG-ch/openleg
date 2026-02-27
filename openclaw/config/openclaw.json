@@ -2,12 +2,12 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "groq/qwen3-32b",
-        "fallbacks": ["groq/llama-3.3-70b"]
+        "primary": "groq/qwen/qwen3-32b",
+        "fallbacks": ["groq/llama-3.3-70b-versatile"]
       },
       "models": {
-        "groq/qwen3-32b": { "alias": "Qwen3" },
-        "groq/llama-3.3-70b": { "alias": "Llama" }
+        "groq/qwen/qwen3-32b": { "alias": "Qwen3" },
+        "groq/llama-3.3-70b-versatile": { "alias": "Llama" }
       },
       "workspace": "/home/node/.openclaw/workspace"
     }
@@ -21,12 +21,12 @@
         "api": "openai-completions",
         "models": [
           {
-            "id": "qwen-qwen3-32b",
-            "name": "groq/qwen3-32b"
+            "id": "qwen/qwen3-32b",
+            "name": "groq/qwen/qwen3-32b"
           },
           {
             "id": "llama-3.3-70b-versatile",
-            "name": "groq/llama-3.3-70b"
+            "name": "groq/llama-3.3-70b-versatile"
           }
         ]
       }

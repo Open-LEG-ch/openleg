@@ -59,6 +59,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - BRAVE_API_KEY=${BRAVE_API_KEY}
       - OPENCLAW_READONLY=${OPENCLAW_READONLY:-false}
+      - DATABASE_URL=postgresql://badenleg:${POSTGRES_PASSWORD}@postgres:5432/badenleg
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:18789/"]
       interval: 15s
