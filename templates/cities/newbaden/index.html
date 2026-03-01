@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ city_name }} OpenLEG Demo</title>
+  {% include 'partials/tailwind_brand.html' %}
+</head>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
+  {% include 'partials/trust_bar.html' %}
+
+  <main class="max-w-6xl mx-auto px-4 py-12">
+    <section class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-brand mb-2">Staging Demo</p>
+      <h1 class="text-4xl font-bold mb-3">{{ city_name }}: kommunale OpenLEG Instanz</h1>
+      <p class="text-ink-muted max-w-3xl">
+        Diese Seite zeigt, wie eine Gemeinde-Instanz direkt nach dem Provisioning aussieht:
+        eigenes Branding, lokaler Kontext und vorbereiteter LEG-Start für Bewohner.
+      </p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="/fuer-bewohner" class="bg-brand text-white px-5 py-3 rounded-lg font-semibold hover:bg-brand-dark">Für Bewohner öffnen</a>
+        <a href="/fuer-gemeinden" class="border border-ink/20 text-ink px-5 py-3 rounded-lg font-semibold hover:bg-slate-50">Gemeinde-Angebot</a>
+      </div>
+    </section>
+
+    <section class="grid md:grid-cols-3 gap-4 mt-6">
+      <article class="bg-white border border-slate-200 rounded-xl p-5">
+        <p class="text-xs text-ink-muted">Subdomain</p>
+        <p class="text-lg font-semibold">{{ tenant.territory }}.openleg.ch</p>
+      </article>
+      <article class="bg-white border border-slate-200 rounded-xl p-5">
+        <p class="text-xs text-ink-muted">Kanton</p>
+        <p class="text-lg font-semibold">{{ kanton }} ({{ kanton_code }})</p>
+      </article>
+      <article class="bg-white border border-slate-200 rounded-xl p-5">
+        <p class="text-xs text-ink-muted">DSO</p>
+        <p class="text-lg font-semibold">{{ utility_name }}</p>
+      </article>
+    </section>
+
+    <section class="bg-emerald-50 border border-emerald-200 rounded-xl p-6 mt-6">
+      <h2 class="text-2xl font-bold mb-2">Was Gemeinden im Demo sehen</h2>
+      <ul class="text-ink-muted space-y-1">
+        <li>&#10003; Einwohner können sich sofort registrieren</li>
+        <li>&#10003; Tenant-Konfiguration ist im System gespeichert</li>
+        <li>&#10003; Branding und Gemeinde-Daten sind bereits gesetzt</li>
+      </ul>
+    </section>
+  </main>
+
+  {% include 'partials/cta_gemeinde.html' %}
+  {% include 'partials/site_footer.html' %}
+</body>
+</html>

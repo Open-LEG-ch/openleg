@@ -33,6 +33,9 @@ class TestCaddyfile:
     def test_has_bare_domain(self):
         assert "openleg.ch" in self.content
 
+    def test_has_newbaden_demo_subdomain(self):
+        assert "newbaden.openleg.ch" in self.content
+
     def test_www_redirect(self):
         assert "www.openleg.ch" in self.content
         assert "redir" in self.content

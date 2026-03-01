@@ -4,10 +4,14 @@ Handles Gemeinde signup, admin dashboard, LEG formation KPIs.
 Public profile pages and directory for municipalities.
 """
 import logging
+import os
+import re
+from typing import Dict, Optional
 from flask import Blueprint, request, jsonify, render_template, g, abort
 
 import database as db
 import security_utils
+import tenant as tenant_module
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +33,162 @@ ZURICH_MUNICIPALITIES = [
     {"bfs": 296, "name": "Illnau-Effretikon", "population": 22000, "dso": "EKZ"},
 ]
 
+
+def _is_demo_mode_enabled() -> bool:
+    return os.getenv("DEMO_MODE", "false").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _demo_subdomain() -> str:
+    raw = os.getenv("DEMO_SUBDOMAIN", "newbaden").strip().lower()
+    slug = re.sub(r"[^a-z0-9-]", "", raw).strip("-")
+    return slug or "newbaden"
+
+
+def _demo_env() -> str:
+    return os.getenv("DEMO_ENV", "staging").strip().lower() or "staging"
+
+
+def _demo_url() -> str:
+    return f"https://{_demo_subdomain()}.openleg.ch"
+
+
+def _to_int(value, default: Optional[int] = None) -> Optional[int]:
+    try:
+        if value is None or value == "":
+            return default
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _clean_payload(payload: Dict) -> Dict:
+    municipality_name = security_utils.sanitize_string(payload.get("municipality_name", ""), max_length=80)
+    contact_name = security_utils.sanitize_string(payload.get("contact_name", ""), max_length=80)
+    contact_email = (payload.get("contact_email") or "").strip()
+    kanton = security_utils.sanitize_string(payload.get("kanton", ""), max_length=60) or "Aargau"
+    kanton_code = security_utils.sanitize_string(payload.get("kanton_code", ""), max_length=8).upper() or "AG"
+    dso_name = security_utils.sanitize_string(payload.get("dso_name", ""), max_length=120) or "Regionalwerke Baden"
+    population = _to_int(payload.get("population"), default=22000)
+
+    if not municipality_name or not contact_name or not contact_email:
+        raise ValueError("Gemeinde, Ansprechperson und E-Mail sind erforderlich.")
+
+    is_valid, normalized, error = security_utils.validate_email_address(contact_email)
+    if not is_valid:
+        raise ValueError(error)
+
+    return {
+        "municipality_name": municipality_name,
+        "contact_name": contact_name,
+        "contact_email": normalized,
+        "kanton": kanton,
+        "kanton_code": kanton_code[:2],
+        "dso_name": dso_name,
+        "population": population,
+    }
+
+
+def build_demo_tenant_config(payload: Dict) -> Dict:
+    municipality_name = payload["municipality_name"]
+    utility_name = payload["dso_name"]
+    return {
+        "territory": _demo_subdomain(),
+        "utility_name": utility_name,
+        "primary_color": "#0f766e",
+        "secondary_color": "#d97706",
+        "contact_email": payload["contact_email"],
+        "legal_entity": f"Einwohnergemeinde {municipality_name}",
+        "dso_contact": utility_name,
+        "active": True,
+        "city_name": municipality_name,
+        "kanton": payload["kanton"],
+        "kanton_code": payload["kanton_code"],
+        "platform_name": f"{municipality_name} OpenLEG",
+        "brand_prefix": municipality_name,
+        "map_center_lat": 47.4767,
+        "map_center_lon": 8.3065,
+        "map_zoom": 13,
+        "map_bounds_sw": [47.42, 8.24],
+        "map_bounds_ne": [47.52, 8.38],
+        "plz_ranges": [[5400, 5408]],
+        "solar_kwh_per_kwp": 1000,
+        "site_url": _demo_url(),
+        "ga4_id": "",
+    }
+
+
+def seed_demo_content(territory: str, payload: Dict) -> Dict:
+    bfs_number = _to_int(os.getenv("DEMO_BFS_NUMBER"), default=79999)
+    municipality_id = db.save_municipality(
+        bfs_number=bfs_number,
+        name=payload["municipality_name"],
+        kanton=payload["kanton_code"],
+        dso_name=payload["dso_name"],
+        population=payload["population"],
+        subdomain=territory,
+    )
+    if not municipality_id:
+        raise RuntimeError("Demo-Gemeinde konnte nicht gespeichert werden.")
+
+    db.update_municipality_status(bfs_number, "demo_ready", admin_email=payload["contact_email"])
+    db.save_municipality_profile({
+        "bfs_number": bfs_number,
+        "name": payload["municipality_name"],
+        "kanton": payload["kanton_code"],
+        "population": payload["population"],
+        "solar_potential_pct": 48.5,
+        "solar_installed_kwp": 12200,
+        "ev_share_pct": 19.5,
+        "renewable_heating_pct": 42.0,
+        "electricity_consumption_mwh": 158000,
+        "renewable_production_mwh": 23600,
+        "leg_value_gap_chf": 178.0,
+        "energy_transition_score": 51.0,
+        "data_sources": {"demo": True},
+    })
+
+    return {"municipality_id": municipality_id, "bfs_number": bfs_number}
+
+
+def provision_demo_instance(payload: Dict) -> Dict:
+    territory = _demo_subdomain()
+    cleaned = _clean_payload(payload or {})
+    existing = db.get_tenant_by_territory(territory)
+
+    if not db.upsert_tenant(territory, build_demo_tenant_config(cleaned)):
+        raise RuntimeError("Tenant-Konfiguration konnte nicht gespeichert werden.")
+
+    seeded = seed_demo_content(territory, cleaned)
+    tenant_module.invalidate_cache(territory)
+    db.track_event("demo_instance_provisioned", data={
+        "territory": territory,
+        "municipality_name": cleaned["municipality_name"],
+        "contact_email": cleaned["contact_email"],
+        "already_exists": bool(existing),
+    })
+
+    return {
+        "success": True,
+        "already_exists": bool(existing),
+        "demo_subdomain": territory,
+        "demo_url": _demo_url(),
+        "environment": _demo_env(),
+        "tenant_ready": True,
+        "municipality_id": seeded["municipality_id"],
+        "bfs_number": seeded["bfs_number"],
+    }
+
+
 @municipality_bp.route('/onboarding')
 def onboarding():
-    return render_template('gemeinde/onboarding.html', municipalities=ZURICH_MUNICIPALITIES)
+    return render_template(
+        'gemeinde/onboarding.html',
+        municipalities=ZURICH_MUNICIPALITIES,
+        demo_enabled=_is_demo_mode_enabled(),
+        demo_subdomain=_demo_subdomain(),
+        demo_env=_demo_env(),
+        demo_url=_demo_url(),
+    )
 
 @municipality_bp.route('/register', methods=['POST'])
 def register():
@@ -64,6 +221,49 @@ def register():
         return jsonify({"success": True, "municipality_id": muni_id, "subdomain": subdomain})
 
     return jsonify({"error": "Registrierung fehlgeschlagen."}), 500
+
+
+@municipality_bp.route('/demo/status')
+def demo_status():
+    territory = _demo_subdomain()
+    if not _is_demo_mode_enabled():
+        return jsonify({
+            "enabled": False,
+            "ready": False,
+            "demo_subdomain": territory,
+            "demo_url": _demo_url(),
+            "environment": _demo_env(),
+        }), 503
+
+    tenant_row = db.get_tenant_by_territory(territory)
+    ready = bool(tenant_row and tenant_row.get("active", True))
+    return jsonify({
+        "enabled": True,
+        "ready": ready,
+        "demo_subdomain": territory,
+        "demo_url": _demo_url(),
+        "environment": _demo_env(),
+        "tenant_exists": bool(tenant_row),
+    })
+
+
+@municipality_bp.route('/demo/provision', methods=['POST'])
+def demo_provision():
+    if not _is_demo_mode_enabled():
+        return jsonify({"error": "Demo-Modus ist deaktiviert."}), 403
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON-Body erforderlich."}), 400
+
+    try:
+        return jsonify(provision_demo_instance(payload))
+    except ValueError as err:
+        return jsonify({"error": str(err)}), 400
+    except Exception as err:
+        logger.error(f"[DEMO] Provisioning failed: {err}")
+        return jsonify({"error": "Demo-Instanz konnte nicht erstellt werden."}), 500
+
 
 @municipality_bp.route('/dashboard')
 def dashboard():

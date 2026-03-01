@@ -8,51 +8,129 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <nav class="bg-white shadow-sm">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
             <a href="/" class="text-2xl font-bold text-gray-900">OpenLEG</a>
-            <span class="text-sm text-gray-500">Gemeinde-Anmeldung</span>
+            <span class="text-sm text-gray-500">Gemeinde-Onboarding</span>
         </div>
     </nav>
-    <div class="max-w-xl mx-auto px-4 py-12">
+
+    <main class="max-w-5xl mx-auto px-4 py-10">
         <div class="overflow-hidden rounded-xl border border-gray-200 shadow-md mb-8">
             <img src="/static/images/subpages/gemeinde-onboarding.png" alt="Gemeinde Onboarding" class="w-full aspect-[3/1] object-cover" loading="lazy">
         </div>
-        <h1 class="text-3xl font-bold mb-2">Gemeinde anmelden</h1>
-        <p class="text-gray-600 mb-8">Melden Sie Ihre Gemeinde an und ermöglichen Sie Bewohnern, lokale Stromgemeinschaften zu gründen. Kostenlos. Ein Formular, fertig.</p>
 
-        <form id="onboarding-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Gemeinde auswählen</label>
-                <select id="municipality-select" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-                    <option value="">Gemeinde wählen...</option>
-                    {% for m in municipalities %}
-                    <option value="{{ m.bfs }}" data-name="{{ m.name }}" data-dso="{{ m.dso }}">{{ m.name }} ({{ m.dso }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Kontakt E-Mail (Gemeindeverwaltung)</label>
-                <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" required>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Ansprechperson</label>
-                <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg text-sm">
-                <h4 class="font-medium mb-1">Was Sie erhalten (kostenlos):</h4>
-                <ul class="text-gray-700 space-y-1">
-                    <li>&#10003; Eigene Instanz unter <span id="subdomain-preview" class="font-mono text-gray-900">gemeinde.openleg.ch</span></li>
-                    <li>&#10003; Bewohner-Registrierung und automatisches Matching</li>
-                    <li>&#10003; Übersicht über Anmeldungen und Formationsfortschritt</li>
-                    <li>&#10003; Alle Dokumente inklusive (Vereinbarung, Verträge, DSO-Anmeldung)</li>
-                    <li>&#10003; Keine versteckten Kosten, kein Abo, kein Vendor Lock-in</li>
-                </ul>
-            </div>
-            <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800">Gemeinde anmelden</button>
-            <div id="form-error" class="text-red-600 text-sm hidden"></div>
-            <div id="form-success" class="text-green-600 text-sm hidden"></div>
-        </form>
-    </div>
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">Gemeinde anmelden</h1>
+            <p class="text-gray-600">Starten Sie klassisch oder erzeugen Sie eine Live-Demo-Instanz für Ihre Gemeinde.</p>
+        </header>
+
+        <div class="grid lg:grid-cols-2 gap-6">
+            <section class="bg-white rounded-lg shadow-md p-6 border">
+                <h2 class="text-xl font-semibold mb-1">Standard-Anmeldung</h2>
+                <p class="text-sm text-gray-600 mb-5">Direkter Einstieg in den regulären Gemeinde-Flow.</p>
+
+                <form id="onboarding-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Gemeinde auswählen</label>
+                        <select id="municipality-select" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
+                            <option value="">Gemeinde wählen...</option>
+                            {% for m in municipalities %}
+                            <option value="{{ m.bfs }}" data-name="{{ m.name }}" data-dso="{{ m.dso }}">{{ m.name }} ({{ m.dso }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Kontakt E-Mail (Gemeindeverwaltung)</label>
+                        <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Ansprechperson</label>
+                        <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg text-sm">
+                        <h4 class="font-medium mb-1">Was Sie erhalten (kostenlos):</h4>
+                        <ul class="text-gray-700 space-y-1">
+                            <li>&#10003; Eigene Instanz unter <span id="subdomain-preview" class="font-mono text-gray-900">gemeinde.openleg.ch</span></li>
+                            <li>&#10003; Bewohner-Registrierung und automatisches Matching</li>
+                            <li>&#10003; Übersicht über Anmeldungen und Formationsfortschritt</li>
+                            <li>&#10003; Alle Dokumente inklusive (Vereinbarung, Verträge, DSO-Anmeldung)</li>
+                        </ul>
+                    </div>
+                    <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800">Gemeinde anmelden</button>
+                    <div id="form-error" class="text-red-600 text-sm hidden"></div>
+                    <div id="form-success" class="text-green-600 text-sm hidden"></div>
+                </form>
+            </section>
+
+            <section class="bg-white rounded-lg shadow-md p-6 border">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="text-xl font-semibold">Demo-Instanz erstellen</h2>
+                    <span class="text-xs px-2 py-1 rounded-full {{ 'bg-emerald-100 text-emerald-800' if demo_enabled else 'bg-gray-100 text-gray-600' }}">
+                        {{ 'aktiv' if demo_enabled else 'deaktiviert' }}
+                    </span>
+                </div>
+                <p class="text-sm text-gray-600 mb-5">
+                    Erstellt eine staging Demo unter <span class="font-mono">{{ demo_subdomain }}.openleg.ch</span>.
+                </p>
+
+                {% if demo_enabled %}
+                <form id="demo-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Gemeindename</label>
+                        <input type="text" id="demo-municipality-name" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" value="Newbaden" required>
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Ansprechperson</label>
+                            <input type="text" id="demo-contact-name" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" placeholder="Max Muster" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Kontakt E-Mail</label>
+                            <input type="email" id="demo-contact-email" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" placeholder="verwaltung@newbaden.ch" required>
+                        </div>
+                    </div>
+                    <div class="grid sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Kanton</label>
+                            <input type="text" id="demo-kanton" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" value="Aargau">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Kürzel</label>
+                            <input type="text" id="demo-kanton-code" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" value="AG" maxlength="2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Einwohner</label>
+                            <input type="number" id="demo-population" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" value="22000" min="1">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">DSO / Werk</label>
+                        <input type="text" id="demo-dso-name" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" value="Regionalwerke Baden">
+                    </div>
+
+                    <div class="rounded-lg border border-gray-200 p-3">
+                        <div class="text-sm font-medium mb-2">Provisioning-Fortschritt</div>
+                        <ol class="grid grid-cols-3 gap-2 text-xs">
+                            <li id="demo-step-received" class="rounded border border-gray-300 px-2 py-1 text-center">1. Anfrage</li>
+                            <li id="demo-step-configured" class="rounded border border-gray-300 px-2 py-1 text-center">2. Tenant</li>
+                            <li id="demo-step-ready" class="rounded border border-gray-300 px-2 py-1 text-center">3. Ready</li>
+                        </ol>
+                    </div>
+
+                    <button id="demo-submit" type="submit" class="w-full bg-indigo-700 text-white py-3 rounded-lg font-semibold hover:bg-indigo-600">Demo erzeugen</button>
+                    <a id="demo-open-link" href="{{ demo_url }}" target="_blank" rel="noopener" class="hidden w-full text-center bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-500">Demo-Instanz öffnen</a>
+                    <div id="demo-error" class="text-red-600 text-sm hidden"></div>
+                    <div id="demo-success" class="text-green-700 text-sm hidden"></div>
+                </form>
+                {% else %}
+                <div class="rounded-lg border border-amber-200 bg-amber-50 text-amber-900 p-4 text-sm">
+                    Demo-Modus ist deaktiviert. Setzen Sie <code>DEMO_MODE=true</code>, um den Flow zu aktivieren.
+                </div>
+                {% endif %}
+            </section>
+        </div>
+    </main>
+
     <script>
     const select = document.getElementById('municipality-select');
     select.addEventListener('change', function() {
@@ -61,32 +139,114 @@
         const subdomain = name.toLowerCase().replace(/\s+/g, '-').replace(/ü/g, 'ue').replace(/ä/g, 'ae').replace(/ö/g, 'oe');
         document.getElementById('subdomain-preview').textContent = subdomain ? `${subdomain}.openleg.ch` : 'gemeinde.openleg.ch';
     });
+
     document.getElementById('onboarding-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const opt = select.options[select.selectedIndex];
         const bfs = select.value;
         const name = opt.dataset.name || '';
         const email = document.getElementById('admin-email').value;
-        if (!bfs || !email) { document.getElementById('form-error').textContent = 'Bitte alle Felder ausfüllen.'; document.getElementById('form-error').classList.remove('hidden'); return; }
+        if (!bfs || !email) {
+            const err = document.getElementById('form-error');
+            err.textContent = 'Bitte alle Felder ausfüllen.';
+            err.classList.remove('hidden');
+            return;
+        }
         try {
             const res = await fetch('/gemeinde/register', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({bfs_number: parseInt(bfs), name: name, admin_email: email})
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({bfs_number: parseInt(bfs, 10), name: name, admin_email: email})
             });
             const data = await res.json();
             if (data.success) {
-                document.getElementById('form-success').textContent = `Registrierung erfolgreich! Ihre Instanz: ${data.subdomain}.openleg.ch`;
-                document.getElementById('form-success').classList.remove('hidden');
+                const success = document.getElementById('form-success');
+                success.textContent = `Registrierung erfolgreich! Ihre Instanz: ${data.subdomain}.openleg.ch`;
+                success.classList.remove('hidden');
                 document.getElementById('form-error').classList.add('hidden');
             } else {
-                document.getElementById('form-error').textContent = data.error || 'Fehler bei der Registrierung.';
-                document.getElementById('form-error').classList.remove('hidden');
+                const err = document.getElementById('form-error');
+                err.textContent = data.error || 'Fehler bei der Registrierung.';
+                err.classList.remove('hidden');
             }
-        } catch(e) {
-            document.getElementById('form-error').textContent = 'Netzwerkfehler.';
-            document.getElementById('form-error').classList.remove('hidden');
+        } catch (e2) {
+            const err = document.getElementById('form-error');
+            err.textContent = 'Netzwerkfehler.';
+            err.classList.remove('hidden');
         }
     });
+
+    const demoForm = document.getElementById('demo-form');
+    if (demoForm) {
+        const stepReceived = document.getElementById('demo-step-received');
+        const stepConfigured = document.getElementById('demo-step-configured');
+        const stepReady = document.getElementById('demo-step-ready');
+        const demoOpenLink = document.getElementById('demo-open-link');
+        const demoError = document.getElementById('demo-error');
+        const demoSuccess = document.getElementById('demo-success');
+        const demoSubmit = document.getElementById('demo-submit');
+
+        function markStep(el) {
+            el.classList.add('bg-emerald-100', 'border-emerald-400', 'text-emerald-800');
+        }
+
+        function resetSteps() {
+            [stepReceived, stepConfigured, stepReady].forEach((el) => {
+                el.className = 'rounded border border-gray-300 px-2 py-1 text-center';
+            });
+        }
+
+        demoForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            resetSteps();
+            demoError.classList.add('hidden');
+            demoSuccess.classList.add('hidden');
+            demoOpenLink.classList.add('hidden');
+
+            const payload = {
+                municipality_name: document.getElementById('demo-municipality-name').value,
+                contact_name: document.getElementById('demo-contact-name').value,
+                contact_email: document.getElementById('demo-contact-email').value,
+                kanton: document.getElementById('demo-kanton').value,
+                kanton_code: document.getElementById('demo-kanton-code').value,
+                population: document.getElementById('demo-population').value,
+                dso_name: document.getElementById('demo-dso-name').value
+            };
+
+            markStep(stepReceived);
+            demoSubmit.disabled = true;
+            try {
+                const res = await fetch('/gemeinde/demo/provision', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || 'Provisioning fehlgeschlagen');
+                }
+
+                markStep(stepConfigured);
+                const statusRes = await fetch('/gemeinde/demo/status');
+                const statusData = await statusRes.json();
+                if (statusRes.ok && statusData.ready) {
+                    markStep(stepReady);
+                }
+
+                demoOpenLink.href = data.demo_url;
+                demoOpenLink.classList.remove('hidden');
+                demoSuccess.textContent = data.already_exists
+                    ? `Demo war bereits vorhanden: ${data.demo_url}`
+                    : `Demo bereit: ${data.demo_url}`;
+                demoSuccess.classList.remove('hidden');
+            } catch (err) {
+                demoError.textContent = err.message || 'Demo konnte nicht erstellt werden.';
+                demoError.classList.remove('hidden');
+            } finally {
+                demoSubmit.disabled = false;
+            }
+        });
+    }
     </script>
 </body>
 </html>

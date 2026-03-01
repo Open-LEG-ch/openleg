@@ -13,6 +13,11 @@ openleg.ch {
     reverse_proxy flask:5000
 }
 
+# Demo municipality instance
+newbaden.openleg.ch {
+    reverse_proxy flask:5000
+}
+
 # www redirect
 www.openleg.ch {
     redir https://openleg.ch{uri} permanent
