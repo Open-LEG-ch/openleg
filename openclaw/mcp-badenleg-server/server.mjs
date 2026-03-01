@@ -1388,6 +1388,87 @@ server.tool(
   }
 );
 
+// ============================================================
+// Telegram & Strategy Tools
+// ============================================================
+
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+
+server.tool(
+  'send_telegram',
+  'Send a message to the CEO via Telegram. Use for progress updates, blockers, approval requests, daily reports, alerts.',
+  {
+    message: z.string().describe('Message text (Markdown supported)'),
+    category: z.enum(['progress', 'blocked', 'approval_needed', 'daily_report', 'alert']).describe('Message category'),
+    urgent: z.boolean().default(false).describe('If true, adds urgent prefix')
+  },
+  async ({ message, category, urgent }) => {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+      return txt({ error: 'TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured' });
+    }
+    const prefix = { progress: '📊', blocked: '🚫', approval_needed: '⚠️', daily_report: '📋', alert: '🔴' };
+    const text = `${urgent ? '🚨 URGENT ' : ''}${prefix[category] || ''} *${category.replace('_', ' ').toUpperCase()}*\n\n${message}`;
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'Markdown', disable_web_page_preview: true })
+      });
+      const data = await res.json();
+      if (!data.ok) return txt({ error: data.description });
+      return txt({ sent: true, message_id: data.result.message_id });
+    } catch (e) {
+      return txt({ error: e.message });
+    }
+  }
+);
+
+server.tool(
+  'track_strategy_item',
+  'Track progress on a 12-week strategy item. Upserts by (week, item).',
+  {
+    week: z.number().min(1).max(12).describe('Strategy week number (1-12)'),
+    item: z.string().describe('Item slug (e.g. "seed-200-municipalities")'),
+    status: z.enum(['pending', 'in_progress', 'done', 'blocked', 'needs_ceo']).describe('Current status'),
+    notes: z.string().optional().describe('Progress notes')
+  },
+  async ({ week, item, status, notes }) => {
+    const guard = readonlyGuard();
+    if (guard) return guard;
+    const result = await query(`
+      INSERT INTO strategy_tracker (week, item, status, notes, updated_at)
+      VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (week, item) DO UPDATE SET status = $3, notes = $4, updated_at = NOW()
+      RETURNING *
+    `, [week, item, status, notes || '']);
+    return txt(result.rows[0]);
+  }
+);
+
+server.tool(
+  'get_strategy_status',
+  'Get strategy tracker status. Optional week filter. Returns items and per-week summary counts.',
+  {
+    week: z.number().optional().describe('Filter by week number')
+  },
+  async ({ week }) => {
+    let items, summary;
+    if (week) {
+      items = await query('SELECT * FROM strategy_tracker WHERE week = $1 ORDER BY item', [week]);
+      summary = await query(`
+        SELECT status, COUNT(*)::int as count FROM strategy_tracker WHERE week = $1 GROUP BY status
+      `, [week]);
+    } else {
+      items = await query('SELECT * FROM strategy_tracker ORDER BY week, item');
+      summary = await query(`
+        SELECT week, status, COUNT(*)::int as count FROM strategy_tracker GROUP BY week, status ORDER BY week
+      `);
+    }
+    return txt({ items: items.rows, summary: summary.rows });
+  }
+);
+
 // Start server
 const transport = new StdioServerTransport();
 await server.connect(transport);

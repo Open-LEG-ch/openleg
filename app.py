@@ -95,6 +95,25 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'hallo@openleg.ch')
 ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
 INTERNAL_TOKEN = os.getenv('INTERNAL_TOKEN', '').strip()
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '').strip()
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '').strip()
+
+
+def _relay_to_telegram(job_name, summary, status):
+    """Fire-and-forget relay of LEA reports to Telegram."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    icon = '✅' if status == 'ok' else '⚠️'
+    text = f"{icon} *LEA: {job_name}*\n{summary[:3000]}"
+    def _send():
+        try:
+            import urllib.request
+            payload = json.dumps({"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "Markdown", "disable_web_page_preview": True}).encode()
+            req = urllib.request.Request(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", data=payload, headers={"Content-Type": "application/json"})
+            urllib.request.urlopen(req, timeout=10)
+        except Exception as e:
+            logger.warning(f"[Telegram] relay failed: {e}")
+    threading.Thread(target=_send, daemon=True).start()
 
 # --- Rate Limiting & Security ---
 if HAS_SECURITY_LIBS:
@@ -549,7 +568,7 @@ def admin_export():
 # --- LEA Reports ---
 @app.route("/api/internal/lea-report", methods=['POST'])
 def api_internal_lea_report():
-    token = request.headers.get('X-Internal-Token') or ''
+    token = request.args.get('token') or request.headers.get('X-Internal-Token') or ''
     if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
         abort(403)
     data = request.get_json(silent=True) or {}
@@ -557,6 +576,7 @@ def api_internal_lea_report():
     summary = data.get('summary', '')
     status = data.get('status', 'ok')
     db.save_lea_report(job_name, summary, status)
+    _relay_to_telegram(job_name, summary, status)
     return jsonify({"ok": True})
 
 

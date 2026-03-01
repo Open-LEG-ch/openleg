@@ -679,6 +679,19 @@ def _create_tables():
             cur.execute("CREATE INDEX IF NOT EXISTS idx_lea_reports_job ON lea_reports(job_name)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_lea_reports_created ON lea_reports(created_at DESC)")
 
+            # Strategy tracker (12-week plan)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS strategy_tracker (
+                    id SERIAL PRIMARY KEY,
+                    week INTEGER NOT NULL CHECK (week BETWEEN 1 AND 12),
+                    item VARCHAR(128) NOT NULL,
+                    status VARCHAR(32) DEFAULT 'pending',
+                    notes TEXT,
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE(week, item)
+                )
+            """)
+
             logger.info("[DB] Tables and indexes created successfully")
 
 
