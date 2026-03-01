@@ -58,5 +58,15 @@
 
   "cron": {
     "enabled": true
+  },
+
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "groupPolicy": "allowlist",
+      "streaming": "off"
+    }
   }
 }

@@ -7,6 +7,7 @@ import os
 import signal
 import socket
 import subprocess
+import sys
 import time
 import pytest
 
@@ -38,7 +39,7 @@ def server():
     port = _free_port()
     env = {**os.environ, "FLASK_RUN_PORT": str(port)}
     proc = subprocess.Popen(
-        ["python", "app.py"],
+        [sys.executable, "app.py"],
         env=env,
         cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         stdout=subprocess.PIPE,

@@ -97,3 +97,7 @@ class TestServerMjs:
     ])
     def test_key_tools_exist(self, tool_name):
         assert re.search(rf"server\.tool\(\s*['\"]{tool_name}['\"]", self.content)
+
+    def test_sparql_uses_political_municipality(self):
+        assert 'admin:PoliticalMunicipality' in self.content, \
+            "SPARQL query must use admin:PoliticalMunicipality, not admin:Municipality"

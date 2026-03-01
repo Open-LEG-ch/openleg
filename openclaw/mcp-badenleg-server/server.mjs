@@ -1308,7 +1308,7 @@ server.tool(
       PREFIX schema: <http://schema.org/>
       PREFIX admin: <https://schema.ld.admin.ch/>
       SELECT ?bfs ?name ?canton ?population WHERE {
-        ?municipality a admin:Municipality ;
+        ?municipality a admin:PoliticalMunicipality ;
           schema:identifier ?bfs ;
           schema:name ?name ;
           admin:canton ?canton .
