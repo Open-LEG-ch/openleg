@@ -3,6 +3,7 @@ OpenLEG Public API Blueprint.
 Open-source Swiss energy data API: municipalities, tariffs, solar, LEG toolkit.
 No auth required. Rate limited. CORS enabled.
 """
+import time
 import logging
 from functools import wraps
 from flask import Blueprint, request, jsonify, render_template
@@ -25,13 +26,31 @@ def add_cors_headers(response):
     return response
 
 
-# === Rate limiting helper ===
+# === Rate limiting (60 req/min per IP) ===
 
 _request_counts = {}
+_RATE_LIMIT = 60
+_RATE_WINDOW = 60
 
 
 def _rate_limit_key():
     return request.headers.get('X-Forwarded-For', request.remote_addr)
+
+
+@public_api_bp.before_request
+def _enforce_rate_limit():
+    if request.method == 'OPTIONS':
+        return None
+    key = _rate_limit_key()
+    now = time.time()
+    # Prune old entries
+    entries = _request_counts.get(key, [])
+    entries = [t for t in entries if now - t < _RATE_WINDOW]
+    if len(entries) >= _RATE_LIMIT:
+        return jsonify({"error": "Rate limit exceeded. Max 60 requests per minute."}), 429
+    entries.append(now)
+    _request_counts[key] = entries
+    return None
 
 
 # === Municipality endpoints ===

@@ -95,10 +95,10 @@ def get_coordinates_from_address(address_string):
     print(f"[GEO] Suche Koordinaten für: '{address_string}'")
     params = {'searchText': address_string, 'type': 'locations', 'limit': 1}
     try:
-        response = requests.get(GEO_API_URL, params=params)
+        response = requests.get(GEO_API_URL, params=params, timeout=10)
         response.raise_for_status()
         results = response.json().get('results', [])
-        if not results: 
+        if not results:
             print("  [GEO FEHLER] Adresse nicht gefunden.")
             return None, None, None
         attrs = results[0]['attrs']
@@ -125,7 +125,7 @@ def get_pv_potential_from_coords(lat, lon):
         'layers': 'all:ch.bfe.sonnendach',
     }
     try:
-        response = requests.get(f"{SOLAR_API_URL}/identify", params=params)
+        response = requests.get(f"{SOLAR_API_URL}/identify", params=params, timeout=10)
         response.raise_for_status()
         results = response.json().get('results', [])
         if not results: 

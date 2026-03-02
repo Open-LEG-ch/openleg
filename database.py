@@ -2413,8 +2413,8 @@ def update_vnb_pipeline_status(vnb_name: str, status: str, notes: str = None) ->
         return False
 
 
-def get_vnb_pipeline_stats() -> Dict:
-    """Get VNB pipeline statistics."""
+def get_vnb_funnel_stats() -> Dict:
+    """Get VNB research funnel statistics (distinct from pipeline stats)."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
@@ -2434,7 +2434,7 @@ def get_vnb_pipeline_stats() -> Dict:
                 """)
                 return dict(cur.fetchone())
     except Exception as e:
-        logger.error(f"[DB] Error getting VNB pipeline stats: {e}")
+        logger.error(f"[DB] Error getting VNB funnel stats: {e}")
         return {}
 
 

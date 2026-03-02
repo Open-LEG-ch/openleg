@@ -207,7 +207,7 @@ def ingest_csv(building_id: str, file_content: str, source: str = 'csv') -> Dict
     Returns:
         {"success": bool, "readings_count": int, "errors": [...], "stats": {...}}
     """
-    readings, errors = parse_ekz_csv(file_content)
+    readings, errors = parse_meter_csv(file_content)
 
     if not readings:
         return {
