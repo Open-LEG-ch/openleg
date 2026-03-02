@@ -570,6 +570,15 @@ def sitemap_xml():
         ("/impressum", "0.3", "yearly", "2026-01-01"),
         ("/datenschutz", "0.3", "yearly", "2026-01-01"),
     ]
+    # Add all municipality profile pages
+    try:
+        profiles = db.get_all_municipality_profiles()
+        for p in profiles:
+            bfs = p.get('bfs_number')
+            if bfs:
+                pages.append((f"/gemeinde/profil/{bfs}", "0.6", "weekly", current_date))
+    except Exception:
+        pass
     xml = render_template("sitemap.xml", site_url=SITE_URL, pages=pages)
     return Response(xml, mimetype="application/xml")
 
@@ -1342,11 +1351,124 @@ def api_formation_financial_model():
     return jsonify(result)
 
 
+# --- Formation Lifecycle ---
+@app.route("/api/formation/create", methods=['POST'])
+def api_formation_create():
+    import formation_wizard
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    building_id = (data.get('building_id') or '').strip()
+    if not name or not building_id:
+        return jsonify({"error": "name and building_id required"}), 400
+    distribution_model = data.get('distribution_model', 'simple')
+    description = data.get('description', '')
+    result = formation_wizard.create_community(db, name, building_id, distribution_model, description)
+    if not result:
+        return jsonify({"error": "Failed to create community"}), 500
+    return jsonify(result)
+
+
+@app.route("/api/formation/invite", methods=['POST'])
+def api_formation_invite():
+    import formation_wizard
+    data = request.json or {}
+    community_id = (data.get('community_id') or '').strip()
+    building_id = (data.get('building_id') or '').strip()
+    invited_by = (data.get('invited_by') or '').strip()
+    if not community_id or not building_id or not invited_by:
+        return jsonify({"error": "community_id, building_id, invited_by required"}), 400
+    ok = formation_wizard.invite_member(db, community_id, building_id, invited_by)
+    if not ok:
+        return jsonify({"error": "Invite failed"}), 400
+    return jsonify({"success": True})
+
+
+@app.route("/api/formation/confirm", methods=['POST'])
+def api_formation_confirm():
+    import formation_wizard
+    data = request.json or {}
+    community_id = (data.get('community_id') or '').strip()
+    building_id = (data.get('building_id') or '').strip()
+    if not community_id or not building_id:
+        return jsonify({"error": "community_id and building_id required"}), 400
+    ok = formation_wizard.confirm_membership(db, community_id, building_id)
+    if not ok:
+        return jsonify({"error": "Confirm failed"}), 400
+    return jsonify({"success": True})
+
+
+@app.route("/api/formation/start", methods=['POST'])
+def api_formation_start():
+    import formation_wizard
+    data = request.json or {}
+    community_id = (data.get('community_id') or '').strip()
+    if not community_id:
+        return jsonify({"error": "community_id required"}), 400
+    ok = formation_wizard.start_formation(db, community_id)
+    if not ok:
+        return jsonify({"error": "Formation start failed, check minimum members"}), 400
+    return jsonify({"success": True})
+
+
+@app.route("/api/formation/generate-docs", methods=['POST'])
+def api_formation_generate_docs():
+    import formation_wizard
+    data = request.json or {}
+    community_id = (data.get('community_id') or '').strip()
+    if not community_id:
+        return jsonify({"error": "community_id required"}), 400
+    docs = formation_wizard.generate_documents(db, community_id)
+    if not docs:
+        return jsonify({"error": "Document generation failed"}), 500
+    return jsonify(docs)
+
+
+@app.route("/api/formation/submit-dso", methods=['POST'])
+def api_formation_submit_dso():
+    import formation_wizard
+    data = request.json or {}
+    community_id = (data.get('community_id') or '').strip()
+    if not community_id:
+        return jsonify({"error": "community_id required"}), 400
+    ok = formation_wizard.submit_to_dso(db, community_id)
+    if not ok:
+        return jsonify({"error": "DSO submission failed"}), 400
+    return jsonify({"success": True})
+
+
+@app.route("/api/formation/status/<community_id>")
+def api_formation_status(community_id):
+    import formation_wizard
+    status = formation_wizard.get_community_status(db, community_id)
+    if not status:
+        return jsonify({"error": "Community not found"}), 404
+    return jsonify(status)
+
+
 # --- Cron ---
 @app.route("/api/cron/process-emails", methods=['POST'])
 def api_cron_process_emails():
     _require_cron_secret()
     result = email_automation.process_email_queue(app=app)
+    # Process formation nudges for communities ready to form
+    nudge_count = 0
+    try:
+        ready = email_automation.check_formation_ready_communities()
+        for community in ready:
+            emails = community.get('member_emails', [])
+            if emails:
+                sent = email_automation.send_formation_nudge(
+                    community['community_id'],
+                    community['name'],
+                    emails,
+                    app=app,
+                )
+                if sent > 0:
+                    db.track_event('formation_nudge_sent', data={'community_id': community['community_id']})
+                    nudge_count += 1
+    except Exception as e:
+        logger.warning(f"[CRON] Formation nudge error: {e}")
+    result['nudges_sent'] = nudge_count
     db.expire_stale_ceo_decisions()
     return jsonify(result)
 
@@ -1355,7 +1477,12 @@ def api_cron_process_emails():
 def api_cron_refresh_public_data():
     _require_cron_secret()
     import public_data
-    result = public_data.refresh_canton('ZH')
+    data = request.get_json(silent=True) or {}
+    scope = data.get('scope', 'zh')
+    if scope == 'all':
+        result = public_data.refresh_all_municipalities()
+    else:
+        result = public_data.refresh_canton('ZH')
     return jsonify(result)
 
 
@@ -1389,11 +1516,48 @@ def webhook_deepsign():
 def api_cron_process_billing():
     _require_cron_secret()
     import billing_engine
+    from datetime import datetime, timedelta
     communities = db.get_active_communities()
     processed = 0
+    period_end = datetime.now()
+    period_start = period_end - timedelta(days=30)
     for community in communities:
         cid = community['community_id']
-        # Billing processing runs per active community.
+        building_ids = db.get_community_member_building_ids(cid)
+        if not building_ids:
+            continue
+        # Build timestamp-aligned production series and consumption DataFrame
+        consumption_frames = {}
+        production_frames = {}
+        for bid in building_ids:
+            readings = db.get_meter_readings(bid, start=period_start, end=period_end, limit=100000)
+            if not readings:
+                continue
+            for r in readings:
+                ts = r.get('timestamp')
+                if ts is None:
+                    continue
+                consumption_frames.setdefault(ts, {})[bid] = r.get('consumption_kwh', 0) or 0
+                production_frames[ts] = production_frames.get(ts, 0) + (r.get('production_kwh', 0) or 0)
+        if not consumption_frames:
+            continue
+        # Build timestamp-indexed DataFrames
+        timestamps = sorted(consumption_frames.keys())
+        consumption_df = pd.DataFrame([
+            {bid: consumption_frames[ts].get(bid, 0) for bid in building_ids if bid in consumption_frames.get(ts, {})}
+            for ts in timestamps
+        ]).fillna(0)
+        production_series = pd.Series([production_frames.get(ts, 0) for ts in timestamps])
+        model = community.get('distribution_model', 'proportional')
+        grid_fee = 0.09  # Default 9 Rp/kWh
+        internal_price = 0.15  # Default 15 Rp/kWh
+        summary = billing_engine.generate_billing_summary(
+            production_series, consumption_df,
+            grid_fee, internal_price,
+            network_level="same",
+            distribution_model=model,
+        )
+        db.save_billing_period(cid, period_start, period_end, summary)
         processed += 1
     return jsonify({"processed": processed, "communities": len(communities)})
 

@@ -2561,6 +2561,21 @@ def get_community_for_building(building_id: str) -> Optional[Dict]:
         return None
 
 
+def get_community_member_building_ids(community_id) -> List[str]:
+    """Get building IDs for confirmed community members."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT building_id FROM community_members WHERE community_id = %s AND status = 'confirmed'",
+                    (community_id,)
+                )
+                return [row['building_id'] for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting community member building IDs: {e}")
+        return []
+
+
 def get_billing_period(period_id: int) -> Optional[Dict]:
     """Get billing period with line items."""
     try:
@@ -2712,6 +2727,33 @@ def expire_stale_ceo_decisions(max_age_hours: int = 72) -> int:
     except Exception as e:
         logger.error(f"[DB] Error expiring stale ceo_decisions: {e}")
         return 0
+
+
+def get_active_communities_for_nudge(min_members: int = 3, cooldown_days: int = 7) -> List[Dict]:
+    """Get communities with >= min_members confirmed members and no recent nudge."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT c.community_id, c.name,
+                           array_agg(b.email) FILTER (WHERE cm.status = 'confirmed') as member_emails,
+                           COUNT(*) FILTER (WHERE cm.status = 'confirmed') as confirmed_count
+                    FROM communities c
+                    JOIN community_members cm ON c.community_id = cm.community_id
+                    JOIN buildings b ON cm.building_id = b.building_id
+                    WHERE c.status IN ('interested', 'formation_started')
+                    AND c.community_id NOT IN (
+                        SELECT DISTINCT data->>'community_id' FROM events
+                        WHERE event_type = 'formation_nudge_sent'
+                        AND created_at > NOW() - INTERVAL '%s days'
+                    )
+                    GROUP BY c.community_id, c.name
+                    HAVING COUNT(*) FILTER (WHERE cm.status = 'confirmed') >= %s
+                """, (cooldown_days, min_members))
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting communities for nudge: {e}")
+        return []
 
 
 def is_db_available() -> bool:

@@ -128,3 +128,25 @@ def app(mock_db):
 def client(app):
     """Flask test client."""
     return app.test_client()
+
+
+@pytest.fixture
+def full_app(mock_db):
+    """Full Flask app with all routes, DB mocked."""
+    os.environ['REDIS_URL'] = 'memory://'
+    with patch('database.is_db_available', return_value=True), \
+         patch('database.init_db', return_value=True), \
+         patch('database._connection_pool', None), \
+         patch('database.get_stats', return_value={'total_buildings': 0}), \
+         patch('database.seed_default_tenant', return_value=True):
+        import importlib
+        import app as app_module
+        importlib.reload(app_module)
+        app_module.app.config['TESTING'] = True
+        yield app_module.app
+
+
+@pytest.fixture
+def full_client(full_app):
+    """Test client for the full app."""
+    return full_app.test_client()

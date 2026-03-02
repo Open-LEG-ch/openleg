@@ -114,6 +114,125 @@ class TestFetchElcom:
         assert fetch_elcom_tariffs(261, 2026) == []
 
 
+class TestRefreshCanton:
+    """Test refresh_canton ZH union bug and canton filtering."""
+
+    @patch('database.save_municipality_profile')
+    @patch('database.save_sonnendach_municipal')
+    @patch('database.save_elcom_tariffs')
+    @patch('public_data.fetch_elcom_tariffs', return_value=[])
+    @patch('public_data.fetch_sonnendach_municipal', return_value=[])
+    @patch('public_data.fetch_energie_reporter')
+    def test_refresh_canton_zh_includes_zh_bfs(self, mock_er, mock_sd, mock_elcom, mock_save_elcom, mock_save_sd, mock_save_prof):
+        from public_data import refresh_canton, ZH_BFS_NUMBERS
+        mock_er.return_value = [
+            {"bfs_number": 261, "kanton": "ZH", "name": "Dietikon"}
+        ]
+        refresh_canton('ZH')
+        saved_bfs = {call.args[0]["bfs_number"] for call in mock_save_prof.call_args_list}
+        for bfs in ZH_BFS_NUMBERS:
+            assert bfs in saved_bfs, f"BFS {bfs} missing from ZH refresh"
+
+    @patch('database.save_municipality_profile')
+    @patch('database.save_sonnendach_municipal')
+    @patch('database.save_elcom_tariffs')
+    @patch('public_data.fetch_elcom_tariffs', return_value=[])
+    @patch('public_data.fetch_sonnendach_municipal', return_value=[])
+    @patch('public_data.fetch_energie_reporter')
+    def test_refresh_canton_non_zh_excludes_zh_bfs(self, mock_er, mock_sd, mock_elcom, mock_save_elcom, mock_save_sd, mock_save_prof):
+        from public_data import refresh_canton, ZH_BFS_NUMBERS
+        mock_er.return_value = [
+            {"bfs_number": 351, "kanton": "BE", "name": "Bern"}
+        ]
+        refresh_canton('BE')
+        saved_bfs = {call.args[0]["bfs_number"] for call in mock_save_prof.call_args_list}
+        for bfs in ZH_BFS_NUMBERS:
+            assert bfs not in saved_bfs, f"ZH BFS {bfs} should not appear in BE refresh"
+        assert 351 in saved_bfs
+
+    @patch('database.save_municipality_profile')
+    @patch('database.save_sonnendach_municipal')
+    @patch('database.save_elcom_tariffs')
+    @patch('public_data.fetch_elcom_tariffs', return_value=[])
+    @patch('public_data.fetch_sonnendach_municipal')
+    @patch('public_data.fetch_energie_reporter', return_value=[])
+    def test_refresh_canton_saves_all_sonnendach(self, mock_er, mock_sd, mock_elcom, mock_save_elcom, mock_save_sd, mock_save_prof):
+        from public_data import refresh_canton
+        mock_sd.return_value = [
+            {"bfs_number": 261, "potential_kwp": 100},
+            {"bfs_number": 351, "potential_kwp": 200},
+        ]
+        refresh_canton('ZH')
+        sd_saved = [call.args[0]["bfs_number"] for call in mock_save_sd.call_args_list]
+        assert 261 in sd_saved
+        assert 351 in sd_saved  # saved even though not ZH
+
+
+class TestRefreshAllMunicipalities:
+    """Test bulk refresh for all Swiss municipalities."""
+
+    def test_refresh_all_municipalities_exists(self):
+        from public_data import refresh_all_municipalities
+        assert callable(refresh_all_municipalities)
+
+    @patch('database.save_municipality_profile')
+    @patch('database.save_sonnendach_municipal')
+    @patch('public_data.fetch_sonnendach_municipal')
+    @patch('public_data.fetch_energie_reporter')
+    def test_refresh_all_uses_bulk_no_elcom(self, mock_er, mock_sd, mock_save_sd, mock_save_prof):
+        from public_data import refresh_all_municipalities
+        mock_er.return_value = [
+            {"bfs_number": 261, "kanton": "ZH", "name": "Dietikon", "solar_potential_pct": 45},
+            {"bfs_number": 351, "kanton": "BE", "name": "Bern", "solar_potential_pct": 40},
+        ]
+        mock_sd.return_value = [
+            {"bfs_number": 261, "potential_kwp": 100},
+        ]
+        result = refresh_all_municipalities()
+        assert result["municipalities"] >= 2
+        assert result.get("elcom_calls", 0) == 0
+
+    @patch('database.save_municipality_profile')
+    @patch('database.save_sonnendach_municipal')
+    @patch('public_data.fetch_sonnendach_municipal', return_value=[])
+    @patch('public_data.fetch_energie_reporter')
+    def test_refresh_all_computes_transition_score(self, mock_er, mock_sd, mock_save_sd, mock_save_prof):
+        from public_data import refresh_all_municipalities
+        mock_er.return_value = [
+            {"bfs_number": 261, "kanton": "ZH", "name": "Dietikon",
+             "solar_potential_pct": 50, "ev_share_pct": 15,
+             "renewable_heating_pct": 50, "electricity_consumption_mwh": 200,
+             "renewable_production_mwh": 50},
+        ]
+        refresh_all_municipalities()
+        saved = mock_save_prof.call_args_list[0].args[0]
+        assert "energy_transition_score" in saved
+        assert saved["energy_transition_score"] > 0
+
+
+class TestCronScope:
+    """Test cron route scope parameter dispatch."""
+
+    @patch('public_data.refresh_all_municipalities', return_value={"scope": "all", "municipalities": 100})
+    @patch('public_data.refresh_canton', return_value={"kanton": "ZH", "municipalities": 11})
+    def test_cron_accepts_scope_all(self, mock_canton, mock_all, full_client):
+        resp = full_client.post('/api/cron/refresh-public-data',
+            headers={'X-Cron-Secret': 'test-cron-secret'},
+            json={"scope": "all"})
+        assert resp.status_code == 200
+        mock_all.assert_called_once()
+        mock_canton.assert_not_called()
+
+    @patch('public_data.refresh_all_municipalities', return_value={"scope": "all", "municipalities": 100})
+    @patch('public_data.refresh_canton', return_value={"kanton": "ZH", "municipalities": 11})
+    def test_cron_default_scope_zh(self, mock_canton, mock_all, full_client):
+        resp = full_client.post('/api/cron/refresh-public-data',
+            headers={'X-Cron-Secret': 'test-cron-secret'})
+        assert resp.status_code == 200
+        mock_canton.assert_called_once_with('ZH')
+        mock_all.assert_not_called()
+
+
 class TestSafeHelpers:
     def test_safe_int(self):
         from public_data import _safe_int

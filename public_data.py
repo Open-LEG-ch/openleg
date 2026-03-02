@@ -314,7 +314,9 @@ def refresh_canton(kanton: str = 'ZH', year: int = 2026) -> Dict:
     result["sonnendach_records"] = len(sd_by_bfs)
 
     # 3. Merge and save profiles
-    all_bfs = set(list(er_by_bfs.keys()) + ZH_BFS_NUMBERS)
+    all_bfs = set(er_by_bfs.keys())
+    if kanton.upper() == 'ZH':
+        all_bfs |= set(ZH_BFS_NUMBERS)
     for bfs in all_bfs:
         try:
             er = er_by_bfs.get(bfs, {})
@@ -342,6 +344,69 @@ def refresh_canton(kanton: str = 'ZH', year: int = 2026) -> Dict:
                 "leg_value_gap_chf": value_gap.get("annual_savings_chf", 0),
                 "data_sources": {
                     "elcom": bool(tariffs),
+                    "energie_reporter": bfs in er_by_bfs,
+                    "sonnendach": bfs in sd_by_bfs,
+                    "last_refresh": datetime.now().isoformat(),
+                },
+            }
+            profile["energy_transition_score"] = compute_energy_transition_score(profile)
+            db.save_municipality_profile(profile)
+            result["municipalities"] += 1
+        except Exception as e:
+            logger.error(f"[PUBLIC_DATA] Error refreshing BFS {bfs}: {e}")
+            result["errors"].append({"bfs": bfs, "error": str(e)})
+
+    return result
+
+
+def refresh_all_municipalities(year: int = 2026) -> Dict:
+    """Bulk refresh all Swiss municipalities from Energie Reporter + Sonnendach.
+
+    Skips per-BFS ElCom SPARQL (too slow for 2131 municipalities).
+    ElCom data is added incrementally via refresh_canton() per canton.
+    """
+    import database as db
+
+    result = {"scope": "all", "municipalities": 0, "errors": [], "elcom_calls": 0}
+
+    # 1. Energie Reporter (all cantons)
+    er_data = fetch_energie_reporter()
+    er_by_bfs = {}
+    for entry in er_data:
+        bfs = entry.get("bfs_number")
+        if bfs:
+            er_by_bfs[bfs] = entry
+
+    # 2. Sonnendach (all municipalities)
+    sd_data = fetch_sonnendach_municipal()
+    sd_by_bfs = {}
+    for entry in sd_data:
+        bfs = entry.get("bfs_number")
+        if bfs:
+            sd_by_bfs[bfs] = entry
+            db.save_sonnendach_municipal(entry)
+
+    # 3. Merge all BFS numbers and save profiles (no ElCom)
+    all_bfs = set(er_by_bfs.keys()) | set(sd_by_bfs.keys())
+    for bfs in all_bfs:
+        try:
+            er = er_by_bfs.get(bfs, {})
+            sd = sd_by_bfs.get(bfs, {})
+
+            profile = {
+                "bfs_number": bfs,
+                "name": er.get("name", ""),
+                "kanton": er.get("kanton", ""),
+                "population": er.get("population"),
+                "solar_potential_pct": er.get("solar_potential_pct"),
+                "solar_installed_kwp": sd.get("potential_kwp"),
+                "ev_share_pct": er.get("ev_share_pct"),
+                "renewable_heating_pct": er.get("renewable_heating_pct"),
+                "electricity_consumption_mwh": er.get("electricity_consumption_mwh"),
+                "renewable_production_mwh": er.get("renewable_production_mwh"),
+                "leg_value_gap_chf": 0,  # No ElCom in bulk mode
+                "data_sources": {
+                    "elcom": False,
                     "energie_reporter": bfs in er_by_bfs,
                     "sonnendach": bfs in sd_by_bfs,
                     "last_refresh": datetime.now().isoformat(),

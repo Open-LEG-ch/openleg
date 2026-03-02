@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ profile.name }} – Energieprofil | OpenLEG</title>
     <meta name="description" content="Energieprofil und LEG-Potenzial für {{ profile.name }}: Stromtarife, Solarpotenzial, Energiewende-Score.">
+    <meta property="og:title" content="{{ profile.name }} – Energieprofil | OpenLEG">
+    <meta property="og:description" content="LEG-Potenzial für {{ profile.name }}: Energiewende-Score {{ profile.energy_transition_score|default(0) }}/100">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script>

@@ -154,3 +154,41 @@ def process_email_queue(app=None):
 def _send_email(to_email: str, subject: str, html_body: str) -> bool:
     """Send a single email via SMTP."""
     return send_email(to_email, subject, html_body, html=True)
+
+
+def send_formation_nudge(community_id: str, community_name: str, member_emails: list, app=None):
+    """Send formation nudge email to all confirmed members of a community."""
+    config = TRIGGER_TEMPLATES["formation_nudge"]
+    sent = 0
+    for email in member_emails:
+        try:
+            if app:
+                with app.app_context():
+                    html_body = render_template(
+                        config["template"],
+                        community_name=community_name,
+                        email=email,
+                        days_stuck=14,
+                        site_url=APP_BASE_URL,
+                    )
+            else:
+                html_body = f"<p>{config['subject']}: {community_name}</p>"
+            if _send_email(email, config["subject"], html_body):
+                sent += 1
+        except Exception as e:
+            logger.error(f"[EMAIL_AUTO] Nudge send error for {email}: {e}")
+    logger.info(f"[EMAIL_AUTO] Formation nudge sent to {sent}/{len(member_emails)} for {community_id}")
+    return sent
+
+
+def check_formation_ready_communities(min_members: int = 3, nudge_cooldown_days: int = 7):
+    """Find communities with enough confirmed members but no recent nudge."""
+    try:
+        communities = db.get_active_communities_for_nudge(
+            min_members=min_members,
+            cooldown_days=nudge_cooldown_days
+        )
+        return communities
+    except Exception as e:
+        logger.error(f"[EMAIL_AUTO] Error checking formation-ready communities: {e}")
+        return []
