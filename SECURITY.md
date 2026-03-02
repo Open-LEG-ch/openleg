@@ -30,7 +30,7 @@ Protects against DoS attacks and brute force attempts:
   - Registration: 5/minute
   - Confirmation/Unsubscribe: 10/minute
 
-**Implementation**: Flask-Limiter with in-memory storage (Redis recommended for production)
+**Implementation**: Flask-Limiter with Redis storage (`REDIS_URL` env var)
 
 ### 3. Security Headers
 
@@ -237,13 +237,9 @@ Monitor `openleg_security.log` for:
 
 ### Current Implementation
 
-1. **In-Memory Database**: Data is lost on server restart. For production, implement persistent storage (PostgreSQL recommended).
+1. **No CSRF Protection for API**: Since this is a stateless API without traditional forms, CSRF is less of a concern. However, for future forms, implement Flask-WTF.
 
-2. **No CSRF Protection for API**: Since this is a stateless API without traditional forms, CSRF is less of a concern. However, for future forms, implement Flask-WTF.
-
-3. **Email Simulation**: Currently using print statements. Implement real SMTP before deployment.
-
-4. **No User Authentication**: System is email-based without passwords. This is by design for simplicity, but consider adding authentication for admin functions.
+2. **Token-based auth**: Dashboard access gated by per-user dashboard tokens issued at registration. No password system; admin uses header tokens.
 
 ## Future Security Enhancements
 
