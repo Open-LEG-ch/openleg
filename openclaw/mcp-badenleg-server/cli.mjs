@@ -778,6 +778,60 @@ const TOOLS = {
       return { count: result.rowCount, candidates: result.rows };
     }
   },
+
+  // === Telegram & Strategy ===
+
+  send_telegram: {
+    desc: 'Send message to CEO via Telegram',
+    params: { message: 'string', category: 'string=progress', urgent: 'bool=false' },
+    run: async (a) => {
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      const chatId = process.env.TELEGRAM_CHAT_ID;
+      if (!token || !chatId) throw new Error('TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured');
+      const prefix = { progress: '📊', blocked: '🚫', approval_needed: '⚠️', daily_report: '📋', alert: '🔴' };
+      const cat = a.category || 'progress';
+      const text = `${a.urgent ? '🚨 URGENT ' : ''}${prefix[cat] || ''} *${cat.replace('_', ' ').toUpperCase()}*\n\n${a.message}`;
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown', disable_web_page_preview: true })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.description);
+      return { sent: true, message_id: data.result.message_id };
+    }
+  },
+
+  track_strategy_item: {
+    desc: 'Track 12-week strategy item progress (upserts by week+item)',
+    params: { week: 'num', item: 'string', status: 'string', notes: 'string?' },
+    run: async (a) => {
+      readonlyGuard();
+      const result = await q(`
+        INSERT INTO strategy_tracker (week, item, status, notes, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (week, item) DO UPDATE SET status = $3, notes = $4, updated_at = NOW()
+        RETURNING *
+      `, [a.week, a.item, a.status, a.notes || '']);
+      return result.rows[0];
+    }
+  },
+
+  get_strategy_status: {
+    desc: 'Get strategy tracker status, optional week filter',
+    params: { week: 'num?' },
+    run: async (a) => {
+      let items, summary;
+      if (a.week) {
+        items = await q('SELECT * FROM strategy_tracker WHERE week = $1 ORDER BY item', [a.week]);
+        summary = await q('SELECT status, COUNT(*)::int as count FROM strategy_tracker WHERE week = $1 GROUP BY status', [a.week]);
+      } else {
+        items = await q('SELECT * FROM strategy_tracker ORDER BY week, item');
+        summary = await q('SELECT week, status, COUNT(*)::int as count FROM strategy_tracker GROUP BY week, status ORDER BY week');
+      }
+      return { items: items.rows, summary: summary.rows };
+    }
+  },
 };
 
 // === Arg parsing ===
