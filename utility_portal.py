@@ -222,7 +222,7 @@ def admin_clients():
     admin_token = os.getenv('ADMIN_TOKEN', '').strip()
     if not admin_token:
         return jsonify({"error": "not found"}), 404
-    token = request.headers.get('X-Admin-Token') or request.args.get('token') or ''
+    token = request.headers.get('X-Admin-Token', '')
     if token != admin_token:
         return jsonify({"error": "forbidden"}), 403
 

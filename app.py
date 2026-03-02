@@ -518,11 +518,21 @@ def sitemap_xml():
 ## Health endpoints registered via health_bp
 
 
+# --- Cron Helper ---
+def _require_cron_secret():
+    """Fail-closed: abort(503) when CRON_SECRET unconfigured, header-only check."""
+    if not CRON_SECRET:
+        abort(503)
+    secret = request.headers.get('X-Cron-Secret', '')
+    if secret != CRON_SECRET:
+        abort(403)
+
+
 # --- Admin ---
 def _require_admin():
     if not ADMIN_TOKEN:
         abort(404)
-    token = request.headers.get('X-Admin-Token') or request.args.get('token') or ''
+    token = request.headers.get('X-Admin-Token', '')
     if token != ADMIN_TOKEN:
         log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", 'WARNING')
         abort(403)
@@ -580,7 +590,7 @@ def admin_export():
 # --- LEA Reports ---
 @app.route("/api/internal/lea-report", methods=['POST'])
 def api_internal_lea_report():
-    token = request.args.get('token') or request.headers.get('X-Internal-Token') or ''
+    token = request.headers.get('X-Internal-Token', '')
     if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
         abort(403)
     data = request.get_json(silent=True) or {}
@@ -1117,18 +1127,14 @@ def api_formation_financial_model():
 # --- Cron ---
 @app.route("/api/cron/process-emails", methods=['POST'])
 def api_cron_process_emails():
-    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
-    if CRON_SECRET and secret != CRON_SECRET:
-        abort(403)
+    _require_cron_secret()
     result = email_automation.process_email_queue(app=app)
     return jsonify(result)
 
 
 @app.route("/api/cron/refresh-public-data", methods=['POST'])
 def api_cron_refresh_public_data():
-    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
-    if CRON_SECRET and secret != CRON_SECRET:
-        abort(403)
+    _require_cron_secret()
     import public_data
     result = public_data.refresh_canton('ZH')
     return jsonify(result)
@@ -1146,8 +1152,13 @@ def api_email_stats():
 
 @app.route("/webhook/deepsign", methods=['POST'])
 def webhook_deepsign():
-    """Handle DeepSign e-signature webhook callbacks."""
+    """Handle DeepSign e-signature webhook callbacks (HMAC verified)."""
     import deepsign_integration
+    raw_body = request.get_data()
+    signature = request.headers.get('X-DeepSign-Signature', '')
+    if not deepsign_integration.verify_webhook_signature(raw_body, signature):
+        log_security_event("WEBHOOK_SIGNATURE_INVALID", "DeepSign webhook failed verification", 'WARNING')
+        abort(403)
     payload = request.get_json(silent=True) or {}
     result = deepsign_integration.handle_webhook(payload)
     logger.info(f"[DEEPSIGN] Webhook: {result.get('action')} for {result.get('document_id')}")
@@ -1157,9 +1168,7 @@ def webhook_deepsign():
 # --- Billing Cron ---
 @app.route("/api/cron/process-billing", methods=['POST'])
 def api_cron_process_billing():
-    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
-    if CRON_SECRET and secret != CRON_SECRET:
-        abort(403)
+    _require_cron_secret()
     import billing_engine
     communities = db.get_active_communities()
     processed = 0

@@ -4,6 +4,8 @@ Requires DEEPSIGN_API_KEY and DEEPSIGN_API_URL env vars.
 API docs: https://docs.deepsign.ch
 """
 import os
+import hmac
+import hashlib
 import requests
 
 API_URL = os.environ.get("DEEPSIGN_API_URL", "https://api.deepsign.ch/v1")
@@ -30,6 +32,7 @@ def upload_document(pdf_bytes, filename, title):
         headers=_headers(),
         files={"file": (filename, pdf_bytes, "application/pdf")},
         data={"title": title},
+        timeout=15,
     )
     if resp.status_code not in (200, 201):
         raise Exception(f"DeepSign upload failed ({resp.status_code}): {resp.text}")
@@ -49,10 +52,19 @@ def request_signatures(document_id, signers):
         f"{API_URL}/documents/{document_id}/signatures",
         headers=_headers(),
         json={"signers": signers, "signature_type": "AES"},
+        timeout=15,
     )
     if resp.status_code not in (200, 201):
         raise Exception(f"DeepSign signature request failed ({resp.status_code}): {resp.text}")
     return resp.json()
+
+
+def verify_webhook_signature(raw_body: bytes, signature_header: str) -> bool:
+    """Verify HMAC-SHA256 signature from DeepSign webhook. Fail-closed when secret empty."""
+    if not WEBHOOK_SECRET:
+        return False
+    expected = hmac.new(WEBHOOK_SECRET.encode(), raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature_header or "")
 
 
 def handle_webhook(payload):
@@ -81,6 +93,7 @@ def get_signing_status(document_id):
     resp = requests.get(
         f"{API_URL}/documents/{document_id}",
         headers=_headers(),
+        timeout=15,
     )
     if resp.status_code != 200:
         raise Exception(f"DeepSign status check failed ({resp.status_code}): {resp.text}")

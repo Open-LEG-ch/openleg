@@ -510,7 +510,7 @@ def _create_tables():
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS billing_periods (
                     id SERIAL PRIMARY KEY,
-                    community_id INTEGER NOT NULL,
+                    community_id VARCHAR(64) NOT NULL,
                     period_start TIMESTAMP NOT NULL,
                     period_end TIMESTAMP NOT NULL,
                     total_production_kwh DECIMAL(12, 4) DEFAULT 0,
@@ -542,7 +542,7 @@ def _create_tables():
                 CREATE TABLE IF NOT EXISTS invoices (
                     id SERIAL PRIMARY KEY,
                     billing_period_id INTEGER REFERENCES billing_periods(id),
-                    community_id INTEGER NOT NULL,
+                    community_id VARCHAR(64) NOT NULL,
                     invoice_number VARCHAR(64) UNIQUE,
                     total_chf DECIMAL(10, 2) DEFAULT 0,
                     status VARCHAR(32) DEFAULT 'draft',
@@ -556,7 +556,7 @@ def _create_tables():
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS leg_documents (
                     id SERIAL PRIMARY KEY,
-                    community_id INTEGER NOT NULL,
+                    community_id VARCHAR(64) NOT NULL,
                     doc_type VARCHAR(64) NOT NULL,
                     filename VARCHAR(255),
                     pdf_data BYTEA,
