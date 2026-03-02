@@ -1282,7 +1282,7 @@ server.tool(
     if (guard) return guard;
     if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN not configured' });
     const slug = (reference || to).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
-    const request_id = `outreach-${slug}`;
+    const request_id = `outreach-${slug}-${Date.now().toString(36)}`;
     try {
       const res = await fetch(`${FLASK_BASE_URL}/api/internal/request-approval`, {
         method: 'POST',

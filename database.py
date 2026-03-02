@@ -2624,7 +2624,7 @@ def create_ceo_decision(request_id: str, activity: str, reference: str = '',
                     ON CONFLICT (request_id) DO NOTHING
                 """, (request_id, activity, reference, summary,
                       _json.dumps(payload or {}), telegram_message_id))
-                return True
+                return cur.rowcount > 0
     except Exception as e:
         logger.error(f"[DB] Error creating ceo_decision: {e}")
         return False
@@ -2680,6 +2680,38 @@ def get_ceo_decision_by_request_id(request_id: str) -> Optional[Dict]:
     except Exception as e:
         logger.error(f"[DB] Error getting ceo_decision: {e}")
         return None
+
+
+def update_ceo_decision_status(request_id: str, status: str) -> bool:
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE ceo_decisions SET status = %s WHERE request_id = %s",
+                    (status, request_id)
+                )
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error updating ceo_decision status: {e}")
+        return False
+
+
+def expire_stale_ceo_decisions(max_age_hours: int = 72) -> int:
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE ceo_decisions SET status = 'expired'
+                    WHERE status = 'pending'
+                      AND created_at < NOW() - INTERVAL '%s hours'
+                """, (max_age_hours,))
+                expired = cur.rowcount
+                if expired:
+                    logger.info(f"[DB] Expired {expired} stale CEO decisions")
+                return expired
+    except Exception as e:
+        logger.error(f"[DB] Error expiring stale ceo_decisions: {e}")
+        return 0
 
 
 def is_db_available() -> bool:

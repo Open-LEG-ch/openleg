@@ -165,9 +165,10 @@ def _execute_approved_action(decision):
             sent = msg_id is not None
         else:
             sent = send_email(to, subject, text)
-        db.track_event('approved_email_sent', data={
-            'to': to, 'subject': subject, 'request_id': decision.get('request_id')
-        })
+        if sent:
+            db.track_event('approved_email_sent', data={
+                'to': to, 'subject': subject, 'request_id': decision.get('request_id')
+            })
         return sent, f"Email to {to}: {'sent' if sent else 'failed'}"
 
     return False, f"Unknown activity: {activity}"
@@ -728,12 +729,15 @@ def webhook_agentmail():
 
 # --- CEO Approval via Telegram ---
 @app.route("/webhook/telegram", methods=['POST'])
+@limiter.limit("20 per minute") if limiter else lambda f: f
 def webhook_telegram():
     """Receive Telegram messages for CEO approve/deny flow."""
-    if TELEGRAM_WEBHOOK_SECRET:
-        secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
-        if secret != TELEGRAM_WEBHOOK_SECRET:
-            abort(403)
+    import hmac as _hmac
+    if not TELEGRAM_WEBHOOK_SECRET:
+        abort(503)
+    secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+    if not _hmac.compare_digest(secret, TELEGRAM_WEBHOOK_SECRET):
+        abort(403)
 
     data = request.get_json(silent=True) or {}
     msg = data.get('message', {})
@@ -744,10 +748,25 @@ def webhook_telegram():
         return jsonify({"ok": True})
 
     parts = text.lower().split(None, 1)
-    if len(parts) < 2 or parts[0] not in ('approve', 'deny'):
+    cmd = parts[0] if parts else ''
+
+    # pending command
+    if cmd == 'pending':
+        decisions = db.get_ceo_decisions(status='pending')
+        if not decisions:
+            _send_telegram_message("No pending decisions.", reply_to_message_id=msg.get('message_id'))
+        else:
+            lines = [f"`{d['request_id']}` {d.get('activity','')} {d.get('summary','')[:60]}" for d in decisions[:10]]
+            _send_telegram_message("Pending:\n" + "\n".join(lines), reply_to_message_id=msg.get('message_id'))
         return jsonify({"ok": True})
 
-    action, request_id = parts[0], parts[1].strip()
+    # approve / deny
+    if len(parts) < 2 or cmd not in ('approve', 'deny'):
+        help_text = "Commands:\n`approve <id>` approve a request\n`deny <id>` deny a request\n`pending` list pending requests"
+        _send_telegram_message(help_text, reply_to_message_id=msg.get('message_id'))
+        return jsonify({"ok": True})
+
+    action, request_id = cmd, parts[1].strip()
     status = 'approved' if action == 'approve' else 'denied'
 
     decision = db.resolve_ceo_decision(request_id, status)
@@ -756,8 +775,12 @@ def webhook_telegram():
                                reply_to_message_id=msg.get('message_id'))
         return jsonify({"ok": True})
 
+    logger.info(f"[CEO] {status} request_id={request_id}")
+
     if status == 'approved':
         success, detail = _execute_approved_action(decision)
+        if not success:
+            db.update_ceo_decision_status(request_id, 'action_failed')
         reply = f"Approved `{request_id}`: {detail}"
     else:
         reply = f"Denied `{request_id}`."
@@ -782,21 +805,25 @@ def api_internal_request_approval():
     if not request_id or not activity:
         return jsonify({"error": "request_id and activity required"}), 400
 
+    esc_ref = security_utils.escape_telegram_markdown(reference)
+    esc_sum = security_utils.escape_telegram_markdown(summary)
     tg_text = (
         f"⚠️ *APPROVAL NEEDED*\n\n"
         f"*ID:* `{request_id}`\n"
         f"*Activity:* {activity}\n"
-        f"*Reference:* {reference}\n"
-        f"*Summary:* {summary}\n\n"
+        f"*Reference:* {esc_ref}\n"
+        f"*Summary:* {esc_sum}\n\n"
         f"Reply: `approve {request_id}` or `deny {request_id}`"
     )
     msg_id = _send_telegram_message(tg_text)
 
-    db.create_ceo_decision(
+    inserted = db.create_ceo_decision(
         request_id=request_id, activity=activity,
         reference=reference, summary=summary,
         payload=payload, telegram_message_id=msg_id
     )
+    if not inserted:
+        return jsonify({"error": "duplicate request_id"}), 409
     return jsonify({"ok": True, "request_id": request_id, "status": "pending"})
 
 
@@ -1320,6 +1347,7 @@ def api_formation_financial_model():
 def api_cron_process_emails():
     _require_cron_secret()
     result = email_automation.process_email_queue(app=app)
+    db.expire_stale_ceo_decisions()
     return jsonify(result)
 
 

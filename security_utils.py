@@ -281,6 +281,15 @@ def rate_limit_key_func():
     return request.headers.get('X-Forwarded-For', request.remote_addr)
 
 
+def escape_telegram_markdown(text: str) -> str:
+    """Escape Telegram Markdown V1 special characters."""
+    if not text:
+        return ""
+    for ch in ('\\', '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'):
+        text = text.replace(ch, f'\\{ch}')
+    return text
+
+
 # Security headers configuration
 SECURITY_HEADERS = {
     'X-Content-Type-Options': 'nosniff',
