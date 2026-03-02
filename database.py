@@ -719,7 +719,6 @@ def save_building(building_id: str, email: str, profile: Dict, consents: Dict,
                         to_timestamp(%s), %s, %s, %s, %s, %s, %s
                     )
                     ON CONFLICT (building_id) DO UPDATE SET
-                        email = EXCLUDED.email,
                         phone = EXCLUDED.phone,
                         verified = EXCLUDED.verified,
                         verified_at = EXCLUDED.verified_at,

@@ -183,6 +183,18 @@ def apply_basic_security_headers(response):
     return response
 
 
+def _require_dashboard_token():
+    """Validate dashboard token from query param or header. Returns building_id or aborts."""
+    token = request.args.get('token', '') or request.headers.get('X-Dashboard-Token', '')
+    token = token.strip()
+    if not token:
+        abort(403)
+    token_info = db.get_token(token)
+    if not token_info or token_info.get('token_type') != 'dashboard':
+        abort(403)
+    return token_info['building_id']
+
+
 # --- Consent Helpers ---
 CONSENT_VERSION = "2026-01-01"
 
@@ -736,10 +748,12 @@ def api_register_anonymous():
         referrer_id=referrer_id, city_id=city_id
     )
 
-    # Create unsubscribe token
+    # Create unsubscribe + dashboard tokens
     unsub_token = str(uuid.uuid4())
     db.save_token(unsub_token, building_id, 'unsubscribe')
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
+    dashboard_token = str(uuid.uuid4())
+    db.save_token(dashboard_token, building_id, 'dashboard')
 
     # Background tasks
     threading.Thread(target=send_confirmation_email, args=(email, unsubscribe_url, building_id, profile.get('address', '')), daemon=True).start()
@@ -760,7 +774,8 @@ def api_register_anonymous():
         "buildings": locations,
         "match_found": bool(cluster_info),
         "verification_email_sent": True,
-        "referral_link": referral_link
+        "referral_link": referral_link,
+        "dashboard_token": dashboard_token
     }
     if cluster_info:
         payload["cluster_info"] = cluster_info
@@ -826,6 +841,8 @@ def api_register_full():
     unsub_token = str(uuid.uuid4())
     db.save_token(unsub_token, building_id, 'unsubscribe')
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
+    dashboard_token = str(uuid.uuid4())
+    db.save_token(dashboard_token, building_id, 'dashboard')
 
     threading.Thread(target=send_confirmation_email, args=(email, unsubscribe_url, building_id, profile.get('address', '')), daemon=True).start()
     threading.Thread(target=run_full_ml_task, args=(building_id, city_id), daemon=True).start()
@@ -844,7 +861,8 @@ def api_register_full():
         "buildings": locations,
         "match_found": bool(cluster_info),
         "verification_email_sent": True,
-        "referral_link": referral_link
+        "referral_link": referral_link,
+        "dashboard_token": dashboard_token
     }
     if cluster_info:
         payload["cluster_info"] = cluster_info
@@ -856,13 +874,14 @@ def api_register_full():
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def api_meter_data_upload():
     import meter_data
+    # Verify dashboard token to authorize upload
+    building_id = _require_dashboard_token()
     data = request.json or {}
-    building_id = data.get('building_id', '').strip()
     csv_content = data.get('csv_content', '')
     tier = int(data.get('tier', 1))
 
-    if not building_id or not csv_content:
-        return jsonify({"error": "building_id und csv_content erforderlich."}), 400
+    if not csv_content:
+        return jsonify({"error": "csv_content erforderlich."}), 400
 
     # Verify building exists
     building = db.get_building(building_id)
@@ -909,15 +928,22 @@ def unsubscribe_page():
             message = email_error
         else:
             email_value = normalized_email
+            # Send unsubscribe link via email instead of deleting directly
             matches = db.get_building_by_email(email_value)
-            if not matches:
-                status = "info"
-                message = "Für diese E-Mail-Adresse wurde kein Eintrag gefunden."
-            else:
+            if matches:
                 for m in matches:
-                    db.delete_building(m['building_id'])
-                status = "success"
-                message = "Ihre Daten wurden erfolgreich gelöscht."
+                    unsub_token = str(uuid.uuid4())
+                    db.save_token(unsub_token, m['building_id'], 'unsubscribe')
+                    unsub_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
+                    threading.Thread(
+                        target=send_email,
+                        args=(email_value, f"{_tenant_name()}: Abmeldelink",
+                              f"Klicken Sie auf den folgenden Link, um sich abzumelden:\n\n{unsub_url}"),
+                        daemon=True
+                    ).start()
+            # Always show same message (don't reveal if email exists)
+            status = "info"
+            message = "Prüfen Sie Ihre E-Mail für den Abmeldelink."
 
     return render_city_template("unsubscribe.html", status=status, message=message, email=email_value)
 
@@ -943,9 +969,7 @@ def unsubscribe_token(token):
 # --- Dashboard ---
 @app.route("/dashboard")
 def dashboard():
-    building_id = request.args.get('bid', '').strip()
-    if not building_id:
-        return render_city_template('dashboard.html', error="Kein Profil angegeben.", user=None)
+    building_id = _require_dashboard_token()
 
     user = db.get_building_for_dashboard(building_id)
     if not user:
@@ -991,8 +1015,9 @@ def dashboard():
 
 
 # --- Referral System ---
-@app.route("/api/referral/stats/<building_id>")
-def api_referral_stats(building_id):
+@app.route("/api/referral/stats")
+def api_referral_stats():
+    building_id = _require_dashboard_token()
     stats = db.get_referral_stats(building_id)
     referral_code = db.get_referral_code(building_id)
     return jsonify({
