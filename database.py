@@ -692,6 +692,22 @@ def _create_tables():
                 )
             """)
 
+            # CEO decision approval queue
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS ceo_decisions (
+                    id SERIAL PRIMARY KEY,
+                    request_id VARCHAR(128) UNIQUE NOT NULL,
+                    activity VARCHAR(64) NOT NULL,
+                    reference VARCHAR(128),
+                    summary TEXT,
+                    status VARCHAR(32) DEFAULT 'pending',
+                    decided_at TIMESTAMPTZ,
+                    telegram_message_id INTEGER,
+                    payload JSONB DEFAULT '{}',
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+
             logger.info("[DB] Tables and indexes created successfully")
 
 
@@ -2593,6 +2609,77 @@ def get_lea_reports(limit: int = 50) -> List[Dict]:
     except Exception as e:
         logger.error(f"[DB] Error getting LEA reports: {e}")
         return []
+
+
+def create_ceo_decision(request_id: str, activity: str, reference: str = '',
+                        summary: str = '', payload: Optional[Dict] = None,
+                        telegram_message_id: Optional[int] = None) -> bool:
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                import json as _json
+                cur.execute("""
+                    INSERT INTO ceo_decisions (request_id, activity, reference, summary, payload, telegram_message_id)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (request_id) DO NOTHING
+                """, (request_id, activity, reference, summary,
+                      _json.dumps(payload or {}), telegram_message_id))
+                return True
+    except Exception as e:
+        logger.error(f"[DB] Error creating ceo_decision: {e}")
+        return False
+
+
+def resolve_ceo_decision(request_id: str, status: str) -> Optional[Dict]:
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE ceo_decisions SET status = %s, decided_at = NOW()
+                    WHERE request_id = %s AND status = 'pending'
+                    RETURNING *
+                """, (status, request_id))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error resolving ceo_decision: {e}")
+        return None
+
+
+def get_ceo_decisions(status: Optional[str] = None, activity: Optional[str] = None,
+                      limit: int = 50) -> List[Dict]:
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                clauses, params = [], []
+                if status:
+                    clauses.append("status = %s")
+                    params.append(status)
+                if activity:
+                    clauses.append("activity = %s")
+                    params.append(activity)
+                where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+                params.append(limit)
+                cur.execute(f"""
+                    SELECT * FROM ceo_decisions {where}
+                    ORDER BY created_at DESC LIMIT %s
+                """, params)
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting ceo_decisions: {e}")
+        return []
+
+
+def get_ceo_decision_by_request_id(request_id: str) -> Optional[Dict]:
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM ceo_decisions WHERE request_id = %s", (request_id,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting ceo_decision: {e}")
+        return None
 
 
 def is_db_available() -> bool:

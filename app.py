@@ -98,6 +98,7 @@ ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
 INTERNAL_TOKEN = os.getenv('INTERNAL_TOKEN', '').strip()
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '').strip()
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '').strip()
+TELEGRAM_WEBHOOK_SECRET = os.getenv('TELEGRAM_WEBHOOK_SECRET', '').strip()
 
 
 def _relay_to_telegram(job_name, summary, status):
@@ -115,6 +116,62 @@ def _relay_to_telegram(job_name, summary, status):
         except Exception as e:
             logger.warning(f"[Telegram] relay failed: {e}")
     threading.Thread(target=_send, daemon=True).start()
+
+
+def _send_telegram_message(text, reply_to_message_id=None):
+    """Sync Telegram send, returns message_id or None."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return None
+    try:
+        import urllib.request
+        payload = json.dumps({
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": text,
+            "parse_mode": "Markdown",
+            "disable_web_page_preview": True,
+            **({"reply_to_message_id": reply_to_message_id} if reply_to_message_id else {})
+        }).encode()
+        req = urllib.request.Request(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data=payload, headers={"Content-Type": "application/json"}
+        )
+        resp = urllib.request.urlopen(req, timeout=10)
+        data = json.loads(resp.read())
+        return data.get("result", {}).get("message_id") if data.get("ok") else None
+    except Exception as e:
+        logger.warning(f"[Telegram] send failed: {e}")
+        return None
+
+
+def _execute_approved_action(decision):
+    """Execute action after CEO approval. Returns (success, detail)."""
+    activity = decision.get('activity', '')
+    payload = decision.get('payload') or {}
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+
+    if activity == 'outreach':
+        to = payload.get('to', '')
+        subject = payload.get('subject', '')
+        text = payload.get('text', '')
+        inbox = payload.get('inbox', 'lea')
+        if not to or not subject or not text:
+            return False, "Missing to/subject/text in payload"
+        if inbox == 'lea' and AGENTMAIL_LEA_INBOX:
+            msg_id = agentmail_client.send_message(
+                inbox_id=AGENTMAIL_LEA_INBOX,
+                to=to, subject=subject, text=text
+            )
+            sent = msg_id is not None
+        else:
+            sent = send_email(to, subject, text)
+        db.track_event('approved_email_sent', data={
+            'to': to, 'subject': subject, 'request_id': decision.get('request_id')
+        })
+        return sent, f"Email to {to}: {'sent' if sent else 'failed'}"
+
+    return False, f"Unknown activity: {activity}"
+
 
 # --- Rate Limiting & Security ---
 if HAS_SECURITY_LIBS:
@@ -667,6 +724,80 @@ def webhook_agentmail():
         subj = payload.get('subject', '(no subject)')
         _relay_to_telegram('inbound_email', f"From: {sender}\nSubject: {subj}", 'ok')
     return jsonify({"ok": True})
+
+
+# --- CEO Approval via Telegram ---
+@app.route("/webhook/telegram", methods=['POST'])
+def webhook_telegram():
+    """Receive Telegram messages for CEO approve/deny flow."""
+    if TELEGRAM_WEBHOOK_SECRET:
+        secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+        if secret != TELEGRAM_WEBHOOK_SECRET:
+            abort(403)
+
+    data = request.get_json(silent=True) or {}
+    msg = data.get('message', {})
+    chat_id = str(msg.get('chat', {}).get('id', ''))
+    text = (msg.get('text') or '').strip()
+
+    if not text or chat_id != TELEGRAM_CHAT_ID:
+        return jsonify({"ok": True})
+
+    parts = text.lower().split(None, 1)
+    if len(parts) < 2 or parts[0] not in ('approve', 'deny'):
+        return jsonify({"ok": True})
+
+    action, request_id = parts[0], parts[1].strip()
+    status = 'approved' if action == 'approve' else 'denied'
+
+    decision = db.resolve_ceo_decision(request_id, status)
+    if not decision:
+        _send_telegram_message(f"No pending request `{request_id}` found.",
+                               reply_to_message_id=msg.get('message_id'))
+        return jsonify({"ok": True})
+
+    if status == 'approved':
+        success, detail = _execute_approved_action(decision)
+        reply = f"Approved `{request_id}`: {detail}"
+    else:
+        reply = f"Denied `{request_id}`."
+
+    _send_telegram_message(reply, reply_to_message_id=msg.get('message_id'))
+    return jsonify({"ok": True})
+
+
+@app.route("/api/internal/request-approval", methods=['POST'])
+def api_internal_request_approval():
+    """Create a CEO decision request and notify via Telegram."""
+    token = request.headers.get('X-Internal-Token', '')
+    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
+        abort(403)
+    data = request.get_json(silent=True) or {}
+    request_id = data.get('request_id', '').strip()
+    activity = data.get('activity', '').strip()
+    reference = data.get('reference', '')
+    summary = data.get('summary', '')
+    payload = data.get('payload', {})
+
+    if not request_id or not activity:
+        return jsonify({"error": "request_id and activity required"}), 400
+
+    tg_text = (
+        f"⚠️ *APPROVAL NEEDED*\n\n"
+        f"*ID:* `{request_id}`\n"
+        f"*Activity:* {activity}\n"
+        f"*Reference:* {reference}\n"
+        f"*Summary:* {summary}\n\n"
+        f"Reply: `approve {request_id}` or `deny {request_id}`"
+    )
+    msg_id = _send_telegram_message(tg_text)
+
+    db.create_ceo_decision(
+        request_id=request_id, activity=activity,
+        reference=reference, summary=summary,
+        payload=payload, telegram_message_id=msg_id
+    )
+    return jsonify({"ok": True, "request_id": request_id, "status": "pending"})
 
 
 # --- Address API ---

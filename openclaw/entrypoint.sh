@@ -74,7 +74,7 @@ add_if_missing "vnb-outreach-cycle" \
   --cron "0 9 * * 2,4" --tz "Europe/Zurich" \
   --session isolated --timeout-seconds 300 \
   --announce \
-  --message "VNB outreach cycle: 1) exec node /opt/mcp-badenleg-server/cli.mjs get_outreach_candidates --limit 10. 2) For top 3 candidates, research_vnb and draft_outreach. 3) Save drafts via track_strategy_item with status needs_ceo. 4) Send approval_needed via send_telegram with draft summaries for CEO review."
+  --message "VNB outreach cycle: 1) exec node /opt/mcp-badenleg-server/cli.mjs get_outreach_candidates --limit 10. 2) For top 3 candidates, research_vnb and draft_outreach. 3) For each draft, use request_approval tool with activity=outreach, include to/subject/text in payload. CEO approves via Telegram reply. 4) Check get_decisions for any recently approved/denied items."
 
 add_if_missing "pipeline-review" \
   --cron "0 10 * * 5" --tz "Europe/Zurich" \

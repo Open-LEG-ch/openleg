@@ -1269,31 +1269,40 @@ server.tool(
 
 server.tool(
   'send_outreach_email',
-  'Send an outreach email to a municipality. Uses LEA inbox via Flask internal API. Requires draft_outreach output or custom text.',
+  'Queue an outreach email for CEO approval. Email is NOT sent immediately; CEO must approve via Telegram. Returns request_id for tracking.',
   {
     to: z.string().describe('Recipient email address'),
     subject: z.string().describe('Email subject line'),
     body: z.string().describe('Email body text'),
-    inbox: z.enum(['lea', 'transactional']).default('lea').describe('Which inbox to send from')
+    inbox: z.enum(['lea', 'transactional']).default('lea').describe('Which inbox to send from'),
+    reference: z.string().optional().describe('Reference label (e.g. municipality name)')
   },
-  async ({ to, subject, body, inbox }) => {
+  async ({ to, subject, body, inbox, reference }) => {
     const guard = readonlyGuard();
     if (guard) return guard;
     if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN not configured' });
+    const slug = (reference || to).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
+    const request_id = `outreach-${slug}`;
     try {
-      const res = await fetch(`${FLASK_BASE_URL}/api/internal/send-email`, {
+      const res = await fetch(`${FLASK_BASE_URL}/api/internal/request-approval`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Internal-Token': INTERNAL_TOKEN
         },
-        body: JSON.stringify({ to, subject, text: body, inbox })
+        body: JSON.stringify({
+          request_id,
+          activity: 'outreach',
+          reference: reference || to,
+          summary: `Email to ${to}: ${subject}`,
+          payload: { to, subject, text: body, inbox }
+        })
       });
       const data = await res.json();
       if (!res.ok) return txt({ error: data.error || `HTTP ${res.status}` });
-      return txt({ sent: data.ok, inbox: data.inbox, to, subject });
+      return txt({ queued_for_approval: true, request_id, to, subject });
     } catch (e) {
-      return txt({ error: `Failed to send: ${e.message}` });
+      return txt({ error: `Failed to queue: ${e.message}` });
     }
   }
 );
@@ -1418,6 +1427,63 @@ server.tool(
       LIMIT $1
     `, [limit]);
     return txt({ count: result.rowCount, candidates: result.rows });
+  }
+);
+
+// ============================================================
+// CEO Approval Tools
+// ============================================================
+
+server.tool(
+  'request_approval',
+  'Request CEO approval for an action. Creates a pending decision and sends structured Telegram message. CEO replies approve/deny in Telegram.',
+  {
+    request_id: z.string().describe('Unique slug (e.g. "outreach-kingley")'),
+    activity: z.enum(['outreach', 'billing', 'formation', 'other']).describe('Action category'),
+    reference: z.string().optional().describe('Reference label'),
+    summary: z.string().describe('Human readable summary for CEO'),
+    payload: z.record(z.any()).optional().describe('Action payload (executed on approval)')
+  },
+  async ({ request_id, activity, reference, summary, payload }) => {
+    const guard = readonlyGuard();
+    if (guard) return guard;
+    if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN not configured' });
+    try {
+      const res = await fetch(`${FLASK_BASE_URL}/api/internal/request-approval`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Internal-Token': INTERNAL_TOKEN
+        },
+        body: JSON.stringify({ request_id, activity, reference: reference || '', summary, payload: payload || {} })
+      });
+      const data = await res.json();
+      if (!res.ok) return txt({ error: data.error || `HTTP ${res.status}` });
+      return txt({ queued: true, request_id, status: 'pending' });
+    } catch (e) {
+      return txt({ error: `Failed to request approval: ${e.message}` });
+    }
+  }
+);
+
+server.tool(
+  'get_decisions',
+  'Query CEO decision queue. Filter by status and activity.',
+  {
+    status: z.enum(['pending', 'approved', 'denied']).optional().describe('Filter by decision status'),
+    activity: z.string().optional().describe('Filter by activity type'),
+    limit: z.number().default(20).describe('Max results')
+  },
+  async ({ status, activity, limit }) => {
+    let sql = 'SELECT * FROM ceo_decisions';
+    const clauses = [], params = [];
+    if (status) { params.push(status); clauses.push(`status = $${params.length}`); }
+    if (activity) { params.push(activity); clauses.push(`activity = $${params.length}`); }
+    if (clauses.length) sql += ' WHERE ' + clauses.join(' AND ');
+    params.push(limit);
+    sql += ` ORDER BY created_at DESC LIMIT $${params.length}`;
+    const result = await query(sql, params);
+    return txt({ count: result.rowCount, decisions: result.rows });
   }
 );
 

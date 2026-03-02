@@ -258,7 +258,7 @@ class TestMCPToolExists:
         with open(mcp_path) as f:
             content = f.read()
         assert "'send_outreach_email'" in content
-        assert "/api/internal/send-email" in content
+        assert "/api/internal/request-approval" in content
         assert "X-Internal-Token" in content
 
     def test_send_outreach_email_has_required_params(self):
