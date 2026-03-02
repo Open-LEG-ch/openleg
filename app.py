@@ -36,6 +36,7 @@ except ImportError:
 
 # --- Email imports ---
 from email_utils import send_email, EMAIL_ENABLED, FROM_EMAIL
+import agentmail_client
 
 # --- Core modules ---
 import data_enricher
@@ -607,6 +608,65 @@ def admin_lea_reports():
     _require_admin()
     reports = db.get_lea_reports(limit=50)
     return jsonify({"reports": reports})
+
+
+# --- Agent Email Sending ---
+AGENTMAIL_LEA_INBOX = os.getenv('AGENTMAIL_LEA_INBOX', '').strip()
+AGENTMAIL_WEBHOOK_SECRET = os.getenv('AGENTMAIL_WEBHOOK_SECRET', '').strip()
+AGENT_EMAIL_ENABLED = os.getenv('AGENT_EMAIL_ENABLED', 'false').lower() == 'true'
+
+
+@app.route("/api/internal/send-email", methods=['POST'])
+def api_internal_send_email():
+    """Send email via AgentMail/SMTP. Used by LEA agent via MCP."""
+    token = request.headers.get('X-Internal-Token', '')
+    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
+        abort(403)
+    if not AGENT_EMAIL_ENABLED:
+        return jsonify({"error": "Agent email sending disabled (AGENT_EMAIL_ENABLED=false)"}), 403
+    data = request.get_json(silent=True) or {}
+    to = data.get('to', '').strip()
+    subject = data.get('subject', '').strip()
+    text = data.get('text', '').strip()
+    html_body = data.get('html', '').strip() or None
+    inbox = data.get('inbox', 'transactional')
+    if not to or not subject or not text:
+        return jsonify({"error": "to, subject, text required"}), 400
+    # Choose inbox
+    if inbox == 'lea' and AGENTMAIL_LEA_INBOX:
+        msg_id = agentmail_client.send_message(
+            inbox_id=AGENTMAIL_LEA_INBOX,
+            to=to, subject=subject, text=text, html=html_body
+        )
+        sent = msg_id is not None
+    else:
+        sent = send_email(to, subject, text, html=bool(html_body), from_email=None)
+    # Log + notify
+    db.track_event('email_sent', data={
+        'to': to, 'subject': subject, 'inbox': inbox, 'sent': sent
+    })
+    _relay_to_telegram('email_sent', f"To: {to}\nSubject: {subject}\nSent: {sent}", 'ok' if sent else 'error')
+    return jsonify({"ok": sent, "inbox": inbox})
+
+
+@app.route("/webhook/agentmail", methods=['POST'])
+def webhook_agentmail():
+    """Handle inbound AgentMail webhooks (message received, etc)."""
+    if AGENTMAIL_WEBHOOK_SECRET:
+        sig = request.headers.get('X-Webhook-Secret', '')
+        if sig != AGENTMAIL_WEBHOOK_SECRET:
+            abort(403)
+    data = request.get_json(silent=True) or {}
+    event_type = data.get('type', data.get('event', 'unknown'))
+    payload = data.get('data', data)
+    logger.info(f"[AgentMail Webhook] {event_type}: {json.dumps(payload)[:500]}")
+    db.track_event('agentmail_webhook', data={'event': event_type, 'payload': payload})
+    # Notify on inbound message
+    if 'received' in event_type:
+        sender = payload.get('from', payload.get('sender', 'unknown'))
+        subj = payload.get('subject', '(no subject)')
+        _relay_to_telegram('inbound_email', f"From: {sender}\nSubject: {subj}", 'ok')
+    return jsonify({"ok": True})
 
 
 # --- Address API ---

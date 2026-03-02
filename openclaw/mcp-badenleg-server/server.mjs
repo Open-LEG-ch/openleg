@@ -13,6 +13,8 @@ const pool = new Pool({
 
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY || '';
 const READONLY = (process.env.OPENCLAW_READONLY || 'false').toLowerCase() === 'true';
+const INTERNAL_TOKEN = process.env.INTERNAL_TOKEN || '';
+const FLASK_BASE_URL = process.env.FLASK_BASE_URL || 'http://flask:5000';
 
 function readonlyGuard() {
   if (READONLY) return { content: [{ type: 'text', text: 'Write access disabled (OPENCLAW_READONLY=true)' }] };
@@ -1262,6 +1264,37 @@ server.tool(
     const onboardingUrl = `https://openleg.ch/gemeinde/${bfs_number}/onboarding`;
     const email = `Betreff: Kostenlose LEG-Infrastruktur für ${municipality_name}\n\nSehr geehrte Gemeindeverantwortliche\n\nDie Gemeinde ${municipality_name} verfügt über ein hohes Potenzial für Lokale Elektrizitätsgemeinschaften (LEG).\n\nKennzahlen:\n- Solarpotenzial: ${solar_potential_pct}% der Dachflächen geeignet\n- Einsparpotenzial: ca. CHF ${value_gap_chf} pro Haushalt und Jahr\n\nOpenLEG stellt kostenlose, quelloffene Infrastruktur für die Gründung und Verwaltung von LEGs bereit. Kein Datenverkauf, keine Gebühren.\n\nGemeindeprofil: ${profileUrl}\nOnboarding starten: ${onboardingUrl}\n\nFreundliche Grüsse\nOpenLEG\nhallo@openleg.ch`;
     return txt({ email, metadata: { municipality_name, bfs_number, value_gap_chf, solar_potential_pct } });
+  }
+);
+
+server.tool(
+  'send_outreach_email',
+  'Send an outreach email to a municipality. Uses LEA inbox via Flask internal API. Requires draft_outreach output or custom text.',
+  {
+    to: z.string().describe('Recipient email address'),
+    subject: z.string().describe('Email subject line'),
+    body: z.string().describe('Email body text'),
+    inbox: z.enum(['lea', 'transactional']).default('lea').describe('Which inbox to send from')
+  },
+  async ({ to, subject, body, inbox }) => {
+    const guard = readonlyGuard();
+    if (guard) return guard;
+    if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN not configured' });
+    try {
+      const res = await fetch(`${FLASK_BASE_URL}/api/internal/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Internal-Token': INTERNAL_TOKEN
+        },
+        body: JSON.stringify({ to, subject, text: body, inbox })
+      });
+      const data = await res.json();
+      if (!res.ok) return txt({ error: data.error || `HTTP ${res.status}` });
+      return txt({ sent: data.ok, inbox: data.inbox, to, subject });
+    } catch (e) {
+      return txt({ error: `Failed to send: ${e.message}` });
+    }
   }
 );
 

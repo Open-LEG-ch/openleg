@@ -19,6 +19,9 @@ psycopg2-binary==2.9.9
 # PDF generation
 weasyprint==62.3
 
+# Email (AgentMail API)
+agentmail>=0.2.0
+
 # Optional: For production
 gunicorn==21.2.0
 requests==2.31.0
