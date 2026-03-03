@@ -1814,8 +1814,42 @@ server.tool(
       ON CONFLICT (week, item) DO UPDATE SET status = $3, notes = $4, updated_at = NOW()
       RETURNING *
     `, [week, item, status, notes || '']);
-    // promoted to GREEN tier
+    // Fire strategy_status_changed event
+    if (INTERNAL_TOKEN && ['done', 'blocked', 'needs_ceo'].includes(status)) {
+      fetch(`${FLASK_BASE_URL}/api/internal/notify-event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
+        body: JSON.stringify({ event_type: 'strategy_status_changed', payload: { week, item, status, notes: notes || '' } })
+      }).catch(e => console.error(`[strategy] notify error: ${e.message}`));
+    }
     return txt(result.rows[0]);
+  }
+);
+
+server.tool(
+  'get_strategy_prioritized_outreach',
+  'Get outreach candidates prioritized by strategy status and VNB pipeline score. GREEN tier.',
+  {
+    limit: z.number().default(10).describe('Max results')
+  },
+  async ({ limit }) => {
+    const result = await query(`
+      SELECT mp.bfs_number, mp.municipality_name, mp.score,
+             vp.status AS pipeline_status, vp.score AS vnb_score,
+             st.status AS strategy_status, st.notes AS strategy_notes
+      FROM municipality_profiles mp
+      LEFT JOIN vnb_pipeline vp ON mp.municipality_name = vp.municipality
+      LEFT JOIN strategy_tracker st ON st.item LIKE '%' || LOWER(REPLACE(mp.municipality_name, ' ', '-')) || '%'
+      WHERE mp.score IS NOT NULL
+      ORDER BY
+        CASE WHEN st.status = 'in_progress' THEN 0
+             WHEN st.status = 'pending' THEN 1
+             WHEN vp.status = 'lead' THEN 2
+             ELSE 3 END,
+        mp.score DESC NULLS LAST
+      LIMIT $1
+    `, [limit]);
+    return txt({ count: result.rowCount, candidates: result.rows });
   }
 );
 
