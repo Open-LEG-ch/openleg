@@ -1685,6 +1685,60 @@ server.tool(
   }
 );
 
+server.tool(
+  'check_competitive_changes',
+  'Combined competitive intelligence: check leghub partners + VNB LEG offerings for changes. Auto-tracks strategy items on findings. GREEN tier.',
+  {},
+  async () => {
+    const changes = { leghub: null, vnb: null, strategy_tracked: false };
+    try {
+      // Check leghub partners
+      if (BRAVE_API_KEY) {
+        const res = await fetch(`https://api.search.brave.com/res/v1/web/search?${new URLSearchParams({ q: 'site:leghub.ch partner', count: 10 })}`, {
+          headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const partners = (data.web?.results || []).map(r => ({ title: r.title, url: r.url }));
+          const prevRes = await query(`SELECT data FROM insights_cache WHERE insight_type = 'leghub_partners' ORDER BY computed_at DESC LIMIT 1`);
+          const previous = prevRes.rows[0]?.data?.partners || [];
+          const prevUrls = new Set(previous.map(p => p.url));
+          const newPartners = partners.filter(p => !prevUrls.has(p.url));
+          changes.leghub = { total: partners.length, new_count: newPartners.length, new_partners: newPartners };
+        }
+      }
+
+      // Check VNB LEG offerings
+      if (BRAVE_API_KEY) {
+        const vnbRes = await fetch(`https://api.search.brave.com/res/v1/web/search?${new URLSearchParams({ q: 'Lokale Elektrizitätsgemeinschaft LEG Angebot Schweiz', count: 10 })}`, {
+          headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY }
+        });
+        if (vnbRes.ok) {
+          const vnbData = await vnbRes.json();
+          const results = (vnbData.web?.results || []).map(r => ({ title: r.title, url: r.url }));
+          changes.vnb = { results_count: results.length, results };
+        }
+      }
+
+      // Auto-track strategy item if changes detected (GREEN tier)
+      if (changes.leghub?.new_count > 0 || changes.vnb?.results_count > 0) {
+        const week = Math.ceil((new Date().getMonth() + 1) / 3) * 4;
+        await query(
+          `INSERT INTO strategy_tracker (week, item, status, notes, updated_at)
+           VALUES ($1, 'competitive-intel', 'in_progress', $2, NOW())
+           ON CONFLICT (week, item) DO UPDATE SET notes = $2, updated_at = NOW()`,
+          [Math.min(week, 12), JSON.stringify(changes).substring(0, 500)]
+        );
+        changes.strategy_tracked = true;
+      }
+
+      return txt(changes);
+    } catch (e) {
+      return txt({ error: e.message, changes });
+    }
+  }
+);
+
 // ============================================================
 // Telegram & Strategy Tools
 // ============================================================
