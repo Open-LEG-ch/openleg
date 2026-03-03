@@ -330,9 +330,22 @@ def refresh_canton(kanton: str = 'ZH', year: int = 2026) -> Dict:
             h4 = next((t for t in tariffs if t.get("category", "").startswith("H4")), None)
             value_gap = compute_leg_value_gap(h4) if h4 else {"annual_savings_chf": 0}
 
+            # Name: Energie Reporter > municipalities table > ElCom operator > empty
+            name = er.get("name", "")
+            if not name:
+                muni = db.get_municipality(bfs_number=bfs)
+                if muni:
+                    name = muni.get("name", "")
+            if not name:
+                # Use operator name from tariffs as last resort
+                for t in tariffs:
+                    op = t.get("operator_name", "")
+                    if op:
+                        name = op.split(" ")[0]  # first word of operator
+                        break
             profile = {
                 "bfs_number": bfs,
-                "name": er.get("name", ""),
+                "name": name,
                 "kanton": er.get("kanton", kanton),
                 "population": er.get("population"),
                 "solar_potential_pct": er.get("solar_potential_pct"),
@@ -393,9 +406,14 @@ def refresh_all_municipalities(year: int = 2026) -> Dict:
             er = er_by_bfs.get(bfs, {})
             sd = sd_by_bfs.get(bfs, {})
 
+            name = er.get("name", "")
+            if not name:
+                muni = db.get_municipality(bfs_number=bfs)
+                if muni:
+                    name = muni.get("name", "")
             profile = {
                 "bfs_number": bfs,
-                "name": er.get("name", ""),
+                "name": name,
                 "kanton": er.get("kanton", ""),
                 "population": er.get("population"),
                 "solar_potential_pct": er.get("solar_potential_pct"),

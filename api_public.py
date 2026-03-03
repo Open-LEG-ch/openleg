@@ -58,14 +58,16 @@ def _enforce_rate_limit():
 @public_api_bp.route('/municipalities')
 def list_municipalities():
     """List all municipalities with profiles."""
-    kanton = request.args.get('kanton', 'ZH')
+    kanton = request.args.get('kanton')
     order_by = request.args.get('order_by', 'name')
     profiles = db.get_all_municipality_profiles(kanton=kanton, order_by=order_by)
-    return jsonify({
+    result = {
         "municipalities": _serialize_profiles(profiles),
         "count": len(profiles),
-        "kanton": kanton
-    })
+    }
+    if kanton:
+        result["kanton"] = kanton
+    return jsonify(result)
 
 
 @public_api_bp.route('/municipalities/<int:bfs>')
