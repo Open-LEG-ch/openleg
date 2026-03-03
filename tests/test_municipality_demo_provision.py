@@ -107,12 +107,12 @@ def test_demo_provision_validation_error(demo_client, monkeypatch):
     assert "error" in data
 
 
-def test_onboarding_renders_demo_form_when_enabled(demo_client):
+def test_onboarding_renders_two_path_page(demo_client):
     response = demo_client.get("/gemeinde/onboarding")
     assert response.status_code == 200
     html = response.data.decode("utf-8", errors="ignore")
-    assert "Demo-Instanz erstellen" in html
-    assert "id=\"demo-form\"" in html
+    assert "Selbst betreiben" in html
+    assert "/gemeinde/anfrage" in html
 
 
 def test_demo_status_disabled(monkeypatch):
@@ -128,7 +128,7 @@ def test_demo_status_disabled(monkeypatch):
     assert data["enabled"] is False
 
 
-def test_onboarding_shows_disabled_notice_when_demo_off(monkeypatch):
+def test_onboarding_shows_open_source_message(monkeypatch):
     monkeypatch.setenv("DEMO_MODE", "false")
     app = Flask(__name__, template_folder=_template_dir())
     app.config["TESTING"] = True
@@ -138,4 +138,4 @@ def test_onboarding_shows_disabled_notice_when_demo_off(monkeypatch):
     response = client.get("/gemeinde/onboarding")
     assert response.status_code == 200
     html = response.data.decode("utf-8", errors="ignore")
-    assert "Demo-Modus ist deaktiviert" in html
+    assert "open-source" in html.lower() or "Open Source" in html

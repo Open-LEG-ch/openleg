@@ -4,11 +4,14 @@
     theme: {
       extend: {
         colors: {
-          brand: { DEFAULT: '#4f46e5', light: '#6366f1', dark: '#4338ca' },
-          accent: '#f59e0b',
+          brand: { DEFAULT: '#0d9488', light: '#14b8a6', dark: '#0f766e', 50: '#f0fdfa', 500: '#0d9488', 700: '#0f766e', 900: '#134e4a' },
+          accent: { DEFAULT: '#f59e0b', 400: '#fbbf24', 500: '#f59e0b' },
           ink: { DEFAULT: '#0f172a', soft: '#1e293b', muted: '#475569' }
-        }
+        },
+        fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
       }
     }
   }
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

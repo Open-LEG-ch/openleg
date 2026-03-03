@@ -1,27 +1,27 @@
 <!-- Savings Calculator Widget -->
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-  <h3 class="font-bold text-lg mb-3">Sparpotenzial Ihrer Gemeinde</h3>
+  <h3 class="font-bold text-lg mb-3">{{ t('savings_title') }}</h3>
   <div class="flex gap-2 mb-4">
-    <input id="sw-input" type="text" placeholder="Gemeinde oder BFS-Nr." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" autocomplete="off">
-    <button onclick="swSearch()" class="bg-brand text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brand-dark">Prüfen</button>
+    <input id="sw-input" type="text" placeholder="{{ t('savings_placeholder') }}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" autocomplete="off">
+    <button onclick="swSearch()" class="bg-brand text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brand-dark">{{ t('savings_check') }}</button>
   </div>
   <ul id="sw-suggestions" class="text-sm border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-40 overflow-y-auto hidden"></ul>
   <div id="sw-result" class="hidden">
     <div class="grid grid-cols-3 gap-3 text-center">
       <div>
         <div id="sw-savings" class="text-2xl font-bold text-green-700"></div>
-        <div class="text-xs text-ink-muted">CHF/Jahr Einsparpotenzial</div>
+        <div class="text-xs text-ink-muted">{{ t('savings_chf_year') }}</div>
       </div>
       <div>
         <div id="sw-solar" class="text-2xl font-bold text-amber-600"></div>
-        <div class="text-xs text-ink-muted">Solarpotenzial</div>
+        <div class="text-xs text-ink-muted">{{ t('savings_solar') }}</div>
       </div>
       <div>
         <div id="sw-gap" class="text-2xl font-bold text-brand"></div>
-        <div class="text-xs text-ink-muted">Tariflücke</div>
+        <div class="text-xs text-ink-muted">{{ t('savings_gap') }}</div>
       </div>
     </div>
-    <a id="sw-cta" href="/gemeinde/onboarding" class="block text-center mt-4 bg-brand text-white text-sm font-semibold py-2 rounded-lg hover:bg-brand-dark">Gemeinde anmelden</a>
+    <a id="sw-cta" href="/gemeinde/onboarding" class="block text-center mt-4 bg-brand text-white text-sm font-semibold py-2 rounded-lg hover:bg-brand-dark">{{ t('cta_gemeinde_anmelden') }}</a>
   </div>
   <div id="sw-error" class="hidden text-sm text-red-600 mt-2"></div>
 </div>

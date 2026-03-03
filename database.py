@@ -2488,7 +2488,8 @@ def store_leg_document(community_id: int, doc_type: str, pdf_bytes: bytes, filen
                     INSERT INTO leg_documents (community_id, doc_type, filename, pdf_data)
                     VALUES (%s, %s, %s, %s) RETURNING id
                 """, (community_id, doc_type, filename, pdf_bytes))
-                return cur.fetchone()[0]
+                row = cur.fetchone()
+                return row['id'] if row else 0
     except Exception as e:
         logger.error(f"[DB] Error storing leg document: {e}")
         return 0
@@ -2503,11 +2504,25 @@ def list_leg_documents(community_id: int) -> List[Dict]:
                     SELECT id, doc_type, filename, signing_status, deepsign_document_id, created_at
                     FROM leg_documents WHERE community_id = %s ORDER BY created_at DESC
                 """, (community_id,))
-                cols = [d[0] for d in cur.description]
-                return [dict(zip(cols, row)) for row in cur.fetchall()]
+                return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error listing leg documents: {e}")
         return []
+
+
+def get_leg_document_pdf(doc_id: int) -> Optional[bytes]:
+    """Retrieve PDF bytes for a leg_document by id."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT pdf_data FROM leg_documents WHERE id = %s", (doc_id,))
+                row = cur.fetchone()
+                if row and row.get('pdf_data'):
+                    return bytes(row['pdf_data'])
+                return None
+    except Exception as e:
+        logger.error(f"[DB] Error getting leg document PDF: {e}")
+        return None
 
 
 def save_billing_period(community_id: int, period_start, period_end, summary: dict) -> int:
@@ -2738,6 +2753,60 @@ def expire_stale_ceo_decisions(max_age_hours: int = 72) -> int:
         return 0
 
 
+def get_dashboard_stats(subdomain: str) -> Dict:
+    """Get community/member/meter stats for a municipality dashboard."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                # Count communities whose admin building belongs to this city
+                cur.execute("""
+                    SELECT COUNT(*) as cnt FROM communities c
+                    JOIN buildings b ON c.admin_building_id = b.building_id
+                    WHERE b.city_id = %s
+                """, (subdomain,))
+                community_count = cur.fetchone()['cnt']
+
+                # Count confirmed members in those communities
+                cur.execute("""
+                    SELECT COUNT(*) as cnt FROM community_members cm
+                    JOIN communities c ON cm.community_id = c.community_id
+                    JOIN buildings b ON c.admin_building_id = b.building_id
+                    WHERE b.city_id = %s AND cm.status = 'confirmed'
+                """, (subdomain,))
+                confirmed_members = cur.fetchone()['cnt']
+
+                # Count meter uploads for buildings in this city
+                cur.execute("""
+                    SELECT COUNT(DISTINCT mr.building_id) as cnt
+                    FROM meter_readings mr
+                    JOIN buildings b ON mr.building_id = b.building_id
+                    WHERE b.city_id = %s
+                """, (subdomain,))
+                meter_uploads = cur.fetchone()['cnt']
+
+                # Count buildings registered and ready for formation
+                cur.execute("""
+                    SELECT COUNT(*) as cnt FROM buildings
+                    WHERE city_id = %s AND verified = TRUE
+                """, (subdomain,))
+                formation_ready_count = cur.fetchone()['cnt']
+
+                return {
+                    'community_count': community_count,
+                    'confirmed_members': confirmed_members,
+                    'meter_uploads': meter_uploads,
+                    'formation_ready_count': formation_ready_count,
+                }
+    except Exception as e:
+        logger.error(f"[DB] Error getting dashboard stats: {e}")
+        return {
+            'community_count': 0,
+            'confirmed_members': 0,
+            'meter_uploads': 0,
+            'formation_ready_count': 0,
+        }
+
+
 def get_active_communities_for_nudge(min_members: int = 3, cooldown_days: int = 7) -> List[Dict]:
     """Get communities with >= min_members confirmed members and no recent nudge."""
     try:
@@ -2763,6 +2832,18 @@ def get_active_communities_for_nudge(min_members: int = 3, cooldown_days: int = 
     except Exception as e:
         logger.error(f"[DB] Error getting communities for nudge: {e}")
         return []
+
+
+def get_formation_pipeline_stats() -> Dict:
+    """Get community formation pipeline counts grouped by status."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT status, COUNT(*) as count FROM communities GROUP BY status")
+                return {row['status']: row['count'] for row in cur.fetchall()}
+    except Exception as e:
+        logger.error(f"[DB] Error getting formation pipeline stats: {e}")
+        return {}
 
 
 def count_budget_events(event_type: str, window_seconds: int) -> int:

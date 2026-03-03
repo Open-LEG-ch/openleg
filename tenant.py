@@ -94,6 +94,9 @@ def get_tenant_config(territory: str, db=None) -> Dict:
             row = _load_tenant_from_db(territory, db)
             if row:
                 config = _merge_tenant_row(row)
+                if 'language' not in config:
+                    from translations import KANTON_LANGUAGE
+                    config['language'] = KANTON_LANGUAGE.get(config.get('kanton_code', 'ZH'), 'de')
                 cache.cache_set(redis_key, config, ttl=REDIS_TENANT_TTL)
                 _tenant_cache[territory] = (config, now)
                 return config
@@ -109,6 +112,11 @@ def get_tenant_config(territory: str, db=None) -> Dict:
         config["city_name"] = territory.capitalize()
         config["platform_name"] = "OpenLEG"
         config["brand_prefix"] = "OpenLEG"
+
+    # Derive language from kanton_code if not set
+    if 'language' not in config:
+        from translations import KANTON_LANGUAGE
+        config['language'] = KANTON_LANGUAGE.get(config.get('kanton_code', 'ZH'), 'de')
 
     cache.cache_set(redis_key, config, ttl=REDIS_TENANT_TTL)
     _tenant_cache[territory] = (config, now)
@@ -191,7 +199,9 @@ def init_tenant_middleware(app, db=None):
 
     @app.context_processor
     def _inject_tenant():
+        from translations import t as translate_fn
         tenant = getattr(g, "tenant", DEFAULT_TENANT)
+        lang = tenant.get("language", "de")
         return {
             "tenant": tenant,
             "city_name": tenant.get("city_name", "Zürich"),
@@ -211,4 +221,6 @@ def init_tenant_middleware(app, db=None):
             "map_bounds_sw": tenant.get("map_bounds_sw", [47.20, 8.30]),
             "map_bounds_ne": tenant.get("map_bounds_ne", [47.60, 8.80]),
             "solar_kwh_per_kwp": tenant.get("solar_kwh_per_kwp", 1000),
+            "t": lambda key: translate_fn(key, lang),
+            "lang": lang,
         }

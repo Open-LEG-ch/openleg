@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,8 +18,8 @@
 
   <div class="max-w-5xl mx-auto px-4 py-12">
     <div class="text-center mb-10">
-      <h1 class="text-4xl font-bold mb-2">Kostenlos. Open Source. Für immer.</h1>
-      <p class="text-ink-muted max-w-2xl mx-auto">OpenLEG ist freie Infrastruktur für Schweizer Stromgemeinschaften. Keine versteckten Kosten, kein Vendor Lock-in, keine Daten die verkauft werden.</p>
+      <h1 class="text-4xl font-bold mb-2">{{ t('pricing_title') }}</h1>
+      <p class="text-ink-muted max-w-2xl mx-auto">{{ t('pricing_subtitle') }}</p>
     </div>
 
     <div class="grid md:grid-cols-3 gap-6">

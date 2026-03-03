@@ -56,6 +56,9 @@ import tenant as tenant_module
 # --- Email Automation ---
 import email_automation
 
+# --- Municipality Seeder ---
+import municipality_seeder
+
 # --- Blueprints ---
 from municipality import municipality_bp
 from api_public import public_api_bp
@@ -703,6 +706,19 @@ def admin_pipeline():
     if 'text/html' in (request.headers.get('Accept') or ''):
         return render_template('admin/pipeline.html', entries=entries, stats=stats)
     return jsonify({"entries": entries, "stats": stats})
+
+
+@app.route("/admin/strategy")
+def admin_strategy():
+    _require_admin()
+    from email_automation import monitor_formation_pipeline
+    stats = db.get_stats()
+    email_stats = db.get_email_stats()
+    pipeline = monitor_formation_pipeline()
+    if 'text/html' in (request.headers.get('Accept') or ''):
+        return render_template('admin/strategy.html',
+                               stats=stats, email_stats=email_stats, pipeline=pipeline)
+    return jsonify({"stats": stats, "email_stats": email_stats, "pipeline": pipeline})
 
 
 @app.route("/admin/export")
@@ -1679,6 +1695,40 @@ def api_cron_process_billing():
         db.save_billing_period(cid, period_start, period_end, summary)
         processed += 1
     return jsonify({"processed": processed, "communities": len(communities)})
+
+
+@app.route("/api/cron/seed-municipalities", methods=['POST'])
+def api_cron_seed_municipalities():
+    _require_cron_secret()
+    kanton = request.args.get('kanton', '').strip() or None
+    provision_tenants = request.args.get('provision_tenants', '').lower() == 'true'
+    result = municipality_seeder.seed_all_municipalities(
+        kanton_filter=kanton, provision_tenants=provision_tenants)
+    return jsonify(result)
+
+
+@app.route("/api/cron/monitor-formations", methods=['POST'])
+def api_cron_monitor_formations():
+    _require_cron_secret()
+    from email_automation import monitor_formation_pipeline, send_formation_nudge
+    pipeline = monitor_formation_pipeline()
+    nudges_sent = 0
+    for community in pipeline.get('stuck', []):
+        sent = send_formation_nudge(
+            community['community_id'],
+            community['name'],
+            community.get('member_emails', []),
+            app=app,
+        )
+        nudges_sent += sent
+    db.track_event('pipeline_monitor_run', data={
+        'total': pipeline.get('total_communities', 0),
+        'stuck': len(pipeline.get('stuck', [])),
+        'nudges_sent': nudges_sent,
+    })
+    summary = f"Pipeline: {pipeline.get('total_communities', 0)} communities, {len(pipeline.get('stuck', []))} stuck, {nudges_sent} nudges sent"
+    _relay_to_telegram('formation_monitor', summary, 'ok')
+    return jsonify({"pipeline": pipeline, "nudges_sent": nudges_sent})
 
 
 @app.route("/api/billing/community/<community_id>/period/<int:period_id>")

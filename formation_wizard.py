@@ -2,9 +2,11 @@
 Formation Wizard Module for OpenLEG
 Handles LEG community formation workflow, document generation, and status tracking.
 """
+import os
 import uuid
 import time
 import logging
+import io
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from enum import Enum
@@ -262,21 +264,34 @@ def start_formation(db, community_id: str) -> bool:
         return False
 
 
+def _build_pdf(title: str, lines: List[str]) -> bytes:
+    """Build a simple text PDF using reportlab. Returns PDF bytes."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas as pdf_canvas
+
+    buf = io.BytesIO()
+    c = pdf_canvas.Canvas(buf, pagesize=A4)
+    w, h = A4
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, h - 60, title)
+    c.setFont("Helvetica", 10)
+    y = h - 100
+    for line in lines:
+        if y < 60:
+            c.showPage()
+            c.setFont("Helvetica", 10)
+            y = h - 60
+        c.drawString(50, y, line)
+        y -= 14
+    c.save()
+    return buf.getvalue()
+
+
 def generate_documents(db, community_id: str) -> Optional[Dict]:
-    """
-    Generate contract documents for a community.
-    
-    Args:
-        db: Database module
-        community_id: Community ID
-    
-    Returns:
-        Dict with document URLs/info or None
-    """
+    """Generate contract PDFs, store them, optionally send to DeepSign."""
     try:
         with db.get_connection() as conn:
             with conn.cursor() as cur:
-                # Get community info
                 cur.execute("""
                     SELECT c.*, array_agg(
                         jsonb_build_object(
@@ -293,43 +308,98 @@ def generate_documents(db, community_id: str) -> Optional[Dict]:
                     WHERE c.community_id = %s
                     GROUP BY c.community_id
                 """, (community_id,))
-                
+
                 community = cur.fetchone()
                 if not community:
                     return None
-                
-                # Generate document metadata
+
+                confirmed = [m for m in community['members'] if m['status'] == 'confirmed']
+                name = community['name']
+                now_iso = datetime.now().isoformat()
+
+                # 1) Community agreement PDF
+                agreement_lines = [
+                    f"Gemeinschaftsvereinbarung: {name}",
+                    f"Community ID: {community_id}",
+                    f"Verteilmodell: {community['distribution_model']}",
+                    f"Datum: {now_iso[:10]}",
+                    "",
+                    "Teilnehmer:",
+                ]
+                for m in confirmed:
+                    agreement_lines.append(f"  - {m.get('address', m['building_id'])} ({m.get('email', '')})")
+                agreement_lines += ["", "Unterschriften:", ""]
+                for m in confirmed:
+                    agreement_lines.append(f"_________________________  {m.get('address', m['building_id'])}")
+                    agreement_lines.append("")
+
+                agreement_pdf = _build_pdf("Gemeinschaftsvereinbarung LEG", agreement_lines)
+                agreement_doc_id = str(uuid.uuid4())
+
+                db.store_leg_document(community_id, "community_agreement", agreement_pdf, f"vereinbarung_{community_id[:8]}.pdf")
+
+                # 2) Participant contracts
+                participant_docs = []
+                for m in confirmed:
+                    lines = [
+                        f"Teilnehmervertrag LEG: {name}",
+                        f"Teilnehmer: {m.get('address', m['building_id'])}",
+                        f"E-Mail: {m.get('email', '')}",
+                        f"Rolle: {m.get('role', 'member')}",
+                        f"Datum: {now_iso[:10]}",
+                        "",
+                        "Hiermit erklaert sich der Teilnehmer bereit, an der",
+                        f"Lokalen Elektrizitaetsgemeinschaft '{name}' teilzunehmen.",
+                        "",
+                        "_________________________",
+                        "Unterschrift",
+                    ]
+                    pdf = _build_pdf("Teilnehmervertrag LEG", lines)
+                    db.store_leg_document(community_id, "participant_contract", pdf, f"vertrag_{m['building_id'][:8]}.pdf")
+                    participant_docs.append({
+                        "document_id": str(uuid.uuid4()),
+                        "building_id": m['building_id'],
+                        "template": "participant_contract",
+                        "generated_at": now_iso,
+                        "status": "pending_signature",
+                    })
+
+                # 3) DSO notification form
+                dso_lines = [
+                    f"Anmeldung Lokale Elektrizitaetsgemeinschaft",
+                    f"Gemeinschaft: {name}",
+                    f"Community ID: {community_id}",
+                    f"Anzahl Teilnehmer: {len(confirmed)}",
+                    f"Datum: {now_iso[:10]}",
+                    "",
+                    "Teilnehmer und Messpunkte:",
+                ]
+                for m in confirmed:
+                    dso_lines.append(f"  - {m.get('address', m['building_id'])}")
+                dso_pdf = _build_pdf("VNB-Anmeldeformular LEG", dso_lines)
+                dso_doc_id = str(uuid.uuid4())
+                db.store_leg_document(community_id, "dso_notification", dso_pdf, f"vnb_anmeldung_{community_id[:8]}.pdf")
+
                 documents = {
                     "community_agreement": {
-                        "document_id": str(uuid.uuid4()),
+                        "document_id": agreement_doc_id,
                         "template": "community_agreement",
-                        "generated_at": datetime.now().isoformat(),
+                        "generated_at": now_iso,
                         "status": "generated",
-                        "signatures_required": len(community['members']),
-                        "signatures_collected": 0
+                        "signatures_required": len(confirmed),
+                        "signatures_collected": 0,
                     },
-                    "participant_contracts": [],
+                    "participant_contracts": participant_docs,
                     "dso_notification": {
-                        "document_id": str(uuid.uuid4()),
+                        "document_id": dso_doc_id,
                         "template": "dso_notification",
-                        "generated_at": datetime.now().isoformat(),
+                        "generated_at": now_iso,
                         "status": "ready",
-                        "recipient": CONTRACT_TEMPLATES["dso_notification"]["recipient"]
-                    }
+                        "recipient": CONTRACT_TEMPLATES["dso_notification"]["recipient"],
+                    },
                 }
-                
-                # Generate participant contracts for each member
-                for member in community['members']:
-                    if member['status'] == 'confirmed':
-                        documents["participant_contracts"].append({
-                            "document_id": str(uuid.uuid4()),
-                            "building_id": member['building_id'],
-                            "template": "participant_contract",
-                            "generated_at": datetime.now().isoformat(),
-                            "status": "pending_signature"
-                        })
-                
-                # Save documents to database
+
+                # Save document metadata
                 cur.execute("""
                     INSERT INTO community_documents (community_id, documents, generated_at)
                     VALUES (%s, %s, CURRENT_TIMESTAMP)
@@ -337,14 +407,44 @@ def generate_documents(db, community_id: str) -> Optional[Dict]:
                         documents = EXCLUDED.documents,
                         generated_at = EXCLUDED.generated_at
                 """, (community_id, documents))
-                
-                # Update community status
-                cur.execute("""
-                    UPDATE communities
-                    SET status = %s, updated_at = CURRENT_TIMESTAMP
-                    WHERE community_id = %s
-                """, (FormationStatus.DOCUMENTS_GENERATED.value, community_id))
-                
+
+                # DeepSign integration (gated behind env var)
+                deepsign_key = os.getenv("DEEPSIGN_API_KEY", "")
+                if deepsign_key:
+                    try:
+                        import deepsign_integration
+                        signers = [{"name": m.get('address', m['building_id']), "email": m['email']}
+                                   for m in confirmed if m.get('email')]
+
+                        ds_id = deepsign_integration.upload_document(
+                            agreement_pdf, f"vereinbarung_{community_id[:8]}.pdf",
+                            f"Gemeinschaftsvereinbarung {name}")
+                        deepsign_integration.request_signatures(ds_id, signers)
+
+                        # Store deepsign_document_id so webhook can match
+                        cur.execute("""
+                            UPDATE leg_documents SET deepsign_document_id = %s, updated_at = CURRENT_TIMESTAMP
+                            WHERE community_id = %s AND doc_type = 'community_agreement'
+                        """, (ds_id, community_id))
+
+                        # Update status to signatures_pending
+                        cur.execute("""
+                            UPDATE communities SET status = %s, updated_at = CURRENT_TIMESTAMP
+                            WHERE community_id = %s
+                        """, (FormationStatus.SIGNATURES_PENDING.value, community_id))
+                        logger.info(f"[FORMATION] DeepSign signatures requested for {community_id}")
+                    except Exception as ds_err:
+                        logger.error(f"[FORMATION] DeepSign error: {ds_err}")
+                        cur.execute("""
+                            UPDATE communities SET status = %s, updated_at = CURRENT_TIMESTAMP
+                            WHERE community_id = %s
+                        """, (FormationStatus.DOCUMENTS_GENERATED.value, community_id))
+                else:
+                    cur.execute("""
+                        UPDATE communities SET status = %s, updated_at = CURRENT_TIMESTAMP
+                        WHERE community_id = %s
+                    """, (FormationStatus.DOCUMENTS_GENERATED.value, community_id))
+
                 logger.info(f"[FORMATION] Generated documents for community {community_id}")
                 return documents
     except Exception as e:
@@ -352,35 +452,131 @@ def generate_documents(db, community_id: str) -> Optional[Dict]:
         return None
 
 
-def submit_to_dso(db, community_id: str) -> bool:
-    """
-    Submit DSO notification for a community.
-    
+def send_dso_email(to_email: str, subject: str, body: str, attachments: List[Dict]) -> bool:
+    """Send DSO notification email with PDF attachments.
+
+    Uses the shared send_email path (AgentMail primary, SMTP fallback).
+    Attachments logged but only sent via SMTP fallback (AgentMail has no
+    attachment API); in dev mode (no credentials) returns True with log.
+
     Args:
-        db: Database module
-        community_id: Community ID
-    
-    Returns:
-        True if submitted successfully
+        to_email: DSO contact email
+        subject: Email subject
+        body: Email body text
+        attachments: list of {"filename": str, "data": bytes}
+
+    Returns True on success.
     """
+    try:
+        from email_utils import EMAIL_ENABLED, SMTP_ENABLED, FROM_EMAIL, \
+            SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
+
+        if not EMAIL_ENABLED:
+            att_names = [a['filename'] for a in attachments]
+            logger.info(f"[DSO] (dev) Would send to {to_email}: {subject} attachments={att_names}")
+            return True
+
+        # Build MIME with attachments
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.application import MIMEApplication
+
+        msg = MIMEMultipart()
+        msg['From'] = FROM_EMAIL
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+        for att in attachments:
+            part = MIMEApplication(att['data'], Name=att['filename'])
+            part['Content-Disposition'] = f'attachment; filename="{att["filename"]}"'
+            msg.attach(part)
+
+        if SMTP_ENABLED:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.send_message(msg)
+            logger.info(f"[DSO] SMTP sent to {to_email}: {subject}")
+            return True
+
+        # AgentMail fallback (no attachment support): send body only
+        from email_utils import send_email
+        att_names = [a['filename'] for a in attachments]
+        body_with_note = body + f"\n\n[Anhänge: {', '.join(att_names)}]"
+        return send_email(to_email, subject, body_with_note)
+    except Exception as e:
+        logger.error(f"[DSO] Failed to send email to {to_email}: {e}")
+        return False
+
+
+def submit_to_dso(db, community_id: str) -> bool:
+    """Submit DSO notification: pull docs, email DSO contact, update status."""
     try:
         with db.get_connection() as conn:
             with conn.cursor() as cur:
+                # Get community
+                cur.execute("SELECT * FROM communities WHERE community_id = %s", (community_id,))
+                community = cur.fetchone()
+                if not community:
+                    return False
+
+                # Get leg documents
+                docs = db.list_leg_documents(community_id)
+                attachments = []
+                for doc in docs:
+                    if doc.get('doc_type') in ('community_agreement', 'dso_notification'):
+                        pdf = db.get_leg_document_pdf(doc['id'])
+                        if pdf:
+                            attachments.append({"filename": doc.get('filename', 'document.pdf'), "data": pdf})
+
+                # Get DSO contact from tenant config
+                territory = None
+                # Try to find territory from admin building's city_id
+                if community.get('admin_building_id'):
+                    cur.execute("SELECT city_id FROM buildings WHERE building_id = %s",
+                                (community['admin_building_id'],))
+                    brow = cur.fetchone()
+                    if brow:
+                        territory = brow.get('city_id')
+
+                dso_email = None
+                if territory:
+                    tenant = db.get_tenant_by_territory(territory)
+                    if tenant:
+                        dso_email = tenant.get('dso_contact', '')
+
+                name = community.get('name', community_id)
+                subject = f"LEG-Anmeldung: {name}"
+                body = (
+                    f"Sehr geehrte Damen und Herren,\n\n"
+                    f"hiermit melden wir die Lokale Elektrizitaetsgemeinschaft '{name}' an.\n"
+                    f"Community ID: {community_id}\n\n"
+                    f"Im Anhang finden Sie die Gemeinschaftsvereinbarung und das VNB-Anmeldeformular.\n\n"
+                    f"Freundliche Gruesse\nOpenLEG"
+                )
+
+                sent = False
+                if dso_email:
+                    sent = send_dso_email(dso_email, subject, body, attachments)
+                else:
+                    # No DSO contact: log only (dev/staging)
+                    logger.info(f"[DSO] No DSO contact for {community_id}, logging submission")
+                    sent = True
+
+                if not sent:
+                    return False
+
                 cur.execute("""
                     UPDATE communities
                     SET status = %s, dso_submitted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-                    WHERE community_id = %s AND status = %s
-                """, (
-                    FormationStatus.DSO_SUBMITTED.value,
-                    community_id,
-                    FormationStatus.SIGNATURES_PENDING.value
-                ))
-                
-                if cur.rowcount > 0:
-                    db.track_event("dso_submitted", None, {"community_id": community_id})
-                    logger.info(f"[FORMATION] Submitted DSO notification for community {community_id}")
-                    return True
-                return False
+                    WHERE community_id = %s
+                """, (FormationStatus.DSO_SUBMITTED.value, community_id))
+
+                db.track_event("dso_submitted", None, {"community_id": community_id})
+                logger.info(f"[FORMATION] Submitted DSO notification for community {community_id}")
+                return True
     except Exception as e:
         logger.error(f"[FORMATION] Error submitting to DSO: {e}")
         return False

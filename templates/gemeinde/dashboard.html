@@ -20,6 +20,7 @@
         <h1 class="text-3xl font-bold mb-2">{{ municipality.name }}</h1>
         <p class="text-gray-500 mb-8">Netzbetreiber: {{ municipality.dso_name or 'EKZ' }} | Status: {{ municipality.onboarding_status }}</p>
 
+        {% set d = dash or {} %}
         <div class="grid md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-lg shadow p-4 text-center">
                 <div class="text-3xl font-bold text-indigo-600">{{ stats.total_buildings if stats else 0 }}</div>
@@ -30,34 +31,64 @@
                 <div class="text-sm text-gray-500">Heute registriert</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 text-center">
-                <div class="text-3xl font-bold text-amber-500">0</div>
+                <div class="text-3xl font-bold text-amber-500">{{ d.community_count or 0 }}</div>
                 <div class="text-sm text-gray-500">Aktive LEGs</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 text-center">
-                <div class="text-3xl font-bold text-green-600">0</div>
+                <div class="text-3xl font-bold text-green-600">{{ d.meter_uploads or 0 }}</div>
                 <div class="text-sm text-gray-500">Meter-Uploads</div>
             </div>
         </div>
 
+        {% set ready = d.formation_ready_count or 0 %}
+        {% set confirmed = d.confirmed_members or 0 %}
+        <div class="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-8">
+            <p class="text-teal-800 font-medium">{{ ready }} Bewohner registriert, {{ confirmed }} f&uuml;r LEG-Gr&uuml;ndung bereit</p>
+            {% if ready >= 3 %}
+            <a href="/gemeinde/formation?subdomain={{ municipality.subdomain }}" class="inline-block mt-2 bg-teal-600 text-white px-5 py-2 rounded font-semibold hover:bg-teal-700">LEG gr&uuml;nden</a>
+            {% endif %}
+        </div>
+
         <div class="grid md:grid-cols-2 gap-6">
             <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="font-semibold text-lg mb-4">Nächste Schritte</h3>
+                <h3 class="font-semibold text-lg mb-4">N&auml;chste Schritte</h3>
                 <ul class="space-y-2 text-sm">
                     <li class="flex items-center gap-2"><span class="text-green-500">&#10003;</span> Gemeinde registriert</li>
-                    <li class="flex items-center gap-2"><span class="text-gray-300">&#9675;</span> Datenverarbeitungsvertrag unterzeichnen</li>
-                    <li class="flex items-center gap-2"><span class="text-gray-300">&#9675;</span> Bewohner zur Registrierung einladen</li>
-                    <li class="flex items-center gap-2"><span class="text-gray-300">&#9675;</span> Erste LEG gründen</li>
+                    <li class="flex items-center gap-2">
+                        {% if (stats and stats.total_buildings or 0) > 0 %}
+                        <span class="text-green-500">&#10003;</span>
+                        {% else %}
+                        <span class="text-gray-300">&#9675;</span>
+                        {% endif %}
+                        Bewohner zur Registrierung einladen
+                    </li>
+                    <li class="flex items-center gap-2">
+                        {% if ready >= 3 %}
+                        <span class="text-green-500">&#10003;</span>
+                        {% else %}
+                        <span class="text-gray-300">&#9675;</span>
+                        {% endif %}
+                        Mindestens 3 Bewohner registriert
+                    </li>
+                    <li class="flex items-center gap-2">
+                        {% if (d.community_count or 0) > 0 %}
+                        <span class="text-green-500">&#10003;</span>
+                        {% else %}
+                        <span class="text-gray-300">&#9675;</span>
+                        {% endif %}
+                        Erste LEG gr&uuml;nden
+                    </li>
                 </ul>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="font-semibold text-lg mb-4">Einladungslink</h3>
                 <p class="text-sm text-gray-600 mb-3">Teilen Sie diesen Link mit Bewohnern Ihrer Gemeinde:</p>
-                <input type="text" value="{{ request.host_url }}" class="w-full border rounded px-3 py-2 text-sm" readonly>
+                <input type="text" value="{{ request.host_url.rstrip('/') }}/fuer-bewohner" class="w-full border rounded px-3 py-2 text-sm" readonly>
             </div>
         </div>
         {% else %}
         <div class="text-center py-12">
-            <h2 class="text-2xl font-bold mb-4">Kein Dashboard verfügbar</h2>
+            <h2 class="text-2xl font-bold mb-4">Kein Dashboard verf&uuml;gbar</h2>
             <p class="text-gray-600 mb-6">Bitte registrieren Sie zuerst Ihre Gemeinde.</p>
             <a href="/gemeinde/onboarding" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700">Gemeinde registrieren</a>
         </div>

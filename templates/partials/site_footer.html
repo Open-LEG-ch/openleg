@@ -1,19 +1,34 @@
-<footer class="bg-ink text-slate-300 py-10">
-  <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-start gap-6">
-    <div>
-      <div class="text-white font-bold text-lg">OpenLEG</div>
-      <div class="text-sm text-slate-400 mt-1">Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz.</div>
-      <div class="flex items-center gap-3 mt-3">
-        <a href="https://github.com/wgusta/openleg" class="text-slate-400 hover:text-white text-sm" target="_blank" rel="noopener">GitHub</a>
-        <span class="text-slate-600">·</span>
-        <a href="/api/v1/docs" class="text-slate-400 hover:text-white text-sm">API Docs</a>
+<footer class="bg-slate-900 text-slate-300 py-10">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="grid md:grid-cols-3 gap-8">
+      <div>
+        <div class="text-white font-bold text-lg">OpenLEG</div>
+        <div class="text-sm text-slate-400 mt-1">{{ t('footer_tagline') }}</div>
+        <div class="flex items-center gap-3 mt-3">
+          <a href="https://github.com/wgusta/openleg" class="text-slate-400 hover:text-white text-sm" target="_blank" rel="noopener">GitHub</a>
+          <span class="text-slate-600">·</span>
+          <a href="/api/v1/docs" class="text-slate-400 hover:text-white text-sm">API Docs</a>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2 text-sm">
+        <a href="/impressum" class="hover:text-white">{{ t('footer_impressum') }}</a>
+        <a href="/datenschutz" class="hover:text-white">{{ t('footer_datenschutz') }}</a>
+        <a href="/how-it-works" class="hover:text-white">{{ t('nav_so_funktionierts') }}</a>
+        <a href="/utility/login" class="hover:text-white text-slate-500">EVU Login</a>
+      </div>
+      <div class="flex flex-col gap-2 text-sm">
+        <div class="text-xs text-slate-500">{{ t('legal_agpl') }}</div>
+        <div class="flex items-center gap-1 text-xs text-slate-500">
+          <a href="?lang=de" class="hover:text-white {% if lang == 'de' %}text-white{% endif %}">DE</a>
+          <span>·</span>
+          <a href="?lang=fr" class="hover:text-white {% if lang == 'fr' %}text-white{% endif %}">FR</a>
+          <span>·</span>
+          <a href="?lang=it" class="hover:text-white {% if lang == 'it' %}text-white{% endif %}">IT</a>
+        </div>
       </div>
     </div>
-    <div class="flex gap-6 text-sm">
-      <a href="/impressum" class="hover:text-white">Impressum</a>
-      <a href="/datenschutz" class="hover:text-white">Datenschutz</a>
-      <a href="/how-it-works" class="hover:text-white">So funktioniert's</a>
-      <a href="/utility/login" class="hover:text-white text-slate-500">EVU Login</a>
+    <div class="mt-8 pt-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+      {{ t('footer_open_source_swiss') }}
     </div>
   </div>
 </footer>

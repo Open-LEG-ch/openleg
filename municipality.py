@@ -10,6 +10,7 @@ from typing import Dict, Optional
 from flask import Blueprint, request, jsonify, render_template, g, abort
 
 import database as db
+import email_utils
 import security_utils
 import tenant as tenant_module
 
@@ -181,14 +182,61 @@ def provision_demo_instance(payload: Dict) -> Dict:
 
 @municipality_bp.route('/onboarding')
 def onboarding():
-    return render_template(
-        'gemeinde/onboarding.html',
-        municipalities=ZURICH_MUNICIPALITIES,
-        demo_enabled=_is_demo_mode_enabled(),
-        demo_subdomain=_demo_subdomain(),
-        demo_env=_demo_env(),
-        demo_url=_demo_url(),
-    )
+    return render_template('gemeinde/onboarding.html')
+
+
+@municipality_bp.route('/anfrage', methods=['GET', 'POST'])
+def anfrage():
+    if request.method == 'GET':
+        return render_template('gemeinde/anfrage.html')
+
+    # POST: JSON intake
+    data = request.get_json(silent=True) or {}
+    gemeinde_name = (data.get('gemeinde_name') or '').strip()
+    kanton = (data.get('kanton') or '').strip()
+    contact_name = (data.get('contact_name') or '').strip()
+    email_raw = (data.get('email') or '').strip()
+
+    if not gemeinde_name:
+        return jsonify({"error": "Gemeindename ist erforderlich."}), 400
+    if not kanton:
+        return jsonify({"error": "Kanton ist erforderlich."}), 400
+    if not contact_name:
+        return jsonify({"error": "Ansprechperson ist erforderlich."}), 400
+    if not email_raw:
+        return jsonify({"error": "E-Mail ist erforderlich."}), 400
+
+    is_valid, normalized_email, err = security_utils.validate_email_address(email_raw)
+    if not is_valid:
+        return jsonify({"error": err}), 400
+
+    # Track event (always, even if email fails)
+    db.track_event('gemeinde_anfrage', data={
+        "gemeinde": gemeinde_name,
+        "kanton": kanton,
+        "email": normalized_email,
+        "contact_name": contact_name,
+    })
+
+    # Send intake email (failure does not block success)
+    subject = f"Neue Gemeinde-Anfrage: {gemeinde_name} ({kanton})"
+    body_lines = [
+        f"Gemeinde: {gemeinde_name}",
+        f"Kanton: {kanton}",
+        f"Kontakt: {contact_name}",
+        f"E-Mail: {normalized_email}",
+    ]
+    for opt_key in ('bfs_nummer', 'einwohner', 'rolle', 'phone', 'dso', 'subdomain', 'message'):
+        val = (data.get(opt_key) or '').strip()
+        if val:
+            body_lines.append(f"{opt_key}: {val}")
+
+    try:
+        email_utils.send_email('hallo@openleg.ch', subject, '\n'.join(body_lines))
+    except Exception as e:
+        logger.warning(f"[ANFRAGE] Email failed: {e}")
+
+    return jsonify({"success": True})
 
 @municipality_bp.route('/register', methods=['POST'])
 def register():
@@ -279,8 +327,27 @@ def dashboard():
     if not muni:
         return render_template('gemeinde/dashboard.html', municipality=None, error="Gemeinde nicht gefunden.")
 
-    stats = db.get_stats(city_id=muni.get('subdomain'))
-    return render_template('gemeinde/dashboard.html', municipality=muni, stats=stats, error=None)
+    sub = muni.get('subdomain', '')
+    stats = db.get_stats(city_id=sub)
+    dash_stats = db.get_dashboard_stats(sub)
+    return render_template('gemeinde/dashboard.html',
+        municipality=muni, stats=stats, dash=dash_stats, error=None)
+
+@municipality_bp.route('/formation')
+def formation():
+    subdomain = request.args.get('subdomain', '').strip()
+    community_id = request.args.get('community_id', '').strip()
+
+    muni = None
+    if subdomain:
+        muni = db.get_municipality(subdomain=subdomain)
+
+    if not muni:
+        return render_template('gemeinde/formation.html', municipality=None, error="Gemeinde nicht gefunden.")
+
+    return render_template('gemeinde/formation.html',
+        municipality=muni, community_id=community_id, error=None)
+
 
 @municipality_bp.route('/api/municipalities')
 def api_municipalities():

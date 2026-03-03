@@ -18,6 +18,7 @@ psycopg2-binary==2.9.9
 
 # PDF generation
 weasyprint==62.3
+reportlab>=4.0
 
 # Email (AgentMail API)
 agentmail>=0.2.0

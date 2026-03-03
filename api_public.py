@@ -208,6 +208,43 @@ def search_municipalities():
     return jsonify({"query": q, "results": results, "count": len(results)})
 
 
+# === VNB Transparency ===
+
+@public_api_bp.route('/vnb/rankings')
+def vnb_rankings():
+    """Ranked DSOs by tariff transparency score."""
+    kanton = request.args.get('kanton', 'ZH')
+    year = request.args.get('year', 2026, type=int)
+
+    profiles = db.get_all_municipality_profiles(kanton=kanton)
+    # Collect tariffs grouped by operator
+    operator_tariffs = {}
+    operator_munis = {}
+    for p in profiles:
+        tariffs = db.get_elcom_tariffs(p['bfs_number'], year=year)
+        for t in tariffs:
+            op = t.get('operator_name', '')
+            if not op:
+                continue
+            operator_tariffs.setdefault(op, []).append(t)
+            operator_munis.setdefault(op, set()).add(p['bfs_number'])
+
+    ranked = []
+    for op, tariffs in operator_tariffs.items():
+        score = public_data.compute_vnb_transparency_score(
+            tariffs, municipalities_served=len(operator_munis.get(op, set()))
+        )
+        ranked.append({
+            "operator_name": op,
+            "transparency_score": score,
+            "municipalities_served": len(operator_munis.get(op, set())),
+            "tariff_categories": len({t.get('category') for t in tariffs}),
+        })
+
+    ranked.sort(key=lambda x: x['transparency_score'], reverse=True)
+    return jsonify({"rankings": ranked, "count": len(ranked), "kanton": kanton, "year": year})
+
+
 # === LEG Toolkit endpoints ===
 
 @public_api_bp.route('/leg/value-gap', methods=['POST'])

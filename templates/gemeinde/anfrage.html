@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anfrage stellen | OpenLEG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-gray-900">OpenLEG</a>
+            <a href="/gemeinde/onboarding" class="text-sm text-gray-500 hover:text-gray-700">&larr; Zur&uuml;ck</a>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto px-4 py-10">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">Managed Setup anfragen</h1>
+            <p class="text-gray-600">Wir richten Ihre Gemeinde-Instanz ein. Optionaler, projektbasierter Support.</p>
+        </header>
+
+        <form id="anfrage-form" class="bg-white rounded-lg shadow-md p-6 border space-y-4">
+            <!-- Required -->
+            <div>
+                <label for="gemeinde_name" class="block text-sm font-medium mb-1">Gemeindename *</label>
+                <input type="text" id="gemeinde_name" name="gemeinde_name" required
+                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                    placeholder="z.B. Dietikon">
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="kanton" class="block text-sm font-medium mb-1">Kanton *</label>
+                    <input type="text" id="kanton" name="kanton" required maxlength="2"
+                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                        placeholder="ZH">
+                </div>
+                <div>
+                    <label for="bfs_nummer" class="block text-sm font-medium mb-1">BFS-Nummer</label>
+                    <input type="text" id="bfs_nummer" name="bfs_nummer"
+                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                        placeholder="261">
+                </div>
+            </div>
+            <div>
+                <label for="contact_name" class="block text-sm font-medium mb-1">Ansprechperson *</label>
+                <input type="text" id="contact_name" name="contact_name" required
+                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                    placeholder="Vor- und Nachname">
+            </div>
+            <div>
+                <label for="email" class="block text-sm font-medium mb-1">E-Mail *</label>
+                <input type="email" id="email" name="email" required
+                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                    placeholder="verwaltung@gemeinde.ch">
+            </div>
+
+            <!-- Optional -->
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="rolle" class="block text-sm font-medium mb-1">Rolle / Funktion</label>
+                    <input type="text" id="rolle" name="rolle"
+                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                        placeholder="Gemeindeschreiber/in">
+                </div>
+                <div>
+                    <label for="phone" class="block text-sm font-medium mb-1">Telefon</label>
+                    <input type="tel" id="phone" name="phone"
+                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                        placeholder="+41 44 ...">
+                </div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="einwohner" class="block text-sm font-medium mb-1">Einwohner</label>
+                    <input type="text" id="einwohner" name="einwohner"
+                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                        placeholder="29000">
+                </div>
+                <div>
+                    <label for="dso" class="block text-sm font-medium mb-1">VNB / DSO</label>
+                    <input type="text" id="dso" name="dso"
+                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                        placeholder="EKZ">
+                </div>
+            </div>
+            <div>
+                <label for="subdomain" class="block text-sm font-medium mb-1">Gew&uuml;nschte Subdomain</label>
+                <div class="flex items-center gap-1">
+                    <input type="text" id="subdomain" name="subdomain"
+                        class="flex-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                        placeholder="dietikon">
+                    <span class="text-sm text-gray-500">.openleg.ch</span>
+                </div>
+            </div>
+            <div>
+                <label for="message" class="block text-sm font-medium mb-1">Nachricht</label>
+                <textarea id="message" name="message" rows="3"
+                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-400 focus:outline-none"
+                    placeholder="Weitere Informationen oder Fragen..."></textarea>
+            </div>
+
+            <button type="submit" class="w-full bg-teal-700 text-white py-3 rounded-lg font-semibold hover:bg-teal-600">
+                Anfrage absenden
+            </button>
+            <div id="form-error" class="text-red-600 text-sm hidden"></div>
+            <div id="form-success" class="text-green-600 text-sm hidden"></div>
+        </form>
+    </main>
+
+    <script>
+    document.getElementById('anfrage-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('form-error');
+        const okEl = document.getElementById('form-success');
+        errEl.classList.add('hidden');
+        okEl.classList.add('hidden');
+
+        const fields = ['gemeinde_name','kanton','contact_name','email',
+                        'bfs_nummer','einwohner','rolle','phone','dso','subdomain','message'];
+        const payload = {};
+        fields.forEach(f => {
+            const v = document.getElementById(f).value.trim();
+            if (v) payload[f] = v;
+        });
+
+        try {
+            const res = await fetch('/gemeinde/anfrage', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const ct = res.headers.get('content-type') || '';
+            let data;
+            if (ct.includes('application/json')) {
+                data = await res.json();
+            } else {
+                data = {error: 'Unerwarteter Serverfehler.'};
+            }
+            if (res.ok && data.success) {
+                okEl.textContent = 'Vielen Dank! Wir melden uns bei Ihnen.';
+                okEl.classList.remove('hidden');
+                this.reset();
+            } else {
+                errEl.textContent = data.error || 'Fehler bei der Anfrage.';
+                errEl.classList.remove('hidden');
+            }
+        } catch (err) {
+            errEl.textContent = 'Netzwerkfehler.';
+            errEl.classList.remove('hidden');
+        }
+    });
+    </script>
+</body>
+</html>

@@ -422,6 +422,46 @@ def refresh_all_municipalities(year: int = 2026) -> Dict:
     return result
 
 
+# === VNB Transparency Scoring ===
+
+def compute_vnb_transparency_score(tariffs: List[Dict], municipalities_served: int = 0) -> float:
+    """Score a DSO's tariff transparency 0-100.
+
+    Factors (weighted):
+    - Category coverage: how many H-categories have data (30%)
+    - Component completeness: energy, grid, fee, kev filled (30%)
+    - Municipality coverage: more served = more transparent (20%)
+    - Data freshness: having any tariff at all (20%)
+    """
+    if not tariffs:
+        return 0.0
+
+    # Category coverage (H1-H8 typical)
+    categories = {t.get('category', '') for t in tariffs if t.get('category')}
+    cat_score = min(len(categories) / 4.0, 1.0)  # 4+ categories = full score
+
+    # Component completeness across all tariffs
+    components = ['energy_rp_kwh', 'grid_rp_kwh', 'municipality_fee_rp_kwh', 'kev_rp_kwh']
+    filled = 0
+    total = 0
+    for t in tariffs:
+        for c in components:
+            total += 1
+            val = t.get(c)
+            if val is not None and val != 0:
+                filled += 1
+    comp_score = filled / total if total > 0 else 0.0
+
+    # Municipality coverage
+    muni_score = min(municipalities_served / 20.0, 1.0)  # 20+ = full score
+
+    # Data presence
+    presence_score = 1.0
+
+    score = (cat_score * 30 + comp_score * 30 + muni_score * 20 + presence_score * 20)
+    return round(min(max(score, 0), 100), 1)
+
+
 # === Helpers ===
 
 def _safe_int(val) -> Optional[int]:

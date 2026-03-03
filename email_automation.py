@@ -192,3 +192,39 @@ def check_formation_ready_communities(min_members: int = 3, nudge_cooldown_days:
     except Exception as e:
         logger.error(f"[EMAIL_AUTO] Error checking formation-ready communities: {e}")
         return []
+
+
+def monitor_formation_pipeline():
+    """Aggregate formation pipeline health: status counts, stuck communities, totals."""
+    by_status = db.get_formation_pipeline_stats()
+    stuck = check_formation_ready_communities()
+    total = sum(by_status.values())
+    return {
+        'by_status': by_status,
+        'stuck': stuck,
+        'total_communities': total,
+        'healthy': len(stuck) == 0,
+    }
+
+
+def render_outreach_email(municipality_profile, app=None):
+    """Render Gemeinde outreach email from municipality profile data. No sending."""
+    name = municipality_profile.get('name', '')
+    kanton = municipality_profile.get('kanton', '')
+    bfs = municipality_profile.get('bfs_number', '')
+    score = municipality_profile.get('energy_transition_score', 0)
+    gap = municipality_profile.get('leg_value_gap_chf', 0)
+    subdomain = name.lower().replace(' ', '-') if name else ''
+    profil_url = f"{APP_BASE_URL}/gemeinde/{bfs}/profil"
+    claim_url = f"{APP_BASE_URL}/gemeinde/onboarding?subdomain={subdomain}"
+
+    ctx = dict(
+        gemeinde_name=name, kanton=kanton,
+        energy_transition_score=score, leg_value_gap_chf=gap,
+        subdomain=subdomain, profil_url=profil_url, claim_url=claim_url,
+    )
+
+    if app:
+        with app.app_context():
+            return render_template('emails/gemeinde_outreach.html', **ctx)
+    return render_template('emails/gemeinde_outreach.html', **ctx)

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,26 +40,26 @@
 
         <div class="mt-6" aria-live="polite">
           <div data-seg-panel="bewohner">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Ihr Strom. Ihre Nachbarn. Ihre Gemeinschaft.</h1>
-            <p class="mt-4 text-lg text-ink-muted max-w-xl">Gründen Sie eine lokale Stromgemeinschaft (LEG) und sparen Sie bis zu CHF 270/Jahr auf Netzgebühren. Kostenlos seit 2026, Open Source, Ihre Daten bleiben bei Ihnen.</p>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">{{ t('hero_title') }}</h1>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">{{ t('hero_subtitle') }}</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
-              <a href="#registrieren" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse prüfen</a>
-              <a href="/fuer-bewohner" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Mehr für Bewohner</a>
+              <a href="#registrieren" class="bg-brand text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-dark text-center shadow-lg">{{ t('cta_adresse_pruefen') }}</a>
+              <a href="/fuer-bewohner" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">{{ t('cta_mehr_bewohner') }}</a>
             </div>
             <div class="mt-6 flex flex-wrap gap-2 text-xs">
-              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Kostenlos, für immer</span>
-              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Open Source</span>
-              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Ihre Daten bleiben bei Ihnen</span>
-              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Gehostet in der Schweiz</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">{{ t('badge_kostenlos') }}</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">{{ t('badge_open_source') }}</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">{{ t('badge_daten_bleiben') }}</span>
+              <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">{{ t('badge_schweiz') }}</span>
             </div>
           </div>
 
           <div data-seg-panel="gemeinde" class="hidden">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Ihre Gemeinde ermöglicht die Energiewende.</h1>
-            <p class="mt-4 text-lg text-ink-muted max-w-xl">Eigene Seite für Ihre Gemeinde, Bewohner finden Nachbarn, Stromgemeinschaften entstehen. Sie füllen ein Formular aus, wir übernehmen Technik und Betrieb.</p>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">{{ t('hero_gemeinde_title') }}</h1>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">{{ t('hero_gemeinde_subtitle') }}</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
-              <a href="/gemeinde/onboarding" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Gemeinde anmelden</a>
-              <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">So funktioniert's</a>
+              <a href="/gemeinde/onboarding" class="bg-brand text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-dark text-center shadow-lg">{{ t('cta_gemeinde_anmelden') }}</a>
+              <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">{{ t('cta_so_funktionierts') }}</a>
             </div>
             <div class="mt-6 flex flex-wrap gap-2 text-xs">
               <span class="px-3 py-1 rounded-full bg-white/80 border border-slate-300/60">Eigene Subdomain</span>

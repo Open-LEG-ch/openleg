@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEG gr&uuml;nden | OpenLEG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-indigo-600">OpenLEG</a>
+            <span class="text-sm text-gray-500">LEG-Gr&uuml;ndungsassistent</span>
+        </div>
+    </nav>
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        {% if error %}
+        <div class="bg-red-50 text-red-700 p-4 rounded-lg mb-6">{{ error }}</div>
+        {% elif municipality %}
+        <h1 class="text-2xl font-bold mb-1">LEG gr&uuml;nden: {{ municipality.name }}</h1>
+        <p class="text-gray-500 mb-6">Schritt-f&uuml;r-Schritt zur Lokalen Elektrizit&auml;tsgemeinschaft</p>
+
+        <!-- Step indicators -->
+        <div class="flex gap-1 mb-8 overflow-x-auto" id="step-nav">
+            <button onclick="goStep(1)" class="step-tab px-3 py-1.5 rounded text-sm font-medium bg-teal-600 text-white" data-step="1">1. Erstellen</button>
+            <button onclick="goStep(2)" class="step-tab px-3 py-1.5 rounded text-sm font-medium bg-gray-200 text-gray-600" data-step="2">2. Einladen</button>
+            <button onclick="goStep(3)" class="step-tab px-3 py-1.5 rounded text-sm font-medium bg-gray-200 text-gray-600" data-step="3">3. Best&auml;tigen</button>
+            <button onclick="goStep(4)" class="step-tab px-3 py-1.5 rounded text-sm font-medium bg-gray-200 text-gray-600" data-step="4">4. Starten</button>
+            <button onclick="goStep(5)" class="step-tab px-3 py-1.5 rounded text-sm font-medium bg-gray-200 text-gray-600" data-step="5">5. Dokumente</button>
+            <button onclick="goStep(6)" class="step-tab px-3 py-1.5 rounded text-sm font-medium bg-gray-200 text-gray-600" data-step="6">6. Unterschriften</button>
+            <button onclick="goStep(7)" class="step-tab px-3 py-1.5 rounded text-sm font-medium bg-gray-200 text-gray-600" data-step="7">7. VNB-Anmeldung</button>
+        </div>
+
+        <!-- Step 1: Erstellen -->
+        <div class="step-panel bg-white rounded-lg shadow p-6 mb-4" data-step="1">
+            <h2 class="text-lg font-semibold mb-4">Gemeinschaft erstellen</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name der LEG</label>
+                    <input type="text" id="leg-name" class="w-full border rounded px-3 py-2" placeholder="z.B. LEG Sonnenhof">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Verteilmodell</label>
+                    <select id="dist-model" class="w-full border rounded px-3 py-2">
+                        <option value="simple">Gleichverteilung</option>
+                        <option value="proportional">Proportional (nach Verbrauch/Produktion)</option>
+                        <option value="custom">Individuell</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ihr Geb&auml;ude-ID</label>
+                    <input type="text" id="admin-building" class="w-full border rounded px-3 py-2" placeholder="building_id">
+                </div>
+                <button onclick="createCommunity()" class="bg-teal-600 text-white px-6 py-2 rounded font-semibold hover:bg-teal-700">Erstellen</button>
+            </div>
+            <div id="create-result" class="mt-4 text-sm"></div>
+        </div>
+
+        <!-- Step 2: Einladen -->
+        <div class="step-panel bg-white rounded-lg shadow p-6 mb-4 hidden" data-step="2">
+            <h2 class="text-lg font-semibold mb-4">Nachbarn einladen</h2>
+            <p class="text-sm text-gray-600 mb-4">Geb&auml;ude in der N&auml;he zur LEG einladen.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Geb&auml;ude-ID einladen</label>
+                    <input type="text" id="invite-building" class="w-full border rounded px-3 py-2" placeholder="building_id">
+                </div>
+                <button onclick="inviteMember()" class="bg-teal-600 text-white px-5 py-2 rounded font-semibold hover:bg-teal-700">Einladen</button>
+            </div>
+            <div id="invite-result" class="mt-4 text-sm"></div>
+            <div id="members-list" class="mt-4"></div>
+        </div>
+
+        <!-- Step 3: Bestätigen -->
+        <div class="step-panel bg-white rounded-lg shadow p-6 mb-4 hidden" data-step="3">
+            <h2 class="text-lg font-semibold mb-4">Mitglieder best&auml;tigen</h2>
+            <p class="text-sm text-gray-600 mb-4">Warten auf Best&auml;tigungen der eingeladenen Mitglieder.</p>
+            <div id="confirm-list" class="space-y-2"></div>
+            <button onclick="refreshStatus()" class="mt-4 bg-gray-200 text-gray-700 px-5 py-2 rounded font-semibold hover:bg-gray-300">Status aktualisieren</button>
+        </div>
+
+        <!-- Step 4: Starten -->
+        <div class="step-panel bg-white rounded-lg shadow p-6 mb-4 hidden" data-step="4">
+            <h2 class="text-lg font-semibold mb-4">Formation starten</h2>
+            <p class="text-sm text-gray-600 mb-4">Mindestens 3 best&auml;tigte Mitglieder erforderlich.</p>
+            <div id="start-check" class="mb-4"></div>
+            <button onclick="startFormation()" id="btn-start" class="bg-teal-600 text-white px-6 py-2 rounded font-semibold hover:bg-teal-700 disabled:opacity-50" disabled>Starten</button>
+            <div id="start-result" class="mt-4 text-sm"></div>
+        </div>
+
+        <!-- Step 5: Dokumente -->
+        <div class="step-panel bg-white rounded-lg shadow p-6 mb-4 hidden" data-step="5">
+            <h2 class="text-lg font-semibold mb-4">Dokumente generieren</h2>
+            <p class="text-sm text-gray-600 mb-4">Gemeinschaftsvereinbarung, Teilnehmervertr&auml;ge und VNB-Anmeldeformular erstellen.</p>
+            <button onclick="generateDocs()" class="bg-teal-600 text-white px-6 py-2 rounded font-semibold hover:bg-teal-700">Dokumente erstellen</button>
+            <div id="docs-result" class="mt-4 text-sm"></div>
+        </div>
+
+        <!-- Step 6: Unterschriften -->
+        <div class="step-panel bg-white rounded-lg shadow p-6 mb-4 hidden" data-step="6">
+            <h2 class="text-lg font-semibold mb-4">Unterschriften sammeln</h2>
+            <p class="text-sm text-gray-600 mb-4">DeepSign Signaturstatus der Dokumente.</p>
+            <div id="signatures-status" class="space-y-2"></div>
+            <button onclick="refreshStatus()" class="mt-4 bg-gray-200 text-gray-700 px-5 py-2 rounded font-semibold hover:bg-gray-300">Status aktualisieren</button>
+        </div>
+
+        <!-- Step 7: VNB-Anmeldung -->
+        <div class="step-panel bg-white rounded-lg shadow p-6 mb-4 hidden" data-step="7">
+            <h2 class="text-lg font-semibold mb-4">VNB-Anmeldung einreichen</h2>
+            <p class="text-sm text-gray-600 mb-4">Unterschriebene Dokumente an den Verteilnetzbetreiber senden.</p>
+            <button onclick="submitDSO()" id="btn-dso" class="bg-teal-600 text-white px-6 py-2 rounded font-semibold hover:bg-teal-700">VNB-Anmeldung senden</button>
+            <div id="dso-result" class="mt-4 text-sm"></div>
+        </div>
+
+        {% else %}
+        <div class="text-center py-12">
+            <h2 class="text-2xl font-bold mb-4">Gemeinde nicht gefunden</h2>
+            <a href="/gemeinde/onboarding" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700">Gemeinde registrieren</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if municipality %}
+    <script>
+    let communityId = {{ community_id|tojson if community_id else 'null' }};
+    let currentStep = 1;
+
+    function goStep(n) {
+        currentStep = n;
+        document.querySelectorAll('.step-panel').forEach(p => {
+            p.classList.toggle('hidden', parseInt(p.dataset.step) !== n);
+        });
+        document.querySelectorAll('.step-tab').forEach(t => {
+            const s = parseInt(t.dataset.step);
+            t.className = 'step-tab px-3 py-1.5 rounded text-sm font-medium ' +
+                (s === n ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-600');
+        });
+        if (communityId && n >= 2) refreshStatus();
+    }
+
+    async function api(url, body) {
+        const resp = await fetch(url, {
+            method: body ? 'POST' : 'GET',
+            headers: {'Content-Type': 'application/json'},
+            body: body ? JSON.stringify(body) : undefined
+        });
+        if (!resp.ok && resp.headers.get('content-type')?.indexOf('json') === -1) {
+            return {error: 'Server error (' + resp.status + ')'};
+        }
+        try { return await resp.json(); }
+        catch { return {error: 'Ungültige Antwort vom Server'}; }
+    }
+
+    async function createCommunity() {
+        const name = document.getElementById('leg-name').value.trim();
+        const model = document.getElementById('dist-model').value;
+        const bid = document.getElementById('admin-building').value.trim();
+        if (!name || !bid) { alert('Name und Gebäude-ID erforderlich'); return; }
+        const res = await api('/api/formation/create', {name, building_id: bid, distribution_model: model});
+        const el = document.getElementById('create-result');
+        if (res.community_id) {
+            communityId = res.community_id;
+            el.innerHTML = '<span class="text-green-600">Gemeinschaft erstellt: ' + res.community_id + '</span>';
+            goStep(2);
+        } else {
+            el.innerHTML = '<span class="text-red-600">' + (res.error || 'Fehler') + '</span>';
+        }
+    }
+
+    async function inviteMember() {
+        const bid = document.getElementById('invite-building').value.trim();
+        if (!bid || !communityId) return;
+        const adminBid = document.getElementById('admin-building').value.trim();
+        const res = await api('/api/formation/invite', {community_id: communityId, building_id: bid, invited_by: adminBid});
+        const el = document.getElementById('invite-result');
+        el.innerHTML = res.success
+            ? '<span class="text-green-600">Einladung gesendet</span>'
+            : '<span class="text-red-600">' + (res.error || 'Fehler') + '</span>';
+        document.getElementById('invite-building').value = '';
+        refreshStatus();
+    }
+
+    async function refreshStatus() {
+        if (!communityId) return;
+        const s = await api('/api/formation/status/' + communityId);
+        if (s.error) return;
+
+        // Update members list
+        const members = s.members || [];
+        const ml = document.getElementById('members-list');
+        if (ml) {
+            ml.innerHTML = '<h4 class="font-medium mb-2">Mitglieder (' + members.length + ')</h4>' +
+                members.map(m => '<div class="flex justify-between items-center py-1 border-b">' +
+                    '<span>' + (m.address || m.building_id) + '</span>' +
+                    '<span class="text-xs px-2 py-0.5 rounded ' +
+                    (m.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700') +
+                    '">' + m.status + '</span></div>').join('');
+        }
+
+        // Update confirm list
+        const cl = document.getElementById('confirm-list');
+        if (cl) cl.innerHTML = ml ? ml.innerHTML : '';
+
+        // Enable start button if enough confirmed
+        const mc = s.member_count || {};
+        const sc = document.getElementById('start-check');
+        if (sc) {
+            sc.innerHTML = (mc.confirmed || 0) + ' von min. 3 best&auml;tigt';
+        }
+        const btn = document.getElementById('btn-start');
+        if (btn) btn.disabled = (mc.confirmed || 0) < 3;
+
+        // Signatures status
+        const ss = document.getElementById('signatures-status');
+        if (ss && s.documents) {
+            const docs = s.documents;
+            let html = '';
+            if (docs.community_agreement) {
+                html += '<div class="py-1">Gemeinschaftsvereinbarung: <span class="font-medium">' + docs.community_agreement.status + '</span></div>';
+            }
+            (docs.participant_contracts || []).forEach(pc => {
+                html += '<div class="py-1">Teilnehmervertrag ' + pc.building_id + ': <span class="font-medium">' + pc.status + '</span></div>';
+            });
+            ss.innerHTML = html || '<p class="text-gray-500">Noch keine Dokumente</p>';
+        }
+    }
+
+    async function startFormation() {
+        const res = await api('/api/formation/start', {community_id: communityId});
+        const el = document.getElementById('start-result');
+        if (res.success) {
+            el.innerHTML = '<span class="text-green-600">Formation gestartet</span>';
+            goStep(5);
+        } else {
+            el.innerHTML = '<span class="text-red-600">' + (res.error || 'Fehler') + '</span>';
+        }
+    }
+
+    async function generateDocs() {
+        const res = await api('/api/formation/generate-docs', {community_id: communityId});
+        const el = document.getElementById('docs-result');
+        if (res.community_agreement) {
+            el.innerHTML = '<span class="text-green-600">Dokumente erstellt</span>';
+            goStep(6);
+        } else {
+            el.innerHTML = '<span class="text-red-600">' + (res.error || 'Fehler') + '</span>';
+        }
+    }
+
+    async function submitDSO() {
+        const res = await api('/api/formation/submit-dso', {community_id: communityId});
+        const el = document.getElementById('dso-result');
+        if (res.success) {
+            el.innerHTML = '<span class="text-green-600">VNB-Anmeldung eingereicht. Warten auf Genehmigung.</span>';
+        } else {
+            el.innerHTML = '<span class="text-red-600">' + (res.error || 'Fehler') + '</span>';
+        }
+    }
+
+    // If community_id is provided in URL, skip to status
+    if (communityId) refreshStatus();
+    </script>
+    {% endif %}
+</body>
+</html>

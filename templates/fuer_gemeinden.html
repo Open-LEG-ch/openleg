@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,10 +18,9 @@
 
   <main class="max-w-5xl mx-auto px-4 py-12">
     <header class="text-center mb-10">
-      <h1 class="text-4xl font-bold mb-2">OpenLEG für Gemeinden</h1>
+      <h1 class="text-4xl font-bold mb-2">{{ t('gemeinden_title') }}</h1>
       <p class="text-ink-muted max-w-3xl mx-auto">
-        Zwei Wege, ein Ziel: funktionierende Lokale Elektrizitätsgemeinschaften mit klarer Zuständigkeit zwischen
-        Gemeinde, Bewohnern und Technikbetrieb. In Tagen live, nicht in Monaten.
+        {{ t('gemeinden_subtitle') }}
       </p>
     </header>
 
