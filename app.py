@@ -817,11 +817,26 @@ def webhook_agentmail():
     payload = data.get('data', data)
     logger.info(f"[AgentMail Webhook] {event_type}: {json.dumps(payload)[:500]}")
     db.track_event('agentmail_webhook', data={'event': event_type, 'payload': payload})
-    # Notify on inbound message
+    # Classify and save inbound message
     if 'received' in event_type:
         sender = payload.get('from', payload.get('sender', 'unknown'))
         subj = payload.get('subject', '(no subject)')
-        _relay_to_telegram('inbound_email', f"From: {sender}\nSubject: {subj}", 'ok')
+        body = payload.get('body', payload.get('text', ''))[:2000]
+        msg_id = payload.get('message_id', payload.get('id', ''))
+        # Keyword classification
+        combined = (subj + ' ' + body).lower()
+        if any(w in combined for w in ['spam', 'unsubscribe', 'newsletter', 'werbung']):
+            classification = 'spam'
+        elif any(w in combined for w in ['partner', 'kooperation', 'zusammenarbeit', 'collaboration']):
+            classification = 'partnership'
+        elif any(w in combined for w in ['problem', 'fehler', 'error', 'hilfe', 'help', 'support', 'bug']):
+            classification = 'support'
+        elif any(w in combined for w in ['frage', 'question', 'wie', 'how', 'info', 'interesse', 'mitmachen']):
+            classification = 'inquiry'
+        else:
+            classification = 'unknown'
+        db.save_inbound_email(sender, subj, body, classification, msg_id)
+        _relay_to_telegram('inbound_email', f"[{classification}] From: {sender}\nSubject: {subj}", 'ok')
     return jsonify({"ok": True})
 
 

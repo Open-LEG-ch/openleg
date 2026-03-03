@@ -717,6 +717,19 @@ def _create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS inbound_emails (
+                    id SERIAL PRIMARY KEY,
+                    sender VARCHAR(255),
+                    subject VARCHAR(500),
+                    body_preview TEXT,
+                    classification VARCHAR(64) DEFAULT 'unknown',
+                    status VARCHAR(32) DEFAULT 'new',
+                    agentmail_message_id VARCHAR(128),
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+
             logger.info("[DB] Tables and indexes created successfully")
 
 
@@ -2910,6 +2923,43 @@ def get_lea_circuit_breaker() -> bool:
     except Exception as e:
         logger.error(f"[DB] get_lea_circuit_breaker error: {e}")
         return True
+
+
+def save_inbound_email(sender: str, subject: str, body_preview: str,
+                       classification: str = 'unknown', agentmail_message_id: str = None) -> bool:
+    """Save an inbound email with classification."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO inbound_emails (sender, subject, body_preview, classification, agentmail_message_id)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (sender, subject[:500], (body_preview or '')[:2000], classification, agentmail_message_id))
+                return True
+    except Exception as e:
+        logger.error(f"[DB] save_inbound_email error: {e}")
+        return False
+
+
+def get_inbound_emails(status: Optional[str] = None, limit: int = 50) -> List[Dict]:
+    """Get inbound emails, optionally filtered by status."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                if status:
+                    cur.execute(
+                        "SELECT * FROM inbound_emails WHERE status = %s ORDER BY created_at DESC LIMIT %s",
+                        (status, limit)
+                    )
+                else:
+                    cur.execute(
+                        "SELECT * FROM inbound_emails ORDER BY created_at DESC LIMIT %s",
+                        (limit,)
+                    )
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] get_inbound_emails error: {e}")
+        return []
 
 
 def get_community_health_issues() -> List[Dict]:

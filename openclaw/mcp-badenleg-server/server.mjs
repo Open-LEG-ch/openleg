@@ -1686,6 +1686,24 @@ server.tool(
 );
 
 server.tool(
+  'get_inbound_emails',
+  'Get inbound emails from the triage queue. Read-only, GREEN tier.',
+  {
+    status: z.enum(['new', 'processed', 'archived']).optional().describe('Filter by status'),
+    limit: z.number().default(20).describe('Max results')
+  },
+  async ({ status, limit }) => {
+    let sql = 'SELECT * FROM inbound_emails';
+    const params = [];
+    if (status) { params.push(status); sql += ` WHERE status = $${params.length}`; }
+    params.push(limit);
+    sql += ` ORDER BY created_at DESC LIMIT $${params.length}`;
+    const result = await query(sql, params);
+    return txt({ count: result.rowCount, emails: result.rows });
+  }
+);
+
+server.tool(
   'check_competitive_changes',
   'Combined competitive intelligence: check leghub partners + VNB LEG offerings for changes. Auto-tracks strategy items on findings. GREEN tier.',
   {},
