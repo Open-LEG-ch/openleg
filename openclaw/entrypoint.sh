@@ -85,6 +85,12 @@ add_if_missing "pipeline-review" \
   --announce \
   --message "Weekly pipeline review: 1) exec node /opt/mcp-badenleg-server/cli.mjs get_stats. 2) exec node /opt/mcp-badenleg-server/cli.mjs list_communities --status formation_started, check for stale leads >14d. 3) exec node /opt/mcp-badenleg-server/cli.mjs get_strategy_status for weekly summary. 4) Send weekly Telegram report via send_telegram (category: daily_report) with funnel metrics, stale leads, stuck formations, strategy progress."
 
+add_if_missing "municipality-pipeline" \
+  --cron "0 11 * * 3" --tz "Europe/Zurich" \
+  --session isolated --timeout-seconds 300 \
+  --announce \
+  --message "Municipality pipeline: exec node /opt/mcp-badenleg-server/cli.mjs run_municipality_pipeline --max_municipalities 3. Pipeline discovers high-potential municipalities, creates tenants, drafts outreach, requests CEO approval. Report results via send_telegram (category: daily_report)."
+
 add_if_missing "auto-followup-check" \
   --cron "0 10 * * 1,3,5" --tz "Europe/Zurich" \
   --session isolated --timeout-seconds 120 \

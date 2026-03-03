@@ -36,6 +36,7 @@ const ACTION_REGISTRY = {
   update_vnb_status:      { tier: 'GREEN',  budget: null },
   track_strategy_item:    { tier: 'GREEN',  budget: null },
   send_telegram:          { tier: 'GREEN',  budget: { limit: 30, window: 3600,  event: 'lea_send_telegram' } },
+  run_municipality_pipeline: { tier: 'YELLOW', budget: { limit: 3, window: 86400, event: 'lea_municipality_pipeline' } },
 };
 
 async function checkBudget(eventType, limit, window) {
@@ -1873,6 +1874,77 @@ server.tool(
       `);
     }
     return txt({ items: items.rows, summary: summary.rows });
+  }
+);
+
+server.tool(
+  'run_municipality_pipeline',
+  'End-to-end municipality discovery pipeline: find high-potential unseeded municipalities, create tenants, draft outreach, request CEO approval. YELLOW tier, budget 3/day.',
+  {
+    max_municipalities: z.number().default(3).describe('Max municipalities to process')
+  },
+  async ({ max_municipalities }) => {
+    const guard = readonlyGuard(); if (guard) return guard;
+    const budgetBlock = await tierGuard('run_municipality_pipeline'); if (budgetBlock) return budgetBlock;
+    const steps = { found: 0, tenants_created: 0, drafts: 0, approvals_requested: 0, errors: [] };
+    try {
+      // 1. Get unseeded municipalities with high potential (value_gap score)
+      const unseeded = await query(`
+        SELECT mp.bfs_number, mp.municipality_name, mp.score
+        FROM municipality_profiles mp
+        WHERE NOT EXISTS (SELECT 1 FROM white_label_configs wlc WHERE wlc.territory = LOWER(REPLACE(mp.municipality_name, ' ', '-')))
+          AND mp.score IS NOT NULL
+        ORDER BY mp.score DESC NULLS LAST
+        LIMIT $1
+      `, [max_municipalities]);
+      steps.found = unseeded.rowCount;
+
+      for (const muni of unseeded.rows) {
+        try {
+          const slug = muni.municipality_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          // 2. Upsert tenant
+          await query(`
+            INSERT INTO white_label_configs (territory, config, active)
+            VALUES ($1, $2, true)
+            ON CONFLICT (territory) DO NOTHING
+          `, [slug, JSON.stringify({ municipality_name: muni.municipality_name, bfs_number: muni.bfs_number })]);
+          steps.tenants_created++;
+
+          // 3. Draft outreach
+          const draft = `Sehr geehrte Gemeinde ${muni.municipality_name}, OpenLEG bietet freie Infrastruktur für Lokale Elektrizitätsgemeinschaften. Ihr Potenzial-Score: ${muni.score}.`;
+          steps.drafts++;
+
+          // 4. Request CEO approval for outreach
+          if (INTERNAL_TOKEN) {
+            await fetch(`${FLASK_BASE_URL}/api/internal/request-approval`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
+              body: JSON.stringify({
+                request_id: `pipeline-${slug}-${Date.now()}`,
+                activity: 'outreach',
+                reference: slug,
+                summary: `Municipality pipeline: outreach to ${muni.municipality_name} (score: ${muni.score})`,
+                payload: { to: `gemeinde@${slug}.ch`, subject: `LEG-Potenzial für ${muni.municipality_name}`, body: draft }
+              })
+            });
+            steps.approvals_requested++;
+          }
+
+          // Track strategy
+          await query(`
+            INSERT INTO strategy_tracker (week, item, status, notes, updated_at)
+            VALUES ($1, $2, 'in_progress', $3, NOW())
+            ON CONFLICT (week, item) DO UPDATE SET notes = $3, updated_at = NOW()
+          `, [Math.min(Math.ceil((new Date().getMonth() + 1) / 3) * 4, 12), `pipeline-${slug}`, `Auto-pipeline: score ${muni.score}`]);
+        } catch (e) {
+          steps.errors.push({ municipality: muni.municipality_name, error: e.message });
+        }
+      }
+      return txt(steps);
+    } catch (e) {
+      steps.errors.push({ stage: 'init', error: e.message });
+      return txt(steps);
+    }
   }
 );
 
