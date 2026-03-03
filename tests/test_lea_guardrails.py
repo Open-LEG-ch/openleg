@@ -340,3 +340,73 @@ def test_get_circuit_breaker_fail_closed():
     with patch("database.get_connection", side_effect=Exception("DB down")):
         result = db_mod.get_lea_circuit_breaker()
         assert result is True
+
+
+# === Promoted tools: YELLOW -> GREEN ===
+
+def test_track_strategy_item_is_green_tier():
+    server_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "openclaw", "mcp-badenleg-server", "server.mjs"
+    )
+    with open(server_path) as f:
+        content = f.read()
+    idx = content.index("track_strategy_item")
+    chunk = content[idx:idx + 80]
+    assert "GREEN" in chunk, "track_strategy_item should be GREEN tier"
+
+
+def test_update_vnb_status_is_green_tier():
+    server_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "openclaw", "mcp-badenleg-server", "server.mjs"
+    )
+    with open(server_path) as f:
+        content = f.read()
+    idx = content.index("update_vnb_status")
+    chunk = content[idx:idx + 80]
+    assert "GREEN" in chunk, "update_vnb_status should be GREEN tier"
+
+
+def test_add_vnb_lead_is_green_tier():
+    server_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "openclaw", "mcp-badenleg-server", "server.mjs"
+    )
+    with open(server_path) as f:
+        content = f.read()
+    idx = content.index("add_vnb_lead")
+    chunk = content[idx:idx + 80]
+    assert "GREEN" in chunk, "add_vnb_lead should be GREEN tier"
+
+
+def test_green_tools_still_respect_readonly():
+    """Promoted GREEN tools should still have readonlyGuard in their handler."""
+    server_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "openclaw", "mcp-badenleg-server", "server.mjs"
+    )
+    with open(server_path) as f:
+        content = f.read()
+    for tool in ['track_strategy_item', 'update_vnb_status', 'add_vnb_lead']:
+        idx = content.index(f"'{tool}'")
+        chunk = content[idx:idx + 800]
+        assert 'readonlyGuard' in chunk, f"{tool} should still use readonlyGuard"
+
+
+def test_green_tools_do_not_call_notify_yellow():
+    """Promoted GREEN tools should NOT call notifyYellow."""
+    server_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "openclaw", "mcp-badenleg-server", "server.mjs"
+    )
+    with open(server_path) as f:
+        content = f.read()
+    for tool in ['track_strategy_item', 'update_vnb_status', 'add_vnb_lead']:
+        idx = content.index(f"'{tool}'")
+        # Find the end of this tool handler (next server.tool call or end)
+        next_tool = content.find("server.tool(", idx + 1)
+        if next_tool == -1:
+            next_tool = len(content)
+        handler_chunk = content[idx:next_tool]
+        assert 'notifyYellow' not in handler_chunk, f"{tool} should not call notifyYellow after promotion to GREEN"

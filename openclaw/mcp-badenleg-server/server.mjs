@@ -32,9 +32,9 @@ const ACTION_REGISTRY = {
   create_community:       { tier: 'YELLOW', budget: { limit: 5,  window: 86400, event: 'lea_create_community' } },
   update_community_status:{ tier: 'YELLOW', budget: null },
   add_community_member:   { tier: 'YELLOW', budget: { limit: 50, window: 86400, event: 'lea_add_community_member' } },
-  add_vnb_lead:           { tier: 'YELLOW', budget: null },
-  update_vnb_status:      { tier: 'YELLOW', budget: null },
-  track_strategy_item:    { tier: 'YELLOW', budget: null },
+  add_vnb_lead:           { tier: 'GREEN',  budget: null },
+  update_vnb_status:      { tier: 'GREEN',  budget: null },
+  track_strategy_item:    { tier: 'GREEN',  budget: null },
   send_telegram:          { tier: 'GREEN',  budget: { limit: 30, window: 3600,  event: 'lea_send_telegram' } },
 };
 
@@ -1176,7 +1176,7 @@ server.tool(
       `UPDATE vnb_pipeline SET status = $2, notes = COALESCE($3, notes), updated_at = NOW() WHERE id = $1 RETURNING *`,
       [vnb_id, status, notes || null]
     );
-    notifyYellow('update_vnb_status', `VNB #${vnb_id} → ${status}`);
+    // promoted to GREEN tier
     return txt(res.rows[0] || { error: 'Not found' });
   }
 );
@@ -1201,7 +1201,7 @@ server.tool(
        VALUES ($1, $2, $3, $4, $5, $6, 'lead', NOW(), NOW()) RETURNING *`,
       [vnb_name, municipality || null, bfs_number || null, population || null, score || null, notes || null]
     );
-    notifyYellow('add_vnb_lead', `Added VNB lead: ${vnb_name}`);
+    // promoted to GREEN tier
     return txt(res.rows[0]);
   }
 );
@@ -1655,7 +1655,7 @@ server.tool(
       ON CONFLICT (week, item) DO UPDATE SET status = $3, notes = $4, updated_at = NOW()
       RETURNING *
     `, [week, item, status, notes || '']);
-    notifyYellow('track_strategy_item', `W${week}: ${item} → ${status}`);
+    // promoted to GREEN tier
     return txt(result.rows[0]);
   }
 );
