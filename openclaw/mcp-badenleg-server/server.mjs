@@ -843,6 +843,16 @@ server.tool(
         kev_rp_kwh: parseFloat(b.kev?.value || 0)
       }));
 
+      // Fetch old tariffs for delta detection
+      const oldRows = await query(
+        `SELECT operator_name, category, total_rp_kwh FROM elcom_tariffs WHERE bfs_number = $1 AND year = $2`,
+        [bfs_number, year]
+      );
+      const oldMap = {};
+      for (const r of oldRows.rows) {
+        oldMap[`${r.operator_name}|${r.category}`] = parseFloat(r.total_rp_kwh);
+      }
+
       // Cache in DB
       for (const t of tariffs) {
         await query(
@@ -855,7 +865,26 @@ server.tool(
           [t.bfs_number, t.operator_name, t.year, t.category, t.total_rp_kwh, t.energy_rp_kwh, t.grid_rp_kwh, t.municipality_fee_rp_kwh, t.kev_rp_kwh]
         );
       }
-      return txt({ bfs_number, year, tariffs_count: tariffs.length, tariffs });
+
+      // Tariff delta detection: notify if any total changed >5%
+      const deltas = [];
+      for (const t of tariffs) {
+        const key = `${t.operator_name}|${t.category}`;
+        const oldVal = oldMap[key];
+        if (oldVal !== undefined && oldVal > 0) {
+          const pctChange = Math.abs(t.total_rp_kwh - oldVal) / oldVal * 100;
+          if (pctChange > 5) deltas.push({ operator: t.operator_name, category: t.category, old: oldVal, new: t.total_rp_kwh, delta_pct: pctChange.toFixed(1) });
+        }
+      }
+      if (deltas.length > 0 && INTERNAL_TOKEN) {
+        fetch(`${FLASK_BASE_URL}/api/internal/notify-event`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
+          body: JSON.stringify({ event_type: 'tariff_changed', payload: { bfs_number, year, deltas } })
+        }).catch(e => console.error(`[tariff-delta] notify error: ${e.message}`));
+      }
+
+      return txt({ bfs_number, year, tariffs_count: tariffs.length, deltas, tariffs });
     } catch (e) {
       return txt({ error: e.message, bfs_number, year });
     }

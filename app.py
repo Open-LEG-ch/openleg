@@ -974,6 +974,24 @@ def api_internal_notify_yellow():
     return jsonify({"ok": True})
 
 
+@app.route("/api/internal/notify-event", methods=['POST'])
+def api_internal_notify_event():
+    """Receive event notifications from MCP server, fire event hooks + Telegram."""
+    token = request.headers.get('X-Internal-Token', '')
+    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
+        abort(403)
+    data = request.get_json(silent=True) or {}
+    event_type = data.get('event_type', '')
+    payload = data.get('payload', {})
+    if not event_type:
+        return jsonify({"error": "event_type required"}), 400
+    event_hooks.fire(event_type, payload)
+    safe_type = security_utils.escape_telegram_markdown(event_type)
+    _send_telegram_message(f"\U0001f4e1 *Event:* `{safe_type}`\n{json.dumps(payload, default=str)[:300]}")
+    db.track_event(f'event_{event_type}', data=payload)
+    return jsonify({"ok": True})
+
+
 # --- Address API ---
 @app.route("/api/suggest_addresses")
 @limiter.limit("30 per minute") if limiter else lambda f: f

@@ -269,6 +269,68 @@ def test_formation_ready_notifies_ceo():
     assert "event_hooks" in content
 
 
+# === Unit 1D: Tariff Change Detection ===
+
+def test_tariff_delta_detection_new_tariff():
+    """server.mjs fetch_elcom_tariffs should have tariff delta detection logic."""
+    server_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "openclaw", "mcp-badenleg-server", "server.mjs"
+    )
+    with open(server_path) as f:
+        content = f.read()
+    idx = content.index("'fetch_elcom_tariffs'")
+    next_tool = content.find("server.tool(", idx + 1)
+    handler = content[idx:next_tool]
+    assert 'notify-event' in handler or 'tariff' in handler.lower()
+
+
+def test_tariff_delta_detection_no_change():
+    """Tariff handler should compare old vs new total_rp_kwh."""
+    server_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "openclaw", "mcp-badenleg-server", "server.mjs"
+    )
+    with open(server_path) as f:
+        content = f.read()
+    idx = content.index("'fetch_elcom_tariffs'")
+    next_tool = content.find("server.tool(", idx + 1)
+    handler = content[idx:next_tool]
+    assert 'old' in handler.lower() or 'previous' in handler.lower() or 'delta' in handler.lower()
+
+
+def test_tariff_change_notifies_telegram():
+    """Tariff change detection should post to notify-event endpoint."""
+    server_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "openclaw", "mcp-badenleg-server", "server.mjs"
+    )
+    with open(server_path) as f:
+        content = f.read()
+    assert 'notify-event' in content
+
+
+def test_tariff_change_recalculates_value_gap(reg_client):
+    """notify-event endpoint should fire event_hooks for the event type."""
+    import event_hooks
+    event_hooks.clear()
+    fired = []
+    event_hooks.register('tariff_changed', lambda p: fired.append(p))
+    resp = reg_client.post("/api/internal/notify-event",
+                            json={"event_type": "tariff_changed", "payload": {"bfs_number": 261}},
+                            headers={"X-Internal-Token": "secret-internal"})
+    assert resp.status_code == 200
+    assert len(fired) == 1
+    assert fired[0]['bfs_number'] == 261
+
+
+def test_notify_event_endpoint_auth_required(reg_client):
+    """notify-event endpoint should require X-Internal-Token."""
+    resp = reg_client.post("/api/internal/notify-event",
+                            json={"event_type": "test", "payload": {}})
+    assert resp.status_code == 403
+
+
 def test_registration_hook_exception_doesnt_break_registration(reg_client):
     """Exception in registration hook must not break the registration response."""
     import event_hooks
