@@ -730,6 +730,20 @@ def _create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS strategy_subtasks (
+                    id SERIAL PRIMARY KEY,
+                    parent_week INTEGER NOT NULL,
+                    parent_item VARCHAR(128) NOT NULL,
+                    subtask VARCHAR(255) NOT NULL,
+                    status VARCHAR(32) DEFAULT 'pending',
+                    notes TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE(parent_week, parent_item, subtask)
+                )
+            """)
+
             logger.info("[DB] Tables and indexes created successfully")
 
 
@@ -2923,6 +2937,54 @@ def get_lea_circuit_breaker() -> bool:
     except Exception as e:
         logger.error(f"[DB] get_lea_circuit_breaker error: {e}")
         return True
+
+
+def create_strategy_subtask(parent_week: int, parent_item: str, subtask: str, notes: str = None) -> bool:
+    """Create a subtask for a strategy item."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO strategy_subtasks (parent_week, parent_item, subtask, notes)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (parent_week, parent_item, subtask) DO NOTHING
+                    RETURNING id
+                """, (parent_week, parent_item, subtask, notes))
+                return True
+    except Exception as e:
+        logger.error(f"[DB] create_strategy_subtask error: {e}")
+        return False
+
+
+def get_strategy_subtasks(parent_week: int, parent_item: str) -> List[Dict]:
+    """Get subtasks for a strategy item."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT * FROM strategy_subtasks
+                    WHERE parent_week = %s AND parent_item = %s
+                    ORDER BY id ASC
+                """, (parent_week, parent_item))
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] get_strategy_subtasks error: {e}")
+        return []
+
+
+def update_strategy_subtask(subtask_id: int, status: str, notes: str = None) -> bool:
+    """Update a strategy subtask status."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE strategy_subtasks SET status = %s, notes = COALESCE(%s, notes), updated_at = NOW()
+                    WHERE id = %s
+                """, (status, notes, subtask_id))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] update_strategy_subtask error: {e}")
+        return False
 
 
 def save_inbound_email(sender: str, subject: str, body_preview: str,

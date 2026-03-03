@@ -1842,6 +1842,65 @@ server.tool(
   }
 );
 
+server.tool(
+  'decompose_strategy_item',
+  'Break a strategy item into subtasks. GREEN tier.',
+  {
+    parent_week: z.number().min(1).max(12).describe('Strategy week number'),
+    parent_item: z.string().describe('Parent item slug'),
+    subtasks: z.array(z.string()).describe('List of subtask descriptions')
+  },
+  async ({ parent_week, parent_item, subtasks }) => {
+    const guard = readonlyGuard(); if (guard) return guard;
+    const results = [];
+    for (const st of subtasks) {
+      await query(
+        `INSERT INTO strategy_subtasks (parent_week, parent_item, subtask)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (parent_week, parent_item, subtask) DO NOTHING`,
+        [parent_week, parent_item, st]
+      );
+      results.push(st);
+    }
+    return txt({ parent_week, parent_item, created: results.length });
+  }
+);
+
+server.tool(
+  'get_strategy_subtasks',
+  'Get subtasks for a strategy item. Read-only, GREEN tier.',
+  {
+    parent_week: z.number().min(1).max(12).describe('Strategy week number'),
+    parent_item: z.string().describe('Parent item slug')
+  },
+  async ({ parent_week, parent_item }) => {
+    const result = await query(
+      'SELECT * FROM strategy_subtasks WHERE parent_week = $1 AND parent_item = $2 ORDER BY id',
+      [parent_week, parent_item]
+    );
+    return txt({ count: result.rowCount, subtasks: result.rows });
+  }
+);
+
+server.tool(
+  'update_strategy_subtask',
+  'Update a strategy subtask status. GREEN tier.',
+  {
+    subtask_id: z.number().describe('Subtask ID'),
+    status: z.enum(['pending', 'in_progress', 'done', 'blocked']).describe('New status'),
+    notes: z.string().optional().describe('Progress notes')
+  },
+  async ({ subtask_id, status, notes }) => {
+    const guard = readonlyGuard(); if (guard) return guard;
+    const result = await query(
+      `UPDATE strategy_subtasks SET status = $2, notes = COALESCE($3, notes), updated_at = NOW()
+       WHERE id = $1 RETURNING *`,
+      [subtask_id, status, notes || null]
+    );
+    return txt(result.rows[0] || { error: 'Subtask not found' });
+  }
+);
+
 // Start server
 const transport = new StdioServerTransport();
 await server.connect(transport);
