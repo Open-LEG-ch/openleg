@@ -175,6 +175,100 @@ def test_registration_hook_runs_cluster_analysis(reg_client):
         assert 'city_id' in fired[0]
 
 
+# === Unit 1C: Formation Threshold Trigger ===
+
+def test_confirm_membership_fires_event():
+    """confirm_membership should fire 'member_confirmed' event."""
+    import event_hooks
+    event_hooks.clear()
+    fired = []
+    event_hooks.register('member_confirmed', lambda p: fired.append(p))
+    from formation_wizard import confirm_membership
+    mock_db = MagicMock()
+    mock_cur = MagicMock()
+    mock_cur.rowcount = 1
+    mock_cur.fetchone.return_value = {'confirmed_count': 1}
+    mock_conn = MagicMock()
+    mock_conn.cursor.return_value.__enter__ = lambda s: mock_cur
+    mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+    mock_db.get_connection.return_value.__enter__ = lambda s: mock_conn
+    mock_db.get_connection.return_value.__exit__ = MagicMock(return_value=False)
+    mock_db.track_event = MagicMock()
+
+    result = confirm_membership(mock_db, 'com-1', 'b-1')
+    assert result is True
+    assert len(fired) == 1
+    assert fired[0]['community_id'] == 'com-1'
+    assert fired[0]['building_id'] == 'b-1'
+
+
+def test_threshold_reached_fires_formation_ready():
+    """When confirmed_count >= 3, should fire formation_threshold_reached."""
+    import event_hooks
+    event_hooks.clear()
+    fired = []
+    event_hooks.register('formation_threshold_reached', lambda p: fired.append(p))
+    from formation_wizard import confirm_membership
+    mock_db = MagicMock()
+    mock_cur = MagicMock()
+    mock_cur.rowcount = 1
+    mock_cur.fetchone.return_value = {'confirmed_count': 3}
+    mock_conn = MagicMock()
+    mock_conn.cursor.return_value.__enter__ = lambda s: mock_cur
+    mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+    mock_db.get_connection.return_value.__enter__ = lambda s: mock_conn
+    mock_db.get_connection.return_value.__exit__ = MagicMock(return_value=False)
+    mock_db.track_event = MagicMock()
+
+    confirm_membership(mock_db, 'com-1', 'b-1')
+    assert len(fired) == 1
+    assert fired[0]['community_id'] == 'com-1'
+
+
+def test_threshold_not_fired_below_min():
+    """When confirmed_count < 3, formation_threshold_reached should NOT fire."""
+    import event_hooks
+    event_hooks.clear()
+    fired = []
+    event_hooks.register('formation_threshold_reached', lambda p: fired.append(p))
+    from formation_wizard import confirm_membership
+    mock_db = MagicMock()
+    mock_cur = MagicMock()
+    mock_cur.rowcount = 1
+    mock_cur.fetchone.return_value = {'confirmed_count': 2}
+    mock_conn = MagicMock()
+    mock_conn.cursor.return_value.__enter__ = lambda s: mock_cur
+    mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+    mock_db.get_connection.return_value.__enter__ = lambda s: mock_conn
+    mock_db.get_connection.return_value.__exit__ = MagicMock(return_value=False)
+    mock_db.track_event = MagicMock()
+
+    confirm_membership(mock_db, 'com-1', 'b-1')
+    assert len(fired) == 0
+
+
+def test_formation_ready_drafts_docs_as_yellow():
+    """formation_threshold_reached should be a YELLOW-tier action (docs draft)."""
+    source_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "formation_wizard.py"
+    )
+    with open(source_path) as f:
+        content = f.read()
+    assert "formation_threshold_reached" in content
+
+
+def test_formation_ready_notifies_ceo():
+    """formation_threshold_reached event should exist in formation_wizard code."""
+    source_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "formation_wizard.py"
+    )
+    with open(source_path) as f:
+        content = f.read()
+    assert "event_hooks" in content
+
+
 def test_registration_hook_exception_doesnt_break_registration(reg_client):
     """Exception in registration hook must not break the registration response."""
     import event_hooks

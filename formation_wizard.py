@@ -10,6 +10,7 @@ import io
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from enum import Enum
+import event_hooks
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +217,26 @@ def confirm_membership(
                     db.track_event("member_confirmed", building_id, {
                         "community_id": community_id
                     })
+                    event_hooks.fire('member_confirmed', {
+                        'community_id': community_id,
+                        'building_id': building_id
+                    })
                     logger.info(f"[FORMATION] {building_id} confirmed membership in {community_id}")
+
+                    # Check formation threshold
+                    cur.execute(
+                        "SELECT COUNT(*) AS confirmed_count FROM community_members WHERE community_id = %s AND status = 'confirmed'",
+                        (community_id,)
+                    )
+                    row = cur.fetchone()
+                    confirmed_count = row['confirmed_count'] if row else 0
+                    if confirmed_count >= 3:
+                        event_hooks.fire('formation_threshold_reached', {
+                            'community_id': community_id,
+                            'confirmed_count': confirmed_count
+                        })
+                        logger.info(f"[FORMATION] Threshold reached for {community_id}: {confirmed_count} confirmed")
+
                     return True
                 return False
     except Exception as e:
