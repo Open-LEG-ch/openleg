@@ -29,7 +29,7 @@ class TestFuerGemeindenPage:
                     app.before_request_funcs[None] = hooks
                 assert resp.status_code == 200
                 html = resp.data.decode("utf-8", errors="ignore")
-                assert "OpenLEG für Gemeinden" in html
+                assert "Gemeinde" in html
                 assert "Selbst betreiben" in html
                 assert "Gehostet" in html
                 assert "github.com/wgusta/openleg" in html

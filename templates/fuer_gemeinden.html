@@ -3,99 +3,348 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Für Gemeinden | OpenLEG</title>
+  <title>LEG für Ihre Gemeinde: Kostenlose Infrastruktur für Lokale Elektrizitätsgemeinschaften | OpenLEG</title>
+  <meta name="description" content="Seit 1. Januar 2026 hat jede Schweizer Gemeinde das Recht auf Lokale Elektrizitätsgemeinschaften. OpenLEG liefert die kostenlose, quelloffene Infrastruktur: Bewohner-Matching, Gründungsassistent, VNB-Anmeldung. Null Kosten, null Risiko für die Gemeinde.">
+  <meta name="keywords" content="LEG Gemeinde, Lokale Elektrizitätsgemeinschaft, Stromgemeinschaft Schweiz, StromVG Art 17d, Gemeinde Energiewende, Netzgebühren sparen, OpenLEG">
+  <link rel="canonical" href="{{ site_url }}/fuer-gemeinden">
+  <meta property="og:title" content="LEG für Ihre Gemeinde: kostenlose Open Source Infrastruktur">
+  <meta property="og:description" content="Art. 17d StromVG: 40% Netzgebühren-Rabatt für LEG-Teilnehmer. OpenLEG liefert alles, was Ihre Gemeinde braucht. Kostenlos.">
   {% include 'partials/tailwind_brand.html' %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "LEG für Gemeinden",
+    "description": "Kostenlose Open Source Infrastruktur für Lokale Elektrizitätsgemeinschaften in Schweizer Gemeinden",
+    "provider": {
+      "@type": "Organization",
+      "name": "OpenLEG",
+      "url": "https://openleg.ch"
+    }
+  }
+  </script>
 </head>
 <body class="bg-[#f6f4ef] text-ink">
   {% include 'partials/site_nav.html' %}
   {% include 'partials/trust_bar.html' %}
 
-  <div class="max-w-5xl mx-auto px-4 pt-10">
-    <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
-      <img src="/static/images/subpages/gemeinde-onboarding.png" alt="OpenLEG für Gemeinden" class="w-full aspect-[3/1] object-cover" loading="lazy">
-    </div>
-  </div>
-
   <main class="max-w-5xl mx-auto px-4 py-12">
-    <header class="text-center mb-10">
-      <h1 class="text-4xl font-bold mb-2">{{ t('gemeinden_title') }}</h1>
-      <p class="text-ink-muted max-w-3xl mx-auto">
-        {{ t('gemeinden_subtitle') }}
+
+    <!-- Hero: evidence-based, bold -->
+    <header class="mb-12">
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-4">Ihre Gemeinde hat das Recht auf eine Stromgemeinschaft. Seit dem 1. Januar 2026.</h1>
+      <p class="text-lg text-ink-muted max-w-3xl">
+        Art. 17d StromVG garantiert jeder Schweizer Gemeinde Lokale Elektrizitätsgemeinschaften (LEG).
+        Der Netzbetreiber muss kooperieren, der Bund gewährt 40% Netzgebühren-Rabatt, die Gemeinde investiert nichts.
+        68.7% der Stimmbevölkerung haben am 9. Juni 2024 dafür gestimmt.
       </p>
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <a href="/gemeinde/onboarding" class="bg-brand text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-dark text-center shadow-lg">Gemeinde anmelden</a>
+        <a href="#gemeinde-verzeichnis" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">Ihre Gemeinde suchen</a>
+      </div>
     </header>
 
-    <div class="grid md:grid-cols-2 gap-6">
-      <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-ink/20 flex flex-col">
-        <h2 class="text-xl font-bold mb-1">Selbst betreiben</h2>
-        <p class="text-sm text-ink-muted mb-4">
-          Für Gemeinden, Verbünde oder kantonale IT-Teams mit eigener Infrastruktur und internem Betrieb.
-          Sie nutzen OpenLEG als frei verfügbare Basis und steuern Roadmap, Hosting und Integrationen selbst.
-        </p>
-        <ul class="text-sm space-y-2 mb-6 text-ink-muted flex-1">
-          <li>&#10003; Open Source (AGPL-3.0)</li>
-          <li>&#10003; Volle Datenhoheit</li>
-          <li>&#10003; Transparente Weiterentwicklung via GitHub</li>
-          <li>&#10003; Eigene Erweiterungen und Prozesse möglich</li>
-        </ul>
-        <pre class="bg-ink text-slate-300 rounded-lg p-4 text-sm overflow-x-auto mb-4"><code>git clone https://github.com/wgusta/openleg.git
-cd openleg
-docker compose up -d</code></pre>
-        <a href="https://github.com/wgusta/openleg" target="_blank" rel="noopener" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Code auf GitHub</a>
-      </section>
-
-      <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand flex flex-col">
-        <h2 class="text-xl font-bold mb-1">Gehostet mit optionalem Projektsupport</h2>
-        <p class="text-sm text-ink-muted mb-4">
-          Für Gemeinden, die schnell starten wollen. Der Kern bleibt kostenlos, dazu kommt bei Bedarf
-          projektbasierte Unterstützung für Einführung, Schulung und Schnittstellen.
-        </p>
-        <ul class="text-sm space-y-2 mb-6 text-ink-muted flex-1">
-          <li>&#10003; Setup und Betrieb durch uns (SLA optional)</li>
-          <li>&#10003; Schulungen, Onboarding, SDAT-CH Integration (optional)</li>
-          <li>&#10003; Keine Abopflicht, kein Datenverkauf</li>
-          <li>&#10003; Fokus auf schnelle kommunale Umsetzung</li>
-        </ul>
-        <a href="/gemeinde/onboarding" class="block text-center bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark mb-2">Gemeinde anmelden</a>
-        <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Gemeinde%20Projektsupport" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Projektsupport anfragen</a>
-      </section>
-    </div>
-
-    <section class="mt-6 bg-white rounded-xl border border-slate-200 p-6">
-      <h2 class="text-2xl font-bold mb-3">Was Gemeinden im Alltag entlastet</h2>
-      <div class="grid md:grid-cols-2 gap-6 text-ink-muted">
-        <div>
-          <h3 class="font-semibold text-ink mb-1">Kommunikation und Beteiligung</h3>
-          <p>Eine zentrale Gemeinde-Seite bündelt Information, Teilnahme und Projektstatus. Das reduziert Rückfragen und macht Fortschritt für Bevölkerung und Verwaltung sichtbar.</p>
+    <!-- Hard facts: what the law says -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold mb-4">Was das Gesetz garantiert</h2>
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="text-3xl font-bold text-brand">40%</div>
+          <div class="text-sm font-semibold mt-1">Netzgebühren-Rabatt</div>
+          <p class="text-xs text-ink-muted mt-2">Art. 19h StromVV: 40% Reduktion auf den Netznutzungs-Arbeitspreis, wenn alle Teilnehmer auf derselben Netzebene liegen. 20% bei Ebenenwechsel.</p>
         </div>
-        <div>
-          <h3 class="font-semibold text-ink mb-1">Prozesssicherheit</h3>
-          <p>OpenLEG führt durch die standardisierten LEG-Schritte mit dokumentierten Übergaben. So sinkt das Risiko von Lücken zwischen Interessensphase, Vertragsphase und Netzbetreiber-Anmeldung.</p>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="text-3xl font-bold text-brand">15</div>
+          <div class="text-sm font-semibold mt-1">Arbeitstage Antwortfrist</div>
+          <p class="text-xs text-ink-muted mt-2">Art. 19g StromVV: Der Netzbetreiber muss die Netztopologie innert 15 Arbeitstagen offenlegen. Nicht optional.</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="text-3xl font-bold text-brand">3</div>
+          <div class="text-sm font-semibold mt-1">Monate Smart-Meter-Frist</div>
+          <p class="text-xs text-ink-muted mt-2">Art. 17d Abs. 4 StromVG: Der Netzbetreiber installiert intelligente Messsysteme für alle LEG-Teilnehmer. Kosten trägt der VNB.</p>
         </div>
       </div>
     </section>
 
-    <section class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-6">
-      <h2 class="text-2xl font-bold mb-3">Klare Abgrenzung</h2>
+    <!-- Zero risk for the Gemeinde -->
+    <section class="mb-10 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-4">Was die Gemeinde konkret tun muss: nichts.</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div>
+          <h3 class="font-semibold text-ink mb-2">Die Gemeinde investiert nichts</h3>
+          <ul class="space-y-2 text-sm text-ink-muted">
+            <li>Keine Infrastrukturkosten. Die LEG nutzt das bestehende Stromnetz.</li>
+            <li>Keine Betriebskosten. OpenLEG übernimmt Technik und Hosting.</li>
+            <li>Kein Gemeindebeschluss nötig. LEG ist privatrechtlich (einfache Gesellschaft).</li>
+            <li>Keine Haftung. Keine Solidarhaftung (Art. 17e StromVG): Jeder Teilnehmer haftet nur für sich.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-ink mb-2">Was die Gemeinde tun kann (optional)</h3>
+          <ul class="space-y-2 text-sm text-ink-muted">
+            <li><strong>Informieren:</strong> Bewohner auf die Möglichkeit aufmerksam machen</li>
+            <li><strong>Vernetzen:</strong> Interessierte Haushalte zusammenbringen</li>
+            <li><strong>Mitmachen:</strong> Gemeinde-Gebäude mit PV als LEG-Erzeuger einbringen</li>
+            <li><strong>Signal setzen:</strong> Brief des Gemeinderats stärkt Vertrauen</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEG vs ZEV: critical distinction -->
+    <section class="mb-10 bg-amber-50 border border-amber-200 rounded-xl p-6">
+      <h2 class="text-2xl font-bold mb-3">LEG ist nicht ZEV. LEG ist risikoärmer.</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left border-b border-amber-300">
+              <th class="py-2 pr-4 font-semibold">Merkmal</th>
+              <th class="py-2 pr-4 font-semibold text-brand">LEG (neu, seit 2026)</th>
+              <th class="py-2 font-semibold">ZEV (bestehend)</th>
+            </tr>
+          </thead>
+          <tbody class="text-ink-muted">
+            <tr class="border-b border-amber-200">
+              <td class="py-2 pr-4 font-medium text-ink">Reichweite</td>
+              <td class="py-2 pr-4">Ganze Gemeinde, über öffentliches Netz</td>
+              <td class="py-2">Nur angrenzende Parzellen</td>
+            </tr>
+            <tr class="border-b border-amber-200">
+              <td class="py-2 pr-4 font-medium text-ink">Kundenstatus</td>
+              <td class="py-2 pr-4">Jeder bleibt individueller VNB-Kunde</td>
+              <td class="py-2">ZEV wird ein einzelner Endverbraucher</td>
+            </tr>
+            <tr class="border-b border-amber-200">
+              <td class="py-2 pr-4 font-medium text-ink">Solidarhaftung</td>
+              <td class="py-2 pr-4 font-semibold text-brand">Keine</td>
+              <td class="py-2">Ja, gesamtschuldnerisch</td>
+            </tr>
+            <tr class="border-b border-amber-200">
+              <td class="py-2 pr-4 font-medium text-ink">Grundversorgung</td>
+              <td class="py-2 pr-4">Jeder behält individuelle Grundversorgung</td>
+              <td class="py-2">Nur ZEV als Ganzes</td>
+            </tr>
+            <tr>
+              <td class="py-2 pr-4 font-medium text-ink">Austritt</td>
+              <td class="py-2 pr-4">1 Monat Kündigungsfrist</td>
+              <td class="py-2">Komplex, vertragliche Bindung</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-ink-muted mt-3">Rechtsgrundlage: Art. 17d/17e StromVG (LEG) vs. Art. 17/18 EnV (ZEV). Quellen: Fedlex, Energonia, Invisia.</p>
+    </section>
+
+    <!-- Honest about savings -->
+    <section class="mb-10 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-3">Ehrliche Zahlen zu Einsparungen</h2>
+      <p class="text-ink-muted mb-4">
+        Noch existieren keine Betriebsdaten aus realen LEGs (erste Aktivierungen: Frühling 2026).
+        Die folgenden Zahlen basieren auf ElCom-Tarifdaten und dem gesetzlichen 40%-Rabatt.
+      </p>
+      <div class="grid md:grid-cols-3 gap-4 mb-4">
+        <div class="bg-[#f6f4ef] rounded-lg p-4 text-center">
+          <div class="text-2xl font-bold text-brand">CHF 65-150</div>
+          <div class="text-xs text-ink-muted mt-1">Pro Haushalt/Jahr (konservativ)</div>
+          <div class="text-xs text-ink-muted">30% interner Verbrauch, H4-Profil</div>
+        </div>
+        <div class="bg-[#f6f4ef] rounded-lg p-4 text-center">
+          <div class="text-2xl font-bold text-brand">CHF 250-400</div>
+          <div class="text-xs text-ink-muted mt-1">Für PV-Erzeuger/Jahr (Mehrerlös)</div>
+          <div class="text-xs text-ink-muted">Interner Preis vs. Rückspeisetarif</div>
+        </div>
+        <div class="bg-[#f6f4ef] rounded-lg p-4 text-center">
+          <div class="text-2xl font-bold text-amber-600">2.8 Rp./kWh</div>
+          <div class="text-xs text-ink-muted mt-1">Typische Netzgebühr-Einsparung</div>
+          <div class="text-xs text-ink-muted">40% von ~7 Rp. Arbeitspreis</div>
+        </div>
+      </div>
+      <div class="mt-4 max-w-xl mx-auto">
+        {% include 'partials/savings_widget.html' %}
+      </div>
+      <p class="text-xs text-ink-muted mt-3">Datenquelle: ElCom Strompreisübersicht 2026, StromVV Art. 19h. Alle Angaben sind Schätzungen, keine Garantien.</p>
+    </section>
+
+    <!-- Municipality Directory: searchable, data-driven -->
+    <section id="gemeinde-verzeichnis" class="mb-10">
+      <h2 class="text-2xl font-bold mb-2">Gemeinde-Verzeichnis: Energiedaten für alle Schweizer Gemeinden</h2>
+      <p class="text-ink-muted mb-4">
+        Öffentliche Daten aus ElCom, BFE Sonnendach und Energie Reporter für alle 2'131 Gemeinden.
+        Suchen Sie Ihre Gemeinde und sehen Sie Solarpotenzial, Energiewende-Score und LEG-Einsparpotenzial.
+      </p>
+      <div class="bg-white rounded-xl border border-slate-200 p-5">
+        <div class="flex gap-2 mb-4">
+          <input id="gv-input" type="text" placeholder="Gemeindename oder BFS-Nummer eingeben..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" autocomplete="off">
+          <select id="gv-kanton" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand">
+            <option value="">Alle Kantone</option>
+            <option value="AG">Aargau</option><option value="AI">Appenzell I.</option>
+            <option value="AR">Appenzell A.</option><option value="BE">Bern</option>
+            <option value="BL">Basel-Land</option><option value="BS">Basel-Stadt</option>
+            <option value="FR">Fribourg</option><option value="GE">Genf</option>
+            <option value="GL">Glarus</option><option value="GR">Graubünden</option>
+            <option value="JU">Jura</option><option value="LU">Luzern</option>
+            <option value="NE">Neuenburg</option><option value="NW">Nidwalden</option>
+            <option value="OW">Obwalden</option><option value="SG">St. Gallen</option>
+            <option value="SH">Schaffhausen</option><option value="SO">Solothurn</option>
+            <option value="SZ">Schwyz</option><option value="TG">Thurgau</option>
+            <option value="TI">Tessin</option><option value="UR">Uri</option>
+            <option value="VD">Waadt</option><option value="VS">Wallis</option>
+            <option value="ZG">Zug</option><option value="ZH">Zürich</option>
+          </select>
+        </div>
+        <div id="gv-count" class="text-xs text-ink-muted mb-2"></div>
+        <div id="gv-results" class="max-h-96 overflow-y-auto">
+          <div class="text-sm text-ink-muted py-8 text-center">Daten werden geladen...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Two paths: self-host vs managed -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold mb-4">Zwei Wege zum Start</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-ink/20 flex flex-col">
+          <h3 class="text-xl font-bold mb-1">Selbst betreiben</h3>
+          <p class="text-sm text-ink-muted mb-4">
+            AGPL-3.0, vollständiger Code auf GitHub. Docker Compose Setup, in Minuten lauffähig.
+            Für Gemeinden mit eigenem IT-Betrieb.
+          </p>
+          <pre class="bg-ink text-slate-300 rounded-lg p-4 text-sm overflow-x-auto mb-4"><code>git clone https://github.com/wgusta/openleg.git
+cd openleg && docker compose up -d</code></pre>
+          <a href="https://github.com/wgusta/openleg" target="_blank" rel="noopener" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50 mt-auto">Code auf GitHub</a>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand flex flex-col">
+          <h3 class="text-xl font-bold mb-1">Managed Setup</h3>
+          <p class="text-sm text-ink-muted mb-4">
+            Wir richten Ihre Gemeinde-Instanz ein. Eigene Subdomain (gemeinde.openleg.ch),
+            Branding, Bewohner-Onboarding. Plattformkern bleibt kostenlos, Projektsupport optional.
+          </p>
+          <ul class="text-sm space-y-1 mb-6 text-ink-muted flex-1">
+            <li>Eigene Instanz unter <span class="font-mono text-xs">gemeinde.openleg.ch</span></li>
+            <li>Dokumente: Vereinbarung, Verträge, VNB-Anmeldung</li>
+            <li>Begleitung bis zur aktiven LEG</li>
+          </ul>
+          <a href="/gemeinde/onboarding" class="block text-center bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark mb-2">Gemeinde anmelden</a>
+          <a href="mailto:hallo@openleg.ch?subject=LEG%20Projektsupport%20Gemeinde" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Projektsupport anfragen</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Competitor comparison -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold mb-4">Kostenlos vs. Konkurrenz</h2>
+      {% include 'partials/competitor_comparison.html' %}
+    </section>
+
+    <!-- Data policy -->
+    <section class="mb-10 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-3">Datenrichtlinie</h2>
       <p class="text-ink-muted">
-        OpenLEG verkauft keine Bewohnerdaten und keine B2B-Datensets. Der Wert entsteht durch funktionierende
-        LEG-Projekte vor Ort, nicht durch Weitergabe von Energiedaten.
+        OpenLEG speichert keine Bürgerdaten ausserhalb des LEG-Kontexts.
+        Kein Datenverkauf an Energieversorger, Versicherungen oder Dritte.
+        Smart-Meter-Daten bleiben in der Stromgemeinschaft.
+        Quellcode ist öffentlich einsehbar (AGPL-3.0). Gehostet auf Schweizer Infrastruktur (Infomaniak), konform mit nDSG.
       </p>
     </section>
 
-    <!-- Savings Widget -->
-    <section class="mt-6">
-      {% include 'partials/savings_widget.html' %}
-    </section>
-
-    <!-- Competitor Comparison (prominent) -->
-    <section class="mt-8">
-      <h2 class="text-2xl font-bold mb-4">Kostenlos vs. Konkurrenz</h2>
-      {% include 'partials/competitor_comparison.html' %}
+    <!-- Legal references -->
+    <section class="mb-6 text-xs text-ink-muted">
+      <h3 class="font-semibold text-ink mb-2">Rechtsgrundlagen und Quellen</h3>
+      <ul class="space-y-1">
+        <li>Art. 17d/17e Stromversorgungsgesetz (StromVG), SR 734.7</li>
+        <li>Art. 19e-19h Stromversorgungsverordnung (StromVV), SR 734.71</li>
+        <li>Mantelerlass: Volksabstimmung 9. Juni 2024, 68.7% Ja-Stimmen</li>
+        <li>ElCom Strompreisübersicht 2026: strompreis.elcom.admin.ch</li>
+        <li>BFE Sonnendach: sonnendach.ch (Solarpotenzial pro Gemeinde)</li>
+        <li>Energie Reporter: energiereporter.ch (Energiewende-Indikatoren)</li>
+      </ul>
     </section>
 
   </main>
 
   {% include 'partials/cta_gemeinde.html' %}
   {% include 'partials/site_footer.html' %}
+
+  <script>
+  // Municipality directory: searchable, sortable, live data from API
+  (function(){
+    var input=document.getElementById('gv-input');
+    var kantonSelect=document.getElementById('gv-kanton');
+    var resultsDiv=document.getElementById('gv-results');
+    var countDiv=document.getElementById('gv-count');
+    var allMunis=null;
+    var debounce=null;
+
+    function loadAll(){
+      if(allMunis)return Promise.resolve(allMunis);
+      return fetch('/api/v1/municipalities').then(function(r){return r.json()}).then(function(d){
+        allMunis=d.municipalities||d||[];
+        return allMunis;
+      });
+    }
+
+    function render(munis){
+      if(!munis.length){
+        resultsDiv.innerHTML='<div class="text-sm text-ink-muted py-4 text-center">Keine Gemeinden gefunden.</div>';
+        countDiv.textContent='0 Ergebnisse';
+        return;
+      }
+      var shown=munis.slice(0,50);
+      countDiv.textContent=munis.length+' Gemeinden'+(munis.length>50?' (erste 50 angezeigt)':'');
+      resultsDiv.innerHTML='<table class="w-full text-sm"><thead class="bg-slate-50 sticky top-0"><tr>'
+        +'<th class="px-3 py-2 text-left font-semibold">Gemeinde</th>'
+        +'<th class="px-3 py-2 text-left font-semibold">Kanton</th>'
+        +'<th class="px-3 py-2 text-right font-semibold">Score</th>'
+        +'<th class="px-3 py-2 text-right font-semibold">Solarpotenzial</th>'
+        +'<th class="px-3 py-2 text-right font-semibold hidden sm:table-cell">CHF/Jahr</th>'
+        +'<th class="px-3 py-2 text-right font-semibold">Profil</th>'
+        +'</tr></thead><tbody class="divide-y divide-slate-100">'
+        +shown.map(function(m){
+          var bfs=m.bfs_number||m.bfs||'';
+          var score=m.energy_transition_score||m.score||'-';
+          var solar=m.solar_potential_pct?Math.round(m.solar_potential_pct)+'%':'-';
+          var gap=m.leg_value_gap_chf?'CHF '+Math.round(m.leg_value_gap_chf):'-';
+          var scoreColor=score>=50?'text-brand font-bold':score>=30?'text-amber-600 font-semibold':'text-ink-muted';
+          return '<tr class="hover:bg-slate-50">'
+            +'<td class="px-3 py-2 font-medium">'+m.name+'</td>'
+            +'<td class="px-3 py-2 text-ink-muted">'+(m.kanton||'')+'</td>'
+            +'<td class="px-3 py-2 text-right '+scoreColor+'">'+(typeof score==='number'?Math.round(score):score)+'</td>'
+            +'<td class="px-3 py-2 text-right text-ink-muted">'+solar+'</td>'
+            +'<td class="px-3 py-2 text-right text-ink-muted hidden sm:table-cell">'+gap+'</td>'
+            +'<td class="px-3 py-2 text-right"><a href="/gemeinde/'+bfs+'/profil" class="text-brand hover:underline text-xs">Profil</a></td>'
+            +'</tr>';
+        }).join('')+'</tbody></table>';
+    }
+
+    function filter(){
+      clearTimeout(debounce);
+      debounce=setTimeout(function(){
+        loadAll().then(function(munis){
+          var q=(input.value||'').trim().toLowerCase();
+          var k=kantonSelect.value;
+          var filtered=munis.filter(function(m){
+            if(k&&m.kanton!==k)return false;
+            if(!q)return true;
+            return (m.name||'').toLowerCase().indexOf(q)>-1||String(m.bfs_number||m.bfs||'').indexOf(q)>-1;
+          });
+          // Sort by energy_transition_score desc
+          filtered.sort(function(a,b){return(b.energy_transition_score||0)-(a.energy_transition_score||0)});
+          render(filtered);
+        });
+      },150);
+    }
+
+    input.addEventListener('input',filter);
+    kantonSelect.addEventListener('change',filter);
+
+    // Initial load
+    loadAll().then(function(munis){
+      munis.sort(function(a,b){return(b.energy_transition_score||0)-(a.energy_transition_score||0)});
+      render(munis);
+    }).catch(function(){
+      resultsDiv.innerHTML='<div class="text-sm text-red-600 py-4 text-center">Daten konnten nicht geladen werden.</div>';
+    });
+  })();
+  </script>
 </body>
 </html>

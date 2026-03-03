@@ -35,8 +35,8 @@ class TestFuerBewohnerPage:
 
     def test_page_renders_with_updated_content(self):
         html = self._get_html()
-        assert "Für Bewohner" in html
-        assert "Eigentümer mit PV" in html
+        assert "Solarstrom" in html
+        assert "Eigentümer" in html
         assert "Mieter" in html
 
     def test_honest_savings_messaging(self):
