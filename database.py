@@ -2912,6 +2912,46 @@ def get_lea_circuit_breaker() -> bool:
         return True
 
 
+def get_community_health_issues() -> List[Dict]:
+    """Detect community health issues: member drops, stale meter data."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                issues = []
+                # Member drops: communities where members left in last 7 days
+                cur.execute("""
+                    SELECT cm.community_id,
+                           'member_drop' AS issue,
+                           COUNT(*) || ' members left in 7 days' AS detail
+                    FROM community_members cm
+                    WHERE cm.status = 'left'
+                      AND cm.confirmed_at > NOW() - INTERVAL '7 days'
+                    GROUP BY cm.community_id
+                    HAVING COUNT(*) >= 1
+                """)
+                issues.extend([dict(row) for row in cur.fetchall()])
+
+                # Stale meter data: communities with no meter uploads in 30 days
+                cur.execute("""
+                    SELECT c.community_id,
+                           'stale_meter_data' AS issue,
+                           'No data for 30 days' AS detail
+                    FROM communities c
+                    WHERE c.status IN ('active', 'formation_started')
+                      AND NOT EXISTS (
+                          SELECT 1 FROM analytics_events ae
+                          WHERE ae.event_type = 'meter_data_uploaded'
+                            AND ae.data->>'community_id' = c.community_id
+                            AND ae.created_at > NOW() - INTERVAL '30 days'
+                      )
+                """)
+                issues.extend([dict(row) for row in cur.fetchall()])
+                return issues
+    except Exception as e:
+        logger.error(f"[DB] get_community_health_issues error: {e}")
+        return []
+
+
 def get_stale_outreach(days_threshold: int = 7) -> List[Dict]:
     """Get approved outreach decisions with no reply after days_threshold."""
     try:

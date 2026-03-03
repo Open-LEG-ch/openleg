@@ -1652,6 +1652,39 @@ server.tool(
   }
 );
 
+server.tool(
+  'get_community_health',
+  'Detect community health issues: member drops, stale meter data. Read-only, GREEN tier.',
+  {},
+  async () => {
+    const issues = [];
+    // Member drops in last 7 days
+    const drops = await query(`
+      SELECT cm.community_id, 'member_drop' AS issue,
+             COUNT(*) || ' members left in 7 days' AS detail
+      FROM community_members cm
+      WHERE cm.status = 'left' AND cm.confirmed_at > NOW() - INTERVAL '7 days'
+      GROUP BY cm.community_id HAVING COUNT(*) >= 1
+    `);
+    issues.push(...drops.rows);
+
+    // Stale meter data (no uploads in 30 days)
+    const stale = await query(`
+      SELECT c.community_id, 'stale_meter_data' AS issue, 'No data for 30 days' AS detail
+      FROM communities c
+      WHERE c.status IN ('active', 'formation_started')
+        AND NOT EXISTS (
+          SELECT 1 FROM analytics_events ae
+          WHERE ae.event_type = 'meter_data_uploaded'
+            AND ae.data->>'community_id' = c.community_id
+            AND ae.created_at > NOW() - INTERVAL '30 days'
+        )
+    `);
+    issues.push(...stale.rows);
+    return txt({ count: issues.length, issues });
+  }
+);
+
 // ============================================================
 // Telegram & Strategy Tools
 // ============================================================
