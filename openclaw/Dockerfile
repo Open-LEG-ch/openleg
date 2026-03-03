@@ -11,12 +11,12 @@ COPY mcp-badenleg-server/package.json ./
 RUN npm install --production
 COPY mcp-badenleg-server/ ./
 
-# Set up config directory and entrypoint
-COPY config/ /home/node/.openclaw/
+# Stage config (entrypoint copies to .openclaw so volume-mounted data persists)
+COPY config/ /opt/openclaw-config/
 COPY entrypoint.sh /opt/entrypoint.sh
 
 # Permissions
-RUN chown -R node:node /home/node /opt/mcp-badenleg-server /opt/entrypoint.sh \
+RUN chown -R node:node /home/node /opt/mcp-badenleg-server /opt/openclaw-config /opt/entrypoint.sh \
     && chmod +x /opt/entrypoint.sh
 
 USER node

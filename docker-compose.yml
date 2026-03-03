@@ -71,6 +71,8 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
       - INTERNAL_TOKEN=${INTERNAL_TOKEN}
+    volumes:
+      - openclaw_data:/home/node/.openclaw
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:18789/"]
       interval: 15s
@@ -114,6 +116,7 @@ volumes:
   postgres_data:
   caddy_data:
   caddy_config:
+  openclaw_data:
 
 networks:
   web:

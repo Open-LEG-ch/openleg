@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copy config into volume (preserves runtime data like device pairings across rebuilds)
+cp /opt/openclaw-config/openclaw.json /home/node/.openclaw/openclaw.json 2>/dev/null || true
+
 # Write Docker env vars to OpenClaw's .env so ${VAR} interpolation works in openclaw.json
 cat > /home/node/.openclaw/.env <<EOF
 GROQ_API_KEY=${GROQ_API_KEY}
