@@ -1627,6 +1627,31 @@ server.tool(
   }
 );
 
+server.tool(
+  'get_stale_outreach',
+  'Get approved outreach decisions with no reply after a threshold. Read-only, GREEN tier.',
+  {
+    days_threshold: z.number().default(7).describe('Days since approval without reply')
+  },
+  async ({ days_threshold }) => {
+    const result = await query(
+      `SELECT cd.request_id, cd.reference, cd.summary, cd.decided_at
+       FROM ceo_decisions cd
+       WHERE cd.activity = 'outreach'
+         AND cd.status = 'approved'
+         AND cd.decided_at < NOW() - INTERVAL '1 day' * $1
+         AND NOT EXISTS (
+           SELECT 1 FROM analytics_events ae
+           WHERE ae.event_type = 'outreach_reply'
+             AND ae.data->>'request_id' = cd.request_id
+         )
+       ORDER BY cd.decided_at ASC`,
+      [days_threshold]
+    );
+    return txt({ count: result.rowCount, stale_outreach: result.rows });
+  }
+);
+
 // ============================================================
 // Telegram & Strategy Tools
 // ============================================================

@@ -2912,6 +2912,30 @@ def get_lea_circuit_breaker() -> bool:
         return True
 
 
+def get_stale_outreach(days_threshold: int = 7) -> List[Dict]:
+    """Get approved outreach decisions with no reply after days_threshold."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT cd.request_id, cd.reference, cd.summary, cd.decided_at
+                    FROM ceo_decisions cd
+                    WHERE cd.activity = 'outreach'
+                      AND cd.status = 'approved'
+                      AND cd.decided_at < NOW() - INTERVAL '%s days'
+                      AND NOT EXISTS (
+                          SELECT 1 FROM analytics_events ae
+                          WHERE ae.event_type = 'outreach_reply'
+                            AND ae.data->>'request_id' = cd.request_id
+                      )
+                    ORDER BY cd.decided_at ASC
+                """, (days_threshold,))
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] get_stale_outreach error: {e}")
+        return []
+
+
 def is_db_available() -> bool:
     """Check if PostgreSQL database is available."""
     global _db_initialized
