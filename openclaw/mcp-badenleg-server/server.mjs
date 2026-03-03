@@ -21,6 +21,60 @@ function readonlyGuard() {
   return null;
 }
 
+// === Tier Guard System ===
+const ACTION_REGISTRY = {
+  send_outreach_email:    { tier: 'RED',    budget: { limit: 20, window: 86400, event: 'lea_send_outreach_email' } },
+  trigger_email:          { tier: 'RED',    budget: { limit: 50, window: 86400, event: 'lea_trigger_email' } },
+  update_consent:         { tier: 'RED',    budget: { limit: 10, window: 86400, event: 'lea_update_consent' } },
+  generate_leg_document:  { tier: 'RED',    budget: { limit: 10, window: 86400, event: 'lea_generate_leg_document' } },
+  request_approval:       { tier: 'RED',    budget: null },
+  upsert_tenant:          { tier: 'YELLOW', budget: { limit: 10, window: 86400, event: 'lea_upsert_tenant' } },
+  create_community:       { tier: 'YELLOW', budget: { limit: 5,  window: 86400, event: 'lea_create_community' } },
+  update_community_status:{ tier: 'YELLOW', budget: null },
+  add_community_member:   { tier: 'YELLOW', budget: { limit: 50, window: 86400, event: 'lea_add_community_member' } },
+  add_vnb_lead:           { tier: 'YELLOW', budget: null },
+  update_vnb_status:      { tier: 'YELLOW', budget: null },
+  track_strategy_item:    { tier: 'YELLOW', budget: null },
+  send_telegram:          { tier: 'GREEN',  budget: { limit: 30, window: 3600,  event: 'lea_send_telegram' } },
+};
+
+async function checkBudget(eventType, limit, window) {
+  if (!INTERNAL_TOKEN) return { allowed: true };
+  try {
+    const res = await fetch(`${FLASK_BASE_URL}/api/internal/check-budget`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
+      body: JSON.stringify({ event_type: eventType, limit, window })
+    });
+    if (!res.ok) return { allowed: false, reason: `HTTP ${res.status}` };
+    return await res.json();
+  } catch (e) {
+    console.error(`[tierGuard] checkBudget error: ${e.message}`);
+    return { allowed: false, reason: 'check_budget_error' };
+  }
+}
+
+function notifyYellow(toolName, summary) {
+  if (!INTERNAL_TOKEN) return;
+  fetch(`${FLASK_BASE_URL}/api/internal/notify-yellow`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
+    body: JSON.stringify({ tool_name: toolName, summary })
+  }).catch(e => console.error(`[tierGuard] notifyYellow error: ${e.message}`));
+}
+
+async function tierGuard(toolName) {
+  const entry = ACTION_REGISTRY[toolName];
+  if (!entry) return null;
+  if (entry.budget) {
+    const result = await checkBudget(entry.budget.event, entry.budget.limit, entry.budget.window);
+    if (!result.allowed) {
+      return { content: [{ type: 'text', text: `Budget exceeded for ${toolName}: ${result.used || '?'}/${result.limit || entry.budget.limit} (${result.reason || 'over limit'})` }] };
+    }
+  }
+  return null;
+}
+
 async function query(sql, params = []) {
   const start = Date.now();
   const result = await pool.query(sql, params);
@@ -368,6 +422,7 @@ server.tool(
   },
   async ({ building_id, ...fields }) => {
     const blocked = readonlyGuard(); if (blocked) return blocked;
+    const budgetBlock = await tierGuard('update_registration'); if (budgetBlock) return budgetBlock;
     const entries = Object.entries(fields).filter(([, v]) => v !== undefined);
     if (entries.length === 0) return txt({ error: 'No fields to update' });
 
@@ -412,6 +467,7 @@ server.tool(
   },
   async ({ name, admin_building_id, distribution_model, description }) => {
     const blocked = readonlyGuard(); if (blocked) return blocked;
+    const budgetBlock = await tierGuard('create_community'); if (budgetBlock) return budgetBlock;
     const community_id = `com_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     const result = await query(
@@ -426,6 +482,8 @@ server.tool(
       [community_id, admin_building_id]
     );
 
+    await query(`INSERT INTO analytics_events (event_type, data, created_at) VALUES ('lea_create_community', $1, NOW())`, [JSON.stringify({ community_id, name })]);
+    notifyYellow('create_community', `Created community "${name}" (${community_id})`);
     return txt(result.rows[0]);
   }
 );
@@ -439,6 +497,7 @@ server.tool(
   },
   async ({ community_id, status }) => {
     const blocked = readonlyGuard(); if (blocked) return blocked;
+    const budgetBlock = await tierGuard('update_community_status'); if (budgetBlock) return budgetBlock;
     const timestampCol = {
       formation_started: 'formation_started_at',
       dso_submitted: 'dso_submitted_at',
@@ -451,6 +510,7 @@ server.tool(
     sql += ` WHERE community_id = $1 RETURNING *`;
 
     const result = await query(sql, [community_id, status]);
+    notifyYellow('update_community_status', `${community_id} → ${status}`);
     return txt(result.rows[0] || { error: 'Not found' });
   }
 );
@@ -465,15 +525,30 @@ server.tool(
   },
   async ({ building_id, template_key, send_at }) => {
     const blocked = readonlyGuard(); if (blocked) return blocked;
+    const budgetBlock = await tierGuard('trigger_email'); if (budgetBlock) return budgetBlock;
+    if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN not configured' });
     const bRes = await query(`SELECT email FROM buildings WHERE building_id = $1`, [building_id]);
     if (bRes.rows.length === 0) return txt({ error: 'Building not found' });
 
-    const result = await query(
-      `INSERT INTO scheduled_emails (building_id, email, template_key, send_at, status, created_at)
-       VALUES ($1, $2, $3, $4, 'pending', NOW()) RETURNING *`,
-      [building_id, bRes.rows[0].email, template_key, send_at || new Date().toISOString()]
-    );
-    return txt(result.rows[0]);
+    const request_id = `trigger-email-${building_id.slice(0, 16)}-${Date.now().toString(36)}`;
+    try {
+      const res = await fetch(`${FLASK_BASE_URL}/api/internal/request-approval`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
+        body: JSON.stringify({
+          request_id,
+          activity: 'trigger_email',
+          reference: `${bRes.rows[0].email} / ${template_key}`,
+          summary: `Schedule "${template_key}" email to ${bRes.rows[0].email}`,
+          payload: { building_id, template_key, send_at: send_at || new Date().toISOString() }
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return txt({ error: data.error || `HTTP ${res.status}` });
+      return txt({ queued_for_approval: true, request_id, building_id, template_key });
+    } catch (e) {
+      return txt({ error: `Failed to queue: ${e.message}` });
+    }
   }
 );
 
@@ -487,6 +562,7 @@ server.tool(
   },
   async ({ community_id, building_id, status }) => {
     const blocked = readonlyGuard(); if (blocked) return blocked;
+    const budgetBlock = await tierGuard('update_formation_step'); if (budgetBlock) return budgetBlock;
     let sql = `UPDATE community_members SET status = $3`;
     if (status === 'confirmed') sql += `, confirmed_at = NOW()`;
     sql += ` WHERE community_id = $1 AND building_id = $2 RETURNING *`;
@@ -507,6 +583,7 @@ server.tool(
   },
   async ({ community_id, building_id, role, invited_by }) => {
     const blocked = readonlyGuard(); if (blocked) return blocked;
+    const budgetBlock = await tierGuard('add_community_member'); if (budgetBlock) return budgetBlock;
     const result = await query(
       `INSERT INTO community_members (community_id, building_id, role, status, invited_by, joined_at)
        VALUES ($1, $2, $3, 'invited', $4, NOW())
@@ -515,6 +592,8 @@ server.tool(
       [community_id, building_id, role, invited_by || null]
     );
     if (result.rows.length === 0) return txt({ error: 'Already a member' });
+    await query(`INSERT INTO analytics_events (event_type, data, created_at) VALUES ('lea_add_community_member', $1, NOW())`, [JSON.stringify({ community_id, building_id })]);
+    notifyYellow('add_community_member', `Added ${building_id} to ${community_id}`);
     return txt(result.rows[0]);
   }
 );
@@ -530,17 +609,30 @@ server.tool(
   },
   async ({ building_id, ...fields }) => {
     const blocked = readonlyGuard(); if (blocked) return blocked;
+    const budgetBlock = await tierGuard('update_consent'); if (budgetBlock) return budgetBlock;
+    if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN not configured' });
     const entries = Object.entries(fields).filter(([, v]) => v !== undefined);
     if (entries.length === 0) return txt({ error: 'No fields to update' });
 
-    const sets = entries.map(([k], i) => `${k} = $${i + 2}`);
-    const params = [building_id, ...entries.map(([, v]) => v)];
-
-    const result = await query(
-      `UPDATE consents SET ${sets.join(', ')} WHERE building_id = $1 RETURNING *`,
-      params
-    );
-    return txt(result.rows[0] || { error: 'Not found' });
+    const request_id = `consent-${building_id.slice(0, 16)}-${Date.now().toString(36)}`;
+    try {
+      const res = await fetch(`${FLASK_BASE_URL}/api/internal/request-approval`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
+        body: JSON.stringify({
+          request_id,
+          activity: 'update_consent',
+          reference: building_id,
+          summary: `Update consent for ${building_id}: ${JSON.stringify(Object.fromEntries(entries))}`,
+          payload: { building_id, ...Object.fromEntries(entries) }
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return txt({ error: data.error || `HTTP ${res.status}` });
+      return txt({ queued_for_approval: true, request_id, building_id });
+    } catch (e) {
+      return txt({ error: `Failed to queue: ${e.message}` });
+    }
   }
 );
 
@@ -601,6 +693,7 @@ server.tool(
   },
   async ({ territory, config: configObj, ...fields }) => {
     const blocked = readonlyGuard(); if (blocked) return blocked;
+    const budgetBlock = await tierGuard('upsert_tenant'); if (budgetBlock) return budgetBlock;
     const result = await query(
       `INSERT INTO white_label_configs (territory, utility_name, primary_color, secondary_color, contact_email, legal_entity, dso_contact, active, config, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
@@ -619,6 +712,8 @@ server.tool(
        fields.contact_email, fields.legal_entity, fields.dso_contact, fields.active,
        JSON.stringify(configObj)]
     );
+    await query(`INSERT INTO analytics_events (event_type, data, created_at) VALUES ('lea_upsert_tenant', $1, NOW())`, [JSON.stringify({ territory })]);
+    notifyYellow('upsert_tenant', `Upserted tenant "${territory}"`);
     return txt(result.rows[0]);
   }
 );
@@ -1074,12 +1169,14 @@ server.tool(
   async ({ vnb_id, status, notes }) => {
     const guard = readonlyGuard();
     if (guard) return guard;
+    const budgetBlock = await tierGuard('update_vnb_status'); if (budgetBlock) return budgetBlock;
     const validStages = ['lead', 'contacted', 'demo', 'trial', 'paid', 'churned'];
     if (!validStages.includes(status)) return txt({ error: 'Invalid status' });
     const res = await query(
       `UPDATE vnb_pipeline SET status = $2, notes = COALESCE($3, notes), updated_at = NOW() WHERE id = $1 RETURNING *`,
       [vnb_id, status, notes || null]
     );
+    notifyYellow('update_vnb_status', `VNB #${vnb_id} → ${status}`);
     return txt(res.rows[0] || { error: 'Not found' });
   }
 );
@@ -1098,11 +1195,13 @@ server.tool(
   async ({ vnb_name, municipality, bfs_number, population, score, notes }) => {
     const guard = readonlyGuard();
     if (guard) return guard;
+    const budgetBlock = await tierGuard('add_vnb_lead'); if (budgetBlock) return budgetBlock;
     const res = await query(
       `INSERT INTO vnb_pipeline (vnb_name, municipality, bfs_number, population, score, notes, status, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, 'lead', NOW(), NOW()) RETURNING *`,
       [vnb_name, municipality || null, bfs_number || null, population || null, score || null, notes || null]
     );
+    notifyYellow('add_vnb_lead', `Added VNB lead: ${vnb_name}`);
     return txt(res.rows[0]);
   }
 );
@@ -1141,17 +1240,27 @@ server.tool(
   },
   async ({ community_id, doc_type }) => {
     const blocked = readonlyGuard(); if (blocked) return blocked;
+    const budgetBlock = await tierGuard('generate_leg_document'); if (budgetBlock) return budgetBlock;
+    if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN not configured' });
+
+    const request_id = `legdoc-${community_id.slice(0, 16)}-${doc_type}-${Date.now().toString(36)}`;
     try {
-      const flaskUrl = process.env.FLASK_URL || 'http://flask:5000';
-      const res = await fetch(`${flaskUrl}/api/formation/generate-document`, {
+      const res = await fetch(`${FLASK_BASE_URL}/api/internal/request-approval`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ community_id, doc_type })
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
+        body: JSON.stringify({
+          request_id,
+          activity: 'generate_leg_document',
+          reference: `${community_id} / ${doc_type}`,
+          summary: `Generate ${doc_type} for community ${community_id}`,
+          payload: { community_id, doc_type }
+        })
       });
       const data = await res.json();
-      return txt(data);
+      if (!res.ok) return txt({ error: data.error || `HTTP ${res.status}` });
+      return txt({ queued_for_approval: true, request_id, community_id, doc_type });
     } catch (e) {
-      return txt({ error: e.message });
+      return txt({ error: `Failed to queue: ${e.message}` });
     }
   }
 );
@@ -1280,6 +1389,7 @@ server.tool(
   async ({ to, subject, body, inbox, reference }) => {
     const guard = readonlyGuard();
     if (guard) return guard;
+    const budgetBlock = await tierGuard('send_outreach_email'); if (budgetBlock) return budgetBlock;
     if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN not configured' });
     const slug = (reference || to).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
     const request_id = `outreach-${slug}-${Date.now().toString(36)}`;
@@ -1447,6 +1557,7 @@ server.tool(
   async ({ request_id, activity, reference, summary, payload }) => {
     const guard = readonlyGuard();
     if (guard) return guard;
+    const budgetBlock = await tierGuard('request_approval'); if (budgetBlock) return budgetBlock;
     if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN not configured' });
     try {
       const res = await fetch(`${FLASK_BASE_URL}/api/internal/request-approval`, {
@@ -1503,6 +1614,7 @@ server.tool(
     urgent: z.boolean().default(false).describe('If true, adds urgent prefix')
   },
   async ({ message, category, urgent }) => {
+    const budgetBlock = await tierGuard('send_telegram'); if (budgetBlock) return budgetBlock;
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
       return txt({ error: 'TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured' });
     }
@@ -1516,6 +1628,7 @@ server.tool(
       });
       const data = await res.json();
       if (!data.ok) return txt({ error: data.description });
+      await query(`INSERT INTO analytics_events (event_type, data, created_at) VALUES ('lea_send_telegram', $1, NOW())`, [JSON.stringify({ category })]);
       return txt({ sent: true, message_id: data.result.message_id });
     } catch (e) {
       return txt({ error: e.message });
@@ -1535,12 +1648,14 @@ server.tool(
   async ({ week, item, status, notes }) => {
     const guard = readonlyGuard();
     if (guard) return guard;
+    const budgetBlock = await tierGuard('track_strategy_item'); if (budgetBlock) return budgetBlock;
     const result = await query(`
       INSERT INTO strategy_tracker (week, item, status, notes, updated_at)
       VALUES ($1, $2, $3, $4, NOW())
       ON CONFLICT (week, item) DO UPDATE SET status = $3, notes = $4, updated_at = NOW()
       RETURNING *
     `, [week, item, status, notes || '']);
+    notifyYellow('track_strategy_item', `W${week}: ${item} → ${status}`);
     return txt(result.rows[0]);
   }
 );

@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 AGENTMAIL_API_KEY = os.getenv('AGENTMAIL_API_KEY', '').strip()
-AGENTMAIL_DOMAIN = os.getenv('AGENTMAIL_DOMAIN', 'agentmail.to')
+AGENTMAIL_DOMAIN = os.getenv('AGENTMAIL_DOMAIN', 'mail.openleg.ch')
 
 _client = None
 
@@ -46,6 +46,10 @@ def ensure_inbox(username, domain=None):
         logger.info(f"[AgentMail] Created inbox: {inbox.inbox_id}")
         return inbox.inbox_id
     except Exception as e:
+        err_str = str(e)
+        if 'AlreadyExists' in err_str or 'IsTaken' in err_str or 'already exists' in err_str.lower():
+            logger.info(f"[AgentMail] Inbox {target} already exists")
+            return target
         logger.error(f"[AgentMail] Failed to ensure inbox {target}: {e}")
         return None
 

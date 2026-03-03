@@ -171,6 +171,76 @@ def _execute_approved_action(decision):
             })
         return sent, f"Email to {to}: {'sent' if sent else 'failed'}"
 
+    if activity == 'trigger_email':
+        building_id = payload.get('building_id', '')
+        template_key = payload.get('template_key', '')
+        send_at = payload.get('send_at', '')
+        if not building_id or not template_key:
+            return False, "Missing building_id/template_key in payload"
+        building = db.get_building(building_id)
+        if not building:
+            return False, f"Building {building_id} not found"
+        email = building.get('email', '')
+        try:
+            with db.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """INSERT INTO scheduled_emails (building_id, email, template_key, send_at, status, created_at)
+                           VALUES (%s, %s, %s, %s, 'pending', NOW()) RETURNING id""",
+                        (building_id, email, template_key, send_at or 'NOW()')
+                    )
+                    row = cur.fetchone()
+            db.track_event('lea_trigger_email', data={
+                'building_id': building_id, 'template_key': template_key,
+                'request_id': decision.get('request_id')
+            })
+            return True, f"Scheduled email #{row['id']} for {email}"
+        except Exception as e:
+            return False, f"trigger_email failed: {e}"
+
+    if activity == 'update_consent':
+        building_id = payload.get('building_id', '')
+        fields = {k: v for k, v in payload.items() if k in ('share_with_neighbors', 'share_with_utility', 'updates_opt_in') and v is not None}
+        if not building_id or not fields:
+            return False, "Missing building_id or consent fields"
+        try:
+            sets = [f"{k} = %s" for k in fields]
+            vals = list(fields.values()) + [building_id]
+            with db.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f"UPDATE consents SET {', '.join(sets)} WHERE building_id = %s", vals)
+                    if cur.rowcount == 0:
+                        return False, f"No consent row for {building_id}"
+            db.track_event('lea_update_consent', data={
+                'building_id': building_id, 'fields': fields,
+                'request_id': decision.get('request_id')
+            })
+            return True, f"Updated consent for {building_id}: {fields}"
+        except Exception as e:
+            return False, f"update_consent failed: {e}"
+
+    if activity == 'generate_leg_document':
+        community_id = payload.get('community_id', '')
+        doc_type = payload.get('doc_type', '')
+        if not community_id or not doc_type:
+            return False, "Missing community_id/doc_type"
+        try:
+            import urllib.request
+            body = json.dumps({"community_id": community_id, "doc_type": doc_type}).encode()
+            req = urllib.request.Request(
+                f"http://localhost:5000/api/formation/generate-document",
+                data=body, headers={"Content-Type": "application/json"}
+            )
+            resp = urllib.request.urlopen(req, timeout=30)
+            result = json.loads(resp.read())
+            db.track_event('lea_generate_leg_document', data={
+                'community_id': community_id, 'doc_type': doc_type,
+                'request_id': decision.get('request_id')
+            })
+            return True, f"Generated {doc_type} for {community_id}"
+        except Exception as e:
+            return False, f"generate_leg_document failed: {e}"
+
     return False, f"Unknown activity: {activity}"
 
 
@@ -769,9 +839,17 @@ def webhook_telegram():
             _send_telegram_message("Pending:\n" + "\n".join(lines), reply_to_message_id=msg.get('message_id'))
         return jsonify({"ok": True})
 
+    # reset-lea command
+    if cmd == 'reset-lea':
+        db.set_lea_circuit_breaker(False)
+        _send_telegram_message("\u2705 LEA circuit breaker reset. All budgeted tools restored.",
+                               reply_to_message_id=msg.get('message_id'))
+        return jsonify({"ok": True})
+
     # approve / deny
     if len(parts) < 2 or cmd not in ('approve', 'deny'):
-        help_text = "Commands:\n`approve <id>` approve a request\n`deny <id>` deny a request\n`pending` list pending requests"
+        help_text = ("Commands:\n`approve <id>` approve a request\n`deny <id>` deny a request\n"
+                     "`pending` list pending requests\n`reset-lea` reset LEA circuit breaker")
         _send_telegram_message(help_text, reply_to_message_id=msg.get('message_id'))
         return jsonify({"ok": True})
 
@@ -793,6 +871,11 @@ def webhook_telegram():
         reply = f"Approved `{request_id}`: {detail}"
     else:
         reply = f"Denied `{request_id}`."
+        # Circuit breaker: 3+ denials in 24h trips it
+        denial_count = db.count_recent_denials(hours=24)
+        if denial_count >= 3:
+            db.set_lea_circuit_breaker(True)
+            reply += "\n\n\U0001f6d1 *Circuit breaker tripped.* 3+ denials in 24h. All budgeted LEA tools blocked. Send `reset-lea` to restore."
 
     _send_telegram_message(reply, reply_to_message_id=msg.get('message_id'))
     return jsonify({"ok": True})
@@ -834,6 +917,42 @@ def api_internal_request_approval():
     if not inserted:
         return jsonify({"error": "duplicate request_id"}), 409
     return jsonify({"ok": True, "request_id": request_id, "status": "pending"})
+
+
+# --- LEA Budget & Yellow Notification ---
+@app.route("/api/internal/check-budget", methods=['POST'])
+def api_internal_check_budget():
+    """Check if LEA action is within budget. Fail-closed on error."""
+    token = request.headers.get('X-Internal-Token', '')
+    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
+        abort(403)
+    # Circuit breaker check first
+    if db.get_lea_circuit_breaker():
+        return jsonify({"allowed": False, "reason": "circuit_breaker_tripped"})
+    data = request.get_json(silent=True) or {}
+    event_type = data.get('event_type', '')
+    limit = data.get('limit')
+    window = data.get('window', 86400)
+    if not event_type or limit is None:
+        return jsonify({"allowed": True, "used": 0, "limit": None, "window": window})
+    used = db.count_budget_events(event_type, window)
+    allowed = used < limit
+    return jsonify({"allowed": allowed, "used": used, "limit": limit, "window": window})
+
+
+@app.route("/api/internal/notify-yellow", methods=['POST'])
+def api_internal_notify_yellow():
+    """Send Telegram FYI for YELLOW tier actions."""
+    token = request.headers.get('X-Internal-Token', '')
+    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
+        abort(403)
+    data = request.get_json(silent=True) or {}
+    tool_name = security_utils.escape_telegram_markdown(data.get('tool_name', 'unknown'))
+    summary = security_utils.escape_telegram_markdown(data.get('summary', '')[:500])
+    tg_text = f"\U0001f7e1 *YELLOW ACTION*\n\n*Tool:* `{tool_name}`\n*Summary:* {summary}"
+    _send_telegram_message(tg_text)
+    db.track_event(f'lea_yellow_{data.get("tool_name", "unknown")}', data={'summary': data.get('summary', '')})
+    return jsonify({"ok": True})
 
 
 # --- Address API ---

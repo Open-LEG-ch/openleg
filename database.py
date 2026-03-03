@@ -708,6 +708,15 @@ def _create_tables():
                 )
             """)
 
+            # Platform settings (LEA circuit breaker, etc.)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS platform_settings (
+                    key VARCHAR(128) PRIMARY KEY,
+                    value JSONB NOT NULL,
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+
             logger.info("[DB] Tables and indexes created successfully")
 
 
@@ -2754,6 +2763,72 @@ def get_active_communities_for_nudge(min_members: int = 3, cooldown_days: int = 
     except Exception as e:
         logger.error(f"[DB] Error getting communities for nudge: {e}")
         return []
+
+
+def count_budget_events(event_type: str, window_seconds: int) -> int:
+    """Count analytics_events of given type within window. Returns 999 on error (fail-closed)."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT COUNT(*) as cnt FROM analytics_events
+                    WHERE event_type = %s AND created_at > NOW() - make_interval(secs => %s)
+                """, (event_type, window_seconds))
+                return int(cur.fetchone()['cnt'])
+    except Exception as e:
+        logger.error(f"[DB] count_budget_events error: {e}")
+        return 999
+
+
+def count_recent_denials(hours: int = 24) -> int:
+    """Count CEO denials in the last N hours. Returns 999 on error (fail-closed)."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT COUNT(*) as cnt FROM ceo_decisions
+                    WHERE status = 'denied' AND decided_at > NOW() - make_interval(hours => %s)
+                """, (hours,))
+                return int(cur.fetchone()['cnt'])
+    except Exception as e:
+        logger.error(f"[DB] count_recent_denials error: {e}")
+        return 999
+
+
+def set_lea_circuit_breaker(tripped: bool) -> bool:
+    """Upsert lea_circuit_breaker in platform_settings."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                import json as _json
+                cur.execute("""
+                    INSERT INTO platform_settings (key, value, updated_at)
+                    VALUES ('lea_circuit_breaker', %s, NOW())
+                    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+                """, (_json.dumps({"tripped": tripped}),))
+                return True
+    except Exception as e:
+        logger.error(f"[DB] set_lea_circuit_breaker error: {e}")
+        return False
+
+
+def get_lea_circuit_breaker() -> bool:
+    """Read lea_circuit_breaker. Returns True (tripped) on error (fail-closed)."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT value FROM platform_settings WHERE key = 'lea_circuit_breaker'")
+                row = cur.fetchone()
+                if not row:
+                    return False
+                val = row['value']
+                if isinstance(val, str):
+                    import json as _json
+                    val = _json.loads(val)
+                return bool(val.get('tripped', False))
+    except Exception as e:
+        logger.error(f"[DB] get_lea_circuit_breaker error: {e}")
+        return True
 
 
 def is_db_available() -> bool:
