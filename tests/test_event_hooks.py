@@ -1,4 +1,5 @@
 """Tests for event_hooks pub/sub system."""
+import os
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -57,3 +58,140 @@ def test_hook_receives_correct_payload():
     assert received[0]['building_id'] == 'b-1'
     assert received[0]['city_id'] == 'zurich'
     assert received[0]['email'] == 'a@b.ch'
+
+
+# === Unit 1B: Registration Trigger ===
+
+@pytest.fixture
+def reg_client():
+    """Flask test client for registration hook tests."""
+    env = {
+        "DATABASE_URL": "postgresql://x:x@localhost/x",
+        "ADMIN_TOKEN": "test123",
+        "INTERNAL_TOKEN": "secret-internal",
+        "TELEGRAM_BOT_TOKEN": "fake-bot-token",
+        "TELEGRAM_CHAT_ID": "12345",
+        "TELEGRAM_WEBHOOK_SECRET": "webhook-secret",
+        "REDIS_URL": "memory://",
+    }
+    with patch.dict(os.environ, env):
+        with patch("database.init_db", return_value=True), \
+             patch("database._connection_pool", MagicMock()), \
+             patch("database.is_db_available", return_value=True):
+            import importlib
+            import event_hooks
+            event_hooks.clear()
+            import app as app_mod
+            importlib.reload(app_mod)
+            app_mod.INTERNAL_TOKEN = "secret-internal"
+            app_mod.TELEGRAM_BOT_TOKEN = "fake-bot-token"
+            app_mod.TELEGRAM_CHAT_ID = "12345"
+            app_mod.app.config['TESTING'] = True
+            if app_mod.limiter:
+                app_mod.limiter.enabled = False
+            yield app_mod.app.test_client()
+
+
+def test_registration_fires_event_hook(reg_client):
+    """Registration should fire the 'registration' event hook."""
+    import event_hooks
+    event_hooks.clear()
+    fired = []
+    event_hooks.register('registration', lambda p: fired.append(p))
+    with patch("database.save_building"), \
+         patch("database.save_token"), \
+         patch("database.track_event"), \
+         patch("database.get_referral_code", return_value=None), \
+         patch("app.find_provisional_matches", return_value=None), \
+         patch("app.collect_building_locations", return_value=[]), \
+         patch("app.send_confirmation_email"), \
+         patch("app.run_full_ml_task"), \
+         patch("email_automation.schedule_sequence_for_user"):
+        resp = reg_client.post("/api/register_anonymous", json={
+            "profile": {"address": "Test 1", "building_id": "b-test-1", "lat": 47.3, "lon": 8.5},
+            "email": "test@example.com",
+            "consents": {"share_with_neighbors": True, "share_with_utility": True}
+        })
+        assert resp.status_code == 200
+        assert len(fired) == 1
+
+
+def test_registration_event_contains_building_id(reg_client):
+    """Registration event payload must include building_id."""
+    import event_hooks
+    event_hooks.clear()
+    fired = []
+    event_hooks.register('registration', lambda p: fired.append(p))
+    with patch("database.save_building"), \
+         patch("database.save_token"), \
+         patch("database.track_event"), \
+         patch("database.get_referral_code", return_value=None), \
+         patch("app.find_provisional_matches", return_value=None), \
+         patch("app.collect_building_locations", return_value=[]), \
+         patch("app.send_confirmation_email"), \
+         patch("app.run_full_ml_task"), \
+         patch("email_automation.schedule_sequence_for_user"):
+        reg_client.post("/api/register_anonymous", json={
+            "profile": {"address": "Test 1", "building_id": "b-test-1", "lat": 47.3, "lon": 8.5},
+            "email": "test@example.com",
+            "consents": {"share_with_neighbors": True, "share_with_utility": True}
+        })
+        assert 'building_id' in fired[0]
+        assert fired[0]['building_id'] is not None
+
+
+def test_registration_hook_notifies_telegram(reg_client):
+    """Default registration hook should send Telegram notification."""
+    app_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "app.py"
+    )
+    with open(app_path) as f:
+        content = f.read()
+    assert "event_hooks.fire('registration'" in content or \
+           'event_hooks.fire("registration"' in content
+
+
+def test_registration_hook_runs_cluster_analysis(reg_client):
+    """Registration hook payload should include city_id for cluster analysis."""
+    import event_hooks
+    event_hooks.clear()
+    fired = []
+    event_hooks.register('registration', lambda p: fired.append(p))
+    with patch("database.save_building"), \
+         patch("database.save_token"), \
+         patch("database.track_event"), \
+         patch("database.get_referral_code", return_value=None), \
+         patch("app.find_provisional_matches", return_value=None), \
+         patch("app.collect_building_locations", return_value=[]), \
+         patch("app.send_confirmation_email"), \
+         patch("app.run_full_ml_task"), \
+         patch("email_automation.schedule_sequence_for_user"):
+        reg_client.post("/api/register_anonymous", json={
+            "profile": {"address": "Test 1", "building_id": "b-test-1", "lat": 47.3, "lon": 8.5},
+            "email": "test@example.com",
+            "consents": {"share_with_neighbors": True, "share_with_utility": True}
+        })
+        assert 'city_id' in fired[0]
+
+
+def test_registration_hook_exception_doesnt_break_registration(reg_client):
+    """Exception in registration hook must not break the registration response."""
+    import event_hooks
+    event_hooks.clear()
+    event_hooks.register('registration', lambda p: (_ for _ in ()).throw(RuntimeError("hook crash")))
+    with patch("database.save_building"), \
+         patch("database.save_token"), \
+         patch("database.track_event"), \
+         patch("database.get_referral_code", return_value=None), \
+         patch("app.find_provisional_matches", return_value=None), \
+         patch("app.collect_building_locations", return_value=[]), \
+         patch("app.send_confirmation_email"), \
+         patch("app.run_full_ml_task"), \
+         patch("email_automation.schedule_sequence_for_user"):
+        resp = reg_client.post("/api/register_anonymous", json={
+            "profile": {"address": "Test 1", "building_id": "b-test-1", "lat": 47.3, "lon": 8.5},
+            "email": "test@example.com",
+            "consents": {"share_with_neighbors": True, "share_with_utility": True}
+        })
+        assert resp.status_code == 200

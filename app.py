@@ -59,6 +59,9 @@ import email_automation
 # --- Municipality Seeder ---
 import municipality_seeder
 
+# --- Event Hooks ---
+import event_hooks
+
 # --- Blueprints ---
 from municipality import municipality_bp
 from api_public import public_api_bp
@@ -1133,6 +1136,7 @@ def api_register_anonymous():
     threading.Thread(target=email_automation.schedule_sequence_for_user, args=(building_id, email), daemon=True).start()
 
     db.track_event('registration', building_id, {'type': 'anonymous', 'city_id': city_id})
+    event_hooks.fire('registration', {'building_id': building_id, 'city_id': city_id, 'email': email, 'type': 'anonymous'})
 
     # Build response
     cluster_info = find_provisional_matches(profile, city_id=city_id)
@@ -1221,6 +1225,7 @@ def api_register_full():
     threading.Thread(target=email_automation.schedule_sequence_for_user, args=(building_id, email), daemon=True).start()
 
     db.track_event('registration', building_id, {'type': 'registered', 'city_id': city_id})
+    event_hooks.fire('registration', {'building_id': building_id, 'city_id': city_id, 'email': email, 'type': 'registered'})
 
     cluster_info = find_provisional_matches(profile, city_id=city_id)
     locations = collect_building_locations(city_id=city_id, exclude_building_id=building_id)
