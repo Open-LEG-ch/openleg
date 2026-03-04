@@ -218,7 +218,7 @@ def render_outreach_email(municipality_profile, app=None):
     score = municipality_profile.get('energy_transition_score', 0)
     gap = municipality_profile.get('leg_value_gap_chf', 0)
     subdomain = name.lower().replace(' ', '-') if name else ''
-    profil_url = f"{APP_BASE_URL}/gemeinde/{bfs}/profil"
+    profil_url = f"{APP_BASE_URL}/gemeinde/profil/{bfs}"
     claim_url = f"{APP_BASE_URL}/gemeinde/onboarding?subdomain={subdomain}"
 
     ctx = dict(
@@ -318,7 +318,7 @@ def process_municipality_outreach(app=None):
 
         tpl_config = OUTREACH_TEMPLATES.get(followup_number, OUTREACH_TEMPLATES[0])
         subdomain = name.lower().replace(' ', '-') if name else ''
-        profil_url = f"{APP_BASE_URL}/gemeinde/{bfs}/profil"
+        profil_url = f"{APP_BASE_URL}/gemeinde/profil/{bfs}"
         claim_url = f"{APP_BASE_URL}/gemeinde/onboarding?subdomain={subdomain}"
 
         ctx = dict(

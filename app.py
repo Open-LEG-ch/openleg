@@ -656,7 +656,10 @@ def pricing():
 def vnb_transparenz():
     from public_data import compute_vnb_transparency_score
     kanton_filter = request.args.get('kanton', '').strip().upper()
-    year = int(request.args.get('year', 2026))
+    try:
+        year = int(request.args.get('year', 2026))
+    except (ValueError, TypeError):
+        year = 2026
 
     tariffs_by_op = db.get_all_elcom_tariffs_by_operator(year)
     profiles = db.get_all_municipality_profiles()
@@ -679,18 +682,23 @@ def vnb_transparenz():
                 continue
             munis = munis_filtered
 
+        # Use filtered municipality set for score when kanton filter active
+        filtered_bfs = {m.get('bfs_number') for m in munis if m.get('bfs_number')}
+        filtered_tariffs = [t for t in tariffs if t.get('bfs_number') in filtered_bfs] if kanton_filter else tariffs
+        served_count = len(filtered_bfs) if kanton_filter else len(bfs_set)
+
         muni_info = sorted(
             [{'name': m.get('name', ''), 'bfs_number': m.get('bfs_number')} for m in munis if m.get('name')],
             key=lambda x: x['name']
         )
         muni_names = [m['name'] for m in muni_info]
-        score = compute_vnb_transparency_score(tariffs, municipalities_served=len(bfs_set))
+        score = compute_vnb_transparency_score(filtered_tariffs, municipalities_served=served_count)
         score_sum += score
-        all_municipalities_covered |= bfs_set
+        all_municipalities_covered |= filtered_bfs if kanton_filter else bfs_set
         rankings.append({
             'operator_name': operator,
             'transparency_score': score,
-            'municipalities_served': len(bfs_set),
+            'municipalities_served': served_count,
             'municipality_names': muni_names[:10],
             'municipality_info': muni_info[:10],
             'bfs_numbers': list(bfs_set),
@@ -1767,7 +1775,11 @@ def api_cron_refresh_public_data():
         result = public_data.refresh_all_municipalities()
     else:
         kanton = scope if len(scope) == 2 and scope.isalpha() else 'ZH'
-        result = public_data.refresh_canton(kanton, year=int(data.get('year', 2026)))
+        try:
+            year = int(data.get('year', 2026))
+        except (ValueError, TypeError):
+            year = 2026
+        result = public_data.refresh_canton(kanton, year=year)
     return jsonify(result)
 
 
@@ -1864,7 +1876,11 @@ def api_cron_process_municipality_outreach():
     data = request.get_json(silent=True) or {}
     schedule_new = data.get('schedule_new', False)
     if schedule_new:
-        scheduled = email_automation.schedule_outreach_batch(limit=int(data.get('limit', 10)))
+        try:
+            limit = int(data.get('limit', 10))
+        except (ValueError, TypeError):
+            limit = 10
+        scheduled = email_automation.schedule_outreach_batch(limit=limit)
     else:
         scheduled = 0
     result = email_automation.process_municipality_outreach(app)

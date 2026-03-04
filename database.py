@@ -3256,7 +3256,7 @@ def get_sent_outreach_needing_followup(followup_number: int, days_since: int) ->
                     SELECT prev.* FROM municipality_outreach_queue prev
                     WHERE prev.status = 'sent'
                       AND prev.followup_number = %s
-                      AND prev.sent_at < NOW() - INTERVAL '%s days'
+                      AND prev.sent_at < NOW() - make_interval(days => %s)
                       AND NOT EXISTS (
                           SELECT 1 FROM municipality_outreach_queue nxt
                           WHERE nxt.contact_email = prev.contact_email
