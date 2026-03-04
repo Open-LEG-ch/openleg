@@ -100,6 +100,7 @@ def mock_db():
         db.save_municipality_profile = MagicMock(return_value=True)
         db.get_sonnendach_municipal = MagicMock(return_value=MOCK_SONNENDACH)
         db.save_sonnendach_municipal = MagicMock(return_value=True)
+        db.get_elcom_last_refresh = MagicMock(return_value={'last_refresh': None, 'record_count': 0})
         yield db
 
 

@@ -229,7 +229,7 @@ class TestCronScope:
         resp = full_client.post('/api/cron/refresh-public-data',
             headers={'X-Cron-Secret': 'test-cron-secret'})
         assert resp.status_code == 200
-        mock_canton.assert_called_once_with('ZH')
+        mock_canton.assert_called_once_with('ZH', year=2026)
         mock_all.assert_not_called()
 
 

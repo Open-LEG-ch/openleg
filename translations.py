@@ -847,6 +847,31 @@ TRANSLATIONS = {
         'fr': 'Source: ElCom LINDAS SPARQL Endpoint (lindas.admin.ch). Mise à jour: annuelle.',
         'it': 'Fonte: ElCom LINDAS SPARQL Endpoint (lindas.admin.ch). Aggiornamento: annuale.',
     },
+    'transparenz_letzte_aktualisierung': {
+        'de': 'Letzte Aktualisierung',
+        'fr': 'Dernière mise à jour',
+        'it': 'Ultimo aggiornamento',
+    },
+    'transparenz_datensaetze': {
+        'de': 'Datensätze',
+        'fr': 'enregistrements',
+        'it': 'record',
+    },
+    'transparenz_stats_vnb': {
+        'de': 'Netzbetreiber erfasst',
+        'fr': 'Gestionnaires de réseau enregistrés',
+        'it': 'Gestori di rete registrati',
+    },
+    'transparenz_stats_avg': {
+        'de': 'Durchschnittlicher Score',
+        'fr': 'Score moyen',
+        'it': 'Score medio',
+    },
+    'transparenz_stats_gemeinden': {
+        'de': 'Gemeinden abgedeckt',
+        'fr': 'Communes couvertes',
+        'it': 'Comuni coperti',
+    },
 
     # === Gemeinde Toolkit page (8 keys) ===
     'toolkit_title': {

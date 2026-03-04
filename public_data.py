@@ -76,14 +76,83 @@ def fetch_elcom_tariffs(bfs_number: int, year: int = 2026) -> List[Dict]:
 
 
 def fetch_all_elcom_tariffs(kanton: str = 'ZH', year: int = 2026, bfs_numbers: List[int] = None) -> List[Dict]:
-    """Batch fetch ElCom tariffs for multiple municipalities."""
+    """Batch fetch ElCom tariffs for multiple municipalities (legacy, uses bulk)."""
     if bfs_numbers is None:
         bfs_numbers = ZH_BFS_NUMBERS
+    return fetch_elcom_tariffs_bulk(bfs_numbers, year)
+
+
+ELCOM_SPARQL_BULK_TEMPLATE = """
+PREFIX schema: <http://schema.org/>
+PREFIX cube: <https://cube.link/>
+PREFIX elcom: <https://energy.ld.admin.ch/elcom/electricityprice/dimension/>
+
+SELECT ?bfs ?operator ?category ?total ?energy ?grid ?municipality_fee ?kev
+WHERE {{
+  VALUES ?municipality {{ {values_block} }}
+
+  ?obs a cube:Observation ;
+       elcom:municipality ?municipality ;
+       elcom:period "{year}"^^<http://www.w3.org/2001/XMLSchema#gYear> ;
+       elcom:operator ?operatorUri ;
+       elcom:category ?categoryUri ;
+       elcom:total ?total .
+
+  OPTIONAL {{ ?obs elcom:gridusage ?grid }}
+  OPTIONAL {{ ?obs elcom:energy ?energy }}
+  OPTIONAL {{ ?obs elcom:charge ?municipality_fee }}
+  OPTIONAL {{ ?obs elcom:aidfee ?kev }}
+
+  ?operatorUri schema:name ?operator .
+  ?categoryUri schema:name ?category .
+
+  BIND(REPLACE(STR(?municipality), "https://ld.admin.ch/municipality/", "") AS ?bfs)
+}}
+ORDER BY ?operator ?category
+"""
+
+
+def fetch_elcom_tariffs_bulk(bfs_numbers: List[int], year: int = 2026, chunk_size: int = 50) -> List[Dict]:
+    """Bulk SPARQL query with VALUES block, chunked to avoid timeout. Returns same shape as fetch_elcom_tariffs()."""
+    if not bfs_numbers:
+        return []
+
     all_tariffs = []
-    for bfs in bfs_numbers:
-        tariffs = fetch_elcom_tariffs(bfs, year)
-        all_tariffs.extend(tariffs)
-    logger.info(f"[PUBLIC_DATA] Batch ElCom: {len(all_tariffs)} total records for {len(bfs_numbers)} municipalities")
+    chunks = [bfs_numbers[i:i + chunk_size] for i in range(0, len(bfs_numbers), chunk_size)]
+
+    for chunk in chunks:
+        values_block = " ".join(f"<https://ld.admin.ch/municipality/{bfs}>" for bfs in chunk)
+        sparql = ELCOM_SPARQL_BULK_TEMPLATE.format(values_block=values_block, year=year)
+        try:
+            resp = requests.post(
+                LINDAS_ENDPOINT,
+                data={"query": sparql},
+                headers={"Accept": "application/sparql-results+json"},
+                timeout=60
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            for binding in data.get("results", {}).get("bindings", []):
+                bfs_val = binding.get("bfs", {}).get("value", "")
+                try:
+                    bfs_int = int(bfs_val)
+                except (ValueError, TypeError):
+                    bfs_int = 0
+                all_tariffs.append({
+                    "bfs_number": bfs_int,
+                    "year": year,
+                    "operator_name": binding.get("operator", {}).get("value", ""),
+                    "category": binding.get("category", {}).get("value", ""),
+                    "total_rp_kwh": _parse_decimal(binding.get("total")),
+                    "energy_rp_kwh": _parse_decimal(binding.get("energy")),
+                    "grid_rp_kwh": _parse_decimal(binding.get("grid")),
+                    "municipality_fee_rp_kwh": _parse_decimal(binding.get("municipality_fee")),
+                    "kev_rp_kwh": _parse_decimal(binding.get("kev")),
+                })
+        except Exception as e:
+            logger.error(f"[PUBLIC_DATA] Bulk ElCom fetch failed for chunk of {len(chunk)}: {e}")
+
+    logger.info(f"[PUBLIC_DATA] Bulk ElCom: {len(all_tariffs)} total records for {len(bfs_numbers)} municipalities")
     return all_tariffs
 
 
@@ -317,15 +386,23 @@ def refresh_canton(kanton: str = 'ZH', year: int = 2026) -> Dict:
     all_bfs = set(er_by_bfs.keys())
     if kanton.upper() == 'ZH':
         all_bfs |= set(ZH_BFS_NUMBERS)
+
+    # Bulk fetch ElCom tariffs for all BFS at once
+    bulk_tariffs = fetch_elcom_tariffs_bulk(list(all_bfs), year)
+    if bulk_tariffs:
+        db.save_elcom_tariffs(bulk_tariffs)
+    # Index by BFS
+    tariffs_by_bfs = {}
+    for t in bulk_tariffs:
+        tariffs_by_bfs.setdefault(t['bfs_number'], []).append(t)
+
     for bfs in all_bfs:
         try:
             er = er_by_bfs.get(bfs, {})
             sd = sd_by_bfs.get(bfs, {})
 
-            # ElCom tariffs
-            tariffs = fetch_elcom_tariffs(bfs, year)
-            if tariffs:
-                db.save_elcom_tariffs(tariffs)
+            # ElCom tariffs (from bulk result)
+            tariffs = tariffs_by_bfs.get(bfs, [])
 
             h4 = next((t for t in tariffs if t.get("category", "").startswith("H4")), None)
             value_gap = compute_leg_value_gap(h4) if h4 else {"annual_savings_chf": 0}

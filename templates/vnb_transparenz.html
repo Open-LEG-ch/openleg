@@ -39,6 +39,24 @@
       <p class="text-lg text-ink-muted max-w-3xl">{{ t('transparenz_subtitle') }}</p>
     </header>
 
+    <!-- Stats cards -->
+    {% if operator_count %}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 text-center">
+        <div class="text-3xl font-bold text-teal-700">{{ operator_count }}</div>
+        <div class="text-sm text-ink-muted mt-1">{{ t('transparenz_stats_vnb') }}</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 text-center">
+        <div class="text-3xl font-bold text-teal-700">{{ avg_score }}</div>
+        <div class="text-sm text-ink-muted mt-1">{{ t('transparenz_stats_avg') }}</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 text-center">
+        <div class="text-3xl font-bold text-teal-700">{{ municipalities_covered }}</div>
+        <div class="text-sm text-ink-muted mt-1">{{ t('transparenz_stats_gemeinden') }}</div>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Kanton filter -->
     <form method="get" class="mb-6 flex items-center gap-3">
       <label for="kanton" class="text-sm font-medium">{{ t('transparenz_filter_kanton') }}:</label>
@@ -49,6 +67,14 @@
         {% endfor %}
       </select>
     </form>
+
+    <!-- Data freshness -->
+    {% if last_refresh and last_refresh.last_refresh %}
+    <div class="mb-4 text-xs text-ink-muted">
+      {{ t('transparenz_letzte_aktualisierung') }}: {{ last_refresh.last_refresh.strftime('%d.%m.%Y %H:%M') if last_refresh.last_refresh else '–' }}
+      · {{ last_refresh.record_count }} {{ t('transparenz_datensaetze') }}
+    </div>
+    {% endif %}
 
     <!-- Rankings table -->
     <div class="bg-white rounded-xl border border-slate-200 overflow-x-auto">
@@ -74,7 +100,16 @@
               <span class="inline-block bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-semibold text-xs">{{ r.transparency_score }}</span>
               {% endif %}
             </td>
-            <td class="py-3 px-4 text-center">{{ r.municipalities_served }}</td>
+            <td class="py-3 px-4 text-center">
+              {{ r.municipalities_served }}
+              {% if r.municipality_info %}
+              <div class="text-xs text-ink-muted mt-1">
+                {% for m in r.municipality_info %}
+                <a href="/gemeinde/profil/{{ m.bfs_number }}" class="hover:text-teal-700 underline">{{ m.name }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              </div>
+              {% endif %}
+            </td>
             <td class="py-3 px-4">
               {% if r.transparency_score >= 70 %}
               <span class="text-green-700 text-xs">{{ t('transparenz_status_gut') }}</span>

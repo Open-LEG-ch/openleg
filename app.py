@@ -660,10 +660,13 @@ def vnb_transparenz():
 
     tariffs_by_op = db.get_all_elcom_tariffs_by_operator(year)
     profiles = db.get_all_municipality_profiles()
+    last_refresh_info = db.get_elcom_last_refresh()
     # Map BFS -> municipality info
     bfs_map = {p['bfs_number']: p for p in profiles}
 
     rankings = []
+    all_municipalities_covered = set()
+    score_sum = 0.0
     for operator, tariffs in tariffs_by_op.items():
         # Find municipalities served by this operator
         bfs_set = {t.get('bfs_number') for t in tariffs if t.get('bfs_number')}
@@ -676,23 +679,40 @@ def vnb_transparenz():
                 continue
             munis = munis_filtered
 
-        muni_names = sorted({m.get('name', '') for m in munis if m.get('name')})
+        muni_info = sorted(
+            [{'name': m.get('name', ''), 'bfs_number': m.get('bfs_number')} for m in munis if m.get('name')],
+            key=lambda x: x['name']
+        )
+        muni_names = [m['name'] for m in muni_info]
         score = compute_vnb_transparency_score(tariffs, municipalities_served=len(bfs_set))
+        score_sum += score
+        all_municipalities_covered |= bfs_set
         rankings.append({
             'operator_name': operator,
             'transparency_score': score,
             'municipalities_served': len(bfs_set),
             'municipality_names': muni_names[:10],
+            'municipality_info': muni_info[:10],
+            'bfs_numbers': list(bfs_set),
         })
 
     rankings.sort(key=lambda x: x['transparency_score'], reverse=True)
+
+    # Stats
+    operator_count = len(rankings)
+    avg_score = round(score_sum / operator_count, 1) if operator_count else 0
+    municipalities_covered = len(all_municipalities_covered)
 
     # Unique kantons for filter dropdown
     kantons = sorted({p.get('kanton', '') for p in profiles if p.get('kanton')})
 
     return render_city_template('vnb_transparenz.html',
                                 rankings=rankings, kantons=kantons,
-                                kanton_filter=kanton_filter, year=year)
+                                kanton_filter=kanton_filter, year=year,
+                                last_refresh=last_refresh_info,
+                                operator_count=operator_count,
+                                avg_score=avg_score,
+                                municipalities_covered=municipalities_covered)
 
 
 @app.route("/gemeinde/toolkit")
@@ -1742,11 +1762,12 @@ def api_cron_refresh_public_data():
     _require_cron_secret()
     import public_data
     data = request.get_json(silent=True) or {}
-    scope = data.get('scope', 'zh')
-    if scope == 'all':
+    scope = data.get('scope', 'zh').strip().upper()
+    if scope == 'ALL':
         result = public_data.refresh_all_municipalities()
     else:
-        result = public_data.refresh_canton('ZH')
+        kanton = scope if len(scope) == 2 and scope.isalpha() else 'ZH'
+        result = public_data.refresh_canton(kanton, year=int(data.get('year', 2026)))
     return jsonify(result)
 
 
@@ -1833,6 +1854,24 @@ def api_cron_seed_municipalities():
     provision_tenants = request.args.get('provision_tenants', '').lower() == 'true'
     result = municipality_seeder.seed_all_municipalities(
         kanton_filter=kanton, provision_tenants=provision_tenants)
+    return jsonify(result)
+
+
+@app.route("/api/cron/process-municipality-outreach", methods=['POST'])
+def api_cron_process_municipality_outreach():
+    _require_cron_secret()
+    import email_automation
+    data = request.get_json(silent=True) or {}
+    schedule_new = data.get('schedule_new', False)
+    if schedule_new:
+        scheduled = email_automation.schedule_outreach_batch(limit=int(data.get('limit', 10)))
+    else:
+        scheduled = 0
+    result = email_automation.process_municipality_outreach(app)
+    result['newly_scheduled'] = scheduled
+    followup_1_count = email_automation.schedule_municipality_followups(followup_number=1, days_after=7)
+    followup_2_count = email_automation.schedule_municipality_followups(followup_number=2, days_after=14)
+    result['followups_scheduled'] = followup_1_count + followup_2_count
     return jsonify(result)
 
 

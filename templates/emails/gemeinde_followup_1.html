@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Erinnerung: Stromgemeinschaft in {{ gemeinde_name }}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 0;">
+
+<div style="max-width: 600px; margin: 0 auto; padding: 32px 24px;">
+
+  <div style="text-align: center; margin-bottom: 32px;">
+    <h1 style="font-size: 20px; font-weight: 700; color: #0f766e; margin: 0;">
+      OpenLEG
+    </h1>
+    <p style="font-size: 13px; color: #64748b; margin: 4px 0 0;">
+      Freie Infrastruktur für Schweizer Stromgemeinschaften
+    </p>
+  </div>
+
+  <div style="background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0;">
+
+    <h2 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 16px;">
+      Haben Sie unsere Nachricht gesehen?
+    </h2>
+
+    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 16px;">
+      Guten Tag,
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 16px;">
+      Vor einigen Tagen haben wir Ihnen geschrieben, wie {{ gemeinde_name }} ({{ kanton }})
+      von einer Lokalen Elektrizitätsgemeinschaft profitieren kann.
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 16px;">
+      Die Zahlen sprechen für sich: Energiewende-Score von
+      <strong>{{ energy_transition_score }}</strong> Punkten,
+      Einsparpotenzial von <strong>CHF {{ leg_value_gap_chf }}</strong> pro Haushalt und Jahr.
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px;">
+      Schauen Sie sich das kostenlose Gemeindeprofil an. OpenLEG liefert die Infrastruktur,
+      Ihre Gemeinde behält die Kontrolle.
+    </p>
+
+    <div style="text-align: center; margin: 0 0 24px;">
+      <a href="{{ profil_url }}" style="display: inline-block; background: #0d9488; color: #ffffff; font-weight: 600; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-size: 15px;">
+        Gemeindeprofil ansehen
+      </a>
+    </div>
+
+    {% if claim_url %}
+    <p style="font-size: 14px; line-height: 1.6; color: #64748b; margin: 0 0 8px;">
+      Subdomain beanspruchen: <a href="{{ claim_url }}" style="color: #0d9488;">{{ subdomain }}.openleg.ch</a>
+    </p>
+    {% endif %}
+
+  </div>
+
+  <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: center;">
+    <p style="font-size: 12px; color: #94a3b8; margin: 0 0 8px;">
+      Wir speichern keine Bürgerdaten. Alle Daten bleiben in der Gemeinde.
+      Quellcode: AGPL-3.0 lizenziert.
+    </p>
+    <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+      OpenLEG &middot; Freie Infrastruktur für Schweizer Stromgemeinschaften
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

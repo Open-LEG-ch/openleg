@@ -744,6 +744,26 @@ def _create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS municipality_outreach_queue (
+                    id SERIAL PRIMARY KEY,
+                    municipality_name VARCHAR(255) NOT NULL,
+                    bfs_number INTEGER,
+                    kanton VARCHAR(2),
+                    contact_email VARCHAR(255) NOT NULL,
+                    email_type VARCHAR(32) DEFAULT 'initial',
+                    followup_number INTEGER DEFAULT 0,
+                    scheduled_at TIMESTAMP NOT NULL,
+                    sent_at TIMESTAMP,
+                    failed_at TIMESTAMP,
+                    error_message TEXT,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(contact_email, email_type, followup_number)
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_outreach_queue_status_sched ON municipality_outreach_queue(status, scheduled_at)")
+
             logger.info("[DB] Tables and indexes created successfully")
 
 
@@ -2061,6 +2081,24 @@ def get_elcom_tariffs(bfs_number: int, year: int = None) -> List[Dict]:
         return []
 
 
+def get_elcom_last_refresh() -> Dict:
+    """Return {'last_refresh': timestamp, 'record_count': int}."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT MAX(fetched_at) as last_refresh, COUNT(*) as record_count FROM elcom_tariffs")
+                row = cur.fetchone()
+                if row:
+                    return {
+                        'last_refresh': row['last_refresh'],
+                        'record_count': row['record_count'],
+                    }
+                return {'last_refresh': None, 'record_count': 0}
+    except Exception as e:
+        logger.error(f"[DB] Error getting ElCom last refresh: {e}")
+        return {'last_refresh': None, 'record_count': 0}
+
+
 def get_all_elcom_tariffs_by_operator(year: int = 2026) -> Dict[str, List[Dict]]:
     """Get all ElCom tariffs grouped by operator name."""
     try:
@@ -3108,6 +3146,127 @@ def get_stale_outreach(days_threshold: int = 7) -> List[Dict]:
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] get_stale_outreach error: {e}")
+        return []
+
+
+# === Municipality Outreach Queue Operations ===
+
+def schedule_municipality_outreach(name: str, bfs: int, kanton: str, email: str,
+                                    email_type: str = 'initial', followup_number: int = 0,
+                                    scheduled_at=None) -> Optional[int]:
+    """Insert into outreach queue. Returns id or None."""
+    from datetime import datetime, timezone
+    if scheduled_at is None:
+        scheduled_at = datetime.now(timezone.utc)
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO municipality_outreach_queue
+                        (municipality_name, bfs_number, kanton, contact_email, email_type, followup_number, scheduled_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (contact_email, email_type, followup_number) DO NOTHING
+                    RETURNING id
+                """, (name, bfs, kanton, email, email_type, followup_number, scheduled_at))
+                row = cur.fetchone()
+                return row['id'] if row else None
+    except Exception as e:
+        logger.error(f"[DB] schedule_municipality_outreach error: {e}")
+        return None
+
+
+def get_pending_municipality_outreach(limit: int = 10) -> List[Dict]:
+    """Get pending items where scheduled_at <= NOW(). Order by scheduled_at."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT * FROM municipality_outreach_queue
+                    WHERE status = 'pending' AND scheduled_at <= NOW()
+                    ORDER BY scheduled_at
+                    LIMIT %s
+                """, (limit,))
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] get_pending_municipality_outreach error: {e}")
+        return []
+
+
+def mark_municipality_outreach_sent(outreach_id: int) -> bool:
+    """Set status='sent', sent_at=NOW()."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE municipality_outreach_queue
+                    SET status = 'sent', sent_at = NOW()
+                    WHERE id = %s
+                """, (outreach_id,))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] mark_municipality_outreach_sent error: {e}")
+        return False
+
+
+def mark_municipality_outreach_failed(outreach_id: int, error: str) -> bool:
+    """Set status='failed', failed_at=NOW(), error_message."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE municipality_outreach_queue
+                    SET status = 'failed', failed_at = NOW(), error_message = %s
+                    WHERE id = %s
+                """, (error, outreach_id,))
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] mark_municipality_outreach_failed error: {e}")
+        return False
+
+
+def get_municipality_outreach_history(contact_email: str = None, status: str = None) -> List[Dict]:
+    """Get outreach history, optionally filtered."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                query = "SELECT * FROM municipality_outreach_queue WHERE 1=1"
+                params = []
+                if contact_email:
+                    query += " AND contact_email = %s"
+                    params.append(contact_email)
+                if status:
+                    query += " AND status = %s"
+                    params.append(status)
+                query += " ORDER BY created_at DESC"
+                cur.execute(query, params)
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] get_municipality_outreach_history error: {e}")
+        return []
+
+
+def get_sent_outreach_needing_followup(followup_number: int, days_since: int) -> List[Dict]:
+    """Get outreach emails sent > N days ago with no follow-up at this number."""
+    prev_followup = followup_number - 1
+    prev_type = 'initial' if prev_followup == 0 else 'followup'
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT prev.* FROM municipality_outreach_queue prev
+                    WHERE prev.status = 'sent'
+                      AND prev.followup_number = %s
+                      AND prev.sent_at < NOW() - INTERVAL '%s days'
+                      AND NOT EXISTS (
+                          SELECT 1 FROM municipality_outreach_queue nxt
+                          WHERE nxt.contact_email = prev.contact_email
+                            AND nxt.followup_number = %s
+                      )
+                    ORDER BY prev.sent_at
+                """, (prev_followup, days_since, followup_number))
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] get_sent_outreach_needing_followup error: {e}")
         return []
 
 
