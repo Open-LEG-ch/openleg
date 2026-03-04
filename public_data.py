@@ -156,6 +156,82 @@ def fetch_elcom_tariffs_bulk(bfs_numbers: List[int], year: int = 2026, chunk_siz
     return all_tariffs
 
 
+ELCOM_DISCOVER_MUNICIPALITIES_SPARQL = """
+PREFIX schema: <http://schema.org/>
+PREFIX cube: <https://cube.link/>
+PREFIX elcom: <https://energy.ld.admin.ch/elcom/electricityprice/dimension/>
+
+SELECT DISTINCT ?bfs ?name
+WHERE {{
+  ?obs a cube:Observation ;
+       elcom:municipality ?municipality ;
+       elcom:period "{year}"^^<http://www.w3.org/2001/XMLSchema#gYear> .
+
+  ?municipality schema:name ?name .
+  BIND(REPLACE(STR(?municipality), "https://ld.admin.ch/municipality/", "") AS ?bfs)
+}}
+ORDER BY ?bfs
+"""
+
+
+def fetch_elcom_municipalities(year: int = 2026) -> List[Dict]:
+    """Discover all municipalities that have ElCom tariff data via SPARQL.
+    Returns list of {'bfs_number': int, 'name': str}."""
+    sparql = ELCOM_DISCOVER_MUNICIPALITIES_SPARQL.format(year=year)
+    try:
+        resp = requests.post(
+            LINDAS_ENDPOINT,
+            data={"query": sparql},
+            headers={"Accept": "application/sparql-results+json"},
+            timeout=60
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        results = []
+        for binding in data.get("results", {}).get("bindings", []):
+            bfs_val = binding.get("bfs", {}).get("value", "")
+            name = binding.get("name", {}).get("value", "")
+            try:
+                bfs_int = int(bfs_val)
+            except (ValueError, TypeError):
+                continue
+            results.append({"bfs_number": bfs_int, "name": name})
+        logger.info(f"[PUBLIC_DATA] ElCom municipality discovery: {len(results)} municipalities for {year}")
+        return results
+    except Exception as e:
+        logger.error(f"[PUBLIC_DATA] ElCom municipality discovery failed: {e}")
+        return []
+
+
+# Canton -> BFS range mapping (approximate, used for filtering SPARQL results)
+KANTON_BFS_RANGES = {
+    'ZH': (1, 299), 'BE': (301, 999), 'LU': (1001, 1150), 'UR': (1201, 1220),
+    'SZ': (1301, 1375), 'OW': (1401, 1407), 'NW': (1501, 1511), 'GL': (1601, 1632),
+    'ZG': (1701, 1711), 'FR': (2001, 2340), 'SO': (2401, 2620), 'BS': (2701, 2703),
+    'BL': (2761, 2900), 'SH': (2901, 2975), 'AR': (3001, 3025), 'AI': (3101, 3111),
+    'SG': (3201, 3440), 'GR': (3501, 3990), 'AG': (4001, 4295), 'TG': (4401, 4950),
+    'TI': (5001, 5400), 'VD': (5401, 5940), 'VS': (6001, 6300), 'NE': (6401, 6512),
+    'GE': (6601, 6645), 'JU': (6701, 6810),
+}
+
+
+def _filter_bfs_by_kanton(bfs_list: List[int], kanton: str) -> List[int]:
+    """Filter BFS numbers by canton range."""
+    kanton = kanton.upper()
+    if kanton not in KANTON_BFS_RANGES:
+        return bfs_list
+    lo, hi = KANTON_BFS_RANGES[kanton]
+    return [b for b in bfs_list if lo <= b <= hi]
+
+
+def _bfs_to_kanton(bfs: int) -> str:
+    """Infer canton code from BFS number range."""
+    for k, (lo, hi) in KANTON_BFS_RANGES.items():
+        if lo <= bfs <= hi:
+            return k
+    return ""
+
+
 def _parse_decimal(binding_value):
     """Parse SPARQL decimal binding to float."""
     if not binding_value:
@@ -387,6 +463,18 @@ def refresh_canton(kanton: str = 'ZH', year: int = 2026) -> Dict:
     if kanton.upper() == 'ZH':
         all_bfs |= set(ZH_BFS_NUMBERS)
 
+    # Fallback: discover BFS numbers from ElCom SPARQL when ER/Sonnendach empty
+    if not all_bfs:
+        elcom_munis = fetch_elcom_municipalities(year)
+        elcom_bfs_map = {m['bfs_number']: m['name'] for m in elcom_munis}
+        canton_bfs = _filter_bfs_by_kanton(list(elcom_bfs_map.keys()), kanton)
+        all_bfs = set(canton_bfs)
+        result["bfs_source"] = "elcom_sparql"
+        # Pre-populate name map for municipalities discovered via SPARQL
+        for bfs in canton_bfs:
+            if bfs not in er_by_bfs:
+                er_by_bfs[bfs] = {"name": elcom_bfs_map.get(bfs, ""), "kanton": kanton}
+
     # Bulk fetch ElCom tariffs for all BFS at once
     bulk_tariffs = fetch_elcom_tariffs_bulk(list(all_bfs), year)
     if bulk_tariffs:
@@ -478,6 +566,17 @@ def refresh_all_municipalities(year: int = 2026) -> Dict:
 
     # 3. Merge all BFS numbers and save profiles (no ElCom)
     all_bfs = set(er_by_bfs.keys()) | set(sd_by_bfs.keys())
+
+    # Fallback: discover all municipalities from ElCom SPARQL
+    if not all_bfs:
+        elcom_munis = fetch_elcom_municipalities(year)
+        for m in elcom_munis:
+            bfs = m['bfs_number']
+            all_bfs.add(bfs)
+            if bfs not in er_by_bfs:
+                er_by_bfs[bfs] = {"name": m['name'], "kanton": _bfs_to_kanton(bfs)}
+        result["bfs_source"] = "elcom_sparql"
+
     for bfs in all_bfs:
         try:
             er = er_by_bfs.get(bfs, {})
@@ -488,10 +587,11 @@ def refresh_all_municipalities(year: int = 2026) -> Dict:
                 muni = db.get_municipality(bfs_number=bfs)
                 if muni:
                     name = muni.get("name", "")
+            kanton_code = er.get("kanton", "") or _bfs_to_kanton(bfs)
             profile = {
                 "bfs_number": bfs,
                 "name": name,
-                "kanton": er.get("kanton", ""),
+                "kanton": kanton_code,
                 "population": er.get("population"),
                 "solar_potential_pct": er.get("solar_potential_pct"),
                 "solar_installed_kwp": sd.get("potential_kwp"),
