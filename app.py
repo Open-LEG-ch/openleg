@@ -916,10 +916,11 @@ def api_internal_send_email():
 @app.route("/webhook/agentmail", methods=['POST'])
 def webhook_agentmail():
     """Handle inbound AgentMail webhooks (message received, etc)."""
-    if AGENTMAIL_WEBHOOK_SECRET:
-        sig = request.headers.get('X-Webhook-Secret', '')
-        if sig != AGENTMAIL_WEBHOOK_SECRET:
-            abort(403)
+    if not AGENTMAIL_WEBHOOK_SECRET:
+        abort(503)
+    sig = request.headers.get('X-Webhook-Secret', '')
+    if sig != AGENTMAIL_WEBHOOK_SECRET:
+        abort(403)
     data = request.get_json(silent=True) or {}
     event_type = data.get('type', data.get('event', 'unknown'))
     payload = data.get('data', data)

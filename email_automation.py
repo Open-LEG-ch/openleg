@@ -282,8 +282,8 @@ def schedule_outreach_batch(limit: int = 10) -> int:
         if not p.get('contact_email'):
             p['contact_email'] = vnb_email_map.get(p.get('bfs_number'), '')
 
-    # Get already contacted emails
-    history = db.get_municipality_outreach_history()
+    # Get already contacted emails (lightweight query)
+    history = db.get_municipality_outreach_history(emails_only=True)
     already_contacted = {h['contact_email'] for h in history if h.get('contact_email')}
 
     candidates = score_outreach_candidates(profiles, already_contacted)

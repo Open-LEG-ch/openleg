@@ -729,6 +729,8 @@ def _create_tables():
                     created_at TIMESTAMPTZ DEFAULT NOW()
                 )
             """)
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_inbound_emails_msgid ON inbound_emails(agentmail_message_id) WHERE agentmail_message_id IS NOT NULL")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_inbound_emails_status ON inbound_emails(status)")
 
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS strategy_subtasks (
@@ -2026,33 +2028,32 @@ _db_initialized = False
 # === ElCom Tariff Operations ===
 
 def save_elcom_tariffs(tariffs: List[Dict]) -> int:
-    """Bulk upsert ElCom tariff records. Returns count saved."""
+    """Bulk upsert ElCom tariff records via execute_values. Returns count saved."""
     if not tariffs:
         return 0
     try:
-        import json
+        from psycopg2.extras import execute_values
+        rows = [
+            (t['bfs_number'], t.get('operator_name', ''), t['year'], t['category'],
+             t.get('total_rp_kwh'), t.get('energy_rp_kwh'), t.get('grid_rp_kwh'),
+             t.get('municipality_fee_rp_kwh'), t.get('kev_rp_kwh'))
+            for t in tariffs
+        ]
         with get_connection() as conn:
             with conn.cursor() as cur:
-                count = 0
-                for t in tariffs:
-                    cur.execute("""
-                        INSERT INTO elcom_tariffs (bfs_number, operator_name, year, category,
-                            total_rp_kwh, energy_rp_kwh, grid_rp_kwh, municipality_fee_rp_kwh, kev_rp_kwh)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (bfs_number, operator_name, year, category) DO UPDATE SET
-                            total_rp_kwh = EXCLUDED.total_rp_kwh,
-                            energy_rp_kwh = EXCLUDED.energy_rp_kwh,
-                            grid_rp_kwh = EXCLUDED.grid_rp_kwh,
-                            municipality_fee_rp_kwh = EXCLUDED.municipality_fee_rp_kwh,
-                            kev_rp_kwh = EXCLUDED.kev_rp_kwh,
-                            fetched_at = CURRENT_TIMESTAMP
-                    """, (
-                        t['bfs_number'], t.get('operator_name', ''), t['year'], t['category'],
-                        t.get('total_rp_kwh'), t.get('energy_rp_kwh'), t.get('grid_rp_kwh'),
-                        t.get('municipality_fee_rp_kwh'), t.get('kev_rp_kwh')
-                    ))
-                    count += 1
-                return count
+                execute_values(cur, """
+                    INSERT INTO elcom_tariffs (bfs_number, operator_name, year, category,
+                        total_rp_kwh, energy_rp_kwh, grid_rp_kwh, municipality_fee_rp_kwh, kev_rp_kwh)
+                    VALUES %s
+                    ON CONFLICT (bfs_number, operator_name, year, category) DO UPDATE SET
+                        total_rp_kwh = EXCLUDED.total_rp_kwh,
+                        energy_rp_kwh = EXCLUDED.energy_rp_kwh,
+                        grid_rp_kwh = EXCLUDED.grid_rp_kwh,
+                        municipality_fee_rp_kwh = EXCLUDED.municipality_fee_rp_kwh,
+                        kev_rp_kwh = EXCLUDED.kev_rp_kwh,
+                        fetched_at = CURRENT_TIMESTAMP
+                """, rows, page_size=500)
+                return len(rows)
     except Exception as e:
         logger.error(f"[DB] Error saving ElCom tariffs: {e}")
         return 0
@@ -3050,14 +3051,21 @@ def update_strategy_subtask(subtask_id: int, status: str, notes: str = None) -> 
 
 def save_inbound_email(sender: str, subject: str, body_preview: str,
                        classification: str = 'unknown', agentmail_message_id: str = None) -> bool:
-    """Save an inbound email with classification."""
+    """Save an inbound email with classification. Idempotent on agentmail_message_id."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO inbound_emails (sender, subject, body_preview, classification, agentmail_message_id)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (sender, subject[:500], (body_preview or '')[:2000], classification, agentmail_message_id))
+                if agentmail_message_id:
+                    cur.execute("""
+                        INSERT INTO inbound_emails (sender, subject, body_preview, classification, agentmail_message_id)
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (agentmail_message_id) DO NOTHING
+                    """, (sender, subject[:500], (body_preview or '')[:2000], classification, agentmail_message_id))
+                else:
+                    cur.execute("""
+                        INSERT INTO inbound_emails (sender, subject, body_preview, classification, agentmail_message_id)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (sender, subject[:500], (body_preview or '')[:2000], classification, agentmail_message_id))
                 return True
     except Exception as e:
         logger.error(f"[DB] save_inbound_email error: {e}")
@@ -3224,12 +3232,13 @@ def mark_municipality_outreach_failed(outreach_id: int, error: str) -> bool:
         return False
 
 
-def get_municipality_outreach_history(contact_email: str = None, status: str = None) -> List[Dict]:
-    """Get outreach history, optionally filtered."""
+def get_municipality_outreach_history(contact_email: str = None, status: str = None, emails_only: bool = False) -> List[Dict]:
+    """Get outreach history, optionally filtered. emails_only=True returns just contact_email column."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                query = "SELECT * FROM municipality_outreach_queue WHERE 1=1"
+                cols = "DISTINCT contact_email" if emails_only else "*"
+                query = f"SELECT {cols} FROM municipality_outreach_queue WHERE 1=1"
                 params = []
                 if contact_email:
                     query += " AND contact_email = %s"
@@ -3237,7 +3246,8 @@ def get_municipality_outreach_history(contact_email: str = None, status: str = N
                 if status:
                     query += " AND status = %s"
                     params.append(status)
-                query += " ORDER BY created_at DESC"
+                if not emails_only:
+                    query += " ORDER BY created_at DESC"
                 cur.execute(query, params)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
