@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ihre Stromgemeinschaft kann starten</title>
+<style>
+body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
+.wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
+.header { background: #6366f1; padding: 24px; text-align: center; }
+.header h1 { color: #fff; font-size: 22px; margin: 0; }
+.content { padding: 32px 24px; }
+.content h2 { font-size: 20px; margin: 0 0 16px; }
+.content p { font-size: 15px; line-height: 1.6; margin: 0 0 16px; color: #374151; }
+.highlight { background: #ecfdf5; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+.highlight p { margin: 0; font-weight: 600; color: #065f46; }
+.cta { display: inline-block; background: #6366f1; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px 0; }
+.steps { margin: 20px 0; }
+.steps li { margin-bottom: 12px; font-size: 15px; line-height: 1.5; }
+.footer { padding: 24px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; }
+.footer a { color: #9ca3af; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>OpenLEG</h1>
+  </div>
+  <div class="content">
+    <h2>{{ community_name }} kann starten!</h2>
+    <div class="highlight">
+      <p>{{ member_count }} Nachbarn haben sich registriert. Ihre Stromgemeinschaft hat die Mindestzahl erreicht.</p>
+    </div>
+    <p>Das bedeutet: Sie können jetzt die LEG-Gründung einleiten. OpenLEG generiert die Verträge, bereitet das VNB-Anmeldepaket vor und begleitet Sie durch den Prozess.</p>
+    <h3 style="font-size: 16px; margin: 24px 0 12px;">Nächste Schritte</h3>
+    <ol class="steps">
+      <li><strong>Gründung starten:</strong> Klicken Sie auf den Button unten, um die LEG-Vereinbarung und Teilnehmerverträge zu generieren.</li>
+      <li><strong>Verträge unterschreiben:</strong> Alle Mitglieder erhalten einen Link zur digitalen Signatur.</li>
+      <li><strong>VNB-Anmeldung:</strong> OpenLEG sendet das Anmeldepaket an den Netzbetreiber. Frist: 15 Arbeitstage Antwort, 3 Monate Smart-Meter-Installation.</li>
+    </ol>
+    <p style="text-align: center;">
+      <a href="{{ formation_url }}" class="cta">LEG-Gründung starten</a>
+    </p>
+    <p style="font-size: 13px; color: #6b7280; margin-top: 24px;">
+      Fragen? Antworten Sie auf diese E-Mail oder schreiben Sie an hallo@openleg.ch.
+    </p>
+  </div>
+  <div class="footer">
+    <p>OpenLEG: Freie Infrastruktur für Schweizer Stromgemeinschaften</p>
+    <p><a href="https://openleg.ch">openleg.ch</a></p>
+  </div>
+</div>
+</body>
+</html>

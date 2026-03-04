@@ -582,6 +582,36 @@ def create_simple_polygon(coords):
 
 
 # ===========================
+# Event Hooks
+# ===========================
+
+def _on_formation_threshold_reached(payload):
+    """Send congratulation email when community reaches minimum members."""
+    community_id = payload.get('community_id', '')
+    if not community_id:
+        return
+    db.track_event('formation_threshold_reached', data={'community_id': community_id})
+    try:
+        members = db.get_community_members(community_id)
+        community = db.get_community(community_id)
+        community_name = community.get('name', 'Ihre Stromgemeinschaft') if community else 'Ihre Stromgemeinschaft'
+        member_count = len(members) if members else 0
+        for m in (members or []):
+            email = m.get('email', '')
+            if not email:
+                continue
+            html = render_template('emails/formation_ready.html',
+                                   community_name=community_name,
+                                   member_count=member_count,
+                                   formation_url=f"{SITE_URL}/gemeinde/formation?community={community_id}")
+            send_email(email, f"Ihre Stromgemeinschaft kann starten: {community_name}", html)
+    except Exception as e:
+        logger.error(f"[formation_threshold] email failed: {e}")
+
+event_hooks.register('formation_threshold_reached', _on_formation_threshold_reached)
+
+
+# ===========================
 # Routes
 # ===========================
 
@@ -622,6 +652,54 @@ def pricing():
     return render_city_template('pricing.html')
 
 
+@app.route("/transparenz")
+def vnb_transparenz():
+    from public_data import compute_vnb_transparency_score
+    kanton_filter = request.args.get('kanton', '').strip().upper()
+    year = int(request.args.get('year', 2026))
+
+    tariffs_by_op = db.get_all_elcom_tariffs_by_operator(year)
+    profiles = db.get_all_municipality_profiles()
+    # Map BFS -> municipality info
+    bfs_map = {p['bfs_number']: p for p in profiles}
+
+    rankings = []
+    for operator, tariffs in tariffs_by_op.items():
+        # Find municipalities served by this operator
+        bfs_set = {t.get('bfs_number') for t in tariffs if t.get('bfs_number')}
+        munis = [bfs_map.get(b, {}) for b in bfs_set]
+
+        # Apply kanton filter
+        if kanton_filter:
+            munis_filtered = [m for m in munis if m.get('kanton', '').upper() == kanton_filter]
+            if not munis_filtered and munis:
+                continue
+            munis = munis_filtered
+
+        muni_names = sorted({m.get('name', '') for m in munis if m.get('name')})
+        score = compute_vnb_transparency_score(tariffs, municipalities_served=len(bfs_set))
+        rankings.append({
+            'operator_name': operator,
+            'transparency_score': score,
+            'municipalities_served': len(bfs_set),
+            'municipality_names': muni_names[:10],
+        })
+
+    rankings.sort(key=lambda x: x['transparency_score'], reverse=True)
+
+    # Unique kantons for filter dropdown
+    kantons = sorted({p.get('kanton', '') for p in profiles if p.get('kanton')})
+
+    return render_city_template('vnb_transparenz.html',
+                                rankings=rankings, kantons=kantons,
+                                kanton_filter=kanton_filter, year=year)
+
+
+@app.route("/gemeinde/toolkit")
+def gemeinde_toolkit():
+    return render_city_template('gemeinde/toolkit.html')
+
+
 @app.route("/robots.txt")
 def robots_txt():
     lines = [
@@ -642,6 +720,8 @@ def sitemap_xml():
         ("/fuer-gemeinden", "0.8", "weekly", current_date),
         ("/fuer-bewohner", "0.8", "weekly", current_date),
         ("/pricing", "0.7", "monthly", current_date),
+        ("/transparenz", "0.7", "weekly", current_date),
+        ("/gemeinde/toolkit", "0.6", "monthly", current_date),
         ("/gemeinde/onboarding", "0.9", "weekly", current_date),
         ("/impressum", "0.3", "yearly", "2026-01-01"),
         ("/datenschutz", "0.3", "yearly", "2026-01-01"),
@@ -1092,6 +1172,7 @@ def api_check_potential():
         return jsonify({"error": f"Server-Fehler: {str(e)}"}), 500
 
     city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    db.track_event('funnel_address_check', data={'city_id': city_id, 'address_prefix': address[:20] if address else ''})
     cluster_info = find_provisional_matches(estimates, city_id=city_id)
     if not cluster_info:
         return jsonify({"potential": False, "message": "Keine direkten Partner gefunden.", "profile_summary": estimates})
@@ -1168,6 +1249,14 @@ def api_register_anonymous():
     threading.Thread(target=run_full_ml_task, args=(building_id, city_id), daemon=True).start()
     threading.Thread(target=email_automation.schedule_sequence_for_user, args=(building_id, email), daemon=True).start()
 
+    # UTM params from frontend
+    utm_data = {}
+    for k in ('utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'):
+        v = (request.json.get(k) or '').strip()
+        if v:
+            utm_data[k] = v
+
+    db.track_event('funnel_registration', building_id, {'type': 'anonymous', 'city_id': city_id, **utm_data})
     db.track_event('registration', building_id, {'type': 'anonymous', 'city_id': city_id})
     event_hooks.fire('registration', {'building_id': building_id, 'city_id': city_id, 'email': email, 'type': 'anonymous'})
 
@@ -1567,6 +1656,7 @@ def api_formation_confirm():
     ok = formation_wizard.confirm_membership(db, community_id, building_id)
     if not ok:
         return jsonify({"error": "Confirm failed"}), 400
+    db.track_event('funnel_formation_confirm', building_id, {'community_id': community_id})
     return jsonify({"success": True})
 
 
@@ -1577,6 +1667,7 @@ def api_formation_start():
     community_id = (data.get('community_id') or '').strip()
     if not community_id:
         return jsonify({"error": "community_id required"}), 400
+    db.track_event('funnel_formation_start', data={'community_id': community_id})
     ok = formation_wizard.start_formation(db, community_id)
     if not ok:
         return jsonify({"error": "Formation start failed, check minimum members"}), 400

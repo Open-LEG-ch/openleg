@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ t('toolkit_title') }} | OpenLEG</title>
+  <meta name="description" content="{{ t('toolkit_subtitle') }}">
+  <link rel="canonical" href="{{ site_url }}/gemeinde/toolkit">
+  {% include 'partials/tailwind_brand.html' %}
+  {% if ga4_id %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ ga4_id }}');
+  </script>
+  {% endif %}
+</head>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
+  {% include 'partials/trust_bar.html' %}
+
+  <main class="max-w-4xl mx-auto px-4 py-12">
+
+    <header class="mb-10">
+      <h1 class="text-4xl font-bold tracking-tight mb-3">{{ t('toolkit_title') }}</h1>
+      <p class="text-lg text-ink-muted max-w-3xl">{{ t('toolkit_subtitle') }}</p>
+    </header>
+
+    <div class="grid md:grid-cols-2 gap-6">
+
+      <!-- Gemeindeblatt -->
+      <div class="bg-white rounded-xl border border-slate-200 p-6">
+        <div class="text-3xl mb-3">&#128240;</div>
+        <h3 class="text-lg font-bold mb-2">{{ t('toolkit_gemeindeblatt') }}</h3>
+        <p class="text-sm text-ink-muted mb-4">{{ t('toolkit_gemeindeblatt_desc') }}</p>
+        <a href="/static/toolkit/gemeindeblatt-a5.pdf" data-download="gemeindeblatt-a5" class="inline-block bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark" download>{{ t('toolkit_download') }}</a>
+      </div>
+
+      <!-- Poster -->
+      <div class="bg-white rounded-xl border border-slate-200 p-6">
+        <div class="text-3xl mb-3">&#128204;</div>
+        <h3 class="text-lg font-bold mb-2">{{ t('toolkit_poster') }}</h3>
+        <p class="text-sm text-ink-muted mb-4">{{ t('toolkit_poster_desc') }}</p>
+        <a href="/static/toolkit/poster-a3.pdf" data-download="poster-a3" class="inline-block bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark" download>{{ t('toolkit_download') }}</a>
+      </div>
+
+      <!-- Gemeinderat Info -->
+      <div class="bg-white rounded-xl border border-slate-200 p-6">
+        <div class="text-3xl mb-3">&#128221;</div>
+        <h3 class="text-lg font-bold mb-2">{{ t('toolkit_gemeinderat') }}</h3>
+        <p class="text-sm text-ink-muted mb-4">{{ t('toolkit_gemeinderat_desc') }}</p>
+        <a href="/static/toolkit/gemeinderat-info.pdf" data-download="gemeinderat-info" class="inline-block bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark" download>{{ t('toolkit_download') }}</a>
+      </div>
+
+      <!-- Social Media -->
+      <div class="bg-white rounded-xl border border-slate-200 p-6">
+        <div class="text-3xl mb-3">&#128242;</div>
+        <h3 class="text-lg font-bold mb-2">{{ t('toolkit_social') }}</h3>
+        <p class="text-sm text-ink-muted mb-4">{{ t('toolkit_social_desc') }}</p>
+        <a href="/static/toolkit/social-media-texte.pdf" data-download="social-media-texte" class="inline-block bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark" download>{{ t('toolkit_download') }}</a>
+      </div>
+
+      <!-- Logo Assets -->
+      <div class="bg-white rounded-xl border border-slate-200 p-6 md:col-span-2">
+        <div class="text-3xl mb-3">&#127912;</div>
+        <h3 class="text-lg font-bold mb-2">{{ t('toolkit_logo') }}</h3>
+        <p class="text-sm text-ink-muted mb-4">{{ t('toolkit_logo_desc') }}</p>
+        <a href="/static/toolkit/openleg-logo.zip" data-download="openleg-logo" class="inline-block bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark" download>{{ t('toolkit_download') }}</a>
+      </div>
+
+    </div>
+
+    <!-- Fördermittel -->
+    <section class="mt-12">
+      <h2 class="text-2xl font-bold tracking-tight mb-2">{{ t('toolkit_foerder_title') }}</h2>
+      <p class="text-ink-muted mb-6">{{ t('toolkit_foerder_subtitle') }}</p>
+
+      <div class="grid md:grid-cols-3 gap-6">
+
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+          <h3 class="text-lg font-bold mb-2">{{ t('toolkit_foerder_energieschweiz') }}</h3>
+          <p class="text-sm text-ink-muted mb-4">{{ t('toolkit_foerder_energieschweiz_desc') }}</p>
+          <a href="https://www.energieschweiz.ch/gemeinden/" target="_blank" rel="noopener" class="text-brand text-sm font-medium hover:underline">energieschweiz.ch &rarr;</a>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+          <h3 class="text-lg font-bold mb-2">{{ t('toolkit_foerder_pronovo') }}</h3>
+          <p class="text-sm text-ink-muted mb-4">{{ t('toolkit_foerder_pronovo_desc') }}</p>
+          <a href="https://pronovo.ch/de/foerderung/einmalverguetung/" target="_blank" rel="noopener" class="text-brand text-sm font-medium hover:underline">pronovo.ch &rarr;</a>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+          <h3 class="text-lg font-bold mb-2">{{ t('toolkit_foerder_kantonal') }}</h3>
+          <p class="text-sm text-ink-muted mb-4">{{ t('toolkit_foerder_kantonal_desc') }}</p>
+          <a href="https://www.energiefranken.ch/" target="_blank" rel="noopener" class="text-brand text-sm font-medium hover:underline">energiefranken.ch &rarr;</a>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="mt-10 bg-brand/5 border border-brand/20 rounded-xl p-6 text-center">
+      <p class="font-semibold text-ink mb-2">{{ t('nav_gemeinde_cta') }}</p>
+      <a href="/gemeinde/onboarding" class="inline-block bg-brand text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-dark">{{ t('cta_gemeinde_anmelden') }}</a>
+    </div>
+
+  </main>
+
+  {% include 'partials/site_footer.html' %}
+
+  <script>
+    document.querySelectorAll('[data-download]').forEach(function(link) {
+      link.addEventListener('click', function() {
+        if (typeof gtag === 'function') {
+          gtag('event', 'file_download', {
+            file_name: this.getAttribute('data-download'),
+            link_url: this.getAttribute('href')
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

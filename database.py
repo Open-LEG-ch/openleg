@@ -2061,6 +2061,29 @@ def get_elcom_tariffs(bfs_number: int, year: int = None) -> List[Dict]:
         return []
 
 
+def get_all_elcom_tariffs_by_operator(year: int = 2026) -> Dict[str, List[Dict]]:
+    """Get all ElCom tariffs grouped by operator name."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT operator_name, category, total_rp_kwh, energy_rp_kwh,
+                           grid_rp_kwh, municipality_fee_rp_kwh, kev_rp_kwh, bfs_number
+                    FROM elcom_tariffs
+                    WHERE year = %s
+                    ORDER BY operator_name, category
+                """, (year,))
+                rows = [dict(r) for r in cur.fetchall()]
+        grouped = {}
+        for row in rows:
+            op = row.get('operator_name', 'Unknown')
+            grouped.setdefault(op, []).append(row)
+        return grouped
+    except Exception as e:
+        logger.error(f"[DB] Error getting all ElCom tariffs: {e}")
+        return {}
+
+
 # === Municipality Profile Operations ===
 
 def save_municipality_profile(profile: Dict) -> bool:

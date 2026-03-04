@@ -99,3 +99,36 @@ class TestVnbRankingsAPI:
             resp = client.get('/api/v1/vnb/rankings')
             assert resp.status_code == 200
             assert resp.get_json()['rankings'] == []
+
+
+# === Template route test ===
+
+class TestTransparenzPage:
+    """GET /transparenz renders the VNB transparency page."""
+
+    def test_transparenz_returns_200(self, full_client):
+        with patch('database.get_all_elcom_tariffs_by_operator', return_value={
+            'EKZ': [
+                {"operator_name": "EKZ", "category": "H4", "total_rp_kwh": 27.5,
+                 "energy_rp_kwh": 12.0, "grid_rp_kwh": 9.5, "municipality_fee_rp_kwh": 3.0,
+                 "kev_rp_kwh": 3.0, "bfs_number": 261},
+            ],
+        }), patch('database.get_all_municipality_profiles', return_value=[
+            {"bfs_number": 261, "name": "Dietikon", "kanton": "ZH"},
+        ]):
+            resp = full_client.get('/transparenz')
+            assert resp.status_code == 200
+            assert b'EKZ' in resp.data
+
+    def test_transparenz_contains_score_markup(self, full_client):
+        with patch('database.get_all_elcom_tariffs_by_operator', return_value={
+            'EKZ': [
+                {"operator_name": "EKZ", "category": "H4", "total_rp_kwh": 27.5,
+                 "energy_rp_kwh": 12.0, "grid_rp_kwh": 9.5, "municipality_fee_rp_kwh": 3.0,
+                 "kev_rp_kwh": 3.0, "bfs_number": 261},
+            ],
+        }), patch('database.get_all_municipality_profiles', return_value=[
+            {"bfs_number": 261, "name": "Dietikon", "kanton": "ZH"},
+        ]):
+            resp = full_client.get('/transparenz')
+            assert b'vnb-table' in resp.data

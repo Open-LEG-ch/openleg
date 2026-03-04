@@ -242,6 +242,13 @@
   let selectedProfile = null;
   let addressTimeout = null;
 
+  // UTM tracking
+  const _params = new URLSearchParams(window.location.search);
+  const _utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+  const utmData = {};
+  _utmKeys.forEach(k => { const v = _params.get(k); if (v) { utmData[k] = v; sessionStorage.setItem(k, v); } });
+  _utmKeys.forEach(k => { if (!utmData[k]) { const v = sessionStorage.getItem(k); if (v) utmData[k] = v; } });
+
   // Address autocomplete
   const addressInput = document.getElementById('address-input');
   const suggestionsDiv = document.getElementById('suggestions');
@@ -343,7 +350,8 @@
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({
                   email, phone, profile_summary: selectedProfile,
-                  consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co}
+                  consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co},
+                  ...utmData
               })
           });
           const data = await res.json();

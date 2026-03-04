@@ -5,7 +5,7 @@ Maps hostnames to territory configs stored in white_label_configs table.
 import time
 import logging
 from typing import Dict, Optional
-from flask import g, request
+from flask import g, request, session
 
 import cache
 
@@ -191,11 +191,21 @@ def invalidate_cache(territory: Optional[str] = None):
 def init_tenant_middleware(app, db=None):
     """Register before_request hook and context processor."""
 
+    VALID_LANGS = {'de', 'fr', 'it', 'rm'}
+
     @app.before_request
     def _set_tenant():
         hostname = request.host or ""
         territory = resolve_tenant(hostname)
         g.tenant = get_tenant_config(territory, db=db)
+
+        # ?lang= override: query param > session > tenant default
+        lang_param = request.args.get('lang', '').lower()
+        if lang_param in VALID_LANGS:
+            session['lang'] = lang_param
+            g.tenant['language'] = lang_param
+        elif 'lang' in session and session['lang'] in VALID_LANGS:
+            g.tenant['language'] = session['lang']
 
     @app.context_processor
     def _inject_tenant():

@@ -3,24 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solarstrom lokal teilen: LEG für Eigentümer und Mieter | OpenLEG</title>
-  <meta name="description" content="Seit 1. Januar 2026 können Hauseigentümer Solarstrom direkt an Nachbarn verkaufen, Mieter lokalen Strom beziehen. 40% Netzgebühren-Rabatt gesetzlich garantiert. Keine Solidarhaftung, 1 Monat Kündigungsfrist. Jetzt Adresse prüfen.">
+  <title>{{ t('bew_page_title') }} | OpenLEG</title>
+  <meta name="description" content="{{ t('bew_hero_p') | truncate(160) }}">
   <meta name="keywords" content="Solarstrom verkaufen Nachbarn, Stromgemeinschaft beitreten, LEG Bewohner, Lokale Elektrizitätsgemeinschaft, Netzgebühren sparen Schweiz, PV Strom lokal teilen, StromVG Art 17d">
   <link rel="canonical" href="{{ site_url }}/fuer-bewohner">
-  <meta property="og:title" content="Solarstrom lokal teilen: 40% Netzgebühren-Rabatt seit 2026">
-  <meta property="og:description" content="Hauseigentümer: CHF 250-400/Jahr Mehrerlös. Mieter: CHF 65-150/Jahr sparen. Keine Solidarhaftung, keine Investitionskosten. Jetzt Adresse prüfen.">
+  <meta property="og:title" content="{{ t('bew_page_title') }}">
+  <meta property="og:description" content="{{ t('bew_hero_p') | truncate(200) }}">
   {% include 'partials/tailwind_brand.html' %}
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "LEG für Bewohner: Solarstrom lokal teilen",
-    "description": "Lokale Elektrizitätsgemeinschaft: Eigentümer verkaufen Solarstrom an Nachbarn, Mieter sparen auf Netzgebühren. Seit 2026 gesetzlich garantiert.",
+    "name": "{{ t('bew_page_title') }}",
+    "description": "{{ t('bew_hero_p') | truncate(200) }}",
     "provider": {
       "@type": "Organization",
       "name": "OpenLEG",
       "url": "https://openleg.ch"
     }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Was ist eine Lokale Elektrizitätsgemeinschaft (LEG)?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Eine LEG erlaubt Hauseigentümern, Solarstrom direkt an Nachbarn in der Gemeinde zu verkaufen, über das bestehende Stromnetz, mit 40% Netzgebühren-Rabatt. Rechtsgrundlage: Art. 17d StromVG, seit 1. Januar 2026."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Wie viel spare ich als LEG-Teilnehmer?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "PV-Erzeuger erzielen CHF 250-400/Jahr Mehrerlös (interner Preis 10-15 Rp./kWh vs. Rückspeisevergütung 4-8 Rp./kWh). Verbraucher sparen CHF 65-150/Jahr durch 40% Rabatt auf den Netznutzungs-Arbeitspreis."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Was ist der Unterschied zwischen LEG und ZEV?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "LEG: ganze Gemeinde, keine Solidarhaftung, individueller VNB-Vertrag bleibt, 1 Monat Kündigungsfrist. ZEV: nur angrenzende Parzellen, gesamtschuldnerische Haftung, VNB-Vertrag wird aufgelöst."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Gibt es eine Solidarhaftung in der LEG?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nein. Jeder LEG-Teilnehmer bleibt individueller VNB-Kunde (Art. 17e StromVG). Es gibt kein Gesamtschuldverhältnis. Jeder haftet nur für den eigenen Verbrauch."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Wer bezahlt das Smart Meter?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Der Verteilnetzbetreiber (VNB) installiert und bezahlt das Smart Meter. Keine Investitionskosten für LEG-Teilnehmer."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Kann ich jederzeit aus der LEG austreten?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja. Die Kündigungsfrist beträgt 1 Monat. Ihre individuelle Grundversorgung beim VNB bleibt bestehen. Sie kehren einfach zum normalen Tarif zurück."
+        }
+      }
+    ]
   }
   </script>
 </head>
@@ -30,119 +86,106 @@
 
   <main class="max-w-5xl mx-auto px-4 py-12">
 
-    <!-- Hero: evidence-based, targeting both PV owners and tenants -->
+    <!-- Hero -->
     <header class="mb-12">
-      <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-4">Ihr Solarstrom geht an Nachbarn statt ins Netz. Seit dem 1. Januar 2026.</h1>
-      <p class="text-lg text-ink-muted max-w-3xl">
-        Art. 17d StromVG: Hauseigentümer verkaufen Solarstrom direkt an Nachbarn in der Gemeinde, über das bestehende Stromnetz, mit 40% Netzgebühren-Rabatt.
-        Mieter beziehen lokalen Strom, behalten ihre eigene Grundversorgung, haften nur für sich.
-        Kein Verein, kein Verband: eine einfache Gesellschaft mit 1 Monat Kündigungsfrist.
-      </p>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-4">{{ t('bew_hero_h1') }}</h1>
+      <p class="text-lg text-ink-muted max-w-3xl">{{ t('bew_hero_p') }}</p>
       <div class="mt-6 flex flex-col sm:flex-row gap-3">
-        <a href="#adresse-pruefen" class="bg-brand text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-dark text-center shadow-lg">Adresse prüfen</a>
-        <a href="#leg-vs-zev" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">LEG vs. ZEV: Was ist der Unterschied?</a>
+        <a href="#adresse-pruefen" class="bg-brand text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-dark text-center shadow-lg">{{ t('cta_adresse_pruefen') }}</a>
+        <a href="#leg-vs-zev" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">{{ t('bew_cta_leg_vs_zev') }}</a>
       </div>
     </header>
 
-    <!-- Hard numbers: what you actually save -->
+    <!-- Hard numbers -->
     <section class="mb-10">
-      <h2 class="text-2xl font-bold mb-4">Konkrete Zahlen: Was LEG-Teilnehmer sparen</h2>
+      <h2 class="text-2xl font-bold mb-4">{{ t('bew_zahlen_title') }}</h2>
       <div class="grid md:grid-cols-3 gap-4">
         <div class="bg-white rounded-xl border border-slate-200 p-5">
           <div class="text-3xl font-bold text-brand">CHF 250-400</div>
-          <div class="text-sm font-semibold mt-1">Mehrerlös für PV-Erzeuger/Jahr</div>
-          <p class="text-xs text-ink-muted mt-2">Interner LEG-Preis (10-15 Rp./kWh) vs. Rückspeisevergütung (4-8 Rp./kWh). Bei 5'000 kWh Überschuss: CHF 300-500 mehr pro Jahr.</p>
+          <div class="text-sm font-semibold mt-1">{{ t('bew_pv_erloese') }}</div>
+          <p class="text-xs text-ink-muted mt-2">{{ t('bew_pv_erloese_detail') }}</p>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 p-5">
           <div class="text-3xl font-bold text-brand">CHF 65-150</div>
-          <div class="text-sm font-semibold mt-1">Ersparnis für Verbraucher/Jahr</div>
-          <p class="text-xs text-ink-muted mt-2">40% Rabatt auf Netznutzungs-Arbeitspreis (Art. 19h StromVV). Bei H4-Haushalt (4'500 kWh) und 30% internem Verbrauch.</p>
+          <div class="text-sm font-semibold mt-1">{{ t('bew_verbraucher_ersparnis') }}</div>
+          <p class="text-xs text-ink-muted mt-2">{{ t('bew_verbraucher_detail') }}</p>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 p-5">
           <div class="text-3xl font-bold text-amber-600">2.8 Rp./kWh</div>
-          <div class="text-sm font-semibold mt-1">Typische Netzgebühr-Einsparung</div>
-          <p class="text-xs text-ink-muted mt-2">40% von ~7 Rp./kWh Arbeitspreis. Gilt für jede kWh, die intern in der LEG verbraucht wird.</p>
+          <div class="text-sm font-semibold mt-1">{{ t('bew_netzgebuehr_label') }}</div>
+          <p class="text-xs text-ink-muted mt-2">{{ t('bew_netzgebuehr_detail') }}</p>
         </div>
       </div>
-      <p class="text-xs text-ink-muted mt-3">Datenquelle: ElCom Strompreisübersicht 2026, StromVV Art. 19h. Noch keine Betriebsdaten aus realen LEGs (erste Aktivierungen: Frühling 2026). Alle Angaben sind Schätzungen.</p>
+      <p class="text-xs text-ink-muted mt-3">{{ t('bew_datenquelle_hinweis') }}</p>
     </section>
 
-    <!-- Two paths: PV owner vs consumer -->
+    <!-- Two paths -->
     <section class="mb-10">
-      <h2 class="text-2xl font-bold mb-4">Zwei Wege in die Stromgemeinschaft</h2>
+      <h2 class="text-2xl font-bold mb-4">{{ t('bew_zwei_wege') }}</h2>
       <div class="grid md:grid-cols-2 gap-6">
         <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand">
-          <h3 class="text-xl font-bold mb-2">Eigentümer mit Solaranlage</h3>
-          <p class="text-sm text-ink-muted mb-4">
-            Sie produzieren Solarstrom und speisen den Überschuss ins Netz. Heute erhalten Sie die Rückspeisevergütung (4-8 Rp./kWh).
-            In einer LEG verkaufen Sie direkt an Nachbarn zum internen Preis (10-15 Rp./kWh): doppelter bis dreifacher Erlös pro kWh.
-          </p>
+          <h3 class="text-xl font-bold mb-2">{{ t('bew_eigentuemer_title') }}</h3>
+          <p class="text-sm text-ink-muted mb-4">{{ t('bew_eigentuemer_desc') }}</p>
           <ul class="text-sm space-y-2 text-ink-muted mb-4">
-            <li><strong>Mehr Ertrag:</strong> CHF 250-400/Jahr Mehrerlös gegenüber Netzrückspeisung</li>
-            <li><strong>Kein Aufwand:</strong> OpenLEG findet passende Verbraucher, erstellt Verträge, meldet beim VNB an</li>
-            <li><strong>Keine Haftung:</strong> Jeder LEG-Teilnehmer bleibt individueller VNB-Kunde (Art. 17e StromVG)</li>
-            <li><strong>Smart Meter:</strong> Der Netzbetreiber installiert das Messsystem, Kosten trägt der VNB</li>
+            <li><strong>{{ t('bew_eigentuemer_ertrag') }}</strong> CHF 250-400/Jahr</li>
+            <li><strong>{{ t('bew_eigentuemer_aufwand') }}</strong> OpenLEG findet Verbraucher, erstellt Verträge</li>
+            <li><strong>{{ t('bew_eigentuemer_haftung') }}</strong> Art. 17e StromVG</li>
+            <li><strong>{{ t('bew_eigentuemer_smartmeter') }}</strong> VNB installiert und bezahlt</li>
           </ul>
-          <a href="#adresse-pruefen" class="block text-center bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark">LEG starten: Adresse prüfen</a>
+          <a href="#adresse-pruefen" class="block text-center bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ t('bew_cta_leg_starten') }}</a>
         </div>
 
         <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-ink/20">
-          <h3 class="text-xl font-bold mb-2">Mieter und Haushalte ohne eigene PV</h3>
-          <p class="text-sm text-ink-muted mb-4">
-            Sie beziehen Strom vom lokalen Netz. In einer LEG kommt ein Teil direkt vom Solardach in der Nachbarschaft,
-            günstiger als der Standardtarif. Sie behalten Ihre individuelle Grundversorgung beim VNB, es gibt keine Solidarhaftung.
-          </p>
+          <h3 class="text-xl font-bold mb-2">{{ t('bew_mieter_title') }}</h3>
+          <p class="text-sm text-ink-muted mb-4">{{ t('bew_mieter_desc') }}</p>
           <ul class="text-sm space-y-2 text-ink-muted mb-4">
-            <li><strong>Günstiger Strom:</strong> CHF 65-150/Jahr Einsparung durch 40% Netzgebühren-Rabatt</li>
-            <li><strong>Kein Risiko:</strong> Keine Solidarhaftung (Art. 17e), jeder haftet nur für den eigenen Verbrauch</li>
-            <li><strong>Jederzeit kündbar:</strong> 1 Monat Kündigungsfrist, individuelle Grundversorgung bleibt</li>
-            <li><strong>Kein Technikaufwand:</strong> Smart Meter wird vom VNB installiert und bezahlt</li>
+            <li><strong>{{ t('bew_mieter_guenstiger') }}</strong> CHF 65-150/Jahr</li>
+            <li><strong>{{ t('bew_mieter_risiko') }}</strong> Art. 17e StromVG</li>
+            <li><strong>{{ t('bew_mieter_kuendbar') }}</strong> 1 Monat</li>
+            <li><strong>{{ t('bew_mieter_technik') }}</strong> VNB installiert Smart Meter</li>
           </ul>
-          <a href="#adresse-pruefen" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Nachbarschaft prüfen</a>
+          <a href="#adresse-pruefen" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">{{ t('bew_cta_nachbarschaft') }}</a>
         </div>
       </div>
     </section>
 
-    <!-- Legal guarantees for residents -->
+    <!-- Legal guarantees -->
     <section class="mb-10">
-      <h2 class="text-2xl font-bold mb-4">Was das Gesetz für Bewohner garantiert</h2>
+      <h2 class="text-2xl font-bold mb-4">{{ t('bew_gesetz_title') }}</h2>
       <div class="grid md:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-slate-200 p-4 text-center">
           <div class="text-2xl font-bold text-brand">40%</div>
-          <div class="text-xs font-semibold mt-1">Netzgebühren-Rabatt</div>
-          <p class="text-xs text-ink-muted mt-1">Auf den Arbeitspreis, bei gleicher Netzebene (Art. 19h StromVV)</p>
+          <div class="text-xs font-semibold mt-1">{{ t('bew_gesetz_rabatt') }}</div>
+          <p class="text-xs text-ink-muted mt-1">Art. 19h StromVV</p>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 p-4 text-center">
           <div class="text-2xl font-bold text-brand">0</div>
-          <div class="text-xs font-semibold mt-1">CHF Investition</div>
-          <p class="text-xs text-ink-muted mt-1">Smart Meter bezahlt der VNB. Plattform kostenlos. Keine Eintrittsgebühr.</p>
+          <div class="text-xs font-semibold mt-1">{{ t('bew_gesetz_investition') }}</div>
+          <p class="text-xs text-ink-muted mt-1">Smart Meter: VNB. {{ t('badge_kostenlos') }}.</p>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 p-4 text-center">
           <div class="text-2xl font-bold text-brand">1</div>
-          <div class="text-xs font-semibold mt-1">Monat Kündigungsfrist</div>
-          <p class="text-xs text-ink-muted mt-1">Jederzeit austretbar. Grundversorgung beim VNB bleibt bestehen.</p>
+          <div class="text-xs font-semibold mt-1">{{ t('bew_gesetz_kuendigung') }}</div>
+          <p class="text-xs text-ink-muted mt-1">Art. 17e StromVG</p>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 p-4 text-center">
-          <div class="text-2xl font-bold text-brand">Keine</div>
-          <div class="text-xs font-semibold mt-1">Solidarhaftung</div>
-          <p class="text-xs text-ink-muted mt-1">Jeder bleibt individueller VNB-Kunde (Art. 17e StromVG). Kein Gesamtschuldverhältnis.</p>
+          <div class="text-2xl font-bold text-brand">{{ t('bew_gesetz_haftung') }}</div>
+          <div class="text-xs font-semibold mt-1">Art. 17e StromVG</div>
         </div>
       </div>
     </section>
 
     <!-- LEG vs ZEV comparison -->
     <section id="leg-vs-zev" class="mb-10 bg-amber-50 border border-amber-200 rounded-xl p-6">
-      <h2 class="text-2xl font-bold mb-3">LEG ist nicht ZEV. Das ist entscheidend.</h2>
-      <p class="text-ink-muted mb-4 text-sm">
-        Viele kennen den Zusammenschluss zum Eigenverbrauch (ZEV). Die LEG funktioniert grundlegend anders: weniger Risiko, mehr Reichweite, einfacherer Austritt.
-      </p>
+      <h2 class="text-2xl font-bold mb-3">{{ t('bew_leg_nicht_zev') }}</h2>
+      <p class="text-ink-muted mb-4 text-sm">{{ t('bew_leg_zev_intro') }}</p>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left border-b border-amber-300">
-              <th class="py-2 pr-4 font-semibold">Merkmal</th>
-              <th class="py-2 pr-4 font-semibold text-brand">LEG (neu, seit 2026)</th>
-              <th class="py-2 font-semibold">ZEV (bestehend)</th>
+              <th class="py-2 pr-4 font-semibold">{{ t('bew_merkmal') }}</th>
+              <th class="py-2 pr-4 font-semibold text-brand">{{ t('leg_short') }} (2026)</th>
+              <th class="py-2 font-semibold">ZEV/RCP</th>
             </tr>
           </thead>
           <tbody class="text-ink-muted">
@@ -152,9 +195,9 @@
               <td class="py-2">Nur angrenzende Parzellen</td>
             </tr>
             <tr class="border-b border-amber-200">
-              <td class="py-2 pr-4 font-medium text-ink">Ihr VNB-Vertrag</td>
+              <td class="py-2 pr-4 font-medium text-ink">VNB-Vertrag</td>
               <td class="py-2 pr-4">Bleibt bestehen, individueller Kunde</td>
-              <td class="py-2">Wird aufgelöst, ZEV wird Endverbraucher</td>
+              <td class="py-2">Wird aufgelöst</td>
             </tr>
             <tr class="border-b border-amber-200">
               <td class="py-2 pr-4 font-medium text-ink">Haftung</td>
@@ -179,37 +222,33 @@
           </tbody>
         </table>
       </div>
-      <p class="text-xs text-ink-muted mt-3">Rechtsgrundlage: Art. 17d/17e StromVG (LEG) vs. Art. 17/18 EnV (ZEV).</p>
+      <p class="text-xs text-ink-muted mt-3">{{ t('hiw_rechtsgrundlage') }}: Art. 17d/17e StromVG ({{ t('leg_short') }}) vs. Art. 17/18 EnV (ZEV).</p>
     </section>
 
-    <!-- The real problem: coordination -->
+    <!-- Coordination -->
     <section class="mb-10 bg-white rounded-xl border border-slate-200 p-6">
-      <h2 class="text-2xl font-bold mb-3">Das eigentliche Problem: Koordination</h2>
-      <p class="text-ink-muted mb-4">
-        Die Rechtsgrundlage existiert. Der Netzgebühren-Rabatt existiert. Die Herausforderung: genug Nachbarn zusammenbringen, Verträge klären, den Netzbetreiber korrekt informieren.
-      </p>
+      <h2 class="text-2xl font-bold mb-3">{{ t('bew_koordination_title') }}</h2>
+      <p class="text-ink-muted mb-4">{{ t('bew_koordination_desc') }}</p>
       <div class="grid md:grid-cols-3 gap-4">
         <div class="bg-[#f6f4ef] rounded-lg p-4">
-          <h3 class="font-semibold text-ink mb-1">1. Nachbarn finden</h3>
-          <p class="text-xs text-ink-muted">Geben Sie Ihre Adresse ein. OpenLEG zeigt, ob in Ihrer Nachbarschaft bereits Haushalte registriert sind und wie hoch das Solarpotenzial liegt.</p>
+          <h3 class="font-semibold text-ink mb-1">{{ t('bew_schritt1_title') }}</h3>
+          <p class="text-xs text-ink-muted">{{ t('bew_schritt1_desc') }}</p>
         </div>
         <div class="bg-[#f6f4ef] rounded-lg p-4">
-          <h3 class="font-semibold text-ink mb-1">2. Verträge generieren</h3>
-          <p class="text-xs text-ink-muted">Sobald genug Teilnehmer beisammen sind, erstellt OpenLEG die LEG-Vereinbarung, Teilnehmerverträge und das VNB-Anmeldepaket automatisch.</p>
+          <h3 class="font-semibold text-ink mb-1">{{ t('bew_schritt2_title') }}</h3>
+          <p class="text-xs text-ink-muted">{{ t('bew_schritt2_desc') }}</p>
         </div>
         <div class="bg-[#f6f4ef] rounded-lg p-4">
-          <h3 class="font-semibold text-ink mb-1">3. VNB anmelden</h3>
-          <p class="text-xs text-ink-muted">Der Netzbetreiber hat 15 Arbeitstage Antwortfrist und 3 Monate für die Smart-Meter-Installation. OpenLEG trackt den Status.</p>
+          <h3 class="font-semibold text-ink mb-1">{{ t('bew_schritt3_title') }}</h3>
+          <p class="text-xs text-ink-muted">{{ t('bew_schritt3_desc') }}</p>
         </div>
       </div>
     </section>
 
-    <!-- Savings widget: check your municipality -->
+    <!-- Savings widget -->
     <section class="mb-10">
-      <h2 class="text-2xl font-bold mb-2">Einsparpotenzial in Ihrer Gemeinde</h2>
-      <p class="text-ink-muted mb-4 text-sm">
-        Die Einsparung hängt vom lokalen Netzgebührentarif ab. Geben Sie Ihre Gemeinde ein und sehen Sie das konkrete Potenzial basierend auf öffentlichen ElCom-Daten.
-      </p>
+      <h2 class="text-2xl font-bold mb-2">{{ t('bew_sparpotenzial_title') }}</h2>
+      <p class="text-ink-muted mb-4 text-sm">{{ t('bew_sparpotenzial_desc') }}</p>
       <div class="max-w-xl mx-auto">
         {% include 'partials/savings_widget.html' %}
       </div>
@@ -217,24 +256,24 @@
 
     <!-- Address checker + registration form -->
     <section id="adresse-pruefen" class="mt-10 bg-white rounded-xl shadow-md p-6">
-      <h2 class="text-2xl font-bold mb-2 text-center">Adresse prüfen und registrieren</h2>
+      <h2 class="text-2xl font-bold mb-2 text-center">{{ t('bew_adresse_title') }}</h2>
       <p class="text-ink-muted text-center mb-6 text-sm">
-        {% if user_count %}Bereits {{ user_count }} Haushalte registriert.{% endif %}
-        Wir prüfen, ob in Ihrer Nachbarschaft bereits eine Stromgemeinschaft entsteht.
+        {% if user_count %}{{ t('bew_adresse_count').replace('{count}', user_count|string) }}{% endif %}
+        {{ t('bew_adresse_hint') }}
       </p>
 
       <div class="max-w-md mx-auto">
         <div id="step-address">
-          <label class="block text-sm font-medium mb-1">Ihre Adresse</label>
+          <label class="block text-sm font-medium mb-1">{{ t('bewohner_adresse_label') }}</label>
           <input type="text" id="address-input" placeholder="Strasse, PLZ Ort" class="w-full border rounded-lg px-3 py-2 mb-1 focus:ring-2 focus:ring-brand focus:outline-none" autocomplete="off">
           <div id="suggestions" class="bg-white border rounded-lg max-h-48 overflow-y-auto hidden"></div>
           <div id="profile-summary" class="text-sm text-ink-muted mt-2 hidden"></div>
-          <button id="btn-check" class="w-full bg-brand text-white py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark disabled:opacity-50" disabled>Adresse prüfen</button>
+          <button id="btn-check" class="w-full bg-brand text-white py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark disabled:opacity-50" disabled>{{ t('cta_adresse_pruefen') }}</button>
         </div>
 
         <div id="step-register" class="hidden">
           <div id="match-info" class="bg-brand/5 p-3 rounded-lg mb-3 text-sm"></div>
-          <label class="block text-sm font-medium mb-1">E-Mail</label>
+          <label class="block text-sm font-medium mb-1">{{ t('bewohner_email_label') }}</label>
           <input type="email" id="email-input" placeholder="ihre@email.ch" class="w-full border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-brand focus:outline-none">
           <label class="block text-sm font-medium mb-1">Telefon (optional)</label>
           <input type="tel" id="phone-input" placeholder="+41 79 ..." class="w-full border rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-brand focus:outline-none">
@@ -243,18 +282,18 @@
             <label class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1"> Meine Daten dürfen für die LEG-Anmeldung beim Netzbetreiber verwendet werden.</label>
             <label class="flex items-start gap-2"><input type="checkbox" id="consent-updates"> Ich möchte Updates per E-Mail erhalten.</label>
           </div>
-          <p class="text-xs text-ink-muted mb-3">Wir verkaufen Ihre Daten nicht und geben sie nicht an Dritte weiter. Sie können jederzeit alles löschen.</p>
-          <button id="btn-register" class="w-full bg-amber-500 text-ink py-2 rounded-lg font-semibold hover:bg-amber-400">Jetzt registrieren</button>
+          <p class="text-xs text-ink-muted mb-3">{{ t('data_policy') }}</p>
+          <button id="btn-register" class="w-full bg-amber-500 text-ink py-2 rounded-lg font-semibold hover:bg-amber-400">{{ t('onboarding_title') }}</button>
         </div>
 
         <div id="step-success" class="hidden text-center py-6">
           <div class="text-4xl mb-3">&#9889;</div>
-          <h3 class="text-lg font-semibold mb-2">Registrierung erfolgreich!</h3>
+          <h3 class="text-lg font-semibold mb-2">{{ t('bewohner_success') }}</h3>
           <p class="text-ink-muted mb-4">Sie erhalten eine Best&auml;tigung per E-Mail.</p>
           <div class="bg-brand/5 border border-brand/20 rounded-lg p-4 mb-4">
             <p class="font-medium text-ink mb-2">Bereit, eine Stromgemeinschaft zu gr&uuml;nden?</p>
             <p class="text-sm text-ink-muted mb-3">Wenn Sie genug Nachbarn haben, k&ouml;nnen Sie direkt eine LEG starten.</p>
-            <a href="/gemeinde/formation" class="inline-block bg-brand text-white px-5 py-2 rounded-lg font-semibold hover:bg-brand-dark">LEG gr&uuml;nden</a>
+            <a href="/gemeinde/formation" class="inline-block bg-brand text-white px-5 py-2 rounded-lg font-semibold hover:bg-brand-dark">{{ t('nav_stromgemeinschaft') }}</a>
           </div>
           <div id="referral-link-box" class="bg-[#f6f4ef] p-3 rounded-lg text-sm hidden">
             <p class="font-medium mb-1">Teilen Sie Ihren Einladungslink:</p>
@@ -268,34 +307,34 @@
 
     <!-- Data policy -->
     <section class="mt-10 mb-10 bg-white rounded-xl border border-slate-200 p-6">
-      <h2 class="text-2xl font-bold mb-3">Ihre Daten, Ihre Kontrolle</h2>
+      <h2 class="text-2xl font-bold mb-3">{{ t('bew_daten_title') }}</h2>
       <div class="grid md:grid-cols-2 gap-6 text-sm text-ink-muted">
         <div>
-          <h3 class="font-semibold text-ink mb-1">Was wir speichern</h3>
-          <p>Adresse (für Nachbarschafts-Matching), E-Mail (für Updates), Einwilligungen (nachweisbar). Keine Smart-Meter-Daten ohne Ihre explizite Freigabe.</p>
+          <h3 class="font-semibold text-ink mb-1">{{ t('bew_daten_speichern') }}</h3>
+          <p>{{ t('bew_daten_speichern_desc') }}</p>
         </div>
         <div>
-          <h3 class="font-semibold text-ink mb-1">Was wir nie tun</h3>
-          <p>Kein Datenverkauf an Energieversorger, Versicherungen oder Dritte. Smart-Meter-Daten bleiben in der LEG. Quellcode öffentlich einsehbar (AGPL-3.0). Hosting: Schweizer Infrastruktur (Infomaniak), nDSG-konform.</p>
+          <h3 class="font-semibold text-ink mb-1">{{ t('bew_daten_nie') }}</h3>
+          <p>{{ t('bew_daten_nie_desc') }}</p>
         </div>
       </div>
     </section>
 
     <!-- Legal references -->
     <section class="mb-6 text-xs text-ink-muted">
-      <h3 class="font-semibold text-ink mb-2">Rechtsgrundlagen und Quellen</h3>
+      <h3 class="font-semibold text-ink mb-2">{{ t('bew_rechtsgrundlagen') }}</h3>
       <ul class="space-y-1">
         <li>Art. 17d/17e Stromversorgungsgesetz (StromVG), SR 734.7</li>
         <li>Art. 19e-19h Stromversorgungsverordnung (StromVV), SR 734.71</li>
         <li>Mantelerlass: Volksabstimmung 9. Juni 2024, 68.7% Ja-Stimmen</li>
         <li>ElCom Strompreisübersicht 2026: strompreis.elcom.admin.ch</li>
-        <li>BFE Sonnendach: sonnendach.ch (Solarpotenzial pro Gemeinde)</li>
+        <li>BFE Sonnendach: sonnendach.ch</li>
       </ul>
     </section>
 
     <!-- Cross-links -->
     <div class="mb-10 flex flex-col sm:flex-row gap-3">
-      <a href="/fuer-gemeinden" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">Angebot für Gemeinden</a>
+      <a href="/fuer-gemeinden" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">{{ t('bew_angebot_gemeinden') }}</a>
       <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">{{ t('cta_so_funktionierts') }}</a>
     </div>
 
@@ -309,6 +348,13 @@
   let addressTimeout = null;
   const params = new URLSearchParams(window.location.search);
   const referralCode = params.get('ref') || '';
+
+  // UTM tracking
+  const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+  const utmData = {};
+  utmKeys.forEach(k => { const v = params.get(k); if (v) { utmData[k] = v; sessionStorage.setItem(k, v); } });
+  // Restore from session if not in URL
+  utmKeys.forEach(k => { if (!utmData[k]) { const v = sessionStorage.getItem(k); if (v) utmData[k] = v; } });
 
   const addressInput = document.getElementById('address-input');
   const suggestionsDiv = document.getElementById('suggestions');
@@ -354,7 +400,7 @@
         document.getElementById('form-error').textContent = data.error;
         document.getElementById('form-error').classList.remove('hidden');
         this.disabled = false;
-        this.textContent = 'Adresse prüfen';
+        this.textContent = '{{ t("cta_adresse_pruefen") }}';
         return;
       }
       selectedProfile = data.profile_summary;
@@ -384,10 +430,10 @@
       document.getElementById('step-address').classList.add('hidden');
       document.getElementById('step-register').classList.remove('hidden');
     } catch(e) {
-      document.getElementById('form-error').textContent = 'Netzwerkfehler. Bitte erneut versuchen.';
+      document.getElementById('form-error').textContent = '{{ t("error_network") }}';
       document.getElementById('form-error').classList.remove('hidden');
       this.disabled = false;
-      this.textContent = 'Adresse prüfen';
+      this.textContent = '{{ t("cta_adresse_pruefen") }}';
     }
   });
 
@@ -398,7 +444,7 @@
     const cu = document.getElementById('consent-utility').checked;
     const co = document.getElementById('consent-updates').checked;
     if (!email) {
-      document.getElementById('form-error').textContent = 'Bitte E-Mail angeben.';
+      document.getElementById('form-error').textContent = '{{ t("error_invalid_email") }}';
       document.getElementById('form-error').classList.remove('hidden');
       return;
     }
@@ -409,7 +455,8 @@
         body: JSON.stringify({
           email, phone, profile: selectedProfile,
           referral_code: referralCode,
-          consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co}
+          consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co},
+          ...utmData
         })
       });
       const data = await res.json();
@@ -421,11 +468,11 @@
           document.getElementById('referral-link-box').classList.remove('hidden');
         }
       } else {
-        document.getElementById('form-error').textContent = data.error || 'Registrierung fehlgeschlagen.';
+        document.getElementById('form-error').textContent = data.error || '{{ t("error_generic") }}';
         document.getElementById('form-error').classList.remove('hidden');
       }
     } catch(e) {
-      document.getElementById('form-error').textContent = 'Netzwerkfehler.';
+      document.getElementById('form-error').textContent = '{{ t("error_network") }}';
       document.getElementById('form-error').classList.remove('hidden');
     }
   });
