@@ -3,12 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ profile.name }} – Energieprofil | OpenLEG</title>
-    <meta name="description" content="Energieprofil und LEG-Potenzial für {{ profile.name }}: Stromtarife, Solarpotenzial, Energiewende-Score.">
-    <meta property="og:title" content="{{ profile.name }} – Energieprofil | OpenLEG">
+    <title>Stromtarif {{ profile.name }} {{ h4_tariff.total_rp_kwh|default(0)|float|round(1) }} Rp/kWh – LEG-Potenzial | OpenLEG</title>
+    <meta name="description" content="Stromtarif in {{ profile.name }} (Kanton {{ profile.kanton }}): {{ h4_tariff.total_rp_kwh|default(0)|float|round(1) }} Rp/kWh. LEG-Ersparnis{% if value_gap %} CHF {{ value_gap.annual_savings_chf|int }}{% endif %}/Jahr. Solarpotenzial, Energiewende-Score {{ profile.energy_transition_score|default(0)|float|round(0)|int }}/100.">
+    <link rel="canonical" href="{{ request.host_url.rstrip('/') }}/gemeinde/profil/{{ profile.bfs_number }}">
+    <meta property="og:title" content="Stromtarif {{ profile.name }}: {{ h4_tariff.total_rp_kwh|default(0)|float|round(1) }} Rp/kWh | OpenLEG">
     <meta property="og:description" content="LEG-Potenzial für {{ profile.name }}: Energiewende-Score {{ profile.energy_transition_score|default(0) }}/100">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:url" content="{{ request.host_url.rstrip('/') }}/gemeinde/profil/{{ profile.bfs_number }}">
+    <meta property="og:image" content="{{ request.host_url.rstrip('/') }}/static/images/og-image.png">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Place",
+        "name": "{{ profile.name }}",
+        "description": "Stromtarif und LEG-Potenzial für {{ profile.name }}, Kanton {{ profile.kanton }}",
+        "areaServed": "{{ profile.kanton }}"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Gemeindeverzeichnis",
+                "item": {
+                    "@type": "Thing",
+                    "@id": "{{ request.host_url.rstrip('/') }}/gemeinde/verzeichnis"
+                }
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "{{ profile.kanton }}",
+                "item": {
+                    "@type": "Thing",
+                    "@id": "{{ request.host_url.rstrip('/') }}/gemeinde/verzeichnis?kanton={{ profile.kanton }}"
+                }
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "{{ profile.name }}"
+            }
+        ]
+    }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script>
@@ -35,7 +77,7 @@
             <p class="text-sm text-gray-500 mb-1">
                 <a href="/gemeinde/verzeichnis" class="hover:text-brand">Gemeindeverzeichnis</a> / {{ profile.kanton }}
             </p>
-            <h1 class="text-3xl font-bold">{{ profile.name }}</h1>
+            <h1 class="text-3xl font-bold">Stromtarif in {{ profile.name }}{% if h4_tariff %}: {{ "%.1f"|format(h4_tariff.total_rp_kwh|float) }} Rp/kWh{% endif %}</h1>
             <p class="text-gray-600 mt-1">Kanton {{ profile.kanton }}{% if profile.population %} · {{ "{:,}".format(profile.population|int).replace(",", "'") }} Einwohner{% endif %}</p>
         </div>
 

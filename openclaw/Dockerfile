@@ -13,6 +13,7 @@ COPY mcp-badenleg-server/ ./
 
 # Stage config (entrypoint copies to .openclaw so volume-mounted data persists)
 COPY config/ /opt/openclaw-config/
+COPY workspace/ /opt/openclaw-workspace/
 COPY entrypoint.sh /opt/entrypoint.sh
 
 # Permissions

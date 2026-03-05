@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gemeindeverzeichnis – Energieprofile Schweizer Gemeinden | OpenLEG</title>
     <meta name="description" content="Schweizer Gemeinden im Energiewende-Vergleich: Stromtarife, Solarpotenzial, LEG-Ersparnis. Offene Daten von ElCom, Sonnendach, Energie Reporter.">
+    <link rel="canonical" href="{{ request.host_url.rstrip('/') }}/gemeinde/verzeichnis">
+    <meta property="og:title" content="Gemeindeverzeichnis: Stromtarife und LEG-Potenzial aller Schweizer Gemeinden">
+    <meta property="og:description" content="2131 Gemeinden im Vergleich: Stromtarife, Solarpotenzial, Energiewende-Score. Offene Daten.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.host_url.rstrip('/') }}/gemeinde/verzeichnis">
+    <meta property="og:image" content="{{ request.host_url.rstrip('/') }}/static/images/og-image.png">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Gemeindeverzeichnis Schweiz",
+        "description": "Energieprofile und LEG-Potenzial aller 2131 Schweizer Gemeinden",
+        "url": "{{ request.host_url.rstrip('/') }}/gemeinde/verzeichnis"
+    }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

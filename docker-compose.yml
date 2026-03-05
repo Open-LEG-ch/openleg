@@ -22,6 +22,7 @@ services:
       - AGENTMAIL_DOMAIN=${AGENTMAIL_DOMAIN:-mail.openleg.ch}
       - AGENTMAIL_LEA_INBOX=${AGENTMAIL_LEA_INBOX:-lea@mail.openleg.ch}
       - AGENTMAIL_WEBHOOK_SECRET=${AGENTMAIL_WEBHOOK_SECRET}
+      - AGENT_EMAIL_ENABLED=${AGENT_EMAIL_ENABLED:-true}
     volumes:
       - flask_data:/data
     healthcheck:
