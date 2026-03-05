@@ -63,6 +63,7 @@ services:
         condition: service_healthy
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
+      - XAI_API_KEY=${XAI_API_KEY}
       - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
       - OPENCLAW_GATEWAY_PASSWORD=${OPENCLAW_GATEWAY_PASSWORD}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

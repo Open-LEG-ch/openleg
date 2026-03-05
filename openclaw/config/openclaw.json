@@ -2,12 +2,14 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "groq/qwen/qwen3-32b",
-        "fallbacks": ["groq/llama-3.3-70b-versatile"]
+        "primary": "groq/openai/gpt-oss-120b",
+        "fallbacks": ["groq/qwen/qwen3-32b"]
       },
       "models": {
+        "groq/openai/gpt-oss-120b": { "alias": "GPT-OSS" },
         "groq/qwen/qwen3-32b": { "alias": "Qwen3" },
-        "groq/llama-3.3-70b-versatile": { "alias": "Llama" }
+        "groq/moonshotai/kimi-k2-instruct-0905": { "alias": "KimiK2" },
+        "xai/grok-3-fast": { "alias": "Grok" }
       },
       "workspace": "/home/node/.openclaw/workspace"
     }
@@ -21,12 +23,27 @@
         "api": "openai-completions",
         "models": [
           {
+            "id": "openai/gpt-oss-120b",
+            "name": "groq/openai/gpt-oss-120b"
+          },
+          {
             "id": "qwen/qwen3-32b",
             "name": "groq/qwen/qwen3-32b"
           },
           {
-            "id": "llama-3.3-70b-versatile",
-            "name": "groq/llama-3.3-70b-versatile"
+            "id": "moonshotai/kimi-k2-instruct-0905",
+            "name": "groq/moonshotai/kimi-k2-instruct-0905"
+          }
+        ]
+      },
+      "xai": {
+        "baseUrl": "https://api.x.ai/v1",
+        "apiKey": "${XAI_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "grok-3-fast",
+            "name": "xai/grok-3-fast"
           }
         ]
       }

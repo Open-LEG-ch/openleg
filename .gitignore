@@ -110,3 +110,4 @@ deploy.sh
 grants/
 output/imagegen/
 openclaw/config/workspace/
+node_modules/

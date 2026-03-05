@@ -2,6 +2,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import pg from 'pg';
+import { readFileSync } from 'node:fs';
+import { buildOutreachBrief } from './outreach.mjs';
 
 const { Pool } = pg;
 
@@ -1391,18 +1393,64 @@ server.tool(
 
 server.tool(
   'draft_outreach',
-  'Draft a municipality outreach email informing about free LEG infrastructure. Returns German text.',
+  'Get enriched data brief for a municipality. Use this data to compose a personalized outreach email following the style_guide. Do NOT use the old template; write the email yourself using the brief data.',
   {
-    municipality_name: z.string().describe('Name of the Gemeinde'),
-    bfs_number: z.number().describe('BFS number of the municipality'),
-    value_gap_chf: z.number().describe('Annual savings potential per household in CHF'),
-    solar_potential_pct: z.number().describe('Solar potential percentage of suitable roofs')
+    bfs_number: z.number().describe('BFS number of the municipality')
   },
-  async ({ municipality_name, bfs_number, value_gap_chf, solar_potential_pct }) => {
-    const profileUrl = `https://openleg.ch/gemeinde/${bfs_number}/profil`;
-    const onboardingUrl = `https://openleg.ch/gemeinde/${bfs_number}/onboarding`;
-    const email = `Betreff: Kostenlose LEG-Infrastruktur für ${municipality_name}\n\nSehr geehrte Gemeindeverantwortliche\n\nDie Gemeinde ${municipality_name} verfügt über ein hohes Potenzial für Lokale Elektrizitätsgemeinschaften (LEG).\n\nKennzahlen:\n- Solarpotenzial: ${solar_potential_pct}% der Dachflächen geeignet\n- Einsparpotenzial: ca. CHF ${value_gap_chf} pro Haushalt und Jahr\n\nOpenLEG stellt kostenlose, quelloffene Infrastruktur für die Gründung und Verwaltung von LEGs bereit. Kein Datenverkauf, keine Gebühren.\n\nGemeindeprofil: ${profileUrl}\nOnboarding starten: ${onboardingUrl}\n\nFreundliche Grüsse\nOpenLEG\nhallo@openleg.ch`;
-    return txt({ email, metadata: { municipality_name, bfs_number, value_gap_chf, solar_potential_pct } });
+  async ({ bfs_number }) => {
+    // Fetch municipality profile
+    const mpResult = await query(
+      'SELECT * FROM municipality_profiles WHERE bfs_number = $1', [bfs_number]
+    );
+    const municipalityRow = mpResult.rows[0] || null;
+
+    // Fetch H4 tariff (standard household)
+    const tariffResult = await query(
+      `SELECT total_rp_kwh, grid_rp_kwh, operator_name FROM elcom_tariffs
+       WHERE bfs_number = $1 AND category = 'H4' ORDER BY year DESC LIMIT 1`, [bfs_number]
+    );
+    const tariffRow = tariffResult.rows[0] || null;
+
+    // Cantonal comparison
+    let cantonalStats = null;
+    if (municipalityRow?.kanton) {
+      const cantonResult = await query(`
+        SELECT
+          AVG(et.total_rp_kwh) as avg_tariff,
+          COUNT(DISTINCT et.bfs_number) as total_in_canton
+        FROM elcom_tariffs et
+        JOIN municipality_profiles mp ON et.bfs_number = mp.bfs_number
+        WHERE mp.kanton = $1 AND et.category = 'H4'
+          AND et.year = (SELECT MAX(year) FROM elcom_tariffs)
+      `, [municipalityRow.kanton]);
+      const cs = cantonResult.rows[0];
+      if (cs) {
+        // Rank: how many municipalities have a higher tariff
+        const rankResult = await query(`
+          SELECT COUNT(*) + 1 as rank FROM elcom_tariffs et
+          JOIN municipality_profiles mp ON et.bfs_number = mp.bfs_number
+          WHERE mp.kanton = $1 AND et.category = 'H4'
+            AND et.year = (SELECT MAX(year) FROM elcom_tariffs)
+            AND et.total_rp_kwh > (SELECT total_rp_kwh FROM elcom_tariffs
+              WHERE bfs_number = $2 AND category = 'H4'
+              ORDER BY year DESC LIMIT 1)
+        `, [municipalityRow.kanton, bfs_number]);
+        cantonalStats = {
+          avg_tariff_rp_kwh: parseFloat(cs.avg_tariff) || null,
+          rank: parseInt(rankResult.rows[0]?.rank) || null,
+          total_in_canton: parseInt(cs.total_in_canton) || null
+        };
+      }
+    }
+
+    // Read feedback file
+    let feedback = '';
+    try {
+      feedback = readFileSync('/home/node/.openclaw/workspace/FEEDBACK.md', 'utf-8');
+    } catch { /* no feedback yet */ }
+
+    const brief = buildOutreachBrief(municipalityRow, tariffRow, cantonalStats, feedback);
+    return txt(brief);
   }
 );
 

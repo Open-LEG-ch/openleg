@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import pg from 'pg';
+import { readFileSync } from 'node:fs';
+import { buildOutreachBrief } from './outreach.mjs';
 const { Pool } = pg;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: false, max: 5 });
@@ -699,13 +701,28 @@ const TOOLS = {
   },
 
   draft_outreach: {
-    desc: 'Draft municipality outreach email (German)',
-    params: { municipality_name: 'string', bfs_number: 'num', value_gap_chf: 'num', solar_potential_pct: 'num' },
+    desc: 'Get enriched data brief for municipality outreach',
+    params: { bfs_number: 'num' },
     run: async (a) => {
-      const profileUrl = `https://openleg.ch/gemeinde/${a.bfs_number}/profil`;
-      const onboardingUrl = `https://openleg.ch/gemeinde/${a.bfs_number}/onboarding`;
-      const email = `Betreff: Kostenlose LEG-Infrastruktur für ${a.municipality_name}\n\nSehr geehrte Gemeindeverantwortliche\n\nDie Gemeinde ${a.municipality_name} verfügt über ein hohes Potenzial für Lokale Elektrizitätsgemeinschaften (LEG).\n\nKennzahlen:\n- Solarpotenzial: ${a.solar_potential_pct}% der Dachflächen geeignet\n- Einsparpotenzial: ca. CHF ${a.value_gap_chf} pro Haushalt und Jahr\n\nOpenLEG stellt kostenlose, quelloffene Infrastruktur für die Gründung und Verwaltung von LEGs bereit. Kein Datenverkauf, keine Gebühren.\n\nGemeindeprofil: ${profileUrl}\nOnboarding starten: ${onboardingUrl}\n\nFreundliche Grüsse\nOpenLEG\nhallo@openleg.ch`;
-      return { email, metadata: { municipality_name: a.municipality_name, bfs_number: a.bfs_number, value_gap_chf: a.value_gap_chf, solar_potential_pct: a.solar_potential_pct } };
+      const mp = await q('SELECT * FROM municipality_profiles WHERE bfs_number = $1', [a.bfs_number]);
+      const mRow = mp.rows[0] || null;
+      const tr = await q(`SELECT total_rp_kwh, grid_rp_kwh, operator_name FROM elcom_tariffs
+        WHERE bfs_number = $1 AND category = 'H4' ORDER BY year DESC LIMIT 1`, [a.bfs_number]);
+      const tRow = tr.rows[0] || null;
+      let cStats = null;
+      if (mRow?.kanton) {
+        const cs = await q(`SELECT AVG(et.total_rp_kwh) as avg_tariff, COUNT(DISTINCT et.bfs_number) as total_in_canton
+          FROM elcom_tariffs et JOIN municipality_profiles mp ON et.bfs_number = mp.bfs_number
+          WHERE mp.kanton = $1 AND et.category = 'H4' AND et.year = (SELECT MAX(year) FROM elcom_tariffs)`, [mRow.kanton]);
+        const rk = await q(`SELECT COUNT(*) + 1 as rank FROM elcom_tariffs et
+          JOIN municipality_profiles mp ON et.bfs_number = mp.bfs_number
+          WHERE mp.kanton = $1 AND et.category = 'H4' AND et.year = (SELECT MAX(year) FROM elcom_tariffs)
+            AND et.total_rp_kwh > (SELECT total_rp_kwh FROM elcom_tariffs WHERE bfs_number = $2 AND category = 'H4' ORDER BY year DESC LIMIT 1)`, [mRow.kanton, a.bfs_number]);
+        cStats = { avg_tariff_rp_kwh: parseFloat(cs.rows[0]?.avg_tariff) || null, rank: parseInt(rk.rows[0]?.rank) || null, total_in_canton: parseInt(cs.rows[0]?.total_in_canton) || null };
+      }
+      let feedback = '';
+      try { feedback = readFileSync('/home/node/.openclaw/workspace/FEEDBACK.md', 'utf-8'); } catch { /* none */ }
+      return buildOutreachBrief(mRow, tRow, cStats, feedback);
     }
   },
 

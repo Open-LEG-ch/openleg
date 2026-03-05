@@ -4,7 +4,7 @@ cp /opt/openclaw-config/openclaw.json /home/node/.openclaw/openclaw.json 2>/dev/
 
 # Copy workspace files (SOUL, USER, TOOLS, HEARTBEAT) only if not already customized
 mkdir -p /home/node/.openclaw/workspace
-for f in SOUL.md USER.md TOOLS.md HEARTBEAT.md; do
+for f in SOUL.md USER.md TOOLS.md HEARTBEAT.md FEEDBACK.md; do
   if [ ! -f "/home/node/.openclaw/workspace/$f" ] || [ "/opt/openclaw-workspace/$f" -nt "/home/node/.openclaw/workspace/$f" ]; then
     cp "/opt/openclaw-workspace/$f" "/home/node/.openclaw/workspace/$f" 2>/dev/null || true
   fi
@@ -13,6 +13,7 @@ done
 # Write Docker env vars to OpenClaw's .env so ${VAR} interpolation works in openclaw.json
 cat > /home/node/.openclaw/.env <<EOF
 GROQ_API_KEY=${GROQ_API_KEY}
+XAI_API_KEY=${XAI_API_KEY}
 OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
 OPENCLAW_GATEWAY_PASSWORD=${OPENCLAW_GATEWAY_PASSWORD}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
