@@ -1393,7 +1393,7 @@ server.tool(
 
 server.tool(
   'draft_outreach',
-  'Get enriched data brief for a municipality. Use this data to compose a personalized outreach email following the style_guide. Do NOT use the old template; write the email yourself using the brief data.',
+  'Get enriched data brief for a Gemeinde (municipality). Use this data to compose a personalized outreach email following the style_guide. Do NOT use the old template; write the email yourself using the brief data.',
   {
     bfs_number: z.number().describe('BFS number of the municipality')
   },
