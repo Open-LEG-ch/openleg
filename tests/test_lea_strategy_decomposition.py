@@ -66,7 +66,7 @@ def test_decompose_tool_exists():
     """server.mjs should have decompose_strategy_item tool."""
     path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(path) as f:
         content = f.read()

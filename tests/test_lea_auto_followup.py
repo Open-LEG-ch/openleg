@@ -68,7 +68,7 @@ def test_followup_tool_exists_in_server():
     """server.mjs should have get_stale_outreach tool."""
     path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(path) as f:
         content = f.read()

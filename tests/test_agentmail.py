@@ -254,7 +254,7 @@ class TestMCPToolExists:
     """Verify send_outreach_email tool exists in MCP server source."""
 
     def test_send_outreach_email_tool_in_source(self):
-        mcp_path = os.path.join(PROJECT_ROOT, "openclaw", "mcp-badenleg-server", "server.mjs")
+        mcp_path = os.path.join(PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs")
         with open(mcp_path) as f:
             content = f.read()
         assert "'send_outreach_email'" in content
@@ -262,7 +262,7 @@ class TestMCPToolExists:
         assert "X-Internal-Token" in content
 
     def test_send_outreach_email_has_required_params(self):
-        mcp_path = os.path.join(PROJECT_ROOT, "openclaw", "mcp-badenleg-server", "server.mjs")
+        mcp_path = os.path.join(PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs")
         with open(mcp_path) as f:
             content = f.read()
         assert "to: z.string()" in content

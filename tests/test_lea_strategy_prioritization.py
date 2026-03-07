@@ -38,7 +38,7 @@ def test_prioritization_tool_exists():
     """server.mjs should have get_strategy_prioritized_outreach tool."""
     path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(path) as f:
         content = f.read()
@@ -49,7 +49,7 @@ def test_prioritization_uses_strategy_status():
     """Prioritization tool should JOIN strategy_tracker."""
     path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(path) as f:
         content = f.read()
@@ -63,7 +63,7 @@ def test_prioritization_falls_back_to_score():
     """Prioritization should order by score when no strategy data."""
     path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(path) as f:
         content = f.read()
@@ -115,7 +115,7 @@ def test_strategy_needs_ceo_creates_approval(strat_client):
     """server.mjs track_strategy_item should POST to notify-event on status change."""
     path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(path) as f:
         content = f.read()

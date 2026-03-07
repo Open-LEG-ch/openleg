@@ -40,7 +40,7 @@ jobs:
             cat commits.txt >> temp_readme.md
             echo "" >> temp_readme.md
             echo "" >> temp_readme.md
-            echo "View full commit history: [GitHub Commits](https://github.com/wgusta/badenleg/commits)" >> temp_readme.md
+            echo "View full commit history: [GitHub Commits](https://github.com/wgusta/openleg/commits)" >> temp_readme.md
             # Add everything after Activity Log section (if exists)
             sed -n '/## Activity Log/,${/## Activity Log/!{/^## /,$p}}' README.md >> temp_readme.md
             mv temp_readme.md README.md

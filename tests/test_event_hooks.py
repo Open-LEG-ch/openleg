@@ -275,7 +275,7 @@ def test_tariff_delta_detection_new_tariff():
     """server.mjs fetch_elcom_tariffs should have tariff delta detection logic."""
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()
@@ -289,7 +289,7 @@ def test_tariff_delta_detection_no_change():
     """Tariff handler should compare old vs new total_rp_kwh."""
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()
@@ -303,7 +303,7 @@ def test_tariff_change_notifies_telegram():
     """Tariff change detection should post to notify-event endpoint."""
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()

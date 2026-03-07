@@ -255,7 +255,7 @@ def test_help_text_includes_reset_lea(guard_client):
 def test_server_has_action_registry():
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()
@@ -270,7 +270,7 @@ def test_server_has_action_registry():
 def test_red_tools_use_request_approval():
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()
@@ -347,7 +347,7 @@ def test_get_circuit_breaker_fail_closed():
 def test_track_strategy_item_is_green_tier():
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()
@@ -359,7 +359,7 @@ def test_track_strategy_item_is_green_tier():
 def test_update_vnb_status_is_green_tier():
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()
@@ -371,7 +371,7 @@ def test_update_vnb_status_is_green_tier():
 def test_add_vnb_lead_is_green_tier():
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()
@@ -384,7 +384,7 @@ def test_green_tools_still_respect_readonly():
     """Promoted GREEN tools should still have readonlyGuard in their handler."""
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()
@@ -398,7 +398,7 @@ def test_green_tools_do_not_call_notify_yellow():
     """Promoted GREEN tools should NOT call notifyYellow."""
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()

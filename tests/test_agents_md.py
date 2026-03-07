@@ -75,7 +75,7 @@ class TestWorkspaceRepoBoundary:
 class TestServerMjs:
     @pytest.fixture(autouse=True)
     def load_server(self):
-        path = os.path.join(PROJECT_ROOT, "openclaw", "mcp-badenleg-server", "server.mjs")
+        path = os.path.join(PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs")
         with open(path) as f:
             self.content = f.read()
 

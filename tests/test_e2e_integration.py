@@ -10,7 +10,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class TestServerMjsIntegration:
     @pytest.fixture(autouse=True)
     def load_server(self):
-        path = os.path.join(PROJECT_ROOT, "openclaw", "mcp-badenleg-server", "server.mjs")
+        path = os.path.join(PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs")
         with open(path) as f:
             self.content = f.read()
 
@@ -28,7 +28,7 @@ class TestServerMjsIntegration:
 
 class TestDraftOutreachMunicipalityFocus:
     def test_draft_outreach_is_municipality_focused(self):
-        with open(os.path.join(PROJECT_ROOT, "openclaw", "mcp-badenleg-server", "server.mjs")) as f:
+        with open(os.path.join(PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs")) as f:
             content = f.read()
         # Extract content around draft_outreach tool
         idx = content.find("'draft_outreach'")

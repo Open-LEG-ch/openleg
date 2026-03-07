@@ -128,7 +128,7 @@ def test_request_approval_escapes_summary(ceo_client):
 def test_request_id_has_unique_suffix():
     server_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "openclaw", "mcp-badenleg-server", "server.mjs"
+        "openclaw", "mcp-openleg-server", "server.mjs"
     )
     with open(server_path) as f:
         content = f.read()
