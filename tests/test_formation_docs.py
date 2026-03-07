@@ -1,8 +1,8 @@
 """Tests for formation document generation + DeepSign wiring."""
-import pytest
-from unittest.mock import patch, MagicMock, ANY
-from formation_wizard import generate_documents, FormationStatus
 
+from unittest.mock import MagicMock, patch
+
+from formation_wizard import generate_documents
 
 MOCK_COMMUNITY_ROW = {
     'community_id': 'c1',

@@ -1,6 +1,7 @@
 """AgentMail SDK wrapper for OpenLEG."""
-import os
+
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ def get_client():
         return None
     if _client is None:
         from agentmail import AgentMail
+
         _client = AgentMail(api_key=AGENTMAIL_API_KEY)
     return _client
 
@@ -31,26 +33,25 @@ def ensure_inbox(username, domain=None):
     if not client:
         return None
     domain = domain or AGENTMAIL_DOMAIN
-    target = f"{username}@{domain}"
+    target = f'{username}@{domain}'
     try:
         existing = client.inboxes.list(limit=100)
-        for inbox in (existing.items if hasattr(existing, 'items') else []):
+        for inbox in existing.items if hasattr(existing, 'items') else []:
             if inbox.inbox_id == target:
                 return target
         from agentmail.inboxes.types import CreateInboxRequest
-        inbox = client.inboxes.create(request=CreateInboxRequest(
-            username=username,
-            domain=domain,
-            display_name=f"OpenLEG {username}"
-        ))
-        logger.info(f"[AgentMail] Created inbox: {inbox.inbox_id}")
+
+        inbox = client.inboxes.create(
+            request=CreateInboxRequest(username=username, domain=domain, display_name=f'OpenLEG {username}')
+        )
+        logger.info(f'[AgentMail] Created inbox: {inbox.inbox_id}')
         return inbox.inbox_id
     except Exception as e:
         err_str = str(e)
         if 'AlreadyExists' in err_str or 'IsTaken' in err_str or 'already exists' in err_str.lower():
-            logger.info(f"[AgentMail] Inbox {target} already exists")
+            logger.info(f'[AgentMail] Inbox {target} already exists')
             return target
-        logger.error(f"[AgentMail] Failed to ensure inbox {target}: {e}")
+        logger.error(f'[AgentMail] Failed to ensure inbox {target}: {e}')
         return None
 
 
@@ -65,10 +66,10 @@ def send_message(inbox_id, to, subject, text, html=None):
             kwargs['html'] = html
         resp = client.inboxes.messages.send(inbox_id=inbox_id, **kwargs)
         msg_id = getattr(resp, 'message_id', None) or getattr(resp, 'id', None)
-        logger.info(f"[AgentMail] Sent to {to}: {subject} (id={msg_id})")
+        logger.info(f'[AgentMail] Sent to {to}: {subject} (id={msg_id})')
         return msg_id
     except Exception as e:
-        logger.error(f"[AgentMail] Failed to send to {to}: {e}")
+        logger.error(f'[AgentMail] Failed to send to {to}: {e}')
         return None
 
 
@@ -86,10 +87,10 @@ def list_messages(inbox_id, limit=50):
                 'from': getattr(m, 'from_', getattr(m, 'sender', None)),
                 'to': getattr(m, 'to', None),
                 'subject': getattr(m, 'subject', None),
-                'created_at': str(getattr(m, 'created_at', ''))
+                'created_at': str(getattr(m, 'created_at', '')),
             }
             for m in items
         ]
     except Exception as e:
-        logger.error(f"[AgentMail] Failed to list messages for {inbox_id}: {e}")
+        logger.error(f'[AgentMail] Failed to list messages for {inbox_id}: {e}')
         return []

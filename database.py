@@ -2,23 +2,25 @@
 PostgreSQL Database Layer for OpenLEG
 Replaces JSON file persistence with proper database storage.
 """
+
+import logging
 import os
 import time
-import logging
 from contextlib import contextmanager
-from typing import Optional, Dict, List, Any, Tuple
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 # Check for psycopg2
 try:
-    import psycopg2  # type: ignore
-    from psycopg2.extras import RealDictCursor  # type: ignore
+    import psycopg2  # type: ignore  # noqa: F401
     from psycopg2 import pool  # type: ignore
+    from psycopg2.extras import RealDictCursor  # type: ignore
+
     HAS_POSTGRES = True
 except ImportError:
     HAS_POSTGRES = False
-    logger.warning("[DB] psycopg2 not installed, PostgreSQL features disabled")
+    logger.warning('[DB] psycopg2 not installed, PostgreSQL features disabled')
 
 # Database configuration
 DATABASE_URL = os.getenv('DATABASE_URL', '')
@@ -34,27 +36,24 @@ def init_db():
     global _connection_pool
 
     if not HAS_POSTGRES:
-        logger.warning("[DB] PostgreSQL not available, using fallback JSON storage")
+        logger.warning('[DB] PostgreSQL not available, using fallback JSON storage')
         return False
 
     if not DATABASE_URL:
-        logger.warning("[DB] DATABASE_URL not set, using fallback JSON storage")
+        logger.warning('[DB] DATABASE_URL not set, using fallback JSON storage')
         return False
 
     try:
         _connection_pool = pool.ThreadedConnectionPool(
-            DB_POOL_MIN,
-            DB_POOL_MAX,
-            DATABASE_URL,
-            cursor_factory=RealDictCursor
+            DB_POOL_MIN, DB_POOL_MAX, DATABASE_URL, cursor_factory=RealDictCursor
         )
-        logger.info(f"[DB] Connection pool created (min={DB_POOL_MIN}, max={DB_POOL_MAX})")
+        logger.info(f'[DB] Connection pool created (min={DB_POOL_MIN}, max={DB_POOL_MAX})')
 
         # Create tables
         _create_tables()
         return True
     except Exception as e:
-        logger.error(f"[DB] Failed to initialize database: {e}")
+        logger.error(f'[DB] Failed to initialize database: {e}')
         return False
 
 
@@ -614,57 +613,63 @@ def _create_tables():
             """)
 
             # Create indexes for common queries
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_email ON buildings(email)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_user_type ON buildings(user_type)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_verified ON buildings(verified)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_referrer ON buildings(referrer_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_buildings_city_id ON buildings(city_id)")
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_buildings_email ON buildings(email)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_buildings_user_type ON buildings(user_type)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_buildings_verified ON buildings(verified)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_buildings_referrer ON buildings(referrer_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_buildings_city_id ON buildings(city_id)')
 
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_tokens_building ON tokens(building_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_tokens_type ON tokens(token_type)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_clusters_cluster_id ON clusters(cluster_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_analytics_type ON analytics_events(event_type)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_analytics_created ON analytics_events(created_at)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_communities_status ON communities(status)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_communities_admin ON communities(admin_building_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_community_members_community ON community_members(community_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_community_members_building ON community_members(building_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_webhooks_type ON webhooks(webhook_type)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(active)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_scheduled_emails_status ON scheduled_emails(status)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_scheduled_emails_send_at ON scheduled_emails(send_at)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_scheduled_emails_building ON scheduled_emails(building_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_municipalities_kanton ON municipalities(kanton)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_municipalities_subdomain ON municipalities(subdomain)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_meter_readings_building ON meter_readings(building_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_meter_readings_timestamp ON meter_readings(timestamp)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_meter_readings_building_time ON meter_readings(building_id, timestamp)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_data_consents_building ON data_consents(building_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_data_consents_tier ON data_consents(tier)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_api_clients_key ON api_clients(api_key_hash)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_api_usage_client ON api_usage(client_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_api_usage_called ON api_usage(called_at)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_insights_cache_type ON insights_cache(insight_type)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_simulation_cache_city ON simulation_cache(city_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_simulation_cache_expires ON simulation_cache(expires_at)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_simulation_cache_building_hash ON simulation_cache(building_ids_hash)")
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_tokens_building ON tokens(building_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_tokens_type ON tokens(token_type)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_clusters_cluster_id ON clusters(cluster_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_analytics_type ON analytics_events(event_type)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_analytics_created ON analytics_events(created_at)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_communities_status ON communities(status)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_communities_admin ON communities(admin_building_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_community_members_community ON community_members(community_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_community_members_building ON community_members(building_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_webhooks_type ON webhooks(webhook_type)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(active)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_scheduled_emails_status ON scheduled_emails(status)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_scheduled_emails_send_at ON scheduled_emails(send_at)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_scheduled_emails_building ON scheduled_emails(building_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_municipalities_kanton ON municipalities(kanton)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_municipalities_subdomain ON municipalities(subdomain)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_meter_readings_building ON meter_readings(building_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_meter_readings_timestamp ON meter_readings(timestamp)')
+            cur.execute(
+                'CREATE INDEX IF NOT EXISTS idx_meter_readings_building_time ON meter_readings(building_id, timestamp)'
+            )
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_data_consents_building ON data_consents(building_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_data_consents_tier ON data_consents(tier)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_api_clients_key ON api_clients(api_key_hash)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_api_usage_client ON api_usage(client_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_api_usage_called ON api_usage(called_at)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_insights_cache_type ON insights_cache(insight_type)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_simulation_cache_city ON simulation_cache(city_id)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_simulation_cache_expires ON simulation_cache(expires_at)')
+            cur.execute(
+                'CREATE INDEX IF NOT EXISTS idx_simulation_cache_building_hash ON simulation_cache(building_ids_hash)'
+            )
 
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_elcom_tariffs_bfs ON elcom_tariffs(bfs_number)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_elcom_tariffs_year ON elcom_tariffs(year)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_municipality_profiles_bfs ON municipality_profiles(bfs_number)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_municipality_profiles_kanton ON municipality_profiles(kanton)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_sonnendach_municipal_bfs ON sonnendach_municipal(bfs_number)")
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_elcom_tariffs_bfs ON elcom_tariffs(bfs_number)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_elcom_tariffs_year ON elcom_tariffs(year)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_municipality_profiles_bfs ON municipality_profiles(bfs_number)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_municipality_profiles_kanton ON municipality_profiles(kanton)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_sonnendach_municipal_bfs ON sonnendach_municipal(bfs_number)')
 
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_email ON utility_clients(contact_email)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_status ON utility_clients(status)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_tier ON utility_clients(tier)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_kanton ON utility_clients(kanton)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_utility_clients_magic_token ON utility_clients(magic_link_token)")
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_utility_clients_email ON utility_clients(contact_email)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_utility_clients_status ON utility_clients(status)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_utility_clients_tier ON utility_clients(tier)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_utility_clients_kanton ON utility_clients(kanton)')
+            cur.execute(
+                'CREATE INDEX IF NOT EXISTS idx_utility_clients_magic_token ON utility_clients(magic_link_token)'
+            )
 
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_research_kanton ON vnb_research(kanton)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_research_status ON vnb_research(pipeline_status)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_research_priority ON vnb_research(priority_score DESC)")
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_vnb_research_kanton ON vnb_research(kanton)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_vnb_research_status ON vnb_research(pipeline_status)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_vnb_research_priority ON vnb_research(priority_score DESC)')
 
             # LEA autonomous reports
             cur.execute("""
@@ -676,8 +681,8 @@ def _create_tables():
                     status VARCHAR(32) DEFAULT 'ok'
                 )
             """)
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_lea_reports_job ON lea_reports(job_name)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_lea_reports_created ON lea_reports(created_at DESC)")
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_lea_reports_job ON lea_reports(job_name)')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_lea_reports_created ON lea_reports(created_at DESC)')
 
             # Strategy tracker (12-week plan)
             cur.execute("""
@@ -729,8 +734,10 @@ def _create_tables():
                     created_at TIMESTAMPTZ DEFAULT NOW()
                 )
             """)
-            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_inbound_emails_msgid ON inbound_emails(agentmail_message_id) WHERE agentmail_message_id IS NOT NULL")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_inbound_emails_status ON inbound_emails(status)")
+            cur.execute(
+                'CREATE UNIQUE INDEX IF NOT EXISTS idx_inbound_emails_msgid ON inbound_emails(agentmail_message_id) WHERE agentmail_message_id IS NOT NULL'
+            )
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_inbound_emails_status ON inbound_emails(status)')
 
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS strategy_subtasks (
@@ -764,25 +771,37 @@ def _create_tables():
                     UNIQUE(contact_email, email_type, followup_number)
                 )
             """)
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_outreach_queue_status_sched ON municipality_outreach_queue(status, scheduled_at)")
+            cur.execute(
+                'CREATE INDEX IF NOT EXISTS idx_outreach_queue_status_sched ON municipality_outreach_queue(status, scheduled_at)'
+            )
 
-            logger.info("[DB] Tables and indexes created successfully")
+            logger.info('[DB] Tables and indexes created successfully')
 
 
 # === Building Operations ===
 
-def save_building(building_id: str, email: str, profile: Dict, consents: Dict,
-                  user_type: str = 'anonymous', phone: Optional[str] = None,
-                  referrer_id: Optional[str] = None, city_id: Optional[str] = None) -> bool:
+
+def save_building(
+    building_id: str,
+    email: str,
+    profile: Dict,
+    consents: Dict,
+    user_type: str = 'anonymous',
+    phone: Optional[str] = None,
+    referrer_id: Optional[str] = None,
+    city_id: Optional[str] = None,
+) -> bool:
     """Save or update a building record."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 # Generate unique referral code
                 import secrets
+
                 referral_code = secrets.token_urlsafe(8)
 
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO buildings (
                         building_id, email, phone, address, lat, lon, plz,
                         building_type, annual_consumption_kwh, potential_pv_kwp,
@@ -798,28 +817,31 @@ def save_building(building_id: str, email: str, profile: Dict, consents: Dict,
                         verified_at = EXCLUDED.verified_at,
                         user_type = EXCLUDED.user_type,
                         updated_at = CURRENT_TIMESTAMP
-                """, (
-                    building_id,
-                    email,
-                    phone or '',
-                    profile.get('address', ''),
-                    profile.get('lat'),
-                    profile.get('lon'),
-                    profile.get('plz'),
-                    profile.get('building_type'),
-                    profile.get('annual_consumption_kwh'),
-                    profile.get('potential_pv_kwp'),
-                    time.time(),
-                    True,  # verified immediately for now
-                    time.time(),
-                    user_type,
-                    referrer_id or '',
-                    referral_code,
-                    city_id or 'baden'
-                ))
+                """,
+                    (
+                        building_id,
+                        email,
+                        phone or '',
+                        profile.get('address', ''),
+                        profile.get('lat'),
+                        profile.get('lon'),
+                        profile.get('plz'),
+                        profile.get('building_type'),
+                        profile.get('annual_consumption_kwh'),
+                        profile.get('potential_pv_kwp'),
+                        time.time(),
+                        True,  # verified immediately for now
+                        time.time(),
+                        user_type,
+                        referrer_id or '',
+                        referral_code,
+                        city_id or 'baden',
+                    ),
+                )
 
                 # Save consents
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO consents (
                         building_id, share_with_neighbors, share_with_utility,
                         updates_opt_in, consent_version, consent_timestamp
@@ -830,26 +852,31 @@ def save_building(building_id: str, email: str, profile: Dict, consents: Dict,
                         updates_opt_in = EXCLUDED.updates_opt_in,
                         consent_version = EXCLUDED.consent_version,
                         consent_timestamp = EXCLUDED.consent_timestamp
-                """, (
-                    building_id,
-                    consents.get('share_with_neighbors', False),
-                    consents.get('share_with_utility', False),
-                    consents.get('updates_opt_in', False),
-                    consents.get('consent_version', '1.0'),
-                    consents.get('consent_timestamp', time.time())
-                ))
+                """,
+                    (
+                        building_id,
+                        consents.get('share_with_neighbors', False),
+                        consents.get('share_with_utility', False),
+                        consents.get('updates_opt_in', False),
+                        consents.get('consent_version', '1.0'),
+                        consents.get('consent_timestamp', time.time()),
+                    ),
+                )
 
                 # Track referral if present
                 if referrer_id:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         INSERT INTO referrals (referrer_id, referred_id)
                         VALUES (%s, %s)
                         ON CONFLICT (referred_id) DO NOTHING
-                    """, (referrer_id, building_id))
+                    """,
+                        (referrer_id, building_id),
+                    )
 
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving building {building_id}: {e}")
+        logger.error(f'[DB] Error saving building {building_id}: {e}')
         return False
 
 
@@ -858,19 +885,22 @@ def get_building(building_id: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT b.*, c.share_with_neighbors, c.share_with_utility,
                            c.updates_opt_in, c.consent_version
                     FROM buildings b
                     LEFT JOIN consents c ON b.building_id = c.building_id
                     WHERE b.building_id = %s
-                """, (building_id,))
+                """,
+                    (building_id,),
+                )
                 row = cur.fetchone()
                 if row:
                     return dict(row)
                 return None
     except Exception as e:
-        logger.error(f"[DB] Error getting building {building_id}: {e}")
+        logger.error(f'[DB] Error getting building {building_id}: {e}')
         return None
 
 
@@ -879,13 +909,16 @@ def get_building_by_email(email: str) -> List[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT building_id FROM buildings
                     WHERE LOWER(email) = LOWER(%s)
-                """, (email,))
+                """,
+                    (email,),
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error finding buildings by email: {e}")
+        logger.error(f'[DB] Error finding buildings by email: {e}')
         return []
 
 
@@ -895,11 +928,14 @@ def get_all_buildings(city_id: Optional[str] = None) -> List[Dict]:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if city_id:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT building_id, lat, lon, user_type, verified
                         FROM buildings
                         WHERE verified = TRUE AND city_id = %s
-                    """, (city_id,))
+                    """,
+                        (city_id,),
+                    )
                 else:
                     cur.execute("""
                         SELECT building_id, lat, lon, user_type, verified
@@ -908,7 +944,7 @@ def get_all_buildings(city_id: Optional[str] = None) -> List[Dict]:
                     """)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting all buildings: {e}")
+        logger.error(f'[DB] Error getting all buildings: {e}')
         return []
 
 
@@ -918,13 +954,15 @@ def get_vnb_pipeline(status_filter: Optional[str] = None) -> List[Dict]:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if status_filter:
-                    cur.execute("SELECT * FROM vnb_pipeline WHERE status = %s ORDER BY score DESC NULLS LAST", (status_filter,))
+                    cur.execute(
+                        'SELECT * FROM vnb_pipeline WHERE status = %s ORDER BY score DESC NULLS LAST', (status_filter,)
+                    )
                 else:
-                    cur.execute("SELECT * FROM vnb_pipeline ORDER BY score DESC NULLS LAST")
+                    cur.execute('SELECT * FROM vnb_pipeline ORDER BY score DESC NULLS LAST')
                 cols = [d[0] for d in cur.description] if cur.description else []
                 return [dict(zip(cols, row)) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"get_vnb_pipeline error: {e}")
+        logger.error(f'get_vnb_pipeline error: {e}')
         return []
 
 
@@ -937,16 +975,16 @@ def get_vnb_pipeline_stats() -> Dict:
                     SELECT status, COUNT(*)::int as count
                     FROM vnb_pipeline GROUP BY status
                 """)
-                result = {"total": 0}
-                for stage in ["lead", "contacted", "demo", "trial", "paid", "churned"]:
+                result = {'total': 0}
+                for stage in ['lead', 'contacted', 'demo', 'trial', 'paid', 'churned']:
                     result[stage] = 0
                 for row in cur.fetchall():
                     result[row[0]] = row[1]
-                    result["total"] += row[1]
+                    result['total'] += row[1]
                 return result
     except Exception as e:
-        logger.error(f"get_vnb_pipeline_stats error: {e}")
-        return {"total": 0}
+        logger.error(f'get_vnb_pipeline_stats error: {e}')
+        return {'total': 0}
 
 
 def get_all_building_profiles(city_id: Optional[str] = None) -> List[Dict]:
@@ -955,13 +993,16 @@ def get_all_building_profiles(city_id: Optional[str] = None) -> List[Dict]:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if city_id:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT building_id, address, lat, lon, plz, building_type,
                                annual_consumption_kwh, potential_pv_kwp, user_type
                         FROM buildings
                         WHERE verified = TRUE AND city_id = %s
                         ORDER BY building_id ASC
-                    """, (city_id,))
+                    """,
+                        (city_id,),
+                    )
                 else:
                     cur.execute("""
                         SELECT building_id, address, lat, lon, plz, building_type,
@@ -972,7 +1013,7 @@ def get_all_building_profiles(city_id: Optional[str] = None) -> List[Dict]:
                     """)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting building profiles: {e}")
+        logger.error(f'[DB] Error getting building profiles: {e}')
         return []
 
 
@@ -981,10 +1022,10 @@ def delete_building(building_id: str) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("DELETE FROM buildings WHERE building_id = %s", (building_id,))
+                cur.execute('DELETE FROM buildings WHERE building_id = %s', (building_id,))
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error deleting building {building_id}: {e}")
+        logger.error(f'[DB] Error deleting building {building_id}: {e}')
         return False
 
 
@@ -993,35 +1034,42 @@ def update_building_verified(building_id: str, verified: bool = True) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE buildings
                     SET verified = %s, verified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
                     WHERE building_id = %s
-                """, (verified, building_id))
+                """,
+                    (verified, building_id),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error updating verification for {building_id}: {e}")
+        logger.error(f'[DB] Error updating verification for {building_id}: {e}')
         return False
 
 
 # === Token Operations ===
+
 
 def save_token(token: str, building_id: str, token_type: str, ttl_seconds: int = 2592000) -> bool:
     """Save a verification or unsubscribe token (default TTL: 30 days)."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO tokens (token, building_id, token_type, expires_at)
                     VALUES (%s, %s, %s, CURRENT_TIMESTAMP + INTERVAL '%s seconds')
                     ON CONFLICT (token) DO UPDATE SET
                         building_id = EXCLUDED.building_id,
                         token_type = EXCLUDED.token_type,
                         expires_at = EXCLUDED.expires_at
-                """, (token, building_id, token_type, ttl_seconds))
+                """,
+                    (token, building_id, token_type, ttl_seconds),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving token: {e}")
+        logger.error(f'[DB] Error saving token: {e}')
         return False
 
 
@@ -1030,18 +1078,21 @@ def get_token(token: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT * FROM tokens
                     WHERE token = %s
                     AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                     AND used_at IS NULL
-                """, (token,))
+                """,
+                    (token,),
+                )
                 row = cur.fetchone()
                 if row:
                     return dict(row)
                 return None
     except Exception as e:
-        logger.error(f"[DB] Error getting token: {e}")
+        logger.error(f'[DB] Error getting token: {e}')
         return None
 
 
@@ -1050,13 +1101,16 @@ def use_token(token: str) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE tokens SET used_at = CURRENT_TIMESTAMP
                     WHERE token = %s
-                """, (token,))
+                """,
+                    (token,),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error using token: {e}")
+        logger.error(f'[DB] Error using token: {e}')
         return False
 
 
@@ -1066,37 +1120,47 @@ def delete_tokens_for_building(building_id: str, token_type: Optional[str] = Non
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if token_type:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         DELETE FROM tokens
                         WHERE building_id = %s AND token_type = %s
-                    """, (building_id, token_type))
+                    """,
+                        (building_id, token_type),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         DELETE FROM tokens WHERE building_id = %s
-                    """, (building_id,))
+                    """,
+                        (building_id,),
+                    )
                 return cur.rowcount
     except Exception as e:
-        logger.error(f"[DB] Error deleting tokens: {e}")
+        logger.error(f'[DB] Error deleting tokens: {e}')
         return 0
 
 
 # === Cluster Operations ===
+
 
 def save_cluster(building_id: str, cluster_id: int) -> bool:
     """Save cluster assignment for a building."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO clusters (building_id, cluster_id)
                     VALUES (%s, %s)
                     ON CONFLICT (building_id) DO UPDATE SET
                         cluster_id = EXCLUDED.cluster_id,
                         updated_at = CURRENT_TIMESTAMP
-                """, (building_id, cluster_id))
+                """,
+                    (building_id, cluster_id),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving cluster: {e}")
+        logger.error(f'[DB] Error saving cluster: {e}')
         return False
 
 
@@ -1106,17 +1170,20 @@ def clear_clusters_for_city(city_id: Optional[str] = None) -> int:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if city_id:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         DELETE FROM clusters
                         WHERE building_id IN (
                             SELECT building_id FROM buildings WHERE city_id = %s
                         )
-                    """, (city_id,))
+                    """,
+                        (city_id,),
+                    )
                 else:
-                    cur.execute("DELETE FROM clusters")
+                    cur.execute('DELETE FROM clusters')
                 return cur.rowcount
     except Exception as e:
-        logger.error(f"[DB] Error clearing clusters: {e}")
+        logger.error(f'[DB] Error clearing clusters: {e}')
         return 0
 
 
@@ -1124,9 +1191,11 @@ def save_cluster_info(cluster_id: int, info: Dict) -> bool:
     """Save cluster metadata."""
     try:
         import json
+
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO cluster_info (
                         cluster_id, autarky_percent, num_members, confidence_percent, profile_data_mix, polygon
                     )
@@ -1138,17 +1207,19 @@ def save_cluster_info(cluster_id: int, info: Dict) -> bool:
                         profile_data_mix = EXCLUDED.profile_data_mix,
                         polygon = EXCLUDED.polygon,
                         updated_at = CURRENT_TIMESTAMP
-                """, (
-                    cluster_id,
-                    info.get('autarky_percent'),
-                    info.get('num_members'),
-                    info.get('confidence_percent'),
-                    info.get('profile_data_mix'),
-                    json.dumps(info.get('polygon', []))
-                ))
+                """,
+                    (
+                        cluster_id,
+                        info.get('autarky_percent'),
+                        info.get('num_members'),
+                        info.get('confidence_percent'),
+                        info.get('profile_data_mix'),
+                        json.dumps(info.get('polygon', [])),
+                    ),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving cluster info: {e}")
+        logger.error(f'[DB] Error saving cluster info: {e}')
         return False
 
 
@@ -1168,26 +1239,30 @@ def get_all_clusters() -> List[Dict]:
                 """)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting clusters: {e}")
+        logger.error(f'[DB] Error getting clusters: {e}')
         return []
 
 
 # === Referral Operations ===
+
 
 def get_referral_code(building_id: str) -> Optional[str]:
     """Get the referral code for a building."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT referral_code FROM buildings WHERE building_id = %s
-                """, (building_id,))
+                """,
+                    (building_id,),
+                )
                 row = cur.fetchone()
                 if row:
                     return row['referral_code']
                 return None
     except Exception as e:
-        logger.error(f"[DB] Error getting referral code: {e}")
+        logger.error(f'[DB] Error getting referral code: {e}')
         return None
 
 
@@ -1196,16 +1271,19 @@ def get_building_by_referral_code(code: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT building_id, email, address FROM buildings
                     WHERE referral_code = %s
-                """, (code,))
+                """,
+                    (code,),
+                )
                 row = cur.fetchone()
                 if row:
                     return dict(row)
                 return None
     except Exception as e:
-        logger.error(f"[DB] Error finding building by referral code: {e}")
+        logger.error(f'[DB] Error finding building by referral code: {e}')
         return None
 
 
@@ -1214,16 +1292,17 @@ def get_referral_stats(building_id: str) -> Dict:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT COUNT(*) as total_referrals
                     FROM referrals WHERE referrer_id = %s
-                """, (building_id,))
+                """,
+                    (building_id,),
+                )
                 row = cur.fetchone()
-                return {
-                    'total_referrals': row['total_referrals'] if row else 0
-                }
+                return {'total_referrals': row['total_referrals'] if row else 0}
     except Exception as e:
-        logger.error(f"[DB] Error getting referral stats: {e}")
+        logger.error(f'[DB] Error getting referral stats: {e}')
         return {'total_referrals': 0}
 
 
@@ -1233,7 +1312,8 @@ def get_referral_leaderboard(limit: int = 10, city_id: Optional[str] = None) -> 
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if city_id:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT b.building_id,
                                SPLIT_PART(b.address, ',', 1) as street,
                                COUNT(r.id) as referral_count
@@ -1243,9 +1323,12 @@ def get_referral_leaderboard(limit: int = 10, city_id: Optional[str] = None) -> 
                         GROUP BY b.building_id, b.address
                         ORDER BY referral_count DESC
                         LIMIT %s
-                    """, (city_id, limit))
+                    """,
+                        (city_id, limit),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT b.building_id,
                                SPLIT_PART(b.address, ',', 1) as street,
                                COUNT(r.id) as referral_count
@@ -1254,28 +1337,35 @@ def get_referral_leaderboard(limit: int = 10, city_id: Optional[str] = None) -> 
                         GROUP BY b.building_id, b.address
                         ORDER BY referral_count DESC
                         LIMIT %s
-                    """, (limit,))
+                    """,
+                        (limit,),
+                    )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting leaderboard: {e}")
+        logger.error(f'[DB] Error getting leaderboard: {e}')
         return []
 
 
 # === Analytics Operations ===
 
+
 def track_event(event_type: str, building_id: Optional[str] = None, data: Optional[Dict] = None) -> bool:
     """Track an analytics event."""
     try:
         import json
+
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO analytics_events (event_type, building_id, data)
                     VALUES (%s, %s, %s)
-                """, (event_type, building_id or '', json.dumps(data if data is not None else {})))
+                """,
+                    (event_type, building_id or '', json.dumps(data if data is not None else {})),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error tracking event: {e}")
+        logger.error(f'[DB] Error tracking event: {e}')
         return False
 
 
@@ -1285,47 +1375,57 @@ def get_stats(city_id: Optional[str] = None) -> Dict:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 stats = {}
-                city_filter = " AND city_id = %s" if city_id else ""
+                city_filter = ' AND city_id = %s' if city_id else ''
                 city_params = (city_id,) if city_id else ()
 
                 # Total buildings
-                cur.execute(f"SELECT COUNT(*) as count FROM buildings WHERE verified = TRUE{city_filter}", city_params)
+                cur.execute(f'SELECT COUNT(*) as count FROM buildings WHERE verified = TRUE{city_filter}', city_params)
                 stats['total_buildings'] = cur.fetchone()['count']
 
                 # By type
-                cur.execute(f"""
+                cur.execute(
+                    f"""
                     SELECT user_type, COUNT(*) as count
                     FROM buildings WHERE verified = TRUE{city_filter}
                     GROUP BY user_type
-                """, city_params)
+                """,
+                    city_params,
+                )
                 for row in cur.fetchall():
                     stats[f'{row["user_type"]}_count'] = row['count']
 
                 # Total referrals
                 if city_id:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT COUNT(*) as count FROM referrals r
                         JOIN buildings b ON r.referrer_id = b.building_id
                         WHERE b.city_id = %s
-                    """, (city_id,))
+                    """,
+                        (city_id,),
+                    )
                 else:
-                    cur.execute("SELECT COUNT(*) as count FROM referrals")
+                    cur.execute('SELECT COUNT(*) as count FROM referrals')
                 stats['total_referrals'] = cur.fetchone()['count']
 
                 # Registrations today
-                cur.execute(f"""
+                cur.execute(
+                    f"""
                     SELECT COUNT(*) as count FROM buildings
                     WHERE DATE(registered_at) = CURRENT_DATE{city_filter}
-                """, city_params)
+                """,
+                    city_params,
+                )
                 stats['registrations_today'] = cur.fetchone()['count']
 
                 return stats
     except Exception as e:
-        logger.error(f"[DB] Error getting stats: {e}")
+        logger.error(f'[DB] Error getting stats: {e}')
         return {}
 
 
 # === Migration from JSON ===
+
 
 def migrate_from_json(json_data: Dict) -> Tuple[int, int]:
     """
@@ -1350,11 +1450,11 @@ def migrate_from_json(json_data: Dict) -> Tuple[int, int]:
                 profile=profile,
                 consents=consents,
                 user_type='registered',
-                phone=data.get('phone')
+                phone=data.get('phone'),
             )
             success += 1
         except Exception as e:
-            logger.error(f"[MIGRATION] Error migrating building {building_id}: {e}")
+            logger.error(f'[MIGRATION] Error migrating building {building_id}: {e}')
             errors += 1
 
     # Migrate interest pool (anonymous)
@@ -1369,18 +1469,19 @@ def migrate_from_json(json_data: Dict) -> Tuple[int, int]:
                 profile=profile,
                 consents=consents,
                 user_type='anonymous',
-                phone=data.get('phone')
+                phone=data.get('phone'),
             )
             success += 1
         except Exception as e:
-            logger.error(f"[MIGRATION] Error migrating interest {building_id}: {e}")
+            logger.error(f'[MIGRATION] Error migrating interest {building_id}: {e}')
             errors += 1
 
-    logger.info(f"[MIGRATION] Completed: {success} success, {errors} errors")
+    logger.info(f'[MIGRATION] Completed: {success} success, {errors} errors')
     return success, errors
 
 
 # === Email Queue Operations ===
+
 
 def schedule_email(building_id: str, email: str, template_key: str, send_at_timestamp: float) -> bool:
     """Schedule an email for future delivery."""
@@ -1388,19 +1489,25 @@ def schedule_email(building_id: str, email: str, template_key: str, send_at_time
         with get_connection() as conn:
             with conn.cursor() as cur:
                 # Skip if same template already scheduled/sent for this building
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT id FROM scheduled_emails
                     WHERE building_id = %s AND template_key = %s AND status IN ('pending', 'sent')
-                """, (building_id, template_key))
+                """,
+                    (building_id, template_key),
+                )
                 if cur.fetchone():
                     return False
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO scheduled_emails (building_id, email, template_key, send_at)
                     VALUES (%s, %s, %s, to_timestamp(%s))
-                """, (building_id, email, template_key, send_at_timestamp))
+                """,
+                    (building_id, email, template_key, send_at_timestamp),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error scheduling email: {e}")
+        logger.error(f'[DB] Error scheduling email: {e}')
         return False
 
 
@@ -1409,7 +1516,8 @@ def get_pending_emails(limit: int = 50) -> List[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT se.id, se.building_id, se.email, se.template_key, se.send_at,
                            b.address, b.lat, b.lon, b.plz
                     FROM scheduled_emails se
@@ -1417,10 +1525,12 @@ def get_pending_emails(limit: int = 50) -> List[Dict]:
                     WHERE se.status = 'pending' AND se.send_at <= CURRENT_TIMESTAMP
                     ORDER BY se.send_at ASC
                     LIMIT %s
-                """, (limit,))
+                """,
+                    (limit,),
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting pending emails: {e}")
+        logger.error(f'[DB] Error getting pending emails: {e}')
         return []
 
 
@@ -1429,14 +1539,17 @@ def mark_email_sent(email_id: int) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE scheduled_emails
                     SET status = 'sent', sent_at = CURRENT_TIMESTAMP
                     WHERE id = %s
-                """, (email_id,))
+                """,
+                    (email_id,),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error marking email sent: {e}")
+        logger.error(f'[DB] Error marking email sent: {e}')
         return False
 
 
@@ -1445,14 +1558,17 @@ def mark_email_failed(email_id: int, error: str) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE scheduled_emails
                     SET status = 'failed', error_message = %s
                     WHERE id = %s
-                """, (error, email_id))
+                """,
+                    (error, email_id),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error marking email failed: {e}")
+        logger.error(f'[DB] Error marking email failed: {e}')
         return False
 
 
@@ -1461,14 +1577,17 @@ def cancel_emails_for_building(building_id: str) -> int:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE scheduled_emails
                     SET status = 'cancelled'
                     WHERE building_id = %s AND status = 'pending'
-                """, (building_id,))
+                """,
+                    (building_id,),
+                )
                 return cur.rowcount
     except Exception as e:
-        logger.error(f"[DB] Error cancelling emails: {e}")
+        logger.error(f'[DB] Error cancelling emails: {e}')
         return 0
 
 
@@ -1487,7 +1606,7 @@ def get_email_stats() -> Dict:
                     stats[row['status']] = row['count']
                 return stats
     except Exception as e:
-        logger.error(f"[DB] Error getting email stats: {e}")
+        logger.error(f'[DB] Error getting email stats: {e}')
         return {}
 
 
@@ -1500,25 +1619,29 @@ def get_neighbor_count_near(lat: float, lon: float, radius_km: float = 0.5, city
                 lat_offset = radius_km / 111.0
                 lon_offset = radius_km / (111.0 * 0.7)  # rough cos(47)
                 if city_id:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT COUNT(*) as count FROM buildings
                         WHERE verified = TRUE AND city_id = %s
                         AND lat BETWEEN %s AND %s
                         AND lon BETWEEN %s AND %s
-                    """, (city_id, lat - lat_offset, lat + lat_offset,
-                          lon - lon_offset, lon + lon_offset))
+                    """,
+                        (city_id, lat - lat_offset, lat + lat_offset, lon - lon_offset, lon + lon_offset),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT COUNT(*) as count FROM buildings
                         WHERE verified = TRUE
                         AND lat BETWEEN %s AND %s
                         AND lon BETWEEN %s AND %s
-                    """, (lat - lat_offset, lat + lat_offset,
-                          lon - lon_offset, lon + lon_offset))
+                    """,
+                        (lat - lat_offset, lat + lat_offset, lon - lon_offset, lon + lon_offset),
+                    )
                 row = cur.fetchone()
                 return row['count'] if row else 0
     except Exception as e:
-        logger.error(f"[DB] Error counting neighbors: {e}")
+        logger.error(f'[DB] Error counting neighbors: {e}')
         return 0
 
 
@@ -1527,7 +1650,8 @@ def get_building_for_dashboard(building_id: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT b.*, c.share_with_neighbors, c.share_with_utility,
                            c.updates_opt_in, c.consent_version,
                            (SELECT COUNT(*) FROM referrals WHERE referrer_id = b.building_id) as referral_count,
@@ -1535,29 +1659,35 @@ def get_building_for_dashboard(building_id: str) -> Optional[Dict]:
                     FROM buildings b
                     LEFT JOIN consents c ON b.building_id = c.building_id
                     WHERE b.building_id = %s
-                """, (building_id,))
+                """,
+                    (building_id,),
+                )
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting dashboard data: {e}")
+        logger.error(f'[DB] Error getting dashboard data: {e}')
         return None
 
 
 # === Tenant Operations ===
+
 
 def get_tenant_by_territory(territory: str) -> Optional[Dict]:
     """Get tenant config by territory slug."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT * FROM white_label_configs
                     WHERE territory = %s AND active = TRUE
-                """, (territory,))
+                """,
+                    (territory,),
+                )
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting tenant {territory}: {e}")
+        logger.error(f'[DB] Error getting tenant {territory}: {e}')
         return None
 
 
@@ -1574,7 +1704,7 @@ def get_all_active_tenants() -> List[Dict]:
                 """)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting active tenants: {e}")
+        logger.error(f'[DB] Error getting active tenants: {e}')
         return []
 
 
@@ -1582,9 +1712,11 @@ def upsert_tenant(territory: str, config: Dict) -> bool:
     """Insert or update a tenant config."""
     try:
         import json
+
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO white_label_configs (
                         territory, utility_name, primary_color, secondary_color,
                         contact_email, contact_phone, legal_entity, dso_contact,
@@ -1601,31 +1733,47 @@ def upsert_tenant(territory: str, config: Dict) -> bool:
                         active = EXCLUDED.active,
                         config = EXCLUDED.config,
                         updated_at = CURRENT_TIMESTAMP
-                """, (
-                    territory,
-                    config.get('utility_name', ''),
-                    config.get('primary_color', '#c7021a'),
-                    config.get('secondary_color', '#f59e0b'),
-                    config.get('contact_email', ''),
-                    config.get('contact_phone', ''),
-                    config.get('legal_entity', ''),
-                    config.get('dso_contact', ''),
-                    config.get('active', True),
-                    json.dumps({k: v for k, v in config.items() if k not in (
-                        'utility_name', 'primary_color', 'secondary_color',
-                        'contact_email', 'contact_phone', 'legal_entity',
-                        'dso_contact', 'active', 'territory'
-                    )})
-                ))
+                """,
+                    (
+                        territory,
+                        config.get('utility_name', ''),
+                        config.get('primary_color', '#c7021a'),
+                        config.get('secondary_color', '#f59e0b'),
+                        config.get('contact_email', ''),
+                        config.get('contact_phone', ''),
+                        config.get('legal_entity', ''),
+                        config.get('dso_contact', ''),
+                        config.get('active', True),
+                        json.dumps(
+                            {
+                                k: v
+                                for k, v in config.items()
+                                if k
+                                not in (
+                                    'utility_name',
+                                    'primary_color',
+                                    'secondary_color',
+                                    'contact_email',
+                                    'contact_phone',
+                                    'legal_entity',
+                                    'dso_contact',
+                                    'active',
+                                    'territory',
+                                )
+                            }
+                        ),
+                    ),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error upserting tenant {territory}: {e}")
+        logger.error(f'[DB] Error upserting tenant {territory}: {e}')
         return False
 
 
 def seed_default_tenant() -> bool:
     """Seed the default Zurich tenant if it doesn't exist."""
     from tenant import DEFAULT_TENANT
+
     existing = get_tenant_by_territory('zurich')
     if existing:
         return True
@@ -1634,22 +1782,26 @@ def seed_default_tenant() -> bool:
 
 # === Municipality Operations ===
 
+
 def save_municipality(bfs_number, name, kanton='ZH', dso_name=None, population=None, subdomain=None):
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO municipalities (bfs_number, name, kanton, dso_name, population, subdomain)
                     VALUES (%s, %s, %s, %s, %s, %s)
                     ON CONFLICT (bfs_number) DO UPDATE SET
                         name = EXCLUDED.name, dso_name = EXCLUDED.dso_name,
                         population = EXCLUDED.population, updated_at = CURRENT_TIMESTAMP
                     RETURNING id
-                """, (bfs_number, name, kanton, dso_name, population, subdomain))
+                """,
+                    (bfs_number, name, kanton, dso_name, population, subdomain),
+                )
                 row = cur.fetchone()
                 return row['id'] if row else None
     except Exception as e:
-        logger.error(f"[DB] Error saving municipality: {e}")
+        logger.error(f'[DB] Error saving municipality: {e}')
         return None
 
 
@@ -1658,15 +1810,15 @@ def get_municipality(bfs_number=None, subdomain=None):
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if bfs_number:
-                    cur.execute("SELECT * FROM municipalities WHERE bfs_number = %s", (bfs_number,))
+                    cur.execute('SELECT * FROM municipalities WHERE bfs_number = %s', (bfs_number,))
                 elif subdomain:
-                    cur.execute("SELECT * FROM municipalities WHERE subdomain = %s", (subdomain,))
+                    cur.execute('SELECT * FROM municipalities WHERE subdomain = %s', (subdomain,))
                 else:
                     return None
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting municipality: {e}")
+        logger.error(f'[DB] Error getting municipality: {e}')
         return None
 
 
@@ -1675,12 +1827,12 @@ def get_all_municipalities(kanton=None):
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if kanton:
-                    cur.execute("SELECT * FROM municipalities WHERE kanton = %s ORDER BY name", (kanton,))
+                    cur.execute('SELECT * FROM municipalities WHERE kanton = %s ORDER BY name', (kanton,))
                 else:
-                    cur.execute("SELECT * FROM municipalities ORDER BY name")
+                    cur.execute('SELECT * FROM municipalities ORDER BY name')
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting municipalities: {e}")
+        logger.error(f'[DB] Error getting municipalities: {e}')
         return []
 
 
@@ -1689,22 +1841,29 @@ def update_municipality_status(bfs_number, status, admin_email=None):
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if admin_email:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         UPDATE municipalities SET onboarding_status = %s, admin_email = %s, updated_at = CURRENT_TIMESTAMP
                         WHERE bfs_number = %s
-                    """, (status, admin_email, bfs_number))
+                    """,
+                        (status, admin_email, bfs_number),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         UPDATE municipalities SET onboarding_status = %s, updated_at = CURRENT_TIMESTAMP
                         WHERE bfs_number = %s
-                    """, (status, bfs_number))
+                    """,
+                        (status, bfs_number),
+                    )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error updating municipality status: {e}")
+        logger.error(f'[DB] Error updating municipality status: {e}')
         return False
 
 
 # === Meter Reading Operations ===
+
 
 def save_meter_readings(building_id, readings, source='csv'):
     """Bulk insert meter readings. readings = list of (timestamp, consumption, production, feed_in)."""
@@ -1712,18 +1871,23 @@ def save_meter_readings(building_id, readings, source='csv'):
         with get_connection() as conn:
             with conn.cursor() as cur:
                 from psycopg2.extras import execute_values
+
                 values = [(building_id, r[0], r[1], r[2], r[3], source) for r in readings]
-                execute_values(cur, """
+                execute_values(
+                    cur,
+                    """
                     INSERT INTO meter_readings (building_id, timestamp, consumption_kwh, production_kwh, feed_in_kwh, source)
                     VALUES %s
                     ON CONFLICT (building_id, timestamp) DO UPDATE SET
                         consumption_kwh = EXCLUDED.consumption_kwh,
                         production_kwh = EXCLUDED.production_kwh,
                         feed_in_kwh = EXCLUDED.feed_in_kwh
-                """, values)
+                """,
+                    values,
+                )
                 return len(values)
     except Exception as e:
-        logger.error(f"[DB] Error saving meter readings: {e}")
+        logger.error(f'[DB] Error saving meter readings: {e}')
         return 0
 
 
@@ -1731,20 +1895,20 @@ def get_meter_readings(building_id, start=None, end=None, limit=1000):
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                query = "SELECT * FROM meter_readings WHERE building_id = %s"
+                query = 'SELECT * FROM meter_readings WHERE building_id = %s'
                 params = [building_id]
                 if start:
-                    query += " AND timestamp >= %s"
+                    query += ' AND timestamp >= %s'
                     params.append(start)
                 if end:
-                    query += " AND timestamp <= %s"
+                    query += ' AND timestamp <= %s'
                     params.append(end)
-                query += " ORDER BY timestamp DESC LIMIT %s"
+                query += ' ORDER BY timestamp DESC LIMIT %s'
                 params.append(limit)
                 cur.execute(query, params)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting meter readings: {e}")
+        logger.error(f'[DB] Error getting meter readings: {e}')
         return []
 
 
@@ -1760,16 +1924,16 @@ def get_meter_profile_15min(building_id, start=None, end=None):
                 """
                 params = [building_id]
                 if start:
-                    query += " AND timestamp >= %s"
+                    query += ' AND timestamp >= %s'
                     params.append(start)
                 if end:
-                    query += " AND timestamp <= %s"
+                    query += ' AND timestamp <= %s'
                     params.append(end)
-                query += " ORDER BY timestamp ASC"
+                query += ' ORDER BY timestamp ASC'
                 cur.execute(query, params)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting meter profile 15min: {e}")
+        logger.error(f'[DB] Error getting meter profile 15min: {e}')
         return []
 
 
@@ -1777,7 +1941,8 @@ def get_meter_reading_stats(building_id):
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT COUNT(*) as total_readings,
                            MIN(timestamp) as first_reading,
                            MAX(timestamp) as last_reading,
@@ -1785,21 +1950,27 @@ def get_meter_reading_stats(building_id):
                            SUM(production_kwh) as total_production,
                            SUM(feed_in_kwh) as total_feed_in
                     FROM meter_readings WHERE building_id = %s
-                """, (building_id,))
+                """,
+                    (building_id,),
+                )
                 row = cur.fetchone()
                 return dict(row) if row else {}
     except Exception as e:
-        logger.error(f"[DB] Error getting meter stats: {e}")
+        logger.error(f'[DB] Error getting meter stats: {e}')
         return {}
 
 
 # === Data Consent Operations ===
 
-def save_data_consent(building_id, tier=1, share_municipality=True, share_research=False, share_providers=False, version='1.0'):
+
+def save_data_consent(
+    building_id, tier=1, share_municipality=True, share_research=False, share_providers=False, version='1.0'
+):
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO data_consents (building_id, tier, share_with_municipality, share_anonymized_research,
                         share_aggregated_providers, consent_version)
                     VALUES (%s, %s, %s, %s, %s, %s)
@@ -1810,10 +1981,12 @@ def save_data_consent(building_id, tier=1, share_municipality=True, share_resear
                         share_aggregated_providers = EXCLUDED.share_aggregated_providers,
                         consent_version = EXCLUDED.consent_version,
                         consented_at = CURRENT_TIMESTAMP, revoked_at = NULL
-                """, (building_id, tier, share_municipality, share_research, share_providers, version))
+                """,
+                    (building_id, tier, share_municipality, share_research, share_providers, version),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving data consent: {e}")
+        logger.error(f'[DB] Error saving data consent: {e}')
         return False
 
 
@@ -1821,11 +1994,11 @@ def get_data_consent(building_id):
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM data_consents WHERE building_id = %s AND revoked_at IS NULL", (building_id,))
+                cur.execute('SELECT * FROM data_consents WHERE building_id = %s AND revoked_at IS NULL', (building_id,))
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting data consent: {e}")
+        logger.error(f'[DB] Error getting data consent: {e}')
         return None
 
 
@@ -1834,31 +2007,45 @@ def count_consented_buildings(tier=None):
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if tier:
-                    cur.execute("SELECT COUNT(*) as count FROM data_consents WHERE tier >= %s AND revoked_at IS NULL", (tier,))
+                    cur.execute(
+                        'SELECT COUNT(*) as count FROM data_consents WHERE tier >= %s AND revoked_at IS NULL', (tier,)
+                    )
                 else:
-                    cur.execute("SELECT COUNT(*) as count FROM data_consents WHERE revoked_at IS NULL")
+                    cur.execute('SELECT COUNT(*) as count FROM data_consents WHERE revoked_at IS NULL')
                 return cur.fetchone()['count']
     except Exception as e:
-        logger.error(f"[DB] Error counting consented buildings: {e}")
+        logger.error(f'[DB] Error counting consented buildings: {e}')
         return 0
 
 
 # === API Client Operations ===
 
+
 def save_api_client(company_name, contact_email, api_key_hash, tier='starter', rate_limit=100, allowed_cantons=None):
     try:
         import json
+
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO api_clients (company_name, contact_email, api_key_hash, tier, rate_limit_per_hour, allowed_cantons)
                     VALUES (%s, %s, %s, %s, %s, %s)
                     RETURNING id
-                """, (company_name, contact_email, api_key_hash, tier, rate_limit, json.dumps(allowed_cantons or ['ZH'])))
+                """,
+                    (
+                        company_name,
+                        contact_email,
+                        api_key_hash,
+                        tier,
+                        rate_limit,
+                        json.dumps(allowed_cantons or ['ZH']),
+                    ),
+                )
                 row = cur.fetchone()
                 return row['id'] if row else None
     except Exception as e:
-        logger.error(f"[DB] Error saving API client: {e}")
+        logger.error(f'[DB] Error saving API client: {e}')
         return None
 
 
@@ -1866,26 +2053,30 @@ def get_api_client_by_key(api_key_hash):
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM api_clients WHERE api_key_hash = %s AND active = TRUE", (api_key_hash,))
+                cur.execute('SELECT * FROM api_clients WHERE api_key_hash = %s AND active = TRUE', (api_key_hash,))
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting API client: {e}")
+        logger.error(f'[DB] Error getting API client: {e}')
         return None
 
 
 def track_api_usage(client_id, endpoint, params=None, response_size=0):
     try:
         import json
+
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO api_usage (client_id, endpoint, params, response_size)
                     VALUES (%s, %s, %s, %s)
-                """, (client_id, endpoint, json.dumps(params or {}), response_size))
+                """,
+                    (client_id, endpoint, json.dumps(params or {}), response_size),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error tracking API usage: {e}")
+        logger.error(f'[DB] Error tracking API usage: {e}')
         return False
 
 
@@ -1893,34 +2084,42 @@ def get_api_usage_count(client_id, hours=1):
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT COUNT(*) as count FROM api_usage
                     WHERE client_id = %s AND called_at > CURRENT_TIMESTAMP - INTERVAL '%s hours'
-                """, (client_id, hours))
+                """,
+                    (client_id, hours),
+                )
                 return cur.fetchone()['count']
     except Exception as e:
-        logger.error(f"[DB] Error getting API usage count: {e}")
+        logger.error(f'[DB] Error getting API usage count: {e}')
         return 0
 
 
 # === Insights Cache Operations ===
 
+
 def save_insight(insight_type, scope, period, data, ttl_hours=24):
     try:
         import json
+
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO insights_cache (insight_type, scope, period, data, expires_at)
                     VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP + INTERVAL '%s hours')
                     ON CONFLICT (insight_type, scope, period) DO UPDATE SET
                         data = EXCLUDED.data,
                         computed_at = CURRENT_TIMESTAMP,
                         expires_at = EXCLUDED.expires_at
-                """, (insight_type, scope, period, json.dumps(data), ttl_hours))
+                """,
+                    (insight_type, scope, period, json.dumps(data), ttl_hours),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving insight: {e}")
+        logger.error(f'[DB] Error saving insight: {e}')
         return False
 
 
@@ -1928,19 +2127,19 @@ def get_insight(insight_type, scope=None, period=None):
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                query = "SELECT * FROM insights_cache WHERE insight_type = %s AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)"
+                query = 'SELECT * FROM insights_cache WHERE insight_type = %s AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)'
                 params = [insight_type]
                 if scope:
-                    query += " AND scope = %s"
+                    query += ' AND scope = %s'
                     params.append(scope)
                 if period:
-                    query += " AND period = %s"
+                    query += ' AND period = %s'
                     params.append(period)
                 cur.execute(query, params)
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting insight: {e}")
+        logger.error(f'[DB] Error getting insight: {e}')
         return None
 
 
@@ -1949,30 +2148,39 @@ def get_simulation_cache(cache_key: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT cache_key, city_id, building_ids_hash, sim_version, result_json,
                            computed_at, expires_at
                     FROM simulation_cache
                     WHERE cache_key = %s
                       AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
-                """, (cache_key,))
+                """,
+                    (cache_key,),
+                )
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting simulation cache: {e}")
+        logger.error(f'[DB] Error getting simulation cache: {e}')
         return None
 
 
-def set_simulation_cache(cache_key: str, result: Dict, ttl_seconds: int = 86400,
-                         city_id: Optional[str] = None,
-                         building_ids_hash: Optional[str] = None,
-                         sim_version: str = 'v2') -> bool:
+def set_simulation_cache(
+    cache_key: str,
+    result: Dict,
+    ttl_seconds: int = 86400,
+    city_id: Optional[str] = None,
+    building_ids_hash: Optional[str] = None,
+    sim_version: str = 'v2',
+) -> bool:
     """Upsert simulation cache entry with TTL."""
     try:
         import json
+
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO simulation_cache
                         (cache_key, city_id, building_ids_hash, sim_version, result_json, expires_at)
                     VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP + (%s * INTERVAL '1 second'))
@@ -1983,17 +2191,12 @@ def set_simulation_cache(cache_key: str, result: Dict, ttl_seconds: int = 86400,
                         result_json = EXCLUDED.result_json,
                         computed_at = CURRENT_TIMESTAMP,
                         expires_at = EXCLUDED.expires_at
-                """, (
-                    cache_key,
-                    city_id,
-                    building_ids_hash,
-                    sim_version,
-                    json.dumps(result),
-                    ttl_seconds
-                ))
+                """,
+                    (cache_key, city_id, building_ids_hash, sim_version, json.dumps(result), ttl_seconds),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error setting simulation cache: {e}")
+        logger.error(f'[DB] Error setting simulation cache: {e}')
         return False
 
 
@@ -2003,12 +2206,15 @@ def purge_simulation_cache(city_id: Optional[str] = None) -> int:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if city_id:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         DELETE FROM simulation_cache
                         WHERE city_id = %s
                           AND expires_at IS NOT NULL
                           AND expires_at <= CURRENT_TIMESTAMP
-                    """, (city_id,))
+                    """,
+                        (city_id,),
+                    )
                 else:
                     cur.execute("""
                         DELETE FROM simulation_cache
@@ -2017,7 +2223,7 @@ def purge_simulation_cache(city_id: Optional[str] = None) -> int:
                     """)
                 return cur.rowcount
     except Exception as e:
-        logger.error(f"[DB] Error purging simulation cache: {e}")
+        logger.error(f'[DB] Error purging simulation cache: {e}')
         return 0
 
 
@@ -2027,21 +2233,33 @@ _db_initialized = False
 
 # === ElCom Tariff Operations ===
 
+
 def save_elcom_tariffs(tariffs: List[Dict]) -> int:
     """Bulk upsert ElCom tariff records via execute_values. Returns count saved."""
     if not tariffs:
         return 0
     try:
         from psycopg2.extras import execute_values
+
         rows = [
-            (t['bfs_number'], t.get('operator_name', ''), t['year'], t['category'],
-             t.get('total_rp_kwh'), t.get('energy_rp_kwh'), t.get('grid_rp_kwh'),
-             t.get('municipality_fee_rp_kwh'), t.get('kev_rp_kwh'))
+            (
+                t['bfs_number'],
+                t.get('operator_name', ''),
+                t['year'],
+                t['category'],
+                t.get('total_rp_kwh'),
+                t.get('energy_rp_kwh'),
+                t.get('grid_rp_kwh'),
+                t.get('municipality_fee_rp_kwh'),
+                t.get('kev_rp_kwh'),
+            )
             for t in tariffs
         ]
         with get_connection() as conn:
             with conn.cursor() as cur:
-                execute_values(cur, """
+                execute_values(
+                    cur,
+                    """
                     INSERT INTO elcom_tariffs (bfs_number, operator_name, year, category,
                         total_rp_kwh, energy_rp_kwh, grid_rp_kwh, municipality_fee_rp_kwh, kev_rp_kwh)
                     VALUES %s
@@ -2052,10 +2270,13 @@ def save_elcom_tariffs(tariffs: List[Dict]) -> int:
                         municipality_fee_rp_kwh = EXCLUDED.municipality_fee_rp_kwh,
                         kev_rp_kwh = EXCLUDED.kev_rp_kwh,
                         fetched_at = CURRENT_TIMESTAMP
-                """, rows, page_size=500)
+                """,
+                    rows,
+                    page_size=500,
+                )
                 return len(rows)
     except Exception as e:
-        logger.error(f"[DB] Error saving ElCom tariffs: {e}")
+        logger.error(f'[DB] Error saving ElCom tariffs: {e}')
         return 0
 
 
@@ -2065,20 +2286,26 @@ def get_elcom_tariffs(bfs_number: int, year: int = None) -> List[Dict]:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if year:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT * FROM elcom_tariffs
                         WHERE bfs_number = %s AND year = %s
                         ORDER BY category
-                    """, (bfs_number, year))
+                    """,
+                        (bfs_number, year),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT * FROM elcom_tariffs
                         WHERE bfs_number = %s
                         ORDER BY year DESC, category
-                    """, (bfs_number,))
+                    """,
+                        (bfs_number,),
+                    )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting ElCom tariffs: {e}")
+        logger.error(f'[DB] Error getting ElCom tariffs: {e}')
         return []
 
 
@@ -2087,7 +2314,7 @@ def get_elcom_last_refresh() -> Dict:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT MAX(fetched_at) as last_refresh, COUNT(*) as record_count FROM elcom_tariffs")
+                cur.execute('SELECT MAX(fetched_at) as last_refresh, COUNT(*) as record_count FROM elcom_tariffs')
                 row = cur.fetchone()
                 if row:
                     return {
@@ -2096,7 +2323,7 @@ def get_elcom_last_refresh() -> Dict:
                     }
                 return {'last_refresh': None, 'record_count': 0}
     except Exception as e:
-        logger.error(f"[DB] Error getting ElCom last refresh: {e}")
+        logger.error(f'[DB] Error getting ElCom last refresh: {e}')
         return {'last_refresh': None, 'record_count': 0}
 
 
@@ -2105,13 +2332,16 @@ def get_all_elcom_tariffs_by_operator(year: int = 2026) -> Dict[str, List[Dict]]
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT operator_name, category, total_rp_kwh, energy_rp_kwh,
                            grid_rp_kwh, municipality_fee_rp_kwh, kev_rp_kwh, bfs_number
                     FROM elcom_tariffs
                     WHERE year = %s
                     ORDER BY operator_name, category
-                """, (year,))
+                """,
+                    (year,),
+                )
                 rows = [dict(r) for r in cur.fetchall()]
         grouped = {}
         for row in rows:
@@ -2119,19 +2349,22 @@ def get_all_elcom_tariffs_by_operator(year: int = 2026) -> Dict[str, List[Dict]]
             grouped.setdefault(op, []).append(row)
         return grouped
     except Exception as e:
-        logger.error(f"[DB] Error getting all ElCom tariffs: {e}")
+        logger.error(f'[DB] Error getting all ElCom tariffs: {e}')
         return {}
 
 
 # === Municipality Profile Operations ===
 
+
 def save_municipality_profile(profile: Dict) -> bool:
     """Upsert a municipality profile."""
     try:
         import json
+
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO municipality_profiles (bfs_number, name, kanton, population,
                         solar_potential_pct, solar_installed_kwp, ev_share_pct, renewable_heating_pct,
                         electricity_consumption_mwh, renewable_production_mwh,
@@ -2149,18 +2382,26 @@ def save_municipality_profile(profile: Dict) -> bool:
                         energy_transition_score = EXCLUDED.energy_transition_score,
                         data_sources = EXCLUDED.data_sources,
                         updated_at = CURRENT_TIMESTAMP
-                """, (
-                    profile['bfs_number'], profile['name'], profile.get('kanton', 'ZH'),
-                    profile.get('population'), profile.get('solar_potential_pct'),
-                    profile.get('solar_installed_kwp'), profile.get('ev_share_pct'),
-                    profile.get('renewable_heating_pct'), profile.get('electricity_consumption_mwh'),
-                    profile.get('renewable_production_mwh'), profile.get('leg_value_gap_chf'),
-                    profile.get('energy_transition_score'),
-                    json.dumps(profile.get('data_sources', {}))
-                ))
+                """,
+                    (
+                        profile['bfs_number'],
+                        profile['name'],
+                        profile.get('kanton', 'ZH'),
+                        profile.get('population'),
+                        profile.get('solar_potential_pct'),
+                        profile.get('solar_installed_kwp'),
+                        profile.get('ev_share_pct'),
+                        profile.get('renewable_heating_pct'),
+                        profile.get('electricity_consumption_mwh'),
+                        profile.get('renewable_production_mwh'),
+                        profile.get('leg_value_gap_chf'),
+                        profile.get('energy_transition_score'),
+                        json.dumps(profile.get('data_sources', {})),
+                    ),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving municipality profile: {e}")
+        logger.error(f'[DB] Error saving municipality profile: {e}')
         return False
 
 
@@ -2169,11 +2410,11 @@ def get_municipality_profile(bfs_number: int) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM municipality_profiles WHERE bfs_number = %s", (bfs_number,))
+                cur.execute('SELECT * FROM municipality_profiles WHERE bfs_number = %s', (bfs_number,))
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting municipality profile: {e}")
+        logger.error(f'[DB] Error getting municipality profile: {e}')
         return None
 
 
@@ -2186,26 +2427,31 @@ def get_all_municipality_profiles(kanton: str = None, order_by: str = 'name') ->
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if kanton:
-                    cur.execute(f"""
+                    cur.execute(
+                        f"""
                         SELECT * FROM municipality_profiles
                         WHERE kanton = %s ORDER BY {order_by}
-                    """, (kanton,))
+                    """,
+                        (kanton,),
+                    )
                 else:
-                    cur.execute(f"SELECT * FROM municipality_profiles ORDER BY {order_by}")
+                    cur.execute(f'SELECT * FROM municipality_profiles ORDER BY {order_by}')
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting municipality profiles: {e}")
+        logger.error(f'[DB] Error getting municipality profiles: {e}')
         return []
 
 
 # === Sonnendach Municipal Operations ===
+
 
 def save_sonnendach_municipal(data: Dict) -> bool:
     """Upsert sonnendach municipal solar data."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO sonnendach_municipal (bfs_number, total_roof_area_m2, suitable_roof_area_m2,
                         potential_kwh_year, potential_kwp, utilization_pct)
                     VALUES (%s, %s, %s, %s, %s, %s)
@@ -2216,14 +2462,19 @@ def save_sonnendach_municipal(data: Dict) -> bool:
                         potential_kwp = EXCLUDED.potential_kwp,
                         utilization_pct = EXCLUDED.utilization_pct,
                         fetched_at = CURRENT_TIMESTAMP
-                """, (
-                    data['bfs_number'], data.get('total_roof_area_m2'),
-                    data.get('suitable_roof_area_m2'), data.get('potential_kwh_year'),
-                    data.get('potential_kwp'), data.get('utilization_pct')
-                ))
+                """,
+                    (
+                        data['bfs_number'],
+                        data.get('total_roof_area_m2'),
+                        data.get('suitable_roof_area_m2'),
+                        data.get('potential_kwh_year'),
+                        data.get('potential_kwp'),
+                        data.get('utilization_pct'),
+                    ),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving sonnendach data: {e}")
+        logger.error(f'[DB] Error saving sonnendach data: {e}')
         return False
 
 
@@ -2232,25 +2483,34 @@ def get_sonnendach_municipal(bfs_number: int) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM sonnendach_municipal WHERE bfs_number = %s", (bfs_number,))
+                cur.execute('SELECT * FROM sonnendach_municipal WHERE bfs_number = %s', (bfs_number,))
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting sonnendach data: {e}")
+        logger.error(f'[DB] Error getting sonnendach data: {e}')
         return None
 
 
 # === Utility Client Operations ===
 
-def save_utility_client(client_id: str, company_name: str, contact_email: str,
-                        contact_name: str = '', contact_phone: str = '',
-                        vnb_name: str = '', population: int = None,
-                        kanton: str = '', tier: str = 'starter') -> bool:
+
+def save_utility_client(
+    client_id: str,
+    company_name: str,
+    contact_email: str,
+    contact_name: str = '',
+    contact_phone: str = '',
+    vnb_name: str = '',
+    population: int = None,
+    kanton: str = '',
+    tier: str = 'starter',
+) -> bool:
     """Create or update a utility client."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO utility_clients (
                         client_id, company_name, contact_name, contact_email,
                         contact_phone, vnb_name, population, kanton, tier, status
@@ -2265,11 +2525,22 @@ def save_utility_client(client_id: str, company_name: str, contact_email: str,
                         kanton = EXCLUDED.kanton,
                         tier = EXCLUDED.tier,
                         updated_at = CURRENT_TIMESTAMP
-                """, (client_id, company_name, contact_name, contact_email,
-                      contact_phone, vnb_name, population, kanton, tier))
+                """,
+                    (
+                        client_id,
+                        company_name,
+                        contact_name,
+                        contact_email,
+                        contact_phone,
+                        vnb_name,
+                        population,
+                        kanton,
+                        tier,
+                    ),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving utility client: {e}")
+        logger.error(f'[DB] Error saving utility client: {e}')
         return False
 
 
@@ -2278,11 +2549,11 @@ def get_utility_client(client_id: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM utility_clients WHERE client_id = %s", (client_id,))
+                cur.execute('SELECT * FROM utility_clients WHERE client_id = %s', (client_id,))
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting utility client: {e}")
+        logger.error(f'[DB] Error getting utility client: {e}')
         return None
 
 
@@ -2291,11 +2562,11 @@ def get_utility_client_by_email(email: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM utility_clients WHERE LOWER(contact_email) = LOWER(%s)", (email,))
+                cur.execute('SELECT * FROM utility_clients WHERE LOWER(contact_email) = LOWER(%s)', (email,))
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting utility client by email: {e}")
+        logger.error(f'[DB] Error getting utility client by email: {e}')
         return None
 
 
@@ -2304,14 +2575,17 @@ def get_utility_client_by_magic_token(token: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT * FROM utility_clients
                     WHERE magic_link_token = %s AND magic_link_expires_at > CURRENT_TIMESTAMP
-                """, (token,))
+                """,
+                    (token,),
+                )
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting utility client by magic token: {e}")
+        logger.error(f'[DB] Error getting utility client by magic token: {e}')
         return None
 
 
@@ -2320,16 +2594,19 @@ def set_utility_magic_token(client_id: str, token: str, ttl_seconds: int = 900) 
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE utility_clients
                     SET magic_link_token = %s,
                         magic_link_expires_at = CURRENT_TIMESTAMP + INTERVAL '%s seconds',
                         updated_at = CURRENT_TIMESTAMP
                     WHERE client_id = %s
-                """, (token, ttl_seconds, client_id))
+                """,
+                    (token, ttl_seconds, client_id),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error setting magic token: {e}")
+        logger.error(f'[DB] Error setting magic token: {e}')
         return False
 
 
@@ -2338,15 +2615,18 @@ def clear_utility_magic_token(client_id: str) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE utility_clients
                     SET magic_link_token = NULL, magic_link_expires_at = NULL,
                         last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
                     WHERE client_id = %s
-                """, (client_id,))
+                """,
+                    (client_id,),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error clearing magic token: {e}")
+        logger.error(f'[DB] Error clearing magic token: {e}')
         return False
 
 
@@ -2355,13 +2635,16 @@ def update_utility_client_status(client_id: str, status: str) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE utility_clients SET status = %s, updated_at = CURRENT_TIMESTAMP
                     WHERE client_id = %s
-                """, (status, client_id))
+                """,
+                    (status, client_id),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error updating utility client status: {e}")
+        logger.error(f'[DB] Error updating utility client status: {e}')
         return False
 
 
@@ -2370,13 +2653,16 @@ def update_utility_client_api_key(client_id: str, api_key_hash: str) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE utility_clients SET api_key_hash = %s, updated_at = CURRENT_TIMESTAMP
                     WHERE client_id = %s
-                """, (api_key_hash, client_id))
+                """,
+                    (api_key_hash, client_id),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error updating utility client API key: {e}")
+        logger.error(f'[DB] Error updating utility client API key: {e}')
         return False
 
 
@@ -2386,12 +2672,12 @@ def get_all_utility_clients(status: str = None) -> List[Dict]:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if status:
-                    cur.execute("SELECT * FROM utility_clients WHERE status = %s ORDER BY created_at DESC", (status,))
+                    cur.execute('SELECT * FROM utility_clients WHERE status = %s ORDER BY created_at DESC', (status,))
                 else:
-                    cur.execute("SELECT * FROM utility_clients ORDER BY created_at DESC")
+                    cur.execute('SELECT * FROM utility_clients ORDER BY created_at DESC')
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting utility clients: {e}")
+        logger.error(f'[DB] Error getting utility clients: {e}')
         return []
 
 
@@ -2413,19 +2699,22 @@ def get_utility_client_stats() -> Dict:
                 """)
                 return dict(cur.fetchone())
     except Exception as e:
-        logger.error(f"[DB] Error getting utility client stats: {e}")
+        logger.error(f'[DB] Error getting utility client stats: {e}')
         return {}
 
 
 # === VNB Research Operations ===
 
+
 def save_vnb_research(vnb_name: str, data: Dict) -> bool:
     """Upsert VNB research record."""
     try:
         import json
+
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO vnb_research (
                         vnb_name, bfs_numbers, kanton, population_served, website,
                         contact_email, contact_phone, has_leg_offering, leg_offering_details,
@@ -2445,24 +2734,26 @@ def save_vnb_research(vnb_name: str, data: Dict) -> bool:
                         pipeline_status = EXCLUDED.pipeline_status,
                         research_data = EXCLUDED.research_data,
                         updated_at = CURRENT_TIMESTAMP
-                """, (
-                    vnb_name,
-                    json.dumps(data.get('bfs_numbers', [])),
-                    data.get('kanton', ''),
-                    data.get('population_served'),
-                    data.get('website', ''),
-                    data.get('contact_email', ''),
-                    data.get('contact_phone', ''),
-                    data.get('has_leg_offering', False),
-                    data.get('leg_offering_details', ''),
-                    data.get('competitor_status', ''),
-                    data.get('priority_score', 0),
-                    data.get('pipeline_status', 'researched'),
-                    json.dumps(data.get('research_data', {}))
-                ))
+                """,
+                    (
+                        vnb_name,
+                        json.dumps(data.get('bfs_numbers', [])),
+                        data.get('kanton', ''),
+                        data.get('population_served'),
+                        data.get('website', ''),
+                        data.get('contact_email', ''),
+                        data.get('contact_phone', ''),
+                        data.get('has_leg_offering', False),
+                        data.get('leg_offering_details', ''),
+                        data.get('competitor_status', ''),
+                        data.get('priority_score', 0),
+                        data.get('pipeline_status', 'researched'),
+                        json.dumps(data.get('research_data', {})),
+                    ),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving VNB research: {e}")
+        logger.error(f'[DB] Error saving VNB research: {e}')
         return False
 
 
@@ -2471,16 +2762,17 @@ def get_vnb_research(vnb_name: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM vnb_research WHERE vnb_name = %s", (vnb_name,))
+                cur.execute('SELECT * FROM vnb_research WHERE vnb_name = %s', (vnb_name,))
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting VNB research: {e}")
+        logger.error(f'[DB] Error getting VNB research: {e}')
         return None
 
 
-def get_all_vnb_research(pipeline_status: str = None, kanton: str = None,
-                         order_by: str = 'priority_score') -> List[Dict]:
+def get_all_vnb_research(
+    pipeline_status: str = None, kanton: str = None, order_by: str = 'priority_score'
+) -> List[Dict]:
     """Get all VNB research records, optionally filtered."""
     allowed_orders = {'priority_score', 'vnb_name', 'population_served', 'updated_at'}
     if order_by not in allowed_orders:
@@ -2488,19 +2780,19 @@ def get_all_vnb_research(pipeline_status: str = None, kanton: str = None,
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                query = "SELECT * FROM vnb_research WHERE 1=1"
+                query = 'SELECT * FROM vnb_research WHERE 1=1'
                 params = []
                 if pipeline_status:
-                    query += " AND pipeline_status = %s"
+                    query += ' AND pipeline_status = %s'
                     params.append(pipeline_status)
                 if kanton:
-                    query += " AND kanton = %s"
+                    query += ' AND kanton = %s'
                     params.append(kanton)
-                query += f" ORDER BY {order_by} DESC"
+                query += f' ORDER BY {order_by} DESC'
                 cur.execute(query, params)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting VNB research: {e}")
+        logger.error(f'[DB] Error getting VNB research: {e}')
         return []
 
 
@@ -2510,20 +2802,26 @@ def update_vnb_pipeline_status(vnb_name: str, status: str, notes: str = None) ->
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if notes:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         UPDATE vnb_research
                         SET pipeline_status = %s, outreach_notes = %s, updated_at = CURRENT_TIMESTAMP
                         WHERE vnb_name = %s
-                    """, (status, notes, vnb_name))
+                    """,
+                        (status, notes, vnb_name),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         UPDATE vnb_research
                         SET pipeline_status = %s, updated_at = CURRENT_TIMESTAMP
                         WHERE vnb_name = %s
-                    """, (status, vnb_name))
+                    """,
+                        (status, vnb_name),
+                    )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error updating VNB pipeline status: {e}")
+        logger.error(f'[DB] Error updating VNB pipeline status: {e}')
         return False
 
 
@@ -2548,9 +2846,8 @@ def get_vnb_funnel_stats() -> Dict:
                 """)
                 return dict(cur.fetchone())
     except Exception as e:
-        logger.error(f"[DB] Error getting VNB funnel stats: {e}")
+        logger.error(f'[DB] Error getting VNB funnel stats: {e}')
         return {}
-
 
 
 def update_document_signing_status(deepsign_document_id: str, status: str) -> bool:
@@ -2558,13 +2855,16 @@ def update_document_signing_status(deepsign_document_id: str, status: str) -> bo
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE leg_documents SET signing_status = %s, updated_at = CURRENT_TIMESTAMP
                     WHERE deepsign_document_id = %s
-                """, (status, deepsign_document_id))
+                """,
+                    (status, deepsign_document_id),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error updating document signing status: {e}")
+        logger.error(f'[DB] Error updating document signing status: {e}')
         return False
 
 
@@ -2573,14 +2873,17 @@ def store_leg_document(community_id: int, doc_type: str, pdf_bytes: bytes, filen
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO leg_documents (community_id, doc_type, filename, pdf_data)
                     VALUES (%s, %s, %s, %s) RETURNING id
-                """, (community_id, doc_type, filename, pdf_bytes))
+                """,
+                    (community_id, doc_type, filename, pdf_bytes),
+                )
                 row = cur.fetchone()
                 return row['id'] if row else 0
     except Exception as e:
-        logger.error(f"[DB] Error storing leg document: {e}")
+        logger.error(f'[DB] Error storing leg document: {e}')
         return 0
 
 
@@ -2589,13 +2892,16 @@ def list_leg_documents(community_id: int) -> List[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT id, doc_type, filename, signing_status, deepsign_document_id, created_at
                     FROM leg_documents WHERE community_id = %s ORDER BY created_at DESC
-                """, (community_id,))
+                """,
+                    (community_id,),
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error listing leg documents: {e}")
+        logger.error(f'[DB] Error listing leg documents: {e}')
         return []
 
 
@@ -2604,13 +2910,13 @@ def get_leg_document_pdf(doc_id: int) -> Optional[bytes]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT pdf_data FROM leg_documents WHERE id = %s", (doc_id,))
+                cur.execute('SELECT pdf_data FROM leg_documents WHERE id = %s', (doc_id,))
                 row = cur.fetchone()
                 if row and row.get('pdf_data'):
                     return bytes(row['pdf_data'])
                 return None
     except Exception as e:
-        logger.error(f"[DB] Error getting leg document PDF: {e}")
+        logger.error(f'[DB] Error getting leg document PDF: {e}')
         return None
 
 
@@ -2619,28 +2925,47 @@ def save_billing_period(community_id: int, period_start, period_end, summary: di
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO billing_periods
                     (community_id, period_start, period_end, total_production_kwh, total_allocated_kwh,
                      total_surplus_kwh, total_network_discount_chf, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, 'final') RETURNING id
-                """, (community_id, period_start, period_end,
-                      summary['total_production_kwh'], summary['total_allocated_kwh'],
-                      summary.get('total_surplus_kwh', 0), summary['total_network_discount_chf']))
+                """,
+                    (
+                        community_id,
+                        period_start,
+                        period_end,
+                        summary['total_production_kwh'],
+                        summary['total_allocated_kwh'],
+                        summary.get('total_surplus_kwh', 0),
+                        summary['total_network_discount_chf'],
+                    ),
+                )
                 period_id = cur.fetchone()[0]
 
                 for p in summary.get('participants', []):
-                    cur.execute("""
+                    cur.execute(
+                        """
                         INSERT INTO billing_line_items
                         (billing_period_id, participant_id, consumption_kwh, allocated_kwh,
                          self_supply_ratio, internal_cost_chf, network_discount_chf)
                         VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    """, (period_id, p['id'], p['consumption_kwh'], p['allocated_kwh'],
-                          p['self_supply_ratio'], p['internal_cost_chf'], p['network_discount_chf']))
+                    """,
+                        (
+                            period_id,
+                            p['id'],
+                            p['consumption_kwh'],
+                            p['allocated_kwh'],
+                            p['self_supply_ratio'],
+                            p['internal_cost_chf'],
+                            p['network_discount_chf'],
+                        ),
+                    )
 
                 return period_id
     except Exception as e:
-        logger.error(f"[DB] Error saving billing period: {e}")
+        logger.error(f'[DB] Error saving billing period: {e}')
         return 0
 
 
@@ -2652,7 +2977,7 @@ def get_active_communities() -> List[Dict]:
                 cur.execute("SELECT * FROM communities WHERE status = 'active'")
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting active communities: {e}")
+        logger.error(f'[DB] Error getting active communities: {e}')
         return []
 
 
@@ -2661,16 +2986,19 @@ def get_community_for_building(building_id: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT c.* FROM communities c
                     JOIN community_members cm ON c.community_id = cm.community_id
                     WHERE cm.building_id = %s AND c.status = 'active'
                     LIMIT 1
-                """, (building_id,))
+                """,
+                    (building_id,),
+                )
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting community for building: {e}")
+        logger.error(f'[DB] Error getting community for building: {e}')
         return None
 
 
@@ -2681,11 +3009,11 @@ def get_community_member_building_ids(community_id) -> List[str]:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT building_id FROM community_members WHERE community_id = %s AND status = 'confirmed'",
-                    (community_id,)
+                    (community_id,),
                 )
                 return [row['building_id'] for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting community member building IDs: {e}")
+        logger.error(f'[DB] Error getting community member building IDs: {e}')
         return []
 
 
@@ -2694,16 +3022,16 @@ def get_billing_period(period_id: int) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM billing_periods WHERE id = %s", (period_id,))
+                cur.execute('SELECT * FROM billing_periods WHERE id = %s', (period_id,))
                 period = cur.fetchone()
                 if not period:
                     return None
                 result = dict(period)
-                cur.execute("SELECT * FROM billing_line_items WHERE billing_period_id = %s", (period_id,))
+                cur.execute('SELECT * FROM billing_line_items WHERE billing_period_id = %s', (period_id,))
                 result['line_items'] = [dict(row) for row in cur.fetchall()]
                 return result
     except Exception as e:
-        logger.error(f"[DB] Error getting billing period: {e}")
+        logger.error(f'[DB] Error getting billing period: {e}')
         return None
 
 
@@ -2712,13 +3040,16 @@ def save_lea_report(job_name: str, summary_text: str, status: str = 'ok') -> boo
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO lea_reports (job_name, summary_text, status)
                     VALUES (%s, %s, %s)
-                """, (job_name, summary_text, status))
+                """,
+                    (job_name, summary_text, status),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] Error saving LEA report: {e}")
+        logger.error(f'[DB] Error saving LEA report: {e}')
         return False
 
 
@@ -2727,34 +3058,45 @@ def get_lea_reports(limit: int = 50) -> List[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT id, job_name, created_at, summary_text, status
                     FROM lea_reports
                     ORDER BY created_at DESC
                     LIMIT %s
-                """, (limit,))
+                """,
+                    (limit,),
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting LEA reports: {e}")
+        logger.error(f'[DB] Error getting LEA reports: {e}')
         return []
 
 
-def create_ceo_decision(request_id: str, activity: str, reference: str = '',
-                        summary: str = '', payload: Optional[Dict] = None,
-                        telegram_message_id: Optional[int] = None) -> bool:
+def create_ceo_decision(
+    request_id: str,
+    activity: str,
+    reference: str = '',
+    summary: str = '',
+    payload: Optional[Dict] = None,
+    telegram_message_id: Optional[int] = None,
+) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 import json as _json
-                cur.execute("""
+
+                cur.execute(
+                    """
                     INSERT INTO ceo_decisions (request_id, activity, reference, summary, payload, telegram_message_id)
                     VALUES (%s, %s, %s, %s, %s, %s)
                     ON CONFLICT (request_id) DO NOTHING
-                """, (request_id, activity, reference, summary,
-                      _json.dumps(payload or {}), telegram_message_id))
+                """,
+                    (request_id, activity, reference, summary, _json.dumps(payload or {}), telegram_message_id),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error creating ceo_decision: {e}")
+        logger.error(f'[DB] Error creating ceo_decision: {e}')
         return False
 
 
@@ -2762,39 +3104,44 @@ def resolve_ceo_decision(request_id: str, status: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE ceo_decisions SET status = %s, decided_at = NOW()
                     WHERE request_id = %s AND status = 'pending'
                     RETURNING *
-                """, (status, request_id))
+                """,
+                    (status, request_id),
+                )
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error resolving ceo_decision: {e}")
+        logger.error(f'[DB] Error resolving ceo_decision: {e}')
         return None
 
 
-def get_ceo_decisions(status: Optional[str] = None, activity: Optional[str] = None,
-                      limit: int = 50) -> List[Dict]:
+def get_ceo_decisions(status: Optional[str] = None, activity: Optional[str] = None, limit: int = 50) -> List[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 clauses, params = [], []
                 if status:
-                    clauses.append("status = %s")
+                    clauses.append('status = %s')
                     params.append(status)
                 if activity:
-                    clauses.append("activity = %s")
+                    clauses.append('activity = %s')
                     params.append(activity)
-                where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+                where = ('WHERE ' + ' AND '.join(clauses)) if clauses else ''
                 params.append(limit)
-                cur.execute(f"""
+                cur.execute(
+                    f"""
                     SELECT * FROM ceo_decisions {where}
                     ORDER BY created_at DESC LIMIT %s
-                """, params)
+                """,
+                    params,
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting ceo_decisions: {e}")
+        logger.error(f'[DB] Error getting ceo_decisions: {e}')
         return []
 
 
@@ -2802,11 +3149,11 @@ def get_ceo_decision_by_request_id(request_id: str) -> Optional[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM ceo_decisions WHERE request_id = %s", (request_id,))
+                cur.execute('SELECT * FROM ceo_decisions WHERE request_id = %s', (request_id,))
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception as e:
-        logger.error(f"[DB] Error getting ceo_decision: {e}")
+        logger.error(f'[DB] Error getting ceo_decision: {e}')
         return None
 
 
@@ -2814,13 +3161,10 @@ def update_ceo_decision_status(request_id: str, status: str) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    "UPDATE ceo_decisions SET status = %s WHERE request_id = %s",
-                    (status, request_id)
-                )
+                cur.execute('UPDATE ceo_decisions SET status = %s WHERE request_id = %s', (status, request_id))
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] Error updating ceo_decision status: {e}")
+        logger.error(f'[DB] Error updating ceo_decision status: {e}')
         return False
 
 
@@ -2828,17 +3172,20 @@ def expire_stale_ceo_decisions(max_age_hours: int = 72) -> int:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE ceo_decisions SET status = 'expired'
                     WHERE status = 'pending'
                       AND created_at < NOW() - INTERVAL '%s hours'
-                """, (max_age_hours,))
+                """,
+                    (max_age_hours,),
+                )
                 expired = cur.rowcount
                 if expired:
-                    logger.info(f"[DB] Expired {expired} stale CEO decisions")
+                    logger.info(f'[DB] Expired {expired} stale CEO decisions')
                 return expired
     except Exception as e:
-        logger.error(f"[DB] Error expiring stale ceo_decisions: {e}")
+        logger.error(f'[DB] Error expiring stale ceo_decisions: {e}')
         return 0
 
 
@@ -2848,36 +3195,48 @@ def get_dashboard_stats(subdomain: str) -> Dict:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 # Count communities whose admin building belongs to this city
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT COUNT(*) as cnt FROM communities c
                     JOIN buildings b ON c.admin_building_id = b.building_id
                     WHERE b.city_id = %s
-                """, (subdomain,))
+                """,
+                    (subdomain,),
+                )
                 community_count = cur.fetchone()['cnt']
 
                 # Count confirmed members in those communities
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT COUNT(*) as cnt FROM community_members cm
                     JOIN communities c ON cm.community_id = c.community_id
                     JOIN buildings b ON c.admin_building_id = b.building_id
                     WHERE b.city_id = %s AND cm.status = 'confirmed'
-                """, (subdomain,))
+                """,
+                    (subdomain,),
+                )
                 confirmed_members = cur.fetchone()['cnt']
 
                 # Count meter uploads for buildings in this city
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT COUNT(DISTINCT mr.building_id) as cnt
                     FROM meter_readings mr
                     JOIN buildings b ON mr.building_id = b.building_id
                     WHERE b.city_id = %s
-                """, (subdomain,))
+                """,
+                    (subdomain,),
+                )
                 meter_uploads = cur.fetchone()['cnt']
 
                 # Count buildings registered and ready for formation
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT COUNT(*) as cnt FROM buildings
                     WHERE city_id = %s AND verified = TRUE
-                """, (subdomain,))
+                """,
+                    (subdomain,),
+                )
                 formation_ready_count = cur.fetchone()['cnt']
 
                 return {
@@ -2887,7 +3246,7 @@ def get_dashboard_stats(subdomain: str) -> Dict:
                     'formation_ready_count': formation_ready_count,
                 }
     except Exception as e:
-        logger.error(f"[DB] Error getting dashboard stats: {e}")
+        logger.error(f'[DB] Error getting dashboard stats: {e}')
         return {
             'community_count': 0,
             'confirmed_members': 0,
@@ -2901,7 +3260,8 @@ def get_active_communities_for_nudge(min_members: int = 3, cooldown_days: int = 
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT c.community_id, c.name,
                            array_agg(b.email) FILTER (WHERE cm.status = 'confirmed') as member_emails,
                            COUNT(*) FILTER (WHERE cm.status = 'confirmed') as confirmed_count
@@ -2916,10 +3276,12 @@ def get_active_communities_for_nudge(min_members: int = 3, cooldown_days: int = 
                     )
                     GROUP BY c.community_id, c.name
                     HAVING COUNT(*) FILTER (WHERE cm.status = 'confirmed') >= %s
-                """, (cooldown_days, min_members))
+                """,
+                    (cooldown_days, min_members),
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting communities for nudge: {e}")
+        logger.error(f'[DB] Error getting communities for nudge: {e}')
         return []
 
 
@@ -2928,10 +3290,10 @@ def get_formation_pipeline_stats() -> Dict:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT status, COUNT(*) as count FROM communities GROUP BY status")
+                cur.execute('SELECT status, COUNT(*) as count FROM communities GROUP BY status')
                 return {row['status']: row['count'] for row in cur.fetchall()}
     except Exception as e:
-        logger.error(f"[DB] Error getting formation pipeline stats: {e}")
+        logger.error(f'[DB] Error getting formation pipeline stats: {e}')
         return {}
 
 
@@ -2940,13 +3302,16 @@ def count_budget_events(event_type: str, window_seconds: int) -> int:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT COUNT(*) as cnt FROM analytics_events
                     WHERE event_type = %s AND created_at > NOW() - make_interval(secs => %s)
-                """, (event_type, window_seconds))
+                """,
+                    (event_type, window_seconds),
+                )
                 return int(cur.fetchone()['cnt'])
     except Exception as e:
-        logger.error(f"[DB] count_budget_events error: {e}")
+        logger.error(f'[DB] count_budget_events error: {e}')
         return 999
 
 
@@ -2955,13 +3320,16 @@ def count_recent_denials(hours: int = 24) -> int:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT COUNT(*) as cnt FROM ceo_decisions
                     WHERE status = 'denied' AND decided_at > NOW() - make_interval(hours => %s)
-                """, (hours,))
+                """,
+                    (hours,),
+                )
                 return int(cur.fetchone()['cnt'])
     except Exception as e:
-        logger.error(f"[DB] count_recent_denials error: {e}")
+        logger.error(f'[DB] count_recent_denials error: {e}')
         return 999
 
 
@@ -2971,14 +3339,18 @@ def set_lea_circuit_breaker(tripped: bool) -> bool:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 import json as _json
-                cur.execute("""
+
+                cur.execute(
+                    """
                     INSERT INTO platform_settings (key, value, updated_at)
                     VALUES ('lea_circuit_breaker', %s, NOW())
                     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
-                """, (_json.dumps({"tripped": tripped}),))
+                """,
+                    (_json.dumps({'tripped': tripped}),),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] set_lea_circuit_breaker error: {e}")
+        logger.error(f'[DB] set_lea_circuit_breaker error: {e}')
         return False
 
 
@@ -2994,10 +3366,11 @@ def get_lea_circuit_breaker() -> bool:
                 val = row['value']
                 if isinstance(val, str):
                     import json as _json
+
                     val = _json.loads(val)
                 return bool(val.get('tripped', False))
     except Exception as e:
-        logger.error(f"[DB] get_lea_circuit_breaker error: {e}")
+        logger.error(f'[DB] get_lea_circuit_breaker error: {e}')
         return True
 
 
@@ -3006,15 +3379,18 @@ def create_strategy_subtask(parent_week: int, parent_item: str, subtask: str, no
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO strategy_subtasks (parent_week, parent_item, subtask, notes)
                     VALUES (%s, %s, %s, %s)
                     ON CONFLICT (parent_week, parent_item, subtask) DO NOTHING
                     RETURNING id
-                """, (parent_week, parent_item, subtask, notes))
+                """,
+                    (parent_week, parent_item, subtask, notes),
+                )
                 return True
     except Exception as e:
-        logger.error(f"[DB] create_strategy_subtask error: {e}")
+        logger.error(f'[DB] create_strategy_subtask error: {e}')
         return False
 
 
@@ -3023,14 +3399,17 @@ def get_strategy_subtasks(parent_week: int, parent_item: str) -> List[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT * FROM strategy_subtasks
                     WHERE parent_week = %s AND parent_item = %s
                     ORDER BY id ASC
-                """, (parent_week, parent_item))
+                """,
+                    (parent_week, parent_item),
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] get_strategy_subtasks error: {e}")
+        logger.error(f'[DB] get_strategy_subtasks error: {e}')
         return []
 
 
@@ -3039,36 +3418,46 @@ def update_strategy_subtask(subtask_id: int, status: str, notes: str = None) -> 
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE strategy_subtasks SET status = %s, notes = COALESCE(%s, notes), updated_at = NOW()
                     WHERE id = %s
-                """, (status, notes, subtask_id))
+                """,
+                    (status, notes, subtask_id),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] update_strategy_subtask error: {e}")
+        logger.error(f'[DB] update_strategy_subtask error: {e}')
         return False
 
 
-def save_inbound_email(sender: str, subject: str, body_preview: str,
-                       classification: str = 'unknown', agentmail_message_id: str = None) -> bool:
+def save_inbound_email(
+    sender: str, subject: str, body_preview: str, classification: str = 'unknown', agentmail_message_id: str = None
+) -> bool:
     """Save an inbound email with classification. Idempotent on agentmail_message_id."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 if agentmail_message_id:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         INSERT INTO inbound_emails (sender, subject, body_preview, classification, agentmail_message_id)
                         VALUES (%s, %s, %s, %s, %s)
                         ON CONFLICT (agentmail_message_id) DO NOTHING
-                    """, (sender, subject[:500], (body_preview or '')[:2000], classification, agentmail_message_id))
+                    """,
+                        (sender, subject[:500], (body_preview or '')[:2000], classification, agentmail_message_id),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         INSERT INTO inbound_emails (sender, subject, body_preview, classification, agentmail_message_id)
                         VALUES (%s, %s, %s, %s, %s)
-                    """, (sender, subject[:500], (body_preview or '')[:2000], classification, agentmail_message_id))
+                    """,
+                        (sender, subject[:500], (body_preview or '')[:2000], classification, agentmail_message_id),
+                    )
                 return True
     except Exception as e:
-        logger.error(f"[DB] save_inbound_email error: {e}")
+        logger.error(f'[DB] save_inbound_email error: {e}')
         return False
 
 
@@ -3079,17 +3468,14 @@ def get_inbound_emails(status: Optional[str] = None, limit: int = 50) -> List[Di
             with conn.cursor() as cur:
                 if status:
                     cur.execute(
-                        "SELECT * FROM inbound_emails WHERE status = %s ORDER BY created_at DESC LIMIT %s",
-                        (status, limit)
+                        'SELECT * FROM inbound_emails WHERE status = %s ORDER BY created_at DESC LIMIT %s',
+                        (status, limit),
                     )
                 else:
-                    cur.execute(
-                        "SELECT * FROM inbound_emails ORDER BY created_at DESC LIMIT %s",
-                        (limit,)
-                    )
+                    cur.execute('SELECT * FROM inbound_emails ORDER BY created_at DESC LIMIT %s', (limit,))
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] get_inbound_emails error: {e}")
+        logger.error(f'[DB] get_inbound_emails error: {e}')
         return []
 
 
@@ -3129,7 +3515,7 @@ def get_community_health_issues() -> List[Dict]:
                 issues.extend([dict(row) for row in cur.fetchall()])
                 return issues
     except Exception as e:
-        logger.error(f"[DB] get_community_health_issues error: {e}")
+        logger.error(f'[DB] get_community_health_issues error: {e}')
         return []
 
 
@@ -3138,7 +3524,8 @@ def get_stale_outreach(days_threshold: int = 7) -> List[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT cd.request_id, cd.reference, cd.summary, cd.decided_at
                     FROM ceo_decisions cd
                     WHERE cd.activity = 'outreach'
@@ -3150,36 +3537,49 @@ def get_stale_outreach(days_threshold: int = 7) -> List[Dict]:
                             AND ae.data->>'request_id' = cd.request_id
                       )
                     ORDER BY cd.decided_at ASC
-                """, (days_threshold,))
+                """,
+                    (days_threshold,),
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] get_stale_outreach error: {e}")
+        logger.error(f'[DB] get_stale_outreach error: {e}')
         return []
 
 
 # === Municipality Outreach Queue Operations ===
 
-def schedule_municipality_outreach(name: str, bfs: int, kanton: str, email: str,
-                                    email_type: str = 'initial', followup_number: int = 0,
-                                    scheduled_at=None) -> Optional[int]:
+
+def schedule_municipality_outreach(
+    name: str,
+    bfs: int,
+    kanton: str,
+    email: str,
+    email_type: str = 'initial',
+    followup_number: int = 0,
+    scheduled_at=None,
+) -> Optional[int]:
     """Insert into outreach queue. Returns id or None."""
     from datetime import datetime, timezone
+
     if scheduled_at is None:
         scheduled_at = datetime.now(timezone.utc)
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO municipality_outreach_queue
                         (municipality_name, bfs_number, kanton, contact_email, email_type, followup_number, scheduled_at)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (contact_email, email_type, followup_number) DO NOTHING
                     RETURNING id
-                """, (name, bfs, kanton, email, email_type, followup_number, scheduled_at))
+                """,
+                    (name, bfs, kanton, email, email_type, followup_number, scheduled_at),
+                )
                 row = cur.fetchone()
                 return row['id'] if row else None
     except Exception as e:
-        logger.error(f"[DB] schedule_municipality_outreach error: {e}")
+        logger.error(f'[DB] schedule_municipality_outreach error: {e}')
         return None
 
 
@@ -3188,15 +3588,18 @@ def get_pending_municipality_outreach(limit: int = 10) -> List[Dict]:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT * FROM municipality_outreach_queue
                     WHERE status = 'pending' AND scheduled_at <= NOW()
                     ORDER BY scheduled_at
                     LIMIT %s
-                """, (limit,))
+                """,
+                    (limit,),
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] get_pending_municipality_outreach error: {e}")
+        logger.error(f'[DB] get_pending_municipality_outreach error: {e}')
         return []
 
 
@@ -3205,14 +3608,17 @@ def mark_municipality_outreach_sent(outreach_id: int) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE municipality_outreach_queue
                     SET status = 'sent', sent_at = NOW()
                     WHERE id = %s
-                """, (outreach_id,))
+                """,
+                    (outreach_id,),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] mark_municipality_outreach_sent error: {e}")
+        logger.error(f'[DB] mark_municipality_outreach_sent error: {e}')
         return False
 
 
@@ -3221,37 +3627,45 @@ def mark_municipality_outreach_failed(outreach_id: int, error: str) -> bool:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE municipality_outreach_queue
                     SET status = 'failed', failed_at = NOW(), error_message = %s
                     WHERE id = %s
-                """, (error, outreach_id,))
+                """,
+                    (
+                        error,
+                        outreach_id,
+                    ),
+                )
                 return cur.rowcount > 0
     except Exception as e:
-        logger.error(f"[DB] mark_municipality_outreach_failed error: {e}")
+        logger.error(f'[DB] mark_municipality_outreach_failed error: {e}')
         return False
 
 
-def get_municipality_outreach_history(contact_email: str = None, status: str = None, emails_only: bool = False) -> List[Dict]:
+def get_municipality_outreach_history(
+    contact_email: str = None, status: str = None, emails_only: bool = False
+) -> List[Dict]:
     """Get outreach history, optionally filtered. emails_only=True returns just contact_email column."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cols = "DISTINCT contact_email" if emails_only else "*"
-                query = f"SELECT {cols} FROM municipality_outreach_queue WHERE 1=1"
+                cols = 'DISTINCT contact_email' if emails_only else '*'
+                query = f'SELECT {cols} FROM municipality_outreach_queue WHERE 1=1'
                 params = []
                 if contact_email:
-                    query += " AND contact_email = %s"
+                    query += ' AND contact_email = %s'
                     params.append(contact_email)
                 if status:
-                    query += " AND status = %s"
+                    query += ' AND status = %s'
                     params.append(status)
                 if not emails_only:
-                    query += " ORDER BY created_at DESC"
+                    query += ' ORDER BY created_at DESC'
                 cur.execute(query, params)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] get_municipality_outreach_history error: {e}")
+        logger.error(f'[DB] get_municipality_outreach_history error: {e}')
         return []
 
 
@@ -3262,7 +3676,8 @@ def get_sent_outreach_needing_followup(followup_number: int, days_since: int) ->
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT prev.* FROM municipality_outreach_queue prev
                     WHERE prev.status = 'sent'
                       AND prev.followup_number = %s
@@ -3273,10 +3688,12 @@ def get_sent_outreach_needing_followup(followup_number: int, days_since: int) ->
                             AND nxt.followup_number = %s
                       )
                     ORDER BY prev.sent_at
-                """, (prev_followup, days_since, followup_number))
+                """,
+                    (prev_followup, days_since, followup_number),
+                )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] get_sent_outreach_needing_followup error: {e}")
+        logger.error(f'[DB] get_sent_outreach_needing_followup error: {e}')
         return []
 
 
@@ -3289,5 +3706,5 @@ def is_db_available() -> bool:
             try:
                 seed_default_tenant()
             except Exception as e:
-                logger.warning(f"[DB] Could not seed default tenant: {e}")
+                logger.warning(f'[DB] Could not seed default tenant: {e}')
     return _db_initialized and _connection_pool is not None

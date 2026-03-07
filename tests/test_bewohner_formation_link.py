@@ -1,6 +1,6 @@
 """Tests for /fuer-bewohner page containing formation CTA."""
-import pytest
-from unittest.mock import patch, MagicMock
+
+from unittest.mock import patch
 
 
 class TestBewohnerFormationLink:

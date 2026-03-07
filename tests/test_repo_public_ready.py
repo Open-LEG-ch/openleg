@@ -1,6 +1,6 @@
 """Tests for public repo readiness (P4: GitHub AGPL-3.0 prep)."""
+
 import os
-import pytest
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -43,11 +43,9 @@ class TestGitignore:
         if os.path.exists(env_path):
             # Verify it's gitignored (not tracked)
             import subprocess
-            result = subprocess.run(
-                ['git', 'check-ignore', '.env'],
-                cwd=REPO_ROOT, capture_output=True, text=True
-            )
-            assert result.returncode == 0, ".env should be gitignored"
+
+            result = subprocess.run(['git', 'check-ignore', '.env'], cwd=REPO_ROOT, capture_output=True, text=True)
+            assert result.returncode == 0, '.env should be gitignored'
 
 
 class TestEnvExample:

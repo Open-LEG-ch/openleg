@@ -1,6 +1,6 @@
 """Tests for referral system: stats, leaderboard, registration with referral code."""
-import pytest
-from unittest.mock import patch, MagicMock
+
+from unittest.mock import patch
 
 
 class TestReferralSystem:
@@ -37,12 +37,15 @@ class TestReferralSystem:
         """Referral code resolves to referrer_id during registration."""
         mock_ref.return_value = {'building_id': 'referrer_b1'}
         # Attempt registration with referral code, expect it calls get_building_by_referral_code
-        resp = full_client.post('/api/register_anonymous', json={
-            'email': 'test@example.ch',
-            'referral_code': 'REF123',
-            'profile': {'building_id': 'b_new', 'lat': 47.4, 'lon': 8.2},
-            'consents': {'share_with_neighbors': True, 'share_with_utility': True},
-        })
+        resp = full_client.post(
+            '/api/register_anonymous',
+            json={
+                'email': 'test@example.ch',
+                'referral_code': 'REF123',
+                'profile': {'building_id': 'b_new', 'lat': 47.4, 'lon': 8.2},
+                'consents': {'share_with_neighbors': True, 'share_with_utility': True},
+            },
+        )
         # Should at least call the referral code lookup
         mock_ref.assert_called_once_with('REF123')
 
@@ -50,12 +53,15 @@ class TestReferralSystem:
     @patch('database.get_building_by_referral_code', return_value=None)
     def test_invalid_referral_code_no_block(self, mock_ref, mock_save, full_client):
         """Bad referral code doesn't block registration flow."""
-        resp = full_client.post('/api/register_anonymous', json={
-            'email': 'test2@example.ch',
-            'referral_code': 'INVALID_CODE',
-            'profile': {'building_id': 'b_new2', 'lat': 47.4, 'lon': 8.2},
-            'consents': {'share_with_neighbors': True, 'share_with_utility': True},
-        })
+        resp = full_client.post(
+            '/api/register_anonymous',
+            json={
+                'email': 'test2@example.ch',
+                'referral_code': 'INVALID_CODE',
+                'profile': {'building_id': 'b_new2', 'lat': 47.4, 'lon': 8.2},
+                'consents': {'share_with_neighbors': True, 'share_with_utility': True},
+            },
+        )
         # Registration should not be blocked by invalid referral code
         # The code should have called get_building_by_referral_code and gotten None
         mock_ref.assert_called_once_with('INVALID_CODE')

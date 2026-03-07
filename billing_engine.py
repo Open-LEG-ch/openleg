@@ -5,15 +5,14 @@ Implements Art. 17d/17e StromVG allocation models:
 - Einfach (equal): equal split, capped by actual consumption
 - Network discount: 40% same level, 20% cross level
 """
-import pandas as pd
-import numpy as np
 
+import pandas as pd
 
 DISCOUNT_SAME_LEVEL = 0.40
 DISCOUNT_CROSS_LEVEL = 0.20
 
 
-def allocate_energy(production, consumption, model="proportional"):
+def allocate_energy(production, consumption, model='proportional'):
     """Allocate solar production to consumers per 15-min interval.
 
     Args:
@@ -37,7 +36,7 @@ def allocate_energy(production, consumption, model="proportional"):
         if total_cons <= 0:
             continue
 
-        if model == "proportional":
+        if model == 'proportional':
             available = min(prod, total_cons)
             shares = cons / total_cons
             allocated = shares * available
@@ -45,7 +44,7 @@ def allocate_energy(production, consumption, model="proportional"):
             allocated = allocated.clip(upper=cons)
             result.iloc[i] = allocated
 
-        elif model == "einfach":
+        elif model == 'einfach':
             n = len(cons)
             equal_share = prod / n
             remaining = prod
@@ -82,7 +81,7 @@ def compute_network_discount(allocated_kwh, grid_fee_per_kwh, network_level):
     if allocated_kwh <= 0:
         return 0.0
 
-    rate = DISCOUNT_SAME_LEVEL if network_level == "same" else DISCOUNT_CROSS_LEVEL
+    rate = DISCOUNT_SAME_LEVEL if network_level == 'same' else DISCOUNT_CROSS_LEVEL
     return allocated_kwh * grid_fee_per_kwh * rate
 
 
@@ -92,7 +91,7 @@ def generate_billing_summary(
     grid_fee_per_kwh,
     internal_price_per_kwh,
     network_level,
-    distribution_model="proportional",
+    distribution_model='proportional',
 ):
     """Generate billing summary for a period.
 
@@ -113,19 +112,21 @@ def generate_billing_summary(
         discount = compute_network_discount(alloc_kwh, grid_fee_per_kwh, network_level)
         cost = alloc_kwh * internal_price_per_kwh
 
-        participants.append({
-            "id": col,
-            "consumption_kwh": round(cons_kwh, 2),
-            "allocated_kwh": round(alloc_kwh, 2),
-            "self_supply_ratio": round(alloc_kwh / cons_kwh, 4) if cons_kwh > 0 else 0,
-            "internal_cost_chf": round(cost, 2),
-            "network_discount_chf": round(discount, 2),
-        })
+        participants.append(
+            {
+                'id': col,
+                'consumption_kwh': round(cons_kwh, 2),
+                'allocated_kwh': round(alloc_kwh, 2),
+                'self_supply_ratio': round(alloc_kwh / cons_kwh, 4) if cons_kwh > 0 else 0,
+                'internal_cost_chf': round(cost, 2),
+                'network_discount_chf': round(discount, 2),
+            }
+        )
 
     return {
-        "total_production_kwh": round(total_production, 2),
-        "total_allocated_kwh": round(total_allocated, 2),
-        "total_surplus_kwh": round(max(0, total_production - total_allocated), 2),
-        "total_network_discount_chf": round(total_discount, 2),
-        "participants": participants,
+        'total_production_kwh': round(total_production, 2),
+        'total_allocated_kwh': round(total_allocated, 2),
+        'total_surplus_kwh': round(max(0, total_production - total_allocated), 2),
+        'total_network_discount_chf': round(total_discount, 2),
+        'participants': participants,
     }

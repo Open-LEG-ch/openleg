@@ -1,6 +1,8 @@
 """TDD tests for cache.py - Redis-backed caching layer."""
+
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 @pytest.fixture
@@ -18,24 +20,29 @@ class TestCacheOperations:
 
     def test_cache_miss(self, mock_redis):
         from cache import cache_get
-        assert cache_get("nonexistent") is None
+
+        assert cache_get('nonexistent') is None
 
     def test_cache_hit(self, mock_redis):
-        from cache import cache_get
         import json
-        mock_redis.get.return_value = json.dumps({"data": 42}).encode()
-        result = cache_get("mykey")
-        assert result == {"data": 42}
+
+        from cache import cache_get
+
+        mock_redis.get.return_value = json.dumps({'data': 42}).encode()
+        result = cache_get('mykey')
+        assert result == {'data': 42}
 
     def test_cache_set(self, mock_redis):
         from cache import cache_set
-        cache_set("mykey", {"data": 42}, ttl=300)
+
+        cache_set('mykey', {'data': 42}, ttl=300)
         mock_redis.setex.assert_called_once()
 
     def test_cache_delete(self, mock_redis):
         from cache import cache_delete
-        cache_delete("mykey")
-        mock_redis.delete.assert_called_once_with("openleg:mykey")
+
+        cache_delete('mykey')
+        mock_redis.delete.assert_called_once_with('openleg:mykey')
 
 
 class TestTenantCache:
@@ -43,12 +50,14 @@ class TestTenantCache:
 
     def test_tenant_cache_key(self, mock_redis):
         from cache import cache_get
-        cache_get("tenant:baden")
-        mock_redis.get.assert_called_with("openleg:tenant:baden")
+
+        cache_get('tenant:baden')
+        mock_redis.get.assert_called_with('openleg:tenant:baden')
 
     def test_cache_fallback_on_error(self):
         """If Redis is down, cache operations return None / no-op."""
-        with patch('cache._get_redis', side_effect=Exception("Connection refused")):
+        with patch('cache._get_redis', side_effect=Exception('Connection refused')):
             from cache import cache_get, cache_set
-            assert cache_get("key") is None
-            cache_set("key", "val")  # should not raise
+
+            assert cache_get('key') is None
+            cache_set('key', 'val')  # should not raise

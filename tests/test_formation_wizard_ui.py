@@ -1,11 +1,15 @@
 """Tests for formation wizard UI page."""
-import pytest
-from unittest.mock import patch, MagicMock
 
+from unittest.mock import patch
 
 MOCK_MUNICIPALITY = {
-    'id': 1, 'bfs_number': 261, 'name': 'Dietikon', 'kanton': 'ZH',
-    'dso_name': 'EKZ', 'population': 29000, 'subdomain': 'dietikon',
+    'id': 1,
+    'bfs_number': 261,
+    'name': 'Dietikon',
+    'kanton': 'ZH',
+    'dso_name': 'EKZ',
+    'population': 29000,
+    'subdomain': 'dietikon',
     'onboarding_status': 'registered',
 }
 

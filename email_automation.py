@@ -2,53 +2,55 @@
 Email Automation for OpenLEG
 Handles scheduled email sequences for user nurturing.
 """
-import os
-import time
+
 import json
 import logging
+import os
 import threading
-from datetime import datetime, timedelta, timezone
-from typing import Optional, List
+import time
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
 from flask import render_template
 
 import database as db
-from email_utils import send_email, EMAIL_ENABLED
+from email_utils import send_email
 
 APP_BASE_URL = os.getenv('APP_BASE_URL', 'http://localhost:5003').rstrip('/')
 
-def get_email_sequence(platform_name="OpenLEG"):
+
+def get_email_sequence(platform_name='OpenLEG'):
     """Return email sequence with dynamic platform name in subjects."""
     return {
-        "day_0_welcome": {
-            "delay_days": 0,
-            "subject": f"Willkommen bei {platform_name}! Ihre Nachbarn warten",
-            "template": "emails/day_0_welcome.html",
+        'day_0_welcome': {
+            'delay_days': 0,
+            'subject': f'Willkommen bei {platform_name}! Ihre Nachbarn warten',
+            'template': 'emails/day_0_welcome.html',
         },
-        "day_3_smartmeter": {
-            "delay_days": 3,
-            "subject": "Schnelle Frage: Haben Sie einen Smart Meter?",
-            "template": "emails/day_3_smartmeter.html",
+        'day_3_smartmeter': {
+            'delay_days': 3,
+            'subject': 'Schnelle Frage: Haben Sie einen Smart Meter?',
+            'template': 'emails/day_3_smartmeter.html',
         },
-        "day_7_consumption": {
-            "delay_days": 7,
-            "subject": "Optimieren Sie Ihr LEG-Matching",
-            "template": "emails/day_7_consumption.html",
+        'day_7_consumption': {
+            'delay_days': 7,
+            'subject': 'Optimieren Sie Ihr LEG-Matching',
+            'template': 'emails/day_7_consumption.html',
         },
-        "day_14_formation": {
-            "delay_days": 14,
-            "subject": "Ihre LEG-Gemeinschaft kann starten",
-            "template": "emails/day_14_formation.html",
+        'day_14_formation': {
+            'delay_days': 14,
+            'subject': 'Ihre LEG-Gemeinschaft kann starten',
+            'template': 'emails/day_14_formation.html',
         },
     }
 
+
 # Standalone trigger templates (not part of drip sequence)
 TRIGGER_TEMPLATES = {
-    "formation_nudge": {
-        "subject": "Ihre LEG-Gründung wartet",
-        "template": "emails/formation_nudge.html",
+    'formation_nudge': {
+        'subject': 'Ihre LEG-Gründung wartet',
+        'template': 'emails/formation_nudge.html',
     },
 }
 
@@ -61,16 +63,17 @@ def schedule_sequence_for_user(building_id: str, email: str):
     now = time.time()
     scheduled = 0
     for key, config in EMAIL_SEQUENCE.items():
-        send_at = now + (config["delay_days"] * 86400)
+        send_at = now + (config['delay_days'] * 86400)
         if db.schedule_email(building_id, email, key, send_at):
             scheduled += 1
-    logger.info(f"[EMAIL_AUTO] Scheduled {scheduled} emails for {building_id}")
+    logger.info(f'[EMAIL_AUTO] Scheduled {scheduled} emails for {building_id}')
     return scheduled
 
 
 def _get_tenant_for_building(building_id: str) -> dict:
     """Load tenant config for a building's city_id."""
-    from tenant import get_tenant_config, DEFAULT_TENANT
+    from tenant import DEFAULT_TENANT, get_tenant_config
+
     building = db.get_building(building_id)
     if building:
         city_id = building.get('city_id', 'baden')
@@ -93,38 +96,37 @@ def process_email_queue(app=None):
         sequence = get_email_sequence(tenant.get('platform_name', 'OpenLEG'))
         config = sequence.get(template_key)
         if not config:
-            db.mark_email_failed(email_id, f"Unknown template: {template_key}")
+            db.mark_email_failed(email_id, f'Unknown template: {template_key}')
             failed += 1
             continue
 
         # Build unsubscribe URL
-        unsubscribe_url = f"{APP_BASE_URL}/unsubscribe"
+        unsubscribe_url = f'{APP_BASE_URL}/unsubscribe'
 
         # Get neighbor count for personalization
         neighbor_count = 0
         if item.get('lat') and item.get('lon'):
             neighbor_count = db.get_neighbor_count_near(
-                float(item['lat']), float(item['lon']),
-                city_id=tenant.get('territory')
+                float(item['lat']), float(item['lon']), city_id=tenant.get('territory')
             )
 
         # Get referral code
         referral_code = db.get_referral_code(item['building_id']) or ''
-        referral_link = f"{APP_BASE_URL}/?ref={referral_code}" if referral_code else ''
+        referral_link = f'{APP_BASE_URL}/?ref={referral_code}' if referral_code else ''
 
         # Render template with tenant context
         try:
             if app:
                 with app.app_context():
                     html_body = render_template(
-                        config["template"],
+                        config['template'],
                         email=item['email'],
                         address=item.get('address', ''),
                         neighbor_count=neighbor_count,
                         unsubscribe_url=unsubscribe_url,
                         referral_link=referral_link,
                         site_url=APP_BASE_URL,
-                        dashboard_url=f"{APP_BASE_URL}/dashboard?bid={item['building_id']}",
+                        dashboard_url=f'{APP_BASE_URL}/dashboard?bid={item["building_id"]}',
                         tenant=tenant,
                         platform_name=tenant.get('platform_name', 'OpenLEG'),
                         city_name=tenant.get('city_name', 'Baden'),
@@ -134,9 +136,9 @@ def process_email_queue(app=None):
                     )
             else:
                 pname = tenant.get('platform_name', 'OpenLEG')
-                html_body = f"<p>{pname}: {config['subject']}</p>"
+                html_body = f'<p>{pname}: {config["subject"]}</p>'
         except Exception as e:
-            logger.error(f"[EMAIL_AUTO] Template render error for {template_key}: {e}")
+            logger.error(f'[EMAIL_AUTO] Template render error for {template_key}: {e}')
             db.mark_email_failed(email_id, str(e))
             failed += 1
             continue
@@ -147,11 +149,11 @@ def process_email_queue(app=None):
             db.mark_email_sent(email_id)
             sent += 1
         else:
-            db.mark_email_failed(email_id, "SMTP delivery failed")
+            db.mark_email_failed(email_id, 'SMTP delivery failed')
             failed += 1
 
-    logger.info(f"[EMAIL_AUTO] Processed queue: {sent} sent, {failed} failed, {len(pending)} total")
-    return {"sent": sent, "failed": failed, "total": len(pending)}
+    logger.info(f'[EMAIL_AUTO] Processed queue: {sent} sent, {failed} failed, {len(pending)} total')
+    return {'sent': sent, 'failed': failed, 'total': len(pending)}
 
 
 def _send_email(to_email: str, subject: str, html_body: str) -> bool:
@@ -161,39 +163,36 @@ def _send_email(to_email: str, subject: str, html_body: str) -> bool:
 
 def send_formation_nudge(community_id: str, community_name: str, member_emails: list, app=None):
     """Send formation nudge email to all confirmed members of a community."""
-    config = TRIGGER_TEMPLATES["formation_nudge"]
+    config = TRIGGER_TEMPLATES['formation_nudge']
     sent = 0
     for email in member_emails:
         try:
             if app:
                 with app.app_context():
                     html_body = render_template(
-                        config["template"],
+                        config['template'],
                         community_name=community_name,
                         email=email,
                         days_stuck=14,
                         site_url=APP_BASE_URL,
                     )
             else:
-                html_body = f"<p>{config['subject']}: {community_name}</p>"
-            if _send_email(email, config["subject"], html_body):
+                html_body = f'<p>{config["subject"]}: {community_name}</p>'
+            if _send_email(email, config['subject'], html_body):
                 sent += 1
         except Exception as e:
-            logger.error(f"[EMAIL_AUTO] Nudge send error for {email}: {e}")
-    logger.info(f"[EMAIL_AUTO] Formation nudge sent to {sent}/{len(member_emails)} for {community_id}")
+            logger.error(f'[EMAIL_AUTO] Nudge send error for {email}: {e}')
+    logger.info(f'[EMAIL_AUTO] Formation nudge sent to {sent}/{len(member_emails)} for {community_id}')
     return sent
 
 
 def check_formation_ready_communities(min_members: int = 3, nudge_cooldown_days: int = 7):
     """Find communities with enough confirmed members but no recent nudge."""
     try:
-        communities = db.get_active_communities_for_nudge(
-            min_members=min_members,
-            cooldown_days=nudge_cooldown_days
-        )
+        communities = db.get_active_communities_for_nudge(min_members=min_members, cooldown_days=nudge_cooldown_days)
         return communities
     except Exception as e:
-        logger.error(f"[EMAIL_AUTO] Error checking formation-ready communities: {e}")
+        logger.error(f'[EMAIL_AUTO] Error checking formation-ready communities: {e}')
         return []
 
 
@@ -218,13 +217,17 @@ def render_outreach_email(municipality_profile, app=None):
     score = municipality_profile.get('energy_transition_score', 0)
     gap = municipality_profile.get('leg_value_gap_chf', 0)
     subdomain = name.lower().replace(' ', '-') if name else ''
-    profil_url = f"{APP_BASE_URL}/gemeinde/profil/{bfs}"
-    claim_url = f"{APP_BASE_URL}/gemeinde/onboarding?subdomain={subdomain}"
+    profil_url = f'{APP_BASE_URL}/gemeinde/profil/{bfs}'
+    claim_url = f'{APP_BASE_URL}/gemeinde/onboarding?subdomain={subdomain}'
 
     ctx = dict(
-        gemeinde_name=name, kanton=kanton,
-        energy_transition_score=score, leg_value_gap_chf=gap,
-        subdomain=subdomain, profil_url=profil_url, claim_url=claim_url,
+        gemeinde_name=name,
+        kanton=kanton,
+        energy_transition_score=score,
+        leg_value_gap_chf=gap,
+        subdomain=subdomain,
+        profil_url=profil_url,
+        claim_url=claim_url,
     )
 
     if app:
@@ -274,7 +277,7 @@ def schedule_outreach_batch(limit: int = 10) -> int:
         email = v.get('contact_email', '')
         if not email:
             continue
-        for bfs in (v.get('bfs_numbers') or []):
+        for bfs in v.get('bfs_numbers') or []:
             vnb_email_map[bfs] = email
 
     # Enrich profiles with contact_email from VNB
@@ -299,7 +302,7 @@ def schedule_outreach_batch(limit: int = 10) -> int:
         )
         if result:
             scheduled += 1
-    logger.info(f"[OUTREACH] Scheduled {scheduled} new municipality outreach emails")
+    logger.info(f'[OUTREACH] Scheduled {scheduled} new municipality outreach emails')
     return scheduled
 
 
@@ -318,13 +321,17 @@ def process_municipality_outreach(app=None):
 
         tpl_config = OUTREACH_TEMPLATES.get(followup_number, OUTREACH_TEMPLATES[0])
         subdomain = name.lower().replace(' ', '-') if name else ''
-        profil_url = f"{APP_BASE_URL}/gemeinde/profil/{bfs}"
-        claim_url = f"{APP_BASE_URL}/gemeinde/onboarding?subdomain={subdomain}"
+        profil_url = f'{APP_BASE_URL}/gemeinde/profil/{bfs}'
+        claim_url = f'{APP_BASE_URL}/gemeinde/onboarding?subdomain={subdomain}'
 
         ctx = dict(
-            gemeinde_name=name, kanton=kanton,
-            energy_transition_score=0, leg_value_gap_chf=0,
-            subdomain=subdomain, profil_url=profil_url, claim_url=claim_url,
+            gemeinde_name=name,
+            kanton=kanton,
+            energy_transition_score=0,
+            leg_value_gap_chf=0,
+            subdomain=subdomain,
+            profil_url=profil_url,
+            claim_url=claim_url,
         )
 
         try:
@@ -332,9 +339,9 @@ def process_municipality_outreach(app=None):
                 with app.app_context():
                     html_body = render_template(tpl_config['template'], **ctx)
             else:
-                html_body = f"<p>OpenLEG: {tpl_config['subject']} ({name})</p>"
+                html_body = f'<p>OpenLEG: {tpl_config["subject"]} ({name})</p>'
         except Exception as e:
-            logger.error(f"[OUTREACH] Template render error for {name}: {e}")
+            logger.error(f'[OUTREACH] Template render error for {name}: {e}')
             db.mark_municipality_outreach_failed(outreach_id, str(e))
             failed += 1
             continue
@@ -350,7 +357,7 @@ def process_municipality_outreach(app=None):
     if sent > 0:
         _notify_outreach_sent('batch', 'outreach', sent)
 
-    logger.info(f"[OUTREACH] Processed: {sent} sent, {failed} failed")
+    logger.info(f'[OUTREACH] Processed: {sent} sent, {failed} failed')
     return {'sent': sent, 'failed': failed}
 
 
@@ -371,7 +378,7 @@ def schedule_municipality_followups(followup_number: int = 1, days_after: int = 
         if result:
             scheduled += 1
     if scheduled > 0:
-        logger.info(f"[OUTREACH] Scheduled {scheduled} follow-up #{followup_number} emails")
+        logger.info(f'[OUTREACH] Scheduled {scheduled} follow-up #{followup_number} emails')
     return scheduled
 
 
@@ -381,21 +388,22 @@ def _notify_outreach_sent(municipality_name: str, email_type: str, count: int):
     chat_id = os.getenv('TELEGRAM_CHAT_ID', '').strip()
     if not bot_token or not chat_id:
         return
-    text = f"📬 *Outreach:* {count}x {email_type} ({municipality_name})"
+    text = f'📬 *Outreach:* {count}x {email_type} ({municipality_name})'
 
     def _send():
         try:
             import urllib.request
-            payload = json.dumps({
-                "chat_id": chat_id, "text": text,
-                "parse_mode": "Markdown", "disable_web_page_preview": True
-            }).encode()
+
+            payload = json.dumps(
+                {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown', 'disable_web_page_preview': True}
+            ).encode()
             req = urllib.request.Request(
-                f"https://api.telegram.org/bot{bot_token}/sendMessage",
-                data=payload, headers={"Content-Type": "application/json"}
+                f'https://api.telegram.org/bot{bot_token}/sendMessage',
+                data=payload,
+                headers={'Content-Type': 'application/json'},
             )
             urllib.request.urlopen(req, timeout=10)
         except Exception as e:
-            logger.warning(f"[Telegram] outreach notify failed: {e}")
+            logger.warning(f'[Telegram] outreach notify failed: {e}')
 
     threading.Thread(target=_send, daemon=True).start()

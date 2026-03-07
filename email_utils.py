@@ -1,9 +1,10 @@
 """Shared email sending for OpenLEG. AgentMail primary, SMTP fallback."""
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import os
+
 import logging
+import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +34,13 @@ def _get_transactional_inbox():
         return _transactional_inbox
     try:
         import agentmail_client
+
         inbox_id = agentmail_client.ensure_inbox('hallo', AGENTMAIL_DOMAIN)
         if inbox_id:
             _transactional_inbox = inbox_id
         return inbox_id
     except Exception as e:
-        logger.error(f"[EMAIL] Failed to get transactional inbox: {e}")
+        logger.error(f'[EMAIL] Failed to get transactional inbox: {e}')
         return None
 
 
@@ -49,18 +51,15 @@ def _send_via_agentmail(to_email, subject, body, html=False):
         return False
     try:
         import agentmail_client
+
         text_body = None if html else body
         html_body = body if html else None
         msg_id = agentmail_client.send_message(
-            inbox_id=inbox_id,
-            to=to_email,
-            subject=subject,
-            text=text_body or body,
-            html=html_body
+            inbox_id=inbox_id, to=to_email, subject=subject, text=text_body or body, html=html_body
         )
         return msg_id is not None
     except Exception as e:
-        logger.error(f"[EMAIL] AgentMail send failed: {e}")
+        logger.error(f'[EMAIL] AgentMail send failed: {e}')
         return False
 
 
@@ -79,10 +78,10 @@ def _send_via_smtp(to_email, subject, body, html=False, from_email=None):
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
-        logger.info(f"[EMAIL] SMTP sent to {to_email}: {subject}")
+        logger.info(f'[EMAIL] SMTP sent to {to_email}: {subject}')
         return True
     except Exception as e:
-        logger.error(f"[EMAIL] SMTP failed to send to {to_email}: {e}")
+        logger.error(f'[EMAIL] SMTP failed to send to {to_email}: {e}')
         return False
 
 
@@ -92,7 +91,7 @@ def send_email(to_email, subject, body, html=False, from_email=None):
     Signature unchanged for backward compatibility.
     """
     if not EMAIL_ENABLED:
-        logger.info(f"[EMAIL] (dev) Would send to {to_email}: {subject}")
+        logger.info(f'[EMAIL] (dev) Would send to {to_email}: {subject}')
         return True
 
     # Try AgentMail first
@@ -100,7 +99,7 @@ def send_email(to_email, subject, body, html=False, from_email=None):
         result = _send_via_agentmail(to_email, subject, body, html)
         if result:
             return True
-        logger.warning("[EMAIL] AgentMail failed, falling back to SMTP")
+        logger.warning('[EMAIL] AgentMail failed, falling back to SMTP')
 
     # SMTP fallback
     return _send_via_smtp(to_email, subject, body, html, from_email)

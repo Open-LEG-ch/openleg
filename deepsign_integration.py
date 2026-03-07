@@ -3,20 +3,22 @@
 Requires DEEPSIGN_API_KEY and DEEPSIGN_API_URL env vars.
 API docs: https://docs.deepsign.ch
 """
-import os
-import hmac
+
 import hashlib
+import hmac
+import os
+
 import requests
 
-API_URL = os.environ.get("DEEPSIGN_API_URL", "https://api.deepsign.ch/v1")
-API_KEY = os.environ.get("DEEPSIGN_API_KEY", "")
-WEBHOOK_SECRET = os.environ.get("DEEPSIGN_WEBHOOK_SECRET", "")
+API_URL = os.environ.get('DEEPSIGN_API_URL', 'https://api.deepsign.ch/v1')
+API_KEY = os.environ.get('DEEPSIGN_API_KEY', '')
+WEBHOOK_SECRET = os.environ.get('DEEPSIGN_WEBHOOK_SECRET', '')
 
 
 def _headers():
     return {
-        "Authorization": f"Bearer {API_KEY}",
-        "Accept": "application/json",
+        'Authorization': f'Bearer {API_KEY}',
+        'Accept': 'application/json',
     }
 
 
@@ -28,15 +30,15 @@ def upload_document(pdf_bytes, filename, title):
     Raises: Exception on upload failure
     """
     resp = requests.post(
-        f"{API_URL}/documents",
+        f'{API_URL}/documents',
         headers=_headers(),
-        files={"file": (filename, pdf_bytes, "application/pdf")},
-        data={"title": title},
+        files={'file': (filename, pdf_bytes, 'application/pdf')},
+        data={'title': title},
         timeout=15,
     )
     if resp.status_code not in (200, 201):
-        raise Exception(f"DeepSign upload failed ({resp.status_code}): {resp.text}")
-    return resp.json()["id"]
+        raise Exception(f'DeepSign upload failed ({resp.status_code}): {resp.text}')
+    return resp.json()['id']
 
 
 def request_signatures(document_id, signers):
@@ -49,13 +51,13 @@ def request_signatures(document_id, signers):
     Returns: signature request dict with id and status
     """
     resp = requests.post(
-        f"{API_URL}/documents/{document_id}/signatures",
+        f'{API_URL}/documents/{document_id}/signatures',
         headers=_headers(),
-        json={"signers": signers, "signature_type": "AES"},
+        json={'signers': signers, 'signature_type': 'AES'},
         timeout=15,
     )
     if resp.status_code not in (200, 201):
-        raise Exception(f"DeepSign signature request failed ({resp.status_code}): {resp.text}")
+        raise Exception(f'DeepSign signature request failed ({resp.status_code}): {resp.text}')
     return resp.json()
 
 
@@ -64,7 +66,7 @@ def verify_webhook_signature(raw_body: bytes, signature_header: str) -> bool:
     if not WEBHOOK_SECRET:
         return False
     expected = hmac.new(WEBHOOK_SECRET.encode(), raw_body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature_header or "")
+    return hmac.compare_digest(expected, signature_header or '')
 
 
 def handle_webhook(payload):
@@ -72,17 +74,17 @@ def handle_webhook(payload):
 
     Returns: dict with action and document_id
     """
-    event = payload.get("event", "")
-    doc_id = payload.get("document_id", "")
+    event = payload.get('event', '')
+    doc_id = payload.get('document_id', '')
 
-    if event == "document.signed":
-        _update_formation_status(doc_id, "signed")
-        return {"action": "signature_completed", "document_id": doc_id}
-    elif event == "document.rejected":
-        _update_formation_status(doc_id, "rejected")
-        return {"action": "signature_rejected", "document_id": doc_id}
+    if event == 'document.signed':
+        _update_formation_status(doc_id, 'signed')
+        return {'action': 'signature_completed', 'document_id': doc_id}
+    elif event == 'document.rejected':
+        _update_formation_status(doc_id, 'rejected')
+        return {'action': 'signature_rejected', 'document_id': doc_id}
     else:
-        return {"action": "unknown", "document_id": doc_id, "event": event}
+        return {'action': 'unknown', 'document_id': doc_id, 'event': event}
 
 
 def get_signing_status(document_id):
@@ -91,12 +93,12 @@ def get_signing_status(document_id):
     Returns: dict with id, status, and optional signed_pdf_url
     """
     resp = requests.get(
-        f"{API_URL}/documents/{document_id}",
+        f'{API_URL}/documents/{document_id}',
         headers=_headers(),
         timeout=15,
     )
     if resp.status_code != 200:
-        raise Exception(f"DeepSign status check failed ({resp.status_code}): {resp.text}")
+        raise Exception(f'DeepSign status check failed ({resp.status_code}): {resp.text}')
     return resp.json()
 
 
@@ -104,7 +106,9 @@ def _update_formation_status(document_id, status):
     """Update formation step based on signing event."""
     try:
         import database
+
         database.update_document_signing_status(document_id, status)
     except Exception as e:
         import logging
-        logging.getLogger(__name__).error(f"[DEEPSIGN] update_formation_status failed: {e}")
+
+        logging.getLogger(__name__).error(f'[DEEPSIGN] update_formation_status failed: {e}')

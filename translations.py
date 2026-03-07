@@ -4,12 +4,30 @@ No flask-babel overhead. Tenant config language field drives selection.
 
 # Kanton -> language mapping for all 26 Swiss cantons
 KANTON_LANGUAGE = {
-    'ZH': 'de', 'BE': 'de', 'LU': 'de', 'UR': 'de', 'SZ': 'de',
-    'OW': 'de', 'NW': 'de', 'GL': 'de', 'ZG': 'de', 'SO': 'de',
-    'BS': 'de', 'BL': 'de', 'SH': 'de', 'AR': 'de', 'AI': 'de',
-    'SG': 'de', 'AG': 'de', 'TG': 'de',
-    'VD': 'fr', 'GE': 'fr', 'NE': 'fr', 'JU': 'fr',
-    'FR': 'fr', 'VS': 'fr',
+    'ZH': 'de',
+    'BE': 'de',
+    'LU': 'de',
+    'UR': 'de',
+    'SZ': 'de',
+    'OW': 'de',
+    'NW': 'de',
+    'GL': 'de',
+    'ZG': 'de',
+    'SO': 'de',
+    'BS': 'de',
+    'BL': 'de',
+    'SH': 'de',
+    'AR': 'de',
+    'AI': 'de',
+    'SG': 'de',
+    'AG': 'de',
+    'TG': 'de',
+    'VD': 'fr',
+    'GE': 'fr',
+    'NE': 'fr',
+    'JU': 'fr',
+    'FR': 'fr',
+    'VS': 'fr',
     'TI': 'it',
     'GR': 'rm',
 }
@@ -52,7 +70,6 @@ TRANSLATIONS = {
         'it': 'Infrastruttura libera per le comunità elettriche svizzere',
         'rm': 'Infrastructura libra per cuminanzas electricas svizras',
     },
-
     # === Hero/landing (8 keys) ===
     'hero_title': {
         'de': 'Ihr Strom. Ihre Nachbarn. Ihre Gemeinschaft.',
@@ -62,7 +79,7 @@ TRANSLATIONS = {
     },
     'hero_subtitle': {
         'de': 'Gründen Sie eine lokale Stromgemeinschaft (LEG) und sparen Sie bis zu CHF 270/Jahr auf Netzgebühren. Kostenlos seit 2026, Open Source, Ihre Daten bleiben bei Ihnen.',
-        'fr': 'Fondez une communauté électrique locale (CEL) et économisez jusqu\'à CHF 270/an sur les frais de réseau. Gratuit depuis 2026, Open Source, vos données restent chez vous.',
+        'fr': "Fondez une communauté électrique locale (CEL) et économisez jusqu'à CHF 270/an sur les frais de réseau. Gratuit depuis 2026, Open Source, vos données restent chez vous.",
         'it': 'Fondate una comunità elettrica locale (CEL) e risparmiate fino a CHF 270/anno sulle tariffe di rete. Gratuito dal 2026, Open Source, i vostri dati restano da voi.',
         'rm': 'Fundai ina cuminanza electrica locala (CEL) e spargni fin a CHF 270/onn sin las taxas da rait. Gratuit dapi 2026, Open Source.',
     },
@@ -79,9 +96,9 @@ TRANSLATIONS = {
     },
     'cta_adresse_pruefen': {
         'de': 'Adresse prüfen',
-        'fr': 'Vérifier l\'adresse',
-        'it': 'Verificare l\'indirizzo',
-        'rm': 'Verifitgar l\'adressa',
+        'fr': "Vérifier l'adresse",
+        'it': "Verificare l'indirizzo",
+        'rm': "Verifitgar l'adressa",
     },
     'cta_mehr_bewohner': {
         'de': 'Mehr für Bewohner',
@@ -99,7 +116,6 @@ TRANSLATIONS = {
         'fr': 'Comment ça marche',
         'it': 'Come funziona',
     },
-
     # === Trust bar badges (4 keys) ===
     'badge_kostenlos': {
         'de': 'Kostenlos, für immer',
@@ -125,7 +141,6 @@ TRANSLATIONS = {
         'it': 'Ospitato in Svizzera',
         'rm': 'Hosted en Svizra',
     },
-
     # === Trust bar data sources ===
     'trust_datenquellen': {
         'de': 'Datenquellen:',
@@ -139,7 +154,6 @@ TRANSLATIONS = {
         'it': 'Nessuna vendita di dati',
         'rm': 'Nagina vendita da datas',
     },
-
     # === Bewohner flow (12 keys) ===
     'bewohner_title': {
         'de': 'OpenLEG für Bewohner',
@@ -150,7 +164,7 @@ TRANSLATIONS = {
     'bewohner_subtitle': {
         'de': 'OpenLEG koordiniert den gesamten Prozess: Sie prüfen Ihre Adresse, finden Nachbarn mit Solarstrom und treten einer lokalen Stromgemeinschaft bei.',
         'fr': 'OpenLEG coordonne tout le processus: vérifiez votre adresse, trouvez des voisins avec du solaire et rejoignez une communauté électrique locale.',
-        'it': 'OpenLEG coordina l\'intero processo: verificate il vostro indirizzo, trovate vicini con solare e aderite a una comunità elettrica locale.',
+        'it': "OpenLEG coordina l'intero processo: verificate il vostro indirizzo, trovate vicini con solare e aderite a una comunità elettrica locale.",
     },
     'bewohner_eigentuemer_title': {
         'de': 'Eigentümer mit PV',
@@ -190,7 +204,7 @@ TRANSLATIONS = {
     },
     'bewohner_consent_text': {
         'de': 'Ich stimme der Datenschutzerklärung zu',
-        'fr': 'J\'accepte la politique de confidentialité',
+        'fr': "J'accepte la politique de confidentialité",
         'it': 'Accetto la politica sulla privacy',
     },
     'bewohner_success': {
@@ -198,7 +212,6 @@ TRANSLATIONS = {
         'fr': 'Inscription réussie! Nous vous contacterons.',
         'it': 'Registrazione riuscita! Vi contatteremo.',
     },
-
     # === Gemeinden flow (10 keys) ===
     'gemeinden_title': {
         'de': 'OpenLEG für Gemeinden',
@@ -250,7 +263,6 @@ TRANSLATIONS = {
         'fr': 'Demander un support projet',
         'it': 'Richiedere supporto progetto',
     },
-
     # === How-it-works (8 keys) ===
     'hiw_title': {
         'de': 'So funktioniert eine Stromgemeinschaft',
@@ -259,8 +271,8 @@ TRANSLATIONS = {
     },
     'hiw_step1_title': {
         'de': 'Adresse prüfen',
-        'fr': 'Vérifier l\'adresse',
-        'it': 'Verificare l\'indirizzo',
+        'fr': "Vérifier l'adresse",
+        'it': "Verificare l'indirizzo",
     },
     'hiw_step2_title': {
         'de': 'Nachbarn finden',
@@ -279,8 +291,8 @@ TRANSLATIONS = {
     },
     'hiw_step5_title': {
         'de': 'Strom teilen, Geld sparen',
-        'fr': 'Partager l\'électricité, économiser',
-        'it': 'Condividere l\'energia, risparmiare',
+        'fr': "Partager l'électricité, économiser",
+        'it': "Condividere l'energia, risparmiare",
     },
     'hiw_rechtsgrundlage': {
         'de': 'Rechtsgrundlage',
@@ -289,10 +301,9 @@ TRANSLATIONS = {
     },
     'hiw_subtitle': {
         'de': 'Von der Idee zur aktiven LEG: was Bewohner und Gemeinden wissen müssen.',
-        'fr': 'De l\'idée à la CEL active: ce que les habitants et communes doivent savoir.',
-        'it': 'Dall\'idea alla CEL attiva: cosa devono sapere residenti e comuni.',
+        'fr': "De l'idée à la CEL active: ce que les habitants et communes doivent savoir.",
+        'it': "Dall'idea alla CEL attiva: cosa devono sapere residenti e comuni.",
     },
-
     # === Pricing (6 keys) ===
     'pricing_title': {
         'de': 'Kostenlos. Open Source. Für immer.',
@@ -303,7 +314,7 @@ TRANSLATIONS = {
     'pricing_subtitle': {
         'de': 'OpenLEG ist freie Infrastruktur für Schweizer Stromgemeinschaften. Keine versteckten Kosten, kein Vendor Lock-in, keine Daten die verkauft werden.',
         'fr': 'OpenLEG est une infrastructure libre pour les communautés électriques suisses. Pas de coûts cachés, pas de vendor lock-in, pas de vente de données.',
-        'it': 'OpenLEG è un\'infrastruttura libera per le comunità elettriche svizzere. Nessun costo nascosto, nessun vendor lock-in, nessuna vendita di dati.',
+        'it': "OpenLEG è un'infrastruttura libera per le comunità elettriche svizzere. Nessun costo nascosto, nessun vendor lock-in, nessuna vendita di dati.",
     },
     'pricing_bewohner': {
         'de': 'Für Bewohner',
@@ -325,7 +336,6 @@ TRANSLATIONS = {
         'fr': 'Comment est-ce financé?',
         'it': 'Come viene finanziato?',
     },
-
     # === Partials (10 keys) ===
     'footer_tagline': {
         'de': 'Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz.',
@@ -351,7 +361,7 @@ TRANSLATIONS = {
     },
     'savings_title': {
         'de': 'Sparpotenzial Ihrer Gemeinde',
-        'fr': 'Potentiel d\'économies de votre commune',
+        'fr': "Potentiel d'économies de votre commune",
         'it': 'Potenziale di risparmio del vostro comune',
     },
     'savings_placeholder': {
@@ -366,7 +376,7 @@ TRANSLATIONS = {
     },
     'savings_chf_year': {
         'de': 'CHF/Jahr Einsparpotenzial',
-        'fr': 'CHF/an potentiel d\'économies',
+        'fr': "CHF/an potentiel d'économies",
         'it': 'CHF/anno potenziale di risparmio',
     },
     'savings_solar': {
@@ -379,7 +389,6 @@ TRANSLATIONS = {
         'fr': 'Écart tarifaire',
         'it': 'Divario tariffario',
     },
-
     # === Error messages (8 keys) ===
     'error_not_found': {
         'de': 'Gemeinde nicht gefunden',
@@ -418,10 +427,9 @@ TRANSLATIONS = {
     },
     'error_generic': {
         'de': 'Ein Fehler ist aufgetreten',
-        'fr': 'Une erreur s\'est produite',
+        'fr': "Une erreur s'est produite",
         'it': 'Si è verificato un errore',
     },
-
     # === Email subjects (6 keys) ===
     'email_welcome_subject': {
         'de': 'Willkommen! Ihre Nachbarn warten',
@@ -453,7 +461,6 @@ TRANSLATIONS = {
         'fr': 'Infrastructure libre pour votre commune',
         'it': 'Infrastruttura libera per il vostro comune',
     },
-
     # === Misc (6 keys) ===
     'data_policy': {
         'de': 'Ihre Daten bleiben im LEG-Kontext. Kein Datenverkauf an Dritte.',
@@ -474,7 +481,7 @@ TRANSLATIONS = {
     'onboarding_subtitle': {
         'de': 'OpenLEG ist freie, Open Source Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften. Wählen Sie Ihren Einstieg.',
         'fr': 'OpenLEG est une infrastructure libre et Open Source pour les communautés électriques locales suisses. Choisissez votre accès.',
-        'it': 'OpenLEG è un\'infrastruttura libera e Open Source per le comunità elettriche locali svizzere. Scegliete il vostro accesso.',
+        'it': "OpenLEG è un'infrastruttura libera e Open Source per le comunità elettriche locali svizzere. Scegliete il vostro accesso.",
     },
     'leg_full_name': {
         'de': 'Lokale Elektrizitätsgemeinschaft',
@@ -488,7 +495,6 @@ TRANSLATIONS = {
         'it': 'CEL',
         'rm': 'CEL',
     },
-
     # === Fuer Bewohner page (~40 keys) ===
     'bew_page_title': {
         'de': 'Solarstrom lokal teilen: LEG für Eigentümer und Mieter',
@@ -502,7 +508,7 @@ TRANSLATIONS = {
     },
     'bew_hero_p': {
         'de': 'Art. 17d StromVG: Hauseigentümer verkaufen Solarstrom direkt an Nachbarn in der Gemeinde, über das bestehende Stromnetz, mit 40% Netzgebühren-Rabatt. Mieter beziehen lokalen Strom, behalten ihre eigene Grundversorgung, haften nur für sich. Kein Verein, kein Verband: eine einfache Gesellschaft mit 1 Monat Kündigungsfrist.',
-        'fr': 'Art. 17d LApEl: les propriétaires vendent le solaire directement aux voisins dans la commune, via le réseau existant, avec 40% de rabais sur les frais de réseau. Les locataires reçoivent de l\'électricité locale, gardent leur approvisionnement de base, ne sont responsables que pour eux. Pas d\'association: une société simple avec 1 mois de préavis.',
+        'fr': "Art. 17d LApEl: les propriétaires vendent le solaire directement aux voisins dans la commune, via le réseau existant, avec 40% de rabais sur les frais de réseau. Les locataires reçoivent de l'électricité locale, gardent leur approvisionnement de base, ne sont responsables que pour eux. Pas d'association: une société simple avec 1 mois de préavis.",
         'it': 'Art. 17d LAEl: i proprietari vendono il solare direttamente ai vicini nel comune, attraverso la rete esistente, con 40% di sconto sulle tariffe di rete. Gli inquilini ricevono energia locale, mantengono la fornitura di base, rispondono solo per sé. Nessuna associazione: una società semplice con 1 mese di preavviso.',
     },
     'bew_cta_leg_vs_zev': {
@@ -521,9 +527,9 @@ TRANSLATIONS = {
         'it': 'Ricavo aggiuntivo per produttori FV/anno',
     },
     'bew_pv_erloese_detail': {
-        'de': 'Interner LEG-Preis (10-15 Rp./kWh) vs. Rückspeisevergütung (4-8 Rp./kWh). Bei 5\'000 kWh Überschuss: CHF 300-500 mehr pro Jahr.',
-        'fr': 'Prix CEL interne (10-15 ct./kWh) vs. rémunération de reprise (4-8 ct./kWh). Avec 5\'000 kWh d\'excédent: CHF 300-500 de plus par an.',
-        'it': 'Prezzo CEL interno (10-15 ct./kWh) vs. remunerazione di ripresa (4-8 ct./kWh). Con 5\'000 kWh di eccedenza: CHF 300-500 in più all\'anno.',
+        'de': "Interner LEG-Preis (10-15 Rp./kWh) vs. Rückspeisevergütung (4-8 Rp./kWh). Bei 5'000 kWh Überschuss: CHF 300-500 mehr pro Jahr.",
+        'fr': "Prix CEL interne (10-15 ct./kWh) vs. rémunération de reprise (4-8 ct./kWh). Avec 5'000 kWh d'excédent: CHF 300-500 de plus par an.",
+        'it': "Prezzo CEL interno (10-15 ct./kWh) vs. remunerazione di ripresa (4-8 ct./kWh). Con 5'000 kWh di eccedenza: CHF 300-500 in più all'anno.",
     },
     'bew_verbraucher_ersparnis': {
         'de': 'Ersparnis für Verbraucher/Jahr',
@@ -531,9 +537,9 @@ TRANSLATIONS = {
         'it': 'Risparmio per i consumatori/anno',
     },
     'bew_verbraucher_detail': {
-        'de': '40% Rabatt auf Netznutzungs-Arbeitspreis (Art. 19h StromVV). Bei H4-Haushalt (4\'500 kWh) und 30% internem Verbrauch.',
-        'fr': '40% de rabais sur le tarif d\'utilisation du réseau (Art. 19h OApEl). Pour un ménage H4 (4\'500 kWh) et 30% de consommation interne.',
-        'it': '40% di sconto sulla tariffa di utilizzo della rete (Art. 19h OAEl). Per un nucleo H4 (4\'500 kWh) e 30% di consumo interno.',
+        'de': "40% Rabatt auf Netznutzungs-Arbeitspreis (Art. 19h StromVV). Bei H4-Haushalt (4'500 kWh) und 30% internem Verbrauch.",
+        'fr': "40% de rabais sur le tarif d'utilisation du réseau (Art. 19h OApEl). Pour un ménage H4 (4'500 kWh) et 30% de consommation interne.",
+        'it': "40% di sconto sulla tariffa di utilizzo della rete (Art. 19h OAEl). Per un nucleo H4 (4'500 kWh) e 30% di consumo interno.",
     },
     'bew_netzgebuehr_label': {
         'de': 'Typische Netzgebühr-Einsparung',
@@ -542,7 +548,7 @@ TRANSLATIONS = {
     },
     'bew_netzgebuehr_detail': {
         'de': '40% von ~7 Rp./kWh Arbeitspreis. Gilt für jede kWh, die intern in der LEG verbraucht wird.',
-        'fr': '40% de ~7 ct./kWh tarif de travail. S\'applique à chaque kWh consommé en interne dans la CEL.',
+        'fr': "40% de ~7 ct./kWh tarif de travail. S'applique à chaque kWh consommé en interne dans la CEL.",
         'it': '40% di ~7 ct./kWh prezzo del lavoro. Si applica a ogni kWh consumato internamente nella CEL.',
     },
     'bew_datenquelle_hinweis': {
@@ -562,8 +568,8 @@ TRANSLATIONS = {
     },
     'bew_eigentuemer_desc': {
         'de': 'Sie produzieren Solarstrom und speisen den Überschuss ins Netz. Heute erhalten Sie die Rückspeisevergütung (4-8 Rp./kWh). In einer LEG verkaufen Sie direkt an Nachbarn zum internen Preis (10-15 Rp./kWh): doppelter bis dreifacher Erlös pro kWh.',
-        'fr': 'Vous produisez du solaire et injectez l\'excédent dans le réseau. Aujourd\'hui vous recevez la rémunération de reprise (4-8 ct./kWh). Dans une CEL, vous vendez directement aux voisins au prix interne (10-15 ct./kWh): revenus doublés ou triplés par kWh.',
-        'it': 'Producete energia solare e immettete l\'eccedenza in rete. Oggi ricevete la remunerazione di ripresa (4-8 ct./kWh). In una CEL, vendete direttamente ai vicini al prezzo interno (10-15 ct./kWh): ricavi doppi o tripli per kWh.',
+        'fr': "Vous produisez du solaire et injectez l'excédent dans le réseau. Aujourd'hui vous recevez la rémunération de reprise (4-8 ct./kWh). Dans une CEL, vous vendez directement aux voisins au prix interne (10-15 ct./kWh): revenus doublés ou triplés par kWh.",
+        'it': "Producete energia solare e immettete l'eccedenza in rete. Oggi ricevete la remunerazione di ripresa (4-8 ct./kWh). In una CEL, vendete direttamente ai vicini al prezzo interno (10-15 ct./kWh): ricavi doppi o tripli per kWh.",
     },
     'bew_eigentuemer_ertrag': {
         'de': 'Mehr Ertrag:',
@@ -587,8 +593,8 @@ TRANSLATIONS = {
     },
     'bew_cta_leg_starten': {
         'de': 'LEG starten: Adresse prüfen',
-        'fr': 'Démarrer une CEL: vérifier l\'adresse',
-        'it': 'Avviare una CEL: verificare l\'indirizzo',
+        'fr': "Démarrer une CEL: vérifier l'adresse",
+        'it': "Avviare una CEL: verificare l'indirizzo",
     },
     'bew_mieter_title': {
         'de': 'Mieter und Haushalte ohne eigene PV',
@@ -597,7 +603,7 @@ TRANSLATIONS = {
     },
     'bew_mieter_desc': {
         'de': 'Sie beziehen Strom vom lokalen Netz. In einer LEG kommt ein Teil direkt vom Solardach in der Nachbarschaft, günstiger als der Standardtarif. Sie behalten Ihre individuelle Grundversorgung beim VNB, es gibt keine Solidarhaftung.',
-        'fr': 'Vous consommez de l\'électricité du réseau local. Dans une CEL, une partie vient directement du toit solaire du voisinage, moins cher que le tarif standard. Vous gardez votre approvisionnement de base individuel auprès du GRD, pas de responsabilité solidaire.',
+        'fr': "Vous consommez de l'électricité du réseau local. Dans une CEL, une partie vient directement du toit solaire du voisinage, moins cher que le tarif standard. Vous gardez votre approvisionnement de base individuel auprès du GRD, pas de responsabilité solidaire.",
         'it': 'Consumate energia dalla rete locale. In una CEL, una parte viene direttamente dal tetto solare del vicinato, più conveniente della tariffa standard. Mantenete la vostra fornitura di base individuale presso il GRD, nessuna responsabilità solidale.',
     },
     'bew_mieter_guenstiger': {
@@ -652,7 +658,7 @@ TRANSLATIONS = {
     },
     'bew_leg_nicht_zev': {
         'de': 'LEG ist nicht ZEV. Das ist entscheidend.',
-        'fr': 'CEL n\'est pas RCP. C\'est décisif.',
+        'fr': "CEL n'est pas RCP. C'est décisif.",
         'it': 'CEL non è RCP. Questo è decisivo.',
     },
     'bew_leg_zev_intro': {
@@ -692,8 +698,8 @@ TRANSLATIONS = {
     },
     'bew_schritt2_desc': {
         'de': 'Sobald genug Teilnehmer beisammen sind, erstellt OpenLEG die LEG-Vereinbarung, Teilnehmerverträge und das VNB-Anmeldepaket automatisch.',
-        'fr': 'Dès que suffisamment de participants sont réunis, OpenLEG génère automatiquement l\'accord CEL, les contrats de participation et le dossier d\'inscription au GRD.',
-        'it': 'Non appena ci sono abbastanza partecipanti, OpenLEG genera automaticamente l\'accordo CEL, i contratti di partecipazione e il pacchetto di iscrizione al GRD.',
+        'fr': "Dès que suffisamment de participants sont réunis, OpenLEG génère automatiquement l'accord CEL, les contrats de participation et le dossier d'inscription au GRD.",
+        'it': "Non appena ci sono abbastanza partecipanti, OpenLEG genera automaticamente l'accordo CEL, i contratti di partecipazione e il pacchetto di iscrizione al GRD.",
     },
     'bew_schritt3_title': {
         'de': '3. VNB anmelden',
@@ -702,12 +708,12 @@ TRANSLATIONS = {
     },
     'bew_schritt3_desc': {
         'de': 'Der Netzbetreiber hat 15 Arbeitstage Antwortfrist und 3 Monate für die Smart-Meter-Installation. OpenLEG trackt den Status.',
-        'fr': 'Le gestionnaire de réseau a 15 jours ouvrables pour répondre et 3 mois pour l\'installation du compteur intelligent. OpenLEG suit le statut.',
-        'it': 'Il gestore di rete ha 15 giorni lavorativi per rispondere e 3 mesi per l\'installazione dello smart meter. OpenLEG monitora lo stato.',
+        'fr': "Le gestionnaire de réseau a 15 jours ouvrables pour répondre et 3 mois pour l'installation du compteur intelligent. OpenLEG suit le statut.",
+        'it': "Il gestore di rete ha 15 giorni lavorativi per rispondere e 3 mesi per l'installazione dello smart meter. OpenLEG monitora lo stato.",
     },
     'bew_sparpotenzial_title': {
         'de': 'Einsparpotenzial in Ihrer Gemeinde',
-        'fr': 'Potentiel d\'économies dans votre commune',
+        'fr': "Potentiel d'économies dans votre commune",
         'it': 'Potenziale di risparmio nel vostro comune',
     },
     'bew_sparpotenzial_desc': {
@@ -717,8 +723,8 @@ TRANSLATIONS = {
     },
     'bew_adresse_title': {
         'de': 'Adresse prüfen und registrieren',
-        'fr': 'Vérifier et enregistrer l\'adresse',
-        'it': 'Verificare e registrare l\'indirizzo',
+        'fr': "Vérifier et enregistrer l'adresse",
+        'it': "Verificare e registrare l'indirizzo",
     },
     'bew_adresse_count': {
         'de': 'Bereits {count} Haushalte registriert.',
@@ -752,7 +758,7 @@ TRANSLATIONS = {
     },
     'bew_daten_nie_desc': {
         'de': 'Kein Datenverkauf an Energieversorger, Versicherungen oder Dritte. Smart-Meter-Daten bleiben in der LEG. Quellcode öffentlich einsehbar (AGPL-3.0). Hosting: Schweizer Infrastruktur (Infomaniak), nDSG-konform.',
-        'fr': 'Aucune vente de données aux fournisseurs d\'énergie, assurances ou tiers. Les données du compteur intelligent restent dans la CEL. Code source consultable publiquement (AGPL-3.0). Hébergement: infrastructure suisse (Infomaniak), conforme nLPD.',
+        'fr': "Aucune vente de données aux fournisseurs d'énergie, assurances ou tiers. Les données du compteur intelligent restent dans la CEL. Code source consultable publiquement (AGPL-3.0). Hébergement: infrastructure suisse (Infomaniak), conforme nLPD.",
         'it': 'Nessuna vendita di dati a fornitori di energia, assicurazioni o terzi. I dati dello smart meter restano nella CEL. Codice sorgente consultabile pubblicamente (AGPL-3.0). Hosting: infrastruttura svizzera (Infomaniak), conforme nLPD.',
     },
     'bew_rechtsgrundlagen': {
@@ -765,7 +771,6 @@ TRANSLATIONS = {
         'fr': 'Offre pour les communes',
         'it': 'Offerta per i comuni',
     },
-
     # === VNB Transparency page (15 keys) ===
     'transparenz_title': {
         'de': 'VNB-Transparenz: Wie offen publizieren Schweizer Netzbetreiber?',
@@ -872,7 +877,6 @@ TRANSLATIONS = {
         'fr': 'Communes couvertes',
         'it': 'Comuni coperti',
     },
-
     # === Gemeinde Toolkit page (8 keys) ===
     'toolkit_title': {
         'de': 'Gemeinde-Kit: Materialien für Ihre LEG-Kommunikation',
@@ -881,7 +885,7 @@ TRANSLATIONS = {
     },
     'toolkit_subtitle': {
         'de': 'Fertige Vorlagen für Gemeindeblatt, Poster, Gemeinderat-Info und Social Media. Frei nutzbar, anpassbar.',
-        'fr': 'Modèles prêts à l\'emploi pour le bulletin communal, affiches, info pour le conseil communal et réseaux sociaux. Libres d\'utilisation, adaptables.',
+        'fr': "Modèles prêts à l'emploi pour le bulletin communal, affiches, info pour le conseil communal et réseaux sociaux. Libres d'utilisation, adaptables.",
         'it': 'Modelli pronti per il bollettino comunale, poster, info per il consiglio comunale e social media. Liberi di utilizzo, adattabili.',
     },
     'toolkit_gemeindeblatt': {
@@ -896,7 +900,7 @@ TRANSLATIONS = {
     },
     'toolkit_gemeinderat': {
         'de': 'Gemeinderat-Infoblatt',
-        'fr': 'Fiche d\'information conseil communal',
+        'fr': "Fiche d'information conseil communal",
         'it': 'Scheda informativa consiglio comunale',
     },
     'toolkit_social': {
@@ -916,7 +920,7 @@ TRANSLATIONS = {
     },
     'toolkit_gemeindeblatt_desc': {
         'de': 'A5 Inserat für das Gemeindeblatt. Enthält QR-Code zur Registrierung, Sparpotenzial-Zahlen, Rechtsgrundlage.',
-        'fr': 'Annonce A5 pour le bulletin communal. Contient un QR-Code d\'inscription, le potentiel d\'économies et la base légale.',
+        'fr': "Annonce A5 pour le bulletin communal. Contient un QR-Code d'inscription, le potentiel d'économies et la base légale.",
         'it': 'Inserto A5 per il bollettino comunale. Contiene codice QR per la registrazione, potenziale di risparmio e base giuridica.',
     },
     'toolkit_poster_desc': {
@@ -926,12 +930,12 @@ TRANSLATIONS = {
     },
     'toolkit_gemeinderat_desc': {
         'de': 'Zweiseitiges Infoblatt für Gemeinderäte. Rechtsgrundlage, Vorteile, Verantwortlichkeiten, OpenLEG-Angebot.',
-        'fr': 'Fiche d\'information de deux pages pour les conseillers municipaux. Base légale, avantages, responsabilités, offre OpenLEG.',
+        'fr': "Fiche d'information de deux pages pour les conseillers municipaux. Base légale, avantages, responsabilités, offre OpenLEG.",
         'it': 'Scheda informativa di due pagine per i consiglieri comunali. Base giuridica, vantaggi, responsabilità, offerta OpenLEG.',
     },
     'toolkit_social_desc': {
         'de': 'Fertige Textvorlagen für Facebook, Instagram, LinkedIn. Kopieren, anpassen, posten.',
-        'fr': 'Modèles de texte prêts à l\'emploi pour Facebook, Instagram, LinkedIn. Copier, adapter, publier.',
+        'fr': "Modèles de texte prêts à l'emploi pour Facebook, Instagram, LinkedIn. Copier, adapter, publier.",
         'it': 'Modelli di testo pronti per Facebook, Instagram, LinkedIn. Copiare, adattare, pubblicare.',
     },
     'toolkit_logo_desc': {
@@ -966,8 +970,8 @@ TRANSLATIONS = {
     },
     'toolkit_foerder_pronovo_desc': {
         'de': 'PV-Investitionsbeiträge für Gebäudeeigentümer. Senkt die Kosten für Solaranlagen in der LEG.',
-        'fr': 'Contributions d\'investissement PV pour les propriétaires. Réduit les coûts des installations solaires dans la CEL.',
-        'it': 'Contributi d\'investimento PV per i proprietari. Riduce i costi degli impianti solari nella CEL.',
+        'fr': "Contributions d'investissement PV pour les propriétaires. Réduit les coûts des installations solaires dans la CEL.",
+        'it': "Contributi d'investimento PV per i proprietari. Riduce i costi degli impianti solari nella CEL.",
     },
     'toolkit_foerder_kantonal': {
         'de': 'Kantonale Programme',

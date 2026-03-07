@@ -1,0 +1,26 @@
+name: Research
+description: Log a research question or finding
+title: "[Research]: "
+labels: ["research"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research Question
+      description: What needs to be investigated?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this research needed?
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources to Check
+      description: Known sources to investigate
+    validations:
+      required: false

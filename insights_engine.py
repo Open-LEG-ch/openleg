@@ -2,9 +2,10 @@
 OpenLEG Insights Engine.
 Aggregates anonymized smart meter data into intelligence products for B2B API.
 """
+
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from datetime import datetime
+from typing import Dict
 
 import database as db
 
@@ -32,7 +33,7 @@ def compute_load_profiles(plz: str = None, period: str = 'month') -> Dict:
                 """
                 params = []
                 if plz:
-                    query += " AND b.plz = %s"
+                    query += ' AND b.plz = %s'
                     params.append(plz)
 
                 query += """
@@ -45,19 +46,23 @@ def compute_load_profiles(plz: str = None, period: str = 'month') -> Dict:
                 # Structure result
                 profiles = {}
                 for row in rows:
-                    key = f"{row['plz']}_{row['building_type']}"
+                    key = f'{row["plz"]}_{row["building_type"]}'
                     if key not in profiles:
-                        profiles[key] = {"plz": row['plz'], "building_type": row['building_type'], "hourly": {}}
-                    profiles[key]["hourly"][f"{int(row['hour'])}h"] = {
-                        "avg_consumption_kwh": float(row['avg_consumption'] or 0),
-                        "avg_production_kwh": float(row['avg_production'] or 0),
-                        "sample_size": row['sample_size']
+                        profiles[key] = {'plz': row['plz'], 'building_type': row['building_type'], 'hourly': {}}
+                    profiles[key]['hourly'][f'{int(row["hour"])}h'] = {
+                        'avg_consumption_kwh': float(row['avg_consumption'] or 0),
+                        'avg_production_kwh': float(row['avg_production'] or 0),
+                        'sample_size': row['sample_size'],
                     }
 
-                return {"profiles": list(profiles.values()), "period": period, "computed_at": datetime.now().isoformat()}
+                return {
+                    'profiles': list(profiles.values()),
+                    'period': period,
+                    'computed_at': datetime.now().isoformat(),
+                }
     except Exception as e:
-        logger.error(f"[INSIGHTS] Error computing load profiles: {e}")
-        return {"profiles": [], "error": str(e)}
+        logger.error(f'[INSIGHTS] Error computing load profiles: {e}')
+        return {'profiles': [], 'error': str(e)}
 
 
 def compute_solar_index(kanton: str = 'ZH') -> Dict:
@@ -91,10 +96,10 @@ def compute_solar_index(kanton: str = 'ZH') -> Dict:
                     row['pv_penetration_pct'] = round((row['active_producers'] or 0) / total * 100, 1)
                     row['avg_pv_kwp'] = round(float(row['avg_pv_kwp'] or 0), 1)
 
-                return {"solar_index": rows, "kanton": kanton, "computed_at": datetime.now().isoformat()}
+                return {'solar_index': rows, 'kanton': kanton, 'computed_at': datetime.now().isoformat()}
     except Exception as e:
-        logger.error(f"[INSIGHTS] Error computing solar index: {e}")
-        return {"solar_index": [], "error": str(e)}
+        logger.error(f'[INSIGHTS] Error computing solar index: {e}')
+        return {'solar_index': [], 'error': str(e)}
 
 
 def compute_flexibility_potential() -> Dict:
@@ -123,10 +128,10 @@ def compute_flexibility_potential() -> Dict:
                     row['flexibility_potential_kwh'] = round((peak - avg) * float(row['households'] or 0), 1)
                     row['load_variability'] = round(float(row['load_variability'] or 0), 4)
 
-                return {"flexibility": rows, "computed_at": datetime.now().isoformat()}
+                return {'flexibility': rows, 'computed_at': datetime.now().isoformat()}
     except Exception as e:
-        logger.error(f"[INSIGHTS] Error computing flexibility: {e}")
-        return {"flexibility": [], "error": str(e)}
+        logger.error(f'[INSIGHTS] Error computing flexibility: {e}')
+        return {'flexibility': [], 'error': str(e)}
 
 
 def compute_community_signals() -> Dict:
@@ -154,10 +159,10 @@ def compute_community_signals() -> Dict:
                     row['community_rate_pct'] = round((row['in_community'] or 0) / total * 100, 1)
                     row['momentum_score'] = min(100, (row['recent_signups'] or 0) * 20)
 
-                return {"signals": rows, "computed_at": datetime.now().isoformat()}
+                return {'signals': rows, 'computed_at': datetime.now().isoformat()}
     except Exception as e:
-        logger.error(f"[INSIGHTS] Error computing community signals: {e}")
-        return {"signals": [], "error": str(e)}
+        logger.error(f'[INSIGHTS] Error computing community signals: {e}')
+        return {'signals': [], 'error': str(e)}
 
 
 def refresh_all_insights():
@@ -174,7 +179,7 @@ def refresh_all_insights():
         db.save_insight(name, scope='ZH', period='current', data=data, ttl_hours=24)
         results[name] = 'ok' if 'error' not in data else data['error']
 
-    logger.info(f"[INSIGHTS] Refreshed all insights: {results}")
+    logger.info(f'[INSIGHTS] Refreshed all insights: {results}')
     return results
 
 
@@ -188,23 +193,21 @@ def compute_formation_pipeline(kanton: str = None) -> Dict:
     except Exception:
         communities = []
 
-    stage_counts = {
-        "interested": 0, "formation_started": 0, "dso_submitted": 0,
-        "dso_approved": 0, "active": 0
-    }
+    stage_counts = {'interested': 0, 'formation_started': 0, 'dso_submitted': 0, 'dso_approved': 0, 'active': 0}
     for c in communities:
-        status = c.get("status", "interested")
+        status = c.get('status', 'interested')
         if status in stage_counts:
             stage_counts[status] += 1
 
     # Compute avg formation days from communities with both timestamps
     formation_days = []
     for c in communities:
-        started = c.get("formation_started_at")
-        approved = c.get("dso_approved_at")
+        started = c.get('formation_started_at')
+        approved = c.get('dso_approved_at')
         if started and approved:
             try:
                 from datetime import datetime
+
                 if isinstance(started, str):
                     started = datetime.fromisoformat(started)
                 if isinstance(approved, str):
@@ -217,46 +220,46 @@ def compute_formation_pipeline(kanton: str = None) -> Dict:
     avg_days = round(sum(formation_days) / len(formation_days), 1) if formation_days else 0
 
     return {
-        "stages": stage_counts,
-        "total_communities": len(communities),
-        "avg_formation_days": avg_days,
-        "kanton": kanton or "all",
+        'stages': stage_counts,
+        'total_communities': len(communities),
+        'avg_formation_days': avg_days,
+        'kanton': kanton or 'all',
     }
 
 
-def compute_grid_optimization(kanton: str = "ZH") -> Dict:
+def compute_grid_optimization(kanton: str = 'ZH') -> Dict:
     """Compute grid optimization recommendations from LEG data.
 
     Returns: peak reduction potential, self-consumption ratio, recommendations
     """
     try:
         profiles = db.get_all_municipality_profiles()
-        profiles = [p for p in profiles if p.get("kanton") == kanton] if kanton else profiles
+        profiles = [p for p in profiles if p.get('kanton') == kanton] if kanton else profiles
     except Exception:
         profiles = []
 
-    total_consumption = sum(p.get("electricity_consumption_mwh", 0) for p in profiles)
-    total_production = sum(p.get("renewable_production_mwh", 0) for p in profiles)
+    total_consumption = sum(p.get('electricity_consumption_mwh', 0) for p in profiles)
+    total_production = sum(p.get('renewable_production_mwh', 0) for p in profiles)
     self_supply = (total_production / total_consumption * 100) if total_consumption > 0 else 0
 
     actions = []
     if self_supply < 20:
-        actions.append("Increase PV installations in low-penetration municipalities")
+        actions.append('Increase PV installations in low-penetration municipalities')
     if self_supply > 30:
-        actions.append("Deploy battery storage to reduce grid feed-in peaks")
-    actions.append("Optimize LEG boundaries to maximize self-consumption")
+        actions.append('Deploy battery storage to reduce grid feed-in peaks')
+    actions.append('Optimize LEG boundaries to maximize self-consumption')
 
     return {
-        "kanton": kanton,
-        "total_consumption_mwh": round(total_consumption, 0),
-        "total_production_mwh": round(total_production, 0),
-        "self_supply_ratio_pct": round(self_supply, 1),
-        "peak_reduction_potential_pct": round(min(self_supply * 0.4, 25), 1),
-        "recommended_actions": actions,
+        'kanton': kanton,
+        'total_consumption_mwh': round(total_consumption, 0),
+        'total_production_mwh': round(total_production, 0),
+        'self_supply_ratio_pct': round(self_supply, 1),
+        'peak_reduction_potential_pct': round(min(self_supply * 0.4, 25), 1),
+        'recommended_actions': actions,
     }
 
 
-def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
+def compute_community_benchmarks(kanton: str = 'ZH') -> Dict:
     """Aggregate community performance benchmarks.
 
     Returns: avg members, avg self-supply ratio, top communities
@@ -268,40 +271,43 @@ def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
 
     if not communities:
         return {
-            "kanton": kanton,
-            "avg_members": 0,
-            "avg_self_supply_ratio": 0,
-            "total_communities": 0,
-            "top_communities": [],
+            'kanton': kanton,
+            'avg_members': 0,
+            'avg_self_supply_ratio': 0,
+            'total_communities': 0,
+            'top_communities': [],
         }
 
-    member_counts = [c.get("member_count", 0) for c in communities]
+    member_counts = [c.get('member_count', 0) for c in communities]
     avg_members = sum(member_counts) / len(member_counts) if member_counts else 0
 
     # Compute avg self-supply ratio from billing data
     avg_self_supply = 0
     try:
-        community_ids = [c.get("community_id") for c in communities if c.get("community_id")]
+        community_ids = [c.get('community_id') for c in communities if c.get('community_id')]
         if community_ids:
             with db.get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT AVG(bli.self_supply_ratio) as avg_ratio
                         FROM billing_line_items bli
                         JOIN billing_periods bp ON bli.billing_period_id = bp.id
                         WHERE bp.community_id = ANY(%s)
                           AND bli.self_supply_ratio IS NOT NULL
-                    """, (community_ids,))
+                    """,
+                        (community_ids,),
+                    )
                     row = cur.fetchone()
-                    if row and row.get("avg_ratio"):
-                        avg_self_supply = round(float(row["avg_ratio"]), 3)
+                    if row and row.get('avg_ratio'):
+                        avg_self_supply = round(float(row['avg_ratio']), 3)
     except Exception as e:
-        logger.debug(f"[INSIGHTS] Could not compute avg_self_supply_ratio: {e}")
+        logger.debug(f'[INSIGHTS] Could not compute avg_self_supply_ratio: {e}')
 
     return {
-        "kanton": kanton,
-        "avg_members": round(avg_members, 1),
-        "avg_self_supply_ratio": avg_self_supply,
-        "total_communities": len(communities),
-        "top_communities": sorted(communities, key=lambda c: c.get("member_count", 0), reverse=True)[:5],
+        'kanton': kanton,
+        'avg_members': round(avg_members, 1),
+        'avg_self_supply_ratio': avg_self_supply,
+        'total_communities': len(communities),
+        'top_communities': sorted(communities, key=lambda c: c.get('member_count', 0), reverse=True)[:5],
     }

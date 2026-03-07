@@ -1,4 +1,5 @@
 """Lightweight event hook pub/sub for LEA event-driven triggers."""
+
 import logging
 
 logger = logging.getLogger(__name__)

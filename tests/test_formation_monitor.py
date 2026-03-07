@@ -1,7 +1,6 @@
 """Tests for formation pipeline monitor + strategy dashboard (P2)."""
-import pytest
-from unittest.mock import patch, MagicMock
 
+from unittest.mock import MagicMock, patch
 
 MOCK_PIPELINE_STATS = {
     'interested': 5,
@@ -35,6 +34,7 @@ class TestPipelineStats:
         mock_conn.return_value = mock_connection
 
         from database import get_formation_pipeline_stats
+
         result = get_formation_pipeline_stats()
         assert result['interested'] == 5
         assert result['formation_started'] == 3
@@ -48,6 +48,7 @@ class TestMonitorFormationPipeline:
     @patch('database.get_formation_pipeline_stats', return_value=MOCK_PIPELINE_STATS)
     def test_monitor_returns_summary(self, mock_stats, mock_stuck):
         from email_automation import monitor_formation_pipeline
+
         result = monitor_formation_pipeline()
         assert 'by_status' in result
         assert 'stuck' in result
@@ -64,26 +65,34 @@ class TestMonitorCronEndpoint:
         assert resp.status_code == 403
 
     @patch('email_automation.send_formation_nudge', return_value=1)
-    @patch('email_automation.monitor_formation_pipeline', return_value={
-        'by_status': MOCK_PIPELINE_STATS, 'stuck': MOCK_STUCK,
-        'total_communities': 11, 'healthy': True,
-    })
+    @patch(
+        'email_automation.monitor_formation_pipeline',
+        return_value={
+            'by_status': MOCK_PIPELINE_STATS,
+            'stuck': MOCK_STUCK,
+            'total_communities': 11,
+            'healthy': True,
+        },
+    )
     @patch('database.track_event', return_value=True)
     def test_monitor_cron_sends_nudges(self, mock_track, mock_monitor, mock_nudge, full_client):
-        resp = full_client.post('/api/cron/monitor-formations',
-                                headers={'X-Cron-Secret': 'test-cron-secret'})
+        resp = full_client.post('/api/cron/monitor-formations', headers={'X-Cron-Secret': 'test-cron-secret'})
         assert resp.status_code == 200
         mock_nudge.assert_called_once()
 
     @patch('email_automation.send_formation_nudge', return_value=1)
-    @patch('email_automation.monitor_formation_pipeline', return_value={
-        'by_status': MOCK_PIPELINE_STATS, 'stuck': MOCK_STUCK,
-        'total_communities': 11, 'healthy': True,
-    })
+    @patch(
+        'email_automation.monitor_formation_pipeline',
+        return_value={
+            'by_status': MOCK_PIPELINE_STATS,
+            'stuck': MOCK_STUCK,
+            'total_communities': 11,
+            'healthy': True,
+        },
+    )
     @patch('database.track_event', return_value=True)
     def test_monitor_cron_tracks_event(self, mock_track, mock_monitor, mock_nudge, full_client):
-        full_client.post('/api/cron/monitor-formations',
-                         headers={'X-Cron-Secret': 'test-cron-secret'})
+        full_client.post('/api/cron/monitor-formations', headers={'X-Cron-Secret': 'test-cron-secret'})
         mock_track.assert_called_once()
         assert mock_track.call_args[0][0] == 'pipeline_monitor_run'
 
@@ -95,30 +104,37 @@ class TestAdminStrategy:
         resp = full_client.get('/admin/strategy')
         assert resp.status_code == 403
 
-    @patch('email_automation.monitor_formation_pipeline', return_value={
-        'by_status': MOCK_PIPELINE_STATS, 'stuck': MOCK_STUCK,
-        'total_communities': 11, 'healthy': True,
-    })
+    @patch(
+        'email_automation.monitor_formation_pipeline',
+        return_value={
+            'by_status': MOCK_PIPELINE_STATS,
+            'stuck': MOCK_STUCK,
+            'total_communities': 11,
+            'healthy': True,
+        },
+    )
     @patch('database.get_email_stats', return_value={'pending': 5, 'sent': 100})
     @patch('database.get_stats', return_value={'total_buildings': 50, 'registrations_today': 3})
     def test_admin_strategy_returns_data(self, mock_stats, mock_email, mock_monitor, full_client):
-        resp = full_client.get('/admin/strategy',
-                               headers={'X-Admin-Token': 'test-admin-token'})
+        resp = full_client.get('/admin/strategy', headers={'X-Admin-Token': 'test-admin-token'})
         assert resp.status_code == 200
         data = resp.get_json()
         assert 'stats' in data
         assert 'pipeline' in data
         assert 'email_stats' in data
 
-    @patch('email_automation.monitor_formation_pipeline', return_value={
-        'by_status': MOCK_PIPELINE_STATS, 'stuck': MOCK_STUCK,
-        'total_communities': 11, 'healthy': True,
-    })
+    @patch(
+        'email_automation.monitor_formation_pipeline',
+        return_value={
+            'by_status': MOCK_PIPELINE_STATS,
+            'stuck': MOCK_STUCK,
+            'total_communities': 11,
+            'healthy': True,
+        },
+    )
     @patch('database.get_email_stats', return_value={'pending': 5, 'sent': 100})
     @patch('database.get_stats', return_value={'total_buildings': 50, 'registrations_today': 3})
     def test_admin_strategy_html(self, mock_stats, mock_email, mock_monitor, full_client):
-        resp = full_client.get('/admin/strategy',
-                               headers={'X-Admin-Token': 'test-admin-token',
-                                        'Accept': 'text/html'})
+        resp = full_client.get('/admin/strategy', headers={'X-Admin-Token': 'test-admin-token', 'Accept': 'text/html'})
         assert resp.status_code == 200
         assert b'<!DOCTYPE html>' in resp.data or b'<html' in resp.data

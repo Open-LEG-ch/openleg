@@ -3,13 +3,15 @@ OpenLEG Utility Portal Blueprint.
 Self-service portal for energy utilities (VNB/EVU) to manage their LEG platform.
 Routes: /utility/*
 """
-import os
-import uuid
+
 import hashlib
-import secrets
 import logging
+import os
+import secrets
+import uuid
 from functools import wraps
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session, g
+
+from flask import Blueprint, g, jsonify, redirect, render_template, request, session, url_for
 
 import database as db
 import security_utils
@@ -33,6 +35,7 @@ def _get_current_client():
 
 def require_utility_auth(f):
     """Require authenticated utility client session."""
+
     @wraps(f)
     def decorated(*args, **kwargs):
         client = _get_current_client()
@@ -40,16 +43,16 @@ def require_utility_auth(f):
             return redirect(url_for('utility.login_page'))
         g.utility_client = client
         return f(*args, **kwargs)
+
     return decorated
 
 
 # --- Registration ---
 
+
 @utility_bp.route('/register', methods=['GET'])
 def register_page():
-    return render_template('utility/register.html',
-                           site_url=SITE_URL,
-                           tenant=getattr(g, 'tenant', {}))
+    return render_template('utility/register.html', site_url=SITE_URL, tenant=getattr(g, 'tenant', {}))
 
 
 @utility_bp.route('/register', methods=['POST'])
@@ -64,17 +67,17 @@ def register():
     kanton = (data.get('kanton') or '').strip().upper()[:2]
 
     if not company_name or not contact_email:
-        return jsonify({"error": "Firmenname und E-Mail sind erforderlich."}), 400
+        return jsonify({'error': 'Firmenname und E-Mail sind erforderlich.'}), 400
 
     is_valid, normalized, error = security_utils.validate_email_address(contact_email)
     if not is_valid:
-        return jsonify({"error": error}), 400
+        return jsonify({'error': error}), 400
     contact_email = normalized
 
     # Check if already registered
     existing = db.get_utility_client_by_email(contact_email)
     if existing:
-        return jsonify({"error": "Diese E-Mail ist bereits registriert. Bitte einloggen."}), 409
+        return jsonify({'error': 'Diese E-Mail ist bereits registriert. Bitte einloggen.'}), 409
 
     if contact_phone:
         is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(contact_phone)
@@ -102,24 +105,18 @@ def register():
         kanton=kanton,
     )
 
-    db.track_event('utility_registered', None, {
-        'client_id': client_id,
-        'company': company_name,
-        'kanton': kanton
-    })
+    db.track_event('utility_registered', None, {'client_id': client_id, 'company': company_name, 'kanton': kanton})
 
     # Send magic link for first login
     _send_magic_link(client_id, contact_email)
 
     if request.is_json:
-        return jsonify({
-            "success": True,
-            "message": "Registrierung erfolgreich. Login-Link per E-Mail gesendet."
-        })
+        return jsonify({'success': True, 'message': 'Registrierung erfolgreich. Login-Link per E-Mail gesendet.'})
     return redirect(url_for('utility.login_page', registered=1))
 
 
 # --- Login (Magic Link) ---
+
 
 @utility_bp.route('/login', methods=['GET'])
 def login_page():
@@ -136,15 +133,16 @@ def login_page():
             if client['status'] == 'pending':
                 db.update_utility_client_status(client['client_id'], 'active')
             return redirect(url_for('utility.dashboard'))
-        return render_template('utility/login.html',
-                               error="Ungültiger oder abgelaufener Login-Link.",
-                               site_url=SITE_URL,
-                               tenant=getattr(g, 'tenant', {}))
+        return render_template(
+            'utility/login.html',
+            error='Ungültiger oder abgelaufener Login-Link.',
+            site_url=SITE_URL,
+            tenant=getattr(g, 'tenant', {}),
+        )
 
-    return render_template('utility/login.html',
-                           registered=registered,
-                           site_url=SITE_URL,
-                           tenant=getattr(g, 'tenant', {}))
+    return render_template(
+        'utility/login.html', registered=registered, site_url=SITE_URL, tenant=getattr(g, 'tenant', {})
+    )
 
 
 @utility_bp.route('/login', methods=['POST'])
@@ -154,15 +152,15 @@ def login_submit():
 
     is_valid, normalized, error = security_utils.validate_email_address(email)
     if not is_valid:
-        return jsonify({"error": error}), 400
+        return jsonify({'error': error}), 400
 
     client = db.get_utility_client_by_email(normalized)
     if not client:
         # Don't reveal whether email exists
-        return jsonify({"success": True, "message": "Falls registriert, erhalten Sie einen Login-Link per E-Mail."})
+        return jsonify({'success': True, 'message': 'Falls registriert, erhalten Sie einen Login-Link per E-Mail.'})
 
     _send_magic_link(client['client_id'], normalized)
-    return jsonify({"success": True, "message": "Login-Link per E-Mail gesendet."})
+    return jsonify({'success': True, 'message': 'Login-Link per E-Mail gesendet.'})
 
 
 @utility_bp.route('/logout')
@@ -173,80 +171,81 @@ def logout():
 
 # --- Dashboard ---
 
+
 @utility_bp.route('/dashboard')
 @require_utility_auth
 def dashboard():
     client = g.utility_client
-    return render_template('utility/dashboard.html',
-                           client=client,
-                           site_url=SITE_URL,
-                           tenant=getattr(g, 'tenant', {}))
+    return render_template('utility/dashboard.html', client=client, site_url=SITE_URL, tenant=getattr(g, 'tenant', {}))
 
 
 # --- API Key Management ---
+
 
 @utility_bp.route('/api-key', methods=['POST'])
 @require_utility_auth
 def generate_api_key():
     """Generate a new API key for the utility client."""
     client = g.utility_client
-    raw_key = f"oleg_{secrets.token_urlsafe(32)}"
+    raw_key = f'oleg_{secrets.token_urlsafe(32)}'
     key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
 
     db.update_utility_client_api_key(client['client_id'], key_hash)
     db.track_event('utility_api_key_generated', None, {'client_id': client['client_id']})
 
-    return jsonify({
-        "success": True,
-        "api_key": raw_key,
-        "message": "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
-    })
+    return jsonify(
+        {
+            'success': True,
+            'api_key': raw_key,
+            'message': 'API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt.',
+        }
+    )
 
 
 # --- Settings ---
+
 
 @utility_bp.route('/settings', methods=['GET'])
 @require_utility_auth
 def settings_page():
     client = g.utility_client
-    return render_template('utility/settings.html',
-                           client=client,
-                           site_url=SITE_URL,
-                           tenant=getattr(g, 'tenant', {}))
+    return render_template('utility/settings.html', client=client, site_url=SITE_URL, tenant=getattr(g, 'tenant', {}))
 
 
 # --- Admin: list all utility clients ---
+
 
 @utility_bp.route('/admin/clients')
 def admin_clients():
     admin_token = os.getenv('ADMIN_TOKEN', '').strip()
     if not admin_token:
-        return jsonify({"error": "not found"}), 404
+        return jsonify({'error': 'not found'}), 404
     token = request.headers.get('X-Admin-Token', '')
     if token != admin_token:
-        return jsonify({"error": "forbidden"}), 403
+        return jsonify({'error': 'forbidden'}), 403
 
     status_filter = request.args.get('status')
     clients = db.get_all_utility_clients(status=status_filter)
     stats = db.get_utility_client_stats()
-    return jsonify({"clients": clients, "stats": stats})
+    return jsonify({'clients': clients, 'stats': stats})
 
 
 # --- Helpers ---
+
 
 def _send_magic_link(client_id: str, email: str):
     """Generate and send a magic login link."""
     token = secrets.token_urlsafe(48)
     db.set_utility_magic_token(client_id, token, MAGIC_LINK_TTL)
 
-    login_url = f"{SITE_URL}/utility/login?token={token}"
-    subject = "OpenLEG: Ihr Login-Link"
+    login_url = f'{SITE_URL}/utility/login?token={token}'
+    subject = 'OpenLEG: Ihr Login-Link'
     body = (
-        f"Guten Tag,\n\n"
-        f"Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n\n"
-        f"{login_url}\n\n"
-        f"Dieser Link ist {MAGIC_LINK_TTL // 60} Minuten gültig.\n\n"
-        f"Ihr OpenLEG-Team"
+        f'Guten Tag,\n\n'
+        f'Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n\n'
+        f'{login_url}\n\n'
+        f'Dieser Link ist {MAGIC_LINK_TTL // 60} Minuten gültig.\n\n'
+        f'Ihr OpenLEG-Team'
     )
     send_email(email, subject, body)
-    logger.info(f"[UTILITY] Magic link sent to {email}")
+    logger.info(f'[UTILITY] Magic link sent to {email}')

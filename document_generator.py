@@ -1,17 +1,18 @@
 """PDF document generator for LEG formation documents using WeasyPrint."""
+
 from datetime import date
 
-
 DISTRIBUTION_LABELS = {
-    "einfach": "Gleichmässige Verteilung",
-    "proportional": "Proportionale Verteilung nach Verbrauchsanteil",
-    "individuell": "Individuelle Vereinbarung gemäss Anhang",
+    'einfach': 'Gleichmässige Verteilung',
+    'proportional': 'Proportionale Verteilung nach Verbrauchsanteil',
+    'individuell': 'Individuelle Vereinbarung gemäss Anhang',
 }
 
 
 def _render_pdf(html_str):
     """Render HTML string to PDF bytes."""
     from weasyprint import HTML
+
     return HTML(string=html_str).write_pdf()
 
 
@@ -38,21 +39,21 @@ def generate_gemeinschaftsvereinbarung(
         ValueError: If fewer than 2 participants or no producer
     """
     if len(participants) < 2:
-        raise ValueError("Eine LEG benötigt mindestens 2 Teilnehmer")
+        raise ValueError('Eine LEG benötigt mindestens 2 Teilnehmer')
 
-    has_producer = any(p.get("role") == "producer" for p in participants)
+    has_producer = any(p.get('role') == 'producer' for p in participants)
     if not has_producer:
-        raise ValueError("Eine LEG benötigt mindestens einen Produzent")
+        raise ValueError('Eine LEG benötigt mindestens einen Produzent')
 
     if date_str is None:
         date_str = date.today().isoformat()
 
     dist_label = DISTRIBUTION_LABELS.get(distribution_model, distribution_model)
 
-    rows = ""
+    rows = ''
     for i, p in enumerate(participants, 1):
-        role_label = "Produzent" if p["role"] == "producer" else "Konsument"
-        rows += f"<tr><td>{i}</td><td>{p['name']}</td><td>{p['address']}</td><td>{role_label}</td></tr>"
+        role_label = 'Produzent' if p['role'] == 'producer' else 'Konsument'
+        rows += f'<tr><td>{i}</td><td>{p["name"]}</td><td>{p["address"]}</td><td>{role_label}</td></tr>'
 
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -95,7 +96,7 @@ der gemäss separater Vollmacht bestimmt wird.</p>
 
 <h2>7. Unterschriften</h2>
 <table><tr><th>Name</th><th>Datum</th><th>Unterschrift</th></tr>
-{"".join(f'<tr><td>{p["name"]}</td><td></td><td></td></tr>' for p in participants)}
+{''.join(f'<tr><td>{p["name"]}</td><td></td><td></td></tr>' for p in participants)}
 </table>
 
 <div class="footer">Generiert durch OpenLEG Platform, openleg.ch</div>
@@ -121,11 +122,11 @@ def generate_teilnehmervertrag(
     if date_str is None:
         date_str = date.today().isoformat()
 
-    role_label = "Produzent" if role == "producer" else "Konsument"
+    role_label = 'Produzent' if role == 'producer' else 'Konsument'
 
-    pv_section = ""
+    pv_section = ''
     if pv_kwp and pv_kwp > 0:
-        pv_section = f"<p><strong>PV-Anlage:</strong> {pv_kwp} kWp</p>"
+        pv_section = f'<p><strong>PV-Anlage:</strong> {pv_kwp} kWp</p>'
 
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -188,15 +189,15 @@ def generate_dso_anmeldung(
         ValueError: If any participant missing metering_point
     """
     for p in participants:
-        if not p.get("metering_point"):
-            raise ValueError(f"Messpunkt fehlt für Teilnehmer {p.get('name', '?')}")
+        if not p.get('metering_point'):
+            raise ValueError(f'Messpunkt fehlt für Teilnehmer {p.get("name", "?")}')
 
     if date_str is None:
         date_str = date.today().isoformat()
 
-    rows = ""
+    rows = ''
     for i, p in enumerate(participants, 1):
-        rows += f"<tr><td>{i}</td><td>{p['name']}</td><td>{p['address']}</td><td>{p['metering_point']}</td></tr>"
+        rows += f'<tr><td>{i}</td><td>{p["name"]}</td><td>{p["address"]}</td><td>{p["metering_point"]}</td></tr>'
 
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -250,10 +251,12 @@ def store_document(community_id, doc_type, pdf_bytes, filename):
 def db_store_document(community_id, doc_type, pdf_bytes, filename):
     """Store document in database. Placeholder for database integration."""
     import database
+
     return database.store_leg_document(community_id, doc_type, pdf_bytes, filename)
 
 
 def list_documents(community_id):
     """List all documents for a community."""
     import database
+
     return database.list_leg_documents(community_id)

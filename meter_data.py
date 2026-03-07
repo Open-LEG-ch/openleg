@@ -2,11 +2,12 @@
 Smart meter data ingestion for OpenLEG.
 Parses EKZ CSV exports, validates readings, stores in database.
 """
+
 import csv
 import io
 import logging
 from datetime import datetime
-from typing import List, Tuple, Optional, Dict
+from typing import Dict, List, Optional, Tuple
 
 import database as db
 
@@ -57,7 +58,7 @@ def parse_ekz_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
 
                     readings.append((ts, consumption, production, feed_in))
                 except (IndexError, ValueError) as e:
-                    errors.append(f"Zeile {i}: {str(e)}")
+                    errors.append(f'Zeile {i}: {str(e)}')
 
             if readings:
                 break  # Found working delimiter
@@ -65,7 +66,7 @@ def parse_ekz_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
             errors.append(f"Parse-Fehler mit Delimiter '{delimiter}': {str(e)}")
 
     if not readings and not errors:
-        errors.append("Keine Messdaten in der Datei gefunden. Bitte EKZ-CSV-Export verwenden.")
+        errors.append('Keine Messdaten in der Datei gefunden. Bitte EKZ-CSV-Export verwenden.')
 
     return readings, errors
 
@@ -96,13 +97,13 @@ def _detect_columns(header: List[str]) -> Optional[Dict[str, int]]:
 def _parse_timestamp(value: str) -> Optional[datetime]:
     """Parse various timestamp formats from Swiss utility CSVs."""
     formats = [
-        '%d.%m.%Y %H:%M',      # 01.01.2026 00:15
-        '%d.%m.%Y %H:%M:%S',   # 01.01.2026 00:15:00
-        '%Y-%m-%d %H:%M',      # 2026-01-01 00:15
-        '%Y-%m-%d %H:%M:%S',   # 2026-01-01 00:15:00
-        '%Y-%m-%dT%H:%M:%S',   # ISO format
-        '%Y-%m-%dT%H:%M',      # ISO without seconds
-        '%d/%m/%Y %H:%M',      # DD/MM/YYYY
+        '%d.%m.%Y %H:%M',  # 01.01.2026 00:15
+        '%d.%m.%Y %H:%M:%S',  # 01.01.2026 00:15:00
+        '%Y-%m-%d %H:%M',  # 2026-01-01 00:15
+        '%Y-%m-%d %H:%M:%S',  # 2026-01-01 00:15:00
+        '%Y-%m-%dT%H:%M:%S',  # ISO format
+        '%Y-%m-%dT%H:%M',  # ISO without seconds
+        '%d/%m/%Y %H:%M',  # DD/MM/YYYY
     ]
     for fmt in formats:
         try:
@@ -117,7 +118,7 @@ def _parse_decimal(value: str) -> float:
     if not value or value.strip() == '' or value.strip() == '-':
         return 0.0
     # Replace comma with dot for European format
-    cleaned = value.strip().replace("'", "").replace(' ', '')
+    cleaned = value.strip().replace("'", '').replace(' ', '')
     if ',' in cleaned and '.' in cleaned:
         # 1.234,56 format
         cleaned = cleaned.replace('.', '').replace(',', '.')
@@ -131,17 +132,17 @@ def detect_format(file_content: str) -> str:
 
     Returns: ekz, ewz, ckw, bkw, or generic
     """
-    first_line = file_content.split('\n')[0].lower().strip() if file_content else ""
+    first_line = file_content.split('\n')[0].lower().strip() if file_content else ''
 
     if 'zeitstempel' in first_line and ';' in first_line:
-        return "ekz"
+        return 'ekz'
     elif 'timestamp' in first_line and ';' in first_line:
-        return "ewz"
+        return 'ewz'
     elif 'datum' in first_line and 'zeit' in first_line and 'bezug' in first_line:
-        return "ckw"
+        return 'ckw'
     elif 'zeitpunkt' in first_line and ',' in first_line:
-        return "bkw"
-    return "generic"
+        return 'bkw'
+    return 'generic'
 
 
 def _parse_ckw_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
@@ -152,34 +153,41 @@ def _parse_ckw_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
         reader = csv.reader(io.StringIO(file_content), delimiter=';')
         header = next(reader, None)
         if not header:
-            return [], ["Leere Datei"]
+            return [], ['Leere Datei']
 
         header_clean = [h.strip().lower() for h in header]
         date_col = next((i for i, h in enumerate(header_clean) if 'datum' in h), None)
         time_col = next((i for i, h in enumerate(header_clean) if h == 'zeit'), None)
         bezug_col = next((i for i, h in enumerate(header_clean) if 'bezug' in h), None)
-        rueck_col = next((i for i, h in enumerate(header_clean) if 'rücklieferung' in h or 'ruecklieferung' in h or 'einspeisung' in h), None)
+        rueck_col = next(
+            (
+                i
+                for i, h in enumerate(header_clean)
+                if 'rücklieferung' in h or 'ruecklieferung' in h or 'einspeisung' in h
+            ),
+            None,
+        )
 
         if date_col is None or bezug_col is None:
-            return [], ["CKW-Format: Datum oder Bezug Spalte fehlt"]
+            return [], ['CKW-Format: Datum oder Bezug Spalte fehlt']
 
         for i, row in enumerate(reader, start=2):
             if not row or all(c.strip() == '' for c in row):
                 continue
             try:
                 date_str = row[date_col].strip()
-                time_str = row[time_col].strip() if time_col is not None else "00:00"
-                ts = _parse_timestamp(f"{date_str} {time_str}")
+                time_str = row[time_col].strip() if time_col is not None else '00:00'
+                ts = _parse_timestamp(f'{date_str} {time_str}')
                 if not ts:
-                    errors.append(f"Zeile {i}: Ungültiger Zeitstempel")
+                    errors.append(f'Zeile {i}: Ungültiger Zeitstempel')
                     continue
                 consumption = _parse_decimal(row[bezug_col])
                 feed_in = _parse_decimal(row[rueck_col]) if rueck_col is not None else 0.0
                 readings.append((ts, consumption, 0.0, feed_in))
             except (IndexError, ValueError) as e:
-                errors.append(f"Zeile {i}: {str(e)}")
+                errors.append(f'Zeile {i}: {str(e)}')
     except Exception as e:
-        errors.append(f"CKW Parse-Fehler: {str(e)}")
+        errors.append(f'CKW Parse-Fehler: {str(e)}')
 
     return readings, errors
 
@@ -190,11 +198,11 @@ def parse_meter_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
     Returns: (readings, errors)
     """
     if not file_content or not file_content.strip():
-        return [], ["Leere Datei"]
+        return [], ['Leere Datei']
 
     fmt = detect_format(file_content)
 
-    if fmt == "ckw":
+    if fmt == 'ckw':
         return _parse_ckw_csv(file_content)
     else:
         # ekz, ewz, bkw, generic all handled by the generic parser
@@ -210,11 +218,7 @@ def ingest_csv(building_id: str, file_content: str, source: str = 'csv') -> Dict
     readings, errors = parse_meter_csv(file_content)
 
     if not readings:
-        return {
-            "success": False,
-            "readings_count": 0,
-            "errors": errors or ["Keine gültigen Messdaten gefunden."]
-        }
+        return {'success': False, 'readings_count': 0, 'errors': errors or ['Keine gültigen Messdaten gefunden.']}
 
     # Store in database
     stored = db.save_meter_readings(building_id, readings, source=source)
@@ -222,20 +226,13 @@ def ingest_csv(building_id: str, file_content: str, source: str = 'csv') -> Dict
     # Get updated stats
     stats = db.get_meter_reading_stats(building_id)
 
-    result = {
-        "success": stored > 0,
-        "readings_count": stored,
-        "errors": errors,
-        "stats": stats
-    }
+    result = {'success': stored > 0, 'readings_count': stored, 'errors': errors, 'stats': stats}
 
     if stored > 0:
-        logger.info(f"[METER] Ingested {stored} readings for building {building_id}")
-        db.track_event('meter_data_uploaded', building_id, {
-            'readings_count': stored,
-            'source': source,
-            'error_count': len(errors)
-        })
+        logger.info(f'[METER] Ingested {stored} readings for building {building_id}')
+        db.track_event(
+            'meter_data_uploaded', building_id, {'readings_count': stored, 'source': source, 'error_count': len(errors)}
+        )
 
     return result
 
@@ -243,7 +240,7 @@ def ingest_csv(building_id: str, file_content: str, source: str = 'csv') -> Dict
 def validate_readings_quality(readings: List[tuple]) -> Dict:
     """Check data quality: gaps, duplicates, outliers."""
     if not readings:
-        return {"quality": "no_data", "issues": []}
+        return {'quality': 'no_data', 'issues': []}
 
     issues = []
     timestamps = sorted([r[0] for r in readings])
@@ -251,25 +248,25 @@ def validate_readings_quality(readings: List[tuple]) -> Dict:
     # Check for gaps (expect 15-min intervals)
     gap_count = 0
     for i in range(1, len(timestamps)):
-        diff = (timestamps[i] - timestamps[i-1]).total_seconds()
+        diff = (timestamps[i] - timestamps[i - 1]).total_seconds()
         if diff > 1800:  # > 30 min gap
             gap_count += 1
 
     if gap_count > 0:
-        issues.append(f"{gap_count} Datenlücken erkannt (> 30 Min.)")
+        issues.append(f'{gap_count} Datenlücken erkannt (> 30 Min.)')
 
     # Check for negative values
     neg_count = sum(1 for r in readings if r[1] < 0 or r[2] < 0 or r[3] < 0)
     if neg_count > 0:
-        issues.append(f"{neg_count} negative Messwerte")
+        issues.append(f'{neg_count} negative Messwerte')
 
-    quality = "good" if not issues else ("fair" if len(issues) <= 2 else "poor")
+    quality = 'good' if not issues else ('fair' if len(issues) <= 2 else 'poor')
 
     return {
-        "quality": quality,
-        "total_readings": len(readings),
-        "date_range": f"{timestamps[0]} bis {timestamps[-1]}",
-        "issues": issues
+        'quality': quality,
+        'total_readings': len(readings),
+        'date_range': f'{timestamps[0]} bis {timestamps[-1]}',
+        'issues': issues,
     }
 
 
@@ -281,15 +278,15 @@ def score_meter_profile_usability(
     """Score whether meter readings are usable for simulation."""
     if not readings:
         return {
-            "usable_for_simulation": False,
-            "coverage_ratio": 0.0,
-            "quality_score": 0.0,
-            "gap_count": 0,
-            "duplicate_count": 0,
-            "negative_count": 0,
-            "outlier_count": 0,
-            "total_points": 0,
-            "expected_points": expected_points or 0,
+            'usable_for_simulation': False,
+            'coverage_ratio': 0.0,
+            'quality_score': 0.0,
+            'gap_count': 0,
+            'duplicate_count': 0,
+            'negative_count': 0,
+            'outlier_count': 0,
+            'total_points': 0,
+            'expected_points': expected_points or 0,
         }
 
     interval_seconds = expected_interval_minutes * 60
@@ -304,15 +301,13 @@ def score_meter_profile_usability(
         if diff > interval_seconds * 1.5:
             gap_count += 1
 
-    negative_count = sum(
-        1 for r in readings
-        if (r[1] or 0) < 0 or (r[2] or 0) < 0 or (r[3] or 0) < 0
-    )
+    negative_count = sum(1 for r in readings if (r[1] or 0) < 0 or (r[2] or 0) < 0 or (r[3] or 0) < 0)
 
     # 20 kWh in 15 minutes is an intentionally strict outlier threshold.
     outlier_threshold_kwh = 20.0
     outlier_count = sum(
-        1 for r in readings
+        1
+        for r in readings
         if (r[1] or 0) > outlier_threshold_kwh
         or (r[2] or 0) > outlier_threshold_kwh
         or (r[3] or 0) > outlier_threshold_kwh
@@ -337,13 +332,13 @@ def score_meter_profile_usability(
     usable_for_simulation = coverage_ratio >= 0.70 and not critical_issues
 
     return {
-        "usable_for_simulation": usable_for_simulation,
-        "coverage_ratio": round(coverage_ratio, 4),
-        "quality_score": round(quality_score, 4),
-        "gap_count": gap_count,
-        "duplicate_count": duplicate_count,
-        "negative_count": negative_count,
-        "outlier_count": outlier_count,
-        "total_points": total_points,
-        "expected_points": expected_points,
+        'usable_for_simulation': usable_for_simulation,
+        'coverage_ratio': round(coverage_ratio, 4),
+        'quality_score': round(quality_score, 4),
+        'gap_count': gap_count,
+        'duplicate_count': duplicate_count,
+        'negative_count': negative_count,
+        'outlier_count': outlier_count,
+        'total_points': total_points,
+        'expected_points': expected_points,
     }

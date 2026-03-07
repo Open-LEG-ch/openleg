@@ -1,8 +1,8 @@
 """Tests for DSO submission wiring."""
-import pytest
-from unittest.mock import patch, MagicMock, ANY, call
-from formation_wizard import submit_to_dso, FormationStatus
 
+from unittest.mock import MagicMock, patch
+
+from formation_wizard import submit_to_dso
 
 MOCK_COMMUNITY_ROW = {
     'community_id': 'c1',
@@ -15,10 +15,8 @@ MOCK_COMMUNITY_ROW = {
 MOCK_BUILDING_ROW = {'city_id': 'dietikon'}
 
 MOCK_LEG_DOCS = [
-    {'id': 1, 'doc_type': 'community_agreement', 'filename': 'vereinbarung.pdf',
-     'signing_status': 'signed'},
-    {'id': 2, 'doc_type': 'dso_notification', 'filename': 'vnb_anmeldung.pdf',
-     'signing_status': 'unsigned'},
+    {'id': 1, 'doc_type': 'community_agreement', 'filename': 'vereinbarung.pdf', 'signing_status': 'signed'},
+    {'id': 2, 'doc_type': 'dso_notification', 'filename': 'vnb_anmeldung.pdf', 'signing_status': 'unsigned'},
 ]
 
 MOCK_TENANT = {

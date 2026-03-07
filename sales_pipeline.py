@@ -4,7 +4,7 @@ Manages the lifecycle of utility client leads from discovery to conversion.
 Designed to be called by OpenClaw (LEA) via MCP tools.
 """
 
-PIPELINE_STAGES = ["lead", "contacted", "demo", "trial", "paid", "churned"]
+PIPELINE_STAGES = ['lead', 'contacted', 'demo', 'trial', 'paid', 'churned']
 
 # Scoring weights
 W_POPULATION = 0.30
@@ -15,7 +15,7 @@ W_SMART_METER = 0.20
 
 def is_valid_transition(from_status, to_status):
     """Check if a pipeline status transition is valid (forward only, or to churned)."""
-    if to_status == "churned":
+    if to_status == 'churned':
         return True
     try:
         from_idx = PIPELINE_STAGES.index(from_status)
@@ -36,6 +36,7 @@ def score_vnb(population, solar_potential_kwh, has_leghub, smart_meter_coverage)
     """
     # Population score: 0-100, log scale, cap at 200k
     import math
+
     pop_score = min(100, (math.log10(max(population, 1)) / math.log10(200000)) * 100)
 
     # Solar score: normalize 800-1200 kWh/kWp range to 0-100
@@ -47,19 +48,14 @@ def score_vnb(population, solar_potential_kwh, has_leghub, smart_meter_coverage)
     # Smart meter: direct percentage to score
     meter_score = min(100, smart_meter_coverage * 100)
 
-    total = (
-        pop_score * W_POPULATION
-        + solar_score * W_SOLAR
-        + comp_score * W_COMPETITION
-        + meter_score * W_SMART_METER
-    )
+    total = pop_score * W_POPULATION + solar_score * W_SOLAR + comp_score * W_COMPETITION + meter_score * W_SMART_METER
     return min(100, max(0, round(total, 1)))
 
 
 def get_pipeline(entries, status_filter=None):
     """Filter pipeline entries by status."""
     if status_filter:
-        return [e for e in entries if e.get("status") == status_filter]
+        return [e for e in entries if e.get('status') == status_filter]
     return entries
 
 
@@ -68,10 +64,10 @@ def update_pipeline_status(entry, new_status):
 
     Returns updated entry or raises ValueError.
     """
-    current = entry.get("status", "lead")
+    current = entry.get('status', 'lead')
     if not is_valid_transition(current, new_status):
-        raise ValueError(f"Ungültiger Übergang: {current} -> {new_status}")
-    entry["status"] = new_status
+        raise ValueError(f'Ungültiger Übergang: {current} -> {new_status}')
+    entry['status'] = new_status
     return entry
 
 
@@ -80,7 +76,7 @@ def draft_outreach_email(vnb_name, population, value_gap_chf, solar_potential_kw
 
     Returns: German email text as string.
     """
-    city = vnb_name.replace("Stadtwerk ", "").replace("EW ", "").replace("Elektrizitätswerk ", "")
+    city = vnb_name.replace('Stadtwerk ', '').replace('EW ', '').replace('Elektrizitätswerk ', '')
 
     return f"""Betreff: LEG-Lösung für {vnb_name}
 
@@ -110,16 +106,16 @@ def get_pipeline_dashboard(entries):
     scores = []
 
     for e in entries:
-        status = e.get("status", "lead")
+        status = e.get('status', 'lead')
         if status in funnel:
             funnel[status] += 1
-        score = e.get("score", 0)
+        score = e.get('score', 0)
         if score:
             scores.append(score)
 
     return {
-        "total": len(entries),
-        "funnel": funnel,
-        "avg_score": round(sum(scores) / len(scores), 1) if scores else 0,
-        "conversion_rate": round(funnel.get("paid", 0) / max(1, len(entries)) * 100, 1),
+        'total': len(entries),
+        'funnel': funnel,
+        'avg_score': round(sum(scores) / len(scores), 1) if scores else 0,
+        'conversion_rate': round(funnel.get('paid', 0) / max(1, len(entries)) * 100, 1),
     }

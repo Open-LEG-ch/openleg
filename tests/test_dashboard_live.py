@@ -1,11 +1,15 @@
 """Tests for Gemeinde dashboard with live data + formation trigger."""
-import pytest
-from unittest.mock import patch, MagicMock
 
+from unittest.mock import patch
 
 MOCK_MUNICIPALITY = {
-    'id': 1, 'bfs_number': 261, 'name': 'Dietikon', 'kanton': 'ZH',
-    'dso_name': 'EKZ', 'population': 29000, 'subdomain': 'dietikon',
+    'id': 1,
+    'bfs_number': 261,
+    'name': 'Dietikon',
+    'kanton': 'ZH',
+    'dso_name': 'EKZ',
+    'population': 29000,
+    'subdomain': 'dietikon',
     'onboarding_status': 'registered',
 }
 
@@ -54,9 +58,15 @@ class TestDashboardLiveData:
         html = resp.data.decode()
         assert 'LEG-Gr' in html  # "LEG-Gründung" readiness indicator
 
-    @patch(f'{DB}.get_dashboard_stats', return_value={
-        'community_count': 0, 'confirmed_members': 1, 'meter_uploads': 0, 'formation_ready_count': 1,
-    })
+    @patch(
+        f'{DB}.get_dashboard_stats',
+        return_value={
+            'community_count': 0,
+            'confirmed_members': 1,
+            'meter_uploads': 0,
+            'formation_ready_count': 1,
+        },
+    )
     @patch(f'{DB}.get_stats', return_value=MOCK_STATS)
     @patch(f'{DB}.get_municipality', return_value=MOCK_MUNICIPALITY)
     def test_dashboard_hides_formation_button_under_3(self, mock_muni, mock_stats, mock_dash, full_client):
@@ -64,9 +74,15 @@ class TestDashboardLiveData:
         html = resp.data.decode()
         assert '/gemeinde/formation' not in html
 
-    @patch(f'{DB}.get_dashboard_stats', return_value={
-        'community_count': 0, 'confirmed_members': 5, 'meter_uploads': 2, 'formation_ready_count': 5,
-    })
+    @patch(
+        f'{DB}.get_dashboard_stats',
+        return_value={
+            'community_count': 0,
+            'confirmed_members': 5,
+            'meter_uploads': 2,
+            'formation_ready_count': 5,
+        },
+    )
     @patch(f'{DB}.get_stats', return_value=MOCK_STATS)
     @patch(f'{DB}.get_municipality', return_value=MOCK_MUNICIPALITY)
     def test_dashboard_shows_formation_button_at_3(self, mock_muni, mock_stats, mock_dash, full_client):
