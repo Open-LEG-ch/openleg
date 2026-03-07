@@ -29,8 +29,18 @@
         </div>
       </div>
     </div>
-    <div class="mt-8 pt-4 border-t border-slate-800 text-xs text-slate-500 text-center">
-      {{ t('footer_open_source_swiss') }}
+    <div class="mt-8 pt-4 border-t border-slate-800 text-xs text-slate-500">
+      <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+        <span class="font-semibold text-slate-400">{{ t('trust_datenquellen') }}</span>
+        <span>ElCom</span><span class="text-slate-700">·</span>
+        <span>BFE Sonnendach</span><span class="text-slate-700">·</span>
+        <span>Energie Reporter</span><span class="text-slate-700">·</span>
+        <span>Swisstopo</span>
+        <span class="text-slate-700 hidden sm:inline">|</span>
+        <span>Open Source (AGPL-3.0)</span><span class="text-slate-700">·</span>
+        <span>{{ t('badge_schweiz') }}</span><span class="text-slate-700">·</span>
+        <span>{{ t('trust_kein_datenverkauf') }}</span>
+      </div>
     </div>
   </div>
 </footer>
