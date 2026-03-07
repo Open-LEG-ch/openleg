@@ -388,8 +388,8 @@ def generate_documents(db, community_id: str) -> Optional[Dict]:
                         f'Rolle: {m.get("role", "member")}',
                         f'Datum: {now_iso[:10]}',
                         '',
-                        'Hiermit erklaert sich der Teilnehmer bereit, an der',
-                        f"Lokalen Elektrizitaetsgemeinschaft '{name}' teilzunehmen.",
+                        'Hiermit erklärt sich der Teilnehmer bereit, an der',
+                        f"Lokalen Elektrizitätsgemeinschaft '{name}' teilzunehmen.",
                         '',
                         '_________________________',
                         'Unterschrift',
@@ -410,7 +410,7 @@ def generate_documents(db, community_id: str) -> Optional[Dict]:
 
                 # 3) DSO notification form
                 dso_lines = [
-                    'Anmeldung Lokale Elektrizitaetsgemeinschaft',
+                    'Anmeldung Lokale Elektrizitätsgemeinschaft',
                     f'Gemeinschaft: {name}',
                     f'Community ID: {community_id}',
                     f'Anzahl Teilnehmer: {len(confirmed)}',
@@ -617,10 +617,10 @@ def submit_to_dso(db, community_id: str) -> bool:
                 subject = f'LEG-Anmeldung: {name}'
                 body = (
                     f'Sehr geehrte Damen und Herren,\n\n'
-                    f"hiermit melden wir die Lokale Elektrizitaetsgemeinschaft '{name}' an.\n"
+                    f"hiermit melden wir die Lokale Elektrizitätsgemeinschaft '{name}' an.\n"
                     f'Community ID: {community_id}\n\n'
                     f'Im Anhang finden Sie die Gemeinschaftsvereinbarung und das VNB-Anmeldeformular.\n\n'
-                    f'Freundliche Gruesse\nOpenLEG'
+                    f'Freundliche Grüsse\nOpenLEG'
                 )
 
                 sent = False
