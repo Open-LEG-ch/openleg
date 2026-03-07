@@ -81,6 +81,31 @@
 | run_municipality_pipeline | YELLOW | 3/day |
 | send_telegram | GREEN | 30/hour |
 
+## Structured Analysis Output
+
+When analyzing a municipality, format your assessment as:
+
+```json
+{
+  "bfs_number": 4021,
+  "municipality": "Baden",
+  "analysis_date": "2026-03-10",
+  "verdict": "HOT",
+  "confidence": 0.85,
+  "key_metrics": {
+    "tariff_rp_kwh": 27.3,
+    "cantonal_rank": "12/213",
+    "value_gap_chf": 185,
+    "solar_potential_pct": 42.5
+  },
+  "risk_factors": ["VNB not on LEGHub", "Population under 20K"],
+  "recommended_action": "Draft outreach email this cycle",
+  "reasoning": "High tariff + above cantonal avg + good solar = strong LEG case"
+}
+```
+
+Use this format when reporting municipality analysis via send_telegram (category: daily_report).
+
 ## Flask Endpoints
 
 - POST /api/internal/send-email (AGENT_EMAIL_ENABLED=true)

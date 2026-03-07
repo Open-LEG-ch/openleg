@@ -82,11 +82,16 @@ add_if_missing "strategy-standup" \
   --announce \
   --message "Daily strategy standup: 1) exec node /opt/mcp-openleg-server/cli.mjs get_strategy_status, review pending/blocked items. 2) exec node /opt/mcp-openleg-server/cli.mjs get_stats for pipeline metrics. 3) Check stuck formations >7d. 4) Send daily_report via send_telegram with summary of strategy progress, pipeline health, and any needs_ceo items. Flag blockers immediately."
 
+add_if_missing "weekly-research-scan" \
+  --cron "0 4 * * 0" --tz "Europe/Zurich" \
+  --session isolated --timeout-seconds 300 --announce \
+  --message "Weekly research scan. Follow the Plan-Research-Synthesize protocol: 1) PLAN: search for BFE grant updates, Swiss energy regulation changes (StromVG, LEG Verordnung), and competitor activity (LEGHub, Ormera, Optimatik, Exnaton). 2) RESEARCH: search_web for each topic, collect top findings with source URLs. 3) SYNTHESIZE: summarize as 2-3 bullet points per category, marking items as NEW or CHANGED. Send full summary via send_telegram (category: daily_report)."
+
 add_if_missing "vnb-outreach-cycle" \
   --cron "0 9 * * 2,4" --tz "Europe/Zurich" \
   --session isolated --timeout-seconds 300 \
   --announce \
-  --message "VNB outreach cycle: 1) exec node /opt/mcp-openleg-server/cli.mjs get_outreach_candidates --limit 10. 2) For top 3 candidates, research_vnb and draft_outreach. 3) For each draft, use request_approval tool with activity=outreach, include to/subject/text in payload. CEO approves via Telegram reply. 4) Check get_decisions for any recently approved/denied items."
+  --message "VNB outreach cycle. Follow the Plan-Research-Synthesize protocol from SOUL.md: 1) PLAN: get_outreach_candidates --limit 10, identify top 3. 2) RESEARCH: For each, research_vnb + draft_outreach to gather data. 3) SYNTHESIZE: Produce structured assessment (verdict, key metrics, risk factors) per TOOLS.md format, then draft outreach for HOT/WARM candidates. 4) request_approval for CEO sign-off. 5) Check get_decisions for recently approved/denied items."
 
 add_if_missing "pipeline-review" \
   --cron "0 10 * * 5" --tz "Europe/Zurich" \

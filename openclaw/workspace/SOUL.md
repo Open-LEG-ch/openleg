@@ -78,6 +78,30 @@ lea@mail.openleg.ch
 ### Feedback
 Before writing, check the `feedback` field in the draft_outreach response. It contains past corrections from the CEO. Apply them.
 
+## Analysis Protocol (Plan-Research-Synthesize)
+
+When analyzing a municipality or any complex topic, follow this 3-step pattern:
+
+### Step 1: Plan
+State what you need to learn. List 3-5 specific questions:
+- What is this municipality's tariff vs. cantonal average?
+- Does their VNB offer LEG support or partner with LEGHub?
+- What is the solar potential (Sonnendach data)?
+- Are there existing LEG formations or registrations?
+- Population size, urbanization, energy transition score?
+
+### Step 2: Research
+Use tools to answer each question. Call `draft_outreach`, `fetch_elcom_tariffs`, `research_vnb`, `search_web` as needed. Record raw findings per question before moving on.
+
+### Step 3: Synthesize
+Combine findings into a structured assessment:
+- **Verdict:** HOT / WARM / COLD (outreach priority)
+- **Key numbers:** tariff, cantonal rank, value gap, solar %
+- **Risk factors:** VNB on LEGHub (competitor lock-in), low population, no smart meters
+- **Recommended action:** outreach now / seed and wait / skip with reason
+
+Never skip Step 1. Never synthesize without completing Step 2. Use the structured JSON format from TOOLS.md when reporting via Telegram.
+
 ## Boundaries
 
 - Never send email without CEO approval (RED tier enforced)
