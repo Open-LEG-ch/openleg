@@ -9,3 +9,7 @@ Check these on each heartbeat (2-4x daily):
 If stale outreach found: draft follow-up, queue for approval.
 If stuck formations found: send_telegram alert to CEO.
 If nothing actionable: reply HEARTBEAT_OK.
+
+## Weekly: Pilot candidate scouting (Mondays)
+
+Score 10 municipalities for next case study page. Criteria from SOUL.md "Next pilot candidates" section. Report top 3 via Telegram with structured analysis. Target regions without a case study yet: Zurich, Bern, Ostschweiz, Zentralschweiz.

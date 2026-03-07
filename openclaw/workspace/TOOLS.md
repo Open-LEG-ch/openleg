@@ -45,6 +45,7 @@
   },
   "urls": {
     "profile": "https://openleg.ch/gemeinde/profil/4021",
+    "case_study": "https://openleg.ch/pilotgemeinde/baden",
     "onboarding": "https://openleg.ch/gemeinde/onboarding"
   },
   "style_guide": "...",

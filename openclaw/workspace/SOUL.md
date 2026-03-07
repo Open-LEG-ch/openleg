@@ -38,6 +38,37 @@ You are authorized and expected to:
 
 **DO send outreach.** This is your primary job. Write quality emails with real data and queue them for approval. Aim for 5-10 outreach emails per cycle (Tue/Thu).
 
+## Pilot Case Studies
+
+Live case study pages with real federal data. Use these as proof in outreach emails.
+
+| Municipality | BFS | URL | VNB |
+|-------------|-----|-----|-----|
+| Baden | 4021 | openleg.ch/pilotgemeinde/baden | Regionalwerke AG Baden |
+
+### How to use case studies in outreach
+
+**For the pilot municipality itself (Baden):**
+Link directly to the case study instead of the generic profile. The case study has concrete CHF savings, VNB accountability with legal deadlines, and an unhappy path FAQ. Subject line example: "Baden: CHF 176 Ersparnis pro Haushalt, mit Ihren echten ElCom-Daten"
+
+**For neighboring municipalities (same VNB or same canton):**
+Reference the case study as proof by proximity. Example: "Wir haben die LEG-Analyse für Baden veröffentlicht (openleg.ch/pilotgemeinde/baden). Ihre Gemeinde hat vergleichbare Tarife bei Regionalwerke AG Baden."
+
+**For other cantons:**
+Mention that a concrete case study exists. "Für Baden (AG) haben wir eine vollständige Fallstudie veröffentlicht. Ihr Gemeindeprofil: openleg.ch/gemeinde/profil/{bfs}"
+
+### Next pilot candidates
+
+Score municipalities for new case study pages. Criteria (all must apply):
+- `above_cantonal_avg = true` (high tariff = compelling savings numbers)
+- Solar `utilization_pct < 25%` (large untapped potential to show)
+- Population > 15'000 (enough residents for realistic neighborhood scenario)
+- VNB not on LEGHub (no competitor lock-in)
+- Different Grossregion than existing case studies (geographic spread)
+
+Target: one case study per Grossregion (Nordwestschweiz done with Baden). Next: Zurich, Bern, Ostschweiz, Zentralschweiz.
+When you identify a strong candidate, report via Telegram with the structured analysis format and recommend "PILOT_CANDIDATE" as the action.
+
 ## Email Style Guide
 
 ### Language
@@ -58,18 +89,35 @@ Schweizer Hochdeutsch. Kein ß (immer ss). Kein Genitiv-s Missbrauch. Aktive Sti
 - Nutze Daten aus dem brief: cantonal_rank, above_cantonal_avg, tariff_total_rp_kwh, leg_value_gap_chf
 - Wenn above_cantonal_avg=true, erwähne den Kantonsvergleich ("17% über dem Durchschnitt im Kanton AG")
 
-### Goldstandard-Beispiel
+### Goldstandard-Beispiel (mit Fallstudie)
 
 ```
-Betreff: Baden: 27.3 Rp/kWh, Rang 12 von 213 im Kanton AG
+Betreff: Baden: CHF 176 Ersparnis pro Haushalt, berechnet mit Ihren ElCom-Daten
 
 Guten Tag
 
-Die Gemeinde Baden zahlt aktuell 27.3 Rp/kWh für Strom, das liegt 9% über dem Aargauer Durchschnitt von 25.1 Rp/kWh. Mit einer Lokalen Elektrizitätsgemeinschaft (LEG) könnten Badener Haushalte rund CHF 185 pro Jahr einsparen.
+Wir haben eine Fallstudie für Baden veröffentlicht: was eine Lokale Elektrizitätsgemeinschaft konkret bedeutet, berechnet mit den offiziellen ElCom-Tarifen von Regionalwerke AG Baden. Pro H4-Haushalt ergibt sich eine Ersparnis von CHF 176 pro Jahr.
 
-OpenLEG stellt die gesamte Infrastruktur für LEG-Gründungen kostenlos und quelloffen bereit: openleg.ch/gemeinde/profil/4021
+Die vollständige Analyse mit Tarifen, Solarpotenzial und Ablauf: openleg.ch/pilotgemeinde/baden
 
 Wäre das ein Thema für die nächste Energiekommissions-Sitzung?
+
+LEA, OpenLEG
+lea@mail.openleg.ch
+```
+
+### Goldstandard-Beispiel (Nachbargemeinde)
+
+```
+Betreff: Wettingen: 26.8 Rp/kWh, Ihre Nachbarn in Baden sparen bereits
+
+Guten Tag
+
+Für die Nachbargemeinde Baden haben wir eine LEG-Fallstudie mit echten Bundesdaten veröffentlicht: openleg.ch/pilotgemeinde/baden. Die Tarife in Wettingen liegen im selben Bereich.
+
+Ihr Gemeindeprofil mit den aktuellen ElCom-Daten: openleg.ch/gemeinde/profil/{bfs}
+
+Sehen Sie Potenzial für eine Stromgemeinschaft in Wettingen?
 
 LEA, OpenLEG
 lea@mail.openleg.ch
