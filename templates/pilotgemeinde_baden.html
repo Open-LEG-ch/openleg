@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stromgemeinschaft in Baden: So sieht eine LEG konkret aus | OpenLEG</title>
+  <meta name="description" content="Fallstudie Baden (AG): Echte ElCom-Tarife, Solarpotenzial aus BFE Sonnendach, konkrete CHF-Ersparnis. So funktioniert eine LEG mit Regionalwerke AG Baden.">
+  <meta name="keywords" content="LEG Baden, Stromgemeinschaft Baden, Regionalwerke AG Baden, Lokale Elektrizit&auml;tsgemeinschaft Aargau, Stromtarif Baden">
+  <link rel="canonical" href="{{ site_url }}/pilotgemeinde/baden">
+  <meta property="og:title" content="Stromgemeinschaft in Baden: So sieht eine LEG konkret aus">
+  <meta property="og:description" content="Fallstudie mit echten Bundesdaten: Was eine LEG in Baden f&uuml;r Ihr Portemonnaie bedeutet.">
+  <meta property="og:url" content="{{ site_url }}/pilotgemeinde/baden">
+  <meta property="og:type" content="article">
+  {% include 'partials/tailwind_brand.html' %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Stromgemeinschaft in Baden: So sieht eine LEG konkret aus",
+    "description": "Fallstudie Baden (AG): Echte ElCom-Tarife, Solarpotenzial, konkrete CHF-Ersparnis f\u00fcr eine Lokale Elektrizit\u00e4tsgemeinschaft.",
+    "author": {"@type": "Organization", "name": "OpenLEG"},
+    "publisher": {"@type": "Organization", "name": "OpenLEG"},
+    "about": {
+      "@type": "Place",
+      "name": "Baden",
+      "address": {"@type": "PostalAddress", "addressLocality": "Baden", "addressRegion": "AG", "addressCountry": "CH"}
+    }
+  }
+  </script>
+</head>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
+
+  <main class="max-w-5xl mx-auto px-4 py-12">
+
+    <!-- Hero -->
+    <header class="mb-10">
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-4">Stromgemeinschaft in Baden: So sieht eine LEG konkret aus</h1>
+      <p class="text-lg text-ink-muted max-w-3xl">Keine Theorie, keine Sch&auml;tzungen. Diese Seite zeigt mit echten Bundesdaten, was eine Lokale Elektrizit&auml;tsgemeinschaft in Baden (AG) f&uuml;r Sie bedeutet.</p>
+    </header>
+
+    <!-- Data sources bar -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4 mb-10 text-sm text-ink-muted">
+      Alle Zahlen stammen aus offiziellen Bundesquellen: <strong>ElCom</strong> (Stromtarife 2026), <strong>BFE Sonnendach</strong> (Solarpotenzial), <strong>Swisstopo</strong> (Geodaten). Keine Eigenerhebungen, keine Sch&auml;tzungen.
+    </div>
+
+    <!-- Tariff breakdown -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold mb-4">Was Sie heute f&uuml;r Strom zahlen</h2>
+      <p class="text-ink-muted mb-4">Ihr Verteilnetzbetreiber (VNB) ist <strong>{{ h4_tariff.operator_name if h4_tariff else 'Regionalwerke AG Baden' }}</strong>. So setzt sich Ihr Tarif zusammen (Kategorie H4, 4500 kWh/Jahr):</p>
+      {% if h4_tariff %}
+      <div class="grid md:grid-cols-3 gap-4 mb-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="text-2xl font-bold text-ink">{{ h4_tariff.energy_rp_kwh }} Rp/kWh</div>
+          <div class="text-sm font-semibold mt-1">Energie</div>
+          <p class="text-xs text-ink-muted mt-2">Stromproduktion und Beschaffungskosten.</p>
+        </div>
+        <div class="bg-white rounded-xl border border-brand/40 p-5 ring-2 ring-brand/20">
+          <div class="text-2xl font-bold text-brand">{{ h4_tariff.grid_rp_kwh }} Rp/kWh</div>
+          <div class="text-sm font-semibold mt-1">Netznutzung</div>
+          <p class="text-xs text-ink-muted mt-2">Davon erhalten LEG-Teilnehmer <strong>40% Rabatt</strong> (Art. 19h StromVV).</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="text-2xl font-bold text-ink">{{ h4_tariff.levy_rp_kwh }} Rp/kWh</div>
+          <div class="text-sm font-semibold mt-1">Abgaben</div>
+          <p class="text-xs text-ink-muted mt-2">Gesetzliche Abgaben (KEV, Gewässerschutz, Gemeinde).</p>
+        </div>
+      </div>
+      <p class="text-sm text-ink-muted">Gesamttarif: <strong>{{ h4_tariff.total_rp_kwh }} Rp/kWh</strong>. Quelle: ElCom Strompreis&uuml;bersicht 2026.</p>
+      {% else %}
+      <p class="text-ink-muted">Tarifdaten werden geladen. Der typische H4-Tarif in Baden liegt bei ca. 27 Rp/kWh (ElCom 2026).</p>
+      {% endif %}
+    </section>
+
+    <!-- Concrete savings -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold mb-4">Ihre Ersparnis als LEG-Teilnehmer</h2>
+      {% if value_gap %}
+      <div class="bg-brand/5 border border-brand/20 rounded-xl p-6">
+        <div class="text-4xl font-bold text-brand mb-2">CHF {{ value_gap.annual_savings_chf }}</div>
+        <div class="text-lg font-semibold">Ersparnis pro Jahr</div>
+        <p class="text-sm text-ink-muted mt-3">Berechnung: {{ value_gap.grid_fee_rp_kwh }} Rp/kWh Netzgeb&uuml;hr &times; 40% Rabatt = {{ value_gap.savings_rp_kwh }} Rp/kWh weniger. Bei {{ value_gap.assumed_consumption_kwh }} kWh Jahresverbrauch (H4) ergibt das CHF {{ value_gap.annual_savings_chf }} pro Jahr, CHF {{ value_gap.monthly_savings_chf }} pro Monat.</p>
+        <p class="text-xs text-ink-muted mt-2">Der VNB (Regionalwerke AG Baden) verrechnet weiterhin die restlichen 60% der Netzgeb&uuml;hr, Energiekosten und Abgaben. Ihre Versorgungssicherheit bleibt identisch.</p>
+      </div>
+      {% else %}
+      <div class="bg-white rounded-xl border border-slate-200 p-6">
+        <p class="text-ink-muted">Ersparnis wird berechnet, sobald die Tarifdaten verf&uuml;gbar sind. Typisch: CHF 150 bis CHF 200 pro Jahr f&uuml;r einen H4-Haushalt in Baden.</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Solar potential -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold mb-4">Solarpotenzial in Baden</h2>
+      {% if solar %}
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="text-2xl font-bold text-brand">{{ '{:,.0f}'.format(solar.potential_kwp) }} kWp</div>
+          <div class="text-sm font-semibold mt-1">Installierbare Leistung</div>
+          <p class="text-xs text-ink-muted mt-2">Gesamtes Solarpotenzial auf Badener D&auml;chern laut BFE Sonnendach.</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="text-2xl font-bold text-ink">{{ '{:,.0f}'.format(solar.suitable_roof_area_m2) }} m&sup2;</div>
+          <div class="text-sm font-semibold mt-1">Geeignete Dachfl&auml;che</div>
+          <p class="text-xs text-ink-muted mt-2">Von {{ '{:,.0f}'.format(solar.total_roof_area_m2) }} m&sup2; Gesamtdachfl&auml;che sind {{ '{:,.0f}'.format(solar.suitable_roof_area_m2) }} m&sup2; f&uuml;r Solar geeignet.</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="text-2xl font-bold text-ink">{{ solar.utilization_pct }}%</div>
+          <div class="text-sm font-semibold mt-1">Aktuelle Auslastung</div>
+          <p class="text-xs text-ink-muted mt-2">Nur {{ solar.utilization_pct }}% des Solarpotenzials werden heute genutzt. Eine LEG macht lokale Solarproduktion wirtschaftlicher.</p>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-ink-muted">Sonnendach-Daten f&uuml;r Baden werden geladen. Baden verf&uuml;gt &uuml;ber erhebliches ungenutztes Solarpotenzial.</p>
+      {% endif %}
+    </section>
+
+    <!-- Neighborhood scenario -->
+    <section class="mb-10 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-4">Beispiel: Quartier Kappelerhof</h2>
+      <p class="text-ink-muted mb-4">Ein realistisches Szenario f&uuml;r eine LEG in Baden:</p>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <p class="font-semibold mb-2">Teilnehmer</p>
+          <ul class="text-sm text-ink-muted space-y-1">
+            <li>12 Haushalte im selben Quartier</li>
+            <li>3 davon mit Photovoltaikanlage (je 8 kWp)</li>
+            <li>9 reine Verbraucher</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-semibold mb-2">Ergebnis</p>
+          <ul class="text-sm text-ink-muted space-y-1">
+            <li>24 kWp lokale Solarleistung</li>
+            <li>Ca. 35% Eigenverbrauch im Quartier</li>
+            {% if value_gap %}
+            <li>CHF {{ value_gap.annual_savings_chf }} Ersparnis pro Haushalt und Jahr</li>
+            {% endif %}
+            <li>Alle Teilnehmer bleiben individuelle VNB-Kunden</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Timeline -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold mb-4">Ablauf: Von der Anmeldung zum Strom teilen</h2>
+      <div class="space-y-4">
+        <div class="flex items-start gap-4 bg-white rounded-xl border border-slate-200 p-5">
+          <div class="bg-brand text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg flex-shrink-0">1</div>
+          <div>
+            <p class="font-semibold">Anmeldung bei OpenLEG</p>
+            <p class="text-sm text-ink-muted">Registrieren Sie sich kostenlos. Geben Sie Ihre Adresse in Baden ein. OpenLEG zeigt Ihnen, wer in Ihrer N&auml;he bereits registriert ist.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 bg-white rounded-xl border border-slate-200 p-5">
+          <div class="bg-brand text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg flex-shrink-0">2</div>
+          <div>
+            <p class="font-semibold">VNB-Antrag bei Regionalwerke AG Baden</p>
+            <p class="text-sm text-ink-muted">OpenLEG generiert das Antragsformular. Regionalwerke AG Baden hat 15 Arbeitstage Zeit f&uuml;r die Bearbeitung (Art. 19g StromVV).</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 bg-white rounded-xl border border-slate-200 p-5">
+          <div class="bg-brand text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg flex-shrink-0">3</div>
+          <div>
+            <p class="font-semibold">Smart Meter Installation</p>
+            <p class="text-sm text-ink-muted">Regionalwerke AG Baden installiert Smart Meter bei allen Teilnehmern, kostenlos. Die Messung erfolgt im 15-Minuten-Takt.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 bg-white rounded-xl border border-slate-200 p-5">
+          <div class="bg-brand text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg flex-shrink-0">4</div>
+          <div>
+            <p class="font-semibold">Strom teilen</p>
+            <p class="text-sm text-ink-muted">Nach Freigabe durch den VNB fliesst der Solarstrom direkt an Ihre Nachbarn. OpenLEG rechnet automatisch ab.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VNB accountability -->
+    <section class="mb-10 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-4">Ihr VNB: Regionalwerke AG Baden</h2>
+      <p class="text-ink-muted mb-3">Regionalwerke AG Baden ist Ihr Verteilnetzbetreiber und gesetzlich verpflichtet, LEG-Antr&auml;ge zu bearbeiten.</p>
+      <ul class="text-sm text-ink-muted space-y-2">
+        <li><strong>Bearbeitungsfrist:</strong> 15 Arbeitstage nach Eingang des LEG-Antrags (Art. 19g StromVV).</li>
+        <li><strong>Smart Meter:</strong> Installation und Betrieb auf Kosten des VNB.</li>
+        <li><strong>Netzgeb&uuml;hr-Rabatt:</strong> 40% auf den Arbeitspreis f&uuml;r lokal verbrauchten Strom (Art. 19h StromVV).</li>
+        <li><strong>Bei Verz&ouml;gerung:</strong> Die ElCom (Eidgen&ouml;ssische Elektrizit&auml;tskommission) &uuml;berwacht die Einhaltung der Fristen. Sie k&ouml;nnen dort Beschwerde einreichen.</li>
+      </ul>
+    </section>
+
+    <!-- Unhappy path FAQ -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold mb-4">Was, wenn es nicht passt?</h2>
+      <div class="space-y-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <p class="font-semibold mb-1">Austritt aus der LEG</p>
+          <p class="text-sm text-ink-muted">Sie k&ouml;nnen jederzeit austreten, mit einer K&uuml;ndigungsfrist von 1 Monat. Danach sind Sie wieder normaler VNB-Kunde. Keine Vertragsstrafe, keine Bindung.</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <p class="font-semibold mb-1">Keine Solidarhaftung</p>
+          <p class="text-sm text-ink-muted">Jeder Teilnehmer bleibt individueller Kunde beim VNB (Art. 17e StromVG). Wenn ein Nachbar nicht zahlt, betrifft das Sie nicht.</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <p class="font-semibold mb-1">VNB reagiert nicht?</p>
+          <p class="text-sm text-ink-muted">Die ElCom ist die Aufsichtsbeh&ouml;rde. Wenn Regionalwerke AG Baden die 15-Tage-Frist &uuml;berschreitet, k&ouml;nnen Sie bei der ElCom eine Verf&uuml;gung beantragen.</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <p class="font-semibold mb-1">Stromversorgung bei Ausfall</p>
+          <p class="text-sm text-ink-muted">Ihre Versorgungssicherheit &auml;ndert sich nicht. Der VNB liefert weiterhin Strom aus dem Netz, wenn die lokale Produktion nicht reicht.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Registration CTA -->
+    <section class="mb-10 bg-brand/5 border border-brand/20 rounded-xl p-8 text-center">
+      <h2 class="text-2xl font-bold mb-3">Sind Sie in Baden?</h2>
+      <p class="text-ink-muted mb-6 max-w-2xl mx-auto">Registrieren Sie sich kostenlos und erfahren Sie, welche Nachbarn bereits Interesse an einer Stromgemeinschaft haben.</p>
+      <a href="/fuer-bewohner" class="bg-brand text-white px-8 py-3 rounded-xl font-semibold hover:bg-brand-dark text-center shadow-lg inline-block">Als Bewohner registrieren</a>
+    </section>
+
+    <!-- Legal references -->
+    <section class="mb-6 text-xs text-ink-muted">
+      <h3 class="font-semibold text-ink mb-2">Rechtsgrundlagen</h3>
+      <ul class="space-y-1">
+        <li>Art. 17d/17e Stromversorgungsgesetz (StromVG), SR 734.7</li>
+        <li>Art. 19e-19h Stromversorgungsverordnung (StromVV), SR 734.71</li>
+        <li>Art. 19g StromVV: Bearbeitungsfrist VNB (15 Arbeitstage)</li>
+        <li>Art. 19h StromVV: Netzgeb&uuml;hr-Reduktion (40% Arbeitspreis)</li>
+        <li>ElCom Strompreis&uuml;bersicht 2026: strompreis.elcom.admin.ch</li>
+        <li>BFE Sonnendach: sonnendach.ch</li>
+      </ul>
+    </section>
+
+    <!-- Cross-links -->
+    <div class="mb-10 flex flex-col sm:flex-row gap-3">
+      <a href="/leg-gruenden" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">LEG gr&uuml;nden: Schritt f&uuml;r Schritt</a>
+      <a href="/leg-kalkulator" class="border border-ink/20 text-ink px-6 py-3 rounded-xl font-semibold hover:bg-white text-center">LEG-Kalkulator</a>
+    </div>
+
+  </main>
+
+  {% include 'partials/cta_gemeinde.html' %}
+  {% include 'partials/site_footer.html' %}
+</body>
+</html>

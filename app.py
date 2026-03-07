@@ -698,6 +698,26 @@ def leg_kalkulator():
     return render_city_template('leg_kalkulator.html')
 
 
+@app.route('/pilotgemeinde/baden')
+def pilotgemeinde_baden():
+    import public_data
+
+    bfs = 4021
+    tariffs = db.get_elcom_tariffs(bfs, year=2026)
+    profile = db.get_municipality_profile(bfs)
+    solar = db.get_sonnendach_municipal(bfs)
+    h4 = next((t for t in tariffs if str(t.get('category', '')).startswith('H4')), None)
+    value_gap = public_data.compute_leg_value_gap(h4) if h4 else None
+    return render_city_template(
+        'pilotgemeinde_baden.html',
+        profile=profile or {'bfs_number': 4021, 'name': 'Baden', 'kanton': 'AG', 'population': 19400},
+        tariffs=tariffs,
+        solar=solar,
+        value_gap=value_gap,
+        h4_tariff=h4,
+    )
+
+
 @app.route('/fuer-bewohner')
 def fuer_bewohner():
     city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') and g.tenant else 'zurich'
@@ -822,6 +842,7 @@ def sitemap_xml():
         ('/leg-kalkulator', '0.8', 'weekly', current_date),
         ('/pricing', '0.7', 'monthly', current_date),
         ('/transparenz', '0.7', 'weekly', current_date),
+        ('/pilotgemeinde/baden', '0.9', 'monthly', current_date),
         ('/gemeinde/toolkit', '0.6', 'monthly', current_date),
         ('/gemeinde/onboarding', '0.9', 'weekly', current_date),
         ('/impressum', '0.3', 'yearly', '2026-01-01'),
