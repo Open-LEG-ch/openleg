@@ -169,6 +169,7 @@ def refresh_all_insights():
         ('solar_index', lambda: compute_solar_index()),
         ('flexibility', lambda: compute_flexibility_potential()),
         ('community_signals', lambda: compute_community_signals()),
+        ('municipality_demand', lambda: compute_municipality_demand_signal()),
     ]:
         data = fn()
         db.save_insight(name, scope='ZH', period='current', data=data, ttl_hours=24)
@@ -254,6 +255,160 @@ def compute_grid_optimization(kanton: str = "ZH") -> Dict:
         "peak_reduction_potential_pct": round(min(self_supply * 0.4, 25), 1),
         "recommended_actions": actions,
     }
+
+
+def compute_municipality_demand_signal(bfs_number: int = None) -> Dict:
+    """Produce municipality-level verified resident demand signal.
+
+    Aggregates actual resident interactions (registrations, LEG formation events,
+    confirmed memberships, meter data uploads) from the live platform into a
+    demand metric that operators can inspect and reuse.
+
+    Distinguishes *verified demand* evidence (real resident actions in the system)
+    from *heuristic_only* municipalities that appear only in public-data sources
+    (Sonnendach, ELCOM tariffs) without any registered residents.
+
+    Args:
+        bfs_number: Optional BFS municipality number to filter to a single
+                    municipality.  When ``None``, all municipalities in the DB
+                    are returned.
+
+    Returns::
+
+        {
+          "signals": [
+            {
+              "bfs_number": int,
+              "name": str,
+              "kanton": str,
+              "verified_demand": {
+                "verified_buildings": int,        # residents who completed e-mail verification
+                "recent_signups_90d": int,        # new registrations in the last 90 days
+                "confirmed_leg_members": int,     # residents confirmed in an active LEG
+                "communities_in_formation": int,  # LEG formation processes started
+                "meter_data_uploads": int,        # residents who uploaded smart-meter data
+                "demand_score": float,            # 0-100 composite score
+              },
+              "heuristic_baseline": {
+                "source": "public_data_only",     # always set; signals data origin of non-resident info
+                "has_resident_data": bool,        # True when verified_demand contains ≥1 real signal
+              },
+              "demand_level": str,   # "high" | "medium" | "low" | "none"
+              "signal_type": str,    # "verified" | "heuristic_only"
+            }, ...
+          ],
+          "computed_at": str,   # ISO-8601 timestamp
+          "bfs_number": int | None,
+        }
+    """
+    try:
+        with db.get_connection() as conn:
+            with conn.cursor() as cur:
+                where = "WHERE m.bfs_number = %s" if bfs_number else ""
+                params: list = [bfs_number] if bfs_number else []
+
+                cur.execute(f"""
+                    SELECT
+                        m.bfs_number,
+                        m.name,
+                        m.kanton,
+                        m.subdomain,
+                        COUNT(DISTINCT b.building_id) AS total_registered,
+                        COUNT(DISTINCT CASE WHEN b.verified = TRUE THEN b.building_id END)
+                            AS verified_buildings,
+                        COUNT(DISTINCT CASE
+                            WHEN b.registered_at > CURRENT_TIMESTAMP - INTERVAL '90 days'
+                            THEN b.building_id END) AS recent_signups_90d,
+                        COUNT(DISTINCT CASE WHEN cm.status = 'confirmed' THEN cm.building_id END)
+                            AS confirmed_leg_members,
+                        COUNT(DISTINCT mr_sub.building_id) AS meter_data_uploads
+                    FROM municipalities m
+                    LEFT JOIN buildings b ON b.city_id = m.subdomain
+                    LEFT JOIN community_members cm ON cm.building_id = b.building_id
+                    LEFT JOIN (
+                        SELECT DISTINCT building_id FROM meter_readings
+                    ) mr_sub ON mr_sub.building_id = b.building_id
+                    {where}
+                    GROUP BY m.bfs_number, m.name, m.kanton, m.subdomain
+                    ORDER BY verified_buildings DESC, m.name
+                """, params)
+                rows = [dict(r) for r in cur.fetchall()]
+
+                cur.execute(f"""
+                    SELECT
+                        m.bfs_number,
+                        COUNT(DISTINCT co.community_id) AS communities_in_formation
+                    FROM municipalities m
+                    JOIN buildings b ON b.city_id = m.subdomain
+                    JOIN community_members cm ON cm.building_id = b.building_id
+                    JOIN communities co
+                        ON co.community_id = cm.community_id
+                        AND co.formation_started_at IS NOT NULL
+                    {where}
+                    GROUP BY m.bfs_number
+                """, params)
+                formation_counts = {
+                    int(r["bfs_number"]): int(r["communities_in_formation"])
+                    for r in cur.fetchall()
+                }
+
+        signals = []
+        for row in rows:
+            bfs = int(row["bfs_number"]) if row["bfs_number"] else None
+            verified = int(row["verified_buildings"] or 0)
+            recent = int(row["recent_signups_90d"] or 0)
+            members = int(row["confirmed_leg_members"] or 0)
+            uploads = int(row["meter_data_uploads"] or 0)
+            in_formation = formation_counts.get(bfs, 0) if bfs else 0
+
+            # Demand score: weighted composite of verified resident signals only.
+            # Each component is capped so a single metric cannot dominate.
+            demand_score = float(
+                min(verified * 2, 40)
+                + min(recent, 15)
+                + min(members * 3, 30)
+                + min(in_formation * 5, 15)
+            )
+
+            has_resident_data = verified > 0 or recent > 0
+
+            if demand_score >= 40:
+                demand_level = "high"
+            elif demand_score >= 15:
+                demand_level = "medium"
+            elif demand_score > 0:
+                demand_level = "low"
+            else:
+                demand_level = "none"
+
+            signals.append({
+                "bfs_number": bfs,
+                "name": row.get("name"),
+                "kanton": row.get("kanton", "ZH"),
+                "verified_demand": {
+                    "verified_buildings": verified,
+                    "recent_signups_90d": recent,
+                    "confirmed_leg_members": members,
+                    "communities_in_formation": in_formation,
+                    "meter_data_uploads": uploads,
+                    "demand_score": demand_score,
+                },
+                "heuristic_baseline": {
+                    "source": "public_data_only",
+                    "has_resident_data": has_resident_data,
+                },
+                "demand_level": demand_level,
+                "signal_type": "verified" if has_resident_data else "heuristic_only",
+            })
+
+        return {
+            "signals": signals,
+            "computed_at": datetime.now().isoformat(),
+            "bfs_number": bfs_number,
+        }
+    except Exception as e:
+        logger.error(f"[INSIGHTS] Error computing municipality demand signal: {e}")
+        return {"signals": [], "error": str(e), "bfs_number": bfs_number}
 
 
 def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
