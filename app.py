@@ -488,6 +488,26 @@ def admin_lea_reports():
     return jsonify({"reports": reports})
 
 
+@app.route("/admin/strategy")
+def admin_strategy():
+    _require_admin()
+    from insights_engine import compute_municipality_demand_signal
+    data = compute_municipality_demand_signal()
+    signals = data.get("signals", [])
+    # Sort: high → medium → low → none so actionable municipalities appear first
+    level_order = {"high": 0, "medium": 1, "low": 2, "none": 3}
+    signals_sorted = sorted(
+        signals,
+        key=lambda s: (level_order.get(s.get("demand_level", "none"), 3),
+                       -s.get("verified_demand", {}).get("demand_score", 0))
+    )
+    if 'text/html' in (request.headers.get('Accept') or ''):
+        return render_template('admin/strategy.html',
+                               signals=signals_sorted,
+                               computed_at=data.get("computed_at"))
+    return jsonify({"signals": signals_sorted, "computed_at": data.get("computed_at")})
+
+
 # --- Address API ---
 @app.route("/api/suggest_addresses")
 @limiter.limit("30 per minute") if limiter else lambda f: f
