@@ -411,6 +411,123 @@ def compute_municipality_demand_signal(bfs_number: int = None) -> Dict:
         return {"signals": [], "error": str(e), "bfs_number": bfs_number}
 
 
+# Maximum CHF value gap used to normalise leg_value_gap_chf to the 0-100 scale.
+_VALUE_GAP_MAX_CHF = 500.0
+
+# Default outreach scoring weights (must sum to 1.0).
+_DEFAULT_OUTREACH_WEIGHTS: Dict[str, float] = {
+    "energy_transition": 0.35,
+    "value_gap": 0.30,
+    "demand": 0.35,
+}
+
+
+def rank_municipalities_for_outreach(
+    profiles: List[Dict],
+    demand_signals: Dict,
+    weights: Optional[Dict[str, float]] = None,
+) -> List[Dict]:
+    """Rank municipalities for outreach by blending verified demand with heuristics.
+
+    Combines three normalised signals (each 0-100) into a single
+    ``outreach_score`` that determines which municipalities to target first:
+
+    * **energy_transition_score** – renewable-energy transition progress from
+      municipality profile (already 0-100).
+    * **value_gap** – normalised LEG annual savings potential
+      (``leg_value_gap_chf`` / 500 CHF, capped at 100).
+    * **demand** – verified resident demand from
+      :func:`compute_municipality_demand_signal` (already 0-100).
+
+    Default weights: ``energy_transition=0.35``, ``value_gap=0.30``,
+    ``demand=0.35``.  Pass a custom *weights* dict to override; keys must be
+    ``"energy_transition"``, ``"value_gap"``, and ``"demand"``.
+
+    Args:
+        profiles: List of municipality profile dicts as returned by
+            ``db.get_all_municipality_profiles()``.  Expected keys:
+            ``bfs_number``, ``name``, ``kanton``, ``energy_transition_score``,
+            ``leg_value_gap_chf``.
+        demand_signals: Output of :func:`compute_municipality_demand_signal`.
+            Must have a ``"signals"`` key containing a list of signal dicts.
+        weights: Optional override for component weights.  All three keys
+            (``energy_transition``, ``value_gap``, ``demand``) must be present
+            and should sum to 1.0.
+
+    Returns:
+        List of dicts sorted descending by ``outreach_score``, each
+        containing::
+
+            {
+              "bfs_number": int,
+              "name": str,
+              "kanton": str,
+              "energy_transition_score": float,  # raw (0-100)
+              "leg_value_gap_chf": float,         # raw CHF
+              "demand_score": float,              # raw (0-100)
+              "demand_level": str,                # "high"|"medium"|"low"|"none"
+              "outreach_score": float,            # weighted composite (0-100)
+              "score_breakdown": {
+                "energy_transition": float,       # weighted contribution
+                "value_gap": float,               # weighted contribution
+                "demand": float,                  # weighted contribution
+              },
+            }
+    """
+    w = weights if weights is not None else _DEFAULT_OUTREACH_WEIGHTS
+
+    # Index demand signals by BFS number for O(1) lookup.
+    demand_by_bfs: Dict[int, Dict] = {}
+    for sig in demand_signals.get("signals", []):
+        bfs = sig.get("bfs_number")
+        if bfs is not None:
+            demand_by_bfs[int(bfs)] = sig
+
+    ranked: List[Dict] = []
+    for profile in profiles:
+        bfs = profile.get("bfs_number")
+        bfs_int = int(bfs) if bfs is not None else None
+
+        energy = float(profile.get("energy_transition_score") or 0)
+        value_gap_chf = float(profile.get("leg_value_gap_chf") or 0)
+
+        demand_sig = demand_by_bfs.get(bfs_int, {})
+        demand_score = float(
+            (demand_sig.get("verified_demand") or {}).get("demand_score") or 0
+        )
+        demand_level = demand_sig.get("demand_level", "none")
+
+        # Normalise value_gap to 0-100 scale.
+        _max_chf = _VALUE_GAP_MAX_CHF if _VALUE_GAP_MAX_CHF > 0 else 1.0
+        value_gap_norm = min(value_gap_chf / _max_chf * 100, 100.0)
+
+        # Weighted contributions.
+        contrib_energy = w["energy_transition"] * energy
+        contrib_gap = w["value_gap"] * value_gap_norm
+        contrib_demand = w["demand"] * demand_score
+
+        outreach_score = round(contrib_energy + contrib_gap + contrib_demand, 2)
+
+        ranked.append({
+            "bfs_number": bfs_int,
+            "name": profile.get("name"),
+            "kanton": profile.get("kanton", "ZH"),
+            "energy_transition_score": energy,
+            "leg_value_gap_chf": value_gap_chf,
+            "demand_score": demand_score,
+            "demand_level": demand_level,
+            "outreach_score": outreach_score,
+            "score_breakdown": {
+                "energy_transition": round(contrib_energy, 2),
+                "value_gap": round(contrib_gap, 2),
+                "demand": round(contrib_demand, 2),
+            },
+        })
+
+    ranked.sort(key=lambda x: x["outreach_score"], reverse=True)
+    return ranked
+
+
 def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
     """Aggregate community performance benchmarks.
 
