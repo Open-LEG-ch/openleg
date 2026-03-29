@@ -577,3 +577,70 @@ def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
         "total_communities": len(communities),
         "top_communities": sorted(communities, key=lambda c: c.get("member_count", 0), reverse=True)[:5],
     }
+
+
+def compute_next_action_summary(
+    demand_level: str,
+    demand_score: float,
+    outreach_score: float = 0.0,
+    verified_buildings: int = 0,
+    communities_in_formation: int = 0,
+) -> str:
+    """Return a concrete operator next-action recommendation for a municipality.
+
+    Combines the verified demand signal with the outreach targeting score to
+    produce a single, actionable sentence an operator can act on immediately.
+
+    Args:
+        demand_level: One of ``"high"``, ``"medium"``, ``"low"``, ``"none"``.
+        demand_score: Raw demand score (0-100) from
+            :func:`compute_municipality_demand_signal`.
+        outreach_score: Composite outreach score (0-100) from
+            :func:`rank_municipalities_for_outreach`.  Defaults to 0 when
+            targeting data is unavailable.
+        verified_buildings: Number of residents who completed email verification.
+        communities_in_formation: Number of active LEG formation processes.
+
+    Returns:
+        A short, municipality-focused recommendation string.
+    """
+    if demand_level == "high":
+        if communities_in_formation > 0:
+            return (
+                "LEG formation already in progress — support administrator "
+                "onboarding and accelerate utility coordination."
+            )
+        return (
+            "Contact municipality administrator to initiate LEG formation — "
+            "strong resident demand is confirmed."
+        )
+    elif demand_level == "medium":
+        if outreach_score >= 50:
+            return (
+                "Schedule municipality meeting — demand signal combined with "
+                "a high targeting score warrants immediate engagement."
+            )
+        return (
+            "Send targeted awareness content and invite municipality to a "
+            "LEG pilot workshop."
+        )
+    elif demand_level == "low":
+        if outreach_score >= 60:
+            return (
+                "Strong energy-transition profile detected — begin prospecting "
+                "campaign to convert early registrants into LEG participants."
+            )
+        return (
+            "Monitor resident sign-ups; send periodic awareness updates to "
+            "the existing registrants."
+        )
+    else:  # none
+        if outreach_score >= 60:
+            return (
+                "Prioritise an initial awareness campaign — the energy profile "
+                "is strong but no resident signal has been detected yet."
+            )
+        return (
+            "No action required at this time; maintain watch and revisit "
+            "when new resident registrations appear."
+        )

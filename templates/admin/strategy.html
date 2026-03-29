@@ -48,11 +48,13 @@
           <th class="px-4 py-3 text-left">Kanton</th>
           <th class="px-4 py-3 text-center">Demand Level</th>
           <th class="px-4 py-3 text-center">Score</th>
+          <th class="px-4 py-3 text-center">Outreach Score</th>
           <th class="px-4 py-3 text-center">Verified Bldgs</th>
           <th class="px-4 py-3 text-center">Signups 90d</th>
           <th class="px-4 py-3 text-center">LEG Members</th>
           <th class="px-4 py-3 text-center">Formations</th>
           <th class="px-4 py-3 text-center">Signal Type</th>
+          <th class="px-4 py-3 text-left">Next Action</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-800">
@@ -86,6 +88,9 @@
             {% else %}text-gray-600{% endif %}">
             {{ vd.demand_score | round(1) }}
           </td>
+          <td class="px-4 py-3 text-center font-bold text-purple-300">
+            {{ s.outreach_score | round(1) if s.outreach_score is defined else '—' }}
+          </td>
           <td class="px-4 py-3 text-center text-gray-300">{{ vd.verified_buildings }}</td>
           <td class="px-4 py-3 text-center text-gray-300">{{ vd.recent_signups_90d }}</td>
           <td class="px-4 py-3 text-center text-gray-300">{{ vd.confirmed_leg_members }}</td>
@@ -97,10 +102,11 @@
               {{ s.signal_type }}
             </span>
           </td>
+          <td class="px-4 py-3 text-xs text-gray-300 max-w-xs">{{ s.next_action }}</td>
         </tr>
         {% endfor %}
         {% if not signals %}
-        <tr><td colspan="9" class="px-4 py-8 text-center text-gray-500">No municipality data available.</td></tr>
+        <tr><td colspan="11" class="px-4 py-8 text-center text-gray-500">No municipality data available.</td></tr>
         {% endif %}
       </tbody>
     </table>
