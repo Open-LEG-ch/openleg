@@ -47,6 +47,10 @@ TRIGGER_TEMPLATES = {
         "subject": "Ihre LEG-Gründung wartet",
         "template": "emails/formation_nudge.html",
     },
+    "municipality_outreach": {
+        "subject": "LEG-Potenzial in {municipality_name} — Ihr nächster Schritt",
+        "template": "emails/municipality_outreach.html",
+    },
 }
 
 # Default sequence (backward compatible)
@@ -154,3 +158,113 @@ def process_email_queue(app=None):
 def _send_email(to_email: str, subject: str, html_body: str) -> bool:
     """Send a single email via SMTP."""
     return send_email(to_email, subject, html_body, html=True)
+
+
+# ---------------------------------------------------------------------------
+# Municipality outreach helpers (US-004)
+# ---------------------------------------------------------------------------
+
+def _empty_demand_context() -> dict:
+    """Return a safe empty demand context when no signal data is available."""
+    return {
+        "demand_level": "none",
+        "demand_score": 0.0,
+        "signal_type": "heuristic_only",
+        "verified_buildings": 0,
+        "recent_signups_90d": 0,
+        "confirmed_leg_members": 0,
+        "communities_in_formation": 0,
+        "has_demand_data": False,
+    }
+
+
+def get_municipality_demand_context(bfs_number: Optional[int] = None) -> dict:
+    """Fetch municipality demand context for outreach rendering.
+
+    Calls ``compute_municipality_demand_signal`` from the insights engine and
+    returns a flat context dict suitable for template rendering.  When no
+    signal is available (empty DB, error, unknown BFS) a safe empty context
+    is returned so templates can render gracefully without demand data.
+    """
+    try:
+        from insights_engine import compute_municipality_demand_signal
+        result = compute_municipality_demand_signal(bfs_number=bfs_number)
+        signals = result.get("signals", [])
+        if not signals:
+            return _empty_demand_context()
+        sig = signals[0]
+        vd = sig.get("verified_demand", {})
+        return {
+            "demand_level": sig.get("demand_level", "none"),
+            "demand_score": vd.get("demand_score", 0.0),
+            "signal_type": sig.get("signal_type", "heuristic_only"),
+            "verified_buildings": vd.get("verified_buildings", 0),
+            "recent_signups_90d": vd.get("recent_signups_90d", 0),
+            "confirmed_leg_members": vd.get("confirmed_leg_members", 0),
+            "communities_in_formation": vd.get("communities_in_formation", 0),
+            "has_demand_data": True,
+        }
+    except Exception:
+        logger.warning("[EMAIL_AUTO] Could not fetch municipality demand context", exc_info=True)
+        return _empty_demand_context()
+
+
+def render_municipality_outreach(
+    municipality_name: str,
+    recipient_email: str,
+    bfs_number: Optional[int] = None,
+    tenant: Optional[dict] = None,
+    app=None,
+) -> dict:
+    """Render a municipality outreach pack with demand-aware context.
+
+    Fetches the demand signal for *bfs_number* (if provided) and renders
+    ``emails/municipality_outreach.html`` with the resulting context.
+
+    Returns::
+
+        {
+          "subject": str,
+          "html_body": str,
+          "demand_context": dict,   # demand data injected into the template
+          "municipality_name": str,
+        }
+    """
+    if tenant is None:
+        from tenant import DEFAULT_TENANT
+        tenant = DEFAULT_TENANT.copy()
+
+    demand_context = get_municipality_demand_context(bfs_number)
+
+    config = TRIGGER_TEMPLATES["municipality_outreach"]
+    subject = config["subject"].format(municipality_name=municipality_name)
+    unsubscribe_url = f"{APP_BASE_URL}/unsubscribe"
+
+    try:
+        if app:
+            with app.app_context():
+                html_body = render_template(
+                    config["template"],
+                    municipality_name=municipality_name,
+                    recipient_email=recipient_email,
+                    unsubscribe_url=unsubscribe_url,
+                    site_url=APP_BASE_URL,
+                    tenant=tenant,
+                    platform_name=tenant.get("platform_name", "OpenLEG"),
+                    primary_color=tenant.get("primary_color", "#c7021a"),
+                    contact_email=tenant.get("contact_email", "hallo@openleg.ch"),
+                    **demand_context,
+                )
+        else:
+            pname = tenant.get("platform_name", "OpenLEG")
+            html_body = f"<p>{pname}: {subject}</p>"
+    except Exception as e:
+        logger.error(f"[EMAIL_AUTO] Municipality outreach render error: {e}")
+        html_body = f"<p>{subject}</p>"
+
+    return {
+        "subject": subject,
+        "html_body": html_body,
+        "demand_context": demand_context,
+        "municipality_name": municipality_name,
+    }

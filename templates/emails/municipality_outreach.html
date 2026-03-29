@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEG-Potenzial in {{ municipality_name }}</title>
+<style>
+body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
+.wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
+.header { background: {{ primary_color }}; padding: 24px; text-align: center; }
+.header h1 { color: #fff; font-size: 22px; margin: 0; }
+.content { padding: 32px 24px; }
+.content h2 { font-size: 20px; margin: 0 0 16px; }
+.content p { font-size: 15px; line-height: 1.6; margin: 0 0 16px; color: #374151; }
+.cta { display: inline-block; background: {{ primary_color }}; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px 0; }
+.demand-box { border-radius: 8px; padding: 16px; margin: 24px 0; }
+.demand-box.high { background: #f0fdf4; border: 1px solid #86efac; }
+.demand-box.medium { background: #fffbeb; border: 1px solid #fcd34d; }
+.demand-box.low { background: #f8fafc; border: 1px solid #e2e8f0; }
+.demand-box.none { background: #f8fafc; border: 1px solid #e2e8f0; }
+.demand-box p { margin: 0 0 8px; }
+.demand-stats { margin-top: 12px; }
+.demand-stat { display: inline-block; margin: 4px 16px 4px 0; font-size: 13px; color: #6b7280; }
+.demand-stat strong { font-size: 20px; color: #111827; display: block; }
+.footer { padding: 24px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; }
+.footer a { color: #9ca3af; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>{{ platform_name }}</h1>
+  </div>
+  <div class="content">
+    <h2>LEG-Potenzial in {{ municipality_name }}</h2>
+    <p>Sehr geehrte Damen und Herren,</p>
+    <p>In <strong>{{ municipality_name }}</strong> zeigt sich ein wachsendes Interesse an lokalen Energiegemeinschaften (LEG). Wir möchten Ihnen eine Zusammenfassung der aktuellen Nachfragesituation vorlegen.</p>
+
+    {% if has_demand_data %}
+    <div class="demand-box {{ demand_level }}">
+      <p><strong>Nachfrageübersicht — {{ municipality_name }}</strong></p>
+      <p>Nachfrageniveau: <strong>{{ demand_level | upper }}</strong>{% if demand_score > 0 %} &nbsp;(Score: {{ demand_score }}/100){% endif %}</p>
+      <div class="demand-stats">
+        <span class="demand-stat"><strong>{{ verified_buildings }}</strong> Verifizierte Gebäude</span>
+        <span class="demand-stat"><strong>{{ recent_signups_90d }}</strong> Neue Anmeldungen (90&nbsp;Tage)</span>
+        <span class="demand-stat"><strong>{{ confirmed_leg_members }}</strong> Bestätigte LEG-Mitglieder</span>
+        {% if communities_in_formation > 0 %}
+        <span class="demand-stat"><strong>{{ communities_in_formation }}</strong> Gründungen in Vorbereitung</span>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="demand-box none">
+      <p><strong>Nachfrageübersicht — {{ municipality_name }}</strong></p>
+      <p>Für diese Gemeinde liegen noch keine verifizierten Nachfragedaten vor. Wir freuen uns, gemeinsam mit Ihnen einen ersten Schritt einzuleiten.</p>
+    </div>
+    {% endif %}
+
+    <p>Als Gemeinde können Sie den LEG-Prozess aktiv unterstützen, indem Sie Ihre Einwohnerinnen und Einwohner informieren und den Kontakt zur lokalen Netzgesellschaft erleichtern.</p>
+
+    <p style="text-align: center;">
+      <a href="{{ site_url }}/gemeinde/onboarding" class="cta">Gemeinde registrieren</a>
+    </p>
+
+    <p>Bei Fragen stehen wir gerne zur Verfügung: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+  </div>
+  <div class="footer">
+    <p>{{ platform_name }} &middot; Kostenlose LEG-Infrastruktur für Gemeinden</p>
+    <p><a href="{{ unsubscribe_url }}">Abmelden</a></p>
+  </div>
+</div>
+</body>
+</html>
