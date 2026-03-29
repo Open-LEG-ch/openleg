@@ -268,3 +268,42 @@ def render_municipality_outreach(
         "demand_context": demand_context,
         "municipality_name": municipality_name,
     }
+
+
+def get_ranked_municipality_outreach_candidates(
+    kanton: str = "ZH",
+    profiles: Optional[list] = None,
+    demand_signals: Optional[dict] = None,
+) -> list:
+    """Return the canonical ranked outreach list used by operators."""
+    from insights_engine import (
+        compute_municipality_demand_signal,
+        rank_municipalities_for_outreach,
+    )
+
+    selected_profiles = profiles if profiles is not None else db.get_all_municipality_profiles(kanton=kanton)
+    signal_data = demand_signals if demand_signals is not None else compute_municipality_demand_signal()
+    return rank_municipalities_for_outreach(selected_profiles or [], signal_data)
+
+
+def send_municipality_outreach(
+    municipality_name: str,
+    recipient_email: str,
+    bfs_number: Optional[int] = None,
+    tenant: Optional[dict] = None,
+    app=None,
+) -> dict:
+    """Send the demand-aware initial municipality outreach email."""
+    pack = render_municipality_outreach(
+        municipality_name=municipality_name,
+        recipient_email=recipient_email,
+        bfs_number=bfs_number,
+        tenant=tenant,
+        app=app,
+    )
+    success = _send_email(recipient_email, pack["subject"], pack["html_body"])
+    return {
+        "success": success,
+        "recipient_email": recipient_email,
+        **pack,
+    }

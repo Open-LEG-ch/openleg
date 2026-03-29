@@ -228,3 +228,39 @@ class TestComputeMunicipalityDemandSignal:
         calls = mock_db.get_connection.return_value.cursor.return_value.execute.call_args_list
         assert any("261" in str(c) for c in calls)
         assert result["bfs_number"] == 261
+
+    def test_bfs_filter_zero_uses_filtered_query(self):
+        """Explicit BFS number 0 should still use the filtered query path."""
+        main_rows = []
+        mock_db = _make_db_mock(main_rows)
+
+        with patch("insights_engine.db", mock_db):
+            from insights_engine import compute_municipality_demand_signal
+            compute_municipality_demand_signal(bfs_number=0)
+
+        calls = mock_db.get_connection.return_value.cursor.return_value.execute.call_args_list
+        assert all("WHERE m.bfs_number = %s" in call.args[0] for call in calls)
+        assert all(call.args[1] == [0] for call in calls)
+
+    def test_members_or_uploads_count_as_resident_data(self):
+        """Resident data should be recognized even without verified/recent signups."""
+        main_rows = [
+            {
+                "bfs_number": 261,
+                "name": "Dietikon",
+                "kanton": "ZH",
+                "subdomain": "dietikon",
+                "total_registered": 0,
+                "verified_buildings": 0,
+                "recent_signups_90d": 0,
+                "confirmed_leg_members": 2,
+                "meter_data_uploads": 1,
+            }
+        ]
+        with patch("insights_engine.db", _make_db_mock(main_rows)):
+            from insights_engine import compute_municipality_demand_signal
+            result = compute_municipality_demand_signal(bfs_number=261)
+
+        signal = result["signals"][0]
+        assert signal["heuristic_baseline"]["has_resident_data"] is True
+        assert signal["signal_type"] == "verified"

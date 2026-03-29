@@ -493,43 +493,48 @@ def admin_strategy():
     _require_admin()
     from insights_engine import (
         compute_municipality_demand_signal,
-        rank_municipalities_for_outreach,
         compute_next_action_summary,
     )
     data = compute_municipality_demand_signal()
     signals = data.get("signals", [])
+    ranked = email_automation.get_ranked_municipality_outreach_candidates(demand_signals=data)
+    ranked_by_bfs = {
+        item.get("bfs_number"): item
+        for item in ranked
+        if item.get("bfs_number") is not None
+    }
 
-    # Fetch municipality profiles and compute outreach ranking so each signal
-    # can be enriched with a targeting score and a concrete next-action summary.
-    try:
-        profiles = db.get_all_municipality_profiles()
-    except Exception:
-        profiles = []
-
-    ranked = rank_municipalities_for_outreach(profiles, data)
-    outreach_by_bfs = {r["bfs_number"]: r for r in ranked}
-
-    enriched = []
-    for s in signals:
-        bfs = s.get("bfs_number")
-        outreach_entry = outreach_by_bfs.get(bfs, {})
-        outreach_score = outreach_entry.get("outreach_score", 0.0)
-        vd = s.get("verified_demand", {})
-        next_action = compute_next_action_summary(
-            demand_level=s.get("demand_level", "none"),
+    enriched_signals = []
+    for signal in signals:
+        ranked_entry = ranked_by_bfs.get(signal.get("bfs_number"), {})
+        outreach_score = float(ranked_entry.get("outreach_score") or 0)
+        signal_view = {
+            **signal,
+            "outreach_score": outreach_score,
+            "score_breakdown": ranked_entry.get("score_breakdown", {
+                "energy_transition": 0.0,
+                "value_gap": 0.0,
+                "demand": 0.0,
+            }),
+        }
+        vd = signal_view.get("verified_demand", {})
+        signal_view["next_action"] = compute_next_action_summary(
+            demand_level=signal_view.get("demand_level", "none"),
             demand_score=float(vd.get("demand_score") or 0),
-            outreach_score=float(outreach_score),
+            outreach_score=outreach_score,
             verified_buildings=int(vd.get("verified_buildings") or 0),
             communities_in_formation=int(vd.get("communities_in_formation") or 0),
         )
-        enriched.append({**s, "outreach_score": outreach_score, "next_action": next_action})
+        enriched_signals.append(signal_view)
 
-    # Sort: high → medium → low → none so actionable municipalities appear first
     level_order = {"high": 0, "medium": 1, "low": 2, "none": 3}
     signals_sorted = sorted(
-        enriched,
-        key=lambda s: (level_order.get(s.get("demand_level", "none"), 3),
-                       -s.get("verified_demand", {}).get("demand_score", 0))
+        enriched_signals,
+        key=lambda s: (
+            level_order.get(s.get("demand_level", "none"), 3),
+            -float(s.get("outreach_score") or 0),
+            -float((s.get("verified_demand") or {}).get("demand_score") or 0),
+        ),
     )
     if 'text/html' in (request.headers.get('Accept') or ''):
         return render_template('admin/strategy.html',

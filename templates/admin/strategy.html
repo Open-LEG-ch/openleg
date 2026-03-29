@@ -88,7 +88,11 @@
             {% else %}text-gray-600{% endif %}">
             {{ vd.demand_score | round(1) }}
           </td>
-          <td class="px-4 py-3 text-center font-bold text-purple-300">
+          <td class="px-4 py-3 text-center font-semibold
+            {% if s.outreach_score >= 60 %}text-red-300
+            {% elif s.outreach_score >= 35 %}text-yellow-300
+            {% elif s.outreach_score > 0 %}text-blue-300
+            {% else %}text-gray-600{% endif %}">
             {{ s.outreach_score | round(1) if s.outreach_score is defined else '—' }}
           </td>
           <td class="px-4 py-3 text-center text-gray-300">{{ vd.verified_buildings }}</td>

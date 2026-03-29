@@ -86,6 +86,10 @@ class TestMunicipalityOutreachRegistration:
         import email_automation
         assert callable(email_automation.render_municipality_outreach)
 
+    def test_send_municipality_outreach_callable(self):
+        import email_automation
+        assert callable(email_automation.send_municipality_outreach)
+
 
 # ---------------------------------------------------------------------------
 # get_municipality_demand_context
@@ -189,3 +193,29 @@ class TestRenderMunicipalityOutreach:
         ctx = result["demand_context"]
         assert ctx["verified_buildings"] == 20
         assert ctx["communities_in_formation"] == 2
+
+
+class TestSendMunicipalityOutreach:
+    def test_send_uses_rendered_pack_for_initial_outreach(self):
+        import email_automation
+        with patch("email_automation.render_municipality_outreach", return_value={
+            "subject": "LEG-Potenzial in Dietikon",
+            "html_body": "<p>hi</p>",
+            "demand_context": {"demand_level": "high"},
+            "municipality_name": "Dietikon",
+        }) as render_mock, \
+             patch("email_automation._send_email", return_value=True) as send_mock:
+            result = email_automation.send_municipality_outreach(
+                municipality_name="Dietikon",
+                recipient_email="gemeinde@dietikon.ch",
+                bfs_number=261,
+            )
+
+        render_mock.assert_called_once()
+        send_mock.assert_called_once_with(
+            "gemeinde@dietikon.ch",
+            "LEG-Potenzial in Dietikon",
+            "<p>hi</p>",
+        )
+        assert result["success"] is True
+        assert result["recipient_email"] == "gemeinde@dietikon.ch"

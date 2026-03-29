@@ -304,8 +304,8 @@ def compute_municipality_demand_signal(bfs_number: int = None) -> Dict:
     try:
         with db.get_connection() as conn:
             with conn.cursor() as cur:
-                where = "WHERE m.bfs_number = %s" if bfs_number else ""
-                params: list = [bfs_number] if bfs_number else []
+                where = "WHERE m.bfs_number = %s" if bfs_number is not None else ""
+                params: list = [bfs_number] if bfs_number is not None else []
 
                 cur.execute(f"""
                     SELECT
@@ -370,7 +370,13 @@ def compute_municipality_demand_signal(bfs_number: int = None) -> Dict:
                 + min(in_formation * 5, 15)
             )
 
-            has_resident_data = verified > 0 or recent > 0
+            has_resident_data = any([
+                verified > 0,
+                recent > 0,
+                members > 0,
+                uploads > 0,
+                in_formation > 0,
+            ])
 
             if demand_score >= 40:
                 demand_level = "high"

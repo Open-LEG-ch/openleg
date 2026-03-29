@@ -1,9 +1,10 @@
-"""Tests for rank_municipalities_for_outreach in insights_engine.py.
+"""Tests for municipality targeting helpers.
 
 Covers US-003: incorporate verified demand into municipality targeting.
 """
 import pytest
 from insights_engine import rank_municipalities_for_outreach
+from unittest.mock import patch
 
 
 # ---------------------------------------------------------------------------
@@ -159,3 +160,21 @@ class TestRankMunicipalitiesForOutreach:
             assert key in entry, f"Missing key: {key}"
         for sub in ("energy_transition", "value_gap", "demand"):
             assert sub in entry["score_breakdown"], f"Missing breakdown key: {sub}"
+
+
+class TestRankedMunicipalityOutreachCandidates:
+
+    def test_canonical_helper_uses_live_profiles_and_demand_signals(self):
+        profiles = [
+            _profile(261, "Dietikon", energy_transition_score=60, leg_value_gap_chf=200),
+            _profile(247, "Schlieren", energy_transition_score=50, leg_value_gap_chf=150),
+        ]
+        demand = _demand_signals((261, 0, "none"), (247, 80, "high"))
+
+        import email_automation
+        with patch("email_automation.db.get_all_municipality_profiles", return_value=profiles), \
+             patch("insights_engine.compute_municipality_demand_signal", return_value=demand):
+            result = email_automation.get_ranked_municipality_outreach_candidates()
+
+        assert result[0]["name"] == "Schlieren"
+        assert result[0]["outreach_score"] > result[1]["outreach_score"]
