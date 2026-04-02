@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for compute_municipality_demand_signal in insights_engine.py.
 
 Covers US-001: verified municipality demand signal.

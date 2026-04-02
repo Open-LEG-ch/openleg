@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """PDF document generator for LEG formation documents using WeasyPrint."""
 from datetime import date
 

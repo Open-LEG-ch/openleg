@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for OpenClaw config and server.mjs tool count."""
 import os
 import json

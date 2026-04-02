@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 OpenLEG Utility Portal Blueprint.
 Self-service portal for energy utilities (VNB/EVU) to manage their LEG platform.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for formation nudge email template and registration."""
 import os
 import pytest

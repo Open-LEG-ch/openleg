@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Formation Wizard Module for OpenLEG
 Handles LEG community formation workflow, document generation, and status tracking.

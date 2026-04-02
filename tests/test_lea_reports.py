@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for LEA report webhook receiver and admin view."""
 import os
 import pytest

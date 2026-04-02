@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for cache.py - Redis-backed caching layer."""
 import pytest
 from unittest.mock import patch, MagicMock

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Token-Persistenz: Speichert Verifizierungs- und Unsubscribe-Tokens in einer JSON-Datei.
 Verwendet atomic writes für Sicherheit und automatisches Aufräumen alter Tokens.

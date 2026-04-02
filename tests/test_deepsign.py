@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for deepsign_integration.py - AES e-signature via DeepSign API."""
 import pytest
 from unittest.mock import patch, MagicMock

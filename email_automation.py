@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Email Automation for OpenLEG
 Handles scheduled email sequences for user nurturing.

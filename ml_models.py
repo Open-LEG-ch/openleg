@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 import pandas as pd
 import numpy as np
 from sklearn.cluster import DBSCAN

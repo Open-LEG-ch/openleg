@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Public data fetchers for OpenLEG.
 Aggregates Swiss government open data: ElCom tariffs, Energie Reporter, Sonnendach.

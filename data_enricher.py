@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 import requests
 import pandas as pd
 import numpy as np

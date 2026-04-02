@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Sales pipeline management for VNB outreach.
 
 Manages the lifecycle of utility client leads from discovery to conversion.

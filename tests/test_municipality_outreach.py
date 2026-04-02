@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for municipality outreach generation in email_automation.py.
 
 Covers US-004: Demand-aware municipality outreach pack generation.

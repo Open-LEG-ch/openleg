@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Stripe billing integration for OpenLEG utility clients."""
 import os
 import logging

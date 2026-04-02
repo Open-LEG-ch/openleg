@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 PostgreSQL Database Layer for OpenLEG
 Replaces JSON file persistence with proper database storage.

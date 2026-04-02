@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for the /admin/strategy route (US-002).
 
 Covers:

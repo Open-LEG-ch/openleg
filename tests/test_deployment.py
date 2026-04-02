@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Config validation tests for deployment artifacts."""
 import os
 import pytest

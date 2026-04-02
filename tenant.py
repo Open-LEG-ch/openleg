@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Multi-tenant resolution for OpenLEG platform.
 Maps hostnames to territory configs stored in white_label_configs table.

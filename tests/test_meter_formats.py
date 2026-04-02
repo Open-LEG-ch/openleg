@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for multi-format smart meter parsing."""
 import pytest
 from meter_data import parse_ekz_csv, detect_format, parse_meter_csv, _parse_decimal, _parse_timestamp

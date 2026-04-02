@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """E2E integration tests (static/mocked, no live services)."""
 import os
 import re

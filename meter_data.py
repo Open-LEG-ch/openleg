@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Smart meter data ingestion for OpenLEG.
 Parses EKZ CSV exports, validates readings, stores in database.

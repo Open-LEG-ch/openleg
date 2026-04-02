@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """DeepSign AES e-signature integration for LEG formation documents.
 
 Requires DEEPSIGN_API_KEY and DEEPSIGN_API_URL env vars.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for onboarding flow: tenant resolution, formation states, config."""
 import pytest
 

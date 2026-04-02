@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for rate limiter Redis + metrics endpoint."""
 import os
 import pytest

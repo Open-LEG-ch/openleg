@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 OpenLEG Insights Engine.
 Aggregates anonymized smart meter data into intelligence products for B2B API.

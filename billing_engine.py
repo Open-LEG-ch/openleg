@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Billing engine for LEG 15-minute interval energy allocation.
 
 Implements Art. 17d/17e StromVG allocation models:

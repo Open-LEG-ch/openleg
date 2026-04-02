@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Redis-backed caching layer for OpenLEG.
 
 Falls back gracefully if Redis is unavailable (returns None, no-ops on writes).

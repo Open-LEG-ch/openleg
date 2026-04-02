@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Municipality onboarding for OpenLEG platform.
 Handles Gemeinde signup, admin dashboard, LEG formation KPIs.

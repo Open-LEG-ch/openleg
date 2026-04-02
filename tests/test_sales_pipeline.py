@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for sales_pipeline.py - VNB sales pipeline management."""
 import pytest
 from unittest.mock import patch, MagicMock

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 OpenLEG Public API Blueprint.
 Open-source Swiss energy data API: municipalities, tariffs, solar, LEG toolkit.

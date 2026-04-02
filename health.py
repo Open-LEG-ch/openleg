@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Health check blueprint for OpenLEG."""
 from flask import Blueprint, jsonify
 import database as db

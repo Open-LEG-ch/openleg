@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for billing_engine.py - 15-min interval energy allocation."""
 import pytest
 import pandas as pd

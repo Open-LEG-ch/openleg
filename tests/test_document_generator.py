@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for document_generator.py - PDF generation for LEG formation documents."""
 import pytest
 from unittest.mock import patch, MagicMock

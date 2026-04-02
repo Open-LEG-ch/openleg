@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for rank_municipalities_for_outreach in insights_engine.py.
 
 Covers US-003: incorporate verified demand into municipality targeting.
