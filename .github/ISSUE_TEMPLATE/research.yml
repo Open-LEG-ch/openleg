@@ -1,0 +1,49 @@
+name: Research Task
+description: Research question or investigation
+labels: ["research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for research tasks: competitive analysis, regulatory research, grant programs, academic partnerships, etc.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+      description: What do we need to find out?
+      placeholder: "Example: What BFE grant programs are available for LEG platforms?"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Research category
+      options:
+        - "Grants & funding"
+        - "Regulatory & legal"
+        - "Competitive analysis"
+        - "Academic partnerships"
+        - "Technical feasibility"
+        - "Market research"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and background
+      description: Why do we need this research?
+    validations:
+      required: false
+
+  - type: textarea
+    id: deliverable
+    attributes:
+      label: Expected deliverable
+      description: What output should this research produce?
+      placeholder: "Example: Document in research.md with URLs, deadlines, eligibility criteria"
+    validations:
+      required: false

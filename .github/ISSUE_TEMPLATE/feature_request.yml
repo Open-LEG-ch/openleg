@@ -1,0 +1,54 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Discipline Policy
+        
+        **No new features until 3 municipalities have active resident registrations.**
+        
+        **Decision filter:** Does this help a citizen discover or form a LEG?
+        - ✅ **Yes, directly** (SEO, content, onboarding fix): propose now
+        - ✅ **Yes, indirectly** (CI, docs, grants): propose now
+        - ❌ **No** (new billing feature, new API endpoint, new ML model): wait
+        
+        See [feature-discipline.md](https://github.com/wgusta/openleg/blob/main/prd/feature-discipline.md) for full policy.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or need
+      description: What problem does this solve? Who needs it?
+      placeholder: As a [user type], I need [capability] so that [benefit]
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would this feature work?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: alignment
+    attributes:
+      label: Feature discipline alignment
+      description: Does this help citizens discover or form LEGs?
+      options:
+        - "Yes - directly (SEO, content, onboarding)"
+        - "Yes - indirectly (CI, docs, grants, academic)"
+        - "No - deferred until 3 active municipalities"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Mockups, references, alternatives considered
+    validations:
+      required: false

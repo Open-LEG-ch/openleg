@@ -1,0 +1,45 @@
+name: orch-cloud-controller
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/20 * * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Codex CLI
+        run: npm install -g @openai/codex
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run controller
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/orch_cloud_controller.py
+
+      - name: Persist manifest updates
+        run: |
+          if git diff --quiet -- .orch/cloud-runs; then
+            exit 0
+          fi
+          git add .orch/cloud-runs
+          git commit -m "chore(orch): update cloud manifests"
+          git push
