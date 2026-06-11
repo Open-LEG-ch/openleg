@@ -20,7 +20,7 @@ psycopg2-binary==2.9.9
 stripe==11.4.1
 
 # PDF generation
-weasyprint==62.3
+weasyprint==68.0
 
 # Optional: For production
 gunicorn==21.2.0
