@@ -1,8 +1,3 @@
-# OpenClaw AI gateway
-claw.openleg.ch {
-    reverse_proxy openclaw:18789
-}
-
 # Public API
 api.openleg.ch {
     reverse_proxy flask:5000

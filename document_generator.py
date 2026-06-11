@@ -1,4 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """PDF document generator for LEG formation documents using WeasyPrint."""
+
 from datetime import date
 
 
@@ -12,6 +14,7 @@ DISTRIBUTION_LABELS = {
 def _render_pdf(html_str):
     """Render HTML string to PDF bytes."""
     from weasyprint import HTML
+
     return HTML(string=html_str).write_pdf()
 
 
@@ -95,7 +98,7 @@ der gemäss separater Vollmacht bestimmt wird.</p>
 
 <h2>7. Unterschriften</h2>
 <table><tr><th>Name</th><th>Datum</th><th>Unterschrift</th></tr>
-{"".join(f'<tr><td>{p["name"]}</td><td></td><td></td></tr>' for p in participants)}
+{"".join(f"<tr><td>{p["name"]}</td><td></td><td></td></tr>" for p in participants)}
 </table>
 
 <div class="footer">Generiert durch OpenLEG Platform, openleg.ch</div>
@@ -250,10 +253,12 @@ def store_document(community_id, doc_type, pdf_bytes, filename):
 def db_store_document(community_id, doc_type, pdf_bytes, filename):
     """Store document in database. Placeholder for database integration."""
     import database
+
     return database.store_leg_document(community_id, doc_type, pdf_bytes, filename)
 
 
 def list_documents(community_id):
     """List all documents for a community."""
     import database
+
     return database.list_leg_documents(community_id)

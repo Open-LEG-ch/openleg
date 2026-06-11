@@ -1,10 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for sales_pipeline.py - VNB sales pipeline management."""
-import pytest
-from unittest.mock import patch, MagicMock
+
 from sales_pipeline import (
     score_vnb,
-    get_pipeline,
-    update_pipeline_status,
     draft_outreach_email,
     get_pipeline_dashboard,
     PIPELINE_STAGES,
@@ -15,10 +13,18 @@ class TestPipelineStages:
     """Verify pipeline stage definitions."""
 
     def test_stage_order(self):
-        assert PIPELINE_STAGES == ["lead", "contacted", "demo", "trial", "paid", "churned"]
+        assert PIPELINE_STAGES == [
+            "lead",
+            "contacted",
+            "demo",
+            "trial",
+            "paid",
+            "churned",
+        ]
 
     def test_valid_transitions(self):
         from sales_pipeline import is_valid_transition
+
         assert is_valid_transition("lead", "contacted") is True
         assert is_valid_transition("contacted", "demo") is True
         assert is_valid_transition("demo", "lead") is False  # can't go backwards
@@ -48,9 +54,16 @@ class TestScoring:
 
     def test_score_bounds(self):
         # Extreme values should stay 0-100
-        score = score_vnb(population=0, solar_potential_kwh=0, has_leghub=True, smart_meter_coverage=0)
+        score = score_vnb(
+            population=0, solar_potential_kwh=0, has_leghub=True, smart_meter_coverage=0
+        )
         assert 0 <= score <= 100
-        score = score_vnb(population=500000, solar_potential_kwh=2000, has_leghub=False, smart_meter_coverage=1.0)
+        score = score_vnb(
+            population=500000,
+            solar_potential_kwh=2000,
+            has_leghub=False,
+            smart_meter_coverage=1.0,
+        )
         assert 0 <= score <= 100
 
 

@@ -12,6 +12,13 @@
     </style>
 </head>
 <body>
+    <section style="padding: 20px; border-bottom: 1px solid #e5e7eb; background: #f8fafc;">
+        <h2 style="margin: 0 0 8px; font-size: 20px;">Copy-paste Beispiele</h2>
+        <p style="margin: 0 0 12px; color: #475569;">Direkt im Terminal ausführen:</p>
+        <pre style="margin: 0 0 10px; padding: 12px; background: #0f172a; color: #cbd5e1; overflow-x: auto;"><code>curl -s "https://openleg.ch/api/v1/municipalities?kanton=all&amp;order_by=name" | jq .</code></pre>
+        <pre style="margin: 0 0 10px; padding: 12px; background: #0f172a; color: #cbd5e1; overflow-x: auto;"><code>curl -s "https://openleg.ch/api/v1/municipalities/261/tariffs?year=2026" | jq .</code></pre>
+        <pre style="margin: 0; padding: 12px; background: #0f172a; color: #cbd5e1; overflow-x: auto;"><code>curl -s "https://openleg.ch/api/v1/municipalities/261/leg-potential?year=2026&amp;participants=10" | jq .</code></pre>
+    </section>
     <div id="swagger-ui"></div>
     <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
     <script>
@@ -34,7 +41,7 @@
                 get: {
                     tags: ["Municipalities"], summary: "List all municipalities",
                     parameters: [
-                        { name: "kanton", in: "query", schema: { type: "string", default: "ZH" }, description: "Canton code" },
+                        { name: "kanton", in: "query", schema: { type: "string", default: "all" }, description: "Canton code (e.g. ZH) or all" },
                         { name: "order_by", in: "query", schema: { type: "string", enum: ["name", "population", "energy_transition_score", "leg_value_gap_chf"] } }
                     ],
                     responses: { "200": { description: "List of municipality profiles" } }
@@ -87,7 +94,7 @@
                 get: {
                     tags: ["Municipalities"], summary: "Tariffs across municipalities",
                     parameters: [
-                        { name: "kanton", in: "query", schema: { type: "string", default: "ZH" } },
+                        { name: "kanton", in: "query", schema: { type: "string", default: "all" } },
                         { name: "year", in: "query", schema: { type: "integer", default: 2026 } }
                     ],
                     responses: { "200": { description: "All tariffs" } }
@@ -97,7 +104,7 @@
                 get: {
                     tags: ["Municipalities"], summary: "Ranked municipalities",
                     parameters: [
-                        { name: "kanton", in: "query", schema: { type: "string", default: "ZH" } },
+                        { name: "kanton", in: "query", schema: { type: "string", default: "all" } },
                         { name: "metric", in: "query", schema: { type: "string", enum: ["energy_transition_score", "leg_value_gap_chf", "population"] } },
                         { name: "limit", in: "query", schema: { type: "integer", default: 20 } }
                     ],
@@ -107,7 +114,10 @@
             "/search": {
                 get: {
                     tags: ["Municipalities"], summary: "Search municipalities",
-                    parameters: [{ name: "q", in: "query", required: true, schema: { type: "string" }, description: "Search query (min 2 chars)" }],
+                    parameters: [
+                        { name: "q", in: "query", required: true, schema: { type: "string" }, description: "Search query (min 2 chars)" },
+                        { name: "limit", in: "query", schema: { type: "integer", default: 10, minimum: 1, maximum: 50 }, description: "Max number of results" }
+                    ],
                     responses: { "200": { description: "Search results" }, "400": { description: "Query too short" } }
                 }
             },

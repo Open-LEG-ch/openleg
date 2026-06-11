@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Billing engine for LEG 15-minute interval energy allocation.
 
 Implements Art. 17d/17e StromVG allocation models:
@@ -5,8 +6,8 @@ Implements Art. 17d/17e StromVG allocation models:
 - Einfach (equal): equal split, capped by actual consumption
 - Network discount: 40% same level, 20% cross level
 """
+
 import pandas as pd
-import numpy as np
 
 
 DISCOUNT_SAME_LEVEL = 0.40
@@ -104,7 +105,9 @@ def generate_billing_summary(
 
     total_production = float(production.sum())
     total_allocated = float(allocation.values.sum())
-    total_discount = compute_network_discount(total_allocated, grid_fee_per_kwh, network_level)
+    total_discount = compute_network_discount(
+        total_allocated, grid_fee_per_kwh, network_level
+    )
 
     participants = []
     for col in allocation.columns:
@@ -113,14 +116,18 @@ def generate_billing_summary(
         discount = compute_network_discount(alloc_kwh, grid_fee_per_kwh, network_level)
         cost = alloc_kwh * internal_price_per_kwh
 
-        participants.append({
-            "id": col,
-            "consumption_kwh": round(cons_kwh, 2),
-            "allocated_kwh": round(alloc_kwh, 2),
-            "self_supply_ratio": round(alloc_kwh / cons_kwh, 4) if cons_kwh > 0 else 0,
-            "internal_cost_chf": round(cost, 2),
-            "network_discount_chf": round(discount, 2),
-        })
+        participants.append(
+            {
+                "id": col,
+                "consumption_kwh": round(cons_kwh, 2),
+                "allocated_kwh": round(alloc_kwh, 2),
+                "self_supply_ratio": round(alloc_kwh / cons_kwh, 4)
+                if cons_kwh > 0
+                else 0,
+                "internal_cost_chf": round(cost, 2),
+                "network_discount_chf": round(discount, 2),
+            }
+        )
 
     return {
         "total_production_kwh": round(total_production, 2),

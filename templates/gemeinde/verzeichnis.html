@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gemeindeverzeichnis – Energieprofile Schweizer Gemeinden | OpenLEG</title>
     <meta name="description" content="Schweizer Gemeinden im Energiewende-Vergleich: Stromtarife, Solarpotenzial, LEG-Ersparnis. Offene Daten von ElCom, Sonnendach, Energie Reporter.">
+    <link rel="canonical" href="{{ canonical_url }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -39,11 +40,9 @@
             </form>
             <div class="flex gap-2">
                 <select onchange="location.href='?kanton='+this.value+'&q={{ query }}&sort={{ sort }}'" class="border rounded-lg px-3 py-2 text-sm bg-white">
-                    <option value="ZH" {{ 'selected' if kanton == 'ZH' }}>Zürich</option>
-                    <option value="BE" {{ 'selected' if kanton == 'BE' }}>Bern</option>
-                    <option value="AG" {{ 'selected' if kanton == 'AG' }}>Aargau</option>
-                    <option value="SG" {{ 'selected' if kanton == 'SG' }}>St. Gallen</option>
-                    <option value="LU" {{ 'selected' if kanton == 'LU' }}>Luzern</option>
+                    {% for code, label in canton_options %}
+                    <option value="{{ code }}" {{ 'selected' if kanton == code }}>{{ label }}</option>
+                    {% endfor %}
                 </select>
                 <select onchange="location.href='?sort='+this.value+'&kanton={{ kanton }}&q={{ query }}'" class="border rounded-lg px-3 py-2 text-sm bg-white">
                     <option value="energy_transition_score" {{ 'selected' if sort == 'energy_transition_score' }}>Score</option>

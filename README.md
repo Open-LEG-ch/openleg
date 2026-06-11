@@ -1,119 +1,61 @@
 # OpenLEG
 
-## Deutsch
+OpenLEG is open-source infrastructure for Swiss Local Electricity Communities (LEG). It is the public app repo: runtime code, tests, templates, docs, and CI live here. Private operations, deployment runbooks, and internal planning stay in a separate private repository.
 
-### Übersicht
-OpenLEG ist eine quelloffene Plattform zur Unterstützung von Lokalen Elektrizitätsgemeinschaften (LEG) in der Schweiz.  
-Der öffentliche Repository-Inhalt ist auf Produktbetrieb, Entwicklung und Deployment ausgerichtet.
+## What this repo is
 
-### Architektur
-- Backend: Flask (Python 3.11)
-- Datenbank: PostgreSQL 16
-- Caching: Redis 7
-- Reverse Proxy: Caddy
-- Zusatzdienst: OpenClaw Gateway
+- Flask app and API code
+- Database layer and migrations
+- Templates and static assets
+- Public documentation and contribution workflow
+- CI and test automation
 
-### Lokale Entwicklung
+## Quick start
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env
+pytest tests/ -q
 python app.py
 ```
 
-### Docker-Betrieb
+## Docker
+
 ```bash
 cp .env.example .env
 docker compose up -d
+docker compose ps
 ```
 
-### Deployment
-- Verwende das öffentliche Template-Skript: `deploy.example.sh`
-- Setze Ziel-Host und Zielpfad per Umgebungsvariablen
-- Führe zuerst einen Dry-Run aus
+## Public architecture
 
-Beispiel:
-```bash
-DEPLOY_HOST=ubuntu@1.2.3.4 \
-REMOTE_DIR=/opt/openleg \
-./deploy.example.sh --dry-run
-```
-
-### Wichtige Umgebungsvariablen
-- `POSTGRES_PASSWORD`
-- `SECRET_KEY`
-- `ADMIN_TOKEN`
-- `CRON_SECRET`
-- `SMTP_*` (falls E-Mail aktiv)
-- `GROQ_API_KEY`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_GATEWAY_PASSWORD` (für OpenClaw)
-
-### Troubleshooting
-- Containerstatus prüfen: `docker compose ps`
-- Logs prüfen: `docker compose logs -f flask`
-- Health prüfen: `curl -fsS http://localhost:5000/livez`
-- Tests ausführen: `pytest tests/ -q`
-
-### Sicherheit
-- Keine produktiven Secrets im Repository committen
-- Lokale/private Betriebsdokumente bleiben untracked
-- Nutze `.gitignore` für interne oder unsichere Artefakte
-
-## English
-
-### Overview
-OpenLEG is an open-source platform supporting Local Electricity Communities (LEG) in Switzerland.  
-This public repository is focused on product runtime, development, and deployment.
-
-### Architecture
-- Backend: Flask (Python 3.11)
+- Backend: Flask on Python 3.11
 - Database: PostgreSQL 16
 - Cache: Redis 7
 - Reverse proxy: Caddy
-- Sidecar service: OpenClaw Gateway
 
-### Local Development
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-cp .env.example .env
-python app.py
-```
+## Contributing
 
-### Docker Runtime
-```bash
-cp .env.example .env
-docker compose up -d
-```
+- Open an issue before larger changes
+- Keep changes small and covered by tests
+- Run `pytest tests/ -q`, `ruff check .`, and `ruff format --check .` before opening a PR
+- Target the required CI checks: `ci/lint`, `ci/test`, `ci/security`
 
-### Deployment
-- Use the public template script: `deploy.example.sh`
-- Set target host/path through environment variables
-- Run dry-run first
+## Repository boundary
 
-Example:
-```bash
-DEPLOY_HOST=ubuntu@1.2.3.4 \
-REMOTE_DIR=/opt/openleg \
-./deploy.example.sh --dry-run
-```
+- Public code stays in this repo
+- Secrets stay out of git
+- Production host inventory stays private
+- Internal strategy, grant work, and operational notes stay in the private ops repository
 
-### Important Environment Variables
-- `POSTGRES_PASSWORD`
-- `SECRET_KEY`
-- `ADMIN_TOKEN`
-- `CRON_SECRET`
-- `SMTP_*` (if email enabled)
-- `GROQ_API_KEY`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_GATEWAY_PASSWORD` (for OpenClaw)
+## Security
 
-### Troubleshooting
-- Check containers: `docker compose ps`
-- Check logs: `docker compose logs -f flask`
-- Check health: `curl -fsS http://localhost:5000/livez`
-- Run tests: `pytest tests/ -q`
+- Never commit production credentials or personal data
+- Use `.env.example` as the local template
+- Report security issues through the repository security workflow
 
-### Security
-- Never commit production secrets
-- Keep private operational docs untracked
-- Use `.gitignore` for internal or uncertain artifacts
+## License
+
+AGPL-3.0-or-later

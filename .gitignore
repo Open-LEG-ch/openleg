@@ -26,6 +26,9 @@ ENV/
 env/
 .venv
 
+# Node
+node_modules/
+
 # Environment Variables
 .env
 .env.local
@@ -41,8 +44,8 @@ env/
 
 # Logs
 *.log
-badenleg_security.log
-badenleg_security.log.*
+openleg_security.log
+openleg_security.log.*
 
 # Flask
 instance/
@@ -92,21 +95,39 @@ id_ed25519*
 *_deploy.pub
 infomaniak_*
 
-# Archived strategy docs
+# Private/internal docs: ignore ALL root-level markdown except the public keep-set.
+# This is the reliable catch-all so no strategy/planning doc can be committed at root.
+/*.md
+!/README.md
+!/CONTRIBUTING.md
+!/SECURITY.md
+
+# Private planning, strategy, ops docs (explicit, defense in depth)
 archive/
-
-# Strategy & internal docs (not for repo)
-open-strategy.md
-CLAUDE.md
-AGENTS.md
-SKILLS.md
-SOUL.md
-PIVOT.md
-PLAN.md
+overnight/
+prd/
 outreach/
-
-# Local-only deployment and internal workspace docs
-deploy.sh
 grants/
+private/
+internal/
+research*.md
+research_*.md
+docs/research.md
+docs/*strategy*.md
+docs/*internal*.md
+docs/*roadmap*.md
+docs/*plan*.md
+RAILWAY_*.md
+SENDGRID_SETUP.md
+*STRATEGY*.md
+*strategy*.md
+*ROADMAP*.md
+*PLAN*.md
+
+# Local-only deployment and generated artifacts
+deploy.sh
 output/imagegen/
-openclaw/config/workspace/
+.claude/
+.orch/
+.github/scripts/
+handoff

@@ -22,13 +22,12 @@
 
         <form id="onboarding-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
             <div>
-                <label class="block text-sm font-medium mb-1">Gemeinde auswählen</label>
-                <select id="municipality-select" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-                    <option value="">Gemeinde wählen...</option>
-                    {% for m in municipalities %}
-                    <option value="{{ m.bfs }}" data-name="{{ m.name }}" data-dso="{{ m.dso }}">{{ m.name }} ({{ m.dso }})</option>
-                    {% endfor %}
-                </select>
+                <label class="block text-sm font-medium mb-1">Gemeinde suchen</label>
+                <input type="text" id="municipality-search" placeholder="z.B. Dietikon" autocomplete="off" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
+                <div id="search-results" class="mt-2 border rounded-lg bg-white shadow-sm hidden max-h-56 overflow-y-auto"></div>
+                <input type="hidden" id="selected-bfs">
+                <input type="hidden" id="selected-name">
+                <p id="selected-municipality" class="text-xs text-gray-500 mt-2 hidden"></p>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Kontakt E-Mail (Gemeindeverwaltung)</label>
@@ -54,24 +53,105 @@
         </form>
     </div>
     <script>
-    const select = document.getElementById('municipality-select');
-    select.addEventListener('change', function() {
-        const opt = this.options[this.selectedIndex];
-        const name = opt.dataset.name || '';
-        const subdomain = name.toLowerCase().replace(/\s+/g, '-').replace(/ü/g, 'ue').replace(/ä/g, 'ae').replace(/ö/g, 'oe');
-        document.getElementById('subdomain-preview').textContent = subdomain ? `${subdomain}.openleg.ch` : 'gemeinde.openleg.ch';
+    const searchInput = document.getElementById('municipality-search');
+    const searchResults = document.getElementById('search-results');
+    const selectedBfs = document.getElementById('selected-bfs');
+    const selectedName = document.getElementById('selected-name');
+    const selectedMunicipality = document.getElementById('selected-municipality');
+    let searchTimer = null;
+
+    function subdomainFromName(name) {
+        return (name || '')
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/ü/g, 'ue')
+            .replace(/ä/g, 'ae')
+            .replace(/ö/g, 'oe');
+    }
+
+    function resetSelection() {
+        selectedBfs.value = '';
+        selectedName.value = '';
+        selectedMunicipality.classList.add('hidden');
+        document.getElementById('subdomain-preview').textContent = 'gemeinde.openleg.ch';
+    }
+
+    function pickMunicipality(item) {
+        selectedBfs.value = String(item.bfs_number);
+        selectedName.value = item.name || '';
+        selectedMunicipality.textContent = `Ausgewählt: ${item.name} (BFS ${item.bfs_number})`;
+        selectedMunicipality.classList.remove('hidden');
+        document.getElementById('subdomain-preview').textContent = `${subdomainFromName(item.name)}.openleg.ch`;
+        searchInput.value = item.name || '';
+        searchResults.innerHTML = '';
+        searchResults.classList.add('hidden');
+    }
+
+    async function queryMunicipalities(q) {
+        try {
+            const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&limit=8`);
+            if (!res.ok) {
+                searchResults.innerHTML = '';
+                searchResults.classList.add('hidden');
+                return;
+            }
+            const data = await res.json();
+            const items = data.results || [];
+            if (!items.length) {
+                searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">Keine Gemeinde gefunden.</div>';
+                searchResults.classList.remove('hidden');
+                return;
+            }
+            searchResults.innerHTML = items
+                .map((m) => `<button type="button" class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100" data-bfs="${m.bfs_number}" data-name="${(m.name || '').replace(/"/g, '&quot;')}">${m.name} (${m.kanton || 'CH'})</button>`)
+                .join('');
+            searchResults.classList.remove('hidden');
+        } catch (e) {
+            searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-red-600">Suche aktuell nicht verfügbar.</div>';
+            searchResults.classList.remove('hidden');
+        }
+    }
+
+    searchInput.addEventListener('input', function() {
+        resetSelection();
+        clearTimeout(searchTimer);
+        const q = this.value.trim();
+        if (q.length < 2) {
+            searchResults.innerHTML = '';
+            searchResults.classList.add('hidden');
+            return;
+        }
+        searchTimer = setTimeout(() => queryMunicipalities(q), 220);
     });
+
+    searchResults.addEventListener('click', function(e) {
+        const button = e.target.closest('button[data-bfs]');
+        if (!button) return;
+        pickMunicipality({
+            bfs_number: parseInt(button.dataset.bfs, 10),
+            name: button.dataset.name || '',
+            kanton: '',
+        });
+    });
+
     document.getElementById('onboarding-form').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const opt = select.options[select.selectedIndex];
-        const bfs = select.value;
-        const name = opt.dataset.name || '';
+        const bfs = selectedBfs.value;
         const email = document.getElementById('admin-email').value;
-        if (!bfs || !email) { document.getElementById('form-error').textContent = 'Bitte alle Felder ausfüllen.'; document.getElementById('form-error').classList.remove('hidden'); return; }
+        if (!bfs) {
+            document.getElementById('form-error').textContent = 'Bitte wählen Sie zuerst eine Gemeinde aus der Suche.';
+            document.getElementById('form-error').classList.remove('hidden');
+            return;
+        }
+        if (!email) {
+            document.getElementById('form-error').textContent = 'Bitte geben Sie eine E-Mail an.';
+            document.getElementById('form-error').classList.remove('hidden');
+            return;
+        }
         try {
             const res = await fetch('/gemeinde/register', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({bfs_number: parseInt(bfs), name: name, admin_email: email})
+                body: JSON.stringify({bfs_number: parseInt(bfs, 10), admin_email: email})
             });
             const data = await res.json();
             if (data.success) {

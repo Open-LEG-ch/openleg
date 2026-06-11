@@ -1,17 +1,46 @@
-# Internal and strategy content (private repo only)
+# Private planning and docs
+archive/**
 grants/**
+internal/**
 outreach/**
+private/**
 strategy/**
-open-strategy.md
+overnight/**
+prd/**
+research*.md
+research_*.md
+docs/research.md
+docs/*strategy*.md
+docs/*internal*.md
+docs/*roadmap*.md
+docs/*plan*.md
+
+# Private strategy, planning, ops docs (root-level)
 PIVOT.md
-PLAN.md
+*STRATEGY*.md
+*strategy*.md
+*ROADMAP*.md
+*PLAN*.md
+ACTIONS_WEEK*.md
+ACQUISITION*.md
+BLITZ*.md
+MARKETING*.md
+RAILWAY_*.md
+SENDGRID_SETUP.md
+START_HERE.md
+TLD_Suggestions.md
+FUTURE.md
+METRICS-DASHBOARD.md
+PLATFORM-PIPELINE.md
+IMPLEMENTATION_CHECKLIST.md
+dashboards-v2-plan.md
 CLAUDE.md
-AGENTS.md
-SOUL.md
-SKILLS.md
+DEPLOYMENT.md
 
 # Private workspace and generated artifacts
-openclaw/config/workspace/**
+.github/scripts/**
+.orch/**
+workspace/**
 output/imagegen/**
 
 # Real deploy scripts and secret-bearing files

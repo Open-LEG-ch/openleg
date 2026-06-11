@@ -1,7 +1,9 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Smart meter data ingestion for OpenLEG.
 Parses EKZ CSV exports, validates readings, stores in database.
 """
+
 import csv
 import io
 import logging
@@ -13,8 +15,18 @@ import database as db
 logger = logging.getLogger(__name__)
 
 # EKZ CSV format: semicolon-separated, European decimals (comma), timestamp format varies
-EKZ_EXPECTED_HEADERS = ['Zeitstempel', 'Verbrauch (kWh)', 'Produktion (kWh)', 'Einspeisung (kWh)']
-EKZ_ALT_HEADERS = ['Timestamp', 'Consumption (kWh)', 'Production (kWh)', 'Feed-in (kWh)']
+EKZ_EXPECTED_HEADERS = [
+    "Zeitstempel",
+    "Verbrauch (kWh)",
+    "Produktion (kWh)",
+    "Einspeisung (kWh)",
+]
+EKZ_ALT_HEADERS = [
+    "Timestamp",
+    "Consumption (kWh)",
+    "Production (kWh)",
+    "Feed-in (kWh)",
+]
 
 
 def parse_ekz_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
@@ -27,7 +39,7 @@ def parse_ekz_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
     errors = []
 
     # Try semicolon first (EKZ standard), then comma
-    for delimiter in [';', ',', '\t']:
+    for delimiter in [";", ",", "\t"]:
         try:
             reader = csv.reader(io.StringIO(file_content), delimiter=delimiter)
             header = next(reader, None)
@@ -43,17 +55,31 @@ def parse_ekz_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
                 continue
 
             for i, row in enumerate(reader, start=2):
-                if not row or all(c.strip() == '' for c in row):
+                if not row or all(c.strip() == "" for c in row):
                     continue
                 try:
-                    ts = _parse_timestamp(row[col_map['timestamp']].strip())
+                    ts = _parse_timestamp(row[col_map["timestamp"]].strip())
                     if not ts:
-                        errors.append(f"Zeile {i}: Ungültiger Zeitstempel '{row[col_map['timestamp']]}'")
+                        errors.append(
+                            f"Zeile {i}: Ungültiger Zeitstempel '{row[col_map['timestamp']]}'"
+                        )
                         continue
 
-                    consumption = _parse_decimal(row[col_map.get('consumption', -1)]) if 'consumption' in col_map else 0
-                    production = _parse_decimal(row[col_map.get('production', -1)]) if 'production' in col_map else 0
-                    feed_in = _parse_decimal(row[col_map.get('feed_in', -1)]) if 'feed_in' in col_map else 0
+                    consumption = (
+                        _parse_decimal(row[col_map.get("consumption", -1)])
+                        if "consumption" in col_map
+                        else 0
+                    )
+                    production = (
+                        _parse_decimal(row[col_map.get("production", -1)])
+                        if "production" in col_map
+                        else 0
+                    )
+                    feed_in = (
+                        _parse_decimal(row[col_map.get("feed_in", -1)])
+                        if "feed_in" in col_map
+                        else 0
+                    )
 
                     readings.append((ts, consumption, production, feed_in))
                 except (IndexError, ValueError) as e:
@@ -65,7 +91,9 @@ def parse_ekz_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
             errors.append(f"Parse-Fehler mit Delimiter '{delimiter}': {str(e)}")
 
     if not readings and not errors:
-        errors.append("Keine Messdaten in der Datei gefunden. Bitte EKZ-CSV-Export verwenden.")
+        errors.append(
+            "Keine Messdaten in der Datei gefunden. Bitte EKZ-CSV-Export verwenden."
+        )
 
     return readings, errors
 
@@ -76,18 +104,21 @@ def _detect_columns(header: List[str]) -> Optional[Dict[str, int]]:
 
     for i, h in enumerate(header):
         h_lower = h.lower().strip()
-        if any(kw in h_lower for kw in ['zeit', 'timestamp', 'datum', 'date']):
-            col_map['timestamp'] = i
-        elif any(kw in h_lower for kw in ['verbrauch', 'consumption', 'bezug']):
-            col_map['consumption'] = i
-        elif any(kw in h_lower for kw in ['produktion', 'production', 'erzeugung']):
-            col_map['production'] = i
-        elif any(kw in h_lower for kw in ['einspeisung', 'feed-in', 'feed_in', 'rücklieferung']):
-            col_map['feed_in'] = i
+        if any(kw in h_lower for kw in ["zeit", "timestamp", "datum", "date"]):
+            col_map["timestamp"] = i
+        elif any(kw in h_lower for kw in ["verbrauch", "consumption", "bezug"]):
+            col_map["consumption"] = i
+        elif any(kw in h_lower for kw in ["produktion", "production", "erzeugung"]):
+            col_map["production"] = i
+        elif any(
+            kw in h_lower
+            for kw in ["einspeisung", "feed-in", "feed_in", "rücklieferung"]
+        ):
+            col_map["feed_in"] = i
 
-    if 'timestamp' not in col_map:
+    if "timestamp" not in col_map:
         return None
-    if 'consumption' not in col_map and 'production' not in col_map:
+    if "consumption" not in col_map and "production" not in col_map:
         return None
 
     return col_map
@@ -96,13 +127,13 @@ def _detect_columns(header: List[str]) -> Optional[Dict[str, int]]:
 def _parse_timestamp(value: str) -> Optional[datetime]:
     """Parse various timestamp formats from Swiss utility CSVs."""
     formats = [
-        '%d.%m.%Y %H:%M',      # 01.01.2026 00:15
-        '%d.%m.%Y %H:%M:%S',   # 01.01.2026 00:15:00
-        '%Y-%m-%d %H:%M',      # 2026-01-01 00:15
-        '%Y-%m-%d %H:%M:%S',   # 2026-01-01 00:15:00
-        '%Y-%m-%dT%H:%M:%S',   # ISO format
-        '%Y-%m-%dT%H:%M',      # ISO without seconds
-        '%d/%m/%Y %H:%M',      # DD/MM/YYYY
+        "%d.%m.%Y %H:%M",  # 01.01.2026 00:15
+        "%d.%m.%Y %H:%M:%S",  # 01.01.2026 00:15:00
+        "%Y-%m-%d %H:%M",  # 2026-01-01 00:15
+        "%Y-%m-%d %H:%M:%S",  # 2026-01-01 00:15:00
+        "%Y-%m-%dT%H:%M:%S",  # ISO format
+        "%Y-%m-%dT%H:%M",  # ISO without seconds
+        "%d/%m/%Y %H:%M",  # DD/MM/YYYY
     ]
     for fmt in formats:
         try:
@@ -114,15 +145,15 @@ def _parse_timestamp(value: str) -> Optional[datetime]:
 
 def _parse_decimal(value: str) -> float:
     """Parse European decimal format (comma as decimal separator)."""
-    if not value or value.strip() == '' or value.strip() == '-':
+    if not value or value.strip() == "" or value.strip() == "-":
         return 0.0
     # Replace comma with dot for European format
-    cleaned = value.strip().replace("'", "").replace(' ', '')
-    if ',' in cleaned and '.' in cleaned:
+    cleaned = value.strip().replace("'", "").replace(" ", "")
+    if "," in cleaned and "." in cleaned:
         # 1.234,56 format
-        cleaned = cleaned.replace('.', '').replace(',', '.')
-    elif ',' in cleaned:
-        cleaned = cleaned.replace(',', '.')
+        cleaned = cleaned.replace(".", "").replace(",", ".")
+    elif "," in cleaned:
+        cleaned = cleaned.replace(",", ".")
     return float(cleaned)
 
 
@@ -131,15 +162,15 @@ def detect_format(file_content: str) -> str:
 
     Returns: ekz, ewz, ckw, bkw, or generic
     """
-    first_line = file_content.split('\n')[0].lower().strip() if file_content else ""
+    first_line = file_content.split("\n")[0].lower().strip() if file_content else ""
 
-    if 'zeitstempel' in first_line and ';' in first_line:
+    if "zeitstempel" in first_line and ";" in first_line:
         return "ekz"
-    elif 'timestamp' in first_line and ';' in first_line:
+    elif "timestamp" in first_line and ";" in first_line:
         return "ewz"
-    elif 'datum' in first_line and 'zeit' in first_line and 'bezug' in first_line:
+    elif "datum" in first_line and "zeit" in first_line and "bezug" in first_line:
         return "ckw"
-    elif 'zeitpunkt' in first_line and ',' in first_line:
+    elif "zeitpunkt" in first_line and "," in first_line:
         return "bkw"
     return "generic"
 
@@ -149,22 +180,29 @@ def _parse_ckw_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
     readings = []
     errors = []
     try:
-        reader = csv.reader(io.StringIO(file_content), delimiter=';')
+        reader = csv.reader(io.StringIO(file_content), delimiter=";")
         header = next(reader, None)
         if not header:
             return [], ["Leere Datei"]
 
         header_clean = [h.strip().lower() for h in header]
-        date_col = next((i for i, h in enumerate(header_clean) if 'datum' in h), None)
-        time_col = next((i for i, h in enumerate(header_clean) if h == 'zeit'), None)
-        bezug_col = next((i for i, h in enumerate(header_clean) if 'bezug' in h), None)
-        rueck_col = next((i for i, h in enumerate(header_clean) if 'rücklieferung' in h or 'ruecklieferung' in h or 'einspeisung' in h), None)
+        date_col = next((i for i, h in enumerate(header_clean) if "datum" in h), None)
+        time_col = next((i for i, h in enumerate(header_clean) if h == "zeit"), None)
+        bezug_col = next((i for i, h in enumerate(header_clean) if "bezug" in h), None)
+        rueck_col = next(
+            (
+                i
+                for i, h in enumerate(header_clean)
+                if "rücklieferung" in h or "ruecklieferung" in h or "einspeisung" in h
+            ),
+            None,
+        )
 
         if date_col is None or bezug_col is None:
             return [], ["CKW-Format: Datum oder Bezug Spalte fehlt"]
 
         for i, row in enumerate(reader, start=2):
-            if not row or all(c.strip() == '' for c in row):
+            if not row or all(c.strip() == "" for c in row):
                 continue
             try:
                 date_str = row[date_col].strip()
@@ -174,7 +212,9 @@ def _parse_ckw_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
                     errors.append(f"Zeile {i}: Ungültiger Zeitstempel")
                     continue
                 consumption = _parse_decimal(row[bezug_col])
-                feed_in = _parse_decimal(row[rueck_col]) if rueck_col is not None else 0.0
+                feed_in = (
+                    _parse_decimal(row[rueck_col]) if rueck_col is not None else 0.0
+                )
                 readings.append((ts, consumption, 0.0, feed_in))
             except (IndexError, ValueError) as e:
                 errors.append(f"Zeile {i}: {str(e)}")
@@ -201,7 +241,7 @@ def parse_meter_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
         return parse_ekz_csv(file_content)
 
 
-def ingest_csv(building_id: str, file_content: str, source: str = 'csv') -> Dict:
+def ingest_csv(building_id: str, file_content: str, source: str = "csv") -> Dict:
     """Parse and store meter readings from CSV upload.
 
     Returns:
@@ -213,7 +253,7 @@ def ingest_csv(building_id: str, file_content: str, source: str = 'csv') -> Dict
         return {
             "success": False,
             "readings_count": 0,
-            "errors": errors or ["Keine gültigen Messdaten gefunden."]
+            "errors": errors or ["Keine gültigen Messdaten gefunden."],
         }
 
     # Store in database
@@ -226,16 +266,16 @@ def ingest_csv(building_id: str, file_content: str, source: str = 'csv') -> Dict
         "success": stored > 0,
         "readings_count": stored,
         "errors": errors,
-        "stats": stats
+        "stats": stats,
     }
 
     if stored > 0:
         logger.info(f"[METER] Ingested {stored} readings for building {building_id}")
-        db.track_event('meter_data_uploaded', building_id, {
-            'readings_count': stored,
-            'source': source,
-            'error_count': len(errors)
-        })
+        db.track_event(
+            "meter_data_uploaded",
+            building_id,
+            {"readings_count": stored, "source": source, "error_count": len(errors)},
+        )
 
     return result
 
@@ -251,7 +291,7 @@ def validate_readings_quality(readings: List[tuple]) -> Dict:
     # Check for gaps (expect 15-min intervals)
     gap_count = 0
     for i in range(1, len(timestamps)):
-        diff = (timestamps[i] - timestamps[i-1]).total_seconds()
+        diff = (timestamps[i] - timestamps[i - 1]).total_seconds()
         if diff > 1800:  # > 30 min gap
             gap_count += 1
 
@@ -269,5 +309,5 @@ def validate_readings_quality(readings: List[tuple]) -> Dict:
         "quality": quality,
         "total_readings": len(readings),
         "date_range": f"{timestamps[0]} bis {timestamps[-1]}",
-        "issues": issues
+        "issues": issues,
     }

@@ -6,17 +6,17 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 RUN npm install -g openclaw@latest
 
 # Install MCP OpenLEG server
-WORKDIR /opt/mcp-badenleg-server
-COPY mcp-badenleg-server/package.json ./
+WORKDIR /opt/mcp-openleg-server
+COPY mcp-openleg-server/package.json ./
 RUN npm install --production
-COPY mcp-badenleg-server/ ./
+COPY mcp-openleg-server/ ./
 
 # Set up config directory and entrypoint
-COPY config/ /home/node/.openclaw/
+COPY config/openclaw.example.json /home/node/.openclaw/openclaw.json
 COPY entrypoint.sh /opt/entrypoint.sh
 
 # Permissions
-RUN chown -R node:node /home/node /opt/mcp-badenleg-server /opt/entrypoint.sh \
+RUN chown -R node:node /home/node /opt/mcp-openleg-server /opt/entrypoint.sh \
     && chmod +x /opt/entrypoint.sh
 
 USER node

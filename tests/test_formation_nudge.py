@@ -1,6 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for formation nudge email template and registration."""
+
 import os
-import pytest
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -22,6 +23,7 @@ class TestFormationNudgeTemplate:
 class TestFormationNudgeRegistration:
     def test_formation_nudge_in_email_module(self):
         import email_automation
+
         assert "formation_nudge" in email_automation.TRIGGER_TEMPLATES
         config = email_automation.TRIGGER_TEMPLATES["formation_nudge"]
         assert "subject" in config

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# ruff: noqa: E402
 import os
 import time
 import uuid
@@ -5,11 +7,13 @@ import math
 import hashlib
 import threading
 import logging
-import json
+
+# PUBLIC-SNAPSHOT-PRIVATE-START: private-export-imports
 import csv
 import io
+
+# PUBLIC-SNAPSHOT-PRIVATE-END: private-export-imports
 from datetime import timedelta
-from pathlib import Path
 from flask import Flask, request, jsonify, render_template, abort, Response, g
 from jinja2 import TemplateNotFound
 import pandas as pd
@@ -21,6 +25,7 @@ load_dotenv()
 
 try:
     from scipy.spatial import ConvexHull
+
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
@@ -30,12 +35,13 @@ try:
     from flask_limiter import Limiter
     from flask_limiter.util import get_remote_address
     from flask_talisman import Talisman
+
     HAS_SECURITY_LIBS = True
 except ImportError:
     HAS_SECURITY_LIBS = False
 
 # --- Email imports ---
-from email_utils import send_email, EMAIL_ENABLED, FROM_EMAIL
+from email_utils import send_email
 
 # --- Core modules ---
 import data_enricher
@@ -44,6 +50,7 @@ import security_utils
 
 # --- PostgreSQL Database ---
 import database as db
+
 USE_POSTGRES = db.is_db_available()
 if not USE_POSTGRES:
     raise RuntimeError("PostgreSQL required. Set DATABASE_URL.")
@@ -61,35 +68,41 @@ from health import health_bp
 from utility_portal import utility_bp
 
 # --- Cron Secret ---
-CRON_SECRET = os.getenv('CRON_SECRET', '').strip()
+CRON_SECRET = os.getenv("CRON_SECRET", "").strip()
 
 # --- Logging ---
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
 # --- App ---
 app = Flask(__name__)
-app.config['JSON_SORT_KEYS'] = False
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', os.urandom(32).hex())
-app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=int(os.getenv('PERMANENT_SESSION_LIFETIME', 3600)))
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB for CSV uploads
+app.config["JSON_SORT_KEYS"] = False
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", os.urandom(32).hex())
+app.config["SESSION_COOKIE_SECURE"] = (
+    os.getenv("SESSION_COOKIE_SECURE", "False") == "True"
+)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
+    seconds=int(os.getenv("PERMANENT_SESSION_LIFETIME", 3600))
+)
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB for CSV uploads
 
 # --- Basis-URL ---
-APP_BASE_URL = os.getenv('APP_BASE_URL', 'http://localhost:5003')
-SITE_URL = APP_BASE_URL.rstrip('/')
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5003")
+SITE_URL = APP_BASE_URL.rstrip("/")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 # --- Email ---
-ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'hallo@openleg.ch')
-ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
-INTERNAL_TOKEN = os.getenv('INTERNAL_TOKEN', '').strip()
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "hallo@openleg.ch")
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
+# PUBLIC-SNAPSHOT-PRIVATE-START: internal-report-token
+INTERNAL_TOKEN = os.getenv("INTERNAL_TOKEN", "").strip()
+# PUBLIC-SNAPSHOT-PRIVATE-END: internal-report-token
 
 # --- Rate Limiting & Security ---
 if HAS_SECURITY_LIBS:
@@ -97,22 +110,38 @@ if HAS_SECURITY_LIBS:
         get_remote_address,
         app=app,
         default_limits=["500 per hour"],
-        storage_uri=os.getenv('REDIS_URL', 'redis://redis:6379/1'),
-        strategy="fixed-window"
+        storage_uri=os.getenv("REDIS_URL", "redis://redis:6379/1"),
+        strategy="fixed-window",
     )
-    force_https = APP_BASE_URL.startswith('https://') if APP_BASE_URL else False
+    force_https = APP_BASE_URL.startswith("https://") if APP_BASE_URL else False
     Talisman(
         app,
         force_https=force_https,
         content_security_policy={
-            'default-src': "'self'",
-            'script-src': ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://cdn.jsdelivr.net", "https://www.googletagmanager.com"],
-            'style-src': ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
-            'img-src': ["'self'", "data:", "https:", "http:"],
-            'font-src': ["'self'", "data:"],
-            'connect-src': ["'self'", "https://www.google-analytics.com", "https://www.googletagmanager.com"]
+            "default-src": "'self'",
+            "script-src": [
+                "'self'",
+                "'unsafe-inline'",
+                "https://cdn.tailwindcss.com",
+                "https://unpkg.com",
+                "https://cdn.jsdelivr.net",
+                "https://www.googletagmanager.com",
+            ],
+            "style-src": [
+                "'self'",
+                "'unsafe-inline'",
+                "https://unpkg.com",
+                "https://cdn.jsdelivr.net",
+            ],
+            "img-src": ["'self'", "data:", "https:", "http:"],
+            "font-src": ["'self'", "data:"],
+            "connect-src": [
+                "'self'",
+                "https://www.google-analytics.com",
+                "https://www.googletagmanager.com",
+            ],
         },
-        content_security_policy_nonce_in=None
+        content_security_policy_nonce_in=None,
     )
     logger.info("Security features enabled")
 else:
@@ -130,10 +159,12 @@ tenant_module.init_tenant_middleware(app, db=db)
 
 def render_city_template(template_name, **kwargs):
     """Render a per-city template with fallback to default."""
-    tenant = getattr(g, 'tenant', tenant_module.DEFAULT_TENANT)
-    kwargs.setdefault('tenant', tenant)
-    kwargs.setdefault('site_url', SITE_URL)
-    kwargs.setdefault('ga4_id', tenant.get('ga4_id') or os.getenv('GA4_MEASUREMENT_ID', ''))
+    tenant = getattr(g, "tenant", tenant_module.DEFAULT_TENANT)
+    kwargs.setdefault("tenant", tenant)
+    kwargs.setdefault("site_url", SITE_URL)
+    kwargs.setdefault(
+        "ga4_id", tenant.get("ga4_id") or os.getenv("GA4_MEASUREMENT_ID", "")
+    )
     city_path = f"cities/{tenant['territory']}/{template_name}"
     try:
         return render_template(city_path, **kwargs)
@@ -142,12 +173,12 @@ def render_city_template(template_name, **kwargs):
 
 
 # --- Security Helpers ---
-def log_security_event(event_type, details, level='INFO'):
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+def log_security_event(event_type, details, level="INFO"):
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
     log_message = f"[SECURITY] {event_type} | IP: {ip} | {details}"
-    if level == 'WARNING':
+    if level == "WARNING":
         logger.warning(log_message)
-    elif level == 'ERROR':
+    elif level == "ERROR":
         logger.error(log_message)
     else:
         logger.info(log_message)
@@ -155,12 +186,13 @@ def log_security_event(event_type, details, level='INFO'):
 
 @app.after_request
 def apply_basic_security_headers(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers["X-Content-Type-Options"] = "nosniff"
     return response
 
 
 # --- Consent Helpers ---
 CONSENT_VERSION = "2026-01-01"
+
 
 def _coerce_bool(value):
     if isinstance(value, bool):
@@ -170,22 +202,24 @@ def _coerce_bool(value):
     if isinstance(value, (int, float)):
         return value != 0
     if isinstance(value, str):
-        return value.strip().lower() in ('1', 'true', 'yes', 'ja', 'on')
+        return value.strip().lower() in ("1", "true", "yes", "ja", "on")
     return False
+
 
 def parse_consents(raw_consents):
     consents = raw_consents or {}
     return {
-        'share_with_neighbors': _coerce_bool(consents.get('share_with_neighbors')),
-        'share_with_utility': _coerce_bool(consents.get('share_with_utility')),
-        'updates_opt_in': _coerce_bool(consents.get('updates_opt_in')),
-        'consent_version': consents.get('consent_version') or CONSENT_VERSION,
-        'consent_timestamp': time.time()
+        "share_with_neighbors": _coerce_bool(consents.get("share_with_neighbors")),
+        "share_with_utility": _coerce_bool(consents.get("share_with_utility")),
+        "updates_opt_in": _coerce_bool(consents.get("updates_opt_in")),
+        "consent_version": consents.get("consent_version") or CONSENT_VERSION,
+        "consent_timestamp": time.time(),
     }
 
 
 # --- Anonymity ---
 ANONYMITY_RADIUS_METERS = 120
+
 
 def jitter_coordinates(lat, lon, radius_meters=ANONYMITY_RADIUS_METERS, seed=None):
     if lat is None or lon is None or radius_meters <= 0:
@@ -212,24 +246,26 @@ def jitter_coordinates(lat, lon, radius_meters=ANONYMITY_RADIUS_METERS, seed=Non
 
 def _tenant_name():
     try:
-        return getattr(g, 'tenant', {}).get('platform_name', 'OpenLEG')
+        return getattr(g, "tenant", {}).get("platform_name", "OpenLEG")
     except RuntimeError:
-        return 'OpenLEG'
+        return "OpenLEG"
 
 
 def send_activity_notification(activity_type, details):
     name = _tenant_name()
     subject = f"{name}: {activity_type}"
-    message_body = f"Neue Aktivität auf {name}:\n\nTyp: {activity_type}\n\nDetails:\n{details}"
+    message_body = (
+        f"Neue Aktivität auf {name}:\n\nTyp: {activity_type}\n\nDetails:\n{details}"
+    )
     send_email(ADMIN_EMAIL, subject, message_body)
 
 
 def send_confirmation_email(email, unsubscribe_url, building_id=None, address=None):
     name = _tenant_name()
     try:
-        city = getattr(g, 'tenant', {}).get('city_name', 'Zürich')
+        city = getattr(g, "tenant", {}).get("city_name", "Zürich")
     except RuntimeError:
-        city = 'Zürich'
+        city = "Zürich"
     subject = f"{name}: Registrierung bestätigt"
     message_body = (
         f"Willkommen bei {name}!\n\n"
@@ -246,18 +282,18 @@ def collect_building_locations(city_id=None, exclude_building_id=None):
     buildings = db.get_all_buildings(city_id=city_id)
     locations = []
     for b in buildings:
-        if exclude_building_id and b.get('building_id') == exclude_building_id:
+        if exclude_building_id and b.get("building_id") == exclude_building_id:
             continue
-        lat = b.get('lat')
-        lon = b.get('lon')
+        lat = b.get("lat")
+        lon = b.get("lon")
         if lat is None or lon is None:
             continue
-        jlat, jlon = jitter_coordinates(float(lat), float(lon), seed=b.get('building_id'))
-        locations.append({
-            'lat': jlat,
-            'lon': jlon,
-            'type': b.get('user_type', 'anonymous')
-        })
+        jlat, jlon = jitter_coordinates(
+            float(lat), float(lon), seed=b.get("building_id")
+        )
+        locations.append(
+            {"lat": jlat, "lon": jlon, "type": b.get("user_type", "anonymous")}
+        )
     return locations
 
 
@@ -275,15 +311,15 @@ def run_full_ml_task(new_building_id=None, city_id=None):
     )
 
     # Save clusters to DB
-    if 'building_id' in buildings_with_clusters.columns:
+    if "building_id" in buildings_with_clusters.columns:
         for _, row in buildings_with_clusters.iterrows():
-            bid = row.get('building_id')
-            cid = row.get('cluster', -1)
+            bid = row.get("building_id")
+            cid = row.get("cluster", -1)
             if bid and cid >= 0:
                 db.save_cluster(bid, cid)
 
     for community in ranked_communities:
-        db.save_cluster_info(community['community_id'], community)
+        db.save_cluster_info(community["community_id"], community)
 
     logger.info(f"[ML] Clustering done: {len(ranked_communities)} clusters")
 
@@ -294,11 +330,13 @@ def find_provisional_matches(new_profile):
     if not profiles:
         return None
 
-    new_coords = (new_profile['lat'], new_profile['lon'])
+    new_coords = (new_profile["lat"], new_profile["lon"])
     provisional = [new_profile]
 
     for p in profiles:
-        dist = ml_models.calculate_distance(new_coords[0], new_coords[1], float(p['lat']), float(p['lon']))
+        dist = ml_models.calculate_distance(
+            new_coords[0], new_coords[1], float(p["lat"]), float(p["lon"])
+        )
         if dist <= 150:
             provisional.append(p)
 
@@ -308,12 +346,19 @@ def find_provisional_matches(new_profile):
     community_df = pd.DataFrame(provisional)
     autarky_score, _, _ = ml_models.calculate_community_autarky(community_df, None)
 
-    members = [{'building_id': p.get('building_id', ''), 'lat': float(p['lat']), 'lon': float(p['lon'])} for p in provisional]
+    members = [
+        {
+            "building_id": p.get("building_id", ""),
+            "lat": float(p["lat"]),
+            "lon": float(p["lon"]),
+        }
+        for p in provisional
+    ]
     return {
-        'community_id': 'provisional',
-        'num_members': len(members),
-        'members': members,
-        'autarky_percent': autarky_score * 100,
+        "community_id": "provisional",
+        "num_members": len(members),
+        "members": members,
+        "autarky_percent": autarky_score * 100,
     }
 
 
@@ -322,12 +367,24 @@ def create_simple_polygon(coords):
         if len(coords) == 1:
             lat, lon = coords[0]
             o = 0.0005
-            return [[lat-o, lon-o], [lat+o, lon-o], [lat+o, lon+o], [lat-o, lon+o], [lat-o, lon-o]]
+            return [
+                [lat - o, lon - o],
+                [lat + o, lon - o],
+                [lat + o, lon + o],
+                [lat - o, lon + o],
+                [lat - o, lon - o],
+            ]
         elif len(coords) == 2:
             lat1, lon1 = coords[0]
             lat2, lon2 = coords[1]
             o = 0.0003
-            return [[lat1-o, lon1-o], [lat2+o, lon1-o], [lat2+o, lon2+o], [lat1-o, lon2+o], [lat1-o, lon1-o]]
+            return [
+                [lat1 - o, lon1 - o],
+                [lat2 + o, lon1 - o],
+                [lat2 + o, lon2 + o],
+                [lat1 - o, lon2 + o],
+                [lat1 - o, lon1 - o],
+            ]
     if HAS_SCIPY:
         try:
             points = np.array(coords)
@@ -335,55 +392,80 @@ def create_simple_polygon(coords):
             polygon = [coords[i] for i in hull.vertices]
             polygon.append(polygon[0])
             return polygon
-        except:
+        except Exception:
             pass
     lats = [c[0] for c in coords]
     lons = [c[1] for c in coords]
     o = 0.0003
-    return [[min(lats)-o, min(lons)-o], [max(lats)+o, min(lons)-o],
-            [max(lats)+o, max(lons)+o], [min(lats)-o, max(lons)+o], [min(lats)-o, min(lons)-o]]
+    return [
+        [min(lats) - o, min(lons) - o],
+        [max(lats) + o, min(lons) - o],
+        [max(lats) + o, max(lons) + o],
+        [min(lats) - o, max(lons) + o],
+        [min(lats) - o, min(lons) - o],
+    ]
 
 
 # ===========================
 # Routes
 # ===========================
 
+
 @app.route("/")
 def index():
-    city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') else 'zurich'
+    city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
     stats = db.get_stats(city_id=city_id)
-    user_count = stats.get('total_buildings', 0)
-    referral_code = request.args.get('ref', '')
+    user_count = stats.get("total_buildings", 0)
+    referral_code = request.args.get("ref", "")
     referrer_info = None
     if referral_code:
         referrer_info = db.get_building_by_referral_code(referral_code)
-    return render_city_template('index.html',
+    return render_city_template(
+        "index.html",
         user_count=user_count,
         referral_code=referral_code,
-        referrer_street=referrer_info.get('address', '').split(',')[0] if referrer_info else '',
+        referrer_street=referrer_info.get("address", "").split(",")[0]
+        if referrer_info
+        else "",
     )
 
 
 @app.route("/how-it-works")
 def how_it_works():
-    return render_city_template('how-it-works.html')
+    return render_city_template("how-it-works.html")
+
 
 @app.route("/fuer-gemeinden")
 def fuer_gemeinden():
-    return render_city_template('fuer_gemeinden.html')
+    return render_city_template("fuer_gemeinden.html")
+
+
+@app.route("/leg-gruenden")
+def leg_gruenden():
+    return render_city_template("leg_gruenden.html")
+
+
+@app.route("/leg-kalkulator")
+def leg_kalkulator():
+    return render_city_template("leg_kalkulator.html")
 
 
 @app.route("/pricing")
 def pricing():
-    return render_city_template('pricing.html')
+    return render_city_template("pricing.html")
 
 
 @app.route("/robots.txt")
 def robots_txt():
     lines = [
-        "User-agent: *", "Allow: /",
-        "Disallow: /api/", "Disallow: /admin/", "Disallow: /confirm/", "Disallow: /unsubscribe/",
-        f"Sitemap: {SITE_URL}/sitemap.xml"
+        "User-agent: *",
+        "Allow: /",
+        "Allow: /api/v1/docs",
+        "Disallow: /api/",
+        "Disallow: /admin/",
+        "Disallow: /confirm/",
+        "Disallow: /unsubscribe/",
+        f"Sitemap: {SITE_URL}/sitemap.xml",
     ]
     return Response("\n".join(lines) + "\n", mimetype="text/plain")
 
@@ -391,16 +473,23 @@ def robots_txt():
 @app.route("/sitemap.xml")
 def sitemap_xml():
     from datetime import datetime
+
     current_date = datetime.now().strftime("%Y-%m-%d")
     pages = [
         ("/", "1.0", "daily", current_date),
         ("/how-it-works", "0.8", "weekly", current_date),
         ("/fuer-gemeinden", "0.8", "weekly", current_date),
+        ("/leg-gruenden", "0.9", "weekly", current_date),
+        ("/leg-kalkulator", "0.9", "weekly", current_date),
         ("/pricing", "0.7", "monthly", current_date),
+        ("/gemeinde/verzeichnis", "0.9", "weekly", current_date),
+        ("/api/v1/docs", "0.8", "weekly", current_date),
         ("/gemeinde/onboarding", "0.9", "weekly", current_date),
         ("/impressum", "0.3", "yearly", "2026-01-01"),
         ("/datenschutz", "0.3", "yearly", "2026-01-01"),
     ]
+    for bfs in db.get_all_municipality_profile_bfs_numbers():
+        pages.append((f"/gemeinde/profil/{bfs}", "0.8", "weekly", current_date))
     xml = render_template("sitemap.xml", site_url=SITE_URL, pages=pages)
     return Response(xml, mimetype="application/xml")
 
@@ -412,9 +501,9 @@ def sitemap_xml():
 def _require_admin():
     if not ADMIN_TOKEN:
         abort(404)
-    token = request.headers.get('X-Admin-Token') or request.args.get('token') or ''
+    token = request.headers.get("X-Admin-Token") or request.args.get("token") or ""
     if token != ADMIN_TOKEN:
-        log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", 'WARNING')
+        log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", "WARNING")
         abort(403)
 
 
@@ -425,16 +514,19 @@ def admin_overview():
     email_stats = db.get_email_stats()
     consented = db.count_consented_buildings()
     municipalities = db.get_all_municipalities()
-    return jsonify({
-        "platform": "OpenLEG",
-        "stats": stats,
-        "email_stats": email_stats,
-        "consented_buildings": consented,
-        "municipalities": len(municipalities),
-        "db_available": USE_POSTGRES
-    })
+    return jsonify(
+        {
+            "platform": "OpenLEG",
+            "stats": stats,
+            "email_stats": email_stats,
+            "consented_buildings": consented,
+            "municipalities": len(municipalities),
+            "db_available": USE_POSTGRES,
+        }
+    )
 
 
+# PUBLIC-SNAPSHOT-PRIVATE-START: private-operator-routes
 @app.route("/admin/pipeline")
 def admin_pipeline():
     _require_admin()
@@ -442,8 +534,8 @@ def admin_pipeline():
     entries = db.get_vnb_pipeline(status_filter=status_filter)
     stats = db.get_vnb_pipeline_stats()
 
-    if 'text/html' in (request.headers.get('Accept') or ''):
-        return render_template('admin/pipeline.html', entries=entries, stats=stats)
+    if "text/html" in (request.headers.get("Accept") or ""):
+        return render_template("admin/pipeline.html", entries=entries, stats=stats)
     return jsonify({"entries": entries, "stats": stats})
 
 
@@ -462,21 +554,23 @@ def admin_export():
             for row in buildings:
                 writer.writerow(row)
         response = Response(output.getvalue(), mimetype="text/csv")
-        response.headers["Content-Disposition"] = "attachment; filename=openleg_export.csv"
+        response.headers["Content-Disposition"] = (
+            "attachment; filename=openleg_export.csv"
+        )
         return response
     return jsonify({"records": buildings, "count": len(buildings)})
 
 
 # --- LEA Reports ---
-@app.route("/api/internal/lea-report", methods=['POST'])
+@app.route("/api/internal/lea-report", methods=["POST"])
 def api_internal_lea_report():
-    token = request.headers.get('X-Internal-Token') or ''
+    token = request.headers.get("X-Internal-Token") or ""
     if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
         abort(403)
     data = request.get_json(silent=True) or {}
-    job_name = data.get('job_name', 'unknown')
-    summary = data.get('summary', '')
-    status = data.get('status', 'ok')
+    job_name = data.get("job_name", "unknown")
+    summary = data.get("summary", "")
+    status = data.get("status", "ok")
     db.save_lea_report(job_name, summary, status)
     return jsonify({"ok": True})
 
@@ -492,45 +586,62 @@ def admin_lea_reports():
 def admin_strategy():
     _require_admin()
     from insights_engine import compute_municipality_demand_signal
+
     data = compute_municipality_demand_signal()
     signals = data.get("signals", [])
     # Sort: high → medium → low → none so actionable municipalities appear first
     level_order = {"high": 0, "medium": 1, "low": 2, "none": 3}
     signals_sorted = sorted(
         signals,
-        key=lambda s: (level_order.get(s.get("demand_level", "none"), 3),
-                       -s.get("verified_demand", {}).get("demand_score", 0))
+        key=lambda s: (
+            level_order.get(s.get("demand_level", "none"), 3),
+            -s.get("verified_demand", {}).get("demand_score", 0),
+        ),
     )
-    if 'text/html' in (request.headers.get('Accept') or ''):
-        return render_template('admin/strategy.html',
-                               signals=signals_sorted,
-                               computed_at=data.get("computed_at"))
+    if "text/html" in (request.headers.get("Accept") or ""):
+        return render_template(
+            "admin/strategy.html",
+            signals=signals_sorted,
+            computed_at=data.get("computed_at"),
+        )
     return jsonify({"signals": signals_sorted, "computed_at": data.get("computed_at")})
+
+
+# PUBLIC-SNAPSHOT-PRIVATE-END: private-operator-routes
 
 
 # --- Address API ---
 @app.route("/api/suggest_addresses")
 @limiter.limit("30 per minute") if limiter else lambda f: f
 def api_suggest_addresses():
-    query = request.args.get('q', '').strip()
+    query = request.args.get("q", "").strip()
     query = security_utils.sanitize_string(query, max_length=100)
     if not query or len(query) < 2:
         return jsonify({"suggestions": []})
     limit = 15 if len(query) < 5 else 10
-    plz_ranges = g.tenant.get('plz_ranges') if hasattr(g, 'tenant') else None
-    suggestions_raw = data_enricher.get_address_suggestions(query, limit=limit, plz_ranges=plz_ranges)
+    plz_ranges = g.tenant.get("plz_ranges") if hasattr(g, "tenant") else None
+    suggestions_raw = data_enricher.get_address_suggestions(
+        query, limit=limit, plz_ranges=plz_ranges
+    )
     suggestions = []
     for s in suggestions_raw:
-        if isinstance(s, dict) and s.get('label') and s.get('label').strip():
-            label = security_utils.sanitize_string(s.get('label', ''), max_length=200)
+        if isinstance(s, dict) and s.get("label") and s.get("label").strip():
+            label = security_utils.sanitize_string(s.get("label", ""), max_length=200)
             if label:
-                suggestions.append({'label': label, 'lat': s.get('lat'), 'lon': s.get('lon'), 'plz': s.get('plz')})
+                suggestions.append(
+                    {
+                        "label": label,
+                        "lat": s.get("lat"),
+                        "lon": s.get("lon"),
+                        "plz": s.get("plz"),
+                    }
+                )
     return jsonify({"suggestions": suggestions})
 
 
 @app.route("/api/get_all_buildings")
 def api_get_all_buildings():
-    city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     locations = collect_building_locations(city_id=city_id)
     return jsonify({"buildings": locations})
 
@@ -540,29 +651,33 @@ def api_get_all_clusters():
     clusters_raw = db.get_all_clusters()
     clusters = []
     for ci in clusters_raw:
-        members = ci.get('members', [])
+        members = ci.get("members", [])
         if not members or len(members) < 2:
             continue
         coords = []
         member_list = []
         for mid in members:
             b = db.get_building(mid)
-            if b and b.get('lat') and b.get('lon'):
-                coords.append([float(b['lat']), float(b['lon'])])
-                member_list.append({'building_id': mid, 'lat': float(b['lat']), 'lon': float(b['lon'])})
+            if b and b.get("lat") and b.get("lon"):
+                coords.append([float(b["lat"]), float(b["lon"])])
+                member_list.append(
+                    {"building_id": mid, "lat": float(b["lat"]), "lon": float(b["lon"])}
+                )
         if len(coords) >= 2:
-            clusters.append({
-                'cluster_id': ci.get('cluster_id'),
-                'members': member_list,
-                'polygon': create_simple_polygon(coords),
-                'autarky_percent': float(ci.get('autarky_percent', 0)),
-                'num_members': len(member_list)
-            })
+            clusters.append(
+                {
+                    "cluster_id": ci.get("cluster_id"),
+                    "members": member_list,
+                    "polygon": create_simple_polygon(coords),
+                    "autarky_percent": float(ci.get("autarky_percent", 0)),
+                    "num_members": len(member_list),
+                }
+            )
     return jsonify({"clusters": clusters})
 
 
 # --- Check Potential ---
-@app.route("/api/check_potential", methods=['POST'])
+@app.route("/api/check_potential", methods=["POST"])
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def api_check_potential():
     try:
@@ -571,8 +686,10 @@ def api_check_potential():
             return jsonify({"error": size_error}), 413
         if not request.json:
             return jsonify({"error": "Keine Daten empfangen."}), 400
-        address = request.json.get('address', '').strip()
-        is_valid, sanitized_address, error_msg = security_utils.validate_address(address)
+        address = request.json.get("address", "").strip()
+        is_valid, sanitized_address, error_msg = security_utils.validate_address(
+            address
+        )
         if not is_valid:
             return jsonify({"error": error_msg}), 400
         address = sanitized_address
@@ -581,9 +698,13 @@ def api_check_potential():
         try:
             estimates, profiles = data_enricher.get_energy_profile_for_address(address)
             if not estimates:
-                estimates, profiles = data_enricher.get_mock_energy_profile_for_address(address)
+                estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
+                    address
+                )
         except Exception:
-            estimates, profiles = data_enricher.get_mock_energy_profile_for_address(address)
+            estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
+                address
+            )
 
         if not estimates:
             return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
@@ -592,12 +713,25 @@ def api_check_potential():
 
     cluster_info = find_provisional_matches(estimates)
     if not cluster_info:
-        return jsonify({"potential": False, "message": "Keine direkten Partner gefunden.", "profile_summary": estimates})
-    return jsonify({"potential": True, "message": "Partner gefunden!", "cluster_info": cluster_info, "profile_summary": estimates})
+        return jsonify(
+            {
+                "potential": False,
+                "message": "Keine direkten Partner gefunden.",
+                "profile_summary": estimates,
+            }
+        )
+    return jsonify(
+        {
+            "potential": True,
+            "message": "Partner gefunden!",
+            "cluster_info": cluster_info,
+            "profile_summary": estimates,
+        }
+    )
 
 
 # --- Registration ---
-@app.route("/api/register_anonymous", methods=['POST'])
+@app.route("/api/register_anonymous", methods=["POST"])
 @limiter.limit("5 per minute") if limiter else lambda f: f
 def api_register_anonymous():
     if not request.json:
@@ -606,69 +740,94 @@ def api_register_anonymous():
     if not is_valid_size:
         return jsonify({"error": size_error}), 413
 
-    phone = (request.json.get('phone') or '').strip()
-    email = (request.json.get('email') or '').strip()
-    profile = request.json.get('profile')
-    referral_code = (request.json.get('referral_code') or '').strip()
+    phone = (request.json.get("phone") or "").strip()
+    email = (request.json.get("email") or "").strip()
+    profile = request.json.get("profile")
+    referral_code = (request.json.get("referral_code") or "").strip()
 
     referrer_id = None
     if referral_code:
         referrer = db.get_building_by_referral_code(referral_code)
         if referrer:
-            referrer_id = referrer.get('building_id')
+            referrer_id = referrer.get("building_id")
 
-    is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email)
+    is_valid_email, normalized_email, email_error = (
+        security_utils.validate_email_address(email)
+    )
     if not is_valid_email:
         return jsonify({"error": email_error}), 400
     email = normalized_email
 
     if phone:
-        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(phone)
+        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(
+            phone
+        )
         if not is_valid_phone:
             return jsonify({"error": phone_error}), 400
         phone = normalized_phone
 
     if not profile:
         return jsonify({"error": "Profildaten fehlen."}), 400
-    building_id = profile.get('building_id')
+    building_id = profile.get("building_id")
     is_valid_id, id_error = security_utils.validate_building_id(building_id)
     if not is_valid_id:
         return jsonify({"error": id_error}), 400
 
-    lat = profile.get('lat')
-    lon = profile.get('lon')
+    lat = profile.get("lat")
+    lon = profile.get("lon")
     is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
     if not is_valid_coords:
         return jsonify({"error": coords_error}), 400
 
-    consents = parse_consents(request.json.get('consents'))
-    if not consents.get('share_with_neighbors') or not consents.get('share_with_utility'):
+    consents = parse_consents(request.json.get("consents"))
+    if not consents.get("share_with_neighbors") or not consents.get(
+        "share_with_utility"
+    ):
         return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe zu."}), 400
 
-    city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') else 'zurich'
+    city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
 
     # Save to PostgreSQL
     db.save_building(
-        building_id=building_id, email=email, profile=profile,
-        consents=consents, user_type='anonymous', phone=phone,
-        referrer_id=referrer_id, city_id=city_id
+        building_id=building_id,
+        email=email,
+        profile=profile,
+        consents=consents,
+        user_type="anonymous",
+        phone=phone,
+        referrer_id=referrer_id,
+        city_id=city_id,
     )
 
     # Create unsubscribe token
     unsub_token = str(uuid.uuid4())
-    db.save_token(unsub_token, building_id, 'unsubscribe')
+    db.save_token(unsub_token, building_id, "unsubscribe")
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
 
     # Background tasks
-    threading.Thread(target=send_confirmation_email, args=(email, unsubscribe_url, building_id, profile.get('address', '')), daemon=True).start()
-    threading.Thread(target=run_full_ml_task, args=(building_id, city_id), daemon=True).start()
-    threading.Thread(target=email_automation.schedule_sequence_for_user, args=(building_id, email), daemon=True).start()
+    threading.Thread(
+        target=send_confirmation_email,
+        args=(email, unsubscribe_url, building_id, profile.get("address", "")),
+        daemon=True,
+    ).start()
+    threading.Thread(
+        target=run_full_ml_task, args=(building_id, city_id), daemon=True
+    ).start()
+    threading.Thread(
+        target=email_automation.schedule_sequence_for_user,
+        args=(building_id, email),
+        daemon=True,
+    ).start()
 
-    db.track_event('registration', building_id, {'type': 'anonymous', 'city_id': city_id})
+    db.track_event(
+        "registration", building_id, {"type": "anonymous", "city_id": city_id}
+    )
 
     # Build response
     cluster_info = find_provisional_matches(profile)
-    locations = collect_building_locations(city_id=city_id, exclude_building_id=building_id)
+    locations = collect_building_locations(
+        city_id=city_id, exclude_building_id=building_id
+    )
     referral_link = None
     ref_code = db.get_referral_code(building_id)
     if ref_code:
@@ -678,14 +837,14 @@ def api_register_anonymous():
         "buildings": locations,
         "match_found": bool(cluster_info),
         "verification_email_sent": True,
-        "referral_link": referral_link
+        "referral_link": referral_link,
     }
     if cluster_info:
         payload["cluster_info"] = cluster_info
     return jsonify(payload)
 
 
-@app.route("/api/register_full", methods=['POST'])
+@app.route("/api/register_full", methods=["POST"])
 @limiter.limit("5 per minute") if limiter else lambda f: f
 def api_register_full():
     if not request.json:
@@ -694,65 +853,90 @@ def api_register_full():
     if not is_valid_size:
         return jsonify({"error": size_error}), 413
 
-    profile = request.json.get('profile')
-    email = (request.json.get('email') or '').strip()
-    phone = (request.json.get('phone') or '').strip()
-    referral_code = (request.json.get('referral_code') or '').strip()
+    profile = request.json.get("profile")
+    email = (request.json.get("email") or "").strip()
+    phone = (request.json.get("phone") or "").strip()
+    referral_code = (request.json.get("referral_code") or "").strip()
 
     referrer_id = None
     if referral_code:
         referrer = db.get_building_by_referral_code(referral_code)
         if referrer:
-            referrer_id = referrer.get('building_id')
+            referrer_id = referrer.get("building_id")
 
-    is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email)
+    is_valid_email, normalized_email, email_error = (
+        security_utils.validate_email_address(email)
+    )
     if not is_valid_email:
         return jsonify({"error": email_error}), 400
     email = normalized_email
 
     if phone:
-        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(phone)
+        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(
+            phone
+        )
         if not is_valid_phone:
             return jsonify({"error": phone_error}), 400
         phone = normalized_phone
 
     if not profile:
         return jsonify({"error": "Profildaten fehlen."}), 400
-    building_id = profile.get('building_id')
+    building_id = profile.get("building_id")
     is_valid_id, id_error = security_utils.validate_building_id(building_id)
     if not is_valid_id:
         return jsonify({"error": id_error}), 400
 
-    lat = profile.get('lat')
-    lon = profile.get('lon')
+    lat = profile.get("lat")
+    lon = profile.get("lon")
     is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
     if not is_valid_coords:
         return jsonify({"error": coords_error}), 400
 
-    consents = parse_consents(request.json.get('consents'))
-    if not consents.get('share_with_neighbors') or not consents.get('share_with_utility'):
+    consents = parse_consents(request.json.get("consents"))
+    if not consents.get("share_with_neighbors") or not consents.get(
+        "share_with_utility"
+    ):
         return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe zu."}), 400
 
-    city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') else 'zurich'
+    city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
 
     db.save_building(
-        building_id=building_id, email=email, profile=profile,
-        consents=consents, user_type='registered', phone=phone,
-        referrer_id=referrer_id, city_id=city_id
+        building_id=building_id,
+        email=email,
+        profile=profile,
+        consents=consents,
+        user_type="registered",
+        phone=phone,
+        referrer_id=referrer_id,
+        city_id=city_id,
     )
 
     unsub_token = str(uuid.uuid4())
-    db.save_token(unsub_token, building_id, 'unsubscribe')
+    db.save_token(unsub_token, building_id, "unsubscribe")
     unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
 
-    threading.Thread(target=send_confirmation_email, args=(email, unsubscribe_url, building_id, profile.get('address', '')), daemon=True).start()
-    threading.Thread(target=run_full_ml_task, args=(building_id, city_id), daemon=True).start()
-    threading.Thread(target=email_automation.schedule_sequence_for_user, args=(building_id, email), daemon=True).start()
+    threading.Thread(
+        target=send_confirmation_email,
+        args=(email, unsubscribe_url, building_id, profile.get("address", "")),
+        daemon=True,
+    ).start()
+    threading.Thread(
+        target=run_full_ml_task, args=(building_id, city_id), daemon=True
+    ).start()
+    threading.Thread(
+        target=email_automation.schedule_sequence_for_user,
+        args=(building_id, email),
+        daemon=True,
+    ).start()
 
-    db.track_event('registration', building_id, {'type': 'registered', 'city_id': city_id})
+    db.track_event(
+        "registration", building_id, {"type": "registered", "city_id": city_id}
+    )
 
     cluster_info = find_provisional_matches(profile)
-    locations = collect_building_locations(city_id=city_id, exclude_building_id=building_id)
+    locations = collect_building_locations(
+        city_id=city_id, exclude_building_id=building_id
+    )
     referral_link = None
     ref_code = db.get_referral_code(building_id)
     if ref_code:
@@ -762,7 +946,7 @@ def api_register_full():
         "buildings": locations,
         "match_found": bool(cluster_info),
         "verification_email_sent": True,
-        "referral_link": referral_link
+        "referral_link": referral_link,
     }
     if cluster_info:
         payload["cluster_info"] = cluster_info
@@ -770,14 +954,15 @@ def api_register_full():
 
 
 # --- Meter Data Upload ---
-@app.route("/api/meter-data/upload", methods=['POST'])
+@app.route("/api/meter-data/upload", methods=["POST"])
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def api_meter_data_upload():
     import meter_data
+
     data = request.json or {}
-    building_id = data.get('building_id', '').strip()
-    csv_content = data.get('csv_content', '')
-    tier = int(data.get('tier', 1))
+    building_id = data.get("building_id", "").strip()
+    csv_content = data.get("csv_content", "")
+    tier = int(data.get("tier", 1))
 
     if not building_id or not csv_content:
         return jsonify({"error": "building_id und csv_content erforderlich."}), 400
@@ -788,24 +973,28 @@ def api_meter_data_upload():
         return jsonify({"error": "Gebäude nicht gefunden."}), 404
 
     # Save consent tier
-    db.save_data_consent(building_id, tier=tier,
+    db.save_data_consent(
+        building_id,
+        tier=tier,
         share_municipality=True,
         share_research=(tier >= 2),
-        share_providers=(tier >= 3))
+        share_providers=(tier >= 3),
+    )
 
-    result = meter_data.ingest_csv(building_id, csv_content, source='csv_upload')
+    result = meter_data.ingest_csv(building_id, csv_content, source="csv_upload")
     return jsonify(result)
 
 
 @app.route("/meter-upload")
 def meter_upload_page():
-    return render_city_template('meter_upload.html')
+    return render_city_template("meter_upload.html")
 
 
 # --- Unsubscribe ---
 @app.route("/impressum")
 def impressum():
     return render_city_template("impressum.html")
+
 
 @app.route("/datenschutz")
 def datenschutz():
@@ -821,7 +1010,9 @@ def unsubscribe_page():
 
     if request.method == "POST":
         email_value = (request.form.get("email") or "").strip()
-        is_valid_email, normalized_email, email_error = security_utils.validate_email_address(email_value)
+        is_valid_email, normalized_email, email_error = (
+            security_utils.validate_email_address(email_value)
+        )
         if not is_valid_email:
             status = "error"
             message = email_error
@@ -833,11 +1024,13 @@ def unsubscribe_page():
                 message = "Für diese E-Mail-Adresse wurde kein Eintrag gefunden."
             else:
                 for m in matches:
-                    db.delete_building(m['building_id'])
+                    db.delete_building(m["building_id"])
                 status = "success"
                 message = "Ihre Daten wurden erfolgreich gelöscht."
 
-    return render_city_template("unsubscribe.html", status=status, message=message, email=email_value)
+    return render_city_template(
+        "unsubscribe.html", status=status, message=message, email=email_value
+    )
 
 
 @app.route("/unsubscribe/<token>")
@@ -851,7 +1044,7 @@ def unsubscribe_token(token):
     if not token_info:
         return "<h1>Link ungültig oder bereits verwendet</h1>", 404
 
-    building_id = token_info['building_id']
+    building_id = token_info["building_id"]
     db.use_token(token)
     db.delete_building(building_id)
     db.cancel_emails_for_building(building_id)
@@ -861,51 +1054,63 @@ def unsubscribe_token(token):
 # --- Dashboard ---
 @app.route("/dashboard")
 def dashboard():
-    building_id = request.args.get('bid', '').strip()
+    building_id = request.args.get("bid", "").strip()
     if not building_id:
-        return render_city_template('dashboard.html', error="Kein Profil angegeben.", user=None)
+        return render_city_template(
+            "dashboard.html", error="Kein Profil angegeben.", user=None
+        )
 
     user = db.get_building_for_dashboard(building_id)
     if not user:
-        return render_city_template('dashboard.html', error="Profil nicht gefunden.", user=None)
+        return render_city_template(
+            "dashboard.html", error="Profil nicht gefunden.", user=None
+        )
 
     score = 0
     checks = []
-    if user.get('verified'):
+    if user.get("verified"):
         score += 25
-        checks.append(('E-Mail bestätigt', True))
+        checks.append(("E-Mail bestätigt", True))
     else:
-        checks.append(('E-Mail bestätigt', False))
-    if user.get('annual_consumption_kwh'):
+        checks.append(("E-Mail bestätigt", False))
+    if user.get("annual_consumption_kwh"):
         score += 25
-        checks.append(('Verbrauchsdaten hinterlegt', True))
+        checks.append(("Verbrauchsdaten hinterlegt", True))
     else:
-        checks.append(('Verbrauchsdaten hinterlegt', False))
-    if user.get('share_with_utility'):
+        checks.append(("Verbrauchsdaten hinterlegt", False))
+    if user.get("share_with_utility"):
         score += 25
-        checks.append(('EVU-Einwilligung erteilt', True))
+        checks.append(("EVU-Einwilligung erteilt", True))
     else:
-        checks.append(('EVU-Einwilligung erteilt', False))
-    if user.get('share_with_neighbors'):
+        checks.append(("EVU-Einwilligung erteilt", False))
+    if user.get("share_with_neighbors"):
         score += 25
-        checks.append(('Nachbar-Einwilligung erteilt', True))
+        checks.append(("Nachbar-Einwilligung erteilt", True))
     else:
-        checks.append(('Nachbar-Einwilligung erteilt', False))
+        checks.append(("Nachbar-Einwilligung erteilt", False))
 
     neighbor_count = 0
-    referral_link = ''
-    lat = user.get('lat')
-    lon = user.get('lon')
-    city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    referral_link = ""
+    lat = user.get("lat")
+    lon = user.get("lon")
+    city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     if lat and lon:
-        neighbor_count = db.get_neighbor_count_near(float(lat), float(lon), city_id=city_id)
+        neighbor_count = db.get_neighbor_count_near(
+            float(lat), float(lon), city_id=city_id
+        )
     ref_code = db.get_referral_code(building_id)
     if ref_code:
         referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
 
-    return render_city_template('dashboard.html',
-        user=user, readiness_score=score, checks=checks,
-        neighbor_count=neighbor_count, referral_link=referral_link, error=None)
+    return render_city_template(
+        "dashboard.html",
+        user=user,
+        readiness_score=score,
+        checks=checks,
+        neighbor_count=neighbor_count,
+        referral_link=referral_link,
+        error=None,
+    )
 
 
 # --- Referral System ---
@@ -913,79 +1118,92 @@ def dashboard():
 def api_referral_stats(building_id):
     stats = db.get_referral_stats(building_id)
     referral_code = db.get_referral_code(building_id)
-    return jsonify({
-        "referral_code": referral_code,
-        "referral_link": f"{APP_BASE_URL}/?ref={referral_code}" if referral_code else None,
-        "total_referrals": stats.get('total_referrals', 0)
-    })
+    return jsonify(
+        {
+            "referral_code": referral_code,
+            "referral_link": f"{APP_BASE_URL}/?ref={referral_code}"
+            if referral_code
+            else None,
+            "total_referrals": stats.get("total_referrals", 0),
+        }
+    )
 
 
 @app.route("/api/referral/leaderboard")
 def api_referral_leaderboard():
-    city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     leaderboard = db.get_referral_leaderboard(limit=10, city_id=city_id)
     for entry in leaderboard:
-        street = entry.get('street', '')
-        entry['display_name'] = street[:15] + '...' if len(street) > 15 else street
+        street = entry.get("street", "")
+        entry["display_name"] = street[:15] + "..." if len(street) > 15 else street
     return jsonify({"leaderboard": leaderboard})
 
 
 @app.route("/api/stats/public")
 def api_public_stats():
-    city_id = g.tenant.get('territory') if hasattr(g, 'tenant') else None
+    city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     stats = db.get_stats(city_id=city_id)
-    return jsonify({
-        "total_users": stats.get('total_buildings', 0),
-        "registrations_today": stats.get('registrations_today', 0)
-    })
+    return jsonify(
+        {
+            "total_users": stats.get("total_buildings", 0),
+            "registrations_today": stats.get("registrations_today", 0),
+        }
+    )
 
 
 @app.route("/api/stats/live")
 def api_live_stats():
-    city_id = g.tenant.get('territory', 'zurich') if hasattr(g, 'tenant') else None
+    city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else None
     stats = db.get_stats(city_id=city_id)
-    return jsonify({
-        "total_registered": stats.get('total_buildings', 0),
-        "last_24h": stats.get('registrations_today', 0),
-        "clusters_ready": 0,
-        "avg_savings_chf": 520
-    })
+    return jsonify(
+        {
+            "total_registered": stats.get("total_buildings", 0),
+            "last_24h": stats.get("registrations_today", 0),
+            "clusters_ready": 0,
+            "avg_savings_chf": 520,
+        }
+    )
 
 
 # --- Savings Calculator ---
-@app.route("/api/calculate_savings", methods=['POST'])
+@app.route("/api/calculate_savings", methods=["POST"])
 def api_calculate_savings():
     data = request.json or {}
-    consumption = float(data.get('consumption_kwh', 4500))
-    has_solar = bool(data.get('has_solar', False))
-    pv_kwp = float(data.get('pv_kwp', 0))
+    consumption = float(data.get("consumption_kwh", 4500))
+    has_solar = bool(data.get("has_solar", False))
+    pv_kwp = float(data.get("pv_kwp", 0))
 
     base_rate_saving = 0.04
     annual_base = consumption * base_rate_saving
     solar_savings = 0
     if has_solar and pv_kwp > 0:
-        solar_yield = g.tenant.get('solar_kwh_per_kwp', 1000) if hasattr(g, 'tenant') else 1000
+        solar_yield = (
+            g.tenant.get("solar_kwh_per_kwp", 1000) if hasattr(g, "tenant") else 1000
+        )
         annual_production = pv_kwp * solar_yield
         export_to_leg = annual_production * 0.65
         solar_savings = export_to_leg * 0.08
 
     total_annual = min(annual_base + solar_savings, 1200)
-    return jsonify({
-        "annual_savings_chf": round(total_annual, 2),
-        "monthly_savings_chf": round(total_annual / 12, 2),
-        "five_year_total_chf": round(total_annual * 5, 2),
-        "has_solar_bonus": has_solar and pv_kwp > 0,
-        "consumption_kwh": consumption,
-    })
+    return jsonify(
+        {
+            "annual_savings_chf": round(total_annual, 2),
+            "monthly_savings_chf": round(total_annual / 12, 2),
+            "five_year_total_chf": round(total_annual * 5, 2),
+            "has_solar_bonus": has_solar and pv_kwp > 0,
+            "consumption_kwh": consumption,
+        }
+    )
 
 
 # --- Formation API ---
-@app.route("/api/formation/optimize", methods=['POST'])
+@app.route("/api/formation/optimize", methods=["POST"])
 def api_formation_optimize():
     """LEG optimization endpoint."""
     import formation_wizard
+
     data = request.json or {}
-    building_id = data.get('building_id', '').strip()
+    building_id = data.get("building_id", "").strip()
     if not building_id:
         return jsonify({"error": "building_id required"}), 400
 
@@ -993,39 +1211,75 @@ def api_formation_optimize():
     return jsonify({"clusters": clusters})
 
 
-@app.route("/api/formation/financial-model", methods=['POST'])
+@app.route("/api/formation/financial-model", methods=["POST"])
 def api_formation_financial_model():
     """Savings projection for a LEG."""
     import formation_wizard
-    data = request.json or {}
-    consumption = float(data.get('consumption_kwh', 4500))
-    pv_kwp = float(data.get('pv_kwp', 0))
-    community_size = int(data.get('community_size', 5))
-    solar_kwh = g.tenant.get('solar_kwh_per_kwp', 1000) if hasattr(g, 'tenant') else 1000
 
-    result = formation_wizard.calculate_savings_estimate(consumption, pv_kwp, community_size, solar_kwh)
+    data = request.json or {}
+    consumption = float(data.get("consumption_kwh", 4500))
+    pv_kwp = float(data.get("pv_kwp", 0))
+    community_size = int(data.get("community_size", 5))
+    solar_kwh = (
+        g.tenant.get("solar_kwh_per_kwp", 1000) if hasattr(g, "tenant") else 1000
+    )
+
+    result = formation_wizard.calculate_savings_estimate(
+        consumption, pv_kwp, community_size, solar_kwh
+    )
     return jsonify(result)
 
 
 # --- Cron ---
-@app.route("/api/cron/process-emails", methods=['POST'])
+@app.route("/api/cron/process-emails", methods=["POST"])
 def api_cron_process_emails():
-    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
+    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
     if CRON_SECRET and secret != CRON_SECRET:
         abort(403)
     result = email_automation.process_email_queue(app=app)
     return jsonify(result)
 
 
-@app.route("/api/cron/refresh-public-data", methods=['POST'])
+@app.route("/api/cron/refresh-public-data", methods=["POST"])
 def api_cron_refresh_public_data():
-    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
+    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
     if CRON_SECRET and secret != CRON_SECRET:
         abort(403)
     import public_data
-    result = public_data.refresh_canton('ZH')
+
+    result = public_data.refresh_canton("ZH")
     return jsonify(result)
 
+
+@app.route("/api/cron/backfill-elcom", methods=["POST"])
+def api_cron_backfill_elcom():
+    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
+    if CRON_SECRET and secret != CRON_SECRET:
+        abort(403)
+    import public_data
+
+    year = request.args.get("year", 2026, type=int)
+    limit = request.args.get("limit", 25, type=int) or 25
+    safe_limit = max(1, min(limit, 200))
+    bfs_numbers = db.get_profile_bfs_missing_elcom_tariffs(year=year, limit=safe_limit)
+
+    result = {
+        "year": year,
+        "limit": safe_limit,
+        "candidates": len(bfs_numbers),
+        "processed": 0,
+        "saved": 0,
+        "errors": [],
+    }
+    for bfs in bfs_numbers:
+        result["processed"] += 1
+        try:
+            tariffs = public_data.fetch_elcom_tariffs(bfs, year=year)
+            if tariffs:
+                result["saved"] += int(db.save_elcom_tariffs(tariffs) or 0)
+        except Exception as e:
+            result["errors"].append({"bfs": bfs, "error": str(e)})
+    return jsonify(result)
 
 
 @app.route("/api/email/stats")
@@ -1037,27 +1291,29 @@ def api_email_stats():
 # --- Webhooks ---
 
 
-@app.route("/webhook/deepsign", methods=['POST'])
+@app.route("/webhook/deepsign", methods=["POST"])
 def webhook_deepsign():
     """Handle DeepSign e-signature webhook callbacks."""
     import deepsign_integration
+
     payload = request.get_json(silent=True) or {}
     result = deepsign_integration.handle_webhook(payload)
-    logger.info(f"[DEEPSIGN] Webhook: {result.get('action')} for {result.get('document_id')}")
+    logger.info(
+        f"[DEEPSIGN] Webhook: {result.get('action')} for {result.get('document_id')}"
+    )
     return jsonify(result), 200
 
 
 # --- Billing Cron ---
-@app.route("/api/cron/process-billing", methods=['POST'])
+@app.route("/api/cron/process-billing", methods=["POST"])
 def api_cron_process_billing():
-    secret = request.headers.get('X-Cron-Secret') or request.args.get('secret') or ''
+    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
     if CRON_SECRET and secret != CRON_SECRET:
         abort(403)
-    import billing_engine
+
     communities = db.get_active_communities()
     processed = 0
     for community in communities:
-        cid = community['community_id']
         # Billing processing runs per active community.
         processed += 1
     return jsonify({"processed": processed, "communities": len(communities)})
@@ -1077,12 +1333,14 @@ def api_billing_period(community_id, period_id):
 def metrics():
     stats = db.get_stats()
     communities = db.get_active_communities()
-    return jsonify({
-        "active_communities": len(communities),
-        "total_buildings": stats.get('total_buildings', 0),
-        "registrations_today": stats.get('registrations_today', 0),
-    })
+    return jsonify(
+        {
+            "active_communities": len(communities),
+            "total_buildings": stats.get("total_buildings", 0),
+            "registrations_today": stats.get("registrations_today", 0),
+        }
+    )
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5003, host='127.0.0.1')
+    app.run(debug=True, port=5003, host="127.0.0.1")

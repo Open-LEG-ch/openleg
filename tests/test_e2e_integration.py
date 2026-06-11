@@ -1,4 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """E2E integration tests (static/mocked, no live services)."""
+
 import os
 import re
 import pytest
@@ -10,12 +12,14 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class TestServerMjsIntegration:
     @pytest.fixture(autouse=True)
     def load_server(self):
-        path = os.path.join(PROJECT_ROOT, "openclaw", "mcp-badenleg-server", "server.mjs")
+        path = os.path.join(
+            PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs"
+        )
         with open(path) as f:
             self.content = f.read()
 
     def test_tool_count_at_least_44(self):
-        count = len(re.findall(r'server\.tool\(', self.content))
+        count = len(re.findall(r"server\.tool\(", self.content))
         assert count >= 44
 
     def test_new_tools_have_descriptions(self):
@@ -28,12 +32,14 @@ class TestServerMjsIntegration:
 
 class TestDraftOutreachMunicipalityFocus:
     def test_draft_outreach_is_municipality_focused(self):
-        with open(os.path.join(PROJECT_ROOT, "openclaw", "mcp-badenleg-server", "server.mjs")) as f:
+        with open(
+            os.path.join(PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs")
+        ) as f:
             content = f.read()
         # Extract content around draft_outreach tool
         idx = content.find("'draft_outreach'")
         assert idx > 0
-        block = content[idx:idx+1500]
+        block = content[idx : idx + 1500]
         assert "Gemeinde" in block
         assert "LEG-Partnerschaft" not in block
 
@@ -61,15 +67,23 @@ class TestDatabaseSchema:
 
 class TestAdminPipelineHTML:
     def test_pipeline_returns_html_with_accept(self):
-        with patch.dict(os.environ, {"DATABASE_URL": "postgresql://x:x@localhost/x", "ADMIN_TOKEN": "test123"}):
-            with patch("database.init_db", return_value=True), \
-                 patch("database._connection_pool", MagicMock()), \
-                 patch("database.is_db_available", return_value=True):
+        with patch.dict(
+            os.environ,
+            {"DATABASE_URL": "postgresql://x:x@localhost/x", "ADMIN_TOKEN": "test123"},
+        ):
+            with (
+                patch("database.init_db", return_value=True),
+                patch("database._connection_pool", MagicMock()),
+                patch("database.is_db_available", return_value=True),
+            ):
                 try:
                     from app import app
+
                     client = app.test_client()
-                    resp = client.get("/admin/pipeline",
-                                      headers={"X-Admin-Token": "test123", "Accept": "text/html"})
+                    resp = client.get(
+                        "/admin/pipeline",
+                        headers={"X-Admin-Token": "test123", "Accept": "text/html"},
+                    )
                     # May fail with DB error but route exists
                     assert resp.status_code in (200, 500)
                 except Exception:
@@ -85,6 +99,7 @@ class TestCSVFixtureParse:
         if not csvs:
             pytest.skip("No CSV fixtures")
         import meter_data
+
         with open(os.path.join(fixture_dir, csvs[0])) as f:
             content = f.read()
         readings, errors = meter_data.parse_ekz_csv(content)

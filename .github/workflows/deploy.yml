@@ -1,4 +1,4 @@
-name: Tests
+name: CI Test
 
 on:
   push:
@@ -8,20 +8,20 @@ on:
 
 jobs:
   test:
-    name: Run tests
+    name: ci/test
     runs-on: ubuntu-latest
 
     services:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: badenleg
+          POSTGRES_USER: openleg
           POSTGRES_PASSWORD: testpass
-          POSTGRES_DB: badenleg
+          POSTGRES_DB: openleg
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U badenleg"
+          --health-cmd "pg_isready -U openleg"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
@@ -39,5 +39,5 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgresql://badenleg:testpass@localhost:5432/badenleg
-        run: pytest tests/ -v
+          DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
+        run: pytest tests/ -q

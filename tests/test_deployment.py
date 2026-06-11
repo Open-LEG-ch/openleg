@@ -1,4 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Config validation tests for deployment artifacts."""
+
 import os
 import pytest
 import yaml
@@ -18,11 +20,8 @@ class TestCaddyfile:
     def test_no_wildcard(self):
         assert "*.openleg.ch" not in self.content
 
-    def test_has_claw_subdomain(self):
-        assert "claw.openleg.ch" in self.content
-
-    def test_no_openclaw_subdomain(self):
-        assert "openclaw.openleg.ch" not in self.content
+    def test_no_private_gateway_subdomain(self):
+        assert "claw.openleg.ch" not in self.content
 
     def test_has_api_subdomain(self):
         assert "api.openleg.ch" in self.content
@@ -47,8 +46,9 @@ class TestDockerCompose:
         with open(path) as f:
             self.config = yaml.safe_load(f)
 
-    def test_five_services(self):
-        assert len(self.config["services"]) == 5
+    def test_four_services(self):
+        assert len(self.config["services"]) == 4
+        assert "openclaw" not in self.config["services"]
 
     def test_flask_healthcheck(self):
         flask = self.config["services"]["flask"]

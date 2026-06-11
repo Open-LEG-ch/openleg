@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""Contract tests for public CI workflow shape."""
+
+from pathlib import Path
+
+import yaml
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+WORKFLOWS_DIR = PROJECT_ROOT / ".github" / "workflows"
+
+
+def _read_workflow(path: Path):
+    with path.open(encoding="utf-8") as handle:
+        return handle.read(), yaml.safe_load(handle.read())
+
+
+def _on_section(data):
+    return data.get("on") or data.get(True) or {}
+
+
+def _has_mainline_trigger(data):
+    on = _on_section(data)
+    push = on.get("push", {})
+    pull_request = on.get("pull_request", {})
+    push_branches = push.get("branches", [])
+    pr_branches = pull_request.get("branches", [])
+    return "main" in push_branches or "main" in pr_branches
+
+
+def test_exactly_three_mainline_workflows_with_expected_job_names():
+    expected_jobs = {"ci/lint", "ci/test", "ci/security"}
+    mainline_workflows = []
+    seen_job_names = set()
+
+    for path in WORKFLOWS_DIR.glob("*.yml"):
+        with path.open(encoding="utf-8") as handle:
+            text = handle.read()
+        data = yaml.safe_load(text)
+        if not _has_mainline_trigger(data):
+            continue
+        mainline_workflows.append(path.name)
+        jobs = data.get("jobs", {})
+        for _job_id, job_data in jobs.items():
+            if "name" in job_data:
+                seen_job_names.add(job_data["name"])
+
+    assert len(mainline_workflows) == 3, mainline_workflows
+    assert seen_job_names == expected_jobs, seen_job_names
+
+
+def test_no_mainline_workflow_pushes_directly():
+    offenders = []
+
+    for path in WORKFLOWS_DIR.glob("*.yml"):
+        with path.open(encoding="utf-8") as handle:
+            text = handle.read()
+        data = yaml.safe_load(text)
+        if not _has_mainline_trigger(data):
+            continue
+        if "git push" in text:
+            offenders.append(path.name)
+
+    assert offenders == [], offenders

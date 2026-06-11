@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Sales pipeline management for VNB outreach.
 
 Manages the lifecycle of utility client leads from discovery to conversion.
@@ -36,6 +37,7 @@ def score_vnb(population, solar_potential_kwh, has_leghub, smart_meter_coverage)
     """
     # Population score: 0-100, log scale, cap at 200k
     import math
+
     pop_score = min(100, (math.log10(max(population, 1)) / math.log10(200000)) * 100)
 
     # Solar score: normalize 800-1200 kWh/kWp range to 0-100
@@ -80,7 +82,11 @@ def draft_outreach_email(vnb_name, population, value_gap_chf, solar_potential_kw
 
     Returns: German email text as string.
     """
-    city = vnb_name.replace("Stadtwerk ", "").replace("EW ", "").replace("Elektrizitätswerk ", "")
+    city = (
+        vnb_name.replace("Stadtwerk ", "")
+        .replace("EW ", "")
+        .replace("Elektrizitätswerk ", "")
+    )
 
     return f"""Betreff: LEG-Lösung für {vnb_name}
 

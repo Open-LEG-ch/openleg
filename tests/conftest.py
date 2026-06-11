@@ -1,4 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Pytest fixtures and mock data for OpenLEG tests."""
+
 import os
 import sys
 import pytest
@@ -8,9 +10,9 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Mock database before importing app
-os.environ.setdefault('DATABASE_URL', '')
-os.environ.setdefault('ADMIN_TOKEN', 'test-admin-token')
-os.environ.setdefault('CRON_SECRET', 'test-cron-secret')
+os.environ.setdefault("DATABASE_URL", "")
+os.environ.setdefault("ADMIN_TOKEN", "test-admin-token")
+os.environ.setdefault("CRON_SECRET", "test-cron-secret")
 
 
 # === Mock Data ===
@@ -87,11 +89,13 @@ MOCK_PROFILES_LIST = [
 
 # === Fixtures ===
 
+
 @pytest.fixture
 def mock_db():
     """Mock database module."""
-    with patch.dict('sys.modules', {'database': MagicMock()}):
+    with patch.dict("sys.modules", {"database": MagicMock()}):
         import database as db
+
         db.is_db_available = MagicMock(return_value=True)
         db.get_elcom_tariffs = MagicMock(return_value=MOCK_ELCOM_TARIFFS)
         db.save_elcom_tariffs = MagicMock(return_value=2)
@@ -106,19 +110,24 @@ def mock_db():
 @pytest.fixture
 def app(mock_db):
     """Flask test app with mocked dependencies."""
-    with patch('database.is_db_available', return_value=True), \
-         patch('database.init_db', return_value=True), \
-         patch('database.get_stats', return_value={'total_buildings': 0}), \
-         patch('database.seed_default_tenant', return_value=True):
+    with (
+        patch("database.is_db_available", return_value=True),
+        patch("database.init_db", return_value=True),
+        patch("database.get_stats", return_value={"total_buildings": 0}),
+        patch("database.seed_default_tenant", return_value=True),
+    ):
         # Import after mocking
         from api_public import public_api_bp
         from health import health_bp
         from flask import Flask
 
-        test_app = Flask(__name__, template_folder=os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates'
-        ))
-        test_app.config['TESTING'] = True
+        test_app = Flask(
+            __name__,
+            template_folder=os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates"
+            ),
+        )
+        test_app.config["TESTING"] = True
         test_app.register_blueprint(public_api_bp)
         test_app.register_blueprint(health_bp)
         yield test_app

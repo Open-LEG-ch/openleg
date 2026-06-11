@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Redis-backed caching layer for OpenLEG.
 
 Falls back gracefully if Redis is unavailable (returns None, no-ops on writes).
 All keys prefixed with "openleg:" to avoid collisions.
 """
+
 import os
 import json
 import logging
@@ -20,6 +22,7 @@ def _get_redis():
     global _redis_client
     if _redis_client is None:
         import redis
+
         _redis_client = redis.from_url(REDIS_URL, decode_responses=False)
     return _redis_client
 

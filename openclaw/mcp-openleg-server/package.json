@@ -1,5 +1,5 @@
 {
-  "name": "mcp-badenleg-server",
+  "name": "mcp-openleg-server",
   "version": "1.0.0",
   "type": "module",
   "main": "server.mjs",

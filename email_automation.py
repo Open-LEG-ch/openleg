@@ -1,20 +1,26 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Email Automation for OpenLEG
 Handles scheduled email sequences for user nurturing.
 """
+
 import os
 import time
 import logging
-from typing import Optional
 
-logger = logging.getLogger(__name__)
+# PUBLIC-SNAPSHOT-PRIVATE-START: municipality-outreach-imports
+from typing import Optional
+# PUBLIC-SNAPSHOT-PRIVATE-END: municipality-outreach-imports
 
 from flask import render_template
 
 import database as db
-from email_utils import send_email, EMAIL_ENABLED
+from email_utils import send_email
 
-APP_BASE_URL = os.getenv('APP_BASE_URL', 'http://localhost:5003').rstrip('/')
+logger = logging.getLogger(__name__)
+
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5003").rstrip("/")
+
 
 def get_email_sequence(platform_name="OpenLEG"):
     """Return email sequence with dynamic platform name in subjects."""
@@ -41,16 +47,19 @@ def get_email_sequence(platform_name="OpenLEG"):
         },
     }
 
+
 # Standalone trigger templates (not part of drip sequence)
 TRIGGER_TEMPLATES = {
     "formation_nudge": {
         "subject": "Ihre LEG-Gründung wartet",
         "template": "emails/formation_nudge.html",
     },
+    # PUBLIC-SNAPSHOT-PRIVATE-START: municipality-outreach-trigger
     "municipality_outreach": {
         "subject": "LEG-Potenzial in {municipality_name} — Ihr nächster Schritt",
         "template": "emails/municipality_outreach.html",
     },
+    # PUBLIC-SNAPSHOT-PRIVATE-END: municipality-outreach-trigger
 }
 
 # Default sequence (backward compatible)
@@ -72,9 +81,10 @@ def schedule_sequence_for_user(building_id: str, email: str):
 def _get_tenant_for_building(building_id: str) -> dict:
     """Load tenant config for a building's city_id."""
     from tenant import get_tenant_config, DEFAULT_TENANT
+
     building = db.get_building(building_id)
     if building:
-        city_id = building.get('city_id', 'baden')
+        city_id = building.get("city_id", "zurich")
         return get_tenant_config(city_id, db=db)
     return DEFAULT_TENANT.copy()
 
@@ -86,12 +96,12 @@ def process_email_queue(app=None):
     failed = 0
 
     for item in pending:
-        email_id = item['id']
-        template_key = item['template_key']
+        email_id = item["id"]
+        template_key = item["template_key"]
 
         # Resolve tenant for this building
-        tenant = _get_tenant_for_building(item['building_id'])
-        sequence = get_email_sequence(tenant.get('platform_name', 'OpenLEG'))
+        tenant = _get_tenant_for_building(item["building_id"])
+        sequence = get_email_sequence(tenant.get("platform_name", "OpenLEG"))
         config = sequence.get(template_key)
         if not config:
             db.mark_email_failed(email_id, f"Unknown template: {template_key}")
@@ -103,15 +113,14 @@ def process_email_queue(app=None):
 
         # Get neighbor count for personalization
         neighbor_count = 0
-        if item.get('lat') and item.get('lon'):
+        if item.get("lat") and item.get("lon"):
             neighbor_count = db.get_neighbor_count_near(
-                float(item['lat']), float(item['lon']),
-                city_id=tenant.get('territory')
+                float(item["lat"]), float(item["lon"]), city_id=tenant.get("territory")
             )
 
         # Get referral code
-        referral_code = db.get_referral_code(item['building_id']) or ''
-        referral_link = f"{APP_BASE_URL}/?ref={referral_code}" if referral_code else ''
+        referral_code = db.get_referral_code(item["building_id"]) or ""
+        referral_link = f"{APP_BASE_URL}/?ref={referral_code}" if referral_code else ""
 
         # Render template with tenant context
         try:
@@ -119,22 +128,22 @@ def process_email_queue(app=None):
                 with app.app_context():
                     html_body = render_template(
                         config["template"],
-                        email=item['email'],
-                        address=item.get('address', ''),
+                        email=item["email"],
+                        address=item.get("address", ""),
                         neighbor_count=neighbor_count,
                         unsubscribe_url=unsubscribe_url,
                         referral_link=referral_link,
                         site_url=APP_BASE_URL,
                         dashboard_url=f"{APP_BASE_URL}/dashboard?bid={item['building_id']}",
                         tenant=tenant,
-                        platform_name=tenant.get('platform_name', 'OpenLEG'),
-                        city_name=tenant.get('city_name', 'Baden'),
-                        primary_color=tenant.get('primary_color', '#c7021a'),
-                        contact_email=tenant.get('contact_email', 'hallo@openleg.ch'),
-                        utility_name=tenant.get('utility_name', 'Regionalwerke Baden'),
+                        platform_name=tenant.get("platform_name", "OpenLEG"),
+                        city_name=tenant.get("city_name", "Zürich"),
+                        primary_color=tenant.get("primary_color", "#c7021a"),
+                        contact_email=tenant.get("contact_email", "hallo@openleg.ch"),
+                        utility_name=tenant.get("utility_name", "Netzbetreiber"),
                     )
             else:
-                pname = tenant.get('platform_name', 'OpenLEG')
+                pname = tenant.get("platform_name", "OpenLEG")
                 html_body = f"<p>{pname}: {config['subject']}</p>"
         except Exception as e:
             logger.error(f"[EMAIL_AUTO] Template render error for {template_key}: {e}")
@@ -143,7 +152,7 @@ def process_email_queue(app=None):
             continue
 
         # Send email
-        success = _send_email(item['email'], config['subject'], html_body)
+        success = _send_email(item["email"], config["subject"], html_body)
         if success:
             db.mark_email_sent(email_id)
             sent += 1
@@ -151,7 +160,9 @@ def process_email_queue(app=None):
             db.mark_email_failed(email_id, "SMTP delivery failed")
             failed += 1
 
-    logger.info(f"[EMAIL_AUTO] Processed queue: {sent} sent, {failed} failed, {len(pending)} total")
+    logger.info(
+        f"[EMAIL_AUTO] Processed queue: {sent} sent, {failed} failed, {len(pending)} total"
+    )
     return {"sent": sent, "failed": failed, "total": len(pending)}
 
 
@@ -160,9 +171,11 @@ def _send_email(to_email: str, subject: str, html_body: str) -> bool:
     return send_email(to_email, subject, html_body, html=True)
 
 
+# PUBLIC-SNAPSHOT-PRIVATE-START: municipality-outreach-helpers
 # ---------------------------------------------------------------------------
 # Municipality outreach helpers (US-004)
 # ---------------------------------------------------------------------------
+
 
 def _empty_demand_context() -> dict:
     """Return a safe empty demand context when no signal data is available."""
@@ -188,6 +201,7 @@ def get_municipality_demand_context(bfs_number: Optional[int] = None) -> dict:
     """
     try:
         from insights_engine import compute_municipality_demand_signal
+
         result = compute_municipality_demand_signal(bfs_number=bfs_number)
         signals = result.get("signals", [])
         if not signals:
@@ -205,7 +219,9 @@ def get_municipality_demand_context(bfs_number: Optional[int] = None) -> dict:
             "has_demand_data": True,
         }
     except Exception:
-        logger.warning("[EMAIL_AUTO] Could not fetch municipality demand context", exc_info=True)
+        logger.warning(
+            "[EMAIL_AUTO] Could not fetch municipality demand context", exc_info=True
+        )
         return _empty_demand_context()
 
 
@@ -232,6 +248,7 @@ def render_municipality_outreach(
     """
     if tenant is None:
         from tenant import DEFAULT_TENANT
+
         tenant = DEFAULT_TENANT.copy()
 
     demand_context = get_municipality_demand_context(bfs_number)
@@ -268,3 +285,6 @@ def render_municipality_outreach(
         "demand_context": demand_context,
         "municipality_name": municipality_name,
     }
+
+
+# PUBLIC-SNAPSHOT-PRIVATE-END: municipality-outreach-helpers

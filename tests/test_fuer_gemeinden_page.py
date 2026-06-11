@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 import os
 import pytest
 from unittest.mock import patch, MagicMock
@@ -5,10 +6,15 @@ from unittest.mock import patch, MagicMock
 
 class TestFuerGemeindenPage:
     def test_page_renders(self):
-        with patch.dict(os.environ, {"DATABASE_URL": "postgresql://x:x@localhost/x", "REDIS_URL": "memory://"}):
-            with patch("database.is_db_available", return_value=True), \
-                 patch("database.init_db", return_value=True), \
-                 patch("database._connection_pool", MagicMock()):
+        with patch.dict(
+            os.environ,
+            {"DATABASE_URL": "postgresql://x:x@localhost/x", "REDIS_URL": "memory://"},
+        ):
+            with (
+                patch("database.is_db_available", return_value=True),
+                patch("database.init_db", return_value=True),
+                patch("database._connection_pool", MagicMock()),
+            ):
                 try:
                     from app import app
                 except Exception:
@@ -17,7 +23,8 @@ class TestFuerGemeindenPage:
                 client = app.test_client()
                 hooks = list(app.before_request_funcs.get(None, []))
                 app.before_request_funcs[None] = [
-                    hook for hook in hooks
+                    hook
+                    for hook in hooks
                     if not (
                         getattr(hook, "__module__", "").startswith("flask_limiter")
                         or getattr(hook, "__name__", "") == "_check_request_limit"
@@ -32,4 +39,16 @@ class TestFuerGemeindenPage:
                 assert "OpenLEG für Gemeinden" in html
                 assert "Selbst betreiben" in html
                 assert "Gehostet" in html
-                assert "github.com/openleg/openleg" in html
+                assert "github.com/openleg-ch/openleg" in html
+                assert "github.com/openleg/openleg" not in html
+
+    def test_homepage_no_full_coverage_claim(self):
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "index.html",
+        )
+        with open(path, encoding="utf-8") as handle:
+            content = handle.read()
+        assert "2'131 Schweizer Gemeinden" not in content
+        assert "Gemeinde-Profile aus öffentlichen Datenquellen" in content

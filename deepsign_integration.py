@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """DeepSign AES e-signature integration for LEG formation documents.
 
 Requires DEEPSIGN_API_KEY and DEEPSIGN_API_URL env vars.
 API docs: https://docs.deepsign.ch
 """
+
 import os
 import requests
 
@@ -51,7 +53,9 @@ def request_signatures(document_id, signers):
         json={"signers": signers, "signature_type": "AES"},
     )
     if resp.status_code not in (200, 201):
-        raise Exception(f"DeepSign signature request failed ({resp.status_code}): {resp.text}")
+        raise Exception(
+            f"DeepSign signature request failed ({resp.status_code}): {resp.text}"
+        )
     return resp.json()
 
 
@@ -83,7 +87,9 @@ def get_signing_status(document_id):
         headers=_headers(),
     )
     if resp.status_code != 200:
-        raise Exception(f"DeepSign status check failed ({resp.status_code}): {resp.text}")
+        raise Exception(
+            f"DeepSign status check failed ({resp.status_code}): {resp.text}"
+        )
     return resp.json()
 
 
@@ -91,7 +97,11 @@ def _update_formation_status(document_id, status):
     """Update formation step based on signing event."""
     try:
         import database
+
         database.update_document_signing_status(document_id, status)
     except Exception as e:
         import logging
-        logging.getLogger(__name__).error(f"[DEEPSIGN] update_formation_status failed: {e}")
+
+        logging.getLogger(__name__).error(
+            f"[DEEPSIGN] update_formation_status failed: {e}"
+        )

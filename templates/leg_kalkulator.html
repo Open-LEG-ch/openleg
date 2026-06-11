@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LEG-Kalkulator: Sparpotenzial berechnen | OpenLEG</title>
+  <meta name="description" content="Berechnen Sie, wie viel Sie mit einer Lokalen Elektrizitätsgemeinschaft (LEG) sparen. Interaktiver Rechner mit aktuellen Tarifdaten für alle Schweizer Gemeinden.">
+  <meta name="keywords" content="LEG Rechner, Stromgemeinschaft Kalkulator, LEG Sparpotenzial, Netzkosten Rechner, Stromkosten Schweiz">
+  {% include 'partials/tailwind_brand.html' %}
+  <style>
+    .range-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      outline: none;
+    }
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #2f5e3a;
+      cursor: pointer;
+    }
+    .range-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #2f5e3a;
+      cursor: pointer;
+      border: none;
+    }
+  </style>
+</head>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
+
+  <main class="max-w-5xl mx-auto px-4 py-12">
+    <header class="text-center mb-12">
+      <h1 class="text-5xl font-bold mb-4">LEG-Kalkulator</h1>
+      <p class="text-xl text-ink-muted max-w-3xl mx-auto">
+        Berechnen Sie in 2 Minuten, wie viel Sie mit einer Lokalen Elektrizitätsgemeinschaft (LEG) sparen können.
+      </p>
+    </header>
+
+    <!-- Calculator Card -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12">
+      
+      <!-- Municipality Selection -->
+      <section class="mb-10">
+        <h2 class="text-2xl font-bold mb-6">Ihre Gemeinde</h2>
+        <div>
+          <label for="municipality" class="block text-sm font-semibold mb-2">Gemeinde auswählen</label>
+          <input 
+            type="text" 
+            id="municipality" 
+            placeholder="z.B. Baden, Zürich, Bern" 
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+            autocomplete="off"
+          />
+          <div id="municipality-results" class="hidden mt-2 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            <!-- Search results populated via JavaScript -->
+          </div>
+          <p class="text-sm text-ink-muted mt-2">Geben Sie den Namen Ihrer Gemeinde ein.</p>
+        </div>
+        <div id="selected-municipality" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-bold text-ink">Ausgewählt:</span>
+              <span id="selected-name" class="ml-2 text-ink-muted"></span>
+            </div>
+            <button onclick="clearMunicipality()" class="text-red-600 hover:text-red-800 text-sm font-semibold">Ändern</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Consumption -->
+      <section class="mb-10">
+        <h2 class="text-2xl font-bold mb-6">Ihr Stromverbrauch</h2>
+        <div>
+          <label for="consumption" class="block text-sm font-semibold mb-2">
+            Jährlicher Verbrauch: <span id="consumption-value" class="text-brand">4500</span> kWh
+          </label>
+          <input 
+            type="range" 
+            id="consumption" 
+            min="1000" 
+            max="15000" 
+            step="100" 
+            value="4500" 
+            class="range-slider"
+            oninput="updateConsumption(this.value)"
+          />
+          <div class="flex justify-between text-xs text-ink-muted mt-1">
+            <span>1'000 kWh</span>
+            <span>15'000 kWh</span>
+          </div>
+          <p class="text-sm text-ink-muted mt-2">
+            💡 Durchschnitt Schweiz: 1-Person: 1'500 kWh | 2-Personen: 2'500 kWh | 4-Personen: 4'500 kWh
+          </p>
+        </div>
+      </section>
+
+      <!-- Local Production -->
+      <section class="mb-10">
+        <h2 class="text-2xl font-bold mb-6">Lokale Solarproduktion</h2>
+        <div>
+          <label for="production" class="block text-sm font-semibold mb-2">
+            Anteil lokal verbrauchbar: <span id="production-value" class="text-brand">60</span>%
+          </label>
+          <input 
+            type="range" 
+            id="production" 
+            min="0" 
+            max="100" 
+            step="5" 
+            value="60" 
+            class="range-slider"
+            oninput="updateProduction(this.value)"
+          />
+          <div class="flex justify-between text-xs text-ink-muted mt-1">
+            <span>0%</span>
+            <span>100%</span>
+          </div>
+          <p class="text-sm text-ink-muted mt-2">
+            Dies hängt davon ab, wann die Solaranlage produziert und wann Sie verbrauchen. Typisch: 40-80%.
+          </p>
+        </div>
+      </section>
+
+      <!-- Calculate Button -->
+      <div class="text-center mb-10">
+        <button 
+          id="calculate-btn"
+          onclick="calculateSavings()" 
+          class="bg-brand text-white px-12 py-4 rounded-lg text-lg font-bold hover:bg-brand-dark disabled:bg-slate-300 disabled:cursor-not-allowed"
+          disabled
+        >
+          Sparpotenzial berechnen
+        </button>
+      </div>
+
+      <!-- Results -->
+      <div id="results" class="hidden">
+        <div class="border-t-4 border-brand pt-8">
+          <h2 class="text-3xl font-bold mb-6 text-center">Ihr Sparpotenzial</h2>
+          
+          <!-- Savings Overview -->
+          <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-green-50 rounded-lg p-6 text-center border border-green-200">
+              <div class="text-4xl font-bold text-green-700 mb-2">CHF <span id="annual-savings">0</span></div>
+              <div class="text-sm text-green-800">Jährliche Einsparung</div>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-6 text-center border border-blue-200">
+              <div class="text-4xl font-bold text-blue-700 mb-2"><span id="savings-percent">0</span>%</div>
+              <div class="text-sm text-blue-800">Reduktion der Netzkosten</div>
+            </div>
+            <div class="bg-amber-50 rounded-lg p-6 text-center border border-amber-200">
+              <div class="text-4xl font-bold text-amber-700 mb-2">CHF <span id="ten-year-savings">0</span></div>
+              <div class="text-sm text-amber-800">10-Jahres-Einsparung</div>
+            </div>
+          </div>
+
+          <!-- Breakdown -->
+          <div class="bg-slate-50 rounded-lg p-6 mb-8">
+            <h3 class="font-bold text-lg mb-4">Kostenvergleich (pro Jahr)</h3>
+            <table class="w-full text-left">
+              <thead class="border-b-2 border-slate-300">
+                <tr>
+                  <th class="pb-2 font-semibold">Position</th>
+                  <th class="pb-2 font-semibold text-right">Ohne LEG</th>
+                  <th class="pb-2 font-semibold text-right">Mit LEG</th>
+                  <th class="pb-2 font-semibold text-right">Differenz</th>
+                </tr>
+              </thead>
+              <tbody class="text-ink-muted">
+                <tr class="border-b border-slate-200">
+                  <td class="py-2">Energiekosten</td>
+                  <td class="py-2 text-right">CHF <span id="energy-without">0</span></td>
+                  <td class="py-2 text-right">CHF <span id="energy-with">0</span></td>
+                  <td class="py-2 text-right">CHF <span id="energy-diff">0</span></td>
+                </tr>
+                <tr class="border-b border-slate-200">
+                  <td class="py-2">Netznutzung</td>
+                  <td class="py-2 text-right">CHF <span id="grid-without">0</span></td>
+                  <td class="py-2 text-right">CHF <span id="grid-with">0</span></td>
+                  <td class="py-2 text-right font-bold text-green-700">CHF <span id="grid-diff">0</span></td>
+                </tr>
+                <tr class="border-b border-slate-200">
+                  <td class="py-2">Abgaben & Gebühren</td>
+                  <td class="py-2 text-right">CHF <span id="fees-without">0</span></td>
+                  <td class="py-2 text-right">CHF <span id="fees-with">0</span></td>
+                  <td class="py-2 text-right">CHF <span id="fees-diff">0</span></td>
+                </tr>
+                <tr class="font-bold text-ink">
+                  <td class="pt-3">Total</td>
+                  <td class="pt-3 text-right">CHF <span id="total-without">0</span></td>
+                  <td class="pt-3 text-right">CHF <span id="total-with">0</span></td>
+                  <td class="pt-3 text-right text-green-700">CHF -<span id="total-diff">0</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Recommendation -->
+          <div id="recommendation" class="p-6 rounded-lg mb-6">
+            <!-- Populated via JavaScript -->
+          </div>
+
+          <!-- CTA -->
+          <div class="text-center">
+            <a href="/leg-gruenden" class="inline-block bg-brand text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-dark">
+              LEG gründen →
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- How it works -->
+    <section class="mt-12 bg-white rounded-xl shadow-md p-8">
+      <h2 class="text-3xl font-bold mb-6">So funktioniert der Rechner</h2>
+      <div class="space-y-4 text-ink-muted">
+        <p>
+          Dieser Kalkulator berechnet Ihre potenzielle Einsparung durch eine Lokale Elektrizitätsgemeinschaft (LEG).
+        </p>
+        <p>
+          <strong>Grundlage:</strong> Wir verwenden offizielle Tarifdaten von ElCom (Eidgenössische Elektrizitätskommission) 
+          für Ihre Gemeinde. Die Berechnung berücksichtigt Energiekosten, Netznutzungsgebühren und Abgaben.
+        </p>
+        <p>
+          <strong>LEG-Rabatt:</strong> Bei lokal verbrauchtem Strom entfallen die Netznutzungsgebühren für die übergeordneten Netzebenen. 
+          Typische Reduktion: 20-40% auf den Netznutzungsentgelt.
+        </p>
+        <p>
+          <strong>Annahmen:</strong> Der Rechner geht davon aus, dass der lokale Solarstrom zum gleichen Preis wie EVU-Strom verrechnet wird. 
+          In der Praxis kann der LEG-Preis auch günstiger sein.
+        </p>
+        <p class="text-sm">
+          <strong>Hinweis:</strong> Dies ist eine Schätzung. Die tatsächlichen Einsparungen hängen von vielen Faktoren ab 
+          (Verbrauchsprofil, Produktionsprofil, LEG-Grösse, Verteilschlüssel).
+        </p>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="mt-8">
+      <h2 class="text-3xl font-bold mb-6">Häufige Fragen</h2>
+      <div class="space-y-4">
+        <details class="bg-white rounded-lg shadow-md p-6">
+          <summary class="font-bold text-ink cursor-pointer">Warum spare ich mit einer LEG Geld?</summary>
+          <p class="mt-3 text-ink-muted">
+            Bei lokal verbrauchtem Strom entfallen die Netznutzungsgebühren für die übergeordneten Netzebenen (Swissgrid, regionale Netze). 
+            Sie zahlen nur für das lokale Verteilnetz. Das spart typischerweise 20-40% auf die Netzkosten.
+          </p>
+        </details>
+        <details class="bg-white rounded-lg shadow-md p-6">
+          <summary class="font-bold text-ink cursor-pointer">Ist die Berechnung genau?</summary>
+          <p class="mt-3 text-ink-muted">
+            Der Rechner nutzt offizielle ElCom-Tarifdaten und realistische Annahmen. Die tatsächliche Einsparung kann abweichen, 
+            da sie von Ihrem individuellen Verbrauchsprofil und der LEG-Struktur abhängt. Betrachten Sie das Ergebnis als Richtwert.
+          </p>
+        </details>
+        <details class="bg-white rounded-lg shadow-md p-6">
+          <summary class="font-bold text-ink cursor-pointer">Was bedeutet "lokal verbrauchbar"?</summary>
+          <p class="mt-3 text-ink-muted">
+            Das ist der Anteil der Solarproduktion, der direkt in Ihrer LEG verbraucht wird (statt ins Netz eingespeist). 
+            Wenn die Sonne mittags scheint, aber alle arbeiten sind, ist der Anteil tief. Mit Batteriespeichern oder vielen Teilnehmern steigt er.
+          </p>
+        </details>
+        <details class="bg-white rounded-lg shadow-md p-6">
+          <summary class="font-bold text-ink cursor-pointer">Berücksichtigt der Rechner Investitionskosten?</summary>
+          <p class="mt-3 text-ink-muted">
+            Nein, der Rechner zeigt nur die laufenden Einsparungen. Die Gründungskosten (CHF 500-2'000) und die Kosten für 
+            Smart Meter sind nicht eingerechnet. Diese amortisieren sich aber meist innerhalb von 1-2 Jahren.
+          </p>
+        </details>
+      </div>
+    </section>
+
+  </main>
+
+  {% include 'partials/site_footer.html' %}
+
+  <script>
+    let selectedBfs = null;
+    let municipalityData = null;
+
+    // Update display values
+    function updateConsumption(value) {
+      document.getElementById('consumption-value').textContent = Number(value).toLocaleString('de-CH');
+      checkCalculateButton();
+    }
+
+    function updateProduction(value) {
+      document.getElementById('production-value').textContent = value;
+      checkCalculateButton();
+    }
+
+    function checkCalculateButton() {
+      const btn = document.getElementById('calculate-btn');
+      btn.disabled = !selectedBfs;
+    }
+
+    // Municipality search
+    const municipalityInput = document.getElementById('municipality');
+    const resultsDiv = document.getElementById('municipality-results');
+    let searchTimeout;
+
+    municipalityInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      const query = this.value.trim();
+      
+      if (query.length < 2) {
+        resultsDiv.classList.add('hidden');
+        return;
+      }
+
+      searchTimeout = setTimeout(() => {
+        fetch(`/api/v1/municipalities?search=${encodeURIComponent(query)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.municipalities && data.municipalities.length > 0) {
+              resultsDiv.innerHTML = data.municipalities.slice(0, 8).map(m => 
+                `<div class="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100" 
+                      onclick="selectMunicipality(${m.bfs_number}, '${m.name.replace(/'/g, "\\'")}', ${JSON.stringify(m).replace(/'/g, "&#39;")})">
+                  <div class="font-semibold">${m.name}</div>
+                  <div class="text-xs text-ink-muted">BFS: ${m.bfs_number}${m.canton ? ' | ' + m.canton : ''}</div>
+                </div>`
+              ).join('');
+              resultsDiv.classList.remove('hidden');
+            } else {
+              resultsDiv.innerHTML = '<div class="px-4 py-3 text-ink-muted">Keine Gemeinde gefunden</div>';
+              resultsDiv.classList.remove('hidden');
+            }
+          })
+          .catch(err => {
+            console.error('Search error:', err);
+            resultsDiv.classList.add('hidden');
+          });
+      }, 300);
+    });
+
+    function selectMunicipality(bfs, name, data) {
+      selectedBfs = bfs;
+      municipalityData = data;
+      document.getElementById('selected-name').textContent = name;
+      document.getElementById('selected-municipality').classList.remove('hidden');
+      resultsDiv.classList.add('hidden');
+      municipalityInput.value = '';
+      checkCalculateButton();
+    }
+
+    function clearMunicipality() {
+      selectedBfs = null;
+      municipalityData = null;
+      document.getElementById('selected-municipality').classList.add('hidden');
+      document.getElementById('results').classList.add('hidden');
+      checkCalculateButton();
+    }
+
+    function calculateSavings() {
+      if (!selectedBfs) return;
+
+      const consumption = parseInt(document.getElementById('consumption').value);
+      const localPercent = parseInt(document.getElementById('production').value);
+
+      // Fetch tariff data and calculate
+      fetch(`/api/v1/municipalities/${selectedBfs}/tariffs`)
+        .then(r => r.json())
+        .then(tariffs => {
+          if (!tariffs || tariffs.length === 0) {
+            alert('Keine Tarifdaten für diese Gemeinde verfügbar.');
+            return;
+          }
+
+          // Use H4 category (typical household)
+          const tariff = tariffs.find(t => t.category === 'H4') || tariffs[0];
+          
+          // Typical Swiss averages (Rp/kWh)
+          const energyPrice = tariff.energy_price || 12.0;
+          const gridPrice = tariff.grid_price || 8.0;
+          const feesAndTaxes = 2.5; // KEV, communal fees, etc.
+
+          // Local consumption
+          const localKwh = consumption * (localPercent / 100);
+          const gridKwh = consumption - localKwh;
+
+          // Without LEG
+          const energyWithout = consumption * energyPrice / 100;
+          const gridWithout = consumption * gridPrice / 100;
+          const feesWithout = consumption * feesAndTaxes / 100;
+          const totalWithout = energyWithout + gridWithout + feesWithout;
+
+          // With LEG (reduced grid fees for local consumption)
+          const gridReduction = 0.35; // 35% reduction on local portion
+          const energyWith = consumption * energyPrice / 100; // Same energy price
+          const gridWith = (gridKwh * gridPrice / 100) + (localKwh * gridPrice * (1 - gridReduction) / 100);
+          const feesWith = consumption * feesAndTaxes / 100; // Same fees
+          const totalWith = energyWith + gridWith + feesWith;
+
+          const annualSavings = totalWithout - totalWith;
+          const tenYearSavings = annualSavings * 10;
+          const savingsPercent = ((gridWithout - gridWith) / gridWithout * 100).toFixed(0);
+
+          // Update UI
+          document.getElementById('annual-savings').textContent = Math.round(annualSavings);
+          document.getElementById('savings-percent').textContent = savingsPercent;
+          document.getElementById('ten-year-savings').textContent = Math.round(tenYearSavings).toLocaleString('de-CH');
+
+          document.getElementById('energy-without').textContent = Math.round(energyWithout);
+          document.getElementById('energy-with').textContent = Math.round(energyWith);
+          document.getElementById('energy-diff').textContent = Math.round(energyWithout - energyWith);
+
+          document.getElementById('grid-without').textContent = Math.round(gridWithout);
+          document.getElementById('grid-with').textContent = Math.round(gridWith);
+          document.getElementById('grid-diff').textContent = '-' + Math.round(gridWithout - gridWith);
+
+          document.getElementById('fees-without').textContent = Math.round(feesWithout);
+          document.getElementById('fees-with').textContent = Math.round(feesWith);
+          document.getElementById('fees-diff').textContent = Math.round(feesWithout - feesWith);
+
+          document.getElementById('total-without').textContent = Math.round(totalWithout);
+          document.getElementById('total-with').textContent = Math.round(totalWith);
+          document.getElementById('total-diff').textContent = Math.round(annualSavings);
+
+          // Recommendation
+          const recDiv = document.getElementById('recommendation');
+          if (annualSavings < 50) {
+            recDiv.className = 'p-6 rounded-lg mb-6 bg-red-50 border border-red-200';
+            recDiv.innerHTML = `
+              <h3 class="font-bold text-lg mb-2 text-red-900">Leider lohnt sich eine LEG nicht</h3>
+              <p class="text-red-800">
+                Mit nur CHF ${Math.round(annualSavings)} pro Jahr decken die Einsparungen kaum die Verwaltungskosten. 
+                Prüfen Sie, ob Sie mehr lokal verbrauchen könnten (Batteriespeicher, E-Auto-Laden während Sonnenstunden).
+              </p>
+            `;
+          } else if (annualSavings < 150) {
+            recDiv.className = 'p-6 rounded-lg mb-6 bg-yellow-50 border border-yellow-200';
+            recDiv.innerHTML = `
+              <h3 class="font-bold text-lg mb-2 text-yellow-900">Grenzfall: Abwägen lohnt sich</h3>
+              <p class="text-yellow-800">
+                Mit CHF ${Math.round(annualSavings)} pro Jahr sparen Sie moderat. Die LEG lohnt sich, wenn Sie die Gründungskosten 
+                (CHF 500-2'000) über 2-3 Jahre amortisieren möchten und Wert auf lokale Energieautarkie legen.
+              </p>
+            `;
+          } else {
+            recDiv.className = 'p-6 rounded-lg mb-6 bg-green-50 border border-green-200';
+            recDiv.innerHTML = `
+              <h3 class="font-bold text-lg mb-2 text-green-900">✓ Eine LEG lohnt sich für Sie!</h3>
+              <p class="text-green-800">
+                Mit CHF ${Math.round(annualSavings)} Ersparnis pro Jahr amortisieren sich die Gründungskosten schnell. 
+                Über 10 Jahre sparen Sie CHF ${Math.round(tenYearSavings).toLocaleString('de-CH')}. Starten Sie jetzt!
+              </p>
+            `;
+          }
+
+          document.getElementById('results').classList.remove('hidden');
+          document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        })
+        .catch(err => {
+          console.error('Calculation error:', err);
+          alert('Fehler bei der Berechnung. Bitte versuchen Sie es erneut.');
+        });
+    }
+
+    // Close results dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!municipalityInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+        resultsDiv.classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

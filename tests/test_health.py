@@ -1,4 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Health endpoint tests."""
+
 import os
 import sys
 import pytest
@@ -25,14 +27,17 @@ def health_client(health_app):
 
 
 class TestHealthEndpoint:
-
     def test_health_ok(self, health_client):
         with patch("health.db") as mock_db:
             mock_conn = MagicMock()
-            mock_db.get_connection.return_value.__enter__ = MagicMock(return_value=mock_conn)
+            mock_db.get_connection.return_value.__enter__ = MagicMock(
+                return_value=mock_conn
+            )
             mock_db.get_connection.return_value.__exit__ = MagicMock(return_value=False)
             mock_cursor = MagicMock()
-            mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cursor)
+            mock_conn.cursor.return_value.__enter__ = MagicMock(
+                return_value=mock_cursor
+            )
             mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
 
             resp = health_client.get("/health")

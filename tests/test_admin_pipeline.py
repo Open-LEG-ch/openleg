@@ -1,5 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for admin pipeline dashboard logic."""
-import pytest
+
 from sales_pipeline import get_pipeline_dashboard, get_pipeline, PIPELINE_STAGES
 
 

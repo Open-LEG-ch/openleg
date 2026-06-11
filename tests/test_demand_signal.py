@@ -1,15 +1,16 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for compute_municipality_demand_signal in insights_engine.py.
 
 Covers US-001: verified municipality demand signal.
 """
-import pytest
-from contextlib import contextmanager
+
 from unittest.mock import MagicMock, patch
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_db_mock(main_rows, formation_rows=None):
     """Return a patched `insights_engine.db` that yields *main_rows* on the
@@ -36,8 +37,8 @@ def _make_db_mock(main_rows, formation_rows=None):
 # Tests
 # ---------------------------------------------------------------------------
 
-class TestComputeMunicipalityDemandSignal:
 
+class TestComputeMunicipalityDemandSignal:
     def test_positive_case_returns_verified_signal(self):
         """Municipality with resident registrations and LEG formation produces
         a non-zero demand_score and signal_type='verified'."""
@@ -58,6 +59,7 @@ class TestComputeMunicipalityDemandSignal:
 
         with patch("insights_engine.db", _make_db_mock(main_rows, formation_rows)):
             from insights_engine import compute_municipality_demand_signal
+
             result = compute_municipality_demand_signal(bfs_number=261)
 
         assert "signals" in result
@@ -97,6 +99,7 @@ class TestComputeMunicipalityDemandSignal:
 
         with patch("insights_engine.db", _make_db_mock(main_rows, formation_rows)):
             from insights_engine import compute_municipality_demand_signal
+
             result = compute_municipality_demand_signal()
 
         sig = result["signals"][0]
@@ -122,6 +125,7 @@ class TestComputeMunicipalityDemandSignal:
 
         with patch("insights_engine.db", _make_db_mock(main_rows)):
             from insights_engine import compute_municipality_demand_signal
+
             result = compute_municipality_demand_signal(bfs_number=242)
 
         assert len(result["signals"]) == 1
@@ -150,6 +154,7 @@ class TestComputeMunicipalityDemandSignal:
 
         with patch("insights_engine.db", _make_db_mock(main_rows)):
             from insights_engine import compute_municipality_demand_signal
+
             result = compute_municipality_demand_signal()
 
         sig = result["signals"][0]
@@ -161,6 +166,7 @@ class TestComputeMunicipalityDemandSignal:
         """When the municipalities table is empty, signals list is empty."""
         with patch("insights_engine.db", _make_db_mock([])):
             from insights_engine import compute_municipality_demand_signal
+
             result = compute_municipality_demand_signal()
 
         assert result["signals"] == []
@@ -173,6 +179,7 @@ class TestComputeMunicipalityDemandSignal:
 
         with patch("insights_engine.db", mock_db):
             from insights_engine import compute_municipality_demand_signal
+
             result = compute_municipality_demand_signal()
 
         assert result["signals"] == []
@@ -188,15 +195,16 @@ class TestComputeMunicipalityDemandSignal:
                 "kanton": "ZH",
                 "subdomain": "dietikon",
                 "total_registered": 5,
-                "verified_buildings": 5,   # contributes min(5*2=10, 40) = 10
-                "recent_signups_90d": 5,   # contributes min(5, 15) = 5
-                "confirmed_leg_members": 2, # contributes min(2*3=6, 30) = 6
+                "verified_buildings": 5,  # contributes min(5*2=10, 40) = 10
+                "recent_signups_90d": 5,  # contributes min(5, 15) = 5
+                "confirmed_leg_members": 2,  # contributes min(2*3=6, 30) = 6
                 "meter_data_uploads": 0,
             }
         ]
         # 0 communities in formation → 0 extra points
         with patch("insights_engine.db", _make_db_mock(main_rows)):
             from insights_engine import compute_municipality_demand_signal
+
             result = compute_municipality_demand_signal(bfs_number=261)
 
         vd = result["signals"][0]["verified_demand"]
@@ -222,6 +230,7 @@ class TestComputeMunicipalityDemandSignal:
 
         with patch("insights_engine.db", mock_db):
             from insights_engine import compute_municipality_demand_signal
+
             result = compute_municipality_demand_signal(bfs_number=261)
 
         # The query must have been called with bfs_number as parameter

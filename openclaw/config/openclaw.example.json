@@ -1,0 +1,40 @@
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "model/${MODEL_ID}"
+      },
+      "workspace": "/home/node/.openclaw/workspace"
+    }
+  },
+  "models": {
+    "providers": {
+      "model": {
+        "baseUrl": "${MODEL_BASE_URL}",
+        "apiKey": "${MODEL_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          { "id": "${MODEL_ID}", "name": "Configured model" }
+        ]
+      }
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "bind": "loopback",
+    "controlUi": {
+      "allowedOrigins": ["http://localhost:18789"]
+    },
+    "auth": {
+      "mode": "password",
+      "token": "${OPENCLAW_GATEWAY_TOKEN}",
+      "password": "${OPENCLAW_GATEWAY_PASSWORD}"
+    }
+  },
+  "tools": {
+    "profile": "full"
+  },
+  "cron": {
+    "enabled": false
+  }
+}

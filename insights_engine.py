@@ -1,9 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 OpenLEG Insights Engine.
 Aggregates anonymized smart meter data into intelligence products for B2B API.
 """
+
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional
 
 import database as db
@@ -11,7 +13,7 @@ import database as db
 logger = logging.getLogger(__name__)
 
 
-def compute_load_profiles(plz: str = None, period: str = 'month') -> Dict:
+def compute_load_profiles(plz: str = None, period: str = "month") -> Dict:
     """Compute average load profiles by PLZ, building type, time-of-day."""
     try:
         with db.get_connection() as conn:
@@ -47,20 +49,28 @@ def compute_load_profiles(plz: str = None, period: str = 'month') -> Dict:
                 for row in rows:
                     key = f"{row['plz']}_{row['building_type']}"
                     if key not in profiles:
-                        profiles[key] = {"plz": row['plz'], "building_type": row['building_type'], "hourly": {}}
+                        profiles[key] = {
+                            "plz": row["plz"],
+                            "building_type": row["building_type"],
+                            "hourly": {},
+                        }
                     profiles[key]["hourly"][f"{int(row['hour'])}h"] = {
-                        "avg_consumption_kwh": float(row['avg_consumption'] or 0),
-                        "avg_production_kwh": float(row['avg_production'] or 0),
-                        "sample_size": row['sample_size']
+                        "avg_consumption_kwh": float(row["avg_consumption"] or 0),
+                        "avg_production_kwh": float(row["avg_production"] or 0),
+                        "sample_size": row["sample_size"],
                     }
 
-                return {"profiles": list(profiles.values()), "period": period, "computed_at": datetime.now().isoformat()}
+                return {
+                    "profiles": list(profiles.values()),
+                    "period": period,
+                    "computed_at": datetime.now().isoformat(),
+                }
     except Exception as e:
         logger.error(f"[INSIGHTS] Error computing load profiles: {e}")
         return {"profiles": [], "error": str(e)}
 
 
-def compute_solar_index(kanton: str = 'ZH') -> Dict:
+def compute_solar_index(kanton: str = "ZH") -> Dict:
     """PV penetration and battery storage rates by municipality."""
     try:
         with db.get_connection() as conn:
@@ -87,11 +97,17 @@ def compute_solar_index(kanton: str = 'ZH') -> Dict:
                 rows = [dict(r) for r in cur.fetchall()]
 
                 for row in rows:
-                    total = row['total_buildings'] or 1
-                    row['pv_penetration_pct'] = round((row['active_producers'] or 0) / total * 100, 1)
-                    row['avg_pv_kwp'] = round(float(row['avg_pv_kwp'] or 0), 1)
+                    total = row["total_buildings"] or 1
+                    row["pv_penetration_pct"] = round(
+                        (row["active_producers"] or 0) / total * 100, 1
+                    )
+                    row["avg_pv_kwp"] = round(float(row["avg_pv_kwp"] or 0), 1)
 
-                return {"solar_index": rows, "kanton": kanton, "computed_at": datetime.now().isoformat()}
+                return {
+                    "solar_index": rows,
+                    "kanton": kanton,
+                    "computed_at": datetime.now().isoformat(),
+                }
     except Exception as e:
         logger.error(f"[INSIGHTS] Error computing solar index: {e}")
         return {"solar_index": [], "error": str(e)}
@@ -118,10 +134,14 @@ def compute_flexibility_potential() -> Dict:
                 rows = [dict(r) for r in cur.fetchall()]
 
                 for row in rows:
-                    avg = float(row['avg_load_kwh'] or 0)
-                    peak = float(row['peak_load_kwh'] or 0)
-                    row['flexibility_potential_kwh'] = round((peak - avg) * float(row['households'] or 0), 1)
-                    row['load_variability'] = round(float(row['load_variability'] or 0), 4)
+                    avg = float(row["avg_load_kwh"] or 0)
+                    peak = float(row["peak_load_kwh"] or 0)
+                    row["flexibility_potential_kwh"] = round(
+                        (peak - avg) * float(row["households"] or 0), 1
+                    )
+                    row["load_variability"] = round(
+                        float(row["load_variability"] or 0), 4
+                    )
 
                 return {"flexibility": rows, "computed_at": datetime.now().isoformat()}
     except Exception as e:
@@ -150,9 +170,11 @@ def compute_community_signals() -> Dict:
                 rows = [dict(r) for r in cur.fetchall()]
 
                 for row in rows:
-                    total = row['registered_count'] or 1
-                    row['community_rate_pct'] = round((row['in_community'] or 0) / total * 100, 1)
-                    row['momentum_score'] = min(100, (row['recent_signups'] or 0) * 20)
+                    total = row["registered_count"] or 1
+                    row["community_rate_pct"] = round(
+                        (row["in_community"] or 0) / total * 100, 1
+                    )
+                    row["momentum_score"] = min(100, (row["recent_signups"] or 0) * 20)
 
                 return {"signals": rows, "computed_at": datetime.now().isoformat()}
     except Exception as e:
@@ -165,15 +187,15 @@ def refresh_all_insights():
     results = {}
 
     for name, fn in [
-        ('load_profiles', lambda: compute_load_profiles()),
-        ('solar_index', lambda: compute_solar_index()),
-        ('flexibility', lambda: compute_flexibility_potential()),
-        ('community_signals', lambda: compute_community_signals()),
-        ('municipality_demand', lambda: compute_municipality_demand_signal()),
+        ("load_profiles", lambda: compute_load_profiles()),
+        ("solar_index", lambda: compute_solar_index()),
+        ("flexibility", lambda: compute_flexibility_potential()),
+        ("community_signals", lambda: compute_community_signals()),
+        ("municipality_demand", lambda: compute_municipality_demand_signal()),
     ]:
         data = fn()
-        db.save_insight(name, scope='ZH', period='current', data=data, ttl_hours=24)
-        results[name] = 'ok' if 'error' not in data else data['error']
+        db.save_insight(name, scope="ZH", period="current", data=data, ttl_hours=24)
+        results[name] = "ok" if "error" not in data else data["error"]
 
     logger.info(f"[INSIGHTS] Refreshed all insights: {results}")
     return results
@@ -185,13 +207,20 @@ def compute_formation_pipeline(kanton: str = None) -> Dict:
     Returns: {stages: {stage: count}, total_communities: int, avg_formation_days: float}
     """
     try:
-        communities = db.list_communities_by_kanton(kanton) if kanton else db.list_all_communities()
+        communities = (
+            db.list_communities_by_kanton(kanton)
+            if kanton
+            else db.list_all_communities()
+        )
     except Exception:
         communities = []
 
     stage_counts = {
-        "interested": 0, "formation_started": 0, "dso_submitted": 0,
-        "dso_approved": 0, "active": 0
+        "interested": 0,
+        "formation_started": 0,
+        "dso_submitted": 0,
+        "dso_approved": 0,
+        "active": 0,
     }
     for c in communities:
         status = c.get("status", "interested")
@@ -206,6 +235,7 @@ def compute_formation_pipeline(kanton: str = None) -> Dict:
         if started and approved:
             try:
                 from datetime import datetime
+
                 if isinstance(started, str):
                     started = datetime.fromisoformat(started)
                 if isinstance(approved, str):
@@ -215,7 +245,9 @@ def compute_formation_pipeline(kanton: str = None) -> Dict:
                     formation_days.append(delta)
             except Exception:
                 pass
-    avg_days = round(sum(formation_days) / len(formation_days), 1) if formation_days else 0
+    avg_days = (
+        round(sum(formation_days) / len(formation_days), 1) if formation_days else 0
+    )
 
     return {
         "stages": stage_counts,
@@ -232,13 +264,17 @@ def compute_grid_optimization(kanton: str = "ZH") -> Dict:
     """
     try:
         profiles = db.get_all_municipality_profiles()
-        profiles = [p for p in profiles if p.get("kanton") == kanton] if kanton else profiles
+        profiles = (
+            [p for p in profiles if p.get("kanton") == kanton] if kanton else profiles
+        )
     except Exception:
         profiles = []
 
     total_consumption = sum(p.get("electricity_consumption_mwh", 0) for p in profiles)
     total_production = sum(p.get("renewable_production_mwh", 0) for p in profiles)
-    self_supply = (total_production / total_consumption * 100) if total_consumption > 0 else 0
+    self_supply = (
+        (total_production / total_consumption * 100) if total_consumption > 0 else 0
+    )
 
     actions = []
     if self_supply < 20:
@@ -307,7 +343,8 @@ def compute_municipality_demand_signal(bfs_number: int = None) -> Dict:
                 where = "WHERE m.bfs_number = %s" if bfs_number else ""
                 params: list = [bfs_number] if bfs_number else []
 
-                cur.execute(f"""
+                cur.execute(
+                    f"""
                     SELECT
                         m.bfs_number,
                         m.name,
@@ -331,10 +368,13 @@ def compute_municipality_demand_signal(bfs_number: int = None) -> Dict:
                     {where}
                     GROUP BY m.bfs_number, m.name, m.kanton, m.subdomain
                     ORDER BY verified_buildings DESC, m.name
-                """, params)
+                """,
+                    params,
+                )
                 rows = [dict(r) for r in cur.fetchall()]
 
-                cur.execute(f"""
+                cur.execute(
+                    f"""
                     SELECT
                         m.bfs_number,
                         COUNT(DISTINCT co.community_id) AS communities_in_formation
@@ -346,7 +386,9 @@ def compute_municipality_demand_signal(bfs_number: int = None) -> Dict:
                         AND co.formation_started_at IS NOT NULL
                     {where}
                     GROUP BY m.bfs_number
-                """, params)
+                """,
+                    params,
+                )
                 formation_counts = {
                     int(r["bfs_number"]): int(r["communities_in_formation"])
                     for r in cur.fetchall()
@@ -381,25 +423,29 @@ def compute_municipality_demand_signal(bfs_number: int = None) -> Dict:
             else:
                 demand_level = "none"
 
-            signals.append({
-                "bfs_number": bfs,
-                "name": row.get("name"),
-                "kanton": row.get("kanton", "ZH"),
-                "verified_demand": {
-                    "verified_buildings": verified,
-                    "recent_signups_90d": recent,
-                    "confirmed_leg_members": members,
-                    "communities_in_formation": in_formation,
-                    "meter_data_uploads": uploads,
-                    "demand_score": demand_score,
-                },
-                "heuristic_baseline": {
-                    "source": "public_data_only",
-                    "has_resident_data": has_resident_data,
-                },
-                "demand_level": demand_level,
-                "signal_type": "verified" if has_resident_data else "heuristic_only",
-            })
+            signals.append(
+                {
+                    "bfs_number": bfs,
+                    "name": row.get("name"),
+                    "kanton": row.get("kanton", "ZH"),
+                    "verified_demand": {
+                        "verified_buildings": verified,
+                        "recent_signups_90d": recent,
+                        "confirmed_leg_members": members,
+                        "communities_in_formation": in_formation,
+                        "meter_data_uploads": uploads,
+                        "demand_score": demand_score,
+                    },
+                    "heuristic_baseline": {
+                        "source": "public_data_only",
+                        "has_resident_data": has_resident_data,
+                    },
+                    "demand_level": demand_level,
+                    "signal_type": "verified"
+                    if has_resident_data
+                    else "heuristic_only",
+                }
+            )
 
         return {
             "signals": signals,
@@ -508,21 +554,23 @@ def rank_municipalities_for_outreach(
 
         outreach_score = round(contrib_energy + contrib_gap + contrib_demand, 2)
 
-        ranked.append({
-            "bfs_number": bfs_int,
-            "name": profile.get("name"),
-            "kanton": profile.get("kanton", "ZH"),
-            "energy_transition_score": energy,
-            "leg_value_gap_chf": value_gap_chf,
-            "demand_score": demand_score,
-            "demand_level": demand_level,
-            "outreach_score": outreach_score,
-            "score_breakdown": {
-                "energy_transition": round(contrib_energy, 2),
-                "value_gap": round(contrib_gap, 2),
-                "demand": round(contrib_demand, 2),
-            },
-        })
+        ranked.append(
+            {
+                "bfs_number": bfs_int,
+                "name": profile.get("name"),
+                "kanton": profile.get("kanton", "ZH"),
+                "energy_transition_score": energy,
+                "leg_value_gap_chf": value_gap_chf,
+                "demand_score": demand_score,
+                "demand_level": demand_level,
+                "outreach_score": outreach_score,
+                "score_breakdown": {
+                    "energy_transition": round(contrib_energy, 2),
+                    "value_gap": round(contrib_gap, 2),
+                    "demand": round(contrib_demand, 2),
+                },
+            }
+        )
 
     ranked.sort(key=lambda x: x["outreach_score"], reverse=True)
     return ranked
@@ -534,7 +582,11 @@ def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
     Returns: avg members, avg self-supply ratio, top communities
     """
     try:
-        communities = db.list_communities_by_kanton(kanton) if kanton else db.list_all_communities()
+        communities = (
+            db.list_communities_by_kanton(kanton)
+            if kanton
+            else db.list_all_communities()
+        )
     except Exception:
         communities = []
 
@@ -553,17 +605,22 @@ def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
     # Compute avg self-supply ratio from billing data
     avg_self_supply = 0
     try:
-        community_ids = [c.get("community_id") for c in communities if c.get("community_id")]
+        community_ids = [
+            c.get("community_id") for c in communities if c.get("community_id")
+        ]
         if community_ids:
             with db.get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT AVG(bli.self_supply_ratio) as avg_ratio
                         FROM billing_line_items bli
                         JOIN billing_periods bp ON bli.billing_period_id = bp.id
                         WHERE bp.community_id = ANY(%s)
                           AND bli.self_supply_ratio IS NOT NULL
-                    """, (community_ids,))
+                    """,
+                        (community_ids,),
+                    )
                     row = cur.fetchone()
                     if row and row.get("avg_ratio"):
                         avg_self_supply = round(float(row["avg_ratio"]), 3)
@@ -575,5 +632,7 @@ def compute_community_benchmarks(kanton: str = "ZH") -> Dict:
         "avg_members": round(avg_members, 1),
         "avg_self_supply_ratio": avg_self_supply,
         "total_communities": len(communities),
-        "top_communities": sorted(communities, key=lambda c: c.get("member_count", 0), reverse=True)[:5],
+        "top_communities": sorted(
+            communities, key=lambda c: c.get("member_count", 0), reverse=True
+        )[:5],
     }

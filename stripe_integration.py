@@ -1,4 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Stripe billing integration for OpenLEG utility clients."""
+
 import os
 import logging
 import stripe
@@ -9,7 +11,9 @@ WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 # Price IDs per tier (set these after creating products in Stripe dashboard)
 TIER_PRICES = {
     "starter": os.environ.get("STRIPE_PRICE_STARTER", "price_starter_placeholder"),
-    "professional": os.environ.get("STRIPE_PRICE_PROFESSIONAL", "price_pro_placeholder"),
+    "professional": os.environ.get(
+        "STRIPE_PRICE_PROFESSIONAL", "price_pro_placeholder"
+    ),
     "enterprise": os.environ.get("STRIPE_PRICE_ENTERPRISE", "price_ent_placeholder"),
 }
 
@@ -87,6 +91,7 @@ def _activate_subscription(client_id, subscription_id, customer_id):
     """Update utility client with Stripe IDs. Placeholder for DB integration."""
     try:
         import database
+
         database.update_utility_client_stripe(
             int(client_id), subscription_id, customer_id, status="active"
         )
@@ -98,15 +103,19 @@ def _deactivate_subscription(subscription_id):
     """Deactivate utility client by subscription ID."""
     try:
         import database
+
         database.deactivate_utility_by_subscription(subscription_id)
     except Exception as e:
-        logging.getLogger(__name__).error(f"[STRIPE] deactivate_subscription failed: {e}")
+        logging.getLogger(__name__).error(
+            f"[STRIPE] deactivate_subscription failed: {e}"
+        )
 
 
 def _flag_payment_failed(subscription_id):
     """Flag payment failure for a subscription."""
     try:
         import database
+
         database.flag_utility_payment_failed(subscription_id)
     except Exception as e:
         logging.getLogger(__name__).error(f"[STRIPE] flag_payment_failed failed: {e}")

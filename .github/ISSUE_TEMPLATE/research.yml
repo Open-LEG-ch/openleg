@@ -1,0 +1,47 @@
+name: Public Research
+description: Share a public source, dataset, or regulatory correction
+labels: ["research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for public evidence that can improve OpenLEG.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+      description: What do we need to find out?
+      placeholder: "Example: Which public source defines this LEG tariff field?"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Research category
+      options:
+        - "Regulatory & legal"
+        - "Public dataset"
+        - "Technical feasibility"
+        - "Documentation correction"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and background
+      description: Why do we need this research?
+    validations:
+      required: false
+
+  - type: textarea
+    id: deliverable
+    attributes:
+      label: Expected deliverable
+      description: What output should this research produce?
+      placeholder: "Example: Documentation correction with source URLs"
+    validations:
+      required: false

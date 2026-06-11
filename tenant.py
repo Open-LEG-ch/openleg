@@ -1,7 +1,9 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Multi-tenant resolution for OpenLEG platform.
 Maps hostnames to territory configs stored in white_label_configs table.
 """
+
 import time
 import logging
 from typing import Dict, Optional
@@ -120,13 +122,16 @@ def _load_tenant_from_db(territory: str, db) -> Optional[Dict]:
     try:
         with db.get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT territory, utility_name, logo_url, primary_color,
                            secondary_color, contact_email, contact_phone,
                            legal_entity, dso_contact, active, config
                     FROM white_label_configs
                     WHERE territory = %s AND active = TRUE
-                """, (territory,))
+                """,
+                    (territory,),
+                )
                 row = cur.fetchone()
                 return dict(row) if row else None
     except Exception:
@@ -159,11 +164,25 @@ def _merge_tenant_row(row: Dict) -> Dict:
     # JSONB config overrides everything
     jsonb = row.get("config") or {}
     if isinstance(jsonb, dict):
-        for key in ("city_name", "kanton", "kanton_code", "platform_name",
-                     "brand_prefix", "map_center_lat", "map_center_lon",
-                     "map_zoom", "map_bounds_sw", "map_bounds_ne",
-                     "plz_ranges", "solar_kwh_per_kwp", "site_url", "ga4_id",
-                     "dso_name", "grid_level", "tariff_group"):
+        for key in (
+            "city_name",
+            "kanton",
+            "kanton_code",
+            "platform_name",
+            "brand_prefix",
+            "map_center_lat",
+            "map_center_lon",
+            "map_zoom",
+            "map_bounds_sw",
+            "map_bounds_ne",
+            "plz_ranges",
+            "solar_kwh_per_kwp",
+            "site_url",
+            "ga4_id",
+            "dso_name",
+            "grid_level",
+            "tariff_group",
+        ):
             if key in jsonb:
                 config[key] = jsonb[key]
 

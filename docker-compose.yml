@@ -3,6 +3,8 @@ services:
     build: .
     container_name: openleg-flask
     restart: unless-stopped
+    mem_limit: 384m
+    mem_reservation: 256m
     depends_on:
       postgres:
         condition: service_healthy
@@ -12,7 +14,7 @@ services:
       - path: .env
         required: false
     environment:
-      - DATABASE_URL=postgresql://badenleg:${POSTGRES_PASSWORD}@postgres:5432/badenleg
+      - DATABASE_URL=postgresql://openleg:${POSTGRES_PASSWORD}@postgres:5432/openleg
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - flask_data:/data
@@ -29,42 +31,19 @@ services:
     image: postgres:16-alpine
     container_name: openleg-postgres
     restart: unless-stopped
+    mem_limit: 256m
+    mem_reservation: 128m
     environment:
-      - POSTGRES_USER=badenleg
+      - POSTGRES_USER=openleg
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=badenleg
+      - POSTGRES_DB=openleg
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U badenleg"]
+      test: ["CMD-SHELL", "pg_isready -U openleg"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - web
-
-  openclaw:
-    build:
-      context: ./openclaw
-      dockerfile: Dockerfile
-    container_name: openleg-openclaw
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
-      - OPENCLAW_GATEWAY_PASSWORD=${OPENCLAW_GATEWAY_PASSWORD}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - BRAVE_API_KEY=${BRAVE_API_KEY}
-      - OPENCLAW_READONLY=${OPENCLAW_READONLY:-false}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:18789/"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
     networks:
       - web
 
@@ -72,6 +51,8 @@ services:
     image: redis:7-alpine
     container_name: openleg-redis
     restart: unless-stopped
+    mem_limit: 64m
+    mem_reservation: 32m
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -84,6 +65,8 @@ services:
     image: caddy:latest
     container_name: openleg-caddy
     restart: always
+    mem_limit: 128m
+    mem_reservation: 64m
     depends_on:
       flask:
         condition: service_healthy
