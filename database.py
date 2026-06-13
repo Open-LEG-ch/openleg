@@ -2432,6 +2432,42 @@ def save_municipality_pv_panel(rows: List[Dict]) -> int:
         return 0
 
 
+def get_pv_profiles(kanton: str = None) -> List[Dict]:
+    """Alle Gemeinden mit berechnetem PV-Score, für die Rangliste."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                if kanton:
+                    cur.execute(
+                        """
+                        SELECT bfs_number, name, kanton, population, density_per_km2,
+                               area_km2, pv_score_pct, pv_estimated_potential_kw,
+                               pv_installed_kw, pv_untapped_kw, pv_annual_potential_gwh,
+                               pv_snapshot_year, pv_plant_match_rate
+                        FROM municipality_profiles
+                        WHERE pv_score_pct IS NOT NULL AND kanton = %s
+                        ORDER BY pv_score_pct DESC
+                        """,
+                        (kanton,),
+                    )
+                else:
+                    cur.execute(
+                        """
+                        SELECT bfs_number, name, kanton, population, density_per_km2,
+                               area_km2, pv_score_pct, pv_estimated_potential_kw,
+                               pv_installed_kw, pv_untapped_kw, pv_annual_potential_gwh,
+                               pv_snapshot_year, pv_plant_match_rate
+                        FROM municipality_profiles
+                        WHERE pv_score_pct IS NOT NULL
+                        ORDER BY pv_score_pct DESC
+                        """
+                    )
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting PV profiles: {e}")
+        return []
+
+
 def get_municipality_pv_panel(bfs_number: int) -> List[Dict]:
     """Panel-Zeilen einer Gemeinde, nach Jahr aufsteigend."""
     try:
