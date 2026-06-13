@@ -10,6 +10,26 @@ OpenLEG is open-source infrastructure for Swiss Local Electricity Communities (L
 - Public documentation and contribution workflow
 - CI and test automation
 
+## Choose your path
+
+OpenLEG serves four audiences. Pick the one that matches you.
+
+| You are | On the site | Get started |
+| --- | --- | --- |
+| Resident / founder | `/fuer-bewohner` | Check your address, find neighbours, start a LEG on the hosted platform. |
+| LEG operator | `/leg-gruenden` | Found and run a community; manage members and self-consumption billing. |
+| Municipality | `/fuer-gemeinden` | Compare solar usage, claim a free `<gemeinde>.openleg.ch` page. |
+| Developer / self-host | this repo | Read the code, use the free API, run your own instance (below). |
+
+Most users do not self-host: the hosted platform gives every municipality and
+LEG its own subdomain at no cost. Self-hosting is for teams who want full data
+sovereignty on their own infrastructure.
+
+### Live examples
+
+- Municipality: `/gemeinde/profil/4021` (Baden, real ElCom and Sonnendach data)
+- LEG: `/leg-gruenden` walks a concrete formation end to end
+
 ## Quick start
 
 ```bash

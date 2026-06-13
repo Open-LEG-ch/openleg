@@ -446,6 +446,11 @@ def how_it_works():
     return render_city_template("how-it-works.html")
 
 
+@app.route("/fuer-bewohner")
+def fuer_bewohner():
+    return render_city_template("fuer_bewohner.html")
+
+
 @app.route("/fuer-gemeinden")
 def fuer_gemeinden():
     return render_city_template("fuer_gemeinden.html")
@@ -503,6 +508,7 @@ def sitemap_xml():
     pages = [
         ("/", "1.0", "daily", current_date),
         ("/how-it-works", "0.8", "weekly", current_date),
+        ("/fuer-bewohner", "0.9", "weekly", current_date),
         ("/fuer-gemeinden", "0.8", "weekly", current_date),
         ("/leg-gruenden", "0.9", "weekly", current_date),
         ("/leg-kalkulator", "0.9", "weekly", current_date),
