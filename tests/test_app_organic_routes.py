@@ -69,6 +69,8 @@ def test_sitemap_contains_directory_docs_and_profile_urls(full_app_module, monke
     xml = resp.data.decode("utf-8", errors="ignore")
     assert "/gemeinde/verzeichnis" in xml
     assert "/api/v1/docs" in xml
+    assert "/rangliste/fortschritte" in xml
+    assert "/rangliste/vergleich" in xml
     assert "/gemeinde/profil/261" in xml
     assert "/gemeinde/profil/247" in xml
     assert "/admin/" not in xml

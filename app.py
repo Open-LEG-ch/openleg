@@ -486,6 +486,8 @@ def sitemap_xml():
         ("/pricing", "0.7", "monthly", current_date),
         ("/gemeinde/verzeichnis", "0.9", "weekly", current_date),
         ("/rangliste", "0.9", "daily", current_date),
+        ("/rangliste/fortschritte", "0.8", "daily", current_date),
+        ("/rangliste/vergleich", "0.7", "weekly", current_date),
         ("/rangliste/methodik", "0.6", "monthly", current_date),
         ("/api/v1/docs", "0.8", "weekly", current_date),
         ("/gemeinde/onboarding", "0.9", "weekly", current_date),
