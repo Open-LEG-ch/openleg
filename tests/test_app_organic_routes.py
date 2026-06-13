@@ -23,6 +23,14 @@ def _disable_rate_limit_hooks(flask_app):
     return hooks
 
 
+def _csp_sources(header, directive_name):
+    for directive in header.split(";"):
+        parts = directive.strip().split()
+        if parts and parts[0] == directive_name:
+            return set(parts[1:])
+    return set()
+
+
 @pytest.fixture
 def full_app_module():
     with patch.dict(
@@ -54,6 +62,36 @@ def test_robots_allows_api_docs_but_blocks_api(full_app_module):
     body = resp.data.decode("utf-8", errors="ignore")
     assert "Allow: /api/v1/docs" in body
     assert "Disallow: /api/" in body
+
+
+def test_security_policy_allows_google_analytics_region_collect(full_app_module):
+    client = full_app_module.app.test_client()
+    resp = client.get("/robots.txt")
+
+    csp = resp.headers.get("Content-Security-Policy", "")
+    assert _csp_sources(csp, "connect-src") == {
+        "'self'",
+        "https://www.google-analytics.com",
+        "https://region1.google-analytics.com",
+        "https://www.googletagmanager.com",
+    }
+
+
+def test_root_favicon_serves_static_icon(full_app_module):
+    client = full_app_module.app.test_client()
+
+    resp = client.get("/favicon.ico")
+
+    assert resp.status_code == 200
+    assert resp.mimetype == "image/vnd.microsoft.icon"
+
+
+def test_shared_tailwind_partial_uses_local_css():
+    with open("templates/partials/tailwind_brand.html") as f:
+        content = f.read()
+
+    assert "cdn.tailwindcss.com" not in content
+    assert "/static/css/openleg.css" in content
 
 
 def test_sitemap_contains_directory_docs_and_profile_urls(full_app_module, monkeypatch):
@@ -96,6 +134,32 @@ def test_open_source_page_explains_codebase(full_app_module):
     assert 'type="application/ld+json"' in html
     assert '"@type": "SoftwareApplication"' in html
     assert '"applicationCategory": "EnergyApplication"' in html
+
+
+@pytest.mark.parametrize(
+    ("route", "headline"),
+    [
+        ("/how-it-works", "So funktioniert"),
+        ("/leg-gruenden", "LEG gründen"),
+        ("/leg-kalkulator", "LEG-Kalkulator"),
+        ("/pricing", "Kostenlos"),
+    ],
+)
+def test_public_guides_have_share_metadata(full_app_module, route, headline):
+    client = full_app_module.app.test_client()
+
+    resp = client.get(route)
+
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert headline in html
+    assert '<meta name="description"' in html
+    assert f'rel="canonical" href="http://localhost:5003{route}"' in html
+    assert 'property="og:title"' in html
+    assert 'property="og:description"' in html
+    assert f'property="og:url" content="http://localhost:5003{route}"' in html
+    assert 'name="twitter:card" content="summary_large_image"' in html
+    assert '"@type": "BreadcrumbList"' in html
 
 
 def test_backfill_elcom_invalid_secret_returns_403_and_no_mutation(

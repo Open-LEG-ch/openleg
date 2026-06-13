@@ -36,6 +36,28 @@ docker compose ps
 - Cache: Redis 7
 - Reverse proxy: Caddy
 
+See:
+
+- [Architecture](docs/architecture.md)
+- [Data pipeline](docs/data-pipeline.md)
+- [API examples](docs/api-examples.md)
+
+## Route map
+
+- `/` resident and municipality entry point
+- `/rangliste` and `/gemeinde/profil/<bfs>` solar utilization ranking
+- `/fuer-gemeinden` municipality onboarding overview
+- `/open-source` codebase and self-hosting explainer
+- `/api/v1/docs` public API documentation
+- `/health` and `/livez` runtime health checks
+
+## Data pipeline
+
+- Public data fetchers live in `public_data.py`
+- Persistent tables and migrations live in `database.py`
+- PV ranking import lives in `scripts/load_pv_data.py`
+- API read paths live in `api_public.py` and ranking blueprints
+
 ## Contributing
 
 - Open an issue before larger changes
