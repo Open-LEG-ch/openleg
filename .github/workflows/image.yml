@@ -2,8 +2,8 @@ name: Publish image
 
 on:
   push:
-    branches: [main]
     tags: ["v*"]
+  workflow_dispatch: {}
 
 jobs:
   publish:
@@ -28,8 +28,8 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/openleg
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=tag
+            type=raw,value=latest
             type=sha,format=short
 
       - name: Build and push
