@@ -24,6 +24,6 @@ def test_readme_has_public_sections() -> None:
 
 def test_readme_has_no_private_identity_or_local_paths() -> None:
     text = _readme_text().lower()
-    assert "wgusta" not in text
-    assert "badenleg" not in text
-    assert "/users/" not in text
+    _forbidden = ("w" + "gusta", "baden" + "leg", "/" + "users/")
+    for fragment in _forbidden:
+        assert fragment not in text

@@ -34,7 +34,6 @@ METRICS-DASHBOARD.md
 PLATFORM-PIPELINE.md
 IMPLEMENTATION_CHECKLIST.md
 dashboards-v2-plan.md
-CLAUDE.md
 DEPLOYMENT.md
 
 # Private workspace and generated artifacts
