@@ -77,6 +77,24 @@ def test_sitemap_contains_directory_docs_and_profile_urls(full_app_module, monke
     assert "/api/v1/municipalities" not in xml
 
 
+def test_open_source_page_explains_codebase(full_app_module):
+    client = full_app_module.app.test_client()
+
+    resp = client.get("/open-source")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "Open Source" in html
+    assert "Flask" in html
+    assert "PostgreSQL" in html
+    assert "Redis" in html
+    assert "Caddy" in html
+    assert "Datenpipeline" in html
+    assert "Public App Repo" in html
+    assert "Private Ops Repo" in html
+    assert "git clone https://github.com/Open-LEG-ch/openleg.git" in html
+    assert "github.com/Open-LEG-ch/openleg" in html
+
+
 def test_backfill_elcom_invalid_secret_returns_403_and_no_mutation(
     full_app_module, monkeypatch
 ):
