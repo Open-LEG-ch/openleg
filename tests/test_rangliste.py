@@ -152,3 +152,35 @@ def test_movers_tab_filters_by_canton(monkeypatch):
     )
     assert "Zürichberg" in html
     assert "Mittelstadt" not in html
+
+
+def _make_compare_client(monkeypatch, rows=SAMPLE):
+    monkeypatch.setattr(
+        rangliste_module.db, "get_pv_profiles", lambda kanton=None: rows
+    )
+    by_bfs = {r["bfs_number"]: r for r in rows}
+    monkeypatch.setattr(
+        rangliste_module.db, "get_municipality_profile", lambda bfs: by_bfs.get(bfs)
+    )
+    app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
+    app.config["TESTING"] = True
+    app.register_blueprint(rangliste_module.rangliste_bp)
+    return app.test_client()
+
+
+def test_vergleich_picker_without_selection(monkeypatch):
+    client = _make_compare_client(monkeypatch)
+    html = client.get("/rangliste/vergleich").data.decode("utf-8", errors="ignore")
+    assert "Gemeinden vergleichen" in html
+    assert "Sonnendorf" in html  # im Dropdown
+
+
+def test_vergleich_shows_two_municipalities(monkeypatch):
+    client = _make_compare_client(monkeypatch)
+    html = client.get("/rangliste/vergleich?a=1&b=3").data.decode(
+        "utf-8", errors="ignore"
+    )
+    assert "Sonnendorf" in html
+    assert "Zürichberg" in html
+    assert "Nationaler Rang" in html
+    assert "Ungenutztes Potenzial" in html

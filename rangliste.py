@@ -91,6 +91,52 @@ def hub():
     return render_template("gemeinde/rangliste.html", **context)
 
 
+def _bfs_arg(name):
+    raw = (request.args.get(name) or "").strip()
+    return int(raw) if raw.isdigit() else None
+
+
+@rangliste_bp.route("/rangliste/vergleich")
+def vergleich():
+    bfs_a = _bfs_arg("a")
+    bfs_b = _bfs_arg("b")
+
+    all_pv = db.get_pv_profiles()
+    rank_map = {r["bfs_number"]: r["rank"] for r in pv_ranking.assign_ranks(all_pv)}
+
+    def enrich(bfs):
+        if not bfs:
+            return None
+        profile = db.get_municipality_profile(bfs)
+        if not profile:
+            return None
+        score, over_100 = pv_ranking.capped_score(profile.get("pv_score_pct"))
+        return {
+            **profile,
+            "display_score": score,
+            "score_over_100": over_100,
+            "pv_rank": rank_map.get(bfs),
+        }
+
+    municipalities = sorted(
+        (
+            {"bfs_number": r["bfs_number"], "name": r["name"], "kanton": r["kanton"]}
+            for r in all_pv
+        ),
+        key=lambda m: m["name"] or "",
+    )
+
+    return render_template(
+        "gemeinde/vergleich.html",
+        a=enrich(bfs_a),
+        b=enrich(bfs_b),
+        bfs_a=bfs_a,
+        bfs_b=bfs_b,
+        municipalities=municipalities,
+        canonical_url=f"{request.url_root.rstrip('/')}/rangliste/vergleich",
+    )
+
+
 @rangliste_bp.route("/rangliste/fortschritte")
 def movers():
     kanton = _clean_param("kanton")

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zwei Gemeinden vergleichen | OpenLEG</title>
+  <meta name="description" content="Vergleichen Sie zwei Schweizer Gemeinden direkt bei Solarnutzung, ungenutztem Potenzial und nationalem Rang.">
+  <link rel="canonical" href="{{ canonical_url }}">
+  {% include 'partials/tailwind_brand.html' %}
+</head>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold">Gemeinden vergleichen</h1>
+      <p class="text-ink-muted mt-2 max-w-2xl">
+        Stellen Sie zwei Gemeinden nebeneinander. Wer nutzt mehr vom eigenen Dachpotenzial?
+      </p>
+      <p class="text-sm text-ink-muted mt-2">
+        <a href="/rangliste" class="text-brand hover:underline">Zurück zur Rangliste</a>
+      </p>
+    </header>
+
+    <form method="get" action="/rangliste/vergleich" class="bg-white rounded-xl p-4 shadow-sm border mb-6 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+      <div>
+        <label class="block text-xs text-ink-muted mb-1">Gemeinde A</label>
+        <select name="a" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="">Bitte wählen</option>
+          {% for m in municipalities %}
+          <option value="{{ m.bfs_number }}" {{ 'selected' if m.bfs_number == bfs_a }}>{{ m.name }} ({{ m.kanton }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-ink-muted mb-1">Gemeinde B</label>
+        <select name="b" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="">Bitte wählen</option>
+          {% for m in municipalities %}
+          <option value="{{ m.bfs_number }}" {{ 'selected' if m.bfs_number == bfs_b }}>{{ m.name }} ({{ m.kanton }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark w-full">Vergleichen</button>
+      </div>
+    </form>
+
+    {% if a and b %}
+    {% set a_lead = (a.display_score|default(0)|float) >= (b.display_score|default(0)|float) %}
+    <div class="grid grid-cols-2 gap-4">
+      {% for g, leads in [(a, a_lead), (b, not a_lead)] %}
+      <div class="bg-white rounded-xl p-6 shadow-sm border {{ 'border-brand/40' if leads else '' }}">
+        <a href="/gemeinde/profil/{{ g.bfs_number }}" class="text-xl font-bold hover:text-brand">{{ g.name }}</a>
+        <p class="text-sm text-ink-muted mb-4">Kanton {{ g.kanton }}{% if g.population %} · {{ "{:,}".format(g.population|int).replace(",", "'") }} Einwohner{% endif %}</p>
+
+        <div class="space-y-3">
+          <div>
+            <p class="text-xs text-ink-muted uppercase tracking-wide">Solarnutzung</p>
+            <p class="text-3xl font-bold {{ 'text-brand' if leads else 'text-ink' }}">
+              {% if g.display_score is not none %}{{ "%.1f"|format(g.display_score|float) }}%{% if g.score_over_100 %}<span class="text-xs ml-1">+</span>{% endif %}{% else %}–{% endif %}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted uppercase tracking-wide">Nationaler Rang</p>
+            <p class="text-lg font-semibold">{% if g.pv_rank %}{{ g.pv_rank }}{% else %}–{% endif %}</p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted uppercase tracking-wide">Ungenutztes Potenzial</p>
+            <p class="text-lg font-semibold">{% if g.pv_untapped_kw is not none %}{{ "{:,}".format(g.pv_untapped_kw|int).replace(",", "'") }} kW{% else %}–{% endif %}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="text-xs text-ink-muted mt-4">Solarnutzung gedeckelt bei 100 %. Quellen: BFE Anlagenregister, BFE Sonnendach, BFS.</p>
+    {% elif bfs_a or bfs_b %}
+    <div class="bg-white rounded-xl p-8 text-center shadow-sm border">
+      <p class="text-ink-muted">Bitte zwei Gemeinden mit verfügbaren Daten wählen.</p>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl p-8 text-center shadow-sm border">
+      <p class="text-ink-muted">Wählen Sie zwei Gemeinden, um sie zu vergleichen.</p>
+    </div>
+    {% endif %}
+  </main>
+
+  {% include 'partials/site_footer.html' %}
+</body>
+</html>
