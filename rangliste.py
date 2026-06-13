@@ -7,9 +7,10 @@ fairen Peers und zeigt das nächste konkrete Ziel.
 
 import logging
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, Response, render_template, request
 
 import database as db
+import pv_badge
 import pv_ranking
 from municipality import SWISS_CANTON_OPTIONS
 
@@ -94,6 +95,40 @@ def hub():
 def _bfs_arg(name):
     raw = (request.args.get(name) or "").strip()
     return int(raw) if raw.isdigit() else None
+
+
+def _rank_for(bfs):
+    rank_map = {
+        r["bfs_number"]: r["rank"]
+        for r in pv_ranking.assign_ranks(db.get_pv_profiles())
+    }
+    return rank_map.get(bfs)
+
+
+@rangliste_bp.route("/rangliste/badge/<int:bfs>.svg")
+def badge(bfs):
+    profile = db.get_municipality_profile(bfs)
+    if not profile:
+        return Response(status=404)
+    score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
+    svg = pv_badge.badge_svg(profile.get("name"), score, _rank_for(bfs))
+    return Response(svg, mimetype="image/svg+xml")
+
+
+@rangliste_bp.route("/rangliste/og/<int:bfs>.svg")
+def og_card(bfs):
+    profile = db.get_municipality_profile(bfs)
+    if not profile:
+        return Response(status=404)
+    score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
+    svg = pv_badge.og_card_svg(
+        profile.get("name"),
+        profile.get("kanton"),
+        score,
+        _rank_for(bfs),
+        profile.get("pv_untapped_kw"),
+    )
+    return Response(svg, mimetype="image/svg+xml")
 
 
 @rangliste_bp.route("/rangliste/vergleich")

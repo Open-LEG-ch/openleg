@@ -209,6 +209,7 @@ def profil(bfs):
         improvement=improvement,
         already_top=already_top,
         leaders=leaders,
+        share_base=request.url_root.rstrip("/"),
         canonical_url=f"{request.url_root.rstrip('/')}/gemeinde/profil/{bfs}",
     )
 
