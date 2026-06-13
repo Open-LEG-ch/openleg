@@ -93,6 +93,9 @@ def test_open_source_page_explains_codebase(full_app_module):
     assert "Private Ops Repo" in html
     assert "git clone https://github.com/Open-LEG-ch/openleg.git" in html
     assert "github.com/Open-LEG-ch/openleg" in html
+    assert 'type="application/ld+json"' in html
+    assert '"@type": "SoftwareApplication"' in html
+    assert '"applicationCategory": "EnergyApplication"' in html
 
 
 def test_backfill_elcom_invalid_secret_returns_403_and_no_mutation(

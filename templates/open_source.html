@@ -9,6 +9,20 @@
   <meta property="og:title" content="Open Source und Codebase | OpenLEG">
   <meta property="og:description" content="Architektur, Datenpipeline, Repo-Grenzen und Selbsthosting der freien OpenLEG Infrastruktur.">
   <meta property="og:url" content="{{ site_url }}/open-source">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "OpenLEG",
+    "applicationCategory": "EnergyApplication",
+    "operatingSystem": "Web",
+    "softwareRequirements": "Python 3.11, PostgreSQL 16, Redis 7, Caddy",
+    "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+    "codeRepository": "https://github.com/Open-LEG-ch/openleg",
+    "url": "{{ site_url }}/open-source",
+    "description": "Open Source Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften."
+  }
+  </script>
   {% include 'partials/tailwind_brand.html' %}
 </head>
 <body class="bg-[#f6f4ef] text-ink">
