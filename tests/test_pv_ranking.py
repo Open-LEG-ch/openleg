@@ -104,6 +104,41 @@ def test_league_standings_ranks_in_each_league():
     assert "Ländlich" in chips
 
 
+def test_league_leaders_excludes_self_and_ineligible():
+    rows = [
+        {
+            "bfs_number": 1,
+            "name": "Self",
+            "pv_score_pct": 90,
+            "pv_annual_potential_gwh": 9,
+        },
+        {
+            "bfs_number": 2,
+            "name": "Gross",
+            "pv_score_pct": 60,
+            "pv_annual_potential_gwh": 9,
+        },
+        {
+            "bfs_number": 3,
+            "name": "Dorf",
+            "pv_score_pct": 99,
+            "pv_annual_potential_gwh": 2,
+        },
+        {
+            "bfs_number": 4,
+            "name": "Mittel",
+            "pv_score_pct": 70,
+            "pv_annual_potential_gwh": 6,
+        },
+    ]
+    leaders = pv_ranking.league_leaders(rows, exclude_bfs=1, n=3)
+    names = [leader["name"] for leader in leaders]
+    assert names == [
+        "Mittel",
+        "Gross",
+    ]  # Dorf ist nicht zitierfähig, Self ausgeschlossen
+
+
 def test_filter_league_by_canton_and_size():
     rows = [
         {"kanton": "AG", "population": 3000, "density_per_km2": 500},

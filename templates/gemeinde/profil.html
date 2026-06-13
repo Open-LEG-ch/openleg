@@ -100,6 +100,49 @@
         </div>
         {% endif %}
 
+        <!-- Nächster Schritt -->
+        {% if profile.get('pv_score_pct') is not none %}
+        <div class="bg-brand/5 rounded-xl p-6 shadow-sm border border-brand/20 mb-8">
+            <h2 class="text-lg font-semibold mb-2">Nächster Schritt für {{ profile.name }}</h2>
+            {% if already_top %}
+            <p class="text-gray-700">
+                {{ profile.name }} gehört bei vergleichbar grossen Gemeinden schon zum oberen Viertel. Halten Sie das Tempo und bauen Sie den Vorsprung aus.
+            </p>
+            {% elif improvement and improvement.needed_kw > 0 %}
+            <p class="text-gray-700">
+                Ziel: <strong>+{{ "{:,}".format(improvement.needed_kw|int).replace(",", "'") }} kW</strong>
+                (rund {{ improvement.roofs }} weitere Dächer), um bei vergleichbar grossen Gemeinden ins obere Viertel zu kommen.
+            </p>
+            {% else %}
+            <p class="text-gray-700">
+                Jede zusätzliche Dachanlage hebt die Solarnutzung von {{ profile.name }}. Legen Sie mit den eigenen Liegenschaften los.
+            </p>
+            {% endif %}
+
+            <h3 class="font-semibold mt-5 mb-2 text-sm uppercase tracking-wide text-gray-500">Konkrete Massnahmen</h3>
+            <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
+                <li>Eigene Dächer mit PV ausstatten: Schulen, Turnhallen, Werkhof.</li>
+                <li>Solarpflicht für Neubau und Sanierung in die Bauordnung aufnehmen.</li>
+                <li>Eine lokale Elektrizitätsgemeinschaft (LEG) gründen und Eigenverbrauch bündeln.</li>
+                <li>Einmalvergütung und kantonale Förderung aktiv an Eigentümer kommunizieren.</li>
+                <li>Geeignete Dächer aus dem Sonnendach-Kataster gezielt ansprechen.</li>
+            </ul>
+            <a href="/leg-gruenden" class="inline-block mt-4 bg-brand text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">LEG gründen</a>
+
+            {% if leaders %}
+            <h3 class="font-semibold mt-6 mb-2 text-sm uppercase tracking-wide text-gray-500">Vorbilder in {{ profile.kanton }}</h3>
+            <div class="flex flex-wrap gap-3">
+                {% for leader in leaders %}
+                <a href="/gemeinde/profil/{{ leader.bfs_number }}" class="text-sm bg-white border rounded-lg px-3 py-2 hover:border-brand/40">
+                    <span class="font-medium">{{ leader.name }}</span>
+                    <span class="text-gray-500">· {{ "%.0f"|format(leader.display_score|float) }}%</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <div class="grid md:grid-cols-2 gap-8">
             <!-- Tariff Breakdown -->
             {% if tariffs %}

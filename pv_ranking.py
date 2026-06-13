@@ -165,6 +165,32 @@ def league_standings(all_rows: List[Dict], profile: Dict) -> List[Dict]:
     return chips
 
 
+def league_leaders(
+    rows: List[Dict], exclude_bfs: Optional[int] = None, n: int = 3
+) -> List[Dict]:
+    """Top-Vorbilder einer Liga zum Abschauen, nur zitierfähige Gemeinden."""
+    eligible = [
+        r
+        for r in rows
+        if is_leader_eligible(r)
+        and r.get("pv_score_pct") is not None
+        and r.get("bfs_number") != exclude_bfs
+    ]
+    ranked = sorted(eligible, key=_score_key, reverse=True)
+    leaders = []
+    for row in ranked[:n]:
+        score, _ = capped_score(row.get("pv_score_pct"))
+        leaders.append(
+            {
+                "bfs_number": row.get("bfs_number"),
+                "name": row.get("name"),
+                "kanton": row.get("kanton"),
+                "display_score": score,
+            }
+        )
+    return leaders
+
+
 def filter_league(
     rows: List[Dict],
     kanton: Optional[str] = None,

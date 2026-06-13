@@ -167,10 +167,34 @@ def profil(bfs):
     if solar_score is None and profile.get("solar_potential_pct") is not None:
         solar_score = round(float(profile["solar_potential_pct"]), 1)
 
-    # Liga-Ränge nur, wenn ein PV-Score vorliegt
+    # Liga-Ränge, Verbesserungsziel und Vorbilder nur bei vorhandenem PV-Score
     league_chips = []
+    improvement = None
+    already_top = False
+    leaders = []
     if profile.get("pv_score_pct") is not None:
-        league_chips = pv_ranking.league_standings(db.get_pv_profiles(), profile)
+        all_pv = db.get_pv_profiles()
+        league_chips = pv_ranking.league_standings(all_pv, profile)
+
+        size = pv_ranking.size_band(profile.get("population"))
+        if size:
+            size_league = pv_ranking.filter_league(all_pv, size=size)
+            threshold = pv_ranking.top_quartile_threshold(size_league)
+            improvement = pv_ranking.improvement_target(profile, threshold)
+            me = next(
+                (
+                    r
+                    for r in pv_ranking.assign_ranks(size_league)
+                    if r["bfs_number"] == bfs
+                ),
+                None,
+            )
+            already_top = bool(me and me["quartile"] == pv_ranking.TOP_QUARTILE)
+
+        leaders = pv_ranking.league_leaders(
+            pv_ranking.filter_league(all_pv, kanton=profile.get("kanton")),
+            exclude_bfs=bfs,
+        )
 
     return render_template(
         "gemeinde/profil.html",
@@ -182,6 +206,9 @@ def profil(bfs):
         solar_score=solar_score,
         solar_over_100=solar_over_100,
         league_chips=league_chips,
+        improvement=improvement,
+        already_top=already_top,
+        leaders=leaders,
         canonical_url=f"{request.url_root.rstrip('/')}/gemeinde/profil/{bfs}",
     )
 
