@@ -144,3 +144,27 @@ class TestFuerGemeindenPage:
         assert 'id="mobile-menu"' in content
         assert 'aria-controls="mobile-menu"' in content
         assert 'href="/open-source"' in content
+
+    def test_site_nav_has_skip_link_and_focus_target(self):
+        template_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "partials",
+            "site_nav.html",
+        )
+        css_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "static",
+            "css",
+            "tailwind.css",
+        )
+        with open(template_path, encoding="utf-8") as handle:
+            content = handle.read()
+        with open(css_path, encoding="utf-8") as handle:
+            css = handle.read()
+
+        assert 'class="skip-link"' in content
+        assert 'href="#main-content"' in content
+        assert 'id="main-content"' in content
+        assert 'tabindex="-1"' in content
+        assert ".skip-link:focus" in css
