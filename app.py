@@ -14,7 +14,16 @@ import io
 
 # PUBLIC-SNAPSHOT-PRIVATE-END: private-export-imports
 from datetime import timedelta
-from flask import Flask, request, jsonify, render_template, abort, Response, g
+from flask import (
+    Flask,
+    request,
+    jsonify,
+    render_template,
+    abort,
+    Response,
+    g,
+    send_from_directory,
+)
 from jinja2 import TemplateNotFound
 import pandas as pd
 import numpy as np
@@ -123,7 +132,6 @@ if HAS_SECURITY_LIBS:
             "script-src": [
                 "'self'",
                 "'unsafe-inline'",
-                "https://cdn.tailwindcss.com",
                 "https://unpkg.com",
                 "https://cdn.jsdelivr.net",
                 "https://www.googletagmanager.com",
@@ -139,6 +147,7 @@ if HAS_SECURITY_LIBS:
             "connect-src": [
                 "'self'",
                 "https://www.google-analytics.com",
+                "https://region1.google-analytics.com",
                 "https://www.googletagmanager.com",
             ],
         },
@@ -475,6 +484,15 @@ def robots_txt():
         f"Sitemap: {SITE_URL}/sitemap.xml",
     ]
     return Response("\n".join(lines) + "\n", mimetype="text/plain")
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(
+        app.static_folder,
+        "favicon.ico",
+        mimetype="image/vnd.microsoft.icon",
+    )
 
 
 @app.route("/sitemap.xml")

@@ -56,6 +56,31 @@ def test_robots_allows_api_docs_but_blocks_api(full_app_module):
     assert "Disallow: /api/" in body
 
 
+def test_security_policy_allows_google_analytics_region_collect(full_app_module):
+    client = full_app_module.app.test_client()
+    resp = client.get("/robots.txt")
+
+    csp = resp.headers.get("Content-Security-Policy", "")
+    assert "https://region1.google-analytics.com" in csp
+
+
+def test_root_favicon_serves_static_icon(full_app_module):
+    client = full_app_module.app.test_client()
+
+    resp = client.get("/favicon.ico")
+
+    assert resp.status_code == 200
+    assert resp.mimetype == "image/vnd.microsoft.icon"
+
+
+def test_shared_tailwind_partial_uses_local_css():
+    with open("templates/partials/tailwind_brand.html") as f:
+        content = f.read()
+
+    assert "cdn.tailwindcss.com" not in content
+    assert "/static/css/openleg.css" in content
+
+
 def test_sitemap_contains_directory_docs_and_profile_urls(full_app_module, monkeypatch):
     monkeypatch.setattr(
         full_app_module.db,
