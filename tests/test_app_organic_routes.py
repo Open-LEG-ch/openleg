@@ -123,6 +123,32 @@ def test_open_source_page_explains_codebase(full_app_module):
     assert '"applicationCategory": "EnergyApplication"' in html
 
 
+@pytest.mark.parametrize(
+    ("route", "headline"),
+    [
+        ("/how-it-works", "So funktioniert"),
+        ("/leg-gruenden", "LEG gründen"),
+        ("/leg-kalkulator", "LEG-Kalkulator"),
+        ("/pricing", "Kostenlos"),
+    ],
+)
+def test_public_guides_have_share_metadata(full_app_module, route, headline):
+    client = full_app_module.app.test_client()
+
+    resp = client.get(route)
+
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert headline in html
+    assert '<meta name="description"' in html
+    assert f'rel="canonical" href="http://localhost:5003{route}"' in html
+    assert 'property="og:title"' in html
+    assert 'property="og:description"' in html
+    assert f'property="og:url" content="http://localhost:5003{route}"' in html
+    assert 'name="twitter:card" content="summary_large_image"' in html
+    assert '"@type": "BreadcrumbList"' in html
+
+
 def test_backfill_elcom_invalid_secret_returns_403_and_no_mutation(
     full_app_module, monkeypatch
 ):
