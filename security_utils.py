@@ -10,8 +10,8 @@ from email_validator import validate_email, EmailNotValidError
 from urllib.parse import urlparse
 
 # Allowed HTML tags for sanitization (none for our use case)
-ALLOWED_TAGS = []
-ALLOWED_ATTRIBUTES = {}
+ALLOWED_TAGS: list[str] = []
+ALLOWED_ATTRIBUTES: dict[str, list[str]] = {}
 
 
 def sanitize_string(text, max_length=500):

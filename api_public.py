@@ -57,7 +57,7 @@ def add_cors_headers(response):
 
 # === Rate limiting helper ===
 
-_request_counts = {}
+_request_counts: dict[str, int] = {}
 
 
 def _rate_limit_key():
