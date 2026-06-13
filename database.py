@@ -2700,7 +2700,9 @@ def get_vnb_research(vnb_name: str) -> Optional[Dict]:
 
 
 def get_all_vnb_research(
-    pipeline_status: Optional[str] = None, kanton: Optional[str] = None, order_by: str = "priority_score"
+    pipeline_status: Optional[str] = None,
+    kanton: Optional[str] = None,
+    order_by: str = "priority_score",
 ) -> List[Dict]:
     """Get all VNB research records, optionally filtered."""
     allowed_orders = {"priority_score", "vnb_name", "population_served", "updated_at"}
@@ -2725,7 +2727,9 @@ def get_all_vnb_research(
         return []
 
 
-def update_vnb_pipeline_status(vnb_name: str, status: str, notes: Optional[str] = None) -> bool:
+def update_vnb_pipeline_status(
+    vnb_name: str, status: str, notes: Optional[str] = None
+) -> bool:
     """Update VNB pipeline status."""
     try:
         with get_connection() as conn:
