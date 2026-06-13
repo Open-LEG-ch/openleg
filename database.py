@@ -390,9 +390,33 @@ def _create_tables():
                     renewable_production_mwh DECIMAL(12, 2),
                     leg_value_gap_chf DECIMAL(10, 2),
                     energy_transition_score DECIMAL(6, 2),
+                    pv_score_pct DECIMAL(6, 2),
+                    pv_estimated_potential_kw DECIMAL(14, 2),
+                    pv_installed_kw DECIMAL(14, 2),
+                    pv_untapped_kw DECIMAL(14, 2),
+                    pv_annual_potential_gwh DECIMAL(12, 2),
+                    pv_snapshot_year INTEGER,
+                    pv_plant_match_rate DECIMAL(6, 2),
+                    density_per_km2 DECIMAL(10, 2),
+                    area_km2 DECIMAL(10, 2),
                     data_sources JSONB DEFAULT '{}',
                     fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # 10-year PV-Nutzungs-Panel (Quelle: dbm-leg-project, BFE-Anlagen kumuliert)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS municipality_pv_panel (
+                    bfs_number INTEGER NOT NULL,
+                    year INTEGER NOT NULL,
+                    added_kw DECIMAL(14, 2),
+                    added_plants INTEGER,
+                    cumulative_kw DECIMAL(14, 2),
+                    estimated_potential_kw DECIMAL(14, 2),
+                    score_pct DECIMAL(8, 4),
+                    untapped_kw DECIMAL(14, 2),
+                    PRIMARY KEY (bfs_number, year)
                 )
             """)
 
@@ -696,6 +720,31 @@ def _create_tables():
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_sonnendach_municipal_bfs ON sonnendach_municipal(bfs_number)"
+            )
+
+            # PV-Nutzungs-Spalten auf bestehende Profile nachziehen
+            for column_ddl in (
+                "pv_score_pct DECIMAL(6, 2)",
+                "pv_estimated_potential_kw DECIMAL(14, 2)",
+                "pv_installed_kw DECIMAL(14, 2)",
+                "pv_untapped_kw DECIMAL(14, 2)",
+                "pv_annual_potential_gwh DECIMAL(12, 2)",
+                "pv_snapshot_year INTEGER",
+                "pv_plant_match_rate DECIMAL(6, 2)",
+                "density_per_km2 DECIMAL(10, 2)",
+                "area_km2 DECIMAL(10, 2)",
+            ):
+                cur.execute(
+                    f"ALTER TABLE municipality_profiles ADD COLUMN IF NOT EXISTS {column_ddl}"
+                )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_municipality_profiles_pv_score ON municipality_profiles(pv_score_pct DESC)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_municipality_pv_panel_year ON municipality_pv_panel(year)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_municipality_pv_panel_bfs ON municipality_pv_panel(bfs_number)"
             )
 
             cur.execute(
@@ -2281,6 +2330,121 @@ def get_municipality_profile(bfs_number: int) -> Optional[Dict]:
     except Exception as e:
         logger.error(f"[DB] Error getting municipality profile: {e}")
         return None
+
+
+def upsert_municipality_pv(profile: Dict) -> bool:
+    """Upsert PV-Nutzungs-Kennzahlen auf ein Gemeindeprofil.
+
+    Setzt nur PV- und Geo-Spalten plus Name/Kanton/Einwohner. ElCom-, Solar-
+    und Energiewende-Felder bleiben unberührt, damit der Massenimport reichere
+    bestehende Profile nicht überschreibt.
+    """
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO municipality_profiles (
+                        bfs_number, name, kanton, population,
+                        density_per_km2, area_km2,
+                        pv_score_pct, pv_estimated_potential_kw, pv_installed_kw,
+                        pv_untapped_kw, pv_annual_potential_gwh, pv_snapshot_year,
+                        pv_plant_match_rate)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (bfs_number) DO UPDATE SET
+                        name = EXCLUDED.name, kanton = EXCLUDED.kanton,
+                        population = EXCLUDED.population,
+                        density_per_km2 = EXCLUDED.density_per_km2,
+                        area_km2 = EXCLUDED.area_km2,
+                        pv_score_pct = EXCLUDED.pv_score_pct,
+                        pv_estimated_potential_kw = EXCLUDED.pv_estimated_potential_kw,
+                        pv_installed_kw = EXCLUDED.pv_installed_kw,
+                        pv_untapped_kw = EXCLUDED.pv_untapped_kw,
+                        pv_annual_potential_gwh = EXCLUDED.pv_annual_potential_gwh,
+                        pv_snapshot_year = EXCLUDED.pv_snapshot_year,
+                        pv_plant_match_rate = EXCLUDED.pv_plant_match_rate,
+                        updated_at = CURRENT_TIMESTAMP
+                """,
+                    (
+                        profile["bfs_number"],
+                        profile["name"],
+                        profile.get("kanton", "ZH"),
+                        profile.get("population"),
+                        profile.get("density_per_km2"),
+                        profile.get("area_km2"),
+                        profile.get("pv_score_pct"),
+                        profile.get("pv_estimated_potential_kw"),
+                        profile.get("pv_installed_kw"),
+                        profile.get("pv_untapped_kw"),
+                        profile.get("pv_annual_potential_gwh"),
+                        profile.get("pv_snapshot_year"),
+                        profile.get("pv_plant_match_rate"),
+                    ),
+                )
+                return True
+    except Exception as e:
+        logger.error(f"[DB] Error upserting municipality PV: {e}")
+        return False
+
+
+def save_municipality_pv_panel(rows: List[Dict]) -> int:
+    """Bulk-Upsert von Panel-Zeilen (bfs_number, year). Gibt Zeilenzahl zurück."""
+    if not rows:
+        return 0
+    try:
+        from psycopg2.extras import execute_values
+
+        values = [
+            (
+                r["bfs_number"],
+                r["year"],
+                r.get("added_kw"),
+                r.get("added_plants"),
+                r.get("cumulative_kw"),
+                r.get("estimated_potential_kw"),
+                r.get("score_pct"),
+                r.get("untapped_kw"),
+            )
+            for r in rows
+        ]
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                execute_values(
+                    cur,
+                    """
+                    INSERT INTO municipality_pv_panel (
+                        bfs_number, year, added_kw, added_plants, cumulative_kw,
+                        estimated_potential_kw, score_pct, untapped_kw)
+                    VALUES %s
+                    ON CONFLICT (bfs_number, year) DO UPDATE SET
+                        added_kw = EXCLUDED.added_kw,
+                        added_plants = EXCLUDED.added_plants,
+                        cumulative_kw = EXCLUDED.cumulative_kw,
+                        estimated_potential_kw = EXCLUDED.estimated_potential_kw,
+                        score_pct = EXCLUDED.score_pct,
+                        untapped_kw = EXCLUDED.untapped_kw
+                """,
+                    values,
+                )
+                return len(values)
+    except Exception as e:
+        logger.error(f"[DB] Error saving PV panel rows: {e}")
+        return 0
+
+
+def get_municipality_pv_panel(bfs_number: int) -> List[Dict]:
+    """Panel-Zeilen einer Gemeinde, nach Jahr aufsteigend."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT * FROM municipality_pv_panel WHERE bfs_number = %s ORDER BY year",
+                    (bfs_number,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting PV panel: {e}")
+        return []
 
 
 def get_all_municipality_profiles(
