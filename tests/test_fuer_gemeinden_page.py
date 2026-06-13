@@ -52,3 +52,25 @@ class TestFuerGemeindenPage:
             content = handle.read()
         assert "2'131 Schweizer Gemeinden" not in content
         assert "Gemeinde-Profile aus öffentlichen Datenquellen" in content
+
+    def test_homepage_links_to_rangliste(self):
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "index.html",
+        )
+        with open(path, encoding="utf-8") as handle:
+            content = handle.read()
+        assert "/rangliste" in content
+        assert "Solarnutzung" in content
+
+    def test_fuer_gemeinden_template_links_to_rangliste(self):
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "fuer_gemeinden.html",
+        )
+        with open(path, encoding="utf-8") as handle:
+            content = handle.read()
+        assert "Rangliste ansehen" in content
+        assert 'href="/rangliste"' in content
