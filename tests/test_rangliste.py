@@ -184,3 +184,17 @@ def test_vergleich_shows_two_municipalities(monkeypatch):
     assert "Zürichberg" in html
     assert "Nationaler Rang" in html
     assert "Ungenutztes Potenzial" in html
+
+
+def test_methodik_page_renders_caveats_and_register(monkeypatch):
+    app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
+    app.config["TESTING"] = True
+    app.register_blueprint(rangliste_module.rangliste_bp)
+    client = app.test_client()
+    resp = client.get("/rangliste/methodik")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "Methodik" in html
+    assert "BFE Sonnendach" in html
+    assert "ungematcht" in html
+    assert "zentrales LEG-Register" in html

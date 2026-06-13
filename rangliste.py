@@ -172,6 +172,17 @@ def vergleich():
     )
 
 
+@rangliste_bp.route("/rangliste/methodik")
+def methodik():
+    import pv_data
+
+    return render_template(
+        "gemeinde/methodik.html",
+        plant_match_rate=pv_data.PLANT_MATCH_RATE_PCT,
+        canonical_url=f"{request.url_root.rstrip('/')}/rangliste/methodik",
+    )
+
+
 @rangliste_bp.route("/rangliste/fortschritte")
 def movers():
     kanton = _clean_param("kanton")

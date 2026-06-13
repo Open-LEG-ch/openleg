@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Methodik der Solarnutzungs-Rangliste | OpenLEG</title>
+  <meta name="description" content="Wie OpenLEG die Solarnutzung berechnet: Kennzahl, Datenquellen, Ligen, Fortschritt und die ehrlichen Grenzen der Daten.">
+  <link rel="canonical" href="{{ canonical_url }}">
+  {% include 'partials/tailwind_brand.html' %}
+</head>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
+
+  <main class="max-w-3xl mx-auto px-4 py-10">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold">Methodik</h1>
+      <p class="text-ink-muted mt-2">
+        Wir legen offen, wie die Solarnutzung entsteht, woher die Daten kommen und wo ihre Grenzen liegen.
+      </p>
+      <p class="text-sm text-ink-muted mt-2"><a href="/rangliste" class="text-brand hover:underline">Zurück zur Rangliste</a></p>
+    </header>
+
+    <section class="bg-white rounded-xl p-6 shadow-sm border mb-6">
+      <h2 class="text-xl font-semibold mb-2">Kennzahl</h2>
+      <p class="text-gray-700">
+        Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial, mal 100.
+        Sie zeigt, welchen Anteil ihres Dachpotenzials eine Gemeinde schon nutzt.
+      </p>
+      <ul class="mt-3 space-y-1 text-sm text-gray-700 list-disc list-inside">
+        <li><strong>Aktueller Snapshot:</strong> nutzt die installierte Leistung der heute registrierten Anlagen.</li>
+        <li><strong>Fortschritt:</strong> nutzt das 10-Jahres-Panel mit kumulierter Leistung nach Inbetriebnahmejahr.</li>
+        <li><strong>Ungenutztes Potenzial:</strong> geschätztes Dachpotenzial minus installierte Leistung.</li>
+      </ul>
+    </section>
+
+    <section class="bg-white rounded-xl p-6 shadow-sm border mb-6">
+      <h2 class="text-xl font-semibold mb-2">Datenquellen</h2>
+      <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
+        <li>BFE Elektrizitätsproduktionsanlagen: installierte Leistung und Inbetriebnahme.</li>
+        <li>BFE Sonnendach: geschätztes Dachpotenzial, der Nenner.</li>
+        <li>BFS Regionalporträts: Einwohner, Dichte und Fläche für die Ligen.</li>
+      </ul>
+    </section>
+
+    <section class="bg-white rounded-xl p-6 shadow-sm border mb-6">
+      <h2 class="text-xl font-semibold mb-2">Ligen und Fortschritt</h2>
+      <p class="text-gray-700">
+        Wir vergleichen Gemeinden mit fairen Peers: nach Kanton, nach Grösse (Einwohner) und nach Dichte (Einwohner pro km2).
+        National ist die Standardansicht, die Filter grenzen auf eine Liga ein.
+      </p>
+      <p class="text-gray-700 mt-2">
+        Der Fortschritt misst die Veränderung des Scores im letzten vollen Jahr, in Prozentpunkten.
+        Er stammt nur aus dem Panel und wird nie mit dem Snapshot vermischt.
+      </p>
+    </section>
+
+    <section class="bg-white rounded-xl p-6 shadow-sm border mb-6">
+      <h2 class="text-xl font-semibold mb-2">Grenzen der Daten</h2>
+      <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+        <li>Das Matching ordnet {{ "%.0f"|format(plant_match_rate|float) }} % der PV-Anlagen deterministisch einer Gemeinde zu. Rund 23 % bleiben ungematcht, meist wegen ungelöster Orts- oder Fusionsnamen. Sie fehlen im Zähler und drücken den Score nach unten.</li>
+        <li>Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir deckeln die Anzeige bei 100 % und markieren diese Fälle.</li>
+        <li>Für eine Vorbild-Aussage verlangen wir ein Mindestpotenzial, damit kleine Dorf-Artefakte die Spitze nicht verzerren.</li>
+        <li>Snapshot und Panel beruhen auf unterschiedlichen Leistungsangaben. Darum trennen wir Rangliste und Fortschritt sauber.</li>
+        <li>Stimmt ein Wert nicht? Melden Sie es uns über den Korrektur-Link auf dem Gemeindeprofil.</li>
+      </ul>
+    </section>
+
+    <section class="bg-brand/5 rounded-xl p-6 shadow-sm border border-brand/20">
+      <h2 class="text-xl font-semibold mb-2">Ausblick: zentrales LEG-Register</h2>
+      <p class="text-gray-700">
+        Heute misst die Rangliste die Solarnutzung als öffentlichen Näherungswert für die Energiewende vor Ort.
+        Als Nächstes planen wir ein zentrales Verzeichnis aller Lokalen Elektrizitätsgemeinschaften.
+        Damit lässt sich nicht nur Potenzial zeigen, sondern auch, wo Bewohner bereits gemeinsam Strom nutzen.
+        Dieses Register ist noch nicht gebaut.
+      </p>
+    </section>
+  </main>
+
+  {% include 'partials/site_footer.html' %}
+</body>
+</html>
