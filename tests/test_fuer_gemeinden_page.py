@@ -39,8 +39,8 @@ class TestFuerGemeindenPage:
                 assert "OpenLEG für Gemeinden" in html
                 assert "Selbst betreiben" in html
                 assert "Gehostet" in html
-                assert "github.com/openleg-ch/openleg" in html
-                assert "github.com/openleg/openleg" not in html
+                assert "github.com/Open-LEG-ch/openleg" in html
+                assert "github.com/openleg-ch/openleg" not in html
 
     def test_homepage_no_full_coverage_claim(self):
         path = os.path.join(
