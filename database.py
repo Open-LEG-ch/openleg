@@ -2432,7 +2432,7 @@ def save_municipality_pv_panel(rows: List[Dict]) -> int:
         return 0
 
 
-def get_pv_profiles(kanton: str = None) -> List[Dict]:
+def get_pv_profiles(kanton: Optional[str] = None) -> List[Dict]:
     """Alle Gemeinden mit berechnetem PV-Score, für die Rangliste."""
     try:
         with get_connection() as conn:
