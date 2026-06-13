@@ -2,15 +2,46 @@
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
     <a href="/" class="text-2xl font-bold text-ink">OpenLEG</a>
     <div class="hidden md:flex items-center gap-6 text-sm text-ink">
-      <a href="#bewohner" class="hover:text-brand">Stromgemeinschaft gründen</a>
+      <a href="/#bewohner" class="hover:text-brand">Stromgemeinschaft gründen</a>
       <a href="/fuer-gemeinden" class="hover:text-brand">Für Gemeinden</a>
       <a href="/rangliste" class="hover:text-brand">Rangliste</a>
       <a href="/how-it-works" class="hover:text-brand">So funktioniert's</a>
-      <a href="https://github.com/Open-LEG-ch/openleg" class="hover:text-brand" target="_blank" rel="noopener">Open Source</a>
+      <a href="/open-source" class="hover:text-brand">Open Source</a>
       <a href="/api/v1/docs" class="hover:text-brand">API</a>
     </div>
     <div class="flex items-center gap-2">
-      <a href="/fuer-gemeinden" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Wie Ihre Gemeinde teilnimmt</a>
+      <a href="/fuer-gemeinden" class="hidden sm:inline-flex bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Wie Ihre Gemeinde teilnimmt</a>
+      <button id="mobile-menu-toggle" type="button" class="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-ink" aria-controls="mobile-menu" aria-expanded="false" aria-label="Navigation öffnen">
+        <span class="sr-only">Navigation öffnen</span>
+        <span class="block w-5 space-y-1">
+          <span class="block h-0.5 bg-ink"></span>
+          <span class="block h-0.5 bg-ink"></span>
+          <span class="block h-0.5 bg-ink"></span>
+        </span>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 bg-white">
+    <div class="max-w-6xl mx-auto px-4 py-3 grid gap-3 text-sm">
+      <a href="/#bewohner" class="py-2 text-ink hover:text-brand">Stromgemeinschaft gründen</a>
+      <a href="/fuer-gemeinden" class="py-2 text-ink hover:text-brand">Für Gemeinden</a>
+      <a href="/rangliste" class="py-2 text-ink hover:text-brand">Rangliste</a>
+      <a href="/how-it-works" class="py-2 text-ink hover:text-brand">So funktioniert's</a>
+      <a href="/open-source" class="py-2 text-ink hover:text-brand">Open Source</a>
+      <a href="/api/v1/docs" class="py-2 text-ink hover:text-brand">API</a>
+      <a href="/fuer-gemeinden" class="mt-1 bg-brand text-white px-4 py-2 rounded-lg text-center font-medium hover:bg-brand-dark">Wie Ihre Gemeinde teilnimmt</a>
     </div>
   </div>
 </nav>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const menu = document.getElementById('mobile-menu');
+    if (!toggle || !menu) return;
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!expanded));
+      menu.classList.toggle('hidden', expanded);
+    });
+  });
+</script>

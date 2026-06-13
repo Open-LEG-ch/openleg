@@ -442,6 +442,11 @@ def fuer_gemeinden():
     return render_city_template("fuer_gemeinden.html")
 
 
+@app.route("/open-source")
+def open_source():
+    return render_city_template("open_source.html")
+
+
 @app.route("/leg-gruenden")
 def leg_gruenden():
     return render_city_template("leg_gruenden.html")
@@ -484,8 +489,11 @@ def sitemap_xml():
         ("/leg-gruenden", "0.9", "weekly", current_date),
         ("/leg-kalkulator", "0.9", "weekly", current_date),
         ("/pricing", "0.7", "monthly", current_date),
+        ("/open-source", "0.8", "weekly", current_date),
         ("/gemeinde/verzeichnis", "0.9", "weekly", current_date),
         ("/rangliste", "0.9", "daily", current_date),
+        ("/rangliste/fortschritte", "0.8", "daily", current_date),
+        ("/rangliste/vergleich", "0.7", "weekly", current_date),
         ("/rangliste/methodik", "0.6", "monthly", current_date),
         ("/api/v1/docs", "0.8", "weekly", current_date),
         ("/gemeinde/onboarding", "0.9", "weekly", current_date),

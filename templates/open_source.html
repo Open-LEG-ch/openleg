@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Source und Codebase | OpenLEG</title>
+  <meta name="description" content="Wie OpenLEG als offene Infrastruktur funktioniert: Public App Repo, Private Ops Repo, Flask, PostgreSQL, Redis, Caddy und offene Energiedaten.">
+  <link rel="canonical" href="{{ site_url }}/open-source">
+  <meta property="og:title" content="Open Source und Codebase | OpenLEG">
+  <meta property="og:description" content="Architektur, Datenpipeline, Repo-Grenzen und Selbsthosting der freien OpenLEG Infrastruktur.">
+  <meta property="og:url" content="{{ site_url }}/open-source">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "OpenLEG",
+    "applicationCategory": "EnergyApplication",
+    "operatingSystem": "Web",
+    "softwareRequirements": "Python 3.11, PostgreSQL 16, Redis 7, Caddy",
+    "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+    "codeRepository": "https://github.com/Open-LEG-ch/openleg",
+    "url": "{{ site_url }}/open-source",
+    "description": "Open Source Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften."
+  }
+  </script>
+  {% include 'partials/tailwind_brand.html' %}
+</head>
+<body class="bg-[#f6f4ef] text-ink">
+  {% include 'partials/site_nav.html' %}
+
+  <main class="max-w-6xl mx-auto px-4 py-12">
+    <header class="max-w-3xl mb-10">
+      <p class="text-sm font-semibold text-brand mb-2">Open Source</p>
+      <h1 class="text-4xl font-bold mb-4">Freie Energieinfrastruktur, die man prüfen und selbst betreiben kann.</h1>
+      <p class="text-lg text-ink-muted">OpenLEG ist das Public App Repo für Schweizer Lokale Elektrizitätsgemeinschaften. Der Code ist offen, die Datenquellen sind nachvollziehbar, und produktive Geheimnisse bleiben ausserhalb des öffentlichen Repos.</p>
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">GitHub öffnen</a>
+        <a href="/api/v1/docs" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">API ansehen</a>
+      </div>
+    </header>
+
+    <section class="grid md:grid-cols-2 gap-6 mb-10">
+      <div class="bg-white border border-slate-200 rounded-xl p-6">
+        <h2 class="text-xl font-bold mb-3">Public App Repo</h2>
+        <p class="text-ink-muted mb-4">Hier liegen Produktcode, Tests, Templates, öffentliche Datenmodelle, API und CI. Dieses Repo ist dafür gedacht, gelesen, geprüft und geforkt zu werden.</p>
+        <ul class="space-y-2 text-sm text-ink-muted list-disc list-inside">
+          <li>Flask App und öffentliche API</li>
+          <li>PostgreSQL Schema und idempotente Migrationen</li>
+          <li>Templates, statische Assets und Tests</li>
+          <li>AGPL-3.0-or-later Lizenz</li>
+        </ul>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-6">
+        <h2 class="text-xl font-bold mb-3">Private Ops Repo</h2>
+        <p class="text-ink-muted mb-4">Produktionsbetrieb, Host-Inventar, Secrets, Incident-Notizen und interne Strategie bleiben privat. So bleibt der App-Code offen, ohne produktive Infrastruktur offenzulegen.</p>
+        <ul class="space-y-2 text-sm text-ink-muted list-disc list-inside">
+          <li>Deployment-Runbooks und Hostnamen</li>
+          <li>Secret-Handling und Rotation</li>
+          <li>Incident Response und interne Planung</li>
+          <li>Keine Bürgerdaten im öffentlichen Repo</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 mb-10">
+      <h2 class="text-2xl font-bold mb-4">Architektur</h2>
+      <div class="grid md:grid-cols-4 gap-4 text-sm">
+        <div class="border border-slate-200 rounded-lg p-4">
+          <h3 class="font-semibold mb-1">Flask</h3>
+          <p class="text-ink-muted">Routen, Formulare, Gemeindeprofile, Rangliste und JSON API.</p>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-4">
+          <h3 class="font-semibold mb-1">PostgreSQL</h3>
+          <p class="text-ink-muted">Gemeindedaten, PV Panel, Tarife, Registrierungen und Audit-Daten.</p>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-4">
+          <h3 class="font-semibold mb-1">Redis</h3>
+          <p class="text-ink-muted">Cache und kurzfristige technische Zustände.</p>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-4">
+          <h3 class="font-semibold mb-1">Caddy</h3>
+          <p class="text-ink-muted">TLS, Domains und Reverse Proxy vor der Flask App.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid md:grid-cols-2 gap-6 mb-10">
+      <div class="bg-white border border-slate-200 rounded-xl p-6">
+        <h2 class="text-xl font-bold mb-3">Datenpipeline</h2>
+        <p class="text-ink-muted mb-4">OpenLEG verbindet öffentliche Energiedaten mit nachvollziehbarer Logik. Die Solarnutzungs-Rangliste nutzt einen deterministischen Export aus BFE Anlagenregister, BFE Sonnendach und BFS Regionalporträts.</p>
+        <ul class="space-y-2 text-sm text-ink-muted list-disc list-inside">
+          <li>ElCom Tarife für H4 und weitere Kategorien</li>
+          <li>BFE Sonnendach für geschätztes Dachpotenzial</li>
+          <li>BFS Regionalporträts für Bevölkerung, Fläche und Dichte</li>
+          <li>CSV Seeds in <code>data/public</code>, Import über <code>scripts/load_pv_data.py</code></li>
+        </ul>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-6">
+        <h2 class="text-xl font-bold mb-3">Selbst betreiben</h2>
+        <p class="text-ink-muted mb-4">Die lokale Entwicklung braucht Python, Docker und eine `.env` aus der öffentlichen Vorlage.</p>
+        <pre class="bg-ink text-slate-300 rounded-lg p-4 text-sm overflow-x-auto"><code>git clone https://github.com/Open-LEG-ch/openleg.git
+cd openleg
+cp .env.example .env
+docker compose up -d</code></pre>
+      </div>
+    </section>
+
+    <section class="bg-brand/5 border border-brand/20 rounded-xl p-6">
+      <h2 class="text-xl font-bold mb-2">Warum offen?</h2>
+      <p class="text-ink-muted">Lokale Stromgemeinschaften brauchen Vertrauen. Gemeinden, Bewohner und Entwickler sollen prüfen können, welche Daten genutzt werden, welche Annahmen in Berechnungen stecken und wie die Plattform betrieben werden kann. OpenLEG verkauft keine Bürgerdaten.</p>
+    </section>
+  </main>
+
+  {% include 'partials/site_footer.html' %}
+</body>
+</html>
