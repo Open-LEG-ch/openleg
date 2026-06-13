@@ -86,6 +86,38 @@ class TestFuerGemeindenPage:
         assert 'href="/open-source"' in content
         assert "Codebase verstehen" in content
 
+    def test_homepage_address_flow_has_clear_states(self):
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "index.html",
+        )
+        with open(path, encoding="utf-8") as handle:
+            content = handle.read()
+        assert 'id="address-status"' in content
+        assert 'role="status"' in content
+        assert 'aria-describedby="address-status address-privacy"' in content
+        assert 'data-address-state="empty"' in content
+        assert 'data-address-state="loading"' in content
+        assert 'data-address-state="found"' in content
+        assert 'data-address-state="not-found"' in content
+        assert "Adresse prüfen" in content
+        assert "Nachbarn finden" in content
+        assert "LEG starten" in content
+        assert "nicht verkauft" in content
+
+    def test_homepage_municipality_flow_has_three_steps(self):
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "index.html",
+        )
+        with open(path, encoding="utf-8") as handle:
+            content = handle.read()
+        assert "Rang prüfen" in content
+        assert "Ziel sehen" in content
+        assert "Gemeinde anmelden" in content
+
     def test_fuer_gemeinden_has_share_metadata_and_open_source_link(self):
         path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

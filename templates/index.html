@@ -119,6 +119,20 @@
         <div>
           <h2 class="text-3xl font-bold">Für Gemeinden: vergleichen, aufholen, gründen.</h2>
           <p class="text-ink-muted mt-3">Die Solarnutzungs-Rangliste zeigt, wie viel Dachpotenzial Ihre Gemeinde schon nutzt und wer in Ihrer Liga vorangeht. Daraus wird ein konkreter nächster Schritt.</p>
+          <ol class="mt-5 grid md:grid-cols-3 gap-3 text-sm">
+            <li class="rounded-lg border border-slate-200 bg-white p-3">
+              <div class="font-semibold">1. Rang prüfen</div>
+              <p class="text-ink-muted mt-1">Gemeinde und faire Vergleichsgruppe ansehen.</p>
+            </li>
+            <li class="rounded-lg border border-slate-200 bg-white p-3">
+              <div class="font-semibold">2. Ziel sehen</div>
+              <p class="text-ink-muted mt-1">Dächer bis zum oberen Viertel erkennen.</p>
+            </li>
+            <li class="rounded-lg border border-slate-200 bg-white p-3">
+              <div class="font-semibold">3. Gemeinde anmelden</div>
+              <p class="text-ink-muted mt-1">Eigene Seite und Onboarding starten.</p>
+            </li>
+          </ol>
           <ul class="mt-4 space-y-2 text-ink-muted list-disc list-inside">
             <li>Fairer Vergleich nach Kanton, Grösse und Dichte</li>
             <li>Konkretes Ziel: wie viele Dächer fehlen zum oberen Viertel</li>
@@ -158,11 +172,30 @@
         </div>
         <!-- Form -->
         <div class="bg-white rounded-xl shadow-md p-6">
+          <ol class="grid grid-cols-3 gap-2 text-xs mb-4">
+            <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <div class="font-semibold">1. Adresse prüfen</div>
+            </li>
+            <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <div class="font-semibold">2. Nachbarn finden</div>
+            </li>
+            <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <div class="font-semibold">3. LEG starten</div>
+            </li>
+          </ol>
           <div id="step-address">
-            <label class="block text-sm font-medium mb-1">Ihre Adresse</label>
-            <input type="text" id="address-input" placeholder="Strasse, PLZ Ort" class="w-full border rounded-lg px-3 py-2 mb-1 focus:ring-2 focus:ring-brand focus:outline-none" autocomplete="off">
+            <label for="address-input" class="block text-sm font-medium mb-1">Ihre Adresse</label>
+            <input type="text" id="address-input" placeholder="Strasse, PLZ Ort" class="w-full border rounded-lg px-3 py-2 mb-1 focus:ring-2 focus:ring-brand focus:outline-none" autocomplete="off" aria-describedby="address-status address-privacy">
+            <p id="address-status" role="status" aria-live="polite" class="text-sm text-ink-muted mt-1">Adresse eingeben. Wir zeigen Vorschläge und prüfen danach Nachbarschaft und Solarpotenzial.</p>
             <div id="suggestions" class="bg-white border rounded-lg max-h-48 overflow-y-auto hidden"></div>
+            <div class="mt-3 space-y-2 text-sm">
+              <div data-address-state="empty" class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-ink-muted">Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert.</div>
+              <div data-address-state="loading" class="hidden rounded-lg border border-blue-200 bg-blue-50 p-3 text-blue-900">Adresse wird geprüft. Solarpotenzial und Nachbarschaft werden geladen.</div>
+              <div data-address-state="found" class="hidden rounded-lg border border-green-200 bg-green-50 p-3 text-green-900">Nachbarn gefunden. Im nächsten Schritt können Sie sich für die LEG vormerken.</div>
+              <div data-address-state="not-found" class="hidden rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800">Noch keine Nachbarn gefunden. Sie können den Startpunkt setzen und andere einladen.</div>
+            </div>
             <div id="profile-summary" class="text-sm text-ink-muted mt-2 hidden"></div>
+            <p id="address-privacy" class="text-xs text-ink-muted mt-3">Ihre Adresse wird nur zur Prüfung verwendet. Kartenpunkte werden um 120m versetzt, Smart-Meter-Daten bleiben in Ihrer LEG und werden nicht verkauft.</p>
             <button id="btn-check" class="w-full bg-brand text-white py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark disabled:opacity-50" disabled>Adresse prüfen</button>
           </div>
           <div id="step-register" class="hidden">
@@ -249,11 +282,25 @@
   const addressInput = document.getElementById('address-input');
   const suggestionsDiv = document.getElementById('suggestions');
   const btnCheck = document.getElementById('btn-check');
+  const addressStatus = document.getElementById('address-status');
+  const addressStateEls = Array.from(document.querySelectorAll('[data-address-state]'));
+
+  function setAddressState(state, message) {
+      addressStateEls.forEach((el) => {
+          el.classList.toggle('hidden', el.dataset.addressState !== state);
+      });
+      if (message) addressStatus.textContent = message;
+  }
 
   addressInput.addEventListener('input', function() {
       clearTimeout(addressTimeout);
       const q = this.value.trim();
-      if (q.length < 3) { suggestionsDiv.classList.add('hidden'); return; }
+      if (q.length < 3) {
+          suggestionsDiv.classList.add('hidden');
+          btnCheck.disabled = true;
+          setAddressState('empty', 'Adresse eingeben. Ab 3 Zeichen zeigen wir Vorschläge.');
+          return;
+      }
       addressTimeout = setTimeout(async () => {
           const res = await fetch(`/api/suggest_addresses?q=${encodeURIComponent(q)}`);
           const data = await res.json();
@@ -267,10 +314,13 @@
                       addressInput.value = this.dataset.label;
                       suggestionsDiv.classList.add('hidden');
                       btnCheck.disabled = false;
+                      setAddressState('empty', 'Adresse gewählt. Jetzt prüfen.');
                   });
               });
           } else {
               suggestionsDiv.classList.add('hidden');
+              btnCheck.disabled = true;
+              setAddressState('not-found', 'Keine passende Adresse gefunden. Prüfen Sie Schreibweise und PLZ.');
           }
       }, 300);
   });
@@ -279,6 +329,7 @@
   btnCheck.addEventListener('click', async function() {
       this.disabled = true;
       this.textContent = 'Prüfe...';
+      setAddressState('loading', 'Adresse wird geprüft. Einen Moment bitte.');
       document.getElementById('form-error').classList.add('hidden');
       try {
           const res = await fetch('/api/check_potential', {
@@ -292,6 +343,7 @@
               document.getElementById('form-error').classList.remove('hidden');
               this.disabled = false;
               this.textContent = 'Adresse prüfen';
+              setAddressState('empty', 'Adresse konnte nicht geprüft werden.');
               return;
           }
           selectedProfile = data.profile_summary;
@@ -299,8 +351,10 @@
           if (data.potential) {
               const ci = data.cluster_info;
               matchInfo.innerHTML = `<strong>${ci.num_members} Nachbarn gefunden!</strong> Autarkie-Potenzial: ${ci.autarky_percent.toFixed(0)}%`;
+              setAddressState('found', 'Nachbarn gefunden. Registrierung ist jetzt möglich.');
           } else {
               matchInfo.innerHTML = '<strong>Noch keine Nachbarn gefunden.</strong> Sie können trotzdem registrieren.';
+              setAddressState('not-found', 'Noch keine Nachbarn gefunden. Sie können trotzdem starten.');
           }
           document.getElementById('step-address').classList.add('hidden');
           document.getElementById('step-register').classList.remove('hidden');
@@ -309,6 +363,7 @@
           document.getElementById('form-error').classList.remove('hidden');
           this.disabled = false;
           this.textContent = 'Adresse prüfen';
+          setAddressState('empty', 'Netzwerkfehler. Bitte erneut versuchen.');
       }
   });
 
