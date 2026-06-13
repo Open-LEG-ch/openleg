@@ -157,9 +157,15 @@ def profil(bfs):
 
     # Compute value gap if H4 tariff available
     import public_data
+    import pv_ranking
 
     h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
     value_gap = public_data.compute_leg_value_gap(h4) if h4 else None
+
+    # Kanonische Solarnutzung: neuer PV-Score, gedeckelt; sonst Altwert
+    solar_score, solar_over_100 = pv_ranking.capped_score(profile.get("pv_score_pct"))
+    if solar_score is None and profile.get("solar_potential_pct") is not None:
+        solar_score = round(float(profile["solar_potential_pct"]), 1)
 
     return render_template(
         "gemeinde/profil.html",
@@ -168,6 +174,8 @@ def profil(bfs):
         solar=solar,
         value_gap=value_gap,
         h4_tariff=h4,
+        solar_score=solar_score,
+        solar_over_100=solar_over_100,
         canonical_url=f"{request.url_root.rstrip('/')}/gemeinde/profil/{bfs}",
     )
 

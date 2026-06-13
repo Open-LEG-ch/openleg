@@ -153,3 +153,56 @@ def test_verzeichnis_and_profil_render_canonical_from_host(monkeypatch):
     assert profil.status_code == 200
     html_profil = profil.data.decode("utf-8", errors="ignore")
     assert 'rel="canonical" href="http://openleg.ch/gemeinde/profil/261"' in html_profil
+
+
+def _patch_profil_deps(monkeypatch, profile):
+    monkeypatch.setattr(
+        municipality_module.db, "get_municipality_profile", lambda _bfs: profile
+    )
+    monkeypatch.setattr(
+        municipality_module.db, "get_elcom_tariffs", lambda *_a, **_k: []
+    )
+    monkeypatch.setattr(
+        municipality_module.db, "get_sonnendach_municipal", lambda _bfs: None
+    )
+
+
+def test_profil_solarnutzung_uses_pv_score(monkeypatch):
+    client = _make_client()
+    _patch_profil_deps(
+        monkeypatch,
+        {"bfs_number": 4021, "name": "Baden", "kanton": "AG", "pv_score_pct": 42.7},
+    )
+    resp = client.get("/gemeinde/profil/4021")
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "Solarnutzung" in html
+    assert "43%" in html
+
+
+def test_profil_solarnutzung_caps_over_100(monkeypatch):
+    client = _make_client()
+    _patch_profil_deps(
+        monkeypatch,
+        {"bfs_number": 1, "name": "Abtwil", "kanton": "AG", "pv_score_pct": 104.0},
+    )
+    resp = client.get("/gemeinde/profil/1")
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "100%" in html
+    assert "Schätzung übertroffen" in html
+
+
+def test_profil_solarnutzung_falls_back_to_old_metric(monkeypatch):
+    client = _make_client()
+    _patch_profil_deps(
+        monkeypatch,
+        {
+            "bfs_number": 2,
+            "name": "Altdorf",
+            "kanton": "UR",
+            "pv_score_pct": None,
+            "solar_potential_pct": 33.0,
+        },
+    )
+    resp = client.get("/gemeinde/profil/2")
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "33%" in html

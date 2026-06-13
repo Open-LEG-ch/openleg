@@ -50,10 +50,11 @@
                 <p class="text-2xl font-bold text-brand mt-1">CHF {{ "%.0f"|format(value_gap.annual_savings_chf) }} <span class="text-sm font-normal">/Jahr</span></p>
             </div>
             {% endif %}
-            {% if profile.solar_potential_pct %}
+            {% if solar_score is not none %}
             <div class="bg-white rounded-xl p-4 shadow-sm border">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Solarnutzung</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.0f"|format(profile.solar_potential_pct|float) }}%</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.0f"|format(solar_score|float) }}%</p>
+                {% if solar_over_100 %}<p class="text-[10px] text-gray-400 mt-1">Schätzung übertroffen</p>{% endif %}
             </div>
             {% endif %}
             <div class="bg-white rounded-xl p-4 shadow-sm border">
