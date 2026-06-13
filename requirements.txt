@@ -10,7 +10,7 @@ Flask-Limiter==3.5.0
 Flask-Talisman==1.1.0
 python-dotenv==1.0.0
 bleach==6.1.0
-email-validator==2.1.0
+email-validator==2.3.0
 redis==5.0.1
 
 # Database
