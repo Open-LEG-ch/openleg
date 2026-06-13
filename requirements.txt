@@ -23,5 +23,5 @@ stripe==11.4.1
 weasyprint==62.3
 
 # Optional: For production
-gunicorn==21.2.0
+gunicorn==26.0.0
 requests==2.31.0
