@@ -23,6 +23,14 @@ def _disable_rate_limit_hooks(flask_app):
     return hooks
 
 
+def _csp_sources(header, directive_name):
+    for directive in header.split(";"):
+        parts = directive.strip().split()
+        if parts and parts[0] == directive_name:
+            return set(parts[1:])
+    return set()
+
+
 @pytest.fixture
 def full_app_module():
     with patch.dict(
@@ -61,7 +69,12 @@ def test_security_policy_allows_google_analytics_region_collect(full_app_module)
     resp = client.get("/robots.txt")
 
     csp = resp.headers.get("Content-Security-Policy", "")
-    assert "https://region1.google-analytics.com" in csp
+    assert _csp_sources(csp, "connect-src") == {
+        "'self'",
+        "https://www.google-analytics.com",
+        "https://region1.google-analytics.com",
+        "https://www.googletagmanager.com",
+    }
 
 
 def test_root_favicon_serves_static_icon(full_app_module):
