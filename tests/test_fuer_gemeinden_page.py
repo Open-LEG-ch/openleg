@@ -74,3 +74,41 @@ class TestFuerGemeindenPage:
             content = handle.read()
         assert "Rangliste ansehen" in content
         assert 'href="/rangliste"' in content
+
+    def test_homepage_links_to_open_source_explainer(self):
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "index.html",
+        )
+        with open(path, encoding="utf-8") as handle:
+            content = handle.read()
+        assert 'href="/open-source"' in content
+        assert "Codebase verstehen" in content
+
+    def test_fuer_gemeinden_has_share_metadata_and_open_source_link(self):
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "fuer_gemeinden.html",
+        )
+        with open(path, encoding="utf-8") as handle:
+            content = handle.read()
+        assert '<meta name="description"' in content
+        assert 'rel="canonical"' in content
+        assert 'property="og:title"' in content
+        assert 'href="/open-source"' in content
+
+    def test_site_nav_has_mobile_menu_controls(self):
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "partials",
+            "site_nav.html",
+        )
+        with open(path, encoding="utf-8") as handle:
+            content = handle.read()
+        assert 'id="mobile-menu-toggle"' in content
+        assert 'id="mobile-menu"' in content
+        assert 'aria-controls="mobile-menu"' in content
+        assert 'href="/open-source"' in content

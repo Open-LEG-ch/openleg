@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Für Gemeinden | OpenLEG</title>
+  <meta name="description" content="OpenLEG für Gemeinden: Solarnutzungs-Rangliste, eigene Gemeinde-Seite, LEG-Onboarding, Selbsthosting und optionaler Projektsupport.">
+  <link rel="canonical" href="{{ site_url }}/fuer-gemeinden">
+  <meta property="og:title" content="OpenLEG für Gemeinden">
+  <meta property="og:description" content="Vergleichen Sie die Solarnutzung Ihrer Gemeinde und starten Sie lokale Stromgemeinschaften mit freier Open Source Infrastruktur.">
+  <meta property="og:url" content="{{ site_url }}/fuer-gemeinden">
   {% include 'partials/tailwind_brand.html' %}
 </head>
 <body class="bg-[#f6f4ef] text-ink">
@@ -39,7 +44,10 @@
         <pre class="bg-ink text-slate-300 rounded-lg p-4 text-sm overflow-x-auto mb-4"><code>git clone https://github.com/Open-LEG-ch/openleg.git
 cd openleg
 docker compose up -d</code></pre>
-        <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Code auf GitHub</a>
+        <div class="grid gap-2">
+          <a href="/open-source" class="block text-center bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark">Codebase verstehen</a>
+          <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Code auf GitHub</a>
+        </div>
       </section>
 
       <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand flex flex-col">
