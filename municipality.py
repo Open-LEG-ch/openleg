@@ -9,6 +9,7 @@ import logging
 from flask import Blueprint, request, jsonify, render_template, abort
 
 import database as db
+import pv_ranking
 import security_utils
 
 logger = logging.getLogger(__name__)
@@ -157,7 +158,6 @@ def profil(bfs):
 
     # Compute value gap if H4 tariff available
     import public_data
-    import pv_ranking
 
     h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
     value_gap = public_data.compute_leg_value_gap(h4) if h4 else None
@@ -222,13 +222,29 @@ def verzeichnis():
 
     profiles = db.get_all_municipality_profiles(kanton=kanton_filter, order_by=order_by)
     # Reverse for descending score/gap
-    if order_by in ("energy_transition_score", "leg_value_gap_chf", "population"):
+    if order_by in (
+        "energy_transition_score",
+        "leg_value_gap_chf",
+        "population",
+        "pv_score_pct",
+    ):
         profiles = list(reversed(profiles))
 
     if q:
         profiles = [
             p for p in profiles if q.lower() in (p.get("name", "") or "").lower()
         ]
+
+    # Nationaler Solarnutzungs-Rang je Gemeinde
+    rank_map = {
+        r["bfs_number"]: r["rank"]
+        for r in pv_ranking.assign_ranks(db.get_pv_profiles())
+    }
+    for profile in profiles:
+        profile["pv_rank"] = rank_map.get(profile.get("bfs_number"))
+        score, over_100 = pv_ranking.capped_score(profile.get("pv_score_pct"))
+        profile["display_score"] = score
+        profile["score_over_100"] = over_100
 
     return render_template(
         "gemeinde/verzeichnis.html",

@@ -45,7 +45,8 @@
                     {% endfor %}
                 </select>
                 <select onchange="location.href='?sort='+this.value+'&kanton={{ kanton }}&q={{ query }}'" class="border rounded-lg px-3 py-2 text-sm bg-white">
-                    <option value="energy_transition_score" {{ 'selected' if sort == 'energy_transition_score' }}>Score</option>
+                    <option value="pv_score_pct" {{ 'selected' if sort == 'pv_score_pct' }}>Solarnutzung</option>
+                    <option value="energy_transition_score" {{ 'selected' if sort == 'energy_transition_score' }}>Energiewende-Score</option>
                     <option value="leg_value_gap_chf" {{ 'selected' if sort == 'leg_value_gap_chf' }}>LEG-Ersparnis</option>
                     <option value="population" {{ 'selected' if sort == 'population' }}>Einwohner</option>
                     <option value="name" {{ 'selected' if sort == 'name' }}>Name</option>
@@ -61,11 +62,15 @@
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h2 class="font-semibold text-lg group-hover:text-brand">{{ p.name }}</h2>
-                        <p class="text-sm text-gray-500">{{ p.kanton }}{% if p.population %} · {{ "{:,}".format(p.population|int).replace(",", "'") }}{% endif %}</p>
+                        <p class="text-sm text-gray-500">
+                            {{ p.kanton }}{% if p.population %} · {{ "{:,}".format(p.population|int).replace(",", "'") }}{% endif %}{% if p.pv_rank %} · Rang {{ p.pv_rank }} CH{% endif %}
+                        </p>
                     </div>
-                    <div class="bg-brand/10 text-brand text-sm font-bold px-2 py-1 rounded">
-                        {{ "%.0f"|format(p.energy_transition_score|default(0)|float) }}
+                    {% if p.display_score is not none %}
+                    <div class="bg-brand/10 text-brand text-sm font-bold px-2 py-1 rounded" title="Solarnutzung">
+                        {{ "%.0f"|format(p.display_score|float) }}%
                     </div>
+                    {% endif %}
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-xs">
                     {% if p.leg_value_gap_chf %}

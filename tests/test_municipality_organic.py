@@ -119,6 +119,38 @@ def test_verzeichnis_defaults_to_all_cantons_and_handles_empty(monkeypatch):
     assert calls["kanton"] is None
 
 
+def test_verzeichnis_shows_score_and_national_rank(monkeypatch):
+    client = _make_client()
+    profiles = [
+        {
+            "bfs_number": 1,
+            "name": "Sonnenstadt",
+            "kanton": "AG",
+            "population": 15000,
+            "pv_score_pct": 80.0,
+        },
+        {
+            "bfs_number": 2,
+            "name": "Schattendorf",
+            "kanton": "AG",
+            "population": 3000,
+            "pv_score_pct": 10.0,
+        },
+    ]
+    monkeypatch.setattr(
+        municipality_module.db, "get_all_municipality_profiles", lambda **_k: profiles
+    )
+    monkeypatch.setattr(
+        municipality_module.db, "get_pv_profiles", lambda kanton=None: profiles
+    )
+    html = client.get("/gemeinde/verzeichnis?sort=pv_score_pct").data.decode(
+        "utf-8", errors="ignore"
+    )
+    assert "Solarnutzung" in html
+    assert "Rang 1 CH" in html
+    assert "80%" in html
+
+
 def test_verzeichnis_and_profil_render_canonical_from_host(monkeypatch):
     client = _make_client()
     monkeypatch.setattr(

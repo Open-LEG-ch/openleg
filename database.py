@@ -2523,6 +2523,7 @@ def get_all_municipality_profiles(
         "population",
         "energy_transition_score",
         "leg_value_gap_chf",
+        "pv_score_pct",
         "bfs_number",
     }
     if order_by not in allowed_orders:
