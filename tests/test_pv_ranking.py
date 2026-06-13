@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests für die Ranglisten-Logik."""
 
+from decimal import Decimal
+
 import pv_ranking
 
 
@@ -68,6 +70,17 @@ def test_improvement_target_zero_when_above_threshold():
     row = {"pv_estimated_potential_kw": 1000.0, "pv_installed_kw": 400.0}
     target = pv_ranking.improvement_target(row, threshold_score=30.0)
     assert target["needed_kw"] == 0.0
+
+
+def test_improvement_target_accepts_postgres_decimal_values():
+    row = {
+        "pv_estimated_potential_kw": Decimal("7345.45"),
+        "pv_installed_kw": Decimal("5000.00"),
+    }
+    target = pv_ranking.improvement_target(row, threshold_score=Decimal("80.00"))
+    assert target["target_score"] == 80.0
+    assert target["needed_kw"] == 876.4
+    assert target["roofs"] == 88
 
 
 def test_league_standings_ranks_in_each_league():

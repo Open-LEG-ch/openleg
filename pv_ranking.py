@@ -121,10 +121,11 @@ def improvement_target(row: Dict, threshold_score: Optional[float]) -> Optional[
     installed = row.get("pv_installed_kw")
     if potential is None or installed is None:
         return None
-    target_kw = threshold_score / 100.0 * float(potential)
+    threshold = float(threshold_score)
+    target_kw = threshold / 100.0 * float(potential)
     needed_kw = max(0.0, target_kw - float(installed))
     return {
-        "target_score": round(threshold_score, 1),
+        "target_score": round(threshold, 1),
         "needed_kw": round(needed_kw, 1),
         "roofs": round(needed_kw / AVG_ROOF_KWP),
     }
