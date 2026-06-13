@@ -98,7 +98,7 @@ der gemäss separater Vollmacht bestimmt wird.</p>
 
 <h2>7. Unterschriften</h2>
 <table><tr><th>Name</th><th>Datum</th><th>Unterschrift</th></tr>
-{"".join(f"<tr><td>{p["name"]}</td><td></td><td></td></tr>" for p in participants)}
+{"".join("<tr><td>" + p["name"] + "</td><td></td><td></td></tr>" for p in participants)}
 </table>
 
 <div class="footer">Generiert durch OpenLEG Platform, openleg.ch</div>
