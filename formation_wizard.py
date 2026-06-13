@@ -6,7 +6,7 @@ Handles LEG community formation workflow, document generation, and status tracki
 
 import uuid
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 from enum import Enum
 
@@ -356,7 +356,7 @@ def generate_documents(db, community_id: str) -> Optional[Dict]:
                     return None
 
                 # Generate document metadata
-                documents = {
+                documents: Dict[str, Any] = {
                     "community_agreement": {
                         "document_id": str(uuid.uuid4()),
                         "template": "community_agreement",

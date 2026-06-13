@@ -2186,7 +2186,7 @@ def save_elcom_tariffs(tariffs: List[Dict]) -> int:
         return 0
 
 
-def get_elcom_tariffs(bfs_number: int, year: int = None) -> List[Dict]:
+def get_elcom_tariffs(bfs_number: int, year: Optional[int] = None) -> List[Dict]:
     """Get ElCom tariffs for a municipality."""
     try:
         with get_connection() as conn:
@@ -2284,7 +2284,7 @@ def get_municipality_profile(bfs_number: int) -> Optional[Dict]:
 
 
 def get_all_municipality_profiles(
-    kanton: str = None, order_by: str = "name"
+    kanton: Optional[str] = None, order_by: str = "name"
 ) -> List[Dict]:
     """Get all municipality profiles, optionally filtered by kanton."""
     allowed_orders = {
@@ -2417,7 +2417,7 @@ def save_utility_client(
     contact_name: str = "",
     contact_phone: str = "",
     vnb_name: str = "",
-    population: int = None,
+    population: Optional[int] = None,
     kanton: str = "",
     tier: str = "starter",
 ) -> bool:
@@ -2587,7 +2587,7 @@ def update_utility_client_api_key(client_id: str, api_key_hash: str) -> bool:
         return False
 
 
-def get_all_utility_clients(status: str = None) -> List[Dict]:
+def get_all_utility_clients(status: Optional[str] = None) -> List[Dict]:
     """Get all utility clients, optionally filtered by status."""
     try:
         with get_connection() as conn:
@@ -2700,7 +2700,9 @@ def get_vnb_research(vnb_name: str) -> Optional[Dict]:
 
 
 def get_all_vnb_research(
-    pipeline_status: str = None, kanton: str = None, order_by: str = "priority_score"
+    pipeline_status: Optional[str] = None,
+    kanton: Optional[str] = None,
+    order_by: str = "priority_score",
 ) -> List[Dict]:
     """Get all VNB research records, optionally filtered."""
     allowed_orders = {"priority_score", "vnb_name", "population_served", "updated_at"}
@@ -2725,7 +2727,9 @@ def get_all_vnb_research(
         return []
 
 
-def update_vnb_pipeline_status(vnb_name: str, status: str, notes: str = None) -> bool:
+def update_vnb_pipeline_status(
+    vnb_name: str, status: str, notes: Optional[str] = None
+) -> bool:
     """Update VNB pipeline status."""
     try:
         with get_connection() as conn:

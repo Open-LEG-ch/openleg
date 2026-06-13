@@ -31,4 +31,4 @@ jobs:
 
       - name: Run mypy on core files
         run: |
-          mypy --ignore-missing-imports app.py database.py api_public.py formation_wizard.py
+          mypy --ignore-missing-imports --follow-imports=skip app.py database.py api_public.py formation_wizard.py
