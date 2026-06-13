@@ -74,7 +74,7 @@
                         <p class="font-medium text-green-600">CHF {{ "%.0f"|format(p.leg_value_gap_chf|float) }}</p>
                     </div>
                     {% endif %}
-                    {% if p.pv_score_pct is not none %}
+                    {% if p.get('pv_score_pct') is not none %}
                     <div>
                         <p class="text-gray-400">Solarnutzung</p>
                         <p class="font-medium">{{ "%.0f"|format([p.pv_score_pct|float, 100]|min) }}%</p>

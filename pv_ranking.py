@@ -16,6 +16,19 @@ SIZE_XL = "xl"
 DENSITY_BANDS = (("low", 250), ("mid", 1000), ("high", 3000))
 DENSITY_VERY_HIGH = "very_high"
 
+SIZE_LABELS = {
+    "small": "Kleine Gemeinden",
+    "medium": "Mittlere Gemeinden",
+    "large": "Grosse Gemeinden",
+    "xl": "Sehr grosse Gemeinden",
+}
+DENSITY_LABELS = {
+    "low": "Ländlich",
+    "mid": "Mittlere Dichte",
+    "high": "Dicht",
+    "very_high": "Sehr dicht",
+}
+
 # Durchschnittliche Dachanlage in kWp (für die Dächer-Schätzung)
 AVG_ROOF_KWP = 10.0
 
@@ -115,6 +128,41 @@ def improvement_target(row: Dict, threshold_score: Optional[float]) -> Optional[
         "needed_kw": round(needed_kw, 1),
         "roofs": round(needed_kw / AVG_ROOF_KWP),
     }
+
+
+def _rank_entry(rows: List[Dict], bfs: int) -> Optional[Dict]:
+    for row in assign_ranks(rows):
+        if row.get("bfs_number") == bfs:
+            return {
+                "rank": row["rank"],
+                "total": row["rank_total"],
+                "quartile": row["quartile"],
+            }
+    return None
+
+
+def league_standings(all_rows: List[Dict], profile: Dict) -> List[Dict]:
+    """Rang einer Gemeinde in ihren Ligen: Schweiz, Kanton, Grösse, Dichte."""
+    bfs = profile.get("bfs_number")
+    kanton = profile.get("kanton")
+    size = size_band(profile.get("population"))
+    density = density_band(profile.get("density_per_km2"))
+
+    chips: List[Dict] = []
+
+    def add(label: str, rows: List[Dict]) -> None:
+        entry = _rank_entry(rows, bfs)
+        if entry:
+            chips.append({"label": label, **entry})
+
+    add("Schweiz", all_rows)
+    if kanton:
+        add(f"Kanton {kanton}", filter_league(all_rows, kanton=kanton))
+    if size:
+        add(SIZE_LABELS[size], filter_league(all_rows, size=size))
+    if density:
+        add(DENSITY_LABELS[density], filter_league(all_rows, density=density))
+    return chips
 
 
 def filter_league(

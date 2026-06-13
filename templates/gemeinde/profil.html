@@ -63,6 +63,43 @@
             </div>
         </div>
 
+        <!-- Liga-Ränge -->
+        {% if league_chips %}
+        <div class="bg-white rounded-xl p-5 shadow-sm border mb-8">
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <h2 class="text-lg font-semibold">So steht {{ profile.name }} im Vergleich</h2>
+                <a href="/rangliste?kanton={{ profile.kanton }}" class="text-sm text-brand hover:underline">Ganze Liga ansehen</a>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                {% for chip in league_chips %}
+                <span class="text-sm px-3 py-1 rounded-full border
+                    {% if chip.quartile == 1 %}bg-green-50 text-green-700 border-green-200
+                    {% elif chip.quartile == 4 %}bg-amber-50 text-amber-700 border-amber-200
+                    {% else %}bg-slate-50 text-slate-600 border-slate-200{% endif %}">
+                    {{ chip.label }}: Rang {{ chip.rank }} von {{ chip.total }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Datenqualität und Quellen -->
+        {% if profile.get('pv_score_pct') is not none %}
+        <div class="bg-white rounded-xl p-5 shadow-sm border mb-8">
+            <h2 class="text-lg font-semibold mb-2">Datenqualität</h2>
+            <p class="text-sm text-gray-600">
+                Diese Solarnutzung beruht auf
+                {% if profile.get('pv_plant_match_rate') is not none %}{{ "%.0f"|format(profile.pv_plant_match_rate|float) }} % deterministisch zugeordneten PV-Anlagen{% else %}öffentlich gemeldeten PV-Anlagen{% endif %}{% if profile.get('pv_snapshot_year') %}, Stand {{ profile.pv_snapshot_year }}{% endif %}.
+                Der Nenner ist ein geschätztes Dachpotenzial, deshalb sind einzelne Werte über 100 % möglich.
+            </p>
+            <div class="flex flex-wrap gap-4 mt-3 text-sm">
+                <a href="https://opendata.swiss/de/dataset/elektrizitatsproduktionsanlagen" target="_blank" rel="noopener" class="text-brand hover:underline">Quelle: BFE Anlagenregister</a>
+                <a href="https://opendata.swiss/de/dataset/sonnendach-ch" target="_blank" rel="noopener" class="text-brand hover:underline">Quelle: BFE Sonnendach</a>
+                <a href="mailto:hallo@openleg.ch?subject=Datenkorrektur%20{{ profile.name|urlencode }}%20(BFS%20{{ profile.bfs_number }})" class="text-brand hover:underline">Daten melden oder korrigieren</a>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="grid md:grid-cols-2 gap-8">
             <!-- Tariff Breakdown -->
             {% if tariffs %}

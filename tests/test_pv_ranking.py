@@ -70,6 +70,40 @@ def test_improvement_target_zero_when_above_threshold():
     assert target["needed_kw"] == 0.0
 
 
+def test_league_standings_ranks_in_each_league():
+    target = {
+        "bfs_number": 1,
+        "kanton": "AG",
+        "population": 3000,
+        "density_per_km2": 200,
+        "pv_score_pct": 20.0,
+    }
+    rows = [
+        target,
+        {
+            "bfs_number": 2,
+            "kanton": "AG",
+            "population": 3500,
+            "density_per_km2": 220,
+            "pv_score_pct": 50.0,
+        },
+        {
+            "bfs_number": 3,
+            "kanton": "ZH",
+            "population": 4000,
+            "density_per_km2": 240,
+            "pv_score_pct": 10.0,
+        },
+    ]
+    chips = {c["label"]: c for c in pv_ranking.league_standings(rows, target)}
+    assert chips["Schweiz"]["rank"] == 2
+    assert chips["Schweiz"]["total"] == 3
+    assert chips["Kanton AG"]["rank"] == 2
+    assert chips["Kanton AG"]["total"] == 2
+    assert chips["Kleine Gemeinden"]["total"] == 3
+    assert "Ländlich" in chips
+
+
 def test_filter_league_by_canton_and_size():
     rows = [
         {"kanton": "AG", "population": 3000, "density_per_km2": 500},

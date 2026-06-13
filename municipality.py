@@ -167,6 +167,11 @@ def profil(bfs):
     if solar_score is None and profile.get("solar_potential_pct") is not None:
         solar_score = round(float(profile["solar_potential_pct"]), 1)
 
+    # Liga-Ränge nur, wenn ein PV-Score vorliegt
+    league_chips = []
+    if profile.get("pv_score_pct") is not None:
+        league_chips = pv_ranking.league_standings(db.get_pv_profiles(), profile)
+
     return render_template(
         "gemeinde/profil.html",
         profile=profile,
@@ -176,6 +181,7 @@ def profil(bfs):
         h4_tariff=h4,
         solar_score=solar_score,
         solar_over_100=solar_over_100,
+        league_chips=league_chips,
         canonical_url=f"{request.url_root.rstrip('/')}/gemeinde/profil/{bfs}",
     )
 

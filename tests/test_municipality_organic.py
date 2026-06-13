@@ -155,7 +155,7 @@ def test_verzeichnis_and_profil_render_canonical_from_host(monkeypatch):
     assert 'rel="canonical" href="http://openleg.ch/gemeinde/profil/261"' in html_profil
 
 
-def _patch_profil_deps(monkeypatch, profile):
+def _patch_profil_deps(monkeypatch, profile, pv_profiles=None):
     monkeypatch.setattr(
         municipality_module.db, "get_municipality_profile", lambda _bfs: profile
     )
@@ -164,6 +164,11 @@ def _patch_profil_deps(monkeypatch, profile):
     )
     monkeypatch.setattr(
         municipality_module.db, "get_sonnendach_municipal", lambda _bfs: None
+    )
+    monkeypatch.setattr(
+        municipality_module.db,
+        "get_pv_profiles",
+        lambda kanton=None: pv_profiles if pv_profiles is not None else [profile],
     )
 
 
@@ -206,3 +211,38 @@ def test_profil_solarnutzung_falls_back_to_old_metric(monkeypatch):
     resp = client.get("/gemeinde/profil/2")
     html = resp.data.decode("utf-8", errors="ignore")
     assert "33%" in html
+
+
+def test_profil_shows_league_chips_and_quality(monkeypatch):
+    client = _make_client()
+    target = {
+        "bfs_number": 4021,
+        "name": "Baden",
+        "kanton": "AG",
+        "population": 19900,
+        "density_per_km2": 1500,
+        "pv_score_pct": 42.7,
+        "pv_plant_match_rate": 76.89,
+        "pv_snapshot_year": 2026,
+        "pv_untapped_kw": 1000,
+    }
+    others = [
+        target,
+        {
+            "bfs_number": 2,
+            "name": "Sonnendorf",
+            "kanton": "AG",
+            "population": 3000,
+            "density_per_km2": 200,
+            "pv_score_pct": 80.0,
+        },
+    ]
+    _patch_profil_deps(monkeypatch, target, pv_profiles=others)
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8", errors="ignore")
+    assert "So steht Baden im Vergleich" in html
+    assert "Kanton AG" in html
+    assert "Datenqualität" in html
+    assert "BFE Sonnendach" in html
+    assert "Daten melden oder korrigieren" in html
+    # Baden ist 2 von 2 in seinem Kanton (niedrigerer Score)
+    assert "Rang 2 von 2" in html
