@@ -13,25 +13,11 @@
     <meta property="og:url" content="{{ canonical_url }}">
     <meta name="twitter:card" content="summary_large_image">
     {% endif %}
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: { brand: { DEFAULT: '#6366f1', light: '#818cf8', dark: '#4f46e5' }, accent: '#f59e0b' } } }
-        }
-    </script>
+    {% include 'partials/tailwind_brand.html' %}
 </head>
-<body class="bg-gray-50 text-gray-900">
-    <nav class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold text-brand">OpenLEG</a>
-            <div class="hidden md:flex space-x-6 text-sm">
-                <a href="/gemeinde/verzeichnis" class="hover:text-brand">Gemeindeverzeichnis</a>
-                <a href="/api/v1/docs" class="hover:text-brand">API</a>
-                <a href="/gemeinde/onboarding" class="hover:text-brand">Gemeinde anmelden</a>
-            </div>
-        </div>
-    </nav>
+<body class="bg-[#f6f4ef] text-ink">
+    {% include 'partials/site_nav.html' %}
 
     <main class="max-w-6xl mx-auto px-4 py-8">
         <!-- Header -->
@@ -256,25 +242,35 @@
         </div>
         {% endif %}
 
-        <!-- API + CTA -->
-        <div class="mt-8 grid md:grid-cols-2 gap-6">
+        <!-- Bewohner-CTA: wer hier landet, sucht meist den eigenen Tarif -->
+        <div class="mt-8 bg-brand rounded-xl p-6 text-white md:flex md:items-center md:justify-between gap-6">
+            <div>
+                <h2 class="text-xl font-semibold mb-1">Wohnen Sie in {{ profile.name }}?</h2>
+                <p class="text-sm text-white/80 max-w-xl">Gründen Sie mit Ihren Nachbarn eine lokale Stromgemeinschaft und sparen Sie bis 40% auf Netzgebühren. Kostenlos, Ihre Daten bleiben bei Ihnen.</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex flex-col sm:flex-row gap-2 shrink-0">
+                <a href="/fuer-bewohner" class="inline-block text-center bg-white text-brand px-5 py-2 rounded-lg text-sm font-semibold hover:bg-slate-100">Stromgemeinschaft gründen</a>
+                <a href="/leg-kalkulator" class="inline-block text-center border border-white/40 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-white/10">Ersparnis berechnen</a>
+            </div>
+        </div>
+
+        <!-- API + Gemeinde-CTA -->
+        <div class="mt-6 grid md:grid-cols-2 gap-6">
             <div class="bg-white rounded-xl p-6 shadow-sm border">
                 <h3 class="font-semibold mb-2">API-Zugang</h3>
-                <p class="text-sm text-gray-600 mb-3">Alle Daten auf dieser Seite sind über unsere offene API verfügbar.</p>
-                <code class="block bg-gray-100 rounded p-3 text-xs mb-3">GET /api/v1/municipalities/{{ profile.bfs_number }}</code>
+                <p class="text-sm text-ink-muted mb-3">Alle Daten auf dieser Seite sind über unsere offene API verfügbar.</p>
+                <code class="block bg-slate-100 rounded p-3 text-xs mb-3">GET /api/v1/municipalities/{{ profile.bfs_number }}</code>
                 <a href="/api/v1/docs" class="text-brand text-sm font-medium hover:underline">API-Dokumentation &rarr;</a>
             </div>
-            <div class="bg-brand rounded-xl p-6 text-white">
-                <h3 class="font-semibold mb-2">LEG-Beratung für {{ profile.name }}</h3>
-                <p class="text-sm text-white/80 mb-3">OpenLEG unterstützt Ihre Gemeinde bei der Gründung und Verwaltung von LEGs.</p>
-                <a href="/gemeinde/onboarding" class="inline-block bg-white text-brand px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100">Kontakt aufnehmen</a>
+            <div class="bg-white rounded-xl p-6 shadow-sm border">
+                <h3 class="font-semibold mb-2">Sind Sie die Gemeinde {{ profile.name }}?</h3>
+                <p class="text-sm text-ink-muted mb-3">Starten Sie Ihre eigene Gemeinde-Seite und unterstützen Sie LEGs vor Ort. Kostenlos, kein IT-Projekt.</p>
+                <a href="/fuer-gemeinden" class="text-brand text-sm font-medium hover:underline">Für Gemeinden &rarr;</a>
             </div>
         </div>
     </main>
 
-    <footer class="border-t mt-16 py-8 text-center text-sm text-gray-400">
-        <p>&copy; 2026 OpenLEG · <a href="/impressum" class="hover:text-gray-600">Impressum</a> · <a href="/datenschutz" class="hover:text-gray-600">Datenschutz</a> · <a href="/api/v1/docs" class="hover:text-gray-600">API</a></p>
-    </footer>
+    {% include 'partials/site_footer.html' %}
 
     {% if solar %}
     <script>
