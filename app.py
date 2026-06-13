@@ -66,6 +66,7 @@ from municipality import municipality_bp
 from api_public import public_api_bp
 from health import health_bp
 from utility_portal import utility_bp
+from rangliste import rangliste_bp
 
 # --- Cron Secret ---
 CRON_SECRET = os.getenv("CRON_SECRET", "").strip()
@@ -152,6 +153,7 @@ app.register_blueprint(municipality_bp)
 app.register_blueprint(public_api_bp)
 app.register_blueprint(health_bp)
 app.register_blueprint(utility_bp)
+app.register_blueprint(rangliste_bp)
 
 # --- Multi-tenant middleware ---
 tenant_module.init_tenant_middleware(app, db=db)
@@ -483,6 +485,8 @@ def sitemap_xml():
         ("/leg-kalkulator", "0.9", "weekly", current_date),
         ("/pricing", "0.7", "monthly", current_date),
         ("/gemeinde/verzeichnis", "0.9", "weekly", current_date),
+        ("/rangliste", "0.9", "daily", current_date),
+        ("/rangliste/methodik", "0.6", "monthly", current_date),
         ("/api/v1/docs", "0.8", "weekly", current_date),
         ("/gemeinde/onboarding", "0.9", "weekly", current_date),
         ("/impressum", "0.3", "yearly", "2026-01-01"),

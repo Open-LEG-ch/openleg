@@ -119,6 +119,38 @@ def test_verzeichnis_defaults_to_all_cantons_and_handles_empty(monkeypatch):
     assert calls["kanton"] is None
 
 
+def test_verzeichnis_shows_score_and_national_rank(monkeypatch):
+    client = _make_client()
+    profiles = [
+        {
+            "bfs_number": 1,
+            "name": "Sonnenstadt",
+            "kanton": "AG",
+            "population": 15000,
+            "pv_score_pct": 80.0,
+        },
+        {
+            "bfs_number": 2,
+            "name": "Schattendorf",
+            "kanton": "AG",
+            "population": 3000,
+            "pv_score_pct": 10.0,
+        },
+    ]
+    monkeypatch.setattr(
+        municipality_module.db, "get_all_municipality_profiles", lambda **_k: profiles
+    )
+    monkeypatch.setattr(
+        municipality_module.db, "get_pv_profiles", lambda kanton=None: profiles
+    )
+    html = client.get("/gemeinde/verzeichnis?sort=pv_score_pct").data.decode(
+        "utf-8", errors="ignore"
+    )
+    assert "Solarnutzung" in html
+    assert "Rang 1 CH" in html
+    assert "80%" in html
+
+
 def test_verzeichnis_and_profil_render_canonical_from_host(monkeypatch):
     client = _make_client()
     monkeypatch.setattr(
@@ -153,3 +185,130 @@ def test_verzeichnis_and_profil_render_canonical_from_host(monkeypatch):
     assert profil.status_code == 200
     html_profil = profil.data.decode("utf-8", errors="ignore")
     assert 'rel="canonical" href="http://openleg.ch/gemeinde/profil/261"' in html_profil
+
+
+def _patch_profil_deps(monkeypatch, profile, pv_profiles=None):
+    monkeypatch.setattr(
+        municipality_module.db, "get_municipality_profile", lambda _bfs: profile
+    )
+    monkeypatch.setattr(
+        municipality_module.db, "get_elcom_tariffs", lambda *_a, **_k: []
+    )
+    monkeypatch.setattr(
+        municipality_module.db, "get_sonnendach_municipal", lambda _bfs: None
+    )
+    monkeypatch.setattr(
+        municipality_module.db,
+        "get_pv_profiles",
+        lambda kanton=None: pv_profiles if pv_profiles is not None else [profile],
+    )
+
+
+def test_profil_solarnutzung_uses_pv_score(monkeypatch):
+    client = _make_client()
+    _patch_profil_deps(
+        monkeypatch,
+        {"bfs_number": 4021, "name": "Baden", "kanton": "AG", "pv_score_pct": 42.7},
+    )
+    resp = client.get("/gemeinde/profil/4021")
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "Solarnutzung" in html
+    assert "43%" in html
+
+
+def test_profil_solarnutzung_caps_over_100(monkeypatch):
+    client = _make_client()
+    _patch_profil_deps(
+        monkeypatch,
+        {"bfs_number": 1, "name": "Abtwil", "kanton": "AG", "pv_score_pct": 104.0},
+    )
+    resp = client.get("/gemeinde/profil/1")
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "100%" in html
+    assert "Schätzung übertroffen" in html
+
+
+def test_profil_solarnutzung_falls_back_to_old_metric(monkeypatch):
+    client = _make_client()
+    _patch_profil_deps(
+        monkeypatch,
+        {
+            "bfs_number": 2,
+            "name": "Altdorf",
+            "kanton": "UR",
+            "pv_score_pct": None,
+            "solar_potential_pct": 33.0,
+        },
+    )
+    resp = client.get("/gemeinde/profil/2")
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "33%" in html
+
+
+def test_profil_shows_league_chips_and_quality(monkeypatch):
+    client = _make_client()
+    target = {
+        "bfs_number": 4021,
+        "name": "Baden",
+        "kanton": "AG",
+        "population": 19900,
+        "density_per_km2": 1500,
+        "pv_score_pct": 42.7,
+        "pv_plant_match_rate": 76.89,
+        "pv_snapshot_year": 2026,
+        "pv_untapped_kw": 1000,
+    }
+    others = [
+        target,
+        {
+            "bfs_number": 2,
+            "name": "Sonnendorf",
+            "kanton": "AG",
+            "population": 3000,
+            "density_per_km2": 200,
+            "pv_score_pct": 80.0,
+        },
+    ]
+    _patch_profil_deps(monkeypatch, target, pv_profiles=others)
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8", errors="ignore")
+    assert "So steht Baden im Vergleich" in html
+    assert "Kanton AG" in html
+    assert "Datenqualität" in html
+    assert "BFE Sonnendach" in html
+    assert "Daten melden oder korrigieren" in html
+    # Baden ist 2 von 2 in seinem Kanton (niedrigerer Score)
+    assert "Rang 2 von 2" in html
+
+
+def test_profil_shows_improvement_and_leaders(monkeypatch):
+    client = _make_client()
+    target = {
+        "bfs_number": 4021,
+        "name": "Baden",
+        "kanton": "AG",
+        "population": 19900,
+        "density_per_km2": 1500,
+        "pv_score_pct": 42.7,
+        "pv_estimated_potential_kw": 50000.0,
+        "pv_installed_kw": 21350.0,
+    }
+    leader = {
+        "bfs_number": 4022,
+        "name": "Sonnenstadt",
+        "kanton": "AG",
+        "population": 15000,
+        "density_per_km2": 1200,
+        "pv_score_pct": 80.0,
+        "pv_estimated_potential_kw": 40000.0,
+        "pv_installed_kw": 32000.0,
+        "pv_annual_potential_gwh": 6.0,
+    }
+    _patch_profil_deps(monkeypatch, target, pv_profiles=[target, leader])
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8", errors="ignore")
+    assert "Nächster Schritt für Baden" in html
+    assert "Ziel:" in html
+    assert "kW" in html
+    assert "Konkrete Massnahmen" in html
+    assert "Solarpflicht" in html
+    assert "Vorbilder in AG" in html
+    assert "Sonnenstadt" in html

@@ -65,7 +65,7 @@ Use the [research template](.github/ISSUE_TEMPLATE/research.yml) for:
 
 ```bash
 # Clone repository
-git clone https://github.com/openleg-ch/openleg.git
+git clone https://github.com/Open-LEG-ch/openleg.git
 cd openleg
 
 # Create virtual environment

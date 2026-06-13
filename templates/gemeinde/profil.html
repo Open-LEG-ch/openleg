@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ profile.name }} – Energieprofil | OpenLEG</title>
-    <meta name="description" content="Energieprofil und LEG-Potenzial für {{ profile.name }}: Stromtarife, Solarpotenzial, Energiewende-Score.">
+    <meta name="description" content="Energieprofil und LEG-Potenzial für {{ profile.name }}: Stromtarife, Solarnutzung, Energiewende-Score.">
     <link rel="canonical" href="{{ canonical_url }}">
+    {% if profile.get('pv_score_pct') is not none and share_base %}
+    <meta property="og:title" content="Solarnutzung {{ profile.name }} | OpenLEG">
+    <meta property="og:description" content="So nutzt {{ profile.name }} sein Solardach-Potenzial. Vergleichen Sie Ihre Gemeinde.">
+    <meta property="og:image" content="{{ share_base }}/rangliste/og/{{ profile.bfs_number }}.svg">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    {% endif %}
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script>
@@ -50,10 +57,11 @@
                 <p class="text-2xl font-bold text-brand mt-1">CHF {{ "%.0f"|format(value_gap.annual_savings_chf) }} <span class="text-sm font-normal">/Jahr</span></p>
             </div>
             {% endif %}
-            {% if profile.solar_potential_pct %}
+            {% if solar_score is not none %}
             <div class="bg-white rounded-xl p-4 shadow-sm border">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Solarnutzung</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.0f"|format(profile.solar_potential_pct|float) }}%</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.0f"|format(solar_score|float) }}%</p>
+                {% if solar_over_100 %}<p class="text-[10px] text-gray-400 mt-1">Schätzung übertroffen</p>{% endif %}
             </div>
             {% endif %}
             <div class="bg-white rounded-xl p-4 shadow-sm border">
@@ -61,6 +69,103 @@
                 <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.0f"|format(profile.energy_transition_score|default(0)|float) }} <span class="text-sm font-normal">/100</span></p>
             </div>
         </div>
+
+        <!-- Liga-Ränge -->
+        {% if league_chips %}
+        <div class="bg-white rounded-xl p-5 shadow-sm border mb-8">
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <h2 class="text-lg font-semibold">So steht {{ profile.name }} im Vergleich</h2>
+                <span class="text-sm flex gap-4">
+                    <a href="/rangliste/vergleich?a={{ profile.bfs_number }}" class="text-brand hover:underline">Gemeinde vergleichen</a>
+                    <a href="/rangliste?kanton={{ profile.kanton }}" class="text-brand hover:underline">Ganze Liga ansehen</a>
+                </span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                {% for chip in league_chips %}
+                <span class="text-sm px-3 py-1 rounded-full border
+                    {% if chip.quartile == 1 %}bg-green-50 text-green-700 border-green-200
+                    {% elif chip.quartile == 4 %}bg-amber-50 text-amber-700 border-amber-200
+                    {% else %}bg-slate-50 text-slate-600 border-slate-200{% endif %}">
+                    {{ chip.label }}: Rang {{ chip.rank }} von {{ chip.total }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Datenqualität und Quellen -->
+        {% if profile.get('pv_score_pct') is not none %}
+        <div class="bg-white rounded-xl p-5 shadow-sm border mb-8">
+            <h2 class="text-lg font-semibold mb-2">Datenqualität</h2>
+            <p class="text-sm text-gray-600">
+                Diese Solarnutzung beruht auf
+                {% if profile.get('pv_plant_match_rate') is not none %}{{ "%.0f"|format(profile.pv_plant_match_rate|float) }} % deterministisch zugeordneten PV-Anlagen{% else %}öffentlich gemeldeten PV-Anlagen{% endif %}{% if profile.get('pv_snapshot_year') %}, Stand {{ profile.pv_snapshot_year }}{% endif %}.
+                Der Nenner ist ein geschätztes Dachpotenzial, deshalb sind einzelne Werte über 100 % möglich.
+            </p>
+            <div class="flex flex-wrap gap-4 mt-3 text-sm">
+                <a href="https://opendata.swiss/de/dataset/elektrizitatsproduktionsanlagen" target="_blank" rel="noopener" class="text-brand hover:underline">Quelle: BFE Anlagenregister</a>
+                <a href="https://opendata.swiss/de/dataset/sonnendach-ch" target="_blank" rel="noopener" class="text-brand hover:underline">Quelle: BFE Sonnendach</a>
+                <a href="mailto:hallo@openleg.ch?subject=Datenkorrektur%20{{ profile.name|urlencode }}%20(BFS%20{{ profile.bfs_number }})" class="text-brand hover:underline">Daten melden oder korrigieren</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Badge teilen -->
+        {% if profile.get('pv_score_pct') is not none and share_base %}
+        <div class="bg-white rounded-xl p-5 shadow-sm border mb-8">
+            <h2 class="text-lg font-semibold mb-3">Badge einbetten</h2>
+            <div class="flex flex-col md:flex-row md:items-center gap-4">
+                <img src="{{ share_base }}/rangliste/badge/{{ profile.bfs_number }}.svg" alt="Solarnutzung {{ profile.name }}" width="320" height="84">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-600 mb-2">Auf der Gemeinde-Website einbinden:</p>
+                    <code class="block text-xs bg-slate-50 border rounded-lg p-3 overflow-x-auto">&lt;a href="{{ canonical_url }}"&gt;&lt;img src="{{ share_base }}/rangliste/badge/{{ profile.bfs_number }}.svg" alt="Solarnutzung {{ profile.name }}"&gt;&lt;/a&gt;</code>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Nächster Schritt -->
+        {% if profile.get('pv_score_pct') is not none %}
+        <div class="bg-brand/5 rounded-xl p-6 shadow-sm border border-brand/20 mb-8">
+            <h2 class="text-lg font-semibold mb-2">Nächster Schritt für {{ profile.name }}</h2>
+            {% if already_top %}
+            <p class="text-gray-700">
+                {{ profile.name }} gehört bei vergleichbar grossen Gemeinden schon zum oberen Viertel. Halten Sie das Tempo und bauen Sie den Vorsprung aus.
+            </p>
+            {% elif improvement and improvement.needed_kw > 0 %}
+            <p class="text-gray-700">
+                Ziel: <strong>+{{ "{:,}".format(improvement.needed_kw|int).replace(",", "'") }} kW</strong>
+                (rund {{ improvement.roofs }} weitere Dächer), um bei vergleichbar grossen Gemeinden ins obere Viertel zu kommen.
+            </p>
+            {% else %}
+            <p class="text-gray-700">
+                Jede zusätzliche Dachanlage hebt die Solarnutzung von {{ profile.name }}. Legen Sie mit den eigenen Liegenschaften los.
+            </p>
+            {% endif %}
+
+            <h3 class="font-semibold mt-5 mb-2 text-sm uppercase tracking-wide text-gray-500">Konkrete Massnahmen</h3>
+            <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
+                <li>Eigene Dächer mit PV ausstatten: Schulen, Turnhallen, Werkhof.</li>
+                <li>Solarpflicht für Neubau und Sanierung in die Bauordnung aufnehmen.</li>
+                <li>Eine lokale Elektrizitätsgemeinschaft (LEG) gründen und Eigenverbrauch bündeln.</li>
+                <li>Einmalvergütung und kantonale Förderung aktiv an Eigentümer kommunizieren.</li>
+                <li>Geeignete Dächer aus dem Sonnendach-Kataster gezielt ansprechen.</li>
+            </ul>
+            <a href="/leg-gruenden" class="inline-block mt-4 bg-brand text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">LEG gründen</a>
+
+            {% if leaders %}
+            <h3 class="font-semibold mt-6 mb-2 text-sm uppercase tracking-wide text-gray-500">Vorbilder in {{ profile.kanton }}</h3>
+            <div class="flex flex-wrap gap-3">
+                {% for leader in leaders %}
+                <a href="/gemeinde/profil/{{ leader.bfs_number }}" class="text-sm bg-white border rounded-lg px-3 py-2 hover:border-brand/40">
+                    <span class="font-medium">{{ leader.name }}</span>
+                    <span class="text-gray-500">· {{ "%.0f"|format(leader.display_score|float) }}%</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
 
         <div class="grid md:grid-cols-2 gap-8">
             <!-- Tariff Breakdown -->

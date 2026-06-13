@@ -9,6 +9,7 @@ import logging
 from flask import Blueprint, request, jsonify, render_template, abort
 
 import database as db
+import pv_ranking
 import security_utils
 
 logger = logging.getLogger(__name__)
@@ -161,6 +162,40 @@ def profil(bfs):
     h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
     value_gap = public_data.compute_leg_value_gap(h4) if h4 else None
 
+    # Kanonische Solarnutzung: neuer PV-Score, gedeckelt; sonst Altwert
+    solar_score, solar_over_100 = pv_ranking.capped_score(profile.get("pv_score_pct"))
+    if solar_score is None and profile.get("solar_potential_pct") is not None:
+        solar_score = round(float(profile["solar_potential_pct"]), 1)
+
+    # Liga-Ränge, Verbesserungsziel und Vorbilder nur bei vorhandenem PV-Score
+    league_chips = []
+    improvement = None
+    already_top = False
+    leaders = []
+    if profile.get("pv_score_pct") is not None:
+        all_pv = db.get_pv_profiles()
+        league_chips = pv_ranking.league_standings(all_pv, profile)
+
+        size = pv_ranking.size_band(profile.get("population"))
+        if size:
+            size_league = pv_ranking.filter_league(all_pv, size=size)
+            threshold = pv_ranking.top_quartile_threshold(size_league)
+            improvement = pv_ranking.improvement_target(profile, threshold)
+            me = next(
+                (
+                    r
+                    for r in pv_ranking.assign_ranks(size_league)
+                    if r["bfs_number"] == bfs
+                ),
+                None,
+            )
+            already_top = bool(me and me["quartile"] == pv_ranking.TOP_QUARTILE)
+
+        leaders = pv_ranking.league_leaders(
+            pv_ranking.filter_league(all_pv, kanton=profile.get("kanton")),
+            exclude_bfs=bfs,
+        )
+
     return render_template(
         "gemeinde/profil.html",
         profile=profile,
@@ -168,6 +203,13 @@ def profil(bfs):
         solar=solar,
         value_gap=value_gap,
         h4_tariff=h4,
+        solar_score=solar_score,
+        solar_over_100=solar_over_100,
+        league_chips=league_chips,
+        improvement=improvement,
+        already_top=already_top,
+        leaders=leaders,
+        share_base=request.url_root.rstrip("/"),
         canonical_url=f"{request.url_root.rstrip('/')}/gemeinde/profil/{bfs}",
     )
 
@@ -181,13 +223,29 @@ def verzeichnis():
 
     profiles = db.get_all_municipality_profiles(kanton=kanton_filter, order_by=order_by)
     # Reverse for descending score/gap
-    if order_by in ("energy_transition_score", "leg_value_gap_chf", "population"):
+    if order_by in (
+        "energy_transition_score",
+        "leg_value_gap_chf",
+        "population",
+        "pv_score_pct",
+    ):
         profiles = list(reversed(profiles))
 
     if q:
         profiles = [
             p for p in profiles if q.lower() in (p.get("name", "") or "").lower()
         ]
+
+    # Nationaler Solarnutzungs-Rang je Gemeinde
+    rank_map = {
+        r["bfs_number"]: r["rank"]
+        for r in pv_ranking.assign_ranks(db.get_pv_profiles())
+    }
+    for profile in profiles:
+        profile["pv_rank"] = rank_map.get(profile.get("bfs_number"))
+        score, over_100 = pv_ranking.capped_score(profile.get("pv_score_pct"))
+        profile["display_score"] = score
+        profile["score_over_100"] = over_100
 
     return render_template(
         "gemeinde/verzeichnis.html",
