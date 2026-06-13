@@ -2468,6 +2468,37 @@ def get_pv_profiles(kanton: str = None) -> List[Dict]:
         return []
 
 
+def get_pv_movers() -> List[Dict]:
+    """Fortschritt je Gemeinde: Delta des Panel-Scores im letzten vollen Jahr.
+
+    Nur aus dem Panel berechnet, nie mit dem Snapshot vermischt.
+    """
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT cur.bfs_number, mp.name, mp.kanton, mp.population,
+                           mp.density_per_km2, cur.year AS year,
+                           cur.score_pct AS score_now,
+                           prev.score_pct AS score_prev,
+                           (cur.score_pct - prev.score_pct) AS delta
+                    FROM municipality_pv_panel cur
+                    JOIN municipality_pv_panel prev
+                      ON prev.bfs_number = cur.bfs_number
+                     AND prev.year = cur.year - 1
+                    JOIN municipality_profiles mp
+                      ON mp.bfs_number = cur.bfs_number
+                    WHERE cur.year = (SELECT MAX(year) FROM municipality_pv_panel)
+                    ORDER BY delta DESC
+                    """
+                )
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting PV movers: {e}")
+        return []
+
+
 def get_municipality_pv_panel(bfs_number: int) -> List[Dict]:
     """Panel-Zeilen einer Gemeinde, nach Jahr aufsteigend."""
     try:

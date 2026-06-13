@@ -89,3 +89,33 @@ def hub():
         }
     )
     return render_template("gemeinde/rangliste.html", **context)
+
+
+@rangliste_bp.route("/rangliste/fortschritte")
+def movers():
+    kanton = _clean_param("kanton")
+    size = _clean_param("size")
+    density = _clean_param("density")
+    try:
+        limit = max(10, min(int(request.args.get("limit", "100")), 3000))
+    except ValueError:
+        limit = 100
+
+    rows = db.get_pv_movers()
+    league = pv_ranking.filter_league(
+        rows, kanton=kanton.upper() if kanton else None, size=size, density=density
+    )
+    latest_year = league[0]["year"] if league else None
+
+    context = _common_context(kanton, size, density)
+    context.update(
+        {
+            "rows": league[:limit],
+            "total": len(league),
+            "limit": limit,
+            "latest_year": latest_year,
+            "active_tab": "fortschritte",
+            "canonical_url": f"{request.url_root.rstrip('/')}/rangliste/fortschritte",
+        }
+    )
+    return render_template("gemeinde/rangliste_fortschritte.html", **context)

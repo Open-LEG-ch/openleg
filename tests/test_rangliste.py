@@ -97,3 +97,58 @@ def test_hub_filters_by_size(monkeypatch):
     html = client.get("/rangliste?size=large").data.decode("utf-8", errors="ignore")
     assert "Mittelstadt" in html
     assert "Sonnendorf" not in html
+
+
+MOVERS = [
+    {
+        "bfs_number": 2,
+        "name": "Mittelstadt",
+        "kanton": "AG",
+        "population": 30000,
+        "density_per_km2": 1500,
+        "year": 2025,
+        "score_now": 40.0,
+        "score_prev": 31.5,
+        "delta": 8.5,
+    },
+    {
+        "bfs_number": 3,
+        "name": "Zürichberg",
+        "kanton": "ZH",
+        "population": 12000,
+        "density_per_km2": 900,
+        "year": 2025,
+        "score_now": 10.0,
+        "score_prev": 9.0,
+        "delta": 1.0,
+    },
+]
+
+
+def _make_movers_client(monkeypatch, rows=MOVERS):
+    monkeypatch.setattr(rangliste_module.db, "get_pv_movers", lambda: rows)
+    app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
+    app.config["TESTING"] = True
+    app.register_blueprint(rangliste_module.rangliste_bp)
+    return app.test_client()
+
+
+def test_movers_tab_renders_delta(monkeypatch):
+    client = _make_movers_client(monkeypatch)
+    resp = client.get("/rangliste/fortschritte")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "Grösste Fortschritte" in html
+    assert "+8.50 Pkt" in html
+    assert "2025" in html
+    # Reihenfolge bleibt nach Delta absteigend
+    assert html.index("Mittelstadt") < html.index("Zürichberg")
+
+
+def test_movers_tab_filters_by_canton(monkeypatch):
+    client = _make_movers_client(monkeypatch)
+    html = client.get("/rangliste/fortschritte?kanton=ZH").data.decode(
+        "utf-8", errors="ignore"
+    )
+    assert "Zürichberg" in html
+    assert "Mittelstadt" not in html
