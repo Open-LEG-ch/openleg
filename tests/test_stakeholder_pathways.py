@@ -24,6 +24,7 @@ def full_app_module():
         {
             "DATABASE_URL": "postgresql://x:x@localhost/x",
             "REDIS_URL": "memory://",
+            "APP_BASE_URL": "http://localhost:5003",
         },
     ):
         with (
@@ -66,22 +67,32 @@ def test_landing_has_four_stakeholder_pathways():
 
 def test_fuer_bewohner_route_renders(full_app_module):
     client = full_app_module.app.test_client()
-    resp = client.get("/fuer-bewohner")
+    resp = client.get("/fuer-bewohner", follow_redirects=True)
     assert resp.status_code == 200
     html = resp.data.decode("utf-8", errors="ignore")
     assert "Für Bewohner und Gründer" in html
+    assert '<link rel="canonical" href="' in html
+    assert "/fuer-bewohner" in html
+    assert 'property="og:title"' in html
+    assert 'property="og:url"' in html
+    assert 'name="twitter:card" content="summary_large_image"' in html
+    assert '"@type": "BreadcrumbList"' in html
 
 
 def test_fuer_bewohner_template_is_on_brand_and_funnels():
     html = _read("fuer_bewohner.html")
+    base = _read("base.html")
     assert "cdn.tailwindcss.com" not in html
-    assert "partials/tailwind_brand.html" in html
-    assert "partials/site_nav.html" in html
-    assert "partials/site_footer.html" in html
-    # share metadata
-    assert '<meta name="description"' in html
-    assert 'rel="canonical"' in html
-    assert 'property="og:title"' in html
+    assert '{% extends "base.html" %}' in html
+    assert '{% from "partials/page_meta.html" import page_meta with context %}' in html
+    assert "partials/tailwind_brand.html" not in html
+    assert "partials/site_nav.html" not in html
+    assert "partials/site_footer.html" not in html
+    assert "partials/tailwind_brand.html" in base
+    assert "partials/site_nav.html" in base
+    assert "partials/site_footer.html" in base
+    assert "page_meta(" in html
+    assert 'og_image="/static/images/og-image.png"' in html
     assert '"@type": "BreadcrumbList"' in html
     # funnels to the conversion surfaces
     assert 'href="/leg-kalkulator"' in html
@@ -89,12 +100,36 @@ def test_fuer_bewohner_template_is_on_brand_and_funnels():
     assert 'href="/#registrieren"' in html
 
 
+def test_fuer_bewohner_template_uses_shared_base():
+    html = _read("fuer_bewohner.html")
+    assert "<!DOCTYPE html>" not in html
+
+
+@pytest.mark.parametrize(
+    "template_name",
+    [
+        "fuer_gemeinden.html",
+        "open_source.html",
+        "how-it-works.html",
+        "pricing.html",
+        "impressum.html",
+        "datenschutz.html",
+    ],
+)
+def test_simple_public_pages_extend_shared_base(template_name):
+    html = _read(template_name)
+    assert '{% extends "base.html" %}' in html
+    assert '{% from "partials/page_meta.html" import page_meta with context %}' in html
+
+
 def test_fuer_bewohner_in_sitemap(full_app_module, monkeypatch):
     monkeypatch.setattr(
         full_app_module.db, "get_all_municipality_profile_bfs_numbers", lambda: [4021]
     )
     client = full_app_module.app.test_client()
-    xml = client.get("/sitemap.xml").data.decode("utf-8", errors="ignore")
+    xml = client.get("/sitemap.xml", follow_redirects=True).data.decode(
+        "utf-8", errors="ignore"
+    )
     assert "/fuer-bewohner" in xml
 
 

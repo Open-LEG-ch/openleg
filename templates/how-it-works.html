@@ -1,18 +1,21 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>So funktioniert's | OpenLEG</title>
-  <meta name="description" content="So funktioniert eine Lokale Elektrizitätsgemeinschaft in der Schweiz: Adresse prüfen, Nachbarn finden, gründen, Netzbetreiber melden und Strom teilen.">
-  <link rel="canonical" href="{{ site_url }}/how-it-works">
-  <meta property="og:type" content="article">
-  <meta property="og:title" content="So funktioniert eine Stromgemeinschaft | OpenLEG">
-  <meta property="og:description" content="Der einfache Ablauf von der Adresse bis zur aktiven Lokalen Elektrizitätsgemeinschaft.">
-  <meta property="og:image" content="{{ site_url }}/static/images/og-image.png">
-  <meta property="og:url" content="{{ site_url }}/how-it-works">
-  <meta name="twitter:card" content="summary_large_image">
-  <script type="application/ld+json">
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="So funktioniert's | OpenLEG",
+  description="So funktioniert eine Lokale Elektrizitätsgemeinschaft in der Schweiz: Adresse prüfen, Nachbarn finden, gründen, Netzbetreiber melden und Strom teilen.",
+  path="/how-it-works",
+  og_title="So funktioniert eine Stromgemeinschaft | OpenLEG",
+  og_description="Der einfache Ablauf von der Adresse bis zur aktiven Lokalen Elektrizitätsgemeinschaft.",
+  og_type="article",
+  og_image="/static/images/og-image.png",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -21,12 +24,10 @@
       {"@type": "ListItem", "position": 2, "name": "So funktioniert es", "item": "{{ site_url }}/how-it-works"}
     ]
   }
-  </script>
-  {% include 'partials/tailwind_brand.html' %}
-</head>
-<body class="bg-[#f6f4ef] text-ink">
-  {% include 'partials/site_nav.html' %}
+</script>
+{% endblock %}
 
+{% block content %}
   <div class="max-w-5xl mx-auto px-4 pt-8">
     <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
       <img src="/static/images/brand/flow-how-it-works.svg" alt="Von Solar über Zähler zur Stromgemeinschaft" class="w-full aspect-[3/1]" loading="lazy">
@@ -38,7 +39,6 @@
     <p class="text-ink-muted mb-8">Von der Idee zur aktiven LEG: was Bewohner und Gemeinden wissen müssen.</p>
 
     <div class="space-y-10">
-      <!-- Step 1 -->
       <section class="grid md:grid-cols-[3rem_1fr] gap-4">
         <div class="w-12 h-12 rounded-full bg-brand text-ink flex items-center justify-center font-bold text-lg">1</div>
         <div>
@@ -47,7 +47,6 @@
         </div>
       </section>
 
-      <!-- Step 2 -->
       <section class="grid md:grid-cols-[3rem_1fr] gap-4">
         <div class="w-12 h-12 rounded-full bg-brand text-ink flex items-center justify-center font-bold text-lg">2</div>
         <div>
@@ -56,7 +55,6 @@
         </div>
       </section>
 
-      <!-- Step 3 -->
       <section class="grid md:grid-cols-[3rem_1fr] gap-4">
         <div class="w-12 h-12 rounded-full bg-brand text-ink flex items-center justify-center font-bold text-lg">3</div>
         <div>
@@ -65,7 +63,6 @@
         </div>
       </section>
 
-      <!-- Step 4 -->
       <section class="grid md:grid-cols-[3rem_1fr] gap-4">
         <div class="w-12 h-12 rounded-full bg-brand text-ink flex items-center justify-center font-bold text-lg">4</div>
         <div>
@@ -74,7 +71,6 @@
         </div>
       </section>
 
-      <!-- Step 5 -->
       <section class="grid md:grid-cols-[3rem_1fr] gap-4">
         <div class="w-12 h-12 rounded-full bg-brand text-ink flex items-center justify-center font-bold text-lg">5</div>
         <div>
@@ -84,7 +80,6 @@
       </section>
     </div>
 
-    <!-- Legal context -->
     <div class="mt-12 bg-white rounded-xl border border-slate-200 p-6">
       <h2 class="text-2xl font-bold mb-3">Rechtsgrundlage</h2>
       <div class="text-ink-muted space-y-2">
@@ -94,7 +89,6 @@
       </div>
     </div>
 
-    <!-- For Gemeinden -->
     <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-6">
       <h2 class="text-2xl font-bold mb-3">Für Gemeinden</h2>
       <p class="text-ink-muted mb-3">Jede Gemeinde kann kostenlos eine eigene OpenLEG-Instanz erhalten. Bewohner registrieren sich auf gemeinde.openleg.ch, das System findet passende Nachbarn und begleitet die Gründung.</p>
@@ -107,7 +101,6 @@
       <a href="/gemeinde/onboarding" class="inline-block bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Gemeinde anmelden</a>
     </div>
 
-    <!-- Data sovereignty -->
     <div class="mt-6 bg-white rounded-xl border border-slate-200 p-6">
       <h2 class="text-2xl font-bold mb-3">Ihre Daten, Ihre Kontrolle</h2>
       <div class="text-ink-muted space-y-2">
@@ -122,7 +115,4 @@
       <a href="/gemeinde/onboarding" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Gemeinde anmelden</a>
     </div>
   </div>
-
-  {% include 'partials/site_footer.html' %}
-</body>
-</html>
+{% endblock %}

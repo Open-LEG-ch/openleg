@@ -1,18 +1,21 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kostenlos und Open Source | OpenLEG</title>
-  <meta name="description" content="OpenLEG ist kostenlose Open Source Infrastruktur für Schweizer Stromgemeinschaften: Bewohner, Gemeinden und API ohne Lizenzkosten oder Datenverkauf.">
-  <link rel="canonical" href="{{ site_url }}/pricing">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Kostenlos und Open Source | OpenLEG">
-  <meta property="og:description" content="Keine Lizenzkosten, kein Vendor Lock-in, kein Datenverkauf. So finanziert sich OpenLEG.">
-  <meta property="og:image" content="{{ site_url }}/static/images/og-image.png">
-  <meta property="og:url" content="{{ site_url }}/pricing">
-  <meta name="twitter:card" content="summary_large_image">
-  <script type="application/ld+json">
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="Kostenlos und Open Source | OpenLEG",
+  description="OpenLEG ist kostenlose Open Source Infrastruktur für Schweizer Stromgemeinschaften: Bewohner, Gemeinden und API ohne Lizenzkosten oder Datenverkauf.",
+  path="/pricing",
+  og_title="Kostenlos und Open Source | OpenLEG",
+  og_description="Keine Lizenzkosten, kein Vendor Lock-in, kein Datenverkauf. So finanziert sich OpenLEG.",
+  og_type="website",
+  og_image="/static/images/og-image.png",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -21,12 +24,10 @@
       {"@type": "ListItem", "position": 2, "name": "Kosten", "item": "{{ site_url }}/pricing"}
     ]
   }
-  </script>
-  {% include 'partials/tailwind_brand.html' %}
-</head>
-<body class="bg-[#f6f4ef] text-ink">
-  {% include 'partials/site_nav.html' %}
+</script>
+{% endblock %}
 
+{% block content %}
   <div class="max-w-5xl mx-auto px-4 pt-8">
     <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
       <img src="/static/images/brand/flow-open-source.svg" alt="Kostenlos und Open Source" class="w-full aspect-[3/1]" loading="lazy">
@@ -40,7 +41,6 @@
     </div>
 
     <div class="grid md:grid-cols-3 gap-6">
-      <!-- Bewohner -->
       <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand">
         <h3 class="text-xl font-bold mb-1">Für Bewohner</h3>
         <div class="text-3xl font-bold mb-1">CHF 0</div>
@@ -55,7 +55,6 @@
         <a href="/#registrieren" class="block text-center bg-brand text-ink py-2 rounded-lg font-medium hover:bg-brand-dark">Adresse prüfen</a>
       </div>
 
-      <!-- Gemeinde -->
       <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand">
         <h3 class="text-xl font-bold mb-1">Für Gemeinden</h3>
         <div class="text-3xl font-bold mb-1">CHF 0</div>
@@ -70,7 +69,6 @@
         <a href="/gemeinde/onboarding" class="block text-center bg-brand text-ink py-2 rounded-lg font-medium hover:bg-brand-dark">Gemeinde anmelden</a>
       </div>
 
-      <!-- API -->
       <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-amber-500">
         <h3 class="text-xl font-bold mb-1">Freie API</h3>
         <div class="text-3xl font-bold mb-1">CHF 0</div>
@@ -86,33 +84,36 @@
       </div>
     </div>
 
-    <!-- How it's funded -->
     <div class="mt-12 bg-white rounded-xl border border-slate-200 p-6">
-      <h2 class="text-2xl font-bold mb-3">Wie wird das finanziert?</h2>
-      <div class="grid md:grid-cols-2 gap-6 text-ink-muted">
+      <h2 class="text-2xl font-bold mb-4">So finanziert sich OpenLEG</h2>
+      <div class="grid md:grid-cols-2 gap-6 text-sm text-ink-muted">
         <div>
-          <h3 class="font-semibold text-ink mb-1">Infrastrukturkosten</h3>
-          <p>Die Plattform läuft auf einem einzigen Schweizer Server für ca. CHF 500/Monat. PostgreSQL, Flask, Caddy. Keine teuren Cloud-Dienste.</p>
+          <h3 class="font-semibold text-ink mb-2">Was kostenlos bleibt</h3>
+          <ul class="space-y-2">
+            <li>&#10003; Plattform-Kern und öffentliche API</li>
+            <li>&#10003; Rangliste und Gemeindeprofile</li>
+            <li>&#10003; Matching für Bewohner</li>
+            <li>&#10003; Open Source Code unter AGPL</li>
+          </ul>
         </div>
         <div>
-          <h3 class="font-semibold text-ink mb-1">Nachhaltiges Modell</h3>
-          <p>Optionale professionelle Dienstleistungen (Onboarding-Support, SDAT-CH Integration, Schulungen) für Gemeinden und Netzbetreiber, die Unterstützung brauchen.</p>
+          <h3 class="font-semibold text-ink mb-2">Optionale Einnahmen</h3>
+          <ul class="space-y-2">
+            <li>&#10003; Projektsupport für Gemeinden</li>
+            <li>&#10003; Self-Hosting Hilfe und Migration</li>
+            <li>&#10003; Schulungen und Datenintegration</li>
+            <li>&#10003; Keine Werbung, kein Datenverkauf</li>
+          </ul>
         </div>
       </div>
     </div>
 
-    <!-- Self-host -->
-    <div class="mt-6 bg-[#f6f4ef] rounded-xl border border-slate-200 p-6">
-      <h2 class="text-2xl font-bold mb-3">Selbst betreiben</h2>
-      <p class="text-ink-muted mb-3">OpenLEG ist Open Source (AGPL-3.0). Jede Gemeinde, jeder Kanton kann die Plattform selbst betreiben.</p>
-      <pre class="bg-ink text-slate-300 rounded-lg p-4 text-sm overflow-x-auto"><code>git clone https://github.com/Open-LEG-ch/openleg.git
-cd openleg
-cp .env.example .env
-docker compose up -d</code></pre>
-      <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="inline-block mt-4 border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white">Code auf GitHub</a>
+    <div class="mt-8 text-center">
+      <p class="text-ink-muted mb-4">Fragen zu Betrieb, Finanzierung oder Selbsthosting?</p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="/fuer-gemeinden" class="bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Für Gemeinden</a>
+        <a href="/open-source" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white">Code auf GitHub</a>
+      </div>
     </div>
   </div>
-
-  {% include 'partials/site_footer.html' %}
-</body>
-</html>
+{% endblock %}

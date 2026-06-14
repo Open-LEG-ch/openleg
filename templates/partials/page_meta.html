@@ -1,0 +1,33 @@
+{% macro page_meta(
+  title,
+  description,
+  path,
+  og_title=None,
+  og_description=None,
+  og_type=None,
+  og_image=None,
+  twitter_card="summary_large_image",
+  keywords=None,
+  robots=None,
+  site_url=""
+) -%}
+  <title>{{ title }}</title>
+  <meta name="description" content="{{ description }}">
+  <link rel="canonical" href="{{ site_url }}{{ path }}">
+  {%- if keywords %}
+  <meta name="keywords" content="{{ keywords }}">
+  {%- endif %}
+  {%- if robots %}
+  <meta name="robots" content="{{ robots }}">
+  {%- endif %}
+  {%- if og_type %}
+  <meta property="og:type" content="{{ og_type }}">
+  {%- endif %}
+  <meta property="og:title" content="{{ og_title or title }}">
+  <meta property="og:description" content="{{ og_description or description }}">
+  {%- if og_image %}
+  <meta property="og:image" content="{{ site_url }}{{ og_image }}">
+  {%- endif %}
+  <meta property="og:url" content="{{ site_url }}{{ path }}">
+  <meta name="twitter:card" content="{{ twitter_card }}">
+{%- endmacro %}

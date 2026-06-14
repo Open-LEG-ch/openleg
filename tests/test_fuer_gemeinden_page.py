@@ -8,7 +8,11 @@ class TestFuerGemeindenPage:
     def test_page_renders(self):
         with patch.dict(
             os.environ,
-            {"DATABASE_URL": "postgresql://x:x@localhost/x", "REDIS_URL": "memory://"},
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
         ):
             with (
                 patch("database.is_db_available", return_value=True),
@@ -31,7 +35,7 @@ class TestFuerGemeindenPage:
                     )
                 ]
                 try:
-                    resp = client.get("/fuer-gemeinden")
+                    resp = client.get("/fuer-gemeinden", follow_redirects=True)
                 finally:
                     app.before_request_funcs[None] = hooks
                 assert resp.status_code == 200
@@ -119,16 +123,27 @@ class TestFuerGemeindenPage:
         assert "Gemeinde anmelden" in content
 
     def test_fuer_gemeinden_has_share_metadata_and_open_source_link(self):
+        base_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "base.html",
+        )
         path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "templates",
             "fuer_gemeinden.html",
         )
+        with open(base_path, encoding="utf-8") as handle:
+            base = handle.read()
         with open(path, encoding="utf-8") as handle:
             content = handle.read()
-        assert '<meta name="description"' in content
-        assert 'rel="canonical"' in content
-        assert 'property="og:title"' in content
+        assert '{% extends "base.html" %}' in content
+        assert (
+            '{% from "partials/page_meta.html" import page_meta with context %}'
+            in content
+        )
+        assert "page_meta(" in content
+        assert "partials/tailwind_brand.html" in base
         assert 'href="/open-source"' in content
 
     def test_site_nav_has_mobile_menu_controls(self):
