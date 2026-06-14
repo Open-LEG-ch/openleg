@@ -70,6 +70,19 @@ Domain vocabulary lives in `CONTEXT.md`. Use those module/seam names.
 - New storage code for a cohesive domain goes in `store/`, not into `database.py`.
 - Deepening roadmap and next extraction order: `prd/architecture-deepening.md`.
 
+## Domain Modules (Candidate 2, shipped)
+
+All three Architecture Deepening candidates are complete:
+
+- `ranking.py` — Ranking facade (#1). Wraps `pv_ranking`/`pv_badge`; call `Ranking.load()` once per request path.
+- `cantons.py` — `SWISS_CANTON_OPTIONS` / `SWISS_CANTONS` (extracted from route module).
+- `municipality_profile.py` — `public_profile(bfs)` verb (#2, slice 1). Assembles profile page data; route in `municipality.py` is now parse+render only.
+- `registration.py` — `check_potential`, `register_anonymous`, `register_full` verbs (#2, slices 2-3). Owns `parse_consents`, `collect_building_locations`, `jitter_coordinates`, `find_provisional_matches`, `send_confirmation_email`, `run_full_ml_task`.
+- `dashboard.py` — `readiness(building_id, *, city_id, app_base_url)` verb (#2, slice 4). Route in `app.py` is parse+render only.
+- `templates/base.html` — shared layout seam (#3). All user-facing pages use `{% extends "base.html" %}`.
+
+Route handlers in `app.py` and `municipality.py` contain no direct `db.*` calls for the above paths.
+
 ## Templates and Pathways
 
 - Every user-facing page uses the shared partials `partials/tailwind_brand.html`

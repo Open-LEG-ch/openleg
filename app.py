@@ -1,12 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # ruff: noqa: E402
 import os
-import time
-import uuid
-import math
 import json
-import hashlib
-import threading
 import logging
 
 # PUBLIC-SNAPSHOT-PRIVATE-START: private-export-imports
@@ -14,7 +9,7 @@ import csv
 import io
 
 # PUBLIC-SNAPSHOT-PRIVATE-END: private-export-imports
-from datetime import timedelta
+from datetime import timedelta, datetime
 from flask import (
     Flask,
     request,
@@ -26,7 +21,6 @@ from flask import (
     send_from_directory,
 )
 from jinja2 import TemplateNotFound
-import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 
@@ -58,11 +52,9 @@ except ImportError:
     HAS_SECURITY_LIBS = False
 
 # --- Email imports ---
-from email_utils import send_email
 
 # --- Core modules ---
 import data_enricher
-import ml_models
 import security_utils
 
 # --- PostgreSQL Database ---
@@ -211,176 +203,9 @@ def apply_basic_security_headers(response):
     return response
 
 
-# --- Consent Helpers ---
-CONSENT_VERSION = "2026-01-01"
-
-
-def _coerce_bool(value):
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return False
-    if isinstance(value, (int, float)):
-        return value != 0
-    if isinstance(value, str):
-        return value.strip().lower() in ("1", "true", "yes", "ja", "on")
-    return False
-
-
-def parse_consents(raw_consents):
-    consents = raw_consents or {}
-    return {
-        "share_with_neighbors": _coerce_bool(consents.get("share_with_neighbors")),
-        "share_with_utility": _coerce_bool(consents.get("share_with_utility")),
-        "updates_opt_in": _coerce_bool(consents.get("updates_opt_in")),
-        "consent_version": consents.get("consent_version") or CONSENT_VERSION,
-        "consent_timestamp": time.time(),
-    }
-
-
-# --- Anonymity ---
-ANONYMITY_RADIUS_METERS = 120
-
-
-def jitter_coordinates(lat, lon, radius_meters=ANONYMITY_RADIUS_METERS, seed=None):
-    if lat is None or lon is None or radius_meters <= 0:
-        return lat, lon
-    if seed is not None:
-        if not isinstance(seed, str):
-            seed = str(seed)
-        seed_hash = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16]
-        seed_value = int(seed_hash, 16)
-    else:
-        seed_value = None
-    rng = np.random.default_rng(seed_value)
-    distance = radius_meters * math.sqrt(rng.random())
-    angle = rng.uniform(0, 2 * math.pi)
-    earth_radius = 6_378_137.0
-    lat_rad = math.radians(lat)
-    delta_lat = (distance * math.cos(angle)) / earth_radius
-    denom = earth_radius * math.cos(lat_rad)
-    if abs(denom) < 1e-9:
-        denom = earth_radius
-    delta_lon = (distance * math.sin(angle)) / denom
-    return lat + math.degrees(delta_lat), lon + math.degrees(delta_lon)
-
-
-def _tenant_name():
-    try:
-        return getattr(g, "tenant", {}).get("platform_name", "OpenLEG")
-    except RuntimeError:
-        return "OpenLEG"
-
-
-def send_activity_notification(activity_type, details):
-    name = _tenant_name()
-    subject = f"{name}: {activity_type}"
-    message_body = (
-        f"Neue Aktivität auf {name}:\n\nTyp: {activity_type}\n\nDetails:\n{details}"
-    )
-    send_email(ADMIN_EMAIL, subject, message_body)
-
-
-def send_confirmation_email(email, unsubscribe_url, building_id=None, address=None):
-    name = _tenant_name()
-    try:
-        city = getattr(g, "tenant", {}).get("city_name", "Zürich")
-    except RuntimeError:
-        city = "Zürich"
-    subject = f"{name}: Registrierung bestätigt"
-    message_body = (
-        f"Willkommen bei {name}!\n\n"
-        f"Sie sind jetzt für eine Lokale Elektrizitätsgemeinschaft (LEG) in {city} registriert.\n\n"
-        "Wir informieren Sie per E-Mail, sobald sich neue Interessenten in Ihrer Zone anmelden.\n\n"
-        f"Abmelden:\n{unsubscribe_url}\n\n"
-        f"Ihr {name}-Team"
-    )
-    send_email(email, subject, message_body)
-
-
-def collect_building_locations(city_id=None, exclude_building_id=None):
-    """Get all verified building locations with jittered coordinates."""
-    buildings = db.get_all_buildings(city_id=city_id)
-    locations = []
-    for b in buildings:
-        if exclude_building_id and b.get("building_id") == exclude_building_id:
-            continue
-        lat = b.get("lat")
-        lon = b.get("lon")
-        if lat is None or lon is None:
-            continue
-        jlat, jlon = jitter_coordinates(
-            float(lat), float(lon), seed=b.get("building_id")
-        )
-        locations.append(
-            {"lat": jlat, "lon": jlon, "type": b.get("user_type", "anonymous")}
-        )
-    return locations
-
-
-def run_full_ml_task(new_building_id=None, city_id=None):
-    """Background ML clustering task using PostgreSQL data."""
-    logger.info("[ML] Starting background clustering...")
-    profiles = db.get_all_building_profiles(city_id=city_id)
-    if len(profiles) < 2:
-        logger.info("[ML] Not enough buildings for clustering.")
-        return
-
-    building_data = pd.DataFrame(profiles)
-    ranked_communities, buildings_with_clusters = ml_models.find_optimal_communities(
-        building_data, radius_meters=150, min_community_size=2
-    )
-
-    # Save clusters to DB
-    if "building_id" in buildings_with_clusters.columns:
-        for _, row in buildings_with_clusters.iterrows():
-            bid = row.get("building_id")
-            cid = row.get("cluster", -1)
-            if bid and cid >= 0:
-                db.save_cluster(bid, cid)
-
-    for community in ranked_communities:
-        db.save_cluster_info(community["community_id"], community)
-
-    logger.info(f"[ML] Clustering done: {len(ranked_communities)} clusters")
-
-
-def find_provisional_matches(new_profile):
-    """Fast provisional match search (distance only, no DBSCAN)."""
-    profiles = db.get_all_building_profiles()
-    if not profiles:
-        return None
-
-    new_coords = (new_profile["lat"], new_profile["lon"])
-    provisional = [new_profile]
-
-    for p in profiles:
-        dist = ml_models.calculate_distance(
-            new_coords[0], new_coords[1], float(p["lat"]), float(p["lon"])
-        )
-        if dist <= 150:
-            provisional.append(p)
-
-    if len(provisional) < 2:
-        return None
-
-    community_df = pd.DataFrame(provisional)
-    autarky_score, _, _ = ml_models.calculate_community_autarky(community_df, None)
-
-    members = [
-        {
-            "building_id": p.get("building_id", ""),
-            "lat": float(p["lat"]),
-            "lon": float(p["lon"]),
-        }
-        for p in provisional
-    ]
-    return {
-        "community_id": "provisional",
-        "num_members": len(members),
-        "members": members,
-        "autarky_percent": autarky_score * 100,
-    }
+import registration
+import dashboard as dashboard_module
+from registration import collect_building_locations
 
 
 def create_simple_polygon(coords):
@@ -546,7 +371,6 @@ def favicon():
 
 @app.route("/sitemap.xml")
 def sitemap_xml():
-    from datetime import datetime
 
     current_date = datetime.now().strftime("%Y-%m-%d")
     pages = [
@@ -934,265 +758,49 @@ def api_check_potential():
         )
         if not is_valid:
             return jsonify({"error": error_msg}), 400
-        address = sanitized_address
-
-        estimates, profiles = None, None
-        try:
-            estimates, profiles = data_enricher.get_energy_profile_for_address(address)
-            if not estimates:
-                estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
-                    address
-                )
-        except Exception:
-            estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
-                address
-            )
-
-        if not estimates:
-            return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
+        result = registration.check_potential(sanitized_address)
+        if "error" in result:
+            return jsonify({"error": result["error"]}), result.get("_status", 400)
+        return jsonify(result)
     except Exception as e:
         return jsonify({"error": f"Server-Fehler: {str(e)}"}), 500
-
-    cluster_info = find_provisional_matches(estimates)
-    if not cluster_info:
-        return jsonify(
-            {
-                "potential": False,
-                "message": "Keine direkten Partner gefunden.",
-                "profile_summary": estimates,
-            }
-        )
-    return jsonify(
-        {
-            "potential": True,
-            "message": "Partner gefunden!",
-            "cluster_info": cluster_info,
-            "profile_summary": estimates,
-        }
-    )
 
 
 # --- Registration ---
 @app.route("/api/register_anonymous", methods=["POST"])
 @limiter.limit("5 per minute") if limiter else lambda f: f
 def api_register_anonymous():
-    if not request.json:
-        return jsonify({"error": "Keine Daten empfangen."}), 400
     is_valid_size, size_error = security_utils.check_request_size(request)
     if not is_valid_size:
         return jsonify({"error": size_error}), 413
-
-    phone = (request.json.get("phone") or "").strip()
-    email = (request.json.get("email") or "").strip()
-    profile = request.json.get("profile")
-    referral_code = (request.json.get("referral_code") or "").strip()
-
-    referrer_id = None
-    if referral_code:
-        referrer = db.get_building_by_referral_code(referral_code)
-        if referrer:
-            referrer_id = referrer.get("building_id")
-
-    is_valid_email, normalized_email, email_error = (
-        security_utils.validate_email_address(email)
-    )
-    if not is_valid_email:
-        return jsonify({"error": email_error}), 400
-    email = normalized_email
-
-    if phone:
-        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(
-            phone
-        )
-        if not is_valid_phone:
-            return jsonify({"error": phone_error}), 400
-        phone = normalized_phone
-
-    if not profile:
-        return jsonify({"error": "Profildaten fehlen."}), 400
-    building_id = profile.get("building_id")
-    is_valid_id, id_error = security_utils.validate_building_id(building_id)
-    if not is_valid_id:
-        return jsonify({"error": id_error}), 400
-
-    lat = profile.get("lat")
-    lon = profile.get("lon")
-    is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
-    if not is_valid_coords:
-        return jsonify({"error": coords_error}), 400
-
-    consents = parse_consents(request.json.get("consents"))
-    if not consents.get("share_with_neighbors") or not consents.get(
-        "share_with_utility"
-    ):
-        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe zu."}), 400
-
+    if not request.json:
+        return jsonify({"error": "Keine Daten empfangen."}), 400
     city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
-
-    # Save to PostgreSQL
-    db.save_building(
-        building_id=building_id,
-        email=email,
-        profile=profile,
-        consents=consents,
-        user_type="anonymous",
-        phone=phone,
-        referrer_id=referrer_id,
-        city_id=city_id,
+    result = registration.register_anonymous(
+        request.json, city_id=city_id, app_base_url=APP_BASE_URL
     )
-
-    # Create unsubscribe token
-    unsub_token = str(uuid.uuid4())
-    db.save_token(unsub_token, building_id, "unsubscribe")
-    unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
-
-    # Background tasks
-    threading.Thread(
-        target=send_confirmation_email,
-        args=(email, unsubscribe_url, building_id, profile.get("address", "")),
-        daemon=True,
-    ).start()
-    threading.Thread(
-        target=run_full_ml_task, args=(building_id, city_id), daemon=True
-    ).start()
-    threading.Thread(
-        target=email_automation.schedule_sequence_for_user,
-        args=(building_id, email),
-        daemon=True,
-    ).start()
-
-    db.track_event(
-        "registration", building_id, {"type": "anonymous", "city_id": city_id}
-    )
-
-    # Build response
-    cluster_info = find_provisional_matches(profile)
-    locations = collect_building_locations(
-        city_id=city_id, exclude_building_id=building_id
-    )
-    referral_link = None
-    ref_code = db.get_referral_code(building_id)
-    if ref_code:
-        referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
-
-    payload = {
-        "buildings": locations,
-        "match_found": bool(cluster_info),
-        "verification_email_sent": True,
-        "referral_link": referral_link,
-    }
-    if cluster_info:
-        payload["cluster_info"] = cluster_info
-    return jsonify(payload)
+    if "error" in result:
+        return jsonify({"error": result["error"]}), result.get("_status", 400)
+    result.pop("_status", None)
+    return jsonify(result)
 
 
 @app.route("/api/register_full", methods=["POST"])
 @limiter.limit("5 per minute") if limiter else lambda f: f
 def api_register_full():
-    if not request.json:
-        return jsonify({"error": "Keine Daten empfangen."}), 400
     is_valid_size, size_error = security_utils.check_request_size(request)
     if not is_valid_size:
         return jsonify({"error": size_error}), 413
-
-    profile = request.json.get("profile")
-    email = (request.json.get("email") or "").strip()
-    phone = (request.json.get("phone") or "").strip()
-    referral_code = (request.json.get("referral_code") or "").strip()
-
-    referrer_id = None
-    if referral_code:
-        referrer = db.get_building_by_referral_code(referral_code)
-        if referrer:
-            referrer_id = referrer.get("building_id")
-
-    is_valid_email, normalized_email, email_error = (
-        security_utils.validate_email_address(email)
-    )
-    if not is_valid_email:
-        return jsonify({"error": email_error}), 400
-    email = normalized_email
-
-    if phone:
-        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(
-            phone
-        )
-        if not is_valid_phone:
-            return jsonify({"error": phone_error}), 400
-        phone = normalized_phone
-
-    if not profile:
-        return jsonify({"error": "Profildaten fehlen."}), 400
-    building_id = profile.get("building_id")
-    is_valid_id, id_error = security_utils.validate_building_id(building_id)
-    if not is_valid_id:
-        return jsonify({"error": id_error}), 400
-
-    lat = profile.get("lat")
-    lon = profile.get("lon")
-    is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
-    if not is_valid_coords:
-        return jsonify({"error": coords_error}), 400
-
-    consents = parse_consents(request.json.get("consents"))
-    if not consents.get("share_with_neighbors") or not consents.get(
-        "share_with_utility"
-    ):
-        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe zu."}), 400
-
+    if not request.json:
+        return jsonify({"error": "Keine Daten empfangen."}), 400
     city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
-
-    db.save_building(
-        building_id=building_id,
-        email=email,
-        profile=profile,
-        consents=consents,
-        user_type="registered",
-        phone=phone,
-        referrer_id=referrer_id,
-        city_id=city_id,
+    result = registration.register_full(
+        request.json, city_id=city_id, app_base_url=APP_BASE_URL
     )
-
-    unsub_token = str(uuid.uuid4())
-    db.save_token(unsub_token, building_id, "unsubscribe")
-    unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
-
-    threading.Thread(
-        target=send_confirmation_email,
-        args=(email, unsubscribe_url, building_id, profile.get("address", "")),
-        daemon=True,
-    ).start()
-    threading.Thread(
-        target=run_full_ml_task, args=(building_id, city_id), daemon=True
-    ).start()
-    threading.Thread(
-        target=email_automation.schedule_sequence_for_user,
-        args=(building_id, email),
-        daemon=True,
-    ).start()
-
-    db.track_event(
-        "registration", building_id, {"type": "registered", "city_id": city_id}
-    )
-
-    cluster_info = find_provisional_matches(profile)
-    locations = collect_building_locations(
-        city_id=city_id, exclude_building_id=building_id
-    )
-    referral_link = None
-    ref_code = db.get_referral_code(building_id)
-    if ref_code:
-        referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
-
-    payload = {
-        "buildings": locations,
-        "match_found": bool(cluster_info),
-        "verification_email_sent": True,
-        "referral_link": referral_link,
-    }
-    if cluster_info:
-        payload["cluster_info"] = cluster_info
-    return jsonify(payload)
+    if "error" in result:
+        return jsonify({"error": result["error"]}), result.get("_status", 400)
+    result.pop("_status", None)
+    return jsonify(result)
 
 
 # --- Meter Data Upload ---
@@ -1297,62 +905,11 @@ def unsubscribe_token(token):
 @app.route("/dashboard")
 def dashboard():
     building_id = request.args.get("bid", "").strip()
-    if not building_id:
-        return render_city_template(
-            "dashboard.html", error="Kein Profil angegeben.", user=None
-        )
-
-    user = db.get_building_for_dashboard(building_id)
-    if not user:
-        return render_city_template(
-            "dashboard.html", error="Profil nicht gefunden.", user=None
-        )
-
-    score = 0
-    checks = []
-    if user.get("verified"):
-        score += 25
-        checks.append(("E-Mail bestätigt", True))
-    else:
-        checks.append(("E-Mail bestätigt", False))
-    if user.get("annual_consumption_kwh"):
-        score += 25
-        checks.append(("Verbrauchsdaten hinterlegt", True))
-    else:
-        checks.append(("Verbrauchsdaten hinterlegt", False))
-    if user.get("share_with_utility"):
-        score += 25
-        checks.append(("EVU-Einwilligung erteilt", True))
-    else:
-        checks.append(("EVU-Einwilligung erteilt", False))
-    if user.get("share_with_neighbors"):
-        score += 25
-        checks.append(("Nachbar-Einwilligung erteilt", True))
-    else:
-        checks.append(("Nachbar-Einwilligung erteilt", False))
-
-    neighbor_count = 0
-    referral_link = ""
-    lat = user.get("lat")
-    lon = user.get("lon")
     city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
-    if lat and lon:
-        neighbor_count = db.get_neighbor_count_near(
-            float(lat), float(lon), city_id=city_id
-        )
-    ref_code = db.get_referral_code(building_id)
-    if ref_code:
-        referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
-
-    return render_city_template(
-        "dashboard.html",
-        user=user,
-        readiness_score=score,
-        checks=checks,
-        neighbor_count=neighbor_count,
-        referral_link=referral_link,
-        error=None,
+    view = dashboard_module.readiness(
+        building_id, city_id=city_id, app_base_url=APP_BASE_URL
     )
+    return render_city_template("dashboard.html", **view)
 
 
 # --- Referral System ---

@@ -5,6 +5,7 @@ import os
 from flask import Flask
 
 import municipality as municipality_module
+import municipality_profile as mprofile_module
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -165,7 +166,7 @@ def test_verzeichnis_and_profil_render_canonical_from_host(monkeypatch):
     )
     _patch_verzeichnis_ranking(monkeypatch, [])
     monkeypatch.setattr(
-        municipality_module.db,
+        mprofile_module.db,
         "get_municipality_profile",
         lambda bfs: {
             "bfs_number": bfs,
@@ -175,10 +176,10 @@ def test_verzeichnis_and_profil_render_canonical_from_host(monkeypatch):
         },
     )
     monkeypatch.setattr(
-        municipality_module.db, "get_elcom_tariffs", lambda *_args, **_kwargs: []
+        mprofile_module.db, "get_elcom_tariffs", lambda *_args, **_kwargs: []
     )
     monkeypatch.setattr(
-        municipality_module.db, "get_sonnendach_municipal", lambda _bfs: None
+        mprofile_module.db, "get_sonnendach_municipal", lambda _bfs: None
     )
 
     verzeichnis = client.get("/gemeinde/verzeichnis", headers={"Host": "openleg.ch"})
@@ -227,17 +228,15 @@ def test_verzeichnis_calls_ranking_load_once(monkeypatch):
 
 def _patch_profil_deps(monkeypatch, profile, pv_profiles=None):
     monkeypatch.setattr(
-        municipality_module.db, "get_municipality_profile", lambda _bfs: profile
+        mprofile_module.db, "get_municipality_profile", lambda _bfs: profile
     )
+    monkeypatch.setattr(mprofile_module.db, "get_elcom_tariffs", lambda *_a, **_k: [])
     monkeypatch.setattr(
-        municipality_module.db, "get_elcom_tariffs", lambda *_a, **_k: []
-    )
-    monkeypatch.setattr(
-        municipality_module.db, "get_sonnendach_municipal", lambda _bfs: None
+        mprofile_module.db, "get_sonnendach_municipal", lambda _bfs: None
     )
     profiles = pv_profiles if pv_profiles is not None else [profile]
     monkeypatch.setattr(
-        municipality_module.Ranking,
+        mprofile_module.Ranking,
         "load",
         lambda: municipality_module.Ranking(profiles),
     )
@@ -380,7 +379,7 @@ def test_profil_calls_ranking_load_once(monkeypatch):
         calls.append(1)
         return municipality_module.Ranking(others)
 
-    monkeypatch.setattr(municipality_module.Ranking, "load", _spy_load)
+    monkeypatch.setattr(mprofile_module.Ranking, "load", _spy_load)
     resp = client.get("/gemeinde/profil/4021")
     html = resp.data.decode("utf-8", errors="ignore")
     assert resp.status_code == 200
@@ -405,7 +404,7 @@ def test_profil_skips_ranking_load_without_pv_score(monkeypatch):
         calls.append(1)
         return municipality_module.Ranking([])
 
-    monkeypatch.setattr(municipality_module.Ranking, "load", _spy_load)
+    monkeypatch.setattr(mprofile_module.Ranking, "load", _spy_load)
     resp = client.get("/gemeinde/profil/2")
     html = resp.data.decode("utf-8", errors="ignore")
     assert resp.status_code == 200

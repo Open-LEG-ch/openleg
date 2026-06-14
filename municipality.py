@@ -10,6 +10,7 @@ from flask import Blueprint, request, jsonify, render_template, abort
 
 from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
 import database as db
+import municipality_profile as mprofile
 from ranking import Ranking
 import security_utils
 
@@ -123,50 +124,12 @@ def api_municipalities():
 @municipality_bp.route("/profil/<int:bfs>")
 def profil(bfs):
     """Public municipality profile page with energy data visualization."""
-    profile = db.get_municipality_profile(bfs)
-    if not profile:
+    view = mprofile.public_profile(bfs)
+    if not view:
         abort(404)
-
-    tariffs = db.get_elcom_tariffs(bfs, year=2026)
-    solar = db.get_sonnendach_municipal(bfs)
-
-    # Compute value gap if H4 tariff available
-    import public_data
-
-    h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
-    value_gap = public_data.compute_leg_value_gap(h4) if h4 else None
-
-    # Kanonische Solarnutzung: neuer PV-Score, gedeckelt; sonst Altwert
-    solar_score, solar_over_100 = Ranking.capped_score(profile.get("pv_score_pct"))
-    if solar_score is None and profile.get("solar_potential_pct") is not None:
-        solar_score = round(float(profile["solar_potential_pct"]), 1)
-
-    # Liga-Ränge, Verbesserungsziel und Vorbilder nur bei vorhandenem PV-Score
-    league_chips = []
-    improvement = None
-    already_top = False
-    leaders = []
-    if profile.get("pv_score_pct") is not None:
-        ranking = Ranking.load()
-        league_chips = ranking.league_chips(profile)
-        improvement = ranking.improvement_target(profile)
-        size_rank = ranking.size_league_rank(profile)
-        already_top = bool(size_rank and size_rank["quartile"] == Ranking.TOP_QUARTILE)
-        leaders = ranking.leaders(profile.get("kanton"), exclude_bfs=bfs)
-
     return render_template(
         "gemeinde/profil.html",
-        profile=profile,
-        tariffs=tariffs,
-        solar=solar,
-        value_gap=value_gap,
-        h4_tariff=h4,
-        solar_score=solar_score,
-        solar_over_100=solar_over_100,
-        league_chips=league_chips,
-        improvement=improvement,
-        already_top=already_top,
-        leaders=leaders,
+        **view,
         site_url=request.url_root.rstrip("/"),
         share_base=request.url_root.rstrip("/"),
         canonical_url=f"{request.url_root.rstrip('/')}/gemeinde/profil/{bfs}",
