@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" role="img" aria-label="Gemeinden im Solarnutzungs-Vergleich">
+  <defs>
+    <linearGradient id="gsky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f6f4ef"/>
+    </linearGradient>
+    <linearGradient id="gbar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc043"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+    <pattern id="gdots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.4" fill="#0f172a" opacity="0.05"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="400" fill="url(#gsky)"/>
+  <rect width="1200" height="400" fill="url(#gdots)"/>
+  <line x1="0" y1="330" x2="1200" y2="330" stroke="#e2e8f0" stroke-width="2"/>
+
+  <!-- left: town hall + map pin -->
+  <g transform="translate(120,150)" fill="none" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <!-- town hall -->
+    <path d="M0 60 L70 18 L140 60"/>
+    <path d="M14 60 L14 180 L126 180 L126 60"/>
+    <line x1="70" y1="18" x2="70" y2="6"/>
+    <circle cx="70" cy="2" r="5" fill="#f59e0b" stroke="none"/>
+    <line x1="40" y1="90" x2="40" y2="180"/>
+    <line x1="70" y1="90" x2="70" y2="180"/>
+    <line x1="100" y1="90" x2="100" y2="180"/>
+    <line x1="14" y1="90" x2="126" y2="90"/>
+    <!-- map pin -->
+    <g transform="translate(150,40)">
+      <path d="M28 0 C44 0 56 12 56 28 C56 48 28 76 28 76 C28 76 0 48 0 28 C0 12 12 0 28 0 Z" fill="#f59e0b" stroke="#d97706"/>
+      <circle cx="28" cy="28" r="11" fill="#0f172a" stroke="none"/>
+    </g>
+  </g>
+
+  <!-- right: ranking bars -->
+  <g transform="translate(620,0)">
+    <!-- axis -->
+    <line x1="0" y1="330" x2="500" y2="330" stroke="#0f172a" stroke-width="2"/>
+    <!-- bars, ascending, winner highlighted -->
+    <g stroke="none">
+      <rect x="20"  y="250" width="64" height="80"  rx="6" fill="#e2e8f0"/>
+      <rect x="110" y="210" width="64" height="120" rx="6" fill="#cbd5e1"/>
+      <rect x="200" y="160" width="64" height="170" rx="6" fill="#94a3b8"/>
+      <rect x="290" y="110" width="64" height="220" rx="6" fill="#475569"/>
+      <!-- winner -->
+      <rect x="380" y="64"  width="64" height="266" rx="6" fill="url(#gbar)"/>
+    </g>
+    <!-- winner star -->
+    <path d="M412 34 l7 16 17 2 -13 12 4 17 -15 -9 -15 9 4 -17 -13 -12 17 -2 z" fill="#f59e0b" stroke="#d97706" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- trend line over bars -->
+    <polyline points="52,250 142,210 232,160 322,110 412,64" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 9"/>
+  </g>
+</svg>
