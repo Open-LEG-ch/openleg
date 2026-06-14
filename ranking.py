@@ -91,20 +91,46 @@ class Ranking:
             return mover_rows
         return store_ranking.get_pv_movers()
 
-    def badge_svg(self, bfs: int) -> str:
-        """SVG badge for one municipality."""
-        profile = None
-        for row in self._profiles:
+    def _rank_for_bfs(self, bfs: int) -> Optional[int]:
+        for row in pv_ranking.assign_ranks(self._profiles):
             if row.get("bfs_number") == bfs:
-                profile = row
-                break
+                return row.get("rank")
+        return None
+
+    def badge_svg(self, bfs: int, profile: Optional[Dict] = None) -> str:
+        """SVG badge for one municipality.
+
+        If ``profile`` is provided, it is used as the data source and only the
+        national rank is resolved against the loaded ranking. This supports
+        municipalities that exist in the profile table but are not part of the
+        PV ranking because they have no score yet.
+        """
         if profile is None:
-            return ""
-        ranked = pv_ranking.assign_ranks(self._profiles)
-        rank = None
-        for row in ranked:
-            if row.get("bfs_number") == bfs:
-                rank = row.get("rank")
-                break
+            for row in self._profiles:
+                if row.get("bfs_number") == bfs:
+                    profile = row
+                    break
+            if profile is None:
+                return ""
         display_score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
+        rank = self._rank_for_bfs(bfs)
         return pv_badge.badge_svg(profile.get("name"), display_score, rank)
+
+    def og_card_svg(self, bfs: int, profile: Optional[Dict] = None) -> str:
+        """SVG OpenGraph card for one municipality."""
+        if profile is None:
+            for row in self._profiles:
+                if row.get("bfs_number") == bfs:
+                    profile = row
+                    break
+            if profile is None:
+                return ""
+        display_score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
+        rank = self._rank_for_bfs(bfs)
+        return pv_badge.og_card_svg(
+            profile.get("name"),
+            profile.get("kanton"),
+            display_score,
+            rank,
+            profile.get("pv_untapped_kw"),
+        )

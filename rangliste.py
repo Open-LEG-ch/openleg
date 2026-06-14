@@ -10,7 +10,6 @@ import logging
 from flask import Blueprint, Response, render_template, request
 
 import database as db
-import pv_badge
 import pv_ranking
 from cantons import SWISS_CANTON_OPTIONS
 from ranking import Ranking
@@ -86,21 +85,13 @@ def _bfs_arg(name):
     return int(raw) if raw.isdigit() else None
 
 
-def _rank_for(bfs):
-    rank_map = {
-        r["bfs_number"]: r["rank"]
-        for r in pv_ranking.assign_ranks(db.get_pv_profiles())
-    }
-    return rank_map.get(bfs)
-
-
 @rangliste_bp.route("/rangliste/badge/<int:bfs>.svg")
 def badge(bfs):
     profile = db.get_municipality_profile(bfs)
     if not profile:
         return Response(status=404)
-    score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
-    svg = pv_badge.badge_svg(profile.get("name"), score, _rank_for(bfs))
+    ranking = Ranking.load()
+    svg = ranking.badge_svg(bfs, profile=profile)
     return Response(svg, mimetype="image/svg+xml")
 
 
@@ -109,14 +100,8 @@ def og_card(bfs):
     profile = db.get_municipality_profile(bfs)
     if not profile:
         return Response(status=404)
-    score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
-    svg = pv_badge.og_card_svg(
-        profile.get("name"),
-        profile.get("kanton"),
-        score,
-        _rank_for(bfs),
-        profile.get("pv_untapped_kw"),
-    )
+    ranking = Ranking.load()
+    svg = ranking.og_card_svg(bfs, profile=profile)
     return Response(svg, mimetype="image/svg+xml")
 
 
