@@ -84,7 +84,16 @@ class TestDeployScript:
         assert "REMOTE_DIR" in self.content
 
     def test_uses_rsync(self):
-        assert "rsync -az --delete" in self.content
+        assert "rsync" in self.content
+        assert "-az" in self.content
+
+    def test_delete_is_opt_in_and_protects_data(self):
+        # --delete must not be unconditional; it is gated behind RSYNC_DELETE.
+        assert "rsync -az --delete" not in self.content
+        assert "RSYNC_DELETE" in self.content
+        # Production-only data must always be excluded from the mirror.
+        for protected in ("backups/", "*.sql", "*.sql.gz"):
+            assert protected in self.content
 
     def test_runs_compose_build(self):
         assert "docker compose" in self.content
