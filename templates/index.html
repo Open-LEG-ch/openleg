@@ -42,7 +42,7 @@
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Ihr Strom. Ihre Nachbarn. Ihre Gemeinschaft.</h1>
             <p class="mt-4 text-lg text-ink-muted max-w-xl">Gründen Sie eine lokale Stromgemeinschaft (LEG) und sparen Sie bis 40% auf Netzgebühren. Kostenlos, Open Source, Ihre Daten bleiben bei Ihnen.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
-              <a href="#registrieren" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse prüfen</a>
+              <a href="#registrieren" class="bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse prüfen</a>
               <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">So funktioniert's</a>
             </div>
             <div class="mt-6 flex flex-wrap gap-2 text-xs">
@@ -57,7 +57,7 @@
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Sehen Sie, wo Ihre Gemeinde bei der Solarnutzung steht.</h1>
             <p class="mt-4 text-lg text-ink-muted max-w-xl">Vergleichen Sie sich mit vergleichbaren Gemeinden, holen Sie auf und gründen Sie lokale Stromgemeinschaften. Kostenlos, kein IT Projekt.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
-              <a href="/rangliste" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Rangliste ansehen</a>
+              <a href="/rangliste" class="bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Rangliste ansehen</a>
               <a href="/gemeinde/onboarding" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Gemeinde anmelden</a>
             </div>
             <div class="mt-6 flex flex-wrap gap-2 text-xs">
@@ -189,7 +189,7 @@
             <li>Alle Dokumente: Vereinbarung, Verträge, Netzbetreiber-Anmeldung</li>
           </ul>
           <div class="mt-6 flex flex-col sm:flex-row gap-3">
-            <a href="/rangliste" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Rangliste ansehen</a>
+            <a href="/rangliste" class="inline-block bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Rangliste ansehen</a>
             <a href="/fuer-gemeinden" class="inline-block border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Wie Ihre Gemeinde teilnimmt</a>
           </div>
         </div>
@@ -201,6 +201,64 @@
       </div>
     </div>
   </section>
+
+  <!-- Rangliste-Vorschau -->
+  {% if ranking_best and ranking_worst %}
+  <section class="py-16 bg-white border-t border-slate-200/60">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+        <div>
+          <h2 class="text-3xl font-bold">Solarnutzungs-Rangliste</h2>
+          <p class="text-ink-muted mt-2 max-w-2xl">Wie viel Dachpotenzial Schweizer Gemeinden schon nutzen. Echte Daten von ElCom, Sonnendach und Energie Reporter.</p>
+        </div>
+        <a href="/rangliste" class="inline-flex items-center gap-2 bg-brand text-ink px-5 py-2.5 rounded-lg font-semibold hover:bg-brand-dark">Ganze Rangliste ansehen <span aria-hidden="true">&rarr;</span></a>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white text-sm font-bold" aria-hidden="true">&#9733;</span>
+            <h3 class="text-lg font-bold">Vorbilder</h3>
+            <span class="text-sm text-ink-muted">hÃ¶chste Solarnutzung</span>
+          </div>
+          <ul class="space-y-2">
+            {% for m in ranking_best %}
+            <li>
+              <a href="/gemeinde/profil/{{ m.bfs_number }}" class="flex items-center justify-between gap-3 rounded-lg bg-white border border-emerald-100 px-4 py-3 hover:border-emerald-300 hover:shadow-sm transition">
+                <span class="flex items-center gap-3 min-w-0">
+                  <span class="font-mono text-sm text-emerald-700 w-10 shrink-0">#{{ m.rank }}</span>
+                  <span class="truncate"><span class="font-semibold">{{ m.name }}</span> <span class="text-ink-muted text-sm">{{ m.kanton }}</span></span>
+                </span>
+                <span class="font-mono font-bold text-emerald-700 shrink-0">{{ m.score }}%</span>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-rose-500 text-white text-sm font-bold" aria-hidden="true">&uarr;</span>
+            <h3 class="text-lg font-bold">GrÃ¶sste Chancen</h3>
+            <span class="text-sm text-ink-muted">meiste ungenutzte DÃ¤cher</span>
+          </div>
+          <ul class="space-y-2">
+            {% for m in ranking_worst %}
+            <li>
+              <a href="/gemeinde/profil/{{ m.bfs_number }}" class="flex items-center justify-between gap-3 rounded-lg bg-white border border-rose-100 px-4 py-3 hover:border-rose-300 hover:shadow-sm transition">
+                <span class="flex items-center gap-3 min-w-0">
+                  <span class="font-mono text-sm text-rose-700 w-12 shrink-0">#{{ m.rank }}</span>
+                  <span class="truncate"><span class="font-semibold">{{ m.name }}</span> <span class="text-ink-muted text-sm">{{ m.kanton }}</span></span>
+                </span>
+                <span class="font-mono font-bold text-rose-700 shrink-0">{{ m.score }}%</span>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+          <p class="text-xs text-ink-muted mt-3">Von {{ ranking_total }} Gemeinden mit Daten.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
 
   <!-- Bewohner -->
   <section id="bewohner" class="py-16 bg-[#f6f4ef]">
@@ -245,10 +303,10 @@
             </div>
             <div id="profile-summary" class="text-sm text-ink-muted mt-2 hidden"></div>
             <p id="address-privacy" class="text-xs text-ink-muted mt-3">Ihre Adresse wird nur zur Prüfung verwendet. Kartenpunkte werden um 120m versetzt, Smart-Meter-Daten bleiben in Ihrer LEG und werden nicht verkauft.</p>
-            <button id="btn-check" class="w-full bg-brand text-white py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark disabled:opacity-50" disabled>Adresse prüfen</button>
+            <button id="btn-check" class="w-full bg-brand text-ink py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark disabled:opacity-50" disabled>Adresse prüfen</button>
           </div>
           <div id="step-register" class="hidden">
-            <div id="match-info" class="bg-indigo-50 p-3 rounded-lg mb-3 text-sm"></div>
+            <div id="match-info" class="bg-amber-50 p-3 rounded-lg mb-3 text-sm"></div>
             <label class="block text-sm font-medium mb-1">E-Mail</label>
             <input type="email" id="email-input" placeholder="ihre@email.ch" class="w-full border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-brand focus:outline-none">
             <label class="block text-sm font-medium mb-1">Telefon (optional)</label>
@@ -290,7 +348,7 @@
             <li>Community-Beiträge willkommen</li>
           </ul>
           <div class="mt-6 flex flex-col sm:flex-row gap-3">
-            <a href="/open-source" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Codebase verstehen</a>
+            <a href="/open-source" class="inline-block bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Codebase verstehen</a>
             <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="inline-block border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 text-center">GitHub ansehen</a>
           </div>
         </div>
@@ -355,7 +413,7 @@
           const data = await res.json();
           if (data.suggestions && data.suggestions.length > 0) {
               suggestionsDiv.innerHTML = data.suggestions.map(s =>
-                  `<div class="px-3 py-2 hover:bg-indigo-50 cursor-pointer text-sm border-b" data-lat="${s.lat}" data-lon="${s.lon}" data-plz="${s.plz}" data-label="${s.label}">${s.label}</div>`
+                  `<div class="px-3 py-2 hover:bg-amber-50 cursor-pointer text-sm border-b" data-lat="${s.lat}" data-lon="${s.lon}" data-plz="${s.plz}" data-label="${s.label}">${s.label}</div>`
               ).join('');
               suggestionsDiv.classList.remove('hidden');
               suggestionsDiv.querySelectorAll('div').forEach(el => {

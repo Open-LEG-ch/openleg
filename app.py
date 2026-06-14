@@ -59,6 +59,7 @@ import security_utils
 
 # --- PostgreSQL Database ---
 import database as db
+import pv_ranking
 
 USE_POSTGRES = db.is_db_available()
 if not USE_POSTGRES:
@@ -422,6 +423,36 @@ def create_simple_polygon(coords):
 # ===========================
 
 
+def _ranking_extremes(n=3):
+    """Top und Schluss der Solarnutzungs-Rangliste für die Startseiten-Vorschau.
+
+    Gibt (vorbilder, chancen, total) zurück. Leer, wenn zu wenige Daten.
+    """
+    try:
+        ranked = pv_ranking.assign_ranks(db.get_pv_profiles())
+    except Exception:
+        logger.exception("ranking preview failed")
+        return [], [], 0
+    scored = [r for r in ranked if r.get("pv_score_pct") is not None]
+    total = len(scored)
+    if total < 2 * n:
+        return [], [], total
+
+    def shape(row):
+        score, _ = pv_ranking.capped_score(row.get("pv_score_pct"))
+        return {
+            "rank": row.get("rank"),
+            "name": row.get("name"),
+            "kanton": row.get("kanton"),
+            "bfs_number": row.get("bfs_number"),
+            "score": score,
+        }
+
+    best = [shape(r) for r in scored[:n]]
+    worst = [shape(r) for r in reversed(scored[-n:])]
+    return best, worst, total
+
+
 @app.route("/")
 def index():
     city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
@@ -431,10 +462,14 @@ def index():
     referrer_info = None
     if referral_code:
         referrer_info = db.get_building_by_referral_code(referral_code)
+    ranking_best, ranking_worst, ranking_total = _ranking_extremes()
     return render_city_template(
         "index.html",
         user_count=user_count,
         referral_code=referral_code,
+        ranking_best=ranking_best,
+        ranking_worst=ranking_worst,
+        ranking_total=ranking_total,
         referrer_street=referrer_info.get("address", "").split(",")[0]
         if referrer_info
         else "",
