@@ -143,7 +143,7 @@ class TestFuerGemeindenPage:
         assert 'id="mobile-menu-toggle"' in content
         assert 'id="mobile-menu"' in content
         assert 'aria-controls="mobile-menu"' in content
-        assert 'href="/open-source"' in content
+        assert "github.com/Open-LEG-ch/openleg" in content
 
     def test_site_nav_has_skip_link_and_focus_target(self):
         template_path = os.path.join(
