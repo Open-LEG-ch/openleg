@@ -28,24 +28,34 @@ def _has_mainline_trigger(data):
     return "main" in push_branches or "main" in pr_branches
 
 
-def test_exactly_three_mainline_workflows_with_expected_job_names():
+def _gates_pull_requests(data):
+    on = _on_section(data)
+    pr_branches = (on.get("pull_request", {}) or {}).get("branches", [])
+    return "main" in pr_branches
+
+
+def test_exactly_three_required_check_workflows_with_expected_job_names():
+    """The PR-gating workflows must be exactly the three required checks.
+
+    Deploy/CD workflows push to main but do not gate PRs, so they are excluded.
+    """
     expected_jobs = {"ci/lint", "ci/test", "ci/security"}
-    mainline_workflows = []
+    required_workflows = []
     seen_job_names = set()
 
     for path in WORKFLOWS_DIR.glob("*.yml"):
         with path.open(encoding="utf-8") as handle:
             text = handle.read()
         data = yaml.safe_load(text)
-        if not _has_mainline_trigger(data):
+        if not _gates_pull_requests(data):
             continue
-        mainline_workflows.append(path.name)
+        required_workflows.append(path.name)
         jobs = data.get("jobs", {})
         for _job_id, job_data in jobs.items():
             if "name" in job_data:
                 seen_job_names.add(job_data["name"])
 
-    assert len(mainline_workflows) == 3, mainline_workflows
+    assert len(required_workflows) == 3, required_workflows
     assert seen_job_names == expected_jobs, seen_job_names
 
 
