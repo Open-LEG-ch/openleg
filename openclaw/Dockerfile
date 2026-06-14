@@ -1,24 +1,19 @@
-FROM node:22-bookworm-slim
+# Use the known-working rollback image as the base. It already contains a
+# functioning openclaw@2026.4.5 install with all native/channel deps resolved.
+FROM openleg-openclaw:rollback
 
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-
-# Install openclaw globally
-RUN npm install -g openclaw@latest
-
-# Install MCP OpenLEG server
+# Update MCP OpenLEG server.
 WORKDIR /opt/mcp-openleg-server
-COPY mcp-openleg-server/package.json ./
+COPY --chown=node:node mcp-openleg-server/package.json ./
 RUN npm install --production
-COPY mcp-openleg-server/ ./
+COPY --chown=node:node mcp-openleg-server/server.mjs ./
 
-# Set up config directory and entrypoint
+# Overlay current config and entrypoint.
+USER root
 COPY config/ /opt/openclaw-config/
 COPY entrypoint.sh /opt/entrypoint.sh
-
-# Permissions
-RUN mkdir -p /home/node/.openclaw \
-    && chown -R node:node /home/node /opt/mcp-openleg-server /opt/openclaw-config /opt/entrypoint.sh \
-    && chmod +x /opt/entrypoint.sh
+RUN chmod +x /opt/entrypoint.sh \
+    && chown -R node:node /opt/mcp-openleg-server /opt/openclaw-config /opt/entrypoint.sh
 
 USER node
 WORKDIR /home/node

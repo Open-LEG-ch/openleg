@@ -1010,24 +1010,47 @@ def get_vnb_pipeline(status_filter: Optional[str] = None) -> List[Dict]:
 
 
 def get_vnb_pipeline_stats() -> Dict:
-    """Get pipeline funnel counts."""
+    """Get pipeline funnel counts, average score, and conversion rate."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT status, COUNT(*)::int as count
+                    SELECT status, COUNT(*)::int as count, ROUND(AVG(score)::numeric, 1) as avg_score
                     FROM vnb_pipeline GROUP BY status
                 """)
-                result = {"total": 0}
-                for stage in ["lead", "contacted", "demo", "trial", "paid", "churned"]:
-                    result[stage] = 0
+                funnel = {
+                    stage: 0
+                    for stage in [
+                        "lead",
+                        "contacted",
+                        "demo",
+                        "trial",
+                        "paid",
+                        "churned",
+                    ]
+                }
+                total = 0
+                score_sum = 0.0
+                score_count = 0
                 for row in cur.fetchall():
-                    result[row[0]] = row[1]
-                    result["total"] += row[1]
-                return result
+                    status, count, avg_score = row
+                    funnel[status] = count
+                    total += count
+                    if avg_score is not None:
+                        score_sum += float(avg_score) * count
+                        score_count += count
+                paid = funnel.get("paid", 0)
+                return {
+                    "total": total,
+                    "funnel": funnel,
+                    "avg_score": round(score_sum / score_count, 1)
+                    if score_count
+                    else 0,
+                    "conversion_rate": round(paid / total * 100, 1) if total else 0,
+                }
     except Exception as e:
         logger.error(f"get_vnb_pipeline_stats error: {e}")
-        return {"total": 0}
+        return {"total": 0, "funnel": {}, "avg_score": 0, "conversion_rate": 0}
 
 
 # PUBLIC-SNAPSHOT-PRIVATE-END: operator-pipeline-helpers

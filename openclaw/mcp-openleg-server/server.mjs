@@ -1461,6 +1461,195 @@ server.tool(
   }
 );
 
+// ============================================================
+// AgentMail Tools
+// ============================================================
+
+const AGENTMAIL_API_BASE = (process.env.AGENTMAIL_API_BASE || 'https://api.agentmail.to/v0').replace(/\/$/, '');
+const AGENTMAIL_API_KEY = process.env.AGENTMAIL_API_KEY || '';
+const LEA_INBOX_ADDRESS = process.env.LEA_INBOX_ADDRESS || '';
+const AGENTMAIL_HUMAN_EMAIL = process.env.AGENTMAIL_HUMAN_EMAIL || '';
+const LEA_AGENT_ID = process.env.LEA_AGENT_ID || 'openleg-lea';
+
+function agentmailConfigured() {
+  if (!AGENTMAIL_API_KEY) return { error: 'AGENTMAIL_API_KEY not configured' };
+  if (!LEA_INBOX_ADDRESS) return { error: 'LEA_INBOX_ADDRESS not configured' };
+  return null;
+}
+
+async function agentmailRequest(path, opts = {}) {
+  const missing = agentmailConfigured();
+  if (missing) return { ok: false, status: 0, error: missing.error };
+
+  const url = `${AGENTMAIL_API_BASE}${path}`;
+  const res = await fetch(url, {
+    ...opts,
+    headers: {
+      'Authorization': `Bearer ${AGENTMAIL_API_KEY}`,
+      'Accept': 'application/json',
+      ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(opts.headers || {})
+    }
+  });
+  const text = await res.text();
+  let data = text;
+  try { data = JSON.parse(text); } catch { /* keep raw text */ }
+  return { ok: res.ok, status: res.status, data };
+}
+
+function agentmailResult(result) {
+  return txt({ inbox: LEA_INBOX_ADDRESS, ...result });
+}
+
+server.tool(
+  'agentmail_status',
+  'Check whether the LEA AgentMail inbox is configured and reachable.',
+  {},
+  async () => {
+    const missing = agentmailConfigured();
+    if (missing) return agentmailResult(missing);
+    const result = await agentmailRequest(`/inboxes/${encodeURIComponent(LEA_INBOX_ADDRESS)}`);
+    return agentmailResult(result);
+  }
+);
+
+server.tool(
+  'agentmail_list_messages',
+  'List messages in the LEA inbox.',
+  {
+    limit: z.number().default(10).describe('Max messages to return'),
+    page_token: z.string().optional().describe('Pagination token'),
+    unread_only: z.boolean().default(false).describe('Only unread messages')
+  },
+  async ({ limit, page_token, unread_only }) => {
+    const missing = agentmailConfigured();
+    if (missing) return agentmailResult(missing);
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (page_token) params.set('page_token', page_token);
+    if (unread_only) params.set('read', 'false');
+    const result = await agentmailRequest(`/inboxes/${encodeURIComponent(LEA_INBOX_ADDRESS)}/messages?${params}`);
+    return agentmailResult(result);
+  }
+);
+
+server.tool(
+  'agentmail_get_message',
+  'Get a single message from the LEA inbox by message ID.',
+  {
+    message_id: z.string().describe('AgentMail message ID')
+  },
+  async ({ message_id }) => {
+    const missing = agentmailConfigured();
+    if (missing) return agentmailResult(missing);
+    const result = await agentmailRequest(`/inboxes/${encodeURIComponent(LEA_INBOX_ADDRESS)}/messages/${encodeURIComponent(message_id)}`);
+    return agentmailResult(result);
+  }
+);
+
+server.tool(
+  'agentmail_list_threads',
+  'List conversation threads in the LEA inbox.',
+  {
+    limit: z.number().default(10).describe('Max threads to return'),
+    page_token: z.string().optional().describe('Pagination token')
+  },
+  async ({ limit, page_token }) => {
+    const missing = agentmailConfigured();
+    if (missing) return agentmailResult(missing);
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (page_token) params.set('page_token', page_token);
+    const result = await agentmailRequest(`/inboxes/${encodeURIComponent(LEA_INBOX_ADDRESS)}/threads?${params}`);
+    return agentmailResult(result);
+  }
+);
+
+server.tool(
+  'agentmail_get_thread',
+  'Get a conversation thread with all its messages.',
+  {
+    thread_id: z.string().describe('AgentMail thread ID')
+  },
+  async ({ thread_id }) => {
+    const missing = agentmailConfigured();
+    if (missing) return agentmailResult(missing);
+    const result = await agentmailRequest(`/inboxes/${encodeURIComponent(LEA_INBOX_ADDRESS)}/threads/${encodeURIComponent(thread_id)}`);
+    return agentmailResult(result);
+  }
+);
+
+server.tool(
+  'agentmail_send',
+  'Send a new email from the LEA inbox. Confirm with the user before executing.',
+  {
+    to: z.union([z.string(), z.array(z.string())]).describe('Recipient email address(es)'),
+    subject: z.string().describe('Email subject'),
+    text: z.string().describe('Plain text body'),
+    html: z.string().optional().describe('Optional HTML body'),
+    cc: z.union([z.string(), z.array(z.string())]).optional().describe('CC address(es)'),
+    bcc: z.union([z.string(), z.array(z.string())]).optional().describe('BCC address(es)')
+  },
+  async ({ to, subject, text, html, cc, bcc }) => {
+    const guard = readonlyGuard();
+    if (guard) return guard;
+    const missing = agentmailConfigured();
+    if (missing) return agentmailResult(missing);
+
+    const normalizeRecipients = (r) => {
+      if (!r) return undefined;
+      return Array.isArray(r) ? r : [r];
+    };
+
+    const body = {
+      to: normalizeRecipients(to),
+      subject,
+      text,
+      ...(html ? { html } : {}),
+      ...(cc ? { cc: normalizeRecipients(cc) } : {}),
+      ...(bcc ? { bcc: normalizeRecipients(bcc) } : {})
+    };
+
+    const result = await agentmailRequest(
+      `/inboxes/${encodeURIComponent(LEA_INBOX_ADDRESS)}/messages/send`,
+      { method: 'POST', body: JSON.stringify(body) }
+    );
+    return agentmailResult(result);
+  }
+);
+
+server.tool(
+  'agentmail_reply',
+  'Reply to a message in the LEA inbox. Confirm with the user before executing.',
+  {
+    message_id: z.string().describe('AgentMail message ID to reply to'),
+    text: z.string().describe('Reply text'),
+    html: z.string().optional().describe('Optional HTML reply'),
+    reply_all: z.boolean().default(false).describe('Reply to all recipients'),
+    attachments: z.array(z.object({
+      filename: z.string(),
+      content_base64: z.string().describe('Base64-encoded file content')
+    })).optional().describe('Optional attachments')
+  },
+  async ({ message_id, text, html, reply_all, attachments }) => {
+    const guard = readonlyGuard();
+    if (guard) return guard;
+    const missing = agentmailConfigured();
+    if (missing) return agentmailResult(missing);
+
+    const body = {
+      text,
+      reply_all,
+      ...(html ? { html } : {}),
+      ...(attachments ? { attachments } : {})
+    };
+
+    const result = await agentmailRequest(
+      `/inboxes/${encodeURIComponent(LEA_INBOX_ADDRESS)}/messages/${encodeURIComponent(message_id)}/reply`,
+      { method: 'POST', body: JSON.stringify(body) }
+    );
+    return agentmailResult(result);
+  }
+);
+
 // Start server
 const transport = new StdioServerTransport();
 await server.connect(transport);

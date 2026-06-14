@@ -4,7 +4,7 @@
 import os
 import re
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -80,8 +80,24 @@ class TestAdminPipelineHTML:
         ):
             with (
                 patch("database.init_db", return_value=True),
-                patch("database._connection_pool", MagicMock()),
                 patch("database.is_db_available", return_value=True),
+                patch("database.get_vnb_pipeline", return_value=[]),
+                patch(
+                    "database.get_vnb_pipeline_stats",
+                    return_value={
+                        "total": 0,
+                        "funnel": {
+                            "lead": 0,
+                            "contacted": 0,
+                            "demo": 0,
+                            "trial": 0,
+                            "paid": 0,
+                            "churned": 0,
+                        },
+                        "avg_score": 0,
+                        "conversion_rate": 0,
+                    },
+                ),
             ):
                 try:
                     from app import app
@@ -91,8 +107,8 @@ class TestAdminPipelineHTML:
                         "/admin/pipeline",
                         headers={"X-Admin-Token": "test123", "Accept": "text/html"},
                     )
-                    # May fail with DB error but route exists
-                    assert resp.status_code in (200, 500)
+                    assert resp.status_code == 200
+                    assert b"VNB Sales Pipeline" in resp.data
                 except Exception:
                     pytest.skip("App import requires live DB")
 
