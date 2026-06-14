@@ -1,7 +1,7 @@
 <footer class="bg-ink text-slate-300 py-10">
   <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-start gap-6">
     <div>
-      <div class="text-white font-bold text-lg">OpenLEG</div>
+      {% with brand_inverse=true, brand_class='text-lg' %}{% include 'partials/brand_wordmark.html' %}{% endwith %}
       <div class="text-sm text-slate-400 mt-1">Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz.</div>
       <div class="flex items-center gap-3 mt-3">
         <a href="https://github.com/Open-LEG-ch/openleg" class="text-slate-400 hover:text-white text-sm" target="_blank" rel="noopener">GitHub</a>
