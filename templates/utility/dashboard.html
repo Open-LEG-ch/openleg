@@ -13,7 +13,7 @@
             {% include 'partials/brand_wordmark.html' %}
             <div class="flex items-center space-x-4 text-sm">
                 <span class="text-gray-600">{{ client.company_name }}</span>
-                <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium uppercase">{{ client.tier }}</span>
+                <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium uppercase">{{ client.tier }}</span>
                 <a href="/utility/logout" class="text-gray-500 hover:text-red-600">Abmelden</a>
             </div>
         </div>
@@ -37,7 +37,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-lg shadow p-5">
                 <p class="text-sm text-gray-500 mb-1">Status</p>
-                <p class="text-2xl font-bold text-indigo-600">{{ client.status|capitalize }}</p>
+                <p class="text-2xl font-bold text-amber-600">{{ client.status|capitalize }}</p>
             </div>
             <div class="bg-white rounded-lg shadow p-5">
                 <p class="text-sm text-gray-500 mb-1">Tier</p>
@@ -64,7 +64,7 @@
                 {% else %}
                 <p class="text-sm text-gray-500 mb-3">Noch kein API-Schluessel generiert.</p>
                 {% endif %}
-                <button id="gen-key-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+                <button id="gen-key-btn" class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-amber-700">
                     {% if client.api_key_hash %}Neuen Schluessel generieren{% else %}API-Schluessel generieren{% endif %}
                 </button>
                 <div id="api-key-result" class="mt-3 hidden">
@@ -131,10 +131,10 @@
         </div>
 
         <!-- API Documentation Link -->
-        <div class="bg-indigo-50 rounded-lg p-6 text-center">
+        <div class="bg-amber-50 rounded-lg p-6 text-center">
             <h3 class="text-lg font-bold mb-2">API Dokumentation</h3>
             <p class="text-gray-600 text-sm mb-4">Integrieren Sie LEG-Daten in Ihre bestehenden Systeme.</p>
-            <a href="/api/v1/docs" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">API Docs oeffnen</a>
+            <a href="/api/v1/docs" class="inline-block bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700">API Docs oeffnen</a>
         </div>
     </div>
 
