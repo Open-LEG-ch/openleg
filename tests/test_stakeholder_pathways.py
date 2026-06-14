@@ -111,6 +111,8 @@ def test_fuer_bewohner_template_uses_shared_base():
         "fuer_gemeinden.html",
         "open_source.html",
         "how-it-works.html",
+        "leg_gruenden.html",
+        "leg_kalkulator.html",
         "pricing.html",
         "impressum.html",
         "datenschutz.html",
