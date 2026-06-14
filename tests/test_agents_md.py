@@ -29,11 +29,27 @@ class TestOpenClawConfig:
     def test_cron_disabled(self):
         assert self.config["cron"]["enabled"] is False
 
+    def test_session_reset_present(self):
+        reset = self.config["session"]["reset"]
+        assert reset["mode"] == "daily"
+        assert reset["atHour"] == 4
+
 
 class TestWorkspaceRepoBoundary:
     def test_workspace_docs_not_tracked(self):
         result = subprocess.run(
             ["git", "ls-files", "openclaw/config/workspace"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        tracked = [line for line in result.stdout.splitlines() if line.strip()]
+        assert tracked == []
+
+    def test_private_openclaw_config_not_tracked(self):
+        result = subprocess.run(
+            ["git", "ls-files", "openclaw/config/openclaw.json"],
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
@@ -73,3 +89,40 @@ class TestServerMjs:
     )
     def test_key_tools_exist(self, tool_name):
         assert re.search(rf"server\.tool\(\s*['\"]{tool_name}['\"]", self.content)
+
+
+class TestOpenClawEntrypoint:
+    @pytest.fixture(autouse=True)
+    def load_entrypoint(self):
+        path = os.path.join(PROJECT_ROOT, "openclaw", "entrypoint.sh")
+        with open(path) as f:
+            self.content = f.read()
+
+    def test_uses_configurable_bind_and_port(self):
+        assert (
+            'OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"' in self.content
+        )
+        assert 'OPENCLAW_GATEWAY_PORT="${OPENCLAW_GATEWAY_PORT:-18789}"' in self.content
+        assert '--bind "${OPENCLAW_GATEWAY_BIND}"' in self.content
+        assert '--port "${OPENCLAW_GATEWAY_PORT}"' in self.content
+
+    def test_defaults_readonly_true(self):
+        assert 'OPENCLAW_READONLY="${OPENCLAW_READONLY:-true}"' in self.content
+
+
+class TestEnvExample:
+    def test_env_example_mentions_openclaw(self):
+        path = os.path.join(PROJECT_ROOT, ".env.example")
+        with open(path) as f:
+            content = f.read()
+        for key in (
+            "MODEL_BASE_URL",
+            "MODEL_API_KEY",
+            "MODEL_ID",
+            "OPENCLAW_GATEWAY_TOKEN",
+            "OPENCLAW_GATEWAY_PASSWORD",
+            "OPENCLAW_GATEWAY_BIND",
+            "OPENCLAW_GATEWAY_PORT",
+            "OPENCLAW_READONLY",
+        ):
+            assert key in content

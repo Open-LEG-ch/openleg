@@ -4,6 +4,9 @@
       "model": {
         "primary": "model/${MODEL_ID}"
       },
+      "models": {
+        "model/${MODEL_ID}": { "alias": "Configured model" }
+      },
       "workspace": "/home/node/.openclaw/workspace"
     }
   },
@@ -33,6 +36,9 @@
   },
   "tools": {
     "profile": "full"
+  },
+  "session": {
+    "reset": { "mode": "daily", "atHour": 4 }
   },
   "cron": {
     "enabled": false

@@ -1,4 +1,12 @@
 #!/bin/sh
+set -eu
+
+OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
+OPENCLAW_GATEWAY_PORT="${OPENCLAW_GATEWAY_PORT:-18789}"
+OPENCLAW_READONLY="${OPENCLAW_READONLY:-true}"
+
+mkdir -p /home/node/.openclaw /home/node/.openclaw/workspace
+
 # Write Docker env vars to OpenClaw's .env so ${VAR} interpolation works in openclaw.json
 cat > /home/node/.openclaw/.env <<EOF
 MODEL_BASE_URL=${MODEL_BASE_URL}
@@ -9,7 +17,15 @@ OPENCLAW_GATEWAY_PASSWORD=${OPENCLAW_GATEWAY_PASSWORD}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 DATABASE_URL=${DATABASE_URL}
 BRAVE_API_KEY=${BRAVE_API_KEY}
-OPENCLAW_READONLY=${OPENCLAW_READONLY:-false}
+OPENCLAW_GATEWAY_BIND=${OPENCLAW_GATEWAY_BIND}
+OPENCLAW_GATEWAY_PORT=${OPENCLAW_GATEWAY_PORT}
+OPENCLAW_READONLY=${OPENCLAW_READONLY}
 EOF
 
-exec openclaw gateway --allow-unconfigured --bind lan --auth password --password "${OPENCLAW_GATEWAY_PASSWORD}" --token "${OPENCLAW_GATEWAY_TOKEN}"
+exec openclaw gateway \
+  --allow-unconfigured \
+  --port "${OPENCLAW_GATEWAY_PORT}" \
+  --bind "${OPENCLAW_GATEWAY_BIND}" \
+  --auth password \
+  --password "${OPENCLAW_GATEWAY_PASSWORD}" \
+  --token "${OPENCLAW_GATEWAY_TOKEN}"

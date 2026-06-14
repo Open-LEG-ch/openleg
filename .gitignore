@@ -101,6 +101,7 @@ infomaniak_*
 !/README.md
 !/CONTRIBUTING.md
 !/SECURITY.md
+!/design.md
 
 # Private planning, strategy, ops docs (explicit, defense in depth)
 archive/
@@ -131,3 +132,11 @@ output/imagegen/
 .orch/
 .github/scripts/
 handoff
+
+# Local OpenClaw state
+openclaw/config/openclaw.json
+openclaw/config/cron/
+openclaw/config/workspace/
+
+# Throwaway logo exploration
+logo-explore/
