@@ -7,6 +7,8 @@ so legacy callers and existing monkeypatches keep working unchanged.
 """
 
 from contextlib import contextmanager
+import subprocess
+import sys
 
 import database
 from store import ranking
@@ -53,6 +55,17 @@ def test_database_reexports_are_identical_objects():
     assert database.get_pv_profiles is ranking.get_pv_profiles
     assert database.get_pv_movers is ranking.get_pv_movers
     assert database.get_municipality_pv_panel is ranking.get_municipality_pv_panel
+
+
+def test_store_ranking_imports_without_database_bootstrap():
+    result = subprocess.run(
+        [sys.executable, "-c", "import store.ranking; print('ok')"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "ok"
 
 
 def test_ranking_uses_database_connection_seam(monkeypatch):
