@@ -125,8 +125,9 @@ def vergleich():
     bfs_a = _bfs_arg("a")
     bfs_b = _bfs_arg("b")
 
-    all_pv = db.get_pv_profiles()
-    rank_map = {r["bfs_number"]: r["rank"] for r in pv_ranking.assign_ranks(all_pv)}
+    ranking = Ranking.load()
+    national = ranking.national()
+    rank_map = {r["bfs_number"]: r["rank"] for r in national}
 
     def enrich(bfs):
         if not bfs:
@@ -145,7 +146,7 @@ def vergleich():
     municipalities = sorted(
         (
             {"bfs_number": r["bfs_number"], "name": r["name"], "kanton": r["kanton"]}
-            for r in all_pv
+            for r in national
         ),
         key=lambda m: m["name"] or "",
     )
@@ -182,7 +183,8 @@ def movers():
     except ValueError:
         limit = 100
 
-    rows = db.get_pv_movers()
+    ranking = Ranking([])
+    rows = ranking.movers()
     league = pv_ranking.filter_league(
         rows, kanton=kanton.upper() if kanton else None, size=size, density=density
     )
