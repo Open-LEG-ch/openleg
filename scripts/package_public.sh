@@ -65,6 +65,7 @@ copy_tracked_tree static
 copy_tracked_tree templates
 rm -f "${DEST}/templates/admin/pipeline.html"
 rm -f "${DEST}/templates/admin/strategy.html"
+rm -f "${DEST}/templates/admin/ops.html"
 rm -f "${DEST}/templates/emails/municipality_outreach.html"
 
 # Slice 3: public docs, CI policy, and tests.
@@ -81,6 +82,7 @@ copy_tracked_tree tests
 rm -f "${DEST}/tests/test_agents_md.py"
 rm -f "${DEST}/tests/test_admin_pipeline.py"
 rm -f "${DEST}/tests/test_admin_strategy.py"
+rm -f "${DEST}/tests/test_admin_ops.py"
 rm -f "${DEST}/tests/test_demand_signal.py"
 rm -f "${DEST}/tests/test_docs_boundary_contract.py"
 rm -f "${DEST}/tests/test_e2e_integration.py"

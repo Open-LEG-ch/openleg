@@ -58,11 +58,18 @@ class TestDatabaseSchema:
             content = f.read()
         assert "lea_reports" in content
 
+    def test_database_has_ops_snapshots_table(self):
+        with open(os.path.join(PROJECT_ROOT, "database.py")) as f:
+            content = f.read()
+        assert "ops_snapshots" in content
+
     def test_database_has_lea_report_functions(self):
         with open(os.path.join(PROJECT_ROOT, "database.py")) as f:
             content = f.read()
         assert "def save_lea_report" in content
         assert "def get_lea_reports" in content
+        assert "def save_ops_snapshot" in content
+        assert "def get_ops_snapshots" in content
 
 
 class TestAdminPipelineHTML:

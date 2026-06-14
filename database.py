@@ -4,6 +4,7 @@ PostgreSQL Database Layer for OpenLEG
 Replaces JSON file persistence with proper database storage.
 """
 
+import json
 import os
 import time
 import logging
@@ -789,6 +790,26 @@ def _create_tables():
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_lea_reports_created ON lea_reports(created_at DESC)"
+            )
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS ops_snapshots (
+                    id SERIAL PRIMARY KEY,
+                    source VARCHAR(64) NOT NULL,
+                    category VARCHAR(64) NOT NULL,
+                    status VARCHAR(32) DEFAULT 'ok',
+                    summary_text TEXT,
+                    payload JSONB DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_source ON ops_snapshots(source)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_category ON ops_snapshots(category)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_created ON ops_snapshots(created_at DESC)"
             )
             # PUBLIC-SNAPSHOT-PRIVATE-END: operator-pipeline-indexes
 
@@ -3034,6 +3055,68 @@ def get_lea_reports(limit: int = 50) -> List[Dict]:
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting LEA reports: {e}")
+        return []
+
+
+def save_ops_snapshot(
+    source: str,
+    category: str,
+    summary_text: str = "",
+    status: str = "ok",
+    payload: Optional[Dict] = None,
+) -> bool:
+    """Save a structured operator snapshot for the admin ops dashboard."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO ops_snapshots (source, category, status, summary_text, payload)
+                    VALUES (%s, %s, %s, %s, %s::jsonb)
+                """,
+                    (
+                        source,
+                        category,
+                        status,
+                        summary_text,
+                        json.dumps(payload or {}),
+                    ),
+                )
+                return True
+    except Exception as e:
+        logger.error(f"[DB] Error saving ops snapshot: {e}")
+        return False
+
+
+def get_ops_snapshots(
+    limit: int = 50,
+    source: Optional[str] = None,
+    category: Optional[str] = None,
+) -> List[Dict]:
+    """Get structured operator snapshots, newest first."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                where = []
+                params: list = []
+                if source:
+                    where.append("source = %s")
+                    params.append(source)
+                if category:
+                    where.append("category = %s")
+                    params.append(category)
+                query = """
+                    SELECT id, source, category, status, summary_text, payload, created_at
+                    FROM ops_snapshots
+                """
+                if where:
+                    query += " WHERE " + " AND ".join(where)
+                query += " ORDER BY created_at DESC LIMIT %s"
+                params.append(limit)
+                cur.execute(query, tuple(params))
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting ops snapshots: {e}")
         return []
 
 

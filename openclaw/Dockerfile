@@ -12,11 +12,12 @@ RUN npm install --production
 COPY mcp-openleg-server/ ./
 
 # Set up config directory and entrypoint
-COPY config/openclaw.example.json /home/node/.openclaw/openclaw.json
+COPY config/ /opt/openclaw-config/
 COPY entrypoint.sh /opt/entrypoint.sh
 
 # Permissions
-RUN chown -R node:node /home/node /opt/mcp-openleg-server /opt/entrypoint.sh \
+RUN mkdir -p /home/node/.openclaw \
+    && chown -R node:node /home/node /opt/mcp-openleg-server /opt/openclaw-config /opt/entrypoint.sh \
     && chmod +x /opt/entrypoint.sh
 
 USER node

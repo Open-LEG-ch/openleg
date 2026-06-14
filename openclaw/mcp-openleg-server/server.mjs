@@ -13,6 +13,8 @@ const pool = new Pool({
 
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY || '';
 const READONLY = (process.env.OPENCLAW_READONLY || 'false').toLowerCase() === 'true';
+const INTERNAL_TOKEN = process.env.INTERNAL_TOKEN || '';
+const FLASK_URL = process.env.FLASK_URL || 'http://flask:5000';
 
 function readonlyGuard() {
   if (READONLY) return { content: [{ type: 'text', text: 'Write access disabled (OPENCLAW_READONLY=true)' }] };
@@ -28,6 +30,19 @@ async function query(sql, params = []) {
 
 function txt(data) {
   return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+}
+
+async function postInternal(path, body) {
+  const res = await fetch(`${FLASK_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Internal-Token': INTERNAL_TOKEN
+    },
+    body: JSON.stringify(body)
+  });
+  const text = await res.text();
+  return { ok: res.ok, status: res.status, body: text };
 }
 
 const server = new McpServer({
@@ -1385,6 +1400,64 @@ server.tool(
       LIMIT $1
     `, [limit]);
     return txt({ count: result.rowCount, candidates: result.rows });
+  }
+);
+
+server.tool(
+  'get_ops_snapshots',
+  'Get recent structured ops snapshots for the LEA/OpenClaw operator dashboard.',
+  {
+    limit: z.number().default(20).describe('Max results'),
+    source: z.string().optional().describe('Optional source filter'),
+    category: z.string().optional().describe('Optional category filter')
+  },
+  async ({ limit, source, category }) => {
+    let sql = `
+      SELECT id, source, category, status, summary_text, payload, created_at
+      FROM ops_snapshots
+    `;
+    const params = [];
+    const where = [];
+    if (source) {
+      params.push(source);
+      where.push(`source = $${params.length}`);
+    }
+    if (category) {
+      params.push(category);
+      where.push(`category = $${params.length}`);
+    }
+    if (where.length) {
+      sql += ` WHERE ${where.join(' AND ')}`;
+    }
+    params.push(limit);
+    sql += ` ORDER BY created_at DESC LIMIT $${params.length}`;
+    const result = await query(sql, params);
+    return txt({ count: result.rowCount, snapshots: result.rows });
+  }
+);
+
+server.tool(
+  'post_ops_snapshot',
+  'Post a structured operator snapshot to the private OpenLEG dashboard endpoint.',
+  {
+    source: z.string().describe('Producer name, e.g. openclaw, github-monitor, agentmail'),
+    category: z.string().describe('Category, e.g. openclaw_health, github_monitor, vnb_monitor'),
+    status: z.string().default('ok').describe('Status label'),
+    summary: z.string().default('').describe('Short operator summary'),
+    payload: z.record(z.any()).default({}).describe('Structured payload')
+  },
+  async ({ source, category, status, summary, payload }) => {
+    const guard = readonlyGuard();
+    if (guard) return guard;
+    if (!INTERNAL_TOKEN) return txt({ error: 'INTERNAL_TOKEN missing' });
+    const result = await postInternal('/api/internal/ops-snapshot', {
+      source,
+      category,
+      status,
+      summary,
+      payload
+    });
+    return txt(result);
   }
 );
 

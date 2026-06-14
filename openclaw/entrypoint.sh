@@ -5,7 +5,21 @@ OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
 OPENCLAW_GATEWAY_PORT="${OPENCLAW_GATEWAY_PORT:-18789}"
 OPENCLAW_READONLY="${OPENCLAW_READONLY:-true}"
 
-mkdir -p /home/node/.openclaw /home/node/.openclaw/workspace
+mkdir -p /home/node/.openclaw /home/node/.openclaw/workspace /home/node/.openclaw/cron
+
+if [ -f /opt/openclaw-config/openclaw.json ]; then
+  cp /opt/openclaw-config/openclaw.json /home/node/.openclaw/openclaw.json
+else
+  cp /opt/openclaw-config/openclaw.example.json /home/node/.openclaw/openclaw.json
+fi
+
+if [ -d /opt/openclaw-config/cron ]; then
+  cp -R /opt/openclaw-config/cron/. /home/node/.openclaw/cron/
+fi
+
+if [ -d /opt/openclaw-config/workspace ]; then
+  cp -R /opt/openclaw-config/workspace/. /home/node/.openclaw/workspace/
+fi
 
 # Write Docker env vars to OpenClaw's .env so ${VAR} interpolation works in openclaw.json
 cat > /home/node/.openclaw/.env <<EOF
@@ -20,6 +34,15 @@ BRAVE_API_KEY=${BRAVE_API_KEY}
 OPENCLAW_GATEWAY_BIND=${OPENCLAW_GATEWAY_BIND}
 OPENCLAW_GATEWAY_PORT=${OPENCLAW_GATEWAY_PORT}
 OPENCLAW_READONLY=${OPENCLAW_READONLY}
+INTERNAL_TOKEN=${INTERNAL_TOKEN}
+FLASK_URL=${FLASK_URL}
+AGENTMAIL_API_BASE=${AGENTMAIL_API_BASE}
+AGENTMAIL_API_KEY=${AGENTMAIL_API_KEY}
+AGENTMAIL_WEBHOOK_SECRET=${AGENTMAIL_WEBHOOK_SECRET}
+AGENTMAIL_WEBHOOK_URL=${AGENTMAIL_WEBHOOK_URL}
+AGENTMAIL_HUMAN_EMAIL=${AGENTMAIL_HUMAN_EMAIL}
+LEA_INBOX_ADDRESS=${LEA_INBOX_ADDRESS}
+LEA_AGENT_ID=${LEA_AGENT_ID}
 EOF
 
 exec openclaw gateway \

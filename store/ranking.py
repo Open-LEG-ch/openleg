@@ -10,9 +10,13 @@ and ``database`` can re-export these functions for legacy callers.
 import logging
 from typing import Optional, Dict, List
 
-import database
-
 logger = logging.getLogger(__name__)
+
+
+def _get_connection():
+    import database
+
+    return database.get_connection()
 
 
 def upsert_municipality_pv(profile: Dict) -> bool:
@@ -23,7 +27,7 @@ def upsert_municipality_pv(profile: Dict) -> bool:
     bestehende Profile nicht überschreibt.
     """
     try:
-        with database.get_connection() as conn:
+        with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -90,7 +94,7 @@ def save_municipality_pv_panel(rows: List[Dict]) -> int:
             )
             for r in rows
         ]
-        with database.get_connection() as conn:
+        with _get_connection() as conn:
             with conn.cursor() as cur:
                 execute_values(
                     cur,
@@ -118,7 +122,7 @@ def save_municipality_pv_panel(rows: List[Dict]) -> int:
 def get_pv_profiles(kanton: Optional[str] = None) -> List[Dict]:
     """Alle Gemeinden mit berechnetem PV-Score, für die Rangliste."""
     try:
-        with database.get_connection() as conn:
+        with _get_connection() as conn:
             with conn.cursor() as cur:
                 if kanton:
                     cur.execute(
@@ -157,7 +161,7 @@ def get_pv_movers() -> List[Dict]:
     Nur aus dem Panel berechnet, nie mit dem Snapshot vermischt.
     """
     try:
-        with database.get_connection() as conn:
+        with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -185,7 +189,7 @@ def get_pv_movers() -> List[Dict]:
 def get_municipality_pv_panel(bfs_number: int) -> List[Dict]:
     """Panel-Zeilen einer Gemeinde, nach Jahr aufsteigend."""
     try:
-        with database.get_connection() as conn:
+        with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT * FROM municipality_pv_panel WHERE bfs_number = %s ORDER BY year",

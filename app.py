@@ -4,6 +4,7 @@ import os
 import time
 import uuid
 import math
+import json
 import hashlib
 import threading
 import logging
@@ -38,6 +39,13 @@ try:
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
+
+try:
+    from svix.webhooks import Webhook, WebhookVerificationError
+
+    HAS_SVIX = True
+except ImportError:
+    HAS_SVIX = False
 
 # --- Security imports ---
 try:
@@ -113,6 +121,7 @@ ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "hallo@openleg.ch")
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
 # PUBLIC-SNAPSHOT-PRIVATE-START: internal-report-token
 INTERNAL_TOKEN = os.getenv("INTERNAL_TOKEN", "").strip()
+AGENTMAIL_WEBHOOK_SECRET = os.getenv("AGENTMAIL_WEBHOOK_SECRET", "").strip()
 # PUBLIC-SNAPSHOT-PRIVATE-END: internal-report-token
 
 # --- Rate Limiting & Security ---
@@ -578,6 +587,98 @@ def _require_admin():
         abort(403)
 
 
+def _latest_snapshot_by_category(snapshots):
+    latest = {}
+    for snapshot in snapshots:
+        latest.setdefault(snapshot.get("category", "uncategorized"), snapshot)
+    return latest
+
+
+def _first_email_identity(value):
+    if isinstance(value, list):
+        value = value[0] if value else ""
+    if isinstance(value, dict):
+        return {"email": value.get("email", ""), "name": value.get("name", "")}
+    if isinstance(value, str):
+        return {"email": value, "name": ""}
+    return {"email": "", "name": ""}
+
+
+def _sanitize_agentmail_payload(data):
+    message = data.get("message") or {}
+    if not isinstance(message, dict):
+        message = {}
+    headers = message.get("headers") or {}
+    if not isinstance(headers, dict):
+        headers = {}
+    sender = _first_email_identity(message.get("from") or message.get("from_") or {})
+    recipients = message.get("to") or []
+    preview = (
+        message.get("text_preview")
+        or message.get("extracted_text")
+        or message.get("snippet")
+        or message.get("text")
+        or data.get("text_preview")
+        or ""
+    )
+    if isinstance(recipients, dict):
+        recipients = [recipients]
+    normalized_to = []
+    for recipient in recipients[:5]:
+        if isinstance(recipient, dict):
+            normalized_to.append(
+                {
+                    "email": recipient.get("email", ""),
+                    "name": recipient.get("name", ""),
+                }
+            )
+        elif isinstance(recipient, str):
+            normalized_to.append({"email": recipient, "name": ""})
+    return {
+        "event_type": (
+            data.get("event_type") or data.get("type") or data.get("event") or "unknown"
+        ),
+        "event_id": data.get("event_id"),
+        "inbox_id": message.get("inbox_id"),
+        "message_id": (
+            message.get("message_id") or message.get("id") or data.get("message_id")
+        ),
+        "thread_id": message.get("thread_id") or data.get("thread_id"),
+        "from_email": sender.get("email") or headers.get("from") or "",
+        "from_name": sender.get("name") or "",
+        "to": normalized_to,
+        "subject": message.get("subject") or headers.get("subject") or "",
+        "received_at": (
+            message.get("received_at")
+            or message.get("timestamp")
+            or data.get("received_at")
+            or data.get("timestamp")
+        ),
+        "text_preview": preview[:280],
+    }
+
+
+def _verify_agentmail_request():
+    if AGENTMAIL_WEBHOOK_SECRET:
+        if not HAS_SVIX:
+            abort(503)
+        try:
+            Webhook(AGENTMAIL_WEBHOOK_SECRET).verify(
+                request.get_data(),
+                {
+                    "svix-id": request.headers.get("svix-id", ""),
+                    "svix-timestamp": request.headers.get("svix-timestamp", ""),
+                    "svix-signature": request.headers.get("svix-signature", ""),
+                },
+            )
+            return
+        except WebhookVerificationError:
+            abort(403)
+    token = request.headers.get("X-Internal-Token") or ""
+    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
+        abort(403)
+
+
 @app.route("/admin/overview")
 def admin_overview():
     _require_admin()
@@ -676,6 +777,76 @@ def admin_strategy():
             computed_at=data.get("computed_at"),
         )
     return jsonify({"signals": signals_sorted, "computed_at": data.get("computed_at")})
+
+
+@app.route("/api/internal/ops-snapshot", methods=["POST"])
+def api_internal_ops_snapshot():
+    token = request.headers.get("X-Internal-Token") or ""
+    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
+        abort(403)
+    data = request.get_json(silent=True) or {}
+    db.save_ops_snapshot(
+        source=data.get("source", "unknown"),
+        category=data.get("category", "general"),
+        summary_text=data.get("summary", ""),
+        status=data.get("status", "ok"),
+        payload=data.get("payload") if isinstance(data.get("payload"), dict) else {},
+    )
+    return jsonify({"ok": True})
+
+
+@app.route("/api/internal/agentmail", methods=["POST"])
+def api_internal_agentmail():
+    _verify_agentmail_request()
+    data = request.get_json(silent=True) or {}
+    event_type = data.get("event_type") or data.get("type") or data.get("event") or ""
+    if event_type not in {
+        "message.received",
+        "message.received.unauthenticated",
+        "inbound_email.received",
+    }:
+        return jsonify({"ok": True, "ignored": True})
+    payload = _sanitize_agentmail_payload(data)
+    summary = payload.get("subject") or payload.get("from_email") or "Inbound LEA mail"
+    db.save_ops_snapshot(
+        source="agentmail",
+        category="lea_inbox",
+        summary_text=summary,
+        status="received",
+        payload=payload,
+    )
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/ops")
+def admin_ops():
+    _require_admin()
+    snapshots = db.get_ops_snapshots(limit=100)
+    reports = db.get_lea_reports(limit=20)
+    latest = _latest_snapshot_by_category(snapshots)
+    response = {
+        "latest": latest,
+        "snapshots": snapshots[:20],
+        "reports": reports,
+        "counts": {
+            "lea_inbox": sum(1 for s in snapshots if s.get("category") == "lea_inbox"),
+            "github_monitor": sum(
+                1 for s in snapshots if s.get("category") == "github_monitor"
+            ),
+            "vnb_monitor": sum(
+                1 for s in snapshots if s.get("category") == "vnb_monitor"
+            ),
+            "stuck_formations": sum(
+                1 for s in snapshots if s.get("category") == "stuck_formations"
+            ),
+        },
+    }
+    if "text/html" in (request.headers.get("Accept") or ""):
+        return render_template("admin/ops.html", **response)
+    return Response(
+        json.dumps(response, default=str),
+        mimetype="application/json",
+    )
 
 
 # PUBLIC-SNAPSHOT-PRIVATE-END: private-operator-routes

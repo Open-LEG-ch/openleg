@@ -10,9 +10,9 @@ import logging
 from flask import Blueprint, Response, render_template, request
 
 import database as db
-import pv_badge
 import pv_ranking
-from municipality import SWISS_CANTON_OPTIONS
+from cantons import SWISS_CANTON_OPTIONS
+from ranking import Ranking
 
 logger = logging.getLogger(__name__)
 
@@ -41,20 +41,6 @@ def _clean_param(name):
     return value
 
 
-def _filtered_league(kanton, size, density):
-    rows = db.get_pv_profiles()
-    return pv_ranking.filter_league(rows, kanton=kanton, size=size, density=density)
-
-
-def _with_display(ranked):
-    """Gedeckelten Score und Überschreitungs-Flag je Zeile ergänzen."""
-    enriched = []
-    for row in ranked:
-        score, over_100 = pv_ranking.capped_score(row.get("pv_score_pct"))
-        enriched.append({**row, "display_score": score, "score_over_100": over_100})
-    return enriched
-
-
 def _common_context(kanton, size, density):
     return {
         "kanton": kanton or "",
@@ -76,14 +62,16 @@ def hub():
     except ValueError:
         limit = 250
 
-    league = _filtered_league(kanton.upper() if kanton else None, size, density)
-    ranked = _with_display(pv_ranking.assign_ranks(league))
+    ranking = Ranking.load()
+    rows = ranking.standings(
+        kanton=kanton.upper() if kanton else None, size=size, density=density
+    )
 
     context = _common_context(kanton, size, density)
     context.update(
         {
-            "rows": ranked[:limit],
-            "total": len(ranked),
+            "rows": rows[:limit],
+            "total": len(rows),
             "limit": limit,
             "active_tab": "rangliste",
             "canonical_url": f"{request.url_root.rstrip('/')}/rangliste",
@@ -97,21 +85,13 @@ def _bfs_arg(name):
     return int(raw) if raw.isdigit() else None
 
 
-def _rank_for(bfs):
-    rank_map = {
-        r["bfs_number"]: r["rank"]
-        for r in pv_ranking.assign_ranks(db.get_pv_profiles())
-    }
-    return rank_map.get(bfs)
-
-
 @rangliste_bp.route("/rangliste/badge/<int:bfs>.svg")
 def badge(bfs):
     profile = db.get_municipality_profile(bfs)
     if not profile:
         return Response(status=404)
-    score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
-    svg = pv_badge.badge_svg(profile.get("name"), score, _rank_for(bfs))
+    ranking = Ranking.load()
+    svg = ranking.badge_svg(bfs, profile=profile)
     return Response(svg, mimetype="image/svg+xml")
 
 
@@ -120,14 +100,8 @@ def og_card(bfs):
     profile = db.get_municipality_profile(bfs)
     if not profile:
         return Response(status=404)
-    score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
-    svg = pv_badge.og_card_svg(
-        profile.get("name"),
-        profile.get("kanton"),
-        score,
-        _rank_for(bfs),
-        profile.get("pv_untapped_kw"),
-    )
+    ranking = Ranking.load()
+    svg = ranking.og_card_svg(bfs, profile=profile)
     return Response(svg, mimetype="image/svg+xml")
 
 
@@ -136,8 +110,9 @@ def vergleich():
     bfs_a = _bfs_arg("a")
     bfs_b = _bfs_arg("b")
 
-    all_pv = db.get_pv_profiles()
-    rank_map = {r["bfs_number"]: r["rank"] for r in pv_ranking.assign_ranks(all_pv)}
+    ranking = Ranking.load()
+    national = ranking.national()
+    rank_map = {r["bfs_number"]: r["rank"] for r in national}
 
     def enrich(bfs):
         if not bfs:
@@ -156,7 +131,7 @@ def vergleich():
     municipalities = sorted(
         (
             {"bfs_number": r["bfs_number"], "name": r["name"], "kanton": r["kanton"]}
-            for r in all_pv
+            for r in national
         ),
         key=lambda m: m["name"] or "",
     )
@@ -193,7 +168,8 @@ def movers():
     except ValueError:
         limit = 100
 
-    rows = db.get_pv_movers()
+    ranking = Ranking([])
+    rows = ranking.movers()
     league = pv_ranking.filter_league(
         rows, kanton=kanton.upper() if kanton else None, size=size, density=density
     )
