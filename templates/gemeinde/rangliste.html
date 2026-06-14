@@ -1,16 +1,17 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solarnutzungs-Rangliste der Schweizer Gemeinden | OpenLEG</title>
-  <meta name="description" content="Wie gut nutzt Ihre Gemeinde ihr Solardach-Potenzial? Vergleichen Sie sich mit fairen Peers nach Kanton, Grösse und Dichte. Offene Daten von BFE und BFS.">
-  <link rel="canonical" href="{{ canonical_url }}">
-  {% include 'partials/tailwind_brand.html' %}
-</head>
-<body class="bg-[#f6f4ef] text-ink">
-  {% include 'partials/site_nav.html' %}
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
 
+{% block meta %}
+{{ page_meta(
+  title="Solarnutzungs-Rangliste der Schweizer Gemeinden | OpenLEG",
+  description="Wie gut nutzt Ihre Gemeinde ihr Solardach-Potenzial? Vergleichen Sie sich mit fairen Peers nach Kanton, Grösse und Dichte. Offene Daten von BFE und BFS.",
+  path=canonical_path,
+  og_type="website",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block content %}
   <main class="max-w-6xl mx-auto px-4 py-8">
     <header class="mb-6">
       <h1 class="text-3xl font-bold">Solarnutzungs-Rangliste</h1>
@@ -118,7 +119,4 @@
     </div>
     {% endif %}
   </main>
-
-  {% include 'partials/site_footer.html' %}
-</body>
-</html>
+{% endblock %}
