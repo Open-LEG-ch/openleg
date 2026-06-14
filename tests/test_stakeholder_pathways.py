@@ -108,6 +108,7 @@ def test_fuer_bewohner_template_uses_shared_base():
 @pytest.mark.parametrize(
     "template_name",
     [
+        "index.html",
         "fuer_gemeinden.html",
         "open_source.html",
         "how-it-works.html",
