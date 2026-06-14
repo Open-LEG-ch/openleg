@@ -141,10 +141,17 @@ def test_fuer_bewohner_in_sitemap(full_app_module, monkeypatch):
 
 def test_profil_uses_shared_design_system():
     html = _read("gemeinde", "profil.html")
+    base = _read("base.html")
     assert "cdn.tailwindcss.com" not in html
-    assert "partials/tailwind_brand.html" in html
-    assert "partials/site_nav.html" in html
-    assert "partials/site_footer.html" in html
+    assert '{% extends "base.html" %}' in html
+    assert '{% from "partials/page_meta.html" import page_meta with context %}' in html
+    assert "partials/tailwind_brand.html" not in html
+    assert "partials/site_nav.html" not in html
+    assert "partials/site_footer.html" not in html
+    assert "partials/tailwind_brand.html" in base
+    assert "partials/site_nav.html" in base
+    assert "partials/site_footer.html" in base
+    assert "page_meta(" in html
 
 
 def test_profil_has_resident_conversion_path():

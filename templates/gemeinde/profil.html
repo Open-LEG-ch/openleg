@@ -1,24 +1,23 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ profile.name }} – Energieprofil | OpenLEG</title>
-    <meta name="description" content="Energieprofil und LEG-Potenzial für {{ profile.name }}: Stromtarife, Solarnutzung, Energiewende-Score.">
-    <link rel="canonical" href="{{ canonical_url }}">
-    {% if profile.get('pv_score_pct') is not none and share_base %}
-    <meta property="og:title" content="Solarnutzung {{ profile.name }} | OpenLEG">
-    <meta property="og:description" content="So nutzt {{ profile.name }} sein Solardach-Potenzial. Vergleichen Sie Ihre Gemeinde.">
-    <meta property="og:image" content="{{ share_base }}/rangliste/og/{{ profile.bfs_number }}.svg">
-    <meta property="og:url" content="{{ canonical_url }}">
-    <meta name="twitter:card" content="summary_large_image">
-    {% endif %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    {% include 'partials/tailwind_brand.html' %}
-</head>
-<body class="bg-[#f6f4ef] text-ink">
-    {% include 'partials/site_nav.html' %}
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
 
+{% block meta %}
+    {{ page_meta(
+        title=profile.name ~ " – Energieprofil | OpenLEG",
+        description="Energieprofil und LEG-Potenzial für " ~ profile.name ~ ": Stromtarife, Solarnutzung, Energiewende-Score.",
+        path="/gemeinde/profil/" ~ profile.bfs_number,
+        og_title=("Solarnutzung " ~ profile.name ~ " | OpenLEG") if profile.get('pv_score_pct') is not none and share_base else None,
+        og_description=("So nutzt " ~ profile.name ~ " sein Solardach-Potenzial. Vergleichen Sie Ihre Gemeinde.") if profile.get('pv_score_pct') is not none and share_base else None,
+        og_image=("/rangliste/og/" ~ profile.bfs_number ~ ".svg") if profile.get('pv_score_pct') is not none and share_base else None,
+        site_url=site_url
+    ) }}
+{% endblock %}
+
+{% block head_extra %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+{% endblock %}
+
+{% block content %}
     <main class="max-w-6xl mx-auto px-4 py-8">
         <!-- Header -->
         <div class="mb-8">
@@ -269,9 +268,9 @@
             </div>
         </div>
     </main>
+{% endblock %}
 
-    {% include 'partials/site_footer.html' %}
-
+{% block scripts %}
     {% if solar %}
     <script>
     const ctx = document.getElementById('solarChart').getContext('2d');
@@ -295,5 +294,4 @@
     });
     </script>
     {% endif %}
-</body>
-</html>
+{% endblock %}
