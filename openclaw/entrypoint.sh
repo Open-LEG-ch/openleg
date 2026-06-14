@@ -7,18 +7,22 @@ OPENCLAW_READONLY="${OPENCLAW_READONLY:-true}"
 
 mkdir -p /home/node/.openclaw /home/node/.openclaw/workspace /home/node/.openclaw/cron
 
-if [ -f /opt/openclaw-config/openclaw.json ]; then
-  cp /opt/openclaw-config/openclaw.json /home/node/.openclaw/openclaw.json
-else
-  cp /opt/openclaw-config/openclaw.example.json /home/node/.openclaw/openclaw.json
+# Copy config only when the destination is not already provided (e.g. via mount).
+# Use "|| true" so a read-only mount never crash-loops the container.
+if [ ! -f /home/node/.openclaw/openclaw.json ]; then
+  if [ -f /opt/openclaw-config/openclaw.json ]; then
+    cp /opt/openclaw-config/openclaw.json /home/node/.openclaw/openclaw.json 2>/dev/null || true
+  else
+    cp /opt/openclaw-config/openclaw.example.json /home/node/.openclaw/openclaw.json 2>/dev/null || true
+  fi
 fi
 
 if [ -d /opt/openclaw-config/cron ]; then
-  cp -R /opt/openclaw-config/cron/. /home/node/.openclaw/cron/
+  cp -R /opt/openclaw-config/cron/. /home/node/.openclaw/cron/ 2>/dev/null || true
 fi
 
 if [ -d /opt/openclaw-config/workspace ]; then
-  cp -R /opt/openclaw-config/workspace/. /home/node/.openclaw/workspace/
+  cp -R /opt/openclaw-config/workspace/. /home/node/.openclaw/workspace/ 2>/dev/null || true
 fi
 
 # Write Docker env vars to OpenClaw's .env so ${VAR} interpolation works in openclaw.json.

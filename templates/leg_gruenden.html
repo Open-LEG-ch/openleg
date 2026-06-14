@@ -1,18 +1,21 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LEG gründen: Der komplette Leitfaden für die Schweiz | OpenLEG</title>
-  <meta name="description" content="Schritt-für-Schritt-Anleitung zur Gründung einer Lokalen Elektrizitätsgemeinschaft (LEG) in der Schweiz. Rechtliche Anforderungen, Zeitplan, Dokumente und Kosten.">
-  <meta name="keywords" content="LEG gründen Schweiz, Stromgemeinschaft gründen, Elektrizitätsgemeinschaft, LEG Anforderungen, LEG Dokumente, Mantelerlass LEG">
-  <link rel="canonical" href="{{ site_url }}/leg-gruenden">
-  <meta property="og:type" content="article">
-  <meta property="og:title" content="LEG gründen: Leitfaden für die Schweiz | OpenLEG">
-  <meta property="og:description" content="Schritt für Schritt zur Lokalen Elektrizitätsgemeinschaft: Voraussetzungen, Mitglieder, Rechtsform, Dokumente und Netzbetreiber.">
-  <meta property="og:url" content="{{ site_url }}/leg-gruenden">
-  <meta name="twitter:card" content="summary_large_image">
-  <script type="application/ld+json">
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="LEG gründen: Der komplette Leitfaden für die Schweiz | OpenLEG",
+  description="Schritt-für-Schritt-Anleitung zur Gründung einer Lokalen Elektrizitätsgemeinschaft (LEG) in der Schweiz. Rechtliche Anforderungen, Zeitplan, Dokumente und Kosten.",
+  path="/leg-gruenden",
+  og_title="LEG gründen: Leitfaden für die Schweiz | OpenLEG",
+  og_description="Schritt für Schritt zur Lokalen Elektrizitätsgemeinschaft: Voraussetzungen, Mitglieder, Rechtsform, Dokumente und Netzbetreiber.",
+  og_type="article",
+  keywords="LEG gründen Schweiz, Stromgemeinschaft gründen, Elektrizitätsgemeinschaft, LEG Anforderungen, LEG Dokumente, Mantelerlass LEG",
+  site_url=site_url
+) }}
+{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -21,12 +24,10 @@
       {"@type": "ListItem", "position": 2, "name": "LEG gründen", "item": "{{ site_url }}/leg-gruenden"}
     ]
   }
-  </script>
-  {% include 'partials/tailwind_brand.html' %}
-</head>
-<body class="bg-[#f6f4ef] text-ink">
-  {% include 'partials/site_nav.html' %}
+</script>
+{% endblock %}
 
+{% block content %}
   <main class="max-w-4xl mx-auto px-4 py-12">
     <header class="text-center mb-12">
       <h1 class="text-5xl font-bold mb-4">LEG gründen: Der komplette Leitfaden</h1>
@@ -456,7 +457,4 @@
     </section>
 
   </main>
-
-  {% include 'partials/site_footer.html' %}
-</body>
-</html>
+{% endblock %}

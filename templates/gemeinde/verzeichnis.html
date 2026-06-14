@@ -1,31 +1,19 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemeindeverzeichnis – Energieprofile Schweizer Gemeinden | OpenLEG</title>
-    <meta name="description" content="Schweizer Gemeinden im Energiewende-Vergleich: Stromtarife, Solarpotenzial, LEG-Ersparnis. Offene Daten von ElCom, Sonnendach, Energie Reporter.">
-    <link rel="canonical" href="{{ canonical_url }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: { brand: { DEFAULT: '#f59e0b', light: '#fbbf24', dark: '#d97706' }, accent: '#f59e0b' } } }
-        }
-    </script>
-    {% include 'partials/brand_head.html' %}
-</head>
-<body class="bg-gray-50 text-gray-900">
-    <nav class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            {% include 'partials/brand_wordmark.html' %}
-            <div class="hidden md:flex space-x-6 text-sm">
-                <a href="/gemeinde/verzeichnis" class="text-brand font-medium">Gemeindeverzeichnis</a>
-                <a href="/api/v1/docs" class="hover:text-brand">API</a>
-                <a href="/gemeinde/onboarding" class="hover:text-brand">Gemeinde anmelden</a>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
 
+{% block meta %}
+{{ page_meta(
+  title="Gemeindeverzeichnis – Energieprofile Schweizer Gemeinden | OpenLEG",
+  description="Schweizer Gemeinden im Energiewende-Vergleich: Stromtarife, Solarpotenzial, LEG-Ersparnis. Offene Daten von ElCom, Sonnendach, Energie Reporter.",
+  path=canonical_path,
+  og_type="website",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 text-gray-900{% endblock %}
+
+{% block content %}
     <main class="max-w-6xl mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-2">Gemeindeverzeichnis</h1>
         <p class="text-gray-600 mb-6">Energieprofile Schweizer Gemeinden: Stromtarife, LEG-Potenzial, Energiewende-Score.</p>
@@ -120,9 +108,4 @@
             </div>
         </div>
     </main>
-
-    <footer class="border-t mt-16 py-8 text-center text-sm text-gray-400">
-        <p>&copy; 2026 OpenLEG · <a href="/impressum" class="hover:text-gray-600">Impressum</a> · <a href="/datenschutz" class="hover:text-gray-600">Datenschutz</a></p>
-    </footer>
-</body>
-</html>
+{% endblock %}

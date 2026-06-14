@@ -1,173 +1,176 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemeinde anmelden | OpenLEG</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    {% include 'partials/brand_head.html' %}
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <nav class="bg-white shadow-sm">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-            {% include 'partials/brand_wordmark.html' %}
-            <span class="text-sm text-gray-500">Gemeinde-Anmeldung</span>
-        </div>
-    </nav>
-    <div class="max-w-xl mx-auto px-4 py-12">
-        <div class="overflow-hidden rounded-xl border border-gray-200 shadow-md mb-8">
-            <img src="/static/images/brand/flow-gemeinden.svg" alt="Gemeinde Onboarding" class="w-full aspect-[3/1]" loading="lazy">
-        </div>
-        <h1 class="text-3xl font-bold mb-2">Gemeinde anmelden</h1>
-        <p class="text-gray-600 mb-8">Melden Sie Ihre Gemeinde an und ermöglichen Sie Bewohnern, lokale Stromgemeinschaften zu gründen. Kostenlos, kein IT Aufwand.</p>
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
 
-        <form id="onboarding-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Gemeinde suchen</label>
-                <input type="text" id="municipality-search" placeholder="z.B. Dietikon" autocomplete="off" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-                <div id="search-results" class="mt-2 border rounded-lg bg-white shadow-sm hidden max-h-56 overflow-y-auto"></div>
-                <input type="hidden" id="selected-bfs">
-                <input type="hidden" id="selected-name">
-                <p id="selected-municipality" class="text-xs text-gray-500 mt-2 hidden"></p>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Kontakt E-Mail (Gemeindeverwaltung)</label>
-                <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" required>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Ansprechperson</label>
-                <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg text-sm">
-                <h4 class="font-medium mb-1">Was Sie erhalten (kostenlos):</h4>
-                <ul class="text-gray-700 space-y-1">
-                    <li>&#10003; Eigene Instanz unter <span id="subdomain-preview" class="font-mono text-gray-900">gemeinde.openleg.ch</span></li>
-                    <li>&#10003; Bewohner-Registrierung und automatisches Matching</li>
-                    <li>&#10003; Übersicht über Anmeldungen und Formationsfortschritt</li>
-                    <li>&#10003; Alle Dokumente inklusive (Vereinbarung, Verträge, DSO-Anmeldung)</li>
-                    <li>&#10003; Keine versteckten Kosten, kein Abo, kein Vendor Lock-in</li>
-                </ul>
-            </div>
-            <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800">Gemeinde anmelden</button>
-            <div id="form-error" class="text-red-600 text-sm hidden"></div>
-            <div id="form-success" class="text-green-600 text-sm hidden"></div>
-        </form>
+{% block meta %}
+{{ page_meta(
+  title="Gemeinde anmelden | OpenLEG",
+  description="Melden Sie Ihre Gemeinde an und ermöglichen Sie Bewohnern, lokale Stromgemeinschaften zu gründen. Kostenlos, kein IT Aufwand.",
+  path=canonical_path,
+  og_type="website",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 min-h-screen text-gray-900{% endblock %}
+
+{% block content %}
+<main id="main-content" class="max-w-xl mx-auto px-4 py-12">
+    <div class="overflow-hidden rounded-xl border border-gray-200 shadow-md mb-8">
+        <img src="/static/images/brand/flow-gemeinden.svg" alt="Gemeinde Onboarding" class="w-full aspect-[3/1]" loading="lazy">
     </div>
-    <script>
-    const searchInput = document.getElementById('municipality-search');
-    const searchResults = document.getElementById('search-results');
-    const selectedBfs = document.getElementById('selected-bfs');
-    const selectedName = document.getElementById('selected-name');
-    const selectedMunicipality = document.getElementById('selected-municipality');
-    let searchTimer = null;
+    <p class="text-sm font-semibold text-brand mb-2">Gemeinde-Anmeldung</p>
+    <h1 class="text-3xl font-bold mb-2">Gemeinde anmelden</h1>
+    <p class="text-gray-600 mb-8">Melden Sie Ihre Gemeinde an und ermöglichen Sie Bewohnern, lokale Stromgemeinschaften zu gründen. Kostenlos, kein IT Aufwand.</p>
 
-    function subdomainFromName(name) {
-        return (name || '')
-            .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/ü/g, 'ue')
-            .replace(/ä/g, 'ae')
-            .replace(/ö/g, 'oe');
-    }
+    <form id="onboarding-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
+        <div>
+            <label class="block text-sm font-medium mb-1">Gemeinde suchen</label>
+            <input type="text" id="municipality-search" placeholder="z.B. Dietikon" autocomplete="off" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
+            <div id="search-results" class="mt-2 border rounded-lg bg-white shadow-sm hidden max-h-56 overflow-y-auto"></div>
+            <input type="hidden" id="selected-bfs">
+            <input type="hidden" id="selected-name">
+            <p id="selected-municipality" class="text-xs text-gray-500 mt-2 hidden"></p>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Kontakt E-Mail (Gemeindeverwaltung)</label>
+            <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" required>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Ansprechperson</label>
+            <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg text-sm">
+            <h4 class="font-medium mb-1">Was Sie erhalten (kostenlos):</h4>
+            <ul class="text-gray-700 space-y-1">
+                <li>&#10003; Eigene Instanz unter <span id="subdomain-preview" class="font-mono text-gray-900">gemeinde.openleg.ch</span></li>
+                <li>&#10003; Bewohner-Registrierung und automatisches Matching</li>
+                <li>&#10003; Übersicht über Anmeldungen und Formationsfortschritt</li>
+                <li>&#10003; Alle Dokumente inklusive (Vereinbarung, Verträge, DSO-Anmeldung)</li>
+                <li>&#10003; Keine versteckten Kosten, kein Abo, kein Vendor Lock-in</li>
+            </ul>
+        </div>
+        <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800">Gemeinde anmelden</button>
+        <div id="form-error" class="text-red-600 text-sm hidden"></div>
+        <div id="form-success" class="text-green-600 text-sm hidden"></div>
+    </form>
+</main>
+{% endblock %}
 
-    function resetSelection() {
-        selectedBfs.value = '';
-        selectedName.value = '';
-        selectedMunicipality.classList.add('hidden');
-        document.getElementById('subdomain-preview').textContent = 'gemeinde.openleg.ch';
-    }
+{% block scripts %}
+<script>
+const searchInput = document.getElementById('municipality-search');
+const searchResults = document.getElementById('search-results');
+const selectedBfs = document.getElementById('selected-bfs');
+const selectedName = document.getElementById('selected-name');
+const selectedMunicipality = document.getElementById('selected-municipality');
+let searchTimer = null;
 
-    function pickMunicipality(item) {
-        selectedBfs.value = String(item.bfs_number);
-        selectedName.value = item.name || '';
-        selectedMunicipality.textContent = `Ausgewählt: ${item.name} (BFS ${item.bfs_number})`;
-        selectedMunicipality.classList.remove('hidden');
-        document.getElementById('subdomain-preview').textContent = `${subdomainFromName(item.name)}.openleg.ch`;
-        searchInput.value = item.name || '';
-        searchResults.innerHTML = '';
-        searchResults.classList.add('hidden');
-    }
+function subdomainFromName(name) {
+    return (name || '')
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/ü/g, 'ue')
+        .replace(/ä/g, 'ae')
+        .replace(/ö/g, 'oe');
+}
 
-    async function queryMunicipalities(q) {
-        try {
-            const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&limit=8`);
-            if (!res.ok) {
-                searchResults.innerHTML = '';
-                searchResults.classList.add('hidden');
-                return;
-            }
-            const data = await res.json();
-            const items = data.results || [];
-            if (!items.length) {
-                searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">Keine Gemeinde gefunden.</div>';
-                searchResults.classList.remove('hidden');
-                return;
-            }
-            searchResults.innerHTML = items
-                .map((m) => `<button type="button" class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100" data-bfs="${m.bfs_number}" data-name="${(m.name || '').replace(/"/g, '&quot;')}">${m.name} (${m.kanton || 'CH'})</button>`)
-                .join('');
-            searchResults.classList.remove('hidden');
-        } catch (e) {
-            searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-red-600">Suche aktuell nicht verfügbar.</div>';
-            searchResults.classList.remove('hidden');
-        }
-    }
+function resetSelection() {
+    selectedBfs.value = '';
+    selectedName.value = '';
+    selectedMunicipality.classList.add('hidden');
+    document.getElementById('subdomain-preview').textContent = 'gemeinde.openleg.ch';
+}
 
-    searchInput.addEventListener('input', function() {
-        resetSelection();
-        clearTimeout(searchTimer);
-        const q = this.value.trim();
-        if (q.length < 2) {
+function pickMunicipality(item) {
+    selectedBfs.value = String(item.bfs_number);
+    selectedName.value = item.name || '';
+    selectedMunicipality.textContent = `Ausgewählt: ${item.name} (BFS ${item.bfs_number})`;
+    selectedMunicipality.classList.remove('hidden');
+    document.getElementById('subdomain-preview').textContent = `${subdomainFromName(item.name)}.openleg.ch`;
+    searchInput.value = item.name || '';
+    searchResults.innerHTML = '';
+    searchResults.classList.add('hidden');
+}
+
+async function queryMunicipalities(q) {
+    try {
+        const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&limit=8`);
+        if (!res.ok) {
             searchResults.innerHTML = '';
             searchResults.classList.add('hidden');
             return;
         }
-        searchTimer = setTimeout(() => queryMunicipalities(q), 220);
-    });
+        const data = await res.json();
+        const items = data.results || [];
+        if (!items.length) {
+            searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">Keine Gemeinde gefunden.</div>';
+            searchResults.classList.remove('hidden');
+            return;
+        }
+        searchResults.innerHTML = items
+            .map((m) => `<button type="button" class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100" data-bfs="${m.bfs_number}" data-name="${(m.name || '').replace(/"/g, '&quot;')}">${m.name} (${m.kanton || 'CH'})</button>`)
+            .join('');
+        searchResults.classList.remove('hidden');
+    } catch (e) {
+        searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-red-600">Suche aktuell nicht verfügbar.</div>';
+        searchResults.classList.remove('hidden');
+    }
+}
 
-    searchResults.addEventListener('click', function(e) {
-        const button = e.target.closest('button[data-bfs]');
-        if (!button) return;
-        pickMunicipality({
-            bfs_number: parseInt(button.dataset.bfs, 10),
-            name: button.dataset.name || '',
-            kanton: '',
+searchInput.addEventListener('input', function() {
+    resetSelection();
+    clearTimeout(searchTimer);
+    const q = this.value.trim();
+    if (q.length < 2) {
+        searchResults.innerHTML = '';
+        searchResults.classList.add('hidden');
+        return;
+    }
+    searchTimer = setTimeout(() => queryMunicipalities(q), 220);
+});
+
+searchResults.addEventListener('click', function(e) {
+    const button = e.target.closest('button[data-bfs]');
+    if (!button) return;
+    pickMunicipality({
+        bfs_number: parseInt(button.dataset.bfs, 10),
+        name: button.dataset.name || '',
+        kanton: '',
+    });
+});
+
+document.getElementById('onboarding-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const bfs = selectedBfs.value;
+    const email = document.getElementById('admin-email').value;
+    if (!bfs) {
+        document.getElementById('form-error').textContent = 'Bitte wählen Sie zuerst eine Gemeinde aus der Suche.';
+        document.getElementById('form-error').classList.remove('hidden');
+        return;
+    }
+    if (!email) {
+        document.getElementById('form-error').textContent = 'Bitte geben Sie eine E-Mail an.';
+        document.getElementById('form-error').classList.remove('hidden');
+        return;
+    }
+    try {
+        const res = await fetch('/gemeinde/register', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bfs_number: parseInt(bfs, 10), admin_email: email})
         });
-    });
-
-    document.getElementById('onboarding-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const bfs = selectedBfs.value;
-        const email = document.getElementById('admin-email').value;
-        if (!bfs) {
-            document.getElementById('form-error').textContent = 'Bitte wählen Sie zuerst eine Gemeinde aus der Suche.';
-            document.getElementById('form-error').classList.remove('hidden');
-            return;
-        }
-        if (!email) {
-            document.getElementById('form-error').textContent = 'Bitte geben Sie eine E-Mail an.';
-            document.getElementById('form-error').classList.remove('hidden');
-            return;
-        }
-        try {
-            const res = await fetch('/gemeinde/register', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({bfs_number: parseInt(bfs, 10), admin_email: email})
-            });
-            const data = await res.json();
-            if (data.success) {
-                document.getElementById('form-success').textContent = `Registrierung erfolgreich! Ihre Instanz: ${data.subdomain}.openleg.ch`;
-                document.getElementById('form-success').classList.remove('hidden');
-                document.getElementById('form-error').classList.add('hidden');
-            } else {
-                document.getElementById('form-error').textContent = data.error || 'Fehler bei der Registrierung.';
-                document.getElementById('form-error').classList.remove('hidden');
-            }
-        } catch(e) {
-            document.getElementById('form-error').textContent = 'Netzwerkfehler.';
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('form-success').textContent = `Registrierung erfolgreich! Ihre Instanz: ${data.subdomain}.openleg.ch`;
+            document.getElementById('form-success').classList.remove('hidden');
+            document.getElementById('form-error').classList.add('hidden');
+        } else {
+            document.getElementById('form-error').textContent = data.error || 'Fehler bei der Registrierung.';
             document.getElementById('form-error').classList.remove('hidden');
         }
-    });
-    </script>
-</body>
-</html>
+    } catch(e) {
+        document.getElementById('form-error').textContent = 'Netzwerkfehler.';
+        document.getElementById('form-error').classList.remove('hidden');
+    }
+});
+</script>
+{% endblock %}

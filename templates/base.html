@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% block meta %}{% endblock %}
+  {% include 'partials/tailwind_brand.html' %}
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="{% block body_class %}bg-[#f6f4ef] text-ink{% endblock %}">
+  {% include 'partials/site_nav.html' %}
+  {% block content %}{% endblock %}
+  {% include 'partials/site_footer.html' %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

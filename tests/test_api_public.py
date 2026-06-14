@@ -296,3 +296,9 @@ class TestApiDocs:
         assert 'rel="canonical"' in html
         assert 'property="og:title"' in html
         assert "Offene Schweizer Energiedaten API" in html
+
+    def test_api_docs_uses_host_canonical(self, client):
+        resp = client.get("/api/v1/docs", headers={"Host": "openleg.ch"})
+        assert resp.status_code == 200
+        html = resp.data.decode("utf-8", errors="ignore")
+        assert 'rel="canonical" href="http://openleg.ch/api/v1/docs"' in html

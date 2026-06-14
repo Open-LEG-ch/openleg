@@ -26,6 +26,14 @@ def test_onboarding_renders_typeahead_search():
     assert "municipality-search" in html
 
 
+def test_onboarding_uses_host_canonical():
+    client = _make_client()
+    resp = client.get("/gemeinde/onboarding", headers={"Host": "openleg.ch"})
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert 'rel="canonical" href="http://openleg.ch/gemeinde/onboarding"' in html
+
+
 def test_register_accepts_any_known_bfs(monkeypatch):
     client = _make_client()
     monkeypatch.setattr(
@@ -112,6 +120,7 @@ def test_verzeichnis_defaults_to_all_cantons_and_handles_empty(monkeypatch):
         "get_all_municipality_profiles",
         _fake_get_all_municipality_profiles,
     )
+    _patch_verzeichnis_ranking(monkeypatch, [])
     resp = client.get("/gemeinde/verzeichnis")
     assert resp.status_code == 200
     html = resp.data.decode("utf-8", errors="ignore")
@@ -140,9 +149,7 @@ def test_verzeichnis_shows_score_and_national_rank(monkeypatch):
     monkeypatch.setattr(
         municipality_module.db, "get_all_municipality_profiles", lambda **_k: profiles
     )
-    monkeypatch.setattr(
-        municipality_module.db, "get_pv_profiles", lambda kanton=None: profiles
-    )
+    _patch_verzeichnis_ranking(monkeypatch, profiles)
     html = client.get("/gemeinde/verzeichnis?sort=pv_score_pct").data.decode(
         "utf-8", errors="ignore"
     )
@@ -156,6 +163,7 @@ def test_verzeichnis_and_profil_render_canonical_from_host(monkeypatch):
     monkeypatch.setattr(
         municipality_module.db, "get_all_municipality_profiles", lambda **_kwargs: []
     )
+    _patch_verzeichnis_ranking(monkeypatch, [])
     monkeypatch.setattr(
         municipality_module.db,
         "get_municipality_profile",
@@ -187,6 +195,36 @@ def test_verzeichnis_and_profil_render_canonical_from_host(monkeypatch):
     assert 'rel="canonical" href="http://openleg.ch/gemeinde/profil/261"' in html_profil
 
 
+def test_verzeichnis_calls_ranking_load_once(monkeypatch):
+    client = _make_client()
+    profiles = [
+        {
+            "bfs_number": 1,
+            "name": "Sonnenstadt",
+            "kanton": "AG",
+            "population": 15000,
+            "pv_score_pct": 80.0,
+        },
+    ]
+    monkeypatch.setattr(
+        municipality_module.db, "get_all_municipality_profiles", lambda **_k: profiles
+    )
+    _patch_verzeichnis_ranking(monkeypatch, profiles)
+
+    calls = []
+
+    def _spy_load():
+        calls.append(1)
+        return municipality_module.Ranking(profiles)
+
+    monkeypatch.setattr(municipality_module.Ranking, "load", _spy_load)
+    resp = client.get("/gemeinde/verzeichnis")
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert resp.status_code == 200
+    assert sum(calls) == 1
+    assert "Solarnutzung" in html
+
+
 def _patch_profil_deps(monkeypatch, profile, pv_profiles=None):
     monkeypatch.setattr(
         municipality_module.db, "get_municipality_profile", lambda _bfs: profile
@@ -197,10 +235,19 @@ def _patch_profil_deps(monkeypatch, profile, pv_profiles=None):
     monkeypatch.setattr(
         municipality_module.db, "get_sonnendach_municipal", lambda _bfs: None
     )
+    profiles = pv_profiles if pv_profiles is not None else [profile]
     monkeypatch.setattr(
-        municipality_module.db,
-        "get_pv_profiles",
-        lambda kanton=None: pv_profiles if pv_profiles is not None else [profile],
+        municipality_module.Ranking,
+        "load",
+        lambda: municipality_module.Ranking(profiles),
+    )
+
+
+def _patch_verzeichnis_ranking(monkeypatch, profiles):
+    monkeypatch.setattr(
+        municipality_module.Ranking,
+        "load",
+        lambda: municipality_module.Ranking(profiles),
     )
 
 
@@ -312,3 +359,55 @@ def test_profil_shows_improvement_and_leaders(monkeypatch):
     assert "Solarpflicht" in html
     assert "Vorbilder in AG" in html
     assert "Sonnenstadt" in html
+
+
+def test_profil_calls_ranking_load_once(monkeypatch):
+    client = _make_client()
+    target = {
+        "bfs_number": 4021,
+        "name": "Baden",
+        "kanton": "AG",
+        "population": 19900,
+        "density_per_km2": 1500,
+        "pv_score_pct": 42.7,
+    }
+    others = [target]
+    _patch_profil_deps(monkeypatch, target, pv_profiles=others)
+
+    calls = []
+
+    def _spy_load():
+        calls.append(1)
+        return municipality_module.Ranking(others)
+
+    monkeypatch.setattr(municipality_module.Ranking, "load", _spy_load)
+    resp = client.get("/gemeinde/profil/4021")
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert resp.status_code == 200
+    assert sum(calls) == 1
+    assert "So steht Baden im Vergleich" in html
+
+
+def test_profil_skips_ranking_load_without_pv_score(monkeypatch):
+    client = _make_client()
+    target = {
+        "bfs_number": 2,
+        "name": "Altdorf",
+        "kanton": "UR",
+        "pv_score_pct": None,
+        "solar_potential_pct": 33.0,
+    }
+    _patch_profil_deps(monkeypatch, target, pv_profiles=[])
+
+    calls = []
+
+    def _spy_load():
+        calls.append(1)
+        return municipality_module.Ranking([])
+
+    monkeypatch.setattr(municipality_module.Ranking, "load", _spy_load)
+    resp = client.get("/gemeinde/profil/2")
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert resp.status_code == 200
+    assert sum(calls) == 0
+    assert "33%" in html

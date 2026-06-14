@@ -39,6 +39,7 @@ def full_app_module():
             "DATABASE_URL": "postgresql://x:x@localhost/x",
             "REDIS_URL": "memory://",
             "CRON_SECRET": "test-cron-secret",
+            "APP_BASE_URL": "http://localhost:5003",
         },
     ):
         with (

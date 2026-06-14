@@ -2,31 +2,41 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "model/${MODEL_ID}"
+        "primary": "groq/llama-3.3-70b-versatile",
+        "fallbacks": ["groq/qwen/qwen3-32b", "groq/llama-3.1-8b-instant"]
       },
       "models": {
-        "model/${MODEL_ID}": { "alias": "Configured model" }
+        "groq/llama-3.3-70b-versatile": { "alias": "Llama 70B" },
+        "groq/qwen/qwen3-32b": { "alias": "Qwen3 32B" },
+        "groq/llama-3.1-8b-instant": { "alias": "Llama 8B" }
       },
       "workspace": "/home/node/.openclaw/workspace"
     }
   },
+
   "models": {
     "providers": {
-      "model": {
-        "baseUrl": "${MODEL_BASE_URL}",
-        "apiKey": "${MODEL_API_KEY}",
+      "groq": {
+        "baseUrl": "https://api.groq.com/openai/v1",
+        "apiKey": "${GROQ_API_KEY}",
         "api": "openai-completions",
         "models": [
-          { "id": "${MODEL_ID}", "name": "Configured model" }
+          { "id": "llama-3.3-70b-versatile", "name": "Llama 3.3 70B Versatile" },
+          { "id": "qwen/qwen3-32b", "name": "Qwen3 32B" },
+          { "id": "llama-3.1-8b-instant", "name": "Llama 3.1 8B Instant" }
         ]
       }
     }
   },
+
   "gateway": {
     "port": 18789,
-    "bind": "loopback",
+    "bind": "custom",
+    "customBindHost": "0.0.0.0",
+    "trustedProxies": ["172.16.0.0/12", "10.0.0.0/8"],
     "controlUi": {
-      "allowedOrigins": ["http://localhost:18789"]
+      "allowedOrigins": ["https://claw.openleg.ch"],
+      "dangerouslyAllowHostHeaderOriginFallback": true
     },
     "auth": {
       "mode": "password",
@@ -34,12 +44,38 @@
       "password": "${OPENCLAW_GATEWAY_PASSWORD}"
     }
   },
+
   "tools": {
     "profile": "full"
   },
+
+  "mcp": {
+    "servers": {
+      "openleg": {
+        "command": "node",
+        "args": ["/opt/mcp-openleg-server/server.mjs"],
+        "env": {
+          "DATABASE_URL": "${DATABASE_URL}",
+          "BRAVE_API_KEY": "${BRAVE_API_KEY}",
+          "INTERNAL_TOKEN": "${INTERNAL_TOKEN}",
+          "FLASK_URL": "${FLASK_URL}",
+          "OPENCLAW_READONLY": "${OPENCLAW_READONLY}",
+          "AGENTMAIL_API_BASE": "${AGENTMAIL_API_BASE}",
+          "AGENTMAIL_API_KEY": "${AGENTMAIL_API_KEY}",
+          "AGENTMAIL_WEBHOOK_SECRET": "${AGENTMAIL_WEBHOOK_SECRET}",
+          "LEA_INBOX_ADDRESS": "${LEA_INBOX_ADDRESS}",
+          "AGENTMAIL_HUMAN_EMAIL": "${AGENTMAIL_HUMAN_EMAIL}",
+          "LEA_AGENT_ID": "${LEA_AGENT_ID}"
+        }
+      }
+    }
+  },
+
   "session": {
+    "dmScope": "per-channel-peer",
     "reset": { "mode": "daily", "atHour": 4 }
   },
+
   "cron": {
     "enabled": false
   }

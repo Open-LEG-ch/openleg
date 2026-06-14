@@ -46,6 +46,7 @@ def _common_context(kanton, size, density):
         "kanton": kanton or "",
         "size": size or "",
         "density": density or "",
+        "site_url": request.url_root.rstrip("/"),
         "canton_options": SWISS_CANTON_OPTIONS,
         "size_options": SIZE_OPTIONS,
         "density_options": DENSITY_OPTIONS,
@@ -74,7 +75,7 @@ def hub():
             "total": len(rows),
             "limit": limit,
             "active_tab": "rangliste",
-            "canonical_url": f"{request.url_root.rstrip('/')}/rangliste",
+            "canonical_path": "/rangliste",
         }
     )
     return render_template("gemeinde/rangliste.html", **context)
@@ -143,7 +144,8 @@ def vergleich():
         bfs_a=bfs_a,
         bfs_b=bfs_b,
         municipalities=municipalities,
-        canonical_url=f"{request.url_root.rstrip('/')}/rangliste/vergleich",
+        site_url=request.url_root.rstrip("/"),
+        canonical_path="/rangliste/vergleich",
     )
 
 
@@ -154,7 +156,8 @@ def methodik():
     return render_template(
         "gemeinde/methodik.html",
         plant_match_rate=pv_data.PLANT_MATCH_RATE_PCT,
-        canonical_url=f"{request.url_root.rstrip('/')}/rangliste/methodik",
+        site_url=request.url_root.rstrip("/"),
+        canonical_path="/rangliste/methodik",
     )
 
 
@@ -183,7 +186,7 @@ def movers():
             "limit": limit,
             "latest_year": latest_year,
             "active_tab": "fortschritte",
-            "canonical_url": f"{request.url_root.rstrip('/')}/rangliste/fortschritte",
+            "canonical_path": "/rangliste/fortschritte",
         }
     )
     return render_template("gemeinde/rangliste_fortschritte.html", **context)
