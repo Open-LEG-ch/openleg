@@ -26,6 +26,14 @@ def test_onboarding_renders_typeahead_search():
     assert "municipality-search" in html
 
 
+def test_onboarding_uses_host_canonical():
+    client = _make_client()
+    resp = client.get("/gemeinde/onboarding", headers={"Host": "openleg.ch"})
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert 'rel="canonical" href="http://openleg.ch/gemeinde/onboarding"' in html
+
+
 def test_register_accepts_any_known_bfs(monkeypatch):
     client = _make_client()
     monkeypatch.setattr(

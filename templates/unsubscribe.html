@@ -1,20 +1,23 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <title>Abmeldung – {{ platform_name }}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Melden Sie sich bei {{ platform_name }} vom Matching-Service für Lokale Elektrizitätsgemeinschaften ab. Eintrag mit einem Klick entfernen.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="{{ site_url }}/unsubscribe">
-    <meta property="og:type" content="article">
-    <meta property="og:title" content="Abmeldung – {{ platform_name }}">
-    <meta property="og:description" content="Hier können Sie sich vom {{ platform_name }}-Service für Lokale Elektrizitätsgemeinschaften abmelden.">
-    <meta property="og:url" content="{{ site_url }}/unsubscribe">
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 text-gray-800">
-<div class="min-h-screen flex items-center justify-center px-4 py-8">
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="Abmeldung – " ~ platform_name,
+  description="Melden Sie sich bei " ~ platform_name ~ " vom Matching-Service für Lokale Elektrizitätsgemeinschaften ab. Eintrag mit einem Klick entfernen.",
+  path="/unsubscribe",
+  og_title="Abmeldung – " ~ platform_name,
+  og_description="Hier können Sie sich vom " ~ platform_name ~ "-Service für Lokale Elektrizitätsgemeinschaften abmelden.",
+  og_type="article",
+  robots="index, follow",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 text-gray-800{% endblock %}
+
+{% block content %}
+<main class="min-h-screen flex items-center justify-center px-4 py-8">
     <div class="w-full max-w-lg bg-white shadow-lg rounded-lg p-6">
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Vom Service abmelden</h1>
         <p class="text-sm text-gray-600 mb-6">
@@ -53,7 +56,5 @@
             <a href="/" class="underline hover:text-gray-700">Zurück zur Startseite</a>
         </div>
     </div>
-</div>
-</body>
-</html>
-
+</main>
+{% endblock %}

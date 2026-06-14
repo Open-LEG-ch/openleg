@@ -476,7 +476,11 @@ def address_profile():
 @public_api_bp.route("/docs")
 def api_docs():
     """Swagger UI for API documentation."""
-    return render_template("api_docs.html")
+    return render_template(
+        "api_docs.html",
+        site_url=request.url_root.rstrip("/"),
+        canonical_path="/api/v1/docs",
+    )
 
 
 # === Serializers ===
