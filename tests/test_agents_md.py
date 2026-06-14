@@ -119,10 +119,13 @@ class TestEnvExample:
             "MODEL_BASE_URL",
             "MODEL_API_KEY",
             "MODEL_ID",
+            "INTERNAL_TOKEN",
             "OPENCLAW_GATEWAY_TOKEN",
             "OPENCLAW_GATEWAY_PASSWORD",
             "OPENCLAW_GATEWAY_BIND",
             "OPENCLAW_GATEWAY_PORT",
             "OPENCLAW_READONLY",
+            "FLASK_URL",
+            "AGENTMAIL_WEBHOOK_SECRET",
         ):
             assert key in content

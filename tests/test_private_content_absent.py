@@ -104,8 +104,10 @@ def test_public_package_excludes_private_workspace_material(tmp_path):
         "openclaw/mcp-openleg-server/package.json",
         "openclaw/mcp-openleg-server/server.mjs",
         "sales_pipeline.py",
+        "templates/admin/ops.html",
         "templates/admin/pipeline.html",
         "templates/admin/strategy.html",
+        "tests/test_admin_ops.py",
         "templates/emails/municipality_outreach.html",
         "tests/test_admin_pipeline.py",
         "tests/test_admin_strategy.py",
@@ -164,12 +166,16 @@ def test_public_package_has_no_private_operator_surfaces(tmp_path):
 
     forbidden_app_fragments = (
         "/admin/pipeline",
+        "/admin/ops",
         "/admin/strategy",
+        "/api/internal/agentmail",
         "/api/internal/lea-report",
+        "/api/internal/ops-snapshot",
         "/admin/lea-reports",
     )
     assert all(fragment not in app_content for fragment in forbidden_app_fragments)
     assert "municipality_outreach" not in email_content
     assert "lea_reports" not in database_content
+    assert "ops_snapshots" not in database_content
     assert "vnb_research" not in database_content
     assert "openclaw:" not in compose_content

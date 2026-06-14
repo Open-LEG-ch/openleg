@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenLEG Admin: Ops</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-white min-h-screen">
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Ops Dashboard</h1>
+    <span class="text-xs text-gray-500">Private operator view</span>
+  </div>
+
+  <div class="grid md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-gray-900 rounded-lg p-4">
+      <div class="text-sm text-gray-400">LEA Inbox</div>
+      <div class="text-3xl font-bold">{{ counts.lea_inbox }}</div>
+    </div>
+    <div class="bg-gray-900 rounded-lg p-4">
+      <div class="text-sm text-gray-400">GitHub Monitor</div>
+      <div class="text-3xl font-bold">{{ counts.github_monitor }}</div>
+    </div>
+    <div class="bg-gray-900 rounded-lg p-4">
+      <div class="text-sm text-gray-400">VNB Monitor</div>
+      <div class="text-3xl font-bold">{{ counts.vnb_monitor }}</div>
+    </div>
+    <div class="bg-gray-900 rounded-lg p-4">
+      <div class="text-sm text-gray-400">Stuck Formations</div>
+      <div class="text-3xl font-bold">{{ counts.stuck_formations }}</div>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-6 mb-8">
+    {% for category, label in [
+      ('openclaw_health', 'OpenClaw Health'),
+      ('lea_inbox', 'LEA Inbox'),
+      ('github_monitor', 'GitHub Monitor'),
+      ('vnb_monitor', 'VNB Monitor'),
+      ('stuck_formations', 'Stuck Formations')
+    ] %}
+    {% set snapshot = latest.get(category) %}
+    <section class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold">{{ label }}</h2>
+        {% if snapshot %}
+        <span class="text-xs px-2 py-1 rounded bg-gray-800 text-gray-300 uppercase">{{ snapshot.status }}</span>
+        {% else %}
+        <span class="text-xs text-gray-600">No data</span>
+        {% endif %}
+      </div>
+      {% if snapshot %}
+      <p class="text-sm text-gray-300 mb-2">{{ snapshot.summary_text or 'No summary' }}</p>
+      <p class="text-xs text-gray-500 mb-3">{{ snapshot.created_at if snapshot.created_at else '' }}</p>
+      <pre class="text-xs text-gray-400 bg-gray-950 rounded p-3 overflow-x-auto">{{ snapshot.payload | tojson(indent=2) }}</pre>
+      {% else %}
+      <p class="text-sm text-gray-500">No snapshot recorded yet.</p>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-6">
+    <section class="bg-gray-900 rounded-lg overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-800">
+        <h2 class="font-semibold">Recent Ops Snapshots</h2>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-800">
+          <tr>
+            <th class="px-4 py-3 text-left">Source</th>
+            <th class="px-4 py-3 text-left">Category</th>
+            <th class="px-4 py-3 text-left">Summary</th>
+            <th class="px-4 py-3 text-right">Created</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800">
+          {% for snapshot in snapshots %}
+          <tr class="hover:bg-gray-800/40">
+            <td class="px-4 py-3">{{ snapshot.source }}</td>
+            <td class="px-4 py-3 text-gray-400">{{ snapshot.category }}</td>
+            <td class="px-4 py-3 text-gray-300">{{ snapshot.summary_text or '' }}</td>
+            <td class="px-4 py-3 text-right text-xs text-gray-500">{{ snapshot.created_at if snapshot.created_at else '' }}</td>
+          </tr>
+          {% endfor %}
+          {% if not snapshots %}
+          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Keine Snapshots</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="bg-gray-900 rounded-lg overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-800">
+        <h2 class="font-semibold">Recent LEA Reports</h2>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-800">
+          <tr>
+            <th class="px-4 py-3 text-left">Job</th>
+            <th class="px-4 py-3 text-left">Status</th>
+            <th class="px-4 py-3 text-left">Summary</th>
+            <th class="px-4 py-3 text-right">Created</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800">
+          {% for report in reports %}
+          <tr class="hover:bg-gray-800/40">
+            <td class="px-4 py-3">{{ report.job_name }}</td>
+            <td class="px-4 py-3 text-gray-400 uppercase">{{ report.status }}</td>
+            <td class="px-4 py-3 text-gray-300">{{ report.summary_text or '' }}</td>
+            <td class="px-4 py-3 text-right text-xs text-gray-500">{{ report.created_at if report.created_at else '' }}</td>
+          </tr>
+          {% endfor %}
+          {% if not reports %}
+          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Keine Berichte</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>
+</body>
+</html>
