@@ -99,7 +99,9 @@ class TestOpenClawEntrypoint:
             self.content = f.read()
 
     def test_uses_configurable_bind_and_port(self):
-        assert 'OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"' in self.content
+        assert (
+            'OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"' in self.content
+        )
         assert 'OPENCLAW_GATEWAY_PORT="${OPENCLAW_GATEWAY_PORT:-18789}"' in self.content
         assert '--bind "${OPENCLAW_GATEWAY_BIND}"' in self.content
         assert '--port "${OPENCLAW_GATEWAY_PORT}"' in self.content
