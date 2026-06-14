@@ -12,7 +12,7 @@ from flask import Blueprint, Response, render_template, request
 import database as db
 import pv_badge
 import pv_ranking
-from municipality import SWISS_CANTON_OPTIONS
+from cantons import SWISS_CANTON_OPTIONS
 
 logger = logging.getLogger(__name__)
 
