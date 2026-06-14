@@ -1,0 +1,75 @@
+name: CD
+
+# Continuous deploy: every merge to main ships to the production VPS so prod
+# never drifts behind main. Host, path, and key live in repo secrets, so no
+# host inventory is exposed in this public repo. Set:
+#   DEPLOY_HOST    e.g. ubuntu@203.0.113.10
+#   REMOTE_DIR     e.g. /opt/openleg
+#   DEPLOY_SSH_KEY private key contents (PEM)
+#   HEALTH_URL     e.g. https://openleg.ch
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    # Skip on forks; only run where the deploy secret exists.
+    if: github.repository_owner == 'Open-LEG-ch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "Deploy secrets not configured; skipping." >&2
+            exit 78
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${DEPLOY_HOST#*@}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Sync app code
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+        run: |
+          rsync -az \
+            --exclude='.git' --exclude='.env' --exclude='__pycache__' --exclude='*.pyc' \
+            --exclude='.pytest_cache' --exclude='node_modules' --exclude='.venv' \
+            --exclude='backups/' --exclude='*.sql' --exclude='*.sql.gz' \
+            --exclude='output/' --exclude='tmp/' --exclude='overnight/' \
+            --exclude='prd/' --exclude='grants/' --exclude='outreach/' \
+            --exclude='Caddyfile' --exclude='docker-compose.yml' \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new" \
+            ./ "${DEPLOY_HOST}:${REMOTE_DIR}/"
+
+      - name: Rebuild and restart flask
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$DEPLOY_HOST" \
+            "cd '$REMOTE_DIR' && docker compose up -d --build flask"
+
+      - name: Health check
+        env:
+          HEALTH_URL: ${{ secrets.HEALTH_URL }}
+        run: |
+          [ -z "$HEALTH_URL" ] && { echo "No HEALTH_URL; skipping check."; exit 0; }
+          sleep 8
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS "$HEALTH_URL/livez" >/dev/null; then echo "healthy"; exit 0; fi
+            sleep 5
+          done
+          echo "Health check failed" >&2; exit 1
