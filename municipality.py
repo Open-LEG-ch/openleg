@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, render_template, abort
 
 from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
 import database as db
-import pv_ranking
+from ranking import Ranking
 import security_utils
 
 logger = logging.getLogger(__name__)
@@ -137,7 +137,7 @@ def profil(bfs):
     value_gap = public_data.compute_leg_value_gap(h4) if h4 else None
 
     # Kanonische Solarnutzung: neuer PV-Score, gedeckelt; sonst Altwert
-    solar_score, solar_over_100 = pv_ranking.capped_score(profile.get("pv_score_pct"))
+    solar_score, solar_over_100 = Ranking.capped_score(profile.get("pv_score_pct"))
     if solar_score is None and profile.get("solar_potential_pct") is not None:
         solar_score = round(float(profile["solar_potential_pct"]), 1)
 
@@ -147,28 +147,12 @@ def profil(bfs):
     already_top = False
     leaders = []
     if profile.get("pv_score_pct") is not None:
-        all_pv = db.get_pv_profiles()
-        league_chips = pv_ranking.league_standings(all_pv, profile)
-
-        size = pv_ranking.size_band(profile.get("population"))
-        if size:
-            size_league = pv_ranking.filter_league(all_pv, size=size)
-            threshold = pv_ranking.top_quartile_threshold(size_league)
-            improvement = pv_ranking.improvement_target(profile, threshold)
-            me = next(
-                (
-                    r
-                    for r in pv_ranking.assign_ranks(size_league)
-                    if r["bfs_number"] == bfs
-                ),
-                None,
-            )
-            already_top = bool(me and me["quartile"] == pv_ranking.TOP_QUARTILE)
-
-        leaders = pv_ranking.league_leaders(
-            pv_ranking.filter_league(all_pv, kanton=profile.get("kanton")),
-            exclude_bfs=bfs,
-        )
+        ranking = Ranking.load()
+        league_chips = ranking.league_chips(profile)
+        improvement = ranking.improvement_target(profile)
+        size_rank = ranking.size_league_rank(profile)
+        already_top = bool(size_rank and size_rank["quartile"] == Ranking.TOP_QUARTILE)
+        leaders = ranking.leaders(profile.get("kanton"), exclude_bfs=bfs)
 
     return render_template(
         "gemeinde/profil.html",
@@ -212,15 +196,12 @@ def verzeichnis():
         ]
 
     # Nationaler Solarnutzungs-Rang je Gemeinde
-    rank_map = {
-        r["bfs_number"]: r["rank"]
-        for r in pv_ranking.assign_ranks(db.get_pv_profiles())
-    }
+    ranking_rows = {r["bfs_number"]: r for r in Ranking.load().national()}
     for profile in profiles:
-        profile["pv_rank"] = rank_map.get(profile.get("bfs_number"))
-        score, over_100 = pv_ranking.capped_score(profile.get("pv_score_pct"))
-        profile["display_score"] = score
-        profile["score_over_100"] = over_100
+        row = ranking_rows.get(profile.get("bfs_number"), {})
+        profile["pv_rank"] = row.get("rank")
+        profile["display_score"] = row.get("display_score")
+        profile["score_over_100"] = row.get("score_over_100")
 
     return render_template(
         "gemeinde/verzeichnis.html",

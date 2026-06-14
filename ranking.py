@@ -5,7 +5,7 @@ The class works with an injected profile list, so it stays pure and easy to
 unit-test. Database access is only performed through ``Ranking.load()``.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import pv_badge
 import pv_ranking
@@ -14,6 +14,8 @@ from store import ranking as store_ranking
 
 class Ranking:
     """Ranking facade over a list of PV municipality profiles."""
+
+    TOP_QUARTILE = pv_ranking.TOP_QUARTILE
 
     def __init__(self, profiles: List[Dict]):
         self._profiles = profiles
@@ -51,6 +53,19 @@ class Ranking:
     def league_chips(self, profile: Dict) -> List[Dict]:
         """League chips for a single profile."""
         return pv_ranking.league_standings(self._profiles, profile)
+
+    @staticmethod
+    def capped_score(score: Optional[float]) -> Tuple[Optional[float], bool]:
+        """Score auf 100 deckeln; zweiter Wert signalisiert Schätzung übertroffen."""
+        return pv_ranking.capped_score(score)
+
+    def size_league_rank(self, profile: Dict) -> Optional[Dict]:
+        """Rang, Liga-Total und Quartil eines Profils in seiner Grössen-Liga."""
+        size = pv_ranking.size_band(profile.get("population"))
+        if size is None:
+            return None
+        league = pv_ranking.filter_league(self._profiles, size=size)
+        return pv_ranking._rank_entry(league, profile.get("bfs_number"))
 
     def standings(
         self,

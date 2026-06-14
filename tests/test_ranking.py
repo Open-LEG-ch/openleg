@@ -76,6 +76,50 @@ class TestRanking:
         assert chips == expected
 
 
+class TestRankingCappedScore:
+    def test_capped_score_delegates_to_pv_ranking(self):
+        assert ranking.Ranking.capped_score(104.0) == (100.0, True)
+        assert ranking.Ranking.capped_score(42.7) == (42.7, False)
+        assert ranking.Ranking.capped_score(None) == (None, False)
+
+
+class TestRankingSizeLeagueRank:
+    def test_size_league_rank_returns_rank_entry(self):
+        profiles = [
+            {
+                "bfs_number": 1,
+                "name": "A",
+                "pv_score_pct": 90,
+                "population": 3000,
+            },
+            {
+                "bfs_number": 2,
+                "name": "B",
+                "pv_score_pct": 80,
+                "population": 3500,
+            },
+            {
+                "bfs_number": 3,
+                "name": "C",
+                "pv_score_pct": 70,
+                "population": 30000,
+            },
+        ]
+        r = ranking.Ranking(profiles)
+        result = r.size_league_rank(profiles[1])
+        assert result == {"rank": 2, "total": 2, "quartile": 3}
+
+    def test_size_league_rank_none_without_population(self):
+        profile = {"bfs_number": 1, "name": "A", "population": None}
+        r = ranking.Ranking([profile])
+        assert r.size_league_rank(profile) is None
+
+    def test_size_league_rank_none_when_not_in_league(self):
+        profile = {"bfs_number": 1, "name": "A", "population": 3000}
+        r = ranking.Ranking([])
+        assert r.size_league_rank(profile) is None
+
+
 class TestRankingStandings:
     def test_standings_filter_by_kanton(self):
         profiles = [
