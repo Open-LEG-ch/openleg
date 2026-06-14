@@ -224,8 +224,9 @@ def verzeichnis():
         kanton=kanton,
         query=q,
         sort=order_by,
+        site_url=request.url_root.rstrip("/"),
         canton_options=SWISS_CANTON_OPTIONS,
-        canonical_url=f"{request.url_root.rstrip('/')}/gemeinde/verzeichnis",
+        canonical_path="/gemeinde/verzeichnis",
     )
 
 

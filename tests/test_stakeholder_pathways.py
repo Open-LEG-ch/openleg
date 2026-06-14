@@ -116,6 +116,7 @@ def test_fuer_bewohner_template_uses_shared_base():
         "gemeinde/rangliste_fortschritte.html",
         "gemeinde/vergleich.html",
         "gemeinde/methodik.html",
+        "gemeinde/verzeichnis.html",
         "leg_gruenden.html",
         "leg_kalkulator.html",
         "pricing.html",
