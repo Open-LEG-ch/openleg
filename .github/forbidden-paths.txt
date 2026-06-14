@@ -41,6 +41,9 @@ DEPLOYMENT.md
 .orch/**
 workspace/**
 output/imagegen/**
+openclaw/config/openclaw.json
+openclaw/config/cron/**
+openclaw/config/workspace/**
 
 # Real deploy scripts and secret-bearing files
 deploy.sh
