@@ -3098,7 +3098,7 @@ def get_ops_snapshots(
         with get_connection() as conn:
             with conn.cursor() as cur:
                 where = []
-                params = []
+                params: list = []
                 if source:
                     where.append("source = %s")
                     params.append(source)
