@@ -2,10 +2,12 @@
 """Tests für den Ranglisten-Hub."""
 
 import os
+from unittest.mock import MagicMock
 
 from flask import Flask
 
 import rangliste as rangliste_module
+from ranking import Ranking
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -53,18 +55,18 @@ SAMPLE = [
 ]
 
 
-def _make_client(monkeypatch, rows=SAMPLE):
-    monkeypatch.setattr(
-        rangliste_module.db, "get_pv_profiles", lambda kanton=None: rows
-    )
+def _make_hub_client(monkeypatch, rows=SAMPLE):
+    monkeypatch.setattr(rangliste_module, "Ranking", Ranking, raising=False)
+    mock_load = MagicMock(return_value=Ranking(rows))
+    monkeypatch.setattr(rangliste_module.Ranking, "load", mock_load)
     app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
     app.config["TESTING"] = True
     app.register_blueprint(rangliste_module.rangliste_bp)
-    return app.test_client()
+    return app.test_client(), mock_load
 
 
 def test_hub_renders_ranked_table(monkeypatch):
-    client = _make_client(monkeypatch)
+    client, _ = _make_hub_client(monkeypatch)
     resp = client.get("/rangliste")
     assert resp.status_code == 200
     html = resp.data.decode("utf-8", errors="ignore")
@@ -79,24 +81,31 @@ def test_hub_renders_ranked_table(monkeypatch):
 
 
 def test_hub_caps_score_over_100(monkeypatch):
-    client = _make_client(monkeypatch)
+    client, _ = _make_hub_client(monkeypatch)
     html = client.get("/rangliste").data.decode("utf-8", errors="ignore")
     assert "100.0%" in html
     assert "104" not in html
 
 
 def test_hub_filters_by_canton(monkeypatch):
-    client = _make_client(monkeypatch)
+    client, _ = _make_hub_client(monkeypatch)
     html = client.get("/rangliste?kanton=AG").data.decode("utf-8", errors="ignore")
     assert "Sonnendorf" in html
     assert "Zürichberg" not in html
 
 
 def test_hub_filters_by_size(monkeypatch):
-    client = _make_client(monkeypatch)
+    client, _ = _make_hub_client(monkeypatch)
     html = client.get("/rangliste?size=large").data.decode("utf-8", errors="ignore")
     assert "Mittelstadt" in html
     assert "Sonnendorf" not in html
+
+
+def test_hub_calls_ranking_load_once(monkeypatch):
+    client, mock_load = _make_hub_client(monkeypatch)
+    resp = client.get("/rangliste")
+    assert resp.status_code == 200
+    mock_load.assert_called_once_with()
 
 
 MOVERS = [

@@ -13,6 +13,7 @@ import database as db
 import pv_badge
 import pv_ranking
 from cantons import SWISS_CANTON_OPTIONS
+from ranking import Ranking
 
 logger = logging.getLogger(__name__)
 
@@ -41,20 +42,6 @@ def _clean_param(name):
     return value
 
 
-def _filtered_league(kanton, size, density):
-    rows = db.get_pv_profiles()
-    return pv_ranking.filter_league(rows, kanton=kanton, size=size, density=density)
-
-
-def _with_display(ranked):
-    """Gedeckelten Score und Überschreitungs-Flag je Zeile ergänzen."""
-    enriched = []
-    for row in ranked:
-        score, over_100 = pv_ranking.capped_score(row.get("pv_score_pct"))
-        enriched.append({**row, "display_score": score, "score_over_100": over_100})
-    return enriched
-
-
 def _common_context(kanton, size, density):
     return {
         "kanton": kanton or "",
@@ -76,14 +63,16 @@ def hub():
     except ValueError:
         limit = 250
 
-    league = _filtered_league(kanton.upper() if kanton else None, size, density)
-    ranked = _with_display(pv_ranking.assign_ranks(league))
+    ranking = Ranking.load()
+    rows = ranking.standings(
+        kanton=kanton.upper() if kanton else None, size=size, density=density
+    )
 
     context = _common_context(kanton, size, density)
     context.update(
         {
-            "rows": ranked[:limit],
-            "total": len(ranked),
+            "rows": rows[:limit],
+            "total": len(rows),
             "limit": limit,
             "active_tab": "rangliste",
             "canonical_url": f"{request.url_root.rstrip('/')}/rangliste",
