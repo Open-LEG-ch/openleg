@@ -11,10 +11,10 @@ colors:
   paper: "#f6f4ef"        # warm light surface
   white: "#ffffff"
   line: "#e2e8f0"         # hairline borders
-  brand: "#4f46e5"        # interactive: links, primary buttons (indigo)
-  brand-light: "#6366f1"
-  brand-dark: "#4338ca"
-  accent: "#f59e0b"       # identity + energy: the logo highlight (amber)
+  brand: "#f59e0b"        # action + identity: links, primary buttons, logo highlight (amber/yellow)
+  brand-light: "#fbbf24"
+  brand-dark: "#d97706"   # button hover, darker amber
+  accent: "#f59e0b"       # alias of brand; energy highlight
   accent-hi: "#ffc043"    # amber top stop for gradients
 typography:
   wordmark:
@@ -66,14 +66,16 @@ Aesthetic: technical, Swiss-precise, warm. Not playful, not corporate.
 
 ## Colors
 
-Two coded roles, one ground:
+One loud colour, one ground:
 
-- **`accent` amber `#f59e0b`** is **identity and energy**. It is the logo
-  highlight, the `LEG`, the caret, the prompt. Use it sparingly so it stays loud.
-- **`brand` indigo `#4f46e5`** is **action**. Links, primary buttons, focus.
-  Never use indigo in the logo; never use amber for a primary button.
-- **`ink` slate `#0f172a`** is the ground: text and dark surfaces (footer, favicon
-  tile). `ink-muted #475569` for secondary text.
+- **`brand` amber/yellow `#f59e0b`** is **both action and identity**. It is the
+  primary action (links, buttons, focus) AND the logo highlight (`LEG`, prompt,
+  caret). Yellow is the whole brand; there is no second action colour.
+- Amber fills carry **ink text**, never white (white on amber fails contrast).
+  Primary button: `bg-brand text-ink hover:bg-brand-dark`.
+- **`ink` slate `#0f172a`** is the ground: all body text, **all h1/h2/h3 titles
+  stay ink (black), never amber**, plus dark surfaces (footer, favicon tile).
+  `ink-muted #475569` for secondary text.
 - **`paper #f6f4ef`** and `white` are light surfaces.
 
 Gradient: `accent-hi #ffc043` (top) to `accent #f59e0b` (bottom), used only inside
@@ -135,15 +137,18 @@ Path-based, no font dependency, legible at 16px. Linked from
 
 ### Buttons
 
-- Primary: `bg-brand text-white rounded-lg hover:bg-brand-dark`.
+- Primary (yellow action): `bg-brand text-ink rounded-lg font-semibold hover:bg-brand-dark`.
 - Secondary: `border border-slate-200 text-ink bg-white`.
 
 ## Do's and Don'ts
 
-- **Do** keep amber rare: logo, one key accent per view.
+- **Do** make every primary action yellow (`bg-brand`); yellow is the only action colour.
+- **Do** use **ink text on amber fills** (white on amber fails contrast).
+- **Do** keep all h1/h2/h3 titles **ink/black**, never amber.
 - **Do** use the wordmark partial; keep `LEG` uppercase and amber.
 - **Do** respect `prefers-reduced-motion` (caret stops).
-- **Don't** put indigo in the logo or amber on a primary button.
+- **Don't** use indigo or any second action colour anywhere.
+- **Don't** put white text on an amber button, or amber on a heading.
 - **Don't** add a separate icon badge next to the wordmark; the prompt is the mark.
 - **Don't** introduce new fonts; sans for reading, mono for the technical voice.
 - **Don't** use em or en dashes in German copy.
