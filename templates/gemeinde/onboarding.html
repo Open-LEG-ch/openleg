@@ -5,7 +5,7 @@
 {{ page_meta(
   title="Gemeinde anmelden | OpenLEG",
   description="Melden Sie Ihre Gemeinde an und ermöglichen Sie Bewohnern, lokale Stromgemeinschaften zu gründen. Kostenlos, kein IT Aufwand.",
-  path="/gemeinde/onboarding",
+  path=canonical_path,
   og_type="website",
   site_url=site_url,
 ) }}
@@ -14,10 +14,11 @@
 {% block body_class %}bg-gray-50 min-h-screen text-gray-900{% endblock %}
 
 {% block content %}
-<main class="max-w-xl mx-auto px-4 py-12">
+<main id="main-content" class="max-w-xl mx-auto px-4 py-12">
     <div class="overflow-hidden rounded-xl border border-gray-200 shadow-md mb-8">
         <img src="/static/images/brand/flow-gemeinden.svg" alt="Gemeinde Onboarding" class="w-full aspect-[3/1]" loading="lazy">
     </div>
+    <p class="text-sm font-semibold text-brand mb-2">Gemeinde-Anmeldung</p>
     <h1 class="text-3xl font-bold mb-2">Gemeinde anmelden</h1>
     <p class="text-gray-600 mb-8">Melden Sie Ihre Gemeinde an und ermöglichen Sie Bewohnern, lokale Stromgemeinschaften zu gründen. Kostenlos, kein IT Aufwand.</p>
 

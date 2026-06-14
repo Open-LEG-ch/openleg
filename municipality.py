@@ -20,7 +20,11 @@ municipality_bp = Blueprint("municipality", __name__, url_prefix="/gemeinde")
 
 @municipality_bp.route("/onboarding")
 def onboarding():
-    return render_template("gemeinde/onboarding.html")
+    return render_template(
+        "gemeinde/onboarding.html",
+        site_url=request.url_root.rstrip("/"),
+        canonical_path="/gemeinde/onboarding",
+    )
 
 
 @municipality_bp.route("/register", methods=["POST"])
