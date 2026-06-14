@@ -49,6 +49,12 @@ docker compose up -d
 docker compose ps
 ```
 
+## OpenClaw
+
+- `openclaw/` contains a public-safe OpenClaw bundle for local automation against OpenLEG.
+- It is separate from the public `docker-compose.yml`.
+- Start with [openclaw/README.md](openclaw/README.md).
+
 ## Public architecture
 
 - Backend: Flask on Python 3.11
