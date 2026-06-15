@@ -149,8 +149,8 @@ Production deployment procedures are documented in `openleg-ops`.
 
 - Host: see `openleg-ops` (Infomaniak VPS)
 - SSH user: `ubuntu`
-- SSH identity file: `~/.ssh/infomaniak_openleg`
-- Remote deployment dir: `/opt/openleg`
+- SSH identity file: `~/.ssh/infomaniak_badenleg`
+- Remote deployment dir: `/opt/badenleg`
 - Containers: `openleg-flask`, `openleg-openclaw`, `openleg-caddy`, `openleg-postgres`, `openleg-redis`
 - Safe verification commands:
   - `docker ps`
