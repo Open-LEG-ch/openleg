@@ -163,7 +163,7 @@ Production deployment procedures are documented in `openleg-ops`.
 ## CI Notes
 
 - **Node.js 24 migration (2026-06-16)**: GitHub Actions forces Node.js 24 as default from June 16, 2026. `actions/checkout@v4` and `actions/setup-python@v5` (both pinned by SHA in `.github/workflows/`) should be compatible with Node 24 as maintained by GitHub. Monitor CI after June 16; if jobs fail, bump the `@v4`/`@v5` SHAs to the latest release.
-- **numpy/pandas version coupling**: numpy 2.x requires pandas 3.x. Dependabot may open numpy 2.x PRs that fail until the pandas 3.x PR lands first. Merge pandas first; numpy PR will pass once rebased.
+- **numpy upgrade blocked by scipy**: numpy 2.x requires pandas 3.x AND scipy>=1.13. Current scipy==1.11.4 caps numpy<1.28. To upgrade numpy 2.x: bump scipy to 1.13+ first, then numpy. Merge order: pandas 3.x → scikit-learn → scipy 1.13+ → numpy 2.x.
 
 ## Current Blocker
 
