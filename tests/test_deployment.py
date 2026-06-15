@@ -105,7 +105,9 @@ class TestBlueGreenDeployArtifacts:
 
     @pytest.fixture(autouse=True)
     def load_artifacts(self):
-        with open(os.path.join(PROJECT_ROOT, "docker-compose.blue-green.example.yml")) as f:
+        with open(
+            os.path.join(PROJECT_ROOT, "docker-compose.blue-green.example.yml")
+        ) as f:
             self.compose = yaml.safe_load(f)
         with open(os.path.join(PROJECT_ROOT, "deploy.blue-green.example.sh")) as f:
             self.script = f.read()
@@ -130,14 +132,14 @@ class TestBlueGreenDeployArtifacts:
 
     def test_script_never_rebuilds_active_compose_service(self):
         assert "up -d --build" not in self.script
-        assert "docker build -t \"$IMAGE_REPO:$inactive\"" in self.script
-        assert "--force-recreate \"flask-$inactive\"" in self.script
+        assert 'docker build -t "$IMAGE_REPO:$inactive"' in self.script
+        assert '--force-recreate "flask-$inactive"' in self.script
 
     def test_script_switches_with_caddy_reload_and_rollback(self):
         assert "caddy reload" in self.script
         assert "ACTIVE_SLOT_FILE" in self.script
         assert "rolling Caddy back" in self.script
-        assert "curl -fsS \"$HEALTH_URL\"" in self.script
+        assert 'curl -fsS "$HEALTH_URL"' in self.script
 
 
 class TestDockerfile:
