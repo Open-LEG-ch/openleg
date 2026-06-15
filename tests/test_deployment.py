@@ -100,6 +100,46 @@ class TestDeployScript:
         assert "--build" in self.content
 
 
+class TestBlueGreenDeployArtifacts:
+    """Validate public-safe blue-green deployment examples."""
+
+    @pytest.fixture(autouse=True)
+    def load_artifacts(self):
+        with open(os.path.join(PROJECT_ROOT, "docker-compose.blue-green.example.yml")) as f:
+            self.compose = yaml.safe_load(f)
+        with open(os.path.join(PROJECT_ROOT, "deploy.blue-green.example.sh")) as f:
+            self.script = f.read()
+        with open(os.path.join(PROJECT_ROOT, "Caddyfile.blue-green.example")) as f:
+            self.caddyfile = f.read()
+
+    def test_compose_has_two_flask_slots(self):
+        services = self.compose["services"]
+        assert "flask-blue" in services
+        assert "flask-green" in services
+        assert services["flask-blue"]["container_name"] == "openleg-flask-blue"
+        assert services["flask-green"]["container_name"] == "openleg-flask-green"
+
+    def test_caddy_mounts_generated_runtime_file(self):
+        volumes = self.compose["services"]["caddy"]["volumes"]
+        assert "./Caddyfile.blue-green:/etc/caddy/Caddyfile" in volumes
+
+    def test_caddy_template_has_health_checked_placeholder_upstream(self):
+        assert "{{UPSTREAM}}" in self.caddyfile
+        assert "health_uri /health" in self.caddyfile
+        assert "claw.openleg.ch" not in self.caddyfile
+
+    def test_script_never_rebuilds_active_compose_service(self):
+        assert "up -d --build" not in self.script
+        assert "docker build -t \"$IMAGE_REPO:$inactive\"" in self.script
+        assert "--force-recreate \"flask-$inactive\"" in self.script
+
+    def test_script_switches_with_caddy_reload_and_rollback(self):
+        assert "caddy reload" in self.script
+        assert "ACTIVE_SLOT_FILE" in self.script
+        assert "rolling Caddy back" in self.script
+        assert "curl -fsS \"$HEALTH_URL\"" in self.script
+
+
 class TestDockerfile:
     """Validate Dockerfile build config."""
 

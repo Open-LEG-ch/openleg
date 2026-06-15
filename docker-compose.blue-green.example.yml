@@ -1,7 +1,35 @@
 services:
-  flask:
-    build: .
-    container_name: openleg-flask
+  flask-blue:
+    image: ${OPENLEG_IMAGE_REPO:-openleg-app}:blue
+    container_name: openleg-flask-blue
+    restart: unless-stopped
+    mem_limit: 384m
+    mem_reservation: 256m
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-openleg}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-openleg}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+    volumes:
+      - flask_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/livez"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - web
+
+  flask-green:
+    image: ${OPENLEG_IMAGE_REPO:-openleg-app}:green
+    container_name: openleg-flask-green
     restart: unless-stopped
     mem_limit: 384m
     mem_reservation: 256m
@@ -67,14 +95,11 @@ services:
     restart: always
     mem_limit: 128m
     mem_reservation: 64m
-    depends_on:
-      flask:
-        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile.blue-green:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
     networks:

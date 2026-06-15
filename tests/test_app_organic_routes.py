@@ -95,6 +95,27 @@ def test_shared_tailwind_partial_uses_local_css():
     assert "/static/css/openleg.css" in content
 
 
+def test_templates_use_shared_favicon_partial():
+    allowed = {
+        os.path.join("templates", "partials", "brand_head.html"),
+        os.path.join("templates", "partials", "tailwind_brand.html"),
+    }
+    offenders = []
+
+    for root, _, files in os.walk("templates"):
+        for filename in files:
+            if not filename.endswith(".html"):
+                continue
+            path = os.path.join(root, filename)
+            with open(path) as f:
+                content = f.read()
+            if "favicon" in content and path not in allowed:
+                if "partials/brand_head.html" not in content:
+                    offenders.append(path)
+
+    assert offenders == []
+
+
 def test_sitemap_contains_directory_docs_and_profile_urls(full_app_module, monkeypatch):
     monkeypatch.setattr(
         full_app_module.db,

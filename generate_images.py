@@ -15,10 +15,12 @@ except ImportError:
 
 import os
 
-# Brand color
-BRAND_COLOR = "#c7021a"
+# Brand colors
+BRAND_COLOR = "#f59e0b"
 WHITE = "#ffffff"
 DARK_GRAY = "#1f2937"
+INK = "#0f172a"
+PAPER = "#f6f4ef"
 
 
 def create_og_image():
@@ -99,31 +101,19 @@ def create_og_image():
 
 
 def create_favicon():
-    """Create favicon (32x32px)"""
+    """Create favicon (32x32px) matching static/favicon.svg."""
     size = 32
-    img = Image.new("RGB", (size, size), color=BRAND_COLOR)
+    img = Image.new("RGBA", (size, size), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    try:
-        font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 22)
-    except Exception:
-        try:
-            font = ImageFont.truetype(
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 22
-            )
-        except Exception:
-            font = ImageFont.load_default()
-
-    # Draw "BL" initials in white on red background
-    text = "BL"
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_width = bbox[2] - bbox[0]
-    text_height = bbox[3] - bbox[1]
-
-    x = (size - text_width) // 2
-    y = (size - text_height) // 2
-
-    draw.text((x, y), text, fill=WHITE, font=font)
+    draw.rounded_rectangle([(0, 0), (size - 1, size - 1)], radius=8, fill=INK)
+    draw.line(
+        [(10, 11), (16.5, 16), (10, 21)],
+        fill=BRAND_COLOR,
+        width=3,
+        joint="curve",
+    )
+    draw.line([(18, 22), (24, 22)], fill=PAPER, width=3)
 
     # Save as ICO
     output_path = "static/favicon.ico"
@@ -133,37 +123,19 @@ def create_favicon():
 
 
 def create_apple_touch_icon():
-    """Create Apple touch icon (180x180px)"""
+    """Create Apple touch icon matching static/favicon.svg."""
     size = 180
-    img = Image.new("RGB", (size, size), color=WHITE)
+    img = Image.new("RGBA", (size, size), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    # Draw background with brand color at top
-    draw.rectangle([(0, 0), (size, 40)], fill=BRAND_COLOR)
-
-    try:
-        font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 50)
-    except Exception:
-        try:
-            font = ImageFont.truetype(
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50
-            )
-        except Exception:
-            font = ImageFont.load_default()
-
-    # Draw "OpenLEG"
-    text = "OpenLEG"
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_width = bbox[2] - bbox[0]
-    text_height = bbox[3] - bbox[1]
-
-    x = (size - text_width) // 2
-    y = (size - text_height) // 2
-
-    draw.text((x, y), "Open", fill=BRAND_COLOR, font=font)
-    bbox_prefix = draw.textbbox((x, y), "Open", font=font)
-    prefix_width = bbox_prefix[2] - bbox_prefix[0]
-    draw.text((x + prefix_width, y), "LEG", fill=DARK_GRAY, font=font)
+    draw.rounded_rectangle([(0, 0), (size - 1, size - 1)], radius=45, fill=INK)
+    draw.line(
+        [(56, 62), (93, 90), (56, 118)],
+        fill=BRAND_COLOR,
+        width=15,
+        joint="curve",
+    )
+    draw.line([(101, 124), (135, 124)], fill=PAPER, width=15)
 
     # Save
     output_path = "static/apple-touch-icon.png"

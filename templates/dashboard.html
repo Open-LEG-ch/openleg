@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mein Dashboard | {{ platform_name }}</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" type="image/x-icon" href="{{ site_url }}/static/favicon.ico">
+    {% include 'partials/brand_head.html' %}
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --brand-color: {{ primary_color }}; }

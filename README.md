@@ -49,6 +49,16 @@ docker compose up -d
 docker compose ps
 ```
 
+For single-VPS deploys that keep the public app reachable during Flask rebuilds,
+use the public-safe blue-green examples:
+
+```bash
+docker compose -f docker-compose.blue-green.example.yml up -d postgres redis flask-blue caddy
+```
+
+Production host inventory and secret-bearing runbooks still belong in
+`openleg-ops`.
+
 ## OpenClaw
 
 - `openclaw/` contains a public-safe OpenClaw bundle for local automation against OpenLEG.
