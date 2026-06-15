@@ -145,6 +145,26 @@ see the README install profiles. Tag a release (`git tag -a vX.Y.Z`) to publish.
 
 Production deployment procedures are documented in `openleg-ops`.
 
+## VPS Access Rules (Public-Safe)
+
+- Host: `83.228.223.66`
+- SSH user: `ubuntu`
+- SSH identity file: `~/.ssh/infomaniak_badenleg`
+- Remote deployment dir: `/opt/badenleg`
+- Containers: `openleg-flask`, `openleg-openclaw`, `openleg-caddy`, `openleg-postgres`, `openleg-redis`
+- Safe verification commands:
+  - `docker ps`
+  - `docker exec openleg-openclaw openclaw mcp list`
+  - `curl -f https://openleg.ch/`
+  - `curl -f https://claw.openleg.ch/`
+- Secret-bearing procedures and `.env` edits belong in `openleg-ops`.
+- Env checks must report presence only, never values.
+
+## CI Notes
+
+- **Node.js 24 migration (2026-06-16)**: GitHub Actions forces Node.js 24 as default from June 16, 2026. `actions/checkout@v4` and `actions/setup-python@v5` (both pinned by SHA in `.github/workflows/`) should be compatible with Node 24 as maintained by GitHub. Monitor CI after June 16; if jobs fail, bump the `@v4`/`@v5` SHAs to the latest release.
+- **numpy/pandas version coupling**: numpy 2.x requires pandas 3.x. Dependabot may open numpy 2.x PRs that fail until the pandas 3.x PR lands first. Merge pandas first; numpy PR will pass once rebased.
+
 ## Current Blocker
 
 - LEA AgentMail and OpenClaw wiring is implemented in repo. A working build is on branch `fix/openclaw-stable-agentmail`; full production cutover still needs private-ops `docker-compose.yml` overrides and AgentMail webhook registration.
