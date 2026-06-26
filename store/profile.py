@@ -166,16 +166,18 @@ def get_all_municipality_profiles(
     kanton: Optional[str] = None, order_by: str = "name"
 ) -> List[Dict]:
     """Get all municipality profiles, optionally filtered by kanton."""
-    allowed_orders = {
-        "name",
-        "population",
-        "energy_transition_score",
-        "leg_value_gap_chf",
-        "pv_score_pct",
-        "bfs_number",
+    # Map the requested sort key to a fixed column literal. The value
+    # interpolated into ORDER BY is always one of these constants (never the
+    # caller's string), so the clause cannot carry untrusted input.
+    order_columns = {
+        "name": "name",
+        "population": "population",
+        "energy_transition_score": "energy_transition_score",
+        "leg_value_gap_chf": "leg_value_gap_chf",
+        "pv_score_pct": "pv_score_pct",
+        "bfs_number": "bfs_number",
     }
-    if order_by not in allowed_orders:
-        order_by = "name"
+    order_column = order_columns.get(order_by, "name")
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
@@ -183,13 +185,13 @@ def get_all_municipality_profiles(
                     cur.execute(
                         f"""
                         SELECT * FROM municipality_profiles
-                        WHERE kanton = %s ORDER BY {order_by}
+                        WHERE kanton = %s ORDER BY {order_column}
                     """,
                         (kanton,),
                     )
                 else:
                     cur.execute(
-                        f"SELECT * FROM municipality_profiles ORDER BY {order_by}"
+                        f"SELECT * FROM municipality_profiles ORDER BY {order_column}"
                     )
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
