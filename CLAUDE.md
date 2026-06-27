@@ -63,12 +63,13 @@ Domain vocabulary lives in `CONTEXT.md`. Use those module/seam names.
 ## Data Layer
 
 - `database.py` owns the connection seam (`get_connection`) plus schema/migrations.
-- Self-contained domains are extracted into per-domain repositories under `store/`
-  (first: `store/ranking.py` for PV/ranking storage, second: `store/profile.py`
-  for municipality energy profile data: ElCom tariffs, profiles, Sonnendach).
-  Each repository resolves the seam via `database.get_connection` and is
-  re-exported from `database.py`, so `import database as db; db.<fn>()` keeps
-  working unchanged.
+- Self-contained domains are extracted into per-domain repositories under `store/`,
+  each resolving the seam via `database.get_connection` and re-exported from
+  `database.py`, so `import database as db; db.<fn>()` keeps working unchanged.
+  Shipped: `store/ranking` (PV/Rangliste), `store/profile` (municipality energy
+  profile: ElCom tariffs, profiles, Sonnendach), `store/billing` (LEG community
+  billing), `store/email_queue` (outbound email queue), `store/utility` (EVU/VNB
+  utility clients).
 - New storage code for a cohesive domain goes in `store/`, not into `database.py`.
 - Deepening roadmap and next extraction order: `prd/architecture-deepening.md`.
 
