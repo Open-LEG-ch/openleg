@@ -70,6 +70,20 @@ class TestDockerCompose:
         assert len(db_urls) > 0
 
 
+class TestEnvExample:
+    """Validate documented env contract."""
+
+    @pytest.fixture(autouse=True)
+    def load_env_example(self):
+        path = os.path.join(PROJECT_ROOT, ".env.example")
+        with open(path) as f:
+            self.content = f.read()
+
+    def test_postgres_identity_is_explicit(self):
+        assert "POSTGRES_USER=" in self.content
+        assert "POSTGRES_DB=" in self.content
+
+
 class TestDeployScript:
     """Validate deploy.example.sh public deploy template."""
 
