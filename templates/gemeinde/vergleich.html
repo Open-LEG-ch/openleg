@@ -59,16 +59,16 @@
           <div>
             <p class="text-xs text-ink-muted uppercase tracking-wide">Solarnutzung</p>
             <p class="text-3xl font-bold {{ 'text-brand' if leads else 'text-ink' }}">
-              {% if g.display_score is not none %}{{ "%.1f"|format(g.display_score|float) }}%{% if g.score_over_100 %}<span class="text-xs ml-1">+</span>{% endif %}{% else %}–{% endif %}
+              {% if g.display_score is not none %}{{ "%.1f"|format(g.display_score|float) }}%{% if g.score_over_100 %}<span class="text-xs ml-1">+</span>{% endif %}{% else %}k. A.{% endif %}
             </p>
           </div>
           <div>
             <p class="text-xs text-ink-muted uppercase tracking-wide">Nationaler Rang</p>
-            <p class="text-lg font-semibold">{% if g.pv_rank %}{{ g.pv_rank }}{% else %}–{% endif %}</p>
+            <p class="text-lg font-semibold">{% if g.pv_rank %}{{ g.pv_rank }}{% else %}k. A.{% endif %}</p>
           </div>
           <div>
             <p class="text-xs text-ink-muted uppercase tracking-wide">Ungenutztes Potenzial</p>
-            <p class="text-lg font-semibold">{% if g.pv_untapped_kw is not none %}{{ "{:,}".format(g.pv_untapped_kw|int).replace(",", "'") }} kW{% else %}–{% endif %}</p>
+            <p class="text-lg font-semibold">{% if g.pv_untapped_kw is not none %}{{ "{:,}".format(g.pv_untapped_kw|int).replace(",", "'") }} kW{% else %}k. A.{% endif %}</p>
           </div>
         </div>
       </div>

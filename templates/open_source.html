@@ -3,11 +3,11 @@
 
 {% block meta %}
 {{ page_meta(
-  title="Open Source und Codebase | OpenLEG",
-  description="Wie OpenLEG als offene Infrastruktur funktioniert: Public App Repo, Private Ops Repo, Flask, PostgreSQL, Redis, Caddy und offene Energiedaten.",
+  title="Open Source und Code | OpenLEG",
+  description="Wie OpenLEG als offene Infrastruktur funktioniert: öffentliches App-Repo, privates Ops-Repo, Flask, PostgreSQL, Redis, Caddy und offene Energiedaten.",
   path="/open-source",
-  og_title="Open Source und Codebase | OpenLEG",
-  og_description="Architektur, Datenpipeline, Repo-Grenzen und Selbsthosting der freien OpenLEG Infrastruktur.",
+  og_title="Open Source und Code | OpenLEG",
+  og_description="Architektur, Datenpipeline, Repo-Grenzen und Selbsthosting der freien OpenLEG-Infrastruktur.",
   site_url=site_url,
 ) }}
 {% endblock %}
@@ -34,7 +34,7 @@
     <header class="max-w-3xl mb-10">
       <p class="text-sm font-semibold text-brand mb-2">Open Source</p>
       <h1 class="text-4xl font-bold mb-4">Freie Energieinfrastruktur, die man prüfen und selbst betreiben kann.</h1>
-      <p class="text-lg text-ink-muted">OpenLEG ist das Public App Repo für Schweizer Lokale Elektrizitätsgemeinschaften. Der Code ist offen, die Datenquellen sind nachvollziehbar, und produktive Geheimnisse bleiben ausserhalb des öffentlichen Repos.</p>
+      <p class="text-lg text-ink-muted">OpenLEG ist das öffentliche App-Repo für Schweizer Lokale Elektrizitätsgemeinschaften. Der Code ist offen, die Datenquellen sind nachvollziehbar, und produktive Secrets bleiben ausserhalb des öffentlichen Repos.</p>
       <div class="mt-6 flex flex-col sm:flex-row gap-3">
         <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">GitHub öffnen</a>
         <a href="/api/v1/docs" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">API ansehen</a>
@@ -43,22 +43,22 @@
 
     <section class="grid md:grid-cols-2 gap-6 mb-10">
       <div class="bg-white border border-slate-200 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-3">Public App Repo</h2>
-        <p class="text-ink-muted mb-4">Hier liegen Produktcode, Tests, Templates, öffentliche Datenmodelle, API und CI. Dieses Repo ist dafür gedacht, gelesen, geprüft und geforkt zu werden.</p>
+        <h2 class="text-xl font-bold mb-3">Öffentliches App-Repo</h2>
+        <p class="text-ink-muted mb-4">Hier liegen Produktcode, Tests, Templates, öffentliche Datenmodelle, API und CI. Das Repo soll lesbar, prüfbar und einfach zu forken sein.</p>
         <ul class="space-y-2 text-sm text-ink-muted list-disc list-inside">
-          <li>Flask App und öffentliche API</li>
-          <li>PostgreSQL Schema und idempotente Migrationen</li>
+          <li>Flask-App und öffentliche API</li>
+          <li>PostgreSQL-Schema und idempotente Migrationen</li>
           <li>Templates, statische Assets und Tests</li>
           <li>AGPL-3.0-or-later Lizenz</li>
         </ul>
       </div>
       <div class="bg-white border border-slate-200 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-3">Private Ops Repo</h2>
+        <h2 class="text-xl font-bold mb-3">Privates Ops-Repo</h2>
         <p class="text-ink-muted mb-4">Produktionsbetrieb, Host-Inventar, Secrets, Incident-Notizen und interne Strategie bleiben privat. So bleibt der App-Code offen, ohne produktive Infrastruktur offenzulegen.</p>
         <ul class="space-y-2 text-sm text-ink-muted list-disc list-inside">
           <li>Deployment-Runbooks und Hostnamen</li>
           <li>Secret-Handling und Rotation</li>
-          <li>Incident Response und interne Planung</li>
+          <li>Incident-Notizen und interne Planung</li>
           <li>Keine Bürgerdaten im öffentlichen Repo</li>
         </ul>
       </div>
@@ -69,11 +69,11 @@
       <div class="grid md:grid-cols-4 gap-4 text-sm">
         <div class="border border-slate-200 rounded-lg p-4">
           <h3 class="font-semibold mb-1">Flask</h3>
-          <p class="text-ink-muted">Routen, Formulare, Gemeindeprofile, Rangliste und JSON API.</p>
+          <p class="text-ink-muted">Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API.</p>
         </div>
         <div class="border border-slate-200 rounded-lg p-4">
           <h3 class="font-semibold mb-1">PostgreSQL</h3>
-          <p class="text-ink-muted">Gemeindedaten, PV Panel, Tarife, Registrierungen und Audit-Daten.</p>
+          <p class="text-ink-muted">Gemeindedaten, PV-Anlagen, Tarife, Registrierungen und Audit-Daten.</p>
         </div>
         <div class="border border-slate-200 rounded-lg p-4">
           <h3 class="font-semibold mb-1">Redis</h3>
@@ -81,7 +81,7 @@
         </div>
         <div class="border border-slate-200 rounded-lg p-4">
           <h3 class="font-semibold mb-1">Caddy</h3>
-          <p class="text-ink-muted">TLS, Domains und Reverse Proxy vor der Flask App.</p>
+          <p class="text-ink-muted">TLS, Domains und Reverse Proxy vor der Flask-App.</p>
         </div>
       </div>
     </section>

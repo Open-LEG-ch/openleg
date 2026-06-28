@@ -4,7 +4,7 @@
 {% block meta %}
 {{ page_meta(
   title="Solarnutzungs-Rangliste der Schweizer Gemeinden | OpenLEG",
-  description="Wie gut nutzt Ihre Gemeinde ihr Solardach-Potenzial? Vergleichen Sie sich mit fairen Peers nach Kanton, Grösse und Dichte. Offene Daten von BFE und BFS.",
+  description="Wie viel Solardach-Potenzial nutzt Ihre Gemeinde schon? Vergleichen Sie Gemeinden nach Kanton, Grösse und Dichte. Offene Daten von BFE und BFS.",
   path=canonical_path,
   og_type="website",
   site_url=site_url,
@@ -16,9 +16,8 @@
     <header class="mb-6">
       <h1 class="text-3xl font-bold">Solarnutzungs-Rangliste</h1>
       <p class="text-ink-muted mt-2 max-w-2xl">
-        Solarnutzung zeigt, welchen Anteil ihres Dachpotenzials eine Gemeinde schon nutzt.
-        Vergleichen Sie sich mit fairen Peers und holen Sie auf. Die Spitze macht vor,
-        wie es geht, der Rest hat die grösste Chance.
+        Solarnutzung zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt.
+        Vergleichen Sie ähnliche Gemeinden und sehen Sie, wo noch Dächer fehlen.
       </p>
       <p class="text-sm text-ink-muted mt-2">
         <a href="/rangliste/vergleich" class="text-brand hover:underline">Zwei Gemeinden vergleichen</a>
@@ -93,7 +92,7 @@
               {{ "%.1f"|format(r.display_score|float) }}%{% if r.score_over_100 %}<span class="text-[10px] text-ink-muted ml-1">+</span>{% endif %}
             </td>
             <td class="px-4 py-3 text-right text-ink-muted">
-              {% if r.pv_untapped_kw is not none %}{{ "{:,}".format(r.pv_untapped_kw|int).replace(",", "'") }} kW{% else %}–{% endif %}
+              {% if r.pv_untapped_kw is not none %}{{ "{:,}".format(r.pv_untapped_kw|int).replace(",", "'") }} kW{% else %}k. A.{% endif %}
             </td>
             <td class="px-4 py-3">
               {% if r.recommendation == 'vorbild' %}

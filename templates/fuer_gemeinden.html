@@ -4,10 +4,10 @@
 {% block meta %}
 {{ page_meta(
   title="Für Gemeinden | OpenLEG",
-  description="OpenLEG für Gemeinden: Solarnutzungs-Rangliste, eigene Gemeinde-Seite, LEG-Onboarding, Selbsthosting und optionaler Projektsupport.",
+  description="OpenLEG für Gemeinden: Solarnutzung vergleichen, eigene Gemeinde-Seite starten, Interessierte sammeln und lokale Stromgemeinschaften vorbereiten.",
   path="/fuer-gemeinden",
   og_title="OpenLEG für Gemeinden",
-  og_description="Vergleichen Sie die Solarnutzung Ihrer Gemeinde und starten Sie lokale Stromgemeinschaften mit freier Open Source Infrastruktur.",
+  og_description="Sehen Sie, wo Ihre Gemeinde bei der Solarnutzung steht, und schaffen Sie einen einfachen Einstieg für lokale Stromgemeinschaften.",
   site_url=site_url,
 ) }}
 {% endblock %}
@@ -22,19 +22,19 @@
   <main class="max-w-5xl mx-auto px-4 py-12">
     <header class="text-center mb-10">
       <h1 class="text-4xl font-bold mb-2">OpenLEG für Gemeinden</h1>
-      <p class="text-ink-muted max-w-2xl mx-auto">Zwei Wege, ein Ziel: funktionierende Lokale Elektrizitätsgemeinschaften. Plattform-Kern kostenlos und Open Source.</p>
+      <p class="text-ink-muted max-w-2xl mx-auto">OpenLEG zeigt, wo Ihre Gemeinde bei der Solarnutzung steht. Danach können Sie eine eigene Seite starten, auf der sich interessierte Haushalte melden.</p>
     </header>
 
     <section class="bg-brand/5 border border-brand/20 rounded-xl p-6 mb-10 text-center">
       <h2 class="text-xl font-bold mb-2">Wo steht Ihre Gemeinde bei der Solarnutzung?</h2>
-      <p class="text-ink-muted max-w-2xl mx-auto mb-4">Die Rangliste vergleicht Sie mit vergleichbaren Gemeinden und nennt das nächste konkrete Ziel. Aus offenen Daten von BFE und BFS, ohne Anmeldung.</p>
+      <p class="text-ink-muted max-w-2xl mx-auto mb-4">Die Rangliste vergleicht Ihre Gemeinde mit ähnlichen Gemeinden und zeigt, wie viele Dächer bis zum oberen Viertel fehlen. Aus offenen Daten von BFE und BFS, ohne Anmeldung.</p>
       <a href="/rangliste" class="inline-block bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Rangliste ansehen</a>
     </section>
 
     <div class="grid md:grid-cols-2 gap-6">
       <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-ink/20 flex flex-col">
         <h2 class="text-xl font-bold mb-1">Selbst betreiben</h2>
-        <p class="text-sm text-ink-muted mb-4">Für IT-Teams mit eigener Infrastruktur.</p>
+        <p class="text-sm text-ink-muted mb-4">Für Gemeinden mit eigenem IT-Team oder bestehendem Hostingpartner.</p>
         <ul class="text-sm space-y-2 mb-6 text-ink-muted flex-1">
           <li>&#10003; Open Source (AGPL-3.0)</li>
           <li>&#10003; Volle Datenhoheit</li>
@@ -51,7 +51,7 @@ docker compose up -d</code></pre>
 
       <section class="bg-white rounded-xl shadow-md p-6 border-t-4 border-brand flex flex-col">
         <h2 class="text-xl font-bold mb-1">Gehostet mit optionalem Projektsupport</h2>
-        <p class="text-sm text-ink-muted mb-4">Plattform-Kern kostenlos. Support nach Aufwand, projektbasiert.</p>
+        <p class="text-sm text-ink-muted mb-4">Für Gemeinden, die schnell starten wollen. Die Plattform bleibt kostenlos, Projektsupport läuft nach Aufwand.</p>
         <ul class="text-sm space-y-2 mb-6 text-ink-muted flex-1">
           <li>&#10003; Setup und Betrieb durch uns (SLA optional)</li>
           <li>&#10003; Schulungen, Onboarding, SDAT-CH Integration (optional)</li>

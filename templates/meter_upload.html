@@ -4,7 +4,7 @@
 {% block meta %}
 {{ page_meta(
   title="Smart-Meter-Daten hochladen | OpenLEG",
-  description="Laden Sie Ihren EKZ-CSV-Export hoch. Die Daten werden verschlüsselt gespeichert und nur gemäss Ihrer Einwilligung verwendet.",
+  description="Laden Sie Ihren EKZ-CSV-Export hoch. OpenLEG speichert die Daten verschlüsselt und nutzt sie nur gemäss Ihrer Einwilligung.",
   path="/meter-upload",
   og_type="website",
   site_url=site_url,
@@ -16,7 +16,7 @@
 {% block content %}
 <main class="max-w-xl mx-auto px-4 py-12">
     <h1 class="text-3xl font-bold mb-2">Smart-Meter-Daten hochladen</h1>
-    <p class="text-gray-600 mb-6">Laden Sie Ihren EKZ-CSV-Export hoch. Die Daten werden verschlüsselt gespeichert und nur gemäss Ihrer Einwilligung verwendet.</p>
+    <p class="text-gray-600 mb-6">Laden Sie Ihren EKZ-CSV-Export hoch. OpenLEG speichert die Daten verschlüsselt und nutzt sie nur gemäss Ihrer Einwilligung.</p>
 
     <div class="bg-white rounded-lg shadow-md p-6">
         <div class="mb-4">
@@ -34,11 +34,11 @@
         </div>
 
         <div class="bg-amber-50 p-4 rounded-lg text-sm mb-4">
-            <h4 class="font-medium mb-1">Datenschutz-Stufen:</h4>
+            <h4 class="font-medium mb-1">Datenschutzstufen:</h4>
             <div class="space-y-2">
                 <label class="flex items-start gap-2"><input type="radio" name="tier" value="1" checked class="mt-1"> <div><strong>Stufe 1:</strong> Nur LEG-Teilnahme, Daten mit Nachbarn und Gemeinde teilen</div></label>
                 <label class="flex items-start gap-2"><input type="radio" name="tier" value="2" class="mt-1"> <div><strong>Stufe 2:</strong> Anonymisiert für Forschung freigeben</div></label>
-                <label class="flex items-start gap-2"><input type="radio" name="tier" value="3" class="mt-1"> <div><strong>Stufe 3:</strong> Aggregierte Insights für Energieversorger freigeben</div></label>
+                <label class="flex items-start gap-2"><input type="radio" name="tier" value="3" class="mt-1"> <div><strong>Stufe 3:</strong> Aggregierte Auswertung für Energieversorger freigeben</div></label>
             </div>
         </div>
 

@@ -128,8 +128,8 @@ def test_open_source_page_explains_codebase(full_app_module):
     assert "Redis" in html
     assert "Caddy" in html
     assert "Datenpipeline" in html
-    assert "Public App Repo" in html
-    assert "Private Ops Repo" in html
+    assert "Öffentliches App-Repo" in html
+    assert "Privates Ops-Repo" in html
     assert "git clone https://github.com/Open-LEG-ch/openleg.git" in html
     assert "github.com/Open-LEG-ch/openleg" in html
     assert 'type="application/ld+json"' in html

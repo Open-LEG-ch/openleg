@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LEG-Matching optimieren</title>
+<title>Verbrauch ergänzen</title>
 <style>
 body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
 .wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
@@ -28,19 +28,19 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     <h1>{{ platform_name }}</h1>
   </div>
   <div class="content">
-    <h2>So holen Sie das Meiste aus Ihrer Stromgemeinschaft</h2>
-    <p>Mit ein paar Angaben zu Ihrem Stromverbrauch finden wir die passenden Nachbarn und die beste Gruppengrösse für Sie.</p>
+    <h2>Ergänzen Sie Ihren Stromverbrauch</h2>
+    <p>Mit ein paar Angaben zu Ihrem Stromverbrauch kann OpenLEG besser einschätzen, welche Nachbarn gut zu Ihrer LEG passen.</p>
 
     <div class="savings-box">
       <div class="amount">CHF 500 bis 800</div>
-      <p>geschätzte jährliche Ersparnis pro Haushalt</p>
+      <p>mögliche jährliche Ersparnis pro Haushalt</p>
     </div>
 
     <p><strong>Was wir benötigen:</strong></p>
     <ul style="font-size:15px;line-height:1.8;">
       <li>Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)</li>
       <li>Ob Sie eine Solaranlage haben (oder planen)</li>
-      <li>Ihre übliche Verbrauchszeit (tagsüber / abends)</li>
+      <li>Ihre übliche Verbrauchszeit, tagsüber oder abends</li>
     </ul>
 
     <p style="text-align:center;">
@@ -48,11 +48,11 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     </p>
 
     <div class="tip">
-      <p><strong>Tipp:</strong> Ihre letzte Stromrechnung von {{ utility_name }} enthält alle nötigen Angaben. Halten Sie diese bereit.</p>
+      <p><strong>Tipp:</strong> Ihre letzte Stromrechnung von {{ utility_name }} enthält die nötigen Angaben.</p>
     </div>
 
     {% if neighbor_count > 0 %}
-    <p style="font-size:14px;color:#6b7280;">Aktuell haben sich {{ neighbor_count }} Haushalte in Ihrer Nähe registriert. Je mehr Angaben wir haben, desto schneller kann es losgehen.</p>
+    <p style="font-size:14px;color:#6b7280;">Aktuell haben sich {{ neighbor_count }} Haushalte in Ihrer Nähe registriert. Je vollständiger die Angaben sind, desto besser lässt sich die Gruppe planen.</p>
     {% endif %}
   </div>
   <div class="footer">

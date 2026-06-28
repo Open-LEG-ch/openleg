@@ -30,8 +30,8 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     <h1>{{ platform_name }}</h1>
   </div>
   <div class="content">
-    <h2>Willkommen bei {{ platform_name }}!</h2>
-    <p>Schön, dass Sie dabei sind! Seit dem 1. Januar 2026 können Haushalte in {{ city_name }} eine lokale Stromgemeinschaft (LEG) gründen und gemeinsam Solarstrom teilen. OpenLEG ist kostenlos und Open Source, Ihre Daten bleiben bei Ihnen.</p>
+    <h2>Willkommen bei {{ platform_name }}</h2>
+    <p>Seit dem 1. Januar 2026 können Haushalte in {{ city_name }} eine lokale Stromgemeinschaft (LEG) gründen und gemeinsam Solarstrom teilen. OpenLEG ist kostenlos und Open Source. Ihre Daten bleiben bei Ihnen.</p>
 
     {% if neighbor_count > 0 %}
     <div class="highlight">
@@ -41,9 +41,9 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
 
     <p><strong>Was passiert als Nächstes?</strong></p>
     <ol class="steps">
-      <li>Wir schauen automatisch, ob genug Nachbarn in Ihrer Nähe interessiert sind.</li>
+      <li>Wir prüfen, ob genug Nachbarn in Ihrer Nähe interessiert sind.</li>
       <li>Sobald es genug Leute sind, stellen wir den Kontakt her.</li>
-      <li>Gemeinsam gründen Sie Ihre LEG und sparen rund CHF 500 bis 800 pro Jahr.</li>
+      <li>Gemeinsam gründen Sie Ihre LEG und sparen je nach Situation mehrere hundert Franken pro Jahr.</li>
     </ol>
 
     <p style="text-align:center;">
@@ -52,8 +52,8 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
 
     {% if referral_link %}
     <div class="referral-box">
-      <p><strong>Laden Sie Ihre Nachbarn ein!</strong></p>
-      <p style="font-size:14px;">Je mehr Nachbarn mitmachen, desto schneller wird Ihre LEG Realität:</p>
+      <p><strong>Laden Sie Ihre Nachbarn ein</strong></p>
+      <p style="font-size:14px;">Je mehr Nachbarn mitmachen, desto schneller kann die Gründung starten:</p>
       <div class="referral-link">{{ referral_link }}</div>
     </div>
     {% endif %}
