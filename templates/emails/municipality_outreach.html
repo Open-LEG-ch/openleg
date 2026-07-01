@@ -34,11 +34,11 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
   <div class="content">
     <h2>LEG-Potenzial in {{ municipality_name }}</h2>
     <p>Sehr geehrte Damen und Herren,</p>
-    <p>In <strong>{{ municipality_name }}</strong> zeigt sich ein wachsendes Interesse an lokalen Energiegemeinschaften (LEG). Wir möchten Ihnen eine Zusammenfassung der aktuellen Nachfragesituation vorlegen.</p>
+    <p>In <strong>{{ municipality_name }}</strong> melden sich erste Haushalte für lokale Energiegemeinschaften (LEG). Hier ist der aktuelle Stand.</p>
 
     {% if has_demand_data %}
     <div class="demand-box {{ demand_level }}">
-      <p><strong>Nachfrageübersicht — {{ municipality_name }}</strong></p>
+      <p><strong>Nachfrageübersicht: {{ municipality_name }}</strong></p>
       <p>Nachfrageniveau: <strong>{{ demand_level | upper }}</strong>{% if demand_score > 0 %} &nbsp;(Score: {{ demand_score }}/100){% endif %}</p>
       <div class="demand-stats">
         <span class="demand-stat"><strong>{{ verified_buildings }}</strong> Verifizierte Gebäude</span>
@@ -51,18 +51,18 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     </div>
     {% else %}
     <div class="demand-box none">
-      <p><strong>Nachfrageübersicht — {{ municipality_name }}</strong></p>
-      <p>Für diese Gemeinde liegen noch keine verifizierten Nachfragedaten vor. Wir freuen uns, gemeinsam mit Ihnen einen ersten Schritt einzuleiten.</p>
+      <p><strong>Nachfrageübersicht: {{ municipality_name }}</strong></p>
+      <p>Für diese Gemeinde liegen noch keine verifizierten Nachfragedaten vor. Eine Gemeinde-Seite kann den ersten Einstieg schaffen.</p>
     </div>
     {% endif %}
 
-    <p>Als Gemeinde können Sie den LEG-Prozess aktiv unterstützen, indem Sie Ihre Einwohnerinnen und Einwohner informieren und den Kontakt zur lokalen Netzgesellschaft erleichtern.</p>
+    <p>Als Gemeinde können Sie helfen, indem Sie Einwohnerinnen und Einwohner informieren und den Kontakt zur lokalen Netzgesellschaft erleichtern.</p>
 
     <p style="text-align: center;">
       <a href="{{ site_url }}/gemeinde/onboarding" class="cta">Gemeinde registrieren</a>
     </p>
 
-    <p>Bei Fragen stehen wir gerne zur Verfügung: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+    <p>Fragen beantworten wir unter <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
   </div>
   <div class="footer">
     <p>{{ platform_name }} &middot; Kostenlose LEG-Infrastruktur für Gemeinden</p>

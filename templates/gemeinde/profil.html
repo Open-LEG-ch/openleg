@@ -3,7 +3,7 @@
 
 {% block meta %}
     {{ page_meta(
-        title=profile.name ~ " – Energieprofil | OpenLEG",
+        title=profile.name ~ " | Energieprofil | OpenLEG",
         description="Energieprofil und LEG-Potenzial für " ~ profile.name ~ ": Stromtarife, Solarnutzung, Energiewende-Score.",
         path="/gemeinde/profil/" ~ profile.bfs_number,
         og_title=("Solarnutzung " ~ profile.name ~ " | OpenLEG") if profile.get('pv_score_pct') is not none and share_base else None,
@@ -124,7 +124,7 @@
             </p>
             {% else %}
             <p class="text-gray-700">
-                Jede zusätzliche Dachanlage hebt die Solarnutzung von {{ profile.name }}. Legen Sie mit den eigenen Liegenschaften los.
+                Jede zusätzliche Dachanlage hebt die Solarnutzung von {{ profile.name }}. Starten Sie mit den eigenen Liegenschaften.
             </p>
             {% endif %}
 
@@ -218,7 +218,7 @@
         {% if value_gap %}
         <div class="mt-8 bg-gradient-to-r from-brand/10 to-accent/10 rounded-xl p-6 border border-brand/20">
             <h2 class="text-lg font-semibold mb-2">LEG-Potenzial für {{ profile.name }}</h2>
-            <p class="text-gray-600 mb-4">Mit einer Lokalen Elektrizitätsgemeinschaft (LEG) können Haushalte in {{ profile.name }} Netzgebühren einsparen.</p>
+            <p class="text-gray-600 mb-4">Mit einer Lokalen Elektrizitätsgemeinschaft (LEG) können Haushalte in {{ profile.name }} Netzgebühren sparen.</p>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                     <p class="text-sm text-gray-500">Netzgebühr aktuell</p>
@@ -245,7 +245,7 @@
         <div class="mt-8 bg-brand rounded-xl p-6 text-white md:flex md:items-center md:justify-between gap-6">
             <div>
                 <h2 class="text-xl font-semibold mb-1">Wohnen Sie in {{ profile.name }}?</h2>
-                <p class="text-sm text-white/80 max-w-xl">Gründen Sie mit Ihren Nachbarn eine lokale Stromgemeinschaft und sparen Sie bis 40% auf Netzgebühren. Kostenlos, Ihre Daten bleiben bei Ihnen.</p>
+                <p class="text-sm text-white/80 max-w-xl">Prüfen Sie, ob in Ihrer Nähe schon Interesse besteht. Mit genug Nachbarn können Sie eine lokale Stromgemeinschaft starten und Netzgebühren sparen.</p>
             </div>
             <div class="mt-4 md:mt-0 flex flex-col sm:flex-row gap-2 shrink-0">
                 <a href="/fuer-bewohner" class="inline-block text-center bg-white text-brand px-5 py-2 rounded-lg text-sm font-semibold hover:bg-slate-100">Stromgemeinschaft gründen</a>
@@ -257,13 +257,13 @@
         <div class="mt-6 grid md:grid-cols-2 gap-6">
             <div class="bg-white rounded-xl p-6 shadow-sm border">
                 <h3 class="font-semibold mb-2">API-Zugang</h3>
-                <p class="text-sm text-ink-muted mb-3">Alle Daten auf dieser Seite sind über unsere offene API verfügbar.</p>
+                <p class="text-sm text-ink-muted mb-3">Alle Daten auf dieser Seite gibt es auch über die offene API.</p>
                 <code class="block bg-slate-100 rounded p-3 text-xs mb-3">GET /api/v1/municipalities/{{ profile.bfs_number }}</code>
                 <a href="/api/v1/docs" class="text-brand text-sm font-medium hover:underline">API-Dokumentation &rarr;</a>
             </div>
             <div class="bg-white rounded-xl p-6 shadow-sm border">
                 <h3 class="font-semibold mb-2">Sind Sie die Gemeinde {{ profile.name }}?</h3>
-                <p class="text-sm text-ink-muted mb-3">Starten Sie Ihre eigene Gemeinde-Seite und unterstützen Sie LEGs vor Ort. Kostenlos, kein IT-Projekt.</p>
+                <p class="text-sm text-ink-muted mb-3">Starten Sie eine Gemeinde-Seite, auf der sich interessierte Haushalte melden können. Kostenlos, ohne eigenes IT-Projekt.</p>
                 <a href="/fuer-gemeinden" class="text-brand text-sm font-medium hover:underline">Für Gemeinden &rarr;</a>
             </div>
         </div>

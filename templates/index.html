@@ -4,10 +4,10 @@
 {% block meta %}
 {{ page_meta(
   title="OpenLEG: Freie Infrastruktur für Schweizer Stromgemeinschaften",
-  description="OpenLEG ist die kostenlose Open Source Plattform für Lokale Elektrizitätsgemeinschaften (LEG) in der Schweiz. Nachbarn finden, Stromgemeinschaft gründen, Netzgebühren sparen.",
+  description="OpenLEG hilft Nachbarn und Gemeinden, lokale Stromgemeinschaften in der Schweiz zu starten. Adresse prüfen, Nachbarn finden, Netzgebühren sparen.",
   path="/",
   og_title="OpenLEG: Freie Infrastruktur für Schweizer Stromgemeinschaften",
-  og_description="Kostenlos, Open Source, gehostet in der Schweiz. Gründen Sie Ihre lokale Stromgemeinschaft und sparen Sie bis 40% auf Netzgebühren.",
+  og_description="Prüfen Sie Ihre Adresse, finden Sie Nachbarn und starten Sie eine lokale Stromgemeinschaft. Kostenlos, Open Source, Schweizer Hosting.",
   og_image="/static/images/og-image.png",
   site_url=site_url
 ) }}
@@ -42,7 +42,7 @@
         <div class="mt-6" aria-live="polite">
           <div data-seg-panel="bewohner">
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Ihr Strom. Ihre Nachbarn. Ihre Gemeinschaft.</h1>
-            <p class="mt-4 text-lg text-ink-muted max-w-xl">Gründen Sie eine lokale Stromgemeinschaft (LEG) und sparen Sie bis 40% auf Netzgebühren. Kostenlos, Open Source, Ihre Daten bleiben bei Ihnen.</p>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Prüfen Sie Ihre Adresse, finden Sie Nachbarn und starten Sie eine lokale Stromgemeinschaft. OpenLEG zeigt den nächsten Schritt und verkauft keine Daten.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
               <a href="#registrieren" class="bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse prüfen</a>
               <a href="/how-it-works" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">So funktioniert's</a>
@@ -57,7 +57,7 @@
 
           <div data-seg-panel="gemeinde" class="hidden">
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Sehen Sie, wo Ihre Gemeinde bei der Solarnutzung steht.</h1>
-            <p class="mt-4 text-lg text-ink-muted max-w-xl">Vergleichen Sie sich mit vergleichbaren Gemeinden, holen Sie auf und gründen Sie lokale Stromgemeinschaften. Kostenlos, kein IT Projekt.</p>
+            <p class="mt-4 text-lg text-ink-muted max-w-xl">Vergleichen Sie Ihre Solarnutzung mit ähnlichen Gemeinden. OpenLEG zeigt, welche Dächer fehlen und wie Ihre Gemeinde eine LEG startet.</p>
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
               <a href="/rangliste" class="bg-brand text-ink px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Rangliste ansehen</a>
               <a href="/gemeinde/onboarding" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Gemeinde anmelden</a>
@@ -94,8 +94,8 @@
     <div class="max-w-6xl mx-auto px-4">
       <div class="max-w-2xl mb-8">
         <p class="text-sm font-semibold text-brand mb-2">Für wen ist OpenLEG?</p>
-        <h2 class="text-3xl font-bold tracking-tight">Vier Wege, ein Ziel: funktionierende Stromgemeinschaften.</h2>
-        <p class="text-ink-muted mt-3">Wählen Sie Ihren Einstieg. Jeder Weg führt zu einem konkreten nächsten Schritt, kostenlos und ohne Anmeldung zum Lesen.</p>
+        <h2 class="text-3xl font-bold tracking-tight">Starten Sie dort, wo Sie heute stehen.</h2>
+        <p class="text-ink-muted mt-3">Bewohner prüfen ihre Adresse. Gemeinden sehen ihr Solarpotenzial. Betreiber finden den Gründungsweg. Entwickler bekommen Code und Daten.</p>
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -104,7 +104,7 @@
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
           </span>
           <h3 class="font-semibold text-lg">Bewohner und Gründer</h3>
-          <p class="text-sm text-ink-muted mt-1 flex-1">Adresse prüfen, Nachbarn finden und Ihre lokale Stromgemeinschaft starten.</p>
+          <p class="text-sm text-ink-muted mt-1 flex-1">Prüfen Sie Ihre Adresse und sehen Sie, ob in Ihrer Nähe schon Interesse besteht.</p>
           <span class="mt-4 text-sm font-semibold text-brand inline-flex items-center gap-1">Einstieg für Bewohner <span aria-hidden="true" class="transition group-hover:translate-x-0.5">&rarr;</span></span>
         </a>
 
@@ -113,7 +113,7 @@
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg>
           </span>
           <h3 class="font-semibold text-lg">LEG-Betreiber</h3>
-          <p class="text-sm text-ink-muted mt-1 flex-1">Gemeinschaft gründen, Mitglieder verwalten, Eigenverbrauch abrechnen.</p>
+          <p class="text-sm text-ink-muted mt-1 flex-1">Klären Sie Mitglieder, Verträge, Netzbetreiber und Abrechnung.</p>
           <span class="mt-4 text-sm font-semibold text-brand inline-flex items-center gap-1">LEG gründen <span aria-hidden="true" class="transition group-hover:translate-x-0.5">&rarr;</span></span>
         </a>
 
@@ -122,7 +122,7 @@
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M12 9h.01M15 9h.01M9 13h.01M12 13h.01M15 13h.01"/></svg>
           </span>
           <h3 class="font-semibold text-lg">Gemeinde</h3>
-          <p class="text-sm text-ink-muted mt-1 flex-1">Solarnutzung vergleichen, aufholen und eine eigene Gemeinde-Seite starten.</p>
+          <p class="text-sm text-ink-muted mt-1 flex-1">Vergleichen Sie Ihre Gemeinde und starten Sie eine Seite für Interessierte.</p>
           <span class="mt-4 text-sm font-semibold text-brand inline-flex items-center gap-1">Für Gemeinden <span aria-hidden="true" class="transition group-hover:translate-x-0.5">&rarr;</span></span>
         </a>
 
@@ -131,7 +131,7 @@
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 6-6 6 6 6"/><path d="m16 6 6 6-6 6"/></svg>
           </span>
           <h3 class="font-semibold text-lg">Entwickler und Self-Hosting</h3>
-          <p class="text-sm text-ink-muted mt-1 flex-1">Code lesen, freie API nutzen oder OpenLEG auf eigener Infrastruktur betreiben.</p>
+          <p class="text-sm text-ink-muted mt-1 flex-1">Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst.</p>
           <span class="mt-4 text-sm font-semibold text-brand inline-flex items-center gap-1">Codebase und Install <span aria-hidden="true" class="transition group-hover:translate-x-0.5">&rarr;</span></span>
         </a>
       </div>
@@ -168,8 +168,8 @@
     <div class="max-w-6xl mx-auto px-4">
       <div class="grid md:grid-cols-2 gap-10 items-center">
         <div>
-          <h2 class="text-3xl font-bold">Für Gemeinden: vergleichen, aufholen, gründen.</h2>
-          <p class="text-ink-muted mt-3">Die Solarnutzungs-Rangliste zeigt, wie viel Dachpotenzial Ihre Gemeinde schon nutzt und wer in Ihrer Liga vorangeht. Daraus wird ein konkreter nächster Schritt.</p>
+          <h2 class="text-3xl font-bold">Für Gemeinden: Potenzial sehen, Einstieg schaffen.</h2>
+          <p class="text-ink-muted mt-3">Die Rangliste zeigt, wie viel Dachpotenzial Ihre Gemeinde nutzt, welche vergleichbaren Gemeinden weiter sind und wie viele Dächer bis zum oberen Viertel fehlen.</p>
           <ol class="mt-5 grid md:grid-cols-3 gap-3 text-sm">
             <li class="rounded-lg border border-slate-200 bg-white p-3">
               <div class="font-semibold">1. Rang prüfen</div>
@@ -177,7 +177,7 @@
             </li>
             <li class="rounded-lg border border-slate-200 bg-white p-3">
               <div class="font-semibold">2. Ziel sehen</div>
-              <p class="text-ink-muted mt-1">Dächer bis zum oberen Viertel erkennen.</p>
+              <p class="text-ink-muted mt-1">Sehen, wie viele Dächer bis zum oberen Viertel fehlen.</p>
             </li>
             <li class="rounded-lg border border-slate-200 bg-white p-3">
               <div class="font-semibold">3. Gemeinde anmelden</div>
@@ -198,7 +198,7 @@
         <div class="rounded-2xl border border-slate-200 bg-amber-50 p-6">
           <div class="text-sm text-ink-muted">Kurz gesagt</div>
           <div class="mt-2 text-2xl font-semibold">In Tagen live, nicht in Monaten.</div>
-          <div class="mt-3 text-ink-muted">Kostenlos. Kein IT Projekt. Kein Aufwand für Ihre Verwaltung. Wir übernehmen Technik und Betrieb.</div>
+          <div class="mt-3 text-ink-muted">Kostenlos starten. Ohne eigenes IT-Projekt. OpenLEG übernimmt Technik und Betrieb, wenn Ihre Gemeinde das möchte.</div>
         </div>
       </div>
     </div>
@@ -266,8 +266,8 @@
   <section id="bewohner" class="py-16 bg-[#f6f4ef]">
     <div class="max-w-6xl mx-auto px-4">
       <div class="mb-6">
-        <h2 class="text-3xl font-bold">Nachbarn finden, Stromgemeinschaft gründen</h2>
-        <p class="text-ink-muted mt-2">Geben Sie Ihre Adresse ein und sehen Sie, wer in Ihrer Nähe ebenfalls mitmachen will. Alles anonymisiert, Ihre Daten bleiben bei Ihnen.</p>
+        <h2 class="text-3xl font-bold">Erst Adresse prüfen, dann Nachbarn finden</h2>
+        <p class="text-ink-muted mt-2">Geben Sie Ihre Adresse ein. OpenLEG prüft die Umgebung, zeigt anonymisierte Interessierte und sagt, ob sich der Start einer LEG lohnt.</p>
         {% if user_count > 0 %}
         <p class="text-ink-muted mt-2">Bereits <strong class="text-ink">{{ user_count }}</strong> Haushalte registriert</p>
         {% endif %}
@@ -304,7 +304,7 @@
               <div data-address-state="not-found" class="hidden rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800">Noch keine Nachbarn gefunden. Sie können den Startpunkt setzen und andere einladen.</div>
             </div>
             <div id="profile-summary" class="text-sm text-ink-muted mt-2 hidden"></div>
-            <p id="address-privacy" class="text-xs text-ink-muted mt-3">Ihre Adresse wird nur zur Prüfung verwendet. Kartenpunkte werden um 120m versetzt, Smart-Meter-Daten bleiben in Ihrer LEG und werden nicht verkauft.</p>
+            <p id="address-privacy" class="text-xs text-ink-muted mt-3">Wir nutzen Ihre Adresse nur für die Prüfung. Kartenpunkte werden um 120 m versetzt. Smart-Meter-Daten bleiben in Ihrer LEG und werden nicht verkauft.</p>
             <button id="btn-check" class="w-full bg-brand text-ink py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark disabled:opacity-50" disabled>Adresse prüfen</button>
           </div>
           <div id="step-register" class="hidden">
@@ -346,7 +346,7 @@
           <ul class="mt-4 space-y-2 text-ink-muted list-disc list-inside">
             <li>Gesamter Code auf GitHub, AGPL-3.0 Lizenz</li>
             <li>Freie API für Schweizer Energiedaten (ElCom Tarife, Sonnendach, Energie Reporter)</li>
-            <li>Kein Vendor Lock-in: jederzeit selbst hosten oder migrieren</li>
+            <li>Keine Anbieterbindung: jederzeit selbst hosten oder migrieren</li>
             <li>Community-Beiträge willkommen</li>
           </ul>
           <div class="mt-6 flex flex-col sm:flex-row gap-3">
