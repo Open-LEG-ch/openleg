@@ -64,8 +64,8 @@ def validate_email_address(email):
         valid = validate_email(email, check_deliverability=False)
         normalized_email = valid.normalized
         return True, normalized_email, None
-    except EmailNotValidError as e:
-        return False, None, f"Ungültige E-Mail-Adresse: {str(e)}"
+    except EmailNotValidError:
+        return False, None, "Ungültige E-Mail-Adresse."
 
 
 def validate_address(address):

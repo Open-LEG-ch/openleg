@@ -184,7 +184,7 @@ class TestComputeMunicipalityDemandSignal:
 
         assert result["signals"] == []
         assert "error" in result
-        assert "connection refused" in result["error"]
+        assert "connection refused" not in result["error"]
 
     def test_demand_score_components(self):
         """Demand score is computed from verified resident signals only."""

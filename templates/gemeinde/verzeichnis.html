@@ -28,12 +28,12 @@
                 <button type="submit" class="bg-brand text-ink px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Suchen</button>
             </form>
             <div class="flex gap-2">
-                <select onchange="location.href='?kanton='+this.value+'&q={{ query }}&sort={{ sort }}'" class="border rounded-lg px-3 py-2 text-sm bg-white">
+                <select onchange="updateFilter('kanton', this.value)" class="border rounded-lg px-3 py-2 text-sm bg-white">
                     {% for code, label in canton_options %}
                     <option value="{{ code }}" {{ 'selected' if kanton == code }}>{{ label }}</option>
                     {% endfor %}
                 </select>
-                <select onchange="location.href='?sort='+this.value+'&kanton={{ kanton }}&q={{ query }}'" class="border rounded-lg px-3 py-2 text-sm bg-white">
+                <select onchange="updateFilter('sort', this.value)" class="border rounded-lg px-3 py-2 text-sm bg-white">
                     <option value="pv_score_pct" {{ 'selected' if sort == 'pv_score_pct' }}>Solarnutzung</option>
                     <option value="energy_transition_score" {{ 'selected' if sort == 'energy_transition_score' }}>Energiewende-Score</option>
                     <option value="leg_value_gap_chf" {{ 'selected' if sort == 'leg_value_gap_chf' }}>LEG-Ersparnis</option>
@@ -41,6 +41,14 @@
                     <option value="name" {{ 'selected' if sort == 'name' }}>Name</option>
                 </select>
             </div>
+
+            <script>
+            function updateFilter(key, value) {
+              const params = new URLSearchParams(window.location.search);
+              params.set(key, value);
+              window.location.href = '?' + params.toString();
+            }
+            </script>
         </div>
 
         <!-- Results -->

@@ -338,20 +338,34 @@
       }
 
       searchTimeout = setTimeout(() => {
-        fetch(`/api/v1/municipalities?search=${encodeURIComponent(query)}`)
+        const params = new URLSearchParams({search: query});
+        fetch('/api/v1/municipalities?' + params.toString())
           .then(r => r.json())
           .then(data => {
+            resultsDiv.textContent = '';
             if (data.municipalities && data.municipalities.length > 0) {
-              resultsDiv.innerHTML = data.municipalities.slice(0, 8).map(m => 
-                `<div class="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100" 
-                      onclick="selectMunicipality(${m.bfs_number}, '${m.name.replace(/'/g, "\\'")}', ${JSON.stringify(m).replace(/'/g, "&#39;")})">
-                  <div class="font-semibold">${m.name}</div>
-                  <div class="text-xs text-ink-muted">BFS: ${m.bfs_number}${m.canton ? ' | ' + m.canton : ''}</div>
-                </div>`
-              ).join('');
+              data.municipalities.slice(0, 8).forEach(m => {
+                const item = document.createElement('div');
+                item.className = 'px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100';
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'font-semibold';
+                nameDiv.textContent = m.name;
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'text-xs text-ink-muted';
+                metaDiv.textContent = 'BFS: ' + m.bfs_number + (m.canton ? ' | ' + m.canton : '');
+                item.appendChild(nameDiv);
+                item.appendChild(metaDiv);
+                item.addEventListener('click', function() {
+                  selectMunicipality(m.bfs_number, m.name, m);
+                });
+                resultsDiv.appendChild(item);
+              });
               resultsDiv.classList.remove('hidden');
             } else {
-              resultsDiv.innerHTML = '<div class="px-4 py-3 text-ink-muted">Keine Gemeinde gefunden</div>';
+              const empty = document.createElement('div');
+              empty.className = 'px-4 py-3 text-ink-muted';
+              empty.textContent = 'Keine Gemeinde gefunden';
+              resultsDiv.appendChild(empty);
               resultsDiv.classList.remove('hidden');
             }
           })

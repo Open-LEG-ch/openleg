@@ -343,9 +343,9 @@ def leg_cluster():
                 }
             )
         return jsonify({"clusters": clusters, "count": len(clusters)})
-    except Exception as e:
-        logger.error(f"[API] Clustering error: {e}")
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        logger.exception("[API] Clustering error")
+        return jsonify({"error": "Clustering fehlgeschlagen."}), 500
 
 
 @public_api_bp.route("/leg/financial-model", methods=["POST"])

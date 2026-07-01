@@ -950,26 +950,27 @@ def api_check_potential():
 
         if not estimates:
             return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
-    except Exception as e:
-        return jsonify({"error": f"Server-Fehler: {str(e)}"}), 500
 
-    cluster_info = find_provisional_matches(estimates)
-    if not cluster_info:
+        cluster_info = find_provisional_matches(estimates)
+        if not cluster_info:
+            return jsonify(
+                {
+                    "potential": False,
+                    "message": "Keine direkten Partner gefunden.",
+                    "profile_summary": estimates,
+                }
+            )
         return jsonify(
             {
-                "potential": False,
-                "message": "Keine direkten Partner gefunden.",
+                "potential": True,
+                "message": "Partner gefunden!",
+                "cluster_info": cluster_info,
                 "profile_summary": estimates,
             }
         )
-    return jsonify(
-        {
-            "potential": True,
-            "message": "Partner gefunden!",
-            "cluster_info": cluster_info,
-            "profile_summary": estimates,
-        }
-    )
+    except Exception:
+        app.logger.exception("Unhandled error in /api/check_potential")
+        return jsonify({"error": "Server-Fehler. Bitte später erneut versuchen."}), 500
 
 
 # --- Registration ---
@@ -1204,27 +1205,37 @@ def api_meter_data_upload():
     data = request.json or {}
     building_id = data.get("building_id", "").strip()
     csv_content = data.get("csv_content", "")
-    tier = int(data.get("tier", 1))
+
+    try:
+        tier = int(data.get("tier", 1))
+        if tier not in (1, 2, 3):
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "tier muss 1, 2 oder 3 sein."}), 400
 
     if not building_id or not csv_content:
         return jsonify({"error": "building_id und csv_content erforderlich."}), 400
 
-    # Verify building exists
-    building = db.get_building(building_id)
-    if not building:
-        return jsonify({"error": "Gebäude nicht gefunden."}), 404
+    try:
+        # Verify building exists
+        building = db.get_building(building_id)
+        if not building:
+            return jsonify({"error": "Gebäude nicht gefunden."}), 404
 
-    # Save consent tier
-    db.save_data_consent(
-        building_id,
-        tier=tier,
-        share_municipality=True,
-        share_research=(tier >= 2),
-        share_providers=(tier >= 3),
-    )
+        # Save consent tier
+        db.save_data_consent(
+            building_id,
+            tier=tier,
+            share_municipality=True,
+            share_research=(tier >= 2),
+            share_providers=(tier >= 3),
+        )
 
-    result = meter_data.ingest_csv(building_id, csv_content, source="csv_upload")
-    return jsonify(result)
+        result = meter_data.ingest_csv(building_id, csv_content, source="csv_upload")
+        return jsonify(result)
+    except Exception:
+        app.logger.exception("Unhandled error in /api/meter-data/upload")
+        return jsonify({"error": "Server-Fehler beim Verarbeiten der Messdaten."}), 500
 
 
 @app.route("/meter-upload")
@@ -1585,4 +1596,4 @@ def metrics():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5003, host="127.0.0.1")
+    app.run(port=5003, host="127.0.0.1")
