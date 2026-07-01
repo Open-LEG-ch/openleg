@@ -42,7 +42,7 @@ def cache_get(key):
 def cache_set(key, value, ttl=DEFAULT_TTL):
     """Set value in cache with TTL (seconds). No-op on error."""
     try:
-        _get_redis().setex(f"{KEY_PREFIX}{key}", ttl, json.dumps(value))
+        _get_redis().set(f"{KEY_PREFIX}{key}", json.dumps(value), ex=ttl)
     except Exception as e:
         logger.debug(f"Cache set error for {key}: {e}")
 

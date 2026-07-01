@@ -9,6 +9,7 @@ from unittest.mock import patch, MagicMock
 def mock_redis():
     mock = MagicMock()
     mock.get.return_value = None
+    mock.set.return_value = True
     mock.setex.return_value = True
     mock.delete.return_value = True
     with patch("cache._get_redis", return_value=mock):
@@ -33,9 +34,13 @@ class TestCacheOperations:
 
     def test_cache_set(self, mock_redis):
         from cache import cache_set
+        import json
 
         cache_set("mykey", {"data": 42}, ttl=300)
-        mock_redis.setex.assert_called_once()
+        mock_redis.set.assert_called_once_with(
+            "openleg:mykey", json.dumps({"data": 42}), ex=300
+        )
+        mock_redis.setex.assert_not_called()
 
     def test_cache_delete(self, mock_redis):
         from cache import cache_delete

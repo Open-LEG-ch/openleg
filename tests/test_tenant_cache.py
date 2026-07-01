@@ -10,6 +10,7 @@ import json
 def mock_redis():
     mock = MagicMock()
     mock.get.return_value = None
+    mock.set.return_value = True
     mock.setex.return_value = True
     mock.delete.return_value = True
     with patch("cache._get_redis", return_value=mock):
@@ -68,7 +69,7 @@ class TestTenantRedisCache:
         assert result["territory"] == "baden"
         assert result["utility_name"] == "AEW"
         # Should have written to Redis
-        mock_redis.setex.assert_called_once()
+        mock_redis.set.assert_called_once()
 
     def test_cache_miss_no_db_returns_default(self, mock_redis):
         from tenant import get_tenant_config
