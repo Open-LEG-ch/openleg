@@ -166,6 +166,65 @@ def test_check_potential_does_not_expose_exception_text(full_app_module, monkeyp
     assert "boom" not in data["error"]
 
 
+def test_meter_data_upload_malformed_tier_returns_json_error(full_app_module):
+    app_module = full_app_module
+    client = app_module.app.test_client()
+    resp = client.post(
+        "/api/meter-data/upload",
+        json={"building_id": "b-123", "csv_content": "x", "tier": "not-an-int"},
+    )
+
+    assert resp.status_code in (400, 500)
+    data = resp.get_json()
+    assert data is not None
+    assert "error" in data
+    html = resp.get_data(as_text=True)
+    assert "ValueError" not in html
+    assert "could not convert" not in html
+    assert "invalid literal" not in html
+
+
+def test_meter_data_upload_get_building_error_is_generic(full_app_module, monkeypatch):
+    app_module = full_app_module
+    monkeypatch.setattr(
+        app_module.db, "get_building", MagicMock(side_effect=RuntimeError("db down"))
+    )
+
+    client = app_module.app.test_client()
+    resp = client.post(
+        "/api/meter-data/upload",
+        json={"building_id": "b-123", "csv_content": "x", "tier": 1},
+    )
+
+    assert resp.status_code == 500
+    data = resp.get_json()
+    assert "error" in data
+    assert "db down" not in data["error"]
+
+
+def test_meter_data_upload_save_consent_error_is_generic(full_app_module, monkeypatch):
+    app_module = full_app_module
+    monkeypatch.setattr(
+        app_module.db, "get_building", lambda _bid: {"building_id": _bid}
+    )
+    monkeypatch.setattr(
+        app_module.db,
+        "save_data_consent",
+        MagicMock(side_effect=RuntimeError("consent save failed")),
+    )
+
+    client = app_module.app.test_client()
+    resp = client.post(
+        "/api/meter-data/upload",
+        json={"building_id": "b-123", "csv_content": "x", "tier": 1},
+    )
+
+    assert resp.status_code == 500
+    data = resp.get_json()
+    assert "error" in data
+    assert "consent save failed" not in data["error"]
+
+
 def test_meter_data_upload_does_not_expose_exception_text(full_app_module, monkeypatch):
     app_module = full_app_module
     import meter_data

@@ -1205,26 +1205,32 @@ def api_meter_data_upload():
     data = request.json or {}
     building_id = data.get("building_id", "").strip()
     csv_content = data.get("csv_content", "")
-    tier = int(data.get("tier", 1))
+
+    try:
+        tier = int(data.get("tier", 1))
+        if tier not in (1, 2, 3):
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "tier muss 1, 2 oder 3 sein."}), 400
 
     if not building_id or not csv_content:
         return jsonify({"error": "building_id und csv_content erforderlich."}), 400
 
-    # Verify building exists
-    building = db.get_building(building_id)
-    if not building:
-        return jsonify({"error": "Gebäude nicht gefunden."}), 404
-
-    # Save consent tier
-    db.save_data_consent(
-        building_id,
-        tier=tier,
-        share_municipality=True,
-        share_research=(tier >= 2),
-        share_providers=(tier >= 3),
-    )
-
     try:
+        # Verify building exists
+        building = db.get_building(building_id)
+        if not building:
+            return jsonify({"error": "Gebäude nicht gefunden."}), 404
+
+        # Save consent tier
+        db.save_data_consent(
+            building_id,
+            tier=tier,
+            share_municipality=True,
+            share_research=(tier >= 2),
+            share_providers=(tier >= 3),
+        )
+
         result = meter_data.ingest_csv(building_id, csv_content, source="csv_upload")
         return jsonify(result)
     except Exception:
