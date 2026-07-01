@@ -452,9 +452,13 @@ def compute_municipality_demand_signal(bfs_number: int = None) -> Dict:
             "computed_at": datetime.now().isoformat(),
             "bfs_number": bfs_number,
         }
-    except Exception as e:
-        logger.error(f"[INSIGHTS] Error computing municipality demand signal: {e}")
-        return {"signals": [], "error": str(e), "bfs_number": bfs_number}
+    except Exception:
+        logger.exception("[INSIGHTS] Error computing municipality demand signal")
+        return {
+            "signals": [],
+            "error": "Fehler beim Berechnen des Nachfragesignals.",
+            "bfs_number": bfs_number,
+        }
 
 
 # Maximum CHF value gap used to normalise leg_value_gap_chf to the 0-100 scale.

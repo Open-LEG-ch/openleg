@@ -200,8 +200,17 @@ def get_energy_profile_for_address(address_string):
     """
     Haupt-Workflow (ECHTE API-AUFRUFE): Nimmt eine Adresse und gibt ein Profil-Dict zurück.
     """
-    # Bereinige Adresse: entferne HTML-Tags und extra Whitespace
-    clean_address = re.sub(r"<[^>]+>", "", address_string).strip()
+    # Bereinige Adresse: entferne HTML-Tags und extra Whitespace (ohne Regex)
+    out = []
+    in_tag = False
+    for ch in address_string:
+        if ch == "<":
+            in_tag = True
+        elif ch == ">":
+            in_tag = False
+        elif not in_tag:
+            out.append(ch)
+    clean_address = "".join(out).strip()
     print(f"--- [ENRICHER] Starte ECHTE Analyse für: {clean_address} ---")
 
     # 0. Eindeutige ID generieren (aus Adresse gehasht)

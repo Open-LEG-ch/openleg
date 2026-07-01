@@ -82,13 +82,13 @@ def parse_ekz_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
                     )
 
                     readings.append((ts, consumption, production, feed_in))
-                except (IndexError, ValueError) as e:
-                    errors.append(f"Zeile {i}: {str(e)}")
+                except (IndexError, ValueError):
+                    errors.append(f"Zeile {i}: Ungültiger Wert.")
 
             if readings:
                 break  # Found working delimiter
-        except Exception as e:
-            errors.append(f"Parse-Fehler mit Delimiter '{delimiter}': {str(e)}")
+        except Exception:
+            errors.append(f"Parse-Fehler mit Delimiter '{delimiter}'.")
 
     if not readings and not errors:
         errors.append(
@@ -216,10 +216,10 @@ def _parse_ckw_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
                     _parse_decimal(row[rueck_col]) if rueck_col is not None else 0.0
                 )
                 readings.append((ts, consumption, 0.0, feed_in))
-            except (IndexError, ValueError) as e:
-                errors.append(f"Zeile {i}: {str(e)}")
-    except Exception as e:
-        errors.append(f"CKW Parse-Fehler: {str(e)}")
+            except (IndexError, ValueError):
+                errors.append(f"Zeile {i}: Ungültiger Wert.")
+    except Exception:
+        errors.append("CKW Parse-Fehler: Ungültiges Dateiformat.")
 
     return readings, errors
 
