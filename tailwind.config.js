@@ -3,7 +3,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        brand: { DEFAULT: "#f59e0b", light: "#fbbf24", dark: "#d97706" },
+        brand: { DEFAULT: "#4f46e5", light: "#6366f1", dark: "#4338ca" },
         accent: "#f59e0b",
         ink: { DEFAULT: "#0f172a", soft: "#1e293b", muted: "#475569" },
       },
