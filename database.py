@@ -1809,81 +1809,6 @@ def update_municipality_status(bfs_number, status, admin_email=None):
         return False
 
 
-# === Meter Reading Operations ===
-
-
-def save_meter_readings(building_id, readings, source="csv"):
-    """Bulk insert meter readings. readings = list of (timestamp, consumption, production, feed_in)."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                from psycopg2.extras import execute_values
-
-                values = [
-                    (building_id, r[0], r[1], r[2], r[3], source) for r in readings
-                ]
-                execute_values(
-                    cur,
-                    """
-                    INSERT INTO meter_readings (building_id, timestamp, consumption_kwh, production_kwh, feed_in_kwh, source)
-                    VALUES %s
-                    ON CONFLICT (building_id, timestamp) DO UPDATE SET
-                        consumption_kwh = EXCLUDED.consumption_kwh,
-                        production_kwh = EXCLUDED.production_kwh,
-                        feed_in_kwh = EXCLUDED.feed_in_kwh
-                """,
-                    values,
-                )
-                return len(values)
-    except Exception as e:
-        logger.error(f"[DB] Error saving meter readings: {e}")
-        return 0
-
-
-def get_meter_readings(building_id, start=None, end=None, limit=1000):
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                query = "SELECT * FROM meter_readings WHERE building_id = %s"
-                params = [building_id]
-                if start:
-                    query += " AND timestamp >= %s"
-                    params.append(start)
-                if end:
-                    query += " AND timestamp <= %s"
-                    params.append(end)
-                query += " ORDER BY timestamp DESC LIMIT %s"
-                params.append(limit)
-                cur.execute(query, params)
-                return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[DB] Error getting meter readings: {e}")
-        return []
-
-
-def get_meter_reading_stats(building_id):
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT COUNT(*) as total_readings,
-                           MIN(timestamp) as first_reading,
-                           MAX(timestamp) as last_reading,
-                           SUM(consumption_kwh) as total_consumption,
-                           SUM(production_kwh) as total_production,
-                           SUM(feed_in_kwh) as total_feed_in
-                    FROM meter_readings WHERE building_id = %s
-                """,
-                    (building_id,),
-                )
-                row = cur.fetchone()
-                return dict(row) if row else {}
-    except Exception as e:
-        logger.error(f"[DB] Error getting meter stats: {e}")
-        return {}
-
-
 # === Data Consent Operations ===
 
 
@@ -2490,4 +2415,10 @@ from store.utility import (  # noqa: E402, F401
     update_utility_client_api_key,
     get_all_utility_clients,
     get_utility_client_stats,
+)
+
+from store.meter import (  # noqa: E402, F401
+    save_meter_readings,
+    get_meter_readings,
+    get_meter_reading_stats,
 )
