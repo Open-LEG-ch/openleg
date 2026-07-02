@@ -143,9 +143,10 @@ if HAS_SECURITY_LIBS:
                 "'unsafe-inline'",
                 "https://unpkg.com",
                 "https://cdn.jsdelivr.net",
+                "https://fonts.googleapis.com",
             ],
             "img-src": ["'self'", "data:", "https:", "http:"],
-            "font-src": ["'self'", "data:"],
+            "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
             "connect-src": [
                 "'self'",
                 "https://www.google-analytics.com",
@@ -910,6 +911,11 @@ def dashboard():
         building_id, city_id=city_id, app_base_url=APP_BASE_URL
     )
     return render_city_template("dashboard.html", **view)
+
+
+@app.route("/dashboard/demo")
+def dashboard_demo():
+    return render_city_template("dashboard.html", **dashboard_module.demo_readiness())
 
 
 # --- Referral System ---

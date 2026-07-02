@@ -312,6 +312,7 @@ CSP_POLICY = {
     "style-src": [
         "'self'",
         "https://unpkg.com",
+        "https://fonts.googleapis.com",
         "'unsafe-inline'",  # Required for Tailwind
     ],
     "img-src": [
@@ -320,7 +321,7 @@ CSP_POLICY = {
         "https:",
         "http:",  # For map tiles
     ],
-    "font-src": ["'self'", "data:"],
+    "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
     "connect-src": ["'self'"],
     "frame-ancestors": ["'none'"],
     "base-uri": ["'self'"],

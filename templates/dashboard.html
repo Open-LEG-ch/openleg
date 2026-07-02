@@ -1,167 +1,237 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mein Dashboard | {{ platform_name }}</title>
-    <meta name="robots" content="noindex, nofollow">
-    {% include 'partials/brand_head.html' %}
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        :root { --brand-color: {{ primary_color }}; }
-        .progress-bar { transition: width 0.6s ease; }
-    </style>
-</head>
-<body class="bg-gray-100 text-gray-800 min-h-screen">
-    <header class="bg-white border-b border-gray-200">
-        <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-            <a href="/" class="text-xl font-bold"><span style="color:var(--brand-color);">{{ brand_prefix }}</span>LEG</a>
-            <a href="/" class="text-sm text-gray-500 hover:text-gray-800">Zur Startseite</a>
+{% extends "base.html" %}
+
+{% block meta %}
+  <title>Mein Dashboard | {{ platform_name }}</title>
+  <meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
+{% block head_extra %}
+<style>
+  .dashboard-wrap{max-width:72rem;margin:0 auto;padding:2rem 1rem 4rem}
+  .dashboard-kicker{color:#f59e0b;font-size:.875rem;font-weight:700;margin:0 0 .5rem}
+  .dashboard-title{color:#0f172a;font-size:2.25rem;line-height:1.08;font-weight:800;margin:0}
+  .dashboard-muted{color:#475569}
+  .dashboard-hero{background:#0f172a;color:#f6f4ef;border:1px solid rgba(15,23,42,.12);border-radius:16px;padding:2rem;margin-top:1.5rem;overflow:hidden}
+  .dashboard-hero-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);gap:2rem;align-items:end}
+  .dashboard-score{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;color:#f59e0b;font-size:4.5rem;line-height:1;font-weight:700;margin:.5rem 0}
+  .dashboard-progress{height:.75rem;background:rgba(246,244,239,.14);border-radius:999px;overflow:hidden}
+  .dashboard-progress span{display:block;height:100%;background:#f59e0b;border-radius:999px}
+  .dashboard-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;margin-top:1.5rem;background:rgba(246,244,239,.18);border-radius:12px;overflow:hidden}
+  .dashboard-metric{background:#111c31;padding:1rem}
+  .dashboard-metric strong{display:block;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.45rem;color:#f6f4ef}
+  .dashboard-metric span{display:block;color:#cbd5e1;font-size:.875rem;margin-top:.25rem}
+  .dashboard-panel{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem}
+  .dashboard-panel h2{color:#0f172a;font-size:1.125rem;line-height:1.5rem;font-weight:800;margin:0}
+  .dashboard-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:1.5rem;margin-top:1.5rem}
+  .dashboard-stack{display:grid;gap:1.5rem}
+  .dashboard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+  .dashboard-tag{display:inline-flex;align-items:center;border-radius:999px;background:#fef3c7;color:#92400e;font-size:.75rem;font-weight:700;padding:.25rem .625rem;white-space:nowrap}
+  .dashboard-checks{display:grid;gap:.75rem;margin:0;padding:0;list-style:none}
+  .dashboard-check{display:flex;align-items:center;gap:.875rem;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem}
+  .dashboard-check-icon{display:inline-flex;align-items:center;justify-content:center;width:1.75rem;height:1.75rem;border-radius:999px;font-size:.875rem;font-weight:800;flex:0 0 auto}
+  .dashboard-check.is-done .dashboard-check-icon{background:#dcfce7;color:#166534}
+  .dashboard-check.is-open .dashboard-check-icon{background:#fef3c7;color:#92400e}
+  .dashboard-check small{display:block;color:#64748b;margin-top:.15rem}
+  .dashboard-form{display:grid;gap:1rem}
+  .dashboard-field label{display:block;font-size:.875rem;font-weight:700;color:#334155;margin-bottom:.35rem}
+  .dashboard-input{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:.75rem .875rem;background:#fff;color:#0f172a}
+  .dashboard-input:focus{outline:2px solid rgba(245,158,11,.35);border-color:#f59e0b}
+  .dashboard-button{border:0;border-radius:8px;background:#f59e0b;color:#0f172a;font-weight:800;padding:.875rem 1rem}
+  .dashboard-button:hover{background:#d97706}
+  .dashboard-copy{display:flex;gap:.5rem}
+  .dashboard-copy .dashboard-input{min-width:0}
+  .dashboard-link-list{display:grid;gap:.75rem}
+  .dashboard-link-list a{display:flex;justify-content:space-between;gap:1rem;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem;color:#0f172a;text-decoration:none}
+  .dashboard-link-list a:hover{border-color:#f59e0b;background:#fffbeb}
+  .dashboard-alert{border:1px solid #fecaca;background:#fef2f2;border-radius:12px;padding:1.5rem;text-align:center;color:#991b1b}
+  @media (max-width:820px){
+    .dashboard-hero-grid,.dashboard-grid{grid-template-columns:1fr}
+    .dashboard-metrics{grid-template-columns:1fr}
+    .dashboard-title{font-size:1.875rem}
+    .dashboard-score{font-size:3.5rem}
+    .dashboard-copy{flex-direction:column}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-wrap">
+  {% if error %}
+    <section class="dashboard-alert">
+      <p><strong>{{ error }}</strong></p>
+      <p class="dashboard-muted" style="margin-top:.5rem">Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail.</p>
+      <a href="/" class="dashboard-button" style="display:inline-block;margin-top:1rem;text-decoration:none">Zur Startseite</a>
+    </section>
+  {% elif user %}
+    <p class="dashboard-kicker">LEG-Dashboard</p>
+    <h1 class="dashboard-title">Ihre Stromgemeinschaft ist zu {{ readiness_score }}% bereit.</h1>
+    <p class="dashboard-muted" style="margin-top:.75rem">{{ user.address }}</p>
+
+    <section class="dashboard-hero" aria-labelledby="readiness-title">
+      <div class="dashboard-hero-grid">
+        <div>
+          <p class="dashboard-kicker" id="readiness-title">Bereitschaft</p>
+          <div class="dashboard-score">{{ readiness_score }}%</div>
+          <p style="max-width:36rem;color:#cbd5e1;margin:0">Sobald die offenen Punkte erledigt sind, kann die LEG-Anmeldung mit {{ utility_name }} vorbereitet werden.</p>
+          <div class="dashboard-progress" aria-label="{{ readiness_score }} Prozent bereit" style="margin-top:1.5rem">
+            <span style="width:{{ readiness_score }}%"></span>
+          </div>
         </div>
-    </header>
-
-    <main class="max-w-3xl mx-auto px-4 py-8">
-        {% if error %}
-        <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p class="text-red-800 font-semibold">{{ error }}</p>
-            <a href="/" class="inline-block mt-4 px-6 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900">Zur Startseite</a>
+        <div class="dashboard-metrics" aria-label="Dashboard Kennzahlen">
+          <div class="dashboard-metric">
+            <strong>{{ neighbor_count or 0 }}</strong>
+            <span>Haushalte in der Nähe</span>
+          </div>
+          <div class="dashboard-metric">
+            <strong>{{ user.referral_count|default(0) }}</strong>
+            <span>Einladungen</span>
+          </div>
+          <div class="dashboard-metric">
+            <strong>{{ "fertig" if readiness_score == 100 else "offen" }}</strong>
+            <span>Profilstatus</span>
+          </div>
         </div>
-        {% elif user %}
+      </div>
+    </section>
 
-        <!-- Readiness Score -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h1 class="text-2xl font-bold mb-1">Ihre LEG-Bereitschaft</h1>
-            <p class="text-sm text-gray-500 mb-4">{{ user.address }}</p>
-
-            <div class="flex items-end gap-3 mb-4">
-                <span class="text-5xl font-bold" style="color:var(--brand-color);">{{ readiness_score }}%</span>
-                <span class="text-gray-500 text-sm pb-2">bereit für die LEG-Gründung</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-3 mb-6">
-                <div class="h-3 rounded-full progress-bar" style="width:{{ readiness_score }}%;background:var(--brand-color);"></div>
-            </div>
-
-            <ul class="space-y-3">
-                {% for label, done in checks %}
-                <li class="flex items-center gap-3 text-sm">
-                    {% if done %}
-                    <span class="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center flex-shrink-0 font-bold">&#10003;</span>
-                    <span class="text-gray-800">{{ label }}</span>
-                    {% else %}
-                    <span class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center flex-shrink-0 font-bold">!</span>
-                    <span class="text-gray-600">{{ label }}</span>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <!-- Neighbor Count -->
-        {% if neighbor_count > 0 %}
-        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-            <span class="text-2xl">🏘</span>
+    <div class="dashboard-grid">
+      <div class="dashboard-stack">
+        <section class="dashboard-panel" aria-labelledby="checks-title">
+          <div class="dashboard-head">
             <div>
-                <p class="font-semibold text-green-800">{{ neighbor_count }} Haushalte in Ihrer Nähe registriert</p>
-                <p class="text-sm text-green-700">Je mehr Nachbarn mitmachen, desto schneller wird Ihre LEG Realität.</p>
+              <h2 id="checks-title">Checkliste</h2>
+              <p class="dashboard-muted" style="margin-top:.25rem">Vier Punkte entscheiden, ob die Anmeldung starten kann.</p>
             </div>
-        </div>
-        {% endif %}
+            <span class="dashboard-tag">{{ readiness_score }}%</span>
+          </div>
+          <ul class="dashboard-checks">
+            {% for label, done in checks %}
+              <li class="dashboard-check {{ 'is-done' if done else 'is-open' }}">
+                <span class="dashboard-check-icon" aria-hidden="true">{% if done %}&#10003;{% else %}{{ loop.index }}{% endif %}</span>
+                <span>
+                  <strong>{{ label }}</strong>
+                  <small>{{ "Erledigt" if done else "Offen" }}</small>
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
 
-        <!-- Energy Profile Form -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-bold mb-4">Energieprofil ergänzen</h2>
-            <form id="energy-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Jährlicher Stromverbrauch (kWh)</label>
-                    <input type="number" id="consumption" placeholder="z.B. 4500" value="{{ user.annual_consumption_kwh or '' }}" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
-                    <p class="text-xs text-gray-500 mt-1">Steht auf Ihrer letzten Stromrechnung von {{ utility_name }}.</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Haben Sie eine Solaranlage?</label>
-                    <select id="has-solar" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
-                        <option value="">Bitte wählen</option>
-                        <option value="yes" {% if user.potential_pv_kwp and user.potential_pv_kwp > 0 %}selected{% endif %}>Ja</option>
-                        <option value="no">Nein</option>
-                        <option value="planned">Geplant</option>
-                    </select>
-                </div>
-                <div id="pv-field" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Leistung Ihrer Anlage (kWp)</label>
-                    <input type="number" id="pv-kwp" step="0.1" placeholder="z.B. 8.5" value="{{ user.potential_pv_kwp or '' }}" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600">
-                </div>
-                <button type="button" id="calc-btn" class="w-full py-3 text-white font-bold rounded-md" style="background:var(--brand-color);">Ersparnis berechnen</button>
-            </form>
-            <div id="savings-result" class="hidden mt-4 bg-yellow-50 border border-yellow-300 rounded-lg p-4 text-center">
-                <p class="text-sm text-yellow-800">Geschätzte jährliche Ersparnis:</p>
-                <p class="text-3xl font-bold text-yellow-900" id="savings-amount"></p>
-                <p class="text-xs text-yellow-700 mt-1">Schätzung basierend auf Ihrem Verbrauchsprofil. Tatsächliche Werte können abweichen.</p>
-            </div>
-        </div>
-
-        <!-- Referral Section -->
         {% if referral_link %}
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-bold mb-2">Nachbarn einladen</h2>
-            <p class="text-sm text-gray-600 mb-3">Teilen Sie diesen Link, um Ihre LEG-Gemeinschaft schneller zu bilden:</p>
-            <div class="flex gap-2">
-                <input type="text" readonly value="{{ referral_link }}" id="ref-link" class="flex-grow p-3 border border-gray-300 rounded-md text-sm bg-gray-50" onclick="this.select()">
-                <button onclick="navigator.clipboard.writeText(document.getElementById('ref-link').value);this.textContent='Kopiert!';setTimeout(()=>this.textContent='Kopieren',2000)" class="px-4 py-3 bg-gray-800 text-white text-sm font-semibold rounded-md hover:bg-gray-900 whitespace-nowrap">Kopieren</button>
+          <section class="dashboard-panel" aria-labelledby="referral-title">
+            <div class="dashboard-head">
+              <div>
+                <h2 id="referral-title">Nachbarn einladen</h2>
+                <p class="dashboard-muted" style="margin-top:.25rem">Teilen Sie den Link mit passenden Haushalten in Ihrer Nähe.</p>
+              </div>
+              <span class="dashboard-tag">Link</span>
+            </div>
+            <div class="dashboard-copy">
+              <input type="text" readonly value="{{ referral_link }}" id="ref-link" class="dashboard-input" onclick="this.select()" aria-label="Einladungslink">
+              <button type="button" id="copy-ref" class="dashboard-button">Kopieren</button>
             </div>
             {% if user.referral_count is defined and user.referral_count > 0 %}
-            <p class="text-sm text-green-700 mt-3 font-medium">{{ user.referral_count }} Nachbar(n) über Ihren Link beigetreten!</p>
+              <p class="dashboard-muted" style="margin-top:.75rem">{{ user.referral_count }} Nachbar(n) sind über Ihren Link beigetreten.</p>
             {% endif %}
-        </div>
+          </section>
         {% endif %}
+      </div>
 
-        <!-- Quick Links -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h2 class="text-lg font-bold mb-3">Nützliche Links</h2>
-            <div class="space-y-2 text-sm">
-                <a href="/leg" class="block text-gray-700 hover:text-gray-900 py-1">Was ist eine LEG?</a>
-                <a href="/vergleich-leg-evl-zev" class="block text-gray-700 hover:text-gray-900 py-1">LEG vs. EVL vs. ZEV: Vergleich</a>
-                <a href="mailto:{{ contact_email }}" class="block text-gray-700 hover:text-gray-900 py-1">Kontakt: {{ contact_email }}</a>
+      <aside class="dashboard-stack">
+        <section class="dashboard-panel" aria-labelledby="energy-title">
+          <div class="dashboard-head">
+            <div>
+              <h2 id="energy-title">Energieprofil</h2>
+              <p class="dashboard-muted" style="margin-top:.25rem">Daten aus Ihrer letzten Stromrechnung reichen.</p>
             </div>
-        </div>
+          </div>
+          <form id="energy-form" class="dashboard-form">
+            <div class="dashboard-field">
+              <label for="consumption">Jährlicher Stromverbrauch in kWh</label>
+              <input type="number" id="consumption" placeholder="z. B. 4500" value="{{ user.annual_consumption_kwh or '' }}" class="dashboard-input">
+              <p class="dashboard-muted" style="font-size:.75rem;margin-top:.35rem">Steht auf Ihrer letzten Stromrechnung von {{ utility_name }}.</p>
+            </div>
+            <div class="dashboard-field">
+              <label for="has-solar">Haben Sie eine Solaranlage?</label>
+              <select id="has-solar" class="dashboard-input">
+                <option value="">Bitte wählen</option>
+                <option value="yes" {% if user.potential_pv_kwp and user.potential_pv_kwp > 0 %}selected{% endif %}>Ja</option>
+                <option value="no">Nein</option>
+                <option value="planned">Geplant</option>
+              </select>
+            </div>
+            <div id="pv-field" class="dashboard-field hidden">
+              <label for="pv-kwp">Leistung Ihrer Anlage in kWp</label>
+              <input type="number" id="pv-kwp" step="0.1" placeholder="z. B. 8.5" value="{{ user.potential_pv_kwp or '' }}" class="dashboard-input">
+            </div>
+            <button type="button" id="calc-btn" class="dashboard-button">Ersparnis berechnen</button>
+          </form>
+          <div id="savings-result" class="hidden" style="margin-top:1rem;border:1px solid #fde68a;background:#fffbeb;border-radius:10px;padding:1rem;text-align:center">
+            <p style="color:#92400e;font-size:.875rem;margin:0">Geschätzte jährliche Ersparnis</p>
+            <p style="color:#0f172a;font-size:2rem;line-height:1.1;font-weight:800;margin:.25rem 0" id="savings-amount"></p>
+            <p class="dashboard-muted" style="font-size:.75rem;margin:0">Richtwert aus Verbrauchsprofil und LEG-Annahmen.</p>
+          </div>
+        </section>
 
-        {% endif %}
-    </main>
+        <section class="dashboard-panel" aria-labelledby="links-title">
+          <h2 id="links-title">Nützliche Links</h2>
+          <div class="dashboard-link-list" style="margin-top:1rem">
+            <a href="/leg"><span>Was ist eine LEG?</span><span aria-hidden="true">&gt;</span></a>
+            <a href="/vergleich-leg-evl-zev"><span>LEG, EVL und ZEV vergleichen</span><span aria-hidden="true">&gt;</span></a>
+            <a href="mailto:{{ contact_email }}"><span>Kontakt</span><span>{{ contact_email }}</span></a>
+          </div>
+        </section>
+      </aside>
+    </div>
+  {% endif %}
+</main>
+{% endblock %}
 
-    <footer class="text-center text-xs text-gray-400 py-8">
-        <a href="/impressum" class="hover:text-gray-600">Impressum</a> &middot;
-        <a href="/datenschutz" class="hover:text-gray-600">Datenschutz</a>
-    </footer>
+{% block scripts %}
+<script>
+  const solarSelect = document.getElementById('has-solar');
+  const pvField = document.getElementById('pv-field');
+  if (solarSelect && pvField) {
+    const syncPvField = () => pvField.classList.toggle('hidden', solarSelect.value !== 'yes');
+    solarSelect.addEventListener('change', syncPvField);
+    syncPvField();
+  }
 
-    <script>
-        const solarSelect = document.getElementById('has-solar');
-        const pvField = document.getElementById('pv-field');
-        if (solarSelect) {
-            solarSelect.addEventListener('change', () => {
-                pvField.classList.toggle('hidden', solarSelect.value !== 'yes');
-            });
-            if (solarSelect.value === 'yes') pvField.classList.remove('hidden');
-        }
+  const copyBtn = document.getElementById('copy-ref');
+  const refLink = document.getElementById('ref-link');
+  if (copyBtn && refLink) {
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(refLink.value);
+      } catch (e) {
+        refLink.select();
+        document.execCommand('copy');
+      }
+      copyBtn.textContent = 'Kopiert';
+      setTimeout(() => { copyBtn.textContent = 'Kopieren'; }, 2000);
+    });
+  }
 
-        const calcBtn = document.getElementById('calc-btn');
-        if (calcBtn) {
-            calcBtn.addEventListener('click', async () => {
-                const consumption = parseFloat(document.getElementById('consumption').value) || 4500;
-                const hasSolar = solarSelect.value === 'yes';
-                const pvKwp = parseFloat(document.getElementById('pv-kwp').value) || 0;
+  const calcBtn = document.getElementById('calc-btn');
+  if (calcBtn) {
+    calcBtn.addEventListener('click', async () => {
+      const consumption = parseFloat(document.getElementById('consumption').value) || 4500;
+      const hasSolar = solarSelect && solarSelect.value === 'yes';
+      const pvKwp = parseFloat(document.getElementById('pv-kwp').value) || 0;
 
-                try {
-                    const res = await fetch('/api/calculate_savings', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({consumption_kwh: consumption, has_solar: hasSolar, pv_kwp: pvKwp})
-                    });
-                    const data = await res.json();
-                    document.getElementById('savings-amount').textContent = 'CHF ' + data.annual_savings_chf.toLocaleString('de-CH');
-                    document.getElementById('savings-result').classList.remove('hidden');
-                } catch (e) {
-                    console.error('Savings calc error', e);
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+      try {
+        const res = await fetch('/api/calculate_savings', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({consumption_kwh: consumption, has_solar: hasSolar, pv_kwp: pvKwp})
+        });
+        const data = await res.json();
+        document.getElementById('savings-amount').textContent = 'CHF ' + data.annual_savings_chf.toLocaleString('de-CH');
+        document.getElementById('savings-result').classList.remove('hidden');
+      } catch (e) {
+        console.error('Savings calc error', e);
+      }
+    });
+  }
+</script>
+{% endblock %}

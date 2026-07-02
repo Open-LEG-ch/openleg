@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "project": "Dashboard Demo",
+  "overview": "Expose a public fake-data OpenLEG dashboard so stakeholders can click through the redesigned dashboard without a private building link or production data.",
+  "goals": [
+    "Provide a stable /dashboard/demo route with realistic fake readiness data",
+    "Keep demo behavior isolated from database and production user records",
+    "Use the existing dashboard template and savings API so the sample is interactive"
+  ],
+  "nonGoals": [
+    "No database seed data",
+    "No authentication changes",
+    "No separate frontend app"
+  ],
+  "successMetrics": [
+    "/dashboard/demo returns HTTP 200",
+    "Demo page shows fake Baden address, checklist, referral link, and savings form",
+    "Targeted pytest suite passes",
+    "Desktop and mobile screenshots render without obvious layout breakage"
+  ],
+  "openQuestions": [
+    "Should /dashboard/demo be linked from public navigation later?"
+  ],
+  "stack": {
+    "framework": "Flask",
+    "hosting": "Existing OpenLEG deployment",
+    "database": "PostgreSQL in production, not used by demo route",
+    "auth": "Public demo route with fake data only"
+  },
+  "routes": [
+    {
+      "path": "/dashboard/demo",
+      "name": "Dashboard Demo",
+      "purpose": "Show clickable fake-data dashboard"
+    },
+    {
+      "path": "/api/calculate_savings",
+      "name": "Savings API",
+      "purpose": "Support the dashboard demo savings interaction"
+    }
+  ],
+  "uiNotes": [
+    "Use existing OpenLEG base layout and terminal wordmark",
+    "Keep Swiss Hochdeutsch copy",
+    "Use amber only for actions and status accents",
+    "Avoid Tailwind CDN"
+  ],
+  "dataModel": [
+    {
+      "entity": "DemoDashboard",
+      "fields": [
+        "user",
+        "readiness_score",
+        "checks",
+        "neighbor_count",
+        "referral_link",
+        "error"
+      ]
+    }
+  ],
+  "importFormat": {
+    "description": "Not applicable",
+    "example": {}
+  },
+  "rules": [
+    "Demo route must not call database",
+    "Demo data must be clearly fake and public-safe",
+    "Savings form uses existing API"
+  ],
+  "qualityGates": [
+    "python3 -m pytest tests/test_dashboard_demo.py tests/test_dashboard_readiness.py -q",
+    "python3 -m pytest tests/ -q",
+    "ruff check .",
+    "ruff format --check ."
+  ],
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Clickable fake-data dashboard",
+      "status": "open",
+      "dependsOn": [],
+      "description": "As a stakeholder, I want a public fake dashboard so that I can inspect the redesigned experience without a private profile link.",
+      "acceptanceCriteria": [
+        "Example: GET /dashboard/demo returns 200 and includes Mellingerstrasse 12, 5400 Baden",
+        "Example: the rendered page includes the fake referral link https://openleg.ch/?ref=DEMO-LEG",
+        "Example: the rendered page includes /api/calculate_savings so the savings form can be clicked",
+        "Negative case: /dashboard/demo must not require a building_id query parameter",
+        "Negative case: /dashboard/demo must not read production building records"
+      ]
+    }
+  ]
+}

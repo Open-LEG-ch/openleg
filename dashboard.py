@@ -62,3 +62,26 @@ def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict
         "referral_link": referral_link,
         "error": None,
     }
+
+
+def demo_readiness() -> dict:
+    """Fake, click-through dashboard data for demos."""
+    return {
+        "user": {
+            "building_id": "demo-building",
+            "address": "Mellingerstrasse 12, 5400 Baden",
+            "annual_consumption_kwh": 4200,
+            "potential_pv_kwp": 8.5,
+            "referral_count": 4,
+        },
+        "readiness_score": 75,
+        "checks": [
+            ("E-Mail bestätigt", True),
+            ("Verbrauchsdaten hinterlegt", True),
+            ("EVU-Einwilligung erteilt", False),
+            ("Nachbar-Einwilligung erteilt", True),
+        ],
+        "neighbor_count": 18,
+        "referral_link": "https://openleg.ch/?ref=DEMO-LEG",
+        "error": None,
+    }
