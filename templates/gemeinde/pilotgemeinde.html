@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+    {{ page_meta(
+        title="Fallstudie: LEG-Potenzial in " ~ profile.name ~ " | OpenLEG",
+        description="Datenbasierte Fallstudie für " ~ profile.name ~ " mit ElCom Tarifdaten und BFE Sonnendach.",
+        path=canonical_path,
+        og_type="article",
+        site_url=site_url
+    ) }}
+{% endblock %}
+
+{% block head_extra %}
+    <script type="application/ld+json">{{ json_ld|tojson }}</script>
+{% endblock %}
+
+{% block content %}
+    <main class="max-w-6xl mx-auto px-4 py-10">
+        <section class="mb-10">
+            <p class="text-sm font-semibold text-brand mb-3">Pilotgemeinde</p>
+            <h1 class="text-4xl font-bold text-ink max-w-3xl">Fallstudie: Was eine LEG in {{ profile.name }} bringt</h1>
+            <p class="text-lg text-ink-muted mt-4 max-w-3xl">
+                Diese Fallstudie nutzt reale öffentliche Daten aus den ElCom Tarifdaten{% if h4 and h4.year %} {{ h4.year }}{% endif %} und dem BFE Sonnendach Datensatz.
+            </p>
+        </section>
+
+        <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            {% if h4 and h4.total_rp_kwh is defined and h4.total_rp_kwh is not none %}
+            <div class="bg-white rounded-xl p-5 shadow-sm border">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">H4 Stromtarif</p>
+                <p class="text-2xl font-bold mt-2">{{ "%.1f"|format(h4.total_rp_kwh|float) }} <span class="text-sm font-normal">Rp/kWh</span></p>
+            </div>
+            {% endif %}
+            {% if h4 and h4.grid_rp_kwh is defined and h4.grid_rp_kwh is not none %}
+            <div class="bg-brand/5 rounded-xl p-5 shadow-sm border border-brand/20">
+                <p class="text-xs text-brand uppercase tracking-wide">Netznutzung</p>
+                <p class="text-2xl font-bold text-brand mt-2">{{ "%.1f"|format(h4.grid_rp_kwh|float) }} <span class="text-sm font-normal">Rp/kWh</span></p>
+            </div>
+            {% endif %}
+            {% if h4 and h4.operator_name %}
+            <div class="bg-white rounded-xl p-5 shadow-sm border">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Verteilnetzbetreiber</p>
+                <p class="text-lg font-semibold mt-2">{{ h4.operator_name }}</p>
+            </div>
+            {% endif %}
+            {% if solar %}
+            <div class="bg-white rounded-xl p-5 shadow-sm border">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Solarnutzung</p>
+                {% if solar.utilization_pct is defined and solar.utilization_pct is not none %}
+                <p class="text-2xl font-bold mt-2">{{ solar.utilization_pct }}%</p>
+                {% endif %}
+                {% if solar.suitable_roof_area_m2 is defined and solar.suitable_roof_area_m2 is not none %}
+                <p class="text-sm text-ink-muted mt-1">{{ "{:,.0f}".format(solar.suitable_roof_area_m2|float).replace(",", "'") }} m² geeignetes Dachpotenzial</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        {% if value_gap %}
+        <section class="bg-brand/5 border border-brand/20 rounded-xl p-6 mb-10">
+            <div class="grid md:grid-cols-3 gap-6 items-start">
+                <div>
+                    <p class="text-sm font-semibold text-brand">Jährlicher Richtwert</p>
+                    <p class="text-4xl font-bold mt-2">CHF {{ value_gap.annual_savings_chf|round(0)|int }}</p>
+                </div>
+                <div class="md:col-span-2">
+                    <h2 class="text-2xl font-bold mb-3">Wie wir diesen Wert herleiten</h2>
+                    <p class="text-ink-muted">
+                        OpenLEG rechnet mit {{ value_gap.grid_reduction_pct|round(0)|int }} Prozent tieferer Netznutzung innerhalb der LEG und einer Annahme von {{ "{:,.0f}".format(value_gap.assumed_consumption_kwh|float).replace(",", "'") }} kWh Jahresverbrauch. Die Basis bildet der H4 Netznutzungstarif der ElCom.
+                    </p>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="mb-10">
+            <h2 class="text-2xl font-bold mb-5">Vom Adresscheck bis zur Anmeldung</h2>
+            <div class="grid md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl p-5 shadow-sm border">
+                    <p class="text-sm font-semibold text-brand mb-2">1. Adresse prüfen</p>
+                    <p class="text-sm text-ink-muted">Bewohner prüfen, ob Gebäude, Nachbarschaft und Netzgebiet zusammenpassen.</p>
+                </div>
+                <div class="bg-white rounded-xl p-5 shadow-sm border">
+                    <p class="text-sm font-semibold text-brand mb-2">2. Potenzial klären</p>
+                    <p class="text-sm text-ink-muted">Tarife, Verbrauch und lokale Produktion zeigen, ob eine LEG wirtschaftlich Sinn ergibt.</p>
+                </div>
+                <div class="bg-white rounded-xl p-5 shadow-sm border">
+                    <p class="text-sm font-semibold text-brand mb-2">3. Gruppe bilden</p>
+                    <p class="text-sm text-ink-muted">Eigentümer, Mieter und Produzenten legen Teilnahme, Rollen und Abrechnung fest.</p>
+                </div>
+                <div class="bg-white rounded-xl p-5 shadow-sm border">
+                    <p class="text-sm font-semibold text-brand mb-2">4. LEG anmelden</p>
+                    <p class="text-sm text-ink-muted">Die Gemeinschaft reicht die LEG Anmeldung beim Verteilnetzbetreiber ein.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-10">
+            <h2 class="text-2xl font-bold mb-5">Auch der unbequeme Teil</h2>
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl p-5 shadow-sm border">
+                    <h3 class="font-semibold">Was passiert bei einem Austritt?</h3>
+                    <p class="text-sm text-ink-muted mt-2">Ein Austritt ist möglich. Danach kehrt der Haushalt in die Grundversorgung zurück.</p>
+                </div>
+                <div class="bg-white rounded-xl p-5 shadow-sm border">
+                    <h3 class="font-semibold">Was, wenn der Netzbetreiber nicht kooperiert?</h3>
+                    <p class="text-sm text-ink-muted mt-2">Die ElCom ist die zuständige Aufsichts- und Schlichtungsstelle für Streitfälle im Strommarkt.</p>
+                </div>
+                <div class="bg-white rounded-xl p-5 shadow-sm border">
+                    <h3 class="font-semibold">Wem gehören die Daten?</h3>
+                    <p class="text-sm text-ink-muted mt-2">Die Daten gehören den Bewohnern. OpenLEG verkauft keine Bürgerdaten und gibt sie nicht an Dritte weiter.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-xl p-6 shadow-sm border mb-8">
+            <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-xl font-bold">Nächster Schritt für {{ profile.name }}</h2>
+                    <p class="text-sm text-ink-muted mt-1">Prüfen Sie das vollständige Energieprofil oder starten Sie mit einer Adresse.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="/gemeinde/profil/{{ bfs }}" class="bg-brand text-white px-5 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Energieprofil ansehen</a>
+                    <a href="/" class="border border-brand/20 text-brand px-5 py-3 rounded-lg font-semibold hover:bg-brand/5 text-center">Adresse prüfen</a>
+                </div>
+            </div>
+        </section>
+
+        <p class="text-xs text-gray-500">Datenquellen: ElCom Tarifdaten{% if h4 and h4.year %} {{ h4.year }}{% endif %}, BFE Sonnendach.</p>
+    </main>
+{% endblock %}
