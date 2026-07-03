@@ -83,7 +83,7 @@ def upsert_tenant(territory: str, config: Dict) -> bool:
                         territory,
                         config.get("utility_name", ""),
                         config.get("primary_color", "#c7021a"),
-                        config.get("secondary_color", "#f59e0b"),
+                        config.get("secondary_color", "#4338ca"),
                         config.get("contact_email", ""),
                         config.get("contact_phone", ""),
                         config.get("legal_entity", ""),
