@@ -49,7 +49,7 @@ class TestTenantRedisCache:
             "territory": "baden",
             "utility_name": "AEW",
             "primary_color": "#c7021a",
-            "secondary_color": "#f59e0b",
+            "secondary_color": "#4338ca",
             "contact_email": "",
             "contact_phone": "",
             "legal_entity": "",

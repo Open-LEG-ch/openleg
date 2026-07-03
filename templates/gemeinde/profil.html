@@ -3,11 +3,11 @@
 
 {% block meta %}
     {{ page_meta(
-        title=profile.name ~ " | Energieprofil | OpenLEG",
-        description="Energieprofil und LEG-Potenzial für " ~ profile.name ~ ": Stromtarife, Solarnutzung, Energiewende-Score.",
+        title=seo_title,
+        description=seo_description,
         path="/gemeinde/profil/" ~ profile.bfs_number,
-        og_title=("Solarnutzung " ~ profile.name ~ " | OpenLEG") if profile.get('pv_score_pct') is not none and share_base else None,
-        og_description=("So nutzt " ~ profile.name ~ " sein Solardach-Potenzial. Vergleichen Sie Ihre Gemeinde.") if profile.get('pv_score_pct') is not none and share_base else None,
+        og_title=("Solarnutzung " ~ profile.name ~ " | OpenLEG") if profile.get('pv_score_pct') is not none and share_base else profile.name ~ " | Energieprofil | OpenLEG",
+        og_description=("So nutzt " ~ profile.name ~ " sein Solardach-Potenzial. Vergleichen Sie Ihre Gemeinde.") if profile.get('pv_score_pct') is not none and share_base else "Energieprofil und LEG-Potenzial für " ~ profile.name ~ ": Stromtarife, Solarnutzung, Energiewende-Score.",
         og_image=("/rangliste/og/" ~ profile.bfs_number ~ ".svg") if profile.get('pv_score_pct') is not none and share_base else None,
         site_url=site_url
     ) }}
@@ -15,6 +15,7 @@
 
 {% block head_extra %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script type="application/ld+json">{{ jsonld|tojson }}</script>
 {% endblock %}
 
 {% block content %}
@@ -24,7 +25,7 @@
             <p class="text-sm text-gray-500 mb-1">
                 <a href="/gemeinde/verzeichnis" class="hover:text-brand">Gemeindeverzeichnis</a> / {{ profile.kanton }}
             </p>
-            <h1 class="text-3xl font-bold">{{ profile.name }}</h1>
+            <h1 class="text-3xl font-bold">Stromtarif und Energieprofil {{ profile.name }}</h1>
             <p class="text-gray-600 mt-1">Kanton {{ profile.kanton }}{% if profile.population %} · {{ "{:,}".format(profile.population|int).replace(",", "'") }} Einwohner{% endif %}</p>
             {% if pilot_slug %}
             <p class="text-sm mt-3">
@@ -74,7 +75,7 @@
                 {% for chip in league_chips %}
                 <span class="text-sm px-3 py-1 rounded-full border
                     {% if chip.quartile == 1 %}bg-green-50 text-green-700 border-green-200
-                    {% elif chip.quartile == 4 %}bg-amber-50 text-amber-700 border-amber-200
+                    {% elif chip.quartile == 4 %}bg-rose-50 text-rose-700 border-rose-200
                     {% else %}bg-slate-50 text-slate-600 border-slate-200{% endif %}">
                     {{ chip.label }}: Rang {{ chip.rank }} von {{ chip.total }}
                 </span>
@@ -293,7 +294,7 @@
                     {{ ((solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100) - solar.utilization_pct|default(0)|float)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }},
                     {{ (100 - solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }}
                 ],
-                backgroundColor: ['#6366f1', '#f59e0b', '#e5e7eb'],
+                backgroundColor: ['#4f46e5', '#a5b4fc', '#e5e7eb'],
             }]
         },
         options: {
