@@ -2,26 +2,26 @@
 name: OpenLEG
 description: >
   Visual identity for OpenLEG, free open-source infrastructure for Swiss local
-  electricity communities (Lokale Elektrizitätsgemeinschaften). Civic, technical,
-  trustworthy. Energy coded in amber, action coded in indigo, grounded in slate.
+  electricity communities (Lokale Elektrizitätsgemeinschaften). Civic,
+  technical, trustworthy. Action and identity coded in violet, grounded in
+  slate.
 colors:
-  ink: "#0f172a"          # primary text, dark surfaces, footer
+  ink: "#0f172a"          # primary text, dark surfaces, footer, favicon tile
   ink-soft: "#1e293b"
   ink-muted: "#475569"    # secondary text
-  paper: "#f6f4ef"        # warm light surface
+  paper: "#f6f4ef"        # warm light surface and inverse wordmark text
   white: "#ffffff"
   line: "#e2e8f0"         # hairline borders
-  brand: "#f59e0b"        # action + identity: links, primary buttons, logo highlight (amber/yellow)
-  brand-light: "#fbbf24"
-  brand-dark: "#d97706"   # button hover, darker amber
-  accent: "#f59e0b"       # alias of brand; energy highlight
-  accent-hi: "#ffc043"    # amber top stop for gradients
+  brand: "#4f46e5"        # action + identity: links, primary buttons, logo highlight
+  brand-light: "#6366f1"
+  brand-dark: "#4338ca"   # button hover
+  accent: "#4f46e5"       # alias of brand
 typography:
   wordmark:
     family: "JetBrains Mono"
     weight: 500
     tracking: "-0.04em"
-    note: "open in ink/paper at 500, LEG in accent at 700"
+    note: "open in ink/paper at 500, LEG in brand at 700, violet caret"
   mono:
     family: "JetBrains Mono"
     weight: 500
@@ -39,11 +39,11 @@ spacing:
   gutter: "1rem"
 components:
   logo:
-    structure: "prompt '>' (accent) + 'open' (ink) + 'LEG' (accent, 700) + blinking caret"
+    structure: "'open' lowercase ink/paper + 'LEG' uppercase brand, 700 + blinking caret"
     partial: "templates/partials/brand_wordmark.html"
   favicon:
     file: "static/favicon.svg"
-    art: "amber shell prompt '>_' on ink rounded tile"
+    art: "violet blinking caret block on ink rounded tile"
   button-primary:
     bg: "{colors.brand}"
     color: "{colors.white}"
@@ -55,31 +55,38 @@ components:
 
 OpenLEG is free, open-source infrastructure for Swiss local electricity
 communities. The identity has to carry three things at once: **open source**
-(developer credibility), **energy** (what the product moves), and **civic trust**
-(citizens and municipalities act on it).
+(developer credibility), **energy coordination** (what the product enables), and
+**civic trust** (citizens and municipalities act on it).
 
-The logo encodes all three: a shell prompt for open source, amber for energy,
-and a plain, honest grotesk word for trust. Keep the system quiet. Let the amber
-do the talking.
+The logo encodes the product through a precise technical wordmark: lowercase
+`open`, uppercase `LEG`, and a blinking violet caret. Keep the system quiet. Let
+violet carry action and identity.
 
-Aesthetic: technical, Swiss-precise, warm. Not playful, not corporate.
+Aesthetic: technical, Swiss-precise, trustworthy. Not playful, not corporate.
 
 ## Colors
 
-One loud colour, one ground:
+One action colour, one ground:
 
-- **`brand` amber/yellow `#f59e0b`** is **both action and identity**. It is the
-  primary action (links, buttons, focus) AND the logo highlight (`LEG`, prompt,
-  caret). Yellow is the whole brand; there is no second action colour.
-- Amber fills carry **ink text**, never white (white on amber fails contrast).
-  Primary button: `bg-brand text-ink hover:bg-brand-dark`.
+- **`brand` violet `#4f46e5`** is **both action and identity**. It is the
+  primary action (links, buttons, focus) AND the logo highlight (`LEG`, caret).
+  Violet is the whole action system; there is no second action colour.
+- `brand-light #6366f1` supports lighter identity accents. `brand-dark #4338ca`
+  is the primary hover colour.
+- `accent #4f46e5` is an alias of `brand`, not a separate colour.
+- Violet fills carry **white text**. Primary button:
+  `bg-brand text-white rounded-lg font-semibold hover:bg-brand-dark`.
+  This is the shipped contrast rule.
+- Tinted chips and icon badges use `bg-brand/10 text-brand`.
+- Focus indicators use a 2px solid `#4f46e5` outline.
 - **`ink` slate `#0f172a`** is the ground: all body text, **all h1/h2/h3 titles
-  stay ink (black), never amber**, plus dark surfaces (footer, favicon tile).
-  `ink-muted #475569` for secondary text.
-- **`paper #f6f4ef`** and `white` are light surfaces.
+  stay ink (black), never violet**, plus dark surfaces (footer, favicon tile).
+  `ink-soft #1e293b` supports dense dark text. `ink-muted #475569` is secondary
+  text.
+- **`paper #f6f4ef`** and `white #ffffff` are light surfaces. `line #e2e8f0` is
+  the hairline colour.
 
-Gradient: `accent-hi #ffc043` (top) to `accent #f59e0b` (bottom), used only inside
-marks (sun, spark), never behind text.
+No gradient is part of the core brand system. Use flat fills and clear contrast.
 
 ## Typography
 
@@ -88,7 +95,9 @@ marks (sun, spark), never behind text.
   tariff figures, data tables, `kbd`. Mono signals "this is real infrastructure."
 
 The wordmark sets the rule: lowercase `open` at weight 500, uppercase `LEG` at
-weight 700 in amber, tracking `-0.04em`.
+weight 700 in violet `#4f46e5`, tracking `-0.04em`. It has no shell prompt
+character. The caret is a violet block with a slow 1.1s blink, disabled under
+`prefers-reduced-motion`.
 
 German user-facing text: Schweizer Hochdeutsch, real umlauts, `ss` not `ß`,
 active voice, no em or en dashes.
@@ -108,47 +117,54 @@ shadows, no glow.
 ## Shapes
 
 Rounded, not pill (except tags/badges). Buttons/inputs `8px`, cards `12px`, the
-favicon tile and feature panels `16px`. The favicon mark itself is built from
-round-capped strokes.
+favicon tile and feature panels `16px`. The favicon mark itself is a rounded
+caret block on a rounded tile.
 
 ## Components
 
 ### Logo / wordmark
 
 ```
-> openLEG▮
+openLEG▮
 ```
 
-- `>` shell prompt, amber, weight 700, ~0.45em right margin.
 - `open` lowercase, ink (paper/`#f6f4ef` on dark via `.ol-logo--inverse`).
-- `LEG` uppercase, amber, weight 700, no gap after `open`.
-- Caret: amber block, slow blink (1.1s), `prefers-reduced-motion` disables it.
-- Source of truth: `templates/partials/brand_wordmark.html`.
-  Inverse variant for dark surfaces: `{% with brand_inverse=true %}`.
+- `LEG` uppercase, violet `#4f46e5`, weight 700, no gap after `open`.
+- Caret: violet `#4f46e5` block, slow blink (1.1s),
+  `prefers-reduced-motion` disables it.
+- Font: `JetBrains Mono`, weight 500, tracking `-0.04em`.
+- Source of truth: `templates/partials/brand_wordmark.html`, with CSS in
+  `templates/partials/brand_head.html`.
+- Inverse variant for dark surfaces: `{% with brand_inverse=true %}` makes
+  `open` paper `#f6f4ef`.
 - Standalone asset (docs, OG, README): `static/images/openleg-logo.svg`.
 
 Never re-typeset the wordmark by hand: always include the partial or the SVG.
+There is no shell prompt `>` character in the wordmark.
 
 ### Favicon
 
-`static/favicon.svg`: amber `>_` prompt on an ink `#0f172a` 16px-radius tile.
-Path-based, no font dependency, legible at 16px. Linked from
-`templates/partials/tailwind_brand.html` with `favicon.ico` as raster fallback.
+`static/favicon.svg`: violet `#4f46e5` blinking caret block on an ink `#0f172a`
+16px-radius tile with `rx 16`. It is path-based, animated by opacity, and has no
+font dependency. Linked from `templates/partials/tailwind_brand.html` with
+`favicon.ico` as raster fallback.
 
 ### Buttons
 
-- Primary (yellow action): `bg-brand text-ink rounded-lg font-semibold hover:bg-brand-dark`.
+- Primary action: `bg-brand text-white rounded-lg font-semibold hover:bg-brand-dark`.
 - Secondary: `border border-slate-200 text-ink bg-white`.
+- Chips and icon badges: `bg-brand/10 text-brand`.
 
 ## Do's and Don'ts
 
-- **Do** make every primary action yellow (`bg-brand`); yellow is the only action colour.
-- **Do** use **ink text on amber fills** (white on amber fails contrast).
-- **Do** keep all h1/h2/h3 titles **ink/black**, never amber.
-- **Do** use the wordmark partial; keep `LEG` uppercase and amber.
+- **Do** make every primary action violet (`bg-brand`); violet is the only action colour.
+- **Do** use **white text on violet fills** with `bg-brand text-white`.
+- **Do** keep all h1/h2/h3 titles **ink/black**, never violet.
+- **Do** use the wordmark partial; keep `LEG` uppercase and violet.
 - **Do** respect `prefers-reduced-motion` (caret stops).
-- **Don't** use indigo or any second action colour anywhere.
-- **Don't** put white text on an amber button, or amber on a heading.
-- **Don't** add a separate icon badge next to the wordmark; the prompt is the mark.
+- **Don't** introduce a second action colour.
+- **Don't** put violet on a heading.
+- **Don't** add a separate icon badge next to the wordmark; the caret is the mark.
+- **Don't** reintroduce a shell prompt `>` into the wordmark or favicon.
 - **Don't** introduce new fonts; sans for reading, mono for the technical voice.
 - **Don't** use em or en dashes in German copy.
