@@ -16,8 +16,9 @@ cd "$(dirname "$0")/.."
 python -m pip install --upgrade pip
 python -m pip install -r requirements-dev.txt
 
-# Smoke check: the full regression gate must be runnable offline.
-python -c "import flask, pytest" >/dev/null
-ruff --version >/dev/null
+# Prove the full regression gate runs before network access is restricted:
+# a green gate here guarantees the offline environment has everything the
+# tests and linters need, including native dependencies.
+bash scripts/tdd_cycle.sh gate
 
 echo "codex setup complete"
