@@ -21,9 +21,21 @@ def _read(path):
 def _shipped_brand_hexes():
     """Extract the hex tokens from the colors block of tailwind.config.js."""
     config = _read(TAILWIND_CONFIG_PATH)
-    colors_block = re.search(r"colors:\s*\{.*?\n\s{6}\}", config, flags=re.DOTALL)
-    assert colors_block, "colors block not found in tailwind.config.js"
-    hexes = set(re.findall(r"#[0-9a-fA-F]{6}", colors_block.group(0)))
+    start = config.find("colors:")
+    assert start != -1, "colors block not found in tailwind.config.js"
+    brace_start = config.index("{", start)
+    depth = 0
+    end = None
+    for index in range(brace_start, len(config)):
+        if config[index] == "{":
+            depth += 1
+        elif config[index] == "}":
+            depth -= 1
+            if depth == 0:
+                end = index + 1
+                break
+    assert end, "unbalanced colors block in tailwind.config.js"
+    hexes = set(re.findall(r"#[0-9a-fA-F]{6}", config[brace_start:end]))
     assert hexes, "no hex tokens found in tailwind.config.js colors block"
     return hexes
 
@@ -48,7 +60,7 @@ class TestDesignDocBrandSync:
             )
 
     def test_no_amber_brand_language(self):
-        assert "amber" not in self.design_lower, (
+        assert not re.search(r"\bamber\b", self.design_lower), (
             "design.md still describes the brand as amber"
         )
 
