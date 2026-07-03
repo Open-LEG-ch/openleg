@@ -16,6 +16,9 @@ import security_utils
 logger = logging.getLogger(__name__)
 
 municipality_bp = Blueprint("municipality", __name__, url_prefix="/gemeinde")
+pilot_bp = Blueprint("pilot", __name__, url_prefix="/pilotgemeinde")
+
+PILOT_MUNICIPALITIES = {"baden": 4021}
 
 
 @municipality_bp.route("/onboarding")
@@ -154,6 +157,11 @@ def profil(bfs):
         already_top = bool(size_rank and size_rank["quartile"] == Ranking.TOP_QUARTILE)
         leaders = ranking.leaders(profile.get("kanton"), exclude_bfs=bfs)
 
+    pilot_slug = next(
+        (slug for slug, pilot_bfs in PILOT_MUNICIPALITIES.items() if pilot_bfs == bfs),
+        None,
+    )
+
     return render_template(
         "gemeinde/profil.html",
         profile=profile,
@@ -170,6 +178,63 @@ def profil(bfs):
         site_url=request.url_root.rstrip("/"),
         share_base=request.url_root.rstrip("/"),
         canonical_url=f"{request.url_root.rstrip('/')}/gemeinde/profil/{bfs}",
+        pilot_slug=pilot_slug,
+    )
+
+
+@pilot_bp.route("/<slug>")
+def pilot_case_study(slug):
+    """Data-driven trust page for selected pilot municipalities."""
+    bfs = PILOT_MUNICIPALITIES.get(slug)
+    if bfs is None:
+        abort(404)
+
+    profile = db.get_municipality_profile(bfs)
+    if not profile:
+        abort(404)
+
+    tariffs = db.get_elcom_tariffs(bfs, year=2026)
+    solar = db.get_sonnendach_municipal(bfs)
+
+    import public_data
+
+    h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
+    value_gap = public_data.compute_leg_value_gap(h4) if h4 else None
+    place_id = f"#place-{bfs}"
+    json_ld = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Article",
+                "headline": f"Fallstudie: LEG-Potenzial in {profile.get('name')}",
+                "author": {"@type": "Organization", "name": "OpenLEG"},
+                "publisher": {"@type": "Organization", "name": "OpenLEG"},
+                "about": {"@id": place_id},
+            },
+            {
+                "@id": place_id,
+                "@type": "Place",
+                "name": profile.get("name"),
+                "identifier": str(bfs),
+                "containedInPlace": {
+                    "@type": "AdministrativeArea",
+                    "name": profile.get("kanton"),
+                },
+            },
+        ],
+    }
+
+    return render_template(
+        "gemeinde/pilotgemeinde.html",
+        profile=profile,
+        bfs=bfs,
+        slug=slug,
+        h4=h4,
+        solar=solar,
+        value_gap=value_gap,
+        json_ld=json_ld,
+        site_url=request.url_root.rstrip("/"),
+        canonical_path=f"/pilotgemeinde/{slug}",
     )
 
 

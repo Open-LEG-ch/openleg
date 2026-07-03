@@ -81,7 +81,7 @@ import tenant as tenant_module
 import email_automation
 
 # --- Blueprints ---
-from municipality import municipality_bp
+from municipality import PILOT_MUNICIPALITIES, municipality_bp, pilot_bp
 from api_public import public_api_bp
 from health import health_bp
 from utility_portal import utility_bp
@@ -171,6 +171,7 @@ else:
 
 # --- Register Blueprints ---
 app.register_blueprint(municipality_bp)
+app.register_blueprint(pilot_bp)
 app.register_blueprint(public_api_bp)
 app.register_blueprint(health_bp)
 app.register_blueprint(utility_bp)
@@ -572,6 +573,8 @@ def sitemap_xml():
     ]
     for bfs in db.get_all_municipality_profile_bfs_numbers():
         pages.append((f"/gemeinde/profil/{bfs}", "0.8", "weekly", current_date))
+    for slug in PILOT_MUNICIPALITIES:
+        pages.append((f"/pilotgemeinde/{slug}", "0.8", "weekly", current_date))
     xml = render_template("sitemap.xml", site_url=SITE_URL, pages=pages)
     return Response(xml, mimetype="application/xml")
 
