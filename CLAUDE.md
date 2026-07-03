@@ -99,15 +99,19 @@ Execution standard:
 
 ## Codex Execution
 
-The `Execution` stage can be delegated to OpenAI Codex. See
-`docs/codex-execution.md` for the full handoff contract.
+The `Execution` stage runs as a two-agent loop: an orchestrating agent
+(Claude) writes failing tests, reviews, and verifies; OpenAI Codex
+implements via `codex exec --full-auto`. Full contract and environment
+requirements: `docs/codex-execution.md`.
 
-- Codex environments use `scripts/codex_setup.sh` as setup script; tests are
-  fully mocked and need no network, database, or secrets.
-- Codex branches use the `codex/<slug>` prefix, PR titles the `[codex]` prefix.
-- Codex must run `scripts/tdd_cycle.sh gate` before finishing and always merge
-  via PR, never push to `main`.
-- `AGENTS.md` is the Codex agent contract and stays byte-identical to this file.
+- One slice, one issue, one `codex/<slug>` branch, one `[codex]` PR.
+- Red tests first; Codex iterates until the full suite is green; the
+  orchestrator reviews every hunk and drives the real app before shipping.
+- `scripts/tdd_cycle.sh gate` must pass before every PR; merge only via PR,
+  never push to `main`. QA stays human.
+- Cloud-task alternative: Codex environments use `scripts/codex_setup.sh`
+  as setup script; tests are fully mocked and need no network or secrets.
+- `AGENTS.md` is the agent contract and stays byte-identical to this file.
 
 ## CI and Branch Policy
 
