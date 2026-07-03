@@ -18,14 +18,14 @@
     <g fill="#475569"><circle cx="28" cy="28" r="7"/><circle cx="52" cy="28" r="7"/><circle cx="76" cy="28" r="7"/></g>
     <line x1="0" y1="52" x2="560" y2="52" stroke="#1e293b" stroke-width="2"/>
     <g font-family="ui-monospace,Menlo,monospace" font-size="26">
-      <text x="32" y="104" fill="#f59e0b">&gt;</text>
+      <text x="32" y="104" fill="#4f46e5">&gt;</text>
       <text x="62" y="104" fill="#f6f4ef">git clone openLEG</text>
       <text x="32" y="150" fill="#64748b">  Lizenz   AGPL-3.0</text>
       <text x="32" y="190" fill="#64748b">  Preis    </text>
-      <text x="150" y="190" fill="#f59e0b">CHF 0</text>
+      <text x="150" y="190" fill="#4f46e5">CHF 0</text>
     </g>
     <!-- blinking-ish caret -->
-    <rect x="32" y="212" width="16" height="26" fill="#f59e0b"/>
+    <rect x="32" y="212" width="16" height="26" fill="#4f46e5"/>
   </g>
 
   <!-- open-source node graph (right) -->
@@ -35,8 +35,8 @@
     <line x1="60"  y1="150" x2="120" y2="250"/>
     <line x1="270" y1="140" x2="210" y2="250"/>
     <line x1="120" y1="250" x2="210" y2="250"/>
-    <g stroke="#d97706" stroke-width="3">
-      <circle cx="160" cy="60"  r="26" fill="#f59e0b"/>
+    <g stroke="#4338ca" stroke-width="3">
+      <circle cx="160" cy="60"  r="26" fill="#4f46e5"/>
       <circle cx="60"  cy="150" r="20" fill="#ffffff"/>
       <circle cx="270" cy="140" r="20" fill="#ffffff"/>
       <circle cx="120" cy="250" r="20" fill="#ffffff"/>

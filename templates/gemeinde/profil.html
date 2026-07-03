@@ -69,7 +69,7 @@
                 {% for chip in league_chips %}
                 <span class="text-sm px-3 py-1 rounded-full border
                     {% if chip.quartile == 1 %}bg-green-50 text-green-700 border-green-200
-                    {% elif chip.quartile == 4 %}bg-amber-50 text-amber-700 border-amber-200
+                    {% elif chip.quartile == 4 %}bg-rose-50 text-rose-700 border-rose-200
                     {% else %}bg-slate-50 text-slate-600 border-slate-200{% endif %}">
                     {{ chip.label }}: Rang {{ chip.rank }} von {{ chip.total }}
                 </span>
@@ -284,7 +284,7 @@
                     {{ ((solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100) - solar.utilization_pct|default(0)|float)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }},
                     {{ (100 - solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }}
                 ],
-                backgroundColor: ['#6366f1', '#f59e0b', '#e5e7eb'],
+                backgroundColor: ['#4f46e5', '#a5b4fc', '#e5e7eb'],
             }]
         },
         options: {
