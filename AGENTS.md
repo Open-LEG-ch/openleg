@@ -97,6 +97,22 @@ Execution standard:
 - Prefer `scripts/tdd_cycle.sh` for deterministic loop commands
 - Run full regression gates before merge
 
+## Codex Execution
+
+The `Execution` stage runs as a two-agent loop: an orchestrating agent
+(Claude) writes failing tests, reviews, and verifies; OpenAI Codex
+implements via `codex exec --full-auto`. Full contract and environment
+requirements: `docs/codex-execution.md`.
+
+- One slice, one issue, one `codex/<slug>` branch, one `[codex]` PR.
+- Red tests first; Codex iterates until the full suite is green; the
+  orchestrator reviews every hunk and drives the real app before shipping.
+- `scripts/tdd_cycle.sh gate` must pass before every PR; merge only via PR,
+  never push to `main`. QA stays human.
+- Cloud-task alternative: Codex environments use `scripts/codex_setup.sh`
+  as setup script; tests are fully mocked and need no network or secrets.
+- `AGENTS.md` is the agent contract and stays byte-identical to this file.
+
 ## CI and Branch Policy
 
 `main` is PR-only.  
