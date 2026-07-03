@@ -411,3 +411,128 @@ def test_profil_skips_ranking_load_without_pv_score(monkeypatch):
     assert resp.status_code == 200
     assert sum(calls) == 0
     assert "33%" in html
+
+
+# === SEO: "[Gemeinde] Stromtarif" query targeting (issue #107) ===
+
+BADEN_PROFILE = {
+    "bfs_number": 4021,
+    "name": "Baden",
+    "kanton": "AG",
+    "population": 20000,
+    "pv_score_pct": 42.7,
+}
+
+BADEN_H4_TARIFF = {
+    "bfs_number": 4021,
+    "year": 2026,
+    "operator_name": "Regionalwerke AG Baden",
+    "category": "H4",
+    "total_rp_kwh": 27.5,
+    "energy_rp_kwh": 12.0,
+    "grid_rp_kwh": 9.5,
+}
+
+
+def _patch_profil_with_tariff(monkeypatch):
+    _patch_profil_deps(monkeypatch, dict(BADEN_PROFILE))
+    monkeypatch.setattr(
+        municipality_module.db,
+        "get_elcom_tariffs",
+        lambda *_a, **_k: [dict(BADEN_H4_TARIFF)],
+    )
+
+
+def _jsonld_graph(html):
+    import json
+    import re
+
+    blocks = re.findall(
+        r'<script type="application/ld\+json">(.*?)</script>', html, flags=re.DOTALL
+    )
+    assert blocks, "no JSON-LD block on profile page"
+    data = json.loads(blocks[0])
+    nodes = data.get("@graph", [data])
+    return {node.get("@type"): node for node in nodes}
+
+
+def test_profil_title_and_h1_target_stromtarif_query(monkeypatch):
+    client = _make_client()
+    _patch_profil_with_tariff(monkeypatch)
+
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8", errors="ignore")
+
+    title = html.split("<title>")[1].split("</title>")[0]
+    assert title.startswith("Stromtarif Baden"), title
+    assert "OpenLEG" in title
+    h1 = html.split("<h1", 1)[1].split("</h1>")[0]
+    assert "Baden" in h1
+    assert "Stromtarif" in h1
+
+
+def test_profil_meta_description_mentions_tariff_value(monkeypatch):
+    client = _make_client()
+    _patch_profil_with_tariff(monkeypatch)
+
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8", errors="ignore")
+
+    description = html.split('name="description" content="')[1].split('"')[0]
+    assert "Baden" in description
+    assert "Stromtarif" in description
+    assert "27.5" in description
+
+
+def test_profil_title_works_without_tariff(monkeypatch):
+    client = _make_client()
+    _patch_profil_deps(monkeypatch, dict(BADEN_PROFILE))
+
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8", errors="ignore")
+
+    title = html.split("<title>")[1].split("</title>")[0]
+    assert title.startswith("Stromtarif Baden"), title
+
+
+def test_profil_renders_place_jsonld(monkeypatch):
+    client = _make_client()
+    _patch_profil_with_tariff(monkeypatch)
+
+    html = client.get(
+        "/gemeinde/profil/4021", headers={"Host": "openleg.ch"}
+    ).data.decode("utf-8", errors="ignore")
+
+    nodes = _jsonld_graph(html)
+    place = nodes.get("Place")
+    assert place, f"no Place node in JSON-LD, got {list(nodes)}"
+    assert place["name"] == "Baden"
+    assert str(place.get("identifier")) == "4021"
+    assert "AG" in str(place.get("containedInPlace", ""))
+
+    breadcrumb = nodes.get("BreadcrumbList")
+    assert breadcrumb, "no BreadcrumbList node in JSON-LD"
+    assert any(
+        "verzeichnis" in str(item.get("item", ""))
+        for item in breadcrumb["itemListElement"]
+    )
+
+
+def test_profil_jsonld_names_grid_operator(monkeypatch):
+    client = _make_client()
+    _patch_profil_with_tariff(monkeypatch)
+
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8", errors="ignore")
+
+    nodes = _jsonld_graph(html)
+    operator = nodes.get("Organization")
+    assert operator, "no Organization node for the grid operator (VNB)"
+    assert operator["name"] == "Regionalwerke AG Baden"
+
+
+def test_profil_jsonld_omits_operator_without_tariff(monkeypatch):
+    client = _make_client()
+    _patch_profil_deps(monkeypatch, dict(BADEN_PROFILE))
+
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8", errors="ignore")
+
+    nodes = _jsonld_graph(html)
+    assert nodes.get("Place")
+    assert "Organization" not in nodes
