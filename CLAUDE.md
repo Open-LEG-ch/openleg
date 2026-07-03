@@ -97,6 +97,18 @@ Execution standard:
 - Prefer `scripts/tdd_cycle.sh` for deterministic loop commands
 - Run full regression gates before merge
 
+## Codex Execution
+
+The `Execution` stage can be delegated to OpenAI Codex. See
+`docs/codex-execution.md` for the full handoff contract.
+
+- Codex environments use `scripts/codex_setup.sh` as setup script; tests are
+  fully mocked and need no network, database, or secrets.
+- Codex branches use the `codex/<slug>` prefix, PR titles the `[codex]` prefix.
+- Codex must run `scripts/tdd_cycle.sh gate` before finishing and always merge
+  via PR, never push to `main`.
+- `AGENTS.md` is the Codex agent contract and stays byte-identical to this file.
+
 ## CI and Branch Policy
 
 `main` is PR-only.  
