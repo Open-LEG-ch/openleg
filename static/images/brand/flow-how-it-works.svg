@@ -5,8 +5,8 @@
       <stop offset="1" stop-color="#f6f4ef"/>
     </linearGradient>
     <linearGradient id="hsun" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffc043"/>
-      <stop offset="1" stop-color="#f59e0b"/>
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#4f46e5"/>
     </linearGradient>
     <pattern id="hdots" width="28" height="28" patternUnits="userSpaceOnUse">
       <circle cx="2" cy="2" r="1.4" fill="#0f172a" opacity="0.05"/>
@@ -20,12 +20,12 @@
   <line x1="0" y1="320" x2="1200" y2="320" stroke="#e2e8f0" stroke-width="2"/>
 
   <!-- energy flow baseline -->
-  <line x1="120" y1="250" x2="1080" y2="250" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 16" opacity="0.9"/>
+  <line x1="120" y1="250" x2="1080" y2="250" stroke="#4f46e5" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 16" opacity="0.9"/>
 
   <!-- sun -->
   <g>
     <circle cx="150" cy="110" r="42" fill="url(#hsun)"/>
-    <g stroke="#f59e0b" stroke-width="5" stroke-linecap="round">
+    <g stroke="#4f46e5" stroke-width="5" stroke-linecap="round">
       <line x1="150" y1="38" x2="150" y2="20"/>
       <line x1="220" y1="110" x2="238" y2="110"/>
       <line x1="200" y1="60" x2="213" y2="47"/>
@@ -40,7 +40,7 @@
     <path d="M12 80 L12 150 L108 150 L108 80"/>
     <rect x="48" y="110" width="24" height="40" fill="#f6f4ef"/>
     <!-- solar panel on roof -->
-    <path d="M30 70 L78 36 L100 52 L52 86 Z" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+    <path d="M30 70 L78 36 L100 52 L52 86 Z" fill="#4f46e5" stroke="#4338ca" stroke-width="2"/>
     <path d="M46 58 L66 72 M62 49 L82 63" stroke="#0f172a" stroke-width="1.6" opacity="0.5"/>
   </g>
 
@@ -48,8 +48,8 @@
   <g transform="translate(470,180)" fill="none" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
     <rect x="0" y="0" width="120" height="140" rx="12" fill="#ffffff"/>
     <rect x="18" y="24" width="84" height="44" rx="6" fill="#0f172a"/>
-    <text x="60" y="54" font-family="ui-monospace,Menlo,monospace" font-size="22" fill="#f59e0b" text-anchor="middle" stroke="none">12.4</text>
-    <circle cx="36" cy="100" r="7" fill="#f59e0b" stroke="none"/>
+    <text x="60" y="54" font-family="ui-monospace,Menlo,monospace" font-size="22" fill="#4f46e5" text-anchor="middle" stroke="none">12.4</text>
+    <circle cx="36" cy="100" r="7" fill="#4f46e5" stroke="none"/>
     <circle cx="60" cy="100" r="7" fill="#e2e8f0" stroke="none"/>
     <circle cx="84" cy="100" r="7" fill="#e2e8f0" stroke="none"/>
   </g>
@@ -57,7 +57,7 @@
   <!-- node 3: LEG hub -->
   <g transform="translate(720,180)" fill="none" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
     <circle cx="60" cy="70" r="48" fill="#0f172a"/>
-    <path d="M40 70 L56 84 L82 54" stroke="#f59e0b" stroke-width="6"/>
+    <path d="M40 70 L56 84 L82 54" stroke="#4f46e5" stroke-width="6"/>
   </g>
 
   <!-- node 4: neighbourhood -->
@@ -65,12 +65,12 @@
     <path d="M0 60 L34 32 L68 60 L68 120 L0 120 Z" fill="#ffffff"/>
     <path d="M70 70 L98 46 L126 70 L126 120 L70 120 Z" fill="#f6f4ef"/>
     <path d="M130 80 L152 60 L174 80 L174 120 L130 120 Z" fill="#ffffff"/>
-    <rect x="22" y="84" width="22" height="36" fill="#f59e0b" stroke="none"/>
-    <rect x="92" y="86" width="18" height="34" fill="#f59e0b" stroke="none"/>
+    <rect x="22" y="84" width="22" height="36" fill="#4f46e5" stroke="none"/>
+    <rect x="92" y="86" width="18" height="34" fill="#4f46e5" stroke="none"/>
   </g>
 
   <!-- flow nodes on baseline -->
-  <g fill="#f59e0b" stroke="#ffffff" stroke-width="3">
+  <g fill="#4f46e5" stroke="#ffffff" stroke-width="3">
     <circle cx="250" cy="250" r="9"/>
     <circle cx="530" cy="250" r="9"/>
     <circle cx="780" cy="250" r="9"/>
