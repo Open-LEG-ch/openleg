@@ -81,15 +81,20 @@ def validate_address(address):
     if not address:
         return False, None, "Adresse ist erforderlich"
 
-    # Sanitize
-    sanitized = sanitize_string(address, max_length=200)
+    raw_address = address.strip()
 
-    if len(sanitized) < 5:
+    if len(raw_address) < 5:
         return False, None, "Adresse ist zu kurz"
 
     # Check for basic address patterns (alphanumeric, spaces, commas, hyphens)
-    if not re.match(r"^[a-zA-ZäöüÄÖÜßéèêàâ0-9\s,.\-]+$", sanitized):
+    if "--" in raw_address or not re.match(
+        r"^[a-zA-ZäöüÄÖÜßéèêàâôîûçëïòùÉÈÊÀÂÔÎÛÇËÏÒÙ0-9\s,.\-'’&]+$",
+        raw_address,
+    ):
         return False, None, "Adresse enthält ungültige Zeichen"
+
+    # Sanitize
+    sanitized = sanitize_string(address, max_length=200)
 
     return True, sanitized, None
 

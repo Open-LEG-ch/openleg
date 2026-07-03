@@ -112,6 +112,22 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
 )
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB for CSV uploads
 
+
+@app.errorhandler(429)
+def handle_rate_limit(_error):
+    return (
+        jsonify(
+            {
+                "error": (
+                    "Zu viele Anfragen. Bitte warten Sie eine Minute und "
+                    "versuchen Sie es erneut."
+                )
+            }
+        ),
+        429,
+    )
+
+
 # --- Basis-URL ---
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5003")
 SITE_URL = APP_BASE_URL.rstrip("/")

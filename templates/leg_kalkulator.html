@@ -158,6 +158,7 @@
         >
           Sparpotenzial berechnen
         </button>
+        <p id="calculator-error" class="text-red-600 text-sm mt-3 hidden"></p>
       </div>
 
       <!-- Results -->
@@ -395,25 +396,33 @@
 
     function calculateSavings() {
       if (!selectedBfs) return;
+      const errorEl = document.getElementById('calculator-error');
+      errorEl.classList.add('hidden');
+      errorEl.textContent = '';
 
       const consumption = parseInt(document.getElementById('consumption').value);
       const localPercent = parseInt(document.getElementById('production').value);
 
       // Fetch tariff data and calculate
       fetch(`/api/v1/municipalities/${selectedBfs}/tariffs`)
-        .then(r => r.json())
-        .then(tariffs => {
+        .then(r => {
+          if (!r.ok) throw new Error(`Tariff request failed: ${r.status}`);
+          return r.json();
+        })
+        .then(data => {
+          const tariffs = data.tariffs || [];
           if (!tariffs || tariffs.length === 0) {
-            alert('Keine Tarifdaten für diese Gemeinde verfügbar.');
+            errorEl.textContent = 'Keine Tarifdaten für diese Gemeinde verfügbar.';
+            errorEl.classList.remove('hidden');
             return;
           }
 
           // Use H4 category (typical household)
           const tariff = tariffs.find(t => t.category === 'H4') || tariffs[0];
-          
+
           // Typical Swiss averages (Rp/kWh)
-          const energyPrice = tariff.energy_price || 12.0;
-          const gridPrice = tariff.grid_price || 8.0;
+          const energyPrice = tariff.energy_rp_kwh || 12.0;
+          const gridPrice = tariff.grid_rp_kwh || 8.0;
           const feesAndTaxes = 2.5; // KEV, communal fees, etc.
 
           // Local consumption
@@ -494,7 +503,8 @@
         })
         .catch(err => {
           console.error('Calculation error:', err);
-          alert('Fehler bei der Berechnung. Bitte versuchen Sie es erneut.');
+          errorEl.textContent = 'Fehler bei der Berechnung. Bitte versuchen Sie es erneut.';
+          errorEl.classList.remove('hidden');
         });
     }
 

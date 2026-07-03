@@ -314,8 +314,8 @@
             <label class="block text-sm font-medium mb-1">Telefon (optional)</label>
             <input type="tel" id="phone-input" placeholder="+41 79 ..." class="w-full border rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-brand focus:outline-none">
             <div class="space-y-2 mb-4 text-sm">
-              <label class="flex items-start gap-2"><input type="checkbox" id="consent-neighbors" class="mt-1"> Ich möchte, dass interessierte Nachbarn in meiner Nähe mich kontaktieren können.</label>
-              <label class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1"> Meine Daten dürfen für die LEG-Anmeldung beim Netzbetreiber verwendet werden.</label>
+              <label class="flex items-start gap-2"><input type="checkbox" id="consent-neighbors" class="mt-1" required> Ich möchte, dass interessierte Nachbarn in meiner Nähe mich kontaktieren können. (erforderlich)</label>
+              <label class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1" required> Meine Daten dürfen für die LEG-Anmeldung beim Netzbetreiber verwendet werden. (erforderlich)</label>
               <label class="flex items-start gap-2"><input type="checkbox" id="consent-updates"> Ich möchte Updates per E-Mail erhalten.</label>
             </div>
             <p class="text-xs text-ink-muted mb-3">Ihre Daten werden nicht verkauft und nicht an Dritte weitergegeben. Sie können jederzeit alles löschen.</p>
@@ -386,6 +386,7 @@
 
   let selectedProfile = null;
   let addressTimeout = null;
+  const referralCode = new URLSearchParams(window.location.search).get('ref');
 
   // Address autocomplete
   const addressInput = document.getElementById('address-input');
@@ -411,25 +412,35 @@
           return;
       }
       addressTimeout = setTimeout(async () => {
-          const res = await fetch(`/api/suggest_addresses?q=${encodeURIComponent(q)}`);
-          const data = await res.json();
-          if (data.suggestions && data.suggestions.length > 0) {
-              suggestionsDiv.innerHTML = data.suggestions.map(s =>
-                  `<div class="px-3 py-2 hover:bg-amber-50 cursor-pointer text-sm border-b" data-lat="${s.lat}" data-lon="${s.lon}" data-plz="${s.plz}" data-label="${s.label}">${s.label}</div>`
-              ).join('');
-              suggestionsDiv.classList.remove('hidden');
-              suggestionsDiv.querySelectorAll('div').forEach(el => {
-                  el.addEventListener('click', function() {
-                      addressInput.value = this.dataset.label;
+          try {
+              const res = await fetch(`/api/suggest_addresses?q=${encodeURIComponent(q)}`)
+                  .catch(e => {
                       suggestionsDiv.classList.add('hidden');
-                      btnCheck.disabled = false;
-                      setAddressState('empty', 'Adresse gewählt. Jetzt prüfen.');
+                      throw e;
                   });
-              });
-          } else {
+              if (!res.ok) throw new Error(`Address suggestions failed: ${res.status}`);
+              const data = await res.json();
+              if (data.suggestions && data.suggestions.length > 0) {
+                  suggestionsDiv.innerHTML = data.suggestions.map(s =>
+                      `<div class="px-3 py-2 hover:bg-amber-50 cursor-pointer text-sm border-b" data-lat="${s.lat}" data-lon="${s.lon}" data-plz="${s.plz}" data-label="${s.label}">${s.label}</div>`
+                  ).join('');
+                  suggestionsDiv.classList.remove('hidden');
+                  suggestionsDiv.querySelectorAll('div').forEach(el => {
+                      el.addEventListener('click', function() {
+                          addressInput.value = this.dataset.label;
+                          suggestionsDiv.classList.add('hidden');
+                          btnCheck.disabled = false;
+                          setAddressState('empty', 'Adresse gewählt. Jetzt prüfen.');
+                      });
+                  });
+              } else {
+                  suggestionsDiv.classList.add('hidden');
+                  btnCheck.disabled = true;
+                  setAddressState('not-found', 'Keine passende Adresse gefunden. Prüfen Sie Schreibweise und PLZ.');
+              }
+          } catch(e) {
+              console.warn('Address autocomplete failed:', e);
               suggestionsDiv.classList.add('hidden');
-              btnCheck.disabled = true;
-              setAddressState('not-found', 'Keine passende Adresse gefunden. Prüfen Sie Schreibweise und PLZ.');
           }
       }, 300);
   });
@@ -446,6 +457,14 @@
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({address: addressInput.value})
           });
+          if (res.status === 429) {
+              document.getElementById('form-error').textContent = 'Zu viele Anfragen. Bitte warten Sie eine Minute.';
+              document.getElementById('form-error').classList.remove('hidden');
+              this.disabled = false;
+              this.textContent = 'Adresse prüfen';
+              setAddressState('empty', 'Adresse konnte nicht geprüft werden.');
+              return;
+          }
           const data = await res.json();
           if (data.error) {
               document.getElementById('form-error').textContent = data.error;
@@ -488,17 +507,29 @@
           document.getElementById('form-error').classList.remove('hidden');
           return;
       }
+      if (!cn || !cu) {
+          document.getElementById('form-error').textContent = 'Bitte stimmen Sie den beiden erforderlichen Punkten zu.';
+          document.getElementById('form-error').classList.remove('hidden');
+          return;
+      }
       try {
-          const res = await fetch('/api/register_interest', {
+          const payload = {
+              email, phone, profile: selectedProfile,
+              consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co}
+          };
+          if (referralCode) payload.referral_code = referralCode;
+          const res = await fetch('/api/register_anonymous', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({
-                  email, phone, profile_summary: selectedProfile,
-                  consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co}
-              })
+              body: JSON.stringify(payload)
           });
-          const data = await res.json();
-          if (data.success) {
+          let data = {};
+          try {
+              data = await res.json();
+          } catch(e) {
+              data = {};
+          }
+          if (res.ok) {
               document.getElementById('step-register').classList.add('hidden');
               document.getElementById('step-success').classList.remove('hidden');
               if (data.referral_link) {
@@ -506,7 +537,9 @@
                   document.getElementById('referral-link-box').classList.remove('hidden');
               }
           } else {
-              document.getElementById('form-error').textContent = data.error || 'Registrierung fehlgeschlagen.';
+              document.getElementById('form-error').textContent = res.status === 429
+                  ? 'Zu viele Anfragen. Bitte warten Sie eine Minute.'
+                  : (data.error || 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
               document.getElementById('form-error').classList.remove('hidden');
           }
       } catch(e) {
