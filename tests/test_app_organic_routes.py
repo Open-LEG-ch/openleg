@@ -78,6 +78,25 @@ def test_security_policy_allows_google_analytics_region_collect(full_app_module)
     }
 
 
+def test_security_policy_allows_brand_font_assets(full_app_module):
+    client = full_app_module.app.test_client()
+    resp = client.get("/dashboard/demo")
+
+    csp = resp.headers.get("Content-Security-Policy", "")
+    assert _csp_sources(csp, "style-src") == {
+        "'self'",
+        "'unsafe-inline'",
+        "https://unpkg.com",
+        "https://cdn.jsdelivr.net",
+        "https://fonts.googleapis.com",
+    }
+    assert _csp_sources(csp, "font-src") == {
+        "'self'",
+        "data:",
+        "https://fonts.gstatic.com",
+    }
+
+
 def test_root_favicon_serves_static_icon(full_app_module):
     client = full_app_module.app.test_client()
 

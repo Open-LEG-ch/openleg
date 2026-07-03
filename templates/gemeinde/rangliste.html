@@ -28,8 +28,8 @@
 
     <!-- Tabs -->
     <div class="flex gap-2 mb-6">
-      <a href="/rangliste" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-ink' if active_tab == 'rangliste' else 'bg-white text-ink border border-slate-200' }}">Rangliste</a>
-      <a href="/rangliste/fortschritte" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-ink' if active_tab == 'fortschritte' else 'bg-white text-ink border border-slate-200' }}">Grösste Fortschritte</a>
+      <a href="/rangliste" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-white' if active_tab == 'rangliste' else 'bg-white text-ink border border-slate-200' }}">Rangliste</a>
+      <a href="/rangliste/fortschritte" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-white' if active_tab == 'fortschritte' else 'bg-white text-ink border border-slate-200' }}">Grösste Fortschritte</a>
     </div>
 
     <!-- Liga-Filter -->
@@ -59,7 +59,7 @@
         </select>
       </div>
       <div class="flex items-end gap-2">
-        <button type="submit" class="bg-brand text-ink px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Liga filtern</button>
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Liga filtern</button>
         <a href="/rangliste" class="px-3 py-2 rounded-lg text-sm text-ink-muted hover:text-ink">Zurücksetzen</a>
       </div>
     </form>

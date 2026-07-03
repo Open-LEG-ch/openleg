@@ -67,6 +67,7 @@ import security_utils
 
 # --- PostgreSQL Database ---
 import database as db
+import dashboard as dashboard_module
 import pv_ranking
 
 USE_POSTGRES = db.is_db_available()
@@ -151,9 +152,10 @@ if HAS_SECURITY_LIBS:
                 "'unsafe-inline'",
                 "https://unpkg.com",
                 "https://cdn.jsdelivr.net",
+                "https://fonts.googleapis.com",
             ],
             "img-src": ["'self'", "data:", "https:", "http:"],
-            "font-src": ["'self'", "data:"],
+            "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
             "connect-src": [
                 "'self'",
                 "https://www.google-analytics.com",
@@ -1364,6 +1366,11 @@ def dashboard():
         referral_link=referral_link,
         error=None,
     )
+
+
+@app.route("/dashboard/demo")
+def dashboard_demo():
+    return render_city_template("dashboard.html", **dashboard_module.demo_readiness())
 
 
 # --- Referral System ---
