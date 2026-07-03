@@ -27,6 +27,11 @@
             </p>
             <h1 class="text-3xl font-bold">Stromtarif und Energieprofil {{ profile.name }}</h1>
             <p class="text-gray-600 mt-1">Kanton {{ profile.kanton }}{% if profile.population %} · {{ "{:,}".format(profile.population|int).replace(",", "'") }} Einwohner{% endif %}</p>
+            {% if pilot_slug %}
+            <p class="text-sm mt-3">
+                <a href="/pilotgemeinde/{{ pilot_slug }}" class="text-brand hover:underline">Fallstudie für {{ profile.name }} ansehen</a>
+            </p>
+            {% endif %}
         </div>
 
         <!-- KPI Cards -->
@@ -202,7 +207,11 @@
                     </div>
                     <div>
                         <p class="text-gray-500">Potenzial</p>
+                        {% if solar.potential_kwp is defined and solar.potential_kwp is not none %}
                         <p class="font-medium">{{ "{:,.0f}".format(solar.potential_kwp|float).replace(",", "'") }} kWp</p>
+                        {% else %}
+                        <p class="font-medium">Noch nicht verfügbar</p>
+                        {% endif %}
                     </div>
                     <div>
                         <p class="text-gray-500">Auslastung</p>
