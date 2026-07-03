@@ -174,3 +174,25 @@ class TestAddressValidation:
     def test_accepts_real_swiss_addresses(self, address):
         is_valid, _sanitized, error = security_utils.validate_address(address)
         assert is_valid, f"legitimate Swiss address rejected: {address!r} ({error})"
+
+
+class TestAutocompleteResilience:
+    @pytest.fixture(autouse=True)
+    def load(self):
+        self.html = _read_template("index.html")
+        start = self.html.index("suggest_addresses")
+        self.suggest_section = self.html[start : start + 1800]
+
+    def test_failure_path_does_not_dead_end(self):
+        catch_part = self.suggest_section.split("catch")[-1][:500]
+        assert "btnCheck.disabled = false" in catch_part, (
+            "on autocomplete failure the check button must be enabled so the "
+            "typed address can still be validated server-side"
+        )
+
+    def test_suggestions_built_without_innerhtml_interpolation(self):
+        assert "suggestionsDiv.innerHTML = data.suggestions" not in self.html, (
+            "suggestion labels must not be interpolated into innerHTML; "
+            "build nodes with textContent and dataset"
+        )
+        assert "textContent" in self.suggest_section

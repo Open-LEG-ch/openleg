@@ -421,24 +421,32 @@
               if (!res.ok) throw new Error(`Address suggestions failed: ${res.status}`);
               const data = await res.json();
               if (data.suggestions && data.suggestions.length > 0) {
-                  suggestionsDiv.innerHTML = data.suggestions.map(s =>
-                      `<div class="px-3 py-2 hover:bg-slate-50 cursor-pointer text-sm border-b" data-lat="${s.lat}" data-lon="${s.lon}" data-plz="${s.plz}" data-label="${s.label}">${s.label}</div>`
-                  ).join('');
-                  suggestionsDiv.classList.remove('hidden');
-                  suggestionsDiv.querySelectorAll('div').forEach(el => {
+                  suggestionsDiv.replaceChildren();
+                  data.suggestions.forEach(s => {
+                      const el = document.createElement('div');
+                      el.className = 'px-3 py-2 hover:bg-slate-50 cursor-pointer text-sm border-b';
+                      el.textContent = s.label;
+                      el.dataset.lat = s.lat;
+                      el.dataset.lon = s.lon;
+                      el.dataset.plz = s.plz;
+                      el.dataset.label = s.label;
                       el.addEventListener('click', function() {
                           addressInput.value = this.dataset.label;
                           suggestionsDiv.classList.add('hidden');
                           btnCheck.disabled = false;
                           setAddressState('empty', 'Adresse gewählt. Jetzt prüfen.');
                       });
+                      suggestionsDiv.appendChild(el);
                   });
+                  suggestionsDiv.classList.remove('hidden');
               } else {
                   suggestionsDiv.classList.add('hidden');
                   btnCheck.disabled = true;
                   setAddressState('not-found', 'Keine passende Adresse gefunden. Prüfen Sie Schreibweise und PLZ.');
               }
           } catch(e) {
+              btnCheck.disabled = false;
+              setAddressState('empty', 'Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen.');
               console.warn('Address autocomplete failed:', e);
               suggestionsDiv.classList.add('hidden');
           }
