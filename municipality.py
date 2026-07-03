@@ -29,18 +29,19 @@ def _format_rp_kwh(value):
 
 def _profile_seo(name, h4_tariff):
     h4_total = _format_rp_kwh(h4_tariff.get("total_rp_kwh")) if h4_tariff else None
-    year = 2026
-    if h4_tariff:
-        year = h4_tariff.get("year") or year
+    year = (h4_tariff or {}).get("year")
+    year_part = f" {year}" if year else ""
 
     if h4_total:
-        title = f"Stromtarif {name} {year}: {h4_total} Rp/kWh, Solar und LEG | OpenLEG"
+        title = (
+            f"Stromtarif {name}{year_part}: {h4_total} Rp/kWh, Solar und LEG | OpenLEG"
+        )
         description = (
             f"Stromtarif {name}: {h4_total} Rp/kWh im H4-Profil. "
             "OpenLEG zeigt Solarnutzung und LEG-Potenzial für die Gemeinde."
         )
     else:
-        title = f"Stromtarif {name} {year}: Solar und LEG | OpenLEG"
+        title = f"Stromtarif {name}: Solar und LEG | OpenLEG"
         description = (
             f"Stromtarif {name}: OpenLEG zeigt Solarnutzung, "
             "Energieprofil und LEG-Potenzial für die Gemeinde."
