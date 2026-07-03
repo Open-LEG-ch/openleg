@@ -170,3 +170,29 @@ def test_sitemap_contains_case_study(full_app_module, monkeypatch):
     client = full_app_module.app.test_client()
     xml = client.get("/sitemap.xml").data.decode("utf-8", errors="ignore")
     assert "/pilotgemeinde/baden" in xml
+
+
+def test_pilot_uses_latest_tariffs_not_hardcoded_year(monkeypatch):
+    client = _make_client()
+    _patch_pilot_deps(monkeypatch)
+    seen_years = []
+
+    def _spy_tariffs(_bfs, year=None):
+        seen_years.append(year)
+        return [dict(BADEN_H4_TARIFF)]
+
+    monkeypatch.setattr(municipality_module.db, "get_elcom_tariffs", _spy_tariffs)
+    resp = client.get("/pilotgemeinde/baden")
+    assert resp.status_code == 200
+    assert seen_years == [None], (
+        "pilot route must not hardcode a tariff year; latest-first ordering "
+        f"of get_elcom_tariffs supplies the newest data (got {seen_years})"
+    )
+
+
+def test_fuer_bewohner_links_to_case_study(full_app_module):
+    client = full_app_module.app.test_client()
+    resp = client.get("/fuer-bewohner")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "/pilotgemeinde/baden" in html

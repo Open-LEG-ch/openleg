@@ -193,7 +193,9 @@ def pilot_case_study(slug):
     if not profile:
         abort(404)
 
-    tariffs = db.get_elcom_tariffs(bfs, year=2026)
+    # No year filter: get_elcom_tariffs orders year DESC, so the first H4
+    # entry is always the latest available tariff.
+    tariffs = db.get_elcom_tariffs(bfs)
     solar = db.get_sonnendach_municipal(bfs)
 
     import public_data
