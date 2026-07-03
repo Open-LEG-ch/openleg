@@ -18,6 +18,83 @@ logger = logging.getLogger(__name__)
 municipality_bp = Blueprint("municipality", __name__, url_prefix="/gemeinde")
 
 
+def _format_rp_kwh(value):
+    if value is None:
+        return None
+    try:
+        return f"{float(value):.1f}"
+    except (TypeError, ValueError):
+        return None
+
+
+def _profile_seo(name, h4_tariff):
+    h4_total = _format_rp_kwh(h4_tariff.get("total_rp_kwh")) if h4_tariff else None
+    year = 2026
+    if h4_tariff:
+        year = h4_tariff.get("year") or year
+
+    if h4_total:
+        title = f"Stromtarif {name} {year}: {h4_total} Rp/kWh, Solar und LEG | OpenLEG"
+        description = (
+            f"Stromtarif {name}: {h4_total} Rp/kWh im H4-Profil. "
+            "OpenLEG zeigt Solarnutzung und LEG-Potenzial für die Gemeinde."
+        )
+    else:
+        title = f"Stromtarif {name} {year}: Solar und LEG | OpenLEG"
+        description = (
+            f"Stromtarif {name}: OpenLEG zeigt Solarnutzung, "
+            "Energieprofil und LEG-Potenzial für die Gemeinde."
+        )
+
+    return title, description
+
+
+def _profile_jsonld(profile, bfs, h4_tariff, site_url, canonical_url):
+    name = (profile.get("name") or "").strip()
+    kanton = (profile.get("kanton") or "").strip().upper()[:2]
+    graph = [
+        {
+            "@type": "Place",
+            "name": name,
+            "identifier": str(bfs),
+            "containedInPlace": {
+                "@type": "AdministrativeArea",
+                "name": kanton,
+            },
+            "url": canonical_url,
+        },
+        {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Gemeindeverzeichnis",
+                    "item": f"{site_url}/gemeinde/verzeichnis",
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": name,
+                    "item": canonical_url,
+                },
+            ],
+        },
+    ]
+
+    operator_name = str((h4_tariff or {}).get("operator_name") or "").strip()
+    if operator_name:
+        graph.append(
+            {
+                "@type": "Organization",
+                "name": operator_name,
+                "description": "Verteilnetzbetreiber",
+            }
+        )
+
+    return {"@context": "https://schema.org", "@graph": graph}
+
+
 @municipality_bp.route("/onboarding")
 def onboarding():
     return render_template(
@@ -154,6 +231,12 @@ def profil(bfs):
         already_top = bool(size_rank and size_rank["quartile"] == Ranking.TOP_QUARTILE)
         leaders = ranking.leaders(profile.get("kanton"), exclude_bfs=bfs)
 
+    name = (profile.get("name") or "").strip()
+    site_url = request.url_root.rstrip("/")
+    canonical_url = f"{site_url}/gemeinde/profil/{bfs}"
+    seo_title, seo_description = _profile_seo(name, h4)
+    jsonld = _profile_jsonld(profile, bfs, h4, site_url, canonical_url)
+
     return render_template(
         "gemeinde/profil.html",
         profile=profile,
@@ -167,9 +250,12 @@ def profil(bfs):
         improvement=improvement,
         already_top=already_top,
         leaders=leaders,
-        site_url=request.url_root.rstrip("/"),
-        share_base=request.url_root.rstrip("/"),
-        canonical_url=f"{request.url_root.rstrip('/')}/gemeinde/profil/{bfs}",
+        site_url=site_url,
+        share_base=site_url,
+        canonical_url=canonical_url,
+        seo_title=seo_title,
+        seo_description=seo_description,
+        jsonld=jsonld,
     )
 
 
