@@ -71,8 +71,15 @@ def _rate_limit_key():
 def list_municipalities():
     """List all municipalities with profiles."""
     kanton_filter, kanton = _normalize_kanton_param(request.args.get("kanton"))
+    search = (request.args.get("search") or "").strip().lower()
     order_by = request.args.get("order_by", "name")
     profiles = db.get_all_municipality_profiles(kanton=kanton_filter, order_by=order_by)
+    if search:
+        profiles = [
+            profile
+            for profile in profiles
+            if search in (profile.get("name") or "").lower()
+        ]
     return jsonify(
         {
             "municipalities": _serialize_profiles(profiles),
