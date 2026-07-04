@@ -100,7 +100,7 @@ def get_address_suggestions(query_string, limit=10, plz_ranges=None):
         return suggestions
     except Exception as e:
         print(f"  [GEO FEHLER bei Vorschlägen] {e}")
-        return []
+        return None
 
 
 def get_coordinates_from_address(address_string):

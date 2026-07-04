@@ -196,3 +196,43 @@ class TestAutocompleteResilience:
             "build nodes with textContent and dataset"
         )
         assert "textContent" in self.suggest_section
+
+
+# === Server: address-suggestion upstream outage (browser-drive finding) ===
+
+
+class TestSuggestAddressesOutage:
+    """An upstream Swisstopo failure must not masquerade as 'no matches'.
+
+    The enricher used to swallow errors and return [], so the funnel showed
+    'Keine passende Adresse gefunden' and disabled the check button: a dead
+    end for a visitor who typed a perfectly good address.
+    """
+
+    def test_upstream_failure_returns_503_json(self, full_app_module):
+        client = full_app_module.app.test_client()
+        with patch.object(
+            full_app_module.data_enricher, "get_address_suggestions", return_value=None
+        ):
+            resp = client.get("/api/suggest_addresses?q=Mellingerstrasse")
+        assert resp.status_code == 503
+        assert resp.is_json
+        assert "verfügbar" in resp.get_json()["error"]
+
+    def test_genuinely_empty_result_stays_200(self, full_app_module):
+        client = full_app_module.app.test_client()
+        with patch.object(
+            full_app_module.data_enricher, "get_address_suggestions", return_value=[]
+        ):
+            resp = client.get("/api/suggest_addresses?q=Atlantisweg")
+        assert resp.status_code == 200
+        assert resp.get_json() == {"suggestions": []}
+
+    def test_enricher_returns_none_on_upstream_error(self, monkeypatch):
+        import data_enricher
+
+        def _boom(*_a, **_k):
+            raise RuntimeError("upstream down")
+
+        monkeypatch.setattr(data_enricher.requests, "get", _boom)
+        assert data_enricher.get_address_suggestions("Mellingerstrasse 12") is None
