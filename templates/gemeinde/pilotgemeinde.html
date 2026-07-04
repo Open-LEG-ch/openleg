@@ -28,7 +28,7 @@
         <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             {% if h4 and h4.total_rp_kwh is defined and h4.total_rp_kwh is not none %}
             <div class="bg-white rounded-xl p-5 shadow-sm border">
-                <p class="text-xs text-gray-500 uppercase tracking-wide">H4 Stromtarif</p>
+                <p class="text-xs text-ink-muted uppercase tracking-wide">H4 Stromtarif</p>
                 <p class="text-2xl font-bold mt-2">{{ "%.1f"|format(h4.total_rp_kwh|float) }} <span class="text-sm font-normal">Rp/kWh</span></p>
             </div>
             {% endif %}
@@ -40,13 +40,13 @@
             {% endif %}
             {% if h4 and h4.operator_name %}
             <div class="bg-white rounded-xl p-5 shadow-sm border">
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Verteilnetzbetreiber</p>
+                <p class="text-xs text-ink-muted uppercase tracking-wide">Verteilnetzbetreiber</p>
                 <p class="text-lg font-semibold mt-2">{{ h4.operator_name }}</p>
             </div>
             {% endif %}
             {% if solar %}
             <div class="bg-white rounded-xl p-5 shadow-sm border">
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Solarnutzung</p>
+                <p class="text-xs text-ink-muted uppercase tracking-wide">Solarnutzung</p>
                 {% if solar.utilization_pct is defined and solar.utilization_pct is not none %}
                 <p class="text-2xl font-bold mt-2">{{ solar.utilization_pct }}%</p>
                 {% endif %}
@@ -127,6 +127,6 @@
             </div>
         </section>
 
-        <p class="text-xs text-gray-500">Datenquellen: ElCom Tarifdaten{% if h4 and h4.year %} {{ h4.year }}{% endif %}, BFE Sonnendach.</p>
+        <p class="text-xs text-ink-muted">Datenquellen: ElCom Tarifdaten{% if h4 and h4.year %} {{ h4.year }}{% endif %}, BFE Sonnendach.</p>
     </main>
 {% endblock %}
