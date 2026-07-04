@@ -236,3 +236,18 @@ class TestSuggestAddressesOutage:
 
         monkeypatch.setattr(data_enricher.requests, "get", _boom)
         assert data_enricher.get_address_suggestions("Mellingerstrasse 12") is None
+
+
+class TestFunnelSurvivesCdnFailure:
+    """Leaflet comes from a third-party CDN; when it fails to load (corporate
+    proxies, adblockers, CDN outage), an unguarded L.map() throws and kills
+    every funnel listener on the homepage: no autocomplete, no address check,
+    no registration. Found by driving the page in a browser with the CDN
+    blocked."""
+
+    def test_map_init_guarded(self):
+        html = _read_template("index.html")
+        assert "typeof L" in html, (
+            "guard the Leaflet map init so a CDN failure cannot break "
+            "the registration funnel"
+        )
