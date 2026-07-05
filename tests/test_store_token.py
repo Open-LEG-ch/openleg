@@ -109,3 +109,13 @@ def test_delete_tokens_filters_by_type(monkeypatch):
     query, params = cur.executed[0]
     assert "token_type" in query
     assert params == ("b1", "unsubscribe")
+
+
+def test_save_token_wires_params(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert store_token.save_token("t1", "b1", "verification", ttl_seconds=3600) is True
+    query, params = cur.executed[0]
+    assert "INSERT INTO tokens" in query
+    assert params == ("t1", "b1", "verification", 3600)
