@@ -44,7 +44,14 @@ def _plz_in_ranges(plz_int, plz_ranges=None):
 
 
 def get_address_suggestions(query_string, limit=10, plz_ranges=None):
-    """Fragt Swisstopo API ab, um Adressvorschläge zu erhalten (gefiltert nach PLZ-Bereichen)."""
+    """Fragt Swisstopo API ab, um Adressvorschläge zu erhalten (gefiltert nach PLZ-Bereichen).
+
+    Returns a list of suggestion dicts; an empty list means the query
+    genuinely matched nothing. Returns None when the upstream request
+    fails, so callers can distinguish an outage from no matches and must
+    not treat None as an empty result (see /api/suggest_addresses, which
+    turns None into a 503).
+    """
     if not query_string or len(query_string) < 2:
         return []
 
@@ -100,7 +107,7 @@ def get_address_suggestions(query_string, limit=10, plz_ranges=None):
         return suggestions
     except Exception as e:
         print(f"  [GEO FEHLER bei Vorschlägen] {e}")
-        return []
+        return None
 
 
 def get_coordinates_from_address(address_string):
