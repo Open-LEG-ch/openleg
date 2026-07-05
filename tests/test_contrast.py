@@ -42,9 +42,14 @@ def contrast(fg, bg):
 
 
 def _css_value(source, selector, prop):
-    match = re.search(re.escape(selector) + r"\{([^}]*)\}", source)
+    # Whitespace-tolerant so behavior-preserving reformatting of the inline
+    # CSS (spaces/newlines around "{", "color :", "color: #...") does not
+    # break the contract.
+    match = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", source)
     assert match, f"selector {selector!r} not found"
-    prop_match = re.search(prop + r":\s*(#[0-9a-fA-F]{6})", match.group(1))
+    prop_match = re.search(
+        re.escape(prop) + r"\s*:\s*(#[0-9a-fA-F]{6})", match.group(1)
+    )
     assert prop_match, f"no {prop} hex on {selector!r}"
     return prop_match.group(1)
 

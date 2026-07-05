@@ -78,12 +78,15 @@ One action colour, one ground:
   `bg-brand text-white rounded-lg font-semibold hover:bg-brand-dark`.
   This is the shipped contrast rule.
 - Tinted chips and icon badges use `bg-brand/10 text-brand`.
-- Focus indicators use a 2px solid `#4f46e5` outline.
+- Focus indicators use a 2px solid `#4f46e5` outline on light surfaces
+  (`paper`, `white`): 5.7:1 to 6.3:1, clears the 3:1 UI-component minimum.
+  On dark ink surfaces the focus outline switches to indigo-400 `#818cf8`
+  (6.0:1), matching the dark-surface rule below.
 - **On dark ink surfaces, never use raw brand `#4f46e5` for text or marks**
-  (2.8:1, fails WCAG AA). Use indigo-400 `#818cf8` for identity accents and
-  large numbers (6.0:1) and indigo-300 `#a5b4fc` for small text (9.0:1). The
-  inverse wordmark (`LEG`, caret) uses `#818cf8`. Footer text on ink uses
-  `text-slate-400` or lighter.
+  (2.8:1, fails WCAG AA). Use indigo-400 `#818cf8` for identity accents,
+  large numbers, and focus outlines (6.0:1) and indigo-300 `#a5b4fc` for
+  small text (9.0:1). The inverse wordmark (`LEG`, caret) uses `#818cf8`.
+  Footer text on ink uses `text-slate-400` or lighter.
 - Muted small text on the `paper` body uses `text-ink-muted` (6.9:1), not
   gray-400/gray-500 (both fail on paper). Positive money values on paper use
   `text-green-700`.
