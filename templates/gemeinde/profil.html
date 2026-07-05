@@ -22,7 +22,7 @@
     <main class="max-w-6xl mx-auto px-4 py-8">
         <!-- Header -->
         <div class="mb-8">
-            <p class="text-sm text-gray-500 mb-1">
+            <p class="text-sm text-ink-muted mb-1">
                 <a href="/gemeinde/verzeichnis" class="hover:text-brand">Gemeindeverzeichnis</a> / {{ profile.kanton }}
             </p>
             <h1 class="text-3xl font-bold">Stromtarif und Energieprofil {{ profile.name }}</h1>
@@ -38,7 +38,7 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {% if h4_tariff %}
             <div class="bg-white rounded-xl p-4 shadow-sm border">
-                <p class="text-xs text-gray-500 uppercase tracking-wide">H4 Stromtarif</p>
+                <p class="text-xs text-ink-muted uppercase tracking-wide">H4 Stromtarif</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.1f"|format(h4_tariff.total_rp_kwh|float) }} <span class="text-sm font-normal">Rp/kWh</span></p>
             </div>
             {% endif %}
@@ -50,13 +50,13 @@
             {% endif %}
             {% if solar_score is not none %}
             <div class="bg-white rounded-xl p-4 shadow-sm border">
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Solarnutzung</p>
+                <p class="text-xs text-ink-muted uppercase tracking-wide">Solarnutzung</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.0f"|format(solar_score|float) }}%</p>
-                {% if solar_over_100 %}<p class="text-[10px] text-gray-400 mt-1">Schätzung übertroffen</p>{% endif %}
+                {% if solar_over_100 %}<p class="text-[10px] text-ink-muted mt-1">Schätzung übertroffen</p>{% endif %}
             </div>
             {% endif %}
             <div class="bg-white rounded-xl p-4 shadow-sm border">
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Energiewende-Score</p>
+                <p class="text-xs text-ink-muted uppercase tracking-wide">Energiewende-Score</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">{{ "%.0f"|format(profile.energy_transition_score|default(0)|float) }} <span class="text-sm font-normal">/100</span></p>
             </div>
         </div>
@@ -134,7 +134,7 @@
             </p>
             {% endif %}
 
-            <h3 class="font-semibold mt-5 mb-2 text-sm uppercase tracking-wide text-gray-500">Konkrete Massnahmen</h3>
+            <h3 class="font-semibold mt-5 mb-2 text-sm uppercase tracking-wide text-ink-muted">Konkrete Massnahmen</h3>
             <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
                 <li>Eigene Dächer mit PV ausstatten: Schulen, Turnhallen, Werkhof.</li>
                 <li>Solarpflicht für Neubau und Sanierung in die Bauordnung aufnehmen.</li>
@@ -145,12 +145,12 @@
             <a href="/leg-gruenden" class="inline-block mt-4 bg-brand text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">LEG gründen</a>
 
             {% if leaders %}
-            <h3 class="font-semibold mt-6 mb-2 text-sm uppercase tracking-wide text-gray-500">Vorbilder in {{ profile.kanton }}</h3>
+            <h3 class="font-semibold mt-6 mb-2 text-sm uppercase tracking-wide text-ink-muted">Vorbilder in {{ profile.kanton }}</h3>
             <div class="flex flex-wrap gap-3">
                 {% for leader in leaders %}
                 <a href="/gemeinde/profil/{{ leader.bfs_number }}" class="text-sm bg-white border rounded-lg px-3 py-2 hover:border-brand/40">
                     <span class="font-medium">{{ leader.name }}</span>
-                    <span class="text-gray-500">· {{ "%.0f"|format(leader.display_score|float) }}%</span>
+                    <span class="text-ink-muted">· {{ "%.0f"|format(leader.display_score|float) }}%</span>
                 </a>
                 {% endfor %}
             </div>
@@ -166,7 +166,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="border-b text-left text-gray-500">
+                            <tr class="border-b text-left text-ink-muted">
                                 <th class="py-2">Kategorie</th>
                                 <th class="py-2 text-right">Total</th>
                                 <th class="py-2 text-right">Energie</th>
@@ -187,7 +187,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="text-xs text-gray-400 mt-2">Alle Angaben in Rp/kWh. Quelle: ElCom / LINDAS</p>
+                <p class="text-xs text-ink-muted mt-2">Alle Angaben in Rp/kWh. Quelle: ElCom / LINDAS</p>
             </div>
             {% endif %}
 
@@ -198,15 +198,15 @@
                 <canvas id="solarChart" height="200"></canvas>
                 <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
                     <div>
-                        <p class="text-gray-500">Gesamtdachfläche</p>
+                        <p class="text-ink-muted">Gesamtdachfläche</p>
                         <p class="font-medium">{{ "{:,.0f}".format(solar.total_roof_area_m2|float).replace(",", "'") }} m²</p>
                     </div>
                     <div>
-                        <p class="text-gray-500">Geeignete Fläche</p>
+                        <p class="text-ink-muted">Geeignete Fläche</p>
                         <p class="font-medium">{{ "{:,.0f}".format(solar.suitable_roof_area_m2|float).replace(",", "'") }} m²</p>
                     </div>
                     <div>
-                        <p class="text-gray-500">Potenzial</p>
+                        <p class="text-ink-muted">Potenzial</p>
                         {% if solar.potential_kwp is defined and solar.potential_kwp is not none %}
                         <p class="font-medium">{{ "{:,.0f}".format(solar.potential_kwp|float).replace(",", "'") }} kWp</p>
                         {% else %}
@@ -214,12 +214,12 @@
                         {% endif %}
                     </div>
                     <div>
-                        <p class="text-gray-500">Auslastung</p>
+                        <p class="text-ink-muted">Auslastung</p>
                         <p class="font-medium">{{ "%.1f"|format(solar.utilization_pct|default(0)|float) }}%</p>
                     </div>
                 </div>
                 {% else %}
-                <p class="text-gray-500">Noch keine Sonnendach-Daten verfügbar.</p>
+                <p class="text-ink-muted">Noch keine Sonnendach-Daten verfügbar.</p>
                 {% endif %}
             </div>
         </div>
@@ -231,23 +231,23 @@
             <p class="text-gray-600 mb-4">Mit einer Lokalen Elektrizitätsgemeinschaft (LEG) können Haushalte in {{ profile.name }} Netzgebühren sparen.</p>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                    <p class="text-sm text-gray-500">Netzgebühr aktuell</p>
+                    <p class="text-sm text-ink-muted">Netzgebühr aktuell</p>
                     <p class="font-bold text-lg">{{ "%.1f"|format(value_gap.grid_fee_rp_kwh) }} Rp/kWh</p>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Reduktion in LEG</p>
-                    <p class="font-bold text-lg text-green-600">{{ "%.1f"|format(value_gap.savings_rp_kwh) }} Rp/kWh</p>
+                    <p class="text-sm text-ink-muted">Reduktion in LEG</p>
+                    <p class="font-bold text-lg text-green-700">{{ "%.1f"|format(value_gap.savings_rp_kwh) }} Rp/kWh</p>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Ersparnis pro Haushalt</p>
+                    <p class="text-sm text-ink-muted">Ersparnis pro Haushalt</p>
                     <p class="font-bold text-lg text-brand">CHF {{ "%.0f"|format(value_gap.annual_savings_chf) }}/Jahr</p>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Sparanteil</p>
+                    <p class="text-sm text-ink-muted">Sparanteil</p>
                     <p class="font-bold text-lg">{{ "%.0f"|format(value_gap.savings_pct) }}%</p>
                 </div>
             </div>
-            <p class="text-xs text-gray-400 mt-4">Basierend auf H4 Tarif (4'500 kWh/Jahr), {{ "%.0f"|format(value_gap.grid_reduction_pct) }}% Netzgebühren-Reduktion (NE7)</p>
+            <p class="text-xs text-ink-muted mt-4">Basierend auf H4 Tarif (4'500 kWh/Jahr), {{ "%.0f"|format(value_gap.grid_reduction_pct) }}% Netzgebühren-Reduktion (NE7)</p>
         </div>
         {% endif %}
 
