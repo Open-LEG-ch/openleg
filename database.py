@@ -1117,102 +1117,6 @@ def update_building_verified(building_id: str, verified: bool = True) -> bool:
         return False
 
 
-# === Token Operations ===
-
-
-def save_token(
-    token: str, building_id: str, token_type: str, ttl_seconds: int = 2592000
-) -> bool:
-    """Save a verification or unsubscribe token (default TTL: 30 days)."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO tokens (token, building_id, token_type, expires_at)
-                    VALUES (%s, %s, %s, CURRENT_TIMESTAMP + INTERVAL '%s seconds')
-                    ON CONFLICT (token) DO UPDATE SET
-                        building_id = EXCLUDED.building_id,
-                        token_type = EXCLUDED.token_type,
-                        expires_at = EXCLUDED.expires_at
-                """,
-                    (token, building_id, token_type, ttl_seconds),
-                )
-                return True
-    except Exception as e:
-        logger.error(f"[DB] Error saving token: {e}")
-        return False
-
-
-def get_token(token: str) -> Optional[Dict]:
-    """Get token info if valid (not expired, not used)."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT * FROM tokens
-                    WHERE token = %s
-                    AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
-                    AND used_at IS NULL
-                """,
-                    (token,),
-                )
-                row = cur.fetchone()
-                if row:
-                    return dict(row)
-                return None
-    except Exception as e:
-        logger.error(f"[DB] Error getting token: {e}")
-        return None
-
-
-def use_token(token: str) -> bool:
-    """Mark a token as used."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    UPDATE tokens SET used_at = CURRENT_TIMESTAMP
-                    WHERE token = %s
-                """,
-                    (token,),
-                )
-                return cur.rowcount > 0
-    except Exception as e:
-        logger.error(f"[DB] Error using token: {e}")
-        return False
-
-
-def delete_tokens_for_building(
-    building_id: str, token_type: Optional[str] = None
-) -> int:
-    """Delete tokens for a building."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                if token_type:
-                    cur.execute(
-                        """
-                        DELETE FROM tokens
-                        WHERE building_id = %s AND token_type = %s
-                    """,
-                        (building_id, token_type),
-                    )
-                else:
-                    cur.execute(
-                        """
-                        DELETE FROM tokens WHERE building_id = %s
-                    """,
-                        (building_id,),
-                    )
-                return cur.rowcount
-    except Exception as e:
-        logger.error(f"[DB] Error deleting tokens: {e}")
-        return 0
-
-
 # === Cluster Operations ===
 
 
@@ -2291,6 +2195,13 @@ from store.email_queue import (  # noqa: E402, F401
     mark_email_failed,
     cancel_emails_for_building,
     get_email_stats,
+)
+
+from store.token import (  # noqa: E402, F401
+    save_token,
+    get_token,
+    use_token,
+    delete_tokens_for_building,
 )
 
 from store.utility import (  # noqa: E402, F401
