@@ -886,6 +886,8 @@ def api_suggest_addresses():
     suggestions_raw = data_enricher.get_address_suggestions(
         query, limit=limit, plz_ranges=plz_ranges
     )
+    if suggestions_raw is None:
+        return jsonify({"error": "Adressvorschläge sind derzeit nicht verfügbar."}), 503
     suggestions = []
     for s in suggestions_raw:
         if isinstance(s, dict) and s.get("label") and s.get("label").strip():

@@ -447,8 +447,8 @@ def address_suggest():
         except (ValueError, IndexError):
             pass
 
-    suggestions = data_enricher.get_address_suggestions(
-        q, limit=10, plz_ranges=plz_ranges
+    suggestions = (
+        data_enricher.get_address_suggestions(q, limit=10, plz_ranges=plz_ranges) or []
     )
     return jsonify({"suggestions": suggestions})
 

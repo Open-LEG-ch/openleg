@@ -378,11 +378,16 @@
   <script src="/static/js/landing_segments.js"></script>
 
   <script>
-  // Map
-  const map = L.map('map').setView([{{ map_center_lat }}, {{ map_center_lon }}], {{ map_zoom }});
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18, attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
+  // Map (Leaflet kommt von einem CDN; der Funnel muss auch ohne Karte funktionieren)
+  let map = null;
+  if (typeof L !== 'undefined') {
+      map = L.map('map').setView([{{ map_center_lat }}, {{ map_center_lon }}], {{ map_zoom }});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18, attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+  } else {
+      document.getElementById('map').classList.add('hidden');
+  }
 
   let selectedProfile = null;
   let addressTimeout = null;
@@ -538,6 +543,7 @@
               data = {};
           }
           if (res.ok) {
+              document.getElementById('form-error').classList.add('hidden');
               document.getElementById('step-register').classList.add('hidden');
               document.getElementById('step-success').classList.remove('hidden');
               if (data.referral_link) {
