@@ -259,6 +259,21 @@ class TestHtmlEscaping:
         assert '<td bgcolor="red">' not in html
         assert self.ESCAPED in html
 
+    def test_dso_anmeldung_escapes_total_pv(self, mock_render_pdf):
+        """total_pv_kwp reaches the HTML unguarded; a string must be escaped."""
+        from document_generator import generate_dso_anmeldung
+
+        generate_dso_anmeldung(
+            community_name="LEG",
+            dso_name="EKZ",
+            participants=[{"name": "A", "address": "Weg 1", "metering_point": "CH1"}],
+            total_pv_kwp=self.HOSTILE,
+            network_level="NE7",
+        )
+        html = self._rendered_html(mock_render_pdf)
+        assert "<script>" not in html
+        assert self.ESCAPED in html
+
 
 class TestDocumentStore:
     """Tests for storing/listing generated documents."""

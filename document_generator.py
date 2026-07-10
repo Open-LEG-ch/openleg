@@ -145,7 +145,7 @@ def generate_teilnehmervertrag(
 
     pv_section = ""
     if pv_kwp and pv_kwp > 0:
-        pv_section = f"<p><strong>PV-Anlage:</strong> {pv_kwp} kWp</p>"
+        pv_section = f"<p><strong>PV-Anlage:</strong> {_escape_html(pv_kwp)} kWp</p>"
 
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -244,7 +244,7 @@ th {{ background: #f0f0f0; }}
 <h2>Gemeinschaft</h2>
 <p><strong>Name:</strong> {community_name}<br>
 <strong>Netzebene:</strong> {network_level}<br>
-<strong>Gesamte PV-Leistung:</strong> {total_pv_kwp} kWp</p>
+<strong>Gesamte PV-Leistung:</strong> {_escape_html(total_pv_kwp)} kWp</p>
 
 <h2>Teilnehmer und Messpunkte</h2>
 <table><tr><th>#</th><th>Name</th><th>Adresse</th><th>Messpunkt-ID</th></tr>{rows}</table>
