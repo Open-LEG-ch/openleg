@@ -1558,8 +1558,9 @@ def api_cron_backfill_elcom():
             tariffs = public_data.fetch_elcom_tariffs(bfs, year=year)
             if tariffs:
                 result["saved"] += int(db.save_elcom_tariffs(tariffs) or 0)
-        except Exception as e:
-            result["errors"].append({"bfs": bfs, "error": str(e)})
+        except Exception:
+            logger.exception("ElCom backfill failed for BFS %s", bfs)
+            result["errors"].append({"bfs": bfs, "error": "fetch_failed"})
     return jsonify(result)
 
 
