@@ -193,6 +193,73 @@ class TestDsoAnmeldung:
             )
 
 
+class TestHtmlEscaping:
+    """User input must be HTML-escaped before reaching WeasyPrint.
+
+    Mitigates WeasyPrint CSS injection via presentational hints
+    (GHSA-jhhc-3hcp-qhm5) by removing the HTML/attribute breakout surface.
+    """
+
+    HOSTILE = '<script>x</script>"><td bgcolor="red">'
+    ESCAPED = "&lt;script&gt;"
+
+    def _rendered_html(self, mock_render_pdf):
+        assert mock_render_pdf.call_args is not None
+        return mock_render_pdf.call_args.args[0]
+
+    def test_gemeinschaftsvereinbarung_escapes_participant(self, mock_render_pdf):
+        from document_generator import generate_gemeinschaftsvereinbarung
+
+        generate_gemeinschaftsvereinbarung(
+            community_name=self.HOSTILE,
+            participants=[
+                {"name": self.HOSTILE, "address": self.HOSTILE, "role": "producer"},
+                {"name": "Anna", "address": "Weg 2", "role": "consumer"},
+            ],
+            municipality=self.HOSTILE,
+            distribution_model="proportional",
+        )
+        html = self._rendered_html(mock_render_pdf)
+        assert "<script>" not in html
+        assert '<td bgcolor="red">' not in html
+        assert self.ESCAPED in html
+
+    def test_teilnehmervertrag_escapes_input(self, mock_render_pdf):
+        from document_generator import generate_teilnehmervertrag
+
+        generate_teilnehmervertrag(
+            participant_name=self.HOSTILE,
+            participant_address=self.HOSTILE,
+            community_name=self.HOSTILE,
+            role="consumer",
+        )
+        html = self._rendered_html(mock_render_pdf)
+        assert "<script>" not in html
+        assert '<td bgcolor="red">' not in html
+        assert self.ESCAPED in html
+
+    def test_dso_anmeldung_escapes_input(self, mock_render_pdf):
+        from document_generator import generate_dso_anmeldung
+
+        generate_dso_anmeldung(
+            community_name=self.HOSTILE,
+            dso_name=self.HOSTILE,
+            participants=[
+                {
+                    "name": self.HOSTILE,
+                    "address": self.HOSTILE,
+                    "metering_point": "CH1",
+                },
+            ],
+            total_pv_kwp=10.0,
+            network_level=self.HOSTILE,
+        )
+        html = self._rendered_html(mock_render_pdf)
+        assert "<script>" not in html
+        assert '<td bgcolor="red">' not in html
+        assert self.ESCAPED in html
+
+
 class TestDocumentStore:
     """Tests for storing/listing generated documents."""
 
