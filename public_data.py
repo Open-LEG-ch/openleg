@@ -424,7 +424,7 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> Dict:
             result["municipalities"] += 1
         except Exception as e:
             logger.error(f"[PUBLIC_DATA] Error refreshing BFS {bfs}: {e}")
-            result["errors"].append({"bfs": bfs, "error": str(e)})
+            result["errors"].append({"bfs": bfs, "error": "refresh_failed"})
 
     return result
 
