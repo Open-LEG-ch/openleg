@@ -435,22 +435,6 @@ def _create_tables():
                 )
             """)
 
-            # PUBLIC-SNAPSHOT-PRIVATE-START: operator-insights-schema
-            # Pre-computed insights cache
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS insights_cache (
-                    id SERIAL PRIMARY KEY,
-                    insight_type VARCHAR(64) NOT NULL,
-                    scope VARCHAR(128),
-                    period VARCHAR(32),
-                    data JSONB NOT NULL,
-                    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    expires_at TIMESTAMP,
-                    UNIQUE(insight_type, scope, period)
-                )
-            """)
-            # PUBLIC-SNAPSHOT-PRIVATE-END: operator-insights-schema
-
             # Utility clients (B2B SaaS customers)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS utility_clients (
@@ -477,50 +461,6 @@ def _create_tables():
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-
-            # PUBLIC-SNAPSHOT-PRIVATE-START: operator-pipeline-schema
-            # VNB research pipeline
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS vnb_research (
-                    id SERIAL PRIMARY KEY,
-                    vnb_name VARCHAR(255) NOT NULL,
-                    bfs_numbers JSONB DEFAULT '[]',
-                    kanton VARCHAR(2),
-                    population_served INTEGER,
-                    website VARCHAR(512),
-                    contact_email VARCHAR(255),
-                    contact_phone VARCHAR(32),
-                    has_leg_offering BOOLEAN DEFAULT FALSE,
-                    leg_offering_details TEXT,
-                    competitor_status VARCHAR(64),
-                    priority_score DECIMAL(5, 2) DEFAULT 0,
-                    pipeline_status VARCHAR(32) DEFAULT 'researched',
-                    outreach_notes TEXT,
-                    last_contacted_at TIMESTAMP,
-                    last_response_at TIMESTAMP,
-                    research_data JSONB DEFAULT '{}',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(vnb_name)
-                )
-            """)
-
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS vnb_pipeline (
-                    id SERIAL PRIMARY KEY,
-                    vnb_name VARCHAR(255) NOT NULL,
-                    municipality VARCHAR(255),
-                    bfs_number INTEGER,
-                    population INTEGER,
-                    score DECIMAL(5, 1),
-                    status VARCHAR(32) DEFAULT 'lead',
-                    notes TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(vnb_name)
-                )
-            """)
-            # PUBLIC-SNAPSHOT-PRIVATE-END: operator-pipeline-schema
 
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS billing_periods (
@@ -701,11 +641,6 @@ def _create_tables():
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_api_usage_called ON api_usage(called_at)"
             )
-            # PUBLIC-SNAPSHOT-PRIVATE-START: operator-insights-index
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_insights_cache_type ON insights_cache(insight_type)"
-            )
-            # PUBLIC-SNAPSHOT-PRIVATE-END: operator-insights-index
 
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_elcom_tariffs_bfs ON elcom_tariffs(bfs_number)"
@@ -763,55 +698,6 @@ def _create_tables():
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_utility_clients_magic_token ON utility_clients(magic_link_token)"
             )
-
-            # PUBLIC-SNAPSHOT-PRIVATE-START: operator-pipeline-indexes
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_vnb_research_kanton ON vnb_research(kanton)"
-            )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_vnb_research_status ON vnb_research(pipeline_status)"
-            )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_vnb_research_priority ON vnb_research(priority_score DESC)"
-            )
-
-            # LEA autonomous reports
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS lea_reports (
-                    id SERIAL PRIMARY KEY,
-                    job_name VARCHAR(128) NOT NULL,
-                    created_at TIMESTAMPTZ DEFAULT NOW(),
-                    summary_text TEXT,
-                    status VARCHAR(32) DEFAULT 'ok'
-                )
-            """)
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_lea_reports_job ON lea_reports(job_name)"
-            )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_lea_reports_created ON lea_reports(created_at DESC)"
-            )
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS ops_snapshots (
-                    id SERIAL PRIMARY KEY,
-                    source VARCHAR(64) NOT NULL,
-                    category VARCHAR(64) NOT NULL,
-                    status VARCHAR(32) DEFAULT 'ok',
-                    summary_text TEXT,
-                    payload JSONB DEFAULT '{}'::jsonb,
-                    created_at TIMESTAMPTZ DEFAULT NOW()
-                )
-            """)
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_source ON ops_snapshots(source)"
-            )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_category ON ops_snapshots(category)"
-            )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_created ON ops_snapshots(created_at DESC)"
-            )
-            # PUBLIC-SNAPSHOT-PRIVATE-END: operator-pipeline-indexes
 
             logger.info("[DB] Tables and indexes created successfully")
 
@@ -985,75 +871,6 @@ def get_all_buildings(city_id: Optional[str] = None) -> List[Dict]:
     except Exception as e:
         logger.error(f"[DB] Error getting all buildings: {e}")
         return []
-
-
-# PUBLIC-SNAPSHOT-PRIVATE-START: operator-pipeline-helpers
-def get_vnb_pipeline(status_filter: Optional[str] = None) -> List[Dict]:
-    """Get VNB pipeline entries, optionally filtered by status."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                if status_filter:
-                    cur.execute(
-                        "SELECT * FROM vnb_pipeline WHERE status = %s ORDER BY score DESC NULLS LAST",
-                        (status_filter,),
-                    )
-                else:
-                    cur.execute(
-                        "SELECT * FROM vnb_pipeline ORDER BY score DESC NULLS LAST"
-                    )
-                cols = [d[0] for d in cur.description] if cur.description else []
-                return [dict(zip(cols, row)) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"get_vnb_pipeline error: {e}")
-        return []
-
-
-def get_vnb_pipeline_stats() -> Dict:
-    """Get pipeline funnel counts, average score, and conversion rate."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    SELECT status, COUNT(*)::int as count, ROUND(AVG(score)::numeric, 1) as avg_score
-                    FROM vnb_pipeline GROUP BY status
-                """)
-                funnel = {
-                    stage: 0
-                    for stage in [
-                        "lead",
-                        "contacted",
-                        "demo",
-                        "trial",
-                        "paid",
-                        "churned",
-                    ]
-                }
-                total = 0
-                score_sum = 0.0
-                score_count = 0
-                for row in cur.fetchall():
-                    status, count, avg_score = row
-                    funnel[status] = count
-                    total += count
-                    if avg_score is not None:
-                        score_sum += float(avg_score) * count
-                        score_count += count
-                paid = funnel.get("paid", 0)
-                return {
-                    "total": total,
-                    "funnel": funnel,
-                    "avg_score": round(score_sum / score_count, 1)
-                    if score_count
-                    else 0,
-                    "conversion_rate": round(paid / total * 100, 1) if total else 0,
-                }
-    except Exception as e:
-        logger.error(f"get_vnb_pipeline_stats error: {e}")
-        return {"total": 0, "funnel": {}, "avg_score": 0, "conversion_rate": 0}
-
-
-# PUBLIC-SNAPSHOT-PRIVATE-END: operator-pipeline-helpers
 
 
 def get_all_building_profiles(city_id: Optional[str] = None) -> List[Dict]:
@@ -1767,215 +1584,9 @@ def get_api_usage_count(client_id, hours=1):
         return 0
 
 
-# PUBLIC-SNAPSHOT-PRIVATE-START: operator-insights-helpers
-# === Insights Cache Operations ===
-
-
-def save_insight(insight_type, scope, period, data, ttl_hours=24):
-    try:
-        import json
-
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO insights_cache (insight_type, scope, period, data, expires_at)
-                    VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP + INTERVAL '%s hours')
-                    ON CONFLICT (insight_type, scope, period) DO UPDATE SET
-                        data = EXCLUDED.data,
-                        computed_at = CURRENT_TIMESTAMP,
-                        expires_at = EXCLUDED.expires_at
-                """,
-                    (insight_type, scope, period, json.dumps(data), ttl_hours),
-                )
-                return True
-    except Exception as e:
-        logger.error(f"[DB] Error saving insight: {e}")
-        return False
-
-
-def get_insight(insight_type, scope=None, period=None):
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                query = "SELECT * FROM insights_cache WHERE insight_type = %s AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)"
-                params = [insight_type]
-                if scope:
-                    query += " AND scope = %s"
-                    params.append(scope)
-                if period:
-                    query += " AND period = %s"
-                    params.append(period)
-                cur.execute(query, params)
-                row = cur.fetchone()
-                return dict(row) if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error getting insight: {e}")
-        return None
-
-
-# PUBLIC-SNAPSHOT-PRIVATE-END: operator-insights-helpers
-
-
 # === Initialization check ===
 
 _db_initialized = False
-
-# PUBLIC-SNAPSHOT-PRIVATE-START: operator-research-helpers
-# === VNB Research Operations ===
-
-
-def save_vnb_research(vnb_name: str, data: Dict) -> bool:
-    """Upsert VNB research record."""
-    try:
-        import json
-
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO vnb_research (
-                        vnb_name, bfs_numbers, kanton, population_served, website,
-                        contact_email, contact_phone, has_leg_offering, leg_offering_details,
-                        competitor_status, priority_score, pipeline_status, research_data
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (vnb_name) DO UPDATE SET
-                        bfs_numbers = EXCLUDED.bfs_numbers,
-                        kanton = EXCLUDED.kanton,
-                        population_served = EXCLUDED.population_served,
-                        website = EXCLUDED.website,
-                        contact_email = EXCLUDED.contact_email,
-                        contact_phone = EXCLUDED.contact_phone,
-                        has_leg_offering = EXCLUDED.has_leg_offering,
-                        leg_offering_details = EXCLUDED.leg_offering_details,
-                        competitor_status = EXCLUDED.competitor_status,
-                        priority_score = EXCLUDED.priority_score,
-                        pipeline_status = EXCLUDED.pipeline_status,
-                        research_data = EXCLUDED.research_data,
-                        updated_at = CURRENT_TIMESTAMP
-                """,
-                    (
-                        vnb_name,
-                        json.dumps(data.get("bfs_numbers", [])),
-                        data.get("kanton", ""),
-                        data.get("population_served"),
-                        data.get("website", ""),
-                        data.get("contact_email", ""),
-                        data.get("contact_phone", ""),
-                        data.get("has_leg_offering", False),
-                        data.get("leg_offering_details", ""),
-                        data.get("competitor_status", ""),
-                        data.get("priority_score", 0),
-                        data.get("pipeline_status", "researched"),
-                        json.dumps(data.get("research_data", {})),
-                    ),
-                )
-                return True
-    except Exception as e:
-        logger.error(f"[DB] Error saving VNB research: {e}")
-        return False
-
-
-def get_vnb_research(vnb_name: str) -> Optional[Dict]:
-    """Get VNB research by name."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT * FROM vnb_research WHERE vnb_name = %s", (vnb_name,)
-                )
-                row = cur.fetchone()
-                return dict(row) if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error getting VNB research: {e}")
-        return None
-
-
-def get_all_vnb_research(
-    pipeline_status: Optional[str] = None,
-    kanton: Optional[str] = None,
-    order_by: str = "priority_score",
-) -> List[Dict]:
-    """Get all VNB research records, optionally filtered."""
-    allowed_orders = {"priority_score", "vnb_name", "population_served", "updated_at"}
-    if order_by not in allowed_orders:
-        order_by = "priority_score"
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                query = "SELECT * FROM vnb_research WHERE 1=1"
-                params = []
-                if pipeline_status:
-                    query += " AND pipeline_status = %s"
-                    params.append(pipeline_status)
-                if kanton:
-                    query += " AND kanton = %s"
-                    params.append(kanton)
-                query += f" ORDER BY {order_by} DESC"
-                cur.execute(query, params)
-                return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[DB] Error getting VNB research: {e}")
-        return []
-
-
-def update_vnb_pipeline_status(
-    vnb_name: str, status: str, notes: Optional[str] = None
-) -> bool:
-    """Update VNB pipeline status."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                if notes:
-                    cur.execute(
-                        """
-                        UPDATE vnb_research
-                        SET pipeline_status = %s, outreach_notes = %s, updated_at = CURRENT_TIMESTAMP
-                        WHERE vnb_name = %s
-                    """,
-                        (status, notes, vnb_name),
-                    )
-                else:
-                    cur.execute(
-                        """
-                        UPDATE vnb_research
-                        SET pipeline_status = %s, updated_at = CURRENT_TIMESTAMP
-                        WHERE vnb_name = %s
-                    """,
-                        (status, vnb_name),
-                    )
-                return cur.rowcount > 0
-    except Exception as e:
-        logger.error(f"[DB] Error updating VNB pipeline status: {e}")
-        return False
-
-
-def get_vnb_research_stats() -> Dict:
-    """Get VNB research pipeline statistics."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    SELECT
-                        COUNT(*) as total,
-                        COUNT(*) FILTER (WHERE pipeline_status = 'researched') as researched,
-                        COUNT(*) FILTER (WHERE pipeline_status = 'contacted') as contacted,
-                        COUNT(*) FILTER (WHERE pipeline_status = 'responded') as responded,
-                        COUNT(*) FILTER (WHERE pipeline_status = 'demo') as demo,
-                        COUNT(*) FILTER (WHERE pipeline_status = 'pilot') as pilot,
-                        COUNT(*) FILTER (WHERE pipeline_status = 'signed') as signed,
-                        COUNT(*) FILTER (WHERE pipeline_status = 'active') as active,
-                        COUNT(*) FILTER (WHERE has_leg_offering = TRUE) as has_leg,
-                        AVG(priority_score) as avg_priority
-                    FROM vnb_research
-                """)
-                return dict(cur.fetchone())
-    except Exception as e:
-        logger.error(f"[DB] Error getting VNB research stats: {e}")
-        return {}
-
-
-# PUBLIC-SNAPSHOT-PRIVATE-END: operator-research-helpers
 
 
 def update_document_signing_status(deepsign_document_id: str, status: str) -> bool:
@@ -2035,7 +1646,6 @@ def list_leg_documents(community_id: int) -> List[Dict]:
         return []
 
 
-# PUBLIC-SNAPSHOT-PRIVATE-START: operator-report-helpers
 def save_lea_report(job_name: str, summary_text: str, status: str = "ok") -> bool:
     """Save an autonomous LEA report from a cron job webhook."""
     try:
@@ -2134,9 +1744,6 @@ def get_ops_snapshots(
     except Exception as e:
         logger.error(f"[DB] Error getting ops snapshots: {e}")
         return []
-
-
-# PUBLIC-SNAPSHOT-PRIVATE-END: operator-report-helpers
 
 
 def is_db_available() -> bool:

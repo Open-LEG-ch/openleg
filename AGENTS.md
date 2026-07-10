@@ -38,6 +38,15 @@ Use `openleg-ops` for:
 - Secret handling procedures and key rotation notes
 - Incident response notes and operational timelines
 - Internal strategy, grant, and outreach execution materials
+- Internal business admin code: strategy/pipeline dashboards, sales pipeline,
+  insights engine, municipality outreach (the public repo gitignores these
+  paths so a private overlay stays untracked; see
+  `tests/test_private_content_absent.py` for the enforced list)
+
+The public repo keeps generic, token-gated instance ops that any self-hoster
+needs: `/admin/overview`, `/admin/export`, `/admin/ops`, `/admin/lea-reports`,
+and the `INTERNAL_TOKEN`-guarded `/api/internal/*` automation endpoints the
+OpenClaw bundle posts to.
 
 ## Swiss German Text Rules
 

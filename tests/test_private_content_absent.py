@@ -1,5 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Ensure private-only content is not tracked in the public repository."""
+"""Ensure private-only content is not tracked in the public repository.
+
+The public boundary is content-based: internal business machinery (strategy
+dashboards, sales pipeline, municipality outreach) lives in the private ops
+repo. Generic, token-gated instance ops (ops snapshots, LEA reports, internal
+automation endpoints) stays public because the public OpenClaw bundle uses it.
+"""
 
 import os
 import subprocess
@@ -7,6 +13,25 @@ from pathlib import Path
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Internal business machinery: never tracked here. Local overlays of these
+# paths must stay untracked via .gitignore.
+PRIVATE_ONLY_PATHS = (
+    "insights_engine.py",
+    "sales_pipeline.py",
+    "templates/admin/strategy.html",
+    "templates/admin/pipeline.html",
+    "templates/emails/municipality_outreach.html",
+    "tests/test_admin_strategy.py",
+    "tests/test_admin_pipeline.py",
+    "tests/test_sales_pipeline.py",
+    "tests/test_municipality_outreach.py",
+    "tests/test_municipality_targeting.py",
+    "tests/test_demand_signal.py",
+    "docs/matt-pocock-quality-slices.md",
+    "scripts/package_public.sh",
+    "scripts/sanitize_public_snapshot.py",
+)
 
 
 def _tracked_files():
@@ -44,7 +69,7 @@ def test_private_assets_are_not_tracked():
         "scripts/ralph_loop.py",
         "strategy-assessment-2026-03-26.md",
         "tests/test_ralph_loop.py",
-    }
+    } | set(PRIVATE_ONLY_PATHS)
     assert tracked.isdisjoint(explicit_private)
     assert all(not path.startswith(".github/scripts/") for path in tracked)
     assert all(not path.startswith(".orch/") for path in tracked)
@@ -53,6 +78,53 @@ def test_private_assets_are_not_tracked():
     assert all(not path.startswith("overnight/") for path in tracked)
     assert all(not path.startswith("outreach/") for path in tracked)
     assert all(not path.startswith("prd/") for path in tracked)
+
+
+def test_private_only_paths_are_gitignored():
+    """Private overlays of the removed paths must stay untracked locally."""
+    unignored = []
+    for path in PRIVATE_ONLY_PATHS:
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", path],
+            cwd=PROJECT_ROOT,
+        )
+        if result.returncode != 0:
+            unignored.append(path)
+    assert unignored == []
+
+
+def test_no_public_snapshot_markers_in_tracked_sources():
+    """The snapshot-sanitizer era is over: no marker sections may remain."""
+    marker = "PUBLIC-SNAPSHOT" + "-PRIVATE"
+    this_file = Path(__file__).resolve()
+    offenders = []
+    for relative_path in sorted(_tracked_files()):
+        path = Path(PROJECT_ROOT, relative_path)
+        if not path.is_file() or path.resolve() == this_file:
+            continue
+        try:
+            content = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        if marker in content:
+            offenders.append(relative_path)
+    assert offenders == []
+
+
+def test_private_operator_surface_absent_from_modules():
+    app_content = Path(PROJECT_ROOT, "app.py").read_text(encoding="utf-8")
+    for fragment in ("/admin/pipeline", "/admin/strategy", "insights_engine"):
+        assert fragment not in app_content
+
+    email_content = Path(PROJECT_ROOT, "email_automation.py").read_text(
+        encoding="utf-8"
+    )
+    assert "municipality_outreach" not in email_content
+    assert "insights_engine" not in email_content
+
+    database_content = Path(PROJECT_ROOT, "database.py").read_text(encoding="utf-8")
+    for fragment in ("vnb_pipeline", "vnb_research", "def save_insight"):
+        assert fragment not in database_content
 
 
 def test_tracked_text_has_no_known_private_identifiers_or_secret_placeholders():
@@ -79,103 +151,3 @@ def test_tracked_text_has_no_known_private_identifiers_or_secret_placeholders():
             offenders[relative_path] = matches
 
     assert offenders == {}
-
-
-def test_public_package_excludes_private_workspace_material(tmp_path):
-    destination = tmp_path / "openleg-public"
-    subprocess.run(
-        ["bash", "scripts/package_public.sh", str(destination)],
-        cwd=PROJECT_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-
-    blocked_paths = {
-        ".github/CODEOWNERS",
-        "AGENTS.md",
-        "CLAUDE.md",
-        "SKILLS.md",
-        "docs/openleg-open-source-standard.md",
-        "docs/research.md",
-        "insights_engine.py",
-        "openclaw/Dockerfile",
-        "openclaw/entrypoint.sh",
-        "openclaw/mcp-openleg-server/package.json",
-        "openclaw/mcp-openleg-server/server.mjs",
-        "sales_pipeline.py",
-        "templates/admin/ops.html",
-        "templates/admin/pipeline.html",
-        "templates/admin/strategy.html",
-        "tests/test_admin_ops.py",
-        "templates/emails/municipality_outreach.html",
-        "tests/test_admin_pipeline.py",
-        "tests/test_admin_strategy.py",
-        "tests/test_demand_signal.py",
-        "tests/test_e2e_integration.py",
-        "tests/test_lea_reports.py",
-        "tests/test_municipality_outreach.py",
-        "tests/test_municipality_targeting.py",
-        "tests/test_sales_pipeline.py",
-    }
-    packaged = {
-        str(path.relative_to(destination))
-        for path in destination.rglob("*")
-        if path.is_file()
-    }
-    assert packaged.isdisjoint(blocked_paths)
-    assert all(not path.startswith("openclaw/config/cron/") for path in packaged)
-    assert all(not path.startswith("overnight/") for path in packaged)
-    assert all(not path.startswith("prd/") for path in packaged)
-
-    forbidden_fragments = (
-        "w" + "gusta",
-        "baden" + "leg",
-        "sk-" + "ant-",
-        "/" + "Users/",
-    )
-    offenders = {}
-    for relative_path in sorted(packaged):
-        path = destination / relative_path
-        try:
-            content = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
-        matches = [
-            item for item in forbidden_fragments if item.lower() in content.lower()
-        ]
-        if matches:
-            offenders[relative_path] = matches
-    assert offenders == {}
-
-
-def test_public_package_has_no_private_operator_surfaces(tmp_path):
-    destination = tmp_path / "openleg-public"
-    subprocess.run(
-        ["bash", "scripts/package_public.sh", str(destination)],
-        cwd=PROJECT_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-
-    app_content = (destination / "app.py").read_text(encoding="utf-8")
-    email_content = (destination / "email_automation.py").read_text(encoding="utf-8")
-    database_content = (destination / "database.py").read_text(encoding="utf-8")
-    compose_content = (destination / "docker-compose.yml").read_text(encoding="utf-8")
-
-    forbidden_app_fragments = (
-        "/admin/pipeline",
-        "/admin/ops",
-        "/admin/strategy",
-        "/api/internal/agentmail",
-        "/api/internal/lea-report",
-        "/api/internal/ops-snapshot",
-        "/admin/lea-reports",
-    )
-    assert all(fragment not in app_content for fragment in forbidden_app_fragments)
-    assert "municipality_outreach" not in email_content
-    assert "lea_reports" not in database_content
-    assert "ops_snapshots" not in database_content
-    assert "vnb_research" not in database_content
-    assert "openclaw:" not in compose_content
