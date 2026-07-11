@@ -88,37 +88,35 @@ class TestFooterTextOnDark:
 
 
 class TestDashboardDarkHero:
-    """Dashboard hero: violet kicker/score/progress sat at 2.84:1 on ink."""
+    """Dashboard hero on ink: Tailwind utilities must keep WCAG contrast.
+
+    The template now uses the shared brand build; these tests pin the
+    utility-to-hex mapping so a class swap cannot silently fail contrast.
+    """
+
+    KICKER_ON_PAPER = "#4f46e5"  # text-brand
+    HERO_KICKER_ON_INK = "#a5b4fc"  # text-indigo-300
+    SCORE_ON_INK = "#818cf8"  # text-indigo-400 / bg-indigo-400
 
     @pytest.fixture(autouse=True)
     def load(self):
-        self.css = _read(os.path.join("templates", "dashboard.html"))
+        self.html = _read(os.path.join("templates", "dashboard.html"))
 
     def test_default_kicker_readable_on_paper(self):
-        color = _css_value(self.css, ".dashboard-kicker", "color")
-        assert contrast(color, PAPER) >= 4.5, (
-            f"page kicker {color} is {contrast(color, PAPER):.2f}:1 on paper"
-        )
+        assert "text-brand" in self.html
+        assert contrast(self.KICKER_ON_PAPER, PAPER) >= 4.5
 
     def test_hero_kicker_readable_on_ink(self):
-        color = _css_value(self.css, ".dashboard-hero .dashboard-kicker", "color")
-        assert contrast(color, INK) >= 4.5, (
-            f"hero kicker {color} is {contrast(color, INK):.2f}:1 on ink"
-        )
+        assert "text-indigo-300" in self.html
+        assert contrast(self.HERO_KICKER_ON_INK, INK) >= 4.5
 
     def test_score_readable(self):
-        color = _css_value(self.css, ".dashboard-score", "color")
-        assert contrast(color, INK) >= 3, (
-            f"dashboard score {color} is {contrast(color, INK):.2f}:1 on ink "
-            "(large text needs 3:1)"
-        )
+        assert "text-indigo-400" in self.html
+        assert contrast(self.SCORE_ON_INK, INK) >= 3, "large text needs 3:1"
 
     def test_progress_fill_visible(self):
-        color = _css_value(self.css, ".dashboard-progress span", "background")
-        assert contrast(color, INK) >= 3, (
-            f"progress fill {color} is {contrast(color, INK):.2f}:1 on ink "
-            "(UI component needs 3:1)"
-        )
+        assert "bg-indigo-400" in self.html
+        assert contrast(self.SCORE_ON_INK, INK) >= 3, "UI component needs 3:1"
 
 
 class TestGrayMicrocopyOnPaper:

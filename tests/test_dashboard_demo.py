@@ -73,3 +73,44 @@ def test_readiness_counts_neighbors_at_zero_coordinates(monkeypatch):
     result = dashboard.readiness("demo")
 
     assert result["neighbor_count"] == 7
+
+
+def test_dashboard_uses_brand_system_not_bespoke_css(app_module):
+    client = app_module.app.test_client()
+    html = client.get("/dashboard/demo").get_data(as_text=True)
+    # the old template shipped its own .dashboard-* stylesheet
+    assert ".dashboard-wrap{" not in html.replace(" ", "")
+    assert "/static/css/openleg.css" in html
+
+
+def test_dashboard_open_checks_are_actionable(app_module):
+    client = app_module.app.test_client()
+    html = client.get("/dashboard/demo").get_data(as_text=True)
+    # demo data has exactly one open check; it must carry an action link
+    assert html.count("check-action") >= 1
+
+
+def test_dashboard_calculator_has_visible_feedback(app_module):
+    client = app_module.app.test_client()
+    html = client.get("/dashboard/demo").get_data(as_text=True)
+    assert 'id="calc-error"' in html
+
+
+def test_dashboard_internal_links_resolve(app_module):
+    import re as _re
+
+    client = app_module.app.test_client()
+    html = client.get("/dashboard/demo").get_data(as_text=True)
+    adapter = app_module.app.url_map.bind("localhost")
+    hrefs = {
+        h.split("#")[0].split("?")[0]
+        for h in _re.findall(r'href="(/[^"]*)"', html)
+        if not h.startswith("/static/")
+    }
+    dead = []
+    for href in sorted(h for h in hrefs if h):
+        try:
+            adapter.match(href)
+        except Exception:
+            dead.append(href)
+    assert dead == []

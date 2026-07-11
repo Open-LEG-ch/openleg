@@ -6,6 +6,7 @@ Public profile pages and directory for municipalities.
 """
 
 import logging
+import os
 from flask import Blueprint, request, jsonify, render_template, abort
 
 from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
@@ -155,6 +156,45 @@ def register():
     return jsonify({"error": "Registrierung fehlgeschlagen."}), 500
 
 
+ONBOARDING_STATUS_LABELS = {
+    "pending": "In Prüfung",
+    "active": "Aktiv",
+    "verified": "Verifiziert",
+}
+
+
+def _dashboard_context(muni):
+    subdomain = (muni.get("subdomain") or "").strip()
+    stats = db.get_stats(city_id=subdomain or None) or {}
+    profile = None
+    if muni.get("bfs_number"):
+        try:
+            profile = db.get_municipality_profile(int(muni["bfs_number"]))
+        except Exception:
+            logger.warning(
+                "municipality profile load failed for bfs=%s",
+                muni.get("bfs_number"),
+                exc_info=True,
+            )
+            profile = None
+    profile = profile or {}
+    if subdomain:
+        invite_url = f"https://{subdomain}.openleg.ch"
+    else:
+        invite_url = os.getenv("APP_BASE_URL", "https://openleg.ch").rstrip("/")
+    return {
+        "municipality": muni,
+        "status_label": ONBOARDING_STATUS_LABELS.get(
+            muni.get("onboarding_status"), "In Prüfung"
+        ),
+        "stats": stats,
+        "solar_score": profile.get("pv_score_pct"),
+        "energy_score": profile.get("energy_transition_score"),
+        "invite_url": invite_url,
+        "error": None,
+    }
+
+
 @municipality_bp.route("/dashboard")
 def dashboard():
     subdomain = request.args.get("subdomain", "").strip()
@@ -164,7 +204,10 @@ def dashboard():
     if subdomain:
         muni = db.get_municipality(subdomain=subdomain)
     elif bfs:
-        muni = db.get_municipality(bfs_number=int(bfs))
+        try:
+            muni = db.get_municipality(bfs_number=int(bfs))
+        except ValueError:
+            muni = None
 
     if not muni:
         return render_template(
@@ -173,9 +216,27 @@ def dashboard():
             error="Gemeinde nicht gefunden.",
         )
 
-    stats = db.get_stats(city_id=muni.get("subdomain"))
+    return render_template("gemeinde/dashboard.html", **_dashboard_context(muni))
+
+
+@municipality_bp.route("/dashboard/demo")
+def dashboard_demo():
+    """Fake, click-through municipality dashboard for demos and screenshots."""
     return render_template(
-        "gemeinde/dashboard.html", municipality=muni, stats=stats, error=None
+        "gemeinde/dashboard.html",
+        municipality={
+            "name": "Baden",
+            "bfs_number": 4021,
+            "subdomain": "baden",
+            "dso_name": "Regionalwerke AG Baden",
+            "onboarding_status": "active",
+        },
+        status_label="Aktiv",
+        stats={"total_buildings": 42, "registrations_today": 3},
+        solar_score=34,
+        energy_score=61,
+        invite_url="https://baden.openleg.ch",
+        error=None,
     )
 
 
