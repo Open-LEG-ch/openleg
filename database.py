@@ -699,6 +699,43 @@ def _create_tables():
                 "CREATE INDEX IF NOT EXISTS idx_utility_clients_magic_token ON utility_clients(magic_link_token)"
             )
 
+            # LEA autonomous reports (instance ops, posted via /api/internal/*)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS lea_reports (
+                    id SERIAL PRIMARY KEY,
+                    job_name VARCHAR(128) NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    summary_text TEXT,
+                    status VARCHAR(32) DEFAULT 'ok'
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_lea_reports_job ON lea_reports(job_name)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_lea_reports_created ON lea_reports(created_at DESC)"
+            )
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS ops_snapshots (
+                    id SERIAL PRIMARY KEY,
+                    source VARCHAR(64) NOT NULL,
+                    category VARCHAR(64) NOT NULL,
+                    status VARCHAR(32) DEFAULT 'ok',
+                    summary_text TEXT,
+                    payload JSONB DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_source ON ops_snapshots(source)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_category ON ops_snapshots(category)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_created ON ops_snapshots(created_at DESC)"
+            )
+
             logger.info("[DB] Tables and indexes created successfully")
 
 

@@ -126,6 +126,34 @@ def test_private_operator_surface_absent_from_modules():
     for fragment in ("vnb_pipeline", "vnb_research", "def save_insight"):
         assert fragment not in database_content
 
+    # The public OpenClaw bundle must not ship sales-pipeline or outreach
+    # tooling either; those tables and engines left with this boundary.
+    server_content = Path(
+        PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs"
+    ).read_text(encoding="utf-8")
+    for fragment in (
+        "vnb_pipeline",
+        "vnb_research",
+        "insights_cache",
+        "research_vnb",
+        "scan_vnb_leg_offerings",
+        "monitor_leghub_partners",
+        "score_vnb",
+        "draft_outreach",
+        "get_outreach_candidates",
+    ):
+        assert fragment not in server_content
+
+
+def test_kept_instance_ops_schema_is_provisioned():
+    """The kept ops surface needs its tables created by init_db."""
+    database_content = Path(PROJECT_ROOT, "database.py").read_text(encoding="utf-8")
+    for fragment in (
+        "CREATE TABLE IF NOT EXISTS lea_reports",
+        "CREATE TABLE IF NOT EXISTS ops_snapshots",
+    ):
+        assert fragment in database_content
+
 
 def test_tracked_text_has_no_known_private_identifiers_or_secret_placeholders():
     forbidden_fragments = (
