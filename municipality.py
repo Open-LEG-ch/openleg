@@ -6,6 +6,7 @@ Public profile pages and directory for municipalities.
 """
 
 import logging
+import os
 from flask import Blueprint, request, jsonify, render_template, abort
 
 from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
@@ -170,8 +171,17 @@ def _dashboard_context(muni):
         try:
             profile = db.get_municipality_profile(int(muni["bfs_number"]))
         except Exception:
+            logger.warning(
+                "municipality profile load failed for bfs=%s",
+                muni.get("bfs_number"),
+                exc_info=True,
+            )
             profile = None
     profile = profile or {}
+    if subdomain:
+        invite_url = f"https://{subdomain}.openleg.ch"
+    else:
+        invite_url = os.getenv("APP_BASE_URL", "https://openleg.ch").rstrip("/")
     return {
         "municipality": muni,
         "status_label": ONBOARDING_STATUS_LABELS.get(
@@ -180,9 +190,7 @@ def _dashboard_context(muni):
         "stats": stats,
         "solar_score": profile.get("pv_score_pct"),
         "energy_score": profile.get("energy_transition_score"),
-        "invite_url": f"https://{subdomain}.openleg.ch"
-        if subdomain
-        else request.host_url,
+        "invite_url": invite_url,
         "error": None,
     }
 
