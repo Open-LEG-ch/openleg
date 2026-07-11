@@ -29,10 +29,9 @@ env/
 # Node
 node_modules/
 
-# Environment Variables
-.env
-.env.local
-.env.production
+# Environment Variables (all variants except the tracked template)
+.env*
+!.env.example
 
 # IDEs
 .vscode/
@@ -102,6 +101,8 @@ infomaniak_*
 !/CONTRIBUTING.md
 !/SECURITY.md
 !/design.md
+!/CLAUDE.md
+!/AGENTS.md
 
 # Private planning, strategy, ops docs (explicit, defense in depth)
 archive/
@@ -127,11 +128,18 @@ SENDGRID_SETUP.md
 
 # Local-only deployment and generated artifacts
 deploy.sh
-output/imagegen/
+output/
 .claude/
 .orch/
 .github/scripts/
 handoff
+gitleaks.sarif
+
+# Database dumps and backups
+backups/
+*.sql
+*.sql.gz
+*.dump
 
 # Internal business admin: private-ops overlay only, never tracked publicly
 insights_engine.py

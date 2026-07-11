@@ -1467,20 +1467,24 @@ def api_formation_financial_model():
 
 
 # --- Cron ---
+def _require_cron_secret():
+    """Cron endpoints fail closed: no CRON_SECRET configured means no access."""
+    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
+    if not CRON_SECRET or secret != CRON_SECRET:
+        log_security_event("CRON_ACCESS_DENIED", "Invalid cron secret", "WARNING")
+        abort(403)
+
+
 @app.route("/api/cron/process-emails", methods=["POST"])
 def api_cron_process_emails():
-    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
-    if CRON_SECRET and secret != CRON_SECRET:
-        abort(403)
+    _require_cron_secret()
     result = email_automation.process_email_queue(app=app)
     return jsonify(result)
 
 
 @app.route("/api/cron/refresh-public-data", methods=["POST"])
 def api_cron_refresh_public_data():
-    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
-    if CRON_SECRET and secret != CRON_SECRET:
-        abort(403)
+    _require_cron_secret()
     import public_data
 
     result = public_data.refresh_canton("ZH")
@@ -1489,9 +1493,7 @@ def api_cron_refresh_public_data():
 
 @app.route("/api/cron/backfill-elcom", methods=["POST"])
 def api_cron_backfill_elcom():
-    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
-    if CRON_SECRET and secret != CRON_SECRET:
-        abort(403)
+    _require_cron_secret()
     import public_data
 
     year = request.args.get("year", 2026, type=int)
@@ -1533,6 +1535,10 @@ def webhook_deepsign():
     """Handle DeepSign e-signature webhook callbacks."""
     import deepsign_integration
 
+    signature = request.headers.get("X-DeepSign-Signature", "")
+    if not deepsign_integration.verify_webhook_signature(request.get_data(), signature):
+        log_security_event("DEEPSIGN_WEBHOOK_DENIED", "Invalid signature", "WARNING")
+        abort(403)
     payload = request.get_json(silent=True) or {}
     result = deepsign_integration.handle_webhook(payload)
     logger.info(
@@ -1544,9 +1550,7 @@ def webhook_deepsign():
 # --- Billing Cron ---
 @app.route("/api/cron/process-billing", methods=["POST"])
 def api_cron_process_billing():
-    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
-    if CRON_SECRET and secret != CRON_SECRET:
-        abort(403)
+    _require_cron_secret()
 
     communities = db.get_active_communities()
     processed = 0
