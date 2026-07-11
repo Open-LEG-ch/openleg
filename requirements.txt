@@ -5,7 +5,7 @@ scipy==1.11.4
 scikit-learn==1.9.0
 
 # Security dependencies
-Flask-Limiter==3.5.0
+Flask-Limiter==4.1.1
 Flask-Talisman==1.1.0
 python-dotenv==1.2.2
 bleach==6.4.0
@@ -23,6 +23,6 @@ weasyprint==68.0
 
 # Optional: For production
 gunicorn==22.0.0
-requests==2.33.0
-svix==1.95.2
+requests==2.34.2
+svix==1.96.1
 werkzeug==3.1.6

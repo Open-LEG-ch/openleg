@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """PDF document generator for LEG formation documents using WeasyPrint."""
 
+import html
 from datetime import date
 
 
@@ -9,6 +10,10 @@ DISTRIBUTION_LABELS = {
     "proportional": "Proportionale Verteilung nach Verbrauchsanteil",
     "individuell": "Individuelle Vereinbarung gemäss Anhang",
 }
+
+
+def _escape_html(value):
+    return html.escape(str(value), quote=True)
 
 
 def _render_pdf(html_str):
@@ -50,12 +55,20 @@ def generate_gemeinschaftsvereinbarung(
     if date_str is None:
         date_str = date.today().isoformat()
 
-    dist_label = DISTRIBUTION_LABELS.get(distribution_model, distribution_model)
+    community_name = _escape_html(community_name)
+    municipality = _escape_html(municipality)
+    date_str = _escape_html(date_str)
+    dist_label = _escape_html(
+        DISTRIBUTION_LABELS.get(distribution_model, distribution_model)
+    )
 
     rows = ""
     for i, p in enumerate(participants, 1):
         role_label = "Produzent" if p["role"] == "producer" else "Konsument"
-        rows += f"<tr><td>{i}</td><td>{p['name']}</td><td>{p['address']}</td><td>{role_label}</td></tr>"
+        rows += (
+            f"<tr><td>{i}</td><td>{_escape_html(p['name'])}</td>"
+            f"<td>{_escape_html(p['address'])}</td><td>{role_label}</td></tr>"
+        )
 
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -98,7 +111,7 @@ der gemäss separater Vollmacht bestimmt wird.</p>
 
 <h2>7. Unterschriften</h2>
 <table><tr><th>Name</th><th>Datum</th><th>Unterschrift</th></tr>
-{"".join("<tr><td>" + p["name"] + "</td><td></td><td></td></tr>" for p in participants)}
+{"".join("<tr><td>" + _escape_html(p["name"]) + "</td><td></td><td></td></tr>" for p in participants)}
 </table>
 
 <div class="footer">Generiert durch OpenLEG Platform, openleg.ch</div>
@@ -124,11 +137,15 @@ def generate_teilnehmervertrag(
     if date_str is None:
         date_str = date.today().isoformat()
 
+    participant_name = _escape_html(participant_name)
+    participant_address = _escape_html(participant_address)
+    community_name = _escape_html(community_name)
+    date_str = _escape_html(date_str)
     role_label = "Produzent" if role == "producer" else "Konsument"
 
     pv_section = ""
     if pv_kwp and pv_kwp > 0:
-        pv_section = f"<p><strong>PV-Anlage:</strong> {pv_kwp} kWp</p>"
+        pv_section = f"<p><strong>PV-Anlage:</strong> {_escape_html(pv_kwp)} kWp</p>"
 
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -197,9 +214,17 @@ def generate_dso_anmeldung(
     if date_str is None:
         date_str = date.today().isoformat()
 
+    community_name = _escape_html(community_name)
+    dso_name = _escape_html(dso_name)
+    network_level = _escape_html(network_level)
+    date_str = _escape_html(date_str)
     rows = ""
     for i, p in enumerate(participants, 1):
-        rows += f"<tr><td>{i}</td><td>{p['name']}</td><td>{p['address']}</td><td>{p['metering_point']}</td></tr>"
+        rows += (
+            f"<tr><td>{i}</td><td>{_escape_html(p['name'])}</td>"
+            f"<td>{_escape_html(p['address'])}</td>"
+            f"<td>{_escape_html(p['metering_point'])}</td></tr>"
+        )
 
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -219,7 +244,7 @@ th {{ background: #f0f0f0; }}
 <h2>Gemeinschaft</h2>
 <p><strong>Name:</strong> {community_name}<br>
 <strong>Netzebene:</strong> {network_level}<br>
-<strong>Gesamte PV-Leistung:</strong> {total_pv_kwp} kWp</p>
+<strong>Gesamte PV-Leistung:</strong> {_escape_html(total_pv_kwp)} kWp</p>
 
 <h2>Teilnehmer und Messpunkte</h2>
 <table><tr><th>#</th><th>Name</th><th>Adresse</th><th>Messpunkt-ID</th></tr>{rows}</table>
