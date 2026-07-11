@@ -93,6 +93,28 @@ def test_deepsign_webhook_rejects_unsigned_when_secret_set(app_with_deepsign_sec
     assert response.status_code == 403
 
 
+def test_deepsign_webhook_accepts_valid_signature(app_with_deepsign_secret):
+    import json as _json
+
+    import deepsign_integration
+
+    body = _json.dumps({"event": "document.signed", "document_id": "doc-1"}).encode()
+    signature = deepsign_integration.sign_webhook_payload(body)
+    with patch.object(
+        deepsign_integration,
+        "handle_webhook",
+        return_value={"action": "signature_completed", "document_id": "doc-1"},
+    ) as handler:
+        response = app_with_deepsign_secret.app.test_client().post(
+            "/webhook/deepsign",
+            data=body,
+            content_type="application/json",
+            headers={"X-DeepSign-Signature": signature},
+        )
+    assert response.status_code == 200
+    handler.assert_called_once()
+
+
 def test_deepsign_signature_verification_helper():
     import deepsign_integration
 

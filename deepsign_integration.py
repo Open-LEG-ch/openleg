@@ -11,9 +11,9 @@ import os
 
 import requests
 
-API_URL = os.environ.get("DEEPSIGN_API_URL", "https://api.deepsign.ch/v1")
-API_KEY = os.environ.get("DEEPSIGN_API_KEY", "")
-WEBHOOK_SECRET = os.environ.get("DEEPSIGN_WEBHOOK_SECRET", "")
+API_URL = os.environ.get("DEEPSIGN_API_URL", "https://api.deepsign.ch/v1").strip()
+API_KEY = os.environ.get("DEEPSIGN_API_KEY", "").strip()
+WEBHOOK_SECRET = os.environ.get("DEEPSIGN_WEBHOOK_SECRET", "").strip()
 
 
 def sign_webhook_payload(body: bytes) -> str:
