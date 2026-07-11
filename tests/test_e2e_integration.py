@@ -4,7 +4,6 @@
 import os
 import re
 import pytest
-from unittest.mock import patch
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -18,30 +17,16 @@ class TestServerMjsIntegration:
         with open(path) as f:
             self.content = f.read()
 
-    def test_tool_count_at_least_44(self):
+    def test_tool_count_at_least_40(self):
         count = len(re.findall(r"server\.tool\(", self.content))
-        assert count >= 44
+        assert count >= 40
 
     def test_new_tools_have_descriptions(self):
         """Verify server.mjs tool calls include description strings."""
         matches = re.findall(r"server\.tool\(\s*['\"](\w+)['\"]", self.content)
-        assert len(matches) >= 44
+        assert len(matches) >= 40
         for name in matches:
             assert len(name) > 0
-
-
-class TestDraftOutreachMunicipalityFocus:
-    def test_draft_outreach_is_municipality_focused(self):
-        with open(
-            os.path.join(PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs")
-        ) as f:
-            content = f.read()
-        # Extract content around draft_outreach tool
-        idx = content.find("'draft_outreach'")
-        assert idx > 0
-        block = content[idx : idx + 1500]
-        assert "Gemeinde" in block
-        assert "LEG-Partnerschaft" not in block
 
 
 class TestDockerfileCron:
@@ -56,12 +41,12 @@ class TestDatabaseSchema:
     def test_database_has_lea_reports_table(self):
         with open(os.path.join(PROJECT_ROOT, "database.py")) as f:
             content = f.read()
-        assert "lea_reports" in content
+        assert "CREATE TABLE IF NOT EXISTS lea_reports" in content
 
     def test_database_has_ops_snapshots_table(self):
         with open(os.path.join(PROJECT_ROOT, "database.py")) as f:
             content = f.read()
-        assert "ops_snapshots" in content
+        assert "CREATE TABLE IF NOT EXISTS ops_snapshots" in content
 
     def test_database_has_lea_report_functions(self):
         with open(os.path.join(PROJECT_ROOT, "database.py")) as f:
@@ -70,47 +55,6 @@ class TestDatabaseSchema:
         assert "def get_lea_reports" in content
         assert "def save_ops_snapshot" in content
         assert "def get_ops_snapshots" in content
-
-
-class TestAdminPipelineHTML:
-    def test_pipeline_returns_html_with_accept(self):
-        with patch.dict(
-            os.environ,
-            {"DATABASE_URL": "postgresql://x:x@localhost/x", "ADMIN_TOKEN": "test123"},
-        ):
-            with (
-                patch("database.init_db", return_value=True),
-                patch("database.is_db_available", return_value=True),
-                patch("database.get_vnb_pipeline", return_value=[]),
-                patch(
-                    "database.get_vnb_pipeline_stats",
-                    return_value={
-                        "total": 0,
-                        "funnel": {
-                            "lead": 0,
-                            "contacted": 0,
-                            "demo": 0,
-                            "trial": 0,
-                            "paid": 0,
-                            "churned": 0,
-                        },
-                        "avg_score": 0,
-                        "conversion_rate": 0,
-                    },
-                ),
-            ):
-                try:
-                    from app import app
-
-                    client = app.test_client()
-                    resp = client.get(
-                        "/admin/pipeline",
-                        headers={"X-Admin-Token": "test123", "Accept": "text/html"},
-                    )
-                    assert resp.status_code == 200
-                    assert b"VNB Sales Pipeline" in resp.data
-                except Exception:
-                    pytest.skip("App import requires live DB")
 
 
 class TestCSVFixtureParse:

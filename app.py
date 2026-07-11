@@ -9,11 +9,9 @@ import hashlib
 import threading
 import logging
 
-# PUBLIC-SNAPSHOT-PRIVATE-START: private-export-imports
 import csv
 import io
 
-# PUBLIC-SNAPSHOT-PRIVATE-END: private-export-imports
 from datetime import timedelta
 from flask import (
     Flask,
@@ -136,10 +134,8 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 # --- Email ---
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "hallo@openleg.ch")
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
-# PUBLIC-SNAPSHOT-PRIVATE-START: internal-report-token
 INTERNAL_TOKEN = os.getenv("INTERNAL_TOKEN", "").strip()
 AGENTMAIL_WEBHOOK_SECRET = os.getenv("AGENTMAIL_WEBHOOK_SECRET", "").strip()
-# PUBLIC-SNAPSHOT-PRIVATE-END: internal-report-token
 
 # --- Rate Limiting & Security ---
 if HAS_SECURITY_LIBS:
@@ -719,19 +715,6 @@ def admin_overview():
     )
 
 
-# PUBLIC-SNAPSHOT-PRIVATE-START: private-operator-routes
-@app.route("/admin/pipeline")
-def admin_pipeline():
-    _require_admin()
-    status_filter = request.args.get("status")
-    entries = db.get_vnb_pipeline(status_filter=status_filter)
-    stats = db.get_vnb_pipeline_stats()
-
-    if "text/html" in (request.headers.get("Accept") or ""):
-        return render_template("admin/pipeline.html", entries=entries, stats=stats)
-    return jsonify({"entries": entries, "stats": stats})
-
-
 @app.route("/admin/export")
 def admin_export():
     _require_admin()
@@ -773,31 +756,6 @@ def admin_lea_reports():
     _require_admin()
     reports = db.get_lea_reports(limit=50)
     return jsonify({"reports": reports})
-
-
-@app.route("/admin/strategy")
-def admin_strategy():
-    _require_admin()
-    from insights_engine import compute_municipality_demand_signal
-
-    data = compute_municipality_demand_signal()
-    signals = data.get("signals", [])
-    # Sort: high → medium → low → none so actionable municipalities appear first
-    level_order = {"high": 0, "medium": 1, "low": 2, "none": 3}
-    signals_sorted = sorted(
-        signals,
-        key=lambda s: (
-            level_order.get(s.get("demand_level", "none"), 3),
-            -s.get("verified_demand", {}).get("demand_score", 0),
-        ),
-    )
-    if "text/html" in (request.headers.get("Accept") or ""):
-        return render_template(
-            "admin/strategy.html",
-            signals=signals_sorted,
-            computed_at=data.get("computed_at"),
-        )
-    return jsonify({"signals": signals_sorted, "computed_at": data.get("computed_at")})
 
 
 @app.route("/api/internal/ops-snapshot", methods=["POST"])
@@ -868,9 +826,6 @@ def admin_ops():
         json.dumps(response, default=str),
         mimetype="application/json",
     )
-
-
-# PUBLIC-SNAPSHOT-PRIVATE-END: private-operator-routes
 
 
 # --- Address API ---

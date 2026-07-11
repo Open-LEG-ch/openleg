@@ -133,6 +133,22 @@ output/imagegen/
 .github/scripts/
 handoff
 
+# Internal business admin: private-ops overlay only, never tracked publicly
+insights_engine.py
+sales_pipeline.py
+templates/admin/strategy.html
+templates/admin/pipeline.html
+templates/emails/municipality_outreach.html
+tests/test_admin_strategy.py
+tests/test_admin_pipeline.py
+tests/test_sales_pipeline.py
+tests/test_municipality_outreach.py
+tests/test_municipality_targeting.py
+tests/test_demand_signal.py
+docs/matt-pocock-quality-slices.md
+scripts/package_public.sh
+scripts/sanitize_public_snapshot.py
+
 # Local OpenClaw state
 openclaw/config/openclaw.json
 openclaw/config/cron/

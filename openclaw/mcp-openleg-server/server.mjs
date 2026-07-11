@@ -651,39 +651,6 @@ server.tool(
   }
 );
 
-server.tool(
-  'research_vnb',
-  'Research a Swiss VNB/utility: search web for their LEG offerings, check if on LEGHub, find PLZ coverage. Use this to evaluate expansion targets.',
-  {
-    utility_name: z.string().describe('Name of the utility/VNB to research'),
-    municipality: z.string().optional().describe('Municipality name for context')
-  },
-  async ({ utility_name, municipality }) => {
-    if (!BRAVE_API_KEY) return txt({ error: 'BRAVE_API_KEY not configured' });
-    const searches = [
-      `"${utility_name}" LEG Lokale Elektrizitätsgemeinschaft`,
-      `"${utility_name}" leghub.ch`,
-      municipality ? `"${utility_name}" ${municipality} PLZ Versorgungsgebiet` : null
-    ].filter(Boolean);
-
-    const results = {};
-    for (const q of searches) {
-      const params = new URLSearchParams({ q, count: 5 });
-      try {
-        const res = await fetch(`https://api.search.brave.com/res/v1/web/search?${params}`, {
-          headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          results[q] = (data.web?.results || []).map(r => ({ title: r.title, url: r.url, description: r.description }));
-        }
-      } catch (e) {
-        results[q] = { error: e.message };
-      }
-    }
-    return txt(results);
-  }
-);
 
 // ============================================================
 // Web Search
@@ -891,73 +858,7 @@ server.tool(
   }
 );
 
-server.tool(
-  'scan_vnb_leg_offerings',
-  'Search web for a VNB/utility LEG product pages. Extract: offers_leg, pricing_model, platform, partnership.',
-  {
-    utility_name: z.string().describe('Name of the VNB/utility'),
-  },
-  async ({ utility_name }) => {
-    if (!BRAVE_API_KEY) return txt({ error: 'BRAVE_API_KEY not configured' });
-    const searches = [
-      `"${utility_name}" LEG Lokale Elektrizitätsgemeinschaft Angebot`,
-      `"${utility_name}" GemeinsamStrom OR LEGhub`,
-      `"${utility_name}" Netzgebühren LEG Reduktion`
-    ];
 
-    const results = {};
-    for (const q of searches) {
-      try {
-        const res = await fetch(`https://api.search.brave.com/res/v1/web/search?${new URLSearchParams({ q, count: 5 })}`, {
-          headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          results[q] = (data.web?.results || []).map(r => ({ title: r.title, url: r.url, description: r.description }));
-        }
-      } catch (e) {
-        results[q] = { error: e.message };
-      }
-    }
-    return txt({ utility_name, searches: results });
-  }
-);
-
-server.tool(
-  'monitor_leghub_partners',
-  'Scrape leghub.ch partner list. Compare with previous scan to detect new/removed partners.',
-  {},
-  async () => {
-    if (!BRAVE_API_KEY) return txt({ error: 'BRAVE_API_KEY not configured' });
-    try {
-      const res = await fetch(`https://api.search.brave.com/res/v1/web/search?${new URLSearchParams({ q: 'site:leghub.ch partner', count: 10 })}`, {
-        headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY }
-      });
-      if (!res.ok) throw new Error(`Brave API ${res.status}`);
-      const data = await res.json();
-      const partners = (data.web?.results || []).map(r => ({ title: r.title, url: r.url, description: r.description }));
-
-      // Check previous scan
-      const prevRes = await query(`SELECT data FROM insights_cache WHERE insight_type = 'leghub_partners' ORDER BY computed_at DESC LIMIT 1`);
-      const previous = prevRes.rows[0]?.data?.partners || [];
-
-      const prevUrls = new Set(previous.map(p => p.url));
-      const newPartners = partners.filter(p => !prevUrls.has(p.url));
-
-      // Save current scan
-      await query(
-        `INSERT INTO insights_cache (insight_type, scope, period, data, expires_at)
-         VALUES ('leghub_partners', 'CH', 'current', $1, NOW() + INTERVAL '30 days')
-         ON CONFLICT (insight_type, scope, period) DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), expires_at = EXCLUDED.expires_at`,
-        [JSON.stringify({ partners, scanned_at: new Date().toISOString() })]
-      );
-
-      return txt({ total_partners: partners.length, new_since_last_scan: newPartners.length, new_partners: newPartners, all_partners: partners });
-    } catch (e) {
-      return txt({ error: e.message });
-    }
-  }
-);
 
 server.tool(
   'refresh_municipality_data',
@@ -1051,95 +952,10 @@ server.tool(
   }
 );
 
-// ============================================================
-// Sales Pipeline Tools
-// ============================================================
 
-server.tool(
-  'get_vnb_pipeline',
-  'Get VNB sales pipeline entries. Optional status filter.',
-  {
-    status: z.string().optional().describe('Filter: lead, contacted, demo, trial, paid, churned'),
-    limit: z.number().default(50).describe('Max results')
-  },
-  async ({ status, limit }) => {
-    let sql = 'SELECT * FROM vnb_pipeline';
-    const params = [];
-    if (status) {
-      sql += ' WHERE status = $1';
-      params.push(status);
-    }
-    sql += ' ORDER BY score DESC NULLS LAST LIMIT $' + (params.length + 1);
-    params.push(limit);
-    const res = await query(sql, params);
-    return txt(res.rows);
-  }
-);
 
-server.tool(
-  'update_vnb_status',
-  'Update VNB pipeline entry status and notes.',
-  {
-    vnb_id: z.number().describe('Pipeline entry ID'),
-    status: z.string().describe('New status: lead, contacted, demo, trial, paid, churned'),
-    notes: z.string().optional().describe('Notes about the status change')
-  },
-  async ({ vnb_id, status, notes }) => {
-    const guard = readonlyGuard();
-    if (guard) return guard;
-    const validStages = ['lead', 'contacted', 'demo', 'trial', 'paid', 'churned'];
-    if (!validStages.includes(status)) return txt({ error: 'Invalid status' });
-    const res = await query(
-      `UPDATE vnb_pipeline SET status = $2, notes = COALESCE($3, notes), updated_at = NOW() WHERE id = $1 RETURNING *`,
-      [vnb_id, status, notes || null]
-    );
-    return txt(res.rows[0] || { error: 'Not found' });
-  }
-);
 
-server.tool(
-  'add_vnb_lead',
-  'Add a new VNB to the sales pipeline.',
-  {
-    vnb_name: z.string().describe('Name of the VNB/utility'),
-    municipality: z.string().optional().describe('Primary municipality'),
-    bfs_number: z.number().optional().describe('BFS municipality number'),
-    population: z.number().optional().describe('Population served'),
-    score: z.number().optional().describe('Lead score 0-100'),
-    notes: z.string().optional().describe('Research notes')
-  },
-  async ({ vnb_name, municipality, bfs_number, population, score, notes }) => {
-    const guard = readonlyGuard();
-    if (guard) return guard;
-    const res = await query(
-      `INSERT INTO vnb_pipeline (vnb_name, municipality, bfs_number, population, score, notes, status, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'lead', NOW(), NOW()) RETURNING *`,
-      [vnb_name, municipality || null, bfs_number || null, population || null, score || null, notes || null]
-    );
-    return txt(res.rows[0]);
-  }
-);
 
-server.tool(
-  'get_pipeline_dashboard',
-  'Get pipeline funnel metrics: counts per stage, avg score, conversion rate.',
-  {},
-  async () => {
-    const res = await query(`
-      SELECT status, COUNT(*)::int as count, ROUND(AVG(score)::numeric, 1) as avg_score
-      FROM vnb_pipeline GROUP BY status ORDER BY
-        CASE status WHEN 'lead' THEN 1 WHEN 'contacted' THEN 2 WHEN 'demo' THEN 3
-        WHEN 'trial' THEN 4 WHEN 'paid' THEN 5 WHEN 'churned' THEN 6 END
-    `);
-    const total = res.rows.reduce((s, r) => s + r.count, 0);
-    const paid = res.rows.find(r => r.status === 'paid')?.count || 0;
-    return txt({
-      funnel: res.rows,
-      total,
-      conversion_rate: total > 0 ? Math.round(paid / total * 1000) / 10 : 0
-    });
-  }
-);
 
 // ============================================================
 // LEG Document & Billing Tools
@@ -1234,51 +1050,7 @@ server.tool(
   }
 );
 
-server.tool(
-  'score_vnb',
-  'Score a VNB/utility as expansion target. Pure computation, no DB needed.',
-  {
-    population: z.number().describe('Municipality population'),
-    solar_potential_pct: z.number().describe('Solar potential percentage (0-100)'),
-    has_leghub: z.boolean().describe('Whether VNB is on LEGHub platform'),
-    smart_meter_rollout_pct: z.number().describe('Smart meter rollout percentage (0-100)')
-  },
-  async ({ population, solar_potential_pct, has_leghub, smart_meter_rollout_pct }) => {
-    let score = 0;
-    // Population: larger = more potential (max 30pts)
-    if (population > 50000) score += 30;
-    else if (population > 20000) score += 25;
-    else if (population > 10000) score += 20;
-    else if (population > 5000) score += 15;
-    else score += 10;
-    // Solar potential (max 25pts)
-    score += Math.min(25, Math.round(solar_potential_pct * 0.25));
-    // LEGHub readiness (max 20pts)
-    score += has_leghub ? 20 : 0;
-    // Smart meter rollout (max 25pts)
-    score += Math.min(25, Math.round(smart_meter_rollout_pct * 0.25));
 
-    const tier = score >= 80 ? 'hot' : score >= 60 ? 'warm' : score >= 40 ? 'medium' : 'cold';
-    return txt({ score, tier, breakdown: { population_pts: score > 80 ? 30 : 'varies', solar_pts: Math.min(25, Math.round(solar_potential_pct * 0.25)), leghub_pts: has_leghub ? 20 : 0, smart_meter_pts: Math.min(25, Math.round(smart_meter_rollout_pct * 0.25)) } });
-  }
-);
-
-server.tool(
-  'draft_outreach',
-  'Draft a municipality outreach email informing about free LEG infrastructure. Returns German text.',
-  {
-    municipality_name: z.string().describe('Name of the Gemeinde'),
-    bfs_number: z.number().describe('BFS number of the municipality'),
-    value_gap_chf: z.number().describe('Annual savings potential per household in CHF'),
-    solar_potential_pct: z.number().describe('Solar potential percentage of suitable roofs')
-  },
-  async ({ municipality_name, bfs_number, value_gap_chf, solar_potential_pct }) => {
-    const profileUrl = `https://openleg.ch/gemeinde/${bfs_number}/profil`;
-    const onboardingUrl = `https://openleg.ch/gemeinde/${bfs_number}/onboarding`;
-    const email = `Betreff: Kostenlose LEG-Infrastruktur für ${municipality_name}\n\nSehr geehrte Gemeindeverantwortliche\n\nDie Gemeinde ${municipality_name} verfügt über ein hohes Potenzial für Lokale Elektrizitätsgemeinschaften (LEG).\n\nKennzahlen:\n- Solarpotenzial: ${solar_potential_pct}% der Dachflächen geeignet\n- Einsparpotenzial: ca. CHF ${value_gap_chf} pro Haushalt und Jahr\n\nOpenLEG stellt kostenlose, quelloffene Infrastruktur für die Gründung und Verwaltung von LEGs bereit. Kein Datenverkauf, keine Gebühren.\n\nGemeindeprofil: ${profileUrl}\nOnboarding starten: ${onboardingUrl}\n\nFreundliche Grüsse\nOpenLEG\nhallo@openleg.ch`;
-    return txt({ email, metadata: { municipality_name, bfs_number, value_gap_chf, solar_potential_pct } });
-  }
-);
 
 // ============================================================
 // Seeding Tools
@@ -1381,27 +1153,6 @@ server.tool(
   }
 );
 
-server.tool(
-  'get_outreach_candidates',
-  'Find seeded municipalities with no registrations and no contact email. Candidates for outreach.',
-  {
-    limit: z.number().default(50).describe('Max results')
-  },
-  async ({ limit }) => {
-    const result = await query(`
-      SELECT wlc.territory, wlc.config->>'city_name' as city_name, wlc.config->>'kanton' as kanton
-      FROM white_label_configs wlc
-      LEFT JOIN buildings b ON b.city_id = wlc.territory
-      WHERE wlc.active = true
-      GROUP BY wlc.id, wlc.territory, wlc.config
-      HAVING COUNT(b.building_id) = 0
-      AND (wlc.contact_email IS NULL OR wlc.contact_email = '')
-      ORDER BY wlc.created_at ASC
-      LIMIT $1
-    `, [limit]);
-    return txt({ count: result.rowCount, candidates: result.rows });
-  }
-);
 
 server.tool(
   'get_ops_snapshots',

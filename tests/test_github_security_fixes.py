@@ -74,20 +74,6 @@ def test_validate_email_address_hides_exception_details():
     assert "Email is not valid" not in error
 
 
-def test_insights_engine_db_error_is_generic():
-    mock_db = MagicMock()
-    mock_db.get_connection.side_effect = Exception("connection refused")
-
-    with patch("insights_engine.db", mock_db):
-        from insights_engine import compute_municipality_demand_signal
-
-        result = compute_municipality_demand_signal()
-
-    assert result["signals"] == []
-    assert "error" in result
-    assert "connection refused" not in result["error"]
-
-
 def test_parse_ekz_csv_hides_exception_details():
     from meter_data import parse_ekz_csv
 

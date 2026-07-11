@@ -68,9 +68,9 @@ class TestServerMjs:
         with open(path) as f:
             self.content = f.read()
 
-    def test_tool_count_at_least_44(self):
+    def test_tool_count_at_least_40(self):
         count = len(re.findall(r"server\.tool\(", self.content))
-        assert count >= 44, f"Expected >= 44 server.tool() calls, found {count}"
+        assert count >= 40, f"Expected >= 44 server.tool() calls, found {count}"
 
     @pytest.mark.parametrize(
         "tool_name",
@@ -79,12 +79,9 @@ class TestServerMjs:
             "list_documents",
             "run_billing_period",
             "get_billing_summary",
-            "score_vnb",
-            "draft_outreach",
             "get_unseeded_municipalities",
             "get_all_swiss_municipalities",
             "get_stuck_formations",
-            "get_outreach_candidates",
         ],
     )
     def test_key_tools_exist(self, tool_name):
