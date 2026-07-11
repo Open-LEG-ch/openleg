@@ -5,12 +5,34 @@ Requires DEEPSIGN_API_KEY and DEEPSIGN_API_URL env vars.
 API docs: https://docs.deepsign.ch
 """
 
+import hashlib
+import hmac
 import os
+
 import requests
 
-API_URL = os.environ.get("DEEPSIGN_API_URL", "https://api.deepsign.ch/v1")
-API_KEY = os.environ.get("DEEPSIGN_API_KEY", "")
-WEBHOOK_SECRET = os.environ.get("DEEPSIGN_WEBHOOK_SECRET", "")
+API_URL = os.environ.get("DEEPSIGN_API_URL", "https://api.deepsign.ch/v1").strip()
+API_KEY = os.environ.get("DEEPSIGN_API_KEY", "").strip()
+WEBHOOK_SECRET = os.environ.get("DEEPSIGN_WEBHOOK_SECRET", "").strip()
+
+
+def sign_webhook_payload(body: bytes) -> str:
+    """HMAC-SHA256 hex signature over the raw webhook body."""
+    return hmac.new(WEBHOOK_SECRET.encode(), body, hashlib.sha256).hexdigest()
+
+
+def verify_webhook_signature(body: bytes, signature: str) -> bool:
+    """Check a webhook signature.
+
+    Without a configured DEEPSIGN_WEBHOOK_SECRET the check is a no-op so
+    local development keeps working; with a secret set, unsigned or wrongly
+    signed requests are rejected.
+    """
+    if not WEBHOOK_SECRET:
+        return True
+    if not signature:
+        return False
+    return hmac.compare_digest(sign_webhook_payload(body), signature)
 
 
 def _headers():
