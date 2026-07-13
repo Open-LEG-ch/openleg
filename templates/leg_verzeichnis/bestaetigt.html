@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="Eintrag bestätigt: " ~ entry.name ~ " | OpenLEG",
+  description="Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell.",
+  path=canonical_path,
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block content %}
+  <main class="max-w-xl mx-auto px-4 py-12">
+    <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+      <p class="font-semibold text-green-900 mb-1">Danke für die Bestätigung.</p>
+      <p class="text-sm text-green-800">"{{ entry.name }}" bleibt als aktuell markiert im Verzeichnis.</p>
+    </div>
+    <a href="/leg-verzeichnis/{{ entry.slug }}" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Zum Eintrag</a>
+  </main>
+{% endblock %}

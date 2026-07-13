@@ -490,9 +490,26 @@ def _create_tables():
                     claimed_at TIMESTAMP,
                     claimed_by_email VARCHAR(255),
                     last_verified_at TIMESTAMP,
+                    verification_token VARCHAR(128),
+                    verification_token_expires_at TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+
+            # Migration: add verification_token columns to leg_registry if missing
+            # (leg_registry shipped in Phase 1 without these Phase 2 columns).
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'leg_registry' AND column_name = 'verification_token'
+                    ) THEN
+                        ALTER TABLE leg_registry ADD COLUMN verification_token VARCHAR(128);
+                        ALTER TABLE leg_registry ADD COLUMN verification_token_expires_at TIMESTAMP;
+                    END IF;
+                END $$
             """)
 
             cur.execute("""
@@ -1917,6 +1934,10 @@ from store.registry import (  # noqa: E402, F401
     set_registry_claim_token,
     get_registry_entry_by_claim_token,
     mark_registry_entry_claimed,
+    set_registry_verification_token,
+    get_registry_entry_by_verification_token,
+    mark_registry_entry_verified,
+    get_registry_entries_needing_verification,
 )
 
 from store.meter import (  # noqa: E402, F401

@@ -242,6 +242,107 @@ def get_registry_entry_by_claim_token(token: str) -> Optional[Dict]:
         return None
 
 
+def set_registry_verification_token(
+    entry_id: int, token: str, ttl_seconds: int = 86400
+) -> bool:
+    """Set a re-confirmation verification token for a registry entry."""
+    try:
+        with _get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE leg_registry
+                    SET verification_token = %s,
+                        verification_token_expires_at = CURRENT_TIMESTAMP
+                            + %s * INTERVAL '1 second',
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """,
+                    (token, ttl_seconds, entry_id),
+                )
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error setting registry verification token: {e}")
+        return False
+
+
+def get_registry_entry_by_verification_token(token: str) -> Optional[Dict]:
+    """Get a registry entry by verification token (only if not expired)."""
+    try:
+        with _get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT * FROM leg_registry
+                    WHERE verification_token = %s
+                        AND verification_token_expires_at > CURRENT_TIMESTAMP
+                """,
+                    (token,),
+                )
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting registry entry by verification token: {e}")
+        return None
+
+
+def mark_registry_entry_verified(entry_id: int) -> bool:
+    """Record a re-confirmation: update last_verified_at, clear the token."""
+    try:
+        with _get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE leg_registry
+                    SET last_verified_at = CURRENT_TIMESTAMP,
+                        verification_token = NULL,
+                        verification_token_expires_at = NULL,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """,
+                    (entry_id,),
+                )
+                return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"[DB] Error marking registry entry verified: {e}")
+        return False
+
+
+def get_registry_entries_needing_verification(
+    stale_days: int = 90, limit: int = 50
+) -> List[Dict]:
+    """Published entries never verified, or not verified in stale_days.
+
+    Excludes entries that already have a live (unexpired) verification
+    token so a nudge isn't re-sent while one is pending.
+    """
+    try:
+        with _get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT * FROM leg_registry
+                    WHERE moderation_status = 'published'
+                        AND (
+                            last_verified_at IS NULL
+                            OR last_verified_at < CURRENT_TIMESTAMP
+                                - %s * INTERVAL '1 day'
+                        )
+                        AND (
+                            verification_token IS NULL
+                            OR verification_token_expires_at <= CURRENT_TIMESTAMP
+                        )
+                    ORDER BY last_verified_at ASC NULLS FIRST
+                    LIMIT %s
+                """,
+                    (stale_days, limit),
+                )
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing registry entries needing verification: {e}")
+        return []
+
+
 def mark_registry_entry_claimed(entry_id: int, claimed_by_email: str) -> bool:
     """Mark a registry entry as claimed and clear its claim token."""
     try:

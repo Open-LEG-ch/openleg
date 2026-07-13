@@ -25,6 +25,10 @@ _REEXPORTED = (
     "set_registry_claim_token",
     "get_registry_entry_by_claim_token",
     "mark_registry_entry_claimed",
+    "set_registry_verification_token",
+    "get_registry_entry_by_verification_token",
+    "mark_registry_entry_verified",
+    "get_registry_entries_needing_verification",
 )
 
 
@@ -140,3 +144,41 @@ def test_get_registry_pending_count_returns_zero_by_default(monkeypatch):
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
     assert registry.get_registry_pending_count() == 0
+
+
+def test_set_registry_verification_token_updates_expiry(monkeypatch):
+    cur = _FakeCursor(rowcount=1)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert (
+        registry.set_registry_verification_token(5, "vtok123", ttl_seconds=3600) is True
+    )
+    assert "verification_token" in cur.executed[0][0]
+
+
+def test_get_registry_entry_by_verification_token_missing_returns_none(monkeypatch):
+    cur = _FakeCursor(one=None)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert registry.get_registry_entry_by_verification_token("nope") is None
+
+
+def test_mark_registry_entry_verified_clears_token(monkeypatch):
+    cur = _FakeCursor(rowcount=1)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert registry.mark_registry_entry_verified(5) is True
+    assert "last_verified_at" in cur.executed[0][0]
+    assert "verification_token = NULL" in cur.executed[0][0]
+
+
+def test_get_registry_entries_needing_verification_defaults_published_only(
+    monkeypatch,
+):
+    cur = _FakeCursor(rows=[])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    registry.get_registry_entries_needing_verification(stale_days=90)
+    query = cur.executed[0][0]
+    assert "leg_registry" in query
+    assert "moderation_status = 'published'" in query

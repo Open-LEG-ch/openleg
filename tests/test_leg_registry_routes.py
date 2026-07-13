@@ -255,3 +255,35 @@ def test_claim_confirm_rejects_expired_or_unknown_token(monkeypatch):
     resp = client.get("/leg-verzeichnis/beanspruchen/badtoken")
     assert resp.status_code == 404
     mock_mark.assert_not_called()
+
+
+# --- Re-confirmation (freshness) ---
+
+
+def _verify_client(monkeypatch, entry=None):
+    mock_lookup = MagicMock(return_value=entry)
+    monkeypatch.setattr(
+        leg_registry_module.db, "get_registry_entry_by_verification_token", mock_lookup
+    )
+    mock_mark = MagicMock(return_value=True)
+    monkeypatch.setattr(
+        leg_registry_module.db, "mark_registry_entry_verified", mock_mark
+    )
+    app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
+    app.config["TESTING"] = True
+    app.register_blueprint(leg_registry_module.registry_bp)
+    return app.test_client(), mock_mark
+
+
+def test_verify_confirm_marks_entry_verified_with_valid_token(monkeypatch):
+    client, mock_mark = _verify_client(monkeypatch, entry=SAMPLE_ENTRY)
+    resp = client.get("/leg-verzeichnis/bestaetigen/validtoken123")
+    assert resp.status_code == 200
+    mock_mark.assert_called_once_with(SAMPLE_ENTRY["id"])
+
+
+def test_verify_confirm_rejects_expired_or_unknown_token(monkeypatch):
+    client, mock_mark = _verify_client(monkeypatch, entry=None)
+    resp = client.get("/leg-verzeichnis/bestaetigen/badtoken")
+    assert resp.status_code == 404
+    mock_mark.assert_not_called()
