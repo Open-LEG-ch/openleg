@@ -58,9 +58,10 @@ requiring data that does not publicly exist.
   verdict.
 - **No automated import or scrape** from ElCom, BFE, or canton sources yet.
   Every registry entry starts as a human-moderated self-submission.
-- **No automatic re-verification job yet.** The data model reserves a
-  `last_verified_at` field so a future freshness pass does not require a
-  schema migration, but nothing populates or acts on it yet.
+- **No automatic re-verification job yet.** Phase 1's data model is planned
+  to reserve a `last_verified_at` field so a future freshness pass does not
+  require a schema migration, but as of this doc no registry data model
+  exists yet, and nothing populates or acts on that field.
 
 ## Related Docs
 
