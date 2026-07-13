@@ -462,6 +462,39 @@ def _create_tables():
                 )
             """)
 
+            # Open LEG registry: self-submitted, human-moderated directory of
+            # Swiss LEGs, independent of which platform (if any) formed them.
+            # See docs/leg-registry.md for the product contract.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS leg_registry (
+                    id SERIAL PRIMARY KEY,
+                    slug VARCHAR(128) UNIQUE NOT NULL,
+                    name VARCHAR(255) NOT NULL,
+                    kanton VARCHAR(2),
+                    plz VARCHAR(10),
+                    ort VARCHAR(255),
+                    bfs_number INTEGER,
+                    vnb_name VARCHAR(255),
+                    member_count_estimate INTEGER,
+                    leg_status VARCHAR(32) DEFAULT 'planung',
+                    description TEXT,
+                    website_url VARCHAR(512),
+                    contact_email VARCHAR(255) NOT NULL,
+                    moderation_status VARCHAR(32) DEFAULT 'pending',
+                    moderation_note TEXT,
+                    source VARCHAR(32) DEFAULT 'self_submitted',
+                    community_id VARCHAR(64)
+                        REFERENCES communities(community_id) ON DELETE SET NULL,
+                    claim_token VARCHAR(128),
+                    claim_token_expires_at TIMESTAMP,
+                    claimed_at TIMESTAMP,
+                    claimed_by_email VARCHAR(255),
+                    last_verified_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS billing_periods (
                     id SERIAL PRIMARY KEY,
@@ -697,6 +730,19 @@ def _create_tables():
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_utility_clients_magic_token ON utility_clients(magic_link_token)"
+            )
+
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_leg_registry_moderation_status ON leg_registry(moderation_status)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_leg_registry_kanton ON leg_registry(kanton)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_leg_registry_plz ON leg_registry(plz)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_leg_registry_claim_token ON leg_registry(claim_token)"
             )
 
             # LEA autonomous reports (instance ops, posted via /api/internal/*)
@@ -1859,6 +1905,18 @@ from store.utility import (  # noqa: E402, F401
     update_utility_client_api_key,
     get_all_utility_clients,
     get_utility_client_stats,
+)
+
+from store.registry import (  # noqa: E402, F401
+    save_registry_entry,
+    get_registry_entry,
+    get_registry_entry_by_slug,
+    list_registry_entries,
+    update_registry_entry_moderation,
+    get_registry_pending_count,
+    set_registry_claim_token,
+    get_registry_entry_by_claim_token,
+    mark_registry_entry_claimed,
 )
 
 from store.meter import (  # noqa: E402, F401
