@@ -144,6 +144,33 @@ def test_fuer_bewohner_in_sitemap(full_app_module, monkeypatch):
     assert "/fuer-bewohner" in xml
 
 
+# --- Phase 0: positioning copy (no vendor lock-in, transparent pricing) ---
+
+
+def test_fuer_bewohner_positions_against_vendor_lockin_and_links_pricing():
+    html = _read("fuer_bewohner.html")
+    assert "unabhängig vom Netzbetreiber" in html
+    assert 'href="/pricing"' in html
+
+
+def test_fuer_gemeinden_positions_against_vendor_lockin_and_links_pricing():
+    html = _read("fuer_gemeinden.html")
+    assert "Kein Anbieter-Lock-in" in html
+    assert "Unabhängig vom Netzbetreiber" in html
+    assert 'href="/pricing"' in html
+
+
+def test_leg_gruenden_positions_free_tooling_and_links_pricing():
+    html = _read("leg_gruenden.html")
+    assert 'href="/pricing"' in html
+    assert "jedem Schweizer Netzbetreiber" in html
+
+
+def test_open_source_positions_as_grid_operator_neutral():
+    html = _read("open_source.html")
+    assert "nicht an einzelne Netzbetreiber" in html
+
+
 # --- Profile page rebrand + resident CTA ---
 
 
