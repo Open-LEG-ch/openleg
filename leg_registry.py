@@ -258,3 +258,36 @@ def bestaetigen(token):
         site_url=request.url_root.rstrip("/"),
         canonical_path=f"/leg-verzeichnis/{entry['slug']}",
     )
+
+
+def send_verification_nudges(base_url=""):
+    """Email listed contacts whose entry is stale, asking them to reconfirm.
+
+    Called from the /api/cron/verify-registry-entries cron endpoint. Skips
+    entries where setting the token fails rather than emailing a dead link.
+    """
+    candidates = db.get_registry_entries_needing_verification(
+        stale_days=VERIFICATION_STALE_DAYS
+    )
+    result = {"candidates": len(candidates), "sent": 0, "errors": 0}
+
+    for entry in candidates:
+        token = secrets.token_urlsafe(32)
+        token_set = db.set_registry_verification_token(
+            entry["id"], token, ttl_seconds=VERIFICATION_TOKEN_TTL_SECONDS
+        )
+        if not token_set:
+            result["errors"] += 1
+            continue
+
+        confirm_url = f"{base_url}/leg-verzeichnis/bestaetigen/{token}"
+        email_utils.send_email(
+            entry["contact_email"],
+            "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?",
+            f'Bitte bestätigen Sie, dass der Eintrag "{entry["name"]}" im '
+            f"OpenLEG-Verzeichnis noch aktuell ist (Link 14 Tage gültig):\n\n"
+            f"{confirm_url}",
+        )
+        result["sent"] += 1
+
+    return result

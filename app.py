@@ -85,6 +85,7 @@ from api_public import public_api_bp
 from health import health_bp
 from utility_portal import utility_bp
 from rangliste import rangliste_bp
+import leg_registry
 from leg_registry import registry_bp
 
 # --- Cron Secret ---
@@ -1531,6 +1532,14 @@ def api_cron_process_billing():
         # Billing processing runs per active community.
         processed += 1
     return jsonify({"processed": processed, "communities": len(communities)})
+
+
+@app.route("/api/cron/verify-registry-entries", methods=["POST"])
+def api_cron_verify_registry_entries():
+    _require_cron_secret()
+
+    result = leg_registry.send_verification_nudges(base_url=SITE_URL)
+    return jsonify(result)
 
 
 @app.route("/api/billing/community/<community_id>/period/<int:period_id>")

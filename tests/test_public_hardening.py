@@ -18,6 +18,7 @@ CRON_ENDPOINTS = (
     "/api/cron/refresh-public-data",
     "/api/cron/backfill-elcom",
     "/api/cron/process-billing",
+    "/api/cron/verify-registry-entries",
 )
 
 # Every env var the code reads that a self-hoster may need to set.
