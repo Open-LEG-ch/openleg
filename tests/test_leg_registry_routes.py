@@ -287,3 +287,117 @@ def test_verify_confirm_rejects_expired_or_unknown_token(monkeypatch):
     resp = client.get("/leg-verzeichnis/bestaetigen/badtoken")
     assert resp.status_code == 404
     mock_mark.assert_not_called()
+
+
+# --- Re-confirmation nudge job ---
+
+
+def test_send_verification_nudges_sends_email_and_sets_token(monkeypatch):
+    stale_entry = {**SAMPLE_ENTRY, "id": 7}
+    mock_candidates = MagicMock(return_value=[stale_entry])
+    monkeypatch.setattr(
+        leg_registry_module.db,
+        "get_registry_entries_needing_verification",
+        mock_candidates,
+    )
+    mock_set_token = MagicMock(return_value=True)
+    monkeypatch.setattr(
+        leg_registry_module.db, "set_registry_verification_token", mock_set_token
+    )
+    mock_send = MagicMock(return_value=True)
+    monkeypatch.setattr(leg_registry_module.email_utils, "send_email", mock_send)
+
+    result = leg_registry_module.send_verification_nudges()
+
+    assert result["candidates"] == 1
+    assert result["sent"] == 1
+    mock_set_token.assert_called_once()
+    args, _ = mock_set_token.call_args
+    assert args[0] == 7
+    mock_send.assert_called_once()
+    send_args, send_kwargs = mock_send.call_args
+    to_email = send_args[0] if send_args else send_kwargs.get("to_email")
+    assert to_email == stale_entry["contact_email"]
+
+
+def test_send_verification_nudges_counts_errors_without_raising(monkeypatch):
+    stale_entry = {**SAMPLE_ENTRY, "id": 8}
+    monkeypatch.setattr(
+        leg_registry_module.db,
+        "get_registry_entries_needing_verification",
+        MagicMock(return_value=[stale_entry]),
+    )
+    monkeypatch.setattr(
+        leg_registry_module.db,
+        "set_registry_verification_token",
+        MagicMock(return_value=False),
+    )
+    mock_send = MagicMock(return_value=True)
+    monkeypatch.setattr(leg_registry_module.email_utils, "send_email", mock_send)
+
+    result = leg_registry_module.send_verification_nudges()
+
+    assert result["candidates"] == 1
+    assert result["sent"] == 0
+    assert result["errors"] == 1
+    mock_send.assert_not_called()
+
+
+def test_cron_verify_registry_entries_requires_secret(monkeypatch):
+    import importlib
+    import os as os_module
+    from unittest.mock import patch
+
+    with patch.dict(
+        os_module.environ,
+        {
+            "DATABASE_URL": "postgresql://x:x@localhost/x",
+            "REDIS_URL": "memory://",
+            "APP_BASE_URL": "http://localhost:5003",
+            "CRON_SECRET": "test-cron-secret",
+        },
+    ):
+        with (
+            patch("database.is_db_available", return_value=True),
+            patch("database._connection_pool", MagicMock()),
+        ):
+            import app as app_module
+
+            app_module = importlib.reload(app_module)
+            client = app_module.app.test_client()
+            resp = client.post("/api/cron/verify-registry-entries")
+            assert resp.status_code == 403
+
+
+def test_cron_verify_registry_entries_calls_nudge_job(monkeypatch):
+    import importlib
+    import os as os_module
+    from unittest.mock import patch
+
+    with patch.dict(
+        os_module.environ,
+        {
+            "DATABASE_URL": "postgresql://x:x@localhost/x",
+            "REDIS_URL": "memory://",
+            "APP_BASE_URL": "http://localhost:5003",
+            "CRON_SECRET": "test-cron-secret",
+        },
+    ):
+        with (
+            patch("database.is_db_available", return_value=True),
+            patch("database._connection_pool", MagicMock()),
+        ):
+            import app as app_module
+
+            app_module = importlib.reload(app_module)
+            with patch(
+                "leg_registry.send_verification_nudges",
+                return_value={"candidates": 0, "sent": 0, "errors": 0},
+            ) as mock_job:
+                client = app_module.app.test_client()
+                resp = client.post(
+                    "/api/cron/verify-registry-entries",
+                    headers={"X-Cron-Secret": "test-cron-secret"},
+                )
+                assert resp.status_code == 200
+                mock_job.assert_called_once()
