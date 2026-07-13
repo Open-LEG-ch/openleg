@@ -101,3 +101,85 @@ def test_detail_404s_for_unpublished_entry(monkeypatch):
     client, _, _ = _make_client(monkeypatch, detail_return=pending_entry)
     resp = client.get("/leg-verzeichnis/leg-baden")
     assert resp.status_code == 404
+
+
+# --- Self-service submission ---
+
+
+def _submit_client(monkeypatch, save_return=None):
+    mock_save = MagicMock(
+        return_value=save_return if save_return is not None else {"id": 1}
+    )
+    monkeypatch.setattr(leg_registry_module.db, "save_registry_entry", mock_save)
+    monkeypatch.setattr(
+        leg_registry_module.db,
+        "get_registry_entry_by_slug",
+        MagicMock(return_value=None),
+    )
+    mock_track = MagicMock(return_value=True)
+    monkeypatch.setattr(leg_registry_module.db, "track_event", mock_track)
+    app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
+    app.config["TESTING"] = True
+    app.register_blueprint(leg_registry_module.registry_bp)
+    return app.test_client(), mock_save, mock_track
+
+
+def test_eintragen_get_renders_form_with_honesty_boundary(monkeypatch):
+    client, _, _ = _submit_client(monkeypatch)
+    resp = client.get("/leg-verzeichnis/eintragen")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8", errors="ignore")
+    assert "prüft keine Netz-Topologie" in html
+    assert "manuell" in html.lower() or "geprüft" in html.lower()
+
+
+def test_eintragen_post_creates_pending_self_submitted_entry(monkeypatch):
+    client, mock_save, mock_track = _submit_client(monkeypatch)
+    resp = client.post(
+        "/leg-verzeichnis/eintragen",
+        data={
+            "name": "LEG Baden",
+            "contact_email": "info@example.ch",
+            "kanton": "AG",
+            "plz": "5400",
+            "ort": "Baden",
+        },
+    )
+    assert resp.status_code in (200, 302)
+    assert mock_save.called
+    _, kwargs = mock_save.call_args
+    assert kwargs["name"] == "LEG Baden"
+    assert kwargs["contact_email"] == "info@example.ch"
+    assert mock_track.called
+
+
+def test_eintragen_post_rejects_missing_required_fields(monkeypatch):
+    client, mock_save, _ = _submit_client(monkeypatch)
+    resp = client.post(
+        "/leg-verzeichnis/eintragen",
+        data={"kanton": "AG"},
+    )
+    assert resp.status_code == 400
+    assert not mock_save.called
+
+
+def test_eintragen_post_rejects_invalid_email(monkeypatch):
+    client, mock_save, _ = _submit_client(monkeypatch)
+    resp = client.post(
+        "/leg-verzeichnis/eintragen",
+        data={"name": "LEG Baden", "contact_email": "not-an-email"},
+    )
+    assert resp.status_code == 400
+    assert not mock_save.called
+
+
+def test_eintragen_post_generates_slug_from_name(monkeypatch):
+    client, mock_save, _ = _submit_client(monkeypatch)
+    client.post(
+        "/leg-verzeichnis/eintragen",
+        data={"name": "LEG Müswangen-Süd", "contact_email": "info@example.ch"},
+    )
+    _, kwargs = mock_save.call_args
+    assert kwargs["slug"]
+    assert " " not in kwargs["slug"]
+    assert kwargs["slug"] == kwargs["slug"].lower()
