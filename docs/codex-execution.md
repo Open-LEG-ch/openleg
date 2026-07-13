@@ -53,6 +53,34 @@ For a Claude Code cloud session driving Codex CLI:
   to `CLAUDE.md`, enforced by `tests/test_docs_boundary_contract.py`. Change
   both together, never one alone.
 
+## Review Rubric
+
+### Two axes: standards vs. spec
+
+Every review finding gets tagged against exactly one of two independent
+questions:
+
+- **Standards** — does the diff violate repo engineering conventions (style,
+  seam discipline via `database.get_connection`, security posture, test
+  patterns)?
+- **Spec** — does the diff actually implement the slice's contract, the one
+  pinned by the failing test written before implementation?
+
+Passing one does not imply passing the other: a diff can be clean,
+idiomatic code that solves the wrong problem, or a correct behavior wrapped
+in code that violates repo conventions. Conflating the two hides which
+failure mode actually occurred, so review comments should say which axis a
+finding belongs to.
+
+### The deletion test
+
+Before a new helper, module, or abstraction survives review, ask: if this
+were deleted, would anything break, or would nothing notice? A wrapper with
+exactly one caller that nothing else depends on should usually be inlined
+rather than kept. Complexity that vanishes when a module is deleted was
+pass-through cruft; complexity that reappears elsewhere was load-bearing and
+earns its keep.
+
 ## Alternative: Codex cloud tasks
 
 For delegating whole tasks to Codex cloud instead of the in-session CLI:
