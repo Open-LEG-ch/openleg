@@ -19,6 +19,7 @@ from flask import (
     jsonify,
     render_template,
     abort,
+    redirect,
     Response,
     g,
     send_from_directory,
@@ -806,10 +807,12 @@ def admin_ops():
     snapshots = db.get_ops_snapshots(limit=100)
     reports = db.get_lea_reports(limit=20)
     latest = _latest_snapshot_by_category(snapshots)
+    pending_registry = db.list_registry_entries(moderation_status="pending")
     response = {
         "latest": latest,
         "snapshots": snapshots[:20],
         "reports": reports,
+        "pending_registry": pending_registry,
         "counts": {
             "lea_inbox": sum(1 for s in snapshots if s.get("category") == "lea_inbox"),
             "github_monitor": sum(
@@ -821,6 +824,7 @@ def admin_ops():
             "stuck_formations": sum(
                 1 for s in snapshots if s.get("category") == "stuck_formations"
             ),
+            "registry_pending": db.get_registry_pending_count(),
         },
     }
     if "text/html" in (request.headers.get("Accept") or ""):
@@ -829,6 +833,21 @@ def admin_ops():
         json.dumps(response, default=str),
         mimetype="application/json",
     )
+
+
+@app.route("/admin/registry/<int:entry_id>/approve", methods=["POST"])
+def admin_registry_approve(entry_id):
+    _require_admin()
+    db.update_registry_entry_moderation(entry_id, "published", "")
+    return redirect(f"/admin/ops?token={ADMIN_TOKEN}")
+
+
+@app.route("/admin/registry/<int:entry_id>/reject", methods=["POST"])
+def admin_registry_reject(entry_id):
+    _require_admin()
+    reason = (request.form.get("reason") or "").strip()
+    db.update_registry_entry_moderation(entry_id, "rejected", reason)
+    return redirect(f"/admin/ops?token={ADMIN_TOKEN}")
 
 
 # --- Address API ---
