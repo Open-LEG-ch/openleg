@@ -34,6 +34,10 @@
       <div class="text-sm text-gray-400">LEG-Verzeichnis</div>
       <div class="text-3xl font-bold">{{ counts.registry_pending }}</div>
     </div>
+    <div class="bg-gray-900 rounded-lg p-4">
+      <div class="text-sm text-gray-400">Unbestätigt (LEG-Verzeichnis)</div>
+      <div class="text-3xl font-bold">{{ counts.registry_stale }}</div>
+    </div>
   </div>
 
   <div class="mb-8">
@@ -47,6 +51,7 @@
             <th class="px-4 py-3 text-left">Name</th>
             <th class="px-4 py-3 text-left">Ort</th>
             <th class="px-4 py-3 text-left">Kontakt</th>
+            <th class="px-4 py-3 text-left">VNB-Plausibilität</th>
             <th class="px-4 py-3 text-right">Aktion</th>
           </tr>
         </thead>
@@ -56,6 +61,15 @@
             <td class="px-4 py-3">{{ entry.name }}</td>
             <td class="px-4 py-3 text-gray-400">{{ entry.ort }}{% if entry.kanton %} ({{ entry.kanton }}){% endif %}</td>
             <td class="px-4 py-3 text-gray-400">{{ entry.contact_email }}</td>
+            <td class="px-4 py-3">
+              {% if entry.vnb_plausible is none %}
+              <span class="text-xs text-gray-500">ungeprüft</span>
+              {% elif entry.vnb_plausible %}
+              <span class="text-xs text-green-400">plausibel</span>
+              {% else %}
+              <span class="text-xs text-yellow-400">Abweichung von ElCom</span>
+              {% endif %}
+            </td>
             <td class="px-4 py-3 text-right">
               <form method="post" action="/admin/registry/{{ entry.id }}/approve?token={{ request.args.get('token', '') }}" class="inline">
                 <button type="submit" class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded">Freischalten</button>
