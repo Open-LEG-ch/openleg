@@ -22,6 +22,7 @@ SAMPLE_ENTRY = {
     "member_count_estimate": 12,
     "description": "Nachbarschaftliche Stromgemeinschaft in Baden.",
     "website_url": "",
+    "contact_email": "info@example.ch",
     "moderation_status": "published",
 }
 
@@ -183,3 +184,74 @@ def test_eintragen_post_generates_slug_from_name(monkeypatch):
     assert kwargs["slug"]
     assert " " not in kwargs["slug"]
     assert kwargs["slug"] == kwargs["slug"].lower()
+
+
+# --- Claim flow ---
+
+
+def _claim_client(monkeypatch, entry=None, claim_lookup=None):
+    monkeypatch.setattr(
+        leg_registry_module.db,
+        "get_registry_entry_by_slug",
+        MagicMock(return_value=entry),
+    )
+    mock_set_token = MagicMock(return_value=True)
+    monkeypatch.setattr(
+        leg_registry_module.db, "set_registry_claim_token", mock_set_token
+    )
+    mock_send = MagicMock(return_value=True)
+    monkeypatch.setattr(leg_registry_module.email_utils, "send_email", mock_send)
+    mock_lookup = MagicMock(return_value=claim_lookup)
+    monkeypatch.setattr(
+        leg_registry_module.db, "get_registry_entry_by_claim_token", mock_lookup
+    )
+    mock_mark = MagicMock(return_value=True)
+    monkeypatch.setattr(
+        leg_registry_module.db, "mark_registry_entry_claimed", mock_mark
+    )
+    app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
+    app.config["TESTING"] = True
+    app.register_blueprint(leg_registry_module.registry_bp)
+    return app.test_client(), mock_set_token, mock_send, mock_mark
+
+
+def test_claim_request_get_renders_confirm_page(monkeypatch):
+    client, _, _, _ = _claim_client(monkeypatch, entry=SAMPLE_ENTRY)
+    resp = client.get("/leg-verzeichnis/leg-baden/beanspruchen")
+    assert resp.status_code == 200
+    assert "LEG Baden" in resp.data.decode("utf-8", errors="ignore")
+
+
+def test_claim_request_get_404s_for_unknown_slug(monkeypatch):
+    client, _, _, _ = _claim_client(monkeypatch, entry=None)
+    resp = client.get("/leg-verzeichnis/nope/beanspruchen")
+    assert resp.status_code == 404
+
+
+def test_claim_request_post_generates_token_and_sends_email(monkeypatch):
+    client, mock_set_token, mock_send, _ = _claim_client(
+        monkeypatch, entry=SAMPLE_ENTRY
+    )
+    resp = client.post("/leg-verzeichnis/leg-baden/beanspruchen")
+    assert resp.status_code == 200
+    assert mock_set_token.called
+    args, _ = mock_set_token.call_args
+    assert args[0] == SAMPLE_ENTRY["id"]
+    assert mock_send.called
+    send_args, send_kwargs = mock_send.call_args
+    to_email = send_args[0] if send_args else send_kwargs.get("to_email")
+    assert to_email == SAMPLE_ENTRY["contact_email"]
+
+
+def test_claim_confirm_marks_entry_claimed_with_valid_token(monkeypatch):
+    client, _, _, mock_mark = _claim_client(monkeypatch, claim_lookup=SAMPLE_ENTRY)
+    resp = client.get("/leg-verzeichnis/beanspruchen/validtoken123")
+    assert resp.status_code == 200
+    mock_mark.assert_called_once_with(SAMPLE_ENTRY["id"], SAMPLE_ENTRY["contact_email"])
+
+
+def test_claim_confirm_rejects_expired_or_unknown_token(monkeypatch):
+    client, _, _, mock_mark = _claim_client(monkeypatch, claim_lookup=None)
+    resp = client.get("/leg-verzeichnis/beanspruchen/badtoken")
+    assert resp.status_code == 404
+    mock_mark.assert_not_called()

@@ -8,12 +8,16 @@ verified grid-topology eligibility signal.
 
 import logging
 import re
+import secrets
 
 from flask import Blueprint, abort, render_template, request
 
 import database as db
+import email_utils
 import security_utils
 from cantons import SWISS_CANTON_OPTIONS
+
+CLAIM_TOKEN_TTL_SECONDS = 24 * 60 * 60
 
 logger = logging.getLogger(__name__)
 
@@ -183,4 +187,56 @@ def _eintragen_error(message, form, status):
             form=form,
         ),
         status,
+    )
+
+
+@registry_bp.route("/leg-verzeichnis/<slug>/beanspruchen", methods=["GET", "POST"])
+def beanspruchen(slug):
+    entry = db.get_registry_entry_by_slug(slug)
+    if not entry:
+        abort(404)
+
+    if request.method == "GET":
+        return render_template(
+            "leg_verzeichnis/beanspruchen.html",
+            entry=entry,
+            sent=False,
+            site_url=request.url_root.rstrip("/"),
+            canonical_path=f"/leg-verzeichnis/{slug}/beanspruchen",
+        )
+
+    token = secrets.token_urlsafe(32)
+    db.set_registry_claim_token(entry["id"], token, ttl_seconds=CLAIM_TOKEN_TTL_SECONDS)
+
+    confirm_url = f"{request.url_root.rstrip('/')}/leg-verzeichnis/beanspruchen/{token}"
+    email_utils.send_email(
+        entry["contact_email"],
+        "Bestätigen Sie Ihren LEG-Eintrag bei OpenLEG",
+        f'Um den Eintrag "{entry["name"]}" im OpenLEG-Verzeichnis zu '
+        f"beanspruchen, öffnen Sie diesen Link (24 Stunden gültig):\n\n"
+        f"{confirm_url}",
+    )
+
+    return render_template(
+        "leg_verzeichnis/beanspruchen.html",
+        entry=entry,
+        sent=True,
+        site_url=request.url_root.rstrip("/"),
+        canonical_path=f"/leg-verzeichnis/{slug}/beanspruchen",
+    )
+
+
+@registry_bp.route("/leg-verzeichnis/beanspruchen/<token>")
+def beanspruchen_bestaetigen(token):
+    entry = db.get_registry_entry_by_claim_token(token)
+    if not entry:
+        abort(404)
+
+    db.mark_registry_entry_claimed(entry["id"], entry["contact_email"])
+
+    return render_template(
+        "leg_verzeichnis/beanspruchen_bestaetigt.html",
+        entry=entry,
+        site_url=request.url_root.rstrip("/"),
+        canonical_path=f"/leg-verzeichnis/{entry['slug']}",
     )
