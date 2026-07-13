@@ -483,7 +483,8 @@ def _create_tables():
                     moderation_status VARCHAR(32) DEFAULT 'pending',
                     moderation_note TEXT,
                     source VARCHAR(32) DEFAULT 'self_submitted',
-                    community_id VARCHAR(64) REFERENCES communities(community_id),
+                    community_id VARCHAR(64)
+                        REFERENCES communities(community_id) ON DELETE SET NULL,
                     claim_token VARCHAR(128),
                     claim_token_expires_at TIMESTAMP,
                     claimed_at TIMESTAMP,
@@ -739,6 +740,9 @@ def _create_tables():
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_leg_registry_plz ON leg_registry(plz)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_leg_registry_claim_token ON leg_registry(claim_token)"
             )
 
             # LEA autonomous reports (instance ops, posted via /api/internal/*)

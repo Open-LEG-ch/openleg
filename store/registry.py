@@ -42,7 +42,11 @@ def save_registry_entry(
     website_url: str = "",
     source: str = "self_submitted",
 ) -> Optional[Dict]:
-    """Create a new registry entry, pending moderation. Returns the row id."""
+    """Create a new registry entry, pending moderation.
+
+    Returns the newly created row as a dict (e.g. {"id": ...}), or None on
+    failure.
+    """
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
@@ -206,7 +210,8 @@ def set_registry_claim_token(
                     """
                     UPDATE leg_registry
                     SET claim_token = %s,
-                        claim_token_expires_at = CURRENT_TIMESTAMP + INTERVAL '%s seconds',
+                        claim_token_expires_at = CURRENT_TIMESTAMP
+                            + %s * INTERVAL '1 second',
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = %s
                 """,
