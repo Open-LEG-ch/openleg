@@ -808,7 +808,12 @@ def admin_ops():
     snapshots = db.get_ops_snapshots(limit=100)
     reports = db.get_lea_reports(limit=20)
     latest = _latest_snapshot_by_category(snapshots)
-    pending_registry = db.list_registry_entries(moderation_status="pending")
+    pending_registry = leg_registry.annotate_vnb_plausibility(
+        db.list_registry_entries(moderation_status="pending")
+    )
+    stale_registry = db.get_registry_entries_needing_verification(
+        stale_days=leg_registry.VERIFICATION_STALE_DAYS, limit=1000
+    )
     response = {
         "latest": latest,
         "snapshots": snapshots[:20],
@@ -826,6 +831,7 @@ def admin_ops():
                 1 for s in snapshots if s.get("category") == "stuck_formations"
             ),
             "registry_pending": db.get_registry_pending_count(),
+            "registry_stale": len(stale_registry),
         },
     }
     if "text/html" in (request.headers.get("Accept") or ""):

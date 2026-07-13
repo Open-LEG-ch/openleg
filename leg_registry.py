@@ -291,3 +291,30 @@ def send_verification_nudges(base_url=""):
         result["sent"] += 1
 
     return result
+
+
+def annotate_vnb_plausibility(entries):
+    """Add a vnb_plausible flag to each entry: a moderator hint, not a verdict.
+
+    None when there's nothing to check (no bfs_number or no self-reported
+    vnb_name). Otherwise True/False based on a case-insensitive substring
+    match against ElCom's operator_name(s) for that municipality. This is a
+    plausibility signal only — see docs/leg-registry.md's honesty boundary:
+    it never confirms grid-topology eligibility.
+    """
+    annotated = []
+    for entry in entries:
+        entry = dict(entry)
+        bfs_number = entry.get("bfs_number")
+        vnb_name = (entry.get("vnb_name") or "").strip()
+        if not bfs_number or not vnb_name:
+            entry["vnb_plausible"] = None
+        else:
+            tariffs = db.get_elcom_tariffs(bfs_number)
+            operator_names = [(t.get("operator_name") or "").lower() for t in tariffs]
+            needle = vnb_name.lower()
+            entry["vnb_plausible"] = any(
+                needle in name or name in needle for name in operator_names if name
+            )
+        annotated.append(entry)
+    return annotated

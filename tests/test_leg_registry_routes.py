@@ -369,6 +369,45 @@ def test_cron_verify_registry_entries_requires_secret(monkeypatch):
             assert resp.status_code == 403
 
 
+def test_annotate_vnb_plausibility_flags_mismatch(monkeypatch):
+    entry = {**SAMPLE_ENTRY, "bfs_number": 4021, "vnb_name": "Regionalwerke Baden"}
+    monkeypatch.setattr(
+        leg_registry_module.db,
+        "get_elcom_tariffs",
+        MagicMock(return_value=[{"operator_name": "Regionalwerke Baden AG"}]),
+    )
+    annotated = leg_registry_module.annotate_vnb_plausibility([entry])
+    assert annotated[0]["vnb_plausible"] is True
+
+    monkeypatch.setattr(
+        leg_registry_module.db,
+        "get_elcom_tariffs",
+        MagicMock(return_value=[{"operator_name": "Ganz Anderer Netzbetreiber"}]),
+    )
+    annotated = leg_registry_module.annotate_vnb_plausibility([entry])
+    assert annotated[0]["vnb_plausible"] is False
+
+
+def test_annotate_vnb_plausibility_none_without_bfs_number(monkeypatch):
+    entry = {**SAMPLE_ENTRY, "bfs_number": None, "vnb_name": "Regionalwerke Baden"}
+    mock_tariffs = MagicMock()
+    monkeypatch.setattr(leg_registry_module.db, "get_elcom_tariffs", mock_tariffs)
+
+    annotated = leg_registry_module.annotate_vnb_plausibility([entry])
+    assert annotated[0]["vnb_plausible"] is None
+    mock_tariffs.assert_not_called()
+
+
+def test_annotate_vnb_plausibility_none_without_vnb_name(monkeypatch):
+    entry = {**SAMPLE_ENTRY, "bfs_number": 4021, "vnb_name": ""}
+    mock_tariffs = MagicMock()
+    monkeypatch.setattr(leg_registry_module.db, "get_elcom_tariffs", mock_tariffs)
+
+    annotated = leg_registry_module.annotate_vnb_plausibility([entry])
+    assert annotated[0]["vnb_plausible"] is None
+    mock_tariffs.assert_not_called()
+
+
 def test_cron_verify_registry_entries_calls_nudge_job(monkeypatch):
     import importlib
     import os as os_module

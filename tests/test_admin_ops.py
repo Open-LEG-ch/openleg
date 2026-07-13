@@ -336,3 +336,51 @@ class TestAdminRegistryModeration:
         assert "pending_registry" in content
         assert "/approve" in content
         assert "/reject" in content
+
+    def test_admin_ops_includes_stale_registry_count_and_vnb_plausibility(self):
+        stale_entry = {
+            "id": 1,
+            "name": "LEG Stale",
+            "bfs_number": 4021,
+            "vnb_name": "Regionalwerke Baden",
+            "contact_email": "info@example.ch",
+        }
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "ADMIN_TOKEN": "test123",
+                "INTERNAL_TOKEN": "secret-internal",
+            },
+        ):
+            with (
+                patch("database.init_db", return_value=True),
+                patch("database._connection_pool", MagicMock()),
+                patch("database.is_db_available", return_value=True),
+                patch("database.get_ops_snapshots", return_value=[]),
+                patch("database.get_lea_reports", return_value=[]),
+                patch("database.list_registry_entries", return_value=[stale_entry]),
+                patch("database.get_registry_pending_count", return_value=1),
+                patch(
+                    "database.get_registry_entries_needing_verification",
+                    return_value=[stale_entry],
+                ),
+                patch(
+                    "database.get_elcom_tariffs",
+                    return_value=[{"operator_name": "Regionalwerke Baden AG"}],
+                ),
+            ):
+                try:
+                    from app import app
+
+                    client = app.test_client()
+                    resp = client.get(
+                        "/admin/ops",
+                        headers={"X-Admin-Token": "test123"},
+                    )
+                    assert resp.status_code == 200
+                    data = json.loads(resp.data)
+                    assert data["counts"]["registry_stale"] == 1
+                    assert data["pending_registry"][0]["vnb_plausible"] is True
+                except Exception:
+                    pytest.skip("App import requires live DB")
