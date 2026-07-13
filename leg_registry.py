@@ -18,6 +18,8 @@ import security_utils
 from cantons import SWISS_CANTON_OPTIONS
 
 CLAIM_TOKEN_TTL_SECONDS = 24 * 60 * 60
+VERIFICATION_TOKEN_TTL_SECONDS = 14 * 24 * 60 * 60
+VERIFICATION_STALE_DAYS = 90
 
 logger = logging.getLogger(__name__)
 
@@ -236,6 +238,22 @@ def beanspruchen_bestaetigen(token):
 
     return render_template(
         "leg_verzeichnis/beanspruchen_bestaetigt.html",
+        entry=entry,
+        site_url=request.url_root.rstrip("/"),
+        canonical_path=f"/leg-verzeichnis/{entry['slug']}",
+    )
+
+
+@registry_bp.route("/leg-verzeichnis/bestaetigen/<token>")
+def bestaetigen(token):
+    entry = db.get_registry_entry_by_verification_token(token)
+    if not entry:
+        abort(404)
+
+    db.mark_registry_entry_verified(entry["id"])
+
+    return render_template(
+        "leg_verzeichnis/bestaetigt.html",
         entry=entry,
         site_url=request.url_root.rstrip("/"),
         canonical_path=f"/leg-verzeichnis/{entry['slug']}",
