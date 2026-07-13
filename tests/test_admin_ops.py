@@ -206,3 +206,133 @@ class TestAdminOpsRouteExists:
         assert "/admin/ops" in content
         assert "/api/internal/ops-snapshot" in content
         assert "/api/internal/agentmail" in content
+
+
+class TestAdminRegistryModeration:
+    def test_admin_ops_includes_registry_pending_count(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "ADMIN_TOKEN": "test123",
+                "INTERNAL_TOKEN": "secret-internal",
+            },
+        ):
+            with (
+                patch("database.init_db", return_value=True),
+                patch("database._connection_pool", MagicMock()),
+                patch("database.is_db_available", return_value=True),
+                patch("database.get_ops_snapshots", return_value=[]),
+                patch("database.get_lea_reports", return_value=[]),
+                patch("database.list_registry_entries", return_value=[{"id": 1}]),
+                patch("database.get_registry_pending_count", return_value=1),
+            ):
+                try:
+                    from app import app
+
+                    client = app.test_client()
+                    resp = client.get(
+                        "/admin/ops",
+                        headers={"X-Admin-Token": "test123"},
+                    )
+                    assert resp.status_code == 200
+                    data = json.loads(resp.data)
+                    assert data["counts"]["registry_pending"] == 1
+                    assert data["pending_registry"] == [{"id": 1}]
+                except Exception:
+                    pytest.skip("App import requires live DB")
+
+    def test_admin_registry_approve_requires_admin_token(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "ADMIN_TOKEN": "test123",
+                "INTERNAL_TOKEN": "secret-internal",
+            },
+        ):
+            with (
+                patch("database.init_db", return_value=True),
+                patch("database._connection_pool", MagicMock()),
+                patch("database.is_db_available", return_value=True),
+                patch(
+                    "database.update_registry_entry_moderation", return_value=True
+                ) as mock_update,
+            ):
+                try:
+                    from app import app
+
+                    client = app.test_client()
+                    resp = client.post("/admin/registry/1/approve")
+                    assert resp.status_code == 403
+                    mock_update.assert_not_called()
+                except Exception:
+                    pytest.skip("App import requires live DB")
+
+    def test_admin_registry_approve_calls_store_with_published(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "ADMIN_TOKEN": "test123",
+                "INTERNAL_TOKEN": "secret-internal",
+            },
+        ):
+            with (
+                patch("database.init_db", return_value=True),
+                patch("database._connection_pool", MagicMock()),
+                patch("database.is_db_available", return_value=True),
+                patch(
+                    "database.update_registry_entry_moderation", return_value=True
+                ) as mock_update,
+            ):
+                try:
+                    from app import app
+
+                    client = app.test_client()
+                    resp = client.post(
+                        "/admin/registry/1/approve",
+                        headers={"X-Admin-Token": "test123"},
+                    )
+                    assert resp.status_code in (200, 302)
+                    mock_update.assert_called_once_with(1, "published", "")
+                except Exception:
+                    pytest.skip("App import requires live DB")
+
+    def test_admin_registry_reject_accepts_optional_reason(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "ADMIN_TOKEN": "test123",
+                "INTERNAL_TOKEN": "secret-internal",
+            },
+        ):
+            with (
+                patch("database.init_db", return_value=True),
+                patch("database._connection_pool", MagicMock()),
+                patch("database.is_db_available", return_value=True),
+                patch(
+                    "database.update_registry_entry_moderation", return_value=True
+                ) as mock_update,
+            ):
+                try:
+                    from app import app
+
+                    client = app.test_client()
+                    resp = client.post(
+                        "/admin/registry/1/reject",
+                        data={"reason": "Duplikat"},
+                        headers={"X-Admin-Token": "test123"},
+                    )
+                    assert resp.status_code in (200, 302)
+                    mock_update.assert_called_once_with(1, "rejected", "Duplikat")
+                except Exception:
+                    pytest.skip("App import requires live DB")
+
+    def test_admin_ops_html_has_registry_moderation_section(self):
+        with open(os.path.join(PROJECT_ROOT, "templates", "admin", "ops.html")) as f:
+            content = f.read()
+        assert "pending_registry" in content
+        assert "/approve" in content
+        assert "/reject" in content

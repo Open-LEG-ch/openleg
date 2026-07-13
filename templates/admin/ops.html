@@ -30,6 +30,49 @@
       <div class="text-sm text-gray-400">Stuck Formations</div>
       <div class="text-3xl font-bold">{{ counts.stuck_formations }}</div>
     </div>
+    <div class="bg-gray-900 rounded-lg p-4">
+      <div class="text-sm text-gray-400">LEG-Verzeichnis</div>
+      <div class="text-3xl font-bold">{{ counts.registry_pending }}</div>
+    </div>
+  </div>
+
+  <div class="mb-8">
+    <section class="bg-gray-900 rounded-lg overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-800">
+        <h2 class="font-semibold">Ausstehende LEG-Einträge</h2>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-800">
+          <tr>
+            <th class="px-4 py-3 text-left">Name</th>
+            <th class="px-4 py-3 text-left">Ort</th>
+            <th class="px-4 py-3 text-left">Kontakt</th>
+            <th class="px-4 py-3 text-right">Aktion</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800">
+          {% for entry in pending_registry %}
+          <tr class="hover:bg-gray-800/40">
+            <td class="px-4 py-3">{{ entry.name }}</td>
+            <td class="px-4 py-3 text-gray-400">{{ entry.ort }}{% if entry.kanton %} ({{ entry.kanton }}){% endif %}</td>
+            <td class="px-4 py-3 text-gray-400">{{ entry.contact_email }}</td>
+            <td class="px-4 py-3 text-right">
+              <form method="post" action="/admin/registry/{{ entry.id }}/approve?token={{ request.args.get('token', '') }}" class="inline">
+                <button type="submit" class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded">Freischalten</button>
+              </form>
+              <form method="post" action="/admin/registry/{{ entry.id }}/reject?token={{ request.args.get('token', '') }}" class="inline ml-2">
+                <input type="hidden" name="reason" value="">
+                <button type="submit" class="bg-red-800 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded">Ablehnen</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not pending_registry %}
+          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Keine ausstehenden Einträge</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </section>
   </div>
 
   <div class="grid lg:grid-cols-2 gap-6 mb-8">
