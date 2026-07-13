@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title=entry.name ~ " | LEG-Verzeichnis | OpenLEG",
+  description="Eintrag im offenen LEG-Verzeichnis: " ~ entry.name ~ (", " ~ entry.ort if entry.ort else "") ~ ". Moderierte Selbstauskunft, unabhängig von der Gründungsplattform.",
+  path=canonical_path,
+  og_type="article",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block content %}
+  <main class="max-w-3xl mx-auto px-4 py-12">
+    <p class="text-sm mb-4"><a href="/leg-verzeichnis" class="text-brand hover:underline">&larr; Zurück zum Verzeichnis</a></p>
+
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold tracking-tight mb-2">{{ entry.name }}</h1>
+      <p class="text-ink-muted">{{ entry.ort }}{% if entry.kanton %} ({{ entry.kanton }}){% endif %}{% if entry.plz %} &middot; {{ entry.plz }}{% endif %}</p>
+    </header>
+
+    {% if entry.description %}
+    <p class="text-ink-muted mb-6">{{ entry.description }}</p>
+    {% endif %}
+
+    <dl class="grid sm:grid-cols-2 gap-4 mb-8">
+      {% if entry.leg_status %}
+      <div class="bg-white rounded-xl border p-4">
+        <dt class="text-sm text-ink-muted">Status</dt>
+        <dd class="font-semibold">{{ entry.leg_status }}</dd>
+      </div>
+      {% endif %}
+      {% if entry.member_count_estimate %}
+      <div class="bg-white rounded-xl border p-4">
+        <dt class="text-sm text-ink-muted">Mitglieder (geschätzt)</dt>
+        <dd class="font-semibold">ca. {{ entry.member_count_estimate }}</dd>
+      </div>
+      {% endif %}
+      {% if entry.vnb_name %}
+      <div class="bg-white rounded-xl border p-4">
+        <dt class="text-sm text-ink-muted">Netzbetreiber (Selbstauskunft)</dt>
+        <dd class="font-semibold">{{ entry.vnb_name }}</dd>
+      </div>
+      {% endif %}
+      {% if entry.website_url %}
+      <div class="bg-white rounded-xl border p-4">
+        <dt class="text-sm text-ink-muted">Website</dt>
+        <dd class="font-semibold"><a href="{{ entry.website_url }}" target="_blank" rel="noopener" class="text-brand hover:underline">{{ entry.website_url }}</a></dd>
+      </div>
+      {% endif %}
+    </dl>
+
+    <section class="bg-brand/5 border border-brand/20 rounded-xl p-6 mb-8">
+      <h2 class="font-bold mb-2">Was dieser Eintrag bedeutet</h2>
+      <p class="text-sm text-ink-muted">Dieser Eintrag ist eine moderierte Selbstauskunft der LEG. OpenLEG prüft keine Netz-Topologie und bestätigt nicht, welche Adressen konkret teilnehmen können. Diese Angabe zum Netzbetreiber stammt von der LEG selbst und ist nicht verifiziert.</p>
+    </section>
+
+    <div class="flex flex-col sm:flex-row gap-3">
+      <a href="/leg-verzeichnis/{{ entry.slug }}/beanspruchen" class="inline-block border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Diese LEG betreiben Sie? Eintrag beanspruchen</a>
+    </div>
+  </main>
+{% endblock %}
