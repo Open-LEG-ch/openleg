@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="LEG-Verzeichnis: Lokale Elektrizitätsgemeinschaften in der Schweiz | OpenLEG",
+  description="Offenes Verzeichnis Schweizer Lokaler Elektrizitätsgemeinschaften (LEG), unabhängig davon, welche Plattform bei der Gründung half. Selbst eintragen oder nach Kanton und PLZ suchen.",
+  path=canonical_path,
+  og_type="website",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block content %}
+  <main class="max-w-6xl mx-auto px-4 py-12">
+    <header class="max-w-3xl mb-8">
+      <p class="text-sm font-semibold text-brand mb-2">LEG-Verzeichnis</p>
+      <h1 class="text-4xl font-bold tracking-tight mb-3">Lokale Elektrizitätsgemeinschaften in der Schweiz</h1>
+      <p class="text-lg text-ink-muted">Offen für jede LEG, unabhängig davon, welche Plattform bei der Gründung half. Einträge sind moderierte Selbstauskünfte: OpenLEG prüft keine Netz-Topologie und keine Eignung einzelner Adressen. Details dazu stehen bei jedem Eintrag.</p>
+      <div class="mt-5">
+        <a href="/leg-verzeichnis/eintragen" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Eigene LEG eintragen</a>
+      </div>
+    </header>
+
+    <form method="get" class="flex flex-col md:flex-row gap-3 mb-6">
+      <input type="text" name="q" value="{{ q }}" placeholder="Name oder Ort suchen..."
+        class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+      <input type="text" name="plz" value="{{ plz }}" placeholder="PLZ"
+        class="w-full md:w-28 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+      <select name="kanton" class="border rounded-lg px-3 py-2 text-sm bg-white">
+        {% for code, label in canton_options %}
+        <option value="{{ code }}" {{ 'selected' if kanton == code }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="leg_status" class="border rounded-lg px-3 py-2 text-sm bg-white">
+        {% for code, label in leg_status_options %}
+        <option value="{{ code }}" {{ 'selected' if leg_status == code }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Suchen</button>
+    </form>
+
+    {% if entries %}
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {% for entry in entries %}
+      <a href="/leg-verzeichnis/{{ entry.slug }}" class="bg-white rounded-xl p-5 shadow-sm border hover:shadow-md hover:border-brand/30 transition-all">
+        <h2 class="font-semibold text-lg mb-1">{{ entry.name }}</h2>
+        <p class="text-sm text-ink-muted mb-2">{{ entry.ort }}{% if entry.kanton %} ({{ entry.kanton }}){% endif %}</p>
+        {% if entry.member_count_estimate %}
+        <p class="text-sm text-ink-muted">ca. {{ entry.member_count_estimate }} Mitglieder</p>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    <p class="text-sm text-ink-muted mt-6">{{ entries|length }} LEGs gefunden. OpenLEG prüft keine Netz-Topologie: ein Eintrag ist eine moderierte Selbstauskunft, kein Eignungsnachweis für eine bestimmte Adresse.</p>
+    {% else %}
+    <div class="bg-white rounded-xl p-8 text-center shadow-sm border">
+      <p class="text-ink-muted mb-2">Keine LEGs gefunden{% if q %} für "{{ q }}"{% endif %}.</p>
+      <p class="text-sm text-ink-muted">Fehlt Ihre LEG? <a href="/leg-verzeichnis/eintragen" class="text-brand hover:underline">Jetzt eintragen</a>. OpenLEG prüft keine Netz-Topologie: das Verzeichnis lebt von Selbstauskünften.</p>
+    </div>
+    {% endif %}
+  </main>
+{% endblock %}
