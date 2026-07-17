@@ -103,6 +103,20 @@ def test_leg_check_multiple_matches_shows_disambiguation(monkeypatch):
     assert "Badenweiler" in html
 
 
+def test_fuer_bewohner_funnels_to_leg_check():
+    path = os.path.join(PROJECT_ROOT, "templates", "fuer_bewohner.html")
+    with open(path, encoding="utf-8") as handle:
+        html = handle.read()
+    assert 'href="/leg-check"' in html
+
+
+def test_leg_verzeichnis_liste_funnels_to_leg_check():
+    path = os.path.join(PROJECT_ROOT, "templates", "leg_verzeichnis", "liste.html")
+    with open(path, encoding="utf-8") as handle:
+        html = handle.read()
+    assert 'href="/leg-check"' in html
+
+
 def test_leg_check_no_match_shows_empty_state(monkeypatch):
     client = _check_client(monkeypatch, profiles=[])
     resp = client.get("/leg-check?q=Nirgendwo")
