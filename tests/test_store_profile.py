@@ -25,6 +25,7 @@ _REEXPORTED = (
     "get_profile_bfs_missing_elcom_tariffs",
     "save_sonnendach_municipal",
     "get_sonnendach_municipal",
+    "search_municipality_profiles",
 )
 
 
@@ -107,3 +108,23 @@ def test_get_all_municipality_profiles_filters_by_kanton(monkeypatch):
 
 def test_save_elcom_tariffs_empty_returns_zero():
     assert profile.save_elcom_tariffs([]) == 0
+
+
+def test_search_municipality_profiles_matches_name_case_insensitive(monkeypatch):
+    cur = _FakeCursor(rows=[{"bfs_number": 4021, "name": "Baden"}])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    rows = profile.search_municipality_profiles("bad")
+    assert rows == [{"bfs_number": 4021, "name": "Baden"}]
+    query, params = cur.executed[0]
+    assert "municipality_profiles" in query
+    assert "ILIKE" in query
+    assert params[0] == "%bad%"
+
+
+def test_search_municipality_profiles_blank_query_returns_empty(monkeypatch):
+    cur = _FakeCursor(rows=[{"bfs_number": 1, "name": "X"}])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert profile.search_municipality_profiles("   ") == []
+    assert cur.executed == []
