@@ -199,6 +199,29 @@ def get_all_municipality_profiles(
         return []
 
 
+def search_municipality_profiles(q: str, limit: int = 10) -> List[Dict]:
+    """Search municipality profiles by name (case-insensitive substring)."""
+    q = (q or "").strip()
+    if not q:
+        return []
+    try:
+        with _get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT * FROM municipality_profiles
+                    WHERE name ILIKE %s
+                    ORDER BY name
+                    LIMIT %s
+                """,
+                    (f"%{q}%", max(1, min(int(limit), 50))),
+                )
+                return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error searching municipality profiles: {e}")
+        return []
+
+
 def get_all_municipality_profile_bfs_numbers() -> List[int]:
     """Get sorted BFS numbers from municipality_profiles."""
     try:

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="LEG-Check: Was ist in Ihrer Gemeinde möglich? | OpenLEG",
+  description="Prüfen Sie, was heute über eine LEG in Ihrer Gemeinde bekannt ist: Netzbetreiber laut ElCom, Solarpotenzial und bestehende Stromgemeinschaften. Aus offenen Daten, ohne Anmeldung.",
+  path=canonical_path,
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block content %}
+  <main class="max-w-3xl mx-auto px-4 py-12">
+    <header class="mb-8">
+      <p class="text-sm font-semibold text-brand mb-2">LEG-Check</p>
+      <h1 class="text-4xl font-bold tracking-tight mb-3">Was ist in Ihrer Gemeinde möglich?</h1>
+      <p class="text-lg text-ink-muted">Aus offenen Daten, ohne Anmeldung: der Netzbetreiber laut ElCom, das Solarpotenzial Ihrer Gemeinde und bestehende Stromgemeinschaften aus dem offenen Verzeichnis. OpenLEG prüft keine Netz-Topologie: ob konkrete Adressen zusammen eine LEG bilden können, klären Sie abschliessend mit Ihren Nachbarn und Ihrem Netzbetreiber.</p>
+    </header>
+
+    <form method="get" class="flex gap-2 mb-10">
+      <input type="text" name="q" value="{{ q }}" placeholder="Gemeinde suchen, z.B. Baden"
+        class="flex-1 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+      <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Prüfen</button>
+    </form>
+
+    {% if profile %}
+    <section class="mb-8">
+      <h2 class="text-2xl font-bold mb-4">{{ profile.name }}{% if profile.kanton %} ({{ profile.kanton }}){% endif %}</h2>
+      <div class="grid sm:grid-cols-2 gap-4 mb-6">
+        <div class="bg-white rounded-xl border p-5">
+          <h3 class="text-sm text-ink-muted mb-1">Netzbetreiber laut ElCom</h3>
+          {% if operators %}
+          {% for op in operators %}
+          <p class="font-semibold">{{ op }}</p>
+          {% endfor %}
+          {% else %}
+          <p class="text-sm text-ink-muted">Keine ElCom-Daten hinterlegt.</p>
+          {% endif %}
+        </div>
+        <div class="bg-white rounded-xl border p-5">
+          <h3 class="text-sm text-ink-muted mb-1">Solarnutzung der Gemeinde</h3>
+          {% if profile.pv_score_pct is not none %}
+          <p class="font-semibold">{{ "%.0f"|format(profile.pv_score_pct|float) }}% des Dachpotenzials genutzt</p>
+          <p class="text-xs text-ink-muted mt-1"><a href="/gemeinde/profil/{{ profile.bfs_number }}" class="text-brand hover:underline">Zum Energieprofil</a></p>
+          {% else %}
+          <p class="text-sm text-ink-muted">Kein Solarprofil hinterlegt.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border p-5 mb-6">
+        <h3 class="text-sm text-ink-muted mb-2">Stromgemeinschaften im offenen Verzeichnis</h3>
+        {% if entries %}
+        <ul class="space-y-2">
+          {% for entry in entries %}
+          <li><a href="/leg-verzeichnis/{{ entry.slug }}" class="text-brand hover:underline font-semibold">{{ entry.name }}</a>{% if entry.leg_status %} <span class="text-xs text-ink-muted">({{ entry.leg_status }})</span>{% endif %}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-sm text-ink-muted">Noch keine LEG aus {{ profile.name }} eingetragen. Vielleicht gründen Sie die erste?</p>
+        {% endif %}
+      </div>
+
+      <div class="bg-brand/5 border border-brand/20 rounded-xl p-5 mb-6">
+        <h3 class="font-bold mb-1">Was dieser Check bedeutet</h3>
+        <p class="text-sm text-ink-muted">Diese Angaben stammen aus offenen Daten (ElCom, BFE Sonnendach) und dem offenen Verzeichnis. OpenLEG prüft keine Netz-Topologie. Die abschliessende Bestätigung, welche Adressen zusammen eine LEG bilden können, geben Ihnen Ihre Nachbarn und Ihr Netzbetreiber.</p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <a href="/leg-gruenden" class="flex-1 text-center bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">LEG gründen: so geht es</a>
+        <a href="/leg-verzeichnis/eintragen" class="flex-1 text-center border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white">Bestehende LEG eintragen</a>
+      </div>
+    </section>
+    {% elif matches %}
+    <section class="mb-8">
+      <h2 class="text-xl font-bold mb-3">Mehrere Gemeinden gefunden</h2>
+      <ul class="space-y-2">
+        {% for m in matches %}
+        <li><a href="/leg-check?q={{ m.name }}" class="text-brand hover:underline font-semibold">{{ m.name }}{% if m.kanton %} ({{ m.kanton }}){% endif %}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% elif q %}
+    <section class="bg-white rounded-xl border p-8 text-center mb-8">
+      <p class="text-ink-muted mb-2">Keine Gemeinde für "{{ q }}" gefunden.</p>
+      <p class="text-sm text-ink-muted">Prüfen Sie die Schreibweise oder durchsuchen Sie das <a href="/gemeinde/verzeichnis" class="text-brand hover:underline">Gemeindeverzeichnis</a>.</p>
+    </section>
+    {% endif %}
+  </main>
+{% endblock %}

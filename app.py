@@ -579,6 +579,7 @@ def sitemap_xml():
         ("/open-source", "0.8", "weekly", current_date),
         ("/gemeinde/verzeichnis", "0.9", "weekly", current_date),
         ("/leg-verzeichnis", "0.9", "weekly", current_date),
+        ("/leg-check", "0.9", "weekly", current_date),
         ("/rangliste", "0.9", "daily", current_date),
         ("/rangliste/fortschritte", "0.8", "daily", current_date),
         ("/rangliste/vergleich", "0.7", "weekly", current_date),

@@ -260,6 +260,42 @@ def bestaetigen(token):
     )
 
 
+@registry_bp.route("/leg-check")
+def leg_check():
+    """Honest pre-check: what is knowable about a municipality today.
+
+    Resolves the municipality from locally cached public data (ElCom,
+    Sonnendach via municipality_profiles) and shows existing registry
+    entries. Never claims address-level or grid-topology eligibility.
+    """
+    q = _clean_param("q")
+    profiles = db.search_municipality_profiles(q) if q else []
+
+    profile = profiles[0] if len(profiles) == 1 else None
+    operators = []
+    entries = []
+    if profile:
+        tariffs = db.get_elcom_tariffs(profile["bfs_number"])
+        seen = set()
+        for tariff in tariffs:
+            name = (tariff.get("operator_name") or "").strip()
+            if name and name not in seen:
+                seen.add(name)
+                operators.append(name)
+        entries = db.list_registry_entries(q=profile["name"])
+
+    return render_template(
+        "leg_verzeichnis/leg_check.html",
+        q=q or "",
+        profile=profile,
+        matches=profiles if len(profiles) > 1 else [],
+        operators=operators,
+        entries=entries,
+        site_url=request.url_root.rstrip("/"),
+        canonical_path="/leg-check",
+    )
+
+
 def send_verification_nudges(base_url=""):
     """Email listed contacts whose entry is stale, asking them to reconfirm.
 

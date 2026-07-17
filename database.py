@@ -1886,6 +1886,7 @@ from store.profile import (  # noqa: E402, F401
     get_profile_bfs_missing_elcom_tariffs,
     save_sonnendach_municipal,
     get_sonnendach_municipal,
+    search_municipality_profiles,
 )
 
 from store.billing import (  # noqa: E402, F401
