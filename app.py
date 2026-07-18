@@ -1330,6 +1330,23 @@ def dashboard_demo():
     return render_city_template("dashboard.html", **dashboard_module.demo_readiness())
 
 
+@app.route("/leg/dashboard")
+def leg_dashboard():
+    community_id = request.args.get("cid", "").strip()
+    building_id = request.args.get("bid", "").strip()
+    return render_city_template(
+        "leg_dashboard.html",
+        **dashboard_module.leg_overview(community_id, building_id),
+    )
+
+
+@app.route("/leg/dashboard/demo")
+def leg_dashboard_demo():
+    return render_city_template(
+        "leg_dashboard.html", **dashboard_module.leg_demo_overview()
+    )
+
+
 # --- Referral System ---
 @app.route("/api/referral/stats/<building_id>")
 def api_referral_stats(building_id):
