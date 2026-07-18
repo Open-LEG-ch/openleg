@@ -94,6 +94,73 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     }
 
 
+def _require_role(community_id: str, building_id: str, role: str):
+    """Return the member row if building_id has the given role, else None."""
+    status = formation_wizard.get_community_status(db, community_id)
+    if not status:
+        return None
+    return next(
+        (
+            m
+            for m in status["members"] or []
+            if m["building_id"] == building_id and m.get("role") == role
+        ),
+        None,
+    )
+
+
+def leg_create(name: str, building_id: str, distribution_model: str) -> dict:
+    """Create a community with building_id as admin."""
+    name = (name or "").strip()
+    if not name or not building_id:
+        return {"error": "Name und Profil sind erforderlich.", "community_id": None}
+    if distribution_model not in ("simple", "proportional", "custom"):
+        distribution_model = "simple"
+    created = formation_wizard.create_community(
+        db, name, building_id, distribution_model
+    )
+    if not created:
+        return {
+            "error": "LEG konnte nicht erstellt werden.",
+            "community_id": None,
+        }
+    return {"error": None, "community_id": created["community_id"]}
+
+
+def leg_invite(community_id: str, building_id: str, invite_building_id: str) -> dict:
+    """Invite a building; only the community admin may invite."""
+    if not _require_role(community_id, building_id, "admin"):
+        return {"error": "Nur die Administration kann einladen."}
+    if not invite_building_id:
+        return {"error": "Kein Profil zum Einladen angegeben."}
+    ok = formation_wizard.invite_member(
+        db, community_id, invite_building_id, building_id
+    )
+    if not ok:
+        return {"error": "Einladung nicht möglich (bereits Mitglied?)."}
+    return {"error": None}
+
+
+def leg_confirm(community_id: str, building_id: str) -> dict:
+    """Confirm one's own invited membership."""
+    if not community_id or not building_id:
+        return {"error": "Kein Zugriff."}
+    ok = formation_wizard.confirm_membership(db, community_id, building_id)
+    if not ok:
+        return {"error": "Keine offene Einladung gefunden."}
+    return {"error": None}
+
+
+def leg_start_formation(community_id: str, building_id: str) -> dict:
+    """Start formal formation; only the community admin may start."""
+    if not _require_role(community_id, building_id, "admin"):
+        return {"error": "Nur die Administration kann die Gründung starten."}
+    ok = formation_wizard.start_formation(db, community_id)
+    if not ok:
+        return {"error": "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."}
+    return {"error": None}
+
+
 def leg_demo_overview() -> dict:
     """Fake, click-through LEG operator dashboard data for demos."""
     return {

@@ -1347,6 +1347,45 @@ def leg_dashboard_demo():
     )
 
 
+def _leg_dashboard_redirect(community_id, building_id):
+    return redirect(f"/leg/dashboard?cid={community_id}&bid={building_id}")
+
+
+@app.route("/leg/community/create", methods=["POST"])
+def leg_community_create():
+    name = request.form.get("name", "")
+    building_id = request.form.get("bid", "").strip()
+    model = request.form.get("distribution_model", "simple")
+    result = dashboard_module.leg_create(name, building_id, model)
+    if result["error"]:
+        return render_city_template(
+            "leg_dashboard.html", error=result["error"], community=None
+        ), 400
+    return _leg_dashboard_redirect(result["community_id"], building_id)
+
+
+@app.route("/leg/community/<community_id>/invite", methods=["POST"])
+def leg_community_invite(community_id):
+    building_id = request.form.get("bid", "").strip()
+    invite_building_id = request.form.get("invite_building_id", "").strip()
+    dashboard_module.leg_invite(community_id, building_id, invite_building_id)
+    return _leg_dashboard_redirect(community_id, building_id)
+
+
+@app.route("/leg/community/<community_id>/confirm", methods=["POST"])
+def leg_community_confirm(community_id):
+    building_id = request.form.get("bid", "").strip()
+    dashboard_module.leg_confirm(community_id, building_id)
+    return _leg_dashboard_redirect(community_id, building_id)
+
+
+@app.route("/leg/community/<community_id>/start-formation", methods=["POST"])
+def leg_community_start_formation(community_id):
+    building_id = request.form.get("bid", "").strip()
+    dashboard_module.leg_start_formation(community_id, building_id)
+    return _leg_dashboard_redirect(community_id, building_id)
+
+
 # --- Referral System ---
 @app.route("/api/referral/stats/<building_id>")
 def api_referral_stats(building_id):

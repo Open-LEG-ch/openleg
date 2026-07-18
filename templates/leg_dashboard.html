@@ -80,6 +80,39 @@
         </tbody>
       </table>
     </section>
+
+    {% set viewer = (community.members | selectattr("building_id", "equalto", viewer_building_id) | list | first) if community.members else none %}
+    {% if viewer and viewer.status == 'invited' %}
+    <section class="bg-white rounded-xl border p-6 mb-8">
+      <h2 class="font-bold mb-2">Ihre Einladung</h2>
+      <p class="text-sm text-ink-muted mb-4">Sie sind eingeladen, bei "{{ community.name }}" mitzumachen.</p>
+      <form method="post" action="/leg/community/{{ community.community_id }}/confirm">
+        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Teilnahme bestätigen</button>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if is_admin %}
+    <section class="bg-white rounded-xl border p-6 mb-8">
+      <h2 class="font-bold mb-2">Mitglied einladen</h2>
+      <form method="post" action="/leg/community/{{ community.community_id }}/invite" class="flex flex-col sm:flex-row gap-3">
+        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <input type="text" name="invite_building_id" placeholder="Profil-ID des Nachbarn"
+          class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+        <button type="submit" class="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-dark">Einladen</button>
+      </form>
+    </section>
+
+    <section class="bg-white rounded-xl border p-6">
+      <h2 class="font-bold mb-2">Gründung starten</h2>
+      <p class="text-sm text-ink-muted mb-4">Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.</p>
+      <form method="post" action="/leg/community/{{ community.community_id }}/start-formation">
+        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <button type="submit" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">Gründung starten</button>
+      </form>
+    </section>
+    {% endif %}
     {% endif %}
   </main>
 {% endblock %}
