@@ -11,6 +11,28 @@
 ) }}
 {% endblock %}
 
+{% block head_extra %}
+{% if entries %}
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Offenes LEG-Verzeichnis Schweiz",
+    "itemListElement": [
+      {% for entry in entries %}
+      {
+        "@type": "ListItem",
+        "position": {{ loop.index }},
+        "name": {{ entry.name | tojson }},
+        "url": "{{ site_url }}/leg-verzeichnis/{{ entry.slug }}"
+      }{{ "," if not loop.last }}
+      {% endfor %}
+    ]
+  }
+</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
   <main class="max-w-6xl mx-auto px-4 py-12">
     <header class="max-w-3xl mb-8">
