@@ -1348,7 +1348,7 @@ def leg_dashboard_demo():
 
 
 def _leg_dashboard_redirect(community_id, building_id):
-    return redirect(f"/leg/dashboard?cid={community_id}&bid={building_id}")
+    return redirect(dashboard_module.leg_dashboard_location(community_id, building_id))
 
 
 @app.route("/leg/community/create", methods=["POST"])

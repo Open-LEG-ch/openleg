@@ -206,6 +206,15 @@ def test_leg_start_formation_as_admin(monkeypatch):
     mock_start.assert_called_once()
 
 
+def test_leg_dashboard_location_encodes_untrusted_values():
+    # CodeQL: user-provided cid/bid must not be able to steer the redirect
+    # off /leg/dashboard (e.g. protocol-relative //evil.com or fragments).
+    location = dashboard_module.leg_dashboard_location("//evil.com", "b?x=1#y")
+    assert location.startswith("/leg/dashboard?")
+    assert "//evil.com" not in location
+    assert "#" not in location
+
+
 def test_formation_action_routes_in_source():
     with open(os.path.join(PROJECT_ROOT, "app.py"), encoding="utf-8") as handle:
         source = handle.read()
