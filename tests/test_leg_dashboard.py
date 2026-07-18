@@ -112,3 +112,122 @@ def test_leg_dashboard_template_contract():
     assert "cdn.tailwindcss.com" not in html
     assert "readiness_score" in html
     assert "next_steps" in html
+
+
+# --- Formation actions (Slice 3) ---
+
+
+def _patch_status(monkeypatch, status=None):
+    monkeypatch.setattr(
+        dashboard_module.formation_wizard,
+        "get_community_status",
+        MagicMock(return_value=dict(STATUS) if status is None else status),
+    )
+
+
+def test_leg_create_calls_formation_wizard(monkeypatch):
+    created = {"community_id": "new-cid", "name": "LEG Neu"}
+    mock_create = MagicMock(return_value=created)
+    monkeypatch.setattr(
+        dashboard_module.formation_wizard, "create_community", mock_create
+    )
+    result = dashboard_module.leg_create("LEG Neu", "b-admin", "simple")
+    assert result["error"] is None
+    assert result["community_id"] == "new-cid"
+    args, _ = mock_create.call_args
+    assert args[1] == "LEG Neu"
+    assert args[2] == "b-admin"
+
+
+def test_leg_create_requires_name_and_bid(monkeypatch):
+    mock_create = MagicMock()
+    monkeypatch.setattr(
+        dashboard_module.formation_wizard, "create_community", mock_create
+    )
+    assert dashboard_module.leg_create("", "b-admin", "simple")["error"]
+    assert dashboard_module.leg_create("LEG Neu", "", "simple")["error"]
+    mock_create.assert_not_called()
+
+
+def test_leg_invite_requires_admin(monkeypatch):
+    _patch_status(monkeypatch)
+    mock_invite = MagicMock(return_value=True)
+    monkeypatch.setattr(dashboard_module.formation_wizard, "invite_member", mock_invite)
+
+    result = dashboard_module.leg_invite("c0ffee", "b-guest", "b-new")
+    assert result["error"]
+    mock_invite.assert_not_called()
+
+
+def test_leg_invite_as_admin_calls_wizard(monkeypatch):
+    _patch_status(monkeypatch)
+    mock_invite = MagicMock(return_value=True)
+    monkeypatch.setattr(dashboard_module.formation_wizard, "invite_member", mock_invite)
+
+    result = dashboard_module.leg_invite("c0ffee", "b-admin", "b-new")
+    assert result["error"] is None
+    args, _ = mock_invite.call_args
+    assert args[1] == "c0ffee"
+    assert args[2] == "b-new"
+    assert args[3] == "b-admin"
+
+
+def test_leg_confirm_confirms_own_membership(monkeypatch):
+    mock_confirm = MagicMock(return_value=True)
+    monkeypatch.setattr(
+        dashboard_module.formation_wizard, "confirm_membership", mock_confirm
+    )
+    result = dashboard_module.leg_confirm("c0ffee", "b-guest")
+    assert result["error"] is None
+    args, _ = mock_confirm.call_args
+    assert args[1] == "c0ffee"
+    assert args[2] == "b-guest"
+
+
+def test_leg_start_formation_requires_admin(monkeypatch):
+    _patch_status(monkeypatch)
+    mock_start = MagicMock(return_value=True)
+    monkeypatch.setattr(
+        dashboard_module.formation_wizard, "start_formation", mock_start
+    )
+    result = dashboard_module.leg_start_formation("c0ffee", "b-guest")
+    assert result["error"]
+    mock_start.assert_not_called()
+
+
+def test_leg_start_formation_as_admin(monkeypatch):
+    _patch_status(monkeypatch)
+    mock_start = MagicMock(return_value=True)
+    monkeypatch.setattr(
+        dashboard_module.formation_wizard, "start_formation", mock_start
+    )
+    result = dashboard_module.leg_start_formation("c0ffee", "b-admin")
+    assert result["error"] is None
+    mock_start.assert_called_once()
+
+
+def test_leg_dashboard_location_encodes_untrusted_values():
+    # CodeQL: user-provided cid/bid must not be able to steer the redirect
+    # off /leg/dashboard (e.g. protocol-relative //evil.com or fragments).
+    location = dashboard_module.leg_dashboard_location("//evil.com", "b?x=1#y")
+    assert location.startswith("/leg/dashboard?")
+    assert "//evil.com" not in location
+    assert "#" not in location
+
+
+def test_formation_action_routes_in_source():
+    with open(os.path.join(PROJECT_ROOT, "app.py"), encoding="utf-8") as handle:
+        source = handle.read()
+    assert '"/leg/community/create"' in source
+    assert '"/leg/community/<community_id>/invite"' in source
+    assert '"/leg/community/<community_id>/confirm"' in source
+    assert '"/leg/community/<community_id>/start-formation"' in source
+
+
+def test_leg_dashboard_template_has_action_forms():
+    path = os.path.join(PROJECT_ROOT, "templates", "leg_dashboard.html")
+    with open(path, encoding="utf-8") as handle:
+        html = handle.read()
+    assert "/invite" in html
+    assert "/start-formation" in html
+    assert "/confirm" in html
