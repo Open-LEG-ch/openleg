@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="LEG-Dashboard | OpenLEG",
+  description="Gründung und Betrieb Ihrer Lokalen Elektrizitätsgemeinschaft: Status, Mitglieder und nächste Schritte auf einen Blick.",
+  path="/leg/dashboard",
+  site_url=site_url|default(""),
+) }}
+{% endblock %}
+
+{% block content %}
+  <main class="max-w-4xl mx-auto px-4 py-12">
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+      <p class="font-semibold text-red-900 mb-1">{{ error }}</p>
+      <p class="text-sm text-red-800">Prüfen Sie Ihren Zugangslink oder öffnen Sie die <a href="/leg/dashboard/demo" class="underline">Demo-Ansicht</a>.</p>
+    </div>
+    {% else %}
+    <header class="mb-8">
+      <p class="text-sm font-semibold text-brand mb-2">LEG-Dashboard</p>
+      <h1 class="text-3xl font-bold tracking-tight mb-1">{{ community.name }}</h1>
+      <p class="text-ink-muted">Status: <span class="font-semibold">{{ community.status }}</span> &middot; Verteilmodell: {{ community.distribution_model }}</p>
+    </header>
+
+    <section class="grid sm:grid-cols-3 gap-4 mb-8">
+      <div class="bg-white rounded-xl border p-5">
+        <p class="text-sm text-ink-muted mb-1">Bereitschaft</p>
+        <p class="text-3xl font-bold text-brand">{{ community.readiness_score }}%</p>
+      </div>
+      <div class="bg-white rounded-xl border p-5">
+        <p class="text-sm text-ink-muted mb-1">Bestätigte Mitglieder</p>
+        <p class="text-3xl font-bold">{{ community.member_count.confirmed }}<span class="text-lg text-ink-muted">/{{ community.member_count.total }}</span></p>
+      </div>
+      <div class="bg-white rounded-xl border p-5">
+        <p class="text-sm text-ink-muted mb-1">Eingeladen</p>
+        <p class="text-3xl font-bold">{{ community.member_count.invited }}</p>
+      </div>
+    </section>
+
+    <section class="bg-brand/5 border border-brand/20 rounded-xl p-6 mb-8">
+      <h2 class="font-bold mb-3">Nächste Schritte</h2>
+      <ol class="space-y-2 text-sm text-ink-muted list-decimal list-inside">
+        {% for step in community.next_steps %}
+        <li>{{ step }}</li>
+        {% endfor %}
+        {% if not community.next_steps %}
+        <li>Keine offenen Schritte.</li>
+        {% endif %}
+      </ol>
+    </section>
+
+    <section class="bg-white rounded-xl border overflow-hidden mb-8">
+      <div class="px-5 py-3 border-b">
+        <h2 class="font-bold">Mitglieder</h2>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="px-5 py-3 text-left">Adresse</th>
+            <th class="px-5 py-3 text-left">Rolle</th>
+            <th class="px-5 py-3 text-left">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          {% for member in community.members %}
+          <tr>
+            <td class="px-5 py-3">{{ member.address or member.building_id }}{% if member.building_id == viewer_building_id %} <span class="text-xs text-brand">(Sie)</span>{% endif %}</td>
+            <td class="px-5 py-3 text-ink-muted">{{ member.role }}</td>
+            <td class="px-5 py-3">
+              {% if member.status == 'confirmed' %}
+              <span class="text-xs text-green-700 font-semibold">bestätigt</span>
+              {% else %}
+              <span class="text-xs text-yellow-600 font-semibold">{{ member.status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+  </main>
+{% endblock %}

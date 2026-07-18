@@ -2,6 +2,7 @@
 """Dashboard readiness verb."""
 
 import database as db
+import formation_wizard
 
 
 def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict:
@@ -61,6 +62,89 @@ def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict
         "neighbor_count": neighbor_count,
         "referral_link": referral_link,
         "error": None,
+    }
+
+
+def leg_overview(community_id: str, building_id: str) -> dict:
+    """Operator view of one community, gated on membership.
+
+    Same capability-URL model as the resident dashboard: the caller must
+    present a building_id that is a member of the community. Non-members
+    get the error view, never another community's data.
+    """
+    if not community_id or not building_id:
+        return {"error": "Kein Zugriff.", "community": None}
+
+    status = formation_wizard.get_community_status(db, community_id)
+    if not status:
+        return {"error": "LEG nicht gefunden.", "community": None}
+
+    member = next(
+        (m for m in status["members"] or [] if m["building_id"] == building_id),
+        None,
+    )
+    if not member:
+        return {"error": "Kein Zugriff.", "community": None}
+
+    return {
+        "error": None,
+        "community": status,
+        "viewer_building_id": building_id,
+        "is_admin": member.get("role") == "admin",
+    }
+
+
+def leg_demo_overview() -> dict:
+    """Fake, click-through LEG operator dashboard data for demos."""
+    return {
+        "error": None,
+        "viewer_building_id": "demo-building",
+        "is_admin": True,
+        "community": {
+            "community_id": "demo-leg",
+            "name": "LEG Musterweg",
+            "status": "formation_started",
+            "distribution_model": "proportional",
+            "member_count": {"total": 5, "confirmed": 4, "invited": 1},
+            "readiness_score": 60,
+            "members": [
+                {
+                    "building_id": "demo-building",
+                    "role": "admin",
+                    "status": "confirmed",
+                    "address": "Musterweg 1, 5400 Baden",
+                },
+                {
+                    "building_id": "demo-2",
+                    "role": "member",
+                    "status": "confirmed",
+                    "address": "Musterweg 3, 5400 Baden",
+                },
+                {
+                    "building_id": "demo-3",
+                    "role": "member",
+                    "status": "confirmed",
+                    "address": "Musterweg 5, 5400 Baden",
+                },
+                {
+                    "building_id": "demo-4",
+                    "role": "member",
+                    "status": "confirmed",
+                    "address": "Musterweg 7, 5400 Baden",
+                },
+                {
+                    "building_id": "demo-5",
+                    "role": "member",
+                    "status": "invited",
+                    "address": "Musterweg 9, 5400 Baden",
+                },
+            ],
+            "documents": None,
+            "next_steps": [
+                "Generate legal documents",
+                "Review community agreement",
+            ],
+        },
     }
 
 
