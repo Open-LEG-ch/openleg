@@ -251,6 +251,24 @@
         </div>
         {% endif %}
 
+        <!-- LEG-Stand: was im offenen Verzeichnis für diese Gemeinde bekannt ist -->
+        <div class="mt-8 bg-white rounded-xl p-6 shadow-sm border">
+            <h2 class="text-xl font-semibold mb-2">Lokale Elektrizitätsgemeinschaften in {{ profile.name }}</h2>
+            {% if leg_entries %}
+            <ul class="space-y-2 mb-4">
+                {% for entry in leg_entries %}
+                <li><a href="/leg-verzeichnis/{{ entry.slug }}" class="text-brand hover:underline font-semibold">{{ entry.name }}</a>{% if entry.leg_status %} <span class="text-xs text-ink-muted">({{ entry.leg_status }})</span>{% endif %}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-ink-muted mb-4">Im offenen Verzeichnis ist noch keine LEG aus {{ profile.name }} eingetragen. Einträge sind moderierte Selbstauskünfte, unabhängig von der Gründungsplattform.</p>
+            {% endif %}
+            <div class="flex flex-col sm:flex-row gap-2">
+                <a href="/leg-check?q={{ profile.name }}" class="inline-block text-center bg-brand text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark">Zum LEG-Check</a>
+                <a href="/leg-verzeichnis/eintragen" class="inline-block text-center border border-ink/20 text-ink px-5 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50">Bestehende LEG eintragen</a>
+            </div>
+        </div>
+
         <!-- Bewohner-CTA: wer hier landet, sucht meist den eigenen Tarif -->
         <div class="mt-8 bg-brand rounded-xl p-6 text-white md:flex md:items-center md:justify-between gap-6">
             <div>

@@ -307,9 +307,12 @@ def profil(bfs):
     seo_title, seo_description = _profile_seo(name, h4)
     jsonld = _profile_jsonld(profile, bfs, h4, site_url, canonical_url)
 
+    leg_entries = db.list_registry_entries(q=name) if name else []
+
     return render_template(
         "gemeinde/profil.html",
         profile=profile,
+        leg_entries=leg_entries,
         tariffs=tariffs,
         solar=solar,
         value_gap=value_gap,
