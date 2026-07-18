@@ -1386,6 +1386,28 @@ def leg_community_start_formation(community_id):
     return _leg_dashboard_redirect(community_id, building_id)
 
 
+@app.route("/leg/community/<community_id>/documents", methods=["POST"])
+def leg_community_documents(community_id):
+    building_id = request.form.get("bid", "").strip()
+    dashboard_module.leg_generate_documents(community_id, building_id)
+    return _leg_dashboard_redirect(community_id, building_id)
+
+
+@app.route("/leg/document/<int:doc_id>")
+def leg_document_download(doc_id):
+    building_id = request.args.get("bid", "").strip()
+    doc = dashboard_module.leg_document_for_member(doc_id, building_id)
+    if not doc:
+        abort(404)
+    return Response(
+        bytes(doc["pdf_data"]),
+        mimetype="application/pdf",
+        headers={
+            "Content-Disposition": f"inline; filename={doc['filename']}",
+        },
+    )
+
+
 # --- Referral System ---
 @app.route("/api/referral/stats/<building_id>")
 def api_referral_stats(building_id):

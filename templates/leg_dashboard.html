@@ -93,6 +93,29 @@
     </section>
     {% endif %}
 
+    <section class="bg-white rounded-xl border p-6 mb-8">
+      <h2 class="font-bold mb-2">Dokumente</h2>
+      <p class="text-sm text-ink-muted mb-4">Diese Vorlagen sind automatisch erstellte Entwürfe und keine Rechtsberatung. Lassen Sie die Dokumente vor der Unterzeichnung juristisch prüfen.</p>
+      {% if leg_documents %}
+      <ul class="space-y-2 mb-4">
+        {% for doc in leg_documents %}
+        <li class="flex items-center justify-between text-sm">
+          <span>{{ doc.filename }} <span class="text-xs text-ink-muted">({{ doc.signing_status }})</span></span>
+          <a href="/leg/document/{{ doc.id }}?bid={{ viewer_building_id }}" class="text-brand hover:underline font-semibold">PDF öffnen</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-sm text-ink-muted mb-4">Noch keine Dokumente erstellt.</p>
+      {% endif %}
+      {% if is_admin %}
+      <form method="post" action="/leg/community/{{ community.community_id }}/documents">
+        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Vertragsentwürfe erstellen</button>
+      </form>
+      {% endif %}
+    </section>
+
     {% if is_admin %}
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">Mitglied einladen</h2>
