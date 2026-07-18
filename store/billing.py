@@ -24,7 +24,7 @@ def _get_connection():
 
 
 def save_billing_period(
-    community_id: int, period_start, period_end, summary: dict
+    community_id: str, period_start, period_end, summary: dict
 ) -> int:
     """Save billing period and line items from billing engine output."""
     try:
