@@ -104,6 +104,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "viewer_building_id": building_id,
         "is_admin": member.get("role") == "admin",
         "leg_documents": db.list_leg_documents(community_id),
+        "correspondence": db.list_correspondence(community_id),
     }
 
 
@@ -246,6 +247,36 @@ def leg_document_for_member(doc_id: int, building_id: str):
         return None
     is_member = any(m["building_id"] == building_id for m in status["members"] or [])
     return doc if is_member else None
+
+
+def leg_log_correspondence(
+    community_id: str,
+    building_id: str,
+    direction: str,
+    channel: str,
+    counterparty: str,
+    subject: str,
+    notes: str = "",
+) -> dict:
+    """Append a ledger entry; any confirmed or invited member may log."""
+    status = formation_wizard.get_community_status(db, community_id)
+    if not status or not any(
+        m["building_id"] == building_id for m in status["members"] or []
+    ):
+        return {"error": "Kein Zugriff."}
+
+    entry_id = db.log_correspondence(
+        community_id=community_id,
+        direction=direction,
+        channel=channel,
+        counterparty=(counterparty or "").strip(),
+        subject=(subject or "").strip(),
+        notes=(notes or "").strip(),
+        logged_by=building_id,
+    )
+    if entry_id is None:
+        return {"error": "Eintrag ungültig (Richtung oder Kanal unbekannt)."}
+    return {"error": None, "entry_id": entry_id}
 
 
 def leg_demo_overview() -> dict:

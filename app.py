@@ -1393,6 +1393,21 @@ def leg_community_documents(community_id):
     return _leg_dashboard_redirect(community_id, building_id)
 
 
+@app.route("/leg/community/<community_id>/correspondence", methods=["POST"])
+def leg_community_correspondence(community_id):
+    building_id = request.form.get("bid", "").strip()
+    dashboard_module.leg_log_correspondence(
+        community_id,
+        building_id,
+        direction=request.form.get("direction", ""),
+        channel=request.form.get("channel", ""),
+        counterparty=request.form.get("counterparty", ""),
+        subject=request.form.get("subject", ""),
+        notes=request.form.get("notes", ""),
+    )
+    return _leg_dashboard_redirect(community_id, building_id)
+
+
 @app.route("/leg/document/<int:doc_id>")
 def leg_document_download(doc_id):
     building_id = request.args.get("bid", "").strip()
