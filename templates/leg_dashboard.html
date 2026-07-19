@@ -93,6 +93,78 @@
     </section>
     {% endif %}
 
+    <section class="bg-white rounded-xl border p-6 mb-8">
+      <h2 class="font-bold mb-2">Dokumente</h2>
+      <p class="text-sm text-ink-muted mb-4">Diese Vorlagen sind automatisch erstellte Entwürfe und keine Rechtsberatung. Lassen Sie die Dokumente vor der Unterzeichnung juristisch prüfen.</p>
+      {% if leg_documents %}
+      <ul class="space-y-2 mb-4">
+        {% for doc in leg_documents %}
+        <li class="flex items-center justify-between text-sm">
+          <span>{{ doc.filename }} <span class="text-xs text-ink-muted">({{ doc.signing_status }})</span></span>
+          <a href="/leg/document/{{ doc.id }}?bid={{ viewer_building_id }}" class="text-brand hover:underline font-semibold">PDF öffnen</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-sm text-ink-muted mb-4">Noch keine Dokumente erstellt.</p>
+      {% endif %}
+      {% if is_admin %}
+      <form method="post" action="/leg/community/{{ community.community_id }}/documents">
+        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Vertragsentwürfe erstellen</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="bg-white rounded-xl border p-6 mb-8">
+      <h2 class="font-bold mb-2">Korrespondenz</h2>
+      <p class="text-sm text-ink-muted mb-4">Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist.</p>
+      {% if correspondence %}
+      <table class="w-full text-sm mb-4">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="px-3 py-2 text-left">Richtung</th>
+            <th class="px-3 py-2 text-left">Kanal</th>
+            <th class="px-3 py-2 text-left">Gegenstelle</th>
+            <th class="px-3 py-2 text-left">Betreff</th>
+            <th class="px-3 py-2 text-right">Datum</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          {% for entry in correspondence %}
+          <tr>
+            <td class="px-3 py-2">{{ "Eingang" if entry.direction == "in" else "Ausgang" }}</td>
+            <td class="px-3 py-2 text-ink-muted">{{ "Brief" if entry.channel == "post" else "E-Mail" }}</td>
+            <td class="px-3 py-2">{{ entry.counterparty }}</td>
+            <td class="px-3 py-2">{{ entry.subject }}</td>
+            <td class="px-3 py-2 text-right text-xs text-ink-muted">{{ entry.created_at }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-sm text-ink-muted mb-4">Noch keine Einträge.</p>
+      {% endif %}
+      <form method="post" action="/leg/community/{{ community.community_id }}/correspondence" class="grid sm:grid-cols-2 gap-3">
+        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <select name="direction" class="border rounded-lg px-3 py-2 text-sm bg-white">
+          <option value="out">Ausgang</option>
+          <option value="in">Eingang</option>
+        </select>
+        <select name="channel" class="border rounded-lg px-3 py-2 text-sm bg-white">
+          <option value="email">E-Mail</option>
+          <option value="post">Brief</option>
+        </select>
+        <input type="text" name="counterparty" placeholder="Gegenstelle, z.B. Netzbetreiber"
+          class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+        <input type="text" name="subject" placeholder="Betreff"
+          class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+        <input type="text" name="notes" placeholder="Notiz (optional)"
+          class="sm:col-span-2 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+        <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Eintrag hinzufügen</button>
+      </form>
+    </section>
+
     {% if is_admin %}
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">Mitglied einladen</h2>

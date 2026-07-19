@@ -800,6 +800,26 @@ def _create_tables():
                 "CREATE INDEX IF NOT EXISTS idx_leg_registry_claim_token ON leg_registry(claim_token)"
             )
 
+            # Community correspondence ledger: shared in/out mail log per LEG
+            # (email and physical post, manually logged). Phase 6 MVP, see
+            # docs/leg-registry.md.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS correspondence_log (
+                    id SERIAL PRIMARY KEY,
+                    community_id VARCHAR(64) NOT NULL,
+                    direction VARCHAR(8) NOT NULL,
+                    channel VARCHAR(16) NOT NULL,
+                    counterparty VARCHAR(255),
+                    subject VARCHAR(255),
+                    notes TEXT,
+                    logged_by VARCHAR(64),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_correspondence_log_community ON correspondence_log(community_id)"
+            )
+
             # LEA autonomous reports (instance ops, posted via /api/internal/*)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS lea_reports (
@@ -1746,7 +1766,7 @@ def update_document_signing_status(deepsign_document_id: str, status: str) -> bo
 
 
 def store_leg_document(
-    community_id: int, doc_type: str, pdf_bytes: bytes, filename: str
+    community_id: str, doc_type: str, pdf_bytes: bytes, filename: str
 ) -> int:
     """Store generated LEG document PDF."""
     try:
@@ -1759,13 +1779,33 @@ def store_leg_document(
                 """,
                     (community_id, doc_type, filename, pdf_bytes),
                 )
-                return cur.fetchone()[0]
+                return dict(cur.fetchone())["id"]
     except Exception as e:
         logger.error(f"[DB] Error storing leg document: {e}")
         return 0
 
 
-def list_leg_documents(community_id: int) -> List[Dict]:
+def get_leg_document(doc_id: int) -> Optional[Dict]:
+    """Get one stored LEG document including its PDF bytes."""
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, community_id, doc_type, filename, pdf_data,
+                           signing_status, created_at
+                    FROM leg_documents WHERE id = %s
+                """,
+                    (doc_id,),
+                )
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting leg document: {e}")
+        return None
+
+
+def list_leg_documents(community_id: str) -> List[Dict]:
     """List all documents for a community."""
     try:
         with get_connection() as conn:
@@ -1977,6 +2017,11 @@ from store.registry import (  # noqa: E402, F401
     get_registry_entry_by_verification_token,
     mark_registry_entry_verified,
     get_registry_entries_needing_verification,
+)
+
+from store.correspondence import (  # noqa: E402, F401
+    log_correspondence,
+    list_correspondence,
 )
 
 from store.meter import (  # noqa: E402, F401

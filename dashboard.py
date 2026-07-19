@@ -4,6 +4,7 @@
 from urllib.parse import urlencode
 
 import database as db
+import document_generator
 import formation_wizard
 
 
@@ -102,6 +103,8 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "community": status,
         "viewer_building_id": building_id,
         "is_admin": member.get("role") == "admin",
+        "leg_documents": db.list_leg_documents(community_id),
+        "correspondence": db.list_correspondence(community_id),
     }
 
 
@@ -170,6 +173,110 @@ def leg_start_formation(community_id: str, building_id: str) -> dict:
     if not ok:
         return {"error": "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."}
     return {"error": None}
+
+
+def leg_generate_documents(community_id: str, building_id: str) -> dict:
+    """Generate the community agreement and participant contracts as PDFs.
+
+    Admin-only. Uses confirmed members as participants; a member counts as
+    producer when its building has PV potential. Real PDFs land in
+    leg_documents; formation_wizard.generate_documents runs the status
+    transition. The documents are templates, not legal advice — the
+    dashboard says so explicitly.
+    """
+    if not _require_role(community_id, building_id, "admin"):
+        return {"error": "Nur die Administration kann Dokumente erstellen."}
+
+    status = formation_wizard.get_community_status(db, community_id)
+    participants = []
+    for member in status["members"] or []:
+        if member["status"] != "confirmed":
+            continue
+        building = db.get_building_for_dashboard(member["building_id"]) or {}
+        pv = building.get("potential_pv_kwp") or 0
+        participants.append(
+            {
+                "name": member.get("email") or member["building_id"],
+                "address": member.get("address") or "",
+                "role": "producer" if pv and float(pv) > 0 else "consumer",
+            }
+        )
+
+    try:
+        agreement_pdf = document_generator.generate_gemeinschaftsvereinbarung(
+            community_name=status["name"],
+            participants=participants,
+            municipality="",
+            distribution_model=status["distribution_model"],
+        )
+    except ValueError as exc:
+        return {"error": str(exc)}
+
+    db.store_leg_document(
+        community_id,
+        "gemeinschaftsvereinbarung",
+        agreement_pdf,
+        "gemeinschaftsvereinbarung.pdf",
+    )
+
+    for participant in participants:
+        contract_pdf = document_generator.generate_teilnehmervertrag(
+            participant_name=participant["name"],
+            participant_address=participant["address"],
+            community_name=status["name"],
+            role=participant["role"],
+        )
+        db.store_leg_document(
+            community_id,
+            "teilnehmervertrag",
+            contract_pdf,
+            f"teilnehmervertrag-{participant['name']}.pdf",
+        )
+
+    formation_wizard.generate_documents(db, community_id)
+    return {"error": None, "generated": 1 + len(participants)}
+
+
+def leg_document_for_member(doc_id: int, building_id: str):
+    """Return a stored document only if building_id belongs to its community."""
+    doc = db.get_leg_document(doc_id)
+    if not doc:
+        return None
+    status = formation_wizard.get_community_status(db, doc["community_id"])
+    if not status:
+        return None
+    is_member = any(m["building_id"] == building_id for m in status["members"] or [])
+    return doc if is_member else None
+
+
+def leg_log_correspondence(
+    community_id: str,
+    building_id: str,
+    direction: str,
+    channel: str,
+    counterparty: str,
+    subject: str,
+    notes: str = "",
+) -> dict:
+    """Append a ledger entry; any confirmed or invited member may log."""
+    status = formation_wizard.get_community_status(db, community_id)
+    if not status or not any(
+        m["building_id"] == building_id for m in status["members"] or []
+    ):
+        return {"error": "Kein Zugriff."}
+
+    entry_id = db.log_correspondence(
+        community_id=community_id,
+        direction=direction,
+        channel=channel,
+        counterparty=(counterparty or "").strip(),
+        subject=(subject or "").strip(),
+        notes=(notes or "").strip(),
+        logged_by=building_id,
+    )
+    if entry_id is None:
+        return {"error": "Eintrag ungültig (Richtung oder Kanal unbekannt)."}
+    return {"error": None, "entry_id": entry_id}
 
 
 def leg_demo_overview() -> dict:

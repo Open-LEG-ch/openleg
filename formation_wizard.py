@@ -390,7 +390,10 @@ def generate_documents(db, community_id: str) -> Optional[Dict]:
                             }
                         )
 
-                # Save documents to database
+                # Save documents to database (JSONB column: adapt via JSON
+                # string; psycopg2 cannot adapt a raw dict)
+                import json
+
                 cur.execute(
                     """
                     INSERT INTO community_documents (community_id, documents, generated_at)
@@ -399,7 +402,7 @@ def generate_documents(db, community_id: str) -> Optional[Dict]:
                         documents = EXCLUDED.documents,
                         generated_at = EXCLUDED.generated_at
                 """,
-                    (community_id, documents),
+                    (community_id, json.dumps(documents)),
                 )
 
                 # Update community status
