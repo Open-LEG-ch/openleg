@@ -80,8 +80,8 @@ class TestParseSdat:
         assert errors
 
 
-class TestIngestSdat:
-    def test_stores_with_sdat_source(self, monkeypatch):
+class TestIngestFile:
+    def test_detects_and_stores_sdat(self, monkeypatch):
         monkeypatch.setattr(
             meter_data.db, "save_meter_readings", MagicMock(return_value=3)
         )
@@ -89,25 +89,24 @@ class TestIngestSdat:
             meter_data.db, "get_meter_reading_stats", MagicMock(return_value={})
         )
         monkeypatch.setattr(meter_data.db, "track_event", MagicMock())
-        result = meter_data.ingest_sdat("b-1", SDAT_PLAIN)
+        result = meter_data.ingest_file("b-1", SDAT_PLAIN)
         assert result["success"]
         assert result["readings_count"] == 3
         _, kwargs = meter_data.db.save_meter_readings.call_args
         assert kwargs.get("source") == "sdat"
 
 
-def test_upload_endpoint_routes_sdat():
-    # The meter upload endpoint must send XML (SDAT) through ingest_sdat.
+def test_upload_endpoint_uses_one_ingestion_seam():
     from pathlib import Path
 
     source = Path(__file__).resolve().parent.parent / "app.py"
-    assert "ingest_sdat" in source.read_text(encoding="utf-8")
+    app_source = source.read_text(encoding="utf-8")
+    assert "meter_data.ingest_file(" in app_source
+    assert "meter_data.ingest_sdat(" not in app_source
 
 
 class TestCsvDispatchFix:
-    def test_ingest_csv_uses_format_dispatch(self, monkeypatch):
-        # Regression: ingest_csv called parse_ekz_csv directly, bypassing
-        # detect_format and the CKW path. It must go through parse_meter_csv.
+    def test_ingest_file_uses_csv_format_dispatch(self, monkeypatch):
         dispatch = MagicMock(return_value=([(datetime(2026, 1, 1), 1.0, 0.0, 0.0)], []))
         monkeypatch.setattr(meter_data, "parse_meter_csv", dispatch)
         monkeypatch.setattr(
@@ -117,5 +116,5 @@ class TestCsvDispatchFix:
             meter_data.db, "get_meter_reading_stats", MagicMock(return_value={})
         )
         monkeypatch.setattr(meter_data.db, "track_event", MagicMock())
-        meter_data.ingest_csv("b-1", "Datum;Zeit;Bezug\n2026-01-01;00:00;1.0")
+        meter_data.ingest_file("b-1", "Datum;Zeit;Bezug\n2026-01-01;00:00;1.0")
         dispatch.assert_called_once()

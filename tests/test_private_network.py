@@ -27,6 +27,19 @@ def test_net_override_defines_headscale_behind_profile():
     assert "web" in hs["networks"]
 
 
+def test_net_override_connects_flask_to_tailnet():
+    config = _load("docker-compose.net.yml")
+    headscale = config["services"]["headscale"]
+    tailscale = config["services"]["tailscale"]
+
+    assert any("8080" in str(port) for port in headscale["ports"])
+    assert tailscale["network_mode"] == "service:flask"
+    assert tailscale["environment"]["TS_STATE_DIR"] == "/var/lib/tailscale"
+    assert "--login-server=" in tailscale["environment"]["TS_EXTRA_ARGS"]
+    assert any("/dev/net/tun" in device for device in tailscale["devices"])
+    assert "NET_ADMIN" in tailscale["cap_add"]
+
+
 def test_base_compose_stays_four_services():
     base = _load("docker-compose.yml")
     assert len(base["services"]) == 4
@@ -35,6 +48,13 @@ def test_base_compose_stays_four_services():
 
 def test_headscale_config_example_present():
     assert (ROOT / "headscale" / "config.example.yaml").is_file()
+
+
+def test_headscale_example_matches_published_port():
+    compose = (ROOT / "docker-compose.net.yml").read_text(encoding="utf-8")
+    example = (ROOT / "headscale" / "config.example.yaml").read_text(encoding="utf-8")
+    assert "HEADSCALE_PORT:-8081" in compose
+    assert ":8081" in example
 
 
 def test_private_network_doc_present_and_honest():
@@ -61,3 +81,5 @@ def test_operator_cli_has_net_subcommand():
     assert "--profile net" in cli
     assert "preauthkeys" in cli
     assert "nodes" in cli
+    assert "docker-compose.quickstart.yml" in cli
+    assert "tailscale" in cli

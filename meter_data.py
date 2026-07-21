@@ -305,48 +305,15 @@ def parse_sdat_xml(xml_content: str) -> Tuple[List[tuple], List[str]]:
         return [], [f"SDAT Parse-Fehler: {exc}"]
 
 
-def ingest_csv(building_id: str, file_content: str, source: str = "csv") -> Dict:
-    """Parse and store meter readings from CSV upload.
-
-    Returns:
-        {"success": bool, "readings_count": int, "errors": [...], "stats": {...}}
-    """
-    readings, errors = parse_meter_csv(file_content)
-
-    if not readings:
-        return {
-            "success": False,
-            "readings_count": 0,
-            "errors": errors or ["Keine gültigen Messdaten gefunden."],
-        }
-
-    # Store in database
-    stored = db.save_meter_readings(building_id, readings, source=source)
-
-    # Get updated stats
-    stats = db.get_meter_reading_stats(building_id)
-
-    result = {
-        "success": stored > 0,
-        "readings_count": stored,
-        "errors": errors,
-        "stats": stats,
-    }
-
-    if stored > 0:
-        logger.info(f"[METER] Ingested {stored} readings for building {building_id}")
-        db.track_event(
-            "meter_data_uploaded",
-            building_id,
-            {"readings_count": stored, "source": source, "error_count": len(errors)},
-        )
-
-    return result
-
-
-def ingest_sdat(building_id: str, xml_content: str, source: str = "sdat") -> Dict:
-    """Parse and store meter readings from an SDAT XML document."""
-    readings, errors = parse_sdat_xml(xml_content)
+def ingest_file(building_id: str, file_content: str) -> Dict:
+    """Detect, parse and store one Swiss meter-data file."""
+    is_sdat = (
+        file_content.lstrip().startswith("<") or "ValidatedMeteredData" in file_content
+    )
+    source = "sdat" if is_sdat else "csv"
+    readings, errors = (
+        parse_sdat_xml(file_content) if is_sdat else parse_meter_csv(file_content)
+    )
 
     if not readings:
         return {

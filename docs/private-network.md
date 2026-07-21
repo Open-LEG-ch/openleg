@@ -50,7 +50,8 @@ reasoning: `docs/self-host-appliance.md`.
 ## Setup
 
 1. `cp headscale/config.example.yaml headscale/config.yaml` and set `server_url` to an
-   endpoint your members can reach.
-2. `scripts/openleg net up`
-3. Create the Headscale user once (`headscale users create openleg`), then
-   `scripts/openleg net invite` to mint join codes for your neighbours.
+   endpoint your members can reach. Add the same URL as `HEADSCALE_SERVER_URL` to `.env`.
+2. Set `HEADSCALE_PORT` in `.env` when the controller should not use port `8081`.
+3. `scripts/openleg net up` starts OpenLEG, the controller and the persistent OpenLEG
+   Tailscale node. The app is then reachable on that node's tailnet address, port `5000`.
+4. `scripts/openleg net invite` mints join codes for your neighbours.

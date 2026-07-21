@@ -89,6 +89,13 @@
     </div>
   </section>
 
+  <!-- Installation -->
+  <section class="border-y border-slate-800 bg-ink py-12 sm:py-16">
+    <div class="max-w-6xl mx-auto px-4">
+      {% include "partials/install_console.html" %}
+    </div>
+  </section>
+
   <!-- Pathways: für wen ist OpenLEG -->
   <section id="pfade" class="py-16 bg-white border-t border-slate-200/60">
     <div class="max-w-6xl mx-auto px-4">
@@ -405,11 +412,10 @@
           </div>
         </div>
         <div class="space-y-4">
-          <div class="rounded-xl border border-slate-200 bg-ink p-5">
-            <div class="font-semibold text-white">In einer Zeile selbst betreiben</div>
-            <p class="text-sm text-slate-300 mt-1 mb-3">Auf einem Raspberry Pi, Mini-PC oder NAS. Ihre LEG besitzt Box und Daten.</p>
-            <pre class="text-slate-100 text-sm overflow-x-auto"><code>curl -fsSL https://openleg.ch/install.sh | bash</code></pre>
-            <a href="/self-host" class="inline-block mt-3 text-sm text-white font-semibold underline">Zum Schnellstart</a>
+          <div class="rounded-xl border border-slate-200 bg-[#f6f4ef] p-5">
+            <div class="font-semibold">Betrieb dokumentiert</div>
+            <p class="text-sm text-ink-muted mt-1">Die Anleitung beschreibt Installation, Updates, Backups und den Zugriff über ein privates Netzwerk.</p>
+            <a href="/self-host" class="text-sm text-brand mt-2 inline-block">Betriebsanleitung öffnen</a>
           </div>
           <div class="rounded-xl border border-slate-200 bg-[#f6f4ef] p-5">
             <div class="font-semibold">Freie Energiedaten API</div>
@@ -432,6 +438,7 @@
 
 {% block scripts %}
   <script src="/static/js/landing_segments.js"></script>
+  <script src="/static/js/install_console.js"></script>
 
   <script>
   // Map (Leaflet kommt von einem CDN; der Funnel muss auch ohne Karte funktionieren)

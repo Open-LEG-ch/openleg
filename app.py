@@ -1242,19 +1242,7 @@ def api_meter_data_upload():
             share_providers=(tier >= 3),
         )
 
-        # SDAT is XML; everything else is a Swiss utility CSV.
-        if (
-            csv_content.lstrip().startswith("<")
-            or "ValidatedMeteredData" in csv_content
-        ):
-            result = meter_data.ingest_sdat(
-                building_id, csv_content, source="sdat_upload"
-            )
-        else:
-            result = meter_data.ingest_csv(
-                building_id, csv_content, source="csv_upload"
-            )
-        return jsonify(result)
+        return jsonify(meter_data.ingest_file(building_id, csv_content))
     except Exception:
         app.logger.exception("Unhandled error in /api/meter-data/upload")
         return jsonify({"error": "Server-Fehler beim Verarbeiten der Messdaten."}), 500

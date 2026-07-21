@@ -11,6 +11,7 @@ import os
 from unittest.mock import MagicMock
 
 import dashboard as dashboard_module
+import formation_documents as formation_documents_module
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -50,39 +51,40 @@ STATUS = {
 
 def _patch(monkeypatch, pv_map=None):
     monkeypatch.setattr(
-        dashboard_module.formation_wizard,
+        formation_documents_module.formation_wizard,
         "get_community_status",
         MagicMock(return_value=dict(STATUS)),
     )
     pv_map = pv_map or {"b-admin": 9.5}
     monkeypatch.setattr(
-        dashboard_module.db,
+        formation_documents_module.db,
         "get_building_for_dashboard",
         MagicMock(side_effect=lambda bid: {"potential_pv_kwp": pv_map.get(bid, 0)}),
     )
     mock_agreement = MagicMock(return_value=b"%PDF-agreement")
     mock_contract = MagicMock(return_value=b"%PDF-contract")
     monkeypatch.setattr(
-        dashboard_module.document_generator,
+        formation_documents_module.document_generator,
         "generate_gemeinschaftsvereinbarung",
         mock_agreement,
     )
     monkeypatch.setattr(
-        dashboard_module.document_generator,
+        formation_documents_module.document_generator,
         "generate_teilnehmervertrag",
         mock_contract,
     )
-    mock_store = MagicMock(return_value=7)
-    monkeypatch.setattr(dashboard_module.db, "store_leg_document", mock_store)
-    mock_wizard_docs = MagicMock(return_value={"community_agreement": {}})
+    mock_store = MagicMock(return_value=3)
     monkeypatch.setattr(
-        dashboard_module.formation_wizard, "generate_documents", mock_wizard_docs
+        formation_documents_module.db,
+        "replace_leg_document_bundle",
+        mock_store,
+        raising=False,
     )
-    return mock_agreement, mock_contract, mock_store, mock_wizard_docs
+    return mock_agreement, mock_contract, mock_store
 
 
 def test_generate_documents_requires_admin(monkeypatch):
-    mock_agreement, _, mock_store, _ = _patch(monkeypatch)
+    mock_agreement, _, mock_store = _patch(monkeypatch)
     result = dashboard_module.leg_generate_documents("c0ffee", "b-2")
     assert result["error"]
     mock_agreement.assert_not_called()
@@ -90,13 +92,14 @@ def test_generate_documents_requires_admin(monkeypatch):
 
 
 def test_generate_documents_stores_agreement_and_contracts(monkeypatch):
-    mock_agreement, mock_contract, mock_store, mock_wizard = _patch(monkeypatch)
+    mock_agreement, mock_contract, mock_store = _patch(monkeypatch)
     result = dashboard_module.leg_generate_documents("c0ffee", "b-admin")
     assert result["error"] is None
     # one agreement + one contract per CONFIRMED member (2 confirmed)
     assert mock_agreement.call_count == 1
     assert mock_contract.call_count == 2
-    assert mock_store.call_count == 3
+    mock_store.assert_called_once()
+    assert len(mock_store.call_args.args[1]) == 3
     # only confirmed members appear as participants
     _, kwargs = mock_agreement.call_args
     participants = kwargs["participants"]
@@ -105,12 +108,10 @@ def test_generate_documents_stores_agreement_and_contracts(monkeypatch):
     roles = {p["name"]: p["role"] for p in participants}
     assert roles["a@example.ch"] == "producer"
     assert roles["b@example.ch"] == "consumer"
-    # wizard status transition ran
-    mock_wizard.assert_called_once()
 
 
 def test_generate_documents_surfaces_generator_error(monkeypatch):
-    mock_agreement, _, mock_store, _ = _patch(monkeypatch, pv_map={})
+    mock_agreement, _, mock_store = _patch(monkeypatch, pv_map={})
     mock_agreement.side_effect = ValueError(
         "Eine LEG benötigt mindestens einen Produzent"
     )
@@ -204,34 +205,35 @@ def test_store_leg_document_returns_id_with_dict_rows(monkeypatch):
     assert database.store_leg_document("c0ffee", "t", b"%PDF", "f.pdf") == 42
 
 
-def test_formation_wizard_serializes_documents_for_jsonb(monkeypatch):
-    # community_documents.documents is JSONB; psycopg2 can't adapt a raw
-    # dict, so the INSERT must receive a JSON string.
-    import json
-    import formation_wizard
+def test_replace_document_bundle_uses_one_transaction(monkeypatch):
+    import store.formation_documents as repository
     from contextlib import contextmanager
 
-    cur = _DictCursor(
-        one={
-            "community_id": "c0ffee",
-            "name": "LEG Musterweg",
-            "members": [{"building_id": "b1", "role": "admin", "status": "confirmed"}],
-        }
-    )
+    cur = _DictCursor(one={"has_signed": False})
 
     @contextmanager
     def _conn():
         yield _DictConnection(cur)
 
-    class _Db:
-        get_connection = staticmethod(_conn)
+    monkeypatch.setattr(repository, "_get_connection", _conn)
+    documents = [
+        {
+            "doc_type": "gemeinschaftsvereinbarung",
+            "filename": "vereinbarung.pdf",
+            "pdf_data": b"%PDF-1",
+        },
+        {
+            "doc_type": "teilnehmervertrag",
+            "filename": "vertrag.pdf",
+            "pdf_data": b"%PDF-2",
+        },
+    ]
 
-    result = formation_wizard.generate_documents(_Db, "c0ffee")
-    assert result is not None
-    insert = next((q, p) for q, p in cur.executed if "community_documents" in q)
-    documents_param = insert[1][1]
-    assert isinstance(documents_param, str)
-    assert json.loads(documents_param)["community_agreement"]
+    assert repository.replace_leg_document_bundle("c0ffee", documents) == 2
+    statements = [" ".join(query.split()) for query, _ in cur.executed]
+    assert any("DELETE FROM leg_documents" in query for query in statements)
+    assert sum("INSERT INTO leg_documents" in query for query in statements) == 2
+    assert any("UPDATE communities" in query for query in statements)
 
 
 # --- Correspondence ledger (Phase 6 MVP) ---

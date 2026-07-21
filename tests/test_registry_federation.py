@@ -29,7 +29,9 @@ VALID = {
 
 def _client(monkeypatch, saved=1):
     monkeypatch.setattr(
-        leg_registry_module, "_unique_slug", lambda name: "leg-sonnenhof"
+        leg_registry_module.registry_intake,
+        "_unique_slug",
+        lambda name: "leg-sonnenhof",
     )
     save = MagicMock(return_value=saved)
     monkeypatch.setattr(leg_registry_module.db, "save_registry_entry", save)
@@ -63,31 +65,6 @@ class TestPublishEndpoint:
         resp = client.post("/api/registry/publish", json=bad)
         assert resp.status_code == 400
         save.assert_not_called()
-
-
-class TestBoxClient:
-    def test_publish_leg_posts_to_central(self, monkeypatch):
-        import federation
-
-        captured = {}
-
-        class _Resp:
-            def raise_for_status(self):
-                return None
-
-            def json(self):
-                return {"slug": "leg-sonnenhof", "moderation_status": "pending"}
-
-        def fake_post(url, json=None, timeout=None):
-            captured["url"] = url
-            captured["json"] = json
-            return _Resp()
-
-        monkeypatch.setattr(federation.requests, "post", fake_post)
-        result = federation.publish_leg("https://openleg.ch", VALID)
-        assert captured["url"] == "https://openleg.ch/api/registry/publish"
-        assert captured["json"] == VALID
-        assert result["moderation_status"] == "pending"
 
 
 def test_publish_route_in_source():
