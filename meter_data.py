@@ -301,8 +301,8 @@ def parse_sdat_xml(xml_content: str) -> Tuple[List[tuple], List[str]]:
             for sequence, volume in sorted(observations)
         ]
         return readings, []
-    except (ET.ParseError, DefusedXmlException, KeyError, TypeError, ValueError) as exc:
-        return [], [f"SDAT Parse-Fehler: {exc}"]
+    except (ET.ParseError, DefusedXmlException, KeyError, TypeError, ValueError):
+        return [], ["SDAT Parse-Fehler: Ungültiges Dateiformat."]
 
 
 def ingest_file(building_id: str, file_content: str) -> Dict:

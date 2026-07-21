@@ -96,6 +96,14 @@ class TestIngestFile:
         assert kwargs.get("source") == "sdat"
 
 
+def test_sdat_parse_error_does_not_expose_input():
+    _, errors = meter_data.parse_sdat_xml(
+        "<ValidatedMeteredData><StartDateTime>private-value</StartDateTime></ValidatedMeteredData>"
+    )
+
+    assert errors == ["SDAT Parse-Fehler: Ungültiges Dateiformat."]
+
+
 def test_upload_endpoint_uses_one_ingestion_seam():
     from pathlib import Path
 
