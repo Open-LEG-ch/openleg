@@ -10,7 +10,7 @@ import logging
 import re
 import secrets
 
-from flask import Blueprint, abort, render_template, request
+from flask import Blueprint, abort, jsonify, render_template, request
 
 import database as db
 import email_utils
@@ -175,6 +175,58 @@ def eintragen():
         form=None,
         submitted=True,
     )
+
+
+@registry_bp.route("/api/registry/publish", methods=["POST"])
+def api_registry_publish():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    contact_email = (data.get("contact_email") or "").strip()
+
+    if not name or not contact_email:
+        return jsonify({"error": "name und contact_email erforderlich."}), 400
+
+    is_valid, normalized_email, email_error = security_utils.validate_email_address(
+        contact_email
+    )
+    if not is_valid:
+        return jsonify({"error": email_error}), 400
+
+    leg_status = (data.get("leg_status") or "planung").strip()
+    if leg_status not in {code for code, _ in LEG_STATUS_OPTIONS if code}:
+        leg_status = "planung"
+
+    member_count_estimate = None
+    try:
+        member_count = int(data["member_count_estimate"])
+        if member_count > 0:
+            member_count_estimate = member_count
+    except (KeyError, TypeError, ValueError):
+        pass
+
+    kanton = (data.get("kanton") or "").strip().upper()
+    slug = _unique_slug(name)
+    saved = db.save_registry_entry(
+        slug=slug,
+        name=name,
+        contact_email=normalized_email,
+        kanton=kanton,
+        plz=(data.get("plz") or "").strip(),
+        ort=(data.get("ort") or "").strip(),
+        vnb_name=(data.get("vnb_name") or "").strip(),
+        member_count_estimate=member_count_estimate,
+        leg_status=leg_status,
+        description=(data.get("description") or "").strip(),
+        website_url=(data.get("website_url") or "").strip(),
+        source="self_hosted",
+    )
+    if not saved:
+        return jsonify({"error": "Eintrag konnte nicht gespeichert werden."}), 500
+
+    db.track_event(
+        "registry_entry_published", data={"slug": slug, "source": "self_hosted"}
+    )
+    return jsonify({"slug": slug, "moderation_status": "pending"}), 201
 
 
 def _eintragen_error(message, form, status):
