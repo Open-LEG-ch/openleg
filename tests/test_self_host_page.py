@@ -33,14 +33,15 @@ class TestSelfHostPage:
         html = _client().get("/self-host").data.decode("utf-8")
         assert ONE_COMMAND in html
 
-    def test_quickstart_and_advanced_both_present(self):
+    def test_multiple_install_paths_present(self):
         html = _client().get("/self-host").data.decode("utf-8")
-        assert "Schnellstart" in html
-        assert "Fortgeschritten" in html
+        assert "Einzeiler" in html
+        assert "Vorher prüfen" in html
+        assert "Git und Docker" in html
 
-    def test_sovereign_default_and_honesty(self):
+    def test_states_where_meter_data_remains(self):
         html = _client().get("/self-host").data.decode("utf-8")
-        assert "Ihre Daten" in html or "Datenhoheit" in html
+        assert "Ihre Messdaten bleiben in Ihrer lokalen PostgreSQL-Datenbank" in html
 
     def test_swiss_hochdeutsch_rules(self):
         html = SELF_HOST_TEMPLATE.read_text(encoding="utf-8")

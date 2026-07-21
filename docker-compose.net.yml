@@ -16,14 +16,42 @@ services:
     profiles: ["net"]
     restart: unless-stopped
     command: serve
+    ports:
+      - "${HEADSCALE_PORT:-8081}:8080"
     volumes:
       - headscale_data:/var/lib/headscale
       - ./headscale/config.yaml:/etc/headscale/config.yaml:ro
     networks:
       - web
 
+  tailscale:
+    image: tailscale/tailscale:v1.78.1
+    container_name: openleg-tailscale
+    hostname: openleg
+    profiles: ["net"]
+    restart: unless-stopped
+    network_mode: "service:flask"
+    depends_on:
+      flask:
+        condition: service_healthy
+      headscale:
+        condition: service_started
+    environment:
+      TS_AUTHKEY: "${HEADSCALE_HOST_AUTHKEY:-}"
+      TS_AUTH_ONCE: "true"
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_ACCEPT_DNS: "false"
+      TS_EXTRA_ARGS: "--login-server=${HEADSCALE_SERVER_URL:-https://leg.example.ch:8081}"
+    volumes:
+      - tailscale_state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+
 volumes:
   headscale_data:
+  tailscale_state:
 
 networks:
   web:

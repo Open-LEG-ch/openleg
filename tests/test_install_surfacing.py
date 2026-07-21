@@ -18,8 +18,23 @@ def _html(name):
 
 def test_homepage_surfaces_one_line_installer():
     html = _html("index.html")
-    assert ONE_COMMAND in html
+    assert 'include "partials/install_console.html"' in html
+    assert ONE_COMMAND in _html("partials/install_console.html")
     assert "/self-host" in html
+
+
+def test_install_console_explains_effects_and_supports_copy():
+    partial = _html("partials/install_console.html")
+    assert "OpenLEG in einer Zeile selbst betreiben" in partial
+    assert "erstellt eine lokale .env-Datei" in partial
+    assert partial.count("data-install-tab") == 3
+    assert partial.count("data-copy-command") == 3
+    assert "Befehl kopieren" in partial
+
+    homepage = _html("index.html")
+    assert homepage.index('include "partials/install_console.html"') < homepage.index(
+        'id="pfade"'
+    )
 
 
 def test_open_source_leads_with_one_line_installer():
@@ -42,13 +57,6 @@ def test_installer_command_color_is_compiled():
     # Tailwind rebuild so an invisible command can never ship again.
     css = (ROOT / "static" / "css" / "openleg.css").read_text(encoding="utf-8")
     assert "text-slate-100" in css
-
-
-def test_homepage_installer_is_above_the_pathways():
-    # It must be high on the page, not buried below the fold.
-    html = _html("index.html")
-    assert ONE_COMMAND in html
-    assert html.index(ONE_COMMAND) < html.index("Für wen ist OpenLEG")
 
 
 def test_nav_links_to_self_host():

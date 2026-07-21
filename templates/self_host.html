@@ -4,10 +4,10 @@
 {% block meta %}
 {{ page_meta(
   title="Selbst betreiben | OpenLEG",
-  description="OpenLEG auf eigener Infrastruktur betreiben: souveräner Schnellstart mit einem Befehl oder manuelle Installation mit voller Kontrolle.",
+  description="OpenLEG auf eigener Infrastruktur installieren: Quellcode laden, lokale Zugangsschlüssel erstellen und Docker-Dienste starten.",
   path="/self-host",
   og_title="OpenLEG selbst betreiben",
-  og_description="Die souveräne OpenLEG-Installation für Ihre LEG, mit einem Befehl auf eigener Hardware.",
+  og_description="OpenLEG mit einem Befehl installieren oder den Quellcode vor dem Start selbst prüfen.",
   site_url=site_url,
 ) }}
 {% endblock %}
@@ -16,35 +16,12 @@
   <main class="max-w-6xl mx-auto px-4 py-12">
     <header class="max-w-3xl mb-10">
       <p class="text-sm font-semibold text-brand mb-2">Selbst betreiben</p>
-      <h1 class="text-4xl font-bold mb-4">Ihre LEG, Ihre Infrastruktur, Ihre Daten.</h1>
-      <p class="text-lg text-ink-muted mb-6">OpenLEG läuft auf Ihrer eigenen Hardware. Docker und eine Zeile genügen für den Einstieg.</p>
-      <div class="bg-ink rounded-xl p-5 shadow-lg">
-        <p class="text-sm font-semibold text-slate-300 mb-3">Schnellstart</p>
-        <pre class="text-slate-100 text-sm overflow-x-auto"><code>curl -fsSL https://openleg.ch/install.sh | bash</code></pre>
-      </div>
+      <h1 class="text-4xl font-bold mb-4">OpenLEG auf eigener Infrastruktur installieren.</h1>
+      <p class="text-lg text-ink-muted">Der Installer richtet die Anwendung und ihre Datenbank lokal mit Docker ein. Ihre LEG übernimmt danach Updates, Backups und Verfügbarkeit.</p>
     </header>
 
-    <section class="grid md:grid-cols-2 gap-6 mb-10">
-      <div class="bg-white border border-slate-200 rounded-xl p-6">
-        <h2 class="text-2xl font-bold mb-3">Schnellstart</h2>
-        <p class="text-ink-muted mb-4">Der Installer richtet OpenLEG mit Docker in einer Zeile ein. Ein Raspberry Pi, Mini-PC oder NAS genügt für den Anfang.</p>
-        <pre class="bg-ink text-slate-100 rounded-lg p-4 text-sm overflow-x-auto"><code>curl -fsSL https://openleg.ch/install.sh | bash</code></pre>
-        <p class="text-sm text-ink-muted mt-4">Sie können das Installationsskript vor dem Ausführen öffnen und prüfen.</p>
-      </div>
-
-      <div class="bg-white border border-slate-200 rounded-xl p-6">
-        <h2 class="text-2xl font-bold mb-3">Fortgeschritten</h2>
-        <p class="text-ink-muted mb-4">Klonen Sie das Repository und verwalten Sie Konfiguration, Updates und Betrieb selbst, wenn Sie volle Kontrolle wünschen.</p>
-        <pre class="bg-ink text-slate-100 rounded-lg p-4 text-sm overflow-x-auto"><code>git clone https://github.com/Open-LEG-ch/openleg.git
-cd openleg
-cp .env.example .env
-docker compose up -d</code></pre>
-      </div>
-    </section>
-
-    <section class="bg-brand/5 border border-brand/20 rounded-xl p-6 mb-10">
-      <h2 class="text-2xl font-bold mb-3">Die souveräne Wahl</h2>
-      <p class="text-ink-muted">Ihre LEG betreibt die Box, und Ihre Daten bleiben in der LEG. Dafür übernimmt Ihr Team Updates, Backups und die Verfügbarkeit. Wenn Sie keine Wartung übernehmen möchten, nutzen Sie die <a href="/" class="text-brand font-semibold underline">gehostete Plattform</a> als Alternative ohne eigenen Betriebsaufwand.</p>
+    <section class="mb-10">
+      {% include "partials/install_console.html" %}
     </section>
 
     <section class="bg-white border border-slate-200 rounded-xl p-6 mb-10">
@@ -59,4 +36,8 @@ docker compose up -d</code></pre>
       <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="inline-block border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white">Quellcode auf GitHub</a>
     </section>
   </main>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/static/js/install_console.js"></script>
 {% endblock %}
