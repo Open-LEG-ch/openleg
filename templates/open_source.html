@@ -36,7 +36,8 @@
       <h1 class="text-4xl font-bold mb-4">Freie Energieinfrastruktur, die man prüfen und selbst betreiben kann.</h1>
       <p class="text-lg text-ink-muted">OpenLEG ist das öffentliche App-Repo für Schweizer Lokale Elektrizitätsgemeinschaften. Der Code ist offen, die Datenquellen sind nachvollziehbar, und produktive Secrets bleiben ausserhalb des öffentlichen Repos.</p>
       <div class="mt-6 flex flex-col sm:flex-row gap-3">
-        <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">GitHub öffnen</a>
+        <a href="/self-host" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Selbst betreiben</a>
+        <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">GitHub öffnen</a>
         <a href="/api/v1/docs" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">API ansehen</a>
       </div>
     </header>
@@ -99,12 +100,15 @@
       </div>
       <div class="bg-white border border-slate-200 rounded-xl p-6">
         <h2 class="text-xl font-bold mb-3">Selbst betreiben</h2>
-        <p class="text-ink-muted mb-4">Die lokale Entwicklung braucht Python, Docker und eine `.env` aus der öffentlichen Vorlage.</p>
+        <p class="text-ink-muted mb-3">Ein Befehl auf Ihrer eigenen Hardware. Docker genügt, ein Raspberry Pi reicht für den Anfang.</p>
+        <pre class="bg-ink text-slate-100 rounded-lg p-4 text-sm overflow-x-auto"><code>curl -fsSL https://openleg.ch/install.sh | bash</code></pre>
+        <p class="text-ink-muted mt-4 text-sm">Danach verwalten Sie die Box mit einem Befehl, importieren Ihre Messdaten lokal und verbinden Nachbarn über ein privates Netzwerk ohne offene Ports.</p>
+        <p class="text-ink-muted mt-4 mb-2 text-sm font-semibold">Oder manuell aus dem Quellcode:</p>
         <pre class="bg-ink text-slate-300 rounded-lg p-4 text-sm overflow-x-auto"><code>git clone https://github.com/Open-LEG-ch/openleg.git
 cd openleg
 cp .env.example .env
 docker compose up -d</code></pre>
-        <p class="mt-4"><a href="/self-host" class="text-brand font-semibold underline">Zum Schnellstart für den eigenen Betrieb</a></p>
+        <p class="mt-3"><a href="/self-host" class="text-brand font-semibold underline">Schnellstart, manuelle Installation und privates Netzwerk</a></p>
       </div>
     </section>
 
