@@ -579,6 +579,7 @@ def sitemap_xml():
         ("/leg-kalkulator", "0.9", "weekly", current_date),
         ("/pricing", "0.7", "monthly", current_date),
         ("/open-source", "0.8", "weekly", current_date),
+        ("/self-host", "0.8", "weekly", current_date),
         ("/gemeinde/verzeichnis", "0.9", "weekly", current_date),
         ("/leg-verzeichnis", "0.9", "weekly", current_date),
         ("/leg-check", "0.9", "weekly", current_date),

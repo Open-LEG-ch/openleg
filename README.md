@@ -21,9 +21,15 @@ OpenLEG serves four audiences. Pick the one that matches you.
 | Municipality | `/fuer-gemeinden` | Compare solar usage, claim a free `<gemeinde>.openleg.ch` page. |
 | Developer / self-host | this repo | Read the code, use the free API, run your own instance (below). |
 
-Most users do not self-host: the hosted platform gives every municipality and
-LEG its own subdomain at no cost. Self-hosting is for teams who want full data
-sovereignty on their own infrastructure.
+Self-hosting is the sovereign default: your LEG runs OpenLEG on its own
+infrastructure and keeps control of its data. Start with one command:
+
+```bash
+curl -fsSL https://openleg.ch/install.sh | bash
+```
+
+The hosted platform remains the no-maintenance alternative for municipalities
+and LEGs that do not want to operate their own instance.
 
 ### Live examples
 
@@ -74,6 +80,7 @@ See:
 - `/rangliste` and `/gemeinde/profil/<bfs>` solar utilization ranking
 - `/fuer-gemeinden` municipality onboarding overview
 - `/open-source` codebase and self-hosting explainer
+- `/self-host` one-command sovereign self-hosting on-ramp
 - `/api/v1/docs` public API documentation
 - `/health` and `/livez` runtime health checks
 
