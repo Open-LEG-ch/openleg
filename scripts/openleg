@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run every command from the repository root.
+cd "$(dirname "$0")/.."
+
+COMPOSE="docker compose -f docker-compose.yml -f docker-compose.quickstart.yml"
+
+case "${1:-}" in
+  status)
+    $COMPOSE ps
+    ;;
+  logs)
+    $COMPOSE logs -f "${2:-flask}"
+    ;;
+  update)
+    git pull --ff-only 2>/dev/null || true
+    $COMPOSE up -d --build flask postgres redis
+    ;;
+  backup)
+    mkdir -p backups
+    out="backups/openleg-$(date +%Y%m%d-%H%M%S).sql"
+    $COMPOSE exec -T postgres pg_dump -U openleg openleg > "$out"
+    echo "$out"
+    ;;
+  restore)
+    if [[ -z "${2:-}" || ! -f "$2" ]]; then
+      echo "Error: restore requires an existing .sql file." >&2
+      exit 1
+    fi
+    $COMPOSE exec -T postgres psql -U openleg -d openleg < "$2"
+    ;;
+  stop)
+    $COMPOSE stop
+    ;;
+  *)
+    echo "Usage: scripts/openleg {status|logs|update|backup|restore|stop}" >&2
+    exit 2
+    ;;
+esac
