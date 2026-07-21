@@ -7,8 +7,12 @@ Parses EKZ CSV exports, validates readings, stores in database.
 import csv
 import io
 import logging
-from datetime import datetime
+import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta
 from typing import List, Tuple, Optional, Dict
+
+from defusedxml.ElementTree import fromstring as _safe_xml_fromstring
+from defusedxml.common import DefusedXmlException
 
 import database as db
 
@@ -241,13 +245,73 @@ def parse_meter_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
         return parse_ekz_csv(file_content)
 
 
+def parse_sdat_xml(xml_content: str) -> Tuple[List[tuple], List[str]]:
+    """Parse a Swiss SDAT ValidatedMeteredData interval document."""
+    if not xml_content or not xml_content.strip():
+        return [], ["Leere SDAT-Datei"]
+
+    def local_name(tag: str) -> str:
+        return tag.rsplit("}", 1)[-1]
+
+    try:
+        # defusedxml blocks XXE and entity-expansion bombs on untrusted uploads.
+        root = _safe_xml_fromstring(xml_content)
+
+        start_element = next(
+            (
+                element
+                for element in root.iter()
+                if local_name(element.tag) == "StartDateTime"
+            ),
+            None,
+        )
+        if start_element is None or not start_element.text:
+            return [], ["SDAT-Startzeit fehlt"]
+        start = datetime.fromisoformat(
+            start_element.text.strip().removesuffix("Z") + "+00:00"
+            if start_element.text.strip().endswith("Z")
+            else start_element.text.strip()
+        ).replace(tzinfo=None)
+
+        resolution_minutes = 15
+        for element in root.iter():
+            text = (element.text or "").strip()
+            if local_name(element.tag) == "Resolution" and text.isdigit():
+                candidate = int(text)
+                if candidate > 0:
+                    resolution_minutes = candidate
+                    break
+
+        observations = []
+        for element in root.iter():
+            if local_name(element.tag) != "Observation":
+                continue
+            children = {local_name(child.tag): child for child in element}
+            sequence = int((children["Sequence"].text or "").strip())
+            volume = float((children["Volume"].text or "").strip())
+            observations.append((sequence, volume))
+
+        readings = [
+            (
+                start + timedelta(minutes=(sequence - 1) * resolution_minutes),
+                volume,
+                0.0,
+                0.0,
+            )
+            for sequence, volume in sorted(observations)
+        ]
+        return readings, []
+    except (ET.ParseError, DefusedXmlException, KeyError, TypeError, ValueError) as exc:
+        return [], [f"SDAT Parse-Fehler: {exc}"]
+
+
 def ingest_csv(building_id: str, file_content: str, source: str = "csv") -> Dict:
     """Parse and store meter readings from CSV upload.
 
     Returns:
         {"success": bool, "readings_count": int, "errors": [...], "stats": {...}}
     """
-    readings, errors = parse_ekz_csv(file_content)
+    readings, errors = parse_meter_csv(file_content)
 
     if not readings:
         return {
@@ -260,6 +324,38 @@ def ingest_csv(building_id: str, file_content: str, source: str = "csv") -> Dict
     stored = db.save_meter_readings(building_id, readings, source=source)
 
     # Get updated stats
+    stats = db.get_meter_reading_stats(building_id)
+
+    result = {
+        "success": stored > 0,
+        "readings_count": stored,
+        "errors": errors,
+        "stats": stats,
+    }
+
+    if stored > 0:
+        logger.info(f"[METER] Ingested {stored} readings for building {building_id}")
+        db.track_event(
+            "meter_data_uploaded",
+            building_id,
+            {"readings_count": stored, "source": source, "error_count": len(errors)},
+        )
+
+    return result
+
+
+def ingest_sdat(building_id: str, xml_content: str, source: str = "sdat") -> Dict:
+    """Parse and store meter readings from an SDAT XML document."""
+    readings, errors = parse_sdat_xml(xml_content)
+
+    if not readings:
+        return {
+            "success": False,
+            "readings_count": 0,
+            "errors": errors or ["Keine gültigen Messdaten gefunden."],
+        }
+
+    stored = db.save_meter_readings(building_id, readings, source=source)
     stats = db.get_meter_reading_stats(building_id)
 
     result = {
