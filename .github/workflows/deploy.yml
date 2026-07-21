@@ -43,4 +43,4 @@ jobs:
       - name: Run tests
         env:
           DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
-        run: pytest tests/ -q
+        run: bash scripts/test.sh full

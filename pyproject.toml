@@ -4,3 +4,10 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+markers = [
+    "unit: fast isolated unit test, needs no external services",
+    "integration: needs a real database or redis",
+    "smoke: drives the running application end to end",
+    "deploy: validates deployment artifacts (compose, Caddyfile, Dockerfile)",
+    "contract: pins a repository boundary or policy invariant",
+]
