@@ -34,3 +34,24 @@ def test_updated_pages_stay_swiss_hochdeutsch():
         assert "ß" not in html
         assert "—" not in html  # em dash
         assert "–" not in html  # en dash
+
+
+def test_installer_command_color_is_compiled():
+    # The dark code blocks use text-slate-100. If that class is missing from the
+    # built CSS the command paints dark-on-dark and is invisible. This pins the
+    # Tailwind rebuild so an invisible command can never ship again.
+    css = (ROOT / "static" / "css" / "openleg.css").read_text(encoding="utf-8")
+    assert "text-slate-100" in css
+
+
+def test_homepage_installer_is_above_the_pathways():
+    # It must be high on the page, not buried below the fold.
+    html = _html("index.html")
+    assert ONE_COMMAND in html
+    assert html.index(ONE_COMMAND) < html.index("Für wen ist OpenLEG")
+
+
+def test_nav_links_to_self_host():
+    nav = (TEMPLATES / "partials" / "site_nav.html").read_text(encoding="utf-8")
+    assert "/self-host" in nav
+    assert "Selbst betreiben" in nav
