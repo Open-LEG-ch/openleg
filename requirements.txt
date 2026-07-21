@@ -17,7 +17,7 @@ redis==8.0.1
 psycopg2-binary==2.9.9
 
 # Billing
-stripe==11.4.1
+stripe==15.3.1
 
 # PDF generation
 weasyprint==68.0
