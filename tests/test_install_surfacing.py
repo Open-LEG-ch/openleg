@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""Website copy reflects the shipped self-host appliance (Program 9 W9).
+
+The one-line installer is surfaced on the homepage and the open-source page, both
+point to /self-host, and the updated pages stay in Schweizer Hochdeutsch.
+"""
+
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+TEMPLATES = ROOT / "templates"
+ONE_COMMAND = "curl -fsSL https://openleg.ch/install.sh | bash"
+
+
+def _html(name):
+    return (TEMPLATES / name).read_text(encoding="utf-8")
+
+
+def test_homepage_surfaces_one_line_installer():
+    html = _html("index.html")
+    assert ONE_COMMAND in html
+    assert "/self-host" in html
+
+
+def test_open_source_leads_with_one_line_installer():
+    html = _html("open_source.html")
+    assert ONE_COMMAND in html
+    assert "/self-host" in html
+
+
+def test_updated_pages_stay_swiss_hochdeutsch():
+    for name in ("index.html", "open_source.html"):
+        html = _html(name)
+        assert "ß" not in html
+        assert "—" not in html  # em dash
+        assert "–" not in html  # en dash
