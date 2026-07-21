@@ -54,7 +54,7 @@ def full_app_module():
 
 def test_landing_has_four_stakeholder_pathways():
     html = _read("index.html")
-    assert "Für wen ist OpenLEG?" in html
+    assert "Starten Sie dort, wo Sie heute stehen." in html
     for href in ("/fuer-bewohner", "/leg-gruenden", "/fuer-gemeinden", "/open-source"):
         assert f'href="{href}"' in html
     assert "Bewohner und Gründer" in html
