@@ -21,6 +21,7 @@ COPY *.py ./
 COPY store/ store/
 COPY templates/ templates/
 COPY static/ static/
+COPY scripts/ scripts/
 
 RUN mkdir -p /data
 
