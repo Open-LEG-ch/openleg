@@ -33,8 +33,29 @@ case "${1:-}" in
   stop)
     $COMPOSE stop
     ;;
+  net)
+    # OpenLEG private network (Tier A, self-hosted Headscale). Members join over
+    # WireGuard with a one-time code and reach the box with no ports opened.
+    COMPOSE_NET="docker compose -f docker-compose.yml -f docker-compose.net.yml"
+    case "${2:-}" in
+      up)
+        $COMPOSE_NET --profile net up -d headscale
+        ;;
+      invite)
+        # Mint a one-time join code (a preauth key), valid 24h.
+        $COMPOSE_NET exec headscale headscale preauthkeys create --user openleg --expiration 24h
+        ;;
+      status)
+        $COMPOSE_NET exec headscale headscale nodes list
+        ;;
+      *)
+        echo "Usage: scripts/openleg net {up|invite|status}" >&2
+        exit 2
+        ;;
+    esac
+    ;;
   *)
-    echo "Usage: scripts/openleg {status|logs|update|backup|restore|stop}" >&2
+    echo "Usage: scripts/openleg {status|logs|update|backup|restore|stop|net}" >&2
     exit 2
     ;;
 esac

@@ -1,0 +1,29 @@
+# OpenLEG private network, Tier A (self-hosted, open).
+#
+# An optional Headscale control server (the open, self-hostable Tailscale control
+# plane) on an audited WireGuard data plane. LEG members join with a one-time code
+# and reach the box over the private network with no ports opened on the home
+# router. Nothing OpenLEG operates is in the loop.
+#
+# Copy headscale/config.example.yaml to headscale/config.yaml, set server_url to an
+# endpoint your members can reach, then start with:
+#   docker compose -f docker-compose.yml -f docker-compose.net.yml --profile net up -d
+# or:  scripts/openleg net up
+services:
+  headscale:
+    image: headscale/headscale:0.23.0
+    container_name: openleg-headscale
+    profiles: ["net"]
+    restart: unless-stopped
+    command: serve
+    volumes:
+      - headscale_data:/var/lib/headscale
+      - ./headscale/config.yaml:/etc/headscale/config.yaml:ro
+    networks:
+      - web
+
+volumes:
+  headscale_data:
+
+networks:
+  web:
