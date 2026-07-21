@@ -35,3 +35,15 @@ def test_base_compose_stays_four_services():
 
 def test_headscale_config_example_present():
     assert (ROOT / "headscale" / "config.example.yaml").is_file()
+
+
+def test_operator_cli_has_net_subcommand():
+    cli = (ROOT / "scripts" / "openleg").read_text(encoding="utf-8")
+    # net dispatch present and uses the net compose override, not the base stack
+    assert "net)" in cli
+    assert "docker-compose.net.yml" in cli
+    # net up starts only the profile; invite mints a one-time preauth key;
+    # status lists the joined nodes
+    assert "--profile net" in cli
+    assert "preauthkeys" in cli
+    assert "nodes" in cli
