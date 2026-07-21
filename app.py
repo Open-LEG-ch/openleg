@@ -87,6 +87,7 @@ from utility_portal import utility_bp
 from rangliste import rangliste_bp
 import leg_registry
 from leg_registry import registry_bp
+from self_host import self_host_bp
 
 # --- Cron Secret ---
 CRON_SECRET = os.getenv("CRON_SECRET", "").strip()
@@ -192,6 +193,7 @@ app.register_blueprint(health_bp)
 app.register_blueprint(utility_bp)
 app.register_blueprint(rangliste_bp)
 app.register_blueprint(registry_bp)
+app.register_blueprint(self_host_bp)
 
 # --- Multi-tenant middleware ---
 tenant_module.init_tenant_middleware(app, db=db)

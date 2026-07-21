@@ -1,0 +1,4 @@
+services:
+  flask:
+    ports:
+      - "${OPENLEG_HTTP_PORT:-8080}:5000"
