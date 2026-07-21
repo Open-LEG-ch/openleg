@@ -24,4 +24,45 @@
     outline: 2px solid #4f46e5;
     outline-offset: 2px;
   }
+
+  .site-nav {
+    --nav-bg: rgb(255 255 255 / 0.9);
+    --nav-border: rgb(226 232 240 / 0.7);
+    --nav-text: #475569;
+    --nav-strong: #0f172a;
+    --nav-icon-bg: #fff;
+    background: var(--nav-bg);
+    border-color: var(--nav-border);
+  }
+
+  .site-nav-links {
+    color: var(--nav-text);
+  }
+
+  .site-nav-icon {
+    background: var(--nav-icon-bg);
+    border-color: var(--nav-border);
+    color: var(--nav-strong);
+  }
+
+  .site-nav-menu {
+    background: var(--nav-bg);
+    border-color: var(--nav-border);
+  }
+
+  .site-nav-menu-link {
+    color: var(--nav-strong);
+  }
+
+  .site-nav-bar {
+    background: var(--nav-strong);
+  }
+
+  .site-nav--dark {
+    --nav-bg: #070d1a;
+    --nav-border: rgb(255 255 255 / 0.15);
+    --nav-text: #cbd5e1;
+    --nav-strong: #fff;
+    --nav-icon-bg: rgb(255 255 255 / 0.05);
+  }
 }

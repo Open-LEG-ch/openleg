@@ -41,7 +41,7 @@ class TestSelfHostPage:
 
     def test_states_where_meter_data_remains(self):
         html = _client().get("/self-host").data.decode("utf-8")
-        assert "Ihre Messdaten bleiben in Ihrer lokalen PostgreSQL-Datenbank" in html
+        assert "Deine Messdaten bleiben in deiner lokalen PostgreSQL-Datenbank" in html
 
     def test_swiss_hochdeutsch_rules(self):
         html = SELF_HOST_TEMPLATE.read_text(encoding="utf-8")
