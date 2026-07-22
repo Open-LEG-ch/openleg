@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
 
 {% block meta %}
 {{ page_meta(
@@ -13,51 +14,64 @@
 
 {% block content %}
   <div class="max-w-6xl mx-auto px-4 py-8">
-    <header class="mb-6">
-      <h1 class="text-3xl font-bold">Grösste Fortschritte</h1>
-      <p class="text-ink-muted mt-2 max-w-2xl">
-        Welche Gemeinden haben im letzten vollen Jahr{% if latest_year %} ({{ latest_year }}){% endif %} bei der Solarnutzung aufgeholt?
-        Der Wert misst die Veränderung in Prozentpunkten, berechnet aus dem 10-Jahres-Panel.
-        Auch kleine Gemeinden mit tiefem Startwert können hier sichtbar werden.
-      </p>
-      <p class="text-sm text-ink-muted mt-2">
-        <a href="/rangliste/methodik" class="text-brand hover:underline">Methodik und Datenquellen</a>
-      </p>
+    <header class="mb-6 flex flex-wrap items-start justify-between gap-6">
+      <div class="max-w-2xl">
+        <h1 class="text-3xl font-bold">Grösste Fortschritte</h1>
+        <p class="text-ink-muted mt-2">
+          Welche Gemeinden haben bei der Solarnutzung am meisten aufgeholt? Der Wert misst die
+          Veränderung in Prozentpunkten gegenüber dem Vorjahr, aus dem 10-Jahres-Panel. Auch
+          kleine Gemeinden mit tiefem Startwert können hier sichtbar werden.
+        </p>
+        <p class="text-sm text-ink-muted mt-2">
+          <a href="/rangliste/methodik" class="text-brand hover:underline">Methodik und Datenquellen</a>
+        </p>
+      </div>
+      <div class="shrink-0 text-right" data-testid="comparison-year">
+        <p class="text-xs uppercase tracking-wide text-ink-muted">Vergleichsjahr</p>
+        <p class="font-mono tabular-nums text-4xl font-bold text-ink">{% if latest_year %}{{ latest_year }}{% else %}–{% endif %}</p>
+      </div>
     </header>
+
+    {{ data_provenance(
+      "Panel-Jahr",
+      latest_year or "k. A.",
+      ["BFE Elektrizitätsproduktionsanlagen (10-Jahres-Panel)", "BFE Sonnendach", "BFS Regionalporträts"],
+      plant_match_rate,
+    ) }}
 
     <!-- Tabs -->
     <div class="flex gap-2 mb-6">
-      <a href="/rangliste" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-white' if active_tab == 'rangliste' else 'bg-white text-ink border border-slate-200' }}">Rangliste</a>
-      <a href="/rangliste/fortschritte" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-white' if active_tab == 'fortschritte' else 'bg-white text-ink border border-slate-200' }}">Grösste Fortschritte</a>
+      <a href="/rangliste" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-white' if active_tab == 'rangliste' else 'text-ink border border-slate-200 hover:border-slate-300' }}">Rangliste</a>
+      <a href="/rangliste/fortschritte" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-white' if active_tab == 'fortschritte' else 'text-ink border border-slate-200 hover:border-slate-300' }}">Grösste Fortschritte</a>
     </div>
 
-    <!-- Liga-Filter -->
-    <form method="get" action="/rangliste/fortschritte" class="bg-white rounded-xl p-4 shadow-sm border mb-6 grid grid-cols-1 md:grid-cols-4 gap-3">
+    <!-- Liga-Filter: compact rail, no card chrome -->
+    <form method="get" action="/rangliste/fortschritte" class="border-y border-slate-200 py-4 mb-6 flex flex-wrap items-end gap-4">
       <div>
-        <label class="block text-xs text-ink-muted mb-1">Kanton</label>
-        <select name="kanton" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <label class="block text-xs text-ink-muted mb-1" for="fortschritte-kanton">Kanton</label>
+        <select id="fortschritte-kanton" name="kanton" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
           {% for code, label in canton_options %}
           <option value="{{ '' if code == 'all' else code }}" {{ 'selected' if (code == 'all' and not kanton) or code == kanton }}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
       <div>
-        <label class="block text-xs text-ink-muted mb-1">Grösse</label>
-        <select name="size" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <label class="block text-xs text-ink-muted mb-1" for="fortschritte-size">Grösse</label>
+        <select id="fortschritte-size" name="size" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
           {% for value, label in size_options %}
           <option value="{{ value }}" {{ 'selected' if value == size }}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
       <div>
-        <label class="block text-xs text-ink-muted mb-1">Dichte</label>
-        <select name="density" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <label class="block text-xs text-ink-muted mb-1" for="fortschritte-density">Dichte</label>
+        <select id="fortschritte-density" name="density" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
           {% for value, label in density_options %}
           <option value="{{ value }}" {{ 'selected' if value == density }}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="flex items-end gap-2">
+      <div class="flex items-center gap-2">
         <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Liga filtern</button>
         <a href="/rangliste/fortschritte" class="px-3 py-2 rounded-lg text-sm text-ink-muted hover:text-ink">Zurücksetzen</a>
       </div>
@@ -67,40 +81,38 @@
     <p class="text-sm text-ink-muted mb-2">
       {{ total }} Gemeinden in dieser Liga{% if rows|length < total %}, angezeigt die ersten {{ rows|length }}{% endif %}.
     </p>
-    <div class="bg-white rounded-xl shadow-sm border overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-ink-muted text-left">
-          <tr>
-            <th class="px-4 py-3 font-medium">#</th>
-            <th class="px-4 py-3 font-medium">Gemeinde</th>
-            <th class="px-4 py-3 font-medium">Kanton</th>
-            <th class="px-4 py-3 font-medium text-right">Solarnutzung</th>
-            <th class="px-4 py-3 font-medium text-right">Fortschritt</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          {% for r in rows %}
-          <tr class="hover:bg-slate-50">
-            <td class="px-4 py-3 text-ink-muted">{{ loop.index }}</td>
-            <td class="px-4 py-3 font-medium">
-              <a href="/gemeinde/profil/{{ r.bfs_number }}" class="hover:text-brand">{{ r.name }}</a>
-            </td>
-            <td class="px-4 py-3 text-ink-muted">{{ r.kanton }}</td>
-            <td class="px-4 py-3 text-right">{{ "%.1f"|format([r.score_now|float, 100]|min) }}%</td>
-            <td class="px-4 py-3 text-right font-semibold {{ 'text-green-600' if r.delta|float > 0 else 'text-ink-muted' }}">
-              {{ '+' if r.delta|float > 0 else '' }}{{ "%.2f"|format(r.delta|float) }} Pkt
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+    {% set max_abs_delta = (rows|map(attribute='delta')|map('float')|map('abs')|list or [1])|max %}
+    <div class="border-t border-slate-200">
+      {% for r in rows %}
+      {% set is_up = r.delta|float > 0 %}
+      {% set bar_pct = (((r.delta|float|abs) / (max_abs_delta or 1)) * 50)|round(1) %}
+      <div class="grid grid-cols-[2rem_1fr_5rem_9rem] md:grid-cols-[2.5rem_14rem_6rem_16rem] items-center gap-3 py-3 border-b border-slate-100 hover:bg-slate-50/60">
+        <span class="font-mono tabular-nums text-xs text-ink-muted">{{ loop.index }}</span>
+        <span class="min-w-0">
+          <a href="/gemeinde/profil/{{ r.bfs_number }}" class="font-medium hover:text-brand truncate block">{{ r.name }}</a>
+          <span class="text-xs text-ink-muted">{{ r.kanton }} · {{ "%.1f"|format([r.score_now|float, 100]|min) }}% heute</span>
+        </span>
+        <span class="font-mono tabular-nums font-semibold text-right {{ 'text-green-700' if is_up else 'text-ink-muted' }}">
+          {{ '+' if is_up else '' }}{{ "%.2f"|format(r.delta|float) }} Pkt
+        </span>
+        <span class="ol-deltabar-track" aria-hidden="true">
+          <span class="ol-baseline"></span>
+          <span
+            class="ol-deltabar"
+            data-direction="{{ 'up' if is_up else 'down' }}"
+            style="{% if is_up %}left: 50%; width: {{ bar_pct }}%;{% else %}right: 50%; width: {{ bar_pct }}%;{% endif %}"
+          ></span>
+        </span>
+      </div>
+      {% endfor %}
     </div>
     <p class="text-xs text-ink-muted mt-4">
       Fortschritt = Veränderung des Solarnutzungs-Scores in Prozentpunkten gegenüber dem Vorjahr,
       aus dem 10-Jahres-Panel. Bewusst getrennt vom aktuellen Snapshot der Rangliste.
     </p>
     {% else %}
-    <div class="bg-white rounded-xl p-8 text-center shadow-sm border">
+    <div class="border border-slate-200 rounded-xl p-8 text-center">
       <p class="text-ink-muted">Noch keine Fortschrittsdaten in dieser Liga. Filter zurücksetzen oder später erneut prüfen.</p>
     </div>
     {% endif %}
