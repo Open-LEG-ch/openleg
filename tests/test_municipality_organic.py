@@ -26,6 +26,31 @@ def test_onboarding_renders_typeahead_search():
     assert "municipality-search" in html
 
 
+def test_onboarding_preserves_controls_actions_and_accessibility():
+    client = _make_client()
+    resp = client.get("/gemeinde/onboarding")
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+    for control_id in (
+        "municipality-search",
+        "selected-bfs",
+        "selected-name",
+        "admin-email",
+        "contact-name",
+    ):
+        assert f'id="{control_id}"' in html
+    for labelled_id in ("municipality-search", "admin-email", "contact-name"):
+        assert f'for="{labelled_id}"' in html
+    for live_id in ("selected-municipality", "form-error", "form-success"):
+        assert f'id="{live_id}"' in html
+    assert 'id="form-error" role="alert"' in html
+    assert 'id="form-success" role="status"' in html
+    assert 'id="onboarding-form"' in html
+    assert 'type="submit"' in html
+    assert "Gemeinde anmelden" in html
+    assert "fetch('/gemeinde/register'" in html
+
+
 def test_onboarding_uses_host_canonical():
     client = _make_client()
     resp = client.get("/gemeinde/onboarding", headers={"Host": "openleg.ch"})
