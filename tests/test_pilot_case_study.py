@@ -119,6 +119,26 @@ def test_pilot_baden_jsonld_article_and_place(monkeypatch):
     assert place["name"] == "Baden"
 
 
+def test_pilot_is_narrative_case_study_with_supporting_evidence(monkeypatch):
+    html = _get_html(monkeypatch)
+
+    assert 'data-page-structure="case-study"' in html
+    assert html.index('data-case-study-part="argument"') < html.index(
+        'data-evidence-tier="measured"'
+    )
+    assert html.index('data-evidence-tier="measured"') < html.index(
+        'data-evidence-tier="modelled"'
+    )
+    assert html.count("data-source-marker=") >= 4
+    assert html.count('href="#data-provenance"') >= 4
+    assert 'id="data-provenance"' in html
+    assert 'data-testid="data-provenance"' in html
+
+    nodes = _jsonld_nodes(html)
+    assert nodes["Article"]["about"]["@id"] == "#place-4021"
+    assert nodes["Place"]["identifier"] == "4021"
+
+
 def test_pilot_baden_canonical(monkeypatch):
     html = _get_html(monkeypatch)
     assert 'rel="canonical" href="http://openleg.ch/pilotgemeinde/baden"' in html
