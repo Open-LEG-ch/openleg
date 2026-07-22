@@ -167,6 +167,11 @@ class TestFuerGemeindenPage:
             "partials",
             "site_nav.html",
         )
+        base_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "base.html",
+        )
         css_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "static",
@@ -175,11 +180,14 @@ class TestFuerGemeindenPage:
         )
         with open(template_path, encoding="utf-8") as handle:
             content = handle.read()
+        with open(base_path, encoding="utf-8") as handle:
+            base = handle.read()
         with open(css_path, encoding="utf-8") as handle:
             css = handle.read()
 
         assert 'class="skip-link"' in content
         assert 'href="#main-content"' in content
-        assert 'id="main-content"' in content
-        assert 'tabindex="-1"' in content
+        assert 'id="main-content"' not in content
+        assert 'id="main-content"' in base
+        assert 'tabindex="-1"' in base
         assert ".skip-link:focus" in css

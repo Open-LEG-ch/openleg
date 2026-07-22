@@ -87,18 +87,24 @@ class TestNavBreakpoint:
 class TestSharedFooter:
     def test_footer_exposes_required_links_and_provenance(self):
         footer_html = _read("templates", "partials", "site_footer.html")
-        assert "mailto:hallo@openleg.ch" in footer_html
+        assert "mailto:{{ contact_email }}" in footer_html
         assert 'href="/impressum"' in footer_html
         assert 'href="/datenschutz"' in footer_html
         assert 'href="/rangliste/methodik"' in footer_html
         assert "github.com/Open-LEG-ch/openleg" in footer_html
         assert "AGPL-3.0-or-later" in footer_html
 
+    def test_footer_wraps_links_in_a_flex_wrap_container(self):
+        footer_html = _read("templates", "partials", "site_footer.html")
+        assert "flex-wrap" in footer_html
+
 
 class TestGlobalFocusVisible:
-    def test_source_css_has_global_focus_visible_treatment(self):
-        css = _read("static", "css", "tailwind.css")
-        assert ":focus-visible" in css
+    def test_source_and_compiled_css_have_global_focus_visible_treatment(self):
+        source_css = _read("static", "css", "tailwind.css")
+        compiled_css = _read("static", "css", "openleg.css")
+        assert ":focus-visible" in source_css
+        assert ":focus-visible" in compiled_css
 
 
 class TestInstallerTabSemantics:
@@ -161,5 +167,10 @@ class TestInstallerTabSemantics:
         assert "ArrowRight" in js
         assert '"Home"' in js or "'Home'" in js
         assert '"End"' in js or "'End'" in js
-        assert "tabindex" in js
+        assert "tabindex" in js.lower()
         assert ".focus()" in js
+
+    def test_js_wires_keydown_listener_and_prevents_default_scroll(self):
+        js = _read("static", "js", "install_console.js")
+        assert "addEventListener(\"keydown\"" in js or "addEventListener('keydown'" in js
+        assert "preventDefault()" in js
