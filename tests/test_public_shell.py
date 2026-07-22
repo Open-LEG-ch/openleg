@@ -53,15 +53,15 @@ class TestSingleMainLandmark:
         offenders = [
             name for name, content in _templates_extending_base() if "<main" in content
         ]
-        assert offenders == [], f"nested <main> in templates extending base.html: {offenders}"
+        assert offenders == [], (
+            f"nested <main> in templates extending base.html: {offenders}"
+        )
 
 
 class TestNavBreakpoint:
     def test_desktop_links_appear_only_at_xl(self):
         nav_html = _read("templates", "partials", "site_nav.html")
-        links_match = re.search(
-            r'<div class="site-nav-links ([^"]+)"', nav_html
-        )
+        links_match = re.search(r'<div class="site-nav-links ([^"]+)"', nav_html)
         assert links_match, "expected site-nav-links container"
         classes = links_match.group(1)
         assert "xl:flex" in classes
@@ -69,7 +69,9 @@ class TestNavBreakpoint:
 
     def test_mobile_toggle_stays_available_below_xl(self):
         nav_html = _read("templates", "partials", "site_nav.html")
-        toggle_match = re.search(r'<button id="mobile-menu-toggle"[^>]*class="([^"]+)"', nav_html)
+        toggle_match = re.search(
+            r'<button id="mobile-menu-toggle"[^>]*class="([^"]+)"', nav_html
+        )
         assert toggle_match, "expected mobile menu toggle button"
         classes = toggle_match.group(1)
         assert "xl:hidden" in classes
@@ -172,5 +174,5 @@ class TestInstallerTabSemantics:
 
     def test_js_wires_keydown_listener_and_prevents_default_scroll(self):
         js = _read("static", "js", "install_console.js")
-        assert "addEventListener(\"keydown\"" in js or "addEventListener('keydown'" in js
+        assert 'addEventListener("keydown"' in js or "addEventListener('keydown'" in js
         assert "preventDefault()" in js
