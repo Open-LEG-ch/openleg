@@ -12,6 +12,7 @@ from flask import Blueprint, request, jsonify, render_template, abort
 from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
 import database as db
 import municipality_profile
+import pv_data
 from ranking import Ranking
 import security_utils
 
@@ -248,6 +249,8 @@ def verzeichnis():
         site_url=request.url_root.rstrip("/"),
         canton_options=SWISS_CANTON_OPTIONS,
         canonical_path="/gemeinde/verzeichnis",
+        data_vintage=pv_data.SNAPSHOT_YEAR,
+        plant_match_rate=pv_data.PLANT_MATCH_RATE_PCT,
     )
 
 

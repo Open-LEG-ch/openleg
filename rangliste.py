@@ -10,6 +10,7 @@ import logging
 from flask import Blueprint, Response, render_template, request
 
 import database as db
+import pv_data
 from cantons import SWISS_CANTON_OPTIONS
 from ranking import Ranking
 
@@ -75,6 +76,8 @@ def hub():
             "limit": limit,
             "active_tab": "rangliste",
             "canonical_path": "/rangliste",
+            "data_vintage": pv_data.SNAPSHOT_YEAR,
+            "plant_match_rate": pv_data.PLANT_MATCH_RATE_PCT,
         }
     )
     return render_template("gemeinde/rangliste.html", **context)
@@ -145,16 +148,17 @@ def vergleich():
         municipalities=municipalities,
         site_url=request.url_root.rstrip("/"),
         canonical_path="/rangliste/vergleich",
+        data_vintage=pv_data.SNAPSHOT_YEAR,
+        plant_match_rate=pv_data.PLANT_MATCH_RATE_PCT,
     )
 
 
 @rangliste_bp.route("/rangliste/methodik")
 def methodik():
-    import pv_data
-
     return render_template(
         "gemeinde/methodik.html",
         plant_match_rate=pv_data.PLANT_MATCH_RATE_PCT,
+        data_vintage=pv_data.SNAPSHOT_YEAR,
         site_url=request.url_root.rstrip("/"),
         canonical_path="/rangliste/methodik",
     )
@@ -185,6 +189,7 @@ def movers():
             "latest_year": latest_year,
             "active_tab": "fortschritte",
             "canonical_path": "/rangliste/fortschritte",
+            "plant_match_rate": pv_data.PLANT_MATCH_RATE_PCT,
         }
     )
     return render_template("gemeinde/rangliste_fortschritte.html", **context)

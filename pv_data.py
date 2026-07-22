@@ -23,6 +23,10 @@ PANEL_CSV = DATA_DIR / "municipality_pv_panel_2016_2025.csv"
 # Nationale, deterministische Matching-Quote (246'139 / 320'114 Anlagen).
 PLANT_MATCH_RATE_PCT = 76.89
 
+# Bezugsjahr des aktuellen Snapshots (municipality_pv_current_snapshot.csv,
+# Spalte snapshot_year). Fortschritt nutzt stattdessen das Panel-Jahr.
+SNAPSHOT_YEAR = 2026
+
 
 def parse_snapshot_row(row: Dict) -> Optional[Dict]:
     """Eine Snapshot-CSV-Zeile in ein Profil-Upsert-Dict übersetzen."""

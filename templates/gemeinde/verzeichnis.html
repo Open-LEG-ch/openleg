@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
 
 {% block meta %}
 {{ page_meta(
@@ -11,29 +12,37 @@
 ) }}
 {% endblock %}
 
-{% block body_class %}bg-gray-50 text-gray-900{% endblock %}
-
 {% block content %}
     <div class="max-w-6xl mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-2">Gemeindeverzeichnis</h1>
-        <p class="text-gray-600 mb-6">Stromtarife, Solarpotenzial und mögliche LEG-Ersparnis für Schweizer Gemeinden.</p>
+        <p class="text-ink-muted mb-6">Stromtarife, Solarpotenzial und mögliche LEG-Ersparnis für Schweizer Gemeinden.</p>
+
+        {{ data_provenance(
+          "Stand",
+          data_vintage,
+          ["ElCom Tarifdaten", "BFE Sonnendach", "BFS Regionalporträts", "Energie Reporter (opendata.swiss)"],
+          plant_match_rate,
+        ) }}
 
         <!-- Search + Filter -->
         <div class="flex flex-col md:flex-row gap-4 mb-6">
             <form class="flex-1 flex gap-2" method="get">
-                <input type="text" name="q" value="{{ query }}" placeholder="Gemeinde suchen..."
-                    class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                <label for="verzeichnis-q" class="sr-only">Gemeinde suchen</label>
+                <input id="verzeichnis-q" type="text" name="q" value="{{ query }}" placeholder="Gemeinde suchen..."
+                    class="flex-1 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
                 <input type="hidden" name="kanton" value="{{ kanton }}">
                 <input type="hidden" name="sort" value="{{ sort }}">
                 <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Suchen</button>
             </form>
             <div class="flex gap-2">
-                <select onchange="updateFilter('kanton', this.value)" class="border rounded-lg px-3 py-2 text-sm bg-white">
+                <label for="verzeichnis-kanton" class="sr-only">Kanton filtern</label>
+                <select id="verzeichnis-kanton" onchange="updateFilter('kanton', this.value)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
                     {% for code, label in canton_options %}
                     <option value="{{ code }}" {{ 'selected' if kanton == code }}>{{ label }}</option>
                     {% endfor %}
                 </select>
-                <select onchange="updateFilter('sort', this.value)" class="border rounded-lg px-3 py-2 text-sm bg-white">
+                <label for="verzeichnis-sort" class="sr-only">Sortieren nach</label>
+                <select id="verzeichnis-sort" onchange="updateFilter('sort', this.value)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
                     <option value="pv_score_pct" {{ 'selected' if sort == 'pv_score_pct' }}>Solarnutzung</option>
                     <option value="energy_transition_score" {{ 'selected' if sort == 'energy_transition_score' }}>Energiewende-Score</option>
                     <option value="leg_value_gap_chf" {{ 'selected' if sort == 'leg_value_gap_chf' }}>LEG-Ersparnis</option>
@@ -51,66 +60,74 @@
             </script>
         </div>
 
-        <!-- Results -->
+        <!-- Results: dense grouped index, not a card grid -->
         {% if profiles %}
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for p in profiles %}
-            <a href="/gemeinde/profil/{{ p.bfs_number }}" class="bg-white rounded-xl p-5 shadow-sm border hover:shadow-md hover:border-brand/30 transition-all group">
-                <div class="flex justify-between items-start mb-3">
-                    <div>
-                        <h2 class="font-semibold text-lg group-hover:text-brand">{{ p.name }}</h2>
-                        <p class="text-sm text-ink-muted">
-                            {{ p.kanton }}{% if p.population %} · {{ "{:,}".format(p.population|int).replace(",", "'") }}{% endif %}{% if p.pv_rank %} · Rang {{ p.pv_rank }} CH{% endif %}
-                        </p>
-                    </div>
-                    {% if p.display_score is not none %}
-                    <div class="bg-brand/10 text-brand text-sm font-bold px-2 py-1 rounded" title="Solarnutzung">
-                        {{ "%.0f"|format(p.display_score|float) }}%
-                    </div>
-                    {% endif %}
-                </div>
-                <div class="grid grid-cols-3 gap-2 text-xs">
-                    {% if p.leg_value_gap_chf %}
-                    <div>
-                        <p class="text-ink-muted">LEG-Ersparnis</p>
-                        <p class="font-medium text-green-700">CHF {{ "%.0f"|format(p.leg_value_gap_chf|float) }}</p>
-                    </div>
-                    {% endif %}
-                    {% if p.get('pv_score_pct') is not none %}
-                    <div>
-                        <p class="text-ink-muted">Solarnutzung</p>
-                        <p class="font-medium">{{ "%.0f"|format([p.pv_score_pct|float, 100]|min) }}%</p>
-                    </div>
-                    {% elif p.solar_potential_pct %}
-                    <div>
-                        <p class="text-ink-muted">Solarnutzung</p>
-                        <p class="font-medium">{{ "%.0f"|format(p.solar_potential_pct|float) }}%</p>
-                    </div>
-                    {% endif %}
-                    {% if p.ev_share_pct %}
-                    <div>
-                        <p class="text-ink-muted">E-Mobilität</p>
-                        <p class="font-medium">{{ "%.0f"|format(p.ev_share_pct|float) }}%</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </a>
+        {% set all_cantons = profiles | selectattr('kanton') | map(attribute='kanton') | unique | sort | list %}
+        {% set canton_names = dict(canton_options) %}
+        <p class="text-sm text-ink-muted mb-4">{{ profiles|length }} Gemeinden gefunden.</p>
+
+        <!-- Jump index -->
+        <nav aria-label="Nach Kanton springen" class="flex flex-wrap gap-x-3 gap-y-1 text-xs font-mono border-y border-slate-200 py-3 mb-6">
+            {% for code in all_cantons %}
+            <a href="#kt-{{ code }}" class="text-ink-muted hover:text-brand">{{ code }}</a>
             {% endfor %}
+        </nav>
+
+        <div class="space-y-8">
+        {% for code in all_cantons %}
+        <section id="kt-{{ code }}" class="scroll-mt-20">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-muted border-b border-slate-200 pb-2 mb-2">
+                {{ canton_names.get(code, code) }} <span class="font-mono text-ink-muted">· {{ code }}</span>
+            </h2>
+            <ul class="divide-y divide-slate-100">
+                {% for p in profiles if p.kanton == code %}
+                <li>
+                    <a href="/gemeinde/profil/{{ p.bfs_number }}" class="flex items-center justify-between gap-4 py-2.5 hover:bg-slate-50/60 group">
+                        <span class="min-w-0">
+                            <span class="font-medium group-hover:text-brand">{{ p.name }}</span>
+                            <span class="text-xs text-ink-muted ml-2">
+                                {% if p.population %}{{ "{:,}".format(p.population|int).replace(",", "'") }} Einw.{% endif %}{% if p.pv_rank %} · Rang {{ p.pv_rank }} CH{% endif %}
+                            </span>
+                        </span>
+                        <span class="flex items-center gap-3 shrink-0 font-mono tabular-nums text-sm">
+                            {% if p.leg_value_gap_chf %}
+                            <span class="text-green-700" title="LEG-Ersparnis">CHF {{ "%.0f"|format(p.leg_value_gap_chf|float) }}</span>
+                            {% endif %}
+                            {% if p.display_score is not none %}
+                            <span class="bg-brand/10 text-brand font-bold px-2 py-1 rounded" title="Solarnutzung">
+                                {{ "%.0f"|format(p.display_score|float) }}%
+                            </span>
+                            {% elif p.get('pv_score_pct') is not none %}
+                            <span class="bg-brand/10 text-brand font-bold px-2 py-1 rounded" title="Solarnutzung">
+                                {{ "%.0f"|format([p.pv_score_pct|float, 100]|min) }}%
+                            </span>
+                            {% elif p.solar_potential_pct %}
+                            <span class="bg-brand/10 text-brand font-bold px-2 py-1 rounded" title="Solarnutzung">
+                                {{ "%.0f"|format(p.solar_potential_pct|float) }}%
+                            </span>
+                            {% endif %}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endfor %}
         </div>
-        <p class="text-sm text-ink-muted mt-6">{{ profiles|length }} Gemeinden gefunden. Daten: ElCom, BFE Sonnendach, Energie Reporter (opendata.swiss).</p>
+        <p class="text-sm text-ink-muted mt-6">Daten: ElCom, BFE Sonnendach, Energie Reporter (opendata.swiss).</p>
         {% else %}
-        <div class="bg-white rounded-xl p-8 text-center shadow-sm border">
+        <div class="border border-slate-200 rounded-xl p-8 text-center">
             <p class="text-ink-muted mb-2">Keine Gemeinden gefunden{% if query %} für "{{ query }}"{% endif %}.</p>
             <p class="text-sm text-ink-muted">Daten werden wöchentlich aktualisiert. <a href="/api/v1/docs" class="text-brand hover:underline">API nutzen</a></p>
         </div>
         {% endif %}
 
         <!-- API CTA -->
-        <div class="mt-8 bg-gray-100 rounded-xl p-6 border">
+        <div class="mt-8 border-t border-slate-200 pt-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
                     <h3 class="font-semibold">Diese Daten per API nutzen</h3>
-                    <p class="text-sm text-gray-600">Alle Gemeindedaten sind frei über unsere REST API verfügbar. Kein API-Key nötig.</p>
+                    <p class="text-sm text-ink-muted">Alle Gemeindedaten sind frei über unsere REST API verfügbar. Kein API-Key nötig.</p>
                 </div>
                 <a href="/api/v1/docs" class="bg-brand text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark whitespace-nowrap">API-Dokumentation</a>
             </div>
