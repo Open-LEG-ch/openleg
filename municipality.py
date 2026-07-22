@@ -11,6 +11,7 @@ from flask import Blueprint, request, jsonify, render_template, abort
 
 from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
 import database as db
+import municipality_profile
 from ranking import Ranking
 import security_utils
 
@@ -19,85 +20,7 @@ logger = logging.getLogger(__name__)
 municipality_bp = Blueprint("municipality", __name__, url_prefix="/gemeinde")
 pilot_bp = Blueprint("pilot", __name__, url_prefix="/pilotgemeinde")
 
-PILOT_MUNICIPALITIES = {"baden": 4021}
-
-
-def _format_rp_kwh(value):
-    if value is None:
-        return None
-    try:
-        return f"{float(value):.1f}"
-    except (TypeError, ValueError):
-        return None
-
-
-def _profile_seo(name, h4_tariff):
-    h4_total = _format_rp_kwh(h4_tariff.get("total_rp_kwh")) if h4_tariff else None
-    year = (h4_tariff or {}).get("year")
-    year_part = f" {year}" if year else ""
-
-    if h4_total:
-        title = (
-            f"Stromtarif {name}{year_part}: {h4_total} Rp/kWh, Solar und LEG | OpenLEG"
-        )
-        description = (
-            f"Stromtarif {name}: {h4_total} Rp/kWh im H4-Profil. "
-            "OpenLEG zeigt Solarnutzung und LEG-Potenzial für die Gemeinde."
-        )
-    else:
-        title = f"Stromtarif {name}: Solar und LEG | OpenLEG"
-        description = (
-            f"Stromtarif {name}: OpenLEG zeigt Solarnutzung, "
-            "Energieprofil und LEG-Potenzial für die Gemeinde."
-        )
-
-    return title, description
-
-
-def _profile_jsonld(profile, bfs, h4_tariff, site_url, canonical_url):
-    name = (profile.get("name") or "").strip()
-    kanton = (profile.get("kanton") or "").strip().upper()[:2]
-    graph = [
-        {
-            "@type": "Place",
-            "name": name,
-            "identifier": str(bfs),
-            "containedInPlace": {
-                "@type": "AdministrativeArea",
-                "name": kanton,
-            },
-            "url": canonical_url,
-        },
-        {
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-                {
-                    "@type": "ListItem",
-                    "position": 1,
-                    "name": "Gemeindeverzeichnis",
-                    "item": f"{site_url}/gemeinde/verzeichnis",
-                },
-                {
-                    "@type": "ListItem",
-                    "position": 2,
-                    "name": name,
-                    "item": canonical_url,
-                },
-            ],
-        },
-    ]
-
-    operator_name = str((h4_tariff or {}).get("operator_name") or "").strip()
-    if operator_name:
-        graph.append(
-            {
-                "@type": "Organization",
-                "name": operator_name,
-                "description": "Verteilnetzbetreiber",
-            }
-        )
-
-    return {"@context": "https://schema.org", "@graph": graph}
+PILOT_MUNICIPALITIES = municipality_profile.PILOT_MUNICIPALITIES
 
 
 @municipality_bp.route("/onboarding")
@@ -265,130 +188,25 @@ def api_municipalities():
 @municipality_bp.route("/profil/<int:bfs>")
 def profil(bfs):
     """Public municipality profile page with energy data visualization."""
-    profile = db.get_municipality_profile(bfs)
-    if not profile:
+    ctx = municipality_profile.profile_context(
+        bfs, site_url=request.url_root.rstrip("/")
+    )
+    if ctx is None:
         abort(404)
 
-    tariffs = db.get_elcom_tariffs(bfs, year=2026)
-    solar = db.get_sonnendach_municipal(bfs)
-
-    # Compute value gap if H4 tariff available
-    import public_data
-
-    h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
-    value_gap = public_data.compute_leg_value_gap(h4) if h4 else None
-
-    # Kanonische Solarnutzung: neuer PV-Score, gedeckelt; sonst Altwert
-    solar_score, solar_over_100 = Ranking.capped_score(profile.get("pv_score_pct"))
-    if solar_score is None and profile.get("solar_potential_pct") is not None:
-        solar_score = round(float(profile["solar_potential_pct"]), 1)
-
-    # Liga-Ränge, Verbesserungsziel und Vorbilder nur bei vorhandenem PV-Score
-    league_chips = []
-    improvement = None
-    already_top = False
-    leaders = []
-    if profile.get("pv_score_pct") is not None:
-        ranking = Ranking.load()
-        league_chips = ranking.league_chips(profile)
-        improvement = ranking.improvement_target(profile)
-        size_rank = ranking.size_league_rank(profile)
-        already_top = bool(size_rank and size_rank["quartile"] == Ranking.TOP_QUARTILE)
-        leaders = ranking.leaders(profile.get("kanton"), exclude_bfs=bfs)
-
-    pilot_slug = next(
-        (slug for slug, pilot_bfs in PILOT_MUNICIPALITIES.items() if pilot_bfs == bfs),
-        None,
-    )
-
-    name = (profile.get("name") or "").strip()
-    site_url = request.url_root.rstrip("/")
-    canonical_url = f"{site_url}/gemeinde/profil/{bfs}"
-    seo_title, seo_description = _profile_seo(name, h4)
-    jsonld = _profile_jsonld(profile, bfs, h4, site_url, canonical_url)
-
-    leg_entries = db.list_registry_entries(q=name) if name else []
-
-    return render_template(
-        "gemeinde/profil.html",
-        profile=profile,
-        leg_entries=leg_entries,
-        tariffs=tariffs,
-        solar=solar,
-        value_gap=value_gap,
-        h4_tariff=h4,
-        solar_score=solar_score,
-        solar_over_100=solar_over_100,
-        league_chips=league_chips,
-        improvement=improvement,
-        already_top=already_top,
-        leaders=leaders,
-        site_url=site_url,
-        share_base=site_url,
-        canonical_url=canonical_url,
-        seo_title=seo_title,
-        seo_description=seo_description,
-        jsonld=jsonld,
-        pilot_slug=pilot_slug,
-    )
+    return render_template("gemeinde/profil.html", **ctx)
 
 
 @pilot_bp.route("/<slug>")
 def pilot_case_study(slug):
     """Data-driven trust page for selected pilot municipalities."""
-    bfs = PILOT_MUNICIPALITIES.get(slug)
-    if bfs is None:
-        abort(404)
-
-    profile = db.get_municipality_profile(bfs)
-    if not profile:
-        abort(404)
-
-    # No year filter: get_elcom_tariffs orders year DESC, so the first H4
-    # entry is always the latest available tariff.
-    tariffs = db.get_elcom_tariffs(bfs)
-    solar = db.get_sonnendach_municipal(bfs)
-
-    import public_data
-
-    h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
-    value_gap = public_data.compute_leg_value_gap(h4) if h4 else None
-    place_id = f"#place-{bfs}"
-    json_ld = {
-        "@context": "https://schema.org",
-        "@graph": [
-            {
-                "@type": "Article",
-                "headline": f"Fallstudie: LEG-Potenzial in {profile.get('name')}",
-                "author": {"@type": "Organization", "name": "OpenLEG"},
-                "publisher": {"@type": "Organization", "name": "OpenLEG"},
-                "about": {"@id": place_id},
-            },
-            {
-                "@id": place_id,
-                "@type": "Place",
-                "name": profile.get("name"),
-                "identifier": str(bfs),
-                "containedInPlace": {
-                    "@type": "AdministrativeArea",
-                    "name": profile.get("kanton"),
-                },
-            },
-        ],
-    }
-
-    return render_template(
-        "gemeinde/pilotgemeinde.html",
-        profile=profile,
-        bfs=bfs,
-        slug=slug,
-        h4=h4,
-        solar=solar,
-        value_gap=value_gap,
-        json_ld=json_ld,
-        site_url=request.url_root.rstrip("/"),
-        canonical_path=f"/pilotgemeinde/{slug}",
+    ctx = municipality_profile.pilot_context(
+        slug, site_url=request.url_root.rstrip("/")
     )
+    if ctx is None:
+        abort(404)
+
+    return render_template("gemeinde/pilotgemeinde.html", **ctx)
 
 
 @municipality_bp.route("/verzeichnis")
