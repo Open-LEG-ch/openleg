@@ -13,6 +13,7 @@ pinned here so they cannot silently regress:
 """
 
 import os
+import shutil
 import subprocess
 
 import yaml
@@ -25,6 +26,39 @@ OPERATOR_PATH = os.path.join(PROJECT_ROOT, "scripts", "openleg")
 def _read(path):
     with open(path, encoding="utf-8") as handle:
         return handle.read()
+
+
+def _run_operator_install(tmp_path, env_content):
+    root = tmp_path / "checkout"
+    scripts = root / "scripts"
+    scripts.mkdir(parents=True)
+    operator = scripts / "openleg"
+    shutil.copy(OPERATOR_PATH, operator)
+    operator.chmod(0o755)
+    env_file = root / ".env"
+    env_file.write_text(env_content, encoding="utf-8")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    docker_log = tmp_path / "docker.log"
+    commands = {
+        "docker": f'#!/bin/sh\nprintf "%s\\n" "$*" >> "{docker_log}"\nexit 0\n',
+        "curl": "#!/bin/sh\nexit 0\n",
+        "openssl": "#!/bin/sh\nprintf generated-secret\n",
+    }
+    for name, content in commands.items():
+        path = bin_dir / name
+        path.write_text(content, encoding="utf-8")
+        path.chmod(0o755)
+
+    result = subprocess.run(
+        [str(operator), "install"],
+        env=os.environ | {"PATH": f"{bin_dir}:{os.environ['PATH']}"},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result, env_file.read_text(encoding="utf-8"), docker_log.read_text()
 
 
 class TestInstallerScript:
@@ -50,7 +84,7 @@ class TestInstallerScript:
             "INTERNAL_TOKEN",
             "CRON_SECRET",
         ):
-            assert f"{key}=" in self.lifecycle
+            assert f"add_default {key} " in self.lifecycle
 
     def test_never_overwrites_existing_env(self):
         # An existing .env (with real secrets and DB data behind it) must be
@@ -119,6 +153,42 @@ def test_fresh_directory_bootstraps_checkout_and_delegates(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert marker.read_text(encoding="utf-8") == "install"
+
+
+def test_install_completes_partial_env_without_overwriting_or_duplication(tmp_path):
+    original = "APP_BASE_URL=https://existing.example\nCUSTOM=value\n"
+
+    first, completed, _ = _run_operator_install(tmp_path, original)
+
+    assert first.returncode == 0, first.stderr
+    assert completed.startswith(original)
+    for key in (
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+        "SECRET_KEY",
+        "ADMIN_TOKEN",
+        "INTERNAL_TOKEN",
+        "CRON_SECRET",
+        "APP_BASE_URL",
+        "ALLOWED_HOSTS",
+    ):
+        assert completed.count(f"{key}=") == 1
+
+    second_root = tmp_path / "second"
+    second_root.mkdir()
+    second, rerun, _ = _run_operator_install(second_root, completed)
+
+    assert second.returncode == 0, second.stderr
+    assert rerun == completed
+
+
+def test_install_rejects_empty_required_env_before_compose_up(tmp_path):
+    result, _, docker_log = _run_operator_install(tmp_path, "POSTGRES_PASSWORD=\n")
+
+    assert result.returncode != 0
+    assert "POSTGRES_PASSWORD" in result.stderr
+    assert " up " not in f" {docker_log} "
 
 
 class TestInstallerRoute:

@@ -49,8 +49,8 @@ not an on-ramp. This spec inverts it.
 
 1. **One command installs a working instance.** `curl -fsSL https://openleg.ch/install.sh | sh`
    (with a documented download-and-read-first alternative) brings up a running OpenLEG on
-   the host's own machine. The script is idempotent, generates strong secrets into `.env`
-   only if `.env` is absent, never overwrites existing secrets, waits for `/livez`, and
+   the host's own machine. The script is idempotent, adds missing settings and strong
+   secrets to `.env`, never overwrites existing values, waits for `/livez`, and
    prints the local URL plus the two or three next steps.
 2. **The served installer is the audited installer.** `GET /install.sh` returns the exact
    bytes of `scripts/install.sh` from the repo, so "pipe to shell" can never drift from the
