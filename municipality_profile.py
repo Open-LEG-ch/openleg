@@ -16,9 +16,7 @@ PILOT_MUNICIPALITIES = {"baden": 4021}
 
 def _first_h4_tariff(bfs, year=None):
     tariffs = db.get_elcom_tariffs(bfs, year=year)
-    h4 = next(
-        (t for t in tariffs if str(t.get("category", "")).startswith("H4")), None
-    )
+    h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
     return tariffs, h4
 
 
