@@ -290,7 +290,7 @@ def leg_value_gap():
     num_participants = data.get("num_participants", 10)
     avg_consumption = data.get("avg_consumption_kwh", 4500)
     grid_level = data.get("grid_level", "NE7")
-    grid_reduction = 40.0 if grid_level == "NE7" else 25.0
+    grid_reduction = 40.0 if grid_level == "NE7" else 20.0
 
     tariffs = db.get_elcom_tariffs(int(bfs), year=year)
     h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
