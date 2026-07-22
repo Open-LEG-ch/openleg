@@ -119,6 +119,25 @@ class TestKalkulatorContract:
             "raw browser alerts are dead ends; render inline German errors"
         )
 
+    def test_grid_reduction_uses_statutory_select_not_hidden_constant(self):
+        assert 'id="grid-reduction"' in self.html, (
+            "the LEG grid-fee reduction is statutory (Art. 19h StromVV) and "
+            "depends on Spannungstransformation; expose it as a native "
+            'select id="grid-reduction", not a hidden JS constant'
+        )
+        assert (
+            'value="40"' in self.html and "Ohne Spannungstransformation" in self.html
+        ), "the 40% reduction option (ohne Spannungstransformation) is missing"
+        assert (
+            'value="20"' in self.html and "Mit Spannungstransformation" in self.html
+        ), "the 20% reduction option (mit Spannungstransformation) is missing"
+        assert "0.35" not in self.html, (
+            "the unsupported hardcoded 35% grid reduction constant must be removed"
+        )
+        assert (
+            "document.getElementById('grid-reduction').value" in self.html
+        ), "calculateSavings must read the statutory reduction from the select"
+
 
 # === Server: municipality search parameter ===
 
