@@ -29,7 +29,7 @@
 
 {% block content %}
   <div class="max-w-5xl mx-auto px-4 pt-8">
-    <div class="overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
+    <div class="overflow-hidden rounded-2xl border border-slate-200">
       <img src="/static/images/brand/flow-how-it-works.svg" alt="Von Solar über Zähler zur Stromgemeinschaft" class="w-full aspect-[3/1]" loading="lazy">
     </div>
   </div>
@@ -38,44 +38,28 @@
     <h1 class="text-4xl font-bold mb-4">So funktioniert eine Stromgemeinschaft</h1>
     <p class="text-ink-muted mb-8">Was zuerst passiert, wer was entscheidet und wann der Netzbetreiber ins Spiel kommt.</p>
 
-    <div class="space-y-10">
-      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
-        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">1</div>
+    <div class="border-t border-slate-200">
+      <section data-journey-step="1" class="grid grid-cols-[3rem_1fr] gap-4 border-b border-slate-200 py-8">
+        <div class="font-mono tabular-nums text-ink-muted text-lg">01</div>
         <div>
           <h2 class="text-2xl font-semibold mb-2">Adresse prüfen</h2>
           <p class="text-ink-muted">Geben Sie Ihre Adresse ein. OpenLEG prüft das Solarpotenzial mit BFE Sonnendach und zeigt, ob in Ihrer Nähe schon Nachbarn Interesse angemeldet haben. Die Karte bleibt anonymisiert.</p>
         </div>
       </section>
 
-      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
-        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">2</div>
+      <section data-journey-step="2" class="grid grid-cols-[3rem_1fr] gap-4 border-b border-slate-200 py-8">
+        <div class="font-mono tabular-nums text-ink-muted text-lg">02</div>
         <div>
           <h2 class="text-2xl font-semibold mb-2">Nachbarn finden</h2>
           <p class="text-ink-muted">Registrieren Sie sich mit Ihrer E-Mail. OpenLEG sucht Haushalte im Umkreis von höchstens 150 m. Sobald genug Interesse da ist, lohnt sich der nächste Schritt.</p>
         </div>
       </section>
 
-      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
-        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">3</div>
+      <section data-journey-step="3" class="grid grid-cols-[3rem_1fr] gap-4 border-b border-slate-200 py-8">
+        <div class="font-mono tabular-nums text-ink-muted text-lg">03</div>
         <div>
-          <h2 class="text-2xl font-semibold mb-2">Stromgemeinschaft gründen</h2>
-          <p class="text-ink-muted">Wählen Sie ein Verteilmodell: gleichmässig, proportional oder individuell. OpenLEG erstellt die Gemeinschaftsvereinbarung, Teilnehmerverträge und die Anmeldung beim Netzbetreiber.</p>
-        </div>
-      </section>
-
-      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
-        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">4</div>
-        <div>
-          <h2 class="text-2xl font-semibold mb-2">Netzbetreiber melden</h2>
-          <p class="text-ink-muted">Die LEG-Vertretung meldet die Bildung der LEG dem Verteilnetzbetreiber drei Monate im Voraus auf ein Monatsende. Beantragt die LEG die Installation eines intelligenten Messsystems, installiert der Verteilnetzbetreiber es innert drei Monaten (Art. 8a decies Abs. 6 StromVV). OpenLEG zeigt den Status und erinnert, wenn etwas liegen bleibt.</p>
-        </div>
-      </section>
-
-      <section class="grid md:grid-cols-[3rem_1fr] gap-4">
-        <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">5</div>
-        <div>
-          <h2 class="text-2xl font-semibold mb-2">Strom teilen, Geld sparen</h2>
-          <p class="text-ink-muted">Ihre LEG ist aktiv. Die Mitglieder teilen Solarstrom lokal und rechnen alle 15 Minuten ab. Für Elektrizität, die innerhalb der LEG erzeugt und von Mitgliedern verbraucht wird, beträgt der Abschlag auf dem Netznutzungstarif 40 Prozent ohne Spannungstransformation und 20 Prozent mit Spannungstransformation.</p>
+          <h2 class="text-2xl font-semibold mb-2">Entscheiden und gründen</h2>
+          <p class="text-ink-muted">Vergleichen Sie Tarifdaten und Aufwand. Wenn die Gruppe entscheidet, erstellt OpenLEG Vereinbarung, Verträge und Anmeldung beim Netzbetreiber. Danach teilt die LEG lokalen Solarstrom.</p>
         </div>
       </section>
     </div>

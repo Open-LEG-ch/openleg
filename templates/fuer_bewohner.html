@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
 
 {% block meta %}
 {{ page_meta(
@@ -27,54 +28,49 @@
 {% endblock %}
 
 {% block content %}
-  <div class="max-w-5xl mx-auto px-4 py-12">
-    <header class="max-w-2xl mb-10">
+  <div class="max-w-6xl mx-auto px-4 py-12">
+    <header class="max-w-2xl mb-12">
       <p class="text-sm font-semibold text-brand mb-2">Für Bewohner und Gründer</p>
       <h1 class="text-4xl font-bold tracking-tight mb-3">Ihr Strom. Ihre Nachbarn. Ihre Gemeinschaft.</h1>
-      <p class="text-lg text-ink-muted">Seit dem 1. Januar 2026 dürfen Nachbarn lokal erzeugten Strom gemeinsam nutzen. Eine Lokale Elektrizitätsgemeinschaft (LEG) kann bis 40% Netzgebühren sparen. OpenLEG zeigt, ob Ihr Haus passt, und hilft beim Start.</p>
-      <div class="mt-6 flex flex-col sm:flex-row gap-3">
-        <a href="/#registrieren" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Adresse prüfen</a>
-        <a href="/leg-kalkulator" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Ersparnis berechnen</a>
-      </div>
+      <p class="text-lg text-ink-muted">Prüfen Sie Ihre Adresse, finden Sie interessierte Nachbarn und entscheiden Sie mit verlässlichen Daten.</p>
+      <a href="/#registrieren" class="mt-6 inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Adresse prüfen</a>
     </header>
 
-    <section aria-labelledby="schritte" class="mb-12">
-      <h2 id="schritte" class="text-2xl font-bold mb-5">In drei Schritten zur eigenen LEG</h2>
-      <ol class="grid md:grid-cols-3 gap-4">
-        <li class="rounded-2xl border border-slate-200 bg-white p-5 border-t-4 border-t-brand">
-          <div class="text-sm font-semibold text-brand">Schritt 1</div>
-          <div class="font-semibold text-lg mt-1">Adresse prüfen</div>
-          <p class="text-sm text-ink-muted mt-1">Sie sehen anonymisiert, wer in Ihrer Nähe mitmachen will, und erhalten eine erste Schätzung zum Solarpotenzial. Der <a href="/leg-check" class="text-brand underline">LEG-Check</a> zeigt zudem, was in Ihrer Gemeinde schon läuft.</p>
+    <section aria-labelledby="schritte" class="mb-14">
+      <h2 id="schritte" class="text-2xl font-bold mb-6">Von der Adresse zur Entscheidung</h2>
+      <ol class="border-t border-slate-200">
+        <li data-journey-step="1" class="grid md:grid-cols-2 border-b border-slate-200">
+          <img src="/static/images/landing/urban.webp" alt="Menschen in einem Schweizer Stadtquartier" width="1280" height="854" class="h-full min-h-64 w-full object-cover" loading="lazy">
+          <div class="p-6 md:p-10 self-center">
+            <div class="font-mono tabular-nums text-sm text-ink-muted">01</div>
+            <h3 class="font-semibold text-2xl mt-2">Adresse prüfen</h3>
+            <p class="text-ink-muted mt-3">OpenLEG prüft Solarpotenzial und anonymisierte Anmeldungen in Ihrer Nähe. Sie sehen sofort, ob ein gemeinsamer Start realistisch ist.</p>
+          </div>
         </li>
-        <li class="rounded-2xl border border-slate-200 bg-white p-5 border-t-4 border-t-brand">
-          <div class="text-sm font-semibold text-brand">Schritt 2</div>
-          <div class="font-semibold text-lg mt-1">Nachbarn finden</div>
-          <p class="text-sm text-ink-muted mt-1">Merken Sie sich für die LEG vor. Ihre Daten bleiben bei Ihnen und werden nicht verkauft.</p>
+        <li data-journey-step="2" class="grid md:grid-cols-2 border-b border-slate-200">
+          <div class="p-6 md:p-10 self-center md:order-1">
+            <div class="font-mono tabular-nums text-sm text-ink-muted">02</div>
+            <h3 class="font-semibold text-2xl mt-2">Nachbarn finden</h3>
+            <p class="text-ink-muted mt-3">Merken Sie sich vor. Interessierte Haushalte können sich verbinden, ohne dass OpenLEG Standorte offenlegt oder Daten verkauft.</p>
+          </div>
+          <img src="/static/images/landing/suburban.webp" alt="Nachbarschaft in einer Schweizer Agglomeration" width="1280" height="854" class="h-full min-h-64 w-full object-cover md:order-2" loading="lazy">
         </li>
-        <li class="rounded-2xl border border-slate-200 bg-white p-5 border-t-4 border-t-brand">
-          <div class="text-sm font-semibold text-brand">Schritt 3</div>
-          <div class="font-semibold text-lg mt-1">LEG starten</div>
-          <p class="text-sm text-ink-muted mt-1">OpenLEG unterstützt bei Vereinbarung, Verträgen und Anmeldung beim Netzbetreiber.</p>
+        <li data-journey-step="3" class="grid md:grid-cols-2 border-b border-slate-200">
+          <img src="/static/images/landing/rural.webp" alt="Schweizer Dorf mit lokaler Gemeinschaft" width="1280" height="854" class="h-full min-h-64 w-full object-cover" loading="lazy">
+          <div class="p-6 md:p-10 self-center">
+            <div class="font-mono tabular-nums text-sm text-ink-muted">03</div>
+            <h3 class="font-semibold text-2xl mt-2">Entscheiden</h3>
+            <p class="text-ink-muted mt-3">Vergleichen Sie Tarifdaten, mögliche Einsparungen und Aufwand. Erst dann entscheiden Sie gemeinsam über die Gründung.</p>
+          </div>
         </li>
       </ol>
     </section>
 
-    <section class="grid md:grid-cols-3 gap-6 mb-12">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
-        <h2 class="text-xl font-bold mb-1">Lohnt sich das für Sie?</h2>
-        <p class="text-sm text-ink-muted mb-4 flex-1">Der LEG-Kalkulator schätzt Ihre jährliche Ersparnis aus echten ElCom-Tarifen und Ihrem Verbrauch.</p>
-        <a href="/leg-kalkulator" class="block text-center bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark">Ersparnis berechnen</a>
-      </div>
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
-        <h2 class="text-xl font-bold mb-1">Wie gründet man eine LEG?</h2>
-        <p class="text-sm text-ink-muted mb-4 flex-1">Die Schritt-für-Schritt-Anleitung erklärt Rechtsgrundlage, Rollen und Fristen, ohne Fachjargon.</p>
-        <a href="/leg-gruenden" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">LEG gründen</a>
-      </div>
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
-        <h2 class="text-xl font-bold mb-1">Was bringt eine LEG konkret?</h2>
-        <p class="text-sm text-ink-muted mb-4 flex-1">Die Fallstudie Baden zeigt mit echten ElCom und Sonnendach Daten, was eine LEG bewirkt.</p>
-        <a href="/pilotgemeinde/baden" class="block text-center border border-ink/20 text-ink py-3 rounded-lg font-semibold hover:bg-slate-50">Fallstudie ansehen</a>
-      </div>
+    <section data-evidence-tier="measured" class="border-y border-slate-200 py-8 mb-10">
+      <p class="text-xs uppercase tracking-wide text-ink-muted">Gesetzlich festgelegt</p>
+      <h2 class="text-2xl font-bold mt-1">Weniger Netznutzungsentgelt für lokalen Strom</h2>
+      <p class="mt-4 text-ink-muted max-w-3xl">Für Strom, den eine LEG lokal erzeugt und verbraucht, gilt ein Abschlag von <strong class="font-mono tabular-nums text-ink">40%</strong> ohne Spannungstransformation oder <strong class="font-mono tabular-nums text-ink">20%</strong> mit Spannungstransformation.</p>
+      <a href="#data-provenance" data-source-marker="stromvv" class="inline-block mt-3 font-mono text-xs text-ink-muted hover:text-brand">Quelle: Art. 19h StromVV</a>
     </section>
 
     <section class="bg-brand/5 border border-brand/20 rounded-2xl p-6">
@@ -88,5 +84,13 @@
       </ul>
       <p class="text-sm text-ink-muted mt-4">Alle Funktionen sind kostenlos. Die <a href="/pricing" class="text-brand underline">Preisübersicht</a> zeigt das transparent, ganz ohne Anfrage.</p>
     </section>
+
+    <div class="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+      <a href="/leg-check" class="text-brand underline">Gemeinde prüfen</a>
+      <a href="/leg-kalkulator" class="text-brand underline">Ersparnis berechnen</a>
+      <a href="/leg-gruenden" class="text-brand underline">Gründung verstehen</a>
+      <a href="/pilotgemeinde/baden" class="text-brand underline">Fallstudie Baden</a>
+    </div>
+    <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance("Rechtsstand", "2026", ["Art. 19h StromVV", "ElCom / LINDAS", "BFE Sonnendach"]) }}</div>
   </div>
 {% endblock %}
