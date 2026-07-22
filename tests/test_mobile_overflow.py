@@ -52,3 +52,17 @@ def test_open_source_page_contains_its_grid_and_heading():
     assert sections
     for section in sections:
         assert "[&>div]:min-w-0" in section, section
+
+
+def test_municipality_directory_filters_wrap_on_narrow_viewports():
+    """Measured 410 against a 360 client width before this guard (issue #233).
+
+    The two filter selects sized to their widest canton option and refused to
+    shrink, so the filter row forced the page wider than the viewport.
+    """
+    html = _read("gemeinde/verzeichnis.html")
+    assert '<div class="flex flex-wrap gap-2">' in html
+    for control in ("verzeichnis-kanton", "verzeichnis-sort"):
+        select = re.search(rf'<select id="{control}"[^>]*class="([^"]+)"', html)
+        assert select, control
+        assert "min-w-0" in select.group(1), control
