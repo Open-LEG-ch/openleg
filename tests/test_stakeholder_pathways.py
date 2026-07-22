@@ -242,7 +242,9 @@ def test_leg_gruenden_and_how_it_works_share_leg_facts_partial():
         "nicht steuerpflichtig",
         "unter 10% lohnt sich eine LEG oft nicht",
     ):
-        assert unsupported not in combined, f"unsupported claim still present: {unsupported}"
+        assert unsupported not in combined, (
+            f"unsupported claim still present: {unsupported}"
+        )
 
 
 # --- README stakeholder paths ---

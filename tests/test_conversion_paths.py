@@ -134,9 +134,9 @@ class TestKalkulatorContract:
         assert "0.35" not in self.html, (
             "the unsupported hardcoded 35% grid reduction constant must be removed"
         )
-        assert (
-            "document.getElementById('grid-reduction').value" in self.html
-        ), "calculateSavings must read the statutory reduction from the select"
+        assert "document.getElementById('grid-reduction').value" in self.html, (
+            "calculateSavings must read the statutory reduction from the select"
+        )
 
 
 # === Server: municipality search parameter ===
