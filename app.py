@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # ruff: noqa: E402
 import os
-import time
-import uuid
 import math
 import json
 import hashlib
@@ -63,6 +61,8 @@ from email_utils import send_email
 import data_enricher
 import ml_models
 import security_utils
+import registration
+from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 
 # --- PostgreSQL Database ---
 import database as db
@@ -230,33 +230,6 @@ def log_security_event(event_type, details, level="INFO"):
 def apply_basic_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
-
-
-# --- Consent Helpers ---
-CONSENT_VERSION = "2026-01-01"
-
-
-def _coerce_bool(value):
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return False
-    if isinstance(value, (int, float)):
-        return value != 0
-    if isinstance(value, str):
-        return value.strip().lower() in ("1", "true", "yes", "ja", "on")
-    return False
-
-
-def parse_consents(raw_consents):
-    consents = raw_consents or {}
-    return {
-        "share_with_neighbors": _coerce_bool(consents.get("share_with_neighbors")),
-        "share_with_utility": _coerce_bool(consents.get("share_with_utility")),
-        "updates_opt_in": _coerce_bool(consents.get("updates_opt_in")),
-        "consent_version": consents.get("consent_version") or CONSENT_VERSION,
-        "consent_timestamp": time.time(),
-    }
 
 
 # --- Anonymity ---
@@ -984,226 +957,44 @@ def api_check_potential():
 
 
 # --- Registration ---
-@app.route("/api/register_anonymous", methods=["POST"])
-@limiter.limit("5 per minute") if limiter else lambda f: f
-def api_register_anonymous():
+def _registration_response(user_type):
     if not request.json:
         return jsonify({"error": "Keine Daten empfangen."}), 400
     is_valid_size, size_error = security_utils.check_request_size(request)
     if not is_valid_size:
         return jsonify({"error": size_error}), 413
 
-    phone = (request.json.get("phone") or "").strip()
-    email = (request.json.get("email") or "").strip()
-    profile = request.json.get("profile")
-    referral_code = (request.json.get("referral_code") or "").strip()
-
-    referrer_id = None
-    if referral_code:
-        referrer = db.get_building_by_referral_code(referral_code)
-        if referrer:
-            referrer_id = referrer.get("building_id")
-
-    is_valid_email, normalized_email, email_error = (
-        security_utils.validate_email_address(email)
-    )
-    if not is_valid_email:
-        return jsonify({"error": email_error}), 400
-    email = normalized_email
-
-    if phone:
-        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(
-            phone
-        )
-        if not is_valid_phone:
-            return jsonify({"error": phone_error}), 400
-        phone = normalized_phone
-
-    if not profile:
-        return jsonify({"error": "Profildaten fehlen."}), 400
-    building_id = profile.get("building_id")
-    is_valid_id, id_error = security_utils.validate_building_id(building_id)
-    if not is_valid_id:
-        return jsonify({"error": id_error}), 400
-
-    lat = profile.get("lat")
-    lon = profile.get("lon")
-    is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
-    if not is_valid_coords:
-        return jsonify({"error": coords_error}), 400
-
-    consents = parse_consents(request.json.get("consents"))
-    if not consents.get("share_with_neighbors") or not consents.get(
-        "share_with_utility"
-    ):
-        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe zu."}), 400
-
     city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
-
-    # Save to PostgreSQL
-    db.save_building(
-        building_id=building_id,
-        email=email,
-        profile=profile,
-        consents=consents,
-        user_type="anonymous",
-        phone=phone,
-        referrer_id=referrer_id,
-        city_id=city_id,
+    deps = registration.RegistrationDeps(
+        db=db,
+        security=security_utils,
+        app_base_url=APP_BASE_URL,
+        thread=threading.Thread,
+        send_confirmation_email=send_confirmation_email,
+        run_full_ml_task=run_full_ml_task,
+        schedule_sequence_for_user=email_automation.schedule_sequence_for_user,
+        find_provisional_matches=find_provisional_matches,
+        collect_building_locations=collect_building_locations,
     )
-
-    # Create unsubscribe token
-    unsub_token = str(uuid.uuid4())
-    db.save_token(unsub_token, building_id, "unsubscribe")
-    unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
-
-    # Background tasks
-    threading.Thread(
-        target=send_confirmation_email,
-        args=(email, unsubscribe_url, building_id, profile.get("address", "")),
-        daemon=True,
-    ).start()
-    threading.Thread(
-        target=run_full_ml_task, args=(building_id, city_id), daemon=True
-    ).start()
-    threading.Thread(
-        target=email_automation.schedule_sequence_for_user,
-        args=(building_id, email),
-        daemon=True,
-    ).start()
-
-    db.track_event(
-        "registration", building_id, {"type": "anonymous", "city_id": city_id}
-    )
-
-    # Build response
-    cluster_info = find_provisional_matches(profile)
-    locations = collect_building_locations(
-        city_id=city_id, exclude_building_id=building_id
-    )
-    referral_link = None
-    ref_code = db.get_referral_code(building_id)
-    if ref_code:
-        referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
-
-    payload = {
-        "buildings": locations,
-        "match_found": bool(cluster_info),
-        "verification_email_sent": True,
-        "referral_link": referral_link,
-    }
-    if cluster_info:
-        payload["cluster_info"] = cluster_info
+    try:
+        payload = registration.register(
+            request.json, city_id=city_id, user_type=user_type, deps=deps
+        )
+    except registration.RegistrationError as error:
+        return jsonify({"error": error.message}), error.status
     return jsonify(payload)
+
+
+@app.route("/api/register_anonymous", methods=["POST"])
+@limiter.limit("5 per minute") if limiter else lambda f: f
+def api_register_anonymous():
+    return _registration_response("anonymous")
 
 
 @app.route("/api/register_full", methods=["POST"])
 @limiter.limit("5 per minute") if limiter else lambda f: f
 def api_register_full():
-    if not request.json:
-        return jsonify({"error": "Keine Daten empfangen."}), 400
-    is_valid_size, size_error = security_utils.check_request_size(request)
-    if not is_valid_size:
-        return jsonify({"error": size_error}), 413
-
-    profile = request.json.get("profile")
-    email = (request.json.get("email") or "").strip()
-    phone = (request.json.get("phone") or "").strip()
-    referral_code = (request.json.get("referral_code") or "").strip()
-
-    referrer_id = None
-    if referral_code:
-        referrer = db.get_building_by_referral_code(referral_code)
-        if referrer:
-            referrer_id = referrer.get("building_id")
-
-    is_valid_email, normalized_email, email_error = (
-        security_utils.validate_email_address(email)
-    )
-    if not is_valid_email:
-        return jsonify({"error": email_error}), 400
-    email = normalized_email
-
-    if phone:
-        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(
-            phone
-        )
-        if not is_valid_phone:
-            return jsonify({"error": phone_error}), 400
-        phone = normalized_phone
-
-    if not profile:
-        return jsonify({"error": "Profildaten fehlen."}), 400
-    building_id = profile.get("building_id")
-    is_valid_id, id_error = security_utils.validate_building_id(building_id)
-    if not is_valid_id:
-        return jsonify({"error": id_error}), 400
-
-    lat = profile.get("lat")
-    lon = profile.get("lon")
-    is_valid_coords, coords_error = security_utils.validate_coordinates(lat, lon)
-    if not is_valid_coords:
-        return jsonify({"error": coords_error}), 400
-
-    consents = parse_consents(request.json.get("consents"))
-    if not consents.get("share_with_neighbors") or not consents.get(
-        "share_with_utility"
-    ):
-        return jsonify({"error": "Bitte stimmen Sie der Datenweitergabe zu."}), 400
-
-    city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
-
-    db.save_building(
-        building_id=building_id,
-        email=email,
-        profile=profile,
-        consents=consents,
-        user_type="registered",
-        phone=phone,
-        referrer_id=referrer_id,
-        city_id=city_id,
-    )
-
-    unsub_token = str(uuid.uuid4())
-    db.save_token(unsub_token, building_id, "unsubscribe")
-    unsubscribe_url = f"{APP_BASE_URL}/unsubscribe/{unsub_token}"
-
-    threading.Thread(
-        target=send_confirmation_email,
-        args=(email, unsubscribe_url, building_id, profile.get("address", "")),
-        daemon=True,
-    ).start()
-    threading.Thread(
-        target=run_full_ml_task, args=(building_id, city_id), daemon=True
-    ).start()
-    threading.Thread(
-        target=email_automation.schedule_sequence_for_user,
-        args=(building_id, email),
-        daemon=True,
-    ).start()
-
-    db.track_event(
-        "registration", building_id, {"type": "registered", "city_id": city_id}
-    )
-
-    cluster_info = find_provisional_matches(profile)
-    locations = collect_building_locations(
-        city_id=city_id, exclude_building_id=building_id
-    )
-    referral_link = None
-    ref_code = db.get_referral_code(building_id)
-    if ref_code:
-        referral_link = f"{APP_BASE_URL}/?ref={ref_code}"
-
-    payload = {
-        "buildings": locations,
-        "match_found": bool(cluster_info),
-        "verification_email_sent": True,
-        "referral_link": referral_link,
-    }
-    if cluster_info:
-        payload["cluster_info"] = cluster_info
-    return jsonify(payload)
+    return _registration_response("registered")
 
 
 # --- Meter Data Upload ---
