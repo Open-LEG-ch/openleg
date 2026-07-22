@@ -196,3 +196,56 @@ def test_fuer_bewohner_links_to_case_study(full_app_module):
     assert resp.status_code == 200
     html = resp.data.decode("utf-8", errors="ignore")
     assert "/pilotgemeinde/baden" in html
+
+
+def test_pilot_route_delegates_to_municipality_profile_module(monkeypatch):
+    """Route parses request, delegates assembly to municipality_profile, renders (#209)."""
+    client = _make_client()
+    fake_ctx = {
+        "profile": dict(BADEN_PROFILE),
+        "bfs": 4021,
+        "slug": "baden",
+        "h4": dict(BADEN_H4_TARIFF),
+        "solar": dict(BADEN_SONNENDACH),
+        "value_gap": {"annual_savings_chf": 171.0},
+        "json_ld": {"@context": "https://schema.org"},
+        "site_url": "http://openleg.ch",
+        "canonical_path": "/pilotgemeinde/baden",
+    }
+    calls = []
+
+    def _fake_pilot_context(slug, *, site_url):
+        calls.append({"slug": slug, "site_url": site_url})
+        return fake_ctx
+
+    monkeypatch.setattr(
+        municipality_module.municipality_profile, "pilot_context", _fake_pilot_context
+    )
+
+    rendered = {}
+
+    def _fake_render_template(template_name, **context):
+        rendered["template"] = template_name
+        rendered["context"] = context
+        return "ok"
+
+    monkeypatch.setattr(municipality_module, "render_template", _fake_render_template)
+
+    resp = client.get("/pilotgemeinde/baden", headers={"Host": "openleg.ch"})
+
+    assert resp.status_code == 200
+    assert calls == [{"slug": "baden", "site_url": "http://openleg.ch"}]
+    assert rendered["template"] == "gemeinde/pilotgemeinde.html"
+
+
+def test_pilot_route_returns_404_when_context_is_none(monkeypatch):
+    client = _make_client()
+    monkeypatch.setattr(
+        municipality_module.municipality_profile,
+        "pilot_context",
+        lambda slug, *, site_url: None,
+    )
+
+    resp = client.get("/pilotgemeinde/atlantis")
+
+    assert resp.status_code == 404
