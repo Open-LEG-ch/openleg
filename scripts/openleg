@@ -23,21 +23,32 @@ case "${1:-}" in
     fi
 
     if [[ -f .env ]]; then
-      echo ".env already exists; keeping the existing secrets."
+      echo ".env already exists; adding only missing settings."
     else
       echo "Creating .env with fresh secrets..."
       umask 077
-      printf '%s\n' \
-        "POSTGRES_USER=openleg" \
-        "POSTGRES_PASSWORD=$(openssl rand -hex 24)" \
-        "POSTGRES_DB=openleg" \
-        "SECRET_KEY=$(openssl rand -hex 32)" \
-        "ADMIN_TOKEN=$(openssl rand -hex 32)" \
-        "INTERNAL_TOKEN=$(openssl rand -hex 32)" \
-        "CRON_SECRET=$(openssl rand -hex 32)" \
-        "APP_BASE_URL=http://localhost:$OPENLEG_HTTP_PORT" \
-        "ALLOWED_HOSTS=localhost,127.0.0.1" > .env
+      touch .env
     fi
+
+    add_default() {
+      grep -q "^$1=" .env || printf '%s=%s\n' "$1" "$2" >> .env
+    }
+    add_default POSTGRES_USER openleg
+    add_default POSTGRES_PASSWORD "$(openssl rand -hex 24)"
+    add_default POSTGRES_DB openleg
+    add_default SECRET_KEY "$(openssl rand -hex 32)"
+    add_default ADMIN_TOKEN "$(openssl rand -hex 32)"
+    add_default INTERNAL_TOKEN "$(openssl rand -hex 32)"
+    add_default CRON_SECRET "$(openssl rand -hex 32)"
+    add_default APP_BASE_URL "http://localhost:$OPENLEG_HTTP_PORT"
+    add_default ALLOWED_HOSTS localhost,127.0.0.1
+
+    for key in POSTGRES_PASSWORD SECRET_KEY ADMIN_TOKEN INTERNAL_TOKEN CRON_SECRET; do
+      if ! grep -Eq "^$key=.+" .env; then
+        echo "Error: $key exists in .env but is empty." >&2
+        exit 1
+      fi
+    done
 
     echo "Starting OpenLEG..."
     $COMPOSE up -d --build flask postgres redis
