@@ -17,7 +17,7 @@ def _read(*parts):
 
 
 def test_profil_route_loads_registry_entries():
-    source = _read("municipality.py")
+    source = _read("municipality_profile.py")
     assert "list_registry_entries" in source
 
 
