@@ -26,9 +26,13 @@ def test_homepage_surfaces_one_line_installer():
 def test_install_console_explains_effects_and_supports_copy():
     partial = _html("partials/install_console.html")
     assert "OpenLEG in einer Zeile selbst betreiben" in partial
-    assert "Installiere OpenLEG direkt, wenn du weisst, was du tust." in partial
+    assert "Installieren Sie OpenLEG direkt, wenn Sie wissen, was Sie tun." in partial
+    assert "Ihre Messdaten bleiben in Ihrer lokalen PostgreSQL-Datenbank." in partial
     assert "erstellt lokale Zugangsschlüssel" in partial
     assert "erstellt eine lokale .env-Datei" not in partial
+    assert " du " not in partial
+    assert "Deine" not in partial
+    assert "deiner" not in partial
     assert partial.count("data-install-tab") == 3
     assert partial.count("data-copy-command") == 3
     assert "Befehl kopieren" in partial
