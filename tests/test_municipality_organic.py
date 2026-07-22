@@ -527,6 +527,41 @@ def test_profil_jsonld_names_grid_operator(monkeypatch):
     assert operator["name"] == "Regionalwerke AG Baden"
 
 
+def test_profil_orders_evidence_and_sources_every_figure(monkeypatch):
+    client = _make_client()
+    _patch_profil_with_tariff(monkeypatch)
+    monkeypatch.setattr(
+        municipality_module.db,
+        "get_sonnendach_municipal",
+        lambda _bfs: {
+            "total_roof_area_m2": 900000.0,
+            "suitable_roof_area_m2": 540000.0,
+            "potential_kwp": 81000.0,
+            "utilization_pct": 12.4,
+        },
+    )
+
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8")
+
+    tiers = [
+        html.index('data-evidence-tier="measured"'),
+        html.index('data-evidence-tier="derived"'),
+        html.index('data-evidence-tier="modelled"'),
+    ]
+    assert tiers == sorted(tiers)
+    assert html.count("data-source-marker=") >= 8
+    assert html.count('href="#data-provenance"') >= 8
+    assert 'id="data-provenance"' in html
+    assert 'data-testid="data-provenance"' in html
+    assert 'class="ol-fillbar-track' in html
+    assert 'class="ol-fillbar"' in html
+    assert "Modellierter Richtwert" in html
+
+    nodes = _jsonld_graph(html)
+    assert nodes["Place"]["identifier"] == "4021"
+    assert nodes["Organization"]["name"] == "Regionalwerke AG Baden"
+
+
 def test_profil_jsonld_omits_operator_without_tariff(monkeypatch):
     client = _make_client()
     _patch_profil_deps(monkeypatch, dict(BADEN_PROFILE))
