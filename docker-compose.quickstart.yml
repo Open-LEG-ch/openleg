@@ -2,3 +2,5 @@ services:
   flask:
     ports:
       - "${OPENLEG_HTTP_PORT:-8080}:5000"
+    environment:
+      APP_BASE_URL: "http://localhost:${OPENLEG_HTTP_PORT:-8080}"

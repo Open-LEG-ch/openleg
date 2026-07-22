@@ -98,6 +98,7 @@ class TestInstallerScript:
 
     def test_waits_for_health(self):
         assert "/livez" in self.lifecycle
+        assert "curl -fsSL" in self.lifecycle
 
     def test_no_phone_home(self):
         # A self-hosted box sends us nothing. No callback to our domain, no
@@ -237,3 +238,9 @@ class TestQuickstartComposeOverride:
         assert "5000" in joined
         assert "OPENLEG_HTTP_PORT" in joined
         assert "8080" in joined
+
+    def test_uses_the_printed_local_http_url(self):
+        environment = self.config["services"]["flask"]["environment"]
+        assert environment["APP_BASE_URL"] == (
+            "http://localhost:${OPENLEG_HTTP_PORT:-8080}"
+        )
