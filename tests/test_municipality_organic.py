@@ -541,27 +541,7 @@ def test_profil_jsonld_omits_operator_without_tariff(monkeypatch):
 def test_profil_route_delegates_to_municipality_profile_module(monkeypatch):
     """Route parses request, delegates assembly to municipality_profile, renders (#209)."""
     client = _make_client()
-    fake_ctx = {
-        "profile": {"bfs_number": 4021, "name": "Baden"},
-        "leg_entries": [],
-        "tariffs": [],
-        "solar": None,
-        "value_gap": None,
-        "h4_tariff": None,
-        "solar_score": None,
-        "solar_over_100": False,
-        "league_chips": [],
-        "improvement": None,
-        "already_top": False,
-        "leaders": [],
-        "site_url": "http://openleg.ch",
-        "share_base": "http://openleg.ch",
-        "canonical_url": "http://openleg.ch/gemeinde/profil/4021",
-        "seo_title": "t",
-        "seo_description": "d",
-        "jsonld": {},
-        "pilot_slug": "baden",
-    }
+    fake_ctx = {"sentinel": "profile-context"}
     calls = []
 
     def _fake_profile_context(bfs, *, site_url):
@@ -588,4 +568,4 @@ def test_profil_route_delegates_to_municipality_profile_module(monkeypatch):
     assert resp.status_code == 200
     assert calls == [{"bfs": 4021, "site_url": "http://openleg.ch"}]
     assert rendered["template"] == "gemeinde/profil.html"
-    assert rendered["context"]["profile"]["name"] == "Baden"
+    assert rendered["context"] == fake_ctx

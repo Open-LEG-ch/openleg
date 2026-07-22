@@ -101,6 +101,8 @@ class TestLegPotentialEndpoint:
             "annual_savings_chf": 171.0,
             "monthly_savings_chf": 14.25,
             "savings_pct": 13.8,
+            "grid_reduction_pct": 40.0,
+            "assumed_consumption_kwh": 4500,
         }
         resp = client.get("/api/v1/municipalities/261/leg-potential")
         assert resp.status_code == 200
@@ -113,6 +115,8 @@ class TestLegPotentialEndpoint:
             "annual_savings_chf",
             "monthly_savings_chf",
             "savings_pct",
+            "grid_reduction_pct",
+            "assumed_consumption_kwh",
             "num_participants",
             "total_community_savings_chf",
             "avg_consumption_kwh",
@@ -278,6 +282,16 @@ class TestLegToolkitEndpoints:
     def test_value_gap_no_bfs(self, mock_db, client):
         resp = client.post("/api/v1/leg/value-gap", json={})
         assert resp.status_code == 400
+
+    @patch("api_public.municipality_profile")
+    def test_value_gap_post_no_h4(self, mock_mp, client):
+        mock_mp.value_gap.return_value = None
+        resp = client.post(
+            "/api/v1/leg/value-gap",
+            json={"bfs_number": 261},
+        )
+        assert resp.status_code == 404
+        assert resp.get_json() == {"error": "No H4 tariff found"}
 
     @patch("api_public.db")
     def test_financial_model(self, mock_db, client):

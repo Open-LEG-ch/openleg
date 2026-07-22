@@ -85,7 +85,7 @@ def test_profile_context_key_set_matches_existing_template_contract(monkeypatch)
     mp = _load_module()
     _patch_profile_deps(monkeypatch, mp, PROFILE, [H4_TARIFF])
 
-    ctx = mp.profile_context(4021, site_url="http://openleg.ch")
+    ctx = mp.profile_context(4021, site_url="http://openleg.ch/")
 
     assert ctx is not None
     assert len(PROFILE_CONTEXT_KEYS) == 19
@@ -93,7 +93,7 @@ def test_profile_context_key_set_matches_existing_template_contract(monkeypatch)
     assert ctx["profile"] == PROFILE
     assert ctx["h4_tariff"] == H4_TARIFF
     assert ctx["pilot_slug"] == "baden"
-    assert ctx["site_url"] == "http://openleg.ch"
+    assert ctx["site_url"] == "http://openleg.ch/"
     assert ctx["canonical_url"] == "http://openleg.ch/gemeinde/profil/4021"
 
 

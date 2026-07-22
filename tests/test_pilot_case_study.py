@@ -201,17 +201,7 @@ def test_fuer_bewohner_links_to_case_study(full_app_module):
 def test_pilot_route_delegates_to_municipality_profile_module(monkeypatch):
     """Route parses request, delegates assembly to municipality_profile, renders (#209)."""
     client = _make_client()
-    fake_ctx = {
-        "profile": dict(BADEN_PROFILE),
-        "bfs": 4021,
-        "slug": "baden",
-        "h4": dict(BADEN_H4_TARIFF),
-        "solar": dict(BADEN_SONNENDACH),
-        "value_gap": {"annual_savings_chf": 171.0},
-        "json_ld": {"@context": "https://schema.org"},
-        "site_url": "http://openleg.ch",
-        "canonical_path": "/pilotgemeinde/baden",
-    }
+    fake_ctx = {"sentinel": "pilot-context"}
     calls = []
 
     def _fake_pilot_context(slug, *, site_url):
@@ -236,6 +226,7 @@ def test_pilot_route_delegates_to_municipality_profile_module(monkeypatch):
     assert resp.status_code == 200
     assert calls == [{"slug": "baden", "site_url": "http://openleg.ch"}]
     assert rendered["template"] == "gemeinde/pilotgemeinde.html"
+    assert rendered["context"] == fake_ctx
 
 
 def test_pilot_route_returns_404_when_context_is_none(monkeypatch):
