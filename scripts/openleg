@@ -54,7 +54,7 @@ case "${1:-}" in
     $COMPOSE up -d --build flask postgres redis
     echo "Waiting for the app to become healthy..."
     for attempt in $(seq 1 60); do
-      if curl -fsS "http://localhost:$OPENLEG_HTTP_PORT/livez" >/dev/null; then
+      if curl -fsSL "http://localhost:$OPENLEG_HTTP_PORT/livez" >/dev/null; then
         echo "OpenLEG is ready at http://localhost:$OPENLEG_HTTP_PORT"
         echo "Run 'scripts/openleg logs' to view logs."
         exit 0
