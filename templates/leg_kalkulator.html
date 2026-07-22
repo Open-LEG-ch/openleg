@@ -146,6 +146,19 @@
             Das hängt davon ab, wann die Solaranlage produziert und wann Sie Strom brauchen. Typisch sind 40 bis 80%.
           </p>
         </div>
+        <div class="mt-6">
+          <label for="grid-reduction" class="block text-sm font-semibold mb-2">
+            Netznutzungsrabatt
+          </label>
+          <select id="grid-reduction" class="w-full border border-slate-300 rounded-lg px-4 py-2">
+            <option value="40" selected>Ohne Spannungstransformation</option>
+            <option value="20">Mit Spannungstransformation</option>
+          </select>
+          <p class="text-sm text-ink-muted mt-2">
+            Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen Rabatt von 40%
+            auf das Netznutzungsentgelt ohne Spannungstransformation, 20% mit Spannungstransformation.
+          </p>
+        </div>
       </section>
 
       <!-- Calculate Button -->
@@ -251,8 +264,8 @@
           für Ihre Gemeinde. Die Berechnung berücksichtigt Energiekosten, Netznutzungsgebühren und Abgaben.
         </p>
         <p>
-          <strong>LEG-Rabatt:</strong> Bei lokal verbrauchtem Strom entfallen die Netznutzungsgebühren für die übergeordneten Netzebenen. 
-          Typische Reduktion: 20 bis 40% auf den Netznutzungsentgelten.
+          <strong>LEG-Rabatt:</strong> Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom
+          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne Spannungstransformation, 20% mit Spannungstransformation.
         </p>
         <p>
           <strong>Annahmen:</strong> Der Rechner geht davon aus, dass der lokale Solarstrom zum gleichen Preis wie EVU-Strom verrechnet wird. 
@@ -272,8 +285,8 @@
         <details class="bg-white rounded-lg shadow-md p-6">
           <summary class="font-bold text-ink cursor-pointer">Warum spare ich mit einer LEG Geld?</summary>
           <p class="mt-3 text-ink-muted">
-            Bei lokal verbrauchtem Strom entfallen die Netznutzungsgebühren für die übergeordneten Netzebenen (Swissgrid, regionale Netze). 
-            Sie zahlen nur für das lokale Verteilnetz. Das spart typischerweise 20 bis 40% auf die Netzkosten.
+            Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen gesetzlichen Rabatt
+            auf das Netznutzungsentgelt: 40% ohne Spannungstransformation, 20% mit Spannungstransformation.
           </p>
         </details>
         <details class="bg-white rounded-lg shadow-md p-6">
@@ -436,7 +449,7 @@
           const totalWithout = energyWithout + gridWithout + feesWithout;
 
           // With LEG (reduced grid fees for local consumption)
-          const gridReduction = 0.35; // 35% reduction on local portion
+          const gridReduction = parseFloat(document.getElementById('grid-reduction').value) / 100;
           const energyWith = consumption * energyPrice / 100; // Same energy price
           const gridWith = (gridKwh * gridPrice / 100) + (localKwh * gridPrice * (1 - gridReduction) / 100);
           const feesWith = consumption * feesAndTaxes / 100; // Same fees
