@@ -67,7 +67,7 @@ import security_utils
 # --- PostgreSQL Database ---
 import database as db
 import dashboard as dashboard_module
-import pv_ranking
+from ranking import Ranking
 
 USE_POSTGRES = db.is_db_available()
 if not USE_POSTGRES:
@@ -459,7 +459,7 @@ def _ranking_extremes(n=3):
     Gibt (vorbilder, chancen, total) zurück. Leer, wenn zu wenige Daten.
     """
     try:
-        ranked = pv_ranking.assign_ranks(db.get_pv_profiles())
+        ranked = Ranking.load().national()
     except Exception:
         logger.exception("ranking preview failed")
         return [], [], 0
@@ -469,13 +469,12 @@ def _ranking_extremes(n=3):
         return [], [], total
 
     def shape(row):
-        score, _ = pv_ranking.capped_score(row.get("pv_score_pct"))
         return {
             "rank": row.get("rank"),
             "name": row.get("name"),
             "kanton": row.get("kanton"),
             "bfs_number": row.get("bfs_number"),
-            "score": score,
+            "score": row.get("display_score"),
         }
 
     best = [shape(r) for r in scored[:n]]

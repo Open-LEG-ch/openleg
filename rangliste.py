@@ -10,7 +10,6 @@ import logging
 from flask import Blueprint, Response, render_template, request
 
 import database as db
-import pv_ranking
 from cantons import SWISS_CANTON_OPTIONS
 from ranking import Ranking
 
@@ -121,7 +120,7 @@ def vergleich():
         profile = db.get_municipality_profile(bfs)
         if not profile:
             return None
-        score, over_100 = pv_ranking.capped_score(profile.get("pv_score_pct"))
+        score, over_100 = ranking.capped_score(profile.get("pv_score_pct"))
         return {
             **profile,
             "display_score": score,
@@ -172,9 +171,8 @@ def movers():
         limit = 100
 
     ranking = Ranking([])
-    rows = ranking.movers()
-    league = pv_ranking.filter_league(
-        rows, kanton=kanton.upper() if kanton else None, size=size, density=density
+    league = ranking.movers(
+        kanton=kanton.upper() if kanton else None, size=size, density=density
     )
     latest_year = league[0]["year"] if league else None
 
