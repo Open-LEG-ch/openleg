@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block content %}
-    <main class="max-w-6xl mx-auto px-4 py-10">
+    <div class="max-w-6xl mx-auto px-4 py-10">
         <section class="mb-10">
             <p class="text-sm font-semibold text-brand mb-3">Pilotgemeinde</p>
             <h1 class="text-4xl font-bold text-ink max-w-3xl">Fallstudie: Was eine LEG in {{ profile.name }} bringt</h1>
@@ -128,5 +128,5 @@
         </section>
 
         <p class="text-xs text-ink-muted">Datenquellen: ElCom Tarifdaten{% if h4 and h4.year %} {{ h4.year }}{% endif %}, BFE Sonnendach.</p>
-    </main>
+    </div>
 {% endblock %}
