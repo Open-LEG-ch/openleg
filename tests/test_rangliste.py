@@ -139,8 +139,8 @@ def _make_movers_client(monkeypatch, rows=MOVERS):
     mock_ranking = MagicMock()
     instance = mock_ranking.return_value
     instance.movers.side_effect = (
-        lambda mover_rows=None, kanton=None, size=None, density=None: pv_ranking.filter_league(
-            rows, kanton=kanton, size=size, density=density
+        lambda mover_rows=None, kanton=None, size=None, density=None: (
+            pv_ranking.filter_league(rows, kanton=kanton, size=size, density=density)
         )
     )
     monkeypatch.setattr(rangliste_module, "Ranking", mock_ranking)

@@ -308,8 +308,18 @@ class TestRankingMovers:
 
     def test_movers_applies_kanton_filter(self):
         rows = [
-            {"bfs_number": 1, "kanton": "AG", "population": 3000, "density_per_km2": 200},
-            {"bfs_number": 2, "kanton": "ZH", "population": 30000, "density_per_km2": 1500},
+            {
+                "bfs_number": 1,
+                "kanton": "AG",
+                "population": 3000,
+                "density_per_km2": 200,
+            },
+            {
+                "bfs_number": 2,
+                "kanton": "ZH",
+                "population": 30000,
+                "density_per_km2": 1500,
+            },
         ]
         r = ranking.Ranking([])
         result = r.movers(mover_rows=rows, kanton="ZH")
@@ -317,8 +327,18 @@ class TestRankingMovers:
 
     def test_movers_applies_size_and_density_filters(self):
         rows = [
-            {"bfs_number": 1, "kanton": "AG", "population": 3000, "density_per_km2": 200},
-            {"bfs_number": 2, "kanton": "ZH", "population": 30000, "density_per_km2": 1500},
+            {
+                "bfs_number": 1,
+                "kanton": "AG",
+                "population": 3000,
+                "density_per_km2": 200,
+            },
+            {
+                "bfs_number": 2,
+                "kanton": "ZH",
+                "population": 30000,
+                "density_per_km2": 1500,
+            },
         ]
         r = ranking.Ranking([])
         assert r.movers(mover_rows=rows, size="large") == [rows[1]]
@@ -326,8 +346,18 @@ class TestRankingMovers:
 
     def test_movers_filters_store_backed_rows_too(self):
         rows = [
-            {"bfs_number": 1, "kanton": "AG", "population": 3000, "density_per_km2": 200},
-            {"bfs_number": 2, "kanton": "ZH", "population": 30000, "density_per_km2": 1500},
+            {
+                "bfs_number": 1,
+                "kanton": "AG",
+                "population": 3000,
+                "density_per_km2": 200,
+            },
+            {
+                "bfs_number": 2,
+                "kanton": "ZH",
+                "population": 30000,
+                "density_per_km2": 1500,
+            },
         ]
         with patch.object(store_ranking, "get_pv_movers") as mock_get:
             mock_get.return_value = rows
