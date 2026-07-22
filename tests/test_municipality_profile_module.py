@@ -93,7 +93,7 @@ def test_profile_context_key_set_matches_existing_template_contract(monkeypatch)
     assert ctx["profile"] == PROFILE
     assert ctx["h4_tariff"] == H4_TARIFF
     assert ctx["pilot_slug"] == "baden"
-    assert ctx["site_url"] == "http://openleg.ch/"
+    assert ctx["site_url"] == "http://openleg.ch"
     assert ctx["canonical_url"] == "http://openleg.ch/gemeinde/profil/4021"
 
 
