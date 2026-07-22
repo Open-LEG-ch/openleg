@@ -67,7 +67,7 @@
         <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">4</div>
         <div>
           <h2 class="text-2xl font-semibold mb-2">Netzbetreiber melden</h2>
-          <p class="text-ink-muted">Die Anmeldung geht an Ihren Netzbetreiber. Er muss innert 3 Monaten einen Smart Meter installieren (Art. 17e StromVG). OpenLEG zeigt den Status und erinnert, wenn etwas liegen bleibt.</p>
+          <p class="text-ink-muted">Die LEG-Vertretung meldet die Bildung der LEG dem Verteilnetzbetreiber drei Monate im Voraus auf ein Monatsende. Beantragt die LEG die Installation eines intelligenten Messsystems, installiert der Verteilnetzbetreiber es innert drei Monaten (Art. 8a decies Abs. 6 StromVV). OpenLEG zeigt den Status und erinnert, wenn etwas liegen bleibt.</p>
         </div>
       </section>
 
@@ -75,19 +75,12 @@
         <div class="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold text-lg">5</div>
         <div>
           <h2 class="text-2xl font-semibold mb-2">Strom teilen, Geld sparen</h2>
-          <p class="text-ink-muted">Ihre LEG ist aktiv. Die Mitglieder teilen Solarstrom lokal und rechnen alle 15 Minuten ab. Je nach Netzebene sparen Haushalte bis 40% auf Netzgebühren. Bei 4'500 kWh pro Jahr sind das grob CHF 90 bis 270.</p>
+          <p class="text-ink-muted">Ihre LEG ist aktiv. Die Mitglieder teilen Solarstrom lokal und rechnen alle 15 Minuten ab. Für Elektrizität, die innerhalb der LEG erzeugt und von Mitgliedern verbraucht wird, beträgt der Abschlag auf dem Netznutzungstarif 40 Prozent ohne Spannungstransformation und 20 Prozent mit Spannungstransformation.</p>
         </div>
       </section>
     </div>
 
-    <div class="mt-12 bg-white rounded-xl border border-slate-200 p-6">
-      <h2 class="text-2xl font-bold mb-3">Rechtsgrundlage</h2>
-      <div class="text-ink-muted space-y-2">
-        <p>Lokale Elektrizitätsgemeinschaften (LEG) sind seit dem 1. Januar 2026 in der gesamten Schweiz möglich. Die Rechtsgrundlage bilden Art. 17d und 17e des Stromversorgungsgesetzes (StromVG) sowie Art. 19e bis 19h der Stromversorgungsverordnung (StromVV).</p>
-        <p>Voraussetzungen: alle Teilnehmer in der gleichen Gemeinde, beim gleichen Netzbetreiber, auf Niederspannungsebene (max. NE5/NE7, unter 36 kV). Mindestens 5% der Gesamtanschlussleistung als erneuerbare Erzeugung.</p>
-        <p>Die Regelung ist Bundesrecht und gilt einheitlich in allen 26 Kantonen.</p>
-      </div>
-    </div>
+    {% include "partials/leg_facts.html" %}
 
     <div class="mt-6 bg-brand/5 border border-brand/20 rounded-xl p-6">
       <h2 class="text-2xl font-bold mb-3">Für Gemeinden</h2>
@@ -106,7 +99,7 @@
       <div class="text-ink-muted space-y-2">
         <p>OpenLEG verkauft keine Daten. Nicht an Energieversorger, nicht an Dritte, nicht in aggregierter Form. Ihre Smart-Meter-Daten bleiben in Ihrer Stromgemeinschaft.</p>
         <p>Die Plattform ist Open Source (AGPL-3.0). Der gesamte Code liegt auf GitHub. Sie können Ihre Daten jederzeit exportieren oder löschen lassen.</p>
-        <p>OpenLEG läuft auf Schweizer Infrastruktur und richtet sich nach dem neuen Datenschutzgesetz (nDSG).</p>
+        <p>OpenLEG läuft auf Schweizer Infrastruktur und richtet sich nach dem Datenschutzgesetz (DSG).</p>
       </div>
     </div>
 

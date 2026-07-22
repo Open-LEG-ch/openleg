@@ -35,7 +35,7 @@
         "name": "Kann ich eine LEG gründen, wenn ich keine Solaranlage habe?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Nein, mindestens ein Teilnehmer muss Strom produzieren. Sie müssen aber nicht selbst der Produzent sein. Sie können einer LEG beitreten, bei der ein Nachbar die Solaranlage hat."
+          "text": "Ja, sofern die eingebrachten erneuerbaren Anlagen der gesamten LEG die 5-Prozent-Schwelle erfüllen. Sie müssen nicht selbst produzieren; die Anlage kann einer anderen teilnehmenden Person gehören."
         }
       },
       {
@@ -43,7 +43,7 @@
         "name": "Wie viel Geld spare ich mit einer LEG?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Das hängt von Ihrem Verbrauch und der lokalen Produktion ab. Typischerweise sparen LEG-Mitglieder 10 bis 30% bei den Netznutzungsentgelten."
+          "text": "Das hängt von Ihrem Verbrauch und der lokalen Produktion ab. Für Elektrizität, die innerhalb der LEG erzeugt und von Teilnehmenden verbraucht wird, beträgt der Abschlag auf dem Netznutzungstarif 40 Prozent ohne Spannungstransformation und 20 Prozent mit Spannungstransformation. Nutzen Sie den LEG-Kalkulator für eine individuelle Schätzung."
         }
       },
       {
@@ -51,7 +51,7 @@
         "name": "Muss ich einen Smart Meter haben?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Ja, für LEGs ist eine 15-Minuten-Messung gesetzlich vorgeschrieben. Ihr Netzbetreiber installiert die Smart Meter nach Genehmigung der LEG."
+          "text": "Ja. Beantragt die LEG die Installation eines intelligenten Messsystems, installiert der Verteilnetzbetreiber es innert drei Monaten (Art. 8a decies Abs. 6 StromVV)."
         }
       },
       {
@@ -59,7 +59,7 @@
         "name": "Kann ich aus einer LEG wieder austreten?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Ja, die Austrittsregeln stehen in Ihren Statuten. Üblicherweise ist ein Austritt mit 3-6 Monaten Kündigungsfrist möglich."
+          "text": "Ja, die Austrittsregeln stehen in Ihren Statuten."
         }
       },
       {
@@ -85,25 +85,7 @@
       </p>
     </header>
 
-    <!-- Quick Summary -->
-    <section class="bg-white rounded-xl shadow-md p-8 mb-8 border-l-4 border-brand">
-      <h2 class="text-2xl font-bold mb-4">Kurzübersicht</h2>
-      <div class="grid md:grid-cols-3 gap-6">
-        <div>
-          <div class="text-3xl font-bold text-brand mb-1">4-8 Wochen</div>
-          <div class="text-sm text-ink-muted">Zeitaufwand</div>
-        </div>
-        <div>
-          <div class="text-3xl font-bold text-brand mb-1">CHF 500-2'000</div>
-          <div class="text-sm text-ink-muted">Gründungskosten</div>
-        </div>
-        <div>
-          <div class="text-3xl font-bold text-brand mb-1">5+ Personen</div>
-          <div class="text-sm text-ink-muted">Mindestgrösse</div>
-        </div>
-      </div>
-      <p class="text-sm text-ink-muted mt-4">Diese Kosten betreffen externe Beratung und Zähler. OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos, siehe <a href="/pricing" class="text-brand underline">Preisübersicht</a>.</p>
-    </section>
+    {% include "partials/leg_facts.html" %}
 
     <!-- Step-by-Step Guide -->
     <section class="space-y-8">
@@ -121,15 +103,11 @@
             <ul class="space-y-2 text-ink-muted">
               <li class="flex items-start gap-2">
                 <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Lokale Nähe:</strong> Alle Teilnehmer im selben Netzgebiet (Verteilnetz des gleichen Betreibers)</span>
+                <span><strong>Lokale Nähe:</strong> Alle Teilnehmenden sind im gleichen Netzgebiet, auf der gleichen Netzebene und innerhalb der gleichen politischen Gemeinde angeschlossen.</span>
               </li>
               <li class="flex items-start gap-2">
                 <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Eigene Produktion:</strong> Mindestens ein Teilnehmer produziert Strom (z.B. Solaranlage)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Genug Mitglieder:</strong> Mindestens 5 Personen (Empfehlung: 10+ für bessere Wirtschaftlichkeit)</span>
+                <span><strong>Eigene Produktion:</strong> Die Leistung der eingebrachten Anlagen für erneuerbare Energie beträgt zusammen mindestens 5 Prozent der Anschlussleistung aller teilnehmenden Endverbraucher.</span>
               </li>
               <li class="flex items-start gap-2">
                 <span class="text-brand font-bold mt-1">✓</span>
@@ -138,8 +116,8 @@
             </ul>
             <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <p class="text-sm text-blue-900">
-                <strong>Tipp:</strong> Nutzen Sie den <a href="/leg-kalkulator" class="text-brand underline">LEG-Kalkulator</a>, 
-                um Ihr Sparpotenzial zu berechnen. Bei Einsparungen unter 10% lohnt sich eine LEG oft nicht.
+                <strong>Tipp:</strong> Nutzen Sie den <a href="/leg-kalkulator" class="text-brand underline">LEG-Kalkulator</a>,
+                um Ihr Sparpotenzial zu berechnen.
               </p>
             </div>
           </div>
@@ -186,7 +164,7 @@
           <div class="flex-1">
             <h3 class="text-2xl font-bold mb-3">Rechtsform wählen</h3>
             <p class="text-ink-muted mb-4">
-              Eine LEG braucht eine rechtliche Struktur. Die häufigsten Formen:
+              Eine LEG braucht eine verbindliche Vereinbarung und eine Vertretung gegenüber dem Netzbetreiber. Die passende Rechtsform hängt von Ihrer Gruppe ab. Häufige Formen:
             </p>
             <div class="space-y-4">
               <div class="p-4 border border-slate-200 rounded-lg">
@@ -195,7 +173,6 @@
                   <li>• Einfache Gründung (keine Notarpflicht)</li>
                   <li>• Mindestens 2 Personen</li>
                   <li>• Statuten und Vorstand nötig</li>
-                  <li>• Kosten: ca. CHF 500-1'000</li>
                 </ul>
               </div>
               <div class="p-4 border border-slate-200 rounded-lg">
@@ -204,7 +181,6 @@
                   <li>• Keine Eintragung ins Handelsregister nötig</li>
                   <li>• Gesellschaftsvertrag ausreichend</li>
                   <li>• Alle Mitglieder haften solidarisch</li>
-                  <li>• Kosten: ca. CHF 300-500</li>
                 </ul>
               </div>
               <div class="p-4 border border-slate-200 rounded-lg">
@@ -213,7 +189,6 @@
                   <li>• Mindestens 7 Mitglieder</li>
                   <li>• Eintragung ins Handelsregister</li>
                   <li>• Ideal für Wachstum (einfache Mitgliederaufnahme)</li>
-                  <li>• Kosten: ca. CHF 1'500-3'000</li>
                 </ul>
               </div>
             </div>
@@ -281,17 +256,17 @@
               </li>
               <li class="flex items-start gap-2">
                 <span class="text-brand font-bold mt-1">3.</span>
-                <span><strong>Messkonzept klären:</strong> 15-Minuten-Messung für alle Teilnehmer nötig (Smart Meter)</span>
+                <span><strong>Messkonzept klären:</strong> Alle Teilnehmenden brauchen ein intelligentes Messsystem.</span>
               </li>
               <li class="flex items-start gap-2">
                 <span class="text-brand font-bold mt-1">4.</span>
-                <span><strong>Netznutzungsvertrag:</strong> Reduzierte Netznutzungsgebühr für lokal verbrauchten Strom</span>
+                <span><strong>Netznutzungsvertrag:</strong> Der Abschlag auf dem Netznutzungstarif beträgt 40 Prozent ohne Spannungstransformation und 20 Prozent mit Spannungstransformation.</span>
               </li>
             </ul>
             <p class="text-sm text-ink-muted mb-4">Diese Anmeldung funktioniert bei jedem Schweizer Netzbetreiber. OpenLEG ist nicht auf einzelne Partner-Netzbetreiber beschränkt.</p>
             <div class="p-4 bg-slate-100 rounded-lg">
               <p class="text-sm text-ink-muted">
-                <strong>Bearbeitungszeit:</strong> Der VNB hat 2-4 Wochen Zeit zur Prüfung. Bei Ablehnung muss er dies begründen.
+                <strong>Frist:</strong> Die LEG-Vertretung meldet die Bildung der LEG dem Verteilnetzbetreiber drei Monate im Voraus auf ein Monatsende.
               </p>
             </div>
           </div>
@@ -314,11 +289,7 @@
               </li>
               <li class="flex items-start gap-2">
                 <span class="text-brand font-bold mt-1">•</span>
-                <span>Kosten: CHF 200-500 pro Zähler (je nach VNB)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span>Dauer: 1-2 Wochen nach Genehmigung</span>
+                <span>Beantragt die LEG die Installation eines intelligenten Messsystems, installiert der Verteilnetzbetreiber es innert drei Monaten (Art. 8a decies Abs. 6 StromVV)</span>
               </li>
             </ul>
             <p class="text-ink-muted mb-4">
@@ -366,102 +337,6 @@
       </div>
     </section>
 
-    <!-- Legal Requirements -->
-    <section class="bg-white rounded-xl shadow-md p-8 mt-12">
-      <h2 class="text-3xl font-bold mb-6">Rechtliche Anforderungen</h2>
-      <div class="space-y-4 text-ink-muted">
-        <div>
-          <h3 class="font-bold text-ink mb-2">Gesetzliche Grundlage</h3>
-          <p>LEGs sind seit dem <strong>Mantelerlass</strong> (Januar 2026) im Energiegesetz (EnG) verankert. 
-          Die Details regelt die <strong>Energieverordnung (EnV)</strong>.</p>
-        </div>
-        <div>
-          <h3 class="font-bold text-ink mb-2">Datenschutz</h3>
-          <p>Smart-Meter-Daten sind personenbezogen. Ihre LEG muss die <strong>Datenschutzgrundverordnung (DSGVO)</strong> 
-          einhalten und Mitglieder informieren, wer Zugriff auf ihre Verbrauchsdaten hat.</p>
-        </div>
-        <div>
-          <h3 class="font-bold text-ink mb-2">Steuern</h3>
-          <p>LEGs sind grundsätzlich <strong>nicht steuerpflichtig</strong>, solange sie keinen Gewinn erwirtschaften. 
-          Bei Überschüssen prüfen Sie mit einem Steuerberater.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Timeline -->
-    <section class="bg-white rounded-xl shadow-md p-8 mt-8">
-      <h2 class="text-3xl font-bold mb-6">Zeitplan: Von der Idee zur LEG</h2>
-      <div class="space-y-4">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-24 text-sm text-ink-muted font-bold">Woche 1-2</div>
-          <div class="flex-1 pb-4 border-l-2 border-slate-200 pl-4">
-            <div class="font-bold text-ink mb-1">Vorbereitung</div>
-            <div class="text-sm text-ink-muted">Voraussetzungen prüfen, Mitglieder finden, erstes Treffen</div>
-          </div>
-        </div>
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-24 text-sm text-ink-muted font-bold">Woche 3-4</div>
-          <div class="flex-1 pb-4 border-l-2 border-slate-200 pl-4">
-            <div class="font-bold text-ink mb-1">Rechtsform & Dokumente</div>
-            <div class="text-sm text-ink-muted">Rechtsform wählen, Statuten aufsetzen, Anwalt konsultieren</div>
-          </div>
-        </div>
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-24 text-sm text-ink-muted font-bold">Woche 5-6</div>
-          <div class="flex-1 pb-4 border-l-2 border-slate-200 pl-4">
-            <div class="font-bold text-ink mb-1">Meldung & Genehmigung</div>
-            <div class="text-sm text-ink-muted">VNB kontaktieren, Dokumente einreichen, Genehmigung abwarten</div>
-          </div>
-        </div>
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-24 text-sm text-ink-muted font-bold">Woche 7-8</div>
-          <div class="flex-1 pb-4 border-l-2 border-slate-200 pl-4">
-            <div class="font-bold text-ink mb-1">Installation & Start</div>
-            <div class="text-sm text-ink-muted">Smart Meter installieren, erste Messungen, Betrieb aufnehmen</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Costs -->
-    <section class="bg-white rounded-xl shadow-md p-8 mt-8">
-      <h2 class="text-3xl font-bold mb-6">Kosten im Überblick</h2>
-      <table class="w-full text-left">
-        <thead class="border-b-2 border-slate-200">
-          <tr>
-            <th class="pb-2 font-bold text-ink">Position</th>
-            <th class="pb-2 font-bold text-ink text-right">Kosten (CHF)</th>
-          </tr>
-        </thead>
-        <tbody class="text-ink-muted">
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Statuten/Vertrag aufsetzen</td>
-            <td class="py-2 text-right">300-800</td>
-          </tr>
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Anwalt (optional, empfohlen)</td>
-            <td class="py-2 text-right">500-1'500</td>
-          </tr>
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Handelsregistereintrag (nur Genossenschaft)</td>
-            <td class="py-2 text-right">600-1'200</td>
-          </tr>
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Smart Meter (pro Teilnehmer)</td>
-            <td class="py-2 text-right">200-500</td>
-          </tr>
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Software für Abrechnung (bei OpenLEG kostenlos)</td>
-            <td class="py-2 text-right">0</td>
-          </tr>
-          <tr class="font-bold text-ink">
-            <td class="pt-3">Gesamtkosten (ohne Zähler)</td>
-            <td class="pt-3 text-right">500-2'000</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
     <!-- CTA -->
     <section class="bg-brand text-white rounded-xl shadow-md p-10 mt-12 text-center">
       <h2 class="text-3xl font-bold mb-4">Bereit für Ihre LEG?</h2>
@@ -469,6 +344,7 @@
         OpenLEG nimmt Ihnen nicht die Gründung ab, aber es räumt viel Kleinarbeit weg:
         Abrechnung, Dokumente, Vorlagen und ein sauberer Einstieg für neue Mitglieder.
       </p>
+      <p class="text-white/90 mb-6">OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos, siehe <a href="/pricing" class="font-semibold underline">Preisübersicht</a>.</p>
       <p class="text-white/90 mb-6">Sie möchten die Plattform in Ihrer LEG betreiben? <a href="/self-host" class="font-semibold underline">OpenLEG selbst installieren</a>.</p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a href="/leg-kalkulator" class="inline-block bg-white text-brand px-8 py-3 rounded-lg font-bold hover:bg-slate-100">
@@ -486,19 +362,19 @@
       <div class="space-y-4">
         <details class="bg-white rounded-lg shadow-md p-6">
           <summary class="font-bold text-ink cursor-pointer">Kann ich eine LEG gründen, wenn ich keine Solaranlage habe?</summary>
-          <p class="mt-3 text-ink-muted">Nein, mindestens ein Teilnehmer muss Strom produzieren. Sie müssen aber nicht selbst der Produzent sein. Sie können einer LEG beitreten, bei der ein Nachbar die Solaranlage hat.</p>
+          <p class="mt-3 text-ink-muted">Ja, sofern die eingebrachten erneuerbaren Anlagen der gesamten LEG die 5-Prozent-Schwelle erfüllen. Sie müssen nicht selbst produzieren; die Anlage kann einer anderen teilnehmenden Person gehören.</p>
         </details>
         <details class="bg-white rounded-lg shadow-md p-6">
           <summary class="font-bold text-ink cursor-pointer">Wie viel Geld spare ich mit einer LEG?</summary>
-          <p class="mt-3 text-ink-muted">Das hängt von Ihrem Verbrauch und der lokalen Produktion ab. Typischerweise sparen LEG-Mitglieder 10 bis 30% bei den Netznutzungsentgelten. Nutzen Sie unseren <a href="/leg-kalkulator" class="text-brand underline">LEG-Kalkulator</a> für eine genauere Schätzung.</p>
+          <p class="mt-3 text-ink-muted">Das hängt von Ihrem Verbrauch und der lokalen Produktion ab. Für Elektrizität, die innerhalb der LEG erzeugt und von Teilnehmenden verbraucht wird, beträgt der Abschlag auf dem Netznutzungstarif 40 Prozent ohne Spannungstransformation und 20 Prozent mit Spannungstransformation. Nutzen Sie unseren <a href="/leg-kalkulator" class="text-brand underline">LEG-Kalkulator</a> für eine individuelle Schätzung.</p>
         </details>
         <details class="bg-white rounded-lg shadow-md p-6">
           <summary class="font-bold text-ink cursor-pointer">Muss ich einen Smart Meter haben?</summary>
-          <p class="mt-3 text-ink-muted">Ja, für LEGs ist eine 15-Minuten-Messung gesetzlich vorgeschrieben. Ihr Netzbetreiber installiert die Smart Meter nach Genehmigung der LEG.</p>
+          <p class="mt-3 text-ink-muted">Ja. Beantragt die LEG die Installation eines intelligenten Messsystems, installiert der Verteilnetzbetreiber es innert drei Monaten (Art. 8a decies Abs. 6 StromVV).</p>
         </details>
         <details class="bg-white rounded-lg shadow-md p-6">
           <summary class="font-bold text-ink cursor-pointer">Kann ich aus einer LEG wieder austreten?</summary>
-          <p class="mt-3 text-ink-muted">Ja, die Austrittsregeln stehen in Ihren Statuten. Üblicherweise ist ein Austritt mit 3-6 Monaten Kündigungsfrist möglich.</p>
+          <p class="mt-3 text-ink-muted">Ja, die Austrittsregeln stehen in Ihren Statuten.</p>
         </details>
         <details class="bg-white rounded-lg shadow-md p-6">
           <summary class="font-bold text-ink cursor-pointer">Was passiert, wenn meine Gemeinde keine LEG-Plattform hat?</summary>
