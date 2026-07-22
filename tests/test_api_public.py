@@ -255,6 +255,17 @@ class TestLegToolkitEndpoints:
         assert data["projections"][0]["year"] == 1
         assert data["co2_reduction_kg_year"] > 0
 
+    @patch("api_public.db")
+    def test_value_gap_ne5_statutory_20pct_grid_discount(self, mock_db, client):
+        mock_db.get_elcom_tariffs.return_value = MOCK_ELCOM_TARIFFS
+        resp = client.post(
+            "/api/v1/leg/value-gap",
+            json={"bfs_number": 261, "grid_level": "NE5"},
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["grid_fee_reduction"] == 1.9
+
     def test_templates(self, client):
         resp = client.get("/api/v1/leg/templates")
         assert resp.status_code == 200
