@@ -196,6 +196,55 @@ def test_profil_has_resident_conversion_path():
     assert 'href="/leg-kalkulator"' in html
 
 
+# --- LEG facts shared partial (issue #207) ---
+
+
+def test_leg_gruenden_and_how_it_works_share_leg_facts_partial():
+    leg_gruenden = _read("leg_gruenden.html")
+    how_it_works = _read("how-it-works.html")
+    assert '{% include "partials/leg_facts.html" %}' in leg_gruenden, (
+        "leg_gruenden.html must include the shared partials/leg_facts.html"
+    )
+    assert '{% include "partials/leg_facts.html" %}' in how_it_works, (
+        "how-it-works.html must include the shared partials/leg_facts.html"
+    )
+
+    facts = _read("partials", "leg_facts.html")
+    assert "gleiche politische Gemeinde" in facts
+    assert "gleiche" in facts and "Netzbetreiber" in facts
+    assert "gleiche Netzebene" in facts
+    assert "5%" in facts or "5 Prozent" in facts
+    assert "20%" in facts or "20 Prozent" in facts
+    assert "40%" in facts or "40 Prozent" in facts
+    assert "drei Monate" in facts or "3 Monate" in facts
+    assert "StromVG" in facts
+    assert "StromVV" in facts
+    assert "Datenschutzgesetz" in facts and "DSG" in facts
+
+    for url in (
+        "https://www.energieschweiz.ch/stories/stromverbuende/",
+        "https://www.lokalerstrom.ch/betriebsmodelle/leg",
+        "https://www.fedlex.admin.ch/eli/cc/2007/418/de",
+        "https://www.fedlex.admin.ch/eli/cc/2008/226/de",
+        "https://www.edoeb.admin.ch/de/wesentlichen-anderungen-fuer-das-offentlichkeitsgesetz",
+    ):
+        assert f'href="{url}"' in facts
+
+    combined = _read("leg_gruenden.html") + _read("leg_kalkulator.html")
+    for unsupported in (
+        "4-8 Wochen",
+        "5+ Personen",
+        "2-4 Wochen",
+        "CHF 500-2'000",
+        "DSGVO",
+        "Energiegesetz (EnG)",
+        "Energieverordnung (EnV)",
+        "nicht steuerpflichtig",
+        "unter 10% lohnt sich eine LEG oft nicht",
+    ):
+        assert unsupported not in combined, f"unsupported claim still present: {unsupported}"
+
+
 # --- README stakeholder paths ---
 
 
