@@ -39,3 +39,16 @@ def test_registry_list_heading_wraps_on_narrow_viewports():
     classes = heading.group(1)
     assert "break-words" in classes
     assert "text-3xl" in classes
+
+
+def test_open_source_page_contains_its_grid_and_heading():
+    """Measured 485 against a 360 client width before this guard (issue #233)."""
+    html = _read("open_source.html")
+    heading = re.search(r"<h1 class=\"([^\"]+)\"", html)
+    assert heading
+    assert "break-words" in heading.group(1)
+    assert "text-3xl" in heading.group(1)
+    sections = re.findall(r'<section class="grid md:grid-cols-2[^"]*"', html)
+    assert sections
+    for section in sections:
+        assert "[&>div]:min-w-0" in section, section
