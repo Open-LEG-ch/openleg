@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block content %}
-  <main class="max-w-xl mx-auto px-4 py-12">
+  <div class="max-w-xl mx-auto px-4 py-12">
     <p class="text-sm mb-4"><a href="/leg-verzeichnis/{{ entry.slug }}" class="text-brand hover:underline">&larr; Zurück zum Eintrag</a></p>
 
     {% if sent %}
@@ -28,5 +28,5 @@
       <button type="submit" class="w-full bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Bestätigungslink senden</button>
     </form>
     {% endif %}
-  </main>
+  </div>
 {% endblock %}

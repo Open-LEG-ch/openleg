@@ -9,7 +9,9 @@
 </head>
 <body class="{% block body_class %}bg-[#f6f4ef] text-ink{% endblock %}">
   {% include 'partials/site_nav.html' %}
-  {% block content %}{% endblock %}
+  <main id="main-content" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
   {% include 'partials/site_footer.html' %}
   {% block scripts %}{% endblock %}
 </body>
