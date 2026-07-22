@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 from flask import Flask
 
+import pv_data
 import pv_ranking
 import rangliste as rangliste_module
 from ranking import Ranking
@@ -109,6 +110,25 @@ def test_hub_calls_ranking_load_once(monkeypatch):
     mock_load.assert_called_once_with()
 
 
+def test_hub_shows_data_provenance(monkeypatch):
+    client, _ = _make_hub_client(monkeypatch)
+    html = client.get("/rangliste").data.decode("utf-8", errors="ignore")
+    assert 'data-testid="data-provenance"' in html
+    assert "BFE Sonnendach" in html
+    assert str(pv_data.SNAPSHOT_YEAR) in html
+    assert "76.9" in html  # PLANT_MATCH_RATE_PCT Anlagen-Matching
+
+
+def test_hub_renders_fill_bar_per_row(monkeypatch):
+    client, _ = _make_hub_client(monkeypatch)
+    html = client.get("/rangliste").data.decode("utf-8", errors="ignore")
+    assert "ol-fillbar" in html
+    # Sonnendorf: pv_score_pct 80.0 -> fill bar width 80.0%
+    assert 'style="width: 80.0%"' in html
+    # Übererfüllt: score_over_100 True, capped at 100 -> marked distinctly
+    assert 'data-score-over-100="true"' in html
+
+
 MOVERS = [
     {
         "bfs_number": 2,
@@ -173,6 +193,22 @@ def test_movers_tab_filters_by_canton(monkeypatch):
     assert "Mittelstadt" not in html
 
 
+def test_movers_tab_stamps_comparison_year_and_zero_baseline(monkeypatch):
+    client, _, _ = _make_movers_client(monkeypatch)
+    html = client.get("/rangliste/fortschritte").data.decode("utf-8", errors="ignore")
+    assert 'data-testid="comparison-year"' in html
+    assert ">2025<" in html
+    assert "ol-deltabar" in html
+    assert "ol-baseline" in html
+
+
+def test_movers_tab_shows_data_provenance(monkeypatch):
+    client, _, _ = _make_movers_client(monkeypatch)
+    html = client.get("/rangliste/fortschritte").data.decode("utf-8", errors="ignore")
+    assert 'data-testid="data-provenance"' in html
+    assert "BFE Sonnendach" in html
+
+
 def _make_compare_client(monkeypatch, rows=SAMPLE):
     by_bfs = {r["bfs_number"]: r for r in rows}
     monkeypatch.setattr(
@@ -211,6 +247,18 @@ def test_vergleich_calls_ranking_load_once(monkeypatch):
     mock_load.assert_called_once_with()
 
 
+def test_vergleich_renders_paired_metric_spine(monkeypatch):
+    client, _ = _make_compare_client(monkeypatch)
+    html = client.get("/rangliste/vergleich?a=1&b=3").data.decode(
+        "utf-8", errors="ignore"
+    )
+    # Each metric is one shared row spanning both municipalities, not two
+    # independent cards.
+    assert html.count("ol-pair-row") >= 3
+    assert 'data-testid="data-provenance"' in html
+    assert "BFE Sonnendach" in html
+
+
 def test_methodik_page_renders_caveats_and_register(monkeypatch):
     app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
     app.config["TESTING"] = True
@@ -223,3 +271,24 @@ def test_methodik_page_renders_caveats_and_register(monkeypatch):
     assert "BFE Sonnendach" in html
     assert "ungematcht" in html
     assert "zentrales LEG-Register" in html
+
+
+def test_methodik_page_has_numbered_computation_sequence(monkeypatch):
+    app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
+    app.config["TESTING"] = True
+    app.register_blueprint(rangliste_module.rangliste_bp)
+    client = app.test_client()
+    html = client.get("/rangliste/methodik").data.decode("utf-8", errors="ignore")
+    assert html.count("ol-step") == 4
+    assert ">01<" in html
+    assert ">04<" in html
+
+
+def test_methodik_page_shows_data_provenance(monkeypatch):
+    app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
+    app.config["TESTING"] = True
+    app.register_blueprint(rangliste_module.rangliste_bp)
+    client = app.test_client()
+    html = client.get("/rangliste/methodik").data.decode("utf-8", errors="ignore")
+    assert 'data-testid="data-provenance"' in html
+    assert str(pv_data.SNAPSHOT_YEAR) in html
