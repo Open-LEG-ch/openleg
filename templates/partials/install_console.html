@@ -1,4 +1,4 @@
-<div class="overflow-hidden rounded-2xl border border-slate-700 bg-[#0b1120] shadow-2xl" data-install-console>
+<div class="overflow-hidden rounded-xl border border-slate-700 bg-ink" data-install-console>
   <div class="border-b border-slate-700 px-5 py-5 sm:px-7">
     <h2 class="text-2xl font-bold text-white sm:text-3xl">OpenLEG in einer Zeile selbst betreiben.</h2>
     <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">Installieren Sie OpenLEG direkt, wenn Sie wissen, was Sie tun. Der Installer erstellt lokale Zugangsschlüssel und startet App, PostgreSQL und Redis mit Docker. Ihre Messdaten bleiben in Ihrer lokalen PostgreSQL-Datenbank.</p>
@@ -16,7 +16,7 @@
     <div data-install-panel="direct" id="install-direct" role="tabpanel" aria-labelledby="install-tab-direct">
       <p class="mb-4 text-sm text-slate-400">Für macOS und Linux mit Docker Compose, curl und OpenSSL.</p>
       <div class="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-950 p-4">
-        <pre class="min-w-0 flex-1 overflow-x-auto text-sm leading-6 text-slate-100"><code>curl -fsSL https://openleg.ch/install.sh | bash</code></pre>
+        <pre class="min-w-0 flex-1 overflow-x-auto font-mono text-sm leading-6 text-slate-100"><code>curl -fsSL https://openleg.ch/install.sh | bash</code></pre>
         <button type="button" class="shrink-0 rounded-lg border border-slate-600 p-2 text-slate-300 hover:border-indigo-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" data-copy-command aria-label="Befehl kopieren" title="Befehl kopieren">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>
         </button>
@@ -26,7 +26,7 @@
     <div class="hidden" data-install-panel="inspect" id="install-inspect" role="tabpanel" aria-labelledby="install-tab-inspect">
       <p class="mb-4 text-sm text-slate-400">Laden Sie das Skript zuerst herunter, lesen Sie es und starten Sie es danach selbst.</p>
       <div class="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-950 p-4">
-        <pre class="min-w-0 flex-1 overflow-x-auto text-sm leading-6 text-slate-100"><code>curl -fsSL https://openleg.ch/install.sh -o install-openleg.sh
+        <pre class="min-w-0 flex-1 overflow-x-auto font-mono text-sm leading-6 text-slate-100"><code>curl -fsSL https://openleg.ch/install.sh -o install-openleg.sh
 less install-openleg.sh
 bash install-openleg.sh</code></pre>
         <button type="button" class="shrink-0 rounded-lg border border-slate-600 p-2 text-slate-300 hover:border-indigo-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" data-copy-command aria-label="Befehl kopieren" title="Befehl kopieren">
@@ -38,7 +38,7 @@ bash install-openleg.sh</code></pre>
     <div class="hidden" data-install-panel="git" id="install-git" role="tabpanel" aria-labelledby="install-tab-git">
       <p class="mb-4 text-sm text-slate-400">Für einen festen Checkout, den Sie vor Installation und Updates selbst prüfen.</p>
       <div class="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-950 p-4">
-        <pre class="min-w-0 flex-1 overflow-x-auto text-sm leading-6 text-slate-100"><code>git clone https://github.com/Open-LEG-ch/openleg.git
+        <pre class="min-w-0 flex-1 overflow-x-auto font-mono text-sm leading-6 text-slate-100"><code>git clone https://github.com/Open-LEG-ch/openleg.git
 cd openleg
 ./scripts/openleg install</code></pre>
         <button type="button" class="shrink-0 rounded-lg border border-slate-600 p-2 text-slate-300 hover:border-indigo-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" data-copy-command aria-label="Befehl kopieren" title="Befehl kopieren">
