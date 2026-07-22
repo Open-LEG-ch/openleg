@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import public_data
+from ranking import Ranking
 
 
 def _disable_rate_limit_hooks(flask_app):
@@ -244,3 +245,58 @@ def test_backfill_elcom_processes_batch_and_returns_summary(
     assert data["processed"] == 2
     assert data["saved"] == 2
     assert data["errors"] == []
+
+
+# === Issue #210: homepage ranking preview routed through the Ranking facade ===
+
+_RANKING_EXTREMES_PROFILES = [
+    {"bfs_number": 1, "name": "Overcap", "kanton": "ZH", "pv_score_pct": 140},
+    {"bfs_number": 2, "name": "G2", "kanton": "ZH", "pv_score_pct": 95},
+    {"bfs_number": 3, "name": "G3", "kanton": "ZH", "pv_score_pct": 90},
+    {"bfs_number": 4, "name": "G4", "kanton": "ZH", "pv_score_pct": 85},
+    {"bfs_number": 5, "name": "G5", "kanton": "ZH", "pv_score_pct": 80},
+    {"bfs_number": 6, "name": "G6", "kanton": "ZH", "pv_score_pct": 75},
+    {"bfs_number": 7, "name": "G7", "kanton": "ZH", "pv_score_pct": 70},
+    {"bfs_number": 8, "name": "Unscored", "kanton": "ZH", "pv_score_pct": None},
+]
+
+
+def test_ranking_extremes_uses_facade(full_app_module, monkeypatch):
+    mock_load = MagicMock(return_value=Ranking(_RANKING_EXTREMES_PROFILES))
+    monkeypatch.setattr(full_app_module.Ranking, "load", mock_load)
+
+    best, worst, total = full_app_module._ranking_extremes(n=3)
+
+    mock_load.assert_called_once_with()
+    assert total == 7  # bfs 8 has no score and is excluded
+    assert best == [
+        {"rank": 1, "name": "Overcap", "kanton": "ZH", "bfs_number": 1, "score": 100.0},
+        {"rank": 2, "name": "G2", "kanton": "ZH", "bfs_number": 2, "score": 95.0},
+        {"rank": 3, "name": "G3", "kanton": "ZH", "bfs_number": 3, "score": 90.0},
+    ]
+    assert worst == [
+        {"rank": 7, "name": "G7", "kanton": "ZH", "bfs_number": 7, "score": 70.0},
+        {"rank": 6, "name": "G6", "kanton": "ZH", "bfs_number": 6, "score": 75.0},
+        {"rank": 5, "name": "G5", "kanton": "ZH", "bfs_number": 5, "score": 80.0},
+    ]
+
+
+def test_ranking_extremes_empty_when_too_few_scored(full_app_module, monkeypatch):
+    profiles = _RANKING_EXTREMES_PROFILES[:2]
+    mock_load = MagicMock(return_value=Ranking(profiles))
+    monkeypatch.setattr(full_app_module.Ranking, "load", mock_load)
+
+    best, worst, total = full_app_module._ranking_extremes(n=3)
+
+    assert (best, worst, total) == ([], [], 2)
+
+
+def test_ranking_extremes_falls_back_on_load_failure(full_app_module, monkeypatch):
+    def _boom(*args, **kwargs):
+        raise RuntimeError("db down")
+
+    monkeypatch.setattr(full_app_module.Ranking, "load", _boom)
+
+    best, worst, total = full_app_module._ranking_extremes(n=3)
+
+    assert (best, worst, total) == ([], [], 0)

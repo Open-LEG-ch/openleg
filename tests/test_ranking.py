@@ -4,11 +4,19 @@
 Pure unit tests: no Flask app, no real database.
 """
 
+import os
 from unittest.mock import patch
 
 import pv_ranking
 import ranking
 from store import ranking as store_ranking
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _read_source(name):
+    with open(os.path.join(PROJECT_ROOT, name), encoding="utf-8") as handle:
+        return handle.read()
 
 
 class TestRanking:
@@ -298,6 +306,37 @@ class TestRankingMovers:
         injected = [{"bfs_number": 2, "delta": 3.0}]
         assert r.movers(mover_rows=injected) is injected
 
+    def test_movers_applies_kanton_filter(self):
+        rows = [
+            {"bfs_number": 1, "kanton": "AG", "population": 3000, "density_per_km2": 200},
+            {"bfs_number": 2, "kanton": "ZH", "population": 30000, "density_per_km2": 1500},
+        ]
+        r = ranking.Ranking([])
+        result = r.movers(mover_rows=rows, kanton="ZH")
+        assert result == [rows[1]]
+
+    def test_movers_applies_size_and_density_filters(self):
+        rows = [
+            {"bfs_number": 1, "kanton": "AG", "population": 3000, "density_per_km2": 200},
+            {"bfs_number": 2, "kanton": "ZH", "population": 30000, "density_per_km2": 1500},
+        ]
+        r = ranking.Ranking([])
+        assert r.movers(mover_rows=rows, size="large") == [rows[1]]
+        assert r.movers(mover_rows=rows, density="low") == [rows[0]]
+
+    def test_movers_filters_store_backed_rows_too(self):
+        rows = [
+            {"bfs_number": 1, "kanton": "AG", "population": 3000, "density_per_km2": 200},
+            {"bfs_number": 2, "kanton": "ZH", "population": 30000, "density_per_km2": 1500},
+        ]
+        with patch.object(store_ranking, "get_pv_movers") as mock_get:
+            mock_get.return_value = rows
+            r = ranking.Ranking([])
+            result = r.movers(kanton="ZH")
+
+            mock_get.assert_called_once_with()
+            assert result == [rows[1]]
+
 
 class TestRankingBadgeSvg:
     def test_badge_svg_delegates_to_pv_badge(self):
@@ -359,3 +398,13 @@ class TestRankingOgCardSvg:
 
             mock_og.assert_called_once_with("A", "AG", None, None, None)
             assert result == "<svg>og</svg>"
+
+
+class TestRankingSeamBoundary:
+    """Issue #210: app.py und rangliste.py duerfen pv_ranking nicht mehr direkt nutzen."""
+
+    def test_app_does_not_import_pv_ranking(self):
+        assert "import pv_ranking" not in _read_source("app.py")
+
+    def test_rangliste_does_not_import_pv_ranking(self):
+        assert "import pv_ranking" not in _read_source("rangliste.py")
