@@ -34,15 +34,15 @@
                 <input type="hidden" name="sort" value="{{ sort }}">
                 <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Suchen</button>
             </form>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
                 <label for="verzeichnis-kanton" class="sr-only">Kanton filtern</label>
-                <select id="verzeichnis-kanton" onchange="updateFilter('kanton', this.value)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                <select id="verzeichnis-kanton" onchange="updateFilter('kanton', this.value)" class="min-w-0 flex-1 basis-36 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
                     {% for code, label in canton_options %}
                     <option value="{{ code }}" {{ 'selected' if kanton == code }}>{{ label }}</option>
                     {% endfor %}
                 </select>
                 <label for="verzeichnis-sort" class="sr-only">Sortieren nach</label>
-                <select id="verzeichnis-sort" onchange="updateFilter('sort', this.value)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                <select id="verzeichnis-sort" onchange="updateFilter('sort', this.value)" class="min-w-0 flex-1 basis-36 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
                     <option value="pv_score_pct" {{ 'selected' if sort == 'pv_score_pct' }}>Solarnutzung</option>
                     <option value="energy_transition_score" {{ 'selected' if sort == 'energy_transition_score' }}>Energiewende-Score</option>
                     <option value="leg_value_gap_chf" {{ 'selected' if sort == 'leg_value_gap_chf' }}>LEG-Ersparnis</option>
