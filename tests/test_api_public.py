@@ -93,20 +93,45 @@ class TestScoreEndpoint:
 
 
 class TestLegPotentialEndpoint:
-    @patch("api_public.db")
-    def test_leg_potential(self, mock_db, client):
-        mock_db.get_elcom_tariffs.return_value = MOCK_ELCOM_TARIFFS
+    @patch("api_public.municipality_profile")
+    def test_leg_potential(self, mock_mp, client):
+        mock_mp.value_gap.return_value = {
+            "grid_fee_rp_kwh": 9.5,
+            "savings_rp_kwh": 3.8,
+            "annual_savings_chf": 171.0,
+            "monthly_savings_chf": 14.25,
+            "savings_pct": 13.8,
+        }
         resp = client.get("/api/v1/municipalities/261/leg-potential")
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["annual_savings_chf"] > 0
         assert data["total_community_savings_chf"] > 0
+        assert set(data.keys()) == {
+            "grid_fee_rp_kwh",
+            "savings_rp_kwh",
+            "annual_savings_chf",
+            "monthly_savings_chf",
+            "savings_pct",
+            "num_participants",
+            "total_community_savings_chf",
+            "avg_consumption_kwh",
+            "bfs_number",
+        }
+        mock_mp.value_gap.assert_called_once_with(
+            261, year=2026, grid_reduction_pct=40.0
+        )
 
-    @patch("api_public.db")
-    def test_leg_potential_no_tariff(self, mock_db, client):
-        mock_db.get_elcom_tariffs.return_value = []
+    @patch("api_public.municipality_profile")
+    def test_leg_potential_no_tariff(self, mock_mp, client):
+        mock_mp.value_gap.return_value = None
         resp = client.get("/api/v1/municipalities/261/leg-potential")
         assert resp.status_code == 404
+        data = resp.get_json()
+        assert data == {
+            "error": "No H4 tariff found. Refresh data first.",
+            "bfs_number": 261,
+        }
 
 
 class TestSearchEndpoint:
@@ -215,9 +240,15 @@ class TestRankingsEndpoint:
 
 
 class TestLegToolkitEndpoints:
-    @patch("api_public.db")
-    def test_value_gap_post(self, mock_db, client):
-        mock_db.get_elcom_tariffs.return_value = MOCK_ELCOM_TARIFFS
+    @patch("api_public.municipality_profile")
+    def test_value_gap_post(self, mock_mp, client):
+        mock_mp.value_gap.return_value = {
+            "grid_fee_rp_kwh": 9.5,
+            "savings_rp_kwh": 3.8,
+            "annual_savings_chf": 171.0,
+            "monthly_savings_chf": 14.25,
+            "savings_pct": 13.8,
+        }
         resp = client.post(
             "/api/v1/leg/value-gap",
             json={
@@ -230,6 +261,18 @@ class TestLegToolkitEndpoints:
         data = resp.get_json()
         assert data["annual_savings_per_household"] > 0
         assert data["total_community_savings"] > 0
+        assert set(data.keys()) == {
+            "bfs_number",
+            "annual_savings_per_household",
+            "total_community_savings",
+            "grid_fee_reduction",
+            "grid_level",
+            "num_participants",
+            "avg_consumption_kwh",
+        }
+        mock_mp.value_gap.assert_called_once_with(
+            261, year=2026, grid_reduction_pct=40.0
+        )
 
     @patch("api_public.db")
     def test_value_gap_no_bfs(self, mock_db, client):
