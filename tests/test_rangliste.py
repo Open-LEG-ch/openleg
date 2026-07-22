@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 from flask import Flask
 
+import pv_ranking
 import rangliste as rangliste_module
 from ranking import Ranking
 
@@ -137,7 +138,11 @@ MOVERS = [
 def _make_movers_client(monkeypatch, rows=MOVERS):
     mock_ranking = MagicMock()
     instance = mock_ranking.return_value
-    instance.movers.return_value = rows
+    instance.movers.side_effect = (
+        lambda mover_rows=None, kanton=None, size=None, density=None: pv_ranking.filter_league(
+            rows, kanton=kanton, size=size, density=density
+        )
+    )
     monkeypatch.setattr(rangliste_module, "Ranking", mock_ranking)
     app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
     app.config["TESTING"] = True
@@ -150,7 +155,7 @@ def test_movers_tab_renders_delta(monkeypatch):
     resp = client.get("/rangliste/fortschritte")
     assert resp.status_code == 200
     mock_ranking.assert_called_once_with([])
-    instance.movers.assert_called_once_with()
+    instance.movers.assert_called_once_with(kanton=None, size=None, density=None)
     html = resp.data.decode("utf-8", errors="ignore")
     assert "Grösste Fortschritte" in html
     assert "+8.50 Pkt" in html
