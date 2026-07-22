@@ -20,43 +20,43 @@
     </header>
 
     {% if submitted %}
-    <div class="bg-green-50 border border-green-200 rounded-xl p-6">
-      <p class="font-semibold text-green-900 mb-1">Danke für Ihren Eintrag.</p>
+    <div role="status" class="border-y border-slate-200 py-6">
+      <h2 class="font-semibold mb-1">Prüfung ausstehend</h2>
       <p class="text-sm text-green-800">Wir prüfen ihn manuell und schalten ihn danach frei.</p>
     </div>
     {% else %}
 
     {% if error %}
-    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-sm text-red-800">{{ error }}</div>
+    <div role="alert" class="border-l-2 border-brand pl-3 py-2 mb-6 text-sm">{{ error }}</div>
     {% endif %}
 
     <form method="post" class="space-y-4">
       <div>
         <label class="block text-sm font-medium mb-1" for="name">Name der LEG *</label>
         <input type="text" id="name" name="name" required value="{{ form.get('name', '') if form else '' }}"
-          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand">
       </div>
       <div>
         <label class="block text-sm font-medium mb-1" for="contact_email">Kontakt-E-Mail *</label>
         <input type="email" id="contact_email" name="contact_email" required value="{{ form.get('contact_email', '') if form else '' }}"
-          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand">
         <p class="text-xs text-ink-muted mt-1">Wird nicht veröffentlicht, nur für die Prüfung und spätere Beanspruchung des Eintrags.</p>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium mb-1" for="plz">PLZ</label>
           <input type="text" id="plz" name="plz" value="{{ form.get('plz', '') if form else '' }}"
-            class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+            class="w-full border rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand">
         </div>
         <div>
           <label class="block text-sm font-medium mb-1" for="ort">Ort</label>
           <input type="text" id="ort" name="ort" value="{{ form.get('ort', '') if form else '' }}"
-            class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+            class="w-full border rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand">
         </div>
       </div>
       <div>
         <label class="block text-sm font-medium mb-1" for="kanton">Kanton</label>
-        <select id="kanton" name="kanton" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+        <select id="kanton" name="kanton" class="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:outline focus:outline-2 focus:outline-brand">
           {% for code, label in canton_options %}
           <option value="{{ code }}">{{ label }}</option>
           {% endfor %}
@@ -64,7 +64,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium mb-1" for="leg_status">Status</label>
-        <select id="leg_status" name="leg_status" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+        <select id="leg_status" name="leg_status" class="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:outline focus:outline-2 focus:outline-brand">
           {% for code, label in leg_status_options if code %}
           <option value="{{ code }}">{{ label }}</option>
           {% endfor %}
@@ -73,24 +73,24 @@
       <div>
         <label class="block text-sm font-medium mb-1" for="vnb_name">Netzbetreiber (Selbstauskunft, optional)</label>
         <input type="text" id="vnb_name" name="vnb_name" value="{{ form.get('vnb_name', '') if form else '' }}"
-          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand">
       </div>
       <div>
         <label class="block text-sm font-medium mb-1" for="member_count_estimate">Mitgliederzahl (geschätzt, optional)</label>
         <input type="number" min="0" id="member_count_estimate" name="member_count_estimate" value="{{ form.get('member_count_estimate', '') if form else '' }}"
-          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand">
       </div>
       <div>
         <label class="block text-sm font-medium mb-1" for="website_url">Website (optional)</label>
         <input type="url" id="website_url" name="website_url" value="{{ form.get('website_url', '') if form else '' }}"
-          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand">
       </div>
       <div>
         <label class="block text-sm font-medium mb-1" for="description">Kurzbeschreibung (optional)</label>
         <textarea id="description" name="description" rows="3"
-          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">{{ form.get('description', '') if form else '' }}</textarea>
+          class="w-full border rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand">{{ form.get('description', '') if form else '' }}</textarea>
       </div>
-      <button type="submit" class="w-full bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">LEG eintragen</button>
+      <button type="submit" class="w-full bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus:outline focus:outline-2 focus:outline-brand focus:outline-offset-2">LEG eintragen</button>
     </form>
     {% endif %}
   </div>

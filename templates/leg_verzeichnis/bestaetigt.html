@@ -12,9 +12,9 @@
 
 {% block content %}
   <div class="max-w-xl mx-auto px-4 py-12">
-    <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
-      <p class="font-semibold text-green-900 mb-1">Danke für die Bestätigung.</p>
-      <p class="text-sm text-green-800">"{{ entry.name }}" bleibt als aktuell markiert im Verzeichnis.</p>
+    <div role="status" class="border-y border-slate-200 py-6 mb-6">
+      <h1 class="text-2xl font-bold mb-2">Danke für die Bestätigung</h1>
+      <p class="text-sm text-ink-muted">"{{ entry.name }}" bleibt als aktuell markiert im Verzeichnis.</p>
     </div>
     <a href="/leg-verzeichnis/{{ entry.slug }}" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Zum Eintrag</a>
   </div>
