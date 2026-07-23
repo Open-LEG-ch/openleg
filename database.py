@@ -2024,6 +2024,8 @@ from store.correspondence import (  # noqa: E402, F401
     list_correspondence,
 )
 
+from store.formation_documents import replace_leg_document_bundle  # noqa: E402, F401
+
 from store.meter import (  # noqa: E402, F401
     save_meter_readings,
     get_meter_readings,

@@ -6,9 +6,9 @@
 {% endblock %}
 
 {% block content %}
-<main class="max-w-6xl mx-auto px-4 pt-8 pb-16">
+<div class="max-w-6xl mx-auto px-4 pt-8 pb-16 overflow-x-hidden [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-brand [&_button:focus-visible]:outline [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-brand [&_input:focus-visible]:outline [&_input:focus-visible]:outline-2 [&_input:focus-visible]:outline-offset-2 [&_input:focus-visible]:outline-brand [&_select:focus-visible]:outline [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-2 [&_select:focus-visible]:outline-brand" data-dashboard-structure="personal-readiness">
   {% if error %}
-    <section class="max-w-xl mx-auto text-center py-16">
+    <section class="max-w-xl mx-auto text-center py-16" role="alert">
       <h1 class="text-2xl font-bold mb-3">{{ error }}</h1>
       <p class="text-ink-muted mb-6">Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail.</p>
       <a href="/" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Zur Startseite</a>
@@ -18,27 +18,27 @@
     <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Ihre Stromgemeinschaft ist zu {{ readiness_score }}% bereit.</h1>
     <p class="text-ink-muted mt-2">{{ user.address }}</p>
 
-    <section class="mt-6 rounded-2xl bg-[#0f172a] text-[#f6f4ef] p-8 overflow-hidden" aria-labelledby="readiness-title">
+    <section class="mt-6 rounded-2xl bg-ink text-paper p-6 sm:p-8 overflow-hidden" aria-labelledby="readiness-title">
       <div class="grid md:grid-cols-2 gap-8 items-end">
         <div>
           <p class="text-sm font-semibold text-indigo-300" id="readiness-title">Bereitschaft</p>
-          <div class="font-mono text-6xl md:text-7xl font-bold text-indigo-400 my-2">{{ readiness_score }}%</div>
+          <div data-statistic class="font-mono tabular-nums text-6xl md:text-7xl font-bold text-indigo-400 my-2">{{ readiness_score }}<span data-statistic-unit class="text-2xl md:text-3xl font-normal text-indigo-300">%</span></div>
           <p class="text-slate-300 max-w-xl">Sobald die offenen Punkte erledigt sind, bereiten wir die LEG-Anmeldung mit {{ utility_name }} vor.</p>
           <div class="mt-6 h-3 rounded-full bg-white/10 overflow-hidden" role="progressbar" aria-valuenow="{{ readiness_score }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ readiness_score }} Prozent bereit">
             <span class="block h-full rounded-full bg-indigo-400" style="width:{{ readiness_score }}%"></span>
           </div>
         </div>
         <div class="grid grid-cols-3 gap-px rounded-xl overflow-hidden bg-white/20" aria-label="Kennzahlen">
-          <div class="bg-[#111c31] p-4">
-            <strong class="block font-mono text-2xl">{{ neighbor_count or 0 }}</strong>
+          <div class="bg-ink-soft p-4">
+            <strong data-statistic class="block font-mono tabular-nums text-2xl text-white">{{ neighbor_count or 0 }} <span data-statistic-unit class="text-xs font-normal text-slate-300">Haushalte</span></strong>
             <span class="block text-sm text-slate-300 mt-1">Haushalte in der Nähe</span>
           </div>
-          <div class="bg-[#111c31] p-4">
-            <strong class="block font-mono text-2xl">{{ user.referral_count|default(0) }}</strong>
+          <div class="bg-ink-soft p-4">
+            <strong data-statistic class="block font-mono tabular-nums text-2xl text-white">{{ user.referral_count|default(0) }} <span data-statistic-unit class="text-xs font-normal text-slate-300">Einladungen</span></strong>
             <span class="block text-sm text-slate-300 mt-1">Einladungen</span>
           </div>
-          <div class="bg-[#111c31] p-4">
-            <strong class="block font-mono text-2xl">{{ "fertig" if readiness_score == 100 else "offen" }}</strong>
+          <div class="bg-ink-soft p-4">
+            <strong class="block font-mono text-2xl text-white">{{ "fertig" if readiness_score == 100 else "offen" }}</strong>
             <span class="block text-sm text-slate-300 mt-1">Profilstatus</span>
           </div>
         </div>
@@ -54,15 +54,15 @@
 
     <div class="grid md:grid-cols-2 gap-6 mt-6 items-start">
       <div class="grid gap-6">
-        <section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm" aria-labelledby="checks-title">
+        <section class="bg-white rounded-xl border border-slate-200 p-6" aria-labelledby="checks-title">
           <h2 id="checks-title" class="text-lg font-bold">Checkliste</h2>
           <p class="text-sm text-ink-muted mt-1 mb-4">Vier Punkte entscheiden, ob die Anmeldung starten kann.</p>
           <ul class="grid gap-3">
             {% for label, done in checks %}
-              <li class="flex items-center justify-between gap-3 rounded-lg border px-4 py-3 {{ 'border-emerald-100 bg-emerald-50/60' if done else 'border-slate-200' }}">
+              <li class="flex items-center justify-between gap-3 rounded-lg border px-4 py-3 {{ 'border-slate-200 bg-slate-50/60' if done else 'border-slate-200' }}">
                 <span class="flex items-center gap-3">
                   {% if done %}
-                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white text-sm font-bold shrink-0" aria-hidden="true">&#10003;</span>
+                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink text-white text-sm font-bold shrink-0" aria-hidden="true">&#10003;</span>
                   {% else %}
                     <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-brand text-sm font-bold shrink-0" aria-hidden="true">{{ loop.index }}</span>
                   {% endif %}
@@ -80,11 +80,12 @@
         </section>
 
         {% if referral_link %}
-          <section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm" aria-labelledby="referral-title">
+          <section class="bg-white rounded-xl border border-slate-200 p-6" aria-labelledby="referral-title">
             <h2 id="referral-title" class="text-lg font-bold">Nachbarn einladen</h2>
             <p class="text-sm text-ink-muted mt-1 mb-3">Je mehr Haushalte mitmachen, desto schneller startet Ihre LEG. Teilen Sie den Link in der Nachbarschaft.</p>
             <div class="flex gap-2">
-              <input type="text" readonly value="{{ referral_link }}" id="ref-link" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50" onclick="this.select()" aria-label="Einladungslink">
+              <label for="ref-link" class="sr-only">Einladungslink</label>
+              <input type="text" readonly value="{{ referral_link }}" id="ref-link" class="w-full min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50" onclick="this.select()">
               <button type="button" id="copy-ref" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark shrink-0">Kopieren</button>
             </div>
             {% if user.referral_count is defined and user.referral_count > 0 %}
@@ -95,7 +96,7 @@
       </div>
 
       <aside class="grid gap-6">
-        <section id="energieprofil" class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm" aria-labelledby="energy-title">
+        <section id="energieprofil" class="bg-white rounded-xl border border-slate-200 p-6" aria-labelledby="energy-title">
           <h2 id="energy-title" class="text-lg font-bold">Energieprofil</h2>
           <p class="text-sm text-ink-muted mt-1 mb-4">Die Daten aus Ihrer letzten Stromrechnung reichen.</p>
           <form id="energy-form" class="grid gap-4">
@@ -117,17 +118,18 @@
               <label for="pv-kwp" class="block text-sm font-semibold text-slate-700 mb-1">Leistung Ihrer Anlage in kWp</label>
               <input type="number" id="pv-kwp" step="0.1" placeholder="z. B. 8.5" value="{{ user.potential_pv_kwp or '' }}" class="w-full border border-slate-300 rounded-lg px-3 py-2">
             </div>
-            <button type="button" id="calc-btn" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark">Ersparnis berechnen</button>
+            <button type="button" id="calc-btn" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Ersparnis berechnen</button>
           </form>
-          <div id="calc-error" class="hidden mt-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert"></div>
+          <div id="calc-error" class="hidden mt-3 rounded-lg border border-slate-200 bg-paper px-4 py-3 text-sm text-ink" role="alert"></div>
           <div id="savings-result" class="hidden mt-4 rounded-lg border border-indigo-200 bg-brand/5 p-4 text-center" aria-live="polite">
             <p class="text-sm text-brand m-0">Geschätzte jährliche Ersparnis</p>
-            <p class="text-3xl font-extrabold text-ink my-1" id="savings-amount"></p>
+            <p data-statistic class="font-mono tabular-nums text-3xl font-extrabold text-ink my-1" id="savings-amount"></p>
+            <span data-statistic-unit class="sr-only">Schweizer Franken pro Jahr</span>
             <p class="text-xs text-ink-muted m-0">Richtwert aus Verbrauchsprofil und LEG-Annahmen.</p>
           </div>
         </section>
 
-        <section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm" aria-labelledby="links-title">
+        <section class="bg-white rounded-xl border border-slate-200 p-6" aria-labelledby="links-title">
           <h2 id="links-title" class="text-lg font-bold mb-3">Nützliche Links</h2>
           <div class="grid gap-2">
             <a href="/how-it-works" class="flex justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:border-brand hover:bg-brand/5 transition"><span>So funktioniert eine LEG</span><span aria-hidden="true">&rarr;</span></a>
@@ -138,7 +140,7 @@
       </aside>
     </div>
   {% endif %}
-</main>
+</div>
 {% endblock %}
 
 {% block scripts %}

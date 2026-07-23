@@ -4,7 +4,7 @@
 from urllib.parse import urlencode
 
 import database as db
-import document_generator
+import formation_documents
 import formation_wizard
 
 
@@ -176,65 +176,8 @@ def leg_start_formation(community_id: str, building_id: str) -> dict:
 
 
 def leg_generate_documents(community_id: str, building_id: str) -> dict:
-    """Generate the community agreement and participant contracts as PDFs.
-
-    Admin-only. Uses confirmed members as participants; a member counts as
-    producer when its building has PV potential. Real PDFs land in
-    leg_documents; formation_wizard.generate_documents runs the status
-    transition. The documents are templates, not legal advice — the
-    dashboard says so explicitly.
-    """
-    if not _require_role(community_id, building_id, "admin"):
-        return {"error": "Nur die Administration kann Dokumente erstellen."}
-
-    status = formation_wizard.get_community_status(db, community_id)
-    participants = []
-    for member in status["members"] or []:
-        if member["status"] != "confirmed":
-            continue
-        building = db.get_building_for_dashboard(member["building_id"]) or {}
-        pv = building.get("potential_pv_kwp") or 0
-        participants.append(
-            {
-                "name": member.get("email") or member["building_id"],
-                "address": member.get("address") or "",
-                "role": "producer" if pv and float(pv) > 0 else "consumer",
-            }
-        )
-
-    try:
-        agreement_pdf = document_generator.generate_gemeinschaftsvereinbarung(
-            community_name=status["name"],
-            participants=participants,
-            municipality="",
-            distribution_model=status["distribution_model"],
-        )
-    except ValueError as exc:
-        return {"error": str(exc)}
-
-    db.store_leg_document(
-        community_id,
-        "gemeinschaftsvereinbarung",
-        agreement_pdf,
-        "gemeinschaftsvereinbarung.pdf",
-    )
-
-    for participant in participants:
-        contract_pdf = document_generator.generate_teilnehmervertrag(
-            participant_name=participant["name"],
-            participant_address=participant["address"],
-            community_name=status["name"],
-            role=participant["role"],
-        )
-        db.store_leg_document(
-            community_id,
-            "teilnehmervertrag",
-            contract_pdf,
-            f"teilnehmervertrag-{participant['name']}.pdf",
-        )
-
-    formation_wizard.generate_documents(db, community_id)
-    return {"error": None, "generated": 1 + len(participants)}
+    """Generate the complete document bundle through its domain seam."""
+    return formation_documents.generate(community_id, building_id)
 
 
 def leg_document_for_member(doc_id: int, building_id: str):
