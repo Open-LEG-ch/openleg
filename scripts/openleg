@@ -7,6 +7,52 @@ cd "$(dirname "$0")/.."
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.quickstart.yml"
 
 case "${1:-}" in
+  install)
+    OPENLEG_HTTP_PORT="${OPENLEG_HTTP_PORT:-8080}"
+    export OPENLEG_HTTP_PORT
+
+    for command in docker curl openssl; do
+      if ! command -v "$command" >/dev/null 2>&1; then
+        echo "Error: $command is required but was not found." >&2
+        exit 1
+      fi
+    done
+    if ! docker compose version >/dev/null 2>&1; then
+      echo "Error: Docker Compose is required but is not working." >&2
+      exit 1
+    fi
+
+    if [[ -f .env ]]; then
+      echo ".env already exists; keeping the existing secrets."
+    else
+      echo "Creating .env with fresh secrets..."
+      umask 077
+      printf '%s\n' \
+        "POSTGRES_USER=openleg" \
+        "POSTGRES_PASSWORD=$(openssl rand -hex 24)" \
+        "POSTGRES_DB=openleg" \
+        "SECRET_KEY=$(openssl rand -hex 32)" \
+        "ADMIN_TOKEN=$(openssl rand -hex 32)" \
+        "INTERNAL_TOKEN=$(openssl rand -hex 32)" \
+        "CRON_SECRET=$(openssl rand -hex 32)" \
+        "APP_BASE_URL=http://localhost:$OPENLEG_HTTP_PORT" \
+        "ALLOWED_HOSTS=localhost,127.0.0.1" > .env
+    fi
+
+    echo "Starting OpenLEG..."
+    $COMPOSE up -d --build flask postgres redis
+    echo "Waiting for the app to become healthy..."
+    for attempt in $(seq 1 60); do
+      if curl -fsS "http://localhost:$OPENLEG_HTTP_PORT/livez" >/dev/null; then
+        echo "OpenLEG is ready at http://localhost:$OPENLEG_HTTP_PORT"
+        echo "Run 'scripts/openleg logs' to view logs."
+        exit 0
+      fi
+      sleep 2
+    done
+    echo "Error: OpenLEG did not become healthy in time." >&2
+    exit 1
+    ;;
   status)
     $COMPOSE ps
     ;;
@@ -14,7 +60,7 @@ case "${1:-}" in
     $COMPOSE logs -f "${2:-flask}"
     ;;
   update)
-    git pull --ff-only 2>/dev/null || true
+    git pull --ff-only
     $COMPOSE up -d --build flask postgres redis
     ;;
   backup)
@@ -33,8 +79,47 @@ case "${1:-}" in
   stop)
     $COMPOSE stop
     ;;
+  net)
+    # OpenLEG private network (Tier A, self-hosted Headscale). Members join over
+    # WireGuard with a one-time code and reach the box with no ports opened.
+    COMPOSE_NET="docker compose -f docker-compose.yml -f docker-compose.quickstart.yml -f docker-compose.net.yml"
+    case "${2:-}" in
+      up)
+        if [[ ! -f .env ]]; then
+          echo "Error: run 'scripts/openleg install' before 'net up'." >&2
+          exit 1
+        fi
+        $COMPOSE_NET --profile net up -d flask postgres redis headscale
+        if ! $COMPOSE_NET exec -T headscale headscale users list | grep -q openleg; then
+          $COMPOSE_NET exec -T headscale headscale users create openleg
+        fi
+        host_key="${HEADSCALE_HOST_AUTHKEY:-}"
+        if [[ -z "$host_key" ]]; then
+          host_key=$(sed -n 's/^HEADSCALE_HOST_AUTHKEY=//p' .env | tail -n 1)
+        fi
+        if [[ -z "$host_key" ]]; then
+          # ponytail: Headscale 0.23 prints the key last; use JSON after upgrading.
+          host_key=$($COMPOSE_NET exec -T headscale headscale preauthkeys create --user openleg --expiration 1h | tail -n 1)
+          printf 'HEADSCALE_HOST_AUTHKEY=%s\n' "$host_key" >> .env
+        fi
+        export HEADSCALE_HOST_AUTHKEY="$host_key"
+        $COMPOSE_NET --profile net up -d tailscale
+        ;;
+      invite)
+        # Mint a one-time join code (a preauth key), valid 24h.
+        $COMPOSE_NET exec headscale headscale preauthkeys create --user openleg --expiration 24h
+        ;;
+      status)
+        $COMPOSE_NET exec headscale headscale nodes list
+        ;;
+      *)
+        echo "Usage: scripts/openleg net {up|invite|status}" >&2
+        exit 2
+        ;;
+    esac
+    ;;
   *)
-    echo "Usage: scripts/openleg {status|logs|update|backup|restore|stop}" >&2
+    echo "Usage: scripts/openleg {install|status|logs|update|backup|restore|stop|net}" >&2
     exit 2
     ;;
 esac

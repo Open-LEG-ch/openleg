@@ -6,8 +6,7 @@ Handles LEG community formation workflow, document generation, and status tracki
 
 import uuid
 import logging
-from typing import Any, Dict, List, Optional
-from datetime import datetime
+from typing import Dict, List, Optional
 from enum import Enum
 
 logger = logging.getLogger(__name__)
@@ -316,114 +315,6 @@ def start_formation(db, community_id: str) -> bool:
         return False
 
 
-def generate_documents(db, community_id: str) -> Optional[Dict]:
-    """
-    Generate contract documents for a community.
-
-    Args:
-        db: Database module
-        community_id: Community ID
-
-    Returns:
-        Dict with document URLs/info or None
-    """
-    try:
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                # Get community info
-                cur.execute(
-                    """
-                    SELECT c.*, array_agg(
-                        jsonb_build_object(
-                            'building_id', cm.building_id,
-                            'role', cm.role,
-                            'status', cm.status,
-                            'email', b.email,
-                            'address', b.address
-                        )
-                    ) as members
-                    FROM communities c
-                    JOIN community_members cm ON c.community_id = cm.community_id
-                    JOIN buildings b ON cm.building_id = b.building_id
-                    WHERE c.community_id = %s
-                    GROUP BY c.community_id
-                """,
-                    (community_id,),
-                )
-
-                community = cur.fetchone()
-                if not community:
-                    return None
-
-                # Generate document metadata
-                documents: Dict[str, Any] = {
-                    "community_agreement": {
-                        "document_id": str(uuid.uuid4()),
-                        "template": "community_agreement",
-                        "generated_at": datetime.now().isoformat(),
-                        "status": "generated",
-                        "signatures_required": len(community["members"]),
-                        "signatures_collected": 0,
-                    },
-                    "participant_contracts": [],
-                    "dso_notification": {
-                        "document_id": str(uuid.uuid4()),
-                        "template": "dso_notification",
-                        "generated_at": datetime.now().isoformat(),
-                        "status": "ready",
-                        "recipient": CONTRACT_TEMPLATES["dso_notification"][
-                            "recipient"
-                        ],
-                    },
-                }
-
-                # Generate participant contracts for each member
-                for member in community["members"]:
-                    if member["status"] == "confirmed":
-                        documents["participant_contracts"].append(
-                            {
-                                "document_id": str(uuid.uuid4()),
-                                "building_id": member["building_id"],
-                                "template": "participant_contract",
-                                "generated_at": datetime.now().isoformat(),
-                                "status": "pending_signature",
-                            }
-                        )
-
-                # Save documents to database (JSONB column: adapt via JSON
-                # string; psycopg2 cannot adapt a raw dict)
-                import json
-
-                cur.execute(
-                    """
-                    INSERT INTO community_documents (community_id, documents, generated_at)
-                    VALUES (%s, %s, CURRENT_TIMESTAMP)
-                    ON CONFLICT (community_id) DO UPDATE SET
-                        documents = EXCLUDED.documents,
-                        generated_at = EXCLUDED.generated_at
-                """,
-                    (community_id, json.dumps(documents)),
-                )
-
-                # Update community status
-                cur.execute(
-                    """
-                    UPDATE communities
-                    SET status = %s, updated_at = CURRENT_TIMESTAMP
-                    WHERE community_id = %s
-                """,
-                    (FormationStatus.DOCUMENTS_GENERATED.value, community_id),
-                )
-
-                logger.info(
-                    f"[FORMATION] Generated documents for community {community_id}"
-                )
-                return documents
-    except Exception as e:
-        logger.error(f"[FORMATION] Error generating documents: {e}")
-        return None
-
-
 def submit_to_dso(db, community_id: str) -> bool:
     """
     Submit DSO notification for a community.
@@ -492,14 +383,12 @@ def get_community_status(db, community_id: str) -> Optional[Dict]:
                                 'address', b.address,
                                 'confirmed_at', cm.confirmed_at
                             ) ORDER BY cm.joined_at
-                        ) FILTER (WHERE cm.building_id IS NOT NULL) as members,
-                        cd.documents as documents
+                        ) FILTER (WHERE cm.building_id IS NOT NULL) as members
                     FROM communities c
                     LEFT JOIN community_members cm ON c.community_id = cm.community_id
                     LEFT JOIN buildings b ON cm.building_id = b.building_id
-                    LEFT JOIN community_documents cd ON c.community_id = cd.community_id
                     WHERE c.community_id = %s
-                    GROUP BY c.community_id, cd.documents
+                    GROUP BY c.community_id
                 """,
                     (community_id,),
                 )
@@ -549,7 +438,7 @@ def get_community_status(db, community_id: str) -> Optional[Dict]:
                     },
                     "readiness_score": readiness_score,
                     "members": row["members"],
-                    "documents": row["documents"],
+                    "documents": None,
                     "next_steps": _get_next_steps(row["status"], confirmed_count),
                 }
     except Exception as e:

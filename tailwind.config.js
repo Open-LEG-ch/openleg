@@ -7,6 +7,15 @@ module.exports = {
         accent: "#4f46e5",
         ink: { DEFAULT: "#0f172a", soft: "#1e293b", muted: "#475569" },
       },
+      fontFamily: {
+        mono: [
+          "JetBrains Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "monospace",
+        ],
+      },
     },
   },
 };

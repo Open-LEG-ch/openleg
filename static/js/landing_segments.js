@@ -10,10 +10,11 @@
       const isActive = btn.dataset.segTab === seg;
       btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
       btn.tabIndex = isActive ? 0 : -1;
-      btn.classList.toggle('bg-ink', isActive);
-      btn.classList.toggle('text-white', isActive);
-      btn.classList.toggle('bg-white/80', !isActive);
-      btn.classList.toggle('text-ink', !isActive);
+      btn.classList.toggle('bg-white', isActive);
+      btn.classList.toggle('text-ink', isActive);
+      btn.classList.toggle('font-semibold', isActive);
+      btn.classList.toggle('text-slate-300', !isActive);
+      btn.classList.toggle('font-medium', !isActive);
       if (isActive && setFocus) btn.focus();
     });
     panels.forEach((panel) => {
