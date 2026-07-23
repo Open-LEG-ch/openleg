@@ -7,7 +7,9 @@ statically here; a real backup/restore round-trip needs Docker and is a manual
 verification step.
 """
 
+import os
 import stat
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -45,6 +47,29 @@ def test_backup_uses_pg_dump_and_restore_uses_psql():
 
 def test_update_restarts_stack():
     assert "up -d" in _content()
+
+
+def test_update_stops_when_git_pull_fails(tmp_path):
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    docker_called = tmp_path / "docker-called"
+    git = bin_dir / "git"
+    git.write_text("#!/bin/sh\nexit 7\n", encoding="utf-8")
+    git.chmod(0o755)
+    docker = bin_dir / "docker"
+    docker.write_text(f"#!/bin/sh\nprintf called > {docker_called}\n", encoding="utf-8")
+    docker.chmod(0o755)
+
+    result = subprocess.run(
+        [str(CLI), "update"],
+        env=os.environ | {"PATH": f"{bin_dir}:{os.environ['PATH']}"},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 7
+    assert not docker_called.exists()
 
 
 def test_unknown_command_shows_usage_and_exits_nonzero():

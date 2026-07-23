@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests für den PV-Nutzungsdaten-Loader."""
 
+import pytest
+
 import pv_data
 
 
@@ -61,6 +63,14 @@ def test_seed_snapshot_csv_parses(tmp_path=None):
     assert rec is not None
     assert rec["bfs_number"] > 0
     assert rec["pv_score_pct"] is not None
+
+
+def test_snapshot_year_matches_csv():
+    if not pv_data.SNAPSHOT_CSV.exists():
+        pytest.skip("Snapshot-CSV fehlt")
+    assert {row["snapshot_year"] for row in pv_data.iter_csv(pv_data.SNAPSHOT_CSV)} == {
+        str(pv_data.SNAPSHOT_YEAR)
+    }
 
 
 def test_seed_panel_csv_parses():

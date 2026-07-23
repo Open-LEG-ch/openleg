@@ -162,5 +162,8 @@ openclaw/config/openclaw.json
 openclaw/config/cron/
 openclaw/config/workspace/
 
+# Local private-network (Headscale) runtime config
+headscale/config.yaml
+
 # Throwaway logo exploration
 logo-explore/

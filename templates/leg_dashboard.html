@@ -11,11 +11,11 @@
 {% endblock %}
 
 {% block content %}
-  <main class="max-w-4xl mx-auto px-4 py-12">
+  <div class="max-w-6xl mx-auto px-4 py-12 overflow-x-hidden [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-brand [&_button:focus-visible]:outline [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-brand [&_input:focus-visible]:outline [&_input:focus-visible]:outline-2 [&_input:focus-visible]:outline-offset-2 [&_input:focus-visible]:outline-brand [&_select:focus-visible]:outline [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-2 [&_select:focus-visible]:outline-brand" data-dashboard-structure="community-operations">
     {% if error %}
-    <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-      <p class="font-semibold text-red-900 mb-1">{{ error }}</p>
-      <p class="text-sm text-red-800">Prüfen Sie Ihren Zugangslink oder öffnen Sie die <a href="/leg/dashboard/demo" class="underline">Demo-Ansicht</a>.</p>
+    <div class="bg-paper border border-slate-200 rounded-xl p-8 text-center" role="alert">
+      <p class="font-semibold text-ink mb-1">{{ error }}</p>
+      <p class="text-sm text-ink-muted">Prüfen Sie Ihren Zugangslink oder öffnen Sie die <a href="/leg/dashboard/demo" class="text-brand underline">Demo-Ansicht</a>.</p>
     </div>
     {% else %}
     <header class="mb-8">
@@ -27,15 +27,15 @@
     <section class="grid sm:grid-cols-3 gap-4 mb-8">
       <div class="bg-white rounded-xl border p-5">
         <p class="text-sm text-ink-muted mb-1">Bereitschaft</p>
-        <p class="text-3xl font-bold text-brand">{{ community.readiness_score }}%</p>
+        <p data-statistic class="font-mono tabular-nums text-3xl font-bold text-brand">{{ community.readiness_score }}<span data-statistic-unit class="text-base font-normal text-ink-muted">%</span></p>
       </div>
       <div class="bg-white rounded-xl border p-5">
         <p class="text-sm text-ink-muted mb-1">Bestätigte Mitglieder</p>
-        <p class="text-3xl font-bold">{{ community.member_count.confirmed }}<span class="text-lg text-ink-muted">/{{ community.member_count.total }}</span></p>
+        <p data-statistic class="font-mono tabular-nums text-3xl font-bold">{{ community.member_count.confirmed }}<span data-statistic-unit class="text-base font-normal text-ink-muted">/{{ community.member_count.total }} Mitglieder</span></p>
       </div>
       <div class="bg-white rounded-xl border p-5">
         <p class="text-sm text-ink-muted mb-1">Eingeladen</p>
-        <p class="text-3xl font-bold">{{ community.member_count.invited }}</p>
+        <p data-statistic class="font-mono tabular-nums text-3xl font-bold">{{ community.member_count.invited }} <span data-statistic-unit class="text-base font-normal text-ink-muted">Mitglieder</span></p>
       </div>
     </section>
 
@@ -55,7 +55,7 @@
       <div class="px-5 py-3 border-b">
         <h2 class="font-bold">Mitglieder</h2>
       </div>
-      <table class="w-full text-sm">
+      <div class="overflow-x-auto"><table class="w-full min-w-[32rem] text-sm">
         <thead class="bg-slate-50">
           <tr>
             <th class="px-5 py-3 text-left">Adresse</th>
@@ -70,15 +70,15 @@
             <td class="px-5 py-3 text-ink-muted">{{ member.role }}</td>
             <td class="px-5 py-3">
               {% if member.status == 'confirmed' %}
-              <span class="text-xs text-green-700 font-semibold">bestätigt</span>
+              <span class="text-xs text-ink font-semibold">bestätigt</span>
               {% else %}
-              <span class="text-xs text-yellow-600 font-semibold">{{ member.status }}</span>
+              <span class="text-xs text-ink-muted font-semibold">{{ member.status }}</span>
               {% endif %}
             </td>
           </tr>
           {% endfor %}
         </tbody>
-      </table>
+      </table></div>
     </section>
 
     {% set viewer = (community.members | selectattr("building_id", "equalto", viewer_building_id) | list | first) if community.members else none %}
@@ -106,7 +106,7 @@
         {% endfor %}
       </ul>
       {% else %}
-      <p class="text-sm text-ink-muted mb-4">Noch keine Dokumente erstellt.</p>
+      <p class="text-sm text-ink-muted mb-4">Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf.</p>
       {% endif %}
       {% if is_admin %}
       <form method="post" action="/leg/community/{{ community.community_id }}/documents">
@@ -120,7 +120,7 @@
       <h2 class="font-bold mb-2">Korrespondenz</h2>
       <p class="text-sm text-ink-muted mb-4">Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist.</p>
       {% if correspondence %}
-      <table class="w-full text-sm mb-4">
+      <div class="overflow-x-auto mb-4"><table class="w-full min-w-[42rem] text-sm">
         <thead class="bg-slate-50">
           <tr>
             <th class="px-3 py-2 text-left">Richtung</th>
@@ -141,27 +141,24 @@
           </tr>
           {% endfor %}
         </tbody>
-      </table>
+      </table></div>
       {% else %}
-      <p class="text-sm text-ink-muted mb-4">Noch keine Einträge.</p>
+      <p class="text-sm text-ink-muted mb-4">Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu.</p>
       {% endif %}
       <form method="post" action="/leg/community/{{ community.community_id }}/correspondence" class="grid sm:grid-cols-2 gap-3">
         <input type="hidden" name="bid" value="{{ viewer_building_id }}">
-        <select name="direction" class="border rounded-lg px-3 py-2 text-sm bg-white">
+        <div><label for="correspondence-direction" class="block text-sm font-semibold mb-1">Richtung</label><select id="correspondence-direction" name="direction" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
           <option value="out">Ausgang</option>
           <option value="in">Eingang</option>
-        </select>
-        <select name="channel" class="border rounded-lg px-3 py-2 text-sm bg-white">
+        </select></div>
+        <div><label for="correspondence-channel" class="block text-sm font-semibold mb-1">Kanal</label><select id="correspondence-channel" name="channel" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
           <option value="email">E-Mail</option>
           <option value="post">Brief</option>
-        </select>
-        <input type="text" name="counterparty" placeholder="Gegenstelle, z.B. Netzbetreiber"
-          class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
-        <input type="text" name="subject" placeholder="Betreff"
-          class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
-        <input type="text" name="notes" placeholder="Notiz (optional)"
-          class="sm:col-span-2 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
-        <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Eintrag hinzufügen</button>
+        </select></div>
+        <div><label for="correspondence-counterparty" class="block text-sm font-semibold mb-1">Gegenstelle</label><input id="correspondence-counterparty" type="text" name="counterparty" placeholder="z. B. Netzbetreiber" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <div><label for="correspondence-subject" class="block text-sm font-semibold mb-1">Betreff</label><input id="correspondence-subject" type="text" name="subject" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <div class="sm:col-span-2"><label for="correspondence-notes" class="block text-sm font-semibold mb-1">Notiz <span class="font-normal text-ink-muted">optional</span></label><input id="correspondence-notes" type="text" name="notes" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Eintrag hinzufügen</button>
       </form>
     </section>
 
@@ -170,8 +167,8 @@
       <h2 class="font-bold mb-2">Mitglied einladen</h2>
       <form method="post" action="/leg/community/{{ community.community_id }}/invite" class="flex flex-col sm:flex-row gap-3">
         <input type="hidden" name="bid" value="{{ viewer_building_id }}">
-        <input type="text" name="invite_building_id" placeholder="Profil-ID des Nachbarn"
-          class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+        <label for="invite-building-id" class="sr-only">Profil-ID des Nachbarn</label>
+        <input id="invite-building-id" type="text" name="invite_building_id" placeholder="Profil-ID des Nachbarn" class="flex-1 border rounded-lg px-4 py-2 text-sm">
         <button type="submit" class="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-dark">Einladen</button>
       </form>
     </section>
@@ -186,5 +183,5 @@
     </section>
     {% endif %}
     {% endif %}
-  </main>
+  </div>
 {% endblock %}

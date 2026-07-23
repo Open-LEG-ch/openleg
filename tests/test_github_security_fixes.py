@@ -216,7 +216,7 @@ def test_meter_data_upload_does_not_expose_exception_text(full_app_module, monke
     import meter_data
 
     monkeypatch.setattr(
-        meter_data, "ingest_csv", MagicMock(side_effect=RuntimeError("disk full"))
+        meter_data, "ingest_file", MagicMock(side_effect=RuntimeError("disk full"))
     )
     monkeypatch.setattr(
         app_module.db, "get_building", lambda _bid: {"building_id": _bid}

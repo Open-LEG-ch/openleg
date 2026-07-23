@@ -1,511 +1,198 @@
 {% extends "base.html" %}
 {% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
 
 {% block meta %}
 {{ page_meta(
   title="LEG gründen: Anleitung für die Schweiz | OpenLEG",
-  description="Anleitung zur Gründung einer Lokalen Elektrizitätsgemeinschaft (LEG) in der Schweiz. Voraussetzungen, Mitglieder, Rechtsform, Dokumente und Kosten.",
+  description="Eine Lokale Elektrizitätsgemeinschaft gründen: Voraussetzungen prüfen, Beteiligte erfassen, Dokumente vorbereiten und die LEG anmelden.",
   path="/leg-gruenden",
-  og_title="LEG gründen: Leitfaden für die Schweiz | OpenLEG",
-  og_description="Schritt für Schritt zur Lokalen Elektrizitätsgemeinschaft: Voraussetzungen, Mitglieder, Rechtsform, Dokumente und Netzbetreiber.",
+  og_title="LEG gründen: der nächste Schritt ist klar | OpenLEG",
+  og_description="Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb.",
   og_type="article",
-  keywords="LEG gründen Schweiz, Stromgemeinschaft gründen, Elektrizitätsgemeinschaft, LEG Anforderungen, LEG Dokumente, Mantelerlass LEG",
+  keywords="LEG gründen Schweiz, Stromgemeinschaft gründen, LEG Anforderungen, LEG Dokumente",
   site_url=site_url
 ) }}
 {% endblock %}
 
 {% block head_extra %}
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {"@type": "ListItem", "position": 1, "name": "OpenLEG", "item": "{{ site_url }}/"},
-      {"@type": "ListItem", "position": 2, "name": "LEG gründen", "item": "{{ site_url }}/leg-gruenden"}
-    ]
-  }
-</script>
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Kann ich eine LEG gründen, wenn ich keine Solaranlage habe?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Nein, mindestens ein Teilnehmer muss Strom produzieren. Sie müssen aber nicht selbst der Produzent sein. Sie können einer LEG beitreten, bei der ein Nachbar die Solaranlage hat."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Wie viel Geld spare ich mit einer LEG?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Das hängt von Ihrem Verbrauch und der lokalen Produktion ab. Typischerweise sparen LEG-Mitglieder 10 bis 30% bei den Netznutzungsentgelten."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Muss ich einen Smart Meter haben?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Ja, für LEGs ist eine 15-Minuten-Messung gesetzlich vorgeschrieben. Ihr Netzbetreiber installiert die Smart Meter nach Genehmigung der LEG."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Kann ich aus einer LEG wieder austreten?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Ja, die Austrittsregeln stehen in Ihren Statuten. Üblicherweise ist ein Austritt mit 3-6 Monaten Kündigungsfrist möglich."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Was passiert, wenn meine Gemeinde keine LEG-Plattform hat?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Sie können trotzdem eine LEG gründen. Es braucht dann mehr Eigenarbeit. Oder Sie schlagen Ihrer Gemeinde vor, bei OpenLEG mitzumachen. Für Gemeinden ist der Plattformstart kostenlos."
-        }
-      }
-    ]
-  }
-</script>
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "OpenLEG", "item": "{{ site_url }}/"},
+    {"@type": "ListItem", "position": 2, "name": "LEG gründen", "item": "{{ site_url }}/leg-gruenden"}
+  ]
+}</script>
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "Eine Lokale Elektrizitätsgemeinschaft gründen",
+  "step": [
+    {"@type": "HowToStep", "position": 1, "name": "Gebiet und Voraussetzungen prüfen", "url": "{{ site_url }}/leg-gruenden#schritt-1"},
+    {"@type": "HowToStep", "position": 2, "name": "Teilnehmende und Anlagen erfassen", "url": "{{ site_url }}/leg-gruenden#schritt-2"},
+    {"@type": "HowToStep", "position": 3, "name": "Vertretung und Vereinbarung festlegen", "url": "{{ site_url }}/leg-gruenden#schritt-3"},
+    {"@type": "HowToStep", "position": 4, "name": "Gründung vorbereiten", "url": "{{ site_url }}/leg-gruenden#schritt-4"},
+    {"@type": "HowToStep", "position": 5, "name": "LEG beim Netzbetreiber anmelden", "url": "{{ site_url }}/leg-gruenden#schritt-5"},
+    {"@type": "HowToStep", "position": 6, "name": "Messung klären und Betrieb aufnehmen", "url": "{{ site_url }}/leg-gruenden#schritt-6"}
+  ]
+}</script>
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Kann ich die OpenLEG-Software selbst betreiben?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Ja. Die Anleitung zum eigenen Betrieb führt durch Installation und Konfiguration."}
+    },
+    {
+      "@type": "Question",
+      "name": "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Nein. OpenLEG funktioniert mit jedem Schweizer Netzbetreiber. Die Anmeldung erfolgt beim zuständigen Verteilnetzbetreiber."}
+    }
+  ]
+}</script>
 {% endblock %}
 
 {% block content %}
-  <main class="max-w-4xl mx-auto px-4 py-12">
-    <header class="text-center mb-12">
-      <h1 class="text-5xl font-bold mb-4">LEG gründen: der Weg von der Idee zum Betrieb</h1>
-      <p class="text-xl text-ink-muted max-w-3xl mx-auto">
-        Seit dem Mantelerlass (Januar 2026) können Sie eine Lokale Elektrizitätsgemeinschaft (LEG) gründen. 
-        Diese Anleitung zeigt die Entscheidungen, Dokumente und Fristen, die Sie dafür klären müssen.
-      </p>
-    </header>
+<div class="max-w-6xl mx-auto px-4 py-12">
+  <header class="max-w-3xl mb-10 border-b border-slate-200 pb-8">
+    <p class="text-sm font-semibold text-brand mb-2">Für LEG-Gründerinnen und LEG-Gründer</p>
+    <h1 class="text-4xl font-bold mb-3">Von der Adresse zur betriebsbereiten LEG</h1>
+    <p class="text-lg text-ink-muted">Jeder Schritt nennt die Voraussetzung, Ihre Aufgabe, den Nachweis und die nächste Aktion. Beginnen Sie dort, wo Ihre Gruppe heute steht.</p>
+  </header>
 
-    <!-- Quick Summary -->
-    <section class="bg-white rounded-xl shadow-md p-8 mb-8 border-l-4 border-brand">
-      <h2 class="text-2xl font-bold mb-4">Kurzübersicht</h2>
-      <div class="grid md:grid-cols-3 gap-6">
-        <div>
-          <div class="text-3xl font-bold text-brand mb-1">4-8 Wochen</div>
-          <div class="text-sm text-ink-muted">Zeitaufwand</div>
-        </div>
-        <div>
-          <div class="text-3xl font-bold text-brand mb-1">CHF 500-2'000</div>
-          <div class="text-sm text-ink-muted">Gründungskosten</div>
-        </div>
-        <div>
-          <div class="text-3xl font-bold text-brand mb-1">5+ Personen</div>
-          <div class="text-sm text-ink-muted">Mindestgrösse</div>
-        </div>
-      </div>
-      <p class="text-sm text-ink-muted mt-4">Diese Kosten betreffen externe Beratung und Zähler. OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos, siehe <a href="/pricing" class="text-brand underline">Preisübersicht</a>.</p>
-    </section>
+  <section aria-labelledby="timeline-title">
+    <div class="max-w-3xl mb-6">
+      <h2 id="timeline-title" class="text-3xl font-bold">Gründung als Arbeitsfolge</h2>
+      <p class="text-ink-muted mt-2">Die Schritte bauen aufeinander auf. Die Anmeldung beim Verteilnetzbetreiber erfolgt drei Monate im Voraus auf ein Monatsende. <a href="#data-provenance" data-source-marker="legal" class="font-mono text-xs text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV</a></p>
+    </div>
 
-    <!-- Step-by-Step Guide -->
-    <section class="space-y-8">
-      <h2 class="text-3xl font-bold mb-6">Schritt für Schritt zur LEG</h2>
+    {% include "partials/leg_facts.html" %}
 
-      <!-- Step 1 -->
-      <div class="bg-white rounded-xl shadow-md p-8">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center text-xl font-bold">1</div>
-          <div class="flex-1">
-            <h3 class="text-2xl font-bold mb-3">Voraussetzungen prüfen</h3>
-            <p class="text-ink-muted mb-4">
-              Nicht jede Situation eignet sich für eine LEG. Prüfen Sie zuerst die Grundvoraussetzungen:
-            </p>
-            <ul class="space-y-2 text-ink-muted">
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Lokale Nähe:</strong> Alle Teilnehmer im selben Netzgebiet (Verteilnetz des gleichen Betreibers)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Eigene Produktion:</strong> Mindestens ein Teilnehmer produziert Strom (z.B. Solaranlage)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Genug Mitglieder:</strong> Mindestens 5 Personen (Empfehlung: 10+ für bessere Wirtschaftlichkeit)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Gemeinsames Interesse:</strong> Alle wollen lokal produzierten Strom teilen</span>
-              </li>
-            </ul>
-            <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p class="text-sm text-blue-900">
-                <strong>Tipp:</strong> Nutzen Sie den <a href="/leg-kalkulator" class="text-brand underline">LEG-Kalkulator</a>, 
-                um Ihr Sparpotenzial zu berechnen. Bei Einsparungen unter 10% lohnt sich eine LEG oft nicht.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <ol class="border-t border-slate-200">
+      <li id="schritt-1" data-formation-stage="1" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
+        <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">01</p>
+        <article>
+          <h3 class="text-xl font-bold mb-4">Gebiet und Voraussetzungen prüfen</h3>
+          <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Sie die Adressen der interessierten Anschlüsse kennen.</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Prüfen Sie politische Gemeinde, Netzgebiet, Netzebene und die gemeinsame erneuerbare Produktion.</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Eine Liste der passenden Anschlüsse und Anlagen.</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg-check" class="text-brand font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Adresse im LEG-Check prüfen</a></dd></div>
+          </dl>
+          <p class="text-sm text-ink-muted mt-4">Für Gemeinden ist der Plattformstart kostenlos. <a href="/pricing" data-source-marker="pricing-municipalities" class="font-mono text-xs text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Quelle: Preisübersicht</a></p>
+        </article>
+      </li>
 
-      <!-- Step 2 -->
-      <div class="bg-white rounded-xl shadow-md p-8">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center text-xl font-bold">2</div>
-          <div class="flex-1">
-            <h3 class="text-2xl font-bold mb-3">Mitglieder finden</h3>
-            <p class="text-ink-muted mb-4">
-              Finden Sie interessierte Nachbarn, Mieter oder Eigentümer in Ihrer Umgebung:
-            </p>
-            <ul class="space-y-2 text-ink-muted mb-4">
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span><strong>Mehrfamilienhaus:</strong> Sprechen Sie mit Ihrer Verwaltung und anderen Bewohnern</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span><strong>Quartier:</strong> Verteilen Sie Flyer, nutzen Sie WhatsApp-Gruppen, organisieren Sie ein Infotreffen</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span><strong>Gemeinde:</strong> Fragen Sie bei Ihrer Gemeinde nach, ob sie eine LEG-Plattform anbietet</span>
-              </li>
-            </ul>
-            <div class="p-4 bg-slate-100 rounded-lg">
-              <p class="text-sm text-ink-muted">
-                <strong>OpenLEG hilft:</strong> Wenn Ihre Gemeinde bei OpenLEG registriert ist, können Sie sich 
-                online anmelden und wir bringen Sie mit passenden Nachbarn zusammen.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <li id="schritt-2" data-formation-stage="2" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
+        <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">02</p>
+        <article>
+          <h3 class="text-xl font-bold mb-4">Teilnehmende und Anlagen erfassen</h3>
+          <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Das mögliche Gebiet feststeht.</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten Anlagen.</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Eine abgestimmte Teilnehmenden- und Anlagenliste.</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg-verzeichnis" class="text-brand font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Bestehende LEGs im Verzeichnis prüfen</a></dd></div>
+          </dl>
+        </article>
+      </li>
 
-      <!-- Step 3 -->
-      <div class="bg-white rounded-xl shadow-md p-8">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center text-xl font-bold">3</div>
-          <div class="flex-1">
-            <h3 class="text-2xl font-bold mb-3">Rechtsform wählen</h3>
-            <p class="text-ink-muted mb-4">
-              Eine LEG braucht eine rechtliche Struktur. Die häufigsten Formen:
-            </p>
-            <div class="space-y-4">
-              <div class="p-4 border border-slate-200 rounded-lg">
-                <h4 class="font-bold mb-2">Verein (empfohlen für kleine LEGs)</h4>
-                <ul class="text-sm text-ink-muted space-y-1">
-                  <li>• Einfache Gründung (keine Notarpflicht)</li>
-                  <li>• Mindestens 2 Personen</li>
-                  <li>• Statuten und Vorstand nötig</li>
-                  <li>• Kosten: ca. CHF 500-1'000</li>
-                </ul>
-              </div>
-              <div class="p-4 border border-slate-200 rounded-lg">
-                <h4 class="font-bold mb-2">Einfache Gesellschaft</h4>
-                <ul class="text-sm text-ink-muted space-y-1">
-                  <li>• Keine Eintragung ins Handelsregister nötig</li>
-                  <li>• Gesellschaftsvertrag ausreichend</li>
-                  <li>• Alle Mitglieder haften solidarisch</li>
-                  <li>• Kosten: ca. CHF 300-500</li>
-                </ul>
-              </div>
-              <div class="p-4 border border-slate-200 rounded-lg">
-                <h4 class="font-bold mb-2">Genossenschaft (für grössere LEGs)</h4>
-                <ul class="text-sm text-ink-muted space-y-1">
-                  <li>• Mindestens 7 Mitglieder</li>
-                  <li>• Eintragung ins Handelsregister</li>
-                  <li>• Ideal für Wachstum (einfache Mitgliederaufnahme)</li>
-                  <li>• Kosten: ca. CHF 1'500-3'000</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <li id="schritt-3" data-formation-stage="3" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
+        <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">03</p>
+        <article>
+          <h3 class="text-xl font-bold mb-4">Vertretung und Vereinbarung festlegen</h3>
+          <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Die künftigen Teilnehmenden bekannt sind.</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Bestimmen Sie die Vertretung und regeln Sie Teilnahme, Stromverteilung, Abrechnung und Austritt.</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Ein von der Gruppe geprüfter Vereinbarungsentwurf.</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Gründungsassistent und Vorlagen ansehen</a></dd></div>
+          </dl>
+        </article>
+      </li>
 
-      <!-- Step 4 -->
-      <div class="bg-white rounded-xl shadow-md p-8">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center text-xl font-bold">4</div>
-          <div class="flex-1">
-            <h3 class="text-2xl font-bold mb-3">Statuten/Vertrag aufsetzen</h3>
-            <p class="text-ink-muted mb-4">
-              Das Gründungsdokument regelt alle wichtigen Punkte Ihrer LEG:
-            </p>
-            <ul class="space-y-2 text-ink-muted mb-4">
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Name und Zweck:</strong> "LEG [Ihr Quartier/Strasse]" und Stromteilung als Zweck</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Mitglieder:</strong> Aufnahme, Austritt, Rechte und Pflichten</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Verteilung:</strong> Wie wird der Strom aufgeteilt? (z.B. nach Verbrauch, nach Anteilen)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Abrechnung:</strong> Strompreis, Netznutzungsgebühren, Abrechnungszyklus</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">✓</span>
-                <span><strong>Organe:</strong> Vorstand/Verwaltung, Entscheidungsfindung, Generalversammlung</span>
-              </li>
-            </ul>
-            <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <p class="text-sm text-yellow-900">
-                <strong>Wichtig:</strong> Lassen Sie die Statuten von einem Anwalt prüfen. Fehler können später teuer werden.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <li id="schritt-4" data-formation-stage="4" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
+        <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">04</p>
+        <article>
+          <h3 class="text-xl font-bold mb-4">Gründung vorbereiten</h3>
+          <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Vertretung und Vereinbarungsinhalt feststehen.</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Vervollständigen Sie im Assistenten Gemeinschaftsvereinbarung und Teilnehmerverträge.</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Geprüfte und unterzeichnete Gründungsdokumente.</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Dokumentablauf im Assistenten öffnen</a></dd></div>
+          </dl>
+        </article>
+      </li>
 
-      <!-- Step 5 -->
-      <div class="bg-white rounded-xl shadow-md p-8">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center text-xl font-bold">5</div>
-          <div class="flex-1">
-            <h3 class="text-2xl font-bold mb-3">Meldung beim Netzbetreiber</h3>
-            <p class="text-ink-muted mb-4">
-              Der Verteilnetzbetreiber (VNB) muss über Ihre LEG informiert werden:
-            </p>
-            <ul class="space-y-2 text-ink-muted mb-4">
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">1.</span>
-                <span><strong>Kontakt aufnehmen:</strong> Finden Sie heraus, wer Ihr VNB ist (steht auf Ihrer Stromrechnung)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">2.</span>
-                <span><strong>Dokumente einreichen:</strong> Statuten, Mitgliederliste, Produktionsanlage-Details</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">3.</span>
-                <span><strong>Messkonzept klären:</strong> 15-Minuten-Messung für alle Teilnehmer nötig (Smart Meter)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">4.</span>
-                <span><strong>Netznutzungsvertrag:</strong> Reduzierte Netznutzungsgebühr für lokal verbrauchten Strom</span>
-              </li>
-            </ul>
-            <p class="text-sm text-ink-muted mb-4">Diese Anmeldung funktioniert bei jedem Schweizer Netzbetreiber. OpenLEG ist nicht auf einzelne Partner-Netzbetreiber beschränkt.</p>
-            <div class="p-4 bg-slate-100 rounded-lg">
-              <p class="text-sm text-ink-muted">
-                <strong>Bearbeitungszeit:</strong> Der VNB hat 2-4 Wochen Zeit zur Prüfung. Bei Ablehnung muss er dies begründen.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <li id="schritt-5" data-formation-stage="5" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
+        <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">05</p>
+        <article>
+          <h3 class="text-xl font-bold mb-4">LEG beim Netzbetreiber anmelden</h3>
+          <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Gruppe, Vertretung, gewünschter Beginn und Dokumente feststehen.</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Melden Sie die Bildung der LEG dem zuständigen Verteilnetzbetreiber drei Monate im Voraus auf ein Monatsende.</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Die eingereichte Anmeldung und die Korrespondenz mit dem Netzbetreiber.</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Anmeldung im Assistenten nachvollziehen</a></dd></div>
+          </dl>
+        </article>
+      </li>
 
-      <!-- Step 6 -->
-      <div class="bg-white rounded-xl shadow-md p-8">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center text-xl font-bold">6</div>
-          <div class="flex-1">
-            <h3 class="text-2xl font-bold mb-3">Smart Meter installieren</h3>
-            <p class="text-ink-muted mb-4">
-              LEGs brauchen intelligente Stromzähler mit 15-Minuten-Messung:
-            </p>
-            <ul class="space-y-2 text-ink-muted mb-4">
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span>VNB installiert die Zähler (oder beauftragt einen Dienstleister)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span>Kosten: CHF 200-500 pro Zähler (je nach VNB)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span>Dauer: 1-2 Wochen nach Genehmigung</span>
-              </li>
-            </ul>
-            <p class="text-ink-muted mb-4">
-              Die Zähler erfassen Ihren Verbrauch alle 15 Minuten. Diese Daten sind die Grundlage für die Abrechnung.
-            </p>
-          </div>
-        </div>
-      </div>
+      <li id="schritt-6" data-formation-stage="6" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
+        <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">06</p>
+        <article>
+          <h3 class="text-xl font-bold mb-4">Messung klären und Betrieb aufnehmen</h3>
+          <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Der Netzbetreiber die Anmeldung bearbeitet und der Messbedarf geklärt ist.</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Beantragen Sie fehlende intelligente Messsysteme und legen Sie den Ablauf für Daten und Abrechnung fest.</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Verfügbare Messdaten und ein dokumentierter Abrechnungsablauf.</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/pricing" class="text-brand font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Betriebsangebote vergleichen</a></dd></div>
+          </dl>
+          <p class="text-sm text-ink-muted mt-4">OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos. <a href="/pricing" data-source-marker="pricing-software" class="font-mono text-xs text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Quelle: Preisübersicht</a></p>
+          <p class="text-sm text-ink-muted mt-4">Beantragt die LEG ein intelligentes Messsystem, installiert der Verteilnetzbetreiber es innert drei Monaten. <a href="#data-provenance" data-source-marker="legal" class="font-mono text-xs text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Art. 8a decies Abs. 6 StromVV</a></p>
+        </article>
+      </li>
+    </ol>
+  </section>
 
-      <!-- Step 7 -->
-      <div class="bg-white rounded-xl shadow-md p-8">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center text-xl font-bold">7</div>
-          <div class="flex-1">
-            <h3 class="text-2xl font-bold mb-3">Betrieb und Abrechnung</h3>
-            <p class="text-ink-muted mb-4">
-              Nach der Inbetriebnahme braucht Ihre LEG vor allem saubere Daten:
-            </p>
-            <ul class="space-y-2 text-ink-muted mb-4">
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span><strong>Datenübermittlung:</strong> VNB liefert monatlich die Messdaten</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span><strong>Abrechnung:</strong> LEG-Verwaltung berechnet Stromverteilung und Kosten</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span><strong>Rechnungsstellung:</strong> Mitglieder erhalten monatliche Abrechnung</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-brand font-bold mt-1">•</span>
-                <span><strong>Überschuss:</strong> Nicht verbrauchter Strom wird ins Netz eingespeist</span>
-              </li>
-            </ul>
-            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
-              <p class="text-sm text-green-900">
-                <strong>OpenLEG-Software:</strong> OpenLEG übernimmt die Abrechnung.
-                Sie laden die CSV-Datei vom VNB hoch.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+  <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance("Rechtsstand", "2026", ["Art. 17d und 17e StromVG", "Art. 19e bis 19h StromVV", "Art. 8a decies Abs. 6 StromVV"]) }}</div>
 
-    <!-- Legal Requirements -->
-    <section class="bg-white rounded-xl shadow-md p-8 mt-12">
-      <h2 class="text-3xl font-bold mb-6">Rechtliche Anforderungen</h2>
-      <div class="space-y-4 text-ink-muted">
-        <div>
-          <h3 class="font-bold text-ink mb-2">Gesetzliche Grundlage</h3>
-          <p>LEGs sind seit dem <strong>Mantelerlass</strong> (Januar 2026) im Energiegesetz (EnG) verankert. 
-          Die Details regelt die <strong>Energieverordnung (EnV)</strong>.</p>
-        </div>
-        <div>
-          <h3 class="font-bold text-ink mb-2">Datenschutz</h3>
-          <p>Smart-Meter-Daten sind personenbezogen. Ihre LEG muss die <strong>Datenschutzgrundverordnung (DSGVO)</strong> 
-          einhalten und Mitglieder informieren, wer Zugriff auf ihre Verbrauchsdaten hat.</p>
-        </div>
-        <div>
-          <h3 class="font-bold text-ink mb-2">Steuern</h3>
-          <p>LEGs sind grundsätzlich <strong>nicht steuerpflichtig</strong>, solange sie keinen Gewinn erwirtschaften. 
-          Bei Überschüssen prüfen Sie mit einem Steuerberater.</p>
-        </div>
-      </div>
-    </section>
+  <section id="rechtsquellen" aria-labelledby="sources-title" class="max-w-3xl mt-8 scroll-mt-20">
+    <h2 id="sources-title" class="text-xl font-bold">Rechtsquellen und Einordnung</h2>
+    <p class="text-sm text-ink-muted mt-2">Prüfen Sie die Vorgaben für Ihren Fall bei den zuständigen Stellen:</p>
+    <ul class="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-sm">
+      <li><a href="https://www.elcom.admin.ch/dam/de/sd-web/weRgj22ICsTE/053-00004_20260616_AN_FAQ%20ES2050%20ab%20Mantelerlass_DE.pdf" class="text-brand underline">ElCom</a></li>
+      <li><a href="https://www.energieschweiz.ch/stories/stromverbuende/" class="text-brand underline">EnergieSchweiz</a></li>
+      <li><a href="https://www.lokalerstrom.ch/betriebsmodelle/leg" class="text-brand underline">lokalerstrom.ch</a></li>
+      <li><a href="https://www.fedlex.admin.ch/eli/cc/2007/418/de" class="text-brand underline">StromVG</a></li>
+      <li><a href="https://www.fedlex.admin.ch/eli/cc/2008/226/de" class="text-brand underline">StromVV</a></li>
+      <li><a href="https://www.edoeb.admin.ch/de/das-neue-datenschutzgesetz-aus-sicht-des-edob" class="text-brand underline">EDÖB zum DSG</a></li>
+      <li><a href="https://www.edoeb.admin.ch/de/wesentlichen-anderungen-fuer-das-offentlichkeitsgesetz" class="text-brand underline">EDÖB zu Gesetzesänderungen</a></li>
+    </ul>
+  </section>
 
-    <!-- Timeline -->
-    <section class="bg-white rounded-xl shadow-md p-8 mt-8">
-      <h2 class="text-3xl font-bold mb-6">Zeitplan: Von der Idee zur LEG</h2>
-      <div class="space-y-4">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-24 text-sm text-ink-muted font-bold">Woche 1-2</div>
-          <div class="flex-1 pb-4 border-l-2 border-slate-200 pl-4">
-            <div class="font-bold text-ink mb-1">Vorbereitung</div>
-            <div class="text-sm text-ink-muted">Voraussetzungen prüfen, Mitglieder finden, erstes Treffen</div>
-          </div>
-        </div>
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-24 text-sm text-ink-muted font-bold">Woche 3-4</div>
-          <div class="flex-1 pb-4 border-l-2 border-slate-200 pl-4">
-            <div class="font-bold text-ink mb-1">Rechtsform & Dokumente</div>
-            <div class="text-sm text-ink-muted">Rechtsform wählen, Statuten aufsetzen, Anwalt konsultieren</div>
-          </div>
-        </div>
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-24 text-sm text-ink-muted font-bold">Woche 5-6</div>
-          <div class="flex-1 pb-4 border-l-2 border-slate-200 pl-4">
-            <div class="font-bold text-ink mb-1">Meldung & Genehmigung</div>
-            <div class="text-sm text-ink-muted">VNB kontaktieren, Dokumente einreichen, Genehmigung abwarten</div>
-          </div>
-        </div>
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0 w-24 text-sm text-ink-muted font-bold">Woche 7-8</div>
-          <div class="flex-1 pb-4 border-l-2 border-slate-200 pl-4">
-            <div class="font-bold text-ink mb-1">Installation & Start</div>
-            <div class="text-sm text-ink-muted">Smart Meter installieren, erste Messungen, Betrieb aufnehmen</div>
-          </div>
-        </div>
-      </div>
-    </section>
+  <section aria-labelledby="options-title" class="border-y border-slate-200 py-8 mt-10">
+    <h2 id="options-title" class="text-2xl font-bold">Werkzeuge und Betrieb</h2>
+    <div class="flex flex-wrap gap-x-6 gap-y-3 mt-4 text-sm">
+      <a href="/leg-kalkulator" class="text-brand font-semibold underline">LEG-Kalkulator öffnen</a>
+      <a href="/pricing" class="text-brand font-semibold underline">Preisübersicht ansehen</a>
+      <a href="/self-host" class="text-brand font-semibold underline">OpenLEG selbst installieren</a>
+      <a href="/gemeinde/onboarding" class="text-brand font-semibold underline">Gemeinde anmelden</a>
+    </div>
+  </section>
 
-    <!-- Costs -->
-    <section class="bg-white rounded-xl shadow-md p-8 mt-8">
-      <h2 class="text-3xl font-bold mb-6">Kosten im Überblick</h2>
-      <table class="w-full text-left">
-        <thead class="border-b-2 border-slate-200">
-          <tr>
-            <th class="pb-2 font-bold text-ink">Position</th>
-            <th class="pb-2 font-bold text-ink text-right">Kosten (CHF)</th>
-          </tr>
-        </thead>
-        <tbody class="text-ink-muted">
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Statuten/Vertrag aufsetzen</td>
-            <td class="py-2 text-right">300-800</td>
-          </tr>
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Anwalt (optional, empfohlen)</td>
-            <td class="py-2 text-right">500-1'500</td>
-          </tr>
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Handelsregistereintrag (nur Genossenschaft)</td>
-            <td class="py-2 text-right">600-1'200</td>
-          </tr>
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Smart Meter (pro Teilnehmer)</td>
-            <td class="py-2 text-right">200-500</td>
-          </tr>
-          <tr class="border-b border-slate-100">
-            <td class="py-2">Software für Abrechnung (bei OpenLEG kostenlos)</td>
-            <td class="py-2 text-right">0</td>
-          </tr>
-          <tr class="font-bold text-ink">
-            <td class="pt-3">Gesamtkosten (ohne Zähler)</td>
-            <td class="pt-3 text-right">500-2'000</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <!-- CTA -->
-    <section class="bg-brand text-white rounded-xl shadow-md p-10 mt-12 text-center">
-      <h2 class="text-3xl font-bold mb-4">Bereit für Ihre LEG?</h2>
-      <p class="text-white/90 mb-6 max-w-2xl mx-auto">
-        OpenLEG nimmt Ihnen nicht die Gründung ab, aber es räumt viel Kleinarbeit weg:
-        Abrechnung, Dokumente, Vorlagen und ein sauberer Einstieg für neue Mitglieder.
-      </p>
-      <p class="text-white/90 mb-6">Sie möchten die Plattform in Ihrer LEG betreiben? <a href="/self-host" class="font-semibold underline">OpenLEG selbst installieren</a>.</p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="/leg-kalkulator" class="inline-block bg-white text-brand px-8 py-3 rounded-lg font-bold hover:bg-slate-100">
-          Sparpotenzial berechnen
-        </a>
-        <a href="/gemeinde/onboarding" class="inline-block border-2 border-white text-white px-8 py-3 rounded-lg font-bold hover:bg-white/10">
-          Gemeinde anmelden
-        </a>
-      </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="mt-12">
-      <h2 class="text-3xl font-bold mb-6">Häufige Fragen</h2>
-      <div class="space-y-4">
-        <details class="bg-white rounded-lg shadow-md p-6">
-          <summary class="font-bold text-ink cursor-pointer">Kann ich eine LEG gründen, wenn ich keine Solaranlage habe?</summary>
-          <p class="mt-3 text-ink-muted">Nein, mindestens ein Teilnehmer muss Strom produzieren. Sie müssen aber nicht selbst der Produzent sein. Sie können einer LEG beitreten, bei der ein Nachbar die Solaranlage hat.</p>
-        </details>
-        <details class="bg-white rounded-lg shadow-md p-6">
-          <summary class="font-bold text-ink cursor-pointer">Wie viel Geld spare ich mit einer LEG?</summary>
-          <p class="mt-3 text-ink-muted">Das hängt von Ihrem Verbrauch und der lokalen Produktion ab. Typischerweise sparen LEG-Mitglieder 10 bis 30% bei den Netznutzungsentgelten. Nutzen Sie unseren <a href="/leg-kalkulator" class="text-brand underline">LEG-Kalkulator</a> für eine genauere Schätzung.</p>
-        </details>
-        <details class="bg-white rounded-lg shadow-md p-6">
-          <summary class="font-bold text-ink cursor-pointer">Muss ich einen Smart Meter haben?</summary>
-          <p class="mt-3 text-ink-muted">Ja, für LEGs ist eine 15-Minuten-Messung gesetzlich vorgeschrieben. Ihr Netzbetreiber installiert die Smart Meter nach Genehmigung der LEG.</p>
-        </details>
-        <details class="bg-white rounded-lg shadow-md p-6">
-          <summary class="font-bold text-ink cursor-pointer">Kann ich aus einer LEG wieder austreten?</summary>
-          <p class="mt-3 text-ink-muted">Ja, die Austrittsregeln stehen in Ihren Statuten. Üblicherweise ist ein Austritt mit 3-6 Monaten Kündigungsfrist möglich.</p>
-        </details>
-        <details class="bg-white rounded-lg shadow-md p-6">
-          <summary class="font-bold text-ink cursor-pointer">Was passiert, wenn meine Gemeinde keine LEG-Plattform hat?</summary>
-          <p class="mt-3 text-ink-muted">Sie können trotzdem eine LEG gründen. Es braucht dann mehr Eigenarbeit. Oder Sie schlagen Ihrer Gemeinde vor, bei OpenLEG mitzumachen. Für Gemeinden ist der Plattformstart kostenlos.</p>
-        </details>
-      </div>
-    </section>
-
-  </main>
+  <section aria-labelledby="faq-title" class="max-w-3xl mt-10">
+    <h2 id="faq-title" class="text-2xl font-bold">Fragen ausserhalb der Gründungsschritte</h2>
+    <div class="divide-y divide-slate-200 border-y border-slate-200 mt-4">
+      <details data-faq-item class="py-5">
+        <summary class="font-semibold text-ink cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Kann ich die OpenLEG-Software selbst betreiben?</summary>
+        <p data-faq-answer class="mt-3 text-ink-muted">Ja. Die Anleitung zum eigenen Betrieb führt durch Installation und Konfiguration.</p>
+      </details>
+      <details data-faq-item class="py-5">
+        <summary class="font-semibold text-ink cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?</summary>
+        <p data-faq-answer class="mt-3 text-ink-muted">Nein. OpenLEG funktioniert mit jedem Schweizer Netzbetreiber. Die Anmeldung erfolgt beim zuständigen Verteilnetzbetreiber.</p>
+      </details>
+    </div>
+  </section>
+</div>
 {% endblock %}

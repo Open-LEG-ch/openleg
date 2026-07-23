@@ -4,53 +4,84 @@
 {% block meta %}
 {{ page_meta(
   title="Selbst betreiben | OpenLEG",
-  description="OpenLEG auf eigener Infrastruktur betreiben: souveräner Schnellstart mit einem Befehl oder manuelle Installation mit voller Kontrolle.",
+  description="OpenLEG auf eigener Infrastruktur installieren: Quellcode laden, lokale Zugangsschlüssel erstellen und Docker-Dienste starten.",
   path="/self-host",
   og_title="OpenLEG selbst betreiben",
-  og_description="Die souveräne OpenLEG-Installation für Ihre LEG, mit einem Befehl auf eigener Hardware.",
+  og_description="OpenLEG mit einem Befehl installieren oder den Quellcode vor dem Start selbst prüfen.",
   site_url=site_url,
 ) }}
 {% endblock %}
 
 {% block content %}
-  <main class="max-w-6xl mx-auto px-4 py-12">
-    <header class="max-w-3xl mb-10">
-      <p class="text-sm font-semibold text-brand mb-2">Selbst betreiben</p>
-      <h1 class="text-4xl font-bold mb-4">Ihre LEG, Ihre Infrastruktur, Ihre Daten.</h1>
-      <p class="text-lg text-ink-muted mb-6">OpenLEG läuft auf Ihrer eigenen Hardware. Docker und eine Zeile genügen für den Einstieg.</p>
-      <div class="bg-ink rounded-xl p-5 shadow-lg">
-        <p class="text-sm font-semibold text-slate-300 mb-3">Schnellstart</p>
-        <pre class="text-slate-100 text-sm overflow-x-auto"><code>curl -fsSL https://openleg.ch/install.sh | bash</code></pre>
-      </div>
+  <div class="max-w-6xl mx-auto px-4 py-12">
+    <header class="max-w-3xl mb-10 border-b border-slate-200 pb-8">
+      <p class="font-mono text-sm text-ink-muted mb-2">/self-host</p>
+      <h1 class="text-4xl font-bold mb-4">OpenLEG auf eigener Infrastruktur installieren.</h1>
+      <p class="text-lg text-ink-muted">Der Installer richtet die Anwendung und ihre Datenbank lokal mit Docker ein. Ihre LEG übernimmt danach Updates, Backups und Verfügbarkeit.</p>
     </header>
 
-    <section class="grid md:grid-cols-2 gap-6 mb-10">
-      <div class="bg-white border border-slate-200 rounded-xl p-6">
-        <h2 class="text-2xl font-bold mb-3">Schnellstart</h2>
-        <p class="text-ink-muted mb-4">Der Installer richtet OpenLEG mit Docker in einer Zeile ein. Ein Raspberry Pi, Mini-PC oder NAS genügt für den Anfang.</p>
-        <pre class="bg-ink text-slate-100 rounded-lg p-4 text-sm overflow-x-auto"><code>curl -fsSL https://openleg.ch/install.sh | bash</code></pre>
-        <p class="text-sm text-ink-muted mt-4">Sie können das Installationsskript vor dem Ausführen öffnen und prüfen.</p>
-      </div>
+    <section class="mb-10">
+      {% include "partials/install_console.html" %}
+    </section>
 
-      <div class="bg-white border border-slate-200 rounded-xl p-6">
-        <h2 class="text-2xl font-bold mb-3">Fortgeschritten</h2>
-        <p class="text-ink-muted mb-4">Klonen Sie das Repository und verwalten Sie Konfiguration, Updates und Betrieb selbst, wenn Sie volle Kontrolle wünschen.</p>
-        <pre class="bg-ink text-slate-100 rounded-lg p-4 text-sm overflow-x-auto"><code>git clone https://github.com/Open-LEG-ch/openleg.git
-cd openleg
-cp .env.example .env
-docker compose up -d</code></pre>
+    <section aria-labelledby="requirements-title" class="grid md:grid-cols-2 border-y border-slate-200 mb-10">
+      <div class="py-7 md:pr-8 border-b md:border-b-0 md:border-r border-slate-200">
+        <p class="font-mono text-xs uppercase tracking-wide text-ink-muted">Voraussetzungen</p>
+        <h2 id="requirements-title" class="text-2xl font-bold mt-1 mb-3">Was vorhanden sein muss</h2>
+        <ul class="space-y-2 text-sm text-ink-muted">
+          <li>macOS oder Linux</li>
+          <li>Docker mit Docker Compose</li>
+          <li><code class="font-mono text-ink">git</code>, <code class="font-mono text-ink">curl</code> und <code class="font-mono text-ink">openssl</code></li>
+          <li>Genügend Speicher für PostgreSQL-Daten und Backups</li>
+        </ul>
+      </div>
+      <div class="py-7 md:pl-8">
+        <p class="font-mono text-xs uppercase tracking-wide text-ink-muted">Installer</p>
+        <h2 class="text-2xl font-bold mt-1 mb-3">Was das Skript ausführt</h2>
+        <ol class="space-y-2 text-sm text-ink-muted list-decimal list-inside">
+          <li>Es lädt einen flachen Checkout des öffentlichen Repos.</li>
+          <li>Es delegiert an <code class="font-mono text-ink">scripts/openleg install</code>.</li>
+          <li>Es erstellt lokale Zugangsschlüssel und startet App, PostgreSQL und Redis.</li>
+          <li>Es prüft den lokalen Health-Endpunkt.</li>
+        </ol>
       </div>
     </section>
 
-    <section class="bg-brand/5 border border-brand/20 rounded-xl p-6 mb-10">
-      <h2 class="text-2xl font-bold mb-3">Die souveräne Wahl</h2>
-      <p class="text-ink-muted">Ihre LEG betreibt die Box, und Ihre Daten bleiben in der LEG. Dafür übernimmt Ihr Team Updates, Backups und die Verfügbarkeit. Wenn Sie keine Wartung übernehmen möchten, nutzen Sie die <a href="/" class="text-brand font-semibold underline">gehostete Plattform</a> als Alternative ohne eigenen Betriebsaufwand.</p>
+    <section aria-labelledby="models-title" class="mb-10">
+      <p class="font-mono text-xs uppercase tracking-wide text-ink-muted">Betriebsmodelle</p>
+      <h2 id="models-title" class="text-2xl font-bold mt-1 mb-4">Verantwortung wählen</h2>
+      <div class="overflow-x-auto border-y border-slate-200">
+        <table class="w-full min-w-[36rem] text-left text-sm">
+          <thead><tr class="border-b border-slate-200"><th class="py-3 pr-4">Modell</th><th class="p-3">Betrieb</th><th class="p-3">Datenhaltung</th></tr></thead>
+          <tbody>
+            <tr class="border-b border-slate-200"><th class="py-4 pr-4">Selbst betreiben</th><td class="p-4">Gemeinde oder Hostingpartner. Sie verantworten Setup, Updates, Backups, Monitoring und Verfügbarkeit.</td><td class="p-4">Auf eigener Infrastruktur</td></tr>
+            <tr><th class="py-4 pr-4">Gehostet auf openleg.ch</th><td class="p-4">OpenLEG. Kein eigener technischer Betrieb.</td><td class="p-4">Auf Schweizer Infrastruktur</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
-    <section class="text-center">
+    <section aria-labelledby="commitments-title" class="border-y border-slate-200 py-7 mb-10">
+      <p class="font-mono text-xs uppercase tracking-wide text-ink-muted">Projektverpflichtungen</p>
+      <h2 id="commitments-title" class="text-2xl font-bold mt-1 mb-3">Daten und Lizenz</h2>
+      <p class="text-ink-muted">Smart-Meter-Daten bleiben innerhalb jeder LEG. Sie werden nicht verkauft und nicht für Dritte aggregiert.</p>
+      <p class="text-ink-muted mt-3">OpenLEG steht unter <a href="https://github.com/Open-LEG-ch/openleg/blob/main/LICENSE" class="text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">AGPL-3.0-or-later</a>. Wer eine veränderte Version über ein Netzwerk anbietet, muss den Nutzenden den entsprechenden Quellcode gemäss Lizenz zugänglich machen.</p>
+    </section>
+
+    <section class="border-b border-slate-200 pb-8 mb-10">
+      <h2 class="text-2xl font-bold mb-3">Privates Netzwerk für Ihre Nachbarn</h2>
+      <p class="text-ink-muted mb-3">Ihre Mitglieder erreichen die Box von zu Hause über ein privates Netzwerk, ganz ohne offene Ports am Router. Es baut auf WireGuard und einem selbst gehosteten Headscale-Server auf. Nachbarn treten mit einem einmaligen Code bei.</p>
+      <p class="text-sm text-ink-muted">Der Koordinator sieht Verbindungsdaten, nie Ihre Messdaten. <a href="https://github.com/Open-LEG-ch/openleg/blob/main/docs/private-network.md" class="text-brand font-semibold underline">Anleitung zum privaten Netzwerk</a>.</p>
+    </section>
+
+    <section>
       <h2 class="text-2xl font-bold mb-3">Offen und nachvollziehbar</h2>
       <p class="text-ink-muted mb-5">Prüfen Sie den Code, passen Sie Ihre Installation an und behalten Sie die Kontrolle über den Betrieb.</p>
       <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="inline-block border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white">Quellcode auf GitHub</a>
     </section>
-  </main>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/static/js/install_console.js"></script>
 {% endblock %}

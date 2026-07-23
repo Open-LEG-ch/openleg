@@ -119,6 +119,26 @@ def test_pilot_baden_jsonld_article_and_place(monkeypatch):
     assert place["name"] == "Baden"
 
 
+def test_pilot_is_narrative_case_study_with_supporting_evidence(monkeypatch):
+    html = _get_html(monkeypatch)
+
+    assert 'data-page-structure="case-study"' in html
+    assert html.index('data-case-study-part="argument"') < html.index(
+        'data-evidence-tier="measured"'
+    )
+    assert html.index('data-evidence-tier="measured"') < html.index(
+        'data-evidence-tier="modelled"'
+    )
+    assert html.count("data-source-marker=") >= 4
+    assert html.count('href="#data-provenance"') >= 4
+    assert 'id="data-provenance"' in html
+    assert 'data-testid="data-provenance"' in html
+
+    nodes = _jsonld_nodes(html)
+    assert nodes["Article"]["about"]["@id"] == "#place-4021"
+    assert nodes["Place"]["identifier"] == "4021"
+
+
 def test_pilot_baden_canonical(monkeypatch):
     html = _get_html(monkeypatch)
     assert 'rel="canonical" href="http://openleg.ch/pilotgemeinde/baden"' in html
@@ -196,3 +216,47 @@ def test_fuer_bewohner_links_to_case_study(full_app_module):
     assert resp.status_code == 200
     html = resp.data.decode("utf-8", errors="ignore")
     assert "/pilotgemeinde/baden" in html
+
+
+def test_pilot_route_delegates_to_municipality_profile_module(monkeypatch):
+    """Route parses request, delegates assembly to municipality_profile, renders (#209)."""
+    client = _make_client()
+    fake_ctx = {"sentinel": "pilot-context"}
+    calls = []
+
+    def _fake_pilot_context(slug, *, site_url):
+        calls.append({"slug": slug, "site_url": site_url})
+        return fake_ctx
+
+    monkeypatch.setattr(
+        municipality_module.municipality_profile, "pilot_context", _fake_pilot_context
+    )
+
+    rendered = {}
+
+    def _fake_render_template(template_name, **context):
+        rendered["template"] = template_name
+        rendered["context"] = context
+        return "ok"
+
+    monkeypatch.setattr(municipality_module, "render_template", _fake_render_template)
+
+    resp = client.get("/pilotgemeinde/baden", headers={"Host": "openleg.ch"})
+
+    assert resp.status_code == 200
+    assert calls == [{"slug": "baden", "site_url": "http://openleg.ch"}]
+    assert rendered["template"] == "gemeinde/pilotgemeinde.html"
+    assert rendered["context"] == fake_ctx
+
+
+def test_pilot_route_returns_404_when_context_is_none(monkeypatch):
+    client = _make_client()
+    monkeypatch.setattr(
+        municipality_module.municipality_profile,
+        "pilot_context",
+        lambda slug, *, site_url: None,
+    )
+
+    resp = client.get("/pilotgemeinde/atlantis")
+
+    assert resp.status_code == 404

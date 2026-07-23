@@ -46,6 +46,62 @@ class TestFuerGemeindenPage:
                 assert "github.com/Open-LEG-ch/openleg" in html
                 assert "github.com/openleg-ch/openleg" not in html
 
+    def test_activation_story_renders_dashboard_responsibilities_and_models(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ):
+            with (
+                patch("database.is_db_available", return_value=True),
+                patch("database.init_db", return_value=True),
+                patch("database._connection_pool", MagicMock()),
+            ):
+                try:
+                    from app import app
+                except Exception:
+                    pytest.skip("App import requires live DB")
+
+                client = app.test_client()
+                hooks = list(app.before_request_funcs.get(None, []))
+                app.before_request_funcs[None] = [
+                    hook
+                    for hook in hooks
+                    if not (
+                        getattr(hook, "__module__", "").startswith("flask_limiter")
+                        or getattr(hook, "__name__", "") == "_check_request_limit"
+                    )
+                ]
+                try:
+                    response = client.get("/fuer-gemeinden")
+                finally:
+                    app.before_request_funcs[None] = hooks
+
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert 'src="/static/images/screenshots/dashboard-gemeinde.webp"' in html
+        assert 'width="1360"' in html
+        assert 'height="900"' in html
+        assert 'loading="lazy"' in html
+        for party in ("Gemeinde", "OpenLEG", "Verteilnetzbetreiber"):
+            assert f'data-responsible-party="{party}"' in html
+        for source in (
+            "Art. 17d und 17e StromVG",
+            "Art. 19e bis 19h StromVV",
+            "Art. 8a decies Abs. 6 StromVV",
+        ):
+            assert source in html
+        assert html.count('data-source-marker="legal"') >= 2
+        assert 'data-testid="data-provenance"' in html
+        dimensions = ("Betrieb", "Datenhaltung", "Aufwand", "Einstieg")
+        for model in ("self-hosted", "hosted"):
+            assert f'data-operating-model="{model}"' in html
+            for dimension in dimensions:
+                assert f'data-model-dimension="{model}:{dimension}"' in html
+
     def test_homepage_no_full_coverage_claim(self):
         path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -167,6 +223,11 @@ class TestFuerGemeindenPage:
             "partials",
             "site_nav.html",
         )
+        base_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "templates",
+            "base.html",
+        )
         css_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "static",
@@ -175,11 +236,14 @@ class TestFuerGemeindenPage:
         )
         with open(template_path, encoding="utf-8") as handle:
             content = handle.read()
+        with open(base_path, encoding="utf-8") as handle:
+            base = handle.read()
         with open(css_path, encoding="utf-8") as handle:
             css = handle.read()
 
         assert 'class="skip-link"' in content
         assert 'href="#main-content"' in content
-        assert 'id="main-content"' in content
-        assert 'tabindex="-1"' in content
+        assert 'id="main-content"' not in content
+        assert 'id="main-content"' in base
+        assert 'tabindex="-1"' in base
         assert ".skip-link:focus" in css
