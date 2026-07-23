@@ -155,28 +155,33 @@
     </div>
   </section>
 
-  <!-- Proof Bar -->
-  <section class="py-12 bg-[#f6f4ef]">
+  <!-- Fakten-Leiste: hairline measurement strip, each fact typed by its own nature -->
+  <section class="py-12 bg-[#f6f4ef]" aria-labelledby="fakten-title">
     <div class="max-w-6xl mx-auto px-4">
-      <div class="grid md:grid-cols-4 gap-4">
-        <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
-          <div class="text-sm text-ink-muted">Ihr Recht seit 1. Januar 2026</div>
-          <div class="text-lg font-semibold">Lokale Stromgemeinschaft gründen</div>
+      <h2 id="fakten-title" class="sr-only">Wichtigste Fakten zur LEG</h2>
+      <dl class="grid gap-x-8 gap-y-8 border-t border-slate-300 pt-8 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-slate-300">
+        <div class="lg:pl-8 lg:first:pl-0">
+          <dt class="text-xs uppercase tracking-wide text-ink-muted">Ihr Recht</dt>
+          <dd class="mt-2 font-mono tabular-nums text-4xl font-bold leading-none">2026</dd>
+          <p class="mt-2 text-sm text-ink-muted">Lokale Stromgemeinschaften seit dem 1. Januar erlaubt.</p>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
-          <div class="text-sm text-ink-muted">Netzgebühren sparen</div>
-          <div class="text-lg font-semibold">Bis 40% Rabatt in Ihrer LEG</div>
+        <div class="lg:pl-8">
+          <dt class="text-xs uppercase tracking-wide text-ink-muted">Netzgebühren</dt>
+          <dd class="mt-2 font-mono tabular-nums text-4xl font-bold leading-none">bis 40<span class="text-2xl align-top">%</span></dd>
+          <p class="mt-2 text-sm text-ink-muted">Rabatt auf lokal erzeugten und verbrauchten Strom.</p>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
-          <div class="text-sm text-ink-muted">Smart Meter</div>
-          <div class="text-lg font-semibold">Ihr Netzbetreiber installiert innert 3 Monaten</div>
+        <div class="lg:pl-8">
+          <dt class="text-xs uppercase tracking-wide text-ink-muted">Smart Meter</dt>
+          <dd class="mt-2 font-mono tabular-nums text-4xl font-bold leading-none">3 <span class="text-xl font-normal">Monate</span></dd>
+          <p class="mt-2 text-sm text-ink-muted">Frist für den Netzbetreiber, das Messsystem zu installieren.</p>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-white/80 p-4">
-          <div class="text-sm text-ink-muted">Plattform</div>
-          <div class="text-lg font-semibold">Kostenlos, Open Source, Schweizer Hosting</div>
+        <div class="lg:pl-8">
+          <dt class="text-xs uppercase tracking-wide text-ink-muted">Plattform</dt>
+          <dd class="mt-2 text-3xl font-bold leading-none">Kostenlos</dd>
+          <p class="mt-2 text-sm text-ink-muted">Open Source, gehostet in der Schweiz.</p>
         </div>
-      </div>
-      <div class="mt-3 text-xs text-ink-muted">Rechtsgrundlage: Art. 17d/17e Stromversorgungsgesetz, Art. 19e-19h Stromversorgungsverordnung.</div>
+      </dl>
+      <p class="mt-6 text-xs text-ink-muted">Rechtsgrundlage: Art. 17d/17e Stromversorgungsgesetz, Art. 19e-19h Stromversorgungsverordnung, Art. 8a decies Abs. 6 StromVV.</p>
     </div>
   </section>
 
