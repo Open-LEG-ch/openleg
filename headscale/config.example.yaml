@@ -1,0 +1,37 @@
+# Example Headscale config for the OpenLEG private network (Tier A, self-hosted).
+#
+# Copy this file to headscale/config.yaml (gitignored) and set server_url to a URL
+# your LEG members can reach:
+#   - a small VPS hostname, or
+#   - your home box's port-forwarded HTTPS endpoint.
+# A self-hosted coordinator must be reachable by the members joining it. Homes behind
+# carrier-grade NAT cannot expose one; those LEGs need the OpenLEG-operated network
+# (Tier B), which is not part of this self-hosted profile.
+#
+# Full reference: https://headscale.net/stable/ref/configuration/
+
+server_url: https://leg.example.ch:8081
+listen_addr: 0.0.0.0:8080
+metrics_listen_addr: 127.0.0.1:9090
+
+private_key_path: /var/lib/headscale/private.key
+noise:
+  private_key_path: /var/lib/headscale/noise_private.key
+
+# WireGuard address ranges handed to members.
+prefixes:
+  v4: 100.64.0.0/10
+  v6: fd7a:115c:a1e0::/48
+
+database:
+  type: sqlite
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
+
+# Keep DNS simple for a small LEG network.
+dns:
+  magic_dns: false
+  base_domain: leg.internal
+
+log:
+  level: info

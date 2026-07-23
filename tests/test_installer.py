@@ -13,11 +13,13 @@ pinned here so they cannot silently regress:
 """
 
 import os
+import subprocess
 
 import yaml
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INSTALLER_PATH = os.path.join(PROJECT_ROOT, "scripts", "install.sh")
+OPERATOR_PATH = os.path.join(PROJECT_ROOT, "scripts", "openleg")
 
 
 def _read(path):
@@ -28,6 +30,7 @@ def _read(path):
 class TestInstallerScript:
     def setup_method(self):
         self.content = _read(INSTALLER_PATH)
+        self.lifecycle = _read(OPERATOR_PATH)
 
     def test_bash_shebang(self):
         assert self.content.splitlines()[0] == "#!/usr/bin/env bash"
@@ -36,10 +39,10 @@ class TestInstallerScript:
         assert "set -euo pipefail" in self.content
 
     def test_checks_docker_present(self):
-        assert "command -v docker" in self.content
+        assert "command in docker curl openssl" in self.lifecycle
 
     def test_generates_strong_secrets(self):
-        assert "openssl rand" in self.content
+        assert "openssl rand" in self.lifecycle
         for key in (
             "POSTGRES_PASSWORD",
             "SECRET_KEY",
@@ -47,20 +50,20 @@ class TestInstallerScript:
             "INTERNAL_TOKEN",
             "CRON_SECRET",
         ):
-            assert f"{key}=" in self.content
+            assert f"{key}=" in self.lifecycle
 
     def test_never_overwrites_existing_env(self):
         # An existing .env (with real secrets and DB data behind it) must be
         # preserved on re-run. Guarded by a file test, with a visible message.
-        assert '-f "$ENV_FILE"' in self.content
-        assert "already exists" in self.content
+        assert "-f .env" in self.lifecycle
+        assert "already exists" in self.lifecycle
 
     def test_brings_up_stack(self):
-        assert "docker compose" in self.content
-        assert "up -d" in self.content
+        assert "docker compose" in self.lifecycle
+        assert "up -d" in self.lifecycle
 
     def test_waits_for_health(self):
-        assert "/livez" in self.content
+        assert "/livez" in self.lifecycle
 
     def test_no_phone_home(self):
         # A self-hosted box sends us nothing. No callback to our domain, no
@@ -71,7 +74,51 @@ class TestInstallerScript:
         assert "telemetry" not in lower
 
     def test_prints_local_url(self):
-        assert "http://localhost" in self.content
+        assert "http://localhost" in self.lifecycle
+
+
+def test_fresh_directory_bootstraps_checkout_and_delegates(tmp_path):
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    marker = tmp_path / "delegated"
+    install_dir = tmp_path / "openleg"
+
+    for name in ("docker", "curl"):
+        path = bin_dir / name
+        path.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    git = bin_dir / "git"
+    git.write_text(
+        "#!/bin/sh\n"
+        'mkdir -p "$5/scripts"\n'
+        'printf \'#!/bin/sh\\nprintf "%%s" "$1" > "$DELEGATED_MARKER"\\n\' '
+        '> "$5/scripts/openleg"\n'
+        'chmod +x "$5/scripts/openleg"\n',
+        encoding="utf-8",
+    )
+    git.chmod(0o755)
+
+    env = os.environ | {
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "OPENLEG_INSTALL_DIR": str(install_dir),
+        "OPENLEG_REPOSITORY": "https://example.invalid/openleg.git",
+        "DELEGATED_MARKER": str(marker),
+    }
+    caller_dir = tmp_path / "caller"
+    caller_dir.mkdir()
+
+    result = subprocess.run(
+        ["bash", INSTALLER_PATH],
+        cwd=caller_dir,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert marker.read_text(encoding="utf-8") == "install"
 
 
 class TestInstallerRoute:

@@ -97,14 +97,20 @@ class Ranking:
         canton_profiles = pv_ranking.filter_league(self._profiles, kanton=kanton)
         return pv_ranking.league_leaders(canton_profiles, exclude_bfs=exclude_bfs)
 
-    def movers(self, mover_rows: Optional[List[Dict]] = None) -> List[Dict]:
+    def movers(
+        self,
+        mover_rows: Optional[List[Dict]] = None,
+        kanton: Optional[str] = None,
+        size: Optional[str] = None,
+        density: Optional[str] = None,
+    ) -> List[Dict]:
         """Gemeinden mit dem grössten Score-Delta.
 
         Nutzt injizierte Zeilen, falls vorhanden, sonst ``store_ranking.get_pv_movers``.
+        Wendet anschliessend dieselben Liga-Filter wie ``standings`` an.
         """
-        if mover_rows is not None:
-            return mover_rows
-        return store_ranking.get_pv_movers()
+        rows = mover_rows if mover_rows is not None else store_ranking.get_pv_movers()
+        return pv_ranking.filter_league(rows, kanton=kanton, size=size, density=density)
 
     def _rank_for_bfs(self, bfs: int) -> Optional[int]:
         for row in pv_ranking.assign_ranks(self._profiles):

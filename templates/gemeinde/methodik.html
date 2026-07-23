@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
 
 {% block meta %}
 {{ page_meta(
@@ -12,7 +13,7 @@
 {% endblock %}
 
 {% block content %}
-  <main class="max-w-3xl mx-auto px-4 py-10">
+  <div class="max-w-[65ch] mx-auto px-4 py-10">
     <header class="mb-8">
       <h1 class="text-3xl font-bold">Methodik</h1>
       <p class="text-ink-muted mt-2">
@@ -21,43 +22,80 @@
       <p class="text-sm text-ink-muted mt-2"><a href="/rangliste" class="text-brand hover:underline">Zurück zur Rangliste</a></p>
     </header>
 
-    <section class="bg-white rounded-xl p-6 shadow-sm border mb-6">
-      <h2 class="text-xl font-semibold mb-2">Kennzahl</h2>
-      <p class="text-gray-700">
-        Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial, mal 100.
-        Die Kennzahl zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt.
-      </p>
-      <ul class="mt-3 space-y-1 text-sm text-gray-700 list-disc list-inside">
-        <li><strong>Aktueller Snapshot:</strong> nutzt die installierte Leistung der heute registrierten Anlagen.</li>
-        <li><strong>Fortschritt:</strong> nutzt das 10-Jahres-Panel mit kumulierter Leistung nach Inbetriebnahmejahr.</li>
-        <li><strong>Ungenutztes Potenzial:</strong> geschätztes Dachpotenzial minus installierte Leistung.</li>
+    {{ data_provenance(
+      "Stand",
+      data_vintage,
+      ["BFE Elektrizitätsproduktionsanlagen", "BFE Sonnendach", "BFS Regionalporträts"],
+      plant_match_rate,
+    ) }}
+
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold mb-4">Wie der Score entsteht</h2>
+      <ol class="space-y-6">
+        <li class="flex gap-4">
+          <span class="ol-step font-mono tabular-nums text-sm text-ink-muted shrink-0 w-6 pt-0.5">01</span>
+          <div>
+            <p class="font-medium">Quelle</p>
+            <p class="text-ink-muted mt-1">
+              BFE Elektrizitätsproduktionsanlagen liefert installierte Leistung und Inbetriebnahmejahr
+              jeder registrierten PV-Anlage. BFS Regionalporträts liefert Einwohner, Dichte und Fläche.
+            </p>
+          </div>
+        </li>
+        <li class="flex gap-4">
+          <span class="ol-step font-mono tabular-nums text-sm text-ink-muted shrink-0 w-6 pt-0.5">02</span>
+          <div>
+            <p class="font-medium">Anlagen-Matching</p>
+            <p class="text-ink-muted mt-1">
+              Jede Anlage wird deterministisch einer Gemeinde zugeordnet. Das Matching erreicht
+              <span class="font-mono tabular-nums font-medium text-ink">{{ "%.1f"|format(plant_match_rate|float) }}%</span>
+              der Anlagen; der Rest bleibt wegen ungelöster Orts- oder Fusionsnamen ungematcht.
+            </p>
+          </div>
+        </li>
+        <li class="flex gap-4">
+          <span class="ol-step font-mono tabular-nums text-sm text-ink-muted shrink-0 w-6 pt-0.5">03</span>
+          <div>
+            <p class="font-medium">Dachpotenzial</p>
+            <p class="text-ink-muted mt-1">
+              BFE Sonnendach schätzt das nutzbare Dachpotenzial je Gemeinde. Dieser Wert bildet den
+              Nenner der Kennzahl.
+            </p>
+          </div>
+        </li>
+        <li class="flex gap-4">
+          <span class="ol-step font-mono tabular-nums text-sm text-ink-muted shrink-0 w-6 pt-0.5">04</span>
+          <div>
+            <p class="font-medium">Score</p>
+            <p class="text-ink-muted mt-1">
+              Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial, mal 100.
+              Die Kennzahl zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt.
+            </p>
+          </div>
+        </li>
+      </ol>
+      <ul class="mt-6 space-y-1 text-sm text-ink-muted border-t border-slate-200 pt-4">
+        <li><strong class="text-ink">Aktueller Snapshot:</strong> nutzt die installierte Leistung der heute registrierten Anlagen.</li>
+        <li><strong class="text-ink">Fortschritt:</strong> nutzt das 10-Jahres-Panel mit kumulierter Leistung nach Inbetriebnahmejahr.</li>
+        <li><strong class="text-ink">Ungenutztes Potenzial:</strong> geschätztes Dachpotenzial minus installierte Leistung.</li>
       </ul>
     </section>
 
-    <section class="bg-white rounded-xl p-6 shadow-sm border mb-6">
-      <h2 class="text-xl font-semibold mb-2">Datenquellen</h2>
-      <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
-        <li>BFE Elektrizitätsproduktionsanlagen: installierte Leistung und Inbetriebnahme.</li>
-        <li>BFE Sonnendach: geschätztes Dachpotenzial, der Nenner.</li>
-        <li>BFS Regionalporträts: Einwohner, Dichte und Fläche für die Ligen.</li>
-      </ul>
-    </section>
-
-    <section class="bg-white rounded-xl p-6 shadow-sm border mb-6">
+    <section class="mb-10">
       <h2 class="text-xl font-semibold mb-2">Ligen und Fortschritt</h2>
-      <p class="text-gray-700">
+      <p class="text-ink-muted">
         Wir vergleichen Gemeinden mit fairen Peers: nach Kanton, nach Grösse (Einwohner) und nach Dichte (Einwohner pro km2).
         National ist die Standardansicht, die Filter grenzen auf eine Liga ein.
       </p>
-      <p class="text-gray-700 mt-2">
+      <p class="text-ink-muted mt-2">
         Der Fortschritt misst die Veränderung des Scores im letzten vollen Jahr, in Prozentpunkten.
         Er stammt nur aus dem Panel und wird nie mit dem Snapshot vermischt.
       </p>
     </section>
 
-    <section class="bg-white rounded-xl p-6 shadow-sm border mb-6">
+    <section class="mb-10">
       <h2 class="text-xl font-semibold mb-2">Grenzen der Daten</h2>
-      <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+      <ul class="space-y-2 text-sm text-ink-muted list-disc list-inside">
         <li>Das Matching ordnet {{ "%.0f"|format(plant_match_rate|float) }} % der PV-Anlagen deterministisch einer Gemeinde zu. Rund 23 % bleiben ungematcht, meist wegen ungelöster Orts- oder Fusionsnamen. Sie fehlen im Zähler und drücken den Score nach unten.</li>
         <li>Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir deckeln die Anzeige bei 100 % und markieren diese Fälle.</li>
         <li>Für eine Vorbild-Aussage verlangen wir ein Mindestpotenzial, damit kleine Dorf-Artefakte die Spitze nicht verzerren.</li>
@@ -66,14 +104,14 @@
       </ul>
     </section>
 
-    <section class="bg-brand/5 rounded-xl p-6 shadow-sm border border-brand/20">
+    <section class="border-t border-slate-200 pt-8">
       <h2 class="text-xl font-semibold mb-2">Ausblick: zentrales LEG-Register</h2>
-      <p class="text-gray-700">
+      <p class="text-ink-muted">
         Heute misst die Rangliste die Solarnutzung als öffentlichen Näherungswert für die Energiewende vor Ort.
         Als Nächstes planen wir ein zentrales Verzeichnis aller Lokalen Elektrizitätsgemeinschaften.
         Damit lässt sich nicht nur Potenzial zeigen, sondern auch, wo Bewohner bereits gemeinsam Strom nutzen.
         Dieses Register ist noch nicht gebaut.
       </p>
     </section>
-  </main>
+  </div>
 {% endblock %}

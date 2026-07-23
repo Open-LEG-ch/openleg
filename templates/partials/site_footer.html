@@ -3,17 +3,17 @@
     <div>
       {% with brand_inverse=true, brand_class='text-lg' %}{% include 'partials/brand_wordmark.html' %}{% endwith %}
       <div class="text-sm text-slate-400 mt-1">Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz.</div>
-      <div class="flex items-center gap-3 mt-3">
-        <a href="https://github.com/Open-LEG-ch/openleg" class="text-slate-400 hover:text-white text-sm" target="_blank" rel="noopener">GitHub</a>
-        <span class="text-slate-400">·</span>
-        <a href="/api/v1/docs" class="text-slate-400 hover:text-white text-sm">API Docs</a>
-      </div>
+      <div class="text-sm text-slate-400 mt-1">Lizenz: AGPL-3.0-or-later</div>
     </div>
-    <div class="flex gap-6 text-sm">
-      <a href="/impressum" class="hover:text-white">Impressum</a>
+    <nav aria-label="Rechtliches und Kontakt" class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+      <a href="mailto:{{ contact_email }}" class="hover:text-white">Kontakt</a>
       <a href="/datenschutz" class="hover:text-white">Datenschutz</a>
+      <a href="/impressum" class="hover:text-white">Impressum</a>
+      <a href="/rangliste/methodik" class="hover:text-white">Methodik</a>
       <a href="/how-it-works" class="hover:text-white">So funktioniert's</a>
+      <a href="/api/v1/docs" class="hover:text-white">API Docs</a>
+      <a href="https://github.com/Open-LEG-ch/openleg" class="hover:text-white" target="_blank" rel="noopener">GitHub</a>
       <a href="/utility/login" class="hover:text-white text-slate-400">EVU Login</a>
-    </div>
+    </nav>
   </div>
 </footer>

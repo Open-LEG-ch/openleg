@@ -10,6 +10,7 @@ import pytest
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCREENSHOT_DIR = os.path.join(PROJECT_ROOT, "static", "images", "screenshots")
+LANDING_DIR = os.path.join(PROJECT_ROOT, "static", "images", "landing")
 MAX_BYTES = 250 * 1024
 
 
@@ -72,3 +73,29 @@ def test_product_section_links_to_live_demos():
     html = _index_html()
     assert 'href="/dashboard/demo"' in html
     assert 'href="/gemeinde/dashboard/demo"' in html
+
+
+def test_homepage_hero_has_current_product_shell():
+    html = _index_html()
+    assert "data-home-hero" in html
+    assert "Offene Infrastruktur für Schweizer Stromgemeinschaften" not in html
+    assert "Selbsthosting" not in html
+    assert "Für wen ist OpenLEG?" not in html
+    assert ">Blick ins Produkt<" not in html
+    assert "Seit 1. Januar 2026" in html
+    assert "Bis zu 40% Rabatt" in html
+    assert 'fetchpriority="high"' in html
+    assert "/static/images/landing/urban.webp" in html
+    hero_images = ("urban.webp", "suburban.webp", "rural.webp")
+    assert all(os.path.isfile(os.path.join(LANDING_DIR, name)) for name in hero_images)
+    assert (
+        sum(os.path.getsize(os.path.join(LANDING_DIR, name)) for name in hero_images)
+        < 300 * 1024
+    )
+
+
+def test_homepage_nav_starts_dark_and_observes_hero():
+    html = _index_html()
+    assert "data-home-nav" in html
+    assert "site-nav--dark" in html
+    assert "IntersectionObserver" in html

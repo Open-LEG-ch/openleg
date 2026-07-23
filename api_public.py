@@ -9,6 +9,7 @@ import logging
 from flask import Blueprint, request, jsonify, render_template
 
 import database as db
+import municipality_profile
 import public_data
 
 logger = logging.getLogger(__name__)
@@ -175,14 +176,14 @@ def get_municipality_leg_potential(bfs):
     num_participants = request.args.get("participants", 10, type=int)
     avg_consumption = request.args.get("consumption_kwh", 4500, type=float)
 
-    tariffs = db.get_elcom_tariffs(bfs, year=year)
-    h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
-    if not h4:
+    gap = municipality_profile.value_gap(
+        bfs, year=year, grid_reduction_pct=grid_reduction
+    )
+    if not gap:
         return jsonify(
             {"error": "No H4 tariff found. Refresh data first.", "bfs_number": bfs}
         ), 404
 
-    gap = public_data.compute_leg_value_gap(h4, grid_reduction_pct=grid_reduction)
     # Scale for participants
     gap["num_participants"] = num_participants
     gap["total_community_savings_chf"] = round(
@@ -292,12 +293,12 @@ def leg_value_gap():
     grid_level = data.get("grid_level", "NE7")
     grid_reduction = 40.0 if grid_level == "NE7" else 25.0
 
-    tariffs = db.get_elcom_tariffs(int(bfs), year=year)
-    h4 = next((t for t in tariffs if str(t.get("category", "")).startswith("H4")), None)
-    if not h4:
+    gap = municipality_profile.value_gap(
+        int(bfs), year=year, grid_reduction_pct=grid_reduction
+    )
+    if not gap:
         return jsonify({"error": "No H4 tariff found"}), 404
 
-    gap = public_data.compute_leg_value_gap(h4, grid_reduction_pct=grid_reduction)
     # Custom consumption scaling
     custom_savings = float(gap["savings_rp_kwh"]) * avg_consumption / 100.0
     return jsonify(

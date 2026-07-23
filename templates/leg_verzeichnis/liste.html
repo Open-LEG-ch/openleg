@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
 
 {% block meta %}
 {{ page_meta(
@@ -34,10 +35,10 @@
 {% endblock %}
 
 {% block content %}
-  <main class="max-w-6xl mx-auto px-4 py-12">
+  <div class="max-w-6xl mx-auto px-4 py-12">
     <header class="max-w-3xl mb-8">
       <p class="text-sm font-semibold text-brand mb-2">LEG-Verzeichnis</p>
-      <h1 class="text-4xl font-bold tracking-tight mb-3">Lokale Elektrizitätsgemeinschaften in der Schweiz</h1>
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-3 hyphens-auto break-words" lang="de">Lokale Elektrizitätsgemeinschaften in der Schweiz</h1>
       <p class="text-lg text-ink-muted">Offen für jede LEG, unabhängig davon, welche Plattform bei der Gründung half. Einträge sind moderierte Selbstauskünfte: OpenLEG prüft keine Netz-Topologie und keine Eignung einzelner Adressen. Details dazu stehen bei jedem Eintrag.</p>
       <div class="mt-5 flex flex-col sm:flex-row gap-3">
         <a href="/leg-verzeichnis/eintragen" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Eigene LEG eintragen</a>
@@ -45,36 +46,38 @@
       </div>
     </header>
 
-    <form method="get" class="flex flex-col md:flex-row gap-3 mb-6">
-      <input type="text" name="q" value="{{ q }}" placeholder="Name oder Ort suchen..."
-        class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
-      <input type="text" name="plz" value="{{ plz }}" placeholder="PLZ"
-        class="w-full md:w-28 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
-      <select name="kanton" class="border rounded-lg px-3 py-2 text-sm bg-white">
+    <form method="get" action="/leg-verzeichnis" class="grid gap-3 mb-8 sm:grid-cols-2 lg:grid-cols-[1fr_7rem_12rem_12rem_auto]">
+      <div><label for="q" class="block text-xs text-ink-muted mb-1">Name oder Ort</label><input type="text" id="q" name="q" value="{{ q }}" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand"></div>
+      <div><label for="plz" class="block text-xs text-ink-muted mb-1">PLZ</label><input type="text" id="plz" name="plz" value="{{ plz }}" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline focus:outline-2 focus:outline-brand"></div>
+      <div><label for="kanton" class="block text-xs text-ink-muted mb-1">Kanton</label><select id="kanton" name="kanton" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline focus:outline-2 focus:outline-brand">
         {% for code, label in canton_options %}
         <option value="{{ code }}" {{ 'selected' if kanton == code }}>{{ label }}</option>
         {% endfor %}
-      </select>
-      <select name="leg_status" class="border rounded-lg px-3 py-2 text-sm bg-white">
+      </select></div>
+      <div><label for="leg_status" class="block text-xs text-ink-muted mb-1">LEG-Status</label><select id="leg_status" name="leg_status" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline focus:outline-2 focus:outline-brand">
         {% for code, label in leg_status_options %}
         <option value="{{ code }}" {{ 'selected' if leg_status == code }}>{{ label }}</option>
         {% endfor %}
-      </select>
-      <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Suchen</button>
+      </select></div>
+      <button type="submit" class="self-end bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark focus:outline focus:outline-2 focus:outline-brand focus:outline-offset-2">Suchen</button>
     </form>
 
     {% if entries %}
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="border-t border-slate-200">
       {% for entry in entries %}
-      <a href="/leg-verzeichnis/{{ entry.slug }}" class="bg-white rounded-xl p-5 shadow-sm border hover:shadow-md hover:border-brand/30 transition-all">
+      <a href="/leg-verzeichnis/{{ entry.slug }}" class="grid gap-4 border-b border-slate-200 py-5 sm:grid-cols-[1fr_19rem] hover:bg-white/60 focus:outline focus:outline-2 focus:outline-brand">
+        <div>
         <h2 class="font-semibold text-lg mb-1">{{ entry.name }}</h2>
         <p class="text-sm text-ink-muted mb-2">{{ entry.ort }}{% if entry.kanton %} ({{ entry.kanton }}){% endif %}</p>
         {% if entry.member_count_estimate %}
-        <p class="text-sm text-ink-muted">ca. {{ entry.member_count_estimate }} Mitglieder</p>
+        <p class="text-sm text-ink-muted">ca. <span class="font-mono tabular-nums">{{ entry.member_count_estimate }}</span> Mitglieder</p>
         {% endif %}
+        </div>
+        {% include "partials/registry_trust.html" %}
       </a>
       {% endfor %}
     </div>
+    <div class="mt-8">{{ data_provenance("Datenstand", "laufend aktualisiert", ["OpenLEG Registereinträge"]) }}</div>
     <p class="text-sm text-ink-muted mt-6">{{ entries|length }} LEGs gefunden. OpenLEG prüft keine Netz-Topologie: ein Eintrag ist eine moderierte Selbstauskunft, kein Eignungsnachweis für eine bestimmte Adresse.</p>
     {% else %}
     <div class="bg-white rounded-xl p-8 text-center shadow-sm border">
@@ -82,5 +85,5 @@
       <p class="text-sm text-ink-muted">Fehlt Ihre LEG? <a href="/leg-verzeichnis/eintragen" class="text-brand hover:underline">Jetzt eintragen</a>. OpenLEG prüft keine Netz-Topologie: das Verzeichnis lebt von Selbstauskünften.</p>
     </div>
     {% endif %}
-  </main>
+  </div>
 {% endblock %}

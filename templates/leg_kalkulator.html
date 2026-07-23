@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
 
 {% block meta %}
 {{ page_meta(
@@ -40,14 +41,14 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: #2f5e3a;
+      background: #4f46e5;
       cursor: pointer;
     }
     .range-slider::-moz-range-thumb {
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: #2f5e3a;
+      background: #4f46e5;
       cursor: pointer;
       border: none;
     }
@@ -55,7 +56,7 @@
 {% endblock %}
 
 {% block content %}
-  <main class="max-w-5xl mx-auto px-4 py-12">
+  <div class="max-w-5xl mx-auto px-4 py-12">
     <header class="text-center mb-12">
       <h1 class="text-5xl font-bold mb-4">LEG-Kalkulator</h1>
       <p class="text-xl text-ink-muted max-w-3xl mx-auto">
@@ -64,7 +65,7 @@
     </header>
 
     <!-- Calculator Card -->
-    <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12">
+    <div class="bg-white border-y border-slate-200 py-8 md:py-12">
       
       <!-- Municipality Selection -->
       <section class="mb-10">
@@ -75,7 +76,7 @@
             type="text" 
             id="municipality" 
             placeholder="z.B. Baden, Zürich, Bern" 
-            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none"
             autocomplete="off"
           />
           <div id="municipality-results" class="hidden mt-2 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -108,7 +109,7 @@
             max="15000" 
             step="100" 
             value="4500" 
-            class="range-slider"
+            class="range-slider focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
             oninput="updateConsumption(this.value)"
           />
           <div class="flex justify-between text-xs text-ink-muted mt-1">
@@ -117,6 +118,7 @@
           </div>
           <p class="text-sm text-ink-muted mt-2">
             Richtwerte Schweiz: 1 Person ca. 1'500 kWh, 2 Personen ca. 2'500 kWh, 4 Personen ca. 4'500 kWh.
+            <a href="#data-provenance" class="font-mono text-xs hover:text-brand">Quelle und Annahmen</a>
           </p>
         </div>
       </section>
@@ -135,7 +137,7 @@
             max="100" 
             step="5" 
             value="60" 
-            class="range-slider"
+            class="range-slider focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
             oninput="updateProduction(this.value)"
           />
           <div class="flex justify-between text-xs text-ink-muted mt-1">
@@ -146,6 +148,19 @@
             Das hängt davon ab, wann die Solaranlage produziert und wann Sie Strom brauchen. Typisch sind 40 bis 80%.
           </p>
         </div>
+        <div class="mt-6">
+          <label for="grid-reduction" class="block text-sm font-semibold mb-2">
+            Netznutzungsrabatt
+          </label>
+          <select id="grid-reduction" class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none">
+            <option value="40" selected>Ohne Spannungstransformation</option>
+            <option value="20">Mit Spannungstransformation</option>
+          </select>
+          <p class="text-sm text-ink-muted mt-2">
+            Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen Rabatt von 40%
+            auf das Netznutzungsentgelt ohne Spannungstransformation, 20% mit Spannungstransformation.
+          </p>
+        </div>
       </section>
 
       <!-- Calculate Button -->
@@ -153,12 +168,12 @@
         <button 
           id="calculate-btn"
           onclick="calculateSavings()" 
-          class="bg-brand text-white px-12 py-4 rounded-lg text-lg font-bold hover:bg-brand-dark disabled:bg-slate-200 disabled:text-slate-600 disabled:cursor-not-allowed"
+          class="bg-brand text-white px-12 py-4 rounded-lg text-lg font-bold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:bg-slate-200 disabled:text-slate-600 disabled:cursor-not-allowed"
           disabled
         >
           Sparpotenzial berechnen
         </button>
-        <p id="calculator-error" class="text-red-600 text-sm mt-3 hidden"></p>
+        <p id="calculator-error" role="alert" aria-live="assertive" class="text-red-600 text-sm mt-3 hidden"></p>
       </div>
 
       <!-- Results -->
@@ -169,15 +184,15 @@
           <!-- Savings Overview -->
           <div class="grid md:grid-cols-3 gap-6 mb-8">
             <div class="bg-green-50 rounded-lg p-6 text-center border border-green-200">
-              <div class="text-4xl font-bold text-green-700 mb-2">CHF <span id="annual-savings">0</span></div>
+              <div class="font-mono tabular-nums text-4xl font-bold text-green-700 mb-2">CHF <span id="annual-savings">0</span></div>
               <div class="text-sm text-green-800">Jährliche Einsparung</div>
             </div>
             <div class="bg-blue-50 rounded-lg p-6 text-center border border-blue-200">
-              <div class="text-4xl font-bold text-blue-700 mb-2"><span id="savings-percent">0</span>%</div>
+              <div class="font-mono tabular-nums text-4xl font-bold text-ink mb-2"><span id="savings-percent">0</span>%</div>
               <div class="text-sm text-blue-800">Reduktion der Netzkosten</div>
             </div>
             <div class="bg-brand/5 rounded-lg p-6 text-center border border-brand/20">
-              <div class="text-4xl font-bold text-brand-dark mb-2">CHF <span id="ten-year-savings">0</span></div>
+              <div class="font-mono tabular-nums text-4xl font-bold text-brand-dark mb-2">CHF <span id="ten-year-savings">0</span></div>
               <div class="text-sm text-ink-muted">10-Jahres-Einsparung</div>
             </div>
           </div>
@@ -240,7 +255,7 @@
     </div>
 
     <!-- How it works -->
-    <section class="mt-12 bg-white rounded-xl shadow-md p-8">
+    <section class="mt-12 border-y border-slate-200 py-8">
       <h2 class="text-3xl font-bold mb-6">So funktioniert der Rechner</h2>
       <div class="space-y-4 text-ink-muted">
         <p>
@@ -251,8 +266,8 @@
           für Ihre Gemeinde. Die Berechnung berücksichtigt Energiekosten, Netznutzungsgebühren und Abgaben.
         </p>
         <p>
-          <strong>LEG-Rabatt:</strong> Bei lokal verbrauchtem Strom entfallen die Netznutzungsgebühren für die übergeordneten Netzebenen. 
-          Typische Reduktion: 20 bis 40% auf den Netznutzungsentgelten.
+          <strong>LEG-Rabatt:</strong> Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom
+          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne Spannungstransformation, 20% mit Spannungstransformation.
         </p>
         <p>
           <strong>Annahmen:</strong> Der Rechner geht davon aus, dass der lokale Solarstrom zum gleichen Preis wie EVU-Strom verrechnet wird. 
@@ -263,7 +278,10 @@
           (Verbrauchsprofil, Produktionsprofil, LEG-Grösse, Verteilschlüssel).
         </p>
       </div>
+      <a href="#data-provenance" data-source-marker="calculator" class="inline-block mt-4 font-mono text-xs text-ink-muted hover:text-brand">Quelle: ElCom und StromVV</a>
     </section>
+
+    <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance("Datenstand", "aktuelle API-Daten", ["ElCom / LINDAS", "Art. 19h StromVV", "OpenLEG Berechnung"]) }}</div>
 
     <!-- FAQ -->
     <section class="mt-8">
@@ -272,8 +290,8 @@
         <details class="bg-white rounded-lg shadow-md p-6">
           <summary class="font-bold text-ink cursor-pointer">Warum spare ich mit einer LEG Geld?</summary>
           <p class="mt-3 text-ink-muted">
-            Bei lokal verbrauchtem Strom entfallen die Netznutzungsgebühren für die übergeordneten Netzebenen (Swissgrid, regionale Netze). 
-            Sie zahlen nur für das lokale Verteilnetz. Das spart typischerweise 20 bis 40% auf die Netzkosten.
+            Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen gesetzlichen Rabatt
+            auf das Netznutzungsentgelt: 40% ohne Spannungstransformation, 20% mit Spannungstransformation.
           </p>
         </details>
         <details class="bg-white rounded-lg shadow-md p-6">
@@ -293,13 +311,13 @@
         <details class="bg-white rounded-lg shadow-md p-6">
           <summary class="font-bold text-ink cursor-pointer">Berücksichtigt der Rechner Investitionskosten?</summary>
           <p class="mt-3 text-ink-muted">
-            Nein, der Rechner zeigt nur die laufenden Einsparungen. Gründungskosten von etwa CHF 500 bis 2'000 und Smart-Meter-Kosten sind nicht eingerechnet. Je nach LEG amortisieren sie sich nach 1 bis 2 Jahren.
+            Der Rechner zeigt nur mögliche laufende Einsparungen. Einmalige und laufende Kosten unterscheiden sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet.
           </p>
         </details>
       </div>
     </section>
 
-  </main>
+  </div>
 {% endblock %}
 
 {% block scripts %}
@@ -436,7 +454,7 @@
           const totalWithout = energyWithout + gridWithout + feesWithout;
 
           // With LEG (reduced grid fees for local consumption)
-          const gridReduction = 0.35; // 35% reduction on local portion
+          const gridReduction = parseFloat(document.getElementById('grid-reduction').value) / 100;
           const energyWith = consumption * energyPrice / 100; // Same energy price
           const gridWith = (gridKwh * gridPrice / 100) + (localKwh * gridPrice * (1 - gridReduction) / 100);
           const feesWith = consumption * feesAndTaxes / 100; // Same fees
@@ -467,36 +485,16 @@
           document.getElementById('total-with').textContent = Math.round(totalWith);
           document.getElementById('total-diff').textContent = Math.round(annualSavings);
 
-          // Recommendation
+          // Savings summary (no founding-cost or profitability verdict: those depend on your VNB and Rechtsform)
           const recDiv = document.getElementById('recommendation');
-          if (annualSavings < 50) {
-            recDiv.className = 'p-6 rounded-lg mb-6 bg-red-50 border border-red-200';
-            recDiv.innerHTML = `
-              <h3 class="font-bold text-lg mb-2 text-red-900">Leider lohnt sich eine LEG nicht</h3>
-              <p class="text-red-800">
-                Mit nur CHF ${Math.round(annualSavings)} pro Jahr decken die Einsparungen kaum die Verwaltungskosten. 
-                Prüfen Sie, ob Sie mehr lokal verbrauchen könnten (Batteriespeicher, E-Auto-Laden während Sonnenstunden).
-              </p>
-            `;
-          } else if (annualSavings < 150) {
-            recDiv.className = 'p-6 rounded-lg mb-6 bg-yellow-50 border border-yellow-200';
-            recDiv.innerHTML = `
-              <h3 class="font-bold text-lg mb-2 text-yellow-900">Grenzfall: Abwägen lohnt sich</h3>
-              <p class="text-yellow-800">
-                Mit CHF ${Math.round(annualSavings)} pro Jahr sparen Sie moderat. Die LEG lohnt sich, wenn Sie die Gründungskosten 
-                (CHF 500-2'000) über 2-3 Jahre amortisieren möchten und Wert auf lokale Energieautarkie legen.
-              </p>
-            `;
-          } else {
-            recDiv.className = 'p-6 rounded-lg mb-6 bg-green-50 border border-green-200';
-            recDiv.innerHTML = `
-              <h3 class="font-bold text-lg mb-2 text-green-900">✓ Eine LEG lohnt sich für Sie!</h3>
-              <p class="text-green-800">
-                Mit CHF ${Math.round(annualSavings)} Ersparnis pro Jahr amortisieren sich die Gründungskosten schnell. 
-                Über 10 Jahre sparen Sie CHF ${Math.round(tenYearSavings).toLocaleString('de-CH')}. Starten Sie jetzt!
-              </p>
-            `;
-          }
+          recDiv.className = 'p-6 rounded-lg mb-6 bg-brand/5 border border-brand/20';
+          recDiv.innerHTML = `
+            <h3 class="font-bold text-lg mb-2 text-ink">Ihre laufende Einsparung</h3>
+            <p class="text-ink-muted">
+              Mit CHF ${Math.round(annualSavings)} pro Jahr auf den Netzkosten sparen Sie über 10 Jahre CHF ${Math.round(tenYearSavings).toLocaleString('de-CH')}.
+              Gründungs- und Smart-Meter-Kosten sind hier nicht eingerechnet.
+            </p>
+          `;
 
           document.getElementById('results').classList.remove('hidden');
           document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
