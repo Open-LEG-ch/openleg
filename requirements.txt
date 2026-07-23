@@ -1,7 +1,7 @@
 Flask==3.1.3
 pandas==3.0.3
-numpy==1.26.2
-scipy==1.11.4
+numpy==1.26.4
+scipy==1.17.1
 scikit-learn==1.9.0
 
 # Security dependencies
@@ -17,13 +17,13 @@ redis==8.0.1
 psycopg2-binary==2.9.9
 
 # Billing
-stripe==11.4.1
+stripe==15.3.1
 
 # PDF generation
-weasyprint==68.0
+weasyprint==69.0
 
 # Optional: For production
 gunicorn==22.0.0
 requests==2.34.2
-svix==1.96.1
+svix==1.98.0
 werkzeug==3.1.6
