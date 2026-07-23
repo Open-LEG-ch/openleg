@@ -26,6 +26,31 @@ def test_onboarding_renders_typeahead_search():
     assert "municipality-search" in html
 
 
+def test_onboarding_preserves_controls_actions_and_accessibility():
+    client = _make_client()
+    resp = client.get("/gemeinde/onboarding")
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+    for control_id in (
+        "municipality-search",
+        "selected-bfs",
+        "selected-name",
+        "admin-email",
+        "contact-name",
+    ):
+        assert f'id="{control_id}"' in html
+    for labelled_id in ("municipality-search", "admin-email", "contact-name"):
+        assert f'for="{labelled_id}"' in html
+    for live_id in ("selected-municipality", "form-error", "form-success"):
+        assert f'id="{live_id}"' in html
+    assert 'id="form-error" role="alert"' in html
+    assert 'id="form-success" role="status"' in html
+    assert 'id="onboarding-form"' in html
+    assert 'type="submit"' in html
+    assert "Gemeinde anmelden" in html
+    assert "fetch('/gemeinde/register'" in html
+
+
 def test_onboarding_uses_host_canonical():
     client = _make_client()
     resp = client.get("/gemeinde/onboarding", headers={"Host": "openleg.ch"})
@@ -527,6 +552,41 @@ def test_profil_jsonld_names_grid_operator(monkeypatch):
     assert operator["name"] == "Regionalwerke AG Baden"
 
 
+def test_profil_orders_evidence_and_sources_every_figure(monkeypatch):
+    client = _make_client()
+    _patch_profil_with_tariff(monkeypatch)
+    monkeypatch.setattr(
+        municipality_module.db,
+        "get_sonnendach_municipal",
+        lambda _bfs: {
+            "total_roof_area_m2": 900000.0,
+            "suitable_roof_area_m2": 540000.0,
+            "potential_kwp": 81000.0,
+            "utilization_pct": 12.4,
+        },
+    )
+
+    html = client.get("/gemeinde/profil/4021").data.decode("utf-8")
+
+    tiers = [
+        html.index('data-evidence-tier="measured"'),
+        html.index('data-evidence-tier="derived"'),
+        html.index('data-evidence-tier="modelled"'),
+    ]
+    assert tiers == sorted(tiers)
+    assert html.count("data-source-marker=") >= 8
+    assert html.count('href="#data-provenance"') >= 8
+    assert 'id="data-provenance"' in html
+    assert 'data-testid="data-provenance"' in html
+    assert 'class="ol-fillbar-track' in html
+    assert 'class="ol-fillbar"' in html
+    assert "Modellierter Richtwert" in html
+
+    nodes = _jsonld_graph(html)
+    assert nodes["Place"]["identifier"] == "4021"
+    assert nodes["Organization"]["name"] == "Regionalwerke AG Baden"
+
+
 def test_profil_jsonld_omits_operator_without_tariff(monkeypatch):
     client = _make_client()
     _patch_profil_deps(monkeypatch, dict(BADEN_PROFILE))
@@ -536,3 +596,36 @@ def test_profil_jsonld_omits_operator_without_tariff(monkeypatch):
     nodes = _jsonld_graph(html)
     assert nodes.get("Place")
     assert "Organization" not in nodes
+
+
+def test_profil_route_delegates_to_municipality_profile_module(monkeypatch):
+    """Route parses request, delegates assembly to municipality_profile, renders (#209)."""
+    client = _make_client()
+    fake_ctx = {"sentinel": "profile-context"}
+    calls = []
+
+    def _fake_profile_context(bfs, *, site_url):
+        calls.append({"bfs": bfs, "site_url": site_url})
+        return fake_ctx
+
+    monkeypatch.setattr(
+        municipality_module.municipality_profile,
+        "profile_context",
+        _fake_profile_context,
+    )
+
+    rendered = {}
+
+    def _fake_render_template(template_name, **context):
+        rendered["template"] = template_name
+        rendered["context"] = context
+        return "ok"
+
+    monkeypatch.setattr(municipality_module, "render_template", _fake_render_template)
+
+    resp = client.get("/gemeinde/profil/4021", headers={"Host": "openleg.ch"})
+
+    assert resp.status_code == 200
+    assert calls == [{"bfs": 4021, "site_url": "http://openleg.ch"}]
+    assert rendered["template"] == "gemeinde/profil.html"
+    assert rendered["context"] == fake_ctx

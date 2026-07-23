@@ -11,37 +11,34 @@
 ) }}
 {% endblock %}
 
-{% block body_class %}bg-gray-50 min-h-screen text-gray-900{% endblock %}
+{% block body_class %}bg-[#f6f4ef] min-h-screen text-ink{% endblock %}
 
 {% block content %}
-<main id="main-content" class="max-w-xl mx-auto px-4 py-12">
-    <div class="overflow-hidden rounded-xl border border-gray-200 shadow-md mb-8">
-        <img src="/static/images/brand/flow-gemeinden.svg" alt="Gemeinde Onboarding" class="w-full aspect-[3/1]" loading="lazy">
-    </div>
+<div class="max-w-xl mx-auto px-4 py-12">
     <p class="text-sm font-semibold text-brand mb-2">Gemeinde-Anmeldung</p>
     <h1 class="text-3xl font-bold mb-2">Gemeinde anmelden</h1>
-    <p class="text-gray-600 mb-8">Melden Sie Ihre Gemeinde an und schaffen Sie einen einfachen Einstieg für lokale Stromgemeinschaften. Kostenlos, ohne eigenes IT-Projekt.</p>
+    <p class="text-ink-muted mb-8">Melden Sie Ihre Gemeinde an und schaffen Sie einen einfachen Einstieg für lokale Stromgemeinschaften. Kostenlos, ohne eigenes IT-Projekt.</p>
 
-    <form id="onboarding-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
+    <form id="onboarding-form" class="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
         <div>
-            <label class="block text-sm font-medium mb-1">Gemeinde suchen</label>
-            <input type="text" id="municipality-search" placeholder="z.B. Dietikon" autocomplete="off" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-            <div id="search-results" class="mt-2 border rounded-lg bg-white shadow-sm hidden max-h-56 overflow-y-auto"></div>
+            <label for="municipality-search" class="block text-sm font-medium mb-1">Gemeinde suchen</label>
+            <input type="text" id="municipality-search" placeholder="z. B. Dietikon" autocomplete="off" aria-describedby="selected-municipality" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+            <div id="search-results" class="mt-2 border border-slate-200 rounded-lg bg-white hidden max-h-56 overflow-y-auto"></div>
             <input type="hidden" id="selected-bfs">
             <input type="hidden" id="selected-name">
-            <p id="selected-municipality" class="text-xs text-gray-500 mt-2 hidden"></p>
+            <p id="selected-municipality" role="status" aria-live="polite" class="text-xs text-ink-muted mt-2 hidden"></p>
         </div>
         <div>
-            <label class="block text-sm font-medium mb-1">Kontakt E-Mail (Gemeindeverwaltung)</label>
-            <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none" required>
+            <label for="admin-email" class="block text-sm font-medium mb-1">Kontakt-E-Mail der Gemeindeverwaltung</label>
+            <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand" required>
         </div>
         <div>
-            <label class="block text-sm font-medium mb-1">Ansprechperson</label>
-            <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
+            <label for="contact-name" class="block text-sm font-medium mb-1">Ansprechperson</label>
+            <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">
         </div>
-        <div class="bg-gray-50 p-4 rounded-lg text-sm">
-            <h4 class="font-medium mb-1">Was Ihre Gemeinde kostenlos erhält:</h4>
-            <ul class="text-gray-700 space-y-1">
+        <div class="border-y border-slate-200 py-4 text-sm">
+            <h2 class="font-medium mb-1">Was Ihre Gemeinde kostenlos erhält</h2>
+            <ul class="text-ink-muted space-y-1">
                 <li>&#10003; Eigene Instanz unter <span id="subdomain-preview" class="font-mono text-gray-900">gemeinde.openleg.ch</span></li>
                 <li>&#10003; Registrierung und Matching für Bewohner</li>
                 <li>&#10003; Übersicht über Anmeldungen und Formationsfortschritt</li>
@@ -49,11 +46,11 @@
                 <li>&#10003; Keine versteckten Kosten, kein Abo, keine Anbieterbindung</li>
             </ul>
         </div>
-        <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800">Gemeinde anmelden</button>
-        <div id="form-error" class="text-red-600 text-sm hidden"></div>
-        <div id="form-success" class="text-green-600 text-sm hidden"></div>
+        <button type="submit" class="w-full bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Gemeinde anmelden</button>
+        <div id="form-error" role="alert" aria-live="assertive" class="text-red-600 text-sm hidden"></div>
+        <div id="form-success" role="status" aria-live="polite" class="text-green-700 text-sm hidden"></div>
     </form>
-</main>
+</div>
 {% endblock %}
 
 {% block scripts %}
