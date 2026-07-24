@@ -11,7 +11,6 @@ import glob
 import os
 import re
 
-import pytest
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TAILWIND_CONFIG = os.path.join(PROJECT_ROOT, "tailwind.config.js")
@@ -47,7 +46,9 @@ def test_config_defines_daylight_tokens():
 def test_config_has_no_legacy_neon_tokens():
     config = _read(TAILWIND_CONFIG).lower()
     offenders = [t for t in LEGACY_NEON if t in config]
-    assert not offenders, f"tailwind.config.js still carries legacy neon tokens: {offenders}"
+    assert not offenders, (
+        f"tailwind.config.js still carries legacy neon tokens: {offenders}"
+    )
 
 
 def test_built_css_is_rebuilt_with_pine():
@@ -66,15 +67,15 @@ def test_built_css_dropped_indigo_brand():
 def test_design_doc_describes_daylight_identity():
     doc = _read(DESIGN_DOC).lower()
     for term in ("daylight", "pine", "solar", "paper"):
-        assert term in doc, f"design.md does not describe the '{term}' part of the identity"
+        assert term in doc, (
+            f"design.md does not describe the '{term}' part of the identity"
+        )
 
 
 def test_hero_has_no_dark_saas_slop():
     html = _read(INDEX_HTML).lower()
     for marker in ("#070d1a", "#0f172a", "blur-3xl"):
-        assert marker not in html, (
-            f"homepage hero still uses AI-slop marker '{marker}'"
-        )
+        assert marker not in html, f"homepage hero still uses AI-slop marker '{marker}'"
 
 
 def test_no_indigo_utility_classes_left_in_templates():

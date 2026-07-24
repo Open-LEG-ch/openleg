@@ -145,7 +145,8 @@ def test_dark_panel_statistics_carry_light_text(client):
     """Statistics on the dark readiness panel must not inherit near-black ink.
 
     A browser check measured them at rgb(15, 23, 42) on the dark navy panel,
-    which is effectively invisible.
+    which is effectively invisible. The panel is now warm pine (brand-dark);
+    the statistics carry paper/white, never near-black ink.
     """
     html = _html(client, "/dashboard/demo")
     panel = re.search(r'aria-label="Kennzahlen".*?</div>\s*</div>\s*</div>', html, re.S)
@@ -153,4 +154,4 @@ def test_dark_panel_statistics_carry_light_text(client):
     values = re.findall(r"<strong[^>]*font-mono[^>]*>", panel.group(0))
     assert len(values) == 3
     for value in values:
-        assert "text-white" in value, value
+        assert "text-paper" in value or "text-white" in value, value
