@@ -94,9 +94,10 @@ class TestDashboardDarkHero:
     utility-to-hex mapping so a class swap cannot silently fail contrast.
     """
 
-    KICKER_ON_PAPER = "#4f46e5"  # text-brand
-    HERO_KICKER_ON_INK = "#a5b4fc"  # text-indigo-300
-    SCORE_ON_INK = "#818cf8"  # text-indigo-400 / bg-indigo-400
+    KICKER_ON_PAPER = "#1f3d32"  # text-brand (pine)
+    PANEL = "#16302a"  # bg-brand-dark readiness panel
+    HERO_KICKER_ON_PANEL = "#f0b968"  # text-accent-light (solar)
+    SCORE_ON_PANEL = "#e8a13a"  # text-accent / bg-accent (solar)
 
     @pytest.fixture(autouse=True)
     def load(self):
@@ -107,16 +108,16 @@ class TestDashboardDarkHero:
         assert contrast(self.KICKER_ON_PAPER, PAPER) >= 4.5
 
     def test_hero_kicker_readable_on_ink(self):
-        assert "text-indigo-300" in self.html
-        assert contrast(self.HERO_KICKER_ON_INK, INK) >= 4.5
+        assert "text-accent-light" in self.html
+        assert contrast(self.HERO_KICKER_ON_PANEL, self.PANEL) >= 4.5
 
     def test_score_readable(self):
-        assert "text-indigo-400" in self.html
-        assert contrast(self.SCORE_ON_INK, INK) >= 3, "large text needs 3:1"
+        assert "text-accent " in self.html or 'text-accent"' in self.html
+        assert contrast(self.SCORE_ON_PANEL, self.PANEL) >= 3, "large text needs 3:1"
 
     def test_progress_fill_visible(self):
-        assert "bg-indigo-400" in self.html
-        assert contrast(self.SCORE_ON_INK, INK) >= 3, "UI component needs 3:1"
+        assert "bg-accent" in self.html
+        assert contrast(self.SCORE_ON_PANEL, self.PANEL) >= 3, "UI component needs 3:1"
 
 
 class TestGrayMicrocopyOnPaper:

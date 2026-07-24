@@ -13,7 +13,7 @@
       btn.classList.toggle('bg-white', isActive);
       btn.classList.toggle('text-ink', isActive);
       btn.classList.toggle('font-semibold', isActive);
-      btn.classList.toggle('text-slate-300', !isActive);
+      btn.classList.toggle('text-ink-muted', !isActive);
       btn.classList.toggle('font-medium', !isActive);
       if (isActive && setFocus) btn.focus();
     });

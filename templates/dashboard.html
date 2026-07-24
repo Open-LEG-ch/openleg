@@ -18,28 +18,28 @@
     <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Ihre Stromgemeinschaft ist zu {{ readiness_score }}% bereit.</h1>
     <p class="text-ink-muted mt-2">{{ user.address }}</p>
 
-    <section class="mt-6 rounded-2xl bg-ink text-paper p-6 sm:p-8 overflow-hidden" aria-labelledby="readiness-title">
+    <section class="mt-6 rounded-2xl bg-brand-dark text-paper p-6 sm:p-8 overflow-hidden" aria-labelledby="readiness-title">
       <div class="grid md:grid-cols-2 gap-8 items-end">
         <div>
-          <p class="text-sm font-semibold text-indigo-300" id="readiness-title">Bereitschaft</p>
-          <div data-statistic class="font-mono tabular-nums text-6xl md:text-7xl font-bold text-indigo-400 my-2">{{ readiness_score }}<span data-statistic-unit class="text-2xl md:text-3xl font-normal text-indigo-300">%</span></div>
-          <p class="text-slate-300 max-w-xl">Sobald die offenen Punkte erledigt sind, bereiten wir die LEG-Anmeldung mit {{ utility_name }} vor.</p>
+          <p class="text-sm font-semibold text-accent-light" id="readiness-title">Bereitschaft</p>
+          <div data-statistic class="font-mono tabular-nums text-6xl md:text-7xl font-bold text-accent my-2">{{ readiness_score }}<span data-statistic-unit class="text-2xl md:text-3xl font-normal text-accent-light">%</span></div>
+          <p class="text-sage-light max-w-xl">Sobald die offenen Punkte erledigt sind, bereiten wir die LEG-Anmeldung mit {{ utility_name }} vor.</p>
           <div class="mt-6 h-3 rounded-full bg-white/10 overflow-hidden" role="progressbar" aria-valuenow="{{ readiness_score }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ readiness_score }} Prozent bereit">
-            <span class="block h-full rounded-full bg-indigo-400" style="width:{{ readiness_score }}%"></span>
+            <span class="block h-full rounded-full bg-accent" style="width:{{ readiness_score }}%"></span>
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-px rounded-xl overflow-hidden bg-white/20" aria-label="Kennzahlen">
-          <div class="bg-ink-soft p-4">
-            <strong data-statistic class="block font-mono tabular-nums text-2xl text-white">{{ neighbor_count or 0 }} <span data-statistic-unit class="text-xs font-normal text-slate-300">Haushalte</span></strong>
-            <span class="block text-sm text-slate-300 mt-1">Haushalte in der Nähe</span>
+        <div class="grid grid-cols-3 gap-px rounded-xl overflow-hidden bg-white/15" aria-label="Kennzahlen">
+          <div class="bg-brand p-4">
+            <strong data-statistic class="block font-mono tabular-nums text-2xl text-paper">{{ neighbor_count or 0 }} <span data-statistic-unit class="text-xs font-normal text-sage-light">Haushalte</span></strong>
+            <span class="block text-sm text-sage-light mt-1">Haushalte in der Nähe</span>
           </div>
-          <div class="bg-ink-soft p-4">
-            <strong data-statistic class="block font-mono tabular-nums text-2xl text-white">{{ user.referral_count|default(0) }} <span data-statistic-unit class="text-xs font-normal text-slate-300">Einladungen</span></strong>
-            <span class="block text-sm text-slate-300 mt-1">Einladungen</span>
+          <div class="bg-brand p-4">
+            <strong data-statistic class="block font-mono tabular-nums text-2xl text-paper">{{ user.referral_count|default(0) }} <span data-statistic-unit class="text-xs font-normal text-sage-light">Einladungen</span></strong>
+            <span class="block text-sm text-sage-light mt-1">Einladungen</span>
           </div>
-          <div class="bg-ink-soft p-4">
-            <strong class="block font-mono text-2xl text-white">{{ "fertig" if readiness_score == 100 else "offen" }}</strong>
-            <span class="block text-sm text-slate-300 mt-1">Profilstatus</span>
+          <div class="bg-brand p-4">
+            <strong class="block font-mono text-2xl text-paper">{{ "fertig" if readiness_score == 100 else "offen" }}</strong>
+            <span class="block text-sm text-sage-light mt-1">Profilstatus</span>
           </div>
         </div>
       </div>
@@ -54,15 +54,15 @@
 
     <div class="grid md:grid-cols-2 gap-6 mt-6 items-start">
       <div class="grid gap-6">
-        <section class="bg-white rounded-xl border border-slate-200 p-6" aria-labelledby="checks-title">
+        <section class="bg-white rounded-xl border border-line p-6" aria-labelledby="checks-title">
           <h2 id="checks-title" class="text-lg font-bold">Checkliste</h2>
           <p class="text-sm text-ink-muted mt-1 mb-4">Vier Punkte entscheiden, ob die Anmeldung starten kann.</p>
           <ul class="grid gap-3">
             {% for label, done in checks %}
-              <li class="flex items-center justify-between gap-3 rounded-lg border px-4 py-3 {{ 'border-slate-200 bg-slate-50/60' if done else 'border-slate-200' }}">
+              <li class="flex items-center justify-between gap-3 rounded-lg border px-4 py-3 {{ 'border-line bg-sage-light/50' if done else 'border-line' }}">
                 <span class="flex items-center gap-3">
                   {% if done %}
-                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink text-white text-sm font-bold shrink-0" aria-hidden="true">&#10003;</span>
+                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sage-dark text-white text-sm font-bold shrink-0" aria-hidden="true">&#10003;</span>
                   {% else %}
                     <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-brand text-sm font-bold shrink-0" aria-hidden="true">{{ loop.index }}</span>
                   {% endif %}
@@ -80,12 +80,12 @@
         </section>
 
         {% if referral_link %}
-          <section class="bg-white rounded-xl border border-slate-200 p-6" aria-labelledby="referral-title">
+          <section class="bg-white rounded-xl border border-line p-6" aria-labelledby="referral-title">
             <h2 id="referral-title" class="text-lg font-bold">Nachbarn einladen</h2>
             <p class="text-sm text-ink-muted mt-1 mb-3">Je mehr Haushalte mitmachen, desto schneller startet Ihre LEG. Teilen Sie den Link in der Nachbarschaft.</p>
             <div class="flex gap-2">
               <label for="ref-link" class="sr-only">Einladungslink</label>
-              <input type="text" readonly value="{{ referral_link }}" id="ref-link" class="w-full min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50" onclick="this.select()">
+              <input type="text" readonly value="{{ referral_link }}" id="ref-link" class="w-full min-w-0 border border-line rounded-lg px-3 py-2 text-sm bg-paper" onclick="this.select()">
               <button type="button" id="copy-ref" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark shrink-0">Kopieren</button>
             </div>
             {% if user.referral_count is defined and user.referral_count > 0 %}
@@ -96,18 +96,18 @@
       </div>
 
       <aside class="grid gap-6">
-        <section id="energieprofil" class="bg-white rounded-xl border border-slate-200 p-6" aria-labelledby="energy-title">
+        <section id="energieprofil" class="bg-white rounded-xl border border-line p-6" aria-labelledby="energy-title">
           <h2 id="energy-title" class="text-lg font-bold">Energieprofil</h2>
           <p class="text-sm text-ink-muted mt-1 mb-4">Die Daten aus Ihrer letzten Stromrechnung reichen.</p>
           <form id="energy-form" class="grid gap-4">
             <div>
-              <label for="consumption" class="block text-sm font-semibold text-slate-700 mb-1">Jährlicher Stromverbrauch in kWh</label>
-              <input type="number" id="consumption" placeholder="z. B. 4500" value="{{ user.annual_consumption_kwh or '' }}" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <label for="consumption" class="block text-sm font-semibold text-ink-soft mb-1">Jährlicher Stromverbrauch in kWh</label>
+              <input type="number" id="consumption" placeholder="z. B. 4500" value="{{ user.annual_consumption_kwh or '' }}" class="w-full border border-line rounded-lg px-3 py-2">
               <p class="text-xs text-ink-muted mt-1">Steht auf Ihrer letzten Stromrechnung von {{ utility_name }}.</p>
             </div>
             <div>
-              <label for="has-solar" class="block text-sm font-semibold text-slate-700 mb-1">Haben Sie eine Solaranlage?</label>
-              <select id="has-solar" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+              <label for="has-solar" class="block text-sm font-semibold text-ink-soft mb-1">Haben Sie eine Solaranlage?</label>
+              <select id="has-solar" class="w-full border border-line rounded-lg px-3 py-2 bg-white">
                 <option value="">Bitte wählen</option>
                 <option value="yes" {% if user.potential_pv_kwp and user.potential_pv_kwp > 0 %}selected{% endif %}>Ja</option>
                 <option value="no">Nein</option>
@@ -115,13 +115,13 @@
               </select>
             </div>
             <div id="pv-field" class="hidden">
-              <label for="pv-kwp" class="block text-sm font-semibold text-slate-700 mb-1">Leistung Ihrer Anlage in kWp</label>
-              <input type="number" id="pv-kwp" step="0.1" placeholder="z. B. 8.5" value="{{ user.potential_pv_kwp or '' }}" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <label for="pv-kwp" class="block text-sm font-semibold text-ink-soft mb-1">Leistung Ihrer Anlage in kWp</label>
+              <input type="number" id="pv-kwp" step="0.1" placeholder="z. B. 8.5" value="{{ user.potential_pv_kwp or '' }}" class="w-full border border-line rounded-lg px-3 py-2">
             </div>
             <button type="button" id="calc-btn" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Ersparnis berechnen</button>
           </form>
-          <div id="calc-error" class="hidden mt-3 rounded-lg border border-slate-200 bg-paper px-4 py-3 text-sm text-ink" role="alert"></div>
-          <div id="savings-result" class="hidden mt-4 rounded-lg border border-indigo-200 bg-brand/5 p-4 text-center" aria-live="polite">
+          <div id="calc-error" class="hidden mt-3 rounded-lg border border-line bg-paper px-4 py-3 text-sm text-ink" role="alert"></div>
+          <div id="savings-result" class="hidden mt-4 rounded-lg border border-sage bg-sage-light/50 p-4 text-center" aria-live="polite">
             <p class="text-sm text-brand m-0">Geschätzte jährliche Ersparnis</p>
             <p data-statistic class="font-mono tabular-nums text-3xl font-extrabold text-ink my-1" id="savings-amount"></p>
             <span data-statistic-unit class="sr-only">Schweizer Franken pro Jahr</span>
@@ -129,12 +129,12 @@
           </div>
         </section>
 
-        <section class="bg-white rounded-xl border border-slate-200 p-6" aria-labelledby="links-title">
+        <section class="bg-white rounded-xl border border-line p-6" aria-labelledby="links-title">
           <h2 id="links-title" class="text-lg font-bold mb-3">Nützliche Links</h2>
           <div class="grid gap-2">
-            <a href="/how-it-works" class="flex justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:border-brand hover:bg-brand/5 transition"><span>So funktioniert eine LEG</span><span aria-hidden="true">&rarr;</span></a>
-            <a href="/leg-kalkulator" class="flex justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:border-brand hover:bg-brand/5 transition"><span>Ersparnis im Detail berechnen</span><span aria-hidden="true">&rarr;</span></a>
-            <a href="mailto:{{ contact_email }}" class="flex justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:border-brand hover:bg-brand/5 transition"><span>Kontakt</span><span class="text-ink-muted">{{ contact_email }}</span></a>
+            <a href="/how-it-works" class="flex justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition"><span>So funktioniert eine LEG</span><span aria-hidden="true">&rarr;</span></a>
+            <a href="/leg-kalkulator" class="flex justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition"><span>Ersparnis im Detail berechnen</span><span aria-hidden="true">&rarr;</span></a>
+            <a href="mailto:{{ contact_email }}" class="flex justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition"><span>Kontakt</span><span class="text-ink-muted">{{ contact_email }}</span></a>
           </div>
         </section>
       </aside>

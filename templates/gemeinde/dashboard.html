@@ -20,22 +20,22 @@
           {% endif %}
         </p>
       </div>
-      <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-semibold text-ink">
+      <span class="inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-1.5 text-sm font-semibold text-ink">
         <span class="h-2 w-2 rounded-full bg-brand" aria-hidden="true"></span>
         {{ status_label }}
       </span>
     </div>
 
-    <section class="grid grid-cols-2 md:grid-cols-4 border-t border-slate-200 mb-8" aria-label="Gemeindestatistik">
-      <div class="py-4 pr-4 border-b border-slate-200">
+    <section class="grid grid-cols-2 md:grid-cols-4 border-t border-line mb-8" aria-label="Gemeindestatistik">
+      <div class="py-4 pr-4 border-b border-line">
         <p class="text-xs text-ink-muted uppercase tracking-wide">Registrierte Haushalte</p>
         <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ stats.total_buildings or 0 }} <span data-statistic-unit class="text-xs font-normal text-ink-muted">Haushalte</span></p>
       </div>
-      <div class="py-4 pr-4 border-b border-slate-200">
+      <div class="py-4 pr-4 border-b border-line">
         <p class="text-xs text-ink-muted uppercase tracking-wide">Heute registriert</p>
         <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ stats.registrations_today or 0 }} <span data-statistic-unit class="text-xs font-normal text-ink-muted">Haushalte</span></p>
       </div>
-      <div class="py-4 pr-4 border-b border-slate-200">
+      <div class="py-4 pr-4 border-b border-line">
         <p class="text-xs text-ink-muted uppercase tracking-wide">Solarnutzung</p>
         {% if solar_score is not none %}
           <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ "%.0f"|format(solar_score|float) }}<span data-statistic-unit class="text-sm font-normal text-ink-muted">%</span></p>
@@ -43,7 +43,7 @@
           <p class="text-sm text-ink-muted mt-2">Noch keine Daten</p>
         {% endif %}
       </div>
-      <div class="py-4 border-b border-slate-200">
+      <div class="py-4 border-b border-line">
         <p class="text-xs text-ink-muted uppercase tracking-wide">Energiewende-Score</p>
         {% if energy_score is not none %}
           <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ "%.0f"|format(energy_score|float) }} <span data-statistic-unit class="text-sm font-normal text-ink-muted">/100</span></p>
@@ -54,16 +54,16 @@
     </section>
 
     <div class="grid md:grid-cols-2 gap-6">
-      <section class="bg-white rounded-xl p-6 border border-slate-200" aria-labelledby="steps-title">
+      <section class="bg-white rounded-xl p-6 border border-line" aria-labelledby="steps-title">
         <h2 id="steps-title" class="text-lg font-semibold mb-1">Nächste Schritte</h2>
         <p class="text-sm text-ink-muted mb-4">Drei Schritte bringen Ihre Gemeinde zur ersten LEG.</p>
         <ul class="space-y-3 text-sm">
-          <li class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-4 py-3">
-            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink text-white text-sm font-bold" aria-hidden="true">&#10003;</span>
+          <li class="flex items-center gap-3 rounded-lg border border-line bg-paper/60 px-4 py-3">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sage-dark text-white text-sm font-bold" aria-hidden="true">&#10003;</span>
             <span><strong>Gemeinde registriert</strong><br><span class="text-ink-muted">Erledigt</span></span>
           </li>
           <li>
-            <a href="mailto:hallo@openleg.ch?subject=Datenverarbeitungsvertrag%20{{ municipality.name|urlencode }}" class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
+            <a href="mailto:hallo@openleg.ch?subject=Datenverarbeitungsvertrag%20{{ municipality.name|urlencode }}" class="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
               <span class="flex items-center gap-3">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-brand text-sm font-bold" aria-hidden="true">2</span>
                 <span><strong>Datenverarbeitungsvertrag unterzeichnen</strong><br><span class="text-ink-muted">Wir senden Ihnen die Vorlage per E-Mail</span></span>
@@ -72,7 +72,7 @@
             </a>
           </li>
           <li>
-            <a href="#einladen" class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
+            <a href="#einladen" class="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
               <span class="flex items-center gap-3">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-brand text-sm font-bold" aria-hidden="true">3</span>
                 <span><strong>Bewohner zur Registrierung einladen</strong><br><span class="text-ink-muted">Link teilen, Interessierte sammeln</span></span>
@@ -81,7 +81,7 @@
             </a>
           </li>
           <li>
-            <a href="/leg-gruenden" class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
+            <a href="/leg-gruenden" class="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
               <span class="flex items-center gap-3">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-brand text-sm font-bold" aria-hidden="true">4</span>
                 <span><strong>Erste LEG gründen</strong><br><span class="text-ink-muted">Schritt für Schritt zur Stromgemeinschaft</span></span>
@@ -93,12 +93,12 @@
       </section>
 
       <div class="space-y-6">
-        <section id="einladen" class="bg-white rounded-xl p-6 border border-slate-200" aria-labelledby="invite-title">
+        <section id="einladen" class="bg-white rounded-xl p-6 border border-line" aria-labelledby="invite-title">
           <h2 id="invite-title" class="text-lg font-semibold mb-1">Bewohner einladen</h2>
           <p class="text-sm text-ink-muted mb-3">Teilen Sie diesen Link auf Ihrer Website, im Mitteilungsblatt oder per E-Mail. Interessierte Haushalte melden sich direkt an.</p>
           <div class="flex gap-2">
             <label for="invite-link" class="sr-only">Einladungslink</label>
-            <input type="text" id="invite-link" value="{{ invite_url }}" class="w-full min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50" readonly onclick="this.select()">
+            <input type="text" id="invite-link" value="{{ invite_url }}" class="w-full min-w-0 border border-line rounded-lg px-3 py-2 text-sm bg-paper" readonly onclick="this.select()">
             <button type="button" id="copy-invite" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand shrink-0">Kopieren</button>
           </div>
         </section>
