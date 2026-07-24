@@ -1,5 +1,6 @@
 <a class="skip-link" href="#main-content">Zum Inhalt springen</a>
-{% set home_nav = request.path == '/' %}
+{# Daylight hero is light: the homepage nav stays light like every other page. #}
+{% set home_nav = false %}
 <nav class="site-nav {{ 'site-nav--dark' if home_nav else '' }} backdrop-blur-xl border-b sticky top-0 z-50 transition-colors"{% if home_nav %} data-home-nav{% endif %}>
   <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
     {% set brand_inverse = home_nav %}
