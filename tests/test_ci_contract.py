@@ -87,4 +87,5 @@ def test_release_image_is_immutable_and_attested():
     assert "sbom: true" in text
     assert "provenance: mode=max" in text
     assert "attest-build-provenance" in text
+    assert "trivy-action@" in text
     assert "steps.build.outputs.digest" in text
