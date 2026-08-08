@@ -72,3 +72,19 @@ def test_no_mainline_workflow_pushes_directly():
             offenders.append(path.name)
 
     assert offenders == [], offenders
+
+
+def test_public_repo_never_deploys_production():
+    for path in WORKFLOWS_DIR.glob("*.yml"):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        jobs = data.get("jobs", {})
+        assert "deploy" not in jobs, path.name
+
+
+def test_release_image_is_immutable_and_attested():
+    text = (WORKFLOWS_DIR / "image.yml").read_text(encoding="utf-8")
+    assert "type=raw,value=latest" not in text
+    assert "sbom: true" in text
+    assert "provenance: mode=max" in text
+    assert "attest-build-provenance" in text
+    assert "steps.build.outputs.digest" in text
