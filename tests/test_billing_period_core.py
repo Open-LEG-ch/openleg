@@ -294,7 +294,7 @@ def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch)
                 "amount_chf": 0.15,
             },
             {
-                "participant_id": "producer-a",
+                "participant_id": "consumer-a",
                 "item_type": "producer_credit",
                 "quantity_kwh": 1,
                 "unit_price_chf_per_kwh": 0.15,
@@ -317,6 +317,7 @@ def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch)
     assert "network_discount_chf" in item_queries[0][0]
     assert item_queries[0][1][-5:] == (1, 1, 1, 0.15, 0.04)
     assert item_queries[1][1][5] == -0.15
+    assert item_queries[1][1][-5:] == (None, None, None, None, None)
 
 
 def test_legacy_summary_still_saves_without_price_snapshot(monkeypatch):

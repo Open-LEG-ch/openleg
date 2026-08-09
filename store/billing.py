@@ -62,7 +62,11 @@ def save_billing_period(
                     for participant in summary.get("participants", [])
                 }
                 for item in line_items:
-                    participant = participants.get(item["participant_id"], {})
+                    participant = (
+                        participants.get(item["participant_id"], {})
+                        if item["item_type"] == "consumer_charge"
+                        else {}
+                    )
                     cur.execute(
                         """
                         INSERT INTO billing_line_items
@@ -79,11 +83,11 @@ def save_billing_period(
                             item["quantity_kwh"],
                             item["unit_price_chf_per_kwh"],
                             item["amount_chf"],
-                            participant.get("consumption_kwh", 0),
-                            participant.get("allocated_kwh", 0),
-                            participant.get("self_supply_ratio", 0),
-                            participant.get("internal_cost_chf", 0),
-                            participant.get("network_discount_chf", 0),
+                            participant.get("consumption_kwh"),
+                            participant.get("allocated_kwh"),
+                            participant.get("self_supply_ratio"),
+                            participant.get("internal_cost_chf"),
+                            participant.get("network_discount_chf"),
                         ),
                     )
 
