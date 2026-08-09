@@ -8,7 +8,9 @@ Implements Art. 17d/17e StromVG allocation models:
 """
 
 from decimal import ROUND_HALF_UP, Decimal
+from math import isfinite
 
+import numpy as np
 import pandas as pd
 
 DISCOUNT_SAME_LEVEL = 0.40
@@ -106,15 +108,18 @@ def generate_billing_summary(
         dict with total_production_kwh, total_allocated_kwh,
         total_network_discount_chf, participants (list of per-participant summaries)
     """
-    if grid_fee_per_kwh < 0 or internal_price_per_kwh < 0:
-        raise ValueError("Billing prices must not be negative")
+    if not all(
+        isfinite(price) and price >= 0
+        for price in (grid_fee_per_kwh, internal_price_per_kwh)
+    ):
+        raise ValueError("Billing prices must be finite and non-negative")
     if network_level not in {"same", "cross"}:
         raise ValueError("network_level must be 'same' or 'cross'")
     if distribution_model not in {"proportional", "einfach"}:
         raise ValueError("Unsupported distribution model")
     if (
-        pd.isna(production).to_numpy().any()
-        or pd.isna(consumption).to_numpy().any()
+        not np.isfinite(production.to_numpy()).all()
+        or not np.isfinite(consumption.to_numpy()).all()
         or (production < 0).to_numpy().any()
         or (consumption < 0).to_numpy().any()
     ):

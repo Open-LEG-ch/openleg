@@ -102,6 +102,11 @@ def test_anonymous_aggregate_production_does_not_emit_unbalanced_ledger():
             pd.DataFrame({"consumer-a": [1.0]}),
             "unknown",
         ),
+        (
+            pd.DataFrame({"producer-a": [float("inf")]}),
+            pd.DataFrame({"consumer-a": [1.0]}),
+            "proportional",
+        ),
     ],
 )
 def test_invalid_billing_inputs_are_rejected(production, consumption, model):
@@ -113,6 +118,18 @@ def test_invalid_billing_inputs_are_rejected(production, consumption, model):
             internal_price_per_kwh=0.15,
             network_level="same",
             distribution_model=model,
+        )
+
+
+@pytest.mark.parametrize("price", [float("nan"), float("inf")])
+def test_non_finite_billing_prices_are_rejected(price):
+    with pytest.raises(ValueError):
+        billing_engine.generate_billing_summary(
+            production=pd.DataFrame({"producer-a": [1.0]}),
+            consumption=pd.DataFrame({"consumer-a": [1.0]}),
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=price,
+            network_level="same",
         )
 
 
