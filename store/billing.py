@@ -75,24 +75,25 @@ def save_billing_period(
                         ),
                     )
 
-                for p in [] if line_items else summary.get("participants", []):
-                    cur.execute(
-                        """
-                        INSERT INTO billing_line_items
-                        (billing_period_id, participant_id, consumption_kwh, allocated_kwh,
-                         self_supply_ratio, internal_cost_chf, network_discount_chf)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    """,
-                        (
-                            period_id,
-                            p["id"],
-                            p["consumption_kwh"],
-                            p["allocated_kwh"],
-                            p["self_supply_ratio"],
-                            p["internal_cost_chf"],
-                            p["network_discount_chf"],
-                        ),
-                    )
+                if not line_items:
+                    for p in summary.get("participants", []):
+                        cur.execute(
+                            """
+                            INSERT INTO billing_line_items
+                            (billing_period_id, participant_id, consumption_kwh, allocated_kwh,
+                             self_supply_ratio, internal_cost_chf, network_discount_chf)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        """,
+                            (
+                                period_id,
+                                p["id"],
+                                p["consumption_kwh"],
+                                p["allocated_kwh"],
+                                p["self_supply_ratio"],
+                                p["internal_cost_chf"],
+                                p["network_discount_chf"],
+                            ),
+                        )
 
                 return period_id
     except Exception as e:

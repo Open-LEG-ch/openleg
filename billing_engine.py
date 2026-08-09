@@ -163,13 +163,14 @@ def generate_billing_summary(
             }
         )
         if producer_production is not None:
+            quantity = round(alloc_kwh, 6)
             line_items.append(
                 {
                     "participant_id": col,
                     "item_type": "consumer_charge",
-                    "quantity_kwh": round(alloc_kwh, 6),
+                    "quantity_kwh": quantity,
                     "unit_price_chf_per_kwh": internal_price_per_kwh,
-                    "amount_chf": float(_money(alloc_kwh * internal_price_per_kwh)),
+                    "amount_chf": float(_money(quantity * internal_price_per_kwh)),
                 }
             )
 
@@ -182,19 +183,29 @@ def generate_billing_summary(
         charge_total = sum(_money(item["amount_chf"]) for item in line_items)
         credited_total = Decimal(0)
         producer_ids = list(credited.index)
-        for position, producer_id in enumerate(producer_ids):
-            quantity = float(credited[producer_id])
+        for producer_id in producer_ids:
+            quantity = round(float(credited[producer_id]), 6)
             amount = _money(quantity * internal_price_per_kwh)
-            if position == len(producer_ids) - 1:
-                amount = charge_total - credited_total
             credited_total += amount
             line_items.append(
                 {
                     "participant_id": producer_id,
                     "item_type": "producer_credit",
-                    "quantity_kwh": round(quantity, 6),
+                    "quantity_kwh": quantity,
                     "unit_price_chf_per_kwh": internal_price_per_kwh,
                     "amount_chf": -float(amount),
+                }
+            )
+
+        rounding_difference = charge_total - credited_total
+        if producer_ids and rounding_difference:
+            line_items.append(
+                {
+                    "participant_id": producer_ids[-1],
+                    "item_type": "rounding_adjustment",
+                    "quantity_kwh": None,
+                    "unit_price_chf_per_kwh": None,
+                    "amount_chf": -float(rounding_difference),
                 }
             )
 

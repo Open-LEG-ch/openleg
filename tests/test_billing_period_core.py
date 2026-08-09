@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD contract for auditable draft billing periods."""
 
+import re
 from contextlib import contextmanager
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import pandas as pd
@@ -12,6 +14,20 @@ import database
 from store import billing
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _money(value):
+    return Decimal(str(value)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+
+
+def _create_table_block(source, table):
+    match = re.search(
+        rf"CREATE TABLE IF NOT EXISTS {table} \((.*?)\)\s*\"\"\"",
+        source,
+        flags=re.DOTALL,
+    )
+    assert match, f"CREATE TABLE {table} block not found"
+    return match.group(1)
 
 
 class _Cursor:
@@ -70,6 +86,36 @@ def test_summary_emits_balanced_consumer_charges_and_producer_credits():
     assert all(item["amount_chf"] > 0 for item in charges)
     assert all(item["amount_chf"] < 0 for item in credits)
     assert round(sum(item["amount_chf"] for item in summary["line_items"]), 6) == 0
+
+
+def test_persisted_quantities_recompute_to_amounts_with_explicit_rounding_item():
+    summary = billing_engine.generate_billing_summary(
+        production=pd.DataFrame({"producer-a": [0.000008]}),
+        consumption=pd.DataFrame({"consumer-a": [0.000004], "consumer-b": [0.000004]}),
+        grid_fee_per_kwh=0.10,
+        internal_price_per_kwh=0.15,
+        network_level="same",
+    )
+
+    priced_items = [
+        item
+        for item in summary["line_items"]
+        if item["item_type"] in {"consumer_charge", "producer_credit"}
+    ]
+    for item in priced_items:
+        expected = _money(item["quantity_kwh"] * item["unit_price_chf_per_kwh"])
+        assert _money(abs(item["amount_chf"])) == expected
+
+    adjustment = [
+        item
+        for item in summary["line_items"]
+        if item["item_type"] == "rounding_adjustment"
+    ]
+    assert len(adjustment) == 1
+    assert adjustment[0]["participant_id"] == "producer-a"
+    assert adjustment[0]["quantity_kwh"] is None
+    assert adjustment[0]["unit_price_chf_per_kwh"] is None
+    assert _money(sum(item["amount_chf"] for item in summary["line_items"])) == 0
 
 
 def test_anonymous_aggregate_production_does_not_emit_unbalanced_ledger():
@@ -179,13 +225,10 @@ def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch)
 
 def test_schema_keeps_prices_and_signed_line_items_with_the_period():
     schema = (PROJECT_ROOT / "database.py").read_text(encoding="utf-8")
+    period_block = _create_table_block(schema, "billing_periods")
+    line_item_block = _create_table_block(schema, "billing_line_items")
 
-    for column in (
-        "internal_price_chf_per_kwh",
-        "grid_fee_chf_per_kwh",
-        "item_type",
-        "quantity_kwh",
-        "unit_price_chf_per_kwh",
-        "amount_chf",
-    ):
-        assert column in schema
+    for column in ("internal_price_chf_per_kwh", "grid_fee_chf_per_kwh"):
+        assert column in period_block
+    for column in ("item_type", "quantity_kwh", "unit_price_chf_per_kwh", "amount_chf"):
+        assert column in line_item_block
