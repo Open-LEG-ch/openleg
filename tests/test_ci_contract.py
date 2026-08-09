@@ -2,17 +2,14 @@
 """Contract tests for public CI workflow shape."""
 
 from pathlib import Path
+import re
 
 import yaml
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = PROJECT_ROOT / ".github" / "workflows"
-
-
-def _read_workflow(path: Path):
-    with path.open(encoding="utf-8") as handle:
-        return handle.read(), yaml.safe_load(handle.read())
+DEPENDABOT_CONFIG = PROJECT_ROOT / ".github" / "dependabot.yml"
 
 
 def _on_section(data):
@@ -43,7 +40,7 @@ def test_exactly_three_required_check_workflows_with_expected_job_names():
     required_workflows = []
     seen_job_names = set()
 
-    for path in WORKFLOWS_DIR.glob("*.yml"):
+    for path in WORKFLOWS_DIR.glob("*.y*ml"):
         with path.open(encoding="utf-8") as handle:
             text = handle.read()
         data = yaml.safe_load(text)
@@ -62,7 +59,7 @@ def test_exactly_three_required_check_workflows_with_expected_job_names():
 def test_no_mainline_workflow_pushes_directly():
     offenders = []
 
-    for path in WORKFLOWS_DIR.glob("*.yml"):
+    for path in WORKFLOWS_DIR.glob("*.y*ml"):
         with path.open(encoding="utf-8") as handle:
             text = handle.read()
         data = yaml.safe_load(text)
@@ -75,17 +72,90 @@ def test_no_mainline_workflow_pushes_directly():
 
 
 def test_public_repo_never_deploys_production():
-    for path in WORKFLOWS_DIR.glob("*.yml"):
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    paths = tuple(WORKFLOWS_DIR.glob("*.y*ml"))
+    forbidden_patterns = (
+        r"\b(?:ssh|scp|rsync)\s+",
+        r"\bDEPLOY_(?:HOST|USER|PATH|SSH_KEY|KNOWN_HOSTS)\b",
+        r"\b(?:REMOTE_DIR|HEALTH_URL)\b",
+        r"(?:ssh-action|rsync-deployments)@",
+    )
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        data = yaml.safe_load(text)
         jobs = data.get("jobs", {})
         assert "deploy" not in jobs, path.name
+        assert not any(re.search(pattern, text) for pattern in forbidden_patterns), (
+            path.name
+        )
+        for job in jobs.values():
+            environment = job.get("environment")
+            name = (
+                environment.get("name")
+                if isinstance(environment, dict)
+                else environment
+            )
+            assert name != "production", path.name
+
+
+def test_workflow_set_changes_require_contract_review():
+    assert {path.name for path in WORKFLOWS_DIR.glob("*.y*ml")} == {
+        "deploy.yml",
+        "image.yml",
+        "lint.yml",
+        "secret-scan.yml",
+    }
+
+
+def test_dependabot_keeps_python_and_actions_updates():
+    data = yaml.safe_load(DEPENDABOT_CONFIG.read_text(encoding="utf-8"))
+    ecosystems = {update["package-ecosystem"] for update in data["updates"]}
+    assert {"pip", "github-actions"} <= ecosystems
 
 
 def test_release_image_is_immutable_and_attested():
-    text = (WORKFLOWS_DIR / "image.yml").read_text(encoding="utf-8")
+    path = WORKFLOWS_DIR / "image.yml"
+    text = path.read_text(encoding="utf-8")
+    data = yaml.safe_load(text)
+    job = data["jobs"]["publish"]
+    steps = job["steps"]
+    image = next(step for step in steps if step.get("name") == "Define image name")
+    metadata = next(step for step in steps if step.get("name") == "Image metadata")
+    build_steps = [
+        step for step in steps if "docker/build-push-action@" in step.get("uses", "")
+    ]
+    scan = next(
+        step
+        for step in steps
+        if step.get("name") == "Block high-severity image vulnerabilities"
+    )
+    push = next(step for step in steps if step.get("name") == "Push scanned image")
+    provenance = next(
+        step for step in steps if step.get("name") == "Attest image provenance"
+    )
+    sbom = next(step for step in steps if step.get("name") == "Attest SBOM")
+
     assert "type=raw,value=latest" not in text
-    assert "sbom: true" in text
-    assert "provenance: mode=max" in text
+    assert "latest=false" in text
+    assert "${GITHUB_REPOSITORY_OWNER,,}" in image["run"]
+    assert metadata["with"]["images"] == "${{ steps.image.outputs.name }}"
+    assert len(build_steps) == 1
+    assert build_steps[0]["with"]["load"] is True
+    assert build_steps[0]["with"].get("push") is not True
+    assert "sbom" not in build_steps[0]["with"]
+    assert "provenance" not in build_steps[0]["with"]
+    assert build_steps[0]["with"]["tags"] == "${{ steps.meta.outputs.tags }}"
+    assert scan["with"]["image-ref"].endswith(":${{ steps.meta.outputs.version }}")
+    assert scan["with"]["image-ref"].startswith("${{ steps.image.outputs.name }}:")
+    assert job["env"]["TRIVY_IMAGE_SRC"] == "docker"
+    assert push["env"]["IMAGE_TAGS"] == build_steps[0]["with"]["tags"]
+    assert steps.index(scan) < steps.index(push)
+    assert "docker push" in push["run"]
+    assert "imagetools inspect" in push["run"]
+    assert provenance["with"]["subject-digest"] == "${{ steps.push.outputs.digest }}"
+    assert sbom["with"]["subject-digest"] == "${{ steps.push.outputs.digest }}"
+    assert provenance["with"]["subject-name"] == "${{ steps.image.outputs.name }}"
+    assert sbom["with"]["subject-name"] == "${{ steps.image.outputs.name }}"
+    assert "docker/setup-buildx-action@" in text
+    assert "sbom-path: sbom.cdx.json" in text
     assert "attest-build-provenance" in text
     assert "trivy-action@" in text
-    assert "steps.build.outputs.digest" in text
