@@ -453,7 +453,6 @@ def _create_tables():
                     magic_link_expires_at TIMESTAMP,
                     branding JSONB DEFAULT '{}',
                     billing_email VARCHAR(255),
-                    stripe_customer_id VARCHAR(128),
                     onboarding_step INTEGER DEFAULT 0,
                     last_login_at TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -606,19 +605,6 @@ def _create_tables():
                     ) THEN
                         ALTER TABLE leg_documents
                             ALTER COLUMN community_id TYPE VARCHAR(64);
-                    END IF;
-                END $$
-            """)
-
-            # Migration: add stripe_subscription_id to utility_clients if missing
-            cur.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'utility_clients' AND column_name = 'stripe_subscription_id'
-                    ) THEN
-                        ALTER TABLE utility_clients ADD COLUMN stripe_subscription_id VARCHAR(128);
                     END IF;
                 END $$
             """)
