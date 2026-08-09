@@ -9,7 +9,6 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 """
 
 import logging
-from typing import Optional, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -74,55 +73,52 @@ def save_billing_period(
         return 0
 
 
-def get_active_communities() -> List[Dict]:
+def get_active_communities() -> list[dict]:
     """Get all communities with status='active'."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT * FROM communities WHERE status = 'active'")
-                return [dict(row) for row in cur.fetchall()]
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM communities WHERE status = 'active'")
+            return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting active communities: {e}")
         return []
 
 
-def get_community_for_building(building_id: str) -> Optional[Dict]:
+def get_community_for_building(building_id: str) -> dict | None:
     """Get community for a building via community_members join."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT c.* FROM communities c
                     JOIN community_members cm ON c.community_id = cm.community_id
                     WHERE cm.building_id = %s AND c.status = 'active'
                     LIMIT 1
                 """,
-                    (building_id,),
-                )
-                row = cur.fetchone()
-                return dict(row) if row else None
+                (building_id,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
     except Exception as e:
         logger.error(f"[DB] Error getting community for building: {e}")
         return None
 
 
-def get_billing_period(period_id: int) -> Optional[Dict]:
+def get_billing_period(period_id: int) -> dict | None:
     """Get billing period with line items."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT * FROM billing_periods WHERE id = %s", (period_id,))
-                period = cur.fetchone()
-                if not period:
-                    return None
-                result = dict(period)
-                cur.execute(
-                    "SELECT * FROM billing_line_items WHERE billing_period_id = %s",
-                    (period_id,),
-                )
-                result["line_items"] = [dict(row) for row in cur.fetchall()]
-                return result
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM billing_periods WHERE id = %s", (period_id,))
+            period = cur.fetchone()
+            if not period:
+                return None
+            result = dict(period)
+            cur.execute(
+                "SELECT * FROM billing_line_items WHERE billing_period_id = %s",
+                (period_id,),
+            )
+            result["line_items"] = [dict(row) for row in cur.fetchall()]
+            return result
     except Exception as e:
         logger.error(f"[DB] Error getting billing period: {e}")
         return None

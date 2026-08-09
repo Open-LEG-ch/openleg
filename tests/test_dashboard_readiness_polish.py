@@ -13,27 +13,27 @@ from tests.test_app_organic_routes import _disable_rate_limit_hooks
 
 @pytest.fixture
 def client():
-    with patch.dict(
-        os.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "CRON_SECRET": "test-cron-secret",
-            "APP_BASE_URL": "http://localhost:5003",
-        },
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "CRON_SECRET": "test-cron-secret",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            import app as imported_app
+        import app as imported_app
 
-            imported_app = importlib.reload(imported_app)
-            hooks = _disable_rate_limit_hooks(imported_app.app)
-            try:
-                yield imported_app.app.test_client()
-            finally:
-                imported_app.app.before_request_funcs[None] = hooks
+        imported_app = importlib.reload(imported_app)
+        hooks = _disable_rate_limit_hooks(imported_app.app)
+        try:
+            yield imported_app.app.test_client()
+        finally:
+            imported_app.app.before_request_funcs[None] = hooks
 
 
 def _html(client, path):
@@ -47,7 +47,7 @@ def test_demo_routes_keep_script_ids_and_context(client):
     municipality = _html(client, "/gemeinde/dashboard/demo")
     leg = _html(client, "/leg/dashboard/demo")
 
-    for element_id in {
+    for element_id in (
         "has-solar",
         "pv-field",
         "copy-ref",
@@ -58,9 +58,9 @@ def test_demo_routes_keep_script_ids_and_context(client):
         "pv-kwp",
         "savings-amount",
         "savings-result",
-    }:
+    ):
         assert f'id="{element_id}"' in resident
-    for element_id in {"copy-invite", "invite-link"}:
+    for element_id in ("copy-invite", "invite-link"):
         assert f'id="{element_id}"' in municipality
 
     assert "Mellingerstrasse 12, 5400 Baden" in resident
@@ -149,7 +149,9 @@ def test_dark_panel_statistics_carry_light_text(client):
     the statistics carry paper/white, never near-black ink.
     """
     html = _html(client, "/dashboard/demo")
-    panel = re.search(r'aria-label="Kennzahlen".*?</div>\s*</div>\s*</div>', html, re.S)
+    panel = re.search(
+        r'aria-label="Kennzahlen".*?</div>\s*</div>\s*</div>', html, re.DOTALL
+    )
     assert panel, "dark readiness panel with statistics not found"
     values = re.findall(r"<strong[^>]*font-mono[^>]*>", panel.group(0))
     assert len(values) == 3

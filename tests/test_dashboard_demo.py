@@ -12,27 +12,27 @@ from tests.test_app_organic_routes import _disable_rate_limit_hooks
 
 @pytest.fixture
 def app_module():
-    with patch.dict(
-        os.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "CRON_SECRET": "test-cron-secret",
-            "APP_BASE_URL": "http://localhost:5003",
-        },
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "CRON_SECRET": "test-cron-secret",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            import app as imported_app
+        import app as imported_app
 
-            imported_app = importlib.reload(imported_app)
-            hooks = _disable_rate_limit_hooks(imported_app.app)
-            try:
-                yield imported_app
-            finally:
-                imported_app.app.before_request_funcs[None] = hooks
+        imported_app = importlib.reload(imported_app)
+        hooks = _disable_rate_limit_hooks(imported_app.app)
+        try:
+            yield imported_app
+        finally:
+            imported_app.app.before_request_funcs[None] = hooks
 
 
 def test_dashboard_demo_route_renders_fake_data(app_module):

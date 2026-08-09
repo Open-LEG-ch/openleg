@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-import pandas as pd
+from math import atan2, cos, radians, sin, sqrt
+
 import numpy as np
+import pandas as pd
 from sklearn.cluster import DBSCAN
-from math import radians, sin, cos, sqrt, atan2
 
 
 # --- NEU: Eigenständige Distanz-Funktion ---

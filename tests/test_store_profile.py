@@ -7,13 +7,12 @@ so legacy callers and existing monkeypatches keep working unchanged. Mirrors
 `test_store_ranking.py`; the seam is the test surface (no Flask, no live pool).
 """
 
-from contextlib import contextmanager
 import subprocess
 import sys
+from contextlib import contextmanager
 
 import database
 from store import profile
-
 
 _REEXPORTED = (
     "save_elcom_tariffs",

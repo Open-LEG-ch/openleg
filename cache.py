@@ -5,9 +5,9 @@ Falls back gracefully if Redis is unavailable (returns None, no-ops on writes).
 All keys prefixed with "openleg:" to avoid collisions.
 """
 
-import os
 import json
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 

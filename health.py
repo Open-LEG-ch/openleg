@@ -2,6 +2,7 @@
 """Health check blueprint for OpenLEG."""
 
 from flask import Blueprint, jsonify
+
 import database as db
 
 health_bp = Blueprint("health", __name__)
@@ -13,9 +14,8 @@ def health():
 
     # Check DB
     try:
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT 1")
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1")
         status["db"] = "connected"
     except Exception:
         status["db"] = "disconnected"

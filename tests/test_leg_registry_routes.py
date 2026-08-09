@@ -41,7 +41,7 @@ def _make_client(monkeypatch, list_return=None, detail_return=None):
 
 
 def test_liste_renders_published_entries(monkeypatch):
-    client, mock_list, _ = _make_client(monkeypatch, list_return=[SAMPLE_ENTRY])
+    client, _mock_list, _ = _make_client(monkeypatch, list_return=[SAMPLE_ENTRY])
     resp = client.get("/leg-verzeichnis")
     assert resp.status_code == 200
     html = resp.data.decode("utf-8", errors="ignore")
@@ -72,7 +72,7 @@ def test_liste_states_no_grid_topology_verification():
     app = Flask(__name__, template_folder=os.path.join(PROJECT_ROOT, "templates"))
     app.config["TESTING"] = True
     app.register_blueprint(leg_registry_module.registry_bp)
-    import unittest.mock as mock
+    from unittest import mock
 
     with mock.patch.object(
         leg_registry_module.db, "list_registry_entries", return_value=[]
@@ -348,25 +348,25 @@ def test_cron_verify_registry_entries_requires_secret(monkeypatch):
     import os as os_module
     from unittest.mock import patch
 
-    with patch.dict(
-        os_module.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "APP_BASE_URL": "http://localhost:5003",
-            "CRON_SECRET": "test-cron-secret",
-        },
+    with (
+        patch.dict(
+            os_module.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+                "CRON_SECRET": "test-cron-secret",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            import app as app_module
+        import app as app_module
 
-            app_module = importlib.reload(app_module)
-            client = app_module.app.test_client()
-            resp = client.post("/api/cron/verify-registry-entries")
-            assert resp.status_code == 403
+        app_module = importlib.reload(app_module)
+        client = app_module.app.test_client()
+        resp = client.post("/api/cron/verify-registry-entries")
+        assert resp.status_code == 403
 
 
 def test_annotate_vnb_plausibility_flags_mismatch(monkeypatch):
@@ -413,30 +413,30 @@ def test_cron_verify_registry_entries_calls_nudge_job(monkeypatch):
     import os as os_module
     from unittest.mock import patch
 
-    with patch.dict(
-        os_module.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "APP_BASE_URL": "http://localhost:5003",
-            "CRON_SECRET": "test-cron-secret",
-        },
+    with (
+        patch.dict(
+            os_module.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+                "CRON_SECRET": "test-cron-secret",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            import app as app_module
+        import app as app_module
 
-            app_module = importlib.reload(app_module)
-            with patch(
-                "leg_registry.send_verification_nudges",
-                return_value={"candidates": 0, "sent": 0, "errors": 0},
-            ) as mock_job:
-                client = app_module.app.test_client()
-                resp = client.post(
-                    "/api/cron/verify-registry-entries",
-                    headers={"X-Cron-Secret": "test-cron-secret"},
-                )
-                assert resp.status_code == 200
-                mock_job.assert_called_once()
+        app_module = importlib.reload(app_module)
+        with patch(
+            "leg_registry.send_verification_nudges",
+            return_value={"candidates": 0, "sent": 0, "errors": 0},
+        ) as mock_job:
+            client = app_module.app.test_client()
+            resp = client.post(
+                "/api/cron/verify-registry-entries",
+                headers={"X-Cron-Secret": "test-cron-secret"},
+            )
+            assert resp.status_code == 200
+            mock_job.assert_called_once()

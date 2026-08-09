@@ -7,9 +7,9 @@ This module owns that persistence and resolves the connection seam via
 ``database`` re-exports the identical objects for legacy callers.
 """
 
-from contextlib import contextmanager
 import subprocess
 import sys
+from contextlib import contextmanager
 
 import database
 from store import tenant

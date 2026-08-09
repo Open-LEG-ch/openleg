@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Trust and accessibility contracts for the public LEG registry journey."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
 from flask import Flask, render_template
 
 import leg_registry
-
 
 TEMPLATES = Path(__file__).parents[1] / "templates"
 BASE_ENTRY = {
@@ -48,7 +47,7 @@ def test_registry_trust_states_use_distinct_words_and_markers():
         "confirmed": {
             **BASE_ENTRY,
             "source": "claimed",
-            "claimed_at": datetime(2026, 6, 2),
+            "claimed_at": datetime(2026, 6, 2, tzinfo=timezone.utc),
         },
     }
 
@@ -68,7 +67,7 @@ def test_same_registry_trust_state_renders_identically_in_list_and_detail(monkey
     entry = {
         **BASE_ENTRY,
         "source": "claimed",
-        "claimed_at": datetime(2026, 6, 2),
+        "claimed_at": datetime(2026, 6, 2, tzinfo=timezone.utc),
     }
     monkeypatch.setattr(leg_registry.db, "list_registry_entries", lambda **_: [entry])
     monkeypatch.setattr(leg_registry.db, "get_registry_entry_by_slug", lambda _: entry)
@@ -85,8 +84,8 @@ def test_registry_trust_states_last_verification_or_plain_absence():
     confirmed = {
         **BASE_ENTRY,
         "source": "claimed",
-        "claimed_at": datetime(2026, 6, 2),
-        "last_verified_at": datetime(2026, 7, 10),
+        "claimed_at": datetime(2026, 6, 2, tzinfo=timezone.utc),
+        "last_verified_at": datetime(2026, 7, 10, tzinfo=timezone.utc),
     }
     never_reconfirmed = {**confirmed, "last_verified_at": None}
 

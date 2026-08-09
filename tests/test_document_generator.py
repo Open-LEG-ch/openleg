@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for document_generator.py - PDF generation for LEG formation documents."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 # Mock _render_pdf to return fake PDF bytes (avoids WeasyPrint system dep in CI)
 FAKE_PDF = b"%PDF-1.4 fake"

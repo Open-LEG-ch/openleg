@@ -6,7 +6,6 @@ nativen Abhängigkeiten nötig sind. Für Plattformen ohne SVG-Vorschau lässt
 sich später ein PNG-Export ergänzen.
 """
 
-from typing import Optional
 from xml.sax.saxutils import escape
 
 BRAND = "#4f46e5"
@@ -14,11 +13,11 @@ INK = "#0f172a"
 MUTED = "#475569"
 
 
-def _score_text(score: Optional[float]) -> str:
+def _score_text(score: float | None) -> str:
     return f"{score:.0f}%" if score is not None else "n/a"
 
 
-def badge_svg(name: str, score: Optional[float], rank: Optional[int]) -> str:
+def badge_svg(name: str, score: float | None, rank: int | None) -> str:
     """Kompaktes Einbett-Badge: Solarnutzung und nationaler Rang."""
     safe_name = escape((name or "").strip())[:28]
     rank_line = f"Rang {rank} CH" if rank else "OpenLEG"
@@ -36,9 +35,9 @@ def badge_svg(name: str, score: Optional[float], rank: Optional[int]) -> str:
 def og_card_svg(
     name: str,
     kanton: str,
-    score: Optional[float],
-    rank: Optional[int],
-    untapped_kw: Optional[float],
+    score: float | None,
+    rank: int | None,
+    untapped_kw: float | None,
 ) -> str:
     """Social-Card 1200x630 für og:image."""
     safe_name = escape((name or "").strip())[:40]
