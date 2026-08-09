@@ -2,8 +2,8 @@
 """PDF document generator for LEG formation documents using WeasyPrint."""
 
 import html
-from datetime import date
-
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 DISTRIBUTION_LABELS = {
     "einfach": "Gleichmässige Verteilung",
@@ -14,6 +14,10 @@ DISTRIBUTION_LABELS = {
 
 def _escape_html(value):
     return html.escape(str(value), quote=True)
+
+
+def _today_iso():
+    return datetime.now(ZoneInfo("Europe/Zurich")).date().isoformat()
 
 
 def _render_pdf(html_str):
@@ -53,7 +57,7 @@ def generate_gemeinschaftsvereinbarung(
         raise ValueError("Eine LEG benötigt mindestens einen Produzent")
 
     if date_str is None:
-        date_str = date.today().isoformat()
+        date_str = _today_iso()
 
     community_name = _escape_html(community_name)
     municipality = _escape_html(municipality)
@@ -135,7 +139,7 @@ def generate_teilnehmervertrag(
         PDF bytes
     """
     if date_str is None:
-        date_str = date.today().isoformat()
+        date_str = _today_iso()
 
     participant_name = _escape_html(participant_name)
     participant_address = _escape_html(participant_address)
@@ -212,7 +216,7 @@ def generate_dso_anmeldung(
             raise ValueError(f"Messpunkt fehlt für Teilnehmer {p.get('name', '?')}")
 
     if date_str is None:
-        date_str = date.today().isoformat()
+        date_str = _today_iso()
 
     community_name = _escape_html(community_name)
     dso_name = _escape_html(dso_name)

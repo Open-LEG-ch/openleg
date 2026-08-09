@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Generate OpenLEG images for og-image, favicon, and apple-touch-icon.
 Colors follow the violet brand (tailwind.config.js brand.DEFAULT).

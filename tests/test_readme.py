@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 README_PATH = Path("README.md")
 ARCHITECTURE_DOC = Path("docs/architecture.md")
 DATA_PIPELINE_DOC = Path("docs/data-pipeline.md")

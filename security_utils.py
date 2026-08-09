@@ -5,9 +5,10 @@ Provides input validation, sanitization, and security helpers
 """
 
 import re
-import bleach
-from email_validator import validate_email, EmailNotValidError
 from urllib.parse import urlparse
+
+import bleach
+from email_validator import EmailNotValidError, validate_email
 
 # Allowed HTML tags for sanitization (none for our use case)
 ALLOWED_TAGS: list[str] = []

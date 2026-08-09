@@ -6,9 +6,9 @@ Verifies the extracted module resolves the connection seam via
 so legacy callers and existing monkeypatches keep working unchanged.
 """
 
-from contextlib import contextmanager
 import subprocess
 import sys
+from contextlib import contextmanager
 
 import database
 from store import ranking

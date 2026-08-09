@@ -5,7 +5,6 @@ import os
 import re
 from pathlib import Path
 
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Matches the CDN script include regardless of protocol or attribute order.

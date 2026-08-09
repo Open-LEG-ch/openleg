@@ -2,11 +2,12 @@
 """Tests for api_public.py: REST API endpoints."""
 
 from unittest.mock import patch
+
 from tests.conftest import (
     MOCK_ELCOM_TARIFFS,
     MOCK_MUNICIPALITY_PROFILE,
-    MOCK_SONNENDACH,
     MOCK_PROFILES_LIST,
+    MOCK_SONNENDACH,
 )
 
 

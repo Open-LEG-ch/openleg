@@ -4,7 +4,6 @@
 import os
 import subprocess
 
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT_PATH = os.path.join(PROJECT_ROOT, "scripts", "tdd_cycle.sh")
 

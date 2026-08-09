@@ -11,8 +11,8 @@ Die Funktionen parse_* sind rein und testbar. Persistenz übernimmt database.
 
 import csv
 import logging
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ PLANT_MATCH_RATE_PCT = 76.89
 SNAPSHOT_YEAR = 2026
 
 
-def parse_snapshot_row(row: Dict) -> Optional[Dict]:
+def parse_snapshot_row(row: dict) -> dict | None:
     """Eine Snapshot-CSV-Zeile in ein Profil-Upsert-Dict übersetzen."""
     bfs = _safe_int(row.get("bfs_nr"))
     if not bfs:
@@ -50,7 +50,7 @@ def parse_snapshot_row(row: Dict) -> Optional[Dict]:
     }
 
 
-def parse_panel_row(row: Dict) -> Optional[Dict]:
+def parse_panel_row(row: dict) -> dict | None:
     """Eine Panel-CSV-Zeile in ein Panel-Upsert-Dict übersetzen."""
     bfs = _safe_int(row.get("bfs_nr"))
     year = _safe_int(row.get("year"))
@@ -68,7 +68,7 @@ def parse_panel_row(row: Dict) -> Optional[Dict]:
     }
 
 
-def iter_csv(path: Path) -> Iterator[Dict]:
+def iter_csv(path: Path) -> Iterator[dict]:
     with open(path, newline="", encoding="utf-8") as handle:
         yield from csv.DictReader(handle)
 
@@ -91,7 +91,7 @@ def load_panel(path: Path = PANEL_CSV, batch_size: int = 2000) -> int:
     import database as db
 
     total = 0
-    batch: List[Dict] = []
+    batch: list[dict] = []
     for row in iter_csv(path):
         record = parse_panel_row(row)
         if record:
@@ -105,7 +105,7 @@ def load_panel(path: Path = PANEL_CSV, batch_size: int = 2000) -> int:
     return total
 
 
-def refresh_pv_data() -> Dict:
+def refresh_pv_data() -> dict:
     """Snapshot und Panel laden."""
     return {
         "snapshot_rows": load_snapshot(),
@@ -114,7 +114,7 @@ def refresh_pv_data() -> Dict:
     }
 
 
-def _safe_int(val) -> Optional[int]:
+def _safe_int(val) -> int | None:
     if val is None or val == "":
         return None
     try:
@@ -123,7 +123,7 @@ def _safe_int(val) -> Optional[int]:
         return None
 
 
-def _safe_float(val) -> Optional[float]:
+def _safe_float(val) -> float | None:
     if val is None or val == "":
         return None
     try:
@@ -132,6 +132,6 @@ def _safe_float(val) -> Optional[float]:
         return None
 
 
-def _round(val, digits: int) -> Optional[float]:
+def _round(val, digits: int) -> float | None:
     parsed = _safe_float(val)
     return round(parsed, digits) if parsed is not None else None

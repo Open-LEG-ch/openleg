@@ -46,20 +46,19 @@ def save_meter_readings(building_id, readings, source="csv"):
 
 def get_meter_readings(building_id, start=None, end=None, limit=1000):
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                query = "SELECT * FROM meter_readings WHERE building_id = %s"
-                params = [building_id]
-                if start:
-                    query += " AND timestamp >= %s"
-                    params.append(start)
-                if end:
-                    query += " AND timestamp <= %s"
-                    params.append(end)
-                query += " ORDER BY timestamp DESC LIMIT %s"
-                params.append(limit)
-                cur.execute(query, params)
-                return [dict(row) for row in cur.fetchall()]
+        with _get_connection() as conn, conn.cursor() as cur:
+            query = "SELECT * FROM meter_readings WHERE building_id = %s"
+            params = [building_id]
+            if start:
+                query += " AND timestamp >= %s"
+                params.append(start)
+            if end:
+                query += " AND timestamp <= %s"
+                params.append(end)
+            query += " ORDER BY timestamp DESC LIMIT %s"
+            params.append(limit)
+            cur.execute(query, params)
+            return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting meter readings: {e}")
         return []
@@ -67,10 +66,9 @@ def get_meter_readings(building_id, start=None, end=None, limit=1000):
 
 def get_meter_reading_stats(building_id):
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT COUNT(*) as total_readings,
                            MIN(timestamp) as first_reading,
                            MAX(timestamp) as last_reading,
@@ -79,10 +77,10 @@ def get_meter_reading_stats(building_id):
                            SUM(feed_in_kwh) as total_feed_in
                     FROM meter_readings WHERE building_id = %s
                 """,
-                    (building_id,),
-                )
-                row = cur.fetchone()
-                return dict(row) if row else {}
+                (building_id,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else {}
     except Exception as e:
         logger.error(f"[DB] Error getting meter stats: {e}")
         return {}

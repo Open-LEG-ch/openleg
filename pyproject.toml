@@ -11,3 +11,12 @@ markers = [
     "deploy: validates deployment artifacts (compose, Caddyfile, Dockerfile)",
     "contract: pins a repository boundary or policy invariant",
 ]
+
+[tool.ruff.lint]
+# Broad catches are existing error boundaries; narrow them in focused slices.
+# Nested DB context managers are explicit and correct; flattening is style-only.
+ignore = ["BLE001", "SIM117"]
+
+[tool.ruff.lint.per-file-ignores]
+# Meter storage currently uses PostgreSQL TIMESTAMP and tests its naive contract.
+"tests/test_meter_connectors.py" = ["DTZ001"]

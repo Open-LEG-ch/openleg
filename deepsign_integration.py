@@ -56,7 +56,7 @@ def upload_document(pdf_bytes, filename, title):
         data={"title": title},
     )
     if resp.status_code not in (200, 201):
-        raise Exception(f"DeepSign upload failed ({resp.status_code}): {resp.text}")
+        raise RuntimeError(f"DeepSign upload failed ({resp.status_code}): {resp.text}")
     return resp.json()["id"]
 
 
@@ -75,7 +75,7 @@ def request_signatures(document_id, signers):
         json={"signers": signers, "signature_type": "AES"},
     )
     if resp.status_code not in (200, 201):
-        raise Exception(
+        raise RuntimeError(
             f"DeepSign signature request failed ({resp.status_code}): {resp.text}"
         )
     return resp.json()
@@ -109,7 +109,7 @@ def get_signing_status(document_id):
         headers=_headers(),
     )
     if resp.status_code != 200:
-        raise Exception(
+        raise RuntimeError(
             f"DeepSign status check failed ({resp.status_code}): {resp.text}"
         )
     return resp.json()
