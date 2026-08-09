@@ -3,7 +3,6 @@
 
 from pathlib import Path
 
-
 DOC_PATH = Path("docs/codex-execution.md")
 
 

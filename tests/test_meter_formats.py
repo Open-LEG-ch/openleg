@@ -39,7 +39,7 @@ class TestEkzFormat:
 
     def test_parse_basic(self):
         csv = "Zeitstempel;Verbrauch (kWh);Produktion (kWh);Einspeisung (kWh)\n01.01.2026 00:15;1,50;0,00;0,00\n01.01.2026 00:30;2,30;0,50;0,10"
-        readings, errors = parse_meter_csv(csv)
+        readings, _errors = parse_meter_csv(csv)
         assert len(readings) == 2
         assert abs(readings[0][1] - 1.50) < 0.01
         assert abs(readings[1][2] - 0.50) < 0.01
@@ -50,7 +50,7 @@ class TestEwzFormat:
 
     def test_parse_basic(self):
         csv = "Timestamp;Consumption (kWh);Production (kWh);Feed-in (kWh)\n2026-01-01 00:15;0.25;0.00;0.00\n2026-01-01 00:30;0.30;0.10;0.05"
-        readings, errors = parse_meter_csv(csv)
+        readings, _errors = parse_meter_csv(csv)
         assert len(readings) == 2
         assert abs(readings[0][1] - 0.25) < 0.01
 
@@ -60,7 +60,7 @@ class TestCkwFormat:
 
     def test_parse_basic(self):
         csv = "Datum;Zeit;Bezug (kWh);Rücklieferung (kWh)\n01.01.2026;00:15;0,25;0,10\n01.01.2026;00:30;0,30;0,00"
-        readings, errors = parse_meter_csv(csv)
+        readings, _errors = parse_meter_csv(csv)
         assert len(readings) == 2
         assert abs(readings[0][1] - 0.25) < 0.01
         assert abs(readings[0][3] - 0.10) < 0.01
@@ -71,7 +71,7 @@ class TestBkwFormat:
 
     def test_parse_basic(self):
         csv = "Zeitpunkt,Bezug kWh,Erzeugung kWh,Einspeisung kWh\n01.01.2026 00:15,0.25,0.10,0.05\n01.01.2026 00:30,0.30,0.00,0.00"
-        readings, errors = parse_meter_csv(csv)
+        readings, _errors = parse_meter_csv(csv)
         assert len(readings) == 2
         assert abs(readings[1][1] - 0.30) < 0.01
 
@@ -86,12 +86,12 @@ class TestEdgeCases:
 
     def test_header_only(self):
         csv = "Zeitstempel;Verbrauch (kWh);Produktion (kWh);Einspeisung (kWh)\n"
-        readings, errors = parse_meter_csv(csv)
+        readings, _errors = parse_meter_csv(csv)
         assert len(readings) == 0
 
     def test_mixed_empty_rows(self):
         csv = "Zeitstempel;Verbrauch (kWh);Produktion (kWh);Einspeisung (kWh)\n\n01.01.2026 00:15;1,00;0,00;0,00\n\n"
-        readings, errors = parse_meter_csv(csv)
+        readings, _errors = parse_meter_csv(csv)
         assert len(readings) == 1
 
 

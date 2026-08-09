@@ -9,7 +9,6 @@ Implements Art. 17d/17e StromVG allocation models:
 
 import pandas as pd
 
-
 DISCOUNT_SAME_LEVEL = 0.40
 DISCOUNT_CROSS_LEVEL = 0.20
 

@@ -122,6 +122,7 @@ SMTP_PASSWORD=your-secure-password
 
 ```python
 import secrets
+
 print(secrets.token_hex(32))
 ```
 

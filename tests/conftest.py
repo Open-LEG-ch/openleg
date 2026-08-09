@@ -3,8 +3,9 @@
 
 import os
 import sys
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Ensure project root is on path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -117,9 +118,10 @@ def app(mock_db):
         patch("database.seed_default_tenant", return_value=True),
     ):
         # Import after mocking
+        from flask import Flask
+
         from api_public import public_api_bp
         from health import health_bp
-        from flask import Flask
 
         test_app = Flask(
             __name__,

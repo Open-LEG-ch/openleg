@@ -8,7 +8,6 @@ import cantons
 import municipality
 import rangliste
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SKIP_DIRS = {
     ".git",

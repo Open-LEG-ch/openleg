@@ -10,7 +10,6 @@ legacy callers.
 """
 
 import logging
-from typing import Optional, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -31,16 +30,15 @@ def save_utility_client(
     contact_name: str = "",
     contact_phone: str = "",
     vnb_name: str = "",
-    population: Optional[int] = None,
+    population: int | None = None,
     kanton: str = "",
     tier: str = "starter",
 ) -> bool:
     """Create or update a utility client."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     INSERT INTO utility_clients (
                         client_id, company_name, contact_name, contact_email,
                         contact_phone, vnb_name, population, kanton, tier, status
@@ -56,56 +54,54 @@ def save_utility_client(
                         tier = EXCLUDED.tier,
                         updated_at = CURRENT_TIMESTAMP
                 """,
-                    (
-                        client_id,
-                        company_name,
-                        contact_name,
-                        contact_email,
-                        contact_phone,
-                        vnb_name,
-                        population,
-                        kanton,
-                        tier,
-                    ),
-                )
-                return True
+                (
+                    client_id,
+                    company_name,
+                    contact_name,
+                    contact_email,
+                    contact_phone,
+                    vnb_name,
+                    population,
+                    kanton,
+                    tier,
+                ),
+            )
+            return True
     except Exception as e:
         logger.error(f"[DB] Error saving utility client: {e}")
         return False
 
 
-def get_utility_client(client_id: str) -> Optional[Dict]:
+def get_utility_client(client_id: str) -> dict | None:
     """Get a utility client by client_id."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT * FROM utility_clients WHERE client_id = %s", (client_id,)
-                )
-                row = cur.fetchone()
-                return dict(row) if row else None
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM utility_clients WHERE client_id = %s", (client_id,)
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
     except Exception as e:
         logger.error(f"[DB] Error getting utility client: {e}")
         return None
 
 
-def get_utility_client_by_email(email: str) -> Optional[Dict]:
+def get_utility_client_by_email(email: str) -> dict | None:
     """Get a utility client by contact email."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT * FROM utility_clients WHERE LOWER(contact_email) = LOWER(%s)",
-                    (email,),
-                )
-                row = cur.fetchone()
-                return dict(row) if row else None
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM utility_clients WHERE LOWER(contact_email) = LOWER(%s)",
+                (email,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
     except Exception as e:
         logger.error(f"[DB] Error getting utility client by email: {e}")
         return None
 
 
-def get_utility_client_by_magic_token(token: str) -> Optional[Dict]:
+def get_utility_client_by_magic_token(token: str) -> dict | None:
     """Get utility client by magic link token (only if not expired)."""
     try:
         with _get_connection() as conn:
@@ -201,7 +197,7 @@ def update_utility_client_api_key(client_id: str, api_key_hash: str) -> bool:
         return False
 
 
-def get_all_utility_clients(status: Optional[str] = None) -> List[Dict]:
+def get_all_utility_clients(status: str | None = None) -> list[dict]:
     """Get all utility clients, optionally filtered by status."""
     try:
         with _get_connection() as conn:
@@ -221,7 +217,7 @@ def get_all_utility_clients(status: Optional[str] = None) -> List[Dict]:
         return []
 
 
-def get_utility_client_stats() -> Dict:
+def get_utility_client_stats() -> dict:
     """Get utility client statistics."""
     try:
         with _get_connection() as conn:

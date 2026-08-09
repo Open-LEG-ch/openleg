@@ -8,13 +8,12 @@ unchanged. Mirrors `test_store_email_queue.py`; the seam is the test
 surface.
 """
 
-from contextlib import contextmanager
 import subprocess
 import sys
+from contextlib import contextmanager
 
 import database
 from store import token as store_token
-
 
 _REEXPORTED = (
     "save_token",

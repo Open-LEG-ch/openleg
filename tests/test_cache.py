@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """TDD tests for cache.py - Redis-backed caching layer."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 @pytest.fixture
@@ -25,16 +26,18 @@ class TestCacheOperations:
         assert cache_get("nonexistent") is None
 
     def test_cache_hit(self, mock_redis):
-        from cache import cache_get
         import json
+
+        from cache import cache_get
 
         mock_redis.get.return_value = json.dumps({"data": 42}).encode()
         result = cache_get("mykey")
         assert result == {"data": 42}
 
     def test_cache_set(self, mock_redis):
-        from cache import cache_set
         import json
+
+        from cache import cache_set
 
         cache_set("mykey", {"data": 42}, ttl=300)
         mock_redis.set.assert_called_once_with(

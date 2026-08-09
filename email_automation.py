@@ -4,10 +4,9 @@ Email Automation for OpenLEG
 Handles scheduled email sequences for user nurturing.
 """
 
+import logging
 import os
 import time
-import logging
-
 
 from flask import render_template
 
@@ -71,7 +70,7 @@ def schedule_sequence_for_user(building_id: str, email: str):
 
 def _get_tenant_for_building(building_id: str) -> dict:
     """Load tenant config for a building's city_id."""
-    from tenant import get_tenant_config, DEFAULT_TENANT
+    from tenant import DEFAULT_TENANT, get_tenant_config
 
     building = db.get_building(building_id)
     if building:

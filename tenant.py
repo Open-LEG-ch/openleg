@@ -4,9 +4,9 @@ Multi-tenant resolution for OpenLEG platform.
 Maps hostnames to territory configs stored in white_label_configs table.
 """
 
-import time
 import logging
-from typing import Dict, Optional
+import time
+
 from flask import g, request
 
 import cache
@@ -14,7 +14,7 @@ import cache
 logger = logging.getLogger(__name__)
 
 # In-memory fallback cache (used when Redis is down)
-_tenant_cache: Dict[str, tuple] = {}
+_tenant_cache: dict[str, tuple] = {}
 CACHE_TTL_SECONDS = 300  # 5 min
 REDIS_TENANT_TTL = 300  # 5 min Redis TTL
 
@@ -74,7 +74,7 @@ def resolve_tenant(hostname: str) -> str:
     return "zurich"
 
 
-def get_tenant_config(territory: str, db=None) -> Dict:
+def get_tenant_config(territory: str, db=None) -> dict:
     """Load tenant config: Redis -> DB -> defaults. Graceful fallback at each layer."""
     redis_key = f"tenant:{territory}"
 
@@ -117,28 +117,27 @@ def get_tenant_config(territory: str, db=None) -> Dict:
     return config
 
 
-def _load_tenant_from_db(territory: str, db) -> Optional[Dict]:
+def _load_tenant_from_db(territory: str, db) -> dict | None:
     """Load tenant row from white_label_configs."""
     try:
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT territory, utility_name, logo_url, primary_color,
                            secondary_color, contact_email, contact_phone,
                            legal_entity, dso_contact, active, config
                     FROM white_label_configs
                     WHERE territory = %s AND active = TRUE
                 """,
-                    (territory,),
-                )
-                row = cur.fetchone()
-                return dict(row) if row else None
+                (territory,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
     except Exception:
         return None
 
 
-def _merge_tenant_row(row: Dict) -> Dict:
+def _merge_tenant_row(row: dict) -> dict:
     """Merge DB row + JSONB config into a flat tenant dict."""
     config = DEFAULT_TENANT.copy()
 
@@ -189,7 +188,7 @@ def _merge_tenant_row(row: Dict) -> Dict:
     return config
 
 
-def invalidate_cache(territory: Optional[str] = None):
+def invalidate_cache(territory: str | None = None):
     """Clear tenant cache (Redis + in-memory). Pass territory for single entry, None for all."""
     if territory:
         _tenant_cache.pop(territory, None)

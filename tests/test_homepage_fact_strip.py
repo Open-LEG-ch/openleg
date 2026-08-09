@@ -14,7 +14,7 @@ INDEX = Path(__file__).resolve().parent.parent / "templates" / "index.html"
 
 def _strip():
     html = INDEX.read_text(encoding="utf-8")
-    match = re.search(r'aria-labelledby="fakten-title".*?</section>', html, re.S)
+    match = re.search(r'aria-labelledby="fakten-title".*?</section>', html, re.DOTALL)
     assert match, "fact strip section not found"
     return match.group(0)
 
