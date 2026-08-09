@@ -33,8 +33,11 @@ def save_billing_period(
                     """
                     INSERT INTO billing_periods
                     (community_id, period_start, period_end, total_production_kwh, total_allocated_kwh,
-                     total_surplus_kwh, total_network_discount_chf, status)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'final') RETURNING id
+                     total_surplus_kwh, total_network_discount_chf, distribution_model,
+                     network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
+                     timezone, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'draft')
+                    RETURNING id
                 """,
                     (
                         community_id,
@@ -44,11 +47,35 @@ def save_billing_period(
                         summary["total_allocated_kwh"],
                         summary.get("total_surplus_kwh", 0),
                         summary["total_network_discount_chf"],
+                        summary.get("distribution_model", "proportional"),
+                        summary.get("network_level", "same"),
+                        summary["internal_price_chf_per_kwh"],
+                        summary["grid_fee_chf_per_kwh"],
+                        summary.get("timezone", "Europe/Zurich"),
                     ),
                 )
                 period_id = cur.fetchone()[0]
 
-                for p in summary.get("participants", []):
+                line_items = summary.get("line_items", [])
+                for item in line_items:
+                    cur.execute(
+                        """
+                        INSERT INTO billing_line_items
+                        (billing_period_id, participant_id, item_type, quantity_kwh,
+                         unit_price_chf_per_kwh, amount_chf)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                        (
+                            period_id,
+                            item["participant_id"],
+                            item["item_type"],
+                            item["quantity_kwh"],
+                            item["unit_price_chf_per_kwh"],
+                            item["amount_chf"],
+                        ),
+                    )
+
+                for p in [] if line_items else summary.get("participants", []):
                     cur.execute(
                         """
                         INSERT INTO billing_line_items

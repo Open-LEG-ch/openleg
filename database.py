@@ -522,6 +522,9 @@ def _create_tables():
                     total_network_discount_chf DECIMAL(10, 2) DEFAULT 0,
                     distribution_model VARCHAR(32) DEFAULT 'proportional',
                     network_level VARCHAR(16) DEFAULT 'same',
+                    internal_price_chf_per_kwh DECIMAL(12, 6),
+                    grid_fee_chf_per_kwh DECIMAL(12, 6),
+                    timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich',
                     status VARCHAR(32) DEFAULT 'draft',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -532,6 +535,10 @@ def _create_tables():
                     id SERIAL PRIMARY KEY,
                     billing_period_id INTEGER REFERENCES billing_periods(id),
                     participant_id VARCHAR(64) NOT NULL,
+                    item_type VARCHAR(32),
+                    quantity_kwh DECIMAL(12, 6),
+                    unit_price_chf_per_kwh DECIMAL(12, 6),
+                    amount_chf DECIMAL(12, 6),
                     consumption_kwh DECIMAL(12, 4) DEFAULT 0,
                     allocated_kwh DECIMAL(12, 4) DEFAULT 0,
                     self_supply_ratio DECIMAL(5, 4) DEFAULT 0,
@@ -539,6 +546,21 @@ def _create_tables():
                     network_discount_chf DECIMAL(10, 2) DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+
+            cur.execute("""
+                ALTER TABLE billing_periods
+                    ADD COLUMN IF NOT EXISTS internal_price_chf_per_kwh DECIMAL(12, 6),
+                    ADD COLUMN IF NOT EXISTS grid_fee_chf_per_kwh DECIMAL(12, 6),
+                    ADD COLUMN IF NOT EXISTS timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich'
+            """)
+
+            cur.execute("""
+                ALTER TABLE billing_line_items
+                    ADD COLUMN IF NOT EXISTS item_type VARCHAR(32),
+                    ADD COLUMN IF NOT EXISTS quantity_kwh DECIMAL(12, 6),
+                    ADD COLUMN IF NOT EXISTS unit_price_chf_per_kwh DECIMAL(12, 6),
+                    ADD COLUMN IF NOT EXISTS amount_chf DECIMAL(12, 6)
             """)
 
             cur.execute("""

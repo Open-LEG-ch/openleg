@@ -7,10 +7,16 @@ Implements Art. 17d/17e StromVG allocation models:
 - Network discount: 40% same level, 20% cross level
 """
 
+from decimal import ROUND_HALF_UP, Decimal
+
 import pandas as pd
 
 DISCOUNT_SAME_LEVEL = 0.40
 DISCOUNT_CROSS_LEVEL = 0.20
+
+
+def _money(value):
+    return Decimal(str(value)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
 
 def allocate_energy(production, consumption, model="proportional"):
@@ -100,15 +106,39 @@ def generate_billing_summary(
         dict with total_production_kwh, total_allocated_kwh,
         total_network_discount_chf, participants (list of per-participant summaries)
     """
-    allocation = allocate_energy(production, consumption, model=distribution_model)
+    if grid_fee_per_kwh < 0 or internal_price_per_kwh < 0:
+        raise ValueError("Billing prices must not be negative")
+    if network_level not in {"same", "cross"}:
+        raise ValueError("network_level must be 'same' or 'cross'")
+    if distribution_model not in {"proportional", "einfach"}:
+        raise ValueError("Unsupported distribution model")
+    if (
+        pd.isna(production).to_numpy().any()
+        or pd.isna(consumption).to_numpy().any()
+        or (production < 0).to_numpy().any()
+        or (consumption < 0).to_numpy().any()
+    ):
+        raise ValueError("Billing readings must be finite and non-negative")
 
-    total_production = float(production.sum())
+    producer_production = production if isinstance(production, pd.DataFrame) else None
+    total_production_series = (
+        production.sum(axis=1) if producer_production is not None else production
+    )
+    if not total_production_series.index.equals(consumption.index):
+        raise ValueError("Production and consumption intervals must match")
+
+    allocation = allocate_energy(
+        total_production_series, consumption, model=distribution_model
+    )
+
+    total_production = float(total_production_series.sum())
     total_allocated = float(allocation.values.sum())
     total_discount = compute_network_discount(
         total_allocated, grid_fee_per_kwh, network_level
     )
 
     participants = []
+    line_items = []
     for col in allocation.columns:
         alloc_kwh = float(allocation[col].sum())
         cons_kwh = float(consumption[col].sum())
@@ -127,11 +157,51 @@ def generate_billing_summary(
                 "network_discount_chf": round(discount, 2),
             }
         )
+        if producer_production is not None:
+            line_items.append(
+                {
+                    "participant_id": col,
+                    "item_type": "consumer_charge",
+                    "quantity_kwh": round(alloc_kwh, 6),
+                    "unit_price_chf_per_kwh": internal_price_per_kwh,
+                    "amount_chf": float(_money(alloc_kwh * internal_price_per_kwh)),
+                }
+            )
+
+    if producer_production is not None:
+        allocated_by_interval = allocation.sum(axis=1)
+        shares = producer_production.div(
+            total_production_series.replace(0, float("nan")), axis=0
+        ).fillna(0)
+        credited = shares.mul(allocated_by_interval, axis=0).sum(axis=0)
+        charge_total = sum(_money(item["amount_chf"]) for item in line_items)
+        credited_total = Decimal(0)
+        producer_ids = list(credited.index)
+        for position, producer_id in enumerate(producer_ids):
+            quantity = float(credited[producer_id])
+            amount = _money(quantity * internal_price_per_kwh)
+            if position == len(producer_ids) - 1:
+                amount = charge_total - credited_total
+            credited_total += amount
+            line_items.append(
+                {
+                    "participant_id": producer_id,
+                    "item_type": "producer_credit",
+                    "quantity_kwh": round(quantity, 6),
+                    "unit_price_chf_per_kwh": internal_price_per_kwh,
+                    "amount_chf": -float(amount),
+                }
+            )
 
     return {
         "total_production_kwh": round(total_production, 2),
         "total_allocated_kwh": round(total_allocated, 2),
         "total_surplus_kwh": round(max(0, total_production - total_allocated), 2),
         "total_network_discount_chf": round(total_discount, 2),
+        "internal_price_chf_per_kwh": internal_price_per_kwh,
+        "grid_fee_chf_per_kwh": grid_fee_per_kwh,
+        "distribution_model": distribution_model,
+        "network_level": network_level,
         "participants": participants,
+        "line_items": line_items,
     }
