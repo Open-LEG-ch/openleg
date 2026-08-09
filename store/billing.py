@@ -49,21 +49,28 @@ def save_billing_period(
                         summary["total_network_discount_chf"],
                         summary.get("distribution_model", "proportional"),
                         summary.get("network_level", "same"),
-                        summary["internal_price_chf_per_kwh"],
-                        summary["grid_fee_chf_per_kwh"],
+                        summary.get("internal_price_chf_per_kwh"),
+                        summary.get("grid_fee_chf_per_kwh"),
                         summary.get("timezone", "Europe/Zurich"),
                     ),
                 )
                 period_id = cur.fetchone()[0]
 
                 line_items = summary.get("line_items", [])
+                participants = {
+                    participant["id"]: participant
+                    for participant in summary.get("participants", [])
+                }
                 for item in line_items:
+                    participant = participants.get(item["participant_id"], {})
                     cur.execute(
                         """
                         INSERT INTO billing_line_items
                         (billing_period_id, participant_id, item_type, quantity_kwh,
-                         unit_price_chf_per_kwh, amount_chf)
-                        VALUES (%s, %s, %s, %s, %s, %s)
+                         unit_price_chf_per_kwh, amount_chf, consumption_kwh,
+                         allocated_kwh, self_supply_ratio, internal_cost_chf,
+                         network_discount_chf)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                         (
                             period_id,
@@ -72,6 +79,11 @@ def save_billing_period(
                             item["quantity_kwh"],
                             item["unit_price_chf_per_kwh"],
                             item["amount_chf"],
+                            participant.get("consumption_kwh", 0),
+                            participant.get("allocated_kwh", 0),
+                            participant.get("self_supply_ratio", 0),
+                            participant.get("internal_cost_chf", 0),
+                            participant.get("network_discount_chf", 0),
                         ),
                     )
 

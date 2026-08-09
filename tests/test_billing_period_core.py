@@ -30,6 +30,16 @@ def _create_table_block(source, table):
     return match.group(1)
 
 
+def _alter_table_block(source, table):
+    match = re.search(
+        rf"ALTER TABLE {table}\s+(.*?)\s*\"\"\"",
+        source,
+        flags=re.DOTALL,
+    )
+    assert match, f"ALTER TABLE {table} block not found"
+    return match.group(1)
+
+
 class _Cursor:
     def __init__(self):
         self.executed = []
@@ -121,6 +131,29 @@ def test_persisted_quantities_recompute_to_amounts_with_explicit_rounding_item()
     assert _money(sum(item["amount_chf"] for item in summary["line_items"])) == 0
 
 
+def test_rounding_adjustment_owner_is_independent_of_producer_column_order():
+    def adjustment_owner(columns):
+        production = pd.DataFrame({key: [value] for key, value in columns})
+        summary = billing_engine.generate_billing_summary(
+            production=production,
+            consumption=pd.DataFrame(
+                {"consumer-a": [0.000004], "consumer-b": [0.000004]}
+            ),
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.625,
+            network_level="same",
+        )
+        return next(
+            item["participant_id"]
+            for item in summary["line_items"]
+            if item["item_type"] == "rounding_adjustment"
+        )
+
+    assert adjustment_owner(
+        [("producer-a", 0.000002), ("producer-b", 0.000006)]
+    ) == adjustment_owner([("producer-b", 0.000006), ("producer-a", 0.000002)])
+
+
 def test_anonymous_aggregate_production_does_not_emit_unbalanced_ledger():
     summary = billing_engine.generate_billing_summary(
         production=pd.Series([1.0]),
@@ -170,7 +203,7 @@ def test_invalid_billing_inputs_are_rejected(production, consumption, model):
         )
 
 
-@pytest.mark.parametrize("price", [float("nan"), float("inf")])
+@pytest.mark.parametrize("price", [float("nan"), float("inf"), None])
 def test_non_finite_billing_prices_are_rejected(price):
     with pytest.raises(ValueError):
         billing_engine.generate_billing_summary(
@@ -180,6 +213,54 @@ def test_non_finite_billing_prices_are_rejected(price):
             internal_price_per_kwh=price,
             network_level="same",
         )
+
+
+def test_decimal_readings_are_accepted_and_normalized():
+    summary = billing_engine.generate_billing_summary(
+        production=pd.DataFrame({"producer-a": [Decimal("1.0")]}),
+        consumption=pd.DataFrame({"consumer-a": [Decimal("1.0")]}),
+        grid_fee_per_kwh=Decimal("0.10"),
+        internal_price_per_kwh=Decimal("0.15"),
+        network_level="same",
+    )
+
+    assert summary["line_items"][0]["amount_chf"] == 0.15
+
+
+def test_non_numeric_readings_raise_value_error():
+    with pytest.raises(ValueError, match="finite and non-negative"):
+        billing_engine.generate_billing_summary(
+            production=pd.DataFrame({"producer-a": [None]}),
+            consumption=pd.DataFrame({"consumer-a": [1.0]}),
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+        )
+
+
+def test_participant_cost_uses_half_up_rounding():
+    summary = billing_engine.generate_billing_summary(
+        production=pd.DataFrame({"producer-a": [1.5]}),
+        consumption=pd.DataFrame({"consumer-a": [1.5]}),
+        grid_fee_per_kwh=0.10,
+        internal_price_per_kwh=0.15,
+        network_level="same",
+    )
+
+    assert summary["participants"][0]["internal_cost_chf"] == 0.23
+
+
+def test_network_discount_uses_half_up_rounding():
+    summary = billing_engine.generate_billing_summary(
+        production=pd.DataFrame({"producer-a": [1.0]}),
+        consumption=pd.DataFrame({"consumer-a": [1.0]}),
+        grid_fee_per_kwh=0.0375,
+        internal_price_per_kwh=0.15,
+        network_level="same",
+    )
+
+    assert summary["participants"][0]["network_discount_chf"] == 0.02
+    assert summary["total_network_discount_chf"] == 0.02
 
 
 def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch):
@@ -194,6 +275,16 @@ def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch)
         "grid_fee_chf_per_kwh": 0.10,
         "distribution_model": "proportional",
         "network_level": "same",
+        "participants": [
+            {
+                "id": "consumer-a",
+                "consumption_kwh": 1,
+                "allocated_kwh": 1,
+                "self_supply_ratio": 1,
+                "internal_cost_chf": 0.15,
+                "network_discount_chf": 0.04,
+            }
+        ],
         "line_items": [
             {
                 "participant_id": "consumer-a",
@@ -219,11 +310,38 @@ def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch)
     assert "internal_price_chf_per_kwh" in period_query
     assert "grid_fee_chf_per_kwh" in period_query
     assert "'draft'" in period_query
-    assert 0.15 in period_params
+    assert period_params[9:11] == (0.15, 0.10)
     item_queries = cursor.executed[1:]
     assert len(item_queries) == 2
     assert all("item_type" in query for query, _ in item_queries)
-    assert item_queries[1][1][-1] == -0.15
+    assert "network_discount_chf" in item_queries[0][0]
+    assert item_queries[0][1][-5:] == (1, 1, 1, 0.15, 0.04)
+    assert item_queries[1][1][5] == -0.15
+
+
+def test_legacy_summary_still_saves_without_price_snapshot(monkeypatch):
+    cursor = _Cursor()
+    monkeypatch.setattr(database, "get_connection", _connection_factory(cursor))
+    summary = {
+        "total_production_kwh": 1,
+        "total_allocated_kwh": 1,
+        "total_network_discount_chf": 0.04,
+        "participants": [
+            {
+                "id": "consumer-a",
+                "consumption_kwh": 1,
+                "allocated_kwh": 1,
+                "self_supply_ratio": 1,
+                "internal_cost_chf": 0.15,
+                "network_discount_chf": 0.04,
+            }
+        ],
+    }
+
+    assert billing.save_billing_period("community-a", "start", "end", summary) == 42
+    assert cursor.executed[0][1][9:11] == (None, None)
+    assert len(cursor.executed) == 2
+    assert "consumption_kwh" in cursor.executed[1][0]
 
 
 def test_schema_keeps_prices_and_signed_line_items_with_the_period():
@@ -235,3 +353,23 @@ def test_schema_keeps_prices_and_signed_line_items_with_the_period():
         assert column in period_block
     for column in ("item_type", "quantity_kwh", "unit_price_chf_per_kwh", "amount_chf"):
         assert column in line_item_block
+
+
+def test_existing_billing_tables_receive_all_new_columns_additively():
+    schema = (PROJECT_ROOT / "database.py").read_text(encoding="utf-8")
+    period_migration = _alter_table_block(schema, "billing_periods")
+    line_item_migration = _alter_table_block(schema, "billing_line_items")
+
+    for column in (
+        "internal_price_chf_per_kwh",
+        "grid_fee_chf_per_kwh",
+        "timezone",
+    ):
+        assert f"ADD COLUMN IF NOT EXISTS {column}" in period_migration
+    for column in (
+        "item_type",
+        "quantity_kwh",
+        "unit_price_chf_per_kwh",
+        "amount_chf",
+    ):
+        assert f"ADD COLUMN IF NOT EXISTS {column}" in line_item_migration

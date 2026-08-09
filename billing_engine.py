@@ -25,6 +25,10 @@ def _priced_amount(quantity, unit_price):
     return _money(Decimal(str(quantity)) * Decimal(str(unit_price)))
 
 
+def _currency(value):
+    return float(value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
 def allocate_energy(production, consumption, model="proportional"):
     """Allocate solar production to consumers per 15-min interval.
 
@@ -112,6 +116,11 @@ def generate_billing_summary(
         dict with total_production_kwh, total_allocated_kwh,
         total_network_discount_chf, participants (list of per-participant summaries)
     """
+    try:
+        grid_fee_per_kwh = float(grid_fee_per_kwh)
+        internal_price_per_kwh = float(internal_price_per_kwh)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Billing prices must be finite and non-negative") from exc
     if not all(
         isfinite(price) and price >= 0
         for price in (grid_fee_per_kwh, internal_price_per_kwh)
@@ -121,6 +130,11 @@ def generate_billing_summary(
         raise ValueError("network_level must be 'same' or 'cross'")
     if distribution_model not in {"proportional", "einfach"}:
         raise ValueError("Unsupported distribution model")
+    try:
+        production = production.astype(float)
+        consumption = consumption.astype(float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Billing readings must be finite and non-negative") from exc
     if (
         not np.isfinite(production.to_numpy()).all()
         or not np.isfinite(consumption.to_numpy()).all()
@@ -150,9 +164,10 @@ def generate_billing_summary(
     line_items = []
     for col in allocation.columns:
         alloc_kwh = float(allocation[col].sum())
+        priced_quantity = round(alloc_kwh, 6)
         cons_kwh = float(consumption[col].sum())
         discount = compute_network_discount(alloc_kwh, grid_fee_per_kwh, network_level)
-        cost = alloc_kwh * internal_price_per_kwh
+        cost = _priced_amount(priced_quantity, internal_price_per_kwh)
 
         participants.append(
             {
@@ -162,20 +177,19 @@ def generate_billing_summary(
                 "self_supply_ratio": round(alloc_kwh / cons_kwh, 4)
                 if cons_kwh > 0
                 else 0,
-                "internal_cost_chf": round(cost, 2),
-                "network_discount_chf": round(discount, 2),
+                "internal_cost_chf": _currency(cost),
+                "network_discount_chf": _currency(_money(discount)),
             }
         )
         if producer_production is not None:
-            quantity = round(alloc_kwh, 6)
             line_items.append(
                 {
                     "participant_id": col,
                     "item_type": "consumer_charge",
-                    "quantity_kwh": quantity,
+                    "quantity_kwh": priced_quantity,
                     "unit_price_chf_per_kwh": internal_price_per_kwh,
                     "amount_chf": float(
-                        _priced_amount(quantity, internal_price_per_kwh)
+                        _priced_amount(priced_quantity, internal_price_per_kwh)
                     ),
                 }
             )
@@ -207,7 +221,7 @@ def generate_billing_summary(
         if producer_ids and rounding_difference:
             line_items.append(
                 {
-                    "participant_id": producer_ids[-1],
+                    "participant_id": min(producer_ids, key=str),
                     "item_type": "rounding_adjustment",
                     "quantity_kwh": None,
                     "unit_price_chf_per_kwh": None,
@@ -219,7 +233,7 @@ def generate_billing_summary(
         "total_production_kwh": round(total_production, 2),
         "total_allocated_kwh": round(total_allocated, 2),
         "total_surplus_kwh": round(max(0, total_production - total_allocated), 2),
-        "total_network_discount_chf": round(total_discount, 2),
+        "total_network_discount_chf": _currency(_money(total_discount)),
         "internal_price_chf_per_kwh": internal_price_per_kwh,
         "grid_fee_chf_per_kwh": grid_fee_per_kwh,
         "distribution_model": distribution_model,
