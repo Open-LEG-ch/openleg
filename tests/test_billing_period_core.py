@@ -93,7 +93,7 @@ def test_persisted_quantities_recompute_to_amounts_with_explicit_rounding_item()
         production=pd.DataFrame({"producer-a": [0.000008]}),
         consumption=pd.DataFrame({"consumer-a": [0.000004], "consumer-b": [0.000004]}),
         grid_fee_per_kwh=0.10,
-        internal_price_per_kwh=0.15,
+        internal_price_per_kwh=0.625,
         network_level="same",
     )
 
@@ -103,7 +103,10 @@ def test_persisted_quantities_recompute_to_amounts_with_explicit_rounding_item()
         if item["item_type"] in {"consumer_charge", "producer_credit"}
     ]
     for item in priced_items:
-        expected = _money(item["quantity_kwh"] * item["unit_price_chf_per_kwh"])
+        expected = _money(
+            Decimal(str(item["quantity_kwh"]))
+            * Decimal(str(item["unit_price_chf_per_kwh"]))
+        )
         assert _money(abs(item["amount_chf"])) == expected
 
     adjustment = [

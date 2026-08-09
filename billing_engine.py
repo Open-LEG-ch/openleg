@@ -21,6 +21,10 @@ def _money(value):
     return Decimal(str(value)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
 
+def _priced_amount(quantity, unit_price):
+    return _money(Decimal(str(quantity)) * Decimal(str(unit_price)))
+
+
 def allocate_energy(production, consumption, model="proportional"):
     """Allocate solar production to consumers per 15-min interval.
 
@@ -170,7 +174,9 @@ def generate_billing_summary(
                     "item_type": "consumer_charge",
                     "quantity_kwh": quantity,
                     "unit_price_chf_per_kwh": internal_price_per_kwh,
-                    "amount_chf": float(_money(quantity * internal_price_per_kwh)),
+                    "amount_chf": float(
+                        _priced_amount(quantity, internal_price_per_kwh)
+                    ),
                 }
             )
 
@@ -185,7 +191,7 @@ def generate_billing_summary(
         producer_ids = list(credited.index)
         for producer_id in producer_ids:
             quantity = round(float(credited[producer_id]), 6)
-            amount = _money(quantity * internal_price_per_kwh)
+            amount = _priced_amount(quantity, internal_price_per_kwh)
             credited_total += amount
             line_items.append(
                 {
