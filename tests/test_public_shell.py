@@ -143,7 +143,7 @@ class TestInstallerTabSemantics:
         tabs = self._tabs(html)
         assert len(tabs) == 3
         assert all(tab["id"] for tab in tabs)
-        assert len(set(tab["id"] for tab in tabs)) == 3
+        assert len({tab["id"] for tab in tabs}) == 3
 
     def test_only_selected_tab_is_in_the_tab_order(self):
         html = _read("templates", "partials", "install_console.html")

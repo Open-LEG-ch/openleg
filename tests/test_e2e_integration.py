@@ -3,6 +3,7 @@
 
 import os
 import re
+
 import pytest
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -100,6 +101,19 @@ class TestB2BApiRemoved:
 
 
 class TestStripeRemoved:
+    def test_stripe_module_and_dependency_are_absent(self):
+        assert not os.path.exists(os.path.join(PROJECT_ROOT, "stripe_integration.py"))
+        with open(os.path.join(PROJECT_ROOT, "requirements.txt")) as f:
+            requirements = f.read().splitlines()
+        assert not any(
+            line.strip().lower().startswith("stripe") for line in requirements
+        )
+
+    def test_no_stripe_config_or_schema(self):
+        for filename in (".env.example", "database.py"):
+            with open(os.path.join(PROJECT_ROOT, filename)) as f:
+                assert "stripe_" not in f.read().lower()
+
     def test_no_stripe_webhook_route(self):
         with open(os.path.join(PROJECT_ROOT, "app.py")) as f:
             content = f.read()

@@ -10,7 +10,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 CRON_ENDPOINTS = (
@@ -28,10 +27,6 @@ REQUIRED_ENV_EXAMPLE_VARS = (
     "DEEPSIGN_API_KEY",
     "DEEPSIGN_API_URL",
     "DEEPSIGN_WEBHOOK_SECRET",
-    "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET",
-    "STRIPE_PRICE_STARTER",
-    "STRIPE_PRICE_ENTERPRISE",
     "DB_POOL_MIN",
     "DB_POOL_MAX",
 )
@@ -149,14 +144,18 @@ def test_gitignore_covers_local_artifacts():
     )
     unignored = []
     for path in should_ignore:
-        result = subprocess.run(["git", "check-ignore", "-q", path], cwd=PROJECT_ROOT)
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", path], cwd=PROJECT_ROOT, check=False
+        )
         if result.returncode != 0:
             unignored.append(path)
     assert unignored == []
 
     # Tracked keep-set must be excluded from the /*.md catch-all.
     for path in (".env.example", "CLAUDE.md", "AGENTS.md"):
-        result = subprocess.run(["git", "check-ignore", "-q", path], cwd=PROJECT_ROOT)
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", path], cwd=PROJECT_ROOT, check=False
+        )
         assert result.returncode != 0, f"{path} must not be gitignored"
 
 

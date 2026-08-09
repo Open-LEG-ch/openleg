@@ -12,7 +12,6 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 """
 
 import logging
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -34,53 +33,51 @@ def log_correspondence(
     subject: str,
     notes: str = "",
     logged_by: str = "",
-) -> Optional[int]:
+) -> int | None:
     """Append one ledger entry. Returns the row id, or None on invalid input."""
     if direction not in DIRECTIONS or channel not in CHANNELS:
         return None
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     INSERT INTO correspondence_log (
                         community_id, direction, channel, counterparty,
                         subject, notes, logged_by
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """,
-                    (
-                        community_id,
-                        direction,
-                        channel,
-                        counterparty,
-                        subject,
-                        notes,
-                        logged_by,
-                    ),
-                )
-                row = cur.fetchone()
-                return dict(row)["id"] if row else None
+                (
+                    community_id,
+                    direction,
+                    channel,
+                    counterparty,
+                    subject,
+                    notes,
+                    logged_by,
+                ),
+            )
+            row = cur.fetchone()
+            return dict(row)["id"] if row else None
     except Exception as e:
         logger.error(f"[DB] Error logging correspondence: {e}")
         return None
 
 
-def list_correspondence(community_id: str, limit: int = 100) -> List[Dict]:
+def list_correspondence(community_id: str, limit: int = 100) -> list[dict]:
     """List a community's ledger entries, newest first."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT * FROM correspondence_log
                     WHERE community_id = %s
                     ORDER BY created_at DESC
                     LIMIT %s
                 """,
-                    (community_id, max(1, min(int(limit), 500))),
-                )
-                return [dict(row) for row in cur.fetchall()]
+                (community_id, max(1, min(int(limit), 500))),
+            )
+            return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error listing correspondence: {e}")
         return []

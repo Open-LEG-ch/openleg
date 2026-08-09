@@ -34,27 +34,27 @@ def _csp_sources(header, directive_name):
 
 @pytest.fixture
 def full_app_module():
-    with patch.dict(
-        os.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "CRON_SECRET": "test-cron-secret",
-            "APP_BASE_URL": "http://localhost:5003",
-        },
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "CRON_SECRET": "test-cron-secret",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            import app as app_module
+        import app as app_module
 
-            app_module = importlib.reload(app_module)
-            hooks = _disable_rate_limit_hooks(app_module.app)
-            try:
-                yield app_module
-            finally:
-                app_module.app.before_request_funcs[None] = hooks
+        app_module = importlib.reload(app_module)
+        hooks = _disable_rate_limit_hooks(app_module.app)
+        try:
+            yield app_module
+        finally:
+            app_module.app.before_request_funcs[None] = hooks
 
 
 def test_robots_allows_api_docs_but_blocks_api(full_app_module):

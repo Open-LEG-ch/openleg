@@ -8,24 +8,24 @@ import pytest
 
 
 def _client():
-    with patch.dict(
-        os.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "APP_BASE_URL": "http://localhost:5003",
-        },
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database.init_db", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database.init_db", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            try:
-                from app import app
-            except Exception:
-                pytest.skip("App import requires live DB")
-            return app.test_client()
+        try:
+            from app import app
+        except Exception:
+            pytest.skip("App import requires live DB")
+        return app.test_client()
 
 
 class TestGemeindeDashboardDemo:

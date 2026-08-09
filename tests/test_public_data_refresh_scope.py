@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for canton-scoped refresh behavior."""
 
-import public_data
 import database
+import public_data
 
 
 def test_refresh_canton_non_zh_does_not_union_zh_seed(monkeypatch):
@@ -16,7 +16,7 @@ def test_refresh_canton_non_zh_does_not_union_zh_seed(monkeypatch):
             {"bfs_number": 261, "name": "Dietikon", "kanton": "ZH"},
         ],
     )
-    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", lambda: [])
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
     monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
 
     monkeypatch.setattr(database, "save_sonnendach_municipal", lambda _entry: True)
@@ -37,8 +37,8 @@ def test_refresh_canton_zh_keeps_seed_list(monkeypatch):
     saved_profiles = []
 
     monkeypatch.setattr(public_data, "ZH_BFS_NUMBERS", [261, 247])
-    monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: [])
-    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", lambda: [])
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
     monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
 
     monkeypatch.setattr(database, "save_sonnendach_municipal", lambda _entry: True)
@@ -63,8 +63,8 @@ def test_refresh_canton_does_not_leak_exception_detail(monkeypatch):
     secret = "SECRET_DB_HOST=10.0.0.9 password=hunter2"
 
     monkeypatch.setattr(public_data, "ZH_BFS_NUMBERS", [261])
-    monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: [])
-    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", lambda: [])
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
 
     def _boom(_bfs, year=2026):
         raise RuntimeError(secret)

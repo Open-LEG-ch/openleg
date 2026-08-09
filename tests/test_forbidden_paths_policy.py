@@ -3,7 +3,6 @@
 
 import os
 
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 POLICY_PATH = os.path.join(PROJECT_ROOT, ".github", "forbidden-paths.txt")
 
@@ -11,7 +10,7 @@ POLICY_PATH = os.path.join(PROJECT_ROOT, ".github", "forbidden-paths.txt")
 def _patterns():
     with open(POLICY_PATH, encoding="utf-8") as handle:
         lines = []
-        for raw in handle.readlines():
+        for raw in handle:
             item = raw.strip()
             if not item or item.startswith("#"):
                 continue

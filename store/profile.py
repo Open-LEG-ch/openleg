@@ -10,7 +10,6 @@ legacy callers.
 """
 
 import logging
-from typing import Optional, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ def _get_connection():
 # === ElCom Tariff Operations ===
 
 
-def save_elcom_tariffs(tariffs: List[Dict]) -> int:
+def save_elcom_tariffs(tariffs: list[dict]) -> int:
     """Bulk upsert ElCom tariff records. Returns count saved."""
     if not tariffs:
         return 0
@@ -65,30 +64,29 @@ def save_elcom_tariffs(tariffs: List[Dict]) -> int:
         return 0
 
 
-def get_elcom_tariffs(bfs_number: int, year: Optional[int] = None) -> List[Dict]:
+def get_elcom_tariffs(bfs_number: int, year: int | None = None) -> list[dict]:
     """Get ElCom tariffs for a municipality."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                if year:
-                    cur.execute(
-                        """
+        with _get_connection() as conn, conn.cursor() as cur:
+            if year:
+                cur.execute(
+                    """
                         SELECT * FROM elcom_tariffs
                         WHERE bfs_number = %s AND year = %s
                         ORDER BY category
                     """,
-                        (bfs_number, year),
-                    )
-                else:
-                    cur.execute(
-                        """
+                    (bfs_number, year),
+                )
+            else:
+                cur.execute(
+                    """
                         SELECT * FROM elcom_tariffs
                         WHERE bfs_number = %s
                         ORDER BY year DESC, category
                     """,
-                        (bfs_number,),
-                    )
-                return [dict(row) for row in cur.fetchall()]
+                    (bfs_number,),
+                )
+            return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting ElCom tariffs: {e}")
         return []
@@ -97,7 +95,7 @@ def get_elcom_tariffs(bfs_number: int, year: Optional[int] = None) -> List[Dict]
 # === Municipality Profile Operations ===
 
 
-def save_municipality_profile(profile: Dict) -> bool:
+def save_municipality_profile(profile: dict) -> bool:
     """Upsert a municipality profile."""
     try:
         import json
@@ -146,25 +144,24 @@ def save_municipality_profile(profile: Dict) -> bool:
         return False
 
 
-def get_municipality_profile(bfs_number: int) -> Optional[Dict]:
+def get_municipality_profile(bfs_number: int) -> dict | None:
     """Get a municipality profile by BFS number."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT * FROM municipality_profiles WHERE bfs_number = %s",
-                    (bfs_number,),
-                )
-                row = cur.fetchone()
-                return dict(row) if row else None
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM municipality_profiles WHERE bfs_number = %s",
+                (bfs_number,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
     except Exception as e:
         logger.error(f"[DB] Error getting municipality profile: {e}")
         return None
 
 
 def get_all_municipality_profiles(
-    kanton: Optional[str] = None, order_by: str = "name"
-) -> List[Dict]:
+    kanton: str | None = None, order_by: str = "name"
+) -> list[dict]:
     """Get all municipality profiles, optionally filtered by kanton."""
     # Map the requested sort key to a fixed column literal. The value
     # interpolated into ORDER BY is always one of these constants (never the
@@ -179,71 +176,67 @@ def get_all_municipality_profiles(
     }
     order_column = order_columns.get(order_by, "name")
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                if kanton:
-                    cur.execute(
-                        f"""
+        with _get_connection() as conn, conn.cursor() as cur:
+            if kanton:
+                cur.execute(
+                    f"""
                         SELECT * FROM municipality_profiles
                         WHERE kanton = %s ORDER BY {order_column}
                     """,
-                        (kanton,),
-                    )
-                else:
-                    cur.execute(
-                        f"SELECT * FROM municipality_profiles ORDER BY {order_column}"
-                    )
-                return [dict(row) for row in cur.fetchall()]
+                    (kanton,),
+                )
+            else:
+                cur.execute(
+                    f"SELECT * FROM municipality_profiles ORDER BY {order_column}"
+                )
+            return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting municipality profiles: {e}")
         return []
 
 
-def search_municipality_profiles(q: str, limit: int = 10) -> List[Dict]:
+def search_municipality_profiles(q: str, limit: int = 10) -> list[dict]:
     """Search municipality profiles by name (case-insensitive substring)."""
     q = (q or "").strip()
     if not q:
         return []
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT * FROM municipality_profiles
                     WHERE name ILIKE %s
                     ORDER BY name
                     LIMIT %s
                 """,
-                    (f"%{q}%", max(1, min(int(limit), 50))),
-                )
-                return [dict(row) for row in cur.fetchall()]
+                (f"%{q}%", max(1, min(int(limit), 50))),
+            )
+            return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error searching municipality profiles: {e}")
         return []
 
 
-def get_all_municipality_profile_bfs_numbers() -> List[int]:
+def get_all_municipality_profile_bfs_numbers() -> list[int]:
     """Get sorted BFS numbers from municipality_profiles."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT bfs_number FROM municipality_profiles ORDER BY bfs_number"
-                )
-                return [int(row["bfs_number"]) for row in cur.fetchall()]
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT bfs_number FROM municipality_profiles ORDER BY bfs_number"
+            )
+            return [int(row["bfs_number"]) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting municipality profile BFS list: {e}")
         return []
 
 
-def get_profile_bfs_missing_elcom_tariffs(year: int, limit: int = 50) -> List[int]:
+def get_profile_bfs_missing_elcom_tariffs(year: int, limit: int = 50) -> list[int]:
     """Get BFS numbers with a profile but without elcom_tariffs rows for the target year."""
     safe_limit = max(1, min(int(limit), 500))
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT p.bfs_number
                     FROM municipality_profiles p
                     LEFT JOIN elcom_tariffs t
@@ -252,9 +245,9 @@ def get_profile_bfs_missing_elcom_tariffs(year: int, limit: int = 50) -> List[in
                     ORDER BY p.bfs_number
                     LIMIT %s
                     """,
-                    (int(year), safe_limit),
-                )
-                return [int(row["bfs_number"]) for row in cur.fetchall()]
+                (int(year), safe_limit),
+            )
+            return [int(row["bfs_number"]) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting missing ElCom BFS list: {e}")
         return []
@@ -263,7 +256,7 @@ def get_profile_bfs_missing_elcom_tariffs(year: int, limit: int = 50) -> List[in
 # === Sonnendach Municipal Operations ===
 
 
-def save_sonnendach_municipal(data: Dict) -> bool:
+def save_sonnendach_municipal(data: dict) -> bool:
     """Upsert sonnendach municipal solar data."""
     try:
         with _get_connection() as conn:
@@ -296,17 +289,16 @@ def save_sonnendach_municipal(data: Dict) -> bool:
         return False
 
 
-def get_sonnendach_municipal(bfs_number: int) -> Optional[Dict]:
+def get_sonnendach_municipal(bfs_number: int) -> dict | None:
     """Get sonnendach data for a municipality."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT * FROM sonnendach_municipal WHERE bfs_number = %s",
-                    (bfs_number,),
-                )
-                row = cur.fetchone()
-                return dict(row) if row else None
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM sonnendach_municipal WHERE bfs_number = %s",
+                (bfs_number,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
     except Exception as e:
         logger.error(f"[DB] Error getting sonnendach data: {e}")
         return None

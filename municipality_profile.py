@@ -184,7 +184,7 @@ def pilot_context(slug, *, site_url):
 
     # No year filter: get_elcom_tariffs orders year DESC, so the first H4
     # entry is always the latest available tariff.
-    tariffs, h4 = _first_h4_tariff(bfs)
+    _tariffs, h4 = _first_h4_tariff(bfs)
     solar = db.get_sonnendach_municipal(bfs)
     gap = _value_gap_for_tariff(h4, grid_reduction_pct=40.0)
 

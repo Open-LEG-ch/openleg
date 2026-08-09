@@ -11,7 +11,6 @@ import os
 import subprocess
 from pathlib import Path
 
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Internal business machinery: never tracked here. Local overlays of these
@@ -87,6 +86,7 @@ def test_private_only_paths_are_gitignored():
         result = subprocess.run(
             ["git", "check-ignore", "-q", path],
             cwd=PROJECT_ROOT,
+            check=False,
         )
         if result.returncode != 0:
             unignored.append(path)

@@ -19,34 +19,34 @@ def _read(*parts):
 
 @pytest.fixture
 def full_app_module():
-    with patch.dict(
-        os.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "APP_BASE_URL": "http://localhost:5003",
-        },
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            import app as app_module
+        import app as app_module
 
-            app_module = importlib.reload(app_module)
-            hooks = list(app_module.app.before_request_funcs.get(None, []))
-            app_module.app.before_request_funcs[None] = [
-                hook
-                for hook in hooks
-                if not (
-                    getattr(hook, "__module__", "").startswith("flask_limiter")
-                    or getattr(hook, "__name__", "") == "_check_request_limit"
-                )
-            ]
-            try:
-                yield app_module
-            finally:
-                app_module.app.before_request_funcs[None] = hooks
+        app_module = importlib.reload(app_module)
+        hooks = list(app_module.app.before_request_funcs.get(None, []))
+        app_module.app.before_request_funcs[None] = [
+            hook
+            for hook in hooks
+            if not (
+                getattr(hook, "__module__", "").startswith("flask_limiter")
+                or getattr(hook, "__name__", "") == "_check_request_limit"
+            )
+        ]
+        try:
+            yield app_module
+        finally:
+            app_module.app.before_request_funcs[None] = hooks
 
 
 # --- Landing pathways wayfinding ---

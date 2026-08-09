@@ -1,31 +1,29 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# ruff: noqa: E402
-import os
-import math
-import json
-import hashlib
-import threading
-import logging
-
 import csv
+import hashlib
 import io
-
+import json
+import logging
+import math
+import os
+import threading
 from datetime import timedelta
+
+import numpy as np
+import pandas as pd
+from dotenv import load_dotenv
 from flask import (
     Flask,
-    request,
-    jsonify,
-    render_template,
-    abort,
-    redirect,
     Response,
+    abort,
     g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
     send_from_directory,
 )
 from jinja2 import TemplateNotFound
-import pandas as pd
-import numpy as np
-from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
@@ -55,39 +53,38 @@ except ImportError:
     HAS_SECURITY_LIBS = False
 
 # --- Email imports ---
-from email_utils import send_email
+import dashboard as dashboard_module
 
 # --- Core modules ---
 import data_enricher
-import ml_models
-import security_utils
-import registration
-from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 
 # --- PostgreSQL Database ---
 import database as db
-import dashboard as dashboard_module
+import ml_models
+import registration
+import security_utils
+from email_utils import send_email
 from ranking import Ranking
+from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 
 USE_POSTGRES = db.is_db_available()
 if not USE_POSTGRES:
     raise RuntimeError("PostgreSQL required. Set DATABASE_URL.")
 
 # --- Multi-tenant ---
-import tenant as tenant_module
-
 # --- Email Automation ---
 import email_automation
+import leg_registry
+import tenant as tenant_module
+from api_public import public_api_bp
+from health import health_bp
+from leg_registry import registry_bp
 
 # --- Blueprints ---
 from municipality import PILOT_MUNICIPALITIES, municipality_bp, pilot_bp
-from api_public import public_api_bp
-from health import health_bp
-from utility_portal import utility_bp
 from rangliste import rangliste_bp
-import leg_registry
-from leg_registry import registry_bp
 from self_host import self_host_bp
+from utility_portal import utility_bp
 
 # --- Cron Secret ---
 CRON_SECRET = os.getenv("CRON_SECRET", "").strip()
@@ -110,7 +107,7 @@ app.config["SESSION_COOKIE_SECURE"] = (
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
-    seconds=int(os.getenv("PERMANENT_SESSION_LIFETIME", 3600))
+    seconds=int(os.getenv("PERMANENT_SESSION_LIFETIME", "3600"))
 )
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB for CSV uploads
 
@@ -408,7 +405,7 @@ def create_simple_polygon(coords):
             polygon.append(polygon[0])
             return polygon
         except Exception:
-            pass
+            logger.debug("Convex hull calculation failed", exc_info=True)
     lats = [c[0] for c in coords]
     lons = [c[1] for c in coords]
     o = 0.0003
@@ -540,8 +537,9 @@ def favicon():
 @app.route("/sitemap.xml")
 def sitemap_xml():
     from datetime import datetime
+    from zoneinfo import ZoneInfo
 
-    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_date = datetime.now(ZoneInfo("Europe/Zurich")).strftime("%Y-%m-%d")
     pages = [
         ("/", "1.0", "daily", current_date),
         ("/how-it-works", "0.8", "weekly", current_date),
@@ -919,15 +917,15 @@ def api_check_potential():
             return jsonify({"error": error_msg}), 400
         address = sanitized_address
 
-        estimates, profiles = None, None
+        estimates, _profiles = None, None
         try:
-            estimates, profiles = data_enricher.get_energy_profile_for_address(address)
+            estimates, _profiles = data_enricher.get_energy_profile_for_address(address)
             if not estimates:
-                estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
-                    address
+                estimates, _profiles = (
+                    data_enricher.get_mock_energy_profile_for_address(address)
                 )
         except Exception:
-            estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
+            estimates, _profiles = data_enricher.get_mock_energy_profile_for_address(
                 address
             )
 
@@ -1089,7 +1087,7 @@ def unsubscribe_page():
 @app.route("/unsubscribe/<token>")
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def unsubscribe_token(token):
-    is_valid_token, token_error = security_utils.validate_token(token)
+    is_valid_token, _token_error = security_utils.validate_token(token)
     if not is_valid_token:
         return "<h1>Ungültiger Link</h1>", 400
 

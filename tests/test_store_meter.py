@@ -7,9 +7,9 @@ existing monkeypatches keep working and ``database`` re-exports the identical
 objects for legacy callers (``import database as db; db.get_meter_readings()``).
 """
 
-from contextlib import contextmanager
 import subprocess
 import sys
+from contextlib import contextmanager
 
 import database
 from store import meter

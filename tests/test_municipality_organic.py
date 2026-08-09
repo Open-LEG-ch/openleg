@@ -2,10 +2,10 @@
 """Organic-growth focused tests for municipality routes."""
 
 import os
+
 from flask import Flask
 
 import municipality as municipality_module
-
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

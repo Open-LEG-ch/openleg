@@ -2,6 +2,7 @@
 """Config validation tests for deployment artifacts."""
 
 import os
+
 import pytest
 import yaml
 

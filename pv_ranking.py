@@ -6,7 +6,6 @@ Verbesserungsziel, Vorbild-Eignung. Keine DB-Zugriffe.
 """
 
 from math import floor
-from typing import Dict, List, Optional, Tuple
 
 # Grössenbänder nach Einwohnerzahl
 SIZE_BANDS = (("small", 5000), ("medium", 20000), ("large", 100000))
@@ -39,7 +38,7 @@ LEADER_MIN_GWH = 5.0
 TOP_QUARTILE = 1
 
 
-def size_band(population: Optional[float]) -> Optional[str]:
+def size_band(population: float | None) -> str | None:
     if population is None:
         return None
     for label, ceiling in SIZE_BANDS:
@@ -48,7 +47,7 @@ def size_band(population: Optional[float]) -> Optional[str]:
     return SIZE_XL
 
 
-def density_band(density: Optional[float]) -> Optional[str]:
+def density_band(density: float | None) -> str | None:
     if density is None:
         return None
     for label, ceiling in DENSITY_BANDS:
@@ -57,7 +56,7 @@ def density_band(density: Optional[float]) -> Optional[str]:
     return DENSITY_VERY_HIGH
 
 
-def capped_score(score: Optional[float]) -> Tuple[Optional[float], bool]:
+def capped_score(score: float | None) -> tuple[float | None, bool]:
     """Score auf 100 deckeln. Zweiter Wert: Schätzung übertroffen."""
     if score is None:
         return None, False
@@ -66,16 +65,16 @@ def capped_score(score: Optional[float]) -> Tuple[Optional[float], bool]:
     return round(score, 1), False
 
 
-def is_leader_eligible(row: Dict) -> bool:
+def is_leader_eligible(row: dict) -> bool:
     return float(row.get("pv_annual_potential_gwh") or 0) >= LEADER_MIN_GWH
 
 
-def _score_key(row: Dict) -> float:
+def _score_key(row: dict) -> float:
     score = row.get("pv_score_pct")
     return float(score) if score is not None else -1.0
 
 
-def assign_ranks(rows: List[Dict]) -> List[Dict]:
+def assign_ranks(rows: list[dict]) -> list[dict]:
     """Nach Score absteigend sortieren, Rang und Quartil ergänzen.
 
     Quartil 1 = bestes Viertel. Gibt neue Dicts zurück.
@@ -105,7 +104,7 @@ def recommendation(quartile: int) -> str:
     return "auf_kurs"
 
 
-def top_quartile_threshold(rows: List[Dict]) -> Optional[float]:
+def top_quartile_threshold(rows: list[dict]) -> float | None:
     """Kleinster Score im besten Viertel: die Schwelle zum Aufstieg."""
     ranked = assign_ranks(rows)
     top = [r["pv_score_pct"] for r in ranked if r["quartile"] == TOP_QUARTILE]
@@ -113,7 +112,7 @@ def top_quartile_threshold(rows: List[Dict]) -> Optional[float]:
     return min(top) if top else None
 
 
-def improvement_target(row: Dict, threshold_score: Optional[float]) -> Optional[Dict]:
+def improvement_target(row: dict, threshold_score: float | None) -> dict | None:
     """Wie viel kW fehlen, um das beste Viertel der Liga zu erreichen."""
     if threshold_score is None:
         return None
@@ -131,7 +130,7 @@ def improvement_target(row: Dict, threshold_score: Optional[float]) -> Optional[
     }
 
 
-def _rank_entry(rows: List[Dict], bfs: int) -> Optional[Dict]:
+def _rank_entry(rows: list[dict], bfs: int) -> dict | None:
     for row in assign_ranks(rows):
         if row.get("bfs_number") == bfs:
             return {
@@ -142,16 +141,16 @@ def _rank_entry(rows: List[Dict], bfs: int) -> Optional[Dict]:
     return None
 
 
-def league_standings(all_rows: List[Dict], profile: Dict) -> List[Dict]:
+def league_standings(all_rows: list[dict], profile: dict) -> list[dict]:
     """Rang einer Gemeinde in ihren Ligen: Schweiz, Kanton, Grösse, Dichte."""
     bfs = profile.get("bfs_number")
     kanton = profile.get("kanton")
     size = size_band(profile.get("population"))
     density = density_band(profile.get("density_per_km2"))
 
-    chips: List[Dict] = []
+    chips: list[dict] = []
 
-    def add(label: str, rows: List[Dict]) -> None:
+    def add(label: str, rows: list[dict]) -> None:
         entry = _rank_entry(rows, bfs)
         if entry:
             chips.append({"label": label, **entry})
@@ -167,8 +166,8 @@ def league_standings(all_rows: List[Dict], profile: Dict) -> List[Dict]:
 
 
 def league_leaders(
-    rows: List[Dict], exclude_bfs: Optional[int] = None, n: int = 3
-) -> List[Dict]:
+    rows: list[dict], exclude_bfs: int | None = None, n: int = 3
+) -> list[dict]:
     """Top-Vorbilder einer Liga zum Abschauen, nur zitierfähige Gemeinden."""
     eligible = [
         r
@@ -193,11 +192,11 @@ def league_leaders(
 
 
 def filter_league(
-    rows: List[Dict],
-    kanton: Optional[str] = None,
-    size: Optional[str] = None,
-    density: Optional[str] = None,
-) -> List[Dict]:
+    rows: list[dict],
+    kanton: str | None = None,
+    size: str | None = None,
+    density: str | None = None,
+) -> list[dict]:
     """Gemeinden auf eine Liga eingrenzen."""
     result = rows
     if kanton:

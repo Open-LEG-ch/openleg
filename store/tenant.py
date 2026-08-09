@@ -6,7 +6,6 @@ Resolves the connection seam via ``database.get_connection`` at call time.
 """
 
 import logging
-from typing import Optional, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -17,26 +16,25 @@ def _get_connection():
     return database.get_connection()
 
 
-def get_tenant_by_territory(territory: str) -> Optional[Dict]:
+def get_tenant_by_territory(territory: str) -> dict | None:
     """Get tenant config by territory slug."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT * FROM white_label_configs
                     WHERE territory = %s AND active = TRUE
                 """,
-                    (territory,),
-                )
-                row = cur.fetchone()
-                return dict(row) if row else None
+                (territory,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
     except Exception as e:
         logger.error(f"[DB] Error getting tenant {territory}: {e}")
         return None
 
 
-def get_all_active_tenants() -> List[Dict]:
+def get_all_active_tenants() -> list[dict]:
     """Get all active tenant configs."""
     try:
         with _get_connection() as conn:
@@ -53,15 +51,14 @@ def get_all_active_tenants() -> List[Dict]:
         return []
 
 
-def upsert_tenant(territory: str, config: Dict) -> bool:
+def upsert_tenant(territory: str, config: dict) -> bool:
     """Insert or update a tenant config."""
     try:
         import json
 
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     INSERT INTO white_label_configs (
                         territory, utility_name, primary_color, secondary_color,
                         contact_email, contact_phone, legal_entity, dso_contact,
@@ -79,37 +76,37 @@ def upsert_tenant(territory: str, config: Dict) -> bool:
                         config = EXCLUDED.config,
                         updated_at = CURRENT_TIMESTAMP
                 """,
-                    (
-                        territory,
-                        config.get("utility_name", ""),
-                        config.get("primary_color", "#c7021a"),
-                        config.get("secondary_color", "#4338ca"),
-                        config.get("contact_email", ""),
-                        config.get("contact_phone", ""),
-                        config.get("legal_entity", ""),
-                        config.get("dso_contact", ""),
-                        config.get("active", True),
-                        json.dumps(
-                            {
-                                k: v
-                                for k, v in config.items()
-                                if k
-                                not in (
-                                    "utility_name",
-                                    "primary_color",
-                                    "secondary_color",
-                                    "contact_email",
-                                    "contact_phone",
-                                    "legal_entity",
-                                    "dso_contact",
-                                    "active",
-                                    "territory",
-                                )
-                            }
-                        ),
+                (
+                    territory,
+                    config.get("utility_name", ""),
+                    config.get("primary_color", "#c7021a"),
+                    config.get("secondary_color", "#4338ca"),
+                    config.get("contact_email", ""),
+                    config.get("contact_phone", ""),
+                    config.get("legal_entity", ""),
+                    config.get("dso_contact", ""),
+                    config.get("active", True),
+                    json.dumps(
+                        {
+                            k: v
+                            for k, v in config.items()
+                            if k
+                            not in (
+                                "utility_name",
+                                "primary_color",
+                                "secondary_color",
+                                "contact_email",
+                                "contact_phone",
+                                "legal_entity",
+                                "dso_contact",
+                                "active",
+                                "territory",
+                            )
+                        }
                     ),
-                )
-                return True
+                ),
+            )
+            return True
     except Exception as e:
         logger.error(f"[DB] Error upserting tenant {territory}: {e}")
         return False

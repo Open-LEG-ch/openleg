@@ -68,25 +68,25 @@ class FounderPageParser(HTMLParser):
 
 @pytest.fixture
 def founder_page():
-    with patch.dict(
-        os.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "APP_BASE_URL": "http://localhost:5003",
-        },
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            import app as app_module
+        import app as app_module
 
-            app_module = importlib.reload(app_module)
-            response = app_module.app.test_client().get("/leg-gruenden")
-            parser = FounderPageParser()
-            parser.feed(response.get_data(as_text=True))
-            yield app_module.app, response, parser
+        app_module = importlib.reload(app_module)
+        response = app_module.app.test_client().get("/leg-gruenden")
+        parser = FounderPageParser()
+        parser.feed(response.get_data(as_text=True))
+        yield app_module.app, response, parser
 
 
 def _jsonld(parser, schema_type):
