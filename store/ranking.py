@@ -8,7 +8,6 @@ and ``database`` can re-export these functions for legacy callers.
 """
 
 import logging
-from typing import Optional, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ def _get_connection():
     return database.get_connection()
 
 
-def upsert_municipality_pv(profile: Dict) -> bool:
+def upsert_municipality_pv(profile: dict) -> bool:
     """Upsert PV-Nutzungs-Kennzahlen auf ein Gemeindeprofil.
 
     Setzt nur PV- und Geo-Spalten plus Name/Kanton/Einwohner. ElCom-, Solar-
@@ -27,10 +26,9 @@ def upsert_municipality_pv(profile: Dict) -> bool:
     bestehende Profile nicht überschreibt.
     """
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     INSERT INTO municipality_profiles (
                         bfs_number, name, kanton, population,
                         density_per_km2, area_km2,
@@ -52,29 +50,29 @@ def upsert_municipality_pv(profile: Dict) -> bool:
                         pv_plant_match_rate = EXCLUDED.pv_plant_match_rate,
                         updated_at = CURRENT_TIMESTAMP
                 """,
-                    (
-                        profile["bfs_number"],
-                        profile["name"],
-                        profile.get("kanton", "ZH"),
-                        profile.get("population"),
-                        profile.get("density_per_km2"),
-                        profile.get("area_km2"),
-                        profile.get("pv_score_pct"),
-                        profile.get("pv_estimated_potential_kw"),
-                        profile.get("pv_installed_kw"),
-                        profile.get("pv_untapped_kw"),
-                        profile.get("pv_annual_potential_gwh"),
-                        profile.get("pv_snapshot_year"),
-                        profile.get("pv_plant_match_rate"),
-                    ),
-                )
-                return True
+                (
+                    profile["bfs_number"],
+                    profile["name"],
+                    profile.get("kanton", "ZH"),
+                    profile.get("population"),
+                    profile.get("density_per_km2"),
+                    profile.get("area_km2"),
+                    profile.get("pv_score_pct"),
+                    profile.get("pv_estimated_potential_kw"),
+                    profile.get("pv_installed_kw"),
+                    profile.get("pv_untapped_kw"),
+                    profile.get("pv_annual_potential_gwh"),
+                    profile.get("pv_snapshot_year"),
+                    profile.get("pv_plant_match_rate"),
+                ),
+            )
+            return True
     except Exception as e:
         logger.error(f"[DB] Error upserting municipality PV: {e}")
         return False
 
 
-def save_municipality_pv_panel(rows: List[Dict]) -> int:
+def save_municipality_pv_panel(rows: list[dict]) -> int:
     """Bulk-Upsert von Panel-Zeilen (bfs_number, year). Gibt Zeilenzahl zurück."""
     if not rows:
         return 0
@@ -94,11 +92,10 @@ def save_municipality_pv_panel(rows: List[Dict]) -> int:
             )
             for r in rows
         ]
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                execute_values(
-                    cur,
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            execute_values(
+                cur,
+                """
                     INSERT INTO municipality_pv_panel (
                         bfs_number, year, added_kw, added_plants, cumulative_kw,
                         estimated_potential_kw, score_pct, untapped_kw)
@@ -111,22 +108,21 @@ def save_municipality_pv_panel(rows: List[Dict]) -> int:
                         score_pct = EXCLUDED.score_pct,
                         untapped_kw = EXCLUDED.untapped_kw
                 """,
-                    values,
-                )
-                return len(values)
+                values,
+            )
+            return len(values)
     except Exception as e:
         logger.error(f"[DB] Error saving PV panel rows: {e}")
         return 0
 
 
-def get_pv_profiles(kanton: Optional[str] = None) -> List[Dict]:
+def get_pv_profiles(kanton: str | None = None) -> list[dict]:
     """Alle Gemeinden mit berechnetem PV-Score, für die Rangliste."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                if kanton:
-                    cur.execute(
-                        """
+        with _get_connection() as conn, conn.cursor() as cur:
+            if kanton:
+                cur.execute(
+                    """
                         SELECT bfs_number, name, kanton, population, density_per_km2,
                                area_km2, pv_score_pct, pv_estimated_potential_kw,
                                pv_installed_kw, pv_untapped_kw, pv_annual_potential_gwh,
@@ -135,11 +131,11 @@ def get_pv_profiles(kanton: Optional[str] = None) -> List[Dict]:
                         WHERE pv_score_pct IS NOT NULL AND kanton = %s
                         ORDER BY pv_score_pct DESC
                         """,
-                        (kanton,),
-                    )
-                else:
-                    cur.execute(
-                        """
+                    (kanton,),
+                )
+            else:
+                cur.execute(
+                    """
                         SELECT bfs_number, name, kanton, population, density_per_km2,
                                area_km2, pv_score_pct, pv_estimated_potential_kw,
                                pv_installed_kw, pv_untapped_kw, pv_annual_potential_gwh,
@@ -148,23 +144,22 @@ def get_pv_profiles(kanton: Optional[str] = None) -> List[Dict]:
                         WHERE pv_score_pct IS NOT NULL
                         ORDER BY pv_score_pct DESC
                         """
-                    )
-                return [dict(row) for row in cur.fetchall()]
+                )
+            return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting PV profiles: {e}")
         return []
 
 
-def get_pv_movers() -> List[Dict]:
+def get_pv_movers() -> list[dict]:
     """Fortschritt je Gemeinde: Delta des Panel-Scores im letzten vollen Jahr.
 
     Nur aus dem Panel berechnet, nie mit dem Snapshot vermischt.
     """
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT cur.bfs_number, mp.name, mp.kanton, mp.population,
                            mp.density_per_km2, cur.year AS year,
                            cur.score_pct AS score_now,
@@ -179,14 +174,14 @@ def get_pv_movers() -> List[Dict]:
                     WHERE cur.year = (SELECT MAX(year) FROM municipality_pv_panel)
                     ORDER BY delta DESC
                     """
-                )
-                return [dict(row) for row in cur.fetchall()]
+            )
+            return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting PV movers: {e}")
         return []
 
 
-def get_municipality_pv_panel(bfs_number: int) -> List[Dict]:
+def get_municipality_pv_panel(bfs_number: int) -> list[dict]:
     """Panel-Zeilen einer Gemeinde, nach Jahr aufsteigend."""
     try:
         with _get_connection() as conn:

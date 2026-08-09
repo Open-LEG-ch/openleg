@@ -6,8 +6,8 @@ Verwendet atomic writes für Sicherheit und automatisches Aufräumen alter Token
 
 import json
 import os
-import time
 import threading
+import time
 
 # Token-Datei-Pfad
 TOKEN_FILE = os.getenv("TOKEN_FILE", "/data/openleg_tokens.json")
@@ -59,12 +59,12 @@ def load_tokens():
         expired_verification = []
         expired_unsubscribe = []
 
-        for token, info in verification_tokens.items():
+        for token in verification_tokens:
             token_created = created_at.get(f"verification_{token}", current_time)
             if current_time - token_created > TOKEN_TTL_SECONDS:
                 expired_verification.append(token)
 
-        for token, info in unsubscribe_tokens.items():
+        for token in unsubscribe_tokens:
             token_created = created_at.get(f"unsubscribe_{token}", current_time)
             if current_time - token_created > TOKEN_TTL_SECONDS:
                 expired_unsubscribe.append(token)
@@ -115,12 +115,13 @@ def save_tokens(
     temp_file = f"{file_path}.tmp"
 
     if created_at is None:
-        # Lade bestehende created_at Daten, falls vorhanden
+        created_at = {}
         if os.path.exists(file_path):
+            # Lade bestehende created_at Daten, falls vorhanden
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     existing_data = json.load(f)
-                    created_at = existing_data.get("created_at", {})
+                    created_at = existing_data.get("created_at") or {}
             except Exception:
                 created_at = {}
 
@@ -168,7 +169,7 @@ def save_tokens(
         try:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
-        except Exception:
+        except OSError:
             pass
         return False
 

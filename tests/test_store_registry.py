@@ -7,13 +7,12 @@ so legacy callers and existing monkeypatches keep working unchanged. Mirrors
 `test_store_utility.py`; the seam is the test surface.
 """
 
-from contextlib import contextmanager
 import subprocess
 import sys
+from contextlib import contextmanager
 
 import database
 from store import registry
-
 
 _REEXPORTED = (
     "save_registry_entry",

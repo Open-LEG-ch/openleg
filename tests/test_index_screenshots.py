@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCREENSHOT_DIR = os.path.join(PROJECT_ROOT, "static", "images", "screenshots")
 LANDING_DIR = os.path.join(PROJECT_ROOT, "static", "images", "landing")
@@ -15,28 +14,28 @@ MAX_BYTES = 250 * 1024
 
 
 def _index_html():
-    with patch.dict(
-        os.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "APP_BASE_URL": "http://localhost:5003",
-        },
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database.init_db", return_value=True),
+        patch("database._connection_pool", MagicMock()),
+        patch("database.get_stats", return_value={"total_buildings": 7}),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database.init_db", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-            patch("database.get_stats", return_value={"total_buildings": 7}),
-        ):
-            try:
-                from app import app
-            except Exception:
-                pytest.skip("App import requires live DB")
-            client = app.test_client()
-            response = client.get("/")
-            assert response.status_code == 200
-            return response.get_data(as_text=True)
+        try:
+            from app import app
+        except Exception:
+            pytest.skip("App import requires live DB")
+        client = app.test_client()
+        response = client.get("/")
+        assert response.status_code == 200
+        return response.get_data(as_text=True)
 
 
 def test_homepage_has_product_section_with_screenshots():

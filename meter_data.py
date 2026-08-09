@@ -9,10 +9,9 @@ import io
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
-from typing import List, Tuple, Optional, Dict
 
-from defusedxml.ElementTree import fromstring as _safe_xml_fromstring
 from defusedxml.common import DefusedXmlException
+from defusedxml.ElementTree import fromstring as _safe_xml_fromstring
 
 import database as db
 
@@ -33,7 +32,7 @@ EKZ_ALT_HEADERS = [
 ]
 
 
-def parse_ekz_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
+def parse_ekz_csv(file_content: str) -> tuple[list[tuple], list[str]]:
     """Parse EKZ smart meter CSV export.
 
     Returns:
@@ -102,7 +101,7 @@ def parse_ekz_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
     return readings, errors
 
 
-def _detect_columns(header: List[str]) -> Optional[Dict[str, int]]:
+def _detect_columns(header: list[str]) -> dict[str, int] | None:
     """Map header columns to our schema."""
     col_map = {}
 
@@ -128,7 +127,7 @@ def _detect_columns(header: List[str]) -> Optional[Dict[str, int]]:
     return col_map
 
 
-def _parse_timestamp(value: str) -> Optional[datetime]:
+def _parse_timestamp(value: str) -> datetime | None:
     """Parse various timestamp formats from Swiss utility CSVs."""
     formats = [
         "%d.%m.%Y %H:%M",  # 01.01.2026 00:15
@@ -141,7 +140,8 @@ def _parse_timestamp(value: str) -> Optional[datetime]:
     ]
     for fmt in formats:
         try:
-            return datetime.strptime(value, fmt)
+            # Utility CSVs contain local wall time without an offset.
+            return datetime.strptime(value, fmt)  # noqa: DTZ007
         except ValueError:
             continue
     return None
@@ -179,7 +179,7 @@ def detect_format(file_content: str) -> str:
     return "generic"
 
 
-def _parse_ckw_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
+def _parse_ckw_csv(file_content: str) -> tuple[list[tuple], list[str]]:
     """Parse CKW format with separate Datum and Zeit columns."""
     readings = []
     errors = []
@@ -228,7 +228,7 @@ def _parse_ckw_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
     return readings, errors
 
 
-def parse_meter_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
+def parse_meter_csv(file_content: str) -> tuple[list[tuple], list[str]]:
     """Auto-detect format and parse any Swiss utility CSV.
 
     Returns: (readings, errors)
@@ -245,7 +245,7 @@ def parse_meter_csv(file_content: str) -> Tuple[List[tuple], List[str]]:
         return parse_ekz_csv(file_content)
 
 
-def parse_sdat_xml(xml_content: str) -> Tuple[List[tuple], List[str]]:
+def parse_sdat_xml(xml_content: str) -> tuple[list[tuple], list[str]]:
     """Parse a Swiss SDAT ValidatedMeteredData interval document."""
     if not xml_content or not xml_content.strip():
         return [], ["Leere SDAT-Datei"]
@@ -305,7 +305,7 @@ def parse_sdat_xml(xml_content: str) -> Tuple[List[tuple], List[str]]:
         return [], ["SDAT Parse-Fehler: Ungültiges Dateiformat."]
 
 
-def ingest_file(building_id: str, file_content: str) -> Dict:
+def ingest_file(building_id: str, file_content: str) -> dict:
     """Detect, parse and store one Swiss meter-data file."""
     is_sdat = (
         file_content.lstrip().startswith("<") or "ValidatedMeteredData" in file_content
@@ -343,7 +343,7 @@ def ingest_file(building_id: str, file_content: str) -> Dict:
     return result
 
 
-def validate_readings_quality(readings: List[tuple]) -> Dict:
+def validate_readings_quality(readings: list[tuple]) -> dict:
     """Check data quality: gaps, duplicates, outliers."""
     if not readings:
         return {"quality": "no_data", "issues": []}

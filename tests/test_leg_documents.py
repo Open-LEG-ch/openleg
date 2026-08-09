@@ -192,8 +192,9 @@ class _DictConnection:
 def test_store_leg_document_returns_id_with_dict_rows(monkeypatch):
     # get_connection uses RealDictCursor: fetchone() returns a dict, so
     # row[0] raised KeyError and rolled back the insert.
-    import database
     from contextlib import contextmanager
+
+    import database
 
     cur = _DictCursor(one={"id": 42})
 
@@ -206,8 +207,9 @@ def test_store_leg_document_returns_id_with_dict_rows(monkeypatch):
 
 
 def test_replace_document_bundle_uses_one_transaction(monkeypatch):
-    import store.formation_documents as repository
     from contextlib import contextmanager
+
+    import store.formation_documents as repository
 
     cur = _DictCursor(one={"has_signed": False})
 

@@ -6,7 +6,8 @@ No auth required. Rate limited. CORS enabled.
 """
 
 import logging
-from flask import Blueprint, request, jsonify, render_template
+
+from flask import Blueprint, jsonify, render_template, request
 
 import database as db
 import municipality_profile
@@ -323,8 +324,9 @@ def leg_cluster():
         return jsonify({"error": "At least 2 buildings required"}), 400
 
     try:
-        import ml_models
         import pandas as pd
+
+        import ml_models
 
         df = pd.DataFrame(buildings)
         if "lat" not in df.columns or "lon" not in df.columns:
@@ -464,13 +466,15 @@ def address_profile():
     import data_enricher
 
     try:
-        estimates, profiles = data_enricher.get_energy_profile_for_address(address)
+        estimates, _profiles = data_enricher.get_energy_profile_for_address(address)
         if not estimates:
-            estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
+            estimates, _profiles = data_enricher.get_mock_energy_profile_for_address(
                 address
             )
     except Exception:
-        estimates, profiles = data_enricher.get_mock_energy_profile_for_address(address)
+        estimates, _profiles = data_enricher.get_mock_energy_profile_for_address(
+            address
+        )
 
     if not estimates:
         return jsonify({"error": "Address could not be analyzed"}), 404

@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-import requests
-import numpy as np
 import hashlib
 import re
+
+import numpy as np
+import requests
 
 # Importiere Profil-Generator aus ml_models
 import ml_models
@@ -230,7 +231,7 @@ def get_energy_profile_for_address(address_string):
         return None, None
 
     # 2. Koordinaten -> PV-Potenzial (Echte API)
-    pv_kwh_pa, pv_kwp = get_pv_potential_from_coords(lat, lon)
+    _pv_kwh_pa, pv_kwp = get_pv_potential_from_coords(lat, lon)
 
     # 3. Statistische Daten (Simulierte DB)
     gwr_data = mock_get_gwr_data(lat, lon, plz)

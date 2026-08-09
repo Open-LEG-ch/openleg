@@ -5,11 +5,10 @@ Aggregates Swiss government open data: ElCom tariffs, Energie Reporter, Sonnenda
 All functions are pure: fetch, parse, return dict. DB persistence handled by callers.
 """
 
-import logging
 import csv
 import io
-from typing import Dict, List, Optional
-from datetime import datetime
+import logging
+from datetime import datetime, timezone
 
 import requests
 
@@ -45,7 +44,7 @@ ORDER BY ?operator ?category
 """
 
 
-def fetch_elcom_tariffs(bfs_number: int, year: int = 2026) -> List[Dict]:
+def fetch_elcom_tariffs(bfs_number: int, year: int = 2026) -> list[dict]:
     """Query LINDAS SPARQL endpoint for ElCom tariffs of a municipality."""
     sparql = ELCOM_SPARQL_TEMPLATE.format(bfs=bfs_number, year=year)
     try:
@@ -84,8 +83,8 @@ def fetch_elcom_tariffs(bfs_number: int, year: int = 2026) -> List[Dict]:
 
 
 def fetch_all_elcom_tariffs(
-    kanton: str = "ZH", year: int = 2026, bfs_numbers: List[int] = None
-) -> List[Dict]:
+    kanton: str = "ZH", year: int = 2026, bfs_numbers: list[int] | None = None
+) -> list[dict]:
     """Batch fetch ElCom tariffs for multiple municipalities."""
     if bfs_numbers is None:
         bfs_numbers = ZH_BFS_NUMBERS
@@ -116,7 +115,7 @@ ENERGIE_REPORTER_URL = (
 )
 
 
-def fetch_energie_reporter() -> List[Dict]:
+def fetch_energie_reporter() -> list[dict]:
     """Download Energie Reporter data from opendata.swiss and parse into per-municipality dicts."""
     try:
         # Get dataset metadata to find CSV resource
@@ -187,7 +186,7 @@ def fetch_energie_reporter() -> List[Dict]:
 SONNENDACH_URL = "https://opendata.swiss/api/3/action/package_show?id=sonnendach-ch"
 
 
-def fetch_sonnendach_municipal() -> List[Dict]:
+def fetch_sonnendach_municipal() -> list[dict]:
     """Download municipal-level solar potential from opendata.swiss."""
     try:
         resp = requests.get(SONNENDACH_URL, timeout=15)
@@ -256,7 +255,7 @@ def fetch_sonnendach_municipal() -> List[Dict]:
 # === Computed Metrics ===
 
 
-def compute_leg_value_gap(h4_tariff: Dict, grid_reduction_pct: float = 40.0) -> Dict:
+def compute_leg_value_gap(h4_tariff: dict, grid_reduction_pct: float = 40.0) -> dict:
     """
     Calculate LEG value gap from grid fee component.
     grid_reduction_pct: typical LEG grid fee reduction (40% for NE7).
@@ -282,7 +281,7 @@ def compute_leg_value_gap(h4_tariff: Dict, grid_reduction_pct: float = 40.0) -> 
     }
 
 
-def compute_energy_transition_score(profile: Dict) -> float:
+def compute_energy_transition_score(profile: dict) -> float:
     """
     Weighted 0-100 score for energy transition progress.
     Solar 30%, EVs 20%, Heating 25%, Production 25%.
@@ -302,7 +301,7 @@ def compute_energy_transition_score(profile: Dict) -> float:
 # === Orchestration ===
 
 
-def refresh_municipality(bfs_number: int, year: int = 2026) -> Dict:
+def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
     """Fetch all sources for one municipality, compute derived fields."""
     import database as db
 
@@ -342,7 +341,10 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> Dict:
         if existing
         else None,
         "leg_value_gap_chf": value_gap.get("annual_savings_chf", 0),
-        "data_sources": {"elcom": True, "last_refresh": datetime.now().isoformat()},
+        "data_sources": {
+            "elcom": True,
+            "last_refresh": datetime.now(timezone.utc).isoformat(),
+        },
     }
     profile["energy_transition_score"] = compute_energy_transition_score(profile)
     db.save_municipality_profile(profile)
@@ -352,7 +354,7 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> Dict:
     return result
 
 
-def refresh_canton(kanton: str = "ZH", year: int = 2026) -> Dict:
+def refresh_canton(kanton: str = "ZH", year: int = 2026) -> dict:
     """Batch refresh: fetch Energie Reporter + Sonnendach, then per-municipality ElCom."""
     import database as db
 
@@ -414,7 +416,7 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> Dict:
                     "elcom": bool(tariffs),
                     "energie_reporter": bfs in er_by_bfs,
                     "sonnendach": bfs in sd_by_bfs,
-                    "last_refresh": datetime.now().isoformat(),
+                    "last_refresh": datetime.now(timezone.utc).isoformat(),
                 },
             }
             profile["energy_transition_score"] = compute_energy_transition_score(
@@ -432,7 +434,7 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> Dict:
 # === Helpers ===
 
 
-def _safe_int(val) -> Optional[int]:
+def _safe_int(val) -> int | None:
     if val is None:
         return None
     try:
@@ -441,7 +443,7 @@ def _safe_int(val) -> Optional[int]:
         return None
 
 
-def _safe_float(val) -> Optional[float]:
+def _safe_float(val) -> float | None:
     if val is None:
         return None
     try:

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 DOC_PATH = Path("docs/repo-boundary.md")
 
 

@@ -4,9 +4,8 @@ Formation Wizard Module for OpenLEG
 Handles LEG community formation workflow, document generation, and status tracking.
 """
 
-import uuid
 import logging
-from typing import Dict, List, Optional
+import uuid
 from enum import Enum
 
 logger = logging.getLogger(__name__)
@@ -105,7 +104,7 @@ def create_community(
     admin_building_id: str,
     distribution_model: str = "simple",
     description: str = "",
-) -> Optional[Dict]:
+) -> dict | None:
     """
     Create a new LEG community.
 
@@ -238,26 +237,25 @@ def confirm_membership(db, community_id: str, building_id: str) -> bool:
         True if successful
     """
     try:
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     UPDATE community_members
                     SET status = 'confirmed', confirmed_at = CURRENT_TIMESTAMP
                     WHERE community_id = %s AND building_id = %s AND status = 'invited'
                 """,
-                    (community_id, building_id),
-                )
+                (community_id, building_id),
+            )
 
-                if cur.rowcount > 0:
-                    db.track_event(
-                        "member_confirmed", building_id, {"community_id": community_id}
-                    )
-                    logger.info(
-                        f"[FORMATION] {building_id} confirmed membership in {community_id}"
-                    )
-                    return True
-                return False
+            if cur.rowcount > 0:
+                db.track_event(
+                    "member_confirmed", building_id, {"community_id": community_id}
+                )
+                logger.info(
+                    f"[FORMATION] {building_id} confirmed membership in {community_id}"
+                )
+                return True
+            return False
     except Exception as e:
         logger.error(f"[FORMATION] Error confirming membership: {e}")
         return False
@@ -356,7 +354,7 @@ def submit_to_dso(db, community_id: str) -> bool:
         return False
 
 
-def get_community_status(db, community_id: str) -> Optional[Dict]:
+def get_community_status(db, community_id: str) -> dict | None:
     """
     Get full status of a community formation.
 
@@ -368,10 +366,9 @@ def get_community_status(db, community_id: str) -> Optional[Dict]:
         Community status dict or None
     """
     try:
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT 
                         c.*,
                         array_agg(
@@ -390,63 +387,63 @@ def get_community_status(db, community_id: str) -> Optional[Dict]:
                     WHERE c.community_id = %s
                     GROUP BY c.community_id
                 """,
-                    (community_id,),
-                )
+                (community_id,),
+            )
 
-                row = cur.fetchone()
-                if not row:
-                    return None
+            row = cur.fetchone()
+            if not row:
+                return None
 
-                # Calculate readiness score
-                confirmed_count = sum(
-                    1 for m in row["members"] if m["status"] == "confirmed"
-                )
-                total_count = len(row["members"])
+            # Calculate readiness score
+            confirmed_count = sum(
+                1 for m in row["members"] if m["status"] == "confirmed"
+            )
+            total_count = len(row["members"])
 
-                readiness_score = 0
-                if confirmed_count >= FORMATION_CONFIG["min_community_size"]:
-                    readiness_score += 30
-                if row["status"] in [
-                    FormationStatus.DOCUMENTS_GENERATED.value,
-                    FormationStatus.SIGNATURES_PENDING.value,
-                ]:
-                    readiness_score += 30
-                if row["status"] == FormationStatus.DSO_SUBMITTED.value:
-                    readiness_score += 20
-                if row["status"] == FormationStatus.DSO_APPROVED.value:
-                    readiness_score += 20
+            readiness_score = 0
+            if confirmed_count >= FORMATION_CONFIG["min_community_size"]:
+                readiness_score += 30
+            if row["status"] in [
+                FormationStatus.DOCUMENTS_GENERATED.value,
+                FormationStatus.SIGNATURES_PENDING.value,
+            ]:
+                readiness_score += 30
+            if row["status"] == FormationStatus.DSO_SUBMITTED.value:
+                readiness_score += 20
+            if row["status"] == FormationStatus.DSO_APPROVED.value:
+                readiness_score += 20
 
-                return {
-                    "community_id": row["community_id"],
-                    "name": row["name"],
-                    "status": row["status"],
-                    "distribution_model": row["distribution_model"],
-                    "admin_building_id": row["admin_building_id"],
-                    "created_at": row["created_at"].isoformat()
-                    if row["created_at"]
-                    else None,
-                    "formation_started_at": row["formation_started_at"].isoformat()
-                    if row["formation_started_at"]
-                    else None,
-                    "dso_submitted_at": row["dso_submitted_at"].isoformat()
-                    if row["dso_submitted_at"]
-                    else None,
-                    "member_count": {
-                        "total": total_count,
-                        "confirmed": confirmed_count,
-                        "invited": total_count - confirmed_count,
-                    },
-                    "readiness_score": readiness_score,
-                    "members": row["members"],
-                    "documents": None,
-                    "next_steps": _get_next_steps(row["status"], confirmed_count),
-                }
+            return {
+                "community_id": row["community_id"],
+                "name": row["name"],
+                "status": row["status"],
+                "distribution_model": row["distribution_model"],
+                "admin_building_id": row["admin_building_id"],
+                "created_at": row["created_at"].isoformat()
+                if row["created_at"]
+                else None,
+                "formation_started_at": row["formation_started_at"].isoformat()
+                if row["formation_started_at"]
+                else None,
+                "dso_submitted_at": row["dso_submitted_at"].isoformat()
+                if row["dso_submitted_at"]
+                else None,
+                "member_count": {
+                    "total": total_count,
+                    "confirmed": confirmed_count,
+                    "invited": total_count - confirmed_count,
+                },
+                "readiness_score": readiness_score,
+                "members": row["members"],
+                "documents": None,
+                "next_steps": _get_next_steps(row["status"], confirmed_count),
+            }
     except Exception as e:
         logger.error(f"[FORMATION] Error getting community status: {e}")
         return None
 
 
-def _get_next_steps(status: str, confirmed_count: int) -> List[str]:
+def _get_next_steps(status: str, confirmed_count: int) -> list[str]:
     """Get recommended next steps based on status."""
     steps = []
 
@@ -479,7 +476,7 @@ def _get_next_steps(status: str, confirmed_count: int) -> List[str]:
     return steps
 
 
-def get_user_communities(db, building_id: str) -> List[Dict]:
+def get_user_communities(db, building_id: str) -> list[dict]:
     """
     Get all communities a user is part of.
 
@@ -517,7 +514,7 @@ def get_user_communities(db, building_id: str) -> List[Dict]:
         return []
 
 
-def get_formable_clusters(db, building_id: str, radius_meters: int = 150) -> List[Dict]:
+def get_formable_clusters(db, building_id: str, radius_meters: int = 150) -> list[dict]:
     """
     Get clusters that are ready for formation (have enough members).
 
@@ -531,22 +528,21 @@ def get_formable_clusters(db, building_id: str, radius_meters: int = 150) -> Lis
     """
     try:
         # Get user's location
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT lat, lon FROM buildings WHERE building_id = %s
                 """,
-                    (building_id,),
-                )
+                (building_id,),
+            )
 
-                user = cur.fetchone()
-                if not user:
-                    return []
+            user = cur.fetchone()
+            if not user:
+                return []
 
-                # Find nearby buildings not in communities
-                cur.execute(
-                    """
+            # Find nearby buildings not in communities
+            cur.execute(
+                """
                     SELECT 
                         b.building_id,
                         b.address,
@@ -569,22 +565,22 @@ def get_formable_clusters(db, building_id: str, radius_meters: int = 150) -> Lis
                     HAVING distance <= %s
                     ORDER BY distance
                 """,
-                    (user["lat"], user["lon"], user["lat"], building_id, radius_meters),
-                )
+                (user["lat"], user["lon"], user["lat"], building_id, radius_meters),
+            )
 
-                nearby = [dict(row) for row in cur.fetchall()]
+            nearby = [dict(row) for row in cur.fetchall()]
 
-                if len(nearby) >= FORMATION_CONFIG["min_community_size"] - 1:
-                    return [
-                        {
-                            "potential_members": len(nearby) + 1,  # +1 for user
-                            "nearby_buildings": nearby[:10],  # Top 10
-                            "radius_meters": radius_meters,
-                            "ready_to_form": len(nearby) + 1
-                            >= FORMATION_CONFIG["min_community_size"],
-                        }
-                    ]
-                return []
+            if len(nearby) >= FORMATION_CONFIG["min_community_size"] - 1:
+                return [
+                    {
+                        "potential_members": len(nearby) + 1,  # +1 for user
+                        "nearby_buildings": nearby[:10],  # Top 10
+                        "radius_meters": radius_meters,
+                        "ready_to_form": len(nearby) + 1
+                        >= FORMATION_CONFIG["min_community_size"],
+                    }
+                ]
+            return []
     except Exception as e:
         logger.error(f"[FORMATION] Error getting formable clusters: {e}")
         return []
@@ -596,7 +592,7 @@ def calculate_municipality_business_case(
     avg_community_size: int = 10,
     avg_pv_kwp: float = 30,
     avg_consumption_kwh: float = 4500,
-) -> Dict:
+) -> dict:
     """
     Calculate business case for a municipality's LEG program.
     Returns aggregate projections for multiple LEGs.
@@ -638,7 +634,7 @@ def calculate_savings_estimate(
     pv_kwp: float,
     community_size: int,
     solar_kwh_per_kwp: int = 900,
-) -> Dict:
+) -> dict:
     """
     Calculate estimated savings for a household in a LEG.
 

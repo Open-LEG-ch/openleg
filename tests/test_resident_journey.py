@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Rendered resident-journey contracts for issue #214."""
 
-import re
 import importlib
 import os
+import re
 from html.parser import HTMLParser
 from unittest.mock import MagicMock, patch
 
@@ -35,25 +35,25 @@ class FormAuditParser(HTMLParser):
 
 @pytest.fixture
 def resident_client():
-    with patch.dict(
-        os.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "APP_BASE_URL": "http://localhost:5003",
-        },
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            import app as app_module
+        import app as app_module
 
-            app_module = importlib.reload(app_module)
-            with patch.object(
-                app_module.db, "get_stats", return_value={"total_buildings": 0}
-            ):
-                yield app_module.app.test_client()
+        app_module = importlib.reload(app_module)
+        with patch.object(
+            app_module.db, "get_stats", return_value={"total_buildings": 0}
+        ):
+            yield app_module.app.test_client()
 
 
 @pytest.fixture

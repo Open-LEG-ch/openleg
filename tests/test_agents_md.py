@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for OpenClaw config and server.mjs tool count."""
 
-import os
 import json
+import os
 import re
 import subprocess
+
 import pytest
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

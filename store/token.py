@@ -9,7 +9,6 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 """
 
 import logging
-from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +27,9 @@ def save_token(
 ) -> bool:
     """Save a verification or unsubscribe token (default TTL: 30 days)."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     INSERT INTO tokens (token, building_id, token_type, expires_at)
                     VALUES (%s, %s, %s, CURRENT_TIMESTAMP + INTERVAL '%s seconds')
                     ON CONFLICT (token) DO UPDATE SET
@@ -39,32 +37,31 @@ def save_token(
                         token_type = EXCLUDED.token_type,
                         expires_at = EXCLUDED.expires_at
                 """,
-                    (token, building_id, token_type, ttl_seconds),
-                )
-                return True
+                (token, building_id, token_type, ttl_seconds),
+            )
+            return True
     except Exception as e:
         logger.error(f"[DB] Error saving token: {e}")
         return False
 
 
-def get_token(token: str) -> Optional[Dict]:
+def get_token(token: str) -> dict | None:
     """Get token info if valid (not expired, not used)."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT * FROM tokens
                     WHERE token = %s
                     AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                     AND used_at IS NULL
                 """,
-                    (token,),
-                )
-                row = cur.fetchone()
-                if row:
-                    return dict(row)
-                return None
+                (token,),
+            )
+            row = cur.fetchone()
+            if row:
+                return dict(row)
+            return None
     except Exception as e:
         logger.error(f"[DB] Error getting token: {e}")
         return None
@@ -73,44 +70,40 @@ def get_token(token: str) -> Optional[Dict]:
 def use_token(token: str) -> bool:
     """Mark a token as used."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     UPDATE tokens SET used_at = CURRENT_TIMESTAMP
                     WHERE token = %s
                 """,
-                    (token,),
-                )
-                return cur.rowcount > 0
+                (token,),
+            )
+            return cur.rowcount > 0
     except Exception as e:
         logger.error(f"[DB] Error using token: {e}")
         return False
 
 
-def delete_tokens_for_building(
-    building_id: str, token_type: Optional[str] = None
-) -> int:
+def delete_tokens_for_building(building_id: str, token_type: str | None = None) -> int:
     """Delete tokens for a building."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                if token_type:
-                    cur.execute(
-                        """
+        with _get_connection() as conn, conn.cursor() as cur:
+            if token_type:
+                cur.execute(
+                    """
                         DELETE FROM tokens
                         WHERE building_id = %s AND token_type = %s
                     """,
-                        (building_id, token_type),
-                    )
-                else:
-                    cur.execute(
-                        """
+                    (building_id, token_type),
+                )
+            else:
+                cur.execute(
+                    """
                         DELETE FROM tokens WHERE building_id = %s
                     """,
-                        (building_id,),
-                    )
-                return cur.rowcount
+                    (building_id,),
+                )
+            return cur.rowcount
     except Exception as e:
         logger.error(f"[DB] Error deleting tokens: {e}")
         return 0

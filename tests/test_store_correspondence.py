@@ -7,13 +7,12 @@ No external mail provider involved. Mirrors test_store_registry.py; the
 seam is the test surface.
 """
 
-from contextlib import contextmanager
 import subprocess
 import sys
+from contextlib import contextmanager
 
 import database
 from store import correspondence
-
 
 _REEXPORTED = (
     "log_correspondence",

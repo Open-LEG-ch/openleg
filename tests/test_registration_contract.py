@@ -10,35 +10,35 @@ import pytest
 
 @pytest.fixture(scope="module")
 def app_module():
-    with patch.dict(
-        os.environ,
-        {
-            "DATABASE_URL": "postgresql://x:x@localhost/x",
-            "REDIS_URL": "memory://",
-            "CRON_SECRET": "test-cron-secret",
-            "APP_BASE_URL": "http://localhost:5003",
-        },
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "CRON_SECRET": "test-cron-secret",
+                "APP_BASE_URL": "http://localhost:5003",
+            },
+        ),
+        patch("database.is_db_available", return_value=True),
+        patch("database._connection_pool", MagicMock()),
     ):
-        with (
-            patch("database.is_db_available", return_value=True),
-            patch("database._connection_pool", MagicMock()),
-        ):
-            import app
+        import app
 
-            app = importlib.reload(app)
-            if app.limiter:
-                app.limiter.enabled = False
-            hooks = list(app.app.before_request_funcs.get(None, []))
-            app.app.before_request_funcs[None] = [
-                hook
-                for hook in hooks
-                if not (
-                    getattr(hook, "__module__", "").startswith("flask_limiter")
-                    or getattr(hook, "__name__", "") == "_check_request_limit"
-                )
-            ]
-            yield app
-            app.app.before_request_funcs[None] = hooks
+        app = importlib.reload(app)
+        if app.limiter:
+            app.limiter.enabled = False
+        hooks = list(app.app.before_request_funcs.get(None, []))
+        app.app.before_request_funcs[None] = [
+            hook
+            for hook in hooks
+            if not (
+                getattr(hook, "__module__", "").startswith("flask_limiter")
+                or getattr(hook, "__name__", "") == "_check_request_limit"
+            )
+        ]
+        yield app
+        app.app.before_request_funcs[None] = hooks
 
 
 @pytest.fixture

@@ -5,21 +5,22 @@ Self-service portal for energy utilities (VNB/EVU) to manage their LEG platform.
 Routes: /utility/*
 """
 
-import os
-import uuid
 import hashlib
-import secrets
 import logging
+import os
+import secrets
+import uuid
 from functools import wraps
+
 from flask import (
     Blueprint,
-    request,
-    jsonify,
-    render_template,
-    redirect,
-    url_for,
-    session,
     g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
 )
 
 import database as db
@@ -93,7 +94,7 @@ def register():
         ), 409
 
     if contact_phone:
-        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(
+        is_valid_phone, normalized_phone, _phone_error = security_utils.validate_phone(
             contact_phone
         )
         if is_valid_phone:

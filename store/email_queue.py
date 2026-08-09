@@ -10,7 +10,6 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 """
 
 import logging
-from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -54,13 +53,12 @@ def schedule_email(
         return False
 
 
-def get_pending_emails(limit: int = 50) -> List[Dict]:
+def get_pending_emails(limit: int = 50) -> list[dict]:
     """Get emails ready to send (send_at <= now, status = pending)."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     SELECT se.id, se.building_id, se.email, se.template_key, se.send_at,
                            b.address, b.lat, b.lon, b.plz
                     FROM scheduled_emails se
@@ -69,9 +67,9 @@ def get_pending_emails(limit: int = 50) -> List[Dict]:
                     ORDER BY se.send_at ASC
                     LIMIT %s
                 """,
-                    (limit,),
-                )
-                return [dict(row) for row in cur.fetchall()]
+                (limit,),
+            )
+            return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting pending emails: {e}")
         return []
@@ -80,17 +78,16 @@ def get_pending_emails(limit: int = 50) -> List[Dict]:
 def mark_email_sent(email_id: int) -> bool:
     """Mark a scheduled email as sent."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     UPDATE scheduled_emails
                     SET status = 'sent', sent_at = CURRENT_TIMESTAMP
                     WHERE id = %s
                 """,
-                    (email_id,),
-                )
-                return cur.rowcount > 0
+                (email_id,),
+            )
+            return cur.rowcount > 0
     except Exception as e:
         logger.error(f"[DB] Error marking email sent: {e}")
         return False
@@ -99,17 +96,16 @@ def mark_email_sent(email_id: int) -> bool:
 def mark_email_failed(email_id: int, error: str) -> bool:
     """Mark a scheduled email as failed."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     UPDATE scheduled_emails
                     SET status = 'failed', error_message = %s
                     WHERE id = %s
                 """,
-                    (error, email_id),
-                )
-                return cur.rowcount > 0
+                (error, email_id),
+            )
+            return cur.rowcount > 0
     except Exception as e:
         logger.error(f"[DB] Error marking email failed: {e}")
         return False
@@ -118,36 +114,34 @@ def mark_email_failed(email_id: int, error: str) -> bool:
 def cancel_emails_for_building(building_id: str) -> int:
     """Cancel all pending emails for a building (e.g. on unsubscribe)."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     UPDATE scheduled_emails
                     SET status = 'cancelled'
                     WHERE building_id = %s AND status = 'pending'
                 """,
-                    (building_id,),
-                )
-                return cur.rowcount
+                (building_id,),
+            )
+            return cur.rowcount
     except Exception as e:
         logger.error(f"[DB] Error cancelling emails: {e}")
         return 0
 
 
-def get_email_stats() -> Dict:
+def get_email_stats() -> dict:
     """Get email queue statistics."""
     try:
-        with _get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute("""
                     SELECT status, COUNT(*) as count
                     FROM scheduled_emails
                     GROUP BY status
                 """)
-                stats = {}
-                for row in cur.fetchall():
-                    stats[row["status"]] = row["count"]
-                return stats
+            stats = {}
+            for row in cur.fetchall():
+                stats[row["status"]] = row["count"]
+            return stats
     except Exception as e:
         logger.error(f"[DB] Error getting email stats: {e}")
         return {}

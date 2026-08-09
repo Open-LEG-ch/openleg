@@ -7,14 +7,15 @@ Public profile pages and directory for municipalities.
 
 import logging
 import os
-from flask import Blueprint, request, jsonify, render_template, abort
 
-from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
+from flask import Blueprint, abort, jsonify, render_template, request
+
 import database as db
 import municipality_profile
 import pv_data
-from ranking import Ranking
 import security_utils
+from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
+from ranking import Ranking
 
 logger = logging.getLogger(__name__)
 

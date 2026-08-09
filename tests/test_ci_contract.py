@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Contract tests for public CI workflow shape."""
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 import yaml
-
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = PROJECT_ROOT / ".github" / "workflows"
@@ -48,7 +47,7 @@ def test_exactly_three_required_check_workflows_with_expected_job_names():
             continue
         required_workflows.append(path.name)
         jobs = data.get("jobs", {})
-        for _job_id, job_data in jobs.items():
+        for job_data in jobs.values():
             if "name" in job_data:
                 seen_job_names.add(job_data["name"])
 
