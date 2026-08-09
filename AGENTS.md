@@ -149,6 +149,11 @@ Container image: built from `Dockerfile`, published to
 `.github/workflows/image.yml`. Self-hosters pull the image via `docker compose`;
 see the README install profiles. Tag a release (`git tag -a vX.Y.Z`) to publish.
 
+The public repository never deploys production. The image workflow publishes
+version/SHA tags, SBOM, provenance, and the immutable digest. Production release
+approval, database backup, digest promotion, health verification, ledger, and
+rollback belong exclusively to private `openleg-ops`.
+
 Production deployment procedures are documented in `openleg-ops`.
 
 ## Current Blocker
