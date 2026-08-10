@@ -96,3 +96,29 @@ def test_documented_install_paths_are_backed_by_repository_files():
 @pytest.mark.parametrize("route", PATHWAY_ROUTES)
 def test_pathway_routes_return_200(full_app_module, route):
     assert full_app_module.app.test_client().get(route).status_code == 200
+
+
+def test_open_source_gives_technical_users_concrete_entry_points(full_app_module):
+    html = _html(full_app_module.app.test_client(), "/open-source")
+
+    for entry_point in (
+        "app.py",
+        "store/",
+        "billing_engine.py",
+        "scripts/tdd_cycle.sh",
+    ):
+        assert entry_point in html
+    assert "consumer_charge" in html
+    assert "producer_credit" in html
+    assert "Entwurf" in html
+
+
+def test_readme_orients_english_and_german_technical_users():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "## English" in readme
+    assert "## Deutsch" in readme
+    assert "### Current billing boundary" in readme
+    assert "### Aktuelle Abrechnungsgrenze" in readme
+    assert "billing_engine.py" in readme
+    assert "scripts/tdd_cycle.sh gate" in readme

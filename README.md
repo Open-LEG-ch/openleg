@@ -1,42 +1,37 @@
 # OpenLEG
 
-OpenLEG is open-source infrastructure for Swiss Local Electricity Communities (LEG). It is the public app repo: runtime code, tests, templates, docs, and CI live here. Private operations, deployment runbooks, and internal planning stay in a separate private repository.
+[English](#english) | [Deutsch](#deutsch)
 
-## What this repo is
+Open-source infrastructure for Swiss Local Electricity Communities. Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften.
 
-- Flask app and API code
-- Database layer and migrations
-- Templates and static assets
-- Public documentation and contribution workflow
-- CI and test automation
+## English
 
-## Choose your path
+OpenLEG is the public application for founding and operating a Swiss Local Electricity Community, known as a LEG. Runtime code, tests, database migrations, templates, and public documentation live here. Production secrets and host-specific operations do not.
 
-OpenLEG serves four audiences. Pick the one that matches you.
+### What this repo is
 
-| You are | On the site | Get started |
+- `app.py` connects the Flask routes and user journeys
+- `api_public.py` provides the public JSON API
+- `database.py` owns connections and migrations; `store/` contains domain repositories
+- `billing_engine.py` contains quarter-hour allocation and draft billing logic
+- `templates/`, `static/`, and `tests/` contain the interface and its checks
+
+### Choose your path
+
+| You are | Start here | What you can do |
 | --- | --- | --- |
-| Resident / founder | `/fuer-bewohner` | Check your address, find neighbours, start a LEG on the hosted platform. |
-| LEG operator | `/leg-gruenden` | Found and run a community; manage members and self-consumption billing. |
-| Municipality | `/fuer-gemeinden` | Compare solar usage, claim a free `<gemeinde>.openleg.ch` page. |
-| Developer / self-host | this repo | Read the code, use the free API, run your own instance (below). |
+| Resident or founder | `/fuer-bewohner` | Check an address, find neighbours, start a LEG. |
+| LEG operator | `/leg-gruenden` | Organise members, contracts, metering, and billing. |
+| Municipality | `/fuer-gemeinden` | Review local solar use and create a municipality page. |
+| Developer or self-hoster | `/open-source` | Trace the code, use the API, or run your own instance. |
 
-Self-hosting is the sovereign default: your LEG runs OpenLEG on its own
-infrastructure and keeps control of its data. Start with one command:
+### Current billing boundary
 
-```bash
-curl -fsSL https://openleg.ch/install.sh | bash
-```
+`billing_engine.py` accepts participant-keyed 15-minute consumption and production frames plus explicit prices. It creates an auditable draft with positive `consumer_charge` items and negative `producer_credit` items. `store/billing.py` persists the period, price snapshot, and signed line items.
 
-The hosted platform remains the no-maintenance alternative for municipalities
-and LEGs that do not want to operate their own instance.
+Metering import, member mapping, a CLI command to start a billing run, and final invoice or credit documents are not one automated public workflow yet. The repository contains the reviewed billing core, not a promise that raw meter data can already produce final documents without integration work.
 
-### Live examples
-
-- Municipality: `/gemeinde/profil/4021` (Baden, real ElCom and Sonnendach data)
-- LEG: `/leg-gruenden` walks a concrete formation end to end
-
-## Quick start
+### Quick start
 
 ```bash
 python3 -m venv .venv
@@ -47,7 +42,13 @@ pytest tests/ -q
 python app.py
 ```
 
-## Docker
+For self-hosting:
+
+```bash
+curl -fsSL https://openleg.ch/install.sh | bash
+```
+
+Or use Docker directly:
 
 ```bash
 cp .env.example .env
@@ -55,62 +56,142 @@ docker compose up -d
 docker compose ps
 ```
 
-## OpenClaw
-
-- `openclaw/` contains a public-safe OpenClaw bundle for local automation against OpenLEG.
-- It is separate from the public `docker-compose.yml`.
-- Start with [openclaw/README.md](openclaw/README.md).
-
-## Public architecture
+### Public architecture
 
 - Backend: Flask on Python 3.11
 - Database: PostgreSQL 16
 - Cache: Redis 7
 - Reverse proxy: Caddy
+- Local automation: the public-safe bundle in [openclaw/README.md](openclaw/README.md), separate from the default `docker-compose.yml`
 
-See:
+Read [Architecture](docs/architecture.md), [Data pipeline](docs/data-pipeline.md), and [API examples](docs/api-examples.md).
 
-- [Architecture](docs/architecture.md)
-- [Data pipeline](docs/data-pipeline.md)
-- [API examples](docs/api-examples.md)
+### Route map
 
-## Route map
-
-- `/` resident and municipality entry point
-- `/rangliste` and `/gemeinde/profil/<bfs>` solar utilization ranking
-- `/fuer-gemeinden` municipality onboarding overview
-- `/open-source` codebase and self-hosting explainer
-- `/self-host` one-command sovereign self-hosting on-ramp
+- `/` entry point for residents and municipalities
+- `/rangliste` solar utilization ranking
+- `/gemeinde/profil/4021` municipality profile example
+- `/open-source` technical pathway and self-hosting context
+- `/self-host` self-hosting guide
 - `/api/v1/docs` public API documentation
-- `/health` and `/livez` runtime health checks
+- `/health` and `/livez` runtime checks
 
-## Data pipeline
+### Data pipeline
 
-- Public data fetchers live in `public_data.py`
-- Persistent tables and migrations live in `database.py`
-- PV ranking import lives in `scripts/load_pv_data.py`
-- API read paths live in `api_public.py` and ranking blueprints
+Public data fetchers live in `public_data.py`. Database persistence uses `database.py` and `store/`. The PV ranking import is `scripts/load_pv_data.py`; API read paths live in `api_public.py` and the ranking blueprints.
 
-## Contributing
+### Contributing
 
-- Open an issue before larger changes
-- Keep changes small and covered by tests
-- Run `pytest tests/ -q`, `ruff check .`, and `ruff format --check .` before opening a PR
-- Target the required CI checks: `ci/lint`, `ci/test`, `ci/security`
+Open an issue before a larger change. Keep the pull request small, start with a failing test, and run:
 
-## Repository boundary
+```bash
+scripts/tdd_cycle.sh gate
+```
 
-- Public code stays in this repo
-- Secrets stay out of git
-- Production host inventory stays private
-- Internal strategy, grant work, and operational notes stay in the private ops repository
+Required checks are `ci/lint`, `ci/test`, and `ci/security`.
 
-## Security
+### Repository boundary
 
-- Never commit production credentials or personal data
-- Use `.env.example` as the local template
-- Report security issues through the repository security workflow
+Public product code belongs here. Production credentials, citizen data, host inventory, deployment runbooks, and internal planning stay outside this repository. The public repo publishes container images; it never deploys production.
 
-## License
+### Security
+
+Never commit credentials or personal data. Use `.env.example` locally and report vulnerabilities through the repository security workflow.
+
+## Deutsch
+
+OpenLEG ist die öffentliche Anwendung für die Gründung und den Betrieb einer Schweizer Lokalen Elektrizitätsgemeinschaft, kurz LEG. Laufzeitcode, Tests, Datenbankmigrationen, Templates und öffentliche Dokumentation liegen hier. Produktive Secrets und hostspezifischer Betrieb gehören nicht in dieses Repo.
+
+### Was dieses Repo enthält
+
+- `app.py` verbindet Flask-Routen und Nutzerwege
+- `api_public.py` stellt die öffentliche JSON-API bereit
+- `database.py` besitzt Verbindungen und Migrationen; `store/` enthält die fachlichen Repositories
+- `billing_engine.py` enthält Logik für Viertelstundenverteilung und Abrechnungsentwürfe
+- `templates/`, `static/` und `tests/` enthalten Oberfläche und Prüfungen
+
+### Wählen Sie Ihren Einstieg
+
+| Sie sind | Einstieg | Das können Sie tun |
+| --- | --- | --- |
+| Bewohner oder Gründer | `/fuer-bewohner` | Adresse prüfen, Nachbarn finden, LEG starten. |
+| LEG-Betreiber | `/leg-gruenden` | Mitglieder, Verträge, Messung und Abrechnung organisieren. |
+| Gemeinde | `/fuer-gemeinden` | Lokale Solarnutzung prüfen und Gemeindeseite erstellen. |
+| Entwickler oder Selbsthoster | `/open-source` | Code verfolgen, API nutzen oder eigene Instanz betreiben. |
+
+### Aktuelle Abrechnungsgrenze
+
+`billing_engine.py` übernimmt nach Teilnehmern geordnete Viertelstundenwerte für Bezug und Einspeisung sowie explizite Preise. Daraus entsteht ein prüfbarer Entwurf mit positiven `consumer_charge` Positionen und negativen `producer_credit` Positionen. `store/billing.py` speichert Periode, Preisstand und Positionen mit Vorzeichen.
+
+Messdatenimport, Mitgliederzuordnung, ein CLI-Befehl für den Abrechnungslauf und definitive Rechnungs- oder Gutschriftdokumente bilden noch keinen automatisierten öffentlichen Ablauf. Das Repo enthält den geprüften Abrechnungskern. Rohdaten allein erzeugen ohne Integrationsarbeit noch keine definitiven Dokumente.
+
+### Schnellstart
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env
+pytest tests/ -q
+python app.py
+```
+
+Für den Eigenbetrieb:
+
+```bash
+curl -fsSL https://openleg.ch/install.sh | bash
+```
+
+Oder direkt mit Docker:
+
+```bash
+cp .env.example .env
+docker compose up -d
+docker compose ps
+```
+
+### Öffentliche Architektur
+
+- Backend: Flask auf Python 3.11
+- Datenbank: PostgreSQL 16
+- Cache: Redis 7
+- Reverse Proxy: Caddy
+- Lokale Automation: öffentliches Paket in [openclaw/README.md](openclaw/README.md), getrennt vom normalen `docker-compose.yml`
+
+Lesen Sie [Architektur](docs/architecture.md), [Datenpipeline](docs/data-pipeline.md) und [API-Beispiele](docs/api-examples.md).
+
+### Routen
+
+- `/` Einstieg für Bewohner und Gemeinden
+- `/rangliste` Rangliste zur Solarnutzung
+- `/gemeinde/profil/4021` Beispiel für ein Gemeindeprofil
+- `/open-source` technischer Einstieg und Kontext zum Eigenbetrieb
+- `/self-host` Anleitung für den Eigenbetrieb
+- `/api/v1/docs` öffentliche API-Dokumentation
+- `/health` und `/livez` Laufzeitprüfungen
+
+### Datenpipeline
+
+`public_data.py` lädt öffentliche Daten. `database.py` und `store/` speichern sie. `scripts/load_pv_data.py` importiert die PV-Rangliste; `api_public.py` und die Ranglisten-Blueprints liefern die Daten aus.
+
+### Mitwirken
+
+Eröffnen Sie vor einer grösseren Änderung ein Issue. Halten Sie den Pull Request klein, beginnen Sie mit einem fehlschlagenden Test und führen Sie danach aus:
+
+```bash
+scripts/tdd_cycle.sh gate
+```
+
+Erforderlich sind `ci/lint`, `ci/test` und `ci/security`.
+
+### Repo-Grenze
+
+Öffentlicher Produktcode gehört hierher. Produktive Zugangsdaten, Bürgerdaten, Host-Inventar, Deployment-Runbooks und interne Planung bleiben ausserhalb dieses Repos. Das öffentliche Repo publiziert Container-Images, deployt aber nie die Produktion.
+
+### Sicherheit
+
+Committen Sie nie Zugangsdaten oder Personendaten. Nutzen Sie lokal `.env.example` und melden Sie Schwachstellen über den Security-Prozess des Repos.
+
+## License / Lizenz
 
 AGPL-3.0-or-later
