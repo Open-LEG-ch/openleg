@@ -8,6 +8,7 @@ billing line items, and communities. The connection seam is resolved via
 unchanged and ``database`` can re-export these functions for legacy callers.
 """
 
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -35,8 +36,10 @@ def save_billing_period(
                     (community_id, period_start, period_end, total_production_kwh, total_allocated_kwh,
                      total_surplus_kwh, total_network_discount_chf, distribution_model,
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
-                     timezone, status)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'draft')
+                     timezone, input_fingerprint, source_document_ids,
+                     reconciliation, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            %s, %s::jsonb, %s::jsonb, 'draft')
                     RETURNING id
                 """,
                     (
@@ -52,9 +55,12 @@ def save_billing_period(
                         summary.get("internal_price_chf_per_kwh"),
                         summary.get("grid_fee_chf_per_kwh"),
                         summary.get("timezone", "Europe/Zurich"),
+                        summary.get("input_fingerprint"),
+                        json.dumps(summary.get("source_document_ids", [])),
+                        json.dumps(summary.get("reconciliation", {})),
                     ),
                 )
-                period_id = cur.fetchone()[0]
+                period_id = cur.fetchone()["id"]
 
                 line_items = summary.get("line_items", [])
                 participants = {
@@ -114,7 +120,7 @@ def save_billing_period(
                 return period_id
     except Exception as e:
         logger.error(f"[DB] Error saving billing period: {e}")
-        return 0
+        raise
 
 
 def get_active_communities() -> list[dict]:
@@ -166,3 +172,44 @@ def get_billing_period(period_id: int) -> dict | None:
     except Exception as e:
         logger.error(f"[DB] Error getting billing period: {e}")
         return None
+
+
+def get_billing_period_for_window(
+    community_id: str, period_start, period_end
+) -> dict | None:
+    """Return the immutable period occupying a community window, if any."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, input_fingerprint FROM billing_periods
+            WHERE community_id = %s AND period_start = %s AND period_end = %s
+            """,
+            (community_id, period_start, period_end),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_billing_policy(community_id: str, period_start, period_end) -> dict | None:
+    """Return one tariff covering the complete billing period."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT t.id AS tariff_id, t.internal_price_chf_per_kwh,
+                   t.grid_fee_chf_per_kwh, t.network_level,
+                   CASE c.distribution_model
+                       WHEN 'simple' THEN 'einfach'
+                       ELSE c.distribution_model
+                   END AS distribution_model
+            FROM billing_tariffs t
+            JOIN communities c ON c.community_id = t.community_id
+            WHERE t.community_id = %s AND c.status = 'active'
+              AND t.effective_from <= %s
+              AND (t.effective_to IS NULL OR t.effective_to >= %s)
+            ORDER BY t.effective_from DESC
+            LIMIT 1
+            """,
+            (community_id, period_start, period_end),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None

@@ -447,11 +447,25 @@ def create_tables():
             """)
 
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS billing_tariffs (
+                    id SERIAL PRIMARY KEY,
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id),
+                    effective_from TIMESTAMPTZ NOT NULL,
+                    effective_to TIMESTAMPTZ,
+                    internal_price_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (internal_price_chf_per_kwh >= 0),
+                    grid_fee_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (grid_fee_chf_per_kwh >= 0),
+                    network_level VARCHAR(16) NOT NULL CHECK (network_level IN ('same', 'cross')),
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE(community_id, effective_from)
+                )
+            """)
+
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS billing_periods (
                     id SERIAL PRIMARY KEY,
                     community_id VARCHAR(64) NOT NULL,
-                    period_start TIMESTAMP NOT NULL,
-                    period_end TIMESTAMP NOT NULL,
+                    period_start TIMESTAMPTZ NOT NULL,
+                    period_end TIMESTAMPTZ NOT NULL,
                     total_production_kwh DECIMAL(12, 4) DEFAULT 0,
                     total_allocated_kwh DECIMAL(12, 4) DEFAULT 0,
                     total_surplus_kwh DECIMAL(12, 4) DEFAULT 0,
@@ -461,8 +475,12 @@ def create_tables():
                     internal_price_chf_per_kwh DECIMAL(12, 6),
                     grid_fee_chf_per_kwh DECIMAL(12, 6),
                     timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich',
+                    input_fingerprint VARCHAR(64),
+                    source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     status VARCHAR(32) DEFAULT 'draft',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(community_id, period_start, period_end)
                 )
             """)
 
@@ -488,7 +506,33 @@ def create_tables():
                 ALTER TABLE billing_periods
                     ADD COLUMN IF NOT EXISTS internal_price_chf_per_kwh DECIMAL(12, 6),
                     ADD COLUMN IF NOT EXISTS grid_fee_chf_per_kwh DECIMAL(12, 6),
-                    ADD COLUMN IF NOT EXISTS timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich'
+                    ADD COLUMN IF NOT EXISTS timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich',
+                    ADD COLUMN IF NOT EXISTS input_fingerprint VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb
+            """)
+
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'billing_periods'
+                          AND column_name = 'period_start'
+                          AND data_type = 'timestamp without time zone'
+                    ) THEN
+                        ALTER TABLE billing_periods
+                            ALTER COLUMN period_start TYPE TIMESTAMPTZ
+                                USING period_start AT TIME ZONE 'Europe/Zurich',
+                            ALTER COLUMN period_end TYPE TIMESTAMPTZ
+                                USING period_end AT TIME ZONE 'Europe/Zurich';
+                    END IF;
+                END $$
+            """)
+
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_period_community_window
+                ON billing_periods (community_id, period_start, period_end)
             """)
 
             cur.execute("""

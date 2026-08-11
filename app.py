@@ -24,6 +24,7 @@ from flask import (
 )
 from jinja2 import TemplateNotFound
 
+import billing_runner
 import dashboard as dashboard_module
 import data_enricher
 import database as db
@@ -1041,12 +1042,31 @@ def api_cron_process_billing():
     _require_cron_secret()
 
     communities = db.get_active_communities()
+    period_start, period_end = billing_runner.previous_complete_month()
+    processed = 0
+    already_processed = 0
+    failures = []
+    for community in communities:
+        community_id = community["community_id"]
+        try:
+            result = billing_runner.run_billing_period(
+                community_id, period_start, period_end
+            )
+        except billing_runner.BillingRunError as exc:
+            failures.append({"community_id": community_id, "error": str(exc)})
+            continue
+        if result["status"] == "created":
+            processed += 1
+        elif result["status"] == "already_processed":
+            already_processed += 1
     return jsonify(
         {
-            "activated": False,
-            "status": "not_activated",
-            "reason": "Billing period generation is not wired to this cron yet; see follow-up issue #261.",
-            "processed": 0,
+            "activated": True,
+            "status": "ok" if not failures else "partial_failure",
+            "processed": processed,
+            "already_processed": already_processed,
+            "failed": len(failures),
+            "failures": failures,
             "communities": len(communities),
         }
     )
