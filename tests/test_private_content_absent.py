@@ -113,8 +113,10 @@ def test_no_public_snapshot_markers_in_tracked_sources():
 
 def test_private_operator_surface_absent_from_modules():
     app_content = Path(PROJECT_ROOT, "app.py").read_text(encoding="utf-8")
+    admin_content = Path(PROJECT_ROOT, "admin.py").read_text(encoding="utf-8")
     for fragment in ("/admin/pipeline", "/admin/strategy", "insights_engine"):
         assert fragment not in app_content
+        assert fragment not in admin_content
 
     email_content = Path(PROJECT_ROOT, "email_automation.py").read_text(
         encoding="utf-8"

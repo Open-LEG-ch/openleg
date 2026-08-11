@@ -4,15 +4,30 @@ Security utilities for OpenLEG application
 Provides input validation, sanitization, and security helpers
 """
 
+import logging
 import re
 from urllib.parse import urlparse
 
 import bleach
 from email_validator import EmailNotValidError, validate_email
+from flask import request
+
+logger = logging.getLogger(__name__)
 
 # Allowed HTML tags for sanitization (none for our use case)
 ALLOWED_TAGS: list[str] = []
 ALLOWED_ATTRIBUTES: dict[str, list[str]] = {}
+
+
+def log_security_event(event_type, details, level="INFO"):
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    log_message = f"[SECURITY] {event_type} | IP: {ip} | {details}"
+    if level == "WARNING":
+        logger.warning(log_message)
+    elif level == "ERROR":
+        logger.error(log_message)
+    else:
+        logger.info(log_message)
 
 
 def sanitize_string(text, max_length=500):

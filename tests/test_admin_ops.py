@@ -202,7 +202,7 @@ class TestAdminOpsRoutes:
 
 class TestAdminOpsRouteExists:
     def test_admin_ops_routes_in_source(self):
-        with open(os.path.join(PROJECT_ROOT, "app.py")) as f:
+        with open(os.path.join(PROJECT_ROOT, "admin.py")) as f:
             content = f.read()
         assert "/admin/ops" in content
         assert "/api/internal/ops-snapshot" in content
