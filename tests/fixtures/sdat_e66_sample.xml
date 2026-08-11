@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Synthetic ebIX E66 sample. Structure mirrors a real VSE ValidatedMeteredData_16
+  delivery; every value is invented. Two metering points, one of which is both a
+  consumption and a production point. Three product channels per (point,
+  direction), three observations each: 9 blocks, 27 observations, 9 wide rows.
+  The interval anchor is 23:00Z (winter, CET) on purpose: 22:00Z is only correct
+  during CEST. One observation carries Condition 21 on a non-total channel, and
+  one row is off by exactly 0.001 kWh to sit inside the balance tolerance.
+-->
+<rsm:ValidatedMeteredData_16 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.strom.ch ValidatedMeteredData_1p6.xsd" xmlns:rsm="http://www.strom.ch">
+  <rsm:ValidatedMeteredData_HeaderInformation>
+    <rsm:HeaderVersion>1.0</rsm:HeaderVersion>
+    <rsm:Sender>
+      <rsm:ID>
+        <rsm:EICID schemeAgencyID="305">12X-TEST-SENDER-1</rsm:EICID>
+      </rsm:ID>
+      <rsm:Role>MDR</rsm:Role>
+    </rsm:Sender>
+    <rsm:Receiver>
+      <rsm:ID>
+        <rsm:EICID schemeAgencyID="305">12X-TEST-RECV-1</rsm:EICID>
+      </rsm:ID>
+      <rsm:Role>CEM</rsm:Role>
+    </rsm:Receiver>
+    <rsm:InstanceDocument>
+      <rsm:DictionaryAgencyID>260</rsm:DictionaryAgencyID>
+      <rsm:VersionID listAgencyID="260">2007B</rsm:VersionID>
+      <rsm:DocumentID>TESTDOC-1</rsm:DocumentID>
+      <rsm:DocumentType listAgencyID="260">
+        <rsm:ebIXCode>E66</rsm:ebIXCode>
+      </rsm:DocumentType>
+      <rsm:Creation>2026-01-06T04:30:00Z</rsm:Creation>
+      <rsm:Status>9</rsm:Status>
+    </rsm:InstanceDocument>
+    <rsm:BusinessScopeProcess>
+      <rsm:BusinessReasonType codeListAgency="260" codeListID="VSE">
+        <rsm:VSENationalCode>C40</rsm:VSENationalCode>
+      </rsm:BusinessReasonType>
+      <rsm:BusinessDomainType listAgencyID="260">E02</rsm:BusinessDomainType>
+      <rsm:BusinessSectorType>23</rsm:BusinessSectorType>
+      <rsm:ReportPeriod>
+        <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+        <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+      </rsm:ReportPeriod>
+      <rsm:BusinessService>
+        <rsm:ServiceTransaction isIntelligibleCheckRequired="true"></rsm:ServiceTransaction>
+      </rsm:BusinessService>
+    </rsm:BusinessScopeProcess>
+  </rsm:ValidatedMeteredData_HeaderInformation>
+
+  <!-- Point 1, consumption, total channel -->
+  <rsm:MeteringData>
+    <rsm:DocumentID>TESTDOC-1@1</rsm:DocumentID>
+    <rsm:Interval>
+      <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+      <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+    </rsm:Interval>
+    <rsm:Resolution>
+      <rsm:Resolution>15</rsm:Resolution>
+      <rsm:Unit>MIN</rsm:Unit>
+    </rsm:Resolution>
+    <rsm:ConsumptionMeteringPoint>
+      <rsm:VSENationalID schemeID="VSE" schemeAgencyID="260">CH000000000000000000000000000001</rsm:VSENationalID>
+    </rsm:ConsumptionMeteringPoint>
+    <rsm:Product>
+      <rsm:ID>
+        <rsm:ebIXCode schemeAgencyID="9">8716867000030</rsm:ebIXCode>
+      </rsm:ID>
+      <rsm:MeasureUnit>KWH</rsm:MeasureUnit>
+    </rsm:Product>
+    <rsm:Community>
+      <rsm:CommunityID>TEST-COMMUNITY</rsm:CommunityID>
+      <rsm:CommunityType codeListAgency="260">
+        <rsm:VSENationalCode>CT01</rsm:VSENationalCode>
+      </rsm:CommunityType>
+    </rsm:Community>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.100</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>2</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.200</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>3</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.300</rsm:Volume>
+    </rsm:Observation>
+  </rsm:MeteringData>
+
+  <!-- Point 1, consumption, grid channel -->
+  <rsm:MeteringData>
+    <rsm:DocumentID>TESTDOC-1@2</rsm:DocumentID>
+    <rsm:Interval>
+      <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+      <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+    </rsm:Interval>
+    <rsm:Resolution>
+      <rsm:Resolution>15</rsm:Resolution>
+      <rsm:Unit>MIN</rsm:Unit>
+    </rsm:Resolution>
+    <rsm:ConsumptionMeteringPoint>
+      <rsm:VSENationalID schemeID="VSE" schemeAgencyID="260">CH000000000000000000000000000001</rsm:VSENationalID>
+    </rsm:ConsumptionMeteringPoint>
+    <rsm:Product>
+      <rsm:ID>
+        <rsm:VSENationalCode schemeAgencyID="260">2404050010124</rsm:VSENationalCode>
+      </rsm:ID>
+      <rsm:MeasureUnit>KWH</rsm:MeasureUnit>
+    </rsm:Product>
+    <rsm:Community>
+      <rsm:CommunityID>TEST-COMMUNITY</rsm:CommunityID>
+      <rsm:CommunityType codeListAgency="260">
+        <rsm:VSENationalCode>CT01</rsm:VSENationalCode>
+      </rsm:CommunityType>
+    </rsm:Community>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.060</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>2</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.140</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>3</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.180</rsm:Volume>
+    </rsm:Observation>
+  </rsm:MeteringData>
+
+  <!-- Point 1, consumption, community channel -->
+  <rsm:MeteringData>
+    <rsm:DocumentID>TESTDOC-1@3</rsm:DocumentID>
+    <rsm:Interval>
+      <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+      <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+    </rsm:Interval>
+    <rsm:Resolution>
+      <rsm:Resolution>15</rsm:Resolution>
+      <rsm:Unit>MIN</rsm:Unit>
+    </rsm:Resolution>
+    <rsm:ConsumptionMeteringPoint>
+      <rsm:VSENationalID schemeID="VSE" schemeAgencyID="260">CH000000000000000000000000000001</rsm:VSENationalID>
+    </rsm:ConsumptionMeteringPoint>
+    <rsm:Product>
+      <rsm:ID>
+        <rsm:VSENationalCode schemeAgencyID="260">2404050010123</rsm:VSENationalCode>
+      </rsm:ID>
+      <rsm:MeasureUnit>KWH</rsm:MeasureUnit>
+    </rsm:Product>
+    <rsm:Community>
+      <rsm:CommunityID>TEST-COMMUNITY</rsm:CommunityID>
+      <rsm:CommunityType codeListAgency="260">
+        <rsm:VSENationalCode>CT01</rsm:VSENationalCode>
+      </rsm:CommunityType>
+    </rsm:Community>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.040</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>2</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.060</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>3</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.120</rsm:Volume>
+    </rsm:Observation>
+  </rsm:MeteringData>
+
+  <!-- Point 2, consumption, total channel -->
+  <rsm:MeteringData>
+    <rsm:DocumentID>TESTDOC-1@4</rsm:DocumentID>
+    <rsm:Interval>
+      <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+      <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+    </rsm:Interval>
+    <rsm:Resolution>
+      <rsm:Resolution>15</rsm:Resolution>
+      <rsm:Unit>MIN</rsm:Unit>
+    </rsm:Resolution>
+    <rsm:ConsumptionMeteringPoint>
+      <rsm:VSENationalID schemeID="VSE" schemeAgencyID="260">CH000000000000000000000000000002</rsm:VSENationalID>
+    </rsm:ConsumptionMeteringPoint>
+    <rsm:Product>
+      <rsm:ID>
+        <rsm:ebIXCode schemeAgencyID="9">8716867000030</rsm:ebIXCode>
+      </rsm:ID>
+      <rsm:MeasureUnit>KWH</rsm:MeasureUnit>
+    </rsm:Product>
+    <rsm:Community>
+      <rsm:CommunityID>TEST-COMMUNITY</rsm:CommunityID>
+      <rsm:CommunityType codeListAgency="260">
+        <rsm:VSENationalCode>CT01</rsm:VSENationalCode>
+      </rsm:CommunityType>
+    </rsm:Community>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.500</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>2</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.400</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>3</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.250</rsm:Volume>
+    </rsm:Observation>
+  </rsm:MeteringData>
+
+  <!-- Point 2, consumption, grid channel -->
+  <rsm:MeteringData>
+    <rsm:DocumentID>TESTDOC-1@5</rsm:DocumentID>
+    <rsm:Interval>
+      <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+      <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+    </rsm:Interval>
+    <rsm:Resolution>
+      <rsm:Resolution>15</rsm:Resolution>
+      <rsm:Unit>MIN</rsm:Unit>
+    </rsm:Resolution>
+    <rsm:ConsumptionMeteringPoint>
+      <rsm:VSENationalID schemeID="VSE" schemeAgencyID="260">CH000000000000000000000000000002</rsm:VSENationalID>
+    </rsm:ConsumptionMeteringPoint>
+    <rsm:Product>
+      <rsm:ID>
+        <rsm:VSENationalCode schemeAgencyID="260">2404050010124</rsm:VSENationalCode>
+      </rsm:ID>
+      <rsm:MeasureUnit>KWH</rsm:MeasureUnit>
+    </rsm:Product>
+    <rsm:Community>
+      <rsm:CommunityID>TEST-COMMUNITY</rsm:CommunityID>
+      <rsm:CommunityType codeListAgency="260">
+        <rsm:VSENationalCode>CT01</rsm:VSENationalCode>
+      </rsm:CommunityType>
+    </rsm:Community>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.300</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>2</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.200</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>3</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.150</rsm:Volume>
+    </rsm:Observation>
+  </rsm:MeteringData>
+
+  <!-- Point 2, consumption, community channel. Sequence 3 makes the row sum to
+       0.251 against a total of 0.250: inside the balance tolerance. -->
+  <rsm:MeteringData>
+    <rsm:DocumentID>TESTDOC-1@6</rsm:DocumentID>
+    <rsm:Interval>
+      <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+      <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+    </rsm:Interval>
+    <rsm:Resolution>
+      <rsm:Resolution>15</rsm:Resolution>
+      <rsm:Unit>MIN</rsm:Unit>
+    </rsm:Resolution>
+    <rsm:ConsumptionMeteringPoint>
+      <rsm:VSENationalID schemeID="VSE" schemeAgencyID="260">CH000000000000000000000000000002</rsm:VSENationalID>
+    </rsm:ConsumptionMeteringPoint>
+    <rsm:Product>
+      <rsm:ID>
+        <rsm:VSENationalCode schemeAgencyID="260">2404050010123</rsm:VSENationalCode>
+      </rsm:ID>
+      <rsm:MeasureUnit>KWH</rsm:MeasureUnit>
+    </rsm:Product>
+    <rsm:Community>
+      <rsm:CommunityID>TEST-COMMUNITY</rsm:CommunityID>
+      <rsm:CommunityType codeListAgency="260">
+        <rsm:VSENationalCode>CT01</rsm:VSENationalCode>
+      </rsm:CommunityType>
+    </rsm:Community>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.200</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>2</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.200</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>3</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.101</rsm:Volume>
+    </rsm:Observation>
+  </rsm:MeteringData>
+
+  <!-- Point 2 again, this time as a production point -->
+  <rsm:MeteringData>
+    <rsm:DocumentID>TESTDOC-1@7</rsm:DocumentID>
+    <rsm:Interval>
+      <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+      <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+    </rsm:Interval>
+    <rsm:Resolution>
+      <rsm:Resolution>15</rsm:Resolution>
+      <rsm:Unit>MIN</rsm:Unit>
+    </rsm:Resolution>
+    <rsm:ProductionMeteringPoint>
+      <rsm:VSENationalID schemeID="VSE" schemeAgencyID="260">CH000000000000000000000000000002</rsm:VSENationalID>
+    </rsm:ProductionMeteringPoint>
+    <rsm:Product>
+      <rsm:ID>
+        <rsm:ebIXCode schemeAgencyID="9">8716867000030</rsm:ebIXCode>
+      </rsm:ID>
+      <rsm:MeasureUnit>KWH</rsm:MeasureUnit>
+    </rsm:Product>
+    <rsm:Community>
+      <rsm:CommunityID>TEST-COMMUNITY</rsm:CommunityID>
+      <rsm:CommunityType codeListAgency="260">
+        <rsm:VSENationalCode>CT01</rsm:VSENationalCode>
+      </rsm:CommunityType>
+    </rsm:Community>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>1.000</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>2</rsm:Sequence></rsm:Position>
+      <rsm:Volume>2.000</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>3</rsm:Sequence></rsm:Position>
+      <rsm:Volume>3.000</rsm:Volume>
+    </rsm:Observation>
+  </rsm:MeteringData>
+
+  <!-- Point 2, production, grid channel. Sequence 3 carries Condition 21, on a
+       channel other than the total, so the roll-up onto the wide row is tested. -->
+  <rsm:MeteringData>
+    <rsm:DocumentID>TESTDOC-1@8</rsm:DocumentID>
+    <rsm:Interval>
+      <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+      <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+    </rsm:Interval>
+    <rsm:Resolution>
+      <rsm:Resolution>15</rsm:Resolution>
+      <rsm:Unit>MIN</rsm:Unit>
+    </rsm:Resolution>
+    <rsm:ProductionMeteringPoint>
+      <rsm:VSENationalID schemeID="VSE" schemeAgencyID="260">CH000000000000000000000000000002</rsm:VSENationalID>
+    </rsm:ProductionMeteringPoint>
+    <rsm:Product>
+      <rsm:ID>
+        <rsm:VSENationalCode schemeAgencyID="260">2404050010124</rsm:VSENationalCode>
+      </rsm:ID>
+      <rsm:MeasureUnit>KWH</rsm:MeasureUnit>
+    </rsm:Product>
+    <rsm:Community>
+      <rsm:CommunityID>TEST-COMMUNITY</rsm:CommunityID>
+      <rsm:CommunityType codeListAgency="260">
+        <rsm:VSENationalCode>CT01</rsm:VSENationalCode>
+      </rsm:CommunityType>
+    </rsm:Community>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.800</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>2</rsm:Sequence></rsm:Position>
+      <rsm:Volume>1.500</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>3</rsm:Sequence></rsm:Position>
+      <rsm:Volume>2.400</rsm:Volume>
+      <rsm:Condition>21</rsm:Condition>
+    </rsm:Observation>
+  </rsm:MeteringData>
+
+  <!-- Point 2, production, community channel -->
+  <rsm:MeteringData>
+    <rsm:DocumentID>TESTDOC-1@9</rsm:DocumentID>
+    <rsm:Interval>
+      <rsm:StartDateTime>2026-01-05T23:00:00Z</rsm:StartDateTime>
+      <rsm:EndDateTime>2026-01-05T23:45:00Z</rsm:EndDateTime>
+    </rsm:Interval>
+    <rsm:Resolution>
+      <rsm:Resolution>15</rsm:Resolution>
+      <rsm:Unit>MIN</rsm:Unit>
+    </rsm:Resolution>
+    <rsm:ProductionMeteringPoint>
+      <rsm:VSENationalID schemeID="VSE" schemeAgencyID="260">CH000000000000000000000000000002</rsm:VSENationalID>
+    </rsm:ProductionMeteringPoint>
+    <rsm:Product>
+      <rsm:ID>
+        <rsm:VSENationalCode schemeAgencyID="260">2404050010123</rsm:VSENationalCode>
+      </rsm:ID>
+      <rsm:MeasureUnit>KWH</rsm:MeasureUnit>
+    </rsm:Product>
+    <rsm:Community>
+      <rsm:CommunityID>TEST-COMMUNITY</rsm:CommunityID>
+      <rsm:CommunityType codeListAgency="260">
+        <rsm:VSENationalCode>CT01</rsm:VSENationalCode>
+      </rsm:CommunityType>
+    </rsm:Community>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.200</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>2</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.500</rsm:Volume>
+    </rsm:Observation>
+    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>3</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.600</rsm:Volume>
+    </rsm:Observation>
+  </rsm:MeteringData>
+</rsm:ValidatedMeteredData_16>

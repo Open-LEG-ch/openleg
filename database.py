@@ -1167,6 +1167,18 @@ from store.meter import (  # noqa: F401
     get_meter_readings,
     save_meter_readings,
 )
+from store.metering import (  # noqa: F401
+    get_community_metering_points,
+    get_metering_point,
+    get_metering_point_reading_stats,
+    get_metering_point_readings,
+    get_metering_points,
+    get_period_readings,
+    get_sdat_import,
+    record_sdat_import,
+    save_metering_point_readings,
+    upsert_metering_points,
+)
 from store.profile import (  # noqa: F401
     get_all_municipality_profile_bfs_numbers,
     get_all_municipality_profiles,

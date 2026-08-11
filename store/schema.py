@@ -800,4 +800,76 @@ def create_tables():
                 "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_created ON ops_snapshots(created_at DESC)"
             )
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS metering_points (
+                    metering_point_id VARCHAR(64) PRIMARY KEY,
+                    vnb_community_id VARCHAR(64),
+                    community_id VARCHAR(64) REFERENCES communities(community_id)
+                        ON DELETE SET NULL,
+                    building_id VARCHAR(64) REFERENCES buildings(building_id)
+                        ON DELETE SET NULL,
+                    alias VARCHAR(128),
+                    address TEXT,
+                    active BOOLEAN DEFAULT TRUE,
+                    first_seen_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_metering_points_building ON metering_points(building_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_metering_points_community ON metering_points(community_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_metering_points_vnb_community ON metering_points(vnb_community_id)"
+            )
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS metering_point_readings (
+                    id BIGSERIAL PRIMARY KEY,
+                    metering_point_id VARCHAR(64) NOT NULL
+                        REFERENCES metering_points(metering_point_id)
+                        ON DELETE CASCADE,
+                    direction VARCHAR(16) NOT NULL
+                        CHECK (direction IN ('consumption', 'production')),
+                    measured_at TIMESTAMPTZ NOT NULL,
+                    resolution_minutes SMALLINT NOT NULL DEFAULT 15,
+                    total_kwh NUMERIC(12, 4),
+                    grid_kwh NUMERIC(12, 4),
+                    community_kwh NUMERIC(12, 4),
+                    condition_code VARCHAR(8),
+                    source_document_id VARCHAR(64),
+                    imported_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE (metering_point_id, direction, measured_at)
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mpr_measured_at ON metering_point_readings(measured_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mpr_document ON metering_point_readings(source_document_id)"
+            )
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS sdat_imports (
+                    id SERIAL PRIMARY KEY,
+                    document_id VARCHAR(64) NOT NULL UNIQUE,
+                    doc_type VARCHAR(8),
+                    file_name VARCHAR(255),
+                    vnb_community_id VARCHAR(64),
+                    document_created_at TIMESTAMPTZ,
+                    period_start TIMESTAMPTZ,
+                    period_end TIMESTAMPTZ,
+                    block_count INTEGER DEFAULT 0,
+                    row_count INTEGER DEFAULT 0,
+                    new_count INTEGER DEFAULT 0,
+                    corrected_count INTEGER DEFAULT 0,
+                    imported_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_sdat_imports_period ON sdat_imports(period_start)"
+            )
+
             logger.info("[DB] Tables and indexes created successfully")
