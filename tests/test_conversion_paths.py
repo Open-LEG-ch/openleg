@@ -44,6 +44,7 @@ def full_app_module():
         import app as app_module
 
         app_module = importlib.reload(app_module)
+        app_module.web = app_module.create_app(load_environment=False)
         yield app_module
 
 
@@ -164,7 +165,7 @@ class TestMunicipalitySearch:
 
 class TestRateLimitResponse:
     def test_429_returns_german_json(self, full_app_module):
-        app = full_app_module.app
+        app = full_app_module.web
         handler = app.error_handler_spec[None].get(429)
         assert handler, (
             "no 429 errorhandler registered; rate-limited visitors get an English HTML page"
@@ -229,7 +230,7 @@ class TestSuggestAddressesOutage:
     """
 
     def test_upstream_failure_returns_503_json(self, full_app_module):
-        client = full_app_module.app.test_client()
+        client = full_app_module.web.test_client()
         with patch.object(
             full_app_module.data_enricher, "get_address_suggestions", return_value=None
         ):
@@ -239,7 +240,7 @@ class TestSuggestAddressesOutage:
         assert "verfügbar" in resp.get_json()["error"]
 
     def test_genuinely_empty_result_stays_200(self, full_app_module):
-        client = full_app_module.app.test_client()
+        client = full_app_module.web.test_client()
         with patch.object(
             full_app_module.data_enricher, "get_address_suggestions", return_value=[]
         ):

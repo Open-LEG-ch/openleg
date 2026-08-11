@@ -83,10 +83,11 @@ def founder_page():
         import app as app_module
 
         app_module = importlib.reload(app_module)
-        response = app_module.app.test_client().get("/leg-gruenden")
+        application = app_module.create_app(load_environment=False)
+        response = application.test_client().get("/leg-gruenden")
         parser = FounderPageParser()
         parser.feed(response.get_data(as_text=True))
-        yield app_module.app, response, parser
+        yield application, response, parser
 
 
 def _jsonld(parser, schema_type):

@@ -5,8 +5,6 @@ import os
 import re
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCREENSHOT_DIR = os.path.join(PROJECT_ROOT, "static", "images", "screenshots")
 LANDING_DIR = os.path.join(PROJECT_ROOT, "static", "images", "landing")
@@ -28,10 +26,9 @@ def _index_html():
         patch("database._connection_pool", MagicMock()),
         patch("database.get_stats", return_value={"total_buildings": 7}),
     ):
-        try:
-            from app import app
-        except Exception:
-            pytest.skip("App import requires live DB")
+        from app import create_app
+
+        app = create_app(load_environment=False)
         client = app.test_client()
         response = client.get("/")
         assert response.status_code == 200

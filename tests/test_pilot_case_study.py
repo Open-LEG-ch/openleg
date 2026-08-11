@@ -178,6 +178,7 @@ def full_app_module():
         import app as app_module
 
         app_module = importlib.reload(app_module)
+        app_module.web = app_module.create_app(load_environment=False)
         yield app_module
 
 
@@ -187,7 +188,7 @@ def test_sitemap_contains_case_study(full_app_module, monkeypatch):
         "get_all_municipality_profile_bfs_numbers",
         lambda: [4021],
     )
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
     xml = client.get("/sitemap.xml").data.decode("utf-8", errors="ignore")
     assert "/pilotgemeinde/baden" in xml
 
@@ -211,7 +212,7 @@ def test_pilot_uses_latest_tariffs_not_hardcoded_year(monkeypatch):
 
 
 def test_fuer_bewohner_links_to_case_study(full_app_module):
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
     resp = client.get("/fuer-bewohner")
     assert resp.status_code == 200
     html = resp.data.decode("utf-8", errors="ignore")

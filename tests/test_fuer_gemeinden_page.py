@@ -2,8 +2,6 @@
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 
 class TestFuerGemeindenPage:
     def test_page_renders(self):
@@ -20,11 +18,9 @@ class TestFuerGemeindenPage:
             patch("database.init_db", return_value=True),
             patch("database._connection_pool", MagicMock()),
         ):
-            try:
-                from app import app
-            except Exception:
-                pytest.skip("App import requires live DB")
+            from app import create_app
 
+            app = create_app(load_environment=False)
             client = app.test_client()
             hooks = list(app.before_request_funcs.get(None, []))
             app.before_request_funcs[None] = [
@@ -61,11 +57,9 @@ class TestFuerGemeindenPage:
             patch("database.init_db", return_value=True),
             patch("database._connection_pool", MagicMock()),
         ):
-            try:
-                from app import app
-            except Exception:
-                pytest.skip("App import requires live DB")
+            from app import create_app
 
+            app = create_app(load_environment=False)
             client = app.test_client()
             hooks = list(app.before_request_funcs.get(None, []))
             app.before_request_funcs[None] = [

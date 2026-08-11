@@ -364,7 +364,7 @@ def test_cron_verify_registry_entries_requires_secret(monkeypatch):
         import app as app_module
 
         app_module = importlib.reload(app_module)
-        client = app_module.app.test_client()
+        client = app_module.create_app(load_environment=False).test_client()
         resp = client.post("/api/cron/verify-registry-entries")
         assert resp.status_code == 403
 
@@ -433,7 +433,7 @@ def test_cron_verify_registry_entries_calls_nudge_job(monkeypatch):
             "leg_registry.send_verification_nudges",
             return_value={"candidates": 0, "sent": 0, "errors": 0},
         ) as mock_job:
-            client = app_module.app.test_client()
+            client = app_module.create_app(load_environment=False).test_client()
             resp = client.post(
                 "/api/cron/verify-registry-entries",
                 headers={"X-Cron-Secret": "test-cron-secret"},

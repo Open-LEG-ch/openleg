@@ -23,7 +23,6 @@ from flask import (
     send_from_directory,
 )
 from jinja2 import TemplateNotFound
-from werkzeug.local import LocalProxy
 
 import dashboard as dashboard_module
 import data_enricher
@@ -1172,20 +1171,6 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         logger.info("Security features enabled")
 
     return application
-
-
-_compatibility_app = None
-
-
-def _get_compatibility_app():
-    # ponytail: lazy legacy export; remove when callers use create_app or wsgi:app.
-    global _compatibility_app
-    if _compatibility_app is None:
-        _compatibility_app = create_app()
-    return _compatibility_app
-
-
-app = LocalProxy(_get_compatibility_app)
 
 
 if __name__ == "__main__":

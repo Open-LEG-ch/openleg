@@ -28,17 +28,7 @@ def app_module():
         app = importlib.reload(app)
         if app.limiter:
             app.limiter.enabled = False
-        hooks = list(app.app.before_request_funcs.get(None, []))
-        app.app.before_request_funcs[None] = [
-            hook
-            for hook in hooks
-            if not (
-                getattr(hook, "__module__", "").startswith("flask_limiter")
-                or getattr(hook, "__name__", "") == "_check_request_limit"
-            )
-        ]
         yield app
-        app.app.before_request_funcs[None] = hooks
 
 
 @pytest.fixture
@@ -106,7 +96,8 @@ def registration(app_module, monkeypatch):
         app_module.email_automation, "schedule_sequence_for_user", MagicMock()
     )
 
-    return app_module.app.test_client(), db, threads
+    application = app_module.create_app(load_environment=False)
+    return application.test_client(), db, threads
 
 
 def valid_data(**updates):

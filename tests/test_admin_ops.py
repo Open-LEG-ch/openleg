@@ -32,7 +32,9 @@ class TestAdminOpsRoutes:
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.get("/admin/ops")
@@ -74,7 +76,9 @@ class TestAdminOpsRoutes:
             patch("database.get_ops_snapshots", return_value=snapshots),
             patch("database.get_lea_reports", return_value=[]),
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.get(
@@ -102,7 +106,9 @@ class TestAdminOpsRoutes:
             patch("database.is_db_available", return_value=True),
             patch("database.save_ops_snapshot", return_value=True),
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.post(
@@ -132,7 +138,9 @@ class TestAdminOpsRoutes:
             patch("database.is_db_available", return_value=True),
             patch("database.save_ops_snapshot", return_value=True) as save_snapshot,
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.post(
@@ -159,7 +167,9 @@ class TestAdminOpsRoutes:
             patch("database.is_db_available", return_value=True),
             patch("database.save_ops_snapshot", return_value=True) as save_snapshot,
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.post(
@@ -223,7 +233,9 @@ class TestAdminRegistryModeration:
             patch("database.list_registry_entries", return_value=[{"id": 1}]),
             patch("database.get_registry_pending_count", return_value=1),
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.get(
@@ -252,7 +264,9 @@ class TestAdminRegistryModeration:
                 "database.update_registry_entry_moderation", return_value=True
             ) as mock_update,
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.post("/admin/registry/1/approve")
@@ -276,7 +290,9 @@ class TestAdminRegistryModeration:
                 "database.update_registry_entry_moderation", return_value=True
             ) as mock_update,
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.post(
@@ -303,7 +319,9 @@ class TestAdminRegistryModeration:
                 "database.update_registry_entry_moderation", return_value=True
             ) as mock_update,
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.post(
@@ -354,7 +372,9 @@ class TestAdminRegistryModeration:
                 return_value=[{"operator_name": "Regionalwerke Baden AG"}],
             ),
         ):
-            from app import app
+            from app import create_app
+
+            app = create_app(load_environment=False)
 
             client = app.test_client()
             resp = client.get(

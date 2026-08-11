@@ -32,6 +32,7 @@ def full_app_module():
         import app as app_module
 
         app_module = importlib.reload(app_module)
+        app_module.web = app_module.create_app(load_environment=False)
         app_module.db.get_stats = lambda **_kwargs: {"total_buildings": 0}
         yield app_module
 
@@ -43,14 +44,14 @@ def _html(client, route):
 
 
 def test_install_command_renders_verbatim_on_self_host_and_homepage(full_app_module):
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
 
     for route in ("/self-host", "/"):
         assert INSTALL_COMMAND in _html(client, route)
 
 
 def test_install_endpoint_serves_script_unchanged(full_app_module):
-    response = full_app_module.app.test_client().get("/install.sh")
+    response = full_app_module.web.test_client().get("/install.sh")
 
     assert response.status_code == 200
     assert response.data == (ROOT / "scripts" / "install.sh").read_bytes()
@@ -58,7 +59,7 @@ def test_install_endpoint_serves_script_unchanged(full_app_module):
 
 @pytest.mark.parametrize("route", PATHWAY_ROUTES)
 def test_pathway_routes_state_agpl_and_data_ownership(full_app_module, route):
-    html = _html(full_app_module.app.test_client(), route)
+    html = _html(full_app_module.web.test_client(), route)
 
     assert "AGPL-3.0-or-later" in html
     assert 'href="https://github.com/Open-LEG-ch/openleg/blob/main/LICENSE"' in html
@@ -71,8 +72,8 @@ def test_pathway_routes_state_agpl_and_data_ownership(full_app_module, route):
 def test_pathway_routes_use_municipality_operating_model_vocabulary(
     full_app_module, route
 ):
-    municipality_html = _html(full_app_module.app.test_client(), "/fuer-gemeinden")
-    pathway_html = _html(full_app_module.app.test_client(), route)
+    municipality_html = _html(full_app_module.web.test_client(), "/fuer-gemeinden")
+    pathway_html = _html(full_app_module.web.test_client(), route)
 
     for model in OPERATING_MODELS:
         assert model in municipality_html
@@ -95,11 +96,11 @@ def test_documented_install_paths_are_backed_by_repository_files():
 
 @pytest.mark.parametrize("route", PATHWAY_ROUTES)
 def test_pathway_routes_return_200(full_app_module, route):
-    assert full_app_module.app.test_client().get(route).status_code == 200
+    assert full_app_module.web.test_client().get(route).status_code == 200
 
 
 def test_open_source_gives_technical_users_concrete_entry_points(full_app_module):
-    html = _html(full_app_module.app.test_client(), "/open-source")
+    html = _html(full_app_module.web.test_client(), "/open-source")
 
     for entry_point in (
         "app.py",

@@ -50,15 +50,16 @@ def full_app_module():
         import app as app_module
 
         app_module = importlib.reload(app_module)
-        hooks = _disable_rate_limit_hooks(app_module.app)
+        app_module.web = app_module.create_app(load_environment=False)
+        hooks = _disable_rate_limit_hooks(app_module.web)
         try:
             yield app_module
         finally:
-            app_module.app.before_request_funcs[None] = hooks
+            app_module.web.before_request_funcs[None] = hooks
 
 
 def test_robots_allows_api_docs_but_blocks_api(full_app_module):
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
     resp = client.get("/robots.txt")
     assert resp.status_code == 200
     body = resp.data.decode("utf-8", errors="ignore")
@@ -67,7 +68,7 @@ def test_robots_allows_api_docs_but_blocks_api(full_app_module):
 
 
 def test_security_policy_allows_google_analytics_region_collect(full_app_module):
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
     resp = client.get("/robots.txt")
 
     csp = resp.headers.get("Content-Security-Policy", "")
@@ -80,7 +81,7 @@ def test_security_policy_allows_google_analytics_region_collect(full_app_module)
 
 
 def test_security_policy_allows_brand_font_assets(full_app_module):
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
     resp = client.get("/dashboard/demo")
 
     csp = resp.headers.get("Content-Security-Policy", "")
@@ -99,7 +100,7 @@ def test_security_policy_allows_brand_font_assets(full_app_module):
 
 
 def test_root_favicon_serves_static_icon(full_app_module):
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
 
     resp = client.get("/favicon.ico")
 
@@ -121,7 +122,7 @@ def test_sitemap_contains_directory_docs_and_profile_urls(full_app_module, monke
         "get_all_municipality_profile_bfs_numbers",
         lambda: [261, 247],
     )
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
 
     resp = client.get("/sitemap.xml")
     assert resp.status_code == 200
@@ -137,7 +138,7 @@ def test_sitemap_contains_directory_docs_and_profile_urls(full_app_module, monke
 
 
 def test_open_source_page_explains_codebase(full_app_module):
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
 
     resp = client.get("/open-source")
     assert resp.status_code == 200
@@ -167,7 +168,7 @@ def test_open_source_page_explains_codebase(full_app_module):
     ],
 )
 def test_public_guides_have_share_metadata(full_app_module, route, headline):
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
 
     resp = client.get(route)
 
@@ -202,7 +203,7 @@ def test_backfill_elcom_invalid_secret_returns_403_and_no_mutation(
         "save_elcom_tariffs",
         lambda rows: called.__setitem__("save", called["save"] + 1),
     )
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
 
     resp = client.post("/api/cron/backfill-elcom")
     assert resp.status_code == 403
@@ -234,7 +235,7 @@ def test_backfill_elcom_processes_batch_and_returns_summary(
     monkeypatch.setattr(
         full_app_module.db, "save_elcom_tariffs", lambda rows: len(rows)
     )
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
 
     resp = client.post(
         "/api/cron/backfill-elcom?limit=2&year=2026",
