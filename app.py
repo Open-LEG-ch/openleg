@@ -1417,11 +1417,15 @@ def api_cron_process_billing():
     _require_cron_secret()
 
     communities = db.get_active_communities()
-    processed = 0
-    for community in communities:
-        # Billing processing runs per active community.
-        processed += 1
-    return jsonify({"processed": processed, "communities": len(communities)})
+    return jsonify(
+        {
+            "activated": False,
+            "status": "not_activated",
+            "reason": "Billing period generation is not wired to this cron yet; see follow-up issue #261.",
+            "processed": 0,
+            "communities": len(communities),
+        }
+    )
 
 
 @app.route("/api/cron/verify-registry-entries", methods=["POST"])
