@@ -1,17 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Contract: the billing cron reports only work it actually performs.
+"""Contract: billing cron counts only newly persisted draft periods."""
 
-Billing period generation is implemented in ``billing_engine`` but not yet
-wired to a scheduled run (see the deliberately out of scope list in #262).
-Until it is, ``/api/cron/process-billing`` must say so instead of counting
-active communities as if they had been billed.
-"""
-
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import pytest
 
 import app as app_module
+import billing_runner
 import database
 
 CRON_SECRET = "test-cron-secret"
@@ -39,29 +34,65 @@ def _post_process_billing(application):
 
 
 class TestBillingCronHonesty:
-    def test_reports_zero_processed_while_billing_runs_are_not_wired(
-        self, app_with_cron_secret
-    ):
+    def test_counts_only_newly_persisted_periods(self, app_with_cron_secret):
         communities = [
             {"community_id": "c1"},
             {"community_id": "c2"},
-            {"community_id": "c3"},
         ]
-        with patch.object(database, "get_active_communities", return_value=communities):
+        with (
+            patch.object(database, "get_active_communities", return_value=communities),
+            patch.object(
+                billing_runner,
+                "previous_complete_month",
+                return_value=("start", "end"),
+            ),
+            patch.object(
+                billing_runner,
+                "run_billing_period",
+                side_effect=(
+                    {"status": "created", "period_id": 1},
+                    {"status": "already_processed", "period_id": 2},
+                ),
+            ) as run,
+        ):
             response = _post_process_billing(app_with_cron_secret)
 
         assert response.status_code == 200
         payload = response.get_json()
-        assert payload["communities"] == 3
-        assert payload["processed"] == 0, (
-            "the cron must not count communities as processed billing runs"
-        )
+        assert payload == {
+            "activated": True,
+            "status": "ok",
+            "communities": 2,
+            "processed": 1,
+            "already_processed": 1,
+            "failed": 0,
+            "failures": [],
+        }
+        assert run.call_args_list == [
+            call("c1", "start", "end"),
+            call("c2", "start", "end"),
+        ]
 
-    def test_states_that_billing_runs_are_not_activated(self, app_with_cron_secret):
-        with patch.object(database, "get_active_communities", return_value=[]):
+    def test_persistence_failure_is_not_counted(self, app_with_cron_secret):
+        with (
+            patch.object(
+                database,
+                "get_active_communities",
+                return_value=[{"community_id": "c1"}],
+            ),
+            patch.object(
+                billing_runner,
+                "previous_complete_month",
+                return_value=("start", "end"),
+            ),
+            patch.object(
+                billing_runner,
+                "run_billing_period",
+                side_effect=billing_runner.BillingRunError("not persisted"),
+            ),
+        ):
             response = _post_process_billing(app_with_cron_secret)
 
         payload = response.get_json()
-        assert payload["activated"] is False
-        assert payload["status"] == "not_activated"
-        assert payload["reason"], "the response explains why nothing ran"
+        assert payload["processed"] == 0
+        assert payload["failed"] == 1

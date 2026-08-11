@@ -82,9 +82,9 @@ constrained to `consumption` or `production` and is part of the readings key,
 because one physical point can be both at the same instant.
 
 Each reading carries three channels: `total_kwh`, plus the VNB's own split into
-`grid_kwh` and `community_kwh`. The billing engine does not use that split; it
-reallocates from totals. `billing_readings.reconcile_with_vnb` reports the
-difference between the two allocations, which is small but not zero.
+`grid_kwh` and `community_kwh`. The VNB split is authoritative. The billing
+engine reallocates totals only as an audit calculation. A missing VNB split or
+any aggregate or participant-level difference blocks the draft period.
 
 ### Timezone semantics
 
@@ -108,6 +108,23 @@ it found, rather than the first, so one pass fixes a period:
 
 A member with no production meter is not a gap. That participant simply has a
 zero production column, which the engine needs in order to emit credits.
+
+### Draft billing policy
+
+`billing_runner.run_billing_period` is the production seam. The cron asks it to
+process the previous complete `Europe/Zurich` calendar month. It creates only a
+draft and applies these fail-closed rules:
+
+- one explicit `billing_tariffs` row must cover the complete period
+- internal and grid prices, network level, and distribution model are copied
+  onto the draft; public H4 data and zero defaults are never substitutes
+- incomplete readings or a difference from the VNB allocation persist nothing
+- `(community_id, period_start, period_end)` is unique
+- identical input fingerprints are retry no-ops; changed inputs require review
+- the cron counts work only after `save_billing_period` returns a committed ID
+
+Invoice issuance remains disabled until the LEG and its VNB approve tax, HKN,
+tariff-class, rounding-tolerance, and operational cutoff rules.
 
 ## Public API Reads
 

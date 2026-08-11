@@ -19,6 +19,8 @@ _REEXPORTED = (
     "get_active_communities",
     "get_community_for_building",
     "get_billing_period",
+    "get_billing_period_for_window",
+    "get_billing_policy",
 )
 
 
@@ -93,3 +95,31 @@ def test_get_billing_period_missing_returns_none(monkeypatch):
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
     assert billing.get_billing_period(999) is None
+
+
+def test_get_effective_policy_and_existing_period_use_the_connection_seam(monkeypatch):
+    policy = {
+        "tariff_id": 7,
+        "internal_price_chf_per_kwh": 0.12,
+        "grid_fee_chf_per_kwh": 0.08,
+        "network_level": "same",
+        "distribution_model": "proportional",
+    }
+    policy_cur = _FakeCursor(one=policy)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(policy_cur))
+
+    assert (
+        billing.get_billing_policy("community-a", "2026-01-01", "2026-02-01") == policy
+    )
+    period_cur = _FakeCursor(one={"id": 42, "input_fingerprint": "abc"})
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(period_cur))
+    assert billing.get_billing_period_for_window(
+        "community-a", "2026-01-01", "2026-02-01"
+    ) == {"id": 42, "input_fingerprint": "abc"}
+    assert "billing_tariffs" in policy_cur.executed[0][0]
+    assert policy_cur.executed[0][1] == (
+        "community-a",
+        "2026-01-01",
+        "2026-02-01",
+    )
+    assert "period_start" in period_cur.executed[0][0]

@@ -48,7 +48,7 @@ class _Cursor:
         self.executed.append((query, params))
 
     def fetchone(self):
-        return (42,)
+        return {"id": 42}
 
     def __enter__(self):
         return self
@@ -362,6 +362,25 @@ def test_schema_keeps_prices_and_signed_line_items_with_the_period():
         assert column in period_block
     for column in ("item_type", "quantity_kwh", "unit_price_chf_per_kwh", "amount_chf"):
         assert column in line_item_block
+
+
+def test_schema_enforces_effective_tariffs_and_one_period_per_window():
+    schema = (PROJECT_ROOT / "store" / "schema.py").read_text(encoding="utf-8")
+    tariff_block = _create_table_block(schema, "billing_tariffs")
+    period_block = _create_table_block(schema, "billing_periods")
+
+    for column in (
+        "effective_from TIMESTAMPTZ",
+        "internal_price_chf_per_kwh",
+        "grid_fee_chf_per_kwh",
+        "network_level",
+    ):
+        assert column in tariff_block
+    for column in ("input_fingerprint", "source_document_ids", "reconciliation"):
+        assert column in period_block
+    for column in ("period_start TIMESTAMPTZ", "period_end TIMESTAMPTZ"):
+        assert column in period_block
+    assert "UNIQUE(community_id, period_start, period_end)" in period_block
 
 
 def test_existing_billing_tables_receive_all_new_columns_additively():

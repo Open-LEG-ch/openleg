@@ -12,6 +12,7 @@ Fixtures are synthetic SDAT-E66 documents. No citizen data enters this suite.
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -260,6 +261,19 @@ def test_mixed_resolution_is_rejected(monkeypatch, rows):
     assert "mixed_resolution" in _kinds(excinfo)
 
 
+def test_missing_vnb_allocation_is_rejected(monkeypatch, rows):
+    dirty = deepcopy(rows)
+    next(row for row in dirty if row["direction"] == "consumption")["community_kwh"] = (
+        None
+    )
+    _install(monkeypatch, _points(), dirty)
+
+    with pytest.raises(billing_readings.PeriodDataError) as excinfo:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert "missing_vnb_allocation" in _kinds(excinfo)
+
+
 def test_mixed_units_never_reach_the_adapter():
     """The unit gate lives at the parse boundary; readings carry no unit column.
 
@@ -365,6 +379,34 @@ def test_reconciliation_reports_the_gap_to_the_vnb_allocation(monkeypatch, rows)
     assert report["engine_allocated_kwh"] == pytest.approx(1.75)
     assert report["difference_kwh"] == pytest.approx(1.029)
     assert report["per_participant"][BUILDING_A]["vnb_kwh"] == pytest.approx(0.22)
+
+
+def test_reconciliation_uses_six_decimal_charge_quantities():
+    frames = SimpleNamespace(
+        vnb_reference={
+            "community_consumption_kwh": 0.123456,
+            "community_production_kwh": 0.0,
+            "per_participant": {
+                BUILDING_A: {"consumption_kwh": 0.123456, "production_kwh": 0.0},
+            },
+        }
+    )
+    summary = {
+        "total_allocated_kwh": 0.12,
+        "participants": [{"id": BUILDING_A, "allocated_kwh": 0.12}],
+        "line_items": [
+            {
+                "participant_id": BUILDING_A,
+                "item_type": "consumer_charge",
+                "quantity_kwh": 0.123456,
+            }
+        ],
+    }
+
+    report = billing_readings.reconcile_with_vnb(frames, summary)
+
+    assert report["difference_kwh"] == 0
+    assert report["per_participant"][BUILDING_A]["difference_kwh"] == 0
 
 
 def test_nothing_is_persisted_by_the_adapter(monkeypatch, rows):

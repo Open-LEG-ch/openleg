@@ -160,6 +160,17 @@ def _check_rows(readings, mapping, expected_index, problems):
                         point_id,
                     )
                 )
+        if (
+            direction in {"consumption", "production"}
+            and row.get("community_kwh") is None
+        ):
+            problems.append(
+                _problem(
+                    "missing_vnb_allocation",
+                    f"{point_id} ({direction}) at {measured_at} has no community_kwh",
+                    point_id,
+                )
+            )
 
         if measured_at not in grid:
             # Assigning this by label would extend the frame with an interval
@@ -321,14 +332,34 @@ def reconcile_with_vnb(frames, summary):
     difference is what a member will ask about, so it gets reported.
     """
     vnb_allocated = float(frames.vnb_reference["community_consumption_kwh"])
-    engine_allocated = float(summary.get("total_allocated_kwh") or 0.0)
+    charges = [
+        item
+        for item in summary.get("line_items", [])
+        if item.get("item_type") == "consumer_charge"
+    ]
+    engine_allocated = (
+        sum(float(item.get("quantity_kwh") or 0.0) for item in charges)
+        if charges
+        else float(summary.get("total_allocated_kwh") or 0.0)
+    )
+    charged_by_participant = {
+        item["participant_id"]: float(item.get("quantity_kwh") or 0.0)
+        for item in charges
+    }
+    production_credits = {
+        item["participant_id"]: float(item.get("quantity_kwh") or 0.0)
+        for item in summary.get("line_items", [])
+        if item.get("item_type") == "producer_credit"
+    }
 
     per_participant = {}
     for item in summary.get("participants", []):
         participant = item["id"]
         reference = frames.vnb_reference["per_participant"].get(participant, {})
         vnb_kwh = float(reference.get("consumption_kwh") or 0.0)
-        engine_kwh = float(item.get("allocated_kwh") or 0.0)
+        engine_kwh = charged_by_participant.get(
+            participant, float(item.get("allocated_kwh") or 0.0)
+        )
         per_participant[participant] = {
             "vnb_kwh": round(vnb_kwh, 6),
             "engine_kwh": round(engine_kwh, 6),
@@ -336,6 +367,17 @@ def reconcile_with_vnb(frames, summary):
         }
 
     difference = engine_allocated - vnb_allocated
+    vnb_production = float(frames.vnb_reference["community_production_kwh"])
+    engine_production = sum(production_credits.values())
+    production_per_participant = {}
+    for participant, reference in frames.vnb_reference["per_participant"].items():
+        vnb_kwh = float(reference.get("production_kwh") or 0.0)
+        engine_kwh = production_credits.get(participant, 0.0)
+        production_per_participant[participant] = {
+            "vnb_kwh": round(vnb_kwh, 6),
+            "engine_kwh": round(engine_kwh, 6),
+            "difference_kwh": round(engine_kwh - vnb_kwh, 6),
+        }
     return {
         "vnb_allocated_kwh": round(vnb_allocated, 6),
         "engine_allocated_kwh": round(engine_allocated, 6),
@@ -344,4 +386,8 @@ def reconcile_with_vnb(frames, summary):
         if vnb_allocated
         else None,
         "per_participant": per_participant,
+        "vnb_production_kwh": round(vnb_production, 6),
+        "engine_production_kwh": round(engine_production, 6),
+        "production_difference_kwh": round(engine_production - vnb_production, 6),
+        "production_per_participant": production_per_participant,
     }
