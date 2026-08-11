@@ -42,10 +42,20 @@ Use the [research template](.github/ISSUE_TEMPLATE/research.yml) for:
 1. Fork the repository
 2. Create a branch: `git checkout -b fix/issue-description`
 3. Make your changes
-4. Run tests: `pytest tests/ -v`
-5. Run linter: `ruff check . && ruff format --check .`
-6. Commit with descriptive message
-7. Push and create a Pull Request
+4. Run the full gate: `scripts/tdd_cycle.sh gate`
+5. Commit with descriptive message
+6. Push and create a Pull Request
+
+AI-assisted or not, you own every hunk. Before opening the PR:
+
+- Trace every caller and reuse the existing module or database seam before adding code or dependencies.
+- Start with a failing behavior test. Never weaken, delete, or repurpose an existing case; add a case for new behavior.
+- Test behavior through public interfaces or Flask's route map, not source text or comments.
+- Tests that import or reload `app.py` must pin every environment variable the path reads, including variables expected to be empty.
+- Do not catch setup or import failures and turn them into skips; broken fixtures must fail.
+- A feature needs a production caller. Test-only reachability is not integration.
+- For dependency replacements, compare randomized outputs against the replaced library before removing it.
+- Do not report success unless the tested production path performed the work.
 
 #### Commit Messages
 
@@ -75,19 +85,15 @@ source .venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt -r requirements-dev.txt
 
-# Run tests
-pytest tests/ -v
-
-# Run linter
-ruff check .
-ruff format --check .
+# Run tests, lint, and formatting checks
+scripts/tdd_cycle.sh gate
 ```
 
 ### Testing
 
-- Write tests for new features
-- Maintain or improve test coverage
-- Use TDD when practical
+- Use small red, green, refactor slices
+- Keep the test that exposed each non-trivial bug
+- Run `scripts/tdd_cycle.sh gate` before every PR
 
 ### Documentation
 
