@@ -167,3 +167,12 @@ headscale/config.yaml
 
 # Throwaway logo exploration
 logo-explore/
+
+# Local VNB exports and LEG participant lists: real citizen data
+# (names, addresses, metering point IDs). Never commit to a public repo.
+# data/public/ stays tracked: it holds published PV/ElCom datasets only.
+/data/*
+!/data/public/
+
+# Local throwaway scripts: seeding, bootstrapping, one-off utilities
+scratch/
