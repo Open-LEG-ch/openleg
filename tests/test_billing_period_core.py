@@ -354,7 +354,7 @@ def test_legacy_summary_still_saves_without_price_snapshot(monkeypatch):
 
 
 def test_schema_keeps_prices_and_signed_line_items_with_the_period():
-    schema = (PROJECT_ROOT / "database.py").read_text(encoding="utf-8")
+    schema = (PROJECT_ROOT / "store" / "schema.py").read_text(encoding="utf-8")
     period_block = _create_table_block(schema, "billing_periods")
     line_item_block = _create_table_block(schema, "billing_line_items")
 
@@ -365,7 +365,7 @@ def test_schema_keeps_prices_and_signed_line_items_with_the_period():
 
 
 def test_existing_billing_tables_receive_all_new_columns_additively():
-    schema = (PROJECT_ROOT / "database.py").read_text(encoding="utf-8")
+    schema = (PROJECT_ROOT / "store" / "schema.py").read_text(encoding="utf-8")
     period_migration = _alter_table_block(schema, "billing_periods")
     line_item_migration = _alter_table_block(schema, "billing_line_items")
 

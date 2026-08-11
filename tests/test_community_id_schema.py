@@ -14,7 +14,9 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _database_source() -> str:
-    with open(os.path.join(PROJECT_ROOT, "database.py"), encoding="utf-8") as handle:
+    with open(
+        os.path.join(PROJECT_ROOT, "store", "schema.py"), encoding="utf-8"
+    ) as handle:
         return handle.read()
 
 
