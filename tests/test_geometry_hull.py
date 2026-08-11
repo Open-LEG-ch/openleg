@@ -33,6 +33,7 @@ class TestConvexHull:
 
         hull = geometry.convex_hull(SQUARE + [INTERIOR])
 
+        assert hull is not None
         # Each step moves along one edge of the square, never across a diagonal.
         for current, following in zip(hull, hull[1:] + hull[:1]):
             shared_axis = current[0] == following[0] or current[1] == following[1]
@@ -49,6 +50,7 @@ class TestConvexHull:
 
         hull = geometry.convex_hull(SQUARE)
 
+        assert hull is not None
         assert all(isinstance(point, list) for point in hull)
         assert all(len(point) == 2 for point in hull)
 

@@ -5,7 +5,11 @@ _COLLINEAR_EPSILON = 1e-15
 
 
 def convex_hull(points: list[list[float]]) -> list[list[float]] | None:
-    """Return the outer points in counterclockwise order."""
+    """Return the outer points counterclockwise, or ``None`` for degenerate input.
+
+    ``None`` means fewer than three distinct points or all points collinear
+    within ``_COLLINEAR_EPSILON``.
+    """
     unique = {}
     for point in points:
         unique.setdefault(tuple(point), point)
