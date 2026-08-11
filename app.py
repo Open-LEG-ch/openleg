@@ -29,13 +29,6 @@ from jinja2 import TemplateNotFound
 load_dotenv()
 
 try:
-    from scipy.spatial import ConvexHull
-
-    HAS_SCIPY = True
-except ImportError:
-    HAS_SCIPY = False
-
-try:
     from svix.webhooks import Webhook, WebhookVerificationError
 
     HAS_SVIX = True
@@ -60,6 +53,7 @@ import data_enricher
 
 # --- PostgreSQL Database ---
 import database as db
+import geometry
 import ml_models
 import registration
 import security_utils
@@ -397,15 +391,9 @@ def create_simple_polygon(coords):
                 [lat1 - o, lon2 + o],
                 [lat1 - o, lon1 - o],
             ]
-    if HAS_SCIPY:
-        try:
-            points = np.array(coords)
-            hull = ConvexHull(points)
-            polygon = [coords[i] for i in hull.vertices]
-            polygon.append(polygon[0])
-            return polygon
-        except Exception:
-            logger.debug("Convex hull calculation failed", exc_info=True)
+    hull = geometry.convex_hull(coords)
+    if hull is not None:
+        return hull + [hull[0]]
     lats = [c[0] for c in coords]
     lons = [c[1] for c in coords]
     o = 0.0003
