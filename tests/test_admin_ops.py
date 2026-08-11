@@ -196,6 +196,10 @@ class TestAdminOpsRoutes:
                 assert kwargs["payload"]["message_id"] == "msg_123"
                 assert kwargs["payload"]["inbox_id"] == "hallo@openleg.ch"
                 assert kwargs["payload"]["from_email"] == "sender@example.com"
+                assert (
+                    kwargs["payload"]["text_preview"]
+                    == "Bitte um Informationen zur LEG."
+                )
             except Exception:
                 pytest.skip("App import requires live DB")
 

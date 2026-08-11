@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import csv
+import hmac
 import io
 import json
 import os
@@ -25,8 +26,6 @@ try:
 except ImportError:
     HAS_SVIX = False
 
-USE_POSTGRES = db.is_db_available()
-
 admin_bp = Blueprint("admin", __name__)
 
 
@@ -35,8 +34,15 @@ def require_admin():
     if not admin_token:
         abort(404)
     token = request.headers.get("X-Admin-Token") or request.args.get("token") or ""
-    if token != admin_token:
+    if not hmac.compare_digest(token, admin_token):
         log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", "WARNING")
+        abort(403)
+
+
+def require_internal_token():
+    token = request.headers.get("X-Internal-Token") or ""
+    internal_token = os.getenv("INTERNAL_TOKEN", "").strip()
+    if not internal_token or not hmac.compare_digest(token, internal_token):
         abort(403)
 
 
@@ -107,7 +113,7 @@ def _sanitize_agentmail_payload(data):
             or data.get("received_at")
             or data.get("timestamp")
         ),
-        "text_preview": preview[:280],
+        "text_preview": str(preview)[:280],
     }
 
 
@@ -128,10 +134,7 @@ def _verify_agentmail_request():
             return
         except WebhookVerificationError:
             abort(403)
-    token = request.headers.get("X-Internal-Token") or ""
-    internal_token = os.getenv("INTERNAL_TOKEN", "").strip()
-    if not internal_token or token != internal_token:
-        abort(403)
+    require_internal_token()
 
 
 @admin_bp.route("/admin/overview")
@@ -148,7 +151,7 @@ def admin_overview():
             "email_stats": email_stats,
             "consented_buildings": consented,
             "municipalities": len(municipalities),
-            "db_available": USE_POSTGRES,
+            "db_available": db.is_db_available(),
         }
     )
 
@@ -177,10 +180,7 @@ def admin_export():
 
 @admin_bp.route("/api/internal/lea-report", methods=["POST"])
 def api_internal_lea_report():
-    token = request.headers.get("X-Internal-Token") or ""
-    internal_token = os.getenv("INTERNAL_TOKEN", "").strip()
-    if not internal_token or token != internal_token:
-        abort(403)
+    require_internal_token()
     data = request.get_json(silent=True) or {}
     job_name = data.get("job_name", "unknown")
     summary = data.get("summary", "")
@@ -198,10 +198,7 @@ def admin_lea_reports():
 
 @admin_bp.route("/api/internal/ops-snapshot", methods=["POST"])
 def api_internal_ops_snapshot():
-    token = request.headers.get("X-Internal-Token") or ""
-    internal_token = os.getenv("INTERNAL_TOKEN", "").strip()
-    if not internal_token or token != internal_token:
-        abort(403)
+    require_internal_token()
     data = request.get_json(silent=True) or {}
     db.save_ops_snapshot(
         source=data.get("source", "unknown"),

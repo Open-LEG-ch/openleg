@@ -81,6 +81,12 @@ class TestBlueprintOwnsTheOperatorSurface:
 
         assert admin.admin_bp.name == "admin"
         assert callable(admin.require_admin)
+        assert callable(admin.require_internal_token)
+
+        with patch.object(admin.db, "is_db_available") as is_db_available:
+            importlib.reload(admin)
+
+        is_db_available.assert_not_called()
 
     def test_every_operator_route_is_served_by_the_blueprint(self, app_with_tokens):
         rules = {
@@ -119,23 +125,72 @@ class TestGuardsStayFailClosed:
                 continue
             assert client.get(rule).status_code == 404, f"{rule} leaked"
 
-    def test_admin_routes_reject_a_wrong_token(self, app_with_tokens):
+    def test_admin_routes_reject_a_wrong_token(self, app_with_tokens, caplog):
         client = app_with_tokens.app.test_client()
 
-        assert client.get("/admin/overview").status_code == 403
-        assert (
-            client.get("/admin/ops", headers={"X-Admin-Token": "nope"}).status_code
-            == 403
-        )
+        with patch("admin.hmac.compare_digest", return_value=False) as compare:
+            assert client.get("/admin/overview").status_code == 403
+            assert (
+                client.get(
+                    "/admin/ops",
+                    headers={"X-Admin-Token": "nope"},
+                    environ_overrides={
+                        "HTTP_X_FORWARDED_FOR": "198.51.100.4\r\nFORGED, 203.0.113.8"
+                    },
+                ).status_code
+                == 403
+            )
+
+        assert compare.call_count == 2
+        record = caplog.records[-1].message
+        assert "IP: 198.51.100.4FORGED |" in record
+        assert "203.0.113.8" not in record
+        assert "\r" not in record and "\n" not in record
 
     def test_internal_ingestion_rejects_a_wrong_token(self, app_with_tokens):
         client = app_with_tokens.app.test_client()
 
-        for rule in ("/api/internal/lea-report", "/api/internal/ops-snapshot"):
-            response = client.post(
-                rule, json={"job_name": "x"}, headers={"X-Internal-Token": "nope"}
+        with (
+            patch("admin.hmac.compare_digest", return_value=False) as compare,
+            patch(
+                "admin.require_internal_token",
+                wraps=__import__("admin").require_internal_token,
+            ) as guard,
+        ):
+            for rule in (
+                "/api/internal/lea-report",
+                "/api/internal/ops-snapshot",
+                "/api/internal/agentmail",
+            ):
+                response = client.post(
+                    rule,
+                    json={"job_name": "x"},
+                    headers={"X-Internal-Token": "nope"},
+                )
+                assert response.status_code == 403, f"{rule} accepted a wrong token"
+
+        assert guard.call_count == 3
+        assert compare.call_count == 3
+
+    def test_agentmail_preview_survives_a_non_string_body(self, app_with_tokens):
+        module = app_with_tokens
+        with patch.object(module.db, "save_ops_snapshot", return_value=True) as saved:
+            response = module.app.test_client().post(
+                "/api/internal/agentmail",
+                json={
+                    "event_type": "message.received",
+                    "message": {
+                        "message_id": "msg_1",
+                        "inbox_id": "hallo@openleg.ch",
+                        "subject": "LEG Anfrage",
+                        "text": 12345,
+                    },
+                },
+                headers={"X-Internal-Token": "internal-token"},
             )
-            assert response.status_code == 403, f"{rule} accepted a wrong token"
+
+        assert response.status_code == 200
+        assert saved.call_args.kwargs["payload"]["text_preview"] == "12345"
 
     def test_admin_overview_still_answers_with_a_valid_token(self, app_with_tokens):
         module = app_with_tokens
@@ -144,6 +199,9 @@ class TestGuardsStayFailClosed:
             patch.object(module.db, "get_email_stats", return_value={}),
             patch.object(module.db, "count_consented_buildings", return_value=0),
             patch.object(module.db, "get_all_municipalities", return_value=[]),
+            patch.object(
+                module.db, "is_db_available", return_value=True
+            ) as is_db_available,
         ):
             response = module.app.test_client().get(
                 "/admin/overview", headers={"X-Admin-Token": "admin-token"}
@@ -151,3 +209,4 @@ class TestGuardsStayFailClosed:
 
         assert response.status_code == 200
         assert response.get_json()["platform"] == "OpenLEG"
+        is_db_available.assert_called_once_with()
