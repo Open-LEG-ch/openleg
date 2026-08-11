@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-import csv
 import hashlib
-import io
-import json
 import logging
 import math
 import os
@@ -25,15 +22,28 @@ from flask import (
 )
 from jinja2 import TemplateNotFound
 
-# Load environment variables
-load_dotenv()
-
-try:
-    from svix.webhooks import Webhook, WebhookVerificationError
-
-    HAS_SVIX = True
-except ImportError:
-    HAS_SVIX = False
+import dashboard as dashboard_module
+import data_enricher
+import database as db
+import email_automation
+import geometry
+import leg_registry
+import ml_models
+import registration
+import security_utils
+import tenant as tenant_module
+from admin import admin_bp, require_admin
+from api_public import public_api_bp
+from email_utils import send_email
+from health import health_bp
+from leg_registry import registry_bp
+from municipality import PILOT_MUNICIPALITIES, municipality_bp, pilot_bp
+from rangliste import rangliste_bp
+from ranking import Ranking
+from registration import CONSENT_VERSION, parse_consents  # noqa: F401
+from security_utils import log_security_event
+from self_host import self_host_bp
+from utility_portal import utility_bp
 
 # --- Security imports ---
 try:
@@ -45,40 +55,12 @@ try:
 except ImportError:
     HAS_SECURITY_LIBS = False
 
-# --- Email imports ---
-import dashboard as dashboard_module
-
-# --- Core modules ---
-import data_enricher
-
-# --- PostgreSQL Database ---
-import database as db
-import geometry
-import ml_models
-import registration
-import security_utils
-from email_utils import send_email
-from ranking import Ranking
-from registration import CONSENT_VERSION, parse_consents  # noqa: F401
+# Load environment variables
+load_dotenv()
 
 USE_POSTGRES = db.is_db_available()
 if not USE_POSTGRES:
     raise RuntimeError("PostgreSQL required. Set DATABASE_URL.")
-
-# --- Multi-tenant ---
-# --- Email Automation ---
-import email_automation
-import leg_registry
-import tenant as tenant_module
-from api_public import public_api_bp
-from health import health_bp
-from leg_registry import registry_bp
-
-# --- Blueprints ---
-from municipality import PILOT_MUNICIPALITIES, municipality_bp, pilot_bp
-from rangliste import rangliste_bp
-from self_host import self_host_bp
-from utility_portal import utility_bp
 
 # --- Cron Secret ---
 CRON_SECRET = os.getenv("CRON_SECRET", "").strip()
@@ -128,9 +110,6 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 # --- Email ---
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "hallo@openleg.ch")
-ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
-INTERNAL_TOKEN = os.getenv("INTERNAL_TOKEN", "").strip()
-AGENTMAIL_WEBHOOK_SECRET = os.getenv("AGENTMAIL_WEBHOOK_SECRET", "").strip()
 
 # --- Rate Limiting & Security ---
 if HAS_SECURITY_LIBS:
@@ -185,6 +164,7 @@ app.register_blueprint(utility_bp)
 app.register_blueprint(rangliste_bp)
 app.register_blueprint(registry_bp)
 app.register_blueprint(self_host_bp)
+app.register_blueprint(admin_bp)
 
 # --- Multi-tenant middleware ---
 tenant_module.init_tenant_middleware(app, db=db)
@@ -203,18 +183,6 @@ def render_city_template(template_name, **kwargs):
         return render_template(city_path, **kwargs)
     except TemplateNotFound:
         return render_template(template_name, **kwargs)
-
-
-# --- Security Helpers ---
-def log_security_event(event_type, details, level="INFO"):
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
-    log_message = f"[SECURITY] {event_type} | IP: {ip} | {details}"
-    if level == "WARNING":
-        logger.warning(log_message)
-    elif level == "ERROR":
-        logger.error(log_message)
-    else:
-        logger.info(log_message)
 
 
 @app.after_request
@@ -559,264 +527,6 @@ def sitemap_xml():
 
 
 ## Health endpoints registered via health_bp
-
-
-# --- Admin ---
-def _require_admin():
-    if not ADMIN_TOKEN:
-        abort(404)
-    token = request.headers.get("X-Admin-Token") or request.args.get("token") or ""
-    if token != ADMIN_TOKEN:
-        log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", "WARNING")
-        abort(403)
-
-
-def _latest_snapshot_by_category(snapshots):
-    latest = {}
-    for snapshot in snapshots:
-        latest.setdefault(snapshot.get("category", "uncategorized"), snapshot)
-    return latest
-
-
-def _first_email_identity(value):
-    if isinstance(value, list):
-        value = value[0] if value else ""
-    if isinstance(value, dict):
-        return {"email": value.get("email", ""), "name": value.get("name", "")}
-    if isinstance(value, str):
-        return {"email": value, "name": ""}
-    return {"email": "", "name": ""}
-
-
-def _sanitize_agentmail_payload(data):
-    message = data.get("message") or {}
-    if not isinstance(message, dict):
-        message = {}
-    headers = message.get("headers") or {}
-    if not isinstance(headers, dict):
-        headers = {}
-    sender = _first_email_identity(message.get("from") or message.get("from_") or {})
-    recipients = message.get("to") or []
-    preview = (
-        message.get("text_preview")
-        or message.get("extracted_text")
-        or message.get("snippet")
-        or message.get("text")
-        or data.get("text_preview")
-        or ""
-    )
-    if isinstance(recipients, dict):
-        recipients = [recipients]
-    normalized_to = []
-    for recipient in recipients[:5]:
-        if isinstance(recipient, dict):
-            normalized_to.append(
-                {
-                    "email": recipient.get("email", ""),
-                    "name": recipient.get("name", ""),
-                }
-            )
-        elif isinstance(recipient, str):
-            normalized_to.append({"email": recipient, "name": ""})
-    return {
-        "event_type": (
-            data.get("event_type") or data.get("type") or data.get("event") or "unknown"
-        ),
-        "event_id": data.get("event_id"),
-        "inbox_id": message.get("inbox_id"),
-        "message_id": (
-            message.get("message_id") or message.get("id") or data.get("message_id")
-        ),
-        "thread_id": message.get("thread_id") or data.get("thread_id"),
-        "from_email": sender.get("email") or headers.get("from") or "",
-        "from_name": sender.get("name") or "",
-        "to": normalized_to,
-        "subject": message.get("subject") or headers.get("subject") or "",
-        "received_at": (
-            message.get("received_at")
-            or message.get("timestamp")
-            or data.get("received_at")
-            or data.get("timestamp")
-        ),
-        "text_preview": preview[:280],
-    }
-
-
-def _verify_agentmail_request():
-    if AGENTMAIL_WEBHOOK_SECRET:
-        if not HAS_SVIX:
-            abort(503)
-        try:
-            Webhook(AGENTMAIL_WEBHOOK_SECRET).verify(
-                request.get_data(),
-                {
-                    "svix-id": request.headers.get("svix-id", ""),
-                    "svix-timestamp": request.headers.get("svix-timestamp", ""),
-                    "svix-signature": request.headers.get("svix-signature", ""),
-                },
-            )
-            return
-        except WebhookVerificationError:
-            abort(403)
-    token = request.headers.get("X-Internal-Token") or ""
-    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
-        abort(403)
-
-
-@app.route("/admin/overview")
-def admin_overview():
-    _require_admin()
-    stats = db.get_stats()
-    email_stats = db.get_email_stats()
-    consented = db.count_consented_buildings()
-    municipalities = db.get_all_municipalities()
-    return jsonify(
-        {
-            "platform": "OpenLEG",
-            "stats": stats,
-            "email_stats": email_stats,
-            "consented_buildings": consented,
-            "municipalities": len(municipalities),
-            "db_available": USE_POSTGRES,
-        }
-    )
-
-
-@app.route("/admin/export")
-def admin_export():
-    _require_admin()
-    fmt = (request.args.get("format") or "json").lower()
-    city_id = request.args.get("city_id")
-
-    buildings = db.get_all_building_profiles(city_id=city_id)
-    if fmt == "csv":
-        output = io.StringIO()
-        if buildings:
-            writer = csv.DictWriter(output, fieldnames=buildings[0].keys())
-            writer.writeheader()
-            for row in buildings:
-                writer.writerow(row)
-        response = Response(output.getvalue(), mimetype="text/csv")
-        response.headers["Content-Disposition"] = (
-            "attachment; filename=openleg_export.csv"
-        )
-        return response
-    return jsonify({"records": buildings, "count": len(buildings)})
-
-
-# --- LEA Reports ---
-@app.route("/api/internal/lea-report", methods=["POST"])
-def api_internal_lea_report():
-    token = request.headers.get("X-Internal-Token") or ""
-    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
-        abort(403)
-    data = request.get_json(silent=True) or {}
-    job_name = data.get("job_name", "unknown")
-    summary = data.get("summary", "")
-    status = data.get("status", "ok")
-    db.save_lea_report(job_name, summary, status)
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/lea-reports")
-def admin_lea_reports():
-    _require_admin()
-    reports = db.get_lea_reports(limit=50)
-    return jsonify({"reports": reports})
-
-
-@app.route("/api/internal/ops-snapshot", methods=["POST"])
-def api_internal_ops_snapshot():
-    token = request.headers.get("X-Internal-Token") or ""
-    if not INTERNAL_TOKEN or token != INTERNAL_TOKEN:
-        abort(403)
-    data = request.get_json(silent=True) or {}
-    db.save_ops_snapshot(
-        source=data.get("source", "unknown"),
-        category=data.get("category", "general"),
-        summary_text=data.get("summary", ""),
-        status=data.get("status", "ok"),
-        payload=data.get("payload") if isinstance(data.get("payload"), dict) else {},
-    )
-    return jsonify({"ok": True})
-
-
-@app.route("/api/internal/agentmail", methods=["POST"])
-def api_internal_agentmail():
-    _verify_agentmail_request()
-    data = request.get_json(silent=True) or {}
-    event_type = data.get("event_type") or data.get("type") or data.get("event") or ""
-    if event_type not in {
-        "message.received",
-        "message.received.unauthenticated",
-        "inbound_email.received",
-    }:
-        return jsonify({"ok": True, "ignored": True})
-    payload = _sanitize_agentmail_payload(data)
-    summary = payload.get("subject") or payload.get("from_email") or "Inbound LEA mail"
-    db.save_ops_snapshot(
-        source="agentmail",
-        category="lea_inbox",
-        summary_text=summary,
-        status="received",
-        payload=payload,
-    )
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/ops")
-def admin_ops():
-    _require_admin()
-    snapshots = db.get_ops_snapshots(limit=100)
-    reports = db.get_lea_reports(limit=20)
-    latest = _latest_snapshot_by_category(snapshots)
-    pending_registry = leg_registry.annotate_vnb_plausibility(
-        db.list_registry_entries(moderation_status="pending")
-    )
-    stale_registry = db.get_registry_entries_needing_verification(
-        stale_days=leg_registry.VERIFICATION_STALE_DAYS, limit=1000
-    )
-    response = {
-        "latest": latest,
-        "snapshots": snapshots[:20],
-        "reports": reports,
-        "pending_registry": pending_registry,
-        "counts": {
-            "lea_inbox": sum(1 for s in snapshots if s.get("category") == "lea_inbox"),
-            "github_monitor": sum(
-                1 for s in snapshots if s.get("category") == "github_monitor"
-            ),
-            "vnb_monitor": sum(
-                1 for s in snapshots if s.get("category") == "vnb_monitor"
-            ),
-            "stuck_formations": sum(
-                1 for s in snapshots if s.get("category") == "stuck_formations"
-            ),
-            "registry_pending": db.get_registry_pending_count(),
-            "registry_stale": len(stale_registry),
-        },
-    }
-    if "text/html" in (request.headers.get("Accept") or ""):
-        return render_template("admin/ops.html", **response)
-    return Response(
-        json.dumps(response, default=str),
-        mimetype="application/json",
-    )
-
-
-@app.route("/admin/registry/<int:entry_id>/approve", methods=["POST"])
-def admin_registry_approve(entry_id):
-    _require_admin()
-    db.update_registry_entry_moderation(entry_id, "published", "")
-    return redirect(f"/admin/ops?token={ADMIN_TOKEN}")
-
-
-@app.route("/admin/registry/<int:entry_id>/reject", methods=["POST"])
-def admin_registry_reject(entry_id):
-    _require_admin()
-    reason = (request.form.get("reason") or "").strip()
-    db.update_registry_entry_moderation(entry_id, "rejected", reason)
-    return redirect(f"/admin/ops?token={ADMIN_TOKEN}")
 
 
 # --- Address API ---
@@ -1375,7 +1085,7 @@ def api_cron_backfill_elcom():
 
 @app.route("/api/email/stats")
 def api_email_stats():
-    _require_admin()
+    require_admin()
     return jsonify(db.get_email_stats())
 
 
@@ -1426,7 +1136,7 @@ def api_cron_verify_registry_entries():
 
 @app.route("/api/billing/community/<community_id>/period/<int:period_id>")
 def api_billing_period(community_id, period_id):
-    _require_admin()
+    require_admin()
     period = db.get_billing_period(period_id)
     if not period:
         return jsonify({"error": "Period not found"}), 404
