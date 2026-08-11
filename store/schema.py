@@ -13,7 +13,7 @@ def _get_connection():
 
 
 def create_tables():
-    """Create database tables if they don't exist."""
+    """Create tables and indexes, then run inline idempotent migrations."""
     with _get_connection() as conn:
         with conn.cursor() as cur:
             # Users/Buildings table

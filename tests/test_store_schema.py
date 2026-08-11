@@ -87,7 +87,7 @@ class TestSchemaModule:
                 f"{table} is missing from store.schema.create_tables"
             )
 
-    def test_create_tables_resolves_the_seam_at_call_time(self, monkeypatch):
+    def test_create_tables_issues_the_index_ddl(self, monkeypatch):
         executed = _run(monkeypatch, schema.create_tables)
 
         assert "create index if not exists" in executed

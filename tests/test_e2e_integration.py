@@ -38,13 +38,13 @@ class TestDockerfileCron:
         assert "COPY config/" in content
 
 
-class TestDatabaseSchema:
-    def test_database_has_lea_reports_table(self):
+class TestSchemaModule:
+    def test_schema_has_lea_reports_table(self):
         with open(os.path.join(PROJECT_ROOT, "store", "schema.py")) as f:
             content = f.read()
         assert "CREATE TABLE IF NOT EXISTS lea_reports" in content
 
-    def test_database_has_ops_snapshots_table(self):
+    def test_schema_has_ops_snapshots_table(self):
         with open(os.path.join(PROJECT_ROOT, "store", "schema.py")) as f:
             content = f.read()
         assert "CREATE TABLE IF NOT EXISTS ops_snapshots" in content

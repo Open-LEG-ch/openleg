@@ -13,7 +13,7 @@ import re
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def _database_source() -> str:
+def _schema_source() -> str:
     with open(
         os.path.join(PROJECT_ROOT, "store", "schema.py"), encoding="utf-8"
     ) as handle:
@@ -31,7 +31,7 @@ def _create_block(source: str, table: str) -> str:
 
 
 def test_billing_periods_community_id_is_varchar():
-    block = _create_block(_database_source(), "billing_periods")
+    block = _create_block(_schema_source(), "billing_periods")
     assert re.search(r"community_id VARCHAR\(64\)", block), (
         "billing_periods.community_id must be VARCHAR(64) to join communities"
     )
@@ -39,7 +39,7 @@ def test_billing_periods_community_id_is_varchar():
 
 
 def test_invoices_community_id_is_varchar():
-    block = _create_block(_database_source(), "invoices")
+    block = _create_block(_schema_source(), "invoices")
     assert re.search(r"community_id VARCHAR\(64\)", block), (
         "invoices.community_id must be VARCHAR(64) to join communities"
     )
@@ -47,7 +47,7 @@ def test_invoices_community_id_is_varchar():
 
 
 def test_leg_documents_community_id_is_varchar():
-    block = _create_block(_database_source(), "leg_documents")
+    block = _create_block(_schema_source(), "leg_documents")
     assert re.search(r"community_id VARCHAR\(64\)", block), (
         "leg_documents.community_id must be VARCHAR(64) to join communities"
     )
@@ -55,7 +55,7 @@ def test_leg_documents_community_id_is_varchar():
 
 
 def test_migration_converts_existing_integer_columns():
-    source = _database_source()
+    source = _schema_source()
     for table in ("billing_periods", "invoices", "leg_documents"):
         assert re.search(
             rf"ALTER TABLE {table}\s+ALTER COLUMN community_id TYPE VARCHAR\(64\)",

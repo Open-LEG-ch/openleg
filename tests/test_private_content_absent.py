@@ -147,14 +147,14 @@ def test_private_operator_surface_absent_from_modules():
 
 def test_kept_instance_ops_schema_is_provisioned():
     """The kept ops surface needs its tables created by init_db."""
-    database_content = Path(PROJECT_ROOT, "store", "schema.py").read_text(
+    schema_content = Path(PROJECT_ROOT, "store", "schema.py").read_text(
         encoding="utf-8"
     )
     for fragment in (
         "CREATE TABLE IF NOT EXISTS lea_reports",
         "CREATE TABLE IF NOT EXISTS ops_snapshots",
     ):
-        assert fragment in database_content
+        assert fragment in schema_content
 
 
 def test_tracked_text_has_no_known_private_identifiers_or_secret_placeholders():
