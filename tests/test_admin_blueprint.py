@@ -9,6 +9,7 @@ cohesive area with one audience, so they move to `admin.py` behind
 
 import importlib
 import os
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -35,7 +36,9 @@ def _load_app():
     ):
         import app as app_module
 
-        return importlib.reload(app_module)
+        return SimpleNamespace(
+            app=app_module.create_app(load_environment=False), db=app_module.db
+        )
 
 
 @pytest.fixture
@@ -48,6 +51,7 @@ def app_with_tokens():
             "APP_BASE_URL": "http://localhost:5003",
             "ADMIN_TOKEN": "admin-token",
             "INTERNAL_TOKEN": "internal-token",
+            "AGENTMAIL_WEBHOOK_SECRET": "",
         },
     ):
         yield _load_app()
@@ -62,6 +66,7 @@ def app_without_admin_token():
             "REDIS_URL": "memory://",
             "APP_BASE_URL": "http://localhost:5003",
             "INTERNAL_TOKEN": "internal-token",
+            "AGENTMAIL_WEBHOOK_SECRET": "",
         },
     ):
         os.environ.pop("ADMIN_TOKEN", None)

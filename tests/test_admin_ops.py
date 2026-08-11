@@ -10,6 +10,13 @@ import pytest
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+@pytest.fixture(autouse=True)
+def _pin_test_environment(monkeypatch):
+    monkeypatch.setenv("REDIS_URL", "memory://")
+    monkeypatch.setenv("APP_BASE_URL", "http://localhost:5003")
+    monkeypatch.setenv("AGENTMAIL_WEBHOOK_SECRET", "")
+
+
 class TestAdminOpsRoutes:
     def test_admin_ops_requires_admin(self):
         with (
@@ -25,14 +32,11 @@ class TestAdminOpsRoutes:
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.get("/admin/ops")
-                assert resp.status_code == 403
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = app.test_client()
+            resp = client.get("/admin/ops")
+            assert resp.status_code == 403
 
     def test_admin_ops_returns_json(self):
         snapshots = [
@@ -70,21 +74,18 @@ class TestAdminOpsRoutes:
             patch("database.get_ops_snapshots", return_value=snapshots),
             patch("database.get_lea_reports", return_value=[]),
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.get(
-                    "/admin/ops",
-                    headers={"X-Admin-Token": "test123"},
-                )
-                assert resp.status_code == 200
-                data = json.loads(resp.data)
-                assert "latest" in data
-                assert "counts" in data
-                assert data["counts"]["lea_inbox"] == 1
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = app.test_client()
+            resp = client.get(
+                "/admin/ops",
+                headers={"X-Admin-Token": "test123"},
+            )
+            assert resp.status_code == 200
+            data = json.loads(resp.data)
+            assert "latest" in data
+            assert "counts" in data
+            assert data["counts"]["lea_inbox"] == 1
 
     def test_internal_ops_snapshot_accepts_valid_token(self):
         with (
@@ -101,23 +102,20 @@ class TestAdminOpsRoutes:
             patch("database.is_db_available", return_value=True),
             patch("database.save_ops_snapshot", return_value=True),
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.post(
-                    "/api/internal/ops-snapshot",
-                    json={
-                        "source": "openclaw",
-                        "category": "openclaw_health",
-                        "summary": "Gateway healthy",
-                        "payload": {"sessions": 1},
-                    },
-                    headers={"X-Internal-Token": "secret-internal"},
-                )
-                assert resp.status_code == 200
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = app.test_client()
+            resp = client.post(
+                "/api/internal/ops-snapshot",
+                json={
+                    "source": "openclaw",
+                    "category": "openclaw_health",
+                    "summary": "Gateway healthy",
+                    "payload": {"sessions": 1},
+                },
+                headers={"X-Internal-Token": "secret-internal"},
+            )
+            assert resp.status_code == 200
 
     def test_internal_agentmail_ignores_non_inbound_events(self):
         with (
@@ -134,20 +132,17 @@ class TestAdminOpsRoutes:
             patch("database.is_db_available", return_value=True),
             patch("database.save_ops_snapshot", return_value=True) as save_snapshot,
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.post(
-                    "/api/internal/agentmail",
-                    json={"type": "message.sent"},
-                    headers={"X-Internal-Token": "secret-internal"},
-                )
-                assert resp.status_code == 200
-                assert resp.get_json()["ignored"] is True
-                save_snapshot.assert_not_called()
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = app.test_client()
+            resp = client.post(
+                "/api/internal/agentmail",
+                json={"type": "message.sent"},
+                headers={"X-Internal-Token": "secret-internal"},
+            )
+            assert resp.status_code == 200
+            assert resp.get_json()["ignored"] is True
+            save_snapshot.assert_not_called()
 
     def test_internal_agentmail_accepts_agentmail_event_type_payload(self):
         with (
@@ -164,44 +159,40 @@ class TestAdminOpsRoutes:
             patch("database.is_db_available", return_value=True),
             patch("database.save_ops_snapshot", return_value=True) as save_snapshot,
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.post(
-                    "/api/internal/agentmail",
-                    json={
-                        "event_type": "message.received",
-                        "event_id": "evt_123",
-                        "message": {
-                            "message_id": "msg_123",
-                            "thread_id": "thd_123",
-                            "inbox_id": "hallo@openleg.ch",
-                            "from_": ["sender@example.com"],
-                            "to": ["hallo@openleg.ch"],
-                            "subject": "LEG Anfrage",
-                            "timestamp": "2026-06-14T10:05:00Z",
-                            "text": "Bitte um Informationen zur LEG.",
-                        },
+            client = app.test_client()
+            resp = client.post(
+                "/api/internal/agentmail",
+                json={
+                    "event_type": "message.received",
+                    "event_id": "evt_123",
+                    "message": {
+                        "message_id": "msg_123",
+                        "thread_id": "thd_123",
+                        "inbox_id": "hallo@openleg.ch",
+                        "from_": ["sender@example.com"],
+                        "to": ["hallo@openleg.ch"],
+                        "subject": "LEG Anfrage",
+                        "timestamp": "2026-06-14T10:05:00Z",
+                        "text": "Bitte um Informationen zur LEG.",
                     },
-                    headers={"X-Internal-Token": "secret-internal"},
-                )
-                assert resp.status_code == 200
-                save_snapshot.assert_called_once()
-                kwargs = save_snapshot.call_args.kwargs
-                assert kwargs["source"] == "agentmail"
-                assert kwargs["category"] == "lea_inbox"
-                assert kwargs["summary_text"] == "LEG Anfrage"
-                assert kwargs["payload"]["event_type"] == "message.received"
-                assert kwargs["payload"]["message_id"] == "msg_123"
-                assert kwargs["payload"]["inbox_id"] == "hallo@openleg.ch"
-                assert kwargs["payload"]["from_email"] == "sender@example.com"
-                assert (
-                    kwargs["payload"]["text_preview"]
-                    == "Bitte um Informationen zur LEG."
-                )
-            except Exception:
-                pytest.skip("App import requires live DB")
+                },
+                headers={"X-Internal-Token": "secret-internal"},
+            )
+            assert resp.status_code == 200
+            save_snapshot.assert_called_once()
+            kwargs = save_snapshot.call_args.kwargs
+            assert kwargs["source"] == "agentmail"
+            assert kwargs["category"] == "lea_inbox"
+            assert kwargs["summary_text"] == "LEG Anfrage"
+            assert kwargs["payload"]["event_type"] == "message.received"
+            assert kwargs["payload"]["message_id"] == "msg_123"
+            assert kwargs["payload"]["inbox_id"] == "hallo@openleg.ch"
+            assert kwargs["payload"]["from_email"] == "sender@example.com"
+            assert (
+                kwargs["payload"]["text_preview"] == "Bitte um Informationen zur LEG."
+            )
 
 
 class TestAdminOpsRouteExists:
@@ -232,20 +223,17 @@ class TestAdminRegistryModeration:
             patch("database.list_registry_entries", return_value=[{"id": 1}]),
             patch("database.get_registry_pending_count", return_value=1),
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.get(
-                    "/admin/ops",
-                    headers={"X-Admin-Token": "test123"},
-                )
-                assert resp.status_code == 200
-                data = json.loads(resp.data)
-                assert data["counts"]["registry_pending"] == 1
-                assert data["pending_registry"] == [{"id": 1}]
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = app.test_client()
+            resp = client.get(
+                "/admin/ops",
+                headers={"X-Admin-Token": "test123"},
+            )
+            assert resp.status_code == 200
+            data = json.loads(resp.data)
+            assert data["counts"]["registry_pending"] == 1
+            assert data["pending_registry"] == [{"id": 1, "vnb_plausible": None}]
 
     def test_admin_registry_approve_requires_admin_token(self):
         with (
@@ -264,15 +252,12 @@ class TestAdminRegistryModeration:
                 "database.update_registry_entry_moderation", return_value=True
             ) as mock_update,
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.post("/admin/registry/1/approve")
-                assert resp.status_code == 403
-                mock_update.assert_not_called()
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = app.test_client()
+            resp = client.post("/admin/registry/1/approve")
+            assert resp.status_code == 403
+            mock_update.assert_not_called()
 
     def test_admin_registry_approve_calls_store_with_published(self):
         with (
@@ -291,18 +276,15 @@ class TestAdminRegistryModeration:
                 "database.update_registry_entry_moderation", return_value=True
             ) as mock_update,
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.post(
-                    "/admin/registry/1/approve",
-                    headers={"X-Admin-Token": "test123"},
-                )
-                assert resp.status_code in (200, 302)
-                mock_update.assert_called_once_with(1, "published", "")
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = app.test_client()
+            resp = client.post(
+                "/admin/registry/1/approve",
+                headers={"X-Admin-Token": "test123"},
+            )
+            assert resp.status_code in (200, 302)
+            mock_update.assert_called_once_with(1, "published", "")
 
     def test_admin_registry_reject_accepts_optional_reason(self):
         with (
@@ -321,19 +303,16 @@ class TestAdminRegistryModeration:
                 "database.update_registry_entry_moderation", return_value=True
             ) as mock_update,
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.post(
-                    "/admin/registry/1/reject",
-                    data={"reason": "Duplikat"},
-                    headers={"X-Admin-Token": "test123"},
-                )
-                assert resp.status_code in (200, 302)
-                mock_update.assert_called_once_with(1, "rejected", "Duplikat")
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = app.test_client()
+            resp = client.post(
+                "/admin/registry/1/reject",
+                data={"reason": "Duplikat"},
+                headers={"X-Admin-Token": "test123"},
+            )
+            assert resp.status_code in (200, 302)
+            mock_update.assert_called_once_with(1, "rejected", "Duplikat")
 
     def test_admin_ops_html_has_registry_moderation_section(self):
         with open(os.path.join(PROJECT_ROOT, "templates", "admin", "ops.html")) as f:
@@ -375,17 +354,14 @@ class TestAdminRegistryModeration:
                 return_value=[{"operator_name": "Regionalwerke Baden AG"}],
             ),
         ):
-            try:
-                from app import app
+            from app import app
 
-                client = app.test_client()
-                resp = client.get(
-                    "/admin/ops",
-                    headers={"X-Admin-Token": "test123"},
-                )
-                assert resp.status_code == 200
-                data = json.loads(resp.data)
-                assert data["counts"]["registry_stale"] == 1
-                assert data["pending_registry"][0]["vnb_plausible"] is True
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = app.test_client()
+            resp = client.get(
+                "/admin/ops",
+                headers={"X-Admin-Token": "test123"},
+            )
+            assert resp.status_code == 200
+            data = json.loads(resp.data)
+            assert data["counts"]["registry_stale"] == 1
+            assert data["pending_registry"][0]["vnb_plausible"] is True

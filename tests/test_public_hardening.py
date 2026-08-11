@@ -6,6 +6,7 @@ import importlib
 import os
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -50,7 +51,9 @@ def _load_app(env_overrides, remove=()):
         ):
             import app as app_module
 
-            return importlib.reload(app_module)
+            return SimpleNamespace(
+                app=app_module.create_app(load_environment=False), db=app_module.db
+            )
 
 
 @pytest.fixture
