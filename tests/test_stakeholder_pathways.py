@@ -34,8 +34,9 @@ def full_app_module():
         import app as app_module
 
         app_module = importlib.reload(app_module)
-        hooks = list(app_module.app.before_request_funcs.get(None, []))
-        app_module.app.before_request_funcs[None] = [
+        app_module.web = app_module.create_app(load_environment=False)
+        hooks = list(app_module.web.before_request_funcs.get(None, []))
+        app_module.web.before_request_funcs[None] = [
             hook
             for hook in hooks
             if not (
@@ -46,7 +47,7 @@ def full_app_module():
         try:
             yield app_module
         finally:
-            app_module.app.before_request_funcs[None] = hooks
+            app_module.web.before_request_funcs[None] = hooks
 
 
 # --- Landing pathways wayfinding ---
@@ -66,7 +67,7 @@ def test_landing_has_four_stakeholder_pathways():
 
 
 def test_fuer_bewohner_route_renders(full_app_module):
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
     resp = client.get("/fuer-bewohner", follow_redirects=True)
     assert resp.status_code == 200
     html = resp.data.decode("utf-8", errors="ignore")
@@ -137,7 +138,7 @@ def test_fuer_bewohner_in_sitemap(full_app_module, monkeypatch):
     monkeypatch.setattr(
         full_app_module.db, "get_all_municipality_profile_bfs_numbers", lambda: [4021]
     )
-    client = full_app_module.app.test_client()
+    client = full_app_module.web.test_client()
     xml = client.get("/sitemap.xml", follow_redirects=True).data.decode(
         "utf-8", errors="ignore"
     )

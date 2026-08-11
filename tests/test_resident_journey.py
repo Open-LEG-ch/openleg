@@ -53,7 +53,8 @@ def resident_client():
         with patch.object(
             app_module.db, "get_stats", return_value={"total_buildings": 0}
         ):
-            yield app_module.app.test_client()
+            application = app_module.create_app(load_environment=False)
+            yield application.test_client()
 
 
 @pytest.fixture

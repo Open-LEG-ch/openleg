@@ -154,7 +154,7 @@ Use a production WSGI server instead of Flask's development server:
 pip install gunicorn
 
 # Run with Gunicorn
-gunicorn -w 4 -b 0.0.0.0:8000 app:app
+gunicorn -w 4 -b 0.0.0.0:8000 wsgi:app
 ```
 
 #### Reverse Proxy
@@ -305,4 +305,3 @@ Please do NOT publicly disclose security issues without coordination.
 ---
 
 Last updated: November 2024
-

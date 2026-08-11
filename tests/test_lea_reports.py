@@ -4,8 +4,6 @@
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -24,17 +22,16 @@ class TestLeaReportWebhook:
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
         ):
-            try:
-                from app import app
+            from app import create_app
 
-                client = app.test_client()
-                resp = client.post(
-                    "/api/internal/lea-report",
-                    json={"job_name": "test", "summary": "hi"},
-                )
-                assert resp.status_code == 403
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = create_app(
+                {"RATELIMIT_STORAGE_URI": "memory://"}, load_environment=False
+            ).test_client()
+            resp = client.post(
+                "/api/internal/lea-report",
+                json={"job_name": "test", "summary": "hi"},
+            )
+            assert resp.status_code == 403
 
     def test_lea_report_accepts_with_valid_token(self):
         with (
@@ -51,19 +48,17 @@ class TestLeaReportWebhook:
             patch("database.is_db_available", return_value=True),
             patch("database.save_lea_report", return_value=True),
         ):
-            try:
-                from app import app
+            from app import create_app
 
-                client = app.test_client()
-                resp = client.post(
-                    "/api/internal/lea-report",
-                    json={"job_name": "daily-health-check", "summary": "All good"},
-                    headers={"X-Internal-Token": "secret-internal"},
-                )
-                # Route exists; may 403 if env var not picked up at module level
-                assert resp.status_code in (200, 403)
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = create_app(
+                {"RATELIMIT_STORAGE_URI": "memory://"}, load_environment=False
+            ).test_client()
+            resp = client.post(
+                "/api/internal/lea-report",
+                json={"job_name": "daily-health-check", "summary": "All good"},
+                headers={"X-Internal-Token": "secret-internal"},
+            )
+            assert resp.status_code == 200
 
 
 class TestAdminLeaReports:
@@ -80,14 +75,13 @@ class TestAdminLeaReports:
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
         ):
-            try:
-                from app import app
+            from app import create_app
 
-                client = app.test_client()
-                resp = client.get("/admin/lea-reports")
-                assert resp.status_code == 403
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = create_app(
+                {"RATELIMIT_STORAGE_URI": "memory://"}, load_environment=False
+            ).test_client()
+            resp = client.get("/admin/lea-reports")
+            assert resp.status_code == 403
 
     def test_admin_lea_reports_returns_json(self):
         with (
@@ -103,19 +97,16 @@ class TestAdminLeaReports:
             patch("database.is_db_available", return_value=True),
             patch("database.get_lea_reports", return_value=[]),
         ):
-            try:
-                from app import app
+            from app import create_app
 
-                client = app.test_client()
-                resp = client.get(
-                    "/admin/lea-reports", headers={"X-Admin-Token": "test123"}
-                )
-                assert resp.status_code in (200, 500)
-                if resp.status_code == 200:
-                    data = resp.get_json()
-                    assert "reports" in data
-            except Exception:
-                pytest.skip("App import requires live DB")
+            client = create_app(
+                {"RATELIMIT_STORAGE_URI": "memory://"}, load_environment=False
+            ).test_client()
+            resp = client.get(
+                "/admin/lea-reports", headers={"X-Admin-Token": "test123"}
+            )
+            assert resp.status_code == 200
+            assert "reports" in resp.get_json()
 
 
 class TestLeaReportRouteExists:

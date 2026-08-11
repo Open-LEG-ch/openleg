@@ -29,11 +29,12 @@ def client():
         import app as imported_app
 
         imported_app = importlib.reload(imported_app)
-        hooks = _disable_rate_limit_hooks(imported_app.app)
+        application = imported_app.create_app(load_environment=False)
+        hooks = _disable_rate_limit_hooks(application)
         try:
-            yield imported_app.app.test_client()
+            yield application.test_client()
         finally:
-            imported_app.app.before_request_funcs[None] = hooks
+            application.before_request_funcs[None] = hooks
 
 
 def _html(client, path):

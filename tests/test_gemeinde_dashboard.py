@@ -4,8 +4,6 @@
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 
 def _client():
     with (
@@ -21,10 +19,9 @@ def _client():
         patch("database.init_db", return_value=True),
         patch("database._connection_pool", MagicMock()),
     ):
-        try:
-            from app import app
-        except Exception:
-            pytest.skip("App import requires live DB")
+        from app import create_app
+
+        app = create_app(load_environment=False)
         return app.test_client()
 
 

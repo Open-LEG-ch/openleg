@@ -3,6 +3,7 @@
 
 import subprocess
 import sys
+from pathlib import Path
 
 
 def test_import_is_inert_and_factory_instances_are_isolated():
@@ -21,6 +22,14 @@ with (
 
 database_probe.assert_not_called()
 logging_probe.assert_not_called()
+assert 'app' not in vars(app)
+assert not hasattr(app, 'app')
+try:
+    from app import app as legacy_app
+except ImportError:
+    pass
+else:
+    raise AssertionError(f'legacy app export still available: {legacy_app!r}')
 first = app.create_app(
     {'TESTING': True, 'SECRET_KEY': 'first', 'RATELIMIT_STORAGE_URI': 'memory://'},
     load_environment=False,
@@ -35,12 +44,6 @@ assert first is not second
 assert first.config['SECRET_KEY'] == 'first'
 assert second.config['SECRET_KEY'] == 'second'
 assert first.test_client().get('/livez').status_code == 200
-
-with patch.object(app, 'create_app', return_value=object()) as factory:
-    app._compatibility_app = None
-    app.app._get_current_object()
-
-factory.assert_called_once_with()
 """,
         ],
         capture_output=True,
@@ -49,3 +52,10 @@ factory.assert_called_once_with()
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_documented_gunicorn_target_uses_wsgi_entrypoint():
+    security = Path("SECURITY.md").read_text()
+
+    assert "gunicorn -w 4 -b 0.0.0.0:8000 wsgi:app" in security
+    assert "app:app" not in security

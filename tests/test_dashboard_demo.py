@@ -28,15 +28,16 @@ def app_module():
         import app as imported_app
 
         imported_app = importlib.reload(imported_app)
-        hooks = _disable_rate_limit_hooks(imported_app.app)
+        imported_app.web = imported_app.create_app(load_environment=False)
+        hooks = _disable_rate_limit_hooks(imported_app.web)
         try:
             yield imported_app
         finally:
-            imported_app.app.before_request_funcs[None] = hooks
+            imported_app.web.before_request_funcs[None] = hooks
 
 
 def test_dashboard_demo_route_renders_fake_data(app_module):
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     response = client.get("/dashboard/demo")
 
     assert response.status_code == 200
@@ -76,7 +77,7 @@ def test_readiness_counts_neighbors_at_zero_coordinates(monkeypatch):
 
 
 def test_dashboard_uses_brand_system_not_bespoke_css(app_module):
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     html = client.get("/dashboard/demo").get_data(as_text=True)
     # the old template shipped its own .dashboard-* stylesheet
     assert ".dashboard-wrap{" not in html.replace(" ", "")
@@ -84,14 +85,14 @@ def test_dashboard_uses_brand_system_not_bespoke_css(app_module):
 
 
 def test_dashboard_open_checks_are_actionable(app_module):
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     html = client.get("/dashboard/demo").get_data(as_text=True)
     # demo data has exactly one open check; it must carry an action link
     assert html.count("check-action") >= 1
 
 
 def test_dashboard_calculator_has_visible_feedback(app_module):
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     html = client.get("/dashboard/demo").get_data(as_text=True)
     assert 'id="calc-error"' in html
 
@@ -99,9 +100,9 @@ def test_dashboard_calculator_has_visible_feedback(app_module):
 def test_dashboard_internal_links_resolve(app_module):
     import re as _re
 
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     html = client.get("/dashboard/demo").get_data(as_text=True)
-    adapter = app_module.app.url_map.bind("localhost")
+    adapter = app_module.web.url_map.bind("localhost")
     hrefs = {
         h.split("#")[0].split("?")[0]
         for h in _re.findall(r'href="(/[^"]*)"', html)

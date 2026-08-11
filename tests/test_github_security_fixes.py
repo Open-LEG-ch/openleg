@@ -49,11 +49,12 @@ def full_app_module():
         import app as app_module
 
         app_module = importlib.reload(app_module)
-        hooks = _disable_rate_limit_hooks(app_module.app)
+        app_module.web = app_module.create_app(load_environment=False)
+        hooks = _disable_rate_limit_hooks(app_module.web)
         try:
             yield app_module
         finally:
-            app_module.app.before_request_funcs[None] = hooks
+            app_module.web.before_request_funcs[None] = hooks
 
 
 # ---------------------------------------------------------------------------
@@ -140,7 +141,7 @@ def test_check_potential_does_not_expose_exception_text(full_app_module, monkeyp
         MagicMock(side_effect=RuntimeError("boom")),
     )
 
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     resp = client.post(
         "/api/check_potential", json={"address": "Bahnhofstrasse 1, Zürich"}
     )
@@ -153,7 +154,7 @@ def test_check_potential_does_not_expose_exception_text(full_app_module, monkeyp
 
 def test_meter_data_upload_malformed_tier_returns_json_error(full_app_module):
     app_module = full_app_module
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     resp = client.post(
         "/api/meter-data/upload",
         json={"building_id": "b-123", "csv_content": "x", "tier": "not-an-int"},
@@ -175,7 +176,7 @@ def test_meter_data_upload_get_building_error_is_generic(full_app_module, monkey
         app_module.db, "get_building", MagicMock(side_effect=RuntimeError("db down"))
     )
 
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     resp = client.post(
         "/api/meter-data/upload",
         json={"building_id": "b-123", "csv_content": "x", "tier": 1},
@@ -198,7 +199,7 @@ def test_meter_data_upload_save_consent_error_is_generic(full_app_module, monkey
         MagicMock(side_effect=RuntimeError("consent save failed")),
     )
 
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     resp = client.post(
         "/api/meter-data/upload",
         json={"building_id": "b-123", "csv_content": "x", "tier": 1},
@@ -221,7 +222,7 @@ def test_meter_data_upload_does_not_expose_exception_text(full_app_module, monke
         app_module.db, "get_building", lambda _bid: {"building_id": _bid}
     )
 
-    client = app_module.app.test_client()
+    client = app_module.web.test_client()
     resp = client.post(
         "/api/meter-data/upload",
         json={"building_id": "b-123", "csv_content": "x", "tier": 1},
