@@ -22,7 +22,10 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 
 def cluster_labels(coordinates, radius_meters=150, min_community_size=3) -> list[int]:
-    """Cluster degree coordinates with DBSCAN and great-circle distances."""
+    """Group (lat, lon) pairs in degrees with DBSCAN over great-circle metres.
+
+    Return one label per input point, using -1 for noise.
+    """
     coordinates = list(coordinates)
     if len(coordinates) < min_community_size:
         return [-1] * len(coordinates)

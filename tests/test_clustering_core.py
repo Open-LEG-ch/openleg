@@ -116,13 +116,17 @@ class TestFindOptimalCommunities:
 
 class TestScikitLearnIsGone:
     def test_requirements_do_not_pin_scikit_learn(self):
-        with open(os.path.join(PROJECT_ROOT, "requirements.txt")) as handle:
+        with open(
+            os.path.join(PROJECT_ROOT, "requirements.txt"), encoding="utf-8"
+        ) as handle:
             content = handle.read().lower()
         assert "scikit-learn" not in content
         assert "sklearn" not in content
 
     def test_ml_models_does_not_import_sklearn(self):
-        with open(os.path.join(PROJECT_ROOT, "ml_models.py")) as handle:
+        with open(
+            os.path.join(PROJECT_ROOT, "ml_models.py"), encoding="utf-8"
+        ) as handle:
             assert "sklearn" not in handle.read()
 
     def test_no_module_imports_sklearn(self):
