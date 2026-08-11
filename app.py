@@ -10,9 +10,11 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from flask import (
+    Blueprint,
     Flask,
     Response,
     abort,
+    current_app,
     g,
     jsonify,
     redirect,
@@ -21,6 +23,7 @@ from flask import (
     send_from_directory,
 )
 from jinja2 import TemplateNotFound
+from werkzeug.local import LocalProxy
 
 import dashboard as dashboard_module
 import data_enricher
@@ -55,40 +58,13 @@ try:
 except ImportError:
     HAS_SECURITY_LIBS = False
 
-# Load environment variables
-load_dotenv()
-
-USE_POSTGRES = db.is_db_available()
-if not USE_POSTGRES:
-    raise RuntimeError("PostgreSQL required. Set DATABASE_URL.")
-
-# --- Cron Secret ---
-CRON_SECRET = os.getenv("CRON_SECRET", "").strip()
-
-# --- Logging ---
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
 logger = logging.getLogger(__name__)
 
-# --- App ---
-app = Flask(__name__)
-app.config["JSON_SORT_KEYS"] = False
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", os.urandom(32).hex())
-app.config["SESSION_COOKIE_SECURE"] = (
-    os.getenv("SESSION_COOKIE_SECURE", "False") == "True"
-)
-app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
-    seconds=int(os.getenv("PERMANENT_SESSION_LIFETIME", "3600"))
-)
-app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB for CSV uploads
+# --- App routes ---
+main_bp = Blueprint("main", __name__)
 
 
-@app.errorhandler(429)
+@main_bp.app_errorhandler(429)
 def handle_rate_limit(_error):
     return (
         jsonify(
@@ -103,78 +79,22 @@ def handle_rate_limit(_error):
     )
 
 
-# --- Basis-URL ---
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5003")
-SITE_URL = APP_BASE_URL.rstrip("/")
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-
-# --- Email ---
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "hallo@openleg.ch")
-
 # --- Rate Limiting & Security ---
 if HAS_SECURITY_LIBS:
     limiter = Limiter(
         get_remote_address,
-        app=app,
         default_limits=["500 per hour"],
-        storage_uri=os.getenv("REDIS_URL", "redis://redis:6379/1"),
         strategy="fixed-window",
     )
-    force_https = APP_BASE_URL.startswith("https://") if APP_BASE_URL else False
-    Talisman(
-        app,
-        force_https=force_https,
-        content_security_policy={
-            "default-src": "'self'",
-            "script-src": [
-                "'self'",
-                "'unsafe-inline'",
-                "https://unpkg.com",
-                "https://cdn.jsdelivr.net",
-                "https://www.googletagmanager.com",
-            ],
-            "style-src": [
-                "'self'",
-                "'unsafe-inline'",
-                "https://unpkg.com",
-                "https://cdn.jsdelivr.net",
-                "https://fonts.googleapis.com",
-            ],
-            "img-src": ["'self'", "data:", "https:", "http:"],
-            "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
-            "connect-src": [
-                "'self'",
-                "https://www.google-analytics.com",
-                "https://region1.google-analytics.com",
-                "https://www.googletagmanager.com",
-            ],
-        },
-        content_security_policy_nonce_in=None,
-    )
-    logger.info("Security features enabled")
 else:
     limiter = None
-
-# --- Register Blueprints ---
-app.register_blueprint(municipality_bp)
-app.register_blueprint(pilot_bp)
-app.register_blueprint(public_api_bp)
-app.register_blueprint(health_bp)
-app.register_blueprint(utility_bp)
-app.register_blueprint(rangliste_bp)
-app.register_blueprint(registry_bp)
-app.register_blueprint(self_host_bp)
-app.register_blueprint(admin_bp)
-
-# --- Multi-tenant middleware ---
-tenant_module.init_tenant_middleware(app, db=db)
 
 
 def render_city_template(template_name, **kwargs):
     """Render a per-city template with fallback to default."""
     tenant = getattr(g, "tenant", tenant_module.DEFAULT_TENANT)
     kwargs.setdefault("tenant", tenant)
-    kwargs.setdefault("site_url", SITE_URL)
+    kwargs.setdefault("site_url", current_app.config["SITE_URL"])
     kwargs.setdefault(
         "ga4_id", tenant.get("ga4_id") or os.getenv("GA4_MEASUREMENT_ID", "")
     )
@@ -185,7 +105,7 @@ def render_city_template(template_name, **kwargs):
         return render_template(template_name, **kwargs)
 
 
-@app.after_request
+@main_bp.after_app_request
 def apply_basic_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
@@ -231,7 +151,7 @@ def send_activity_notification(activity_type, details):
     message_body = (
         f"Neue Aktivität auf {name}:\n\nTyp: {activity_type}\n\nDetails:\n{details}"
     )
-    send_email(ADMIN_EMAIL, subject, message_body)
+    send_email(current_app.config["ADMIN_EMAIL"], subject, message_body)
 
 
 def send_confirmation_email(email, unsubscribe_url, building_id=None, address=None):
@@ -408,7 +328,7 @@ def _ranking_extremes(n=3):
     return best, worst, total
 
 
-@app.route("/")
+@main_bp.route("/")
 def index():
     city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
     stats = db.get_stats(city_id=city_id)
@@ -431,42 +351,42 @@ def index():
     )
 
 
-@app.route("/how-it-works")
+@main_bp.route("/how-it-works")
 def how_it_works():
     return render_city_template("how-it-works.html")
 
 
-@app.route("/fuer-bewohner")
+@main_bp.route("/fuer-bewohner")
 def fuer_bewohner():
     return render_city_template("fuer_bewohner.html")
 
 
-@app.route("/fuer-gemeinden")
+@main_bp.route("/fuer-gemeinden")
 def fuer_gemeinden():
     return render_city_template("fuer_gemeinden.html")
 
 
-@app.route("/open-source")
+@main_bp.route("/open-source")
 def open_source():
     return render_city_template("open_source.html")
 
 
-@app.route("/leg-gruenden")
+@main_bp.route("/leg-gruenden")
 def leg_gruenden():
     return render_city_template("leg_gruenden.html")
 
 
-@app.route("/leg-kalkulator")
+@main_bp.route("/leg-kalkulator")
 def leg_kalkulator():
     return render_city_template("leg_kalkulator.html")
 
 
-@app.route("/pricing")
+@main_bp.route("/pricing")
 def pricing():
     return render_city_template("pricing.html")
 
 
-@app.route("/robots.txt")
+@main_bp.route("/robots.txt")
 def robots_txt():
     lines = [
         "User-agent: *",
@@ -476,21 +396,21 @@ def robots_txt():
         "Disallow: /admin/",
         "Disallow: /confirm/",
         "Disallow: /unsubscribe/",
-        f"Sitemap: {SITE_URL}/sitemap.xml",
+        f"Sitemap: {current_app.config['SITE_URL']}/sitemap.xml",
     ]
     return Response("\n".join(lines) + "\n", mimetype="text/plain")
 
 
-@app.route("/favicon.ico")
+@main_bp.route("/favicon.ico")
 def favicon():
     return send_from_directory(
-        app.static_folder,
+        current_app.static_folder,
         "favicon.ico",
         mimetype="image/vnd.microsoft.icon",
     )
 
 
-@app.route("/sitemap.xml")
+@main_bp.route("/sitemap.xml")
 def sitemap_xml():
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -522,7 +442,9 @@ def sitemap_xml():
         pages.append((f"/gemeinde/profil/{bfs}", "0.8", "weekly", current_date))
     for slug in PILOT_MUNICIPALITIES:
         pages.append((f"/pilotgemeinde/{slug}", "0.8", "weekly", current_date))
-    xml = render_template("sitemap.xml", site_url=SITE_URL, pages=pages)
+    xml = render_template(
+        "sitemap.xml", site_url=current_app.config["SITE_URL"], pages=pages
+    )
     return Response(xml, mimetype="application/xml")
 
 
@@ -530,7 +452,7 @@ def sitemap_xml():
 
 
 # --- Address API ---
-@app.route("/api/suggest_addresses")
+@main_bp.route("/api/suggest_addresses")
 @limiter.limit("30 per minute") if limiter else lambda f: f
 def api_suggest_addresses():
     query = request.args.get("q", "").strip()
@@ -560,14 +482,14 @@ def api_suggest_addresses():
     return jsonify({"suggestions": suggestions})
 
 
-@app.route("/api/get_all_buildings")
+@main_bp.route("/api/get_all_buildings")
 def api_get_all_buildings():
     city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     locations = collect_building_locations(city_id=city_id)
     return jsonify({"buildings": locations})
 
 
-@app.route("/api/get_all_clusters")
+@main_bp.route("/api/get_all_clusters")
 def api_get_all_clusters():
     clusters_raw = db.get_all_clusters()
     clusters = []
@@ -598,7 +520,7 @@ def api_get_all_clusters():
 
 
 # --- Check Potential ---
-@app.route("/api/check_potential", methods=["POST"])
+@main_bp.route("/api/check_potential", methods=["POST"])
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def api_check_potential():
     try:
@@ -648,7 +570,7 @@ def api_check_potential():
             }
         )
     except Exception:
-        app.logger.exception("Unhandled error in /api/check_potential")
+        current_app.logger.exception("Unhandled error in /api/check_potential")
         return jsonify({"error": "Server-Fehler. Bitte später erneut versuchen."}), 500
 
 
@@ -664,7 +586,7 @@ def _registration_response(user_type):
     deps = registration.RegistrationDeps(
         db=db,
         security=security_utils,
-        app_base_url=APP_BASE_URL,
+        app_base_url=current_app.config["APP_BASE_URL"],
         thread=threading.Thread,
         send_confirmation_email=send_confirmation_email,
         run_full_ml_task=run_full_ml_task,
@@ -681,20 +603,20 @@ def _registration_response(user_type):
     return jsonify(payload)
 
 
-@app.route("/api/register_anonymous", methods=["POST"])
+@main_bp.route("/api/register_anonymous", methods=["POST"])
 @limiter.limit("5 per minute") if limiter else lambda f: f
 def api_register_anonymous():
     return _registration_response("anonymous")
 
 
-@app.route("/api/register_full", methods=["POST"])
+@main_bp.route("/api/register_full", methods=["POST"])
 @limiter.limit("5 per minute") if limiter else lambda f: f
 def api_register_full():
     return _registration_response("registered")
 
 
 # --- Meter Data Upload ---
-@app.route("/api/meter-data/upload", methods=["POST"])
+@main_bp.route("/api/meter-data/upload", methods=["POST"])
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def api_meter_data_upload():
     import meter_data
@@ -730,27 +652,27 @@ def api_meter_data_upload():
 
         return jsonify(meter_data.ingest_file(building_id, csv_content))
     except Exception:
-        app.logger.exception("Unhandled error in /api/meter-data/upload")
+        current_app.logger.exception("Unhandled error in /api/meter-data/upload")
         return jsonify({"error": "Server-Fehler beim Verarbeiten der Messdaten."}), 500
 
 
-@app.route("/meter-upload")
+@main_bp.route("/meter-upload")
 def meter_upload_page():
     return render_city_template("meter_upload.html")
 
 
 # --- Unsubscribe ---
-@app.route("/impressum")
+@main_bp.route("/impressum")
 def impressum():
     return render_city_template("impressum.html")
 
 
-@app.route("/datenschutz")
+@main_bp.route("/datenschutz")
 def datenschutz():
     return render_city_template("datenschutz.html")
 
 
-@app.route("/unsubscribe", methods=["GET", "POST"])
+@main_bp.route("/unsubscribe", methods=["GET", "POST"])
 @limiter.limit("5 per minute") if limiter else lambda f: f
 def unsubscribe_page():
     status = None
@@ -782,7 +704,7 @@ def unsubscribe_page():
     )
 
 
-@app.route("/unsubscribe/<token>")
+@main_bp.route("/unsubscribe/<token>")
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def unsubscribe_token(token):
     is_valid_token, _token_error = security_utils.validate_token(token)
@@ -801,24 +723,26 @@ def unsubscribe_token(token):
 
 
 # --- Dashboard ---
-@app.route("/dashboard")
+@main_bp.route("/dashboard")
 def dashboard():
     building_id = request.args.get("bid", "").strip()
     city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     return render_city_template(
         "dashboard.html",
         **dashboard_module.readiness(
-            building_id, city_id=city_id, app_base_url=APP_BASE_URL
+            building_id,
+            city_id=city_id,
+            app_base_url=current_app.config["APP_BASE_URL"],
         ),
     )
 
 
-@app.route("/dashboard/demo")
+@main_bp.route("/dashboard/demo")
 def dashboard_demo():
     return render_city_template("dashboard.html", **dashboard_module.demo_readiness())
 
 
-@app.route("/leg/dashboard")
+@main_bp.route("/leg/dashboard")
 def leg_dashboard():
     community_id = request.args.get("cid", "").strip()
     building_id = request.args.get("bid", "").strip()
@@ -828,7 +752,7 @@ def leg_dashboard():
     )
 
 
-@app.route("/leg/dashboard/demo")
+@main_bp.route("/leg/dashboard/demo")
 def leg_dashboard_demo():
     return render_city_template(
         "leg_dashboard.html", **dashboard_module.leg_demo_overview()
@@ -839,7 +763,7 @@ def _leg_dashboard_redirect(community_id, building_id):
     return redirect(dashboard_module.leg_dashboard_location(community_id, building_id))
 
 
-@app.route("/leg/community/create", methods=["POST"])
+@main_bp.route("/leg/community/create", methods=["POST"])
 def leg_community_create():
     name = request.form.get("name", "")
     building_id = request.form.get("bid", "").strip()
@@ -852,7 +776,7 @@ def leg_community_create():
     return _leg_dashboard_redirect(result["community_id"], building_id)
 
 
-@app.route("/leg/community/<community_id>/invite", methods=["POST"])
+@main_bp.route("/leg/community/<community_id>/invite", methods=["POST"])
 def leg_community_invite(community_id):
     building_id = request.form.get("bid", "").strip()
     invite_building_id = request.form.get("invite_building_id", "").strip()
@@ -860,28 +784,28 @@ def leg_community_invite(community_id):
     return _leg_dashboard_redirect(community_id, building_id)
 
 
-@app.route("/leg/community/<community_id>/confirm", methods=["POST"])
+@main_bp.route("/leg/community/<community_id>/confirm", methods=["POST"])
 def leg_community_confirm(community_id):
     building_id = request.form.get("bid", "").strip()
     dashboard_module.leg_confirm(community_id, building_id)
     return _leg_dashboard_redirect(community_id, building_id)
 
 
-@app.route("/leg/community/<community_id>/start-formation", methods=["POST"])
+@main_bp.route("/leg/community/<community_id>/start-formation", methods=["POST"])
 def leg_community_start_formation(community_id):
     building_id = request.form.get("bid", "").strip()
     dashboard_module.leg_start_formation(community_id, building_id)
     return _leg_dashboard_redirect(community_id, building_id)
 
 
-@app.route("/leg/community/<community_id>/documents", methods=["POST"])
+@main_bp.route("/leg/community/<community_id>/documents", methods=["POST"])
 def leg_community_documents(community_id):
     building_id = request.form.get("bid", "").strip()
     dashboard_module.leg_generate_documents(community_id, building_id)
     return _leg_dashboard_redirect(community_id, building_id)
 
 
-@app.route("/leg/community/<community_id>/correspondence", methods=["POST"])
+@main_bp.route("/leg/community/<community_id>/correspondence", methods=["POST"])
 def leg_community_correspondence(community_id):
     building_id = request.form.get("bid", "").strip()
     dashboard_module.leg_log_correspondence(
@@ -896,7 +820,7 @@ def leg_community_correspondence(community_id):
     return _leg_dashboard_redirect(community_id, building_id)
 
 
-@app.route("/leg/document/<int:doc_id>")
+@main_bp.route("/leg/document/<int:doc_id>")
 def leg_document_download(doc_id):
     building_id = request.args.get("bid", "").strip()
     doc = dashboard_module.leg_document_for_member(doc_id, building_id)
@@ -912,14 +836,16 @@ def leg_document_download(doc_id):
 
 
 # --- Referral System ---
-@app.route("/api/referral/stats/<building_id>")
+@main_bp.route("/api/referral/stats/<building_id>")
 def api_referral_stats(building_id):
     stats = db.get_referral_stats(building_id)
     referral_code = db.get_referral_code(building_id)
     return jsonify(
         {
             "referral_code": referral_code,
-            "referral_link": f"{APP_BASE_URL}/?ref={referral_code}"
+            "referral_link": (
+                f"{current_app.config['APP_BASE_URL']}/?ref={referral_code}"
+            )
             if referral_code
             else None,
             "total_referrals": stats.get("total_referrals", 0),
@@ -927,7 +853,7 @@ def api_referral_stats(building_id):
     )
 
 
-@app.route("/api/referral/leaderboard")
+@main_bp.route("/api/referral/leaderboard")
 def api_referral_leaderboard():
     city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     leaderboard = db.get_referral_leaderboard(limit=10, city_id=city_id)
@@ -937,7 +863,7 @@ def api_referral_leaderboard():
     return jsonify({"leaderboard": leaderboard})
 
 
-@app.route("/api/stats/public")
+@main_bp.route("/api/stats/public")
 def api_public_stats():
     city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     stats = db.get_stats(city_id=city_id)
@@ -949,7 +875,7 @@ def api_public_stats():
     )
 
 
-@app.route("/api/stats/live")
+@main_bp.route("/api/stats/live")
 def api_live_stats():
     city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else None
     stats = db.get_stats(city_id=city_id)
@@ -964,7 +890,7 @@ def api_live_stats():
 
 
 # --- Savings Calculator ---
-@app.route("/api/calculate_savings", methods=["POST"])
+@main_bp.route("/api/calculate_savings", methods=["POST"])
 def api_calculate_savings():
     data = request.json or {}
     consumption = float(data.get("consumption_kwh", 4500))
@@ -995,7 +921,7 @@ def api_calculate_savings():
 
 
 # --- Formation API ---
-@app.route("/api/formation/optimize", methods=["POST"])
+@main_bp.route("/api/formation/optimize", methods=["POST"])
 def api_formation_optimize():
     """LEG optimization endpoint."""
     import formation_wizard
@@ -1009,7 +935,7 @@ def api_formation_optimize():
     return jsonify({"clusters": clusters})
 
 
-@app.route("/api/formation/financial-model", methods=["POST"])
+@main_bp.route("/api/formation/financial-model", methods=["POST"])
 def api_formation_financial_model():
     """Savings projection for a LEG."""
     import formation_wizard
@@ -1032,19 +958,20 @@ def api_formation_financial_model():
 def _require_cron_secret():
     """Cron endpoints fail closed: no CRON_SECRET configured means no access."""
     secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
-    if not CRON_SECRET or secret != CRON_SECRET:
+    configured = current_app.config["CRON_SECRET"]
+    if not configured or secret != configured:
         log_security_event("CRON_ACCESS_DENIED", "Invalid cron secret", "WARNING")
         abort(403)
 
 
-@app.route("/api/cron/process-emails", methods=["POST"])
+@main_bp.route("/api/cron/process-emails", methods=["POST"])
 def api_cron_process_emails():
     _require_cron_secret()
-    result = email_automation.process_email_queue(app=app)
+    result = email_automation.process_email_queue(app=current_app)
     return jsonify(result)
 
 
-@app.route("/api/cron/refresh-public-data", methods=["POST"])
+@main_bp.route("/api/cron/refresh-public-data", methods=["POST"])
 def api_cron_refresh_public_data():
     _require_cron_secret()
     import public_data
@@ -1053,7 +980,7 @@ def api_cron_refresh_public_data():
     return jsonify(result)
 
 
-@app.route("/api/cron/backfill-elcom", methods=["POST"])
+@main_bp.route("/api/cron/backfill-elcom", methods=["POST"])
 def api_cron_backfill_elcom():
     _require_cron_secret()
     import public_data
@@ -1083,7 +1010,7 @@ def api_cron_backfill_elcom():
     return jsonify(result)
 
 
-@app.route("/api/email/stats")
+@main_bp.route("/api/email/stats")
 def api_email_stats():
     require_admin()
     return jsonify(db.get_email_stats())
@@ -1092,7 +1019,7 @@ def api_email_stats():
 # --- Webhooks ---
 
 
-@app.route("/webhook/deepsign", methods=["POST"])
+@main_bp.route("/webhook/deepsign", methods=["POST"])
 def webhook_deepsign():
     """Handle DeepSign e-signature webhook callbacks."""
     import deepsign_integration
@@ -1110,7 +1037,7 @@ def webhook_deepsign():
 
 
 # --- Billing Cron ---
-@app.route("/api/cron/process-billing", methods=["POST"])
+@main_bp.route("/api/cron/process-billing", methods=["POST"])
 def api_cron_process_billing():
     _require_cron_secret()
 
@@ -1126,15 +1053,17 @@ def api_cron_process_billing():
     )
 
 
-@app.route("/api/cron/verify-registry-entries", methods=["POST"])
+@main_bp.route("/api/cron/verify-registry-entries", methods=["POST"])
 def api_cron_verify_registry_entries():
     _require_cron_secret()
 
-    result = leg_registry.send_verification_nudges(base_url=SITE_URL)
+    result = leg_registry.send_verification_nudges(
+        base_url=current_app.config["SITE_URL"]
+    )
     return jsonify(result)
 
 
-@app.route("/api/billing/community/<community_id>/period/<int:period_id>")
+@main_bp.route("/api/billing/community/<community_id>/period/<int:period_id>")
 def api_billing_period(community_id, period_id):
     require_admin()
     period = db.get_billing_period(period_id)
@@ -1144,7 +1073,7 @@ def api_billing_period(community_id, period_id):
 
 
 # --- Metrics ---
-@app.route("/metrics")
+@main_bp.route("/metrics")
 def metrics():
     stats = db.get_stats()
     communities = db.get_active_communities()
@@ -1157,5 +1086,107 @@ def metrics():
     )
 
 
+def create_app(config=None, *, load_environment=True, check_database=True):
+    """Create one configured OpenLEG Flask application."""
+    if load_environment:
+        load_dotenv()
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler()],
+    )
+    if check_database and not db.is_db_available():
+        raise RuntimeError("PostgreSQL required. Set DATABASE_URL.")
+
+    application = Flask(__name__)
+    app_base_url = os.getenv("APP_BASE_URL", "http://localhost:5003")
+    application.config.from_mapping(
+        JSON_SORT_KEYS=False,
+        SECRET_KEY=os.getenv("SECRET_KEY", os.urandom(32).hex()),
+        SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "False") == "True",
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE=os.getenv("SESSION_COOKIE_SAMESITE", "Lax"),
+        PERMANENT_SESSION_LIFETIME=timedelta(
+            seconds=int(os.getenv("PERMANENT_SESSION_LIFETIME", "3600"))
+        ),
+        MAX_CONTENT_LENGTH=10 * 1024 * 1024,
+        APP_BASE_URL=app_base_url,
+        SITE_URL=app_base_url.rstrip("/"),
+        ALLOWED_HOSTS=os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(","),
+        ADMIN_EMAIL=os.getenv("ADMIN_EMAIL", "hallo@openleg.ch"),
+        CRON_SECRET=os.getenv("CRON_SECRET", "").strip(),
+        RATELIMIT_STORAGE_URI=os.getenv("REDIS_URL", "redis://redis:6379/1"),
+    )
+    if config:
+        application.config.update(config)
+        if "APP_BASE_URL" in config and "SITE_URL" not in config:
+            application.config["SITE_URL"] = config["APP_BASE_URL"].rstrip("/")
+
+    for blueprint in (
+        main_bp,
+        municipality_bp,
+        pilot_bp,
+        public_api_bp,
+        health_bp,
+        utility_bp,
+        rangliste_bp,
+        registry_bp,
+        self_host_bp,
+        admin_bp,
+    ):
+        application.register_blueprint(blueprint)
+    tenant_module.init_tenant_middleware(application, db=db)
+
+    if HAS_SECURITY_LIBS:
+        limiter.init_app(application)
+        Talisman(
+            application,
+            force_https=application.config["APP_BASE_URL"].startswith("https://"),
+            content_security_policy={
+                "default-src": "'self'",
+                "script-src": [
+                    "'self'",
+                    "'unsafe-inline'",
+                    "https://unpkg.com",
+                    "https://cdn.jsdelivr.net",
+                    "https://www.googletagmanager.com",
+                ],
+                "style-src": [
+                    "'self'",
+                    "'unsafe-inline'",
+                    "https://unpkg.com",
+                    "https://cdn.jsdelivr.net",
+                    "https://fonts.googleapis.com",
+                ],
+                "img-src": ["'self'", "data:", "https:", "http:"],
+                "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
+                "connect-src": [
+                    "'self'",
+                    "https://www.google-analytics.com",
+                    "https://region1.google-analytics.com",
+                    "https://www.googletagmanager.com",
+                ],
+            },
+            content_security_policy_nonce_in=None,
+        )
+        logger.info("Security features enabled")
+
+    return application
+
+
+_compatibility_app = None
+
+
+def _get_compatibility_app():
+    # ponytail: lazy legacy export; remove when callers use create_app or wsgi:app.
+    global _compatibility_app
+    if _compatibility_app is None:
+        _compatibility_app = create_app()
+    return _compatibility_app
+
+
+app = LocalProxy(_get_compatibility_app)
+
+
 if __name__ == "__main__":
-    app.run(port=5003, host="127.0.0.1")
+    create_app().run(port=5003, host="127.0.0.1")
