@@ -3,7 +3,6 @@ from math import atan2, cos, radians, sin, sqrt
 
 import numpy as np
 import pandas as pd
-from sklearn.cluster import DBSCAN
 
 
 # --- NEU: Eigenständige Distanz-Funktion ---
@@ -20,6 +19,52 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     ) * sin(delta_lambda / 2)
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c
+
+
+def cluster_labels(coordinates, radius_meters=150, min_community_size=3) -> list[int]:
+    """Group (lat, lon) pairs in degrees with DBSCAN over great-circle metres.
+
+    Return one label per input point, using -1 for noise.
+    """
+    coordinates = list(coordinates)
+    if len(coordinates) < min_community_size:
+        return [-1] * len(coordinates)
+
+    neighbours = [
+        [
+            other_index
+            for other_index, other in enumerate(coordinates)
+            if calculate_distance(*point, *other) <= radius_meters
+        ]
+        for point in coordinates
+    ]
+    labels = [None] * len(coordinates)
+    cluster_id = 0
+
+    for point_index, point_neighbours in enumerate(neighbours):
+        if labels[point_index] is not None:
+            continue
+        if len(point_neighbours) < min_community_size:
+            labels[point_index] = -1
+            continue
+
+        labels[point_index] = cluster_id
+        pending = list(point_neighbours)
+        pending_set = set(pending)
+        for neighbour_index in pending:
+            if labels[neighbour_index] is None:
+                neighbour_neighbours = neighbours[neighbour_index]
+                if len(neighbour_neighbours) >= min_community_size:
+                    for candidate in neighbour_neighbours:
+                        if candidate not in pending_set:
+                            pending.append(candidate)
+                            pending_set.add(candidate)
+            if labels[neighbour_index] in (None, -1):
+                labels[neighbour_index] = cluster_id
+
+        cluster_id += 1
+
+    return labels
 
 
 # --- Profil-Generator ---
@@ -186,28 +231,19 @@ def find_optimal_communities(building_data_df, radius_meters=150, min_community_
     # Dies stellt sicher, dass wir einen normalen numerischen Index haben
     working_df = pd.DataFrame(building_data_df.to_dict("records"))
 
-    coords = working_df[["lat", "lon"]].values
-    coords_rad = np.radians(coords)
+    labels = cluster_labels(
+        working_df[["lat", "lon"]].itertuples(index=False, name=None),
+        radius_meters,
+        min_community_size,
+    )
+    working_df["cluster"] = labels
 
-    earth_radius_m = 6371e3
-    eps_rad = radius_meters / earth_radius_m
-
-    # Führe DBSCAN mit Haversine-Distanz (echte Erddistanz) aus
-    db = DBSCAN(
-        eps=eps_rad,
-        min_samples=min_community_size,
-        algorithm="ball_tree",
-        metric="haversine",
-    ).fit(coords_rad)
-
-    working_df["cluster"] = db.labels_
-
-    num_clusters = len(set(db.labels_)) - (1 if -1 in db.labels_ else 0)
+    num_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     print(f"[ML] DBSCAN fand {num_clusters} potenzielle Gemeinschaften.")
 
     print("[ML] Simuliere Autarkie für jeden Cluster...")
     results = []
-    for cluster_id in set(db.labels_):
+    for cluster_id in set(labels):
         if cluster_id == -1:
             continue  # Rauscht-Cluster (isolierte Gebäude)
 
