@@ -156,6 +156,23 @@ def test_profile_export_normalizes_non_json_values(monkeypatch):
     assert "private_internal" not in exported
 
 
+def test_profile_export_omits_non_finite_numbers(monkeypatch):
+    monkeypatch.setattr(
+        dashboard.db,
+        "get_building",
+        lambda _building_id: {
+            "building_id": "building-1",
+            "lat": float("nan"),
+            "annual_consumption_kwh": float("inf"),
+        },
+    )
+
+    exported = dashboard.export_profile("building-1")
+
+    assert "lat" not in exported
+    assert "annual_consumption_kwh" not in exported
+
+
 def test_dashboard_templates_expose_human_controls_and_progress():
     leg = Path("templates/leg_dashboard.html").read_text(encoding="utf-8")
     resident = Path("templates/dashboard.html").read_text(encoding="utf-8")
@@ -193,6 +210,30 @@ def test_correspondence_rejects_non_pdf_attachment(monkeypatch):
     )
 
     assert result["error"] == "Anhänge müssen PDF-Dateien sein."
+    save.assert_not_called()
+
+
+def test_correspondence_rejects_empty_selected_pdf(monkeypatch):
+    monkeypatch.setattr(
+        dashboard.formation_wizard,
+        "get_community_status",
+        lambda *_args: {"members": [{"building_id": "b-admin"}]},
+    )
+    save = MagicMock()
+    monkeypatch.setattr(dashboard.db, "log_correspondence", save)
+
+    result = dashboard.leg_log_correspondence(
+        "c0ffee",
+        "b-admin",
+        "in",
+        "email",
+        "VNB",
+        "Antwort",
+        attachment_filename="leer.pdf",
+        attachment_data=b"",
+    )
+
+    assert result["error"] == "Der Anhang ist keine gültige PDF-Datei."
     save.assert_not_called()
 
 

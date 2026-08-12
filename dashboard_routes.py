@@ -337,7 +337,11 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
         attachment = request.files.get("attachment")
-        attachment_data = attachment.read(2 * 1024 * 1024 + 1) if attachment else None
+        attachment_data = (
+            attachment.read(2 * 1024 * 1024 + 1)
+            if attachment and attachment.filename
+            else None
+        )
         result = dashboard_module.leg_log_correspondence(
             community_id,
             building_id,
@@ -346,7 +350,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             counterparty=request.form.get("counterparty", ""),
             subject=request.form.get("subject", ""),
             notes=request.form.get("notes", ""),
-            attachment_filename=attachment.filename if attachment else "",
+            attachment_filename=(
+                attachment.filename if attachment and attachment.filename else ""
+            ),
             attachment_data=attachment_data,
         )
         if result["error"]:

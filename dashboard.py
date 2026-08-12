@@ -208,12 +208,16 @@ def export_profile(building_id: str) -> dict:
     exported = {}
     for field in _PROFILE_EXPORT_FIELDS:
         value = profile.get(field)
+        if isinstance(value, float) and not math.isfinite(value):
+            continue
         if value is None or isinstance(value, (str, int, float, bool)):
             exported[field] = value
         elif hasattr(value, "isoformat"):
             exported[field] = value.isoformat()
         elif field in {"lat", "lon", "annual_consumption_kwh", "potential_pv_kwp"}:
-            exported[field] = float(value)
+            numeric_value = float(value)
+            if math.isfinite(numeric_value):
+                exported[field] = numeric_value
     return exported
 
 
@@ -272,7 +276,7 @@ def leg_log_correspondence(
     ):
         return {"error": "Kein Zugriff."}
 
-    if attachment_data:
+    if attachment_data is not None:
         if not attachment_filename.lower().endswith(".pdf"):
             return {"error": "Anhänge müssen PDF-Dateien sein."}
         if not attachment_data.startswith(b"%PDF-"):
