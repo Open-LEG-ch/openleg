@@ -27,7 +27,12 @@ def test_product_flow_has_real_animated_gif_and_static_fallback(name):
     with Image.open(gif_path) as animation:
         assert animation.format == "GIF"
         assert animation.n_frames >= 4
-        assert animation.info.get("duration", 0) >= 200
+        assert animation.info.get("loop") is None
+        total_duration = 0
+        for frame_number in range(animation.n_frames):
+            animation.seek(frame_number)
+            total_duration += animation.info.get("duration", 0)
+        assert 1_000 <= total_duration <= 5_000
     with Image.open(fallback_path) as fallback:
         assert fallback.format == "WEBP"
 
