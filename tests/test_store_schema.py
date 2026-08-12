@@ -21,6 +21,7 @@ CORE_TABLES = (
     "buildings",
     "clusters",
     "tokens",
+    "dashboard_access_tokens",
     "scheduled_emails",
     "municipality_profiles",
     "elcom_tariffs",
