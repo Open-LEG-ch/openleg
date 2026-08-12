@@ -95,7 +95,7 @@ def test_token_requires_unsubscribe_type(app_module, monkeypatch):
     delete_building.assert_not_called()
 
 
-def test_token_is_consumed_before_profile_deletion(app_module, monkeypatch):
+def test_token_get_only_renders_confirmation(app_module, monkeypatch):
     imported_app, web = app_module
     token = "12345678-1234-1234-1234-123456789abc"
     monkeypatch.setattr(
@@ -103,11 +103,47 @@ def test_token_is_consumed_before_profile_deletion(app_module, monkeypatch):
         "get_token",
         lambda _token: {"building_id": "building-1", "token_type": "unsubscribe"},
     )
-    monkeypatch.setattr(imported_app.db, "use_token", lambda _token: False)
-    delete_building = MagicMock()
-    monkeypatch.setattr(imported_app.db, "delete_building", delete_building)
+    confirm_deletion = MagicMock()
+    monkeypatch.setattr(imported_app.db, "confirm_profile_deletion", confirm_deletion)
 
-    replay = web.test_client().get(f"/unsubscribe/{token}")
+    response = web.test_client().get(f"/unsubscribe/{token}")
 
-    assert replay.status_code == 404
-    delete_building.assert_not_called()
+    assert response.status_code == 200
+    assert "Löschung bestätigen" in response.get_data(as_text=True)
+    confirm_deletion.assert_not_called()
+
+
+def test_token_post_deletes_atomically(app_module, monkeypatch):
+    imported_app, web = app_module
+    token = "12345678-1234-1234-1234-123456789abc"
+    monkeypatch.setattr(
+        imported_app.db,
+        "get_token",
+        lambda _token: {"building_id": "building-1", "token_type": "unsubscribe"},
+    )
+    confirm_deletion = MagicMock(return_value=True)
+    monkeypatch.setattr(imported_app.db, "confirm_profile_deletion", confirm_deletion)
+
+    response = web.test_client().post(f"/unsubscribe/{token}")
+
+    assert response.status_code == 200
+    assert "erfolgreich gelöscht" in response.get_data(as_text=True)
+    confirm_deletion.assert_called_once_with(token)
+
+
+def test_failed_atomic_deletion_does_not_report_success(app_module, monkeypatch):
+    imported_app, web = app_module
+    token = "12345678-1234-1234-1234-123456789abc"
+    monkeypatch.setattr(
+        imported_app.db,
+        "get_token",
+        lambda _token: {"building_id": "building-1", "token_type": "unsubscribe"},
+    )
+    monkeypatch.setattr(
+        imported_app.db, "confirm_profile_deletion", lambda _token: False
+    )
+
+    response = web.test_client().post(f"/unsubscribe/{token}")
+
+    assert response.status_code == 409
+    assert "nicht gelöscht" in response.get_data(as_text=True)

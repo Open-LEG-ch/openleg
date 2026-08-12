@@ -724,7 +724,7 @@ def unsubscribe_page():
     )
 
 
-@main_bp.route("/unsubscribe/<token>")
+@main_bp.route("/unsubscribe/<token>", methods=["GET", "POST"])
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def unsubscribe_token(token):
     try:
@@ -736,12 +736,28 @@ def unsubscribe_token(token):
     if not token_info or token_info.get("token_type") != "unsubscribe":
         abort(404)
 
-    if not db.use_token(token_uuid):
-        abort(404)
+    if request.method == "GET":
+        return render_template(
+            "unsubscribe.html",
+            status=None,
+            message=None,
+            email="",
+            confirm_deletion=True,
+        )
 
-    building_id = token_info["building_id"]
-    db.cancel_emails_for_building(building_id)
-    db.delete_building(building_id)
+    if not db.confirm_profile_deletion(token_uuid):
+        return (
+            render_template(
+                "unsubscribe.html",
+                status="error",
+                message=(
+                    "Ihre Daten wurden nicht gelöscht. Der Link ist möglicherweise "
+                    "abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
+                ),
+                email="",
+            ),
+            409,
+        )
     return render_template(
         "unsubscribe.html",
         status="success",
