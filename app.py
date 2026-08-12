@@ -1052,8 +1052,11 @@ def api_cron_process_billing():
             result = billing_runner.run_billing_period(
                 community_id, period_start, period_end
             )
-        except billing_runner.BillingRunError as exc:
-            failures.append({"community_id": community_id, "error": str(exc)})
+        except billing_runner.BillingRunError:
+            logger.exception("Billing run failed for community %s", community_id)
+            failures.append(
+                {"community_id": community_id, "error": "billing_run_failed"}
+            )
             continue
         if result["status"] == "created":
             processed += 1

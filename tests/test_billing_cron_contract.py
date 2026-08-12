@@ -73,7 +73,10 @@ class TestBillingCronHonesty:
             call("c2", "start", "end"),
         ]
 
-    def test_persistence_failure_is_not_counted(self, app_with_cron_secret):
+    def test_persistence_failure_is_redacted_and_not_counted(
+        self, app_with_cron_secret, caplog
+    ):
+        secret_detail = "DATABASE_URL=postgres://private password=hunter2"
         with (
             patch.object(
                 database,
@@ -88,7 +91,7 @@ class TestBillingCronHonesty:
             patch.object(
                 billing_runner,
                 "run_billing_period",
-                side_effect=billing_runner.BillingRunError("not persisted"),
+                side_effect=billing_runner.BillingRunError(secret_detail),
             ),
         ):
             response = _post_process_billing(app_with_cron_secret)
@@ -96,3 +99,8 @@ class TestBillingCronHonesty:
         payload = response.get_json()
         assert payload["processed"] == 0
         assert payload["failed"] == 1
+        assert payload["failures"] == [
+            {"community_id": "c1", "error": "billing_run_failed"}
+        ]
+        assert secret_detail not in response.get_data(as_text=True)
+        assert secret_detail in caplog.text
