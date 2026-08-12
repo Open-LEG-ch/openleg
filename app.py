@@ -109,7 +109,7 @@ def render_city_template(template_name, **kwargs):
 @main_bp.after_app_request
 def apply_basic_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
-    is_private_dashboard = request.path == "/dashboard" and bool(
+    is_private_dashboard = request.path in {"/dashboard", "/dashboard/export"} and bool(
         dashboard_routes._dashboard_session_building_id()
     )
     is_private_leg_dashboard = request.path == "/leg/dashboard" and bool(

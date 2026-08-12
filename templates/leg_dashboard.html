@@ -101,11 +101,20 @@
       {% if leg_documents %}
       <ul class="space-y-2 mb-4">
         {% for doc in leg_documents %}
-        <li class="flex items-center justify-between text-sm">
-          <span>{{ doc.filename }} <span class="text-xs text-ink-muted">({{ doc.signing_status }})</span></span>
+        {% set status_labels = {"unsigned": "Entwurf bereit", "draft": "Entwurf bereit", "sent": "Zur Unterschrift versendet", "viewed": "Von Unterzeichnenden geöffnet", "signed": "Unterzeichnet", "completed": "Unterzeichnet", "declined": "Unterschrift abgelehnt"} %}
+        <li class="rounded-lg border border-line p-4 text-sm">
+          <div class="flex items-center justify-between gap-3">
+          <span class="font-semibold">{{ doc.filename }}</span>
           {% if viewer_has_session %}
           <a href="/leg/document/{{ doc.id }}" class="text-brand hover:underline font-semibold">PDF öffnen</a>
           {% endif %}
+          </div>
+          <dl class="mt-3 grid gap-2 text-xs text-ink-muted sm:grid-cols-3">
+            <div><dt class="font-semibold text-ink">Status</dt><dd>{{ status_labels.get(doc.signing_status, "Status wird geprüft") }}</dd></div>
+            <div><dt class="font-semibold text-ink">Verantwortlich</dt><dd>{{ "Alle Mitglieder" if doc.signing_status in ["sent", "viewed"] else "LEG-Administration" }}</dd></div>
+            <div><dt class="font-semibold text-ink">Nächster Schritt</dt><dd>{{ "Unterschriften abschliessen" if doc.signing_status in ["sent", "viewed"] else "Entwurf prüfen" if doc.signing_status in ["unsigned", "draft"] else "Kein offener Schritt" if doc.signing_status in ["signed", "completed"] else "Vorgehen klären" }}</dd></div>
+          </dl>
+          <p class="mt-2 text-xs text-ink-muted"><strong class="text-ink">Erwartete Dauer:</strong> {{ "bis 14 Tage" if doc.signing_status in ["sent", "viewed"] else "abhängig von Ihrer Prüfung" }}</p>
         </li>
         {% endfor %}
       </ul>
@@ -176,10 +185,11 @@
     {% if is_admin and viewer_has_session %}
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">Mitglied einladen</h2>
+      <p class="text-sm text-ink-muted mb-4">Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen nicht an, ob bereits ein Profil existiert.</p>
       <form method="post" action="/leg/community/{{ community.community_id }}/invite" class="flex flex-col sm:flex-row gap-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label for="invite-building-id" class="sr-only">Profil-ID des Nachbarn</label>
-        <input id="invite-building-id" type="text" name="invite_building_id" placeholder="Profil-ID des Nachbarn" class="flex-1 border rounded-lg px-4 py-2 text-sm">
+        <label for="invite-email" class="sr-only">E-Mail-Adresse</label>
+        <input id="invite-email" type="email" name="invite_email" autocomplete="email" required placeholder="name@beispiel.ch" class="flex-1 border rounded-lg px-4 py-2 text-sm">
         <button type="submit" class="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-dark">Einladen</button>
       </form>
     </section>

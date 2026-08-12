@@ -7,6 +7,29 @@ from urllib.parse import urlencode
 import database as db
 import formation_documents
 import formation_wizard
+import security_utils
+
+_PROFILE_EXPORT_FIELDS = (
+    "building_id",
+    "email",
+    "phone",
+    "address",
+    "lat",
+    "lon",
+    "plz",
+    "building_type",
+    "annual_consumption_kwh",
+    "potential_pv_kwp",
+    "registered_at",
+    "verified",
+    "verified_at",
+    "user_type",
+    "city_id",
+    "share_with_neighbors",
+    "share_with_utility",
+    "updates_opt_in",
+    "consent_version",
+)
 
 
 def leg_dashboard_location(community_id: str) -> str:
@@ -154,6 +177,44 @@ def leg_invite(community_id: str, building_id: str, invite_building_id: str) -> 
     if not ok:
         return {"error": "Einladung nicht möglich (bereits Mitglied?)."}
     return {"error": None}
+
+
+def leg_invite_by_email(community_id: str, building_id: str, invite_email: str) -> dict:
+    """Invite a known profile by email without exposing profile identifiers.
+
+    A valid address always gets the same response. This prevents the operator
+    dashboard from becoming an email-enumeration surface.
+    """
+    if not _require_role(community_id, building_id, "admin"):
+        return {"error": "Nur die Administration kann einladen."}
+    valid, normalized, error = security_utils.validate_email_address(invite_email)
+    if not valid or not normalized:
+        return {"error": error or "Bitte geben Sie eine gültige E-Mail-Adresse ein."}
+
+    for profile in db.get_building_by_email(normalized) or []:
+        invite_building_id = (profile.get("building_id") or "").strip()
+        if not invite_building_id or invite_building_id == building_id:
+            continue
+        formation_wizard.invite_member(
+            db, community_id, invite_building_id, building_id
+        )
+        break
+    return {"error": None}
+
+
+def export_profile(building_id: str) -> dict:
+    """Return an explicit, JSON-safe export of one resident-owned profile."""
+    profile = db.get_building(building_id) or {}
+    exported = {}
+    for field in _PROFILE_EXPORT_FIELDS:
+        value = profile.get(field)
+        if value is None or isinstance(value, (str, int, float, bool)):
+            exported[field] = value
+        elif hasattr(value, "isoformat"):
+            exported[field] = value.isoformat()
+        elif field in {"lat", "lon", "annual_consumption_kwh", "potential_pv_kwp"}:
+            exported[field] = float(value)
+    return exported
 
 
 def leg_confirm(community_id: str, building_id: str) -> dict:

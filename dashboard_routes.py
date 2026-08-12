@@ -9,6 +9,7 @@ closures across test reloads.
 
 import hmac
 import io
+import json
 import secrets
 
 from flask import (
@@ -157,6 +158,23 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             return _mark_private_response(response), 400
         return _exchange_response("/dashboard?saved=1")
 
+    @bp.route("/dashboard/export")
+    def dashboard_profile_export():
+        building_id = _require_dashboard_session()
+        payload = json.dumps(
+            dashboard_module.export_profile(building_id),
+            ensure_ascii=False,
+            indent=2,
+        ).encode("utf-8")
+        return _mark_private_response(
+            send_file(
+                io.BytesIO(payload),
+                mimetype="application/json",
+                as_attachment=True,
+                download_name="openleg-profil.json",
+            )
+        )
+
     @bp.route("/dashboard/access/<token>")
     @_rate_limit(limiter, "10 per minute")
     def dashboard_access_exchange(token):
@@ -278,8 +296,8 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_community_invite(community_id):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
-        invite_building_id = request.form.get("invite_building_id", "").strip()
-        dashboard_module.leg_invite(community_id, building_id, invite_building_id)
+        invite_email = request.form.get("invite_email", "").strip()
+        dashboard_module.leg_invite_by_email(community_id, building_id, invite_email)
         return _leg_dashboard_redirect(community_id)
 
     @bp.route("/leg/community/<community_id>/confirm", methods=["POST"])

@@ -205,6 +205,17 @@
             <a href="mailto:{{ contact_email }}" class="flex justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition"><span>Kontakt</span><span class="text-ink-muted">{{ contact_email }}</span></a>
           </div>
         </section>
+
+        {% if csrf_token %}
+        <section class="bg-white rounded-xl border border-line p-6" aria-labelledby="data-controls-title">
+          <h2 id="data-controls-title" class="text-lg font-bold mb-2">Ihre Daten</h2>
+          <p class="text-sm text-ink-muted mb-4">Laden Sie Ihre Profildaten herunter oder fordern Sie eine bestätigte Löschung an.</p>
+          <div class="grid gap-2">
+            <a href="/dashboard/export" class="rounded-lg border border-line px-4 py-3 font-semibold text-brand hover:bg-brand/5">Profildaten herunterladen</a>
+            <a href="/unsubscribe" class="rounded-lg border border-line px-4 py-3 font-semibold text-ink hover:bg-slate-50">Profil löschen</a>
+          </div>
+        </section>
+        {% endif %}
       </aside>
     </div>
   {% else %}
