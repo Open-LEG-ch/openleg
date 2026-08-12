@@ -71,9 +71,10 @@ def test_gate_ignores_a_stale_ruff_binary_on_path(tmp_path):
 def test_gate_uses_the_selected_python_in_ruff_install_guidance(tmp_path):
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
-    fake_python3 = fake_bin / "python3"
-    fake_python3.write_text("#!/bin/sh\necho 'ruff 0.15.20'\n")
-    fake_python3.chmod(0o755)
+    fake_python = fake_bin / "python"
+    fake_python.write_text("#!/bin/sh\necho 'ruff 0.15.20'\n")
+    fake_python.chmod(0o755)
+    (fake_bin / "python3").symlink_to(fake_python)
     fake_pytest = fake_bin / "pytest"
     fake_pytest.write_text("#!/bin/sh\nexit 99\n")
     fake_pytest.chmod(0o755)
@@ -91,4 +92,4 @@ def test_gate_uses_the_selected_python_in_ruff_install_guidance(tmp_path):
 
     assert result.returncode == 2
     assert "Ruff 0.16.1 required; found 0.15.20" in result.stderr
-    assert "python3 -m pip install -r requirements-dev.txt" in result.stderr
+    assert "python -m pip install -r requirements-dev.txt" in result.stderr
