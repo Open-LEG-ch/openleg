@@ -12,6 +12,8 @@ from tests.test_dashboard_access_routes import (  # noqa: F401
 )
 from tests.test_leg_dashboard import _patch_status
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def test_leg_invite_resolves_email_without_exposing_profile_id(monkeypatch):
     _patch_status(monkeypatch)
@@ -174,8 +176,8 @@ def test_profile_export_omits_non_finite_numbers(monkeypatch):
 
 
 def test_dashboard_templates_expose_human_controls_and_progress():
-    leg = Path("templates/leg_dashboard.html").read_text(encoding="utf-8")
-    resident = Path("templates/dashboard.html").read_text(encoding="utf-8")
+    leg = (ROOT / "templates/leg_dashboard.html").read_text(encoding="utf-8")
+    resident = (ROOT / "templates/dashboard.html").read_text(encoding="utf-8")
 
     assert 'name="invite_email"' in leg
     assert 'name="invite_building_id"' not in leg
