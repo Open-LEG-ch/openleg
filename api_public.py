@@ -204,13 +204,9 @@ def list_tariffs():
     """Tariffs across municipalities."""
     kanton_filter, kanton = _normalize_kanton_param(request.args.get("kanton"))
     year = request.args.get("year", 2026, type=int)
-    profiles = db.get_all_municipality_profiles(kanton=kanton_filter)
-    all_tariffs = []
-    for p in profiles:
-        tariffs = db.get_elcom_tariffs(p["bfs_number"], year=year)
-        for t in tariffs:
-            t["municipality_name"] = p.get("name", "")
-        all_tariffs.extend(_serialize_tariffs(tariffs))
+    all_tariffs = _serialize_tariffs(
+        db.get_all_elcom_tariffs(year=year, kanton=kanton_filter)
+    )
     return jsonify(
         {
             "tariffs": all_tariffs,
