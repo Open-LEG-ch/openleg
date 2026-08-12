@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Dashboard readiness verb."""
 
+import math
 from urllib.parse import urlencode
 
 import database as db
@@ -297,3 +298,56 @@ def demo_readiness() -> dict:
         "referral_link": "https://openleg.ch/?ref=DEMO-LEG",
         "error": None,
     }
+
+
+def update_profile(
+    building_id: str,
+    *,
+    annual_consumption_kwh: str | None = None,
+    potential_pv_kwp: str | None = None,
+    share_with_utility: bool = False,
+    share_with_neighbors: bool = False,
+) -> dict:
+    """Validate and delegate a dashboard profile update.
+
+    Returns ``{"error": None}`` on success or ``{"error": "..."}``
+    when validation fails.  Invalid input never reaches the store.
+    """
+    try:
+        consumption = (
+            float(annual_consumption_kwh)
+            if annual_consumption_kwh not in (None, "")
+            else None
+        )
+    except (TypeError, ValueError):
+        return {"error": "Bitte geben Sie einen gültigen Jahresverbrauch ein."}
+
+    if (
+        consumption is None
+        or not math.isfinite(consumption)
+        or consumption <= 0
+        or consumption > 9_999_999_999.99
+    ):
+        return {"error": "Bitte geben Sie einen gültigen Jahresverbrauch ein."}
+
+    try:
+        pv = float(potential_pv_kwp) if potential_pv_kwp not in (None, "") else None
+    except (TypeError, ValueError):
+        return {"error": "Bitte geben Sie eine gültige Solarleistung ein."}
+
+    if pv is not None and (not math.isfinite(pv) or pv < 0 or pv > 999_999.99):
+        return {"error": "Bitte geben Sie eine gültige Solarleistung ein."}
+
+    saved = db.update_dashboard_profile(
+        building_id,
+        annual_consumption_kwh=consumption,
+        potential_pv_kwp=pv,
+        share_with_utility=share_with_utility,
+        share_with_neighbors=share_with_neighbors,
+    )
+    if not saved:
+        return {
+            "error": "Das Energieprofil konnte nicht gespeichert werden. "
+            "Bitte versuchen Sie es erneut."
+        }
+    return {"error": None}

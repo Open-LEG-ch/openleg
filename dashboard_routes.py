@@ -123,10 +123,39 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         if session_building_id:
             return _mark_private_response(
                 render_city_template(
-                    "dashboard.html", **_dashboard_context(session_building_id)
+                    "dashboard.html",
+                    **_dashboard_context(
+                        session_building_id,
+                        profile_saved=request.args.get("saved") == "1",
+                    ),
                 )
             )
         return render_city_template("dashboard.html", **_dashboard_public_context())
+
+    @bp.route("/dashboard/profile", methods=["POST"])
+    def dashboard_profile_update():
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        potential_pv_kwp = request.form.get("potential_pv_kwp")
+        if request.form.get("has_solar") in {"no", "planned"}:
+            potential_pv_kwp = ""
+        result = dashboard_module.update_profile(
+            building_id,
+            annual_consumption_kwh=request.form.get("annual_consumption_kwh"),
+            potential_pv_kwp=potential_pv_kwp,
+            share_with_utility="share_with_utility" in request.form,
+            share_with_neighbors="share_with_neighbors" in request.form,
+        )
+        if result["error"]:
+            response = render_city_template(
+                "dashboard.html",
+                **_dashboard_context(
+                    building_id,
+                    profile_error=result["error"],
+                ),
+            )
+            return _mark_private_response(response), 400
+        return _exchange_response("/dashboard?saved=1")
 
     @bp.route("/dashboard/access/<token>")
     @_rate_limit(limiter, "10 per minute")
