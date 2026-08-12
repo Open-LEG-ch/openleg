@@ -97,16 +97,21 @@ Execution standard:
 - Prefer `scripts/tdd_cycle.sh` for deterministic loop commands
 - Run full regression gates before merge
 
-## Codex Execution
+## Agent Execution
 
-The `Execution` stage runs as a two-agent loop: an orchestrating agent
-(Claude) writes failing tests, reviews, and verifies; OpenAI Codex
-implements via `codex exec --full-auto`. Full contract and environment
-requirements: `docs/codex-execution.md`.
+The `Execution` stage runs as an orchestrator-executor loop. The primary agent
+plans slices, writes or approves failing tests, reviews every hunk, drives the
+real app, and verifies all gates. Kimi Code implements almost all execution
+tasks through the project-local CLI. The primary agent edits directly only for
+tiny mechanical changes. If Kimi Code is unavailable, use Claude Code. If both
+are unavailable, use ChatGPT 5.4. Record every fallback and its reason.
 
 - One slice, one issue, one `codex/<slug>` branch, one `[codex]` PR.
-- Red tests first; Codex iterates until the full suite is green; the
+- Red tests first; Kimi Code iterates until the full suite is green; the
   orchestrator reviews every hunk and drives the real app before shipping.
+- Run CodeRabbit on every slice before opening or updating its PR. Address all
+  actionable findings and rerun until clean. A rate limit may delay review but
+  never permits shipping without it.
 - `scripts/tdd_cycle.sh gate` must pass before every PR; merge only via PR,
   never push to `main`. QA stays human.
 - Cloud-task alternative: Codex environments use `scripts/codex_setup.sh`

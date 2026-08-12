@@ -28,15 +28,11 @@ def save_dashboard_access_token(
                         %s,
                         CURRENT_TIMESTAMP + (%s * INTERVAL '1 second')
                     )
-                    ON CONFLICT (token_hash) DO UPDATE SET
-                        building_id = EXCLUDED.building_id,
-                        expires_at = EXCLUDED.expires_at,
-                        used_at = NULL,
-                        revoked_at = NULL
+                    ON CONFLICT (token_hash) DO NOTHING
                 """,
                 (token_hash, building_id, ttl_seconds),
             )
-            return True
+            return cur.rowcount > 0
     except Exception as e:
         logger.error(f"[DB] Error saving dashboard access token: {e}")
         return False

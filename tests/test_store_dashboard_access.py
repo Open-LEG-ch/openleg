@@ -52,7 +52,7 @@ def test_database_reexports_dashboard_access_repository():
 
 
 def test_save_persists_only_the_hash_and_expiry(monkeypatch):
-    cursor = _FakeCursor()
+    cursor = _FakeCursor(rowcount=1)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cursor))
 
     assert dashboard_access.save_dashboard_access_token(
@@ -65,6 +65,20 @@ def test_save_persists_only_the_hash_and_expiry(monkeypatch):
     assert "token_hash" in query
     assert "%s * INTERVAL '1 second'" in normalized
     assert params == ("a" * 64, "building-1", 1800)
+
+
+def test_save_fails_closed_on_impossible_hash_collision(monkeypatch):
+    cursor = _FakeCursor(rowcount=0)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cursor))
+
+    assert not dashboard_access.save_dashboard_access_token(
+        "a" * 64, "building-1", ttl_seconds=1800
+    )
+
+    query, _params = cursor.executed[0]
+    normalized = " ".join(query.split())
+    assert "ON CONFLICT (token_hash) DO NOTHING" in normalized
+    assert "DO UPDATE" not in normalized
 
 
 def test_consume_is_atomic_and_rejects_expired_used_or_revoked_tokens(monkeypatch):
