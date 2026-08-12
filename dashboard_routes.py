@@ -297,7 +297,18 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
         invite_email = request.form.get("invite_email", "").strip()
-        dashboard_module.leg_invite_by_email(community_id, building_id, invite_email)
+        result = dashboard_module.leg_invite_by_email(
+            community_id, building_id, invite_email
+        )
+        if result["error"]:
+            response = render_city_template(
+                "leg_dashboard.html",
+                **dashboard_module.leg_overview(community_id, building_id),
+                viewer_has_session=True,
+                csrf_token=_dashboard_csrf_token(),
+                invite_error=result["error"],
+            )
+            return _mark_private_response(response), 400
         return _leg_dashboard_redirect(community_id)
 
     @bp.route("/leg/community/<community_id>/confirm", methods=["POST"])

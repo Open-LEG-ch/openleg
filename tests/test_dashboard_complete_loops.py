@@ -67,6 +67,49 @@ def test_invite_route_uses_email_session_and_csrf(
     invite.assert_called_once_with("c0ffee", "building-session", "person@example.ch")
 
 
+def test_invite_route_renders_validation_error(
+    dashboard_app_module,  # noqa: F811
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        dashboard_app_module.dashboard_module,
+        "leg_invite_by_email",
+        lambda *_args: {"error": "Bitte geben Sie eine gültige E-Mail-Adresse ein."},
+    )
+    overview = {
+        "error": None,
+        "community": {
+            "community_id": "c0ffee",
+            "name": "LEG Musterweg",
+            "status": "interested",
+            "distribution_model": "simple",
+            "readiness_score": 0,
+            "member_count": {"confirmed": 1, "total": 1, "invited": 0},
+            "members": [],
+            "next_steps": [],
+        },
+        "viewer_building_id": "building-session",
+        "is_admin": True,
+        "leg_documents": [],
+        "correspondence": [],
+    }
+    monkeypatch.setattr(
+        dashboard_app_module.dashboard_module,
+        "leg_overview",
+        lambda *_args: overview,
+    )
+    client = dashboard_app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/c0ffee/invite",
+        data={"csrf_token": "csrf-secret", "invite_email": "bad"},
+    )
+
+    assert response.status_code == 400
+    assert "gültige E-Mail-Adresse" in response.get_data(as_text=True)
+
+
 def test_profile_export_is_session_gated_private_and_json(
     dashboard_app_module,  # noqa: F811
     monkeypatch,

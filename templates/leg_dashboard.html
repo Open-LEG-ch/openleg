@@ -186,6 +186,7 @@
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">Mitglied einladen</h2>
       <p class="text-sm text-ink-muted mb-4">Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen nicht an, ob bereits ein Profil existiert.</p>
+      {% if invite_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ invite_error }}</p>{% endif %}
       <form method="post" action="/leg/community/{{ community.community_id }}/invite" class="flex flex-col sm:flex-row gap-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label for="invite-email" class="sr-only">E-Mail-Adresse</label>
