@@ -168,3 +168,49 @@ def test_dashboard_templates_expose_human_controls_and_progress():
     assert "Erwartete Dauer" in leg
     assert 'href="/dashboard/export"' in resident
     assert 'href="/unsubscribe"' in resident
+    assert 'name="attachment"' in leg
+    assert "Korrekturen bleiben" in leg
+
+
+def test_correspondence_rejects_non_pdf_attachment(monkeypatch):
+    monkeypatch.setattr(
+        dashboard.formation_wizard,
+        "get_community_status",
+        lambda *_args: {"members": [{"building_id": "b-admin", "role": "admin"}]},
+    )
+    save = MagicMock()
+    monkeypatch.setattr(dashboard.db, "log_correspondence", save)
+
+    result = dashboard.leg_log_correspondence(
+        "c0ffee",
+        "b-admin",
+        "in",
+        "email",
+        "VNB",
+        "Antwort",
+        attachment_filename="malware.exe",
+        attachment_data=b"MZ",
+    )
+
+    assert result["error"] == "Anhänge müssen PDF-Dateien sein."
+    save.assert_not_called()
+
+
+def test_correspondence_attachment_requires_community_membership(monkeypatch):
+    monkeypatch.setattr(
+        dashboard.db,
+        "get_correspondence_attachment",
+        lambda *_args: {
+            "community_id": "c0ffee",
+            "attachment_filename": "antwort.pdf",
+            "attachment_data": b"%PDF",
+        },
+    )
+    monkeypatch.setattr(
+        dashboard.formation_wizard,
+        "get_community_status",
+        lambda *_args: {"members": [{"building_id": "b-admin"}]},
+    )
+
+    assert dashboard.leg_correspondence_attachment(4, "c0ffee", "stranger") is None
+    assert dashboard.leg_correspondence_attachment(4, "c0ffee", "b-admin")

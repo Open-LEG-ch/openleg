@@ -152,6 +152,7 @@
             <td class="px-3 py-2">{{ entry.subject }}</td>
             <td class="px-3 py-2 text-right text-xs text-ink-muted">{{ entry.created_at }}</td>
           </tr>
+          {% if entry.attachment_filename %}<tr><td colspan="5" class="px-3 pb-3 text-right"><a class="text-sm font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/correspondence/{{ entry.id }}/attachment">{{ entry.attachment_filename }} herunterladen</a></td></tr>{% endif %}
           {% endfor %}
         </tbody>
       </table></div>
@@ -159,7 +160,9 @@
       <p class="text-sm text-ink-muted mb-4">Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu.</p>
       {% endif %}
       {% if viewer_has_session %}
-      <form method="post" action="/leg/community/{{ community.community_id }}/correspondence" class="grid sm:grid-cols-2 gap-3">
+      {% if correspondence_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ correspondence_error }}</p>{% endif %}
+      <p class="mb-4 text-xs text-ink-muted">Das Journal bleibt nachvollziehbar: Korrekturen bleiben als neue Einträge sichtbar. Bestehende Einträge werden nicht überschrieben oder gelöscht.</p>
+      <form method="post" enctype="multipart/form-data" action="/leg/community/{{ community.community_id }}/correspondence" class="grid sm:grid-cols-2 gap-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div><label for="correspondence-direction" class="block text-sm font-semibold mb-1">Richtung</label><select id="correspondence-direction" name="direction" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
           <option value="out">Ausgang</option>
@@ -172,6 +175,7 @@
         <div><label for="correspondence-counterparty" class="block text-sm font-semibold mb-1">Gegenstelle</label><input id="correspondence-counterparty" type="text" name="counterparty" placeholder="z. B. Netzbetreiber" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
         <div><label for="correspondence-subject" class="block text-sm font-semibold mb-1">Betreff</label><input id="correspondence-subject" type="text" name="subject" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
         <div class="sm:col-span-2"><label for="correspondence-notes" class="block text-sm font-semibold mb-1">Notiz <span class="font-normal text-ink-muted">optional</span></label><input id="correspondence-notes" type="text" name="notes" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <div class="sm:col-span-2"><label for="correspondence-attachment" class="block text-sm font-semibold mb-1">PDF-Anhang <span class="font-normal text-ink-muted">optional, höchstens 2 MB</span></label><input id="correspondence-attachment" type="file" name="attachment" accept="application/pdf,.pdf" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
         <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Eintrag hinzufügen</button>
       </form>
       {% else %}

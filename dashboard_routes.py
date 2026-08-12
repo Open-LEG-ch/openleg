@@ -336,7 +336,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_community_correspondence(community_id):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
-        dashboard_module.leg_log_correspondence(
+        attachment = request.files.get("attachment")
+        attachment_data = attachment.read(2 * 1024 * 1024 + 1) if attachment else None
+        result = dashboard_module.leg_log_correspondence(
             community_id,
             building_id,
             direction=request.form.get("direction", ""),
@@ -344,8 +346,38 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             counterparty=request.form.get("counterparty", ""),
             subject=request.form.get("subject", ""),
             notes=request.form.get("notes", ""),
+            attachment_filename=attachment.filename if attachment else "",
+            attachment_data=attachment_data,
         )
+        if result["error"]:
+            response = render_city_template(
+                "leg_dashboard.html",
+                **dashboard_module.leg_overview(community_id, building_id),
+                viewer_has_session=True,
+                csrf_token=_dashboard_csrf_token(),
+                correspondence_error=result["error"],
+            )
+            return _mark_private_response(response), 400
         return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/correspondence/<int:entry_id>/attachment")
+    def leg_correspondence_attachment(community_id, entry_id):
+        building_id = _dashboard_session_building_id()
+        if not building_id:
+            abort(404)
+        attachment = dashboard_module.leg_correspondence_attachment(
+            entry_id, community_id, building_id
+        )
+        if not attachment:
+            abort(404)
+        return _mark_private_response(
+            send_file(
+                io.BytesIO(bytes(attachment["attachment_data"])),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=attachment["attachment_filename"],
+            )
+        )
 
     @bp.route("/leg/document/<int:doc_id>")
     def leg_document_download(doc_id):

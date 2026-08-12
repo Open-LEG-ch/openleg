@@ -262,6 +262,8 @@ def leg_log_correspondence(
     counterparty: str,
     subject: str,
     notes: str = "",
+    attachment_filename: str = "",
+    attachment_data: bytes | None = None,
 ) -> dict:
     """Append a ledger entry; any confirmed or invited member may log."""
     status = formation_wizard.get_community_status(db, community_id)
@@ -269,6 +271,14 @@ def leg_log_correspondence(
         m["building_id"] == building_id for m in status["members"] or []
     ):
         return {"error": "Kein Zugriff."}
+
+    if attachment_data:
+        if not attachment_filename.lower().endswith(".pdf"):
+            return {"error": "Anhänge müssen PDF-Dateien sein."}
+        if not attachment_data.startswith(b"%PDF-"):
+            return {"error": "Der Anhang ist keine gültige PDF-Datei."}
+        if len(attachment_data) > 2 * 1024 * 1024:
+            return {"error": "Der PDF-Anhang darf höchstens 2 MB gross sein."}
 
     entry_id = db.log_correspondence(
         community_id=community_id,
@@ -278,10 +288,25 @@ def leg_log_correspondence(
         subject=(subject or "").strip(),
         notes=(notes or "").strip(),
         logged_by=building_id,
+        attachment_filename=attachment_filename,
+        attachment_mime="application/pdf" if attachment_data else "",
+        attachment_data=attachment_data,
     )
     if entry_id is None:
         return {"error": "Eintrag ungültig (Richtung oder Kanal unbekannt)."}
     return {"error": None, "entry_id": entry_id}
+
+
+def leg_correspondence_attachment(
+    entry_id: int, community_id: str, building_id: str
+) -> dict | None:
+    """Return a correspondence attachment only to a current LEG member."""
+    status = formation_wizard.get_community_status(db, community_id)
+    if not status or not any(
+        member["building_id"] == building_id for member in status["members"] or []
+    ):
+        return None
+    return db.get_correspondence_attachment(entry_id, community_id)
 
 
 def leg_demo_overview() -> dict:

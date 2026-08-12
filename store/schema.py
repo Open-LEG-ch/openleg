@@ -821,9 +821,21 @@ def create_tables():
                     subject VARCHAR(255),
                     notes TEXT,
                     logged_by VARCHAR(64),
+                    attachment_filename VARCHAR(255),
+                    attachment_mime VARCHAR(64),
+                    attachment_data BYTEA,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            cur.execute(
+                "ALTER TABLE correspondence_log ADD COLUMN IF NOT EXISTS attachment_filename VARCHAR(255)"
+            )
+            cur.execute(
+                "ALTER TABLE correspondence_log ADD COLUMN IF NOT EXISTS attachment_mime VARCHAR(64)"
+            )
+            cur.execute(
+                "ALTER TABLE correspondence_log ADD COLUMN IF NOT EXISTS attachment_data BYTEA"
+            )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_correspondence_log_community ON correspondence_log(community_id)"
             )

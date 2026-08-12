@@ -17,6 +17,7 @@ from store import correspondence
 _REEXPORTED = (
     "log_correspondence",
     "list_correspondence",
+    "get_correspondence_attachment",
 )
 
 
@@ -124,3 +125,43 @@ def test_list_correspondence_scoped_to_community(monkeypatch):
     query, params = cur.executed[0]
     assert "community_id = %s" in query
     assert params[0] == "c0ffee"
+
+
+def test_log_correspondence_stores_pdf_attachment(monkeypatch):
+    cur = _FakeCursor(one={"id": 4})
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    entry_id = correspondence.log_correspondence(
+        "c0ffee",
+        "in",
+        "email",
+        "VNB",
+        "Antwort",
+        logged_by="b-admin",
+        attachment_filename="antwort.pdf",
+        attachment_data=b"%PDF-1.7 test",
+    )
+
+    assert entry_id == 4
+    query, params = cur.executed[0]
+    assert "attachment_filename" in query
+    assert params[-3:] == ("antwort.pdf", None, b"%PDF-1.7 test")
+
+
+def test_get_attachment_returns_only_scoped_entry(monkeypatch):
+    cur = _FakeCursor(
+        one={
+            "id": 4,
+            "community_id": "c0ffee",
+            "attachment_filename": "antwort.pdf",
+            "attachment_data": b"%PDF",
+        }
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    row = correspondence.get_correspondence_attachment(4, "c0ffee")
+
+    assert row["attachment_filename"] == "antwort.pdf"
+    query, params = cur.executed[0]
+    assert "id = %s" in query and "community_id = %s" in query
+    assert params == (4, "c0ffee")
