@@ -31,7 +31,10 @@ def save_token(
             cur.execute(
                 """
                     INSERT INTO tokens (token, building_id, token_type, expires_at)
-                    VALUES (%s, %s, %s, CURRENT_TIMESTAMP + INTERVAL '%s seconds')
+                    VALUES (
+                        %s, %s, %s,
+                        CURRENT_TIMESTAMP + (%s * INTERVAL '1 second')
+                    )
                     ON CONFLICT (token) DO UPDATE SET
                         building_id = EXCLUDED.building_id,
                         token_type = EXCLUDED.token_type,
@@ -68,13 +71,15 @@ def get_token(token: str) -> dict | None:
 
 
 def use_token(token: str) -> bool:
-    """Mark a token as used."""
+    """Mark a token as used. Returns True if an unused, unexpired row was updated."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
                     UPDATE tokens SET used_at = CURRENT_TIMESTAMP
                     WHERE token = %s
+                      AND used_at IS NULL
+                      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                 """,
                 (token,),
             )
