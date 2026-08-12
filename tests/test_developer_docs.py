@@ -9,16 +9,25 @@ ROOT = Path(__file__).parents[1]
 
 def test_frontend_build_is_pinned_and_documented():
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+    assert package["name"] == "openleg"
     assert package["private"] is True
     assert package["scripts"]["build:css"] == (
         "tailwindcss -i static/css/tailwind.css -o static/css/openleg.css --minify"
     )
     assert package["devDependencies"]["tailwindcss"] == "3.4.17"
     assert (ROOT / "package-lock.json").is_file()
+    lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
+    assert lock["name"] == "openleg"
     agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     assert "npm ci" in agents
     assert "npm run build:css" in agents
     assert "npx tailwindcss" not in agents
+    lint_workflow = (ROOT / ".github" / "workflows" / "lint.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "npm ci" in lint_workflow
+    assert "npm run build:css" in lint_workflow
+    assert "git diff --exit-code -- static/css/openleg.css" in lint_workflow
 
 
 def test_secure_dashboard_access_is_publicly_documented():

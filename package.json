@@ -1,4 +1,5 @@
 {
+  "name": "openleg",
   "private": true,
   "scripts": {
     "build:css": "tailwindcss -i static/css/tailwind.css -o static/css/openleg.css --minify"
