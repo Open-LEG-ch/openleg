@@ -376,105 +376,6 @@ def get_all_clusters() -> list[dict]:
         return []
 
 
-# === Referral Operations ===
-
-
-def get_referral_code(building_id: str) -> str | None:
-    """Get the referral code for a building."""
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    SELECT referral_code FROM buildings WHERE building_id = %s
-                """,
-                (building_id,),
-            )
-            row = cur.fetchone()
-            if row:
-                return row["referral_code"]
-            return None
-    except Exception as e:
-        logger.error(f"[DB] Error getting referral code: {e}")
-        return None
-
-
-def get_building_by_referral_code(code: str) -> dict | None:
-    """Find a building by its referral code."""
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    SELECT building_id, email, address FROM buildings
-                    WHERE referral_code = %s
-                """,
-                (code,),
-            )
-            row = cur.fetchone()
-            if row:
-                return dict(row)
-            return None
-    except Exception as e:
-        logger.error(f"[DB] Error finding building by referral code: {e}")
-        return None
-
-
-def get_referral_stats(building_id: str) -> dict:
-    """Get referral statistics for a building."""
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    SELECT COUNT(*) as total_referrals
-                    FROM referrals WHERE referrer_id = %s
-                """,
-                (building_id,),
-            )
-            row = cur.fetchone()
-            return {"total_referrals": row["total_referrals"] if row else 0}
-    except Exception as e:
-        logger.error(f"[DB] Error getting referral stats: {e}")
-        return {"total_referrals": 0}
-
-
-def get_referral_leaderboard(limit: int = 10, city_id: str | None = None) -> list[dict]:
-    """Get top referrers, optionally scoped by city_id."""
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            if city_id:
-                cur.execute(
-                    """
-                        SELECT b.building_id,
-                               SPLIT_PART(b.address, ',', 1) as street,
-                               COUNT(r.id) as referral_count
-                        FROM buildings b
-                        JOIN referrals r ON b.building_id = r.referrer_id
-                        WHERE b.city_id = %s
-                        GROUP BY b.building_id, b.address
-                        ORDER BY referral_count DESC
-                        LIMIT %s
-                    """,
-                    (city_id, limit),
-                )
-            else:
-                cur.execute(
-                    """
-                        SELECT b.building_id,
-                               SPLIT_PART(b.address, ',', 1) as street,
-                               COUNT(r.id) as referral_count
-                        FROM buildings b
-                        JOIN referrals r ON b.building_id = r.referrer_id
-                        GROUP BY b.building_id, b.address
-                        ORDER BY referral_count DESC
-                        LIMIT %s
-                    """,
-                    (limit,),
-                )
-            return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[DB] Error getting leaderboard: {e}")
-        return []
-
-
 # === Analytics Operations ===
 
 
@@ -1199,6 +1100,12 @@ from store.ranking import (  # noqa: F401
     get_pv_profiles,
     save_municipality_pv_panel,
     upsert_municipality_pv,
+)
+from store.referral import (  # noqa: F401
+    get_building_by_referral_code,
+    get_referral_code,
+    get_referral_leaderboard,
+    get_referral_stats,
 )
 from store.registry import (  # noqa: F401
     get_registry_entries_needing_verification,
