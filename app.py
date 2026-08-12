@@ -1053,7 +1053,7 @@ def api_cron_process_billing():
                 community_id, period_start, period_end
             )
         except billing_runner.BillingRunError:
-            logger.exception("Billing run failed for community %s", community_id)
+            logger.error("Billing run failed for community %s", community_id)
             failures.append(
                 {"community_id": community_id, "error": "billing_run_failed"}
             )

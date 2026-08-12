@@ -103,4 +103,5 @@ class TestBillingCronHonesty:
             {"community_id": "c1", "error": "billing_run_failed"}
         ]
         assert secret_detail not in response.get_data(as_text=True)
-        assert secret_detail in caplog.text
+        assert secret_detail not in caplog.text
+        assert "Billing run failed for community c1" in caplog.text
