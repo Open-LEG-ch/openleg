@@ -365,9 +365,23 @@ def get_all_clusters() -> list[dict]:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon,
-                           array_agg(c.building_id) as members
+                           COALESCE(
+                               json_agg(
+                                   json_build_object(
+                                       'building_id', c.building_id,
+                                       'lat', b.lat,
+                                       'lon', b.lon
+                                   ) ORDER BY c.building_id
+                               ) FILTER (
+                                   WHERE c.building_id IS NOT NULL
+                                     AND b.lat IS NOT NULL
+                                     AND b.lon IS NOT NULL
+                               ),
+                               '[]'::json
+                           ) AS members
                     FROM cluster_info ci
                     LEFT JOIN clusters c ON ci.cluster_id = c.cluster_id
+                    LEFT JOIN buildings b ON b.building_id = c.building_id
                     GROUP BY ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon
                 """)
                 return [dict(row) for row in cur.fetchall()]
