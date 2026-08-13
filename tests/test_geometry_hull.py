@@ -7,9 +7,6 @@ produced is pinned here and served by ``geometry.convex_hull``.
 """
 
 import os
-from unittest.mock import patch
-
-import pytest
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -53,43 +50,6 @@ class TestConvexHull:
         assert hull is not None
         assert all(isinstance(point, list) for point in hull)
         assert all(len(point) == 2 for point in hull)
-
-
-class TestClusterPolygon:
-    @pytest.fixture
-    def create_simple_polygon(self):
-        with patch("database.is_db_available", return_value=True):
-            import app as app_module
-
-        return app_module.create_simple_polygon
-
-    def test_polygon_closes_the_hull_ring(self, create_simple_polygon):
-        polygon = create_simple_polygon(SQUARE + [INTERIOR])
-
-        assert len(polygon) == 5
-        assert polygon[0] == polygon[-1]
-        assert INTERIOR not in polygon
-        assert {tuple(point) for point in polygon[:-1]} == {tuple(p) for p in SQUARE}
-
-    def test_polygon_falls_back_to_a_padded_box_when_the_hull_degenerates(
-        self, create_simple_polygon
-    ):
-        polygon = create_simple_polygon(COLLINEAR)
-
-        assert len(polygon) == 5
-        assert polygon[0] == polygon[-1]
-        lats = [point[0] for point in polygon]
-        lons = [point[1] for point in polygon]
-        assert min(lats) == pytest.approx(47.0 - 0.0003)
-        assert max(lats) == pytest.approx(47.002 + 0.0003)
-        assert min(lons) == pytest.approx(8.0 - 0.0003)
-        assert max(lons) == pytest.approx(8.002 + 0.0003)
-
-    def test_single_and_paired_coordinates_keep_their_shapes(
-        self, create_simple_polygon
-    ):
-        assert len(create_simple_polygon([[47.0, 8.0]])) == 5
-        assert len(create_simple_polygon([[47.0, 8.0], [47.01, 8.01]])) == 5
 
 
 class TestSciPyIsGone:

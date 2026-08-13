@@ -65,30 +65,30 @@ def get_address_suggestions(query_string, limit=10, plz_ranges=None):
 
         suggestions = []
         for result in results:
-            attrs = result.get("attrs", {})
+            if not isinstance(result, dict):
+                continue
+            attrs = result.get("attrs")
+            if not isinstance(attrs, dict):
+                continue
             label = attrs.get("label", "")
+            if not isinstance(label, str):
+                continue
 
-            # Filter by PLZ ranges
+            # Determine PLZ: prefer numeric attrs.plz, fall back to label
             plz = attrs.get("plz")
+            plz_int = None
             if plz:
                 try:
                     plz_int = int(plz)
-                    if not _plz_in_ranges(plz_int, plz_ranges):
-                        continue
                 except (ValueError, TypeError):
-                    plz_match = re.search(r"\b(\d{4})\b", label)
-                    if not plz_match:
-                        continue
-                    plz_int = int(plz_match.group(1))
-                    if not _plz_in_ranges(plz_int, plz_ranges):
-                        continue
-            else:
+                    plz_int = None
+            if plz_int is None:
                 plz_match = re.search(r"\b(\d{4})\b", label)
                 if not plz_match:
                     continue
                 plz_int = int(plz_match.group(1))
-                if not _plz_in_ranges(plz_int, plz_ranges):
-                    continue
+            if not _plz_in_ranges(plz_int, plz_ranges):
+                continue
 
             # Entferne HTML-Tags aus dem Label
             if label:
@@ -98,7 +98,7 @@ def get_address_suggestions(query_string, limit=10, plz_ranges=None):
                         "label": clean_label,
                         "lat": attrs.get("lat"),
                         "lon": attrs.get("lon"),
-                        "plz": plz if plz else plz_int,
+                        "plz": plz_int,
                     }
                 )
 

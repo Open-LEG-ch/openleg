@@ -394,11 +394,12 @@ def get_community_status(db, community_id: str) -> dict | None:
             if not row:
                 return None
 
+            # Normalize NULL aggregate to an empty list and use it consistently.
+            members = row["members"] or []
+
             # Calculate readiness score
-            confirmed_count = sum(
-                1 for m in row["members"] if m["status"] == "confirmed"
-            )
-            total_count = len(row["members"])
+            confirmed_count = sum(1 for m in members if m["status"] == "confirmed")
+            total_count = len(members)
 
             readiness_score = 0
             if confirmed_count >= FORMATION_CONFIG["min_community_size"]:
@@ -434,7 +435,7 @@ def get_community_status(db, community_id: str) -> dict | None:
                     "invited": total_count - confirmed_count,
                 },
                 "readiness_score": readiness_score,
-                "members": row["members"],
+                "members": members,
                 "documents": None,
                 "next_steps": _get_next_steps(row["status"], confirmed_count),
             }
@@ -443,37 +444,37 @@ def get_community_status(db, community_id: str) -> dict | None:
         return None
 
 
+NEXT_STEPS_BY_STATUS = {
+    FormationStatus.FORMATION_STARTED.value: [
+        "Erstellen Sie die Rechtsdokumente.",
+        "Prüfen Sie die Gemeinschaftsvereinbarung.",
+    ],
+    FormationStatus.DOCUMENTS_GENERATED.value: [
+        "Holen Sie die Unterschriften aller Mitglieder ein.",
+        "Prüfen Sie die Teilnehmerverträge.",
+    ],
+    FormationStatus.SIGNATURES_PENDING.value: [
+        "Reichen Sie die Anmeldung beim VNB ein.",
+    ],
+    FormationStatus.DSO_SUBMITTED.value: [
+        "Warten Sie auf die Genehmigung des VNB. Dies kann bis zu 30 Tage dauern.",
+    ],
+    FormationStatus.DSO_APPROVED.value: [
+        "Legen Sie das Aktivierungsdatum fest.",
+        "Konfigurieren Sie die Abrechnung.",
+    ],
+}
+
+
 def _get_next_steps(status: str, confirmed_count: int) -> list[str]:
     """Get recommended next steps based on status."""
-    steps = []
-
     if status == FormationStatus.INTERESTED.value:
-        if confirmed_count < FORMATION_CONFIG["min_community_size"]:
-            steps.append(
-                f"Invite at least {FORMATION_CONFIG['min_community_size'] - confirmed_count} more neighbors"
-            )
-        else:
-            steps.append("Start formation process")
+        missing = FORMATION_CONFIG["min_community_size"] - confirmed_count
+        if missing > 0:
+            return [f"Laden Sie mindestens {missing} weitere Nachbarn ein."]
+        return ["Starten Sie den Gründungsprozess."]
 
-    elif status == FormationStatus.FORMATION_STARTED.value:
-        steps.append("Generate legal documents")
-        steps.append("Review community agreement")
-
-    elif status == FormationStatus.DOCUMENTS_GENERATED.value:
-        steps.append("Collect signatures from all members")
-        steps.append("Review participant contracts")
-
-    elif status == FormationStatus.SIGNATURES_PENDING.value:
-        steps.append("Submit DSO notification")
-
-    elif status == FormationStatus.DSO_SUBMITTED.value:
-        steps.append("Wait for DSO approval (up to 30 days)")
-
-    elif status == FormationStatus.DSO_APPROVED.value:
-        steps.append("Set activation date")
-        steps.append("Configure billing")
-
-    return steps
+    return list(NEXT_STEPS_BY_STATUS.get(status, []))
 
 
 def get_user_communities(db, building_id: str) -> list[dict]:

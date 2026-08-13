@@ -35,6 +35,11 @@ SITE_URL = os.getenv("APP_BASE_URL", "http://localhost:5003").rstrip("/")
 MAGIC_LINK_TTL = 900  # 15 minutes
 
 
+def _text_field(data, key):
+    value = data.get(key)
+    return value.strip() if isinstance(value, str) else ""
+
+
 def _get_current_client():
     """Get current logged-in utility client from session."""
     client_id = session.get("utility_client_id")
@@ -69,17 +74,19 @@ def register_page():
 
 @utility_bp.route("/register", methods=["POST"])
 def register():
-    data = request.json or request.form.to_dict()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        data = {}
 
-    company_name = (data.get("company_name") or "").strip()
-    contact_name = (data.get("contact_name") or "").strip()
-    contact_email = (data.get("contact_email") or "").strip()
-    contact_phone = (data.get("contact_phone") or "").strip()
-    vnb_name = (data.get("vnb_name") or "").strip()
-    kanton = (data.get("kanton") or "").strip().upper()[:2]
+    company_name = _text_field(data, "company_name")
+    contact_name = _text_field(data, "contact_name")
+    contact_email = _text_field(data, "contact_email")
+    contact_phone = _text_field(data, "contact_phone")
+    vnb_name = _text_field(data, "vnb_name")
+    kanton = _text_field(data, "kanton").upper()[:2]
 
     if not company_name or not contact_email:
-        return jsonify({"error": "Firmenname und E-Mail sind erforderlich."}), 400
+        return jsonify({"error": "Geben Sie Firmenname und E-Mail ein."}), 400
 
     is_valid, normalized, error = security_utils.validate_email_address(contact_email)
     if not is_valid:
@@ -94,11 +101,12 @@ def register():
         ), 409
 
     if contact_phone:
-        is_valid_phone, normalized_phone, _phone_error = security_utils.validate_phone(
+        is_valid_phone, normalized_phone, phone_error = security_utils.validate_phone(
             contact_phone
         )
-        if is_valid_phone:
-            contact_phone = normalized_phone
+        if not is_valid_phone:
+            return jsonify({"error": phone_error}), 400
+        contact_phone = normalized_phone
 
     population = None
     pop_raw = data.get("population")
@@ -175,8 +183,10 @@ def login_page():
 
 @utility_bp.route("/login", methods=["POST"])
 def login_submit():
-    data = request.json or request.form.to_dict()
-    email = (data.get("email") or "").strip()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        data = {}
+    email = _text_field(data, "email")
 
     is_valid, normalized, error = security_utils.validate_email_address(email)
     if not is_valid:

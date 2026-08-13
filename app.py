@@ -29,7 +29,6 @@ import dashboard as dashboard_module
 import data_enricher
 import database as db
 import email_automation
-import geometry
 import leg_registry
 import ml_models
 import registration
@@ -256,44 +255,6 @@ def find_provisional_matches(new_profile):
     }
 
 
-def create_simple_polygon(coords):
-    if len(coords) < 3:
-        if len(coords) == 1:
-            lat, lon = coords[0]
-            o = 0.0005
-            return [
-                [lat - o, lon - o],
-                [lat + o, lon - o],
-                [lat + o, lon + o],
-                [lat - o, lon + o],
-                [lat - o, lon - o],
-            ]
-        elif len(coords) == 2:
-            lat1, lon1 = coords[0]
-            lat2, lon2 = coords[1]
-            o = 0.0003
-            return [
-                [lat1 - o, lon1 - o],
-                [lat2 + o, lon1 - o],
-                [lat2 + o, lon2 + o],
-                [lat1 - o, lon2 + o],
-                [lat1 - o, lon1 - o],
-            ]
-    hull = geometry.convex_hull(coords)
-    if hull is not None:
-        return hull + [hull[0]]
-    lats = [c[0] for c in coords]
-    lons = [c[1] for c in coords]
-    o = 0.0003
-    return [
-        [min(lats) - o, min(lons) - o],
-        [max(lats) + o, min(lons) - o],
-        [max(lats) + o, max(lons) + o],
-        [min(lats) - o, max(lons) + o],
-        [min(lats) - o, min(lons) - o],
-    ]
-
-
 # ===========================
 # Routes
 # ===========================
@@ -487,36 +448,6 @@ def api_get_all_buildings():
     city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     locations = collect_building_locations(city_id=city_id)
     return jsonify({"buildings": locations})
-
-
-@main_bp.route("/api/get_all_clusters")
-def api_get_all_clusters():
-    clusters_raw = db.get_all_clusters()
-    clusters = []
-    for ci in clusters_raw:
-        members = ci.get("members", [])
-        if not members or len(members) < 2:
-            continue
-        coords = []
-        member_list = []
-        for mid in members:
-            b = db.get_building(mid)
-            if b and b.get("lat") and b.get("lon"):
-                coords.append([float(b["lat"]), float(b["lon"])])
-                member_list.append(
-                    {"building_id": mid, "lat": float(b["lat"]), "lon": float(b["lon"])}
-                )
-        if len(coords) >= 2:
-            clusters.append(
-                {
-                    "cluster_id": ci.get("cluster_id"),
-                    "members": member_list,
-                    "polygon": create_simple_polygon(coords),
-                    "autarky_percent": float(ci.get("autarky_percent", 0)),
-                    "num_members": len(member_list),
-                }
-            )
-    return jsonify({"clusters": clusters})
 
 
 # --- Check Potential ---

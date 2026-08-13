@@ -83,6 +83,15 @@ def test_cron_endpoints_fail_closed_without_secret(app_without_cron_secret):
         )
 
 
+def test_get_all_clusters_returns_404(app_without_cron_secret):
+    client = app_without_cron_secret.app.test_client()
+    response = client.get("/api/get_all_clusters")
+    assert response.status_code == 404, (
+        f"GET /api/get_all_clusters must be disabled to avoid exposing "
+        f"cross-tenant citizen cluster data, got {response.status_code}"
+    )
+
+
 def test_deepsign_webhook_rejects_unsigned_when_secret_set(app_with_deepsign_secret):
     client = app_with_deepsign_secret.app.test_client()
     response = client.post(

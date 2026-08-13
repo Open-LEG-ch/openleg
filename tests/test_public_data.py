@@ -126,6 +126,98 @@ class TestFetchElcom:
         assert fetch_elcom_tariffs(261, 2026) == []
 
 
+class TestFetchCkanData:
+    @patch("public_data.requests.get")
+    def test_energie_reporter_uses_csv_resource_and_normalizes_aliases(self, mock_get):
+        from public_data import ENERGIE_REPORTER_URL, fetch_energie_reporter
+
+        metadata = MagicMock()
+        metadata.json.return_value = {
+            "result": {
+                "resources": [
+                    {"format": "JSON", "url": "https://example.test/data.json"},
+                    {"format": "csv", "url": "https://example.test/data.csv"},
+                ]
+            }
+        }
+        csv_response = MagicMock(
+            text=(
+                "bfs_nr;gemeindename;kanton;solar_potential_pct;ev_share_pct;"
+                "renewable_heating_pct;electricity_consumption_mwh;"
+                "renewable_production_mwh\n"
+                "4021;Baden;AG;48,5;12;31;1000;250\n"
+                ";Ignored;AG;1;2;3;4;5\n"
+            ),
+            apparent_encoding="utf-8",
+        )
+        mock_get.side_effect = [metadata, csv_response]
+
+        result = fetch_energie_reporter()
+
+        assert result == [
+            {
+                "bfs_number": 4021,
+                "name": "Baden",
+                "kanton": "AG",
+                "solar_potential_pct": 48.5,
+                "ev_share_pct": 12.0,
+                "renewable_heating_pct": 31.0,
+                "electricity_consumption_mwh": 1000.0,
+                "renewable_production_mwh": 250.0,
+            }
+        ]
+        assert mock_get.call_args_list[0].args == (ENERGIE_REPORTER_URL,)
+        assert mock_get.call_args_list[1].args == ("https://example.test/data.csv",)
+
+    @patch("public_data.requests.get")
+    def test_sonnendach_prefers_municipal_csv(self, mock_get):
+        from public_data import SONNENDACH_URL, fetch_sonnendach_municipal
+
+        metadata = MagicMock()
+        metadata.json.return_value = {
+            "result": {
+                "resources": [
+                    {
+                        "format": "CSV",
+                        "name": "Buildings",
+                        "url": "https://example.test/buildings.csv",
+                    },
+                    {
+                        "format": "CSV",
+                        "name": "Gemeinden",
+                        "url": "https://example.test/municipalities.csv",
+                    },
+                ]
+            }
+        }
+        csv_response = MagicMock(
+            text=(
+                "BFS_NR;dachflaeche_total_m2;dachflaeche_geeignet_m2;"
+                "potenzial_kwh_jahr;potenzial_kwp;auslastung_pct\n"
+                "4021;500;250;200000;180;8,3\n"
+            ),
+            apparent_encoding="utf-8",
+        )
+        mock_get.side_effect = [metadata, csv_response]
+
+        result = fetch_sonnendach_municipal()
+
+        assert result == [
+            {
+                "bfs_number": 4021,
+                "total_roof_area_m2": 500.0,
+                "suitable_roof_area_m2": 250.0,
+                "potential_kwh_year": 200000.0,
+                "potential_kwp": 180.0,
+                "utilization_pct": 8.3,
+            }
+        ]
+        assert mock_get.call_args_list[0].args == (SONNENDACH_URL,)
+        assert mock_get.call_args_list[1].args == (
+            "https://example.test/municipalities.csv",
+        )
+
+
 class TestSafeHelpers:
     def test_safe_int(self):
         from public_data import _safe_int

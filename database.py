@@ -358,24 +358,6 @@ def save_cluster_info(cluster_id: int, info: dict) -> bool:
         return False
 
 
-def get_all_clusters() -> list[dict]:
-    """Get all clusters with their info."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    SELECT ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon,
-                           array_agg(c.building_id) as members
-                    FROM cluster_info ci
-                    LEFT JOIN clusters c ON ci.cluster_id = c.cluster_id
-                    GROUP BY ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon
-                """)
-                return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[DB] Error getting clusters: {e}")
-        return []
-
-
 # === Referral Operations ===
 
 
