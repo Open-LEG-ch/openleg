@@ -413,6 +413,7 @@ def favicon():
 
 @main_bp.route("/sitemap.xml")
 def sitemap_xml():
+    """Render and briefly cache the public sitemap for the current site and day."""
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
@@ -497,6 +498,7 @@ def api_get_all_buildings():
 
 @main_bp.route("/api/get_all_clusters")
 def api_get_all_clusters():
+    """Return cluster geometry from one bulk-loaded database result."""
     clusters_raw = db.get_all_clusters()
     clusters = []
     for ci in clusters_raw:
