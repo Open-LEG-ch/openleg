@@ -33,6 +33,9 @@ def log_correspondence(
     subject: str,
     notes: str = "",
     logged_by: str = "",
+    attachment_filename: str = "",
+    attachment_mime: str = "",
+    attachment_data: bytes | None = None,
 ) -> int | None:
     """Append one ledger entry. Returns the row id, or None on invalid input."""
     if direction not in DIRECTIONS or channel not in CHANNELS:
@@ -43,8 +46,9 @@ def log_correspondence(
                 """
                     INSERT INTO correspondence_log (
                         community_id, direction, channel, counterparty,
-                        subject, notes, logged_by
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        subject, notes, logged_by, attachment_filename,
+                        attachment_mime, attachment_data
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """,
                 (
@@ -55,6 +59,9 @@ def log_correspondence(
                     subject,
                     notes,
                     logged_by,
+                    attachment_filename or None,
+                    attachment_mime or None,
+                    attachment_data,
                 ),
             )
             row = cur.fetchone()
@@ -81,3 +88,24 @@ def list_correspondence(community_id: str, limit: int = 100) -> list[dict]:
     except Exception as e:
         logger.error(f"[DB] Error listing correspondence: {e}")
         return []
+
+
+def get_correspondence_attachment(entry_id: int, community_id: str) -> dict | None:
+    """Return one attachment scoped to its community."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                    SELECT id, community_id, attachment_filename,
+                           attachment_mime, attachment_data
+                    FROM correspondence_log
+                    WHERE id = %s AND community_id = %s
+                      AND attachment_data IS NOT NULL
+                """,
+                (entry_id, community_id),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting correspondence attachment: {e}")
+        return None

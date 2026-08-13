@@ -10,6 +10,7 @@ import time
 
 from flask import render_template
 
+import dashboard_access
 import database as db
 from email_utils import send_email
 
@@ -111,6 +112,19 @@ def process_email_queue(app=None):
         # Get referral code
         referral_code = db.get_referral_code(item["building_id"]) or ""
         referral_link = f"{APP_BASE_URL}/?ref={referral_code}" if referral_code else ""
+        ttl_seconds = 86_400
+        if app:
+            ttl_seconds = app.config.get("DASHBOARD_EMAIL_TOKEN_TTL_SECONDS", 86_400)
+        dashboard_token = dashboard_access.issue_access_token(
+            db,
+            item["building_id"],
+            ttl_seconds=ttl_seconds,
+        )
+        if not dashboard_token:
+            db.mark_email_failed(email_id, "Dashboard access token could not be issued")
+            failed += 1
+            continue
+        dashboard_url = dashboard_access.access_url(APP_BASE_URL + "/", dashboard_token)
 
         # Render template with tenant context
         try:
@@ -124,7 +138,7 @@ def process_email_queue(app=None):
                         unsubscribe_url=unsubscribe_url,
                         referral_link=referral_link,
                         site_url=APP_BASE_URL,
-                        dashboard_url=f"{APP_BASE_URL}/dashboard?bid={item['building_id']}",
+                        dashboard_url=dashboard_url,
                         tenant=tenant,
                         platform_name=tenant.get("platform_name", "OpenLEG"),
                         city_name=tenant.get("city_name", "Zürich"),

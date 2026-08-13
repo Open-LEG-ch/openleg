@@ -145,7 +145,9 @@ def test_document_download_gated_on_membership(monkeypatch):
 
 
 def test_document_routes_in_source():
-    with open(os.path.join(PROJECT_ROOT, "app.py"), encoding="utf-8") as handle:
+    with open(
+        os.path.join(PROJECT_ROOT, "dashboard_routes.py"), encoding="utf-8"
+    ) as handle:
         source = handle.read()
     assert '"/leg/community/<community_id>/documents"' in source
     assert '"/leg/document/<int:doc_id>"' in source
@@ -296,7 +298,9 @@ def test_leg_overview_includes_correspondence(monkeypatch):
 
 
 def test_correspondence_route_in_source():
-    with open(os.path.join(PROJECT_ROOT, "app.py"), encoding="utf-8") as handle:
+    with open(
+        os.path.join(PROJECT_ROOT, "dashboard_routes.py"), encoding="utf-8"
+    ) as handle:
         source = handle.read()
     assert '"/leg/community/<community_id>/correspondence"' in source
 

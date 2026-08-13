@@ -6,6 +6,7 @@ Provides input validation, sanitization, and security helpers
 
 import logging
 import re
+import uuid
 from urllib.parse import urlparse
 
 import bleach
@@ -217,6 +218,19 @@ def validate_token(token):
         return False, "Ungültiges Token-Format"
 
     return True, None
+
+
+def generate_uuid() -> str:
+    """Generate a new UUID4 string."""
+    return str(uuid.uuid4())
+
+
+def validate_uuid(token: str) -> str:
+    """Validate UUID format and return normalized token, or raise ValueError."""
+    is_valid, error = validate_token(token)
+    if not is_valid:
+        raise ValueError(error or "Ungültiges Token")
+    return token.lower()
 
 
 def is_safe_redirect_url(url, allowed_hosts=None):

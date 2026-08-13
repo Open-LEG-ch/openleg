@@ -11,12 +11,56 @@
     <section class="max-w-xl mx-auto text-center py-16" role="alert">
       <h1 class="text-2xl font-bold mb-3">{{ error }}</h1>
       <p class="text-ink-muted mb-6">Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail.</p>
+      {% if read_only or access_request_sent %}
+        <div class="mt-6 rounded-xl border border-line bg-white p-6 text-left">
+          <h2 class="text-lg font-bold mb-2">Zugangslink anfordern</h2>
+          <p class="text-sm text-ink-muted mb-4">Falls Sie keinen gültigen Link mehr haben, senden wir Ihnen einen neuen Zugang per E-Mail.</p>
+          <form method="post" action="/dashboard/access/request" class="grid gap-3">
+            <label for="dashboard-access-email" class="text-sm font-semibold text-ink-soft">E-Mail-Adresse</label>
+            <input id="dashboard-access-email" type="email" name="email" autocomplete="email" class="w-full border border-line rounded-lg px-3 py-2">
+            <button type="submit" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark">Neuen Link anfordern</button>
+          </form>
+          {% if access_request_message %}
+            <p class="mt-4 text-sm text-ink-muted">{{ access_request_message }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
       <a href="/" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Zur Startseite</a>
     </section>
   {% elif user %}
-    <p class="text-sm font-semibold text-brand mb-1">LEG-Dashboard</p>
+    <div class="flex items-start justify-between gap-4">
+      <p class="text-sm font-semibold text-brand mb-1">LEG-Dashboard</p>
+      {% if csrf_token %}
+        <form method="post" action="/dashboard/logout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="text-sm font-semibold text-ink-muted hover:text-ink hover:underline">Abmelden</button>
+        </form>
+      {% endif %}
+    </div>
     <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Ihre Stromgemeinschaft ist zu {{ readiness_score }}% bereit.</h1>
     <p class="text-ink-muted mt-2">{{ user.address }}</p>
+    {% if read_only %}
+      <section class="mt-4 rounded-xl border border-accent-light bg-accent/10 px-4 py-3" role="alert">
+        <p class="font-semibold text-ink">Nur Lesezugriff</p>
+        <p class="text-sm text-ink-muted mt-1">Dieser alte Link zeigt Ihr Dashboard nur noch lesend. Fordern Sie für Änderungen einen neuen Zugangslink an.</p>
+      </section>
+    {% endif %}
+    {% if read_only or access_request_sent %}
+      <section class="mt-6 bg-white rounded-xl border border-line p-6" aria-labelledby="dashboard-access-request-title">
+        <h2 id="dashboard-access-request-title" class="text-lg font-bold">Zugangslink anfordern</h2>
+        <p class="text-sm text-ink-muted mt-1 mb-4">Wir senden Ihnen bei Bedarf einen neuen Zugangslink per E-Mail.</p>
+        <form method="post" action="/dashboard/access/request" class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div>
+            <label for="dashboard-access-email" class="block text-sm font-semibold text-ink-soft mb-1">E-Mail-Adresse</label>
+            <input id="dashboard-access-email" type="email" name="email" autocomplete="email" class="w-full border border-line rounded-lg px-3 py-2">
+          </div>
+          <button type="submit" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark">Neuen Link anfordern</button>
+        </form>
+        {% if access_request_message %}
+          <p class="mt-4 text-sm text-ink-muted">{{ access_request_message }}</p>
+        {% endif %}
+      </section>
+    {% endif %}
 
     <section class="mt-6 rounded-2xl bg-brand-dark text-paper p-6 sm:p-8 overflow-hidden" aria-labelledby="readiness-title">
       <div class="grid md:grid-cols-2 gap-8 items-end">
@@ -48,8 +92,8 @@
     {% set check_actions = {
       "E-Mail bestätigt": ("mailto:" ~ contact_email ~ "?subject=Best%C3%A4tigungslink%20erneut%20senden", "Link erneut anfordern"),
       "Verbrauchsdaten hinterlegt": ("#energieprofil", "Jetzt hinterlegen"),
-      "EVU-Einwilligung erteilt": ("mailto:" ~ contact_email ~ "?subject=EVU-Einwilligung%20erteilen", "Einwilligung erteilen"),
-      "Nachbar-Einwilligung erteilt": ("mailto:" ~ contact_email ~ "?subject=Nachbar-Einwilligung%20erteilen", "Einwilligung erteilen")
+      "EVU-Einwilligung erteilt": ("#einwilligungen", "Einwilligung erteilen"),
+      "Nachbar-Einwilligung erteilt": ("#einwilligungen", "Einwilligung erteilen")
     } %}
 
     <div class="grid md:grid-cols-2 gap-6 mt-6 items-start">
@@ -99,15 +143,22 @@
         <section id="energieprofil" class="bg-white rounded-xl border border-line p-6" aria-labelledby="energy-title">
           <h2 id="energy-title" class="text-lg font-bold">Energieprofil</h2>
           <p class="text-sm text-ink-muted mt-1 mb-4">Die Daten aus Ihrer letzten Stromrechnung reichen.</p>
-          <form id="energy-form" class="grid gap-4">
+          {% if profile_saved %}
+            <p class="mb-4 rounded-lg border border-sage bg-sage-light/50 px-4 py-3 text-sm font-semibold text-brand" role="status">Energieprofil und Einwilligungen gespeichert.</p>
+          {% endif %}
+          {% if profile_error %}
+            <p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm text-ink" role="alert">{{ profile_error }}</p>
+          {% endif %}
+          <form id="energy-form" method="post" action="/dashboard/profile" class="grid gap-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div>
               <label for="consumption" class="block text-sm font-semibold text-ink-soft mb-1">Jährlicher Stromverbrauch in kWh</label>
-              <input type="number" id="consumption" placeholder="z. B. 4500" value="{{ user.annual_consumption_kwh or '' }}" class="w-full border border-line rounded-lg px-3 py-2">
+              <input type="number" id="consumption" name="annual_consumption_kwh" min="1" max="9999999999.99" step="1" required placeholder="z. B. 4500" value="{{ user.annual_consumption_kwh or '' }}" class="w-full border border-line rounded-lg px-3 py-2">
               <p class="text-xs text-ink-muted mt-1">Steht auf Ihrer letzten Stromrechnung von {{ utility_name }}.</p>
             </div>
             <div>
               <label for="has-solar" class="block text-sm font-semibold text-ink-soft mb-1">Haben Sie eine Solaranlage?</label>
-              <select id="has-solar" class="w-full border border-line rounded-lg px-3 py-2 bg-white">
+              <select id="has-solar" name="has_solar" class="w-full border border-line rounded-lg px-3 py-2 bg-white">
                 <option value="">Bitte wählen</option>
                 <option value="yes" {% if user.potential_pv_kwp and user.potential_pv_kwp > 0 %}selected{% endif %}>Ja</option>
                 <option value="no">Nein</option>
@@ -116,9 +167,26 @@
             </div>
             <div id="pv-field" class="hidden">
               <label for="pv-kwp" class="block text-sm font-semibold text-ink-soft mb-1">Leistung Ihrer Anlage in kWp</label>
-              <input type="number" id="pv-kwp" step="0.1" placeholder="z. B. 8.5" value="{{ user.potential_pv_kwp or '' }}" class="w-full border border-line rounded-lg px-3 py-2">
+              <input type="number" id="pv-kwp" name="potential_pv_kwp" min="0" max="999999.99" step="0.1" placeholder="z. B. 8.5" value="{{ user.potential_pv_kwp or '' }}" class="w-full border border-line rounded-lg px-3 py-2">
             </div>
-            <button type="button" id="calc-btn" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Ersparnis berechnen</button>
+            <fieldset id="einwilligungen" class="grid gap-3 rounded-lg border border-line p-4">
+              <legend class="px-1 text-sm font-semibold text-ink-soft">Einwilligungen</legend>
+              <label for="share-with-utility" class="flex items-start gap-3 text-sm text-ink-soft">
+                <input id="share-with-utility" type="checkbox" name="share_with_utility" class="mt-1" {% if user.share_with_utility %}checked{% endif %}>
+                <span>Mein Energieprofil darf für die LEG-Abklärung an {{ utility_name }} weitergegeben werden.</span>
+              </label>
+              <label for="share-with-neighbors" class="flex items-start gap-3 text-sm text-ink-soft">
+                <input id="share-with-neighbors" type="checkbox" name="share_with_neighbors" class="mt-1" {% if user.share_with_neighbors %}checked{% endif %}>
+                <span>Mein Interesse darf passenden Haushalten in der Nachbarschaft angezeigt werden. Meine Kontaktdaten bleiben privat.</span>
+              </label>
+              <p class="text-xs text-ink-muted">Sie können beide Einwilligungen hier jederzeit ändern.</p>
+            </fieldset>
+            {% if csrf_token %}
+              <button type="submit" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark">Profil speichern</button>
+            {% else %}
+              <a href="/" class="block rounded-lg bg-brand px-4 py-3 text-center font-semibold text-white hover:bg-brand-dark">Eigenes Profil starten</a>
+            {% endif %}
+            <button type="button" id="calc-btn" class="border border-brand text-brand px-4 py-3 rounded-lg font-semibold hover:bg-brand/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Ersparnis berechnen</button>
           </form>
           <div id="calc-error" class="hidden mt-3 rounded-lg border border-line bg-paper px-4 py-3 text-sm text-ink" role="alert"></div>
           <div id="savings-result" class="hidden mt-4 rounded-lg border border-sage bg-sage-light/50 p-4 text-center" aria-live="polite">
@@ -137,8 +205,37 @@
             <a href="mailto:{{ contact_email }}" class="flex justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition"><span>Kontakt</span><span class="text-ink-muted">{{ contact_email }}</span></a>
           </div>
         </section>
+
+        {% if csrf_token %}
+        <section class="bg-white rounded-xl border border-line p-6" aria-labelledby="data-controls-title">
+          <h2 id="data-controls-title" class="text-lg font-bold mb-2">Ihre Daten</h2>
+          <p class="text-sm text-ink-muted mb-4">Laden Sie Ihre Profildaten herunter oder fordern Sie eine bestätigte Löschung an.</p>
+          <div class="grid gap-2">
+            <a href="/dashboard/export" class="rounded-lg border border-line px-4 py-3 font-semibold text-brand hover:bg-brand/5">Profildaten herunterladen</a>
+            <a href="/unsubscribe" class="rounded-lg border border-line px-4 py-3 font-semibold text-ink hover:bg-slate-50">Profil löschen</a>
+          </div>
+        </section>
+        {% endif %}
       </aside>
     </div>
+  {% else %}
+    <section class="max-w-xl mx-auto py-16" role="alert">
+      <p class="text-sm font-semibold text-brand mb-1">LEG-Dashboard</p>
+      <h1 class="text-3xl font-bold tracking-tight">Zugangslink anfordern</h1>
+      <p class="text-ink-muted mt-2">Öffnen Sie Ihr Dashboard mit einem sicheren Link per E-Mail.</p>
+      <section class="mt-6 rounded-xl border border-line bg-white p-6" aria-labelledby="dashboard-access-request-title">
+        <h2 id="dashboard-access-request-title" class="text-lg font-bold">Dashboard öffnen</h2>
+        <p class="text-sm text-ink-muted mt-1 mb-4">Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink.</p>
+        <form method="post" action="/dashboard/access/request" class="grid gap-3">
+          <label for="dashboard-access-email" class="text-sm font-semibold text-ink-soft">E-Mail-Adresse</label>
+          <input id="dashboard-access-email" type="email" name="email" autocomplete="email" class="w-full border border-line rounded-lg px-3 py-2">
+          <button type="submit" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark">Link anfordern</button>
+        </form>
+        {% if access_request_message %}
+          <p class="mt-4 text-sm text-ink-muted">{{ access_request_message }}</p>
+        {% endif %}
+      </section>
+    </section>
   {% endif %}
 </div>
 {% endblock %}

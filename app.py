@@ -17,7 +17,6 @@ from flask import (
     current_app,
     g,
     jsonify,
-    redirect,
     render_template,
     request,
     send_from_directory,
@@ -25,7 +24,9 @@ from flask import (
 from jinja2 import TemplateNotFound
 
 import billing_runner
-import dashboard as dashboard_module
+import dashboard as dashboard_module  # noqa: F401
+import dashboard_access as dashboard_access_module  # noqa: F401
+import dashboard_routes
 import data_enricher
 import database as db
 import email_automation
@@ -108,6 +109,21 @@ def render_city_template(template_name, **kwargs):
 @main_bp.after_app_request
 def apply_basic_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
+    is_private_dashboard = request.path in {"/dashboard", "/dashboard/export"} and bool(
+        dashboard_routes._dashboard_session_building_id()
+    )
+    is_private_leg_dashboard = request.path == "/leg/dashboard" and bool(
+        dashboard_routes._dashboard_session_building_id()
+    )
+    is_private_leg_document = request.path.startswith("/leg/document/")
+    if (
+        request.path.startswith("/dashboard/access/")
+        or is_private_dashboard
+        or is_private_leg_dashboard
+        or is_private_leg_document
+    ):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Referrer-Policy"] = "no-referrer"
     return response
 
 
@@ -690,149 +706,95 @@ def unsubscribe_page():
         else:
             email_value = normalized_email
             matches = db.get_building_by_email(email_value)
-            if not matches:
-                status = "info"
-                message = "Für diese E-Mail-Adresse wurde kein Eintrag gefunden."
-            else:
+            if matches:
                 for m in matches:
-                    db.delete_building(m["building_id"])
-                status = "success"
-                message = "Ihre Daten wurden erfolgreich gelöscht."
+                    token = security_utils.generate_uuid()
+                    saved = db.save_token(
+                        token, m["building_id"], "unsubscribe", ttl_seconds=3600
+                    )
+                    if not saved:
+                        continue
+                    unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
+                    try:
+                        send_email(
+                            email_value,
+                            "OpenLEG: Löschung bestätigen",
+                            "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
+                            f"diesen Link:\n\n{unsubscribe_url}\n\n"
+                            "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
+                            "nicht angefordert haben, ignorieren Sie diese E-Mail.",
+                        )
+                    except Exception:
+                        current_app.logger.exception(
+                            "Failed to send profile deletion confirmation"
+                        )
+            email_value = ""
+            status = "success"
+            message = (
+                "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink "
+                "per E-Mail."
+            )
 
     return render_city_template(
         "unsubscribe.html", status=status, message=message, email=email_value
     )
 
 
-@main_bp.route("/unsubscribe/<token>")
+@main_bp.route("/unsubscribe/<token>", methods=["GET", "POST"])
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def unsubscribe_token(token):
-    is_valid_token, _token_error = security_utils.validate_token(token)
-    if not is_valid_token:
-        return "<h1>Ungültiger Link</h1>", 400
+    try:
+        token_uuid = security_utils.validate_uuid(token)
+    except ValueError:
+        abort(404)
 
-    token_info = db.get_token(token)
-    if not token_info:
-        return "<h1>Link ungültig oder bereits verwendet</h1>", 404
+    token_info = db.get_token(token_uuid)
+    if not token_info or token_info.get("token_type") != "unsubscribe":
+        abort(404)
 
-    building_id = token_info["building_id"]
-    db.use_token(token)
-    db.delete_building(building_id)
-    db.cancel_emails_for_building(building_id)
-    return "<h1>Abmeldung erfolgreich</h1><p>Ihre Daten wurden gelöscht.</p>"
+    if request.method == "GET":
+        return render_template(
+            "unsubscribe.html",
+            status=None,
+            message=None,
+            email="",
+            confirm_deletion=True,
+        )
+
+    if not db.confirm_profile_deletion(token_uuid):
+        return (
+            render_template(
+                "unsubscribe.html",
+                status="error",
+                message=(
+                    "Ihre Daten wurden nicht gelöscht. Der Link ist möglicherweise "
+                    "abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
+                ),
+                email="",
+            ),
+            409,
+        )
+    return render_template(
+        "unsubscribe.html",
+        status="success",
+        message="Ihre Daten wurden erfolgreich gelöscht.",
+        email="",
+    )
 
 
 # --- Dashboard ---
-@main_bp.route("/dashboard")
-def dashboard():
-    building_id = request.args.get("bid", "").strip()
-    city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
-    return render_city_template(
-        "dashboard.html",
-        **dashboard_module.readiness(
-            building_id,
-            city_id=city_id,
-            app_base_url=current_app.config["APP_BASE_URL"],
-        ),
-    )
+# Dashboard and LEG HTTP surface is registered from dashboard_routes so app.py
+# stays within its line budget.
+def _dashboard_send_email(*args, **kwargs):
+    return send_email(*args, **kwargs)
 
 
-@main_bp.route("/dashboard/demo")
-def dashboard_demo():
-    return render_city_template("dashboard.html", **dashboard_module.demo_readiness())
-
-
-@main_bp.route("/leg/dashboard")
-def leg_dashboard():
-    community_id = request.args.get("cid", "").strip()
-    building_id = request.args.get("bid", "").strip()
-    return render_city_template(
-        "leg_dashboard.html",
-        **dashboard_module.leg_overview(community_id, building_id),
-    )
-
-
-@main_bp.route("/leg/dashboard/demo")
-def leg_dashboard_demo():
-    return render_city_template(
-        "leg_dashboard.html", **dashboard_module.leg_demo_overview()
-    )
-
-
-def _leg_dashboard_redirect(community_id, building_id):
-    return redirect(dashboard_module.leg_dashboard_location(community_id, building_id))
-
-
-@main_bp.route("/leg/community/create", methods=["POST"])
-def leg_community_create():
-    name = request.form.get("name", "")
-    building_id = request.form.get("bid", "").strip()
-    model = request.form.get("distribution_model", "simple")
-    result = dashboard_module.leg_create(name, building_id, model)
-    if result["error"]:
-        return render_city_template(
-            "leg_dashboard.html", error=result["error"], community=None
-        ), 400
-    return _leg_dashboard_redirect(result["community_id"], building_id)
-
-
-@main_bp.route("/leg/community/<community_id>/invite", methods=["POST"])
-def leg_community_invite(community_id):
-    building_id = request.form.get("bid", "").strip()
-    invite_building_id = request.form.get("invite_building_id", "").strip()
-    dashboard_module.leg_invite(community_id, building_id, invite_building_id)
-    return _leg_dashboard_redirect(community_id, building_id)
-
-
-@main_bp.route("/leg/community/<community_id>/confirm", methods=["POST"])
-def leg_community_confirm(community_id):
-    building_id = request.form.get("bid", "").strip()
-    dashboard_module.leg_confirm(community_id, building_id)
-    return _leg_dashboard_redirect(community_id, building_id)
-
-
-@main_bp.route("/leg/community/<community_id>/start-formation", methods=["POST"])
-def leg_community_start_formation(community_id):
-    building_id = request.form.get("bid", "").strip()
-    dashboard_module.leg_start_formation(community_id, building_id)
-    return _leg_dashboard_redirect(community_id, building_id)
-
-
-@main_bp.route("/leg/community/<community_id>/documents", methods=["POST"])
-def leg_community_documents(community_id):
-    building_id = request.form.get("bid", "").strip()
-    dashboard_module.leg_generate_documents(community_id, building_id)
-    return _leg_dashboard_redirect(community_id, building_id)
-
-
-@main_bp.route("/leg/community/<community_id>/correspondence", methods=["POST"])
-def leg_community_correspondence(community_id):
-    building_id = request.form.get("bid", "").strip()
-    dashboard_module.leg_log_correspondence(
-        community_id,
-        building_id,
-        direction=request.form.get("direction", ""),
-        channel=request.form.get("channel", ""),
-        counterparty=request.form.get("counterparty", ""),
-        subject=request.form.get("subject", ""),
-        notes=request.form.get("notes", ""),
-    )
-    return _leg_dashboard_redirect(community_id, building_id)
-
-
-@main_bp.route("/leg/document/<int:doc_id>")
-def leg_document_download(doc_id):
-    building_id = request.args.get("bid", "").strip()
-    doc = dashboard_module.leg_document_for_member(doc_id, building_id)
-    if not doc:
-        abort(404)
-    return Response(
-        bytes(doc["pdf_data"]),
-        mimetype="application/pdf",
-        headers={
-            "Content-Disposition": f"inline; filename={doc['filename']}",
-        },
-    )
+dashboard_routes.register_dashboard_routes(
+    main_bp,
+    send_email=_dashboard_send_email,
+    limiter=limiter,
+    render_city_template=render_city_template,
+)
 
 
 # --- Referral System ---
@@ -1052,8 +1014,11 @@ def api_cron_process_billing():
             result = billing_runner.run_billing_period(
                 community_id, period_start, period_end
             )
-        except billing_runner.BillingRunError as exc:
-            failures.append({"community_id": community_id, "error": str(exc)})
+        except billing_runner.BillingRunError:
+            logger.error("Billing run failed for community %s", community_id)
+            failures.append(
+                {"community_id": community_id, "error": "billing_run_failed"}
+            )
             continue
         if result["status"] == "created":
             processed += 1
@@ -1105,6 +1070,18 @@ def metrics():
     )
 
 
+def _parse_dashboard_ttl_seconds(raw, default):
+    """Parse a dashboard token TTL env value with safe bounds."""
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        logger.warning("Invalid dashboard TTL value %r, using default %s", raw, default)
+        return default
+    return max(60, min(value, 86_400))
+
+
 def create_app(config=None, *, load_environment=True, check_database=True):
     """Create one configured OpenLEG Flask application."""
     if load_environment:
@@ -1119,14 +1096,29 @@ def create_app(config=None, *, load_environment=True, check_database=True):
 
     application = Flask(__name__)
     app_base_url = os.getenv("APP_BASE_URL", "http://localhost:5003")
+    secure_cookie_env = os.getenv("SESSION_COOKIE_SECURE")
+    default_session_cookie_secure = app_base_url.startswith("https://")
+    if secure_cookie_env is not None:
+        default_session_cookie_secure = secure_cookie_env.strip().lower() in {
+            "true",
+            "1",
+            "yes",
+            "on",
+        }
     application.config.from_mapping(
         JSON_SORT_KEYS=False,
         SECRET_KEY=os.getenv("SECRET_KEY", os.urandom(32).hex()),
-        SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "False") == "True",
+        SESSION_COOKIE_SECURE=default_session_cookie_secure,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE=os.getenv("SESSION_COOKIE_SAMESITE", "Lax"),
         PERMANENT_SESSION_LIFETIME=timedelta(
             seconds=int(os.getenv("PERMANENT_SESSION_LIFETIME", "3600"))
+        ),
+        DASHBOARD_ACCESS_TOKEN_TTL_SECONDS=_parse_dashboard_ttl_seconds(
+            os.getenv("DASHBOARD_ACCESS_TOKEN_TTL_SECONDS"), 900
+        ),
+        DASHBOARD_EMAIL_TOKEN_TTL_SECONDS=_parse_dashboard_ttl_seconds(
+            os.getenv("DASHBOARD_EMAIL_TOKEN_TTL_SECONDS"), 86_400
         ),
         MAX_CONTENT_LENGTH=10 * 1024 * 1024,
         APP_BASE_URL=app_base_url,
@@ -1140,6 +1132,12 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         application.config.update(config)
         if "APP_BASE_URL" in config and "SITE_URL" not in config:
             application.config["SITE_URL"] = config["APP_BASE_URL"].rstrip("/")
+        if (
+            "SESSION_COOKIE_SECURE" not in config
+            and secure_cookie_env is None
+            and application.config["APP_BASE_URL"].startswith("https://")
+        ):
+            application.config["SESSION_COOKIE_SECURE"] = True
 
     for blueprint in (
         main_bp,
