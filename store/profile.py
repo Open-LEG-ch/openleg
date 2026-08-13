@@ -92,6 +92,28 @@ def get_elcom_tariffs(bfs_number: int, year: int | None = None) -> list[dict]:
         return []
 
 
+def get_all_elcom_tariffs(*, year: int, kanton: str | None = None) -> list[dict]:
+    """Load tariffs with municipality names in one query."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            query = """
+                SELECT t.*, mp.name AS municipality_name
+                FROM elcom_tariffs t
+                JOIN municipality_profiles mp ON mp.bfs_number = t.bfs_number
+                WHERE t.year = %s
+            """
+            params: list = [year]
+            if kanton:
+                query += " AND mp.kanton = %s"
+                params.append(kanton)
+            query += " ORDER BY mp.name, t.category"
+            cur.execute(query, tuple(params))
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting all ElCom tariffs: {e}")
+        return []
+
+
 # === Municipality Profile Operations ===
 
 

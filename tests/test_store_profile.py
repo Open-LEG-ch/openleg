@@ -17,6 +17,7 @@ from store import profile
 _REEXPORTED = (
     "save_elcom_tariffs",
     "get_elcom_tariffs",
+    "get_all_elcom_tariffs",
     "save_municipality_profile",
     "get_municipality_profile",
     "get_all_municipality_profiles",
@@ -127,3 +128,17 @@ def test_search_municipality_profiles_blank_query_returns_empty(monkeypatch):
 
     assert profile.search_municipality_profiles("   ") == []
     assert cur.executed == []
+
+
+def test_all_tariffs_load_in_one_kanton_scoped_query(monkeypatch):
+    cur = _FakeCursor(rows=[{"bfs_number": 4021, "municipality_name": "Baden"}])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    rows = profile.get_all_elcom_tariffs(year=2026, kanton="AG")
+
+    assert rows[0]["municipality_name"] == "Baden"
+    assert len(cur.executed) == 1
+    query, params = cur.executed[0]
+    assert "JOIN municipality_profiles" in query
+    assert "mp.kanton = %s" in query
+    assert params == (2026, "AG")

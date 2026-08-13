@@ -202,24 +202,25 @@ class TestSearchEndpoint:
 class TestTariffsEndpoint:
     @patch("api_public.db")
     def test_tariffs_defaults_all_cantons(self, mock_db, client):
-        mock_db.get_all_municipality_profiles.return_value = MOCK_PROFILES_LIST
-        mock_db.get_elcom_tariffs.return_value = MOCK_ELCOM_TARIFFS
+        mock_db.get_all_elcom_tariffs.return_value = [
+            {**row, "municipality_name": "Dietikon"} for row in MOCK_ELCOM_TARIFFS
+        ]
         resp = client.get("/api/v1/tariffs")
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["kanton"] == "all"
         assert data["count"] >= 2
-        assert mock_db.get_all_municipality_profiles.call_args.kwargs["kanton"] is None
+        mock_db.get_all_elcom_tariffs.assert_called_once_with(year=2026, kanton=None)
+        mock_db.get_elcom_tariffs.assert_not_called()
 
     @patch("api_public.db")
     def test_tariffs_invalid_kanton_is_safe(self, mock_db, client):
-        mock_db.get_all_municipality_profiles.return_value = MOCK_PROFILES_LIST
-        mock_db.get_elcom_tariffs.return_value = MOCK_ELCOM_TARIFFS
+        mock_db.get_all_elcom_tariffs.return_value = MOCK_ELCOM_TARIFFS
         resp = client.get("/api/v1/tariffs?kanton=XX")
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["kanton"] == "all"
-        assert mock_db.get_all_municipality_profiles.call_args.kwargs["kanton"] is None
+        mock_db.get_all_elcom_tariffs.assert_called_once_with(year=2026, kanton=None)
 
 
 class TestRankingsEndpoint:

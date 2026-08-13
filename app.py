@@ -24,6 +24,7 @@ from flask import (
 from jinja2 import TemplateNotFound
 
 import billing_runner
+import cache as cache_module
 import dashboard as dashboard_module  # noqa: F401
 import dashboard_access as dashboard_access_module  # noqa: F401
 import dashboard_routes
@@ -428,10 +429,15 @@ def favicon():
 
 @main_bp.route("/sitemap.xml")
 def sitemap_xml():
+    """Render and briefly cache the public sitemap for the current site and day."""
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
     current_date = datetime.now(ZoneInfo("Europe/Zurich")).strftime("%Y-%m-%d")
+    cache_key = f"sitemap:{current_app.config['SITE_URL']}:{current_date}"
+    cached_xml = cache_module.cache_get(cache_key)
+    if cached_xml is not None:
+        return Response(cached_xml, mimetype="application/xml")
     pages = [
         ("/", "1.0", "daily", current_date),
         ("/how-it-works", "0.8", "weekly", current_date),
@@ -461,6 +467,7 @@ def sitemap_xml():
     xml = render_template(
         "sitemap.xml", site_url=current_app.config["SITE_URL"], pages=pages
     )
+    cache_module.cache_set(cache_key, xml, ttl=3600)
     return Response(xml, mimetype="application/xml")
 
 
@@ -507,6 +514,7 @@ def api_get_all_buildings():
 
 @main_bp.route("/api/get_all_clusters")
 def api_get_all_clusters():
+    """Return cluster geometry from one bulk-loaded database result."""
     clusters_raw = db.get_all_clusters()
     clusters = []
     for ci in clusters_raw:
@@ -515,12 +523,20 @@ def api_get_all_clusters():
             continue
         coords = []
         member_list = []
-        for mid in members:
-            b = db.get_building(mid)
-            if b and b.get("lat") and b.get("lon"):
-                coords.append([float(b["lat"]), float(b["lon"])])
+        for member in members:
+            if not isinstance(member, dict):
+                continue
+            building_id = member.get("building_id")
+            lat = member.get("lat")
+            lon = member.get("lon")
+            if building_id and lat is not None and lon is not None:
+                coords.append([float(lat), float(lon)])
                 member_list.append(
-                    {"building_id": mid, "lat": float(b["lat"]), "lon": float(b["lon"])}
+                    {
+                        "building_id": building_id,
+                        "lat": float(lat),
+                        "lon": float(lon),
+                    }
                 )
         if len(coords) >= 2:
             clusters.append(
