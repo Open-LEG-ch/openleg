@@ -1160,6 +1160,7 @@ from store.dashboard_access import (  # noqa: F401
     revoke_dashboard_access_tokens,
     save_dashboard_access_token,
 )
+from store.dashboard_profile import update_dashboard_profile  # noqa: F401
 from store.email_queue import (  # noqa: F401
     cancel_emails_for_building,
     get_email_stats,
