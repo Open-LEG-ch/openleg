@@ -17,6 +17,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# CVE-2026-23949 (jaraco.context), CVE-2026-24049 (wheel): upgrade the
+# base-image package that vendors both dependencies.
+RUN pip install --no-cache-dir --upgrade "setuptools>=84.0.0"
+
 COPY *.py ./
 COPY store/ store/
 COPY templates/ templates/

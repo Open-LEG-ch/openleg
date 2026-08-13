@@ -135,3 +135,11 @@ class TestDockerfile:
 
     def test_gthread_workers(self):
         assert "gthread" in self.content
+
+    def test_explicitly_upgrades_cve_vulnerable_build_deps(self):
+        """Issue #307: Trivy blocked vendored jaraco.context and wheel.
+
+        Setuptools 84 removes the vulnerable jaraco.context copy and vendors a
+        fixed wheel version.
+        """
+        assert "setuptools>=84.0.0" in self.content
