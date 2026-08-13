@@ -11,12 +11,56 @@
     <section class="max-w-xl mx-auto text-center py-16" role="alert">
       <h1 class="text-2xl font-bold mb-3">{{ error }}</h1>
       <p class="text-ink-muted mb-6">Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail.</p>
+      {% if read_only or access_request_sent %}
+        <div class="mt-6 rounded-xl border border-line bg-white p-6 text-left">
+          <h2 class="text-lg font-bold mb-2">Zugangslink anfordern</h2>
+          <p class="text-sm text-ink-muted mb-4">Falls Sie keinen gültigen Link mehr haben, senden wir Ihnen einen neuen Zugang per E-Mail.</p>
+          <form method="post" action="/dashboard/access/request" class="grid gap-3">
+            <label for="dashboard-access-email" class="text-sm font-semibold text-ink-soft">E-Mail-Adresse</label>
+            <input id="dashboard-access-email" type="email" name="email" autocomplete="email" class="w-full border border-line rounded-lg px-3 py-2">
+            <button type="submit" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark">Neuen Link anfordern</button>
+          </form>
+          {% if access_request_message %}
+            <p class="mt-4 text-sm text-ink-muted">{{ access_request_message }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
       <a href="/" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Zur Startseite</a>
     </section>
   {% elif user %}
-    <p class="text-sm font-semibold text-brand mb-1">LEG-Dashboard</p>
+    <div class="flex items-start justify-between gap-4">
+      <p class="text-sm font-semibold text-brand mb-1">LEG-Dashboard</p>
+      {% if csrf_token %}
+        <form method="post" action="/dashboard/logout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="text-sm font-semibold text-ink-muted hover:text-ink hover:underline">Abmelden</button>
+        </form>
+      {% endif %}
+    </div>
     <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Ihre Stromgemeinschaft ist zu {{ readiness_score }}% bereit.</h1>
     <p class="text-ink-muted mt-2">{{ user.address }}</p>
+    {% if read_only %}
+      <section class="mt-4 rounded-xl border border-accent-light bg-accent/10 px-4 py-3" role="alert">
+        <p class="font-semibold text-ink">Nur Lesezugriff</p>
+        <p class="text-sm text-ink-muted mt-1">Dieser alte Link zeigt Ihr Dashboard nur noch lesend. Fordern Sie für Änderungen einen neuen Zugangslink an.</p>
+      </section>
+    {% endif %}
+    {% if read_only or access_request_sent %}
+      <section class="mt-6 bg-white rounded-xl border border-line p-6" aria-labelledby="dashboard-access-request-title">
+        <h2 id="dashboard-access-request-title" class="text-lg font-bold">Zugangslink anfordern</h2>
+        <p class="text-sm text-ink-muted mt-1 mb-4">Wir senden Ihnen bei Bedarf einen neuen Zugangslink per E-Mail.</p>
+        <form method="post" action="/dashboard/access/request" class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div>
+            <label for="dashboard-access-email" class="block text-sm font-semibold text-ink-soft mb-1">E-Mail-Adresse</label>
+            <input id="dashboard-access-email" type="email" name="email" autocomplete="email" class="w-full border border-line rounded-lg px-3 py-2">
+          </div>
+          <button type="submit" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark">Neuen Link anfordern</button>
+        </form>
+        {% if access_request_message %}
+          <p class="mt-4 text-sm text-ink-muted">{{ access_request_message }}</p>
+        {% endif %}
+      </section>
+    {% endif %}
 
     <section class="mt-6 rounded-2xl bg-brand-dark text-paper p-6 sm:p-8 overflow-hidden" aria-labelledby="readiness-title">
       <div class="grid md:grid-cols-2 gap-8 items-end">
@@ -139,6 +183,24 @@
         </section>
       </aside>
     </div>
+  {% else %}
+    <section class="max-w-xl mx-auto py-16" role="alert">
+      <p class="text-sm font-semibold text-brand mb-1">LEG-Dashboard</p>
+      <h1 class="text-3xl font-bold tracking-tight">Zugangslink anfordern</h1>
+      <p class="text-ink-muted mt-2">Öffnen Sie Ihr Dashboard mit einem sicheren Link per E-Mail.</p>
+      <section class="mt-6 rounded-xl border border-line bg-white p-6" aria-labelledby="dashboard-access-request-title">
+        <h2 id="dashboard-access-request-title" class="text-lg font-bold">Dashboard öffnen</h2>
+        <p class="text-sm text-ink-muted mt-1 mb-4">Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink.</p>
+        <form method="post" action="/dashboard/access/request" class="grid gap-3">
+          <label for="dashboard-access-email" class="text-sm font-semibold text-ink-soft">E-Mail-Adresse</label>
+          <input id="dashboard-access-email" type="email" name="email" autocomplete="email" class="w-full border border-line rounded-lg px-3 py-2">
+          <button type="submit" class="bg-brand text-white px-4 py-3 rounded-lg font-semibold hover:bg-brand-dark">Link anfordern</button>
+        </form>
+        {% if access_request_message %}
+          <p class="mt-4 text-sm text-ink-muted">{{ access_request_message }}</p>
+        {% endif %}
+      </section>
+    </section>
   {% endif %}
 </div>
 {% endblock %}

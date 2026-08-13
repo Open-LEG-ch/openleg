@@ -8,13 +8,13 @@ import formation_documents
 import formation_wizard
 
 
-def leg_dashboard_location(community_id: str, building_id: str) -> str:
+def leg_dashboard_location(community_id: str) -> str:
     """Build the dashboard redirect target with untrusted values encoded.
 
     urlencode keeps the location a relative /leg/dashboard path no matter
     what the caller passes (no protocol-relative //host, no fragments).
     """
-    return "/leg/dashboard?" + urlencode({"cid": community_id, "bid": building_id})
+    return "/leg/dashboard?" + urlencode({"cid": community_id})
 
 
 def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict:

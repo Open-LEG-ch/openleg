@@ -86,10 +86,12 @@
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">Ihre Einladung</h2>
       <p class="text-sm text-ink-muted mb-4">Sie sind eingeladen, bei "{{ community.name }}" mitzumachen.</p>
+      {% if viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/confirm">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Teilnahme bestätigen</button>
       </form>
+      {% endif %}
     </section>
     {% endif %}
 
@@ -101,16 +103,18 @@
         {% for doc in leg_documents %}
         <li class="flex items-center justify-between text-sm">
           <span>{{ doc.filename }} <span class="text-xs text-ink-muted">({{ doc.signing_status }})</span></span>
-          <a href="/leg/document/{{ doc.id }}?bid={{ viewer_building_id }}" class="text-brand hover:underline font-semibold">PDF öffnen</a>
+          {% if viewer_has_session %}
+          <a href="/leg/document/{{ doc.id }}" class="text-brand hover:underline font-semibold">PDF öffnen</a>
+          {% endif %}
         </li>
         {% endfor %}
       </ul>
       {% else %}
       <p class="text-sm text-ink-muted mb-4">Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf.</p>
       {% endif %}
-      {% if is_admin %}
+      {% if is_admin and viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/documents">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Vertragsentwürfe erstellen</button>
       </form>
       {% endif %}
@@ -145,8 +149,9 @@
       {% else %}
       <p class="text-sm text-ink-muted mb-4">Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu.</p>
       {% endif %}
+      {% if viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/correspondence" class="grid sm:grid-cols-2 gap-3">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div><label for="correspondence-direction" class="block text-sm font-semibold mb-1">Richtung</label><select id="correspondence-direction" name="direction" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
           <option value="out">Ausgang</option>
           <option value="in">Eingang</option>
@@ -160,13 +165,19 @@
         <div class="sm:col-span-2"><label for="correspondence-notes" class="block text-sm font-semibold mb-1">Notiz <span class="font-normal text-ink-muted">optional</span></label><input id="correspondence-notes" type="text" name="notes" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
         <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Eintrag hinzufügen</button>
       </form>
+      {% else %}
+      <div class="rounded-lg border border-dashed border-line px-4 py-4 text-sm text-ink-muted">
+        <p class="mb-3">Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern.</p>
+        <a href="/dashboard" class="inline-flex items-center rounded-lg border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Eintrag hinzufügen</a>
+      </div>
+      {% endif %}
     </section>
 
-    {% if is_admin %}
+    {% if is_admin and viewer_has_session %}
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">Mitglied einladen</h2>
       <form method="post" action="/leg/community/{{ community.community_id }}/invite" class="flex flex-col sm:flex-row gap-3">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label for="invite-building-id" class="sr-only">Profil-ID des Nachbarn</label>
         <input id="invite-building-id" type="text" name="invite_building_id" placeholder="Profil-ID des Nachbarn" class="flex-1 border rounded-lg px-4 py-2 text-sm">
         <button type="submit" class="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-dark">Einladen</button>
@@ -177,9 +188,15 @@
       <h2 class="font-bold mb-2">Gründung starten</h2>
       <p class="text-sm text-ink-muted mb-4">Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.</p>
       <form method="post" action="/leg/community/{{ community.community_id }}/start-formation">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">Gründung starten</button>
       </form>
+    </section>
+    {% elif is_admin %}
+    <section class="bg-white rounded-xl border p-6">
+      <h2 class="font-bold mb-2">Gründung starten</h2>
+      <p class="text-sm text-ink-muted mb-4">Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen.</p>
+      <a href="/dashboard" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Gründung starten</a>
     </section>
     {% endif %}
     {% endif %}

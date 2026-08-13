@@ -1155,6 +1155,11 @@ from store.correspondence import (  # noqa: F401
     list_correspondence,
     log_correspondence,
 )
+from store.dashboard_access import (  # noqa: F401
+    consume_dashboard_access_token,
+    revoke_dashboard_access_tokens,
+    save_dashboard_access_token,
+)
 from store.email_queue import (  # noqa: F401
     cancel_emails_for_building,
     get_email_stats,

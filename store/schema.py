@@ -67,6 +67,17 @@ def create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS dashboard_access_tokens (
+                    token_hash CHAR(64) PRIMARY KEY,
+                    building_id VARCHAR(64) NOT NULL REFERENCES buildings(building_id) ON DELETE CASCADE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP NOT NULL,
+                    used_at TIMESTAMP,
+                    revoked_at TIMESTAMP
+                )
+            """)
+
             # Clusters table
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS clusters (
@@ -86,6 +97,16 @@ def create_tables():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_dashboard_access_tokens_building_id
+                ON dashboard_access_tokens(building_id)
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_dashboard_access_tokens_expires_at
+                ON dashboard_access_tokens(expires_at)
             """)
 
             # Referrals tracking table
