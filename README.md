@@ -64,7 +64,7 @@ docker compose ps
 - Reverse proxy: Caddy
 - Local automation: the public-safe bundle in [openclaw/README.md](openclaw/README.md), separate from the default `docker-compose.yml`
 
-Read [Architecture](docs/architecture.md), [Data pipeline](docs/data-pipeline.md), and [API examples](docs/api-examples.md).
+Read [Architecture](docs/architecture.md), [Data pipeline](docs/data-pipeline.md), [dashboard access](docs/dashboard-access.md), and [API examples](docs/api-examples.md).
 
 ### Route map
 
@@ -158,7 +158,7 @@ docker compose ps
 - Reverse Proxy: Caddy
 - Lokale Automation: öffentliches Paket in [openclaw/README.md](openclaw/README.md), getrennt vom normalen `docker-compose.yml`
 
-Lesen Sie [Architektur](docs/architecture.md), [Datenpipeline](docs/data-pipeline.md) und [API-Beispiele](docs/api-examples.md).
+Lesen Sie [Architektur](docs/architecture.md), [Datenpipeline](docs/data-pipeline.md), [Dashboard-Zugriff](docs/dashboard-access.md) und [API-Beispiele](docs/api-examples.md).
 
 ### Routen
 

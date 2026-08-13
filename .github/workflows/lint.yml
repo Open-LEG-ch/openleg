@@ -28,6 +28,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      - name: Verify frontend build
+        run: |
+          npm ci
+          npm run build:css
+          git diff --exit-code -- static/css/openleg.css
+
       - name: Run ruff check
         run: ruff check .
 

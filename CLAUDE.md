@@ -78,8 +78,8 @@ Domain vocabulary lives in `CONTEXT.md`. Use those module/seam names.
 - Every user-facing page uses the shared partials `partials/tailwind_brand.html`
   (built CSS, never the Tailwind CDN), `partials/site_nav.html`, `partials/site_footer.html`.
 - Tailwind is compiled from `static/css/tailwind.css` to `static/css/openleg.css`
-  (`npx tailwindcss -i static/css/tailwind.css -o static/css/openleg.css --minify`);
-  rebuild after adding new utility classes.
+  with pinned dependencies: run `npm ci`, then `npm run build:css`. Rebuild after
+  adding new utility classes.
 - Stakeholder pathways: `/fuer-bewohner` (residents/founders), `/fuer-gemeinden`
   (municipalities), `/leg-gruenden` (LEG operators), `/open-source` (developers).
   README documents the matching per-stakeholder install profiles.
