@@ -24,6 +24,7 @@ from flask import (
 from jinja2 import TemplateNotFound
 
 import billing_runner
+import cache as cache_module
 import dashboard as dashboard_module  # noqa: F401
 import dashboard_access as dashboard_access_module  # noqa: F401
 import dashboard_routes
@@ -109,7 +110,7 @@ def render_city_template(template_name, **kwargs):
 @main_bp.after_app_request
 def apply_basic_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
-    is_private_dashboard = request.path == "/dashboard" and bool(
+    is_private_dashboard = request.path in {"/dashboard", "/dashboard/export"} and bool(
         dashboard_routes._dashboard_session_building_id()
     )
     is_private_leg_dashboard = request.path == "/leg/dashboard" and bool(
@@ -428,10 +429,15 @@ def favicon():
 
 @main_bp.route("/sitemap.xml")
 def sitemap_xml():
+    """Render and briefly cache the public sitemap for the current site and day."""
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
     current_date = datetime.now(ZoneInfo("Europe/Zurich")).strftime("%Y-%m-%d")
+    cache_key = f"sitemap:{current_app.config['SITE_URL']}:{current_date}"
+    cached_xml = cache_module.cache_get(cache_key)
+    if cached_xml is not None:
+        return Response(cached_xml, mimetype="application/xml")
     pages = [
         ("/", "1.0", "daily", current_date),
         ("/how-it-works", "0.8", "weekly", current_date),
@@ -461,6 +467,7 @@ def sitemap_xml():
     xml = render_template(
         "sitemap.xml", site_url=current_app.config["SITE_URL"], pages=pages
     )
+    cache_module.cache_set(cache_key, xml, ttl=3600)
     return Response(xml, mimetype="application/xml")
 
 
@@ -507,6 +514,7 @@ def api_get_all_buildings():
 
 @main_bp.route("/api/get_all_clusters")
 def api_get_all_clusters():
+    """Return cluster geometry from one bulk-loaded database result."""
     clusters_raw = db.get_all_clusters()
     clusters = []
     for ci in clusters_raw:
@@ -515,12 +523,20 @@ def api_get_all_clusters():
             continue
         coords = []
         member_list = []
-        for mid in members:
-            b = db.get_building(mid)
-            if b and b.get("lat") and b.get("lon"):
-                coords.append([float(b["lat"]), float(b["lon"])])
+        for member in members:
+            if not isinstance(member, dict):
+                continue
+            building_id = member.get("building_id")
+            lat = member.get("lat")
+            lon = member.get("lon")
+            if building_id and lat is not None and lon is not None:
+                coords.append([float(lat), float(lon)])
                 member_list.append(
-                    {"building_id": mid, "lat": float(b["lat"]), "lon": float(b["lon"])}
+                    {
+                        "building_id": building_id,
+                        "lat": float(lat),
+                        "lon": float(lon),
+                    }
                 )
         if len(coords) >= 2:
             clusters.append(
@@ -706,36 +722,80 @@ def unsubscribe_page():
         else:
             email_value = normalized_email
             matches = db.get_building_by_email(email_value)
-            if not matches:
-                status = "info"
-                message = "Für diese E-Mail-Adresse wurde kein Eintrag gefunden."
-            else:
+            if matches:
                 for m in matches:
-                    db.delete_building(m["building_id"])
-                status = "success"
-                message = "Ihre Daten wurden erfolgreich gelöscht."
+                    token = security_utils.generate_uuid()
+                    saved = db.save_token(
+                        token, m["building_id"], "unsubscribe", ttl_seconds=3600
+                    )
+                    if not saved:
+                        continue
+                    unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
+                    try:
+                        send_email(
+                            email_value,
+                            "OpenLEG: Löschung bestätigen",
+                            "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
+                            f"diesen Link:\n\n{unsubscribe_url}\n\n"
+                            "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
+                            "nicht angefordert haben, ignorieren Sie diese E-Mail.",
+                        )
+                    except Exception:
+                        current_app.logger.exception(
+                            "Failed to send profile deletion confirmation"
+                        )
+            email_value = ""
+            status = "success"
+            message = (
+                "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink "
+                "per E-Mail."
+            )
 
     return render_city_template(
         "unsubscribe.html", status=status, message=message, email=email_value
     )
 
 
-@main_bp.route("/unsubscribe/<token>")
+@main_bp.route("/unsubscribe/<token>", methods=["GET", "POST"])
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def unsubscribe_token(token):
-    is_valid_token, _token_error = security_utils.validate_token(token)
-    if not is_valid_token:
-        return "<h1>Ungültiger Link</h1>", 400
+    try:
+        token_uuid = security_utils.validate_uuid(token)
+    except ValueError:
+        abort(404)
 
-    token_info = db.get_token(token)
-    if not token_info:
-        return "<h1>Link ungültig oder bereits verwendet</h1>", 404
+    token_info = db.get_token(token_uuid)
+    if not token_info or token_info.get("token_type") != "unsubscribe":
+        abort(404)
 
-    building_id = token_info["building_id"]
-    db.use_token(token)
-    db.delete_building(building_id)
-    db.cancel_emails_for_building(building_id)
-    return "<h1>Abmeldung erfolgreich</h1><p>Ihre Daten wurden gelöscht.</p>"
+    if request.method == "GET":
+        return render_template(
+            "unsubscribe.html",
+            status=None,
+            message=None,
+            email="",
+            confirm_deletion=True,
+        )
+
+    if not db.confirm_profile_deletion(token_uuid):
+        return (
+            render_template(
+                "unsubscribe.html",
+                status="error",
+                message=(
+                    "Ihre Daten wurden nicht gelöscht. Der Link ist möglicherweise "
+                    "abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
+                ),
+                email="",
+            ),
+            409,
+        )
+    return render_template(
+        "unsubscribe.html",
+        status="success",
+        message="Ihre Daten wurden erfolgreich gelöscht.",
+        email="",
+    )
 
 
 # --- Dashboard ---
@@ -970,8 +1030,11 @@ def api_cron_process_billing():
             result = billing_runner.run_billing_period(
                 community_id, period_start, period_end
             )
-        except billing_runner.BillingRunError as exc:
-            failures.append({"community_id": community_id, "error": str(exc)})
+        except billing_runner.BillingRunError:
+            logger.error("Billing run failed for community %s", community_id)
+            failures.append(
+                {"community_id": community_id, "error": "billing_run_failed"}
+            )
             continue
         if result["status"] == "created":
             processed += 1

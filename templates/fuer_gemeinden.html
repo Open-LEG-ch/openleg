@@ -24,7 +24,10 @@
   <section aria-labelledby="dashboard-title" class="border-y border-slate-200 py-8">
     <div class="grid lg:grid-cols-[2fr_1fr] gap-8 items-center">
       <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <img src="/static/images/screenshots/dashboard-gemeinde.webp" alt="Gemeinde-Dashboard mit Anmeldungen, Solarnutzung und nächsten Schritten" width="1360" height="900" loading="lazy" class="w-full h-auto">
+        <picture>
+          <source srcset="/static/images/product/municipality-dashboard-static.webp" media="(prefers-reduced-motion: reduce)">
+          <img src="/static/images/product/municipality-dashboard.gif" alt="Echtes Gemeinde-Dashboard beim Wechsel zwischen Kennzahlen und nächsten Schritten" width="960" height="540" loading="lazy" class="w-full h-auto">
+        </picture>
       </div>
       <div>
         <h2 id="dashboard-title" class="text-2xl font-bold mb-3">Ein Arbeitsstand statt einer Werbepräsentation</h2>
@@ -33,7 +36,10 @@
           <li><strong class="text-ink">Solarnutzung:</strong> Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein.</li>
           <li><strong class="text-ink">Nächster Schritt:</strong> Das Dashboard zeigt, was für die Aktivierung noch fehlt.</li>
         </ul>
-        <a href="/gemeinde/dashboard/demo" class="inline-block mt-5 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Demo-Dashboard öffnen</a>
+        <div class="mt-5 flex flex-col sm:flex-row gap-3">
+          <a href="/gemeinde/dashboard/demo" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Demo-Dashboard öffnen</a>
+          <a href="/gemeinde/onboarding" class="inline-block border border-line bg-white text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 text-center">Gemeinde anmelden</a>
+        </div>
       </div>
     </div>
   </section>
