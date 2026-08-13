@@ -35,11 +35,12 @@ def _index_html():
         return response.get_data(as_text=True)
 
 
-def test_homepage_has_product_section_with_screenshots():
+def test_homepage_has_real_product_media():
     html = _index_html()
     assert 'id="produkt"' in html
-    imgs = re.findall(r'<img[^>]+src="(/static/images/screenshots/[^"]+)"', html)
-    assert len(imgs) >= 2
+    assert 'src="/static/images/product/resident-dashboard.gif"' in html
+    assert 'srcset="/static/images/product/resident-dashboard-static.webp"' in html
+    assert 'src="/static/images/screenshots/dashboard-gemeinde.webp"' in html
 
 
 def test_screenshot_images_exist_and_are_within_budget():
