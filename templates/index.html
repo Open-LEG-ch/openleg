@@ -32,8 +32,7 @@
   <section class="relative overflow-hidden bg-paper" data-home-hero>
     <div class="relative max-w-7xl mx-auto px-4 pt-10 pb-20 md:pt-14 md:pb-24 grid lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-center">
       <div>
-        <p class="inline-flex items-center gap-2 rounded-full border border-line bg-white/70 px-3.5 py-1.5 text-sm font-medium text-ink-soft">
-          <span class="h-2 w-2 rounded-full bg-accent" aria-hidden="true"></span>
+        <p class="inline-flex items-center rounded-full border border-line bg-white/70 px-3.5 py-1.5 text-sm font-medium text-ink-soft">
           Nachbarschaftsstrom, gemeinsam betrieben
         </p>
 
@@ -205,11 +204,17 @@
               </span>
               <span class="ml-2 truncate rounded-md bg-white border border-slate-200 px-3 py-1 text-xs text-ink-muted font-mono">openleg.ch/dashboard</span>
             </div>
-            <img src="/static/images/screenshots/dashboard-bewohner.webp" alt="Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner" width="1360" height="900" loading="lazy" class="w-full h-auto">
+            <picture>
+              <source srcset="/static/images/product/resident-dashboard-static.webp" media="(prefers-reduced-motion: reduce)">
+              <img src="/static/images/product/resident-dashboard.gif" alt="Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner" width="960" height="540" loading="lazy" class="w-full h-auto">
+            </picture>
           </div>
-          <figcaption class="mt-3 flex items-start justify-between gap-4">
+          <figcaption class="mt-3 flex flex-wrap items-start justify-between gap-4">
             <span class="text-sm text-ink-muted"><strong class="text-ink">Für Bewohner:</strong> Bereitschaft, Checkliste und Ersparnis auf einen Blick.</span>
-            <a href="/dashboard/demo" class="text-sm font-semibold text-brand hover:underline shrink-0">Live ansehen <span aria-hidden="true">&rarr;</span></a>
+            <span class="flex gap-4 text-sm font-semibold shrink-0">
+              <a href="/dashboard/demo" class="text-brand hover:underline">Demo ansehen <span aria-hidden="true">&rarr;</span></a>
+              <a href="/#registrieren" class="text-brand hover:underline">Adresse prüfen <span aria-hidden="true">&rarr;</span></a>
+            </span>
           </figcaption>
         </figure>
 

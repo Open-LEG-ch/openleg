@@ -77,9 +77,13 @@ class TestFuerGemeindenPage:
 
         assert response.status_code == 200
         html = response.get_data(as_text=True)
-        assert 'src="/static/images/screenshots/dashboard-gemeinde.webp"' in html
-        assert 'width="1360"' in html
-        assert 'height="900"' in html
+        assert 'src="/static/images/product/municipality-dashboard.gif"' in html
+        assert (
+            'srcset="/static/images/product/municipality-dashboard-static.webp"' in html
+        )
+        assert 'media="(prefers-reduced-motion: reduce)"' in html
+        assert 'width="960"' in html
+        assert 'height="540"' in html
         assert 'loading="lazy"' in html
         for party in ("Gemeinde", "OpenLEG", "Verteilnetzbetreiber"):
             assert f'data-responsible-party="{party}"' in html

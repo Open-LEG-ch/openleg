@@ -8,6 +8,7 @@ in sync.
 """
 
 import glob
+import hashlib
 import os
 import re
 
@@ -16,6 +17,10 @@ TAILWIND_CONFIG = os.path.join(PROJECT_ROOT, "tailwind.config.js")
 BUILT_CSS = os.path.join(PROJECT_ROOT, "static", "css", "openleg.css")
 DESIGN_DOC = os.path.join(PROJECT_ROOT, "design.md")
 INDEX_HTML = os.path.join(PROJECT_ROOT, "templates", "index.html")
+FAVICON_SVG = os.path.join(PROJECT_ROOT, "static", "favicon.svg")
+FAVICON_ICO = os.path.join(PROJECT_ROOT, "static", "favicon.ico")
+APPLE_TOUCH_ICON = os.path.join(PROJECT_ROOT, "static", "apple-touch-icon.png")
+BRAND_HEAD = os.path.join(PROJECT_ROOT, "templates", "partials", "brand_head.html")
 TEMPLATE_GLOB = os.path.join(PROJECT_ROOT, "templates", "**", "*.html")
 
 # The daylight-cooperative palette. brand == pine, accent == solar.
@@ -75,6 +80,35 @@ def test_hero_has_no_dark_saas_slop():
     html = _read(INDEX_HTML).lower()
     for marker in ("#070d1a", "#0f172a", "blur-3xl"):
         assert marker not in html, f"homepage hero still uses AI-slop marker '{marker}'"
+
+
+def test_homepage_hero_badge_has_no_decorative_bullet():
+    html = _read(INDEX_HTML)
+    badge = re.search(r'<p class="[^"]*"[^>]*>\s*(.*?)\s*</p>', html, re.DOTALL)
+    assert badge is not None
+    assert "Nachbarschaftsstrom, gemeinsam betrieben" in badge.group(1)
+    assert "bg-accent" not in badge.group(1)
+
+
+def test_favicon_uses_current_daylight_identity():
+    svg = _read(FAVICON_SVG).lower()
+    assert "#1f3d32" in svg
+    assert "#e8a13a" in svg
+    for legacy in LEGACY_NEON:
+        assert legacy not in svg
+
+    expected_hashes = {
+        FAVICON_ICO: "fa7f2a09740f249ba27f2b5f578fa8e15c8343537846e72b1de0405d134dfa54",
+        APPLE_TOUCH_ICON: "ac26c779cfb96af87a4f96fcfe4a43011badba6ec0ff967f0a3c1ea54a206ba1",
+    }
+    for path, expected_hash in expected_hashes.items():
+        with open(path, "rb") as handle:
+            assert hashlib.sha256(handle.read()).hexdigest() == expected_hash
+
+    head = _read(BRAND_HEAD)
+    assert "/static/favicon.svg?v=daylight" in head
+    assert "/static/favicon.ico?v=daylight" in head
+    assert "/static/apple-touch-icon.png?v=daylight" in head
 
 
 def test_no_indigo_utility_classes_left_in_templates():
