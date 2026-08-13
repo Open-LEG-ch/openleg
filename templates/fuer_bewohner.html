@@ -36,6 +36,33 @@
       <a href="/#registrieren" class="mt-6 inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Adresse prüfen</a>
     </header>
 
+    <section aria-labelledby="produkt-motion" class="mb-14">
+      <div class="grid lg:grid-cols-[2fr_1fr] gap-8 items-center">
+        <div class="rounded-2xl border border-line shadow-lg overflow-hidden bg-white">
+          <div class="flex items-center gap-2 border-b border-line bg-paper-deep px-4 py-2.5">
+            <span class="flex gap-1.5" aria-hidden="true">
+              <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+              <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+              <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+            </span>
+            <span class="ml-2 truncate rounded-md bg-white border border-slate-200 px-3 py-1 text-xs text-ink-muted font-mono">openleg.ch/dashboard</span>
+          </div>
+          <picture>
+            <source srcset="/static/images/product/resident-dashboard-static.webp" media="(prefers-reduced-motion: reduce)">
+            <img src="/static/images/product/resident-dashboard.gif" alt="Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner" width="960" height="540" loading="lazy" class="w-full h-auto">
+          </picture>
+        </div>
+        <div>
+          <h2 id="produkt-motion" class="text-2xl font-bold mb-3">So sieht Ihr Dashboard aus.</h2>
+          <p class="text-ink-muted mb-5">Echte Ansicht aus dem laufenden Produkt. Klicken Sie sich direkt durch die Demo oder registrieren Sie Ihre Adresse.</p>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <a href="/dashboard/demo" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Demo ansehen</a>
+            <a href="/#registrieren" class="inline-block border border-line bg-white text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 text-center">Adresse prüfen</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section aria-labelledby="schritte" class="mb-14">
       <h2 id="schritte" class="text-2xl font-bold mb-6">Von der Adresse zur Entscheidung</h2>
       <ol class="border-t border-slate-200">

@@ -1071,9 +1071,16 @@ from store.billing import (  # noqa: F401
     save_billing_period,
 )
 from store.correspondence import (  # noqa: F401
+    get_correspondence_attachment,
     list_correspondence,
     log_correspondence,
 )
+from store.dashboard_access import (  # noqa: F401
+    consume_dashboard_access_token,
+    revoke_dashboard_access_tokens,
+    save_dashboard_access_token,
+)
+from store.dashboard_profile import update_dashboard_profile  # noqa: F401
 from store.email_queue import (  # noqa: F401
     cancel_emails_for_building,
     get_email_stats,
@@ -1142,6 +1149,7 @@ from store.tenant import (  # noqa: F401
     upsert_tenant,
 )
 from store.token import (  # noqa: F401
+    confirm_profile_deletion,
     delete_tokens_for_building,
     get_token,
     save_token,

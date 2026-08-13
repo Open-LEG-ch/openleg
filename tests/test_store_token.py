@@ -98,6 +98,10 @@ def test_use_token_reports_rowcount(monkeypatch):
     cur = _FakeCursor(rowcount=0)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
     assert store_token.use_token("missing") is False
+    query, params = cur.executed[0]
+    assert "used_at IS NULL" in query
+    assert "expires_at > CURRENT_TIMESTAMP" in query
+    assert params == ("missing",)
 
 
 def test_delete_tokens_filters_by_type(monkeypatch):
@@ -117,4 +121,6 @@ def test_save_token_wires_params(monkeypatch):
     assert store_token.save_token("t1", "b1", "verification", ttl_seconds=3600) is True
     query, params = cur.executed[0]
     assert "INSERT INTO tokens" in query
+    assert "(%s * INTERVAL '1 second')" in query
+    assert "INTERVAL '%s seconds'" not in query
     assert params == ("t1", "b1", "verification", 3600)
