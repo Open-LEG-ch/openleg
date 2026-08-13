@@ -82,12 +82,9 @@ def test_hero_has_no_dark_saas_slop():
         assert marker not in html, f"homepage hero still uses AI-slop marker '{marker}'"
 
 
-def test_homepage_hero_badge_has_no_decorative_bullet():
+def test_homepage_hero_has_no_slogan_pill():
     html = _read(INDEX_HTML)
-    badge = re.search(r'<p class="[^"]*"[^>]*>\s*(.*?)\s*</p>', html, re.DOTALL)
-    assert badge is not None
-    assert "Nachbarschaftsstrom, gemeinsam betrieben" in badge.group(1)
-    assert "bg-accent" not in badge.group(1)
+    assert "Nachbarschaftsstrom, gemeinsam betrieben" not in html
 
 
 def test_favicon_uses_current_daylight_identity():
