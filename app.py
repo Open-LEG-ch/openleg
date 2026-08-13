@@ -690,36 +690,80 @@ def unsubscribe_page():
         else:
             email_value = normalized_email
             matches = db.get_building_by_email(email_value)
-            if not matches:
-                status = "info"
-                message = "Für diese E-Mail-Adresse wurde kein Eintrag gefunden."
-            else:
+            if matches:
                 for m in matches:
-                    db.delete_building(m["building_id"])
-                status = "success"
-                message = "Ihre Daten wurden erfolgreich gelöscht."
+                    token = security_utils.generate_uuid()
+                    saved = db.save_token(
+                        token, m["building_id"], "unsubscribe", ttl_seconds=3600
+                    )
+                    if not saved:
+                        continue
+                    unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
+                    try:
+                        send_email(
+                            email_value,
+                            "OpenLEG: Löschung bestätigen",
+                            "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
+                            f"diesen Link:\n\n{unsubscribe_url}\n\n"
+                            "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
+                            "nicht angefordert haben, ignorieren Sie diese E-Mail.",
+                        )
+                    except Exception:
+                        current_app.logger.exception(
+                            "Failed to send profile deletion confirmation"
+                        )
+            email_value = ""
+            status = "success"
+            message = (
+                "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink "
+                "per E-Mail."
+            )
 
     return render_city_template(
         "unsubscribe.html", status=status, message=message, email=email_value
     )
 
 
-@main_bp.route("/unsubscribe/<token>")
+@main_bp.route("/unsubscribe/<token>", methods=["GET", "POST"])
 @limiter.limit("10 per minute") if limiter else lambda f: f
 def unsubscribe_token(token):
-    is_valid_token, _token_error = security_utils.validate_token(token)
-    if not is_valid_token:
-        return "<h1>Ungültiger Link</h1>", 400
+    try:
+        token_uuid = security_utils.validate_uuid(token)
+    except ValueError:
+        abort(404)
 
-    token_info = db.get_token(token)
-    if not token_info:
-        return "<h1>Link ungültig oder bereits verwendet</h1>", 404
+    token_info = db.get_token(token_uuid)
+    if not token_info or token_info.get("token_type") != "unsubscribe":
+        abort(404)
 
-    building_id = token_info["building_id"]
-    db.use_token(token)
-    db.delete_building(building_id)
-    db.cancel_emails_for_building(building_id)
-    return "<h1>Abmeldung erfolgreich</h1><p>Ihre Daten wurden gelöscht.</p>"
+    if request.method == "GET":
+        return render_template(
+            "unsubscribe.html",
+            status=None,
+            message=None,
+            email="",
+            confirm_deletion=True,
+        )
+
+    if not db.confirm_profile_deletion(token_uuid):
+        return (
+            render_template(
+                "unsubscribe.html",
+                status="error",
+                message=(
+                    "Ihre Daten wurden nicht gelöscht. Der Link ist möglicherweise "
+                    "abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
+                ),
+                email="",
+            ),
+            409,
+        )
+    return render_template(
+        "unsubscribe.html",
+        status="success",
+        message="Ihre Daten wurden erfolgreich gelöscht.",
+        email="",
+    )
 
 
 # --- Dashboard ---
