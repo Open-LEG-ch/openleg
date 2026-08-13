@@ -855,93 +855,6 @@ def count_consented_buildings(tier=None):
         return 0
 
 
-# === API Client Operations ===
-
-
-def save_api_client(
-    company_name,
-    contact_email,
-    api_key_hash,
-    tier="starter",
-    rate_limit=100,
-    allowed_cantons=None,
-):
-    try:
-        import json
-
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO api_clients (company_name, contact_email, api_key_hash, tier, rate_limit_per_hour, allowed_cantons)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    RETURNING id
-                """,
-                    (
-                        company_name,
-                        contact_email,
-                        api_key_hash,
-                        tier,
-                        rate_limit,
-                        json.dumps(allowed_cantons or ["ZH"]),
-                    ),
-                )
-                row = cur.fetchone()
-                return row["id"] if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error saving API client: {e}")
-        return None
-
-
-def get_api_client_by_key(api_key_hash):
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                "SELECT * FROM api_clients WHERE api_key_hash = %s AND active = TRUE",
-                (api_key_hash,),
-            )
-            row = cur.fetchone()
-            return dict(row) if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error getting API client: {e}")
-        return None
-
-
-def track_api_usage(client_id, endpoint, params=None, response_size=0):
-    try:
-        import json
-
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    INSERT INTO api_usage (client_id, endpoint, params, response_size)
-                    VALUES (%s, %s, %s, %s)
-                """,
-                (client_id, endpoint, json.dumps(params or {}), response_size),
-            )
-            return True
-    except Exception as e:
-        logger.error(f"[DB] Error tracking API usage: {e}")
-        return False
-
-
-def get_api_usage_count(client_id, hours=1):
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT COUNT(*) as count FROM api_usage
-                    WHERE client_id = %s AND called_at > CURRENT_TIMESTAMP - INTERVAL '%s hours'
-                """,
-                    (client_id, hours),
-                )
-                return cur.fetchone()["count"]
-    except Exception as e:
-        logger.error(f"[DB] Error getting API usage count: {e}")
-        return 0
-
-
 # === Initialization check ===
 
 _db_initialized = False
@@ -1143,6 +1056,12 @@ def is_db_available() -> bool:
 # that monkeypatch `database.get_connection` keep working unchanged. The import
 # is at module end to avoid a circular import (store.ranking imports database).
 # ---------------------------------------------------------------------------
+from store.api_client import (  # noqa: F401
+    get_api_client_by_key,
+    get_api_usage_count,
+    save_api_client,
+    track_api_usage,
+)
 from store.billing import (  # noqa: F401
     get_active_communities,
     get_billing_period,
