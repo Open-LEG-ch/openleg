@@ -1152,6 +1152,7 @@ from store.billing import (  # noqa: F401
     save_billing_period,
 )
 from store.correspondence import (  # noqa: F401
+    get_correspondence_attachment,
     list_correspondence,
     log_correspondence,
 )

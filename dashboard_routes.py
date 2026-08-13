@@ -9,6 +9,7 @@ closures across test reloads.
 
 import hmac
 import io
+import json
 import secrets
 
 from flask import (
@@ -157,6 +158,23 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             return _mark_private_response(response), 400
         return _exchange_response("/dashboard?saved=1")
 
+    @bp.route("/dashboard/export")
+    def dashboard_profile_export():
+        building_id = _require_dashboard_session()
+        payload = json.dumps(
+            dashboard_module.export_profile(building_id),
+            ensure_ascii=False,
+            indent=2,
+        ).encode("utf-8")
+        return _mark_private_response(
+            send_file(
+                io.BytesIO(payload),
+                mimetype="application/json",
+                as_attachment=True,
+                download_name="openleg-profil.json",
+            )
+        )
+
     @bp.route("/dashboard/access/<token>")
     @_rate_limit(limiter, "10 per minute")
     def dashboard_access_exchange(token):
@@ -278,8 +296,19 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_community_invite(community_id):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
-        invite_building_id = request.form.get("invite_building_id", "").strip()
-        dashboard_module.leg_invite(community_id, building_id, invite_building_id)
+        invite_email = request.form.get("invite_email", "").strip()
+        result = dashboard_module.leg_invite_by_email(
+            community_id, building_id, invite_email
+        )
+        if result["error"]:
+            response = render_city_template(
+                "leg_dashboard.html",
+                **dashboard_module.leg_overview(community_id, building_id),
+                viewer_has_session=True,
+                csrf_token=_dashboard_csrf_token(),
+                invite_error=result["error"],
+            )
+            return _mark_private_response(response), 400
         return _leg_dashboard_redirect(community_id)
 
     @bp.route("/leg/community/<community_id>/confirm", methods=["POST"])
@@ -307,7 +336,13 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_community_correspondence(community_id):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
-        dashboard_module.leg_log_correspondence(
+        attachment = request.files.get("attachment")
+        attachment_data = (
+            attachment.read(2 * 1024 * 1024 + 1)
+            if attachment and attachment.filename
+            else None
+        )
+        result = dashboard_module.leg_log_correspondence(
             community_id,
             building_id,
             direction=request.form.get("direction", ""),
@@ -315,8 +350,40 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             counterparty=request.form.get("counterparty", ""),
             subject=request.form.get("subject", ""),
             notes=request.form.get("notes", ""),
+            attachment_filename=(
+                attachment.filename if attachment and attachment.filename else ""
+            ),
+            attachment_data=attachment_data,
         )
+        if result["error"]:
+            response = render_city_template(
+                "leg_dashboard.html",
+                **dashboard_module.leg_overview(community_id, building_id),
+                viewer_has_session=True,
+                csrf_token=_dashboard_csrf_token(),
+                correspondence_error=result["error"],
+            )
+            return _mark_private_response(response), 400
         return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/correspondence/<int:entry_id>/attachment")
+    def leg_correspondence_attachment(community_id, entry_id):
+        building_id = _dashboard_session_building_id()
+        if not building_id:
+            abort(404)
+        attachment = dashboard_module.leg_correspondence_attachment(
+            entry_id, community_id, building_id
+        )
+        if not attachment:
+            abort(404)
+        return _mark_private_response(
+            send_file(
+                io.BytesIO(bytes(attachment["attachment_data"])),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=attachment["attachment_filename"],
+            )
+        )
 
     @bp.route("/leg/document/<int:doc_id>")
     def leg_document_download(doc_id):

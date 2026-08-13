@@ -7,6 +7,29 @@ from urllib.parse import urlencode
 import database as db
 import formation_documents
 import formation_wizard
+import security_utils
+
+_PROFILE_EXPORT_FIELDS = (
+    "building_id",
+    "email",
+    "phone",
+    "address",
+    "lat",
+    "lon",
+    "plz",
+    "building_type",
+    "annual_consumption_kwh",
+    "potential_pv_kwp",
+    "registered_at",
+    "verified",
+    "verified_at",
+    "user_type",
+    "city_id",
+    "share_with_neighbors",
+    "share_with_utility",
+    "updates_opt_in",
+    "consent_version",
+)
 
 
 def leg_dashboard_location(community_id: str) -> str:
@@ -156,6 +179,48 @@ def leg_invite(community_id: str, building_id: str, invite_building_id: str) -> 
     return {"error": None}
 
 
+def leg_invite_by_email(community_id: str, building_id: str, invite_email: str) -> dict:
+    """Invite a known profile by email without exposing profile identifiers.
+
+    A valid address always gets the same response. This prevents the operator
+    dashboard from becoming an email-enumeration surface.
+    """
+    if not _require_role(community_id, building_id, "admin"):
+        return {"error": "Nur die Administration kann einladen."}
+    valid, normalized, error = security_utils.validate_email_address(invite_email)
+    if not valid or not normalized:
+        return {"error": error or "Bitte geben Sie eine gültige E-Mail-Adresse ein."}
+
+    for profile in db.get_building_by_email(normalized) or []:
+        invite_building_id = (profile.get("building_id") or "").strip()
+        if not invite_building_id or invite_building_id == building_id:
+            continue
+        formation_wizard.invite_member(
+            db, community_id, invite_building_id, building_id
+        )
+        break
+    return {"error": None}
+
+
+def export_profile(building_id: str) -> dict:
+    """Return an explicit, JSON-safe export of one resident-owned profile."""
+    profile = db.get_building(building_id) or {}
+    exported = {}
+    for field in _PROFILE_EXPORT_FIELDS:
+        value = profile.get(field)
+        if isinstance(value, float) and not math.isfinite(value):
+            continue
+        if value is None or isinstance(value, (str, int, float, bool)):
+            exported[field] = value
+        elif hasattr(value, "isoformat"):
+            exported[field] = value.isoformat()
+        elif field in {"lat", "lon", "annual_consumption_kwh", "potential_pv_kwp"}:
+            numeric_value = float(value)
+            if math.isfinite(numeric_value):
+                exported[field] = numeric_value
+    return exported
+
+
 def leg_confirm(community_id: str, building_id: str) -> dict:
     """Confirm one's own invited membership."""
     if not community_id or not building_id:
@@ -201,6 +266,8 @@ def leg_log_correspondence(
     counterparty: str,
     subject: str,
     notes: str = "",
+    attachment_filename: str = "",
+    attachment_data: bytes | None = None,
 ) -> dict:
     """Append a ledger entry; any confirmed or invited member may log."""
     status = formation_wizard.get_community_status(db, community_id)
@@ -208,6 +275,14 @@ def leg_log_correspondence(
         m["building_id"] == building_id for m in status["members"] or []
     ):
         return {"error": "Kein Zugriff."}
+
+    if attachment_data is not None:
+        if not attachment_filename.lower().endswith(".pdf"):
+            return {"error": "Anhänge müssen PDF-Dateien sein."}
+        if not attachment_data.startswith(b"%PDF-"):
+            return {"error": "Der Anhang ist keine gültige PDF-Datei."}
+        if len(attachment_data) > 2 * 1024 * 1024:
+            return {"error": "Der PDF-Anhang darf höchstens 2 MB gross sein."}
 
     entry_id = db.log_correspondence(
         community_id=community_id,
@@ -217,10 +292,25 @@ def leg_log_correspondence(
         subject=(subject or "").strip(),
         notes=(notes or "").strip(),
         logged_by=building_id,
+        attachment_filename=attachment_filename,
+        attachment_mime="application/pdf" if attachment_data else "",
+        attachment_data=attachment_data,
     )
     if entry_id is None:
         return {"error": "Eintrag ungültig (Richtung oder Kanal unbekannt)."}
     return {"error": None, "entry_id": entry_id}
+
+
+def leg_correspondence_attachment(
+    entry_id: int, community_id: str, building_id: str
+) -> dict | None:
+    """Return a correspondence attachment only to a current LEG member."""
+    status = formation_wizard.get_community_status(db, community_id)
+    if not status or not any(
+        member["building_id"] == building_id for member in status["members"] or []
+    ):
+        return None
+    return db.get_correspondence_attachment(entry_id, community_id)
 
 
 def leg_demo_overview() -> dict:

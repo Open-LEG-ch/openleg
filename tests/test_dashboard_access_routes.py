@@ -206,19 +206,19 @@ def test_access_request_stays_generic_when_mail_delivery_raises(
 
 def test_leg_mutation_requires_session_and_csrf(app_module, monkeypatch):
     invite = MagicMock(return_value={"error": None})
-    monkeypatch.setattr(app_module.dashboard_module, "leg_invite", invite)
+    monkeypatch.setattr(app_module.dashboard_module, "leg_invite_by_email", invite)
     client = app_module.web.test_client()
 
     anonymous = client.post(
         "/leg/community/community-1/invite",
-        data={"bid": "building-attacker", "invite_building_id": "building-new"},
+        data={"bid": "building-attacker", "invite_email": "new@example.ch"},
     )
     assert anonymous.status_code == 401
 
     _set_session(client)
     missing_csrf = client.post(
         "/leg/community/community-1/invite",
-        data={"bid": "building-attacker", "invite_building_id": "building-new"},
+        data={"bid": "building-attacker", "invite_email": "new@example.ch"},
     )
     assert missing_csrf.status_code == 400
     invite.assert_not_called()
@@ -227,24 +227,24 @@ def test_leg_mutation_requires_session_and_csrf(app_module, monkeypatch):
         "/leg/community/community-1/invite",
         data={
             "bid": "building-attacker",
-            "invite_building_id": "building-new",
+            "invite_email": "new@example.ch",
             "csrf_token": "csrf-secret",
         },
     )
     assert accepted.status_code == 302
-    invite.assert_called_once_with("community-1", "building-session", "building-new")
+    invite.assert_called_once_with("community-1", "building-session", "new@example.ch")
     assert "bid=" not in accepted.headers["Location"]
 
 
 def test_leg_mutation_rejects_non_ascii_csrf_as_bad_request(app_module, monkeypatch):
     invite = MagicMock(return_value={"error": None})
-    monkeypatch.setattr(app_module.dashboard_module, "leg_invite", invite)
+    monkeypatch.setattr(app_module.dashboard_module, "leg_invite_by_email", invite)
     client = app_module.web.test_client()
     _set_session(client)
 
     response = client.post(
         "/leg/community/community-1/invite",
-        data={"csrf_token": "nön-ascii", "invite_building_id": "building-new"},
+        data={"csrf_token": "nön-ascii", "invite_email": "new@example.ch"},
     )
 
     assert response.status_code == 400
