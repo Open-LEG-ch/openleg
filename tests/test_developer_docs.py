@@ -39,9 +39,12 @@ def test_secure_dashboard_access_is_publicly_documented():
         "one-time",
         "SHA-256",
         "HttpOnly",
-        "SameSite",
+        "SameSite=Lax",
+        "Cache-Control: no-store",
+        "no-referrer",
         "CSRF",
         "/dashboard/demo",
+        "/leg/dashboard/demo",
         "No production data",
     ):
         assert text in access
@@ -55,12 +58,12 @@ def test_pull_request_template_pins_quality_and_security_checks():
     )
     for text in (
         "Closes #",
-        "RED",
-        "scripts/tdd_cycle.sh gate",
+        "- [ ] RED: a focused test failed for the missing or broken behaviour",
+        "- [ ] GREEN: the focused test passes",
+        "- [ ] `scripts/tdd_cycle.sh gate` passes",
         "CodeRabbit",
-        "desktop",
-        "mobile",
-        "secrets",
-        "citizen data",
+        "- [ ] I tested user-facing changes in a real browser on desktop and mobile",
+        "- [ ] This change contains no secrets, production host details or private operations notes",
+        "- [ ] This change contains no citizen data or identifying smart-meter data",
     ):
         assert text in template

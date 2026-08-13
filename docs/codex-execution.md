@@ -1,4 +1,4 @@
-# Codex Execution Integration
+# External Executor Integration
 
 How to run the `Execution` stage of the pipeline
 (`Idea -> Research -> Prototype -> PRD -> Kanban -> Execution -> QA`)
@@ -14,6 +14,10 @@ Per slice, one issue, one branch, one PR:
    (red), pinning the exact contract.
 2. Kimi Code implements until green:
    `kimi --print --no-thinking --prompt "<precise task: files, contract, DoD>"`.
+   Unattended runs use a disposable isolated checkout without production
+   credentials. They may change only the pull-request branch. Before any push,
+   the orchestrator reviews the complete diff explicitly and runs the full
+   validation gate.
    The task prompt names the failing test file, the mapping rules, and the
    constraints (no test edits, no built-asset edits, Schweizer Hochdeutsch
    copy rules).
