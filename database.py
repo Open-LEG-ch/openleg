@@ -1228,6 +1228,7 @@ from store.tenant import (  # noqa: F401
     upsert_tenant,
 )
 from store.token import (  # noqa: F401
+    confirm_profile_deletion,
     delete_tokens_for_building,
     get_token,
     save_token,
