@@ -86,10 +86,12 @@
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">Ihre Einladung</h2>
       <p class="text-sm text-ink-muted mb-4">Sie sind eingeladen, bei "{{ community.name }}" mitzumachen.</p>
+      {% if viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/confirm">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Teilnahme bestätigen</button>
       </form>
+      {% endif %}
     </section>
     {% endif %}
 
@@ -99,18 +101,29 @@
       {% if leg_documents %}
       <ul class="space-y-2 mb-4">
         {% for doc in leg_documents %}
-        <li class="flex items-center justify-between text-sm">
-          <span>{{ doc.filename }} <span class="text-xs text-ink-muted">({{ doc.signing_status }})</span></span>
-          <a href="/leg/document/{{ doc.id }}?bid={{ viewer_building_id }}" class="text-brand hover:underline font-semibold">PDF öffnen</a>
+        {% set status_labels = {"unsigned": "Entwurf bereit", "draft": "Entwurf bereit", "sent": "Zur Unterschrift versendet", "viewed": "Von Unterzeichnenden geöffnet", "signed": "Unterzeichnet", "completed": "Unterzeichnet", "declined": "Unterschrift abgelehnt"} %}
+        <li class="rounded-lg border border-line p-4 text-sm">
+          <div class="flex items-center justify-between gap-3">
+          <span class="font-semibold">{{ doc.filename }}</span>
+          {% if viewer_has_session %}
+          <a href="/leg/document/{{ doc.id }}" class="text-brand hover:underline font-semibold">PDF öffnen</a>
+          {% endif %}
+          </div>
+          <dl class="mt-3 grid gap-2 text-xs text-ink-muted sm:grid-cols-3">
+            <div><dt class="font-semibold text-ink">Status</dt><dd>{{ status_labels.get(doc.signing_status, "Status wird geprüft") }}</dd></div>
+            <div><dt class="font-semibold text-ink">Verantwortlich</dt><dd>{{ "Alle Mitglieder" if doc.signing_status in ["sent", "viewed"] else "LEG-Administration" }}</dd></div>
+            <div><dt class="font-semibold text-ink">Nächster Schritt</dt><dd>{{ "Unterschriften abschliessen" if doc.signing_status in ["sent", "viewed"] else "Entwurf prüfen" if doc.signing_status in ["unsigned", "draft"] else "Kein offener Schritt" if doc.signing_status in ["signed", "completed"] else "Vorgehen klären" }}</dd></div>
+          </dl>
+          <p class="mt-2 text-xs text-ink-muted"><strong class="text-ink">Erwartete Dauer:</strong> {{ "bis 14 Tage" if doc.signing_status in ["sent", "viewed"] else "abhängig von Ihrer Prüfung" }}</p>
         </li>
         {% endfor %}
       </ul>
       {% else %}
       <p class="text-sm text-ink-muted mb-4">Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf.</p>
       {% endif %}
-      {% if is_admin %}
+      {% if is_admin and viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/documents">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Vertragsentwürfe erstellen</button>
       </form>
       {% endif %}
@@ -139,14 +152,18 @@
             <td class="px-3 py-2">{{ entry.subject }}</td>
             <td class="px-3 py-2 text-right text-xs text-ink-muted">{{ entry.created_at }}</td>
           </tr>
+          {% if entry.attachment_filename %}<tr><td colspan="5" class="px-3 pb-3 text-right"><a class="text-sm font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/correspondence/{{ entry.id }}/attachment">{{ entry.attachment_filename }} herunterladen</a></td></tr>{% endif %}
           {% endfor %}
         </tbody>
       </table></div>
       {% else %}
       <p class="text-sm text-ink-muted mb-4">Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu.</p>
       {% endif %}
-      <form method="post" action="/leg/community/{{ community.community_id }}/correspondence" class="grid sm:grid-cols-2 gap-3">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+      {% if viewer_has_session %}
+      {% if correspondence_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ correspondence_error }}</p>{% endif %}
+      <p class="mb-4 text-xs text-ink-muted">Das Journal bleibt nachvollziehbar: Korrekturen bleiben als neue Einträge sichtbar. Bestehende Einträge werden nicht überschrieben oder gelöscht.</p>
+      <form method="post" enctype="multipart/form-data" action="/leg/community/{{ community.community_id }}/correspondence" class="grid sm:grid-cols-2 gap-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div><label for="correspondence-direction" class="block text-sm font-semibold mb-1">Richtung</label><select id="correspondence-direction" name="direction" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
           <option value="out">Ausgang</option>
           <option value="in">Eingang</option>
@@ -158,17 +175,26 @@
         <div><label for="correspondence-counterparty" class="block text-sm font-semibold mb-1">Gegenstelle</label><input id="correspondence-counterparty" type="text" name="counterparty" placeholder="z. B. Netzbetreiber" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
         <div><label for="correspondence-subject" class="block text-sm font-semibold mb-1">Betreff</label><input id="correspondence-subject" type="text" name="subject" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
         <div class="sm:col-span-2"><label for="correspondence-notes" class="block text-sm font-semibold mb-1">Notiz <span class="font-normal text-ink-muted">optional</span></label><input id="correspondence-notes" type="text" name="notes" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <div class="sm:col-span-2"><label for="correspondence-attachment" class="block text-sm font-semibold mb-1">PDF-Anhang <span class="font-normal text-ink-muted">optional, höchstens 2 MB</span></label><input id="correspondence-attachment" type="file" name="attachment" accept="application/pdf,.pdf" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
         <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Eintrag hinzufügen</button>
       </form>
+      {% else %}
+      <div class="rounded-lg border border-dashed border-line px-4 py-4 text-sm text-ink-muted">
+        <p class="mb-3">Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern.</p>
+        <a href="/dashboard" class="inline-flex items-center rounded-lg border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Eintrag hinzufügen</a>
+      </div>
+      {% endif %}
     </section>
 
-    {% if is_admin %}
+    {% if is_admin and viewer_has_session %}
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">Mitglied einladen</h2>
+      <p class="text-sm text-ink-muted mb-4">Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen nicht an, ob bereits ein Profil existiert.</p>
+      {% if invite_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ invite_error }}</p>{% endif %}
       <form method="post" action="/leg/community/{{ community.community_id }}/invite" class="flex flex-col sm:flex-row gap-3">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
-        <label for="invite-building-id" class="sr-only">Profil-ID des Nachbarn</label>
-        <input id="invite-building-id" type="text" name="invite_building_id" placeholder="Profil-ID des Nachbarn" class="flex-1 border rounded-lg px-4 py-2 text-sm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="invite-email" class="sr-only">E-Mail-Adresse</label>
+        <input id="invite-email" type="email" name="invite_email" autocomplete="email" required placeholder="name@beispiel.ch" class="flex-1 border rounded-lg px-4 py-2 text-sm">
         <button type="submit" class="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-dark">Einladen</button>
       </form>
     </section>
@@ -177,9 +203,15 @@
       <h2 class="font-bold mb-2">Gründung starten</h2>
       <p class="text-sm text-ink-muted mb-4">Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.</p>
       <form method="post" action="/leg/community/{{ community.community_id }}/start-formation">
-        <input type="hidden" name="bid" value="{{ viewer_building_id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">Gründung starten</button>
       </form>
+    </section>
+    {% elif is_admin %}
+    <section class="bg-white rounded-xl border p-6">
+      <h2 class="font-bold mb-2">Gründung starten</h2>
+      <p class="text-sm text-ink-muted mb-4">Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen.</p>
+      <a href="/dashboard" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Gründung starten</a>
     </section>
     {% endif %}
     {% endif %}
