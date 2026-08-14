@@ -20,4 +20,5 @@ configuration, host inventory, incident notes, or secret-handling procedures.
 ## Rule of Thumb
 
 - Put reusable product code, tests, and public docs in `openleg`.
-- Put private operations and internal planning in a separate private repository.
+- Keep local handoff notes untracked.
+- Put production status, incident logs, operations, and internal planning in `openleg-ops`.
