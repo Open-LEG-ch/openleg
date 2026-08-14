@@ -21,7 +21,6 @@ from flask import (
     request,
     send_from_directory,
 )
-from jinja2 import TemplateNotFound
 
 import billing_runner
 import cache as cache_module
@@ -93,18 +92,14 @@ else:
 
 
 def render_city_template(template_name, **kwargs):
-    """Render a per-city template with fallback to default."""
+    """Render the canonical template with tenant context."""
     tenant = getattr(g, "tenant", tenant_module.DEFAULT_TENANT)
     kwargs.setdefault("tenant", tenant)
     kwargs.setdefault("site_url", current_app.config["SITE_URL"])
     kwargs.setdefault(
         "ga4_id", tenant.get("ga4_id") or os.getenv("GA4_MEASUREMENT_ID", "")
     )
-    city_path = f"cities/{tenant['territory']}/{template_name}"
-    try:
-        return render_template(city_path, **kwargs)
-    except TemplateNotFound:
-        return render_template(template_name, **kwargs)
+    return render_template(template_name, **kwargs)
 
 
 @main_bp.after_app_request
