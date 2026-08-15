@@ -78,6 +78,12 @@ FORMATION_CONFIG = {
     "signature_timeout_days": 14,
 }
 
+DEFAULT_GRID_BUY_PRICE_RP = 25.0
+DEFAULT_GRID_SELL_PRICE_RP = 6.0
+DEFAULT_LEG_PRICE_RP = 15.0
+DEFAULT_SELF_CONSUMPTION_SHARE_PCT = 30.0
+DEFAULT_SOLAR_KWH_PER_KWP = 950
+
 
 def get_contract_templates(
     jurisdiction="Kanton Zürich", dso_contact="EKZ Verteilnetz AG"
@@ -652,7 +658,7 @@ def calculate_municipality_business_case(
             }
         )
 
-    co2_per_leg = avg_pv_kwp * 950 * 0.3 * 0.128  # kg CO2
+    co2_per_leg = avg_pv_kwp * DEFAULT_SOLAR_KWH_PER_KWP * 0.3 * 0.128  # kg CO2
     return {
         "bfs_number": bfs_number,
         "num_legs": num_legs,
@@ -669,7 +675,7 @@ def calculate_savings_estimate(
     consumption_kwh: float,
     pv_kwp: float,
     community_size: int,
-    solar_kwh_per_kwp: int = 900,
+    solar_kwh_per_kwp: int = DEFAULT_SOLAR_KWH_PER_KWP,
 ) -> dict:
     """
     Calculate estimated savings for a household in a LEG.
@@ -682,18 +688,16 @@ def calculate_savings_estimate(
     Returns:
         Savings estimate dict
     """
-    # Swiss energy prices (Rp/kWh)
-    GRID_BUY_PRICE = 25.0  # Buying from grid
-    GRID_SELL_PRICE = 6.0  # Selling to grid
-    LEG_PRICE = 15.0  # LEG internal price
-
     # Estimate production (800-1050 kWh/kWp/year in Switzerland, varies by region)
     estimated_production = pv_kwp * solar_kwh_per_kwp if pv_kwp else 0
+    self_consumption_share = DEFAULT_SELF_CONSUMPTION_SHARE_PCT / 100
 
     # Simple model: share production within community
     if estimated_production > 0:
         # Producer scenario
-        self_consumption = min(consumption_kwh, estimated_production * 0.3)
+        self_consumption = min(
+            consumption_kwh, estimated_production * self_consumption_share
+        )
         leg_sales = min(
             estimated_production - self_consumption,
             consumption_kwh * (community_size - 1),
@@ -702,28 +706,27 @@ def calculate_savings_estimate(
         grid_purchase = max(0, consumption_kwh - self_consumption)
 
         # Revenue/cost
-        leg_revenue = leg_sales * LEG_PRICE / 100  # Convert Rp to CHF
-        grid_revenue = grid_sales * GRID_SELL_PRICE / 100
-        grid_cost = grid_purchase * GRID_BUY_PRICE / 100
+        leg_revenue = leg_sales * DEFAULT_LEG_PRICE_RP / 100  # Convert Rp to CHF
+        grid_revenue = grid_sales * DEFAULT_GRID_SELL_PRICE_RP / 100
+        grid_cost = grid_purchase * DEFAULT_GRID_BUY_PRICE_RP / 100
 
         net_cost = grid_cost - leg_revenue - grid_revenue
 
         # Without LEG
-        without_leg_cost = (consumption_kwh * GRID_BUY_PRICE / 100) - (
-            estimated_production * GRID_SELL_PRICE / 100
+        without_leg_cost = (consumption_kwh * DEFAULT_GRID_BUY_PRICE_RP / 100) - (
+            estimated_production * DEFAULT_GRID_SELL_PRICE_RP / 100
         )
 
         annual_savings = without_leg_cost - net_cost
     else:
         # Consumer scenario
-        # Assume community provides 30% of consumption
-        leg_purchase = consumption_kwh * 0.3
-        grid_purchase = consumption_kwh * 0.7
+        leg_purchase = consumption_kwh * self_consumption_share
+        grid_purchase = consumption_kwh * (1 - self_consumption_share)
 
-        with_leg_cost = (leg_purchase * LEG_PRICE / 100) + (
-            grid_purchase * GRID_BUY_PRICE / 100
+        with_leg_cost = (leg_purchase * DEFAULT_LEG_PRICE_RP / 100) + (
+            grid_purchase * DEFAULT_GRID_BUY_PRICE_RP / 100
         )
-        without_leg_cost = consumption_kwh * GRID_BUY_PRICE / 100
+        without_leg_cost = consumption_kwh * DEFAULT_GRID_BUY_PRICE_RP / 100
 
         annual_savings = without_leg_cost - with_leg_cost
 
@@ -732,9 +735,11 @@ def calculate_savings_estimate(
         "monthly_savings_chf": round(annual_savings / 12, 2),
         "five_year_savings_chf": round(annual_savings * 5, 2),
         "assumptions": {
-            "grid_buy_price_rp": GRID_BUY_PRICE,
-            "grid_sell_price_rp": GRID_SELL_PRICE,
-            "leg_price_rp": LEG_PRICE,
+            "grid_buy_price_rp": DEFAULT_GRID_BUY_PRICE_RP,
+            "grid_sell_price_rp": DEFAULT_GRID_SELL_PRICE_RP,
+            "leg_price_rp": DEFAULT_LEG_PRICE_RP,
             "community_size": community_size,
+            "solar_kwh_per_kwp": solar_kwh_per_kwp,
+            "self_consumption_share_pct": DEFAULT_SELF_CONSUMPTION_SHARE_PCT,
         },
     }

@@ -39,6 +39,7 @@
         <p class="text-xs text-ink-muted uppercase tracking-wide">Solarnutzung</p>
         {% if solar_score is not none %}
           <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ "%.0f"|format(solar_score|float) }}<span data-statistic-unit class="text-sm font-normal text-ink-muted">%</span></p>
+          <a href="/rangliste/methodik" class="text-xs text-brand underline">Formel und Datengrenzen ansehen</a>
         {% else %}
           <p class="text-sm text-ink-muted mt-2">Noch keine Daten</p>
         {% endif %}
@@ -47,6 +48,8 @@
         <p class="text-xs text-ink-muted uppercase tracking-wide">Energiewende-Score</p>
         {% if energy_score is not none %}
           <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ "%.0f"|format(energy_score|float) }} <span data-statistic-unit class="text-sm font-normal text-ink-muted">/100</span></p>
+          <p class="text-xs text-ink-muted mt-2">Gewichtung: Solar 30 Prozent, Elektroautos 20 Prozent, erneuerbare Heizungen 25 Prozent, erneuerbare Produktion 25 Prozent.</p>
+          <a href="/rangliste/methodik" class="text-xs text-brand underline">Methodik ansehen</a>
         {% else %}
           <p class="text-sm text-ink-muted mt-2">Noch keine Daten</p>
         {% endif %}

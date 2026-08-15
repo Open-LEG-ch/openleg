@@ -151,6 +151,9 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     return {
         "error": None,
         "community": _with_german_labels(status),
+        "minimum_community_size": formation_wizard.FORMATION_CONFIG[
+            "min_community_size"
+        ],
         "viewer_building_id": building_id,
         "is_admin": member.get("role") == "admin",
         "leg_documents": db.list_leg_documents(community_id),
@@ -389,6 +392,9 @@ def leg_demo_overview() -> dict:
         "error": None,
         "viewer_building_id": "demo-building",
         "is_admin": True,
+        "minimum_community_size": formation_wizard.FORMATION_CONFIG[
+            "min_community_size"
+        ],
         "community": _with_german_labels(community),
     }
 

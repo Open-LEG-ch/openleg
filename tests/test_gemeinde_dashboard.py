@@ -2,6 +2,7 @@
 """Contract tests for the municipality dashboard (brand system, honest data)."""
 
 import os
+import re
 from unittest.mock import MagicMock, patch
 
 
@@ -73,6 +74,25 @@ class TestGemeindeDashboardDemo:
         html = client.get("/gemeinde/dashboard/demo").get_data(as_text=True)
         assert "42" in html
         assert ">0<" not in html.replace(" ", "")
+
+    def test_solar_score_links_to_methodology(self):
+        client = _client()
+        html = client.get("/gemeinde/dashboard/demo").get_data(as_text=True)
+        tile = re.search(r"Solarnutzung.*?</div>", html, re.DOTALL)
+        assert tile
+        assert 'href="/rangliste/methodik"' in tile.group(0)
+        assert "Formel und Datengrenzen ansehen" in tile.group(0)
+
+    def test_energy_score_shows_weighting_and_links_to_methodology(self):
+        client = _client()
+        html = client.get("/gemeinde/dashboard/demo").get_data(as_text=True)
+        tile = re.search(r"Energiewende-Score.*?</div>", html, re.DOTALL)
+        assert tile
+        assert 'href="/rangliste/methodik"' in tile.group(0)
+        assert (
+            "Gewichtung: Solar 30 Prozent, Elektroautos 20 Prozent, erneuerbare "
+            "Heizungen 25 Prozent, erneuerbare Produktion 25 Prozent." in tile.group(0)
+        )
 
 
 class TestGemeindeDashboardEmptyState:

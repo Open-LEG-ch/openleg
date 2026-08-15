@@ -10,6 +10,7 @@ import time
 from flask import g, request
 
 import cache
+from formation_wizard import DEFAULT_SOLAR_KWH_PER_KWP
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ DEFAULT_TENANT = {
     "map_bounds_sw": [47.20, 8.30],
     "map_bounds_ne": [47.60, 8.80],
     "plz_ranges": [[8000, 8999]],
-    "solar_kwh_per_kwp": 1000,
+    "solar_kwh_per_kwp": DEFAULT_SOLAR_KWH_PER_KWP,
     "site_url": "",
     "ga4_id": "",
     "active": True,
@@ -228,5 +229,7 @@ def init_tenant_middleware(app, db=None):
             "map_zoom": tenant.get("map_zoom", 12),
             "map_bounds_sw": tenant.get("map_bounds_sw", [47.20, 8.30]),
             "map_bounds_ne": tenant.get("map_bounds_ne", [47.60, 8.80]),
-            "solar_kwh_per_kwp": tenant.get("solar_kwh_per_kwp", 1000),
+            "solar_kwh_per_kwp": tenant.get(
+                "solar_kwh_per_kwp", DEFAULT_SOLAR_KWH_PER_KWP
+            ),
         }

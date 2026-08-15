@@ -30,6 +30,7 @@ import dashboard_routes
 import data_enricher
 import database as db
 import email_automation
+import formation_wizard
 import geometry
 import leg_registry
 import ml_models
@@ -869,36 +870,23 @@ def api_calculate_savings():
     consumption = float(data.get("consumption_kwh", 4500))
     has_solar = bool(data.get("has_solar", False))
     pv_kwp = float(data.get("pv_kwp", 0))
-
-    base_rate_saving = 0.04
-    annual_base = consumption * base_rate_saving
-    solar_savings = 0
-    if has_solar and pv_kwp > 0:
-        solar_yield = (
-            g.tenant.get("solar_kwh_per_kwp", 1000) if hasattr(g, "tenant") else 1000
-        )
-        annual_production = pv_kwp * solar_yield
-        export_to_leg = annual_production * 0.65
-        solar_savings = export_to_leg * 0.08
-
-    total_annual = min(annual_base + solar_savings, 1200)
-    return jsonify(
-        {
-            "annual_savings_chf": round(total_annual, 2),
-            "monthly_savings_chf": round(total_annual / 12, 2),
-            "five_year_total_chf": round(total_annual * 5, 2),
-            "has_solar_bonus": has_solar and pv_kwp > 0,
-            "consumption_kwh": consumption,
-        }
+    tenant = getattr(g, "tenant", {})
+    solar_yield = tenant.get(
+        "solar_kwh_per_kwp", formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP
     )
+    result = formation_wizard.calculate_savings_estimate(
+        consumption_kwh=consumption,
+        pv_kwp=pv_kwp if has_solar else 0,
+        community_size=5,
+        solar_kwh_per_kwp=solar_yield,
+    )
+    return jsonify(result)
 
 
 # --- Formation API ---
 @main_bp.route("/api/formation/optimize", methods=["POST"])
 def api_formation_optimize():
     """LEG optimization endpoint."""
-    import formation_wizard
-
     data = request.json or {}
     building_id = data.get("building_id", "").strip()
     if not building_id:
@@ -911,14 +899,14 @@ def api_formation_optimize():
 @main_bp.route("/api/formation/financial-model", methods=["POST"])
 def api_formation_financial_model():
     """Savings projection for a LEG."""
-    import formation_wizard
-
     data = request.json or {}
     consumption = float(data.get("consumption_kwh", 4500))
     pv_kwp = float(data.get("pv_kwp", 0))
     community_size = int(data.get("community_size", 5))
     solar_kwh = (
-        g.tenant.get("solar_kwh_per_kwp", 1000) if hasattr(g, "tenant") else 1000
+        g.tenant.get("solar_kwh_per_kwp", formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP)
+        if hasattr(g, "tenant")
+        else formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP
     )
 
     result = formation_wizard.calculate_savings_estimate(
