@@ -48,7 +48,9 @@ class _NeighborVisibilityCursor:
 
     def _visible(self):
         rows = list(self.buildings)
-        if "JOIN consents" in self.query:
+        has_consent_join = "JOIN consents" in self.query
+        has_consent_predicate = "share_with_neighbors = TRUE" in self.query
+        if has_consent_join and has_consent_predicate:
             rows = [
                 row for row in rows if self.consents.get(row["building_id"]) is True
             ]
@@ -107,6 +109,20 @@ def test_neighbor_queries_keep_consented_buildings_and_city_scope(monkeypatch):
     ] == ["consented"]
 
 
+def test_neighbor_visibility_double_requires_predicate(monkeypatch):
+    """The double must fail if production joins consents but drops the predicate."""
+    cursor = _neighbor_visibility_connection(monkeypatch)
+
+    cursor.execute(
+        """
+        SELECT b.building_id FROM buildings b
+        INNER JOIN consents c ON b.building_id = c.building_id
+        WHERE b.verified = TRUE
+        """
+    )
+    assert any(row["building_id"] == "revoked" for row in cursor.fetchall())
+
+
 class _ClusterConsentCursor:
     """Simulate the cluster_info/clusters/buildings/consents join for get_all_clusters."""
 
@@ -139,7 +155,7 @@ class _ClusterConsentCursor:
     def execute(self, query, _params=None):
         self.query = " ".join(query.split())
 
-    def _consenting_members(self):
+    def _matching_members(self, require_consent):
         members = []
         for c in self.clusters:
             b = self.buildings.get(c["building_id"])
@@ -149,8 +165,8 @@ class _ClusterConsentCursor:
                 and b is not None
                 and b["lat"] is not None
                 and b["lon"] is not None
-                and consent is not None
-                and consent["share_with_neighbors"] is True
+                and (not require_consent or consent is not None)
+                and (not require_consent or consent["share_with_neighbors"] is True)
             ):
                 members.append(
                     {
@@ -161,6 +177,12 @@ class _ClusterConsentCursor:
                 )
         members.sort(key=lambda m: m["building_id"])
         return members
+
+    def _consenting_members(self):
+        return self._matching_members(require_consent=True)
+
+    def _all_members(self):
+        return self._matching_members(require_consent=False)
 
     def fetchall(self):
         if "FROM cluster_info ci" not in self.query:
@@ -174,8 +196,10 @@ class _ClusterConsentCursor:
         # members. The fix uses COUNT(...) FILTER with the same conditions.
         if "ci.num_members" in self.query:
             num_members = info["num_members"]
-        else:
+        elif self._has_filtered_count_aggregate():
             num_members = len(members)
+        else:
+            num_members = len(self._all_members())
 
         return [
             {
@@ -186,6 +210,16 @@ class _ClusterConsentCursor:
                 "members": members,
             }
         ]
+
+    def _has_filtered_count_aggregate(self):
+        count_pos = self.query.find("COUNT(")
+        if count_pos == -1:
+            return False
+        alias_pos = self.query.find("AS num_members", count_pos)
+        if alias_pos == -1:
+            return False
+        count_expr = self.query[count_pos:alias_pos]
+        return "FILTER" in count_expr and "share_with_neighbors = TRUE" in count_expr
 
     def __enter__(self):
         return self
