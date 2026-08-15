@@ -21,7 +21,7 @@
     <header class="mb-8">
       <p class="text-sm font-semibold text-brand mb-2">LEG-Dashboard</p>
       <h1 class="text-3xl font-bold tracking-tight mb-1">{{ community.name }}</h1>
-      <p class="text-ink-muted">Status: <span class="font-semibold">{{ community.status }}</span> &middot; Verteilmodell: {{ community.distribution_model }}</p>
+      <p class="text-ink-muted">Status: <span class="font-semibold">{{ community.status_label }}</span> &middot; Verteilmodell: {{ community.distribution_model_label }}</p>
     </header>
 
     <section class="grid sm:grid-cols-3 gap-4 mb-8">
@@ -67,13 +67,9 @@
           {% for member in community.members %}
           <tr>
             <td class="px-5 py-3">{{ member.address or member.building_id }}{% if member.building_id == viewer_building_id %} <span class="text-xs text-brand">(Sie)</span>{% endif %}</td>
-            <td class="px-5 py-3 text-ink-muted">{{ member.role }}</td>
+            <td class="px-5 py-3 text-ink-muted">{{ member.role_label }}</td>
             <td class="px-5 py-3">
-              {% if member.status == 'confirmed' %}
-              <span class="text-xs text-ink font-semibold">bestätigt</span>
-              {% else %}
-              <span class="text-xs text-ink-muted font-semibold">{{ member.status }}</span>
-              {% endif %}
+              <span class="text-xs font-semibold {{ 'text-ink' if member.status == 'confirmed' else 'text-ink-muted' }}">{{ member.status_label }}</span>
             </td>
           </tr>
           {% endfor %}
