@@ -76,6 +76,7 @@
           <div class="bg-brand p-4">
             <strong data-statistic class="block font-mono tabular-nums text-2xl text-paper">{{ neighbor_count or 0 }} <span data-statistic-unit class="text-xs font-normal text-sage-light">Haushalte</span></strong>
             <span class="block text-sm text-sage-light mt-1">Haushalte in der Nähe</span>
+            <span class="block text-xs text-sage-light/80 mt-1">Bis {{ neighbor_box_half_width_m }} m in jede Richtung, nur mit Zustimmung zur Anzeige</span>
           </div>
           <div class="bg-brand p-4">
             <strong data-statistic class="block font-mono tabular-nums text-2xl text-paper">{{ user.referral_count|default(0) }} <span data-statistic-unit class="text-xs font-normal text-sage-light">Einladungen</span></strong>

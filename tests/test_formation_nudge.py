@@ -3,7 +3,21 @@
 
 import os
 
+import formation_wizard
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def test_formation_neighbor_search_requires_current_sharing_consent():
+    with open(formation_wizard.__file__, encoding="utf-8") as source_file:
+        source = source_file.read()
+    start = source.index("def get_formable_clusters")
+    query = source[
+        start : source.index("def calculate_municipality_business_case", start)
+    ]
+
+    assert "JOIN consents" in query
+    assert "share_with_neighbors = TRUE" in query
 
 
 class TestFormationNudgeTemplate:

@@ -91,6 +91,8 @@ def test_clusters_bulk_load_member_coordinates(monkeypatch):
     query = " ".join(cursor.executed[0][0].split())
     assert len(cursor.executed) == 1
     assert "JOIN buildings" in query
+    assert "JOIN consents" in query
+    assert "share_with_neighbors = TRUE" in query
     assert rows[0]["members"][0] == {
         "building_id": "a",
         "lat": 47.1,

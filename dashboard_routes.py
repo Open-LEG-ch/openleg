@@ -96,6 +96,7 @@ def _dashboard_public_context(**extra):
         "readiness_score": 0,
         "checks": [],
         "neighbor_count": 0,
+        "neighbor_box_half_width_m": int(db.NEIGHBOR_BOX_HALF_WIDTH_KM * 1000),
         "referral_link": "",
         "read_only": False,
         "access_request_sent": False,

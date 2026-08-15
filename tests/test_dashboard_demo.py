@@ -48,6 +48,14 @@ def test_dashboard_demo_route_renders_fake_data(app_module):
     assert "/api/calculate_savings" in html
 
 
+def test_dashboard_explains_neighbor_box_and_consent(app_module):
+    client = app_module.web.test_client()
+    html = client.get("/dashboard/demo").get_data(as_text=True)
+
+    assert "500 m in jede Richtung" in html
+    assert "nur mit Zustimmung zur Anzeige" in html
+
+
 def test_readiness_counts_neighbors_at_zero_coordinates(monkeypatch):
     import dashboard
 

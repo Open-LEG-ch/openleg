@@ -597,7 +597,9 @@ def get_formable_clusters(db, building_id: str, radius_meters: int = 150) -> lis
                             sin(radians(%s)) * sin(radians(b.lat))
                         )) as distance
                     FROM buildings b
+                    INNER JOIN consents c ON b.building_id = c.building_id
                     WHERE b.verified = TRUE
+                    AND c.share_with_neighbors = TRUE
                     AND b.building_id != %s
                     AND NOT EXISTS (
                         SELECT 1 FROM community_members cm
