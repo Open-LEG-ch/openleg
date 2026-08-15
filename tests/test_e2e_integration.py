@@ -2,40 +2,10 @@
 """E2E integration tests (static/mocked, no live services)."""
 
 import os
-import re
 
 import pytest
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
-class TestServerMjsIntegration:
-    @pytest.fixture(autouse=True)
-    def load_server(self):
-        path = os.path.join(
-            PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs"
-        )
-        with open(path) as f:
-            self.content = f.read()
-
-    def test_tool_count_at_least_40(self):
-        count = len(re.findall(r"server\.tool\(", self.content))
-        assert count >= 40
-
-    def test_new_tools_have_descriptions(self):
-        """Verify server.mjs tool calls include description strings."""
-        matches = re.findall(r"server\.tool\(\s*['\"](\w+)['\"]", self.content)
-        assert len(matches) >= 40
-        for name in matches:
-            assert len(name) > 0
-
-
-class TestDockerfileCron:
-    def test_dockerfile_copies_cron(self):
-        with open(os.path.join(PROJECT_ROOT, "openclaw", "Dockerfile")) as f:
-            content = f.read()
-        # config/ COPY includes config/cron/
-        assert "COPY config/" in content
 
 
 class TestSchemaModule:

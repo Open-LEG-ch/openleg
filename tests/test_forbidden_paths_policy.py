@@ -30,6 +30,7 @@ def test_policy_includes_private_only_patterns():
         "grants/**",
         "internal/**",
         "overnight/**",
+        "openclaw/**",
         "prd/**",
         "research*.md",
         "private/**",

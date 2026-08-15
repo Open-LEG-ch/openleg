@@ -4,7 +4,7 @@
 The public boundary is content-based: internal business machinery (strategy
 dashboards, sales pipeline, municipality outreach) lives in the private ops
 repo. Generic, token-gated instance ops (ops snapshots, LEA reports, internal
-automation endpoints) stays public because the public OpenClaw bundle uses it.
+automation endpoints) stays public as part of the product runtime.
 """
 
 import os
@@ -62,7 +62,6 @@ def test_private_assets_are_not_tracked():
         "docs/openleg-open-source-standard.md",
         "docs/research.md",
         "open-strategy.md",
-        "openclaw/config/openclaw.json",
         "research_academic_partnerships.md",
         "research_bfe_grants.md",
         "scripts/ralph_loop.py",
@@ -73,7 +72,6 @@ def test_private_assets_are_not_tracked():
     assert all(not path.startswith(".github/scripts/") for path in tracked)
     assert all(not path.startswith(".orch/") for path in tracked)
     assert all(not path.startswith("grants/") for path in tracked)
-    assert all(not path.startswith("openclaw/config/cron/") for path in tracked)
     assert all(not path.startswith("overnight/") for path in tracked)
     assert all(not path.startswith("outreach/") for path in tracked)
     assert all(not path.startswith("prd/") for path in tracked)
@@ -127,24 +125,6 @@ def test_private_operator_surface_absent_from_modules():
     database_content = Path(PROJECT_ROOT, "database.py").read_text(encoding="utf-8")
     for fragment in ("vnb_pipeline", "vnb_research", "def save_insight"):
         assert fragment not in database_content
-
-    # The public OpenClaw bundle must not ship sales-pipeline or outreach
-    # tooling either; those tables and engines left with this boundary.
-    server_content = Path(
-        PROJECT_ROOT, "openclaw", "mcp-openleg-server", "server.mjs"
-    ).read_text(encoding="utf-8")
-    for fragment in (
-        "vnb_pipeline",
-        "vnb_research",
-        "insights_cache",
-        "research_vnb",
-        "scan_vnb_leg_offerings",
-        "monitor_leghub_partners",
-        "score_vnb",
-        "draft_outreach",
-        "get_outreach_candidates",
-    ):
-        assert fragment not in server_content
 
 
 def test_kept_instance_ops_schema_is_provisioned():

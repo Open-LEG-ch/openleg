@@ -157,11 +157,6 @@ docs/matt-pocock-quality-slices.md
 scripts/package_public.sh
 scripts/sanitize_public_snapshot.py
 
-# Local OpenClaw state
-openclaw/config/openclaw.json
-openclaw/config/cron/
-openclaw/config/workspace/
-
 # Local private-network (Headscale) runtime config
 headscale/config.yaml
 
