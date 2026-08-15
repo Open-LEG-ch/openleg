@@ -67,12 +67,12 @@
         <div>
           <p class="text-sm font-semibold text-accent-light" id="readiness-title">Bereitschaft</p>
           <div data-statistic class="font-mono tabular-nums text-6xl md:text-7xl font-bold text-accent my-2">{{ readiness_score }}<span data-statistic-unit class="text-2xl md:text-3xl font-normal text-accent-light">%</span></div>
-          <p class="text-sage-light max-w-xl">Sobald die offenen Punkte erledigt sind, bereiten wir die LEG-Anmeldung mit {{ utility_name }} vor.</p>
+          <p class="text-sage-light max-w-xl">Sobald die offenen Punkte erledigt sind, bereiten wir die LEG-Anmeldung mit {{ utility_name }} vor. Die vier Checklisten-Punkte unten zählen je ein Viertel.</p>
           <div class="mt-6 h-3 rounded-full bg-white/10 overflow-hidden" role="progressbar" aria-valuenow="{{ readiness_score }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ readiness_score }} Prozent bereit">
             <span class="block h-full rounded-full bg-accent" style="width:{{ readiness_score }}%"></span>
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-px rounded-xl overflow-hidden bg-white/15" aria-label="Kennzahlen">
+        <div class="grid grid-cols-2 gap-px rounded-xl overflow-hidden bg-white/15" aria-label="Kennzahlen">
           <div class="bg-brand p-4">
             <strong data-statistic class="block font-mono tabular-nums text-2xl text-paper">{{ neighbor_count or 0 }} <span data-statistic-unit class="text-xs font-normal text-sage-light">Haushalte</span></strong>
             <span class="block text-sm text-sage-light mt-1">Haushalte in der Nähe</span>
@@ -80,10 +80,6 @@
           <div class="bg-brand p-4">
             <strong data-statistic class="block font-mono tabular-nums text-2xl text-paper">{{ user.referral_count|default(0) }} <span data-statistic-unit class="text-xs font-normal text-sage-light">Einladungen</span></strong>
             <span class="block text-sm text-sage-light mt-1">Einladungen</span>
-          </div>
-          <div class="bg-brand p-4">
-            <strong class="block font-mono text-2xl text-paper">{{ "fertig" if readiness_score == 100 else "offen" }}</strong>
-            <span class="block text-sm text-sage-light mt-1">Profilstatus</span>
           </div>
         </div>
       </div>
@@ -194,6 +190,14 @@
             <p data-statistic class="font-mono tabular-nums text-3xl font-extrabold text-ink my-1" id="savings-amount"></p>
             <span data-statistic-unit class="sr-only">Schweizer Franken pro Jahr</span>
             <p class="text-xs text-ink-muted m-0">Richtwert aus Verbrauchsprofil und LEG-Annahmen.</p>
+            <dl id="savings-assumptions" class="mt-3 grid sm:grid-cols-2 gap-2 text-xs text-left text-ink-muted">
+              <div><dt class="font-semibold text-ink">Netzbezugspreis</dt><dd><span id="savings-grid-buy-price"></span> Rp/kWh</dd></div>
+              <div><dt class="font-semibold text-ink">Einspeisevergütung</dt><dd><span id="savings-grid-sell-price"></span> Rp/kWh</dd></div>
+              <div><dt class="font-semibold text-ink">LEG-Preis</dt><dd><span id="savings-leg-price"></span> Rp/kWh</dd></div>
+              <div><dt class="font-semibold text-ink">Haushalte in der LEG</dt><dd><span id="savings-community-size"></span></dd></div>
+              <div><dt class="font-semibold text-ink">PV-Ertrag pro kWp</dt><dd><span id="savings-solar-yield"></span> kWh/Jahr</dd></div>
+              <div><dt class="font-semibold text-ink">Eigenverbrauchsanteil</dt><dd><span id="savings-self-consumption-share"></span>%</dd></div>
+            </dl>
           </div>
         </section>
 
@@ -285,6 +289,12 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         document.getElementById('savings-amount').textContent = 'CHF ' + data.annual_savings_chf.toLocaleString('de-CH');
+        document.getElementById('savings-grid-buy-price').textContent = data.assumptions.grid_buy_price_rp.toLocaleString('de-CH');
+        document.getElementById('savings-grid-sell-price').textContent = data.assumptions.grid_sell_price_rp.toLocaleString('de-CH');
+        document.getElementById('savings-leg-price').textContent = data.assumptions.leg_price_rp.toLocaleString('de-CH');
+        document.getElementById('savings-community-size').textContent = data.assumptions.community_size.toLocaleString('de-CH');
+        document.getElementById('savings-solar-yield').textContent = data.assumptions.solar_kwh_per_kwp.toLocaleString('de-CH');
+        document.getElementById('savings-self-consumption-share').textContent = data.assumptions.self_consumption_share_pct.toLocaleString('de-CH');
         document.getElementById('savings-result').classList.remove('hidden');
       } catch (e) {
         calcError.textContent = 'Die Berechnung ist gerade nicht möglich. Bitte versuchen Sie es in einer Minute erneut.';

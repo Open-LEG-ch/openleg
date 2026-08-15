@@ -10,6 +10,7 @@ import logging
 from flask import Blueprint, jsonify, render_template, request
 
 import database as db
+import formation_wizard
 import municipality_profile
 import public_data
 
@@ -364,10 +365,11 @@ def leg_financial_model():
     pv_kwp = scenario.get("pv_kwp", 30)
     consumption_kwh = scenario.get("consumption_kwh", 4500)
 
-    import formation_wizard
-
     base = formation_wizard.calculate_savings_estimate(
-        consumption_kwh, pv_kwp, community_size, solar_kwh_per_kwp=950
+        consumption_kwh,
+        pv_kwp,
+        community_size,
+        solar_kwh_per_kwp=formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP,
     )
 
     annual = base.get("annual_savings_chf", 0)
@@ -386,7 +388,7 @@ def leg_financial_model():
         )
 
     # CO2 reduction estimate (0.128 kg/kWh Swiss grid mix)
-    self_consumption_kwh = pv_kwp * 950 * 0.3
+    self_consumption_kwh = pv_kwp * formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP * 0.3
     co2_reduction_kg = self_consumption_kwh * 0.128
 
     return jsonify(

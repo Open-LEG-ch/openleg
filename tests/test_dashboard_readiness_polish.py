@@ -104,7 +104,7 @@ def test_dashboard_empty_states_are_actionable(client):
     assert "Hier sehen Sie" in municipality
     assert 'href="/gemeinde/onboarding"' in municipality
     assert "Hier erscheinen" in leg
-    assert "Eintrag hinzufügen" in leg
+    assert "Vollzugriff im persönlichen Dashboard anfordern" in leg
 
 
 def test_dashboard_errors_are_announced(client):
@@ -112,6 +112,35 @@ def test_dashboard_errors_are_announced(client):
         html = _html(client, path)
         assert re.search(r'<[^>]+role="alert"[^>]*>', html)
         assert "Öffnen" in html or "Prüfen" in html or "registrieren" in html
+
+
+def test_readiness_score_explains_four_equal_checks(client):
+    html = _html(client, "/dashboard/demo")
+    assert "vier Checklisten-Punkte" in html
+    assert "je ein Viertel" in html
+
+
+def test_community_readiness_score_explains_weighted_steps(client):
+    html = _html(client, "/leg/dashboard/demo")
+    assert "Mindestens 3 Mitglieder bestätigen ihre Teilnahme" in html
+    assert "Die LEG erstellt Dokumente oder sammelt Unterschriften" in html
+    assert "Die LEG reicht die Anmeldung beim Netzbetreiber ein" in html
+    assert "Der Netzbetreiber genehmigt sie" in html
+    assert html.count("30 Prozentpunkte") == 2
+    assert html.count("20 Prozentpunkte") == 2
+
+
+def test_read_only_controls_describe_dashboard_access_request(client):
+    html = _html(client, "/leg/dashboard/demo")
+    labels = re.findall(r'<a href="/dashboard"[^>]*>(.*?)</a>', html, re.DOTALL)
+    assert labels.count("Vollzugriff im persönlichen Dashboard anfordern") == 2
+    assert "Eintrag hinzufügen" not in labels
+    assert "Gründung starten" not in labels
+
+
+def test_profilstatus_tile_is_removed(client):
+    html = _html(client, "/dashboard/demo")
+    assert "Profilstatus" not in html
 
 
 def test_dashboard_form_controls_have_bound_labels(client):
@@ -155,6 +184,6 @@ def test_dark_panel_statistics_carry_light_text(client):
     )
     assert panel, "dark readiness panel with statistics not found"
     values = re.findall(r"<strong[^>]*font-mono[^>]*>", panel.group(0))
-    assert len(values) == 3
+    assert len(values) == 2
     for value in values:
         assert "text-paper" in value or "text-white" in value, value

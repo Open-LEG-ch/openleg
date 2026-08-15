@@ -28,6 +28,7 @@
       <div class="bg-white rounded-xl border p-5">
         <p class="text-sm text-ink-muted mb-1">Bereitschaft</p>
         <p data-statistic class="font-mono tabular-nums text-3xl font-bold text-brand">{{ community.readiness_score }}<span data-statistic-unit class="text-base font-normal text-ink-muted">%</span></p>
+        <p class="text-xs text-ink-muted mt-2">Der Wert setzt sich aus vier Schritten zusammen: Mindestens {{ minimum_community_size }} Mitglieder bestätigen ihre Teilnahme (30 Prozentpunkte). Die LEG erstellt Dokumente oder sammelt Unterschriften (30 Prozentpunkte). Die LEG reicht die Anmeldung beim Netzbetreiber ein (20 Prozentpunkte). Der Netzbetreiber genehmigt sie (20 Prozentpunkte).</p>
       </div>
       <div class="bg-white rounded-xl border p-5">
         <p class="text-sm text-ink-muted mb-1">Bestätigte Mitglieder</p>
@@ -177,7 +178,7 @@
       {% else %}
       <div class="rounded-lg border border-dashed border-line px-4 py-4 text-sm text-ink-muted">
         <p class="mb-3">Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern.</p>
-        <a href="/dashboard" class="inline-flex items-center rounded-lg border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Eintrag hinzufügen</a>
+        <a href="/dashboard" class="inline-flex items-center rounded-lg border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Vollzugriff im persönlichen Dashboard anfordern</a>
       </div>
       {% endif %}
     </section>
@@ -207,7 +208,7 @@
     <section class="bg-white rounded-xl border p-6">
       <h2 class="font-bold mb-2">Gründung starten</h2>
       <p class="text-sm text-ink-muted mb-4">Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen.</p>
-      <a href="/dashboard" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Gründung starten</a>
+      <a href="/dashboard" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Vollzugriff im persönlichen Dashboard anfordern</a>
     </section>
     {% endif %}
     {% endif %}

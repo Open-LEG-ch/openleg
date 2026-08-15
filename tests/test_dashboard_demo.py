@@ -115,3 +115,149 @@ def test_dashboard_internal_links_resolve(app_module):
         except Exception:
             dead.append(href)
     assert dead == []
+
+
+def test_calculate_savings_estimate_returns_solar_and_self_consumption_assumptions():
+    from formation_wizard import calculate_savings_estimate
+
+    result = calculate_savings_estimate(
+        consumption_kwh=4500, pv_kwp=0, community_size=5
+    )
+    assert result["assumptions"]["solar_kwh_per_kwp"] == 950
+    assert result["assumptions"]["self_consumption_share_pct"] == 30.0
+
+
+def test_calculate_savings_estimate_pins_canonical_output():
+    from formation_wizard import calculate_savings_estimate
+
+    result = calculate_savings_estimate(
+        consumption_kwh=4500, pv_kwp=10, community_size=5
+    )
+    assert result["annual_savings_chf"] == 1140.0
+    assert result["monthly_savings_chf"] == 95.0
+    assert result["five_year_savings_chf"] == 5700.0
+
+
+def test_savings_api_includes_assumptions(app_module):
+    client = app_module.web.test_client()
+    resp = client.post(
+        "/api/calculate_savings",
+        json={"consumption_kwh": 4500, "has_solar": False, "pv_kwp": 0},
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert "assumptions" in data
+    for key in (
+        "grid_buy_price_rp",
+        "grid_sell_price_rp",
+        "leg_price_rp",
+        "community_size",
+        "solar_kwh_per_kwp",
+        "self_consumption_share_pct",
+    ):
+        assert key in data["assumptions"]
+
+
+def test_savings_api_assumptions_track_backend_constants(app_module, monkeypatch):
+    monkeypatch.setattr(app_module.formation_wizard, "DEFAULT_GRID_BUY_PRICE_RP", 30.0)
+    client = app_module.web.test_client()
+    resp = client.post(
+        "/api/calculate_savings",
+        json={"consumption_kwh": 4500, "has_solar": False, "pv_kwp": 0},
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["assumptions"]["grid_buy_price_rp"] == 30.0
+    assert data["annual_savings_chf"] == 202.5
+
+
+@pytest.mark.parametrize(
+    ("has_solar", "pv_kwp", "expected_annual_savings"),
+    ((False, 0, 135.0), (True, 10, 1140.0)),
+)
+def test_savings_api_pins_canonical_output(
+    app_module, has_solar, pv_kwp, expected_annual_savings
+):
+    client = app_module.web.test_client()
+    resp = client.post(
+        "/api/calculate_savings",
+        json={
+            "consumption_kwh": 4500,
+            "has_solar": has_solar,
+            "pv_kwp": pv_kwp,
+        },
+    )
+
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["annual_savings_chf"] == expected_annual_savings
+    assert set(data) == {
+        "annual_savings_chf",
+        "monthly_savings_chf",
+        "five_year_savings_chf",
+        "assumptions",
+    }
+
+
+def test_savings_api_matches_uncapped_canonical_function(app_module):
+    client = app_module.web.test_client()
+    resp = client.post(
+        "/api/calculate_savings",
+        json={"consumption_kwh": 4500, "has_solar": True, "pv_kwp": 20},
+    )
+
+    assert resp.status_code == 200
+    endpoint_result = resp.get_json()
+    canonical_result = app_module.formation_wizard.calculate_savings_estimate(
+        consumption_kwh=4500,
+        pv_kwp=20,
+        community_size=5,
+    )
+    assert canonical_result["annual_savings_chf"] == 2160.0
+    assert (
+        endpoint_result["annual_savings_chf"] == canonical_result["annual_savings_chf"]
+    )
+
+
+def test_savings_api_uses_tenant_solar_yield_override(app_module, monkeypatch):
+    tenant = {**app_module.tenant_module.DEFAULT_TENANT, "solar_kwh_per_kwp": 875}
+    monkeypatch.setattr(
+        app_module.tenant_module,
+        "get_tenant_config",
+        lambda _territory, db=None: tenant,
+    )
+    client = app_module.web.test_client()
+    resp = client.post(
+        "/api/calculate_savings",
+        json={"consumption_kwh": 4500, "has_solar": True, "pv_kwp": 10},
+    )
+
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["assumptions"]["solar_kwh_per_kwp"] == 875
+    assert data["annual_savings_chf"] == 1050.0
+
+
+def test_dashboard_renders_every_savings_assumption_from_api(app_module):
+    client = app_module.web.test_client()
+    html = client.get("/dashboard/demo").get_data(as_text=True)
+
+    for label in (
+        "Netzbezugspreis",
+        "Einspeisevergütung",
+        "LEG-Preis",
+        "Haushalte in der LEG",
+        "PV-Ertrag pro kWp",
+        "Eigenverbrauchsanteil",
+    ):
+        assert label in html
+
+    for key in (
+        "grid_buy_price_rp",
+        "grid_sell_price_rp",
+        "leg_price_rp",
+        "community_size",
+        "solar_kwh_per_kwp",
+        "self_consumption_share_pct",
+    ):
+        assert f"data.assumptions.{key}" in html
