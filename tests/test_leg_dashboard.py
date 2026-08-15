@@ -4,7 +4,11 @@
 import os
 from unittest.mock import MagicMock
 
+import pytest
+
 import dashboard as dashboard_module
+from formation_wizard import _get_next_steps
+from tests.test_dashboard_access_routes import app_module  # noqa: F401
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,7 +28,7 @@ STATUS = {
         {"building_id": "b-guest", "role": "member", "status": "invited"},
     ],
     "documents": None,
-    "next_steps": ["Invite at least 2 more neighbors"],
+    "next_steps": ["Laden Sie mindestens 2 weitere Nachbarn ein."],
 }
 
 
@@ -229,3 +233,175 @@ def test_leg_dashboard_template_has_action_forms():
     assert "/invite" in html
     assert "/start-formation" in html
     assert "/confirm" in html
+
+
+# --- German status vocabulary (Slice 1) ---
+
+_ENGLISH_MARKERS = [
+    "Collect",
+    "Submit",
+    "Generate",
+    "Invite",
+    "Wait for",
+    "Configure",
+    "Review",
+]
+
+_RAW_MACHINE_TOKENS = [
+    "documents_generated",
+    "signatures_pending",
+    "dso_submitted",
+    "dso_approved",
+    "formation_started",
+    "proportional",
+    "simple",
+    "custom",
+    "invited",
+    "member",
+]
+
+_EXPECTED_STATUS_LABELS = {
+    "interested": "Interessiert",
+    "invited": "Eingeladen",
+    "confirmed": "Bestätigt",
+    "formation_started": "Gründung gestartet",
+    "documents_generated": "Dokumente erstellt",
+    "signatures_pending": "Unterschriften ausstehend",
+    "dso_submitted": "Netzbetreiber informiert",
+    "dso_approved": "Netzbetreiber hat bewilligt",
+    "active": "Aktiv",
+    "rejected": "Abgelehnt",
+}
+
+_GET_NEXT_STEP_CASES = [
+    ("interested", 1, ["Laden Sie mindestens 2 weitere Nachbarn ein."]),
+    ("interested", 3, ["Starten Sie den Gründungsprozess."]),
+    (
+        "formation_started",
+        3,
+        [
+            "Erstellen Sie die rechtlichen Dokumente.",
+            "Prüfen Sie die Gemeinschaftsvereinbarung.",
+        ],
+    ),
+    (
+        "documents_generated",
+        3,
+        [
+            "Sammeln Sie die Unterschriften aller Mitglieder.",
+            "Prüfen Sie die Teilnehmerverträge.",
+        ],
+    ),
+    ("signatures_pending", 3, ["Melden Sie die LEG beim Netzbetreiber an."]),
+    (
+        "dso_submitted",
+        3,
+        ["Warten Sie auf die Bewilligung durch den Netzbetreiber (bis zu 30 Tage)."],
+    ),
+    (
+        "dso_approved",
+        3,
+        [
+            "Legen Sie das Aktivierungsdatum fest.",
+            "Richten Sie die Abrechnung ein.",
+        ],
+    ),
+]
+
+
+def _demo_community(status, distribution_model="proportional", confirmed_count=1):
+    community = {
+        "community_id": "demo-leg",
+        "name": "LEG Musterweg",
+        "status": status,
+        "distribution_model": distribution_model,
+        "member_count": {
+            "total": confirmed_count + 1,
+            "confirmed": confirmed_count,
+            "invited": 1,
+        },
+        "readiness_score": 0,
+        "members": [
+            {
+                "building_id": "demo-building",
+                "role": "admin",
+                "status": "confirmed",
+                "address": "Musterweg 1",
+            },
+            {
+                "building_id": "demo-2",
+                "role": "member",
+                "status": "invited",
+                "address": "Musterweg 3",
+            },
+        ],
+        "documents": None,
+        "next_steps": _get_next_steps(status, confirmed_count),
+    }
+    return dashboard_module._with_german_labels(community)
+
+
+def _render_demo(app_module, monkeypatch, community):  # noqa: F811
+    monkeypatch.setattr(
+        dashboard_module,
+        "leg_demo_overview",
+        lambda: {
+            "error": None,
+            "viewer_building_id": "demo-building",
+            "is_admin": True,
+            "community": community,
+        },
+    )
+    client = app_module.web.test_client()
+    return client.get("/leg/dashboard/demo").get_data(as_text=True)
+
+
+@pytest.mark.parametrize("status,confirmed_count,expected", _GET_NEXT_STEP_CASES)
+def test_get_next_steps_returns_german(status, confirmed_count, expected):
+    steps = _get_next_steps(status, confirmed_count)
+    assert steps == expected
+    joined = " ".join(steps)
+    for marker in _ENGLISH_MARKERS:
+        assert marker not in joined
+
+
+def test_get_next_steps_returns_empty_for_inactive_statuses():
+    for status in ("invited", "confirmed", "active", "rejected"):
+        assert _get_next_steps(status, 3) == []
+
+
+def test_get_next_steps_unknown_status_degrades_safely():
+    assert _get_next_steps("not_a_status", 3) == []
+
+
+@pytest.mark.parametrize("status", list(_EXPECTED_STATUS_LABELS))
+def test_leg_dashboard_renders_german_status_label(app_module, monkeypatch, status):  # noqa: F811
+    community = _demo_community(status)
+    html = _render_demo(app_module, monkeypatch, community)
+    assert _EXPECTED_STATUS_LABELS[status] in html
+    assert status not in html
+    for marker in _ENGLISH_MARKERS:
+        assert marker not in html
+
+
+def test_leg_dashboard_renders_no_machine_tokens(app_module, monkeypatch):  # noqa: F811
+    community = _demo_community(
+        "documents_generated", distribution_model="proportional", confirmed_count=2
+    )
+    html = _render_demo(app_module, monkeypatch, community)
+    for token in _RAW_MACHINE_TOKENS:
+        assert token not in html
+    for marker in _ENGLISH_MARKERS:
+        assert marker not in html
+    assert "Dokumente erstellt" in html
+    assert "Nach Verbrauch und Erzeugung" in html
+    assert "Mitglied" in html
+    assert "Eingeladen" in html
+    assert "Sammeln Sie die Unterschriften aller Mitglieder." in html
+
+
+def test_leg_dashboard_renders_fallback_for_unknown_status(app_module, monkeypatch):  # noqa: F811
+    community = _demo_community("not_a_status")
+    html = _render_demo(app_module, monkeypatch, community)
+    assert "Status wird geprüft" in html
+    assert "not_a_status" not in html

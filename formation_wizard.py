@@ -34,6 +34,40 @@ class DistributionModel(Enum):
     CUSTOM = "custom"  # Custom rules
 
 
+# German display labels for the LEG dashboard.
+# Machine values stay ASCII; these maps are the single source of truth for
+# user-facing Schweizer Hochdeutsch text.
+FORMATION_STATUS_LABELS = {
+    FormationStatus.INTERESTED.value: "Interessiert",
+    FormationStatus.INVITED.value: "Eingeladen",
+    FormationStatus.CONFIRMED.value: "Bestätigt",
+    FormationStatus.FORMATION_STARTED.value: "Gründung gestartet",
+    FormationStatus.DOCUMENTS_GENERATED.value: "Dokumente erstellt",
+    FormationStatus.SIGNATURES_PENDING.value: "Unterschriften ausstehend",
+    FormationStatus.DSO_SUBMITTED.value: "Netzbetreiber informiert",
+    FormationStatus.DSO_APPROVED.value: "Netzbetreiber hat bewilligt",
+    FormationStatus.ACTIVE.value: "Aktiv",
+    FormationStatus.REJECTED.value: "Abgelehnt",
+}
+
+DISTRIBUTION_MODEL_LABELS = {
+    DistributionModel.SIMPLE.value: "Gleichverteilt",
+    DistributionModel.PROPORTIONAL.value: "Nach Verbrauch und Erzeugung",
+    DistributionModel.CUSTOM.value: "Individuelle Regeln",
+}
+
+MEMBER_ROLE_LABELS = {
+    "admin": "Verwaltung",
+    "member": "Mitglied",
+}
+
+MEMBER_STATUS_LABELS = {
+    "invited": "Eingeladen",
+    "confirmed": "Bestätigt",
+    "rejected": "Abgelehnt",
+}
+
+
 # Formation configuration
 FORMATION_CONFIG = {
     "min_community_size": 3,
@@ -444,34 +478,36 @@ def get_community_status(db, community_id: str) -> dict | None:
 
 
 def _get_next_steps(status: str, confirmed_count: int) -> list[str]:
-    """Get recommended next steps based on status."""
+    """Get recommended next steps based on status (Schweizer Hochdeutsch)."""
     steps = []
 
     if status == FormationStatus.INTERESTED.value:
         if confirmed_count < FORMATION_CONFIG["min_community_size"]:
             steps.append(
-                f"Invite at least {FORMATION_CONFIG['min_community_size'] - confirmed_count} more neighbors"
+                f"Laden Sie mindestens {FORMATION_CONFIG['min_community_size'] - confirmed_count} weitere Nachbarn ein."
             )
         else:
-            steps.append("Start formation process")
+            steps.append("Starten Sie den Gründungsprozess.")
 
     elif status == FormationStatus.FORMATION_STARTED.value:
-        steps.append("Generate legal documents")
-        steps.append("Review community agreement")
+        steps.append("Erstellen Sie die rechtlichen Dokumente.")
+        steps.append("Prüfen Sie die Gemeinschaftsvereinbarung.")
 
     elif status == FormationStatus.DOCUMENTS_GENERATED.value:
-        steps.append("Collect signatures from all members")
-        steps.append("Review participant contracts")
+        steps.append("Sammeln Sie die Unterschriften aller Mitglieder.")
+        steps.append("Prüfen Sie die Teilnehmerverträge.")
 
     elif status == FormationStatus.SIGNATURES_PENDING.value:
-        steps.append("Submit DSO notification")
+        steps.append("Melden Sie die LEG beim Netzbetreiber an.")
 
     elif status == FormationStatus.DSO_SUBMITTED.value:
-        steps.append("Wait for DSO approval (up to 30 days)")
+        steps.append(
+            "Warten Sie auf die Bewilligung durch den Netzbetreiber (bis zu 30 Tage)."
+        )
 
     elif status == FormationStatus.DSO_APPROVED.value:
-        steps.append("Set activation date")
-        steps.append("Configure billing")
+        steps.append("Legen Sie das Aktivierungsdatum fest.")
+        steps.append("Richten Sie die Abrechnung ein.")
 
     return steps
 

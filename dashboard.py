@@ -101,6 +101,32 @@ def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict
     }
 
 
+def _with_german_labels(community: dict) -> dict:
+    """Return a shallow copy with German display labels for rendering."""
+    labeled = dict(community)
+    labeled["status_label"] = formation_wizard.FORMATION_STATUS_LABELS.get(
+        labeled.get("status"), "Status wird geprüft"
+    )
+    labeled["distribution_model_label"] = (
+        formation_wizard.DISTRIBUTION_MODEL_LABELS.get(
+            labeled.get("distribution_model"),
+            "Verteilmodell wird geprüft",
+        )
+    )
+    labeled_members = []
+    for member in labeled.get("members") or []:
+        labeled_member = dict(member)
+        labeled_member["role_label"] = formation_wizard.MEMBER_ROLE_LABELS.get(
+            labeled_member.get("role"), "Rolle wird geprüft"
+        )
+        labeled_member["status_label"] = formation_wizard.MEMBER_STATUS_LABELS.get(
+            labeled_member.get("status"), "Status wird geprüft"
+        )
+        labeled_members.append(labeled_member)
+    labeled["members"] = labeled_members
+    return labeled
+
+
 def leg_overview(community_id: str, building_id: str) -> dict:
     """Operator view of one community, gated on membership.
 
@@ -124,7 +150,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
 
     return {
         "error": None,
-        "community": status,
+        "community": _with_german_labels(status),
         "viewer_building_id": building_id,
         "is_admin": member.get("role") == "admin",
         "leg_documents": db.list_leg_documents(community_id),
@@ -315,55 +341,55 @@ def leg_correspondence_attachment(
 
 def leg_demo_overview() -> dict:
     """Fake, click-through LEG operator dashboard data for demos."""
+    community = {
+        "community_id": "demo-leg",
+        "name": "LEG Musterweg",
+        "status": "formation_started",
+        "distribution_model": "proportional",
+        "member_count": {"total": 5, "confirmed": 4, "invited": 1},
+        "readiness_score": 60,
+        "members": [
+            {
+                "building_id": "demo-building",
+                "role": "admin",
+                "status": "confirmed",
+                "address": "Musterweg 1, 5400 Baden",
+            },
+            {
+                "building_id": "demo-2",
+                "role": "member",
+                "status": "confirmed",
+                "address": "Musterweg 3, 5400 Baden",
+            },
+            {
+                "building_id": "demo-3",
+                "role": "member",
+                "status": "confirmed",
+                "address": "Musterweg 5, 5400 Baden",
+            },
+            {
+                "building_id": "demo-4",
+                "role": "member",
+                "status": "confirmed",
+                "address": "Musterweg 7, 5400 Baden",
+            },
+            {
+                "building_id": "demo-5",
+                "role": "member",
+                "status": "invited",
+                "address": "Musterweg 9, 5400 Baden",
+            },
+        ],
+        "documents": None,
+    }
+    community["next_steps"] = formation_wizard._get_next_steps(
+        community["status"], community["member_count"]["confirmed"]
+    )
     return {
         "error": None,
         "viewer_building_id": "demo-building",
         "is_admin": True,
-        "community": {
-            "community_id": "demo-leg",
-            "name": "LEG Musterweg",
-            "status": "formation_started",
-            "distribution_model": "proportional",
-            "member_count": {"total": 5, "confirmed": 4, "invited": 1},
-            "readiness_score": 60,
-            "members": [
-                {
-                    "building_id": "demo-building",
-                    "role": "admin",
-                    "status": "confirmed",
-                    "address": "Musterweg 1, 5400 Baden",
-                },
-                {
-                    "building_id": "demo-2",
-                    "role": "member",
-                    "status": "confirmed",
-                    "address": "Musterweg 3, 5400 Baden",
-                },
-                {
-                    "building_id": "demo-3",
-                    "role": "member",
-                    "status": "confirmed",
-                    "address": "Musterweg 5, 5400 Baden",
-                },
-                {
-                    "building_id": "demo-4",
-                    "role": "member",
-                    "status": "confirmed",
-                    "address": "Musterweg 7, 5400 Baden",
-                },
-                {
-                    "building_id": "demo-5",
-                    "role": "member",
-                    "status": "invited",
-                    "address": "Musterweg 9, 5400 Baden",
-                },
-            ],
-            "documents": None,
-            "next_steps": [
-                "Generate legal documents",
-                "Review community agreement",
-            ],
-        },
+        "community": _with_german_labels(community),
     }
 
 
