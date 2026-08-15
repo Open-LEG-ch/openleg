@@ -163,7 +163,9 @@ class TestFuerGemeindenPage:
         assert "Adresse prüfen" in content
         assert "Nachbarn finden" in content
         assert "LEG starten" in content
-        assert "nicht verkauft" in content
+        # The no-sale promise stays; Schweizer Hochdeutsch requires Aktiv, so
+        # the passive "werden nicht verkauft" now names OpenLEG as the actor.
+        assert "Wir verkaufen Ihre Daten nicht" in content
 
     def test_homepage_municipality_flow_has_three_steps(self):
         path = os.path.join(
