@@ -93,8 +93,13 @@ count must use filter conditions **identical** to the list's. A count that
 disagrees with its own list discloses that hidden members exist.
 
 Queries already gated: `get_neighbor_count_near`, `get_all_buildings`,
-`get_all_clusters`, `formation_wizard.get_formable_clusters`,
+`formation_wizard.get_formable_clusters`,
 `store.referral.get_referral_leaderboard`.
+
+When a query turns out to have no consumer, prefer deleting it to gating it. That
+removes the exposure rather than narrowing it, and it cannot break a caller that
+does not exist. Two unauthenticated endpoints published resident locations that
+nothing had ever fetched; they were deleted rather than hardened.
 
 ### One savings model
 
