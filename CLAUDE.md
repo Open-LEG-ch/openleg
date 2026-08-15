@@ -72,6 +72,42 @@ Domain vocabulary lives in `CONTEXT.md`. Use those module/seam names.
 - New storage code for a cohesive domain goes in `store/`, not into `database.py`.
 - Deepening roadmap and next extraction order: `prd/architecture-deepening.md`.
 
+### Neighbour consent gate
+
+`share_with_neighbors` lives in the `consents` table, not in `buildings`, so
+`WHERE verified = TRUE` alone does **not** respect consent. Registration requires
+both consents, but residents may revoke later from their dashboard, and the
+dashboard promises they can.
+
+Any query whose output another resident can see must add:
+
+```sql
+INNER JOIN consents c ON b.building_id = c.building_id
+AND c.share_with_neighbors = TRUE
+```
+
+Inner join, so a building with no consent row is excluded. Fail closed.
+
+When a query returns both a filtered list and a count over the same rows, the
+count must use filter conditions **identical** to the list's. A count that
+disagrees with its own list discloses that hidden members exist.
+
+Queries already gated: `get_neighbor_count_near`, `get_all_buildings`,
+`get_all_clusters`, `formation_wizard.get_formable_clusters`,
+`store.referral.get_referral_leaderboard`.
+
+### One savings model
+
+`formation_wizard.calculate_savings_estimate` is the only savings calculation.
+It states its basis (Netzbezug 25, Einspeisung 6, LEG-intern 15 Rp/kWh, 30 percent
+Eigenverbrauch) behind `DEFAULT_SOLAR_KWH_PER_KWP`, shared by `formation_wizard`,
+`api_public.py`, `app.py` and `tenant.py`. A per-tenant `solar_kwh_per_kwp` still
+overrides the default.
+
+Never add a second calculation. Two surfaces once answered the same question with
+CHF 180 and CHF 135. A test pins the endpoint and the function to the same figure;
+if it fails, it is telling the truth.
+
 ## Templates and Pathways
 
 - Every user-facing page uses the shared partials `partials/tailwind_brand.html`
@@ -96,6 +132,15 @@ Execution standard:
 - Prefer `scripts/tdd_cycle.sh` for deterministic loop commands
 - Run full regression gates before merge
 
+Tests must be able to fail. A fake that accepts the *shape* of a query as proof of
+its behaviour proves nothing: doubles that treated any `JOIN consents` as a consent
+filter would have passed while production leaked revoked buildings. Assert the
+predicate, not the join.
+
+Verify any security or privacy assertion by mutation: break the production code the
+test is meant to catch, confirm the suite goes red, revert, confirm green. Report
+the red output. An untested guard is worse than none, because it is trusted.
+
 ## Agent Execution
 
 The `Execution` stage runs as an orchestrator-executor loop. The primary agent
@@ -108,9 +153,27 @@ are unavailable, use ChatGPT 5.4. Record every fallback and its reason.
 - One slice, one issue, one `codex/<slug>` branch, one `[codex]` PR.
 - Red tests first; Kimi Code iterates until the full suite is green; the
   orchestrator reviews every hunk and drives the real app before shipping.
+- **A green suite does not mean the change stayed in scope.** Executors widen
+  silently: one rewired `/api/calculate_savings` to a different model, changing the
+  advertised saving for a 10 kWp household from CHF 700 to CHF 1080 and dropping an
+  output cap, with every test passing. Read the diff for edits nobody asked for
+  before trusting the gates.
+- Stage explicit paths. `git add -A` has twice swept unrelated files into a commit
+  (another author's work in progress, and a stub `uv.lock`).
 - Run CodeRabbit on every slice before opening or updating its PR. Address all
   actionable findings and rerun until clean. A rate limit may delay review but
   never permits shipping without it.
+- The local `coderabbit` CLI and the GitHub app do not find the same issues: the CLI
+  reported "no findings" on branches the app then flagged, including a privacy
+  contradiction on a consent form. The app is the gate that counts. The CLI
+  rate-limits for 20 to 45 minutes, and a check reading `pass ... Review rate
+  limited` means the commit was **not** reviewed.
+- Branch protection requires conversation resolution, so unresolved review threads
+  block the merge even when every check is green. Read each thread, fix it or reply
+  with the reason you declined, then resolve it. A formal `CHANGES_REQUESTED` review
+  keeps blocking until a later review supersedes it.
+- Deviating from a review suggestion is fine when it is wrong for the context; say so
+  in the thread rather than resolving silently.
 - `scripts/tdd_cycle.sh gate` must pass before every PR; merge only via PR,
   never push to `main`. QA stays human.
 - Cloud-task alternative: Codex environments use `scripts/codex_setup.sh`
@@ -141,6 +204,18 @@ ruff check .
 ruff format --check .
 ```
 
+Ruff is pinned to `ruff==0.16.1` in `requirements-dev.txt`. A system ruff on an
+older version reports about 30 phantom `E402`s that CI never sees, so check your
+version and run `uvx ruff@0.16.1 ...` when it differs.
+
+`uv` is not this project's dependency manager: CI installs from `requirements.txt`,
+and `uv run` drops a stub `uv.lock` that pins nothing and claims the wrong Python
+version. It is gitignored. Using `uvx` for the pinned ruff is still correct.
+
+The app needs Redis and PostgreSQL, so it will not boot from a bare checkout. The
+suite is fully mocked and needs neither. To check rendering without the services,
+call the real view-model function and render the template through Jinja directly.
+
 ## Deployment in Public Repo
 
 Use only public-safe deployment template and examples:
@@ -170,3 +245,18 @@ Production deployment procedures are documented in `openleg-ops`.
 
 Citizen smart meter data stays within each LEG.  
 Data is not sold and not aggregated for third parties.
+
+Consent is revocable in fact, not only in the interface. Every surface honours the
+current value of `share_with_neighbors`, not the value given at registration. See
+the neighbour consent gate in the Data Layer section.
+
+Never let the interface promise more than the system delivers. Each of these
+shipped and had to be corrected: a privacy note promising no third-party sharing
+directly above a checkbox authorising exactly that; a deletion promise wider than
+what unsubscribe can reach; read-only buttons labelled with actions they do not
+perform. Before writing a claim about data, check that the code keeps it.
+
+Numbers shown to residents carry their basis. Readiness scores name their
+components, savings estimates list their assumptions, and the Gemeinde scores link
+to `/rangliste/methodik`. A figure a reader cannot trace is a figure they cannot
+check.
