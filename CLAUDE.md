@@ -98,11 +98,19 @@ Queries already gated: `get_neighbor_count_near`, `get_all_buildings`,
 
 ### One savings model
 
-`formation_wizard.calculate_savings_estimate` is the only savings calculation.
-It states its basis (Netzbezug 25, Einspeisung 6, LEG-intern 15 Rp/kWh, 30 percent
-Eigenverbrauch) behind `DEFAULT_SOLAR_KWH_PER_KWP`, shared by `formation_wizard`,
-`api_public.py`, `app.py` and `tenant.py`. A per-tenant `solar_kwh_per_kwp` still
-overrides the default.
+`formation_wizard.calculate_savings_estimate` is the only savings calculation. It
+states its basis through named module-level constants in `formation_wizard.py`,
+read at call time so a monkeypatched value reaches the response:
+
+- `DEFAULT_GRID_BUY_PRICE_RP` (25), `DEFAULT_GRID_SELL_PRICE_RP` (6),
+  `DEFAULT_LEG_PRICE_RP` (15) and `DEFAULT_SELF_CONSUMPTION_SHARE_PCT` (30) are the
+  price and consumption assumptions.
+- `DEFAULT_SOLAR_KWH_PER_KWP` (950) is the production assumption and the only one
+  shared across modules: `api_public.py`, `app.py` and `tenant.py` all import it, so
+  the yield cannot diverge again. A per-tenant `solar_kwh_per_kwp` still overrides it.
+
+The function returns all of these in its `assumptions` dict, and the dashboard
+renders them from the response rather than hardcoding any.
 
 Never add a second calculation. Two surfaces once answered the same question with
 CHF 180 and CHF 135. A test pins the endpoint and the function to the same figure;
