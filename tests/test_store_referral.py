@@ -91,6 +91,8 @@ def test_leaderboard_keeps_city_scope_and_limit(monkeypatch):
     assert rows[0]["referral_count"] == 2
     query, params = cur.executed[0]
     assert "b.city_id = %s" in query
+    assert "JOIN consents" in query
+    assert "share_with_neighbors = TRUE" in query
     assert "LIMIT %s" in query
     assert params == ("baden", 5)
 

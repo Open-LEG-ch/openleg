@@ -96,6 +96,7 @@ def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict
         "readiness_score": score,
         "checks": checks,
         "neighbor_count": neighbor_count,
+        "neighbor_box_half_width_m": int(db.NEIGHBOR_BOX_HALF_WIDTH_KM * 1000),
         "referral_link": referral_link,
         "error": None,
     }
@@ -417,6 +418,7 @@ def demo_readiness() -> dict:
             ("Nachbar-Einwilligung erteilt", True),
         ],
         "neighbor_count": 18,
+        "neighbor_box_half_width_m": int(db.NEIGHBOR_BOX_HALF_WIDTH_KM * 1000),
         "referral_link": "https://openleg.ch/?ref=DEMO-LEG",
         "error": None,
     }

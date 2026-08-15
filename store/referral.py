@@ -87,7 +87,9 @@ def get_referral_leaderboard(limit: int = 10, city_id: str | None = None) -> lis
                                COUNT(r.id) as referral_count
                         FROM buildings b
                         JOIN referrals r ON b.building_id = r.referrer_id
+                        INNER JOIN consents c ON b.building_id = c.building_id
                         WHERE b.city_id = %s
+                        AND c.share_with_neighbors = TRUE
                         GROUP BY b.building_id, b.address
                         ORDER BY referral_count DESC
                         LIMIT %s
@@ -102,6 +104,8 @@ def get_referral_leaderboard(limit: int = 10, city_id: str | None = None) -> lis
                                COUNT(r.id) as referral_count
                         FROM buildings b
                         JOIN referrals r ON b.building_id = r.referrer_id
+                        INNER JOIN consents c ON b.building_id = c.building_id
+                        WHERE c.share_with_neighbors = TRUE
                         GROUP BY b.building_id, b.address
                         ORDER BY referral_count DESC
                         LIMIT %s

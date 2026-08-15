@@ -230,17 +230,21 @@ def get_all_buildings(city_id: str | None = None) -> list[dict]:
             if city_id:
                 cur.execute(
                     """
-                        SELECT building_id, lat, lon, user_type, verified
-                        FROM buildings
-                        WHERE verified = TRUE AND city_id = %s
+                        SELECT b.building_id, b.lat, b.lon, b.user_type, b.verified
+                        FROM buildings b
+                        INNER JOIN consents c ON b.building_id = c.building_id
+                        WHERE b.verified = TRUE
+                        AND c.share_with_neighbors = TRUE AND b.city_id = %s
                     """,
                     (city_id,),
                 )
             else:
                 cur.execute("""
-                        SELECT building_id, lat, lon, user_type, verified
-                        FROM buildings
-                        WHERE verified = TRUE
+                        SELECT b.building_id, b.lat, b.lon, b.user_type, b.verified
+                        FROM buildings b
+                        INNER JOIN consents c ON b.building_id = c.building_id
+                        WHERE b.verified = TRUE
+                        AND c.share_with_neighbors = TRUE
                     """)
             return [dict(row) for row in cur.fetchall()]
     except Exception as e:
@@ -364,7 +368,17 @@ def get_all_clusters() -> list[dict]:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon,
+                    -- polygon and autarky_percent are stored cluster-level aggregates
+                    -- over all members; callers must derive geometry from the returned
+                    -- members list rather than trusting polygon.
+                    SELECT ci.cluster_id, ci.autarky_percent,
+                           COUNT(c.building_id) FILTER (
+                               WHERE c.building_id IS NOT NULL
+                                 AND b.lat IS NOT NULL
+                                 AND b.lon IS NOT NULL
+                                 AND consent.share_with_neighbors = TRUE
+                           ) AS num_members,
+                           ci.polygon,
                            COALESCE(
                                json_agg(
                                    json_build_object(
@@ -376,13 +390,15 @@ def get_all_clusters() -> list[dict]:
                                    WHERE c.building_id IS NOT NULL
                                      AND b.lat IS NOT NULL
                                      AND b.lon IS NOT NULL
+                                     AND consent.share_with_neighbors = TRUE
                                ),
                                '[]'::json
                            ) AS members
                     FROM cluster_info ci
                     LEFT JOIN clusters c ON ci.cluster_id = c.cluster_id
                     LEFT JOIN buildings b ON b.building_id = c.building_id
-                    GROUP BY ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon
+                    LEFT JOIN consents consent ON b.building_id = consent.building_id
+                    GROUP BY ci.cluster_id, ci.autarky_percent, ci.polygon
                 """)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
@@ -532,22 +548,33 @@ def migrate_from_json(json_data: dict) -> tuple[int, int]:
     return success, errors
 
 
+NEIGHBOR_BOX_HALF_WIDTH_KM = 0.5
+
+
 def get_neighbor_count_near(
-    lat: float, lon: float, radius_km: float = 0.5, city_id: str | None = None
+    lat: float,
+    lon: float,
+    box_half_width_km: float = NEIGHBOR_BOX_HALF_WIDTH_KM,
+    city_id: str | None = None,
 ) -> int:
-    """Count verified buildings within radius of a point, optionally scoped by city_id."""
+    """Count visible buildings in a square around a point, optionally by city.
+
+    ``box_half_width_km`` is the approximate distance from the centre to each
+    side of the latitude/longitude-aligned bounding box.
+    """
     try:
         with get_connection() as conn, conn.cursor() as cur:
-            # Approximate degree offset for radius
-            lat_offset = radius_km / 111.0
-            lon_offset = radius_km / (111.0 * 0.7)  # rough cos(47)
+            lat_offset = box_half_width_km / 111.0
+            lon_offset = box_half_width_km / (111.0 * 0.7)  # rough cos(47)
             if city_id:
                 cur.execute(
                     """
-                        SELECT COUNT(*) as count FROM buildings
-                        WHERE verified = TRUE AND city_id = %s
-                        AND lat BETWEEN %s AND %s
-                        AND lon BETWEEN %s AND %s
+                        SELECT COUNT(*) as count FROM buildings b
+                        INNER JOIN consents c ON b.building_id = c.building_id
+                        WHERE b.verified = TRUE
+                        AND c.share_with_neighbors = TRUE AND b.city_id = %s
+                        AND b.lat BETWEEN %s AND %s
+                        AND b.lon BETWEEN %s AND %s
                     """,
                     (
                         city_id,
@@ -560,10 +587,12 @@ def get_neighbor_count_near(
             else:
                 cur.execute(
                     """
-                        SELECT COUNT(*) as count FROM buildings
-                        WHERE verified = TRUE
-                        AND lat BETWEEN %s AND %s
-                        AND lon BETWEEN %s AND %s
+                        SELECT COUNT(*) as count FROM buildings b
+                        INNER JOIN consents c ON b.building_id = c.building_id
+                        WHERE b.verified = TRUE
+                        AND c.share_with_neighbors = TRUE
+                        AND b.lat BETWEEN %s AND %s
+                        AND b.lon BETWEEN %s AND %s
                     """,
                     (
                         lat - lat_offset,
