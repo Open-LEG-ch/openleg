@@ -268,7 +268,7 @@ _EXPECTED_STATUS_LABELS = {
     "documents_generated": "Dokumente erstellt",
     "signatures_pending": "Unterschriften ausstehend",
     "dso_submitted": "Netzbetreiber informiert",
-    "dso_approved": "Vom Netzbetreiber bewilligt",
+    "dso_approved": "Netzbetreiber hat bewilligt",
     "active": "Aktiv",
     "rejected": "Abgelehnt",
 }

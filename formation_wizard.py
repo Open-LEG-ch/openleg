@@ -45,7 +45,7 @@ FORMATION_STATUS_LABELS = {
     FormationStatus.DOCUMENTS_GENERATED.value: "Dokumente erstellt",
     FormationStatus.SIGNATURES_PENDING.value: "Unterschriften ausstehend",
     FormationStatus.DSO_SUBMITTED.value: "Netzbetreiber informiert",
-    FormationStatus.DSO_APPROVED.value: "Vom Netzbetreiber bewilligt",
+    FormationStatus.DSO_APPROVED.value: "Netzbetreiber hat bewilligt",
     FormationStatus.ACTIVE.value: "Aktiv",
     FormationStatus.REJECTED.value: "Abgelehnt",
 }
