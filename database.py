@@ -362,50 +362,6 @@ def save_cluster_info(cluster_id: int, info: dict) -> bool:
         return False
 
 
-def get_all_clusters() -> list[dict]:
-    """Get all clusters with their info."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    -- polygon and autarky_percent are stored cluster-level aggregates
-                    -- over all members; callers must derive geometry from the returned
-                    -- members list rather than trusting polygon.
-                    SELECT ci.cluster_id, ci.autarky_percent,
-                           COUNT(c.building_id) FILTER (
-                               WHERE c.building_id IS NOT NULL
-                                 AND b.lat IS NOT NULL
-                                 AND b.lon IS NOT NULL
-                                 AND consent.share_with_neighbors = TRUE
-                           ) AS num_members,
-                           ci.polygon,
-                           COALESCE(
-                               json_agg(
-                                   json_build_object(
-                                       'building_id', c.building_id,
-                                       'lat', b.lat,
-                                       'lon', b.lon
-                                   ) ORDER BY c.building_id
-                               ) FILTER (
-                                   WHERE c.building_id IS NOT NULL
-                                     AND b.lat IS NOT NULL
-                                     AND b.lon IS NOT NULL
-                                     AND consent.share_with_neighbors = TRUE
-                               ),
-                               '[]'::json
-                           ) AS members
-                    FROM cluster_info ci
-                    LEFT JOIN clusters c ON ci.cluster_id = c.cluster_id
-                    LEFT JOIN buildings b ON b.building_id = c.building_id
-                    LEFT JOIN consents consent ON b.building_id = consent.building_id
-                    GROUP BY ci.cluster_id, ci.autarky_percent, ci.polygon
-                """)
-                return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[DB] Error getting clusters: {e}")
-        return []
-
-
 # === Analytics Operations ===
 
 
