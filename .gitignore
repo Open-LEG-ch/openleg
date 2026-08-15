@@ -26,6 +26,9 @@ ENV/
 env/
 .venv
 
+# uv is not this project's dependency manager; `uv run` drops a stub lockfile
+uv.lock
+
 # Node
 node_modules/
 
