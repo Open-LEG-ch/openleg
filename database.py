@@ -368,7 +368,17 @@ def get_all_clusters() -> list[dict]:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon,
+                    -- polygon and autarky_percent are stored cluster-level aggregates
+                    -- over all members; callers must derive geometry from the returned
+                    -- members list rather than trusting polygon.
+                    SELECT ci.cluster_id, ci.autarky_percent,
+                           COUNT(c.building_id) FILTER (
+                               WHERE c.building_id IS NOT NULL
+                                 AND b.lat IS NOT NULL
+                                 AND b.lon IS NOT NULL
+                                 AND consent.share_with_neighbors = TRUE
+                           ) AS num_members,
+                           ci.polygon,
                            COALESCE(
                                json_agg(
                                    json_build_object(
@@ -388,7 +398,7 @@ def get_all_clusters() -> list[dict]:
                     LEFT JOIN clusters c ON ci.cluster_id = c.cluster_id
                     LEFT JOIN buildings b ON b.building_id = c.building_id
                     LEFT JOIN consents consent ON b.building_id = consent.building_id
-                    GROUP BY ci.cluster_id, ci.autarky_percent, ci.num_members, ci.polygon
+                    GROUP BY ci.cluster_id, ci.autarky_percent, ci.polygon
                 """)
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:

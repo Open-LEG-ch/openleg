@@ -107,6 +107,122 @@ def test_neighbor_queries_keep_consented_buildings_and_city_scope(monkeypatch):
     ] == ["consented"]
 
 
+class _ClusterConsentCursor:
+    """Simulate the cluster_info/clusters/buildings/consents join for get_all_clusters."""
+
+    def __init__(self):
+        self.query = ""
+        self.cluster_info = [
+            {
+                "cluster_id": 1,
+                "autarky_percent": 50.0,
+                "num_members": 3,
+                "polygon": None,
+            }
+        ]
+        self.clusters = [
+            {"cluster_id": 1, "building_id": "a"},
+            {"cluster_id": 1, "building_id": "b"},
+            {"cluster_id": 1, "building_id": "c"},
+        ]
+        self.buildings = {
+            "a": {"building_id": "a", "lat": 47.1, "lon": 8.1},
+            "b": {"building_id": "b", "lat": 47.2, "lon": 8.2},
+            "c": {"building_id": "c", "lat": 47.3, "lon": 8.3},
+        }
+        self.consents = {
+            "a": {"share_with_neighbors": True},
+            "b": {"share_with_neighbors": True},
+            "c": {"share_with_neighbors": False},
+        }
+
+    def execute(self, query, _params=None):
+        self.query = " ".join(query.split())
+
+    def _consenting_members(self):
+        members = []
+        for c in self.clusters:
+            b = self.buildings.get(c["building_id"])
+            consent = self.consents.get(c["building_id"])
+            if (
+                c["building_id"] is not None
+                and b is not None
+                and b["lat"] is not None
+                and b["lon"] is not None
+                and consent is not None
+                and consent["share_with_neighbors"] is True
+            ):
+                members.append(
+                    {
+                        "building_id": b["building_id"],
+                        "lat": b["lat"],
+                        "lon": b["lon"],
+                    }
+                )
+        members.sort(key=lambda m: m["building_id"])
+        return members
+
+    def fetchall(self):
+        if "FROM cluster_info ci" not in self.query:
+            return []
+
+        members = self._consenting_members()
+        info = self.cluster_info[0]
+
+        # The bug: the old SQL selects the stored ci.num_members, which counts
+        # all cluster members, while the json_agg FILTER hides non-consenting
+        # members. The fix uses COUNT(...) FILTER with the same conditions.
+        if "ci.num_members" in self.query:
+            num_members = info["num_members"]
+        else:
+            num_members = len(members)
+
+        return [
+            {
+                "cluster_id": info["cluster_id"],
+                "autarky_percent": info["autarky_percent"],
+                "num_members": num_members,
+                "polygon": info["polygon"],
+                "members": members,
+            }
+        ]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+class _ClusterConsentConnection:
+    def __init__(self):
+        self._cursor = _ClusterConsentCursor()
+
+    def cursor(self):
+        return self._cursor
+
+
+def test_get_all_clusters_num_members_matches_filtered_members(monkeypatch):
+    """The stored num_members counts all members; the returned list is filtered by consent.
+
+    The SQL must compute num_members using the same FILTER as json_agg so the
+    count and the list can never disagree.
+    """
+
+    @contextmanager
+    def connection():
+        yield _ClusterConsentConnection()
+
+    monkeypatch.setattr(database, "get_connection", connection)
+
+    rows = database.get_all_clusters()
+    assert len(rows) == 1
+    cluster = rows[0]
+    assert cluster["num_members"] == len(cluster["members"])
+    assert cluster["num_members"] == 2
+    assert [m["building_id"] for m in cluster["members"]] == ["a", "b"]
+
+
 def test_get_all_municipality_profile_bfs_numbers_returns_rows(monkeypatch):
     @contextmanager
     def _fake_get_connection():
