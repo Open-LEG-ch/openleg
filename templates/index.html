@@ -389,7 +389,7 @@
               <div class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand" required><label for="consent-utility">Ich bin einverstanden, dass OpenLEG meine Daten für die LEG-Anmeldung an den Netzbetreiber übermittelt. (erforderlich)</label></div>
               <div class="flex items-start gap-2"><input type="checkbox" id="consent-updates" class="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"><label for="consent-updates">Ich möchte Updates per E-Mail erhalten. (optional)</label></div>
             </div>
-            <p class="text-xs text-ink-muted mb-3">Wir verkaufen Ihre Daten nicht und geben sie nicht an Dritte weiter. Sie können jederzeit alles löschen.</p>
+            <p class="text-xs text-ink-muted mb-3">Wir verkaufen Ihre Daten nicht. An den Netzbetreiber übermitteln wir sie nur für die LEG-Anmeldung und nur mit Ihrer Zustimmung. Sie können jederzeit alles löschen.</p>
             <button id="btn-register" class="w-full bg-brand text-white py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Registrieren</button>
           </div>
           <div id="step-success" class="hidden text-center py-6">
@@ -553,7 +553,7 @@
               document.getElementById('form-error').classList.remove('hidden');
               this.disabled = false;
               this.textContent = 'Adresse prüfen';
-              setAddressState('empty', 'Wir konnten die Adresse nicht prüfen.');
+              setAddressState('empty', 'Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut.');
               return;
           }
           const data = await res.json();
