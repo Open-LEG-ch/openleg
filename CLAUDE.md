@@ -55,8 +55,7 @@ All user-facing German text must use Schweizer Hochdeutsch:
 - Database: PostgreSQL 16
 - Cache: Redis 7
 - Reverse proxy: Caddy
-- AI gateway: OpenClaw
-- Domains: `openleg.ch`, `<city>.openleg.ch`, `api.openleg.ch`, `claw.openleg.ch`
+- Domains: `openleg.ch`, `<city>.openleg.ch`, `api.openleg.ch`
 
 Domain vocabulary lives in `CONTEXT.md`. Use those module/seam names.
 
@@ -163,50 +162,9 @@ Production deployment procedures are documented in `openleg-ops`.
 
 ## Current Blocker
 
-- LEA AgentMail and OpenClaw wiring is implemented in repo. A working build is on branch `fix/openclaw-stable-agentmail`; full production cutover still needs private-ops `docker-compose.yml` overrides and AgentMail webhook registration.
-- Required next-step secrets/config in `openleg-ops`: `AGENTMAIL_API_KEY`, `AGENTMAIL_WEBHOOK_SECRET`, `INTERNAL_TOKEN`, `APP_BASE_URL`, VPS service/runtime config.
-- Required next-step actions after secrets exist: register AgentMail webhook via `openclaw/config/cron/register_agentmail_webhook.sh`, rebuild/restart OpenClaw container, verify `/api/internal/agentmail` and `/admin/ops`.
-
-## OpenClaw Deployment Notes
-
-Learnings from building and running OpenClaw on the VPS. Host-specific steps belong in `openleg-ops`; this section only covers the public-repo bits.
-
-### Image build
-
-- OpenClaw `2026.4.5` has packaging quirks: installing from scratch with `npm`/`pnpm` misses optional native/channel deps (`@buape/carbon`, `@larksuiteoapi/node-sdk`, etc.). The current Dockerfile uses a known-working local rollback image (`openleg-openclaw:rollback`) as base and overlays the current MCP server + config. If you rebuild the base image from scratch, expect to chase missing modules.
-- The MCP server is installed with `npm install --production` inside the container on top of the rollback base.
-
-### Config schema
-
-- The OpenClaw build in use expects MCP servers under `mcp.servers`, **not** top-level `mcpServers`. `mcpServers` is rejected as an unrecognized key.
-- The tracked template is `openclaw/config/openclaw.example.json`. The runtime `openclaw/config/openclaw.json` is gitignored, so copy/adapt the example on each host.
-
-### Gateway binding
-
-- The entrypoint starts the gateway with `--bind "$OPENCLAW_GATEWAY_BIND"`, defaulting to `loopback`. That makes the container unreachable from Caddy on the Docker bridge.
-- Set `OPENCLAW_GATEWAY_BIND=lan` in the compose environment, or use `bind: "custom"` + `customBindHost: "0.0.0.0"` in config, to listen on all interfaces.
-
-### Reverse proxy
-
-- Caddy proxies `claw.openleg.ch` to the Docker service name `openclaw:18789`. The gateway and Caddy must share the same `web` network.
-
-### AgentMail MCP env
-
-- The `openleg` MCP server needs these env vars passed into the OpenClaw container:
-  `DATABASE_URL`, `INTERNAL_TOKEN`, `AGENTMAIL_API_KEY`, `AGENTMAIL_WEBHOOK_SECRET`,
-  `AGENTMAIL_API_BASE`, `LEA_INBOX_ADDRESS`, `AGENTMAIL_HUMAN_EMAIL`, `LEA_AGENT_ID`,
-  `FLASK_URL`, `APP_BASE_URL`, `BRAVE_API_KEY`, `OPENCLAW_READONLY`.
-
-### Verification
-
-- `docker exec openleg-openclaw openclaw mcp list` should show `openleg`.
-- `docker exec openleg-openclaw openclaw dashboard` prints the Control UI URL with a fresh token.
-- `curl -f https://claw.openleg.ch/` should return 200.
-
-### Known non-fatal warnings
-
-- `failed to persist plugin auto-enable changes: EBUSY ... openclaw.json` happens when `openclaw.json` is mounted read-only. Startup succeeds; remove `:ro` if you want OpenClaw to persist runtime config changes.
-- `gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true` weakens origin checks. It is enabled as break-glass for the Caddy reverse proxy; review when a proper trusted-proxy setup is available.
+- The AgentMail webhook receiver lives in this repo at `/api/internal/agentmail` and fails closed without `AGENTMAIL_WEBHOOK_SECRET`.
+- Register the webhook with `scripts/register_agentmail_webhook.sh`.
+- The agent gateway lives in `openleg-ops`.
 
 ## Data Policy
 

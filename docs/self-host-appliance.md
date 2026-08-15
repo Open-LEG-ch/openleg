@@ -181,9 +181,8 @@ here, while keeping each piece a TDD tracer-bullet when it becomes real code:
 - **Operator tooling** - the `openleg` CLI (T3), the installer (T1), backup/restore/update,
   and a hardware reference ("the OpenLEG box": recommended Pi / mini-PC / NAS bills of
   materials) so a non-expert host buys the right hardware once.
-- **AI / agent surface** - the OpenClaw bundle and the LEA (AgentMail) agent already exist
-  in-repo; the ecosystem framing is an MCP tool surface a LEG host can extend, with LEA
-  handling VNB correspondence (ties into the Phase 6 correspondence ledger).
+- **AI / agent surface** - the LEA (AgentMail) webhook receiver remains in this repo;
+  the agent gateway and its deployment belong in `openleg-ops`.
 - **Template gallery** - the contract and billing-model templates (Phase 5 document
   generator) presented as a reusable, community-extendable gallery rather than buried in a
   dashboard button.
