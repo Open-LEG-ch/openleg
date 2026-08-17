@@ -18,6 +18,7 @@ Gebäude, dieses pro Messpunkt.
 """
 
 import logging
+import re
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
@@ -116,6 +117,50 @@ def is_e66_document(xml_content) -> bool:
         return False
     head = xml_content[:4096]
     return "ValidatedMeteredData_" in head and "E66" in head
+
+
+def is_e31_document(xml_content) -> bool:
+    """Ohne vollständiges Parsen prüfen, ob ein E31 Dokument vorliegt.
+
+    Der Import überspringt E31, braucht aber den Unterschied zu einer sonst
+    unbekannten Datei: "kein E66" heisst nicht "also E31".
+    """
+    if not xml_content:
+        return False
+    head = xml_content[:4096]
+    return "AggregatedMeteredData_" in head and "E31" in head
+
+
+# Die Lieferung wird durch die DocumentID im InstanceDocument identifiziert.
+# Danach folgt pro Block eine weitere DocumentID ("<id>@1", "@2", ...), im
+# Beispiel neun Stück, drei davon noch in den ersten 4096 Zeichen. Ein Griff
+# nach der ersten DocumentID im Text trifft heute zufällig richtig, darum wird
+# hier erst das InstanceDocument eingegrenzt und dann darin gesucht.
+_INSTANCE_DOCUMENT_RE = re.compile(
+    r"<(?!/)[^>]*\bInstanceDocument\b[^>]*>(.*?)</[^>]*\bInstanceDocument\b[^>]*>",
+    re.DOTALL,
+)
+_DOCUMENT_ID_RE = re.compile(
+    r"<[^>]*\bDocumentID\b[^>]*>([^<]+)</[^>]*\bDocumentID\b[^>]*>"
+)
+
+
+def extract_document_id(xml_content):
+    """Die DocumentID der Lieferung aus dem Kopf lesen, ohne zu parsen.
+
+    Nimmt auch einen abgeschnittenen Anfang der Datei. Gibt ``None`` zurück,
+    wenn die ID nicht sicher bestimmbar ist; der Aufrufer muss dann die volle
+    Arbeit machen und darf die Datei nicht überspringen.
+    """
+    if not xml_content:
+        return None
+    instance = _INSTANCE_DOCUMENT_RE.search(xml_content)
+    if not instance:
+        return None
+    match = _DOCUMENT_ID_RE.search(instance.group(1))
+    if not match:
+        return None
+    return match.group(1).strip() or None
 
 
 def _resolution_minutes(block):
@@ -369,7 +414,7 @@ def _warn_on_interval_count(document, groups, warnings):
     """Erwartete Intervallzahl aus dem Berichtszeitraum ableiten.
 
     Nicht fest 480 annehmen: der Zeitraum ist an lokale Mitternacht verankert,
-    ein Fenster über den Zeitumstellungssonntag hat 479 oder 481 Intervalle.
+    ein Fenster über den Zeitumstellungssonntag hat 476 oder 484 Intervalle.
     """
     start, end = document["period_start"], document["period_end"]
     if not start or not end:

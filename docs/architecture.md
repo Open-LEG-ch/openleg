@@ -5,52 +5,182 @@ This public repository contains product runtime code, tests, templates, public
 docs, and CI. Production operations and secret handling belong outside this
 repository.
 
+Domain vocabulary and seam names: `CONTEXT.md`.
+
 ## Runtime
 
-- Flask serves HTML pages, forms, health checks, and JSON API routes.
+- Flask serves HTML pages, forms, health checks, and JSON API routes. `app.py`
+  provides the app factory `create_app(config=None, *, load_environment=True,
+  check_database=True)`, which builds one configured `Flask` app and registers
+  the blueprints on it. `wsgi.py` is the production entry point.
 - PostgreSQL stores registrations, municipality profiles, tariffs, PV ranking
-  data, consent records, and operational app state.
-- Redis backs rate limiting and short lived cache state.
+  data, metering data, consent records, and operational app state.
+- Redis backs rate limiting, the tenant config cache, and short lived state.
 - Caddy terminates TLS and proxies traffic to the Flask container.
+
+The app refuses to start without a database. `create_app` raises
+`RuntimeError("PostgreSQL required. Set DATABASE_URL.")` unless it is called with
+`check_database=False`, which is what the tests do.
+
+Scripts are the exception, and the trap is there. `database.init_db()` only
+returns `False` when `psycopg2` is missing or `DATABASE_URL` is unset, and the
+module reads `DATABASE_URL` at import time. A script must therefore call
+`load_dotenv()` before importing `database`, or it runs against no database while
+looking like it worked.
+
+## Multi-tenancy
+
+`tenant.init_tenant_middleware` registers a `before_request` hook that maps the
+request hostname to a territory slug:
+
+- `dietikon.openleg.ch` resolves to `dietikon`
+- `openleg.ch`, `www.openleg.ch`, and `localhost` resolve to `zurich`
+- Reserved service labels such as `api` and `admin` are not tenants.
+
+The resolved config lands on `g.tenant` and is injected into every template by a
+context processor. `render_city_template` prefers
+`templates/cities/<territory>/<name>.html` and falls back to the shared
+template, so a municipality gets branding, map bounds, and page overrides
+without code changes.
+
+## Blueprints
+
+| Blueprint | Module | Prefix |
+| --- | --- | --- |
+| `main_bp` | `app.py` | none |
+| `municipality_bp` | `municipality.py` | `/gemeinde` |
+| `pilot_bp` | `municipality.py` | `/pilotgemeinde` |
+| `public_api_bp` | `api_public.py` | `/api/v1` |
+| `utility_bp` | `utility_portal.py` | `/utility` |
+| `rangliste_bp` | `rangliste.py` | none |
+| `registry_bp` | `leg_registry.py` | none |
+| `self_host_bp` | `self_host.py` | none |
+| `health_bp` | `health.py` | none |
+| `admin_bp` | `admin.py` | none |
 
 ## Route map
 
+Stakeholder pathways and public pages:
+
 - `/` resident and municipality entry point with address check.
 - `/how-it-works` explains the resident LEG path.
-- `/fuer-gemeinden` explains self-hosting and hosted municipality onboarding.
-- `/open-source` explains the public app repo and private ops boundary.
-- `/rangliste` lists solar utilization by municipality.
-- `/rangliste/fortschritte` shows the strongest PV movers.
-- `/rangliste/vergleich` compares two municipalities.
-- `/gemeinde/profil/<bfs>` renders one municipality profile.
-- `/api/v1/docs` documents the public API.
-- `/robots.txt` and `/sitemap.xml` support indexing.
-- `/health` and `/livez` support runtime checks.
+- `/fuer-bewohner`, `/fuer-gemeinden`, `/leg-gruenden`, `/open-source` are the
+  four stakeholder pathways.
+- `/leg-kalkulator` and `/pricing` support the decision.
+- `/rangliste`, `/rangliste/fortschritte`, `/rangliste/vergleich`,
+  `/rangliste/methodik` cover the ranking, plus badge and OG image routes.
+- `/gemeinde/profil/<int:bfs>` renders one Gemeindeprofil.
+- `/leg-verzeichnis` lists registered LEGs with claim and confirm flows.
+- `/self-host` and `/install.sh` serve the self-hosting profile.
+- `/robots.txt`, `/sitemap.xml`, `/health`, `/livez` support indexing and checks.
 
-## Code Map
+Application and API routes:
 
-- `app.py`: Flask app factory, security policy, public HTML routes, cron routes.
+- `/dashboard` and `/leg/*` drive registration, community formation, documents,
+  and correspondence.
+- `/meter-upload` accepts a meter file; `/api/meter-data/upload` ingests it.
+- `/api/v1/*` is the unauthenticated public JSON API, documented at `/api/v1/docs`.
+- `/api/cron/*` runs scheduled work behind a cron secret.
+- `/api/cron/process-billing` processes the previous complete month for every
+  active community behind that cron secret.
+- `/api/billing/community/<community_id>/period/<int:period_id>` returns one
+  persisted draft billing period as JSON to admins.
+- `/admin/*` and `/api/internal/*` sit behind an admin or internal token.
+
+## Code map
+
+- `app.py`: Flask app, security policy, public HTML routes, admin and cron routes.
+- `tenant.py`: hostname to territory resolution, tenant config, template context.
+- `database.py`: connection pool, schema creation, unextracted query helpers,
+  and the store re-exports.
+- `store/`: per-domain repositories (see the data layer below).
 - `api_public.py`: unauthenticated public JSON API.
-- `database.py`: schema setup, migrations, and query helpers.
-- `public_data.py`: open data fetchers for ElCom, Energie Reporter, Sonnendach.
-- `pv_ranking.py`: solar utilization ranking logic.
-- `rangliste.py`: ranking pages and SVG share assets.
 - `municipality.py`: municipality directory and profile pages.
-- `templates/`: Jinja pages and shared partials.
-- `static/`: CSS, images, and browser JavaScript.
-- `tests/`: regression, security, API, docs, and route contract tests.
+- `rangliste.py`: ranking pages and SVG share assets.
+- `leg_registry.py`: LEG registry, claim tokens, verification nudges.
+- `utility_portal.py`: EVU and VNB portal.
+- `self_host.py`: self-hosting pages and install script.
+- `health.py`: health and liveness endpoints.
+- `public_data.py`: open data fetchers for ElCom, Energie Reporter, Sonnendach.
+- `billing_engine.py`: energy allocation and network discount computation.
+- `billing_readings.py`: validated billing frames and VNB reconciliation from
+  imported quarter-hour readings.
+- `billing_runner.py`: fail-closed orchestration and persistence for one billing
+  period.
+- `sdat_datahub.py`, `sdat_e66.py`, `meter_data.py`: meter data retrieval,
+  SDAT parsing, and upload ingestion.
+- `templates/`, `static/`, `tests/`, `scripts/`.
 
-## Request Flow
+## Data layer
+
+`database.py` owns the connection seam `get_connection`, idempotent schema
+creation, and the domains that have not been extracted yet. Self-contained
+domains move into `store/`, each resolving the seam through a lazy
+`database.get_connection` lookup and re-exported at the end of `database.py`, so
+`import database as db; db.<fn>()` keeps working unchanged.
+
+Shipped stores: `store/ranking`, `store/profile`, `store/billing`,
+`store/email_queue`, `store/utility`, `store/metering`, `store/meter`,
+`store/registry`, `store/tenant`, `store/token`.
+
+New storage code for a cohesive domain goes into `store/`, not into
+`database.py`.
+
+### Extraction order
+
+Remaining in `database.py`, in the order they should be extracted. Each move is
+mechanical: lift the functions, add the lazy `_get_connection`, re-export, and
+keep the existing tests green.
+
+1. `store/building` — buildings, profiles, dashboard reads. The largest block
+   and the most called, so it pays back first.
+2. `store/cluster` — clusters and cluster info, which depend only on buildings.
+3. `store/analytics` — events and aggregate stats.
+4. `store/referral` — referral codes, stats, leaderboard.
+5. `store/consent` — data consents and consent counts.
+6. `store/api_client` — API clients and usage tracking.
+7. `store/document` — LEG documents and signing status.
+8. `store/ops` — LEA reports and ops snapshots.
+
+`_create_tables()` and `get_connection` stay in `database.py`. Extraction is
+finished when nothing but the pool, the schema, and the re-exports remain.
+
+## Data pipelines
+
+Two independent paths feed the database. Public-safe commands and required
+environment-variable names are documented in `docs/data-pipeline.md`.
+
+- **Public open data**: `public_data.py` and `scripts/load_pv_data.py` load BFE,
+  BFS, ElCom, Sonnendach, and Energie Reporter data into
+  `municipality_profiles`, `elcom_tariffs`, and the PV panel. This feeds the
+  Rangliste, the Gemeindeprofil, and the public API.
+- **Citizen meter data**: `sdat_datahub.py` and `scripts/fetch_sdat.py` retrieve
+  SDAT files from the Swisseldex Datahub;
+  `scripts/import_sdat.py` parses E66 messages through `sdat_e66.py` and writes
+  `metering_points`, `metering_point_readings`, and the `sdat_imports` ledger.
+  The `/meter-upload` page is a separate manual path that writes
+  `meter_readings` per building.
+
+`billing_readings.py` loads imported `metering_point_readings` into participant
+frames. `billing_runner.py` validates tariff coverage, import provenance, and
+VNB reconciliation, calls `generate_billing_summary`, and persists an immutable
+draft `billing_periods` row. The secret-protected billing cron invokes this flow
+for the previous complete month. There is no member or operator UI and no
+invoice PDF generation or download yet.
+
+## Request flow
 
 1. Caddy receives HTTPS traffic and forwards to Flask.
-2. Flask applies host, tenant, rate limit, and security middleware.
-3. Route handlers read public data through `database.py`.
-4. Templates render HTML with public-safe metadata and links.
-5. API routes return JSON from stable read models.
+2. The tenant hook resolves the hostname and populates `g.tenant`.
+3. Host, rate limit, and security middleware apply.
+4. Route handlers read through `database.py` and the `store/` repositories.
+5. Templates render HTML with tenant context and public-safe metadata, or API
+   routes return JSON from stable read models.
 
-## Contribution Boundaries
+## Contribution boundaries
 
 - Keep product code, public docs, tests, fixtures, and examples here.
 - Do not add credentials, host inventory, incident runbooks, or internal plans.
+  Those live in the private ops repository; see `docs/repo-boundary.md`.
 - Prefer focused tests before implementation.
 - Run `pytest tests/ -q`, `ruff check .`, and `ruff format --check .`.

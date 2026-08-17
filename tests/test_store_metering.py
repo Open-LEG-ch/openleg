@@ -402,3 +402,46 @@ def test_connection_failure_returns_safe_defaults(monkeypatch):
     assert metering.record_sdat_import({"document_id": "DOC-1"}) is False
     assert metering.upsert_metering_points([{"metering_point_id": POINT}]) == 0
     assert metering.save_metering_point_readings([_row()])["written"] == 0
+
+
+# ==== The import index ====
+
+
+def test_import_index_returns_both_keys_in_one_query(monkeypatch):
+    cur = _FakeCursor(
+        rows=[
+            {"document_id": "DOC-1", "file_name": "a.xml"},
+            {"document_id": "DOC-2", "file_name": "b.xml"},
+        ]
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    index = metering.get_sdat_import_index()
+
+    assert index["document_ids"] == frozenset({"DOC-1", "DOC-2"})
+    assert index["file_names"] == frozenset({"a.xml", "b.xml"})
+    assert len(cur.executed) == 1, (
+        "the point of the index is one query per run, not one per file"
+    )
+
+
+def test_import_index_tolerates_rows_without_a_file_name(monkeypatch):
+    # file_name is nullable, so a legacy row must not put None into the set and
+    # make an unnamed file look settled.
+    cur = _FakeCursor(rows=[{"document_id": "DOC-1", "file_name": None}])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    index = metering.get_sdat_import_index()
+
+    assert index["file_names"] == frozenset()
+    assert index["document_ids"] == frozenset({"DOC-1"})
+
+
+def test_import_index_is_empty_when_the_ledger_cannot_be_read(monkeypatch):
+    # Empty means "do the work". Anything else would skip a delivery because a
+    # query failed.
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    index = metering.get_sdat_import_index()
+
+    assert index == {"document_ids": frozenset(), "file_names": frozenset()}

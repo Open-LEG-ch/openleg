@@ -68,9 +68,10 @@ Domain vocabulary lives in `CONTEXT.md`. Use those module/seam names.
   Shipped: `store/ranking` (PV/Rangliste), `store/profile` (municipality energy
   profile: ElCom tariffs, profiles, Sonnendach), `store/billing` (LEG community
   billing), `store/email_queue` (outbound email queue), `store/utility` (EVU/VNB
-  utility clients).
+  utility clients), `store/metering` (SDAT metering points, 15-minute E66
+  readings, import ledger).
 - New storage code for a cohesive domain goes in `store/`, not into `database.py`.
-- Deepening roadmap and next extraction order: `prd/architecture-deepening.md`.
+- Deepening roadmap and next extraction order: `docs/architecture.md`.
 
 ### Neighbour consent gate
 

@@ -247,6 +247,69 @@ def test_parsing_an_e31_document_returns_an_error_not_a_crash():
     assert errors
 
 
+def test_recognises_an_e31_document():
+    assert sdat_e66.is_e31_document(E31_SAMPLE) is True
+
+
+def test_an_e66_document_is_not_an_e31():
+    assert sdat_e66.is_e31_document(_sample()) is False
+
+
+def test_unknown_xml_is_neither_e66_nor_e31():
+    # The importer treats an unrecognised file differently from a known E31
+    # sibling, so "not E66" must not be read as "therefore E31".
+    foreign = "<?xml version='1.0'?><something-else/>"
+    assert sdat_e66.is_e66_document(foreign) is False
+    assert sdat_e66.is_e31_document(foreign) is False
+
+
+def test_empty_input_is_not_an_e31():
+    assert sdat_e66.is_e31_document("") is False
+    assert sdat_e66.is_e31_document(None) is False
+
+
+# ==== Cheap identity ====
+
+
+def test_extracts_the_header_document_id_not_a_block_one():
+    # The fixture carries ten DocumentID elements: TESTDOC-1 in the header and
+    # TESTDOC-1@1..@9 one per block. Three of them sit inside the first 4096
+    # characters, so "the first match" is not a safe rule. Only the id inside
+    # InstanceDocument identifies the delivery, and it is the ledger key.
+    assert sdat_e66.extract_document_id(_sample()) == "TESTDOC-1"
+
+
+def test_extracts_the_document_id_from_a_truncated_head():
+    # The caller passes a bounded prefix, not the whole document.
+    head = _sample()[:16384]
+    assert sdat_e66.extract_document_id(head) == "TESTDOC-1"
+
+
+def test_extracts_the_document_id_of_an_e31():
+    assert sdat_e66.extract_document_id(E31_SAMPLE) == "AGG-1"
+
+
+def test_returns_none_when_there_is_no_document_id():
+    # None must make the caller do the full work rather than skip the file.
+    assert sdat_e66.extract_document_id("<not-sdat/>") is None
+    assert sdat_e66.extract_document_id("") is None
+    assert sdat_e66.extract_document_id(None) is None
+
+
+def test_returns_none_when_the_head_cuts_off_before_the_id():
+    assert sdat_e66.extract_document_id(_sample()[:200]) is None
+
+
+def test_ignores_a_document_id_outside_the_instance_document():
+    # A block id alone must not be mistaken for the delivery id.
+    orphan = (
+        "<?xml version='1.0'?><rsm:ValidatedMeteredData_16 xmlns:rsm='x'>"
+        "<rsm:MeteringData><rsm:DocumentID>BLOCK-ONLY@1</rsm:DocumentID>"
+        "</rsm:MeteringData></rsm:ValidatedMeteredData_16>"
+    )
+    assert sdat_e66.extract_document_id(orphan) is None
+
+
 # ==== Masking ====
 
 
@@ -298,6 +361,16 @@ def _document(blocks: str) -> str:
   </rsm:ValidatedMeteredData_HeaderInformation>
 {blocks}
 </rsm:ValidatedMeteredData_16>"""
+
+
+def test_extract_document_id_does_not_treat_a_closing_tag_as_an_opening_tag():
+    malformed = (
+        "</rsm:InstanceDocument>"
+        "<rsm:DocumentID>WRONG</rsm:DocumentID>"
+        "</rsm:InstanceDocument>"
+    )
+
+    assert sdat_e66.extract_document_id(malformed) is None
 
 
 def _block(product_xml: str, observations: str, unit: str = "KWH") -> str:

@@ -409,3 +409,31 @@ def get_sdat_import(document_id):
     except Exception as e:
         logger.error(f"[DB] Error getting SDAT import: {e}")
         return None
+
+
+def get_sdat_import_index():
+    """Das Ledger als Mengen laden: ein Query statt einer Abfrage pro Datei.
+
+    Der Import vergleicht jede Datei im Verzeichnis gegen das Ledger. Bei einem
+    Archiv aus einem Jahr Lieferungen sind das hunderte Abfragen pro Lauf, für
+    eine Tabelle, die komplett in den Speicher passt.
+
+    Bei einem Fehler kommen leere Mengen zurück. Der Import macht dann die volle
+    Arbeit; er darf nie eine Datei überspringen, weil das Ledger unlesbar war.
+    """
+    try:
+        with _get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT document_id, file_name FROM sdat_imports")
+                rows = cur.fetchall()
+                return {
+                    "document_ids": frozenset(
+                        row["document_id"] for row in rows if row["document_id"]
+                    ),
+                    "file_names": frozenset(
+                        row["file_name"] for row in rows if row["file_name"]
+                    ),
+                }
+    except Exception as e:
+        logger.error(f"[DB] Error getting SDAT import index: {e}")
+        return {"document_ids": frozenset(), "file_names": frozenset()}
