@@ -23,6 +23,7 @@ from flask import (
     send_from_directory,
     session,
 )
+from flask_talisman import Talisman
 
 import billing_runner
 import cache as cache_module
@@ -51,14 +52,6 @@ from security_extensions import limiter
 from security_utils import log_security_event
 from self_host import self_host_bp
 from utility_portal import utility_bp
-
-# --- Security imports ---
-try:
-    from flask_talisman import Talisman
-
-    HAS_SECURITY_LIBS = limiter is not None
-except ImportError:
-    HAS_SECURITY_LIBS = False
 
 logger = logging.getLogger(__name__)
 
@@ -1074,39 +1067,38 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)
 
-    if HAS_SECURITY_LIBS:
-        limiter.init_app(application)
-        Talisman(
-            application,
-            force_https=application.config["APP_BASE_URL"].startswith("https://"),
-            content_security_policy={
-                "default-src": "'self'",
-                "script-src": [
-                    "'self'",
-                    "'unsafe-inline'",
-                    "https://unpkg.com",
-                    "https://cdn.jsdelivr.net",
-                    "https://www.googletagmanager.com",
-                ],
-                "style-src": [
-                    "'self'",
-                    "'unsafe-inline'",
-                    "https://unpkg.com",
-                    "https://cdn.jsdelivr.net",
-                    "https://fonts.googleapis.com",
-                ],
-                "img-src": ["'self'", "data:", "https:", "http:"],
-                "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
-                "connect-src": [
-                    "'self'",
-                    "https://www.google-analytics.com",
-                    "https://region1.google-analytics.com",
-                    "https://www.googletagmanager.com",
-                ],
-            },
-            content_security_policy_nonce_in=None,
-        )
-        logger.info("Security features enabled")
+    limiter.init_app(application)
+    Talisman(
+        application,
+        force_https=application.config["APP_BASE_URL"].startswith("https://"),
+        content_security_policy={
+            "default-src": "'self'",
+            "script-src": [
+                "'self'",
+                "'unsafe-inline'",
+                "https://unpkg.com",
+                "https://cdn.jsdelivr.net",
+                "https://www.googletagmanager.com",
+            ],
+            "style-src": [
+                "'self'",
+                "'unsafe-inline'",
+                "https://unpkg.com",
+                "https://cdn.jsdelivr.net",
+                "https://fonts.googleapis.com",
+            ],
+            "img-src": ["'self'", "data:", "https:", "http:"],
+            "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
+            "connect-src": [
+                "'self'",
+                "https://www.google-analytics.com",
+                "https://region1.google-analytics.com",
+                "https://www.googletagmanager.com",
+            ],
+        },
+        content_security_policy_nonce_in=None,
+    )
+    logger.info("Security features enabled")
 
     return application
 
