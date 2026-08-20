@@ -160,8 +160,8 @@ def get_community_for_building(building_id: str) -> dict | None:
 
 def list_billing_periods(limit: int = 100) -> list[dict]:
     """List persisted billing periods, newest period first."""
+    bounded_limit = max(1, min(int(limit), 500))
     try:
-        bounded_limit = max(1, min(int(limit), 500))
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
@@ -172,8 +172,6 @@ def list_billing_periods(limit: int = 100) -> list[dict]:
                 (bounded_limit,),
             )
             return [dict(row) for row in cur.fetchall()]
-    except (TypeError, ValueError):
-        return []
     except Exception as e:
         logger.error(f"[DB] Error listing billing periods: {e}")
         raise BillingStoreError("Could not list billing periods") from e

@@ -125,6 +125,30 @@ def test_list_billing_periods_is_newest_first_and_bounded(monkeypatch):
     assert params == (25,)
 
 
+@pytest.mark.parametrize(("limit", "expected"), [(0, 1), (501, 500)])
+def test_list_billing_periods_clamps_limit(monkeypatch, limit, expected):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    billing.list_billing_periods(limit=limit)
+
+    assert cur.executed[0][1] == (expected,)
+
+
+@pytest.mark.parametrize("invalid_limit", [None, "not-a-number"])
+def test_list_billing_periods_rejects_invalid_limit(invalid_limit):
+    with pytest.raises((TypeError, ValueError)):
+        billing.list_billing_periods(limit=invalid_limit)
+
+
+def test_list_billing_periods_wraps_invalid_database_rows(monkeypatch):
+    cur = _FakeCursor(rows=[object()])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    with pytest.raises(billing.BillingStoreError):
+        billing.list_billing_periods()
+
+
 def test_list_billing_periods_propagates_storage_failure(monkeypatch):
     @contextmanager
     def unavailable_connection():

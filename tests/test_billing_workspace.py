@@ -206,3 +206,39 @@ def test_incomplete_reconciliation_and_malformed_provenance_are_visible(
     assert selected["provenance"]["source_document_ids"] == []
     assert selected["provenance"]["source_count"] == 0
     assert selected["tariff"]["internal_price"] == "Nicht angegeben"
+
+
+def test_malformed_persisted_numeric_values_fall_back_without_error(monkeypatch):
+    workspace = _module()
+    period = {
+        "id": 7,
+        "community_id": "community-a",
+        "period_start": "2026-07-01",
+        "status": "draft",
+        "total_production_kwh": None,
+        "internal_price_chf_per_kwh": "not-a-number",
+        "reconciliation": {"difference_kwh": "not-a-number"},
+        "line_items": [
+            {
+                "participant_id": "consumer-a",
+                "item_type": "consumer_charge",
+                "quantity_kwh": "not-a-number",
+                "unit_price_chf_per_kwh": "not-a-number",
+                "amount_chf": "not-a-number",
+            }
+        ],
+    }
+    monkeypatch.setattr(
+        workspace.db, "list_billing_periods", lambda limit=100: [period]
+    )
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda _period_id: period)
+
+    selected = workspace.load()["selected"]
+    item = selected["consumer_charges"][0]
+
+    assert selected["metrics_display"]["production_kwh"] == "0.00"
+    assert selected["tariff"]["internal_price"] == "Nicht angegeben"
+    assert selected["reconciliation"]["balanced"] is False
+    assert item["display_quantity_kwh"] == "0.000"
+    assert item["display_unit_price_rp"] == "0.00"
+    assert item["display_amount_chf"] == "0.00"

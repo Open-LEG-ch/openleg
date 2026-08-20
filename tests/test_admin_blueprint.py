@@ -153,6 +153,16 @@ class TestGuardsStayFailClosed:
         assert "203.0.113.8" not in record
         assert "\r" not in record and "\n" not in record
 
+    def test_admin_routes_reject_a_non_ascii_token_without_error(
+        self, app_with_tokens, caplog
+    ):
+        response = app_with_tokens.app.test_client().get(
+            "/admin/overview", headers={"X-Admin-Token": "tökén"}
+        )
+
+        assert response.status_code == 403
+        assert "ADMIN_ACCESS_DENIED" in caplog.records[-1].message
+
     def test_internal_ingestion_rejects_a_wrong_token(self, app_with_tokens):
         client = app_with_tokens.app.test_client()
 
@@ -177,6 +187,17 @@ class TestGuardsStayFailClosed:
 
         assert guard.call_count == 3
         assert compare.call_count == 3
+
+    def test_internal_ingestion_rejects_a_non_ascii_token_without_error(
+        self, app_with_tokens
+    ):
+        response = app_with_tokens.app.test_client().post(
+            "/api/internal/lea-report",
+            json={"job_name": "x"},
+            headers={"X-Internal-Token": "tökén"},
+        )
+
+        assert response.status_code == 403
 
     def test_agentmail_preview_survives_a_non_string_body(self, app_with_tokens):
         module = app_with_tokens
@@ -310,7 +331,34 @@ class TestGuardsStayFailClosed:
             )
 
         assert response.status_code == 200
-        load.assert_called_once_with(period_id="42")
+        load.assert_called_once_with(period_id=42)
+
+    def test_billing_workspace_rejects_invalid_period_before_loading(
+        self, app_with_tokens
+    ):
+        import admin
+
+        with patch.object(admin.billing_workspace, "load") as load:
+            response = app_with_tokens.app.test_client().get(
+                "/admin/abrechnungen?token=admin-token&period_id=invalid"
+            )
+
+        assert response.status_code == 404
+        load.assert_not_called()
+
+    def test_billing_workspace_does_not_hide_internal_type_errors(
+        self, app_with_tokens
+    ):
+        import admin
+
+        with patch.object(
+            admin.billing_workspace, "load", side_effect=TypeError("programming bug")
+        ):
+            response = app_with_tokens.app.test_client().get(
+                "/admin/abrechnungen?token=admin-token&period_id=42"
+            )
+
+        assert response.status_code == 500
 
     def test_billing_workspace_reports_storage_failure_as_unavailable(
         self, app_with_tokens
@@ -386,3 +434,14 @@ class TestGuardsStayFailClosed:
             )
 
         assert response.status_code == 503
+
+    def test_billing_template_uses_no_forbidden_dash_characters(self):
+        template_path = os.path.join(
+            PROJECT_ROOT, "templates", "admin", "abrechnungen.html"
+        )
+
+        with open(template_path) as handle:
+            template = handle.read()
+
+        assert "–" not in template
+        assert "—" not in template

@@ -28,6 +28,7 @@ class BillingPeriodNotFound(LookupError):
 
 
 def _normalise(value):
+    """Convert temporal containers while preserving exact decimal values."""
     if isinstance(value, Decimal):
         return value
     if isinstance(value, (datetime, date)):
@@ -40,15 +41,17 @@ def _normalise(value):
 
 
 def _decimal_text(value, places, scale=Decimal(1)):
+    """Format a decimal with the billing engine's half-up policy."""
     try:
         decimal_value = Decimal(str(value)) * scale
         quantum = Decimal(1).scaleb(-places)
         return format(decimal_value.quantize(quantum, rounding=ROUND_HALF_UP), "f")
-    except (TypeError, ValueError):
+    except (ArithmeticError, TypeError, ValueError):
         return format(Decimal(0), f".{places}f")
 
 
 def _display_line_item(item):
+    """Add exact, preformatted display fields to a persisted line item."""
     result = _normalise(item)
     result["display_quantity_kwh"] = (
         _decimal_text(item.get("quantity_kwh"), 3)
@@ -68,6 +71,7 @@ def _display_line_item(item):
 
 
 def _json_value(value, fallback):
+    """Decode persisted JSON while falling back on malformed values."""
     if isinstance(value, str):
         try:
             value = json.loads(value)
@@ -77,6 +81,7 @@ def _json_value(value, fallback):
 
 
 def _period_label(value):
+    """Return a Swiss High German month and year label."""
     if isinstance(value, str):
         try:
             value = datetime.fromisoformat(value)
@@ -88,6 +93,7 @@ def _period_label(value):
 
 
 def _period_summary(period):
+    """Build the compact period data used by the selector."""
     result = _normalise(period)
     result["period_label"] = _period_label(period.get("period_start"))
     result["status_label"] = (
@@ -97,6 +103,7 @@ def _period_summary(period):
 
 
 def _is_balanced(reconciliation):
+    """Return whether every available reconciliation difference is zero."""
     if not reconciliation:
         return False
     differences = []
@@ -108,7 +115,7 @@ def _is_balanced(reconciliation):
         elif key.endswith("difference_kwh"):
             try:
                 differences.append(Decimal(str(value)))
-            except (TypeError, ValueError):
+            except (ArithmeticError, TypeError, ValueError):
                 differences.append(Decimal("NaN"))
 
     collect(reconciliation)
@@ -118,6 +125,7 @@ def _is_balanced(reconciliation):
 
 
 def _detail_model(period):
+    """Build the complete read-only audit model for one billing period."""
     raw_reconciliation = _json_value(period.get("reconciliation"), {})
     source_ids = _json_value(period.get("source_document_ids"), [])
     line_items = [_display_line_item(item) for item in period.get("line_items", [])]
@@ -192,11 +200,12 @@ def _detail_model(period):
 
 
 def _rate(value):
+    """Format a CHF/kWh decimal as Rp./kWh for display."""
     if value is None:
         return "Nicht angegeben"
     try:
         return f"{Decimal(str(value)) * 100:.2f} Rp./kWh"
-    except (TypeError, ValueError):
+    except (ArithmeticError, TypeError, ValueError):
         return "Nicht angegeben"
 
 
