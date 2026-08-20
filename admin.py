@@ -15,6 +15,7 @@ from flask import (
     request,
 )
 
+import billing_workspace
 import database as db
 import leg_registry
 from security_utils import log_security_event
@@ -33,8 +34,13 @@ def require_admin():
     admin_token = os.getenv("ADMIN_TOKEN", "").strip()
     if not admin_token:
         abort(404)
-    token = request.headers.get("X-Admin-Token") or request.args.get("token") or ""
-    if not hmac.compare_digest(token, admin_token):
+    token = (
+        request.headers.get("X-Admin-Token")
+        or request.args.get("token")
+        or request.form.get("token")
+        or ""
+    )
+    if not hmac.compare_digest(token.encode("utf-8"), admin_token.encode("utf-8")):
         log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", "WARNING")
         abort(403)
 
@@ -42,7 +48,9 @@ def require_admin():
 def require_internal_token():
     token = request.headers.get("X-Internal-Token") or ""
     internal_token = os.getenv("INTERNAL_TOKEN", "").strip()
-    if not internal_token or not hmac.compare_digest(token, internal_token):
+    if not internal_token or not hmac.compare_digest(
+        token.encode("utf-8"), internal_token.encode("utf-8")
+    ):
         abort(403)
 
 
@@ -270,6 +278,28 @@ def admin_ops():
     return Response(
         json.dumps(response, default=str),
         mimetype="application/json",
+    )
+
+
+@admin_bp.route("/admin/abrechnungen", methods=["GET", "POST"])
+def admin_billing_workspace():
+    """Render the read-only audit surface for billing drafts."""
+    require_admin()
+    raw_period_id = request.values.get("period_id")
+    try:
+        period_id = int(raw_period_id) if raw_period_id is not None else None
+    except (TypeError, ValueError):
+        abort(404)
+    try:
+        workspace = billing_workspace.load(period_id=period_id)
+    except billing_workspace.BillingPeriodNotFound:
+        abort(404)
+    except db.BillingStoreError:
+        abort(503)
+    return render_template(
+        "admin/abrechnungen.html",
+        **workspace,
+        contact_email=os.getenv("ADMIN_EMAIL", "hallo@openleg.ch"),
     )
 
 

@@ -164,7 +164,7 @@ def test_doc_matches_billing_orchestration_boundary() -> None:
     app.py drives billing_runner from a cron route and per-community routes. A
     doc that calls the billing code uncalled, or its period table empty, sends a
     reader looking for work that is already shipped, and hides the work that is
-    genuinely missing: there is no operator UI or invoice PDF.
+    genuinely missing: there is no member UI or invoice PDF.
     """
     app_source = APP_PATH.read_text(encoding="utf-8")
     assert "billing_runner.run_billing_period" in app_source, (
@@ -187,8 +187,11 @@ def test_doc_matches_billing_orchestration_boundary() -> None:
     assert "/api/billing/community/" in lowered, (
         "docs/architecture.md must document the /api/billing/community/ routes"
     )
-    assert "no member or operator ui" in lowered, (
-        "docs/architecture.md must state that no member or operator UI exists yet"
+    assert "read-only operator ui" in lowered, (
+        "docs/architecture.md must document the operator audit UI"
+    )
+    assert "no member ui" in lowered, (
+        "docs/architecture.md must state that no member billing UI exists yet"
     )
     assert "no invoice pdf" in lowered, (
         "docs/architecture.md must state that no invoice PDF exists yet"

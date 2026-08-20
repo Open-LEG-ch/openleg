@@ -964,7 +964,10 @@ def api_cron_verify_registry_entries():
 @main_bp.route("/api/billing/community/<community_id>/period/<int:period_id>")
 def api_billing_period(community_id, period_id):
     require_admin()
-    period = db.get_billing_period(period_id)
+    try:
+        period = db.get_billing_period(period_id, community_id)
+    except db.BillingStoreError:
+        abort(503)
     if not period:
         return jsonify({"error": "Period not found"}), 404
     return jsonify(period)
