@@ -136,11 +136,9 @@ keep the existing tests green.
    and the most called, so it pays back first.
 2. `store/cluster` — clusters and cluster info, which depend only on buildings.
 3. `store/analytics` — events and aggregate stats.
-4. `store/referral` — referral codes, stats, leaderboard.
-5. `store/consent` — data consents and consent counts.
-6. `store/api_client` — API clients and usage tracking.
-7. `store/document` — LEG documents and signing status.
-8. `store/ops` — LEA reports and ops snapshots.
+4. `store/consent` — data consents and consent counts.
+5. `store/document` — LEG documents and signing status.
+6. `store/ops` — LEA reports and ops snapshots.
 
 `_create_tables()` and `get_connection` stay in `database.py`. Extraction is
 finished when nothing but the pool, the schema, and the re-exports remain.

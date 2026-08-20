@@ -113,6 +113,35 @@ def test_doc_records_the_store_extraction_order() -> None:
     )
 
 
+def test_extraction_order_does_not_list_already_extracted_stores() -> None:
+    """A store listed as 'Remaining in database.py' must not already be shipped."""
+    text = _doc_text()
+    extraction_section = re.search(
+        r"### Extraction order\n\n(.*?)\n\n`_create_tables\(\)`",
+        text,
+        re.DOTALL,
+    )
+    assert extraction_section is not None, "Could not find extraction order section"
+
+    shipped = []
+    for match in re.finditer(
+        r"^\d+\.\s+`store/(?P<name>[a-z_]+)`",
+        extraction_section.group(1),
+        re.MULTILINE,
+    ):
+        name = match.group("name")
+        store_path = PROJECT_ROOT / "store" / f"{name}.py"
+        re_exported = (
+            f"from store.{name} import" in APP_PATH.with_name("database.py").read_text()
+        )
+        if store_path.exists() and re_exported:
+            shipped.append(name)
+
+    assert shipped == [], (
+        f"docs/architecture.md lists already-extracted stores as remaining: {shipped}"
+    )
+
+
 def test_documented_route_prefixes_match_the_blueprints() -> None:
     text = _doc_text()
     for prefix in ("/gemeinde", "/api/v1", "/utility", "/pilotgemeinde"):
