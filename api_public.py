@@ -87,6 +87,35 @@ def site_home():
     )
 
 
+@public_api_bp.route("/registry")
+def registry_entries():
+    """List published LEG registry entries without contact or moderation data."""
+    kanton, _display_kanton = _normalize_kanton_param(request.args.get("kanton"))
+    plz = (request.args.get("plz") or "").strip() or None
+    q = (request.args.get("q") or "").strip()[:100] or None
+    leg_status = (request.args.get("leg_status") or "").strip().lower()
+    if leg_status not in {"planung", "gruendung", "aktiv", "pausiert"}:
+        leg_status = None
+    entries = db.list_registry_entries(
+        kanton=kanton,
+        plz=plz,
+        leg_status=leg_status,
+        q=q,
+        moderation_status="published",
+    )
+    serialized = [_serialize_registry_entry(entry) for entry in entries]
+    return jsonify({"entries": serialized, "count": len(serialized)})
+
+
+@public_api_bp.route("/registry/<slug>")
+def registry_entry(slug):
+    """Return one published LEG registry entry with public fields only."""
+    entry = db.get_registry_entry_by_slug(slug)
+    if not entry or entry.get("moderation_status") != "published":
+        return jsonify({"error": "Registry entry not found"}), 404
+    return jsonify(_serialize_registry_entry(entry))
+
+
 @public_api_bp.route("/municipalities")
 def list_municipalities():
     """List all municipalities with profiles."""
@@ -533,6 +562,22 @@ def _serialize_profile(p):
 
 def _serialize_profiles(profiles):
     return [_serialize_profile(p) for p in profiles]
+
+
+def _serialize_registry_entry(entry):
+    """Whitelist fields intended for the public LEG directory."""
+    return {
+        "slug": entry.get("slug", ""),
+        "name": entry.get("name", ""),
+        "kanton": entry.get("kanton", ""),
+        "plz": entry.get("plz", ""),
+        "ort": entry.get("ort", ""),
+        "vnb_name": entry.get("vnb_name", ""),
+        "leg_status": entry.get("leg_status", ""),
+        "member_count_estimate": entry.get("member_count_estimate"),
+        "description": entry.get("description", ""),
+        "website_url": entry.get("website_url", ""),
+    }
 
 
 def _serialize_tariffs(tariffs):

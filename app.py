@@ -404,7 +404,7 @@ def sitemap_xml():
 
 # --- Address API ---
 @main_bp.route("/api/suggest_addresses")
-@limiter.limit("30 per minute") if limiter else lambda f: f
+@limiter.limit("30 per minute")
 def api_suggest_addresses():
     query = request.args.get("q", "").strip()
     query = security_utils.sanitize_string(query, max_length=100)
@@ -435,7 +435,7 @@ def api_suggest_addresses():
 
 # --- Check Potential ---
 @main_bp.route("/api/check_potential", methods=["POST"])
-@limiter.limit("10 per minute") if limiter else lambda f: f
+@limiter.limit("10 per minute")
 def api_check_potential():
     try:
         is_valid_size, size_error = security_utils.check_request_size(request)
@@ -518,20 +518,20 @@ def _registration_response(user_type):
 
 
 @main_bp.route("/api/register_anonymous", methods=["POST"])
-@limiter.limit("5 per minute") if limiter else lambda f: f
+@limiter.limit("5 per minute")
 def api_register_anonymous():
     return _registration_response("anonymous")
 
 
 @main_bp.route("/api/register_full", methods=["POST"])
-@limiter.limit("5 per minute") if limiter else lambda f: f
+@limiter.limit("5 per minute")
 def api_register_full():
     return _registration_response("registered")
 
 
 # --- Meter Data Upload ---
 @main_bp.route("/api/meter-data/upload", methods=["POST"])
-@limiter.limit("10 per minute") if limiter else lambda f: f
+@limiter.limit("10 per minute")
 def api_meter_data_upload():
     import meter_data
 
@@ -587,7 +587,7 @@ def datenschutz():
 
 
 @main_bp.route("/unsubscribe", methods=["GET", "POST"])
-@limiter.limit("5 per minute") if limiter else lambda f: f
+@limiter.limit("5 per minute")
 def unsubscribe_page():
     status = None
     message = None
@@ -639,7 +639,7 @@ def unsubscribe_page():
 
 
 @main_bp.route("/unsubscribe/<token>", methods=["GET", "POST"])
-@limiter.limit("10 per minute") if limiter else lambda f: f
+@limiter.limit("10 per minute")
 def unsubscribe_token(token):
     try:
         token_uuid = security_utils.validate_uuid(token)

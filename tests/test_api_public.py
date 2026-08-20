@@ -50,6 +50,84 @@ class TestMunicipalityEndpoints:
         assert data["bfs_number"] == 261
         assert data["name"] == "Dietikon"
 
+
+REGISTRY_ENTRY = {
+    "id": 9,
+    "slug": "leg-baden",
+    "name": "LEG Baden",
+    "kanton": "AG",
+    "plz": "5400",
+    "ort": "Baden",
+    "vnb_name": "Regionalwerke Baden",
+    "leg_status": "aktiv",
+    "member_count_estimate": 12,
+    "description": "Lokale Gemeinschaft.",
+    "website_url": "https://example.ch",
+    "contact_email": "private@example.ch",
+    "claim_token_hash": "private-token",
+    "moderation_status": "published",
+}
+
+
+class TestRegistryReadEndpoints:
+    @patch("api_public.db")
+    def test_registry_list_is_published_only_and_field_filtered(self, mock_db, client):
+        mock_db.list_registry_entries.return_value = [REGISTRY_ENTRY]
+
+        response = client.get(
+            "/api/v1/registry?kanton=ag&plz=5400&leg_status=aktiv&q=Baden"
+            "&moderation_status=pending"
+        )
+
+        assert response.status_code == 200
+        payload = response.get_json()
+        assert payload == {
+            "entries": [
+                {
+                    "slug": "leg-baden",
+                    "name": "LEG Baden",
+                    "kanton": "AG",
+                    "plz": "5400",
+                    "ort": "Baden",
+                    "vnb_name": "Regionalwerke Baden",
+                    "leg_status": "aktiv",
+                    "member_count_estimate": 12,
+                    "description": "Lokale Gemeinschaft.",
+                    "website_url": "https://example.ch",
+                }
+            ],
+            "count": 1,
+        }
+        mock_db.list_registry_entries.assert_called_once_with(
+            kanton="AG",
+            plz="5400",
+            leg_status="aktiv",
+            q="Baden",
+            moderation_status="published",
+        )
+        serialized = repr(payload)
+        assert "private@example.ch" not in serialized
+        assert "private-token" not in serialized
+
+    @patch("api_public.db")
+    def test_registry_detail_rejects_unpublished_and_filters_fields(
+        self, mock_db, client
+    ):
+        mock_db.get_registry_entry_by_slug.side_effect = [
+            REGISTRY_ENTRY,
+            {**REGISTRY_ENTRY, "moderation_status": "pending"},
+        ]
+
+        published = client.get("/api/v1/registry/leg-baden")
+        pending = client.get("/api/v1/registry/leg-baden")
+
+        assert published.status_code == 200
+        assert published.get_json()["slug"] == "leg-baden"
+        assert "contact_email" not in published.get_json()
+        assert pending.status_code == 404
+
+
+class TestMunicipalityDetailEndpoints:
     @patch("api_public.db")
     def test_get_municipality_not_found(self, mock_db, client):
         mock_db.get_municipality_profile.return_value = None
