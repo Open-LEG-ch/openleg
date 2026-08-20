@@ -7,10 +7,11 @@ No auth required. Rate limited. CORS enabled.
 
 import logging
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, g, jsonify, render_template, request
 
 import database as db
 import formation_wizard
+import homepage_view_model
 import municipality_profile
 import public_data
 
@@ -68,6 +69,22 @@ def _rate_limit_key():
 
 
 # === Municipality endpoints ===
+
+
+@public_api_bp.route("/site/home")
+def site_home():
+    """Return the public-safe homepage bootstrap model for the website BFF."""
+    territory = (
+        g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
+    )
+    model = homepage_view_model.build_homepage_view_model(territory)
+    return jsonify(
+        {
+            "schema_version": model["schema_version"],
+            "stats": model["stats"],
+            "ranking": model["ranking"],
+        }
+    )
 
 
 @public_api_bp.route("/municipalities")

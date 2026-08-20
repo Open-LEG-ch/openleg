@@ -33,6 +33,7 @@ import data_enricher
 import database as db
 import email_automation
 import formation_wizard
+import homepage_view_model
 import leg_registry
 import ml_models
 import registration
@@ -42,10 +43,11 @@ from admin import admin_bp, require_admin
 from api_public import public_api_bp
 from email_utils import send_email
 from health import health_bp
+from homepage_view_model import ranking_extremes
 from leg_registry import registry_bp
 from municipality import PILOT_MUNICIPALITIES, municipality_bp, pilot_bp
 from rangliste import rangliste_bp
-from ranking import Ranking
+from ranking import Ranking  # noqa: F401 - compatibility seam for existing callers
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import limiter
 from security_utils import log_security_event
@@ -269,32 +271,8 @@ def find_provisional_matches(new_profile):
 
 
 def _ranking_extremes(n=3):
-    """Top und Schluss der Solarnutzungs-Rangliste für die Startseiten-Vorschau.
-
-    Gibt (vorbilder, chancen, total) zurück. Leer, wenn zu wenige Daten.
-    """
-    try:
-        ranked = Ranking.load().national()
-    except Exception:
-        logger.exception("ranking preview failed")
-        return [], [], 0
-    scored = [r for r in ranked if r.get("pv_score_pct") is not None]
-    total = len(scored)
-    if total < 2 * n:
-        return [], [], total
-
-    def shape(row):
-        return {
-            "rank": row.get("rank"),
-            "name": row.get("name"),
-            "kanton": row.get("kanton"),
-            "bfs_number": row.get("bfs_number"),
-            "score": row.get("display_score"),
-        }
-
-    best = [shape(r) for r in scored[:n]]
-    worst = [shape(r) for r in reversed(scored[-n:])]
-    return best, worst, total
+    """Compatibility seam for the shared public homepage ranking model."""
+    return ranking_extremes(n)
 
 
 @main_bp.route("/")
@@ -310,21 +288,18 @@ def index():
 def public_preview():
     """Keep the existing public site renderable until the ops cutover."""
     city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
-    stats = db.get_stats(city_id=city_id)
-    user_count = stats.get("total_buildings", 0)
     referral_code = request.args.get("ref", "")
-    referrer_info = (
-        db.get_building_by_referral_code(referral_code) if referral_code else None
+    model = homepage_view_model.build_homepage_view_model(
+        city_id, referral_code=referral_code
     )
-    ranking_best, ranking_worst, ranking_total = _ranking_extremes()
     return render_city_template(
         "index.html",
-        user_count=user_count,
-        referral_code=referral_code,
-        ranking_best=ranking_best,
-        ranking_worst=ranking_worst,
-        ranking_total=ranking_total,
-        referrer_street=(referrer_info or {}).get("address", "").split(",")[0],
+        user_count=model["stats"]["registered_buildings"],
+        referral_code=model["referral"]["code"],
+        ranking_best=model["ranking"]["best"],
+        ranking_worst=model["ranking"]["needs_action"],
+        ranking_total=model["ranking"]["total"],
+        referrer_street=model["referral"]["street"],
     )
 
 
