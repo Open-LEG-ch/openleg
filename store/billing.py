@@ -14,6 +14,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class BillingStoreError(RuntimeError):
+    """Billing data could not be loaded from persistent storage."""
+
+
 def _get_connection():
     import database
 
@@ -154,11 +158,41 @@ def get_community_for_building(building_id: str) -> dict | None:
         return None
 
 
-def get_billing_period(period_id: int) -> dict | None:
+def list_billing_periods(limit: int = 100) -> list[dict]:
+    """List persisted billing periods, newest period first."""
+    try:
+        bounded_limit = max(1, min(int(limit), 500))
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM billing_periods
+                ORDER BY period_start DESC, id DESC
+                LIMIT %s
+                """,
+                (bounded_limit,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except (TypeError, ValueError):
+        return []
+    except Exception as e:
+        logger.error(f"[DB] Error listing billing periods: {e}")
+        raise BillingStoreError("Could not list billing periods") from e
+
+
+def get_billing_period(period_id: int, community_id: str | None = None) -> dict | None:
     """Get billing period with line items."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
-            cur.execute("SELECT * FROM billing_periods WHERE id = %s", (period_id,))
+            if community_id is None:
+                cur.execute("SELECT * FROM billing_periods WHERE id = %s", (period_id,))
+            else:
+                cur.execute(
+                    """
+                    SELECT * FROM billing_periods
+                    WHERE id = %s AND community_id = %s
+                    """,
+                    (period_id, community_id),
+                )
             period = cur.fetchone()
             if not period:
                 return None
@@ -171,7 +205,7 @@ def get_billing_period(period_id: int) -> dict | None:
             return result
     except Exception as e:
         logger.error(f"[DB] Error getting billing period: {e}")
-        return None
+        raise BillingStoreError("Could not load billing period") from e
 
 
 def get_billing_period_for_window(

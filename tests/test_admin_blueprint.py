@@ -21,6 +21,7 @@ ADMIN_RULES = (
     "/admin/export",
     "/admin/lea-reports",
     "/admin/ops",
+    "/admin/abrechnungen",
     "/admin/registry/<int:entry_id>/approve",
     "/admin/registry/<int:entry_id>/reject",
     "/api/internal/lea-report",
@@ -215,3 +216,173 @@ class TestGuardsStayFailClosed:
         assert response.status_code == 200
         assert response.get_json()["platform"] == "OpenLEG"
         is_db_available.assert_called_once_with()
+
+    def test_billing_workspace_renders_an_honest_read_only_draft(self, app_with_tokens):
+        import admin
+
+        workspace = {
+            "empty": False,
+            "periods": [{"id": 42, "period_label": "Juli 2026"}],
+            "selected": {
+                "id": 42,
+                "community_id": "community-a",
+                "period_label": "Juli 2026",
+                "status_label": "Entwurf",
+                "draft_notice": (
+                    "Dieser Abrechnungsentwurf ist keine definitive Rechnung."
+                ),
+                "metrics": {
+                    "production_kwh": 125.5,
+                    "allocated_kwh": 100.25,
+                    "surplus_kwh": 25.25,
+                    "network_discount_chf": 8.2,
+                },
+                "metrics_display": {
+                    "production_kwh": "125.50",
+                    "allocated_kwh": "100.25",
+                    "surplus_kwh": "25.25",
+                    "network_discount_chf": "8.20",
+                },
+                "tariff": {
+                    "internal_price": "15.00 Rp./kWh",
+                    "grid_fee": "8.00 Rp./kWh",
+                    "distribution_model": "Proportional",
+                    "network_level": "Gleiche Netzebene",
+                },
+                "reconciliation": {
+                    "balanced": True,
+                    "label": "Vollständig abgeglichen",
+                },
+                "provenance": {
+                    "source_document_ids": ["E66-A"],
+                    "source_count": 1,
+                    "input_fingerprint": "abc123",
+                },
+                "consumer_charges": [
+                    {
+                        "participant_id": "consumer-a",
+                        "quantity_kwh": 100.25,
+                        "unit_price_chf_per_kwh": 0.15,
+                        "amount_chf": 15.0375,
+                        "display_quantity_kwh": "100.250",
+                        "display_unit_price_rp": "15.00",
+                        "display_amount_chf": "15.04",
+                    }
+                ],
+                "producer_credits": [],
+                "rounding_adjustments": [],
+            },
+        }
+        with patch.object(admin.billing_workspace, "load", return_value=workspace):
+            response = app_with_tokens.app.test_client().get(
+                "/admin/abrechnungen?token=admin-token",
+                headers={"Accept": "text/html"},
+            )
+
+        html = response.get_data(as_text=True)
+        assert response.status_code == 200
+        for text in (
+            "Abrechnungsentwurf",
+            "keine definitive Rechnung",
+            "Tarifbasis",
+            "Vollständig abgeglichen",
+            "Quelldokumente",
+            "Belastungen",
+        ):
+            assert text in html
+        for forbidden in ("Rechnung ausstellen", "Finalisieren", "Bezahlen"):
+            assert forbidden not in html
+        assert "?period_id=42&amp;token=" not in html
+
+    def test_billing_workspace_selects_period_without_token_in_url(
+        self, app_with_tokens
+    ):
+        import admin
+
+        workspace = {"empty": True, "periods": [], "selected": None}
+        with patch.object(
+            admin.billing_workspace, "load", return_value=workspace
+        ) as load:
+            response = app_with_tokens.app.test_client().post(
+                "/admin/abrechnungen",
+                data={"token": "admin-token", "period_id": "42"},
+                headers={"Accept": "text/html"},
+            )
+
+        assert response.status_code == 200
+        load.assert_called_once_with(period_id="42")
+
+    def test_billing_workspace_reports_storage_failure_as_unavailable(
+        self, app_with_tokens
+    ):
+        import admin
+
+        with patch.object(
+            admin.billing_workspace,
+            "load",
+            side_effect=app_with_tokens.db.BillingStoreError("offline"),
+        ):
+            response = app_with_tokens.app.test_client().get(
+                "/admin/abrechnungen?token=admin-token"
+            )
+
+        assert response.status_code == 503
+
+    def test_billing_json_scopes_period_to_community(self, app_with_tokens):
+        get_period = MagicMock(
+            return_value={"id": 42, "community_id": "community-a", "line_items": []}
+        )
+        with patch.object(app_with_tokens.db, "get_billing_period", get_period):
+            response = app_with_tokens.app.test_client().get(
+                "/api/billing/community/community-a/period/42",
+                headers={"X-Admin-Token": "admin-token"},
+            )
+
+        assert response.status_code == 200
+        get_period.assert_called_once_with(42, "community-a")
+
+    def test_billing_workspace_explains_why_it_is_empty(self, app_with_tokens):
+        import admin
+
+        with patch.object(
+            admin.billing_workspace,
+            "load",
+            return_value={"empty": True, "periods": [], "selected": None},
+        ):
+            response = app_with_tokens.app.test_client().get(
+                "/admin/abrechnungen?token=admin-token",
+                headers={"Accept": "text/html"},
+            )
+
+        html = response.get_data(as_text=True)
+        assert response.status_code == 200
+        assert "Keine Abrechnungsentwürfe vorhanden" in html
+        assert "Messdatenimport" in html
+        assert "VNB-Abgleich" in html
+
+    def test_billing_json_hides_missing_or_cross_community_period(
+        self, app_with_tokens
+    ):
+        with patch.object(
+            app_with_tokens.db, "get_billing_period", return_value=None
+        ) as get_period:
+            response = app_with_tokens.app.test_client().get(
+                "/api/billing/community/community-b/period/42",
+                headers={"X-Admin-Token": "admin-token"},
+            )
+
+        assert response.status_code == 404
+        get_period.assert_called_once_with(42, "community-b")
+
+    def test_billing_json_reports_storage_failure_as_unavailable(self, app_with_tokens):
+        with patch.object(
+            app_with_tokens.db,
+            "get_billing_period",
+            side_effect=app_with_tokens.db.BillingStoreError("offline"),
+        ):
+            response = app_with_tokens.app.test_client().get(
+                "/api/billing/community/community-a/period/42",
+                headers={"X-Admin-Token": "admin-token"},
+            )
+
+        assert response.status_code == 503

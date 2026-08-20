@@ -11,6 +11,8 @@ import subprocess
 import sys
 from contextlib import contextmanager
 
+import pytest
+
 import database
 from store import billing
 
@@ -18,6 +20,7 @@ _REEXPORTED = (
     "save_billing_period",
     "get_active_communities",
     "get_community_for_building",
+    "list_billing_periods",
     "get_billing_period",
     "get_billing_period_for_window",
     "get_billing_policy",
@@ -95,6 +98,62 @@ def test_get_billing_period_missing_returns_none(monkeypatch):
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
     assert billing.get_billing_period(999) is None
+
+
+def test_get_billing_period_propagates_storage_failure(monkeypatch):
+    @contextmanager
+    def unavailable_connection():
+        raise RuntimeError("database unavailable")
+        yield
+
+    monkeypatch.setattr(database, "get_connection", unavailable_connection)
+
+    with pytest.raises(billing.BillingStoreError):
+        billing.get_billing_period(999)
+
+
+def test_list_billing_periods_is_newest_first_and_bounded(monkeypatch):
+    cur = _FakeCursor(rows=[{"id": 42, "community_id": "community-a"}])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    rows = billing.list_billing_periods(limit=25)
+
+    assert rows == [{"id": 42, "community_id": "community-a"}]
+    query, params = cur.executed[0]
+    assert "ORDER BY period_start DESC, id DESC" in " ".join(query.split())
+    assert "LIMIT %s" in query
+    assert params == (25,)
+
+
+def test_list_billing_periods_propagates_storage_failure(monkeypatch):
+    @contextmanager
+    def unavailable_connection():
+        raise RuntimeError("database unavailable")
+        yield
+
+    monkeypatch.setattr(database, "get_connection", unavailable_connection)
+
+    with pytest.raises(billing.BillingStoreError):
+        billing.list_billing_periods()
+
+
+def test_get_billing_period_can_fail_closed_to_one_community(monkeypatch):
+    cur = _FakeCursor(
+        rows=[{"participant_id": "building-a", "item_type": "consumer_charge"}],
+        one={"id": 42, "community_id": "community-a"},
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    period = billing.get_billing_period(42, "community-a")
+
+    assert period["line_items"][0]["participant_id"] == "building-a"
+    period_query, period_params = cur.executed[0]
+    line_query, line_params = cur.executed[1]
+    assert "id = %s" in period_query
+    assert "community_id = %s" in period_query
+    assert period_params == (42, "community-a")
+    assert "billing_period_id = %s" in line_query
+    assert line_params == (42,)
 
 
 def test_get_effective_policy_and_existing_period_use_the_connection_seam(monkeypatch):

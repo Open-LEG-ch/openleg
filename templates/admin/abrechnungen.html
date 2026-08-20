@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block meta %}
+  <title>Abrechnungen prüfen | OpenLEG</title>
+{% endblock %}
+
+{% block body_class %}bg-paper text-ink min-h-screen{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10 lg:py-16">
+  <header class="max-w-3xl mb-10">
+    <p class="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-brand">Prüfplatz</p>
+    <h1 class="mt-3 text-4xl sm:text-5xl font-bold tracking-tight">Abrechnungen</h1>
+    <p class="mt-4 text-lg text-ink-muted">Prüfen Sie Entwürfe gegen Tarif, VNB-Abgleich und Quelldokumente.</p>
+  </header>
+
+  {% if empty %}
+  <section class="rounded-3xl border border-line bg-white p-8 sm:p-12 max-w-3xl" aria-labelledby="empty-title">
+    <p class="font-mono text-sm text-sage-dark">Noch keine Periode</p>
+    <h2 id="empty-title" class="mt-2 text-2xl font-bold">Keine Abrechnungsentwürfe vorhanden</h2>
+    <p class="mt-3 text-ink-muted">Ein Entwurf erscheint hier erst nach einem vollständigen Messdatenimport, gültigem Tarif und erfolgreichem VNB-Abgleich.</p>
+  </section>
+  {% else %}
+  <div class="grid gap-8 lg:grid-cols-[17rem_minmax(0,1fr)]">
+    <aside>
+      <h2 class="font-semibold mb-3">Perioden</h2>
+      <nav aria-label="Abrechnungsperioden" class="grid gap-2">
+        {% for period in periods %}
+        <form method="post" action="{{ url_for('admin.admin_billing_workspace') }}">
+          <input type="hidden" name="token" value="{{ request.values.get('token', '') }}">
+          <input type="hidden" name="period_id" value="{{ period.id }}">
+          <button type="submit"
+           class="w-full rounded-2xl border px-4 py-3 text-left transition-colors {{ 'border-brand bg-brand text-white' if selected.id == period.id else 'border-line bg-white hover:border-sage' }}"
+           {% if selected.id == period.id %}aria-current="page"{% endif %}>
+          <span class="block font-semibold">{{ period.period_label }}</span>
+          <span class="block mt-1 font-mono text-xs {{ 'text-sage-light' if selected.id == period.id else 'text-ink-muted' }}">{{ period.community_id }} · {{ period.status_label }}</span>
+          </button>
+        </form>
+        {% endfor %}
+      </nav>
+    </aside>
+
+    <article class="min-w-0">
+      <div class="rounded-3xl bg-brand-dark text-white p-6 sm:p-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p class="font-mono text-xs uppercase tracking-[0.18em] text-sage-light">Abrechnungsentwurf</p>
+            <h2 class="mt-2 text-3xl font-bold">{{ selected.period_label }}</h2>
+            <p class="mt-2 font-mono text-sm text-sage-light">LEG {{ selected.community_id }}</p>
+          </div>
+          <span class="self-start rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold">{{ selected.status_label }}</span>
+        </div>
+        <p class="mt-6 max-w-2xl border-l-2 border-accent pl-4 text-sage-light">{{ selected.draft_notice }}</p>
+      </div>
+
+      <dl class="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line lg:grid-cols-4">
+        {% for label, value, unit in [
+          ('Produktion', selected.metrics_display.production_kwh, 'kWh'),
+          ('Lokal verteilt', selected.metrics_display.allocated_kwh, 'kWh'),
+          ('Überschuss', selected.metrics_display.surplus_kwh, 'kWh'),
+          ('Netzentgeltvorteil', selected.metrics_display.network_discount_chf, 'CHF')
+        ] %}
+        <div class="bg-white p-4 sm:p-5">
+          <dt class="text-xs text-ink-muted">{{ label }}</dt>
+          <dd class="mt-1 font-mono text-xl font-bold tabular-nums">{{ value }} <span class="text-xs font-normal text-ink-muted">{{ unit }}</span></dd>
+        </div>
+        {% endfor %}
+      </dl>
+
+      <div class="mt-8 grid gap-5 xl:grid-cols-2">
+        <section class="rounded-2xl border border-line bg-white p-5" aria-labelledby="tariff-title">
+          <h3 id="tariff-title" class="text-lg font-bold">Tarifbasis</h3>
+          <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
+            <div><dt class="text-ink-muted">LEG-Preis</dt><dd class="mt-1 font-mono font-semibold">{{ selected.tariff.internal_price }}</dd></div>
+            <div><dt class="text-ink-muted">Netzentgelt</dt><dd class="mt-1 font-mono font-semibold">{{ selected.tariff.grid_fee }}</dd></div>
+            <div><dt class="text-ink-muted">Verteilung</dt><dd class="mt-1 font-semibold">{{ selected.tariff.distribution_model }}</dd></div>
+            <div><dt class="text-ink-muted">Netzebene</dt><dd class="mt-1 font-semibold">{{ selected.tariff.network_level }}</dd></div>
+          </dl>
+        </section>
+        <section class="rounded-2xl border border-line bg-white p-5" aria-labelledby="reconciliation-title">
+          <div class="flex items-start justify-between gap-4">
+            <h3 id="reconciliation-title" class="text-lg font-bold">VNB-Abgleich</h3>
+            <span class="rounded-full px-3 py-1 text-xs font-semibold {{ 'bg-sage-light text-brand-dark' if selected.reconciliation.balanced else 'bg-accent-light text-ink' }}">{{ selected.reconciliation.label }}</span>
+          </div>
+          <p class="mt-4 text-sm text-ink-muted">Bezug und Produktion werden für die Gemeinschaft und jeden Teilnehmer gegen die VNB-Werte geprüft.</p>
+        </section>
+      </div>
+
+      <section class="mt-8 rounded-2xl border border-line bg-white p-5" aria-labelledby="source-title">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h3 id="source-title" class="text-lg font-bold">Quelldokumente</h3>
+          <span class="font-mono text-xs text-ink-muted">{{ selected.provenance.source_count }} SDAT-Dokumente</span>
+        </div>
+        <ul class="mt-4 flex flex-wrap gap-2">
+          {% for source_id in selected.provenance.source_document_ids %}<li><code class="rounded-lg bg-paper-deep px-2.5 py-1.5 text-xs">{{ source_id }}</code></li>{% endfor %}
+        </ul>
+        <p class="mt-4 break-all font-mono text-xs text-ink-muted">Fingerabdruck: {{ selected.provenance.input_fingerprint }}</p>
+      </section>
+
+      {% for title, items, tone in [
+        ('Belastungen', selected.consumer_charges, 'charge'),
+        ('Gutschriften', selected.producer_credits, 'credit'),
+        ('Rundungsausgleich', selected.rounding_adjustments, 'rounding')
+      ] %}
+      <section class="mt-8" aria-labelledby="items-{{ tone }}">
+        <div class="flex items-baseline justify-between gap-4">
+          <h3 id="items-{{ tone }}" class="text-xl font-bold">{{ title }}</h3>
+          <span class="font-mono text-xs text-ink-muted">{{ items|length }} {{ 'Position' if items|length == 1 else 'Positionen' }}</span>
+        </div>
+        {% if items %}
+        <div class="mt-3 hidden overflow-x-auto rounded-2xl border border-line bg-white md:block">
+          <table class="w-full text-sm">
+            <thead class="bg-paper-deep text-left text-xs text-ink-muted"><tr><th class="px-4 py-3">Teilnehmer</th><th class="px-4 py-3 text-right">Menge</th><th class="px-4 py-3 text-right">Preis</th><th class="px-4 py-3 text-right">Betrag</th></tr></thead>
+            <tbody class="divide-y divide-line">{% for item in items %}<tr><td class="px-4 py-3 font-mono">{{ item.participant_id }}</td><td class="px-4 py-3 text-right font-mono tabular-nums">{{ item.display_quantity_kwh if item.quantity_kwh is not none else '–' }}{% if item.quantity_kwh is not none %} kWh{% endif %}</td><td class="px-4 py-3 text-right font-mono tabular-nums">{{ item.display_unit_price_rp if item.unit_price_chf_per_kwh is not none else '–' }}{% if item.unit_price_chf_per_kwh is not none %} Rp./kWh{% endif %}</td><td class="px-4 py-3 text-right font-mono font-semibold tabular-nums">CHF {{ item.display_amount_chf }}</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+        <ul class="mt-3 grid gap-3 md:hidden">{% for item in items %}<li class="rounded-2xl border border-line bg-white p-4"><div class="flex items-start justify-between gap-4"><code class="break-all text-xs">{{ item.participant_id }}</code><strong class="shrink-0 font-mono tabular-nums">CHF {{ item.display_amount_chf }}</strong></div><p class="mt-3 text-xs text-ink-muted">{% if item.quantity_kwh is not none %}{{ item.display_quantity_kwh }} kWh · {{ item.display_unit_price_rp }} Rp./kWh{% else %}Ausgleich der Preisrundung{% endif %}</p></li>{% endfor %}</ul>
+        {% else %}<p class="mt-3 rounded-2xl border border-dashed border-line p-5 text-sm text-ink-muted">Keine Positionen in dieser Kategorie.</p>{% endif %}
+      </section>
+      {% endfor %}
+    </article>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

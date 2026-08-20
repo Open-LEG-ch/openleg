@@ -85,6 +85,8 @@ Application and API routes:
   active community behind that cron secret.
 - `/api/billing/community/<community_id>/period/<int:period_id>` returns one
   persisted draft billing period as JSON to admins.
+- `/admin/abrechnungen` renders the same persisted drafts as a read-only audit
+  workspace with tariff, VNB reconciliation, provenance, and signed line items.
 - `/admin/*` and `/api/internal/*` sit behind an admin or internal token.
 
 ## Code map
@@ -107,6 +109,7 @@ Application and API routes:
   imported quarter-hour readings.
 - `billing_runner.py`: fail-closed orchestration and persistence for one billing
   period.
+- `billing_workspace.py`: display-ready audit model for persisted billing drafts.
 - `sdat_datahub.py`, `sdat_e66.py`, `meter_data.py`: meter data retrieval,
   SDAT parsing, and upload ingestion.
 - `templates/`, `static/`, `tests/`, `scripts/`.
@@ -163,8 +166,8 @@ environment-variable names are documented in `docs/data-pipeline.md`.
 frames. `billing_runner.py` validates tariff coverage, import provenance, and
 VNB reconciliation, calls `generate_billing_summary`, and persists an immutable
 draft `billing_periods` row. The secret-protected billing cron invokes this flow
-for the previous complete month. There is no member or operator UI and no
-invoice PDF generation or download yet.
+for the previous complete month. A read-only operator UI exposes persisted drafts
+for audit, but there is no member UI and no invoice PDF generation or download yet.
 
 ## Request flow
 
