@@ -25,3 +25,5 @@ def test_source_and_compiled_css_have_global_focus_visible_treatment():
         assert re.search(
             r":focus-visible[^\{]*\{[^\}]*outline:[^\}]*outline-offset:", css
         )
+        for element in ("button", "input", "select", "textarea", "summary"):
+            assert f"{element}:focus-visible" in css

@@ -945,10 +945,13 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     public_site_base = _validated_public_site_url(application.config["PUBLIC_SITE_URL"])
 
     def public_site_url(path):
-        parsed_path = urlparse(path)
+        if path.startswith("//"):
+            raise ValueError("public site link must be a relative path")
+        relative_path = path.lstrip("/")
+        parsed_path = urlparse(relative_path)
         if parsed_path.scheme or parsed_path.netloc:
             raise ValueError("public site link must be a relative path")
-        return urljoin(f"{public_site_base}/", path.lstrip("/"))
+        return urljoin(f"{public_site_base}/", relative_path)
 
     application.jinja_env.globals["public_site_url"] = public_site_url
 

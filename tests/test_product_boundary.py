@@ -128,6 +128,8 @@ def test_product_templates_use_dashboard_shell_without_public_navigation():
     for relative_path in PRODUCT_TEMPLATES:
         source = (ROOT / "templates" / relative_path).read_text(encoding="utf-8")
         assert '{% extends "product_base.html" %}' in source, relative_path
+        assert "partials/site_nav.html" not in source, relative_path
+        assert "partials/site_footer.html" not in source, relative_path
 
     shell = (ROOT / "templates/product_base.html").read_text(encoding="utf-8")
     assert "partials/site_nav.html" not in shell
@@ -157,7 +159,13 @@ def test_public_site_links_use_the_configured_origin():
 
 
 @pytest.mark.parametrize(
-    "path", ("https://attacker.example/path", "//attacker.example/path")
+    "path",
+    (
+        "https://attacker.example/path",
+        "//attacker.example/path",
+        "///https://attacker.example/path",
+        "/javascript:alert(1)",
+    ),
 )
 def test_public_site_links_reject_external_paths(path):
     application = app_module.create_app(
