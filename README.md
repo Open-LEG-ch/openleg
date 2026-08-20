@@ -77,7 +77,7 @@ Read [Architecture](docs/architecture.md), [Data pipeline](docs/data-pipeline.md
 
 ### Data pipeline
 
-Public data fetchers live in `public_data.py`. Database persistence uses `database.py` and `store/`. The PV ranking import is `scripts/load_pv_data.py`; API read paths live in `api_public.py` and the ranking blueprints.
+Public data fetchers live in `public_data.py`. Database persistence uses `database.py` and `store/`. The PV ranking import is `scripts/load_pv_data.py`; SDAT retrieval from the Swisseldex Datahub lives in `sdat_datahub.py` and `scripts/fetch_sdat.py`. API read paths live in `api_public.py` and the ranking blueprints.
 
 ### Contributing
 
@@ -170,7 +170,7 @@ Lesen Sie [Architektur](docs/architecture.md), [Datenpipeline](docs/data-pipelin
 
 ### Datenpipeline
 
-`public_data.py` lädt öffentliche Daten. `database.py` und `store/` speichern sie. `scripts/load_pv_data.py` importiert die PV-Rangliste; `api_public.py` und die Ranglisten-Blueprints liefern die Daten aus.
+`public_data.py` lädt öffentliche Daten. `database.py` und `store/` speichern sie. `scripts/load_pv_data.py` importiert die PV-Rangliste; `sdat_datahub.py` und `scripts/fetch_sdat.py` holen SDAT-Dateien vom Swisseldex Datahub. `api_public.py` und die Ranglisten-Blueprints liefern die Daten aus.
 
 ### Mitwirken
 

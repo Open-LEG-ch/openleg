@@ -39,13 +39,55 @@ Expected effects:
 - keep unrelated municipality profile fields intact
 - allow repeated imports without duplicate records
 
+## SDAT Retrieval (Swisseldex Datahub)
+
+`sdat_datahub.py` fetches the SDAT files a VNB drops into our Datahub outbox at
+`ftpes://datahub.swisseldex.ch` (FTP with explicit TLS). It only retrieves
+files; parsing and ingestion belong to `sdat_e66.py` and `store/metering.py`,
+documented in the sections below.
+
+Set the credentials in `.env` first (template: `.env.example`):
+
+```ini
+SWISSELDEX_FTPS_USER=
+SWISSELDEX_FTPS_PASSWORD=
+SWISSELDEX_FTPS_REMOTE_DIR=/
+SWISSELDEX_SDAT_DIR=data/sdat
+```
+
+Run manually:
+
+```bash
+python scripts/fetch_sdat.py --list          # zeigt nur an, was geladen würde
+python scripts/fetch_sdat.py                 # lädt alle neuen Dateien
+python scripts/fetch_sdat.py --recursive     # auch Unterverzeichnisse
+python scripts/fetch_sdat.py --since-days 7  # nur die letzte Woche
+```
+
+Behaviour worth knowing:
+
+- Downloads land in `SWISSELDEX_SDAT_DIR` (default `data/sdat`, gitignored
+  because the files hold real citizen metering data).
+- Files already present locally are skipped, so repeated runs are cheap.
+  `--force` re-downloads them.
+- Transfers are atomic: a failed download leaves no partial file behind.
+- Remote files stay on the Datahub unless you pass `--delete-remote`.
+- The connector resumes the control-channel TLS session on the data channel,
+  which managed FTPS endpoints usually require.
+
 ## SDAT Metering Data
 
 Citizen smart meter data is a separate pipeline from the public open data
 above. It never reaches the public API and never leaves the LEG.
 
-The VNB delivers ebIX SDAT files. The E66 message (`ValidatedMeteredData`)
-carries validated 15-minute readings; its E31 sibling is skipped on import.
+The VNB delivers load curves as ebIX SDAT XML. Two document types arrive in the
+same directory:
+
+- **E66** (`ValidatedMeteredData_16`): validated 15-minute values per metering
+  point. This is the source for LEG billing.
+- **E31** (`AggregatedMeteredData_13`): aggregates at LEG level, without a
+  metering point. The import skips them.
+
 `sdat_e66.py` parses one document into rows, `store/metering.py` stores them,
 and `billing_readings.py` turns a period into frames for `billing_engine.py`.
 
@@ -60,6 +102,25 @@ and `billing_readings.py` turns a period into frames for `billing_engine.py`.
 `metering_point_readings` is the canonical readings table. The older
 `meter_readings` table belongs to the manual `/meter-upload` path and is keyed
 on `building_id`, not on a metering point. The two are not interchangeable.
+
+### Structure of an E66 file
+
+One block per combination of metering point, direction, and product channel.
+Each pair of metering point and direction carries three channels:
+
+| Product code | Channel | Column |
+| --- | --- | --- |
+| `8716867000030` (ebIXCode) | Total energy | `total_kwh` |
+| `2404050010124` (VSENationalCode) | Grid share | `grid_kwh` |
+| `2404050010123` (VSENationalCode) | LEG share | `community_kwh` |
+
+`total = grid + community` holds. The LEG channel balances across the
+community: what production points feed into the LEG, consumption points draw
+from it.
+
+Observations carry no timestamp of their own. It follows from the interval
+start of the block plus `(Sequence - 1) * resolution` and marks the **start**
+of the interval. Everything is UTC, hence `TIMESTAMPTZ`.
 
 ### Ownership mapping
 
@@ -79,10 +140,10 @@ Volumes are kWh throughout. The readings table carries no unit column, so the
 unit gate sits at the parse boundary: a document whose `MeasureUnit` is not
 `KWH` is a hard parse error and never reaches storage. `direction` is
 constrained to `consumption` or `production` and is part of the readings key,
-because one physical point can be both at the same instant.
+because one physical point can be both at the same instant. The full key is
+therefore `(metering_point_id, direction, measured_at)`.
 
-Each reading carries three channels: `total_kwh`, plus the VNB's own split into
-`grid_kwh` and `community_kwh`. The VNB split is authoritative. The billing
+The VNB split into `grid_kwh` and `community_kwh` is authoritative. The billing
 engine reallocates totals only as an audit calculation. A missing VNB split or
 any aggregate or participant-level difference blocks the draft period.
 
@@ -92,6 +153,19 @@ any aggregate or participant-level difference blocks the draft period.
 the SDAT source is UTC and a naive local key would collide on the October DST
 repeat. Periods are half-open, `[start, end)`, and are expressed in
 `Europe/Zurich`. An inclusive end would bill the boundary interval twice.
+
+The VNB anchors its reporting window to local midnight (22:00Z in summer,
+23:00Z in winter). A five-day window is 480 quarter-hours only outside the
+switch: it holds 476 across the spring change and 484 across the autumn one,
+because the local day loses or gains an hour. Never assume a fixed count.
+
+### Delivery and corrections
+
+Daily deliveries cover five days and overlap by four, so later files correct
+earlier values. The import therefore upserts with last write wins.
+
+`Condition` flags individual values but does not reliably predict corrections.
+Do not rely on it.
 
 ### Data quality policy
 
@@ -125,6 +199,90 @@ draft and applies these fail-closed rules:
 
 Invoice issuance remains disabled until the LEG and its VNB approve tax, HKN,
 tariff-class, rounding-tolerance, and operational cutoff rules.
+
+### Running the import
+
+```bash
+python scripts/import_sdat.py data/<gemeinde> --dry-run
+python scripts/import_sdat.py data/<gemeinde>
+python scripts/import_metering_points.py data/<gemeinde>/teilnehmer.csv
+```
+
+The import skips documents it already read, tracked in `sdat_imports`.
+`--force` reads them again. `--dry-run` needs no database.
+
+### Skipping what is already imported
+
+A municipality directory grows with every delivery and never shrinks, so a run
+must avoid fully parsing settled files. The importer decides identity from the
+document header before parsing:
+
+| Key | Cost per settled file |
+| --- | --- |
+| document id, from the first 16 KB | one small read, no full parse |
+
+`get_sdat_import_index` replaces one ledger query per file with a single query
+per run. Only a genuinely new E66 is read in full and parsed. On
+the test fixture a full parse is 0.736 ms against 0.0003 ms for a head scan, and
+the gap widens with file size.
+
+Every readable but uncertain case does the full work instead of skipping: a
+head that yields no document id, a ledger read that failed, and `--force`.
+Skipping a delivery the ledger does not know about would lose it silently, so
+uncertainty costs time rather than data. If the head itself is unreadable, the
+import reports the file as failed and leaves it in place.
+
+Two consequences worth knowing:
+
+- The run reports skipped files separately (`N bereits importiert`), so a run
+  that does almost nothing still says what it saw.
+- File names are reporting metadata, never identity. Two documents with the
+  same file name are distinguished by their document ids.
+
+### Disk use after the import
+
+Once a document's rows are in the database, the import packs its XML back into
+`<name>.xml.gz` and removes the plain file. SDAT XML is highly repetitive, so
+this costs around a tenth of the space. The unpacked files are the bulk of
+`data/` and nothing reads them again after the import.
+
+A file is packed once it is settled, meaning nothing will read it again:
+
+- an E66 whose rows the run just wrote
+- an E66 already recorded in `sdat_imports`
+- an E31 sibling, which the import skips by design and which arrives with every
+  delivery
+
+A dry run, a parse failure, and a file that is neither E66 nor E31 leave the
+file plain. A failed parse or an unrecognised document may be a delivery problem
+someone has to read, and that file is the only local copy of it. "Not an E66" is
+therefore not treated as "an E31": the importer tests for E31 explicitly.
+
+The archive is written to a `.part` file and read back before it is published
+without overwriting an existing archive. Only then is the original deleted. A
+failed pack or name conflict costs disk space, never data, and reports a warning
+without failing the run. `--no-compress` turns it off.
+
+`import_sdat.py` reads `*.xml.gz` directly, so packing never hides a file from
+the importer and `--force` still works afterwards. That is also why
+`sdat_pipeline.sh` no longer unpacks the municipality directory: a settled file
+stays packed and is never opened again. Unpacking it for the importer to repack
+it was work that grew with the archive and produced nothing.
+
+A directory that predates packing holds plain, already imported XML. Those files
+are packed once, on the skip path, without being parsed.
+
+Metering point IDs are personal data as soon as they link to the register.
+Output and logs show only the last six digits. Real exports live under `data/`
+and stay unversioned.
+
+### Regression checks
+
+```bash
+pytest tests/test_sdat_e66.py tests/test_store_metering.py \
+       tests/test_metering_schema.py tests/test_import_sdat_script.py \
+       tests/test_import_sdat_compression.py tests/test_import_sdat_skip.py -q
+```
 
 ## Public API Reads
 

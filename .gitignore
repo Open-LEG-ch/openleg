@@ -106,6 +106,7 @@ infomaniak_*
 !/design.md
 !/CLAUDE.md
 !/AGENTS.md
+!/CONTEXT.md
 
 # Private planning, strategy, ops docs (explicit, defense in depth)
 archive/
@@ -131,6 +132,7 @@ SENDGRID_SETUP.md
 
 # Local-only deployment and generated artifacts
 deploy.sh
+docker-compose.localdb.yml
 output/
 .claude/
 .orch/

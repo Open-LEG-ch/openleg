@@ -8,6 +8,7 @@ automation endpoints) stays public as part of the product runtime.
 """
 
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -139,13 +140,73 @@ def test_kept_instance_ops_schema_is_provisioned():
         assert fragment in schema_content
 
 
-def test_tracked_text_has_no_known_private_identifiers_or_secret_placeholders():
-    forbidden_fragments = (
+_METERING_POINT = re.compile(r"\bCH[A-Z0-9]{20,}\b")
+_COMMUNITY_ID = re.compile(r"(?<![A-Z0-9])\d{6}-[A-Z0-9]{6}(?![A-Z0-9])")
+_HOME_PATH = re.compile(r"/(?:Users|home)/[^/\s]+(?=/|\s|$)")
+_SECRET_TOKEN = re.compile(r"\bsk-(?:ant|live|proj)-[A-Za-z0-9_-]{16,}\b")
+_KNOWN_PRIVATE_FRAGMENTS = (
+    "w" + "gusta",
+    "baden" + "leg",
+)
+
+
+def _is_synthetic_metering_point(value):
+    body = value.removeprefix("CH")
+    return len(body) >= 3 and body[:-2].strip("0") == "" and body[-2:].isdigit()
+
+
+def _private_markers(content):
+    markers = []
+    if any(
+        not _is_synthetic_metering_point(match.group())
+        for match in _METERING_POINT.finditer(content)
+    ):
+        markers.append("metering point")
+    if _COMMUNITY_ID.search(content):
+        markers.append("CommunityID")
+    if _HOME_PATH.search(content):
+        markers.append("home path")
+    if _SECRET_TOKEN.search(content):
+        markers.append("secret token")
+    if any(fragment in content.lower() for fragment in _KNOWN_PRIVATE_FRAGMENTS):
+        markers.append("known private identifier")
+    return markers
+
+
+def test_private_marker_scan_detects_identifier_shapes_without_echoing_values():
+    samples = {
+        "metering point": "CH" + "7" * 30,
+        "CommunityID": "1" * 6 + "-" + "A" * 6,
+        "home path": "/" + "Users/" + "example/project",
+        "secret token": "sk-" + "ant-" + "x" * 24,
+    }
+
+    for category, sample in samples.items():
+        assert _private_markers(sample) == [category]
+
+
+def test_private_marker_scan_detects_home_directory_at_nonfinal_line_end():
+    content = "Pfad: /" + "Users/example\nWeitere Zeile"
+    assert _private_markers(content) == ["home path"]
+
+
+def test_private_marker_scan_detects_known_legacy_fragments():
+    samples = (
         "w" + "gusta",
         "baden" + "leg",
-        "sk-" + "ant-",
-        "/" + "Users/",
     )
+
+    for sample in samples:
+        assert _private_markers(sample) == ["known private identifier"]
+
+
+def test_private_marker_scan_allows_synthetic_ids_and_lowercase_url_paths():
+    synthetic_point = "CH" + "0" * 28 + "01"
+    assert _private_markers(synthetic_point) == []
+    assert _private_markers("https://example.ch/users/notifications") == []
+
+
+def test_tracked_text_has_no_known_private_identifiers_or_secret_placeholders():
     offenders = {}
 
     for relative_path in sorted(_tracked_files()):
@@ -156,9 +217,7 @@ def test_tracked_text_has_no_known_private_identifiers_or_secret_placeholders():
             content = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        matches = [
-            item for item in forbidden_fragments if item.lower() in content.lower()
-        ]
+        matches = _private_markers(content)
         if matches:
             offenders[relative_path] = matches
 
