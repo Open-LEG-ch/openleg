@@ -242,3 +242,32 @@ def test_malformed_persisted_numeric_values_fall_back_without_error(monkeypatch)
     assert item["display_quantity_kwh"] == "0.000"
     assert item["display_unit_price_rp"] == "0.00"
     assert item["display_amount_chf"] == "0.00"
+
+
+@pytest.mark.parametrize("non_finite", ["NaN", "Infinity", "-Infinity"])
+def test_non_finite_numeric_values_are_never_displayed(monkeypatch, non_finite):
+    workspace = _module()
+    period = {
+        "id": 7,
+        "community_id": "community-a",
+        "period_start": "2026-07-01",
+        "status": "draft",
+        "total_production_kwh": non_finite,
+        "internal_price_chf_per_kwh": non_finite,
+        "line_items": [],
+    }
+    monkeypatch.setattr(
+        workspace.db, "list_billing_periods", lambda limit=100: [period]
+    )
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda _period_id: period)
+
+    selected = workspace.load()["selected"]
+
+    assert selected["metrics_display"]["production_kwh"] == "0.00"
+    assert selected["tariff"]["internal_price"] == "Nicht angegeben"
+
+
+def test_rate_uses_explicit_half_up_rounding():
+    workspace = _module()
+
+    assert workspace._rate(Decimal("0.15005")) == "15.01 Rp./kWh"

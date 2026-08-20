@@ -44,6 +44,8 @@ def _decimal_text(value, places, scale=Decimal(1)):
     """Format a decimal with the billing engine's half-up policy."""
     try:
         decimal_value = Decimal(str(value)) * scale
+        if not decimal_value.is_finite():
+            return format(Decimal(0), f".{places}f")
         quantum = Decimal(1).scaleb(-places)
         return format(decimal_value.quantize(quantum, rounding=ROUND_HALF_UP), "f")
     except (ArithmeticError, TypeError, ValueError):
@@ -204,7 +206,11 @@ def _rate(value):
     if value is None:
         return "Nicht angegeben"
     try:
-        return f"{Decimal(str(value)) * 100:.2f} Rp./kWh"
+        rate_rp = Decimal(str(value)) * 100
+        if not rate_rp.is_finite():
+            return "Nicht angegeben"
+        rounded = rate_rp.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return f"{rounded:.2f} Rp./kWh"
     except (ArithmeticError, TypeError, ValueError):
         return "Nicht angegeben"
 
