@@ -9,7 +9,7 @@ Domain vocabulary and seam names: `CONTEXT.md`.
 
 ## Runtime
 
-- Flask serves HTML pages, forms, health checks, and JSON API routes. `app.py`
+- Flask serves product dashboards, forms, health checks, and JSON API routes. `app.py`
   provides the app factory `create_app(config=None, *, load_environment=True,
   check_database=True)`, which builds one configured `Flask` app and registers
   the blueprints on it. `wsgi.py` is the production entry point.
@@ -49,34 +49,22 @@ without code changes.
 | --- | --- | --- |
 | `main_bp` | `app.py` | none |
 | `municipality_bp` | `municipality.py` | `/gemeinde` |
-| `pilot_bp` | `municipality.py` | `/pilotgemeinde` |
+| `registry_api_bp` | `leg_registry.py` | none |
 | `public_api_bp` | `api_public.py` | `/api/v1` |
 | `utility_bp` | `utility_portal.py` | `/utility` |
-| `rangliste_bp` | `rangliste.py` | none |
-| `registry_bp` | `leg_registry.py` | none |
-| `self_host_bp` | `self_host.py` | none |
 | `health_bp` | `health.py` | none |
 | `admin_bp` | `admin.py` | none |
 
 ## Route map
 
-Stakeholder pathways and public pages:
-
-- `/` resident and municipality entry point with address check.
-- `/how-it-works` explains the resident LEG path.
-- `/fuer-bewohner`, `/fuer-gemeinden`, `/leg-gruenden`, `/open-source` are the
-  four stakeholder pathways.
-- `/leg-kalkulator` and `/pricing` support the decision.
-- `/rangliste`, `/rangliste/fortschritte`, `/rangliste/vergleich`,
-  `/rangliste/methodik` cover the ranking, plus badge and OG image routes.
-- `/gemeinde/profil/<int:bfs>` renders one Gemeindeprofil.
-- `/leg-verzeichnis` lists registered LEGs with claim and confirm flows.
-- `/self-host` and `/install.sh` serve the self-hosting profile.
-- `/robots.txt`, `/sitemap.xml`, `/health`, `/livez` support indexing and checks.
+The public website, ranking pages, municipality profiles, registry directory,
+legal pages, sitemap, and installer delivery run from `openleg-ops`. This app
+does not register those HTML routes. `PUBLIC_SITE_URL` is the explicit link seam.
 
 Application and API routes:
 
-- `/dashboard` and `/leg/*` drive registration, community formation, documents,
+- `/` chooses the Eigentümer or Gemeinde dashboard. `/dashboard` and `/leg/*`
+  drive registration, community formation, documents,
   and correspondence.
 - `/meter-upload` accepts a meter file; `/api/meter-data/upload` ingests it.
 - `/api/v1/*` is the unauthenticated public JSON API, documented at `/api/v1/docs`.
@@ -91,17 +79,15 @@ Application and API routes:
 
 ## Code map
 
-- `app.py`: Flask app, security policy, public HTML routes, admin and cron routes.
+- `app.py`: Flask product app, security policy, admin and cron routes.
 - `tenant.py`: hostname to territory resolution, tenant config, template context.
 - `database.py`: connection pool, schema creation, unextracted query helpers,
   and the store re-exports.
 - `store/`: per-domain repositories (see the data layer below).
 - `api_public.py`: unauthenticated public JSON API.
-- `municipality.py`: municipality directory and profile pages.
-- `rangliste.py`: ranking pages and SVG share assets.
-- `leg_registry.py`: LEG registry, claim tokens, verification nudges.
+- `municipality.py`: municipality onboarding, access, and dashboard routes.
+- `leg_registry.py`: registry federation API and verification operations.
 - `utility_portal.py`: EVU and VNB portal.
-- `self_host.py`: self-hosting pages and install script.
 - `health.py`: health and liveness endpoints.
 - `public_data.py`: open data fetchers for ElCom, Energie Reporter, Sonnendach.
 - `billing_engine.py`: energy allocation and network discount computation.

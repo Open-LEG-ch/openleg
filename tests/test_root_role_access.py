@@ -5,7 +5,6 @@ import re
 
 import pytest
 
-from ranking import Ranking
 from tests.test_app_organic_routes import _disable_rate_limit_hooks
 
 
@@ -29,7 +28,6 @@ def app_module(monkeypatch):
         "get_stats",
         lambda city_id=None: {"total_buildings": 0},
     )
-    monkeypatch.setattr(imported_app.Ranking, "load", lambda: Ranking([]))
     try:
         imported_app.web = web
         yield imported_app

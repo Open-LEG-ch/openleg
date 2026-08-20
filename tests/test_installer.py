@@ -192,28 +192,6 @@ def test_install_rejects_empty_required_env_before_compose_up(tmp_path):
     assert " up " not in f" {docker_log} "
 
 
-class TestInstallerRoute:
-    def _client(self):
-        from flask import Flask
-
-        import self_host
-
-        app = Flask(__name__)
-        app.register_blueprint(self_host.self_host_bp)
-        return app.test_client()
-
-    def test_served_verbatim(self):
-        resp = self._client().get("/install.sh")
-        assert resp.status_code == 200
-        assert "x-shellscript" in resp.headers["Content-Type"]
-        with open(INSTALLER_PATH, "rb") as handle:
-            assert resp.data == handle.read()
-
-    def test_served_body_is_a_script(self):
-        resp = self._client().get("/install.sh")
-        assert resp.data.startswith(b"#!")
-
-
 class TestInstallerShippedInImage:
     """The hosted app must be able to serve /install.sh, so the script has to
     be inside the Docker image, not just in the source tree."""

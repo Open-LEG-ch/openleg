@@ -65,12 +65,6 @@ def test_private_network_doc_present_and_honest():
         assert honesty in doc.lower()
 
 
-def test_self_host_page_links_private_network():
-    html = (ROOT / "templates" / "self_host.html").read_text(encoding="utf-8")
-    assert "private-network.md" in html
-    assert "Netzwerk" in html
-
-
 def test_operator_cli_has_net_subcommand():
     cli = (ROOT / "scripts" / "openleg").read_text(encoding="utf-8")
     # net dispatch present and uses the net compose override, not the base stack

@@ -435,6 +435,3 @@ class TestRankingSeamBoundary:
 
     def test_app_does_not_import_pv_ranking(self):
         assert "import pv_ranking" not in _read_source("app.py")
-
-    def test_rangliste_does_not_import_pv_ranking(self):
-        assert "import pv_ranking" not in _read_source("rangliste.py")

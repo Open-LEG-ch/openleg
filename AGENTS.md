@@ -124,14 +124,18 @@ if it fails, it is telling the truth.
 
 ## Templates and Pathways
 
-- Every user-facing page uses the shared partials `partials/tailwind_brand.html`
-  (built CSS, never the Tailwind CDN), `partials/site_nav.html`, `partials/site_footer.html`.
+- Product pages extend `templates/product_base.html` and use
+  `partials/tailwind_brand.html` (built CSS, never the Tailwind CDN). The product
+  shell has no marketing navigation or footer.
 - Tailwind is compiled from `static/css/tailwind.css` to `static/css/openleg.css`
   with pinned dependencies: run `npm ci`, then `npm run build:css`. Rebuild after
   adding new utility classes.
-- Stakeholder pathways: `/fuer-bewohner` (residents/founders), `/fuer-gemeinden`
-  (municipalities), `/leg-gruenden` (LEG operators), `/open-source` (developers).
-  README documents the matching per-stakeholder install profiles.
+- Product pathways: `/dashboard` (owners/founders), `/leg/dashboard` (LEG
+  operators), `/gemeinde/dashboard` (municipalities), `/utility/login` (VNB/EVU),
+  and `/api/v1/docs` (developers).
+- Marketing pages, public directories, ranking pages, legal pages, and their
+  assets live in `openleg-ops`. Product templates link to their configured origin
+  through `PUBLIC_SITE_URL`; never copy those pages back into this repository.
 
 ## Development Workflow
 
@@ -272,5 +276,5 @@ perform. Before writing a claim about data, check that the code keeps it.
 
 Numbers shown to residents carry their basis. Readiness scores name their
 components, savings estimates list their assumptions, and the Gemeinde scores link
-to `/rangliste/methodik`. A figure a reader cannot trace is a figure they cannot
-check.
+to the public site's `/rangliste/methodik` through `PUBLIC_SITE_URL`. A figure a
+reader cannot trace is a figure they cannot check.

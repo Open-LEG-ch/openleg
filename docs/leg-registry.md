@@ -7,6 +7,10 @@ Elektrizitätsgemeinschaft (LEG) regardless of which platform formed it,
 self-service submit and claim, honestly scoped eligibility guidance, and a
 real freshness/verification pipeline so listings stay trustworthy over time.
 
+The product repository owns registry storage, verification actions, moderation,
+and API endpoints. The public directory and stakeholder pages are rendered by the
+separately deployed website in `openleg-ops`.
+
 ## Why This Matters
 
 Existing LEG tooling in Switzerland is largely sold through individual grid
@@ -23,7 +27,7 @@ formed it, on whatever platform — fills that gap.
 
 ## Phase 0 — Positioning
 
-Sharpen the existing stakeholder pathway pages (`/fuer-bewohner`,
+Sharpen the public website's stakeholder pathway pages (`/fuer-bewohner`,
 `/fuer-gemeinden`, `/leg-gruenden`, `/open-source`) so the platform's real,
 already-shippable differentiators are explicit: transparent pricing, no
 lock-in to a single grid operator, and tooling that works the same way
@@ -33,7 +37,7 @@ any named product.
 
 ## Phase 1 — Open Registry MVP
 
-A public, searchable directory (`/leg-verzeichnis`) of Swiss LEGs, populated
+A public, searchable website directory (`/leg-verzeichnis`) of Swiss LEGs, populated
 by self-service submission and gated by human moderation before anything
 goes public. Any LEG can list itself, independent of which platform (if any)
 was used to form it. Claim-by-email-verification lets a LEG's real operator
@@ -58,10 +62,10 @@ requiring data that does not publicly exist.
   verdict.
 - **No automated import or scrape** from ElCom, BFE, or canton sources yet.
   Every registry entry starts as a human-moderated self-submission.
-- **No automatic re-verification job yet.** Phase 1's data model is planned
-  to reserve a `last_verified_at` field so a future freshness pass does not
-  require a schema migration, but as of this doc no registry data model
-  exists yet, and nothing populates or acts on that field.
+- **No fully automated re-verification policy yet.** Registry entries,
+  verification tokens, `last_verified_at`, reminder emails, and the explicit
+  confirmation action exist. Scheduling, escalation, and automatic moderation
+  decisions remain operator-controlled.
 
 ## Related Docs
 

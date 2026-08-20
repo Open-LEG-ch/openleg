@@ -108,7 +108,7 @@ def test_leg_dashboard_template_contract():
     path = os.path.join(PROJECT_ROOT, "templates", "leg_dashboard.html")
     with open(path, encoding="utf-8") as handle:
         html = handle.read()
-    assert '{% extends "base.html" %}' in html
+    assert '{% extends "product_base.html" %}' in html
     assert "cdn.tailwindcss.com" not in html
     assert "readiness_score" in html
     assert "next_steps" in html

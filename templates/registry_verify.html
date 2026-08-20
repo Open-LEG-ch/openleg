@@ -1,0 +1,18 @@
+{% extends "product_base.html" %}
+
+{% block meta %}
+  <title>LEG-Eintrag bestätigen | OpenLEG</title>
+{% endblock %}
+
+{% block content %}
+  <section class="mx-auto max-w-lg px-4 py-16">
+    <div class="rounded-xl border border-line bg-white p-6">
+      <h1 class="text-2xl font-bold">LEG-Eintrag bestätigen</h1>
+      <p class="mt-3 text-ink-muted">Bestätigen Sie, dass der Eintrag «{{ entry.name }}» weiterhin aktuell ist.</p>
+      <form method="post" class="mt-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="rounded-lg bg-brand px-5 py-3 font-semibold text-white hover:bg-brand-dark">Eintrag bestätigen</button>
+      </form>
+    </div>
+  </section>
+{% endblock %}

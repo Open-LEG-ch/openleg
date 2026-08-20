@@ -16,7 +16,6 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TAILWIND_CONFIG = os.path.join(PROJECT_ROOT, "tailwind.config.js")
 BUILT_CSS = os.path.join(PROJECT_ROOT, "static", "css", "openleg.css")
 DESIGN_DOC = os.path.join(PROJECT_ROOT, "design.md")
-INDEX_HTML = os.path.join(PROJECT_ROOT, "templates", "index.html")
 FAVICON_SVG = os.path.join(PROJECT_ROOT, "static", "favicon.svg")
 FAVICON_ICO = os.path.join(PROJECT_ROOT, "static", "favicon.ico")
 APPLE_TOUCH_ICON = os.path.join(PROJECT_ROOT, "static", "apple-touch-icon.png")
@@ -74,17 +73,6 @@ def test_design_doc_describes_daylight_identity():
         assert term in doc, (
             f"design.md does not describe the '{term}' part of the identity"
         )
-
-
-def test_hero_has_no_dark_saas_slop():
-    html = _read(INDEX_HTML).lower()
-    for marker in ("#070d1a", "#0f172a", "blur-3xl"):
-        assert marker not in html, f"homepage hero still uses AI-slop marker '{marker}'"
-
-
-def test_homepage_hero_has_no_slogan_pill():
-    html = _read(INDEX_HTML)
-    assert "Nachbarschaftsstrom, gemeinsam betrieben" not in html
 
 
 def test_favicon_uses_current_daylight_identity():

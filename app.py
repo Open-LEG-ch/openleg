@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import hashlib
+import hmac
 import logging
 import math
 import os
+import secrets
 import threading
 from datetime import timedelta
+from urllib.parse import urljoin, urlparse
 
 import numpy as np
 import pandas as pd
@@ -12,7 +15,6 @@ from dotenv import load_dotenv
 from flask import (
     Blueprint,
     Flask,
-    Response,
     abort,
     current_app,
     g,
@@ -26,7 +28,6 @@ from flask import (
 from flask_talisman import Talisman
 
 import billing_runner
-import cache as cache_module
 import dashboard as dashboard_module  # noqa: F401
 import dashboard_access as dashboard_access_module  # noqa: F401
 import dashboard_routes
@@ -34,7 +35,6 @@ import data_enricher
 import database as db
 import email_automation
 import formation_wizard
-import homepage_view_model
 import leg_registry
 import ml_models
 import registration
@@ -44,15 +44,11 @@ from admin import admin_bp, require_admin
 from api_public import public_api_bp
 from email_utils import send_email
 from health import health_bp
-from homepage_view_model import ranking_extremes
-from leg_registry import registry_bp
-from municipality import PILOT_MUNICIPALITIES, municipality_bp, pilot_bp
-from rangliste import rangliste_bp
-from ranking import Ranking  # noqa: F401 - compatibility seam for existing callers
+from leg_registry import registry_api_bp
+from municipality import municipality_bp
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import limiter
 from security_utils import log_security_event
-from self_host import self_host_bp
 from utility_portal import utility_bp
 
 logger = logging.getLogger(__name__)
@@ -103,6 +99,7 @@ def apply_basic_security_headers(response):
     if (
         request.path.startswith("/dashboard/access/")
         or request.path.startswith("/gemeinde/access/")
+        or request.path.startswith("/registry/verify/")
         or is_private_dashboard
         or is_private_municipality_dashboard
         or is_private_leg_dashboard
@@ -263,11 +260,6 @@ def find_provisional_matches(new_profile):
 # ===========================
 
 
-def _ranking_extremes(n=3):
-    """Compatibility seam for the shared public homepage ranking model."""
-    return ranking_extremes(n)
-
-
 @main_bp.route("/")
 def index():
     if session.get("dashboard_building_id"):
@@ -277,75 +269,6 @@ def index():
     return render_city_template("role_access.html")
 
 
-@main_bp.route("/public-preview")
-def public_preview():
-    """Keep the existing public site renderable until the ops cutover."""
-    city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
-    referral_code = request.args.get("ref", "")
-    model = homepage_view_model.build_homepage_view_model(
-        city_id, referral_code=referral_code
-    )
-    return render_city_template(
-        "index.html",
-        user_count=model["stats"]["registered_buildings"],
-        referral_code=model["referral"]["code"],
-        ranking_best=model["ranking"]["best"],
-        ranking_worst=model["ranking"]["needs_action"],
-        ranking_total=model["ranking"]["total"],
-        referrer_street=model["referral"]["street"],
-    )
-
-
-@main_bp.route("/how-it-works")
-def how_it_works():
-    return render_city_template("how-it-works.html")
-
-
-@main_bp.route("/fuer-bewohner")
-def fuer_bewohner():
-    return render_city_template("fuer_bewohner.html")
-
-
-@main_bp.route("/fuer-gemeinden")
-def fuer_gemeinden():
-    return render_city_template("fuer_gemeinden.html")
-
-
-@main_bp.route("/open-source")
-def open_source():
-    return render_city_template("open_source.html")
-
-
-@main_bp.route("/leg-gruenden")
-def leg_gruenden():
-    return render_city_template("leg_gruenden.html")
-
-
-@main_bp.route("/leg-kalkulator")
-def leg_kalkulator():
-    return render_city_template("leg_kalkulator.html")
-
-
-@main_bp.route("/pricing")
-def pricing():
-    return render_city_template("pricing.html")
-
-
-@main_bp.route("/robots.txt")
-def robots_txt():
-    lines = [
-        "User-agent: *",
-        "Allow: /",
-        "Allow: /api/v1/docs",
-        "Disallow: /api/",
-        "Disallow: /admin/",
-        "Disallow: /confirm/",
-        "Disallow: /unsubscribe/",
-        f"Sitemap: {current_app.config['SITE_URL']}/sitemap.xml",
-    ]
-    return Response("\n".join(lines) + "\n", mimetype="text/plain")
-
-
 @main_bp.route("/favicon.ico")
 def favicon():
     return send_from_directory(
@@ -353,50 +276,6 @@ def favicon():
         "favicon.ico",
         mimetype="image/vnd.microsoft.icon",
     )
-
-
-@main_bp.route("/sitemap.xml")
-def sitemap_xml():
-    """Render and briefly cache the public sitemap for the current site and day."""
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-
-    current_date = datetime.now(ZoneInfo("Europe/Zurich")).strftime("%Y-%m-%d")
-    cache_key = f"sitemap:{current_app.config['SITE_URL']}:{current_date}"
-    cached_xml = cache_module.cache_get(cache_key)
-    if cached_xml is not None:
-        return Response(cached_xml, mimetype="application/xml")
-    pages = [
-        ("/", "1.0", "daily", current_date),
-        ("/how-it-works", "0.8", "weekly", current_date),
-        ("/fuer-bewohner", "0.9", "weekly", current_date),
-        ("/fuer-gemeinden", "0.8", "weekly", current_date),
-        ("/leg-gruenden", "0.9", "weekly", current_date),
-        ("/leg-kalkulator", "0.9", "weekly", current_date),
-        ("/pricing", "0.7", "monthly", current_date),
-        ("/open-source", "0.8", "weekly", current_date),
-        ("/self-host", "0.8", "weekly", current_date),
-        ("/gemeinde/verzeichnis", "0.9", "weekly", current_date),
-        ("/leg-verzeichnis", "0.9", "weekly", current_date),
-        ("/leg-check", "0.9", "weekly", current_date),
-        ("/rangliste", "0.9", "daily", current_date),
-        ("/rangliste/fortschritte", "0.8", "daily", current_date),
-        ("/rangliste/vergleich", "0.7", "weekly", current_date),
-        ("/rangliste/methodik", "0.6", "monthly", current_date),
-        ("/api/v1/docs", "0.8", "weekly", current_date),
-        ("/gemeinde/onboarding", "0.9", "weekly", current_date),
-        ("/impressum", "0.3", "yearly", "2026-01-01"),
-        ("/datenschutz", "0.3", "yearly", "2026-01-01"),
-    ]
-    for bfs in db.get_all_municipality_profile_bfs_numbers():
-        pages.append((f"/gemeinde/profil/{bfs}", "0.8", "weekly", current_date))
-    for slug in PILOT_MUNICIPALITIES:
-        pages.append((f"/pilotgemeinde/{slug}", "0.8", "weekly", current_date))
-    xml = render_template(
-        "sitemap.xml", site_url=current_app.config["SITE_URL"], pages=pages
-    )
-    cache_module.cache_set(cache_key, xml, ttl=3600)
-    return Response(xml, mimetype="application/xml")
 
 
 ## Health endpoints registered via health_bp
@@ -576,16 +455,6 @@ def meter_upload_page():
 
 
 # --- Unsubscribe ---
-@main_bp.route("/impressum")
-def impressum():
-    return render_city_template("impressum.html")
-
-
-@main_bp.route("/datenschutz")
-def datenschutz():
-    return render_city_template("datenschutz.html")
-
-
 @main_bp.route("/unsubscribe", methods=["GET", "POST"])
 @limiter.limit("5 per minute")
 def unsubscribe_page():
@@ -678,6 +547,35 @@ def unsubscribe_token(token):
         message="Ihre Daten wurden erfolgreich gelöscht.",
         email="",
     )
+
+
+@main_bp.route("/registry/verify/<token>", methods=["GET", "POST"])
+def verify_registry_entry(token):
+    entry = db.get_registry_entry_by_verification_token(token)
+    if not entry:
+        abort(404)
+
+    csrf_token = session.get("registry_verification_csrf_token")
+    if not isinstance(csrf_token, str) or not csrf_token:
+        csrf_token = secrets.token_urlsafe(32)
+        session["registry_verification_csrf_token"] = csrf_token
+
+    if request.method == "GET":
+        return render_template(
+            "registry_verify.html", entry=entry, csrf_token=csrf_token
+        )
+
+    submitted = request.form.get("csrf_token", "")
+    if (
+        not isinstance(submitted, str)
+        or not submitted.isascii()
+        or not hmac.compare_digest(submitted, csrf_token)
+    ):
+        abort(400)
+
+    db.mark_registry_entry_verified(entry["id"])
+    session.pop("registry_verification_csrf_token", None)
+    return redirect("/?registry=verified")
 
 
 # --- Dashboard ---
@@ -970,6 +868,22 @@ def _parse_dashboard_ttl_seconds(raw, default):
     return max(60, min(value, 86_400))
 
 
+def _validated_public_site_url(value):
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL")
+    if (
+        parsed.username
+        or parsed.password
+        or parsed.path not in {"", "/"}
+        or parsed.params
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("PUBLIC_SITE_URL must not contain credentials or suffixes")
+    return value.rstrip("/")
+
+
 def create_app(config=None, *, load_environment=True, check_database=True):
     """Create one configured OpenLEG Flask application."""
     if load_environment:
@@ -1011,6 +925,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         MAX_CONTENT_LENGTH=10 * 1024 * 1024,
         APP_BASE_URL=app_base_url,
         SITE_URL=app_base_url.rstrip("/"),
+        PUBLIC_SITE_URL=os.getenv("PUBLIC_SITE_URL", "https://openleg.ch"),
         ALLOWED_HOSTS=os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(","),
         ADMIN_EMAIL=os.getenv("ADMIN_EMAIL", "hallo@openleg.ch"),
         CRON_SECRET=os.getenv("CRON_SECRET", "").strip(),
@@ -1027,16 +942,20 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         ):
             application.config["SESSION_COOKIE_SECURE"] = True
 
+    public_site_base = _validated_public_site_url(application.config["PUBLIC_SITE_URL"])
+
+    def public_site_url(path):
+        return urljoin(f"{public_site_base}/", path.lstrip("/"))
+
+    application.jinja_env.globals["public_site_url"] = public_site_url
+
     for blueprint in (
         main_bp,
         municipality_bp,
-        pilot_bp,
+        registry_api_bp,
         public_api_bp,
         health_bp,
         utility_bp,
-        rangliste_bp,
-        registry_bp,
-        self_host_bp,
         admin_bp,
     ):
         application.register_blueprint(blueprint)

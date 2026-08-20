@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  {% block meta %}{% endblock %}
+  {% include "partials/tailwind_brand.html" %}
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="{% block body_class %}min-h-screen bg-paper text-ink{% endblock %}">
+  <header class="border-b border-line bg-white">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+      {% set brand_class = "text-2xl" %}
+      {% include "partials/brand_wordmark.html" %}
+      <span class="text-sm font-semibold text-ink-muted">Dashboard</span>
+    </div>
+  </header>
+  <main id="main-content" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
