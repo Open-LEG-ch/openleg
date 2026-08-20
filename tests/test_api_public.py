@@ -75,7 +75,7 @@ class TestRegistryReadEndpoints:
         mock_db.list_registry_entries.return_value = [REGISTRY_ENTRY]
 
         response = client.get(
-            "/api/v1/registry?kanton=ag&plz=5400&leg_status=aktiv&q=Baden"
+            "/api/v1/registry?kanton=ag&plz=5400&leg_status=aktiv&q=Baden&limit=50"
             "&moderation_status=pending"
         )
 
@@ -104,6 +104,7 @@ class TestRegistryReadEndpoints:
             leg_status="aktiv",
             q="Baden",
             moderation_status="published",
+            limit=50,
         )
         serialized = repr(payload)
         assert "private@example.ch" not in serialized
@@ -124,7 +125,20 @@ class TestRegistryReadEndpoints:
         assert published.status_code == 200
         assert published.get_json()["slug"] == "leg-baden"
         assert "contact_email" not in published.get_json()
+        assert "claim_token_hash" not in published.get_json()
         assert pending.status_code == 404
+
+    @patch("api_public.db")
+    def test_registry_clears_non_http_website_url(self, mock_db, client):
+        mock_db.get_registry_entry_by_slug.return_value = {
+            **REGISTRY_ENTRY,
+            "website_url": "javascript:alert(1)",
+        }
+
+        response = client.get("/api/v1/registry/leg-baden")
+
+        assert response.status_code == 200
+        assert response.get_json()["website_url"] == ""
 
 
 class TestMunicipalityDetailEndpoints:

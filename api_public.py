@@ -15,6 +15,7 @@ import homepage_view_model
 import municipality_profile
 import public_data
 import ranking as ranking_module
+import registry_intake
 
 logger = logging.getLogger(__name__)
 
@@ -145,12 +146,16 @@ def registry_entries():
     leg_status = (request.args.get("leg_status") or "").strip().lower()
     if leg_status not in {"planung", "gruendung", "aktiv", "pausiert"}:
         leg_status = None
+    limit = _normalize_limit(
+        request.args.get("limit"), default=100, minimum=1, maximum=500
+    )
     entries = db.list_registry_entries(
         kanton=kanton,
         plz=plz,
         leg_status=leg_status,
         q=q,
         moderation_status="published",
+        limit=limit,
     )
     serialized = [_serialize_registry_entry(entry) for entry in entries]
     return jsonify({"entries": serialized, "count": len(serialized)})
@@ -655,7 +660,9 @@ def _serialize_registry_entry(entry):
         "leg_status": entry.get("leg_status", ""),
         "member_count_estimate": entry.get("member_count_estimate"),
         "description": entry.get("description", ""),
-        "website_url": entry.get("website_url", ""),
+        "website_url": registry_intake.normalize_website_url(
+            entry.get("website_url", "")
+        ),
     }
 
 

@@ -57,7 +57,9 @@ class TestRateLimiterRedis:
 
         assert application.config["RATELIMIT_STORAGE_URI"] == "memory://"
         assert [response.status_code for response in responses] == [200] * 5 + [429]
-        assert "Content-Security-Policy" in responses[-1].headers
+        csp = responses[0].headers.get("Content-Security-Policy", "")
+        assert "default-src 'self'" in csp
+        assert "script-src 'self'" in csp
 
 
 class TestMetricsEndpoint:

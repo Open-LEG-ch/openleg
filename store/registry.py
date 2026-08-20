@@ -119,6 +119,7 @@ def list_registry_entries(
     leg_status: str | None = None,
     q: str | None = None,
     moderation_status: str = "published",
+    limit: int = 250,
 ) -> list[dict]:
     """List registry entries, defaulting to published-only.
 
@@ -143,11 +144,14 @@ def list_registry_entries(
                 clauses.append("(name ILIKE %s OR ort ILIKE %s)")
                 params.extend([f"%{q}%", f"%{q}%"])
             where = " AND ".join(clauses)
+            bounded_limit = max(1, min(int(limit), 500))
+            params.append(bounded_limit)
             cur.execute(
                 f"""
                     SELECT * FROM leg_registry
                     WHERE {where}
                     ORDER BY created_at DESC
+                    LIMIT %s
                 """,
                 tuple(params),
             )
