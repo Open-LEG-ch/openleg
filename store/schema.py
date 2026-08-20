@@ -254,6 +254,27 @@ def create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS municipality_access_tokens (
+                    token_hash CHAR(64) PRIMARY KEY,
+                    municipality_id INTEGER NOT NULL REFERENCES municipalities(id) ON DELETE CASCADE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP NOT NULL,
+                    used_at TIMESTAMP,
+                    revoked_at TIMESTAMP
+                )
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_municipality_access_tokens_municipality_id
+                ON municipality_access_tokens(municipality_id)
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_municipality_access_tokens_expires_at
+                ON municipality_access_tokens(expires_at)
+            """)
+
             # Meter readings (15-min smart meter data)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS meter_readings (

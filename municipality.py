@@ -5,17 +5,31 @@ Handles Gemeinde signup, admin dashboard, LEG formation KPIs.
 Public profile pages and directory for municipalities.
 """
 
+import hmac
 import logging
 import os
+import secrets
 
-from flask import Blueprint, abort, jsonify, render_template, request
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+)
 
 import database as db
+import email_utils
+import municipality_access
 import municipality_profile
 import pv_data
 import security_utils
 from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
 from ranking import Ranking
+from security_extensions import rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -122,17 +136,20 @@ def _dashboard_context(muni):
 
 @municipality_bp.route("/dashboard")
 def dashboard():
-    subdomain = request.args.get("subdomain", "").strip()
-    bfs = request.args.get("bfs", "")
+    municipality_id = session.get("municipality_id")
+    if not municipality_id:
+        return render_template(
+            "gemeinde/dashboard.html",
+            municipality=None,
+            error=(
+                "Der Zugangslink ist ungültig oder bereits verwendet."
+                if request.args.get("access") == "invalid"
+                else None
+            ),
+            access_required=True,
+        )
 
-    muni = None
-    if subdomain:
-        muni = db.get_municipality(subdomain=subdomain)
-    elif bfs:
-        try:
-            muni = db.get_municipality(bfs_number=int(bfs))
-        except ValueError:
-            muni = None
+    muni = db.get_municipality(municipality_id=municipality_id)
 
     if not muni:
         return render_template(
@@ -142,6 +159,86 @@ def dashboard():
         )
 
     return render_template("gemeinde/dashboard.html", **_dashboard_context(muni))
+
+
+@municipality_bp.route("/access/request", methods=["POST"])
+@rate_limit("5 per minute")
+def access_request():
+    email = (request.form.get("email") or "").strip().lower()
+    generic_message = (
+        "Falls eine Gemeinde zu dieser E-Mail-Adresse existiert, haben wir einen "
+        "neuen Zugangslink gesendet."
+    )
+    is_valid, normalized_email, _error = security_utils.validate_email_address(email)
+    municipality = (
+        db.get_municipality_by_admin_email(normalized_email)
+        if is_valid and normalized_email
+        else None
+    )
+    if municipality:
+        municipality_id = municipality.get("id")
+        token = municipality_access.issue_access_token(
+            db, municipality_id, ttl_seconds=900
+        )
+        if token:
+            url = municipality_access.access_url(
+                current_app.config["APP_BASE_URL"], token
+            )
+            try:
+                email_utils.send_email(
+                    normalized_email,
+                    "Ihr Gemeinde-Dashboard-Zugangslink",
+                    "Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n\n"
+                    f"{url}\n\n"
+                    "Falls Sie diesen Link nicht angefordert haben, können Sie "
+                    "diese E-Mail ignorieren.",
+                )
+            except Exception:
+                current_app.logger.exception(
+                    "Failed to send municipality dashboard access email"
+                )
+    return render_template(
+        "gemeinde/dashboard.html",
+        municipality=None,
+        error=None,
+        access_required=True,
+        access_request_message=generic_message,
+    )
+
+
+@municipality_bp.route("/access/<token>")
+def access_exchange(token):
+    municipality_id = municipality_access.consume_access_token(db, token)
+    if not municipality_id:
+        response = redirect("/gemeinde/dashboard?access=invalid")
+    else:
+        session.clear()
+        session.permanent = True
+        session["municipality_id"] = municipality_id
+        session["municipality_csrf_token"] = secrets.token_urlsafe(32)
+        response = redirect("/gemeinde/dashboard")
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@municipality_bp.route("/logout", methods=["POST"])
+def logout():
+    municipality_id = session.get("municipality_id")
+    submitted = request.form.get("csrf_token", "")
+    expected = session.get("municipality_csrf_token", "")
+    if not municipality_id:
+        abort(401)
+    if (
+        not isinstance(submitted, str)
+        or not submitted.isascii()
+        or not expected
+        or not hmac.compare_digest(submitted, expected)
+    ):
+        abort(400)
+    db.revoke_municipality_access_tokens(municipality_id)
+    session.clear()
+    return redirect("/")
 
 
 @municipality_bp.route("/dashboard/demo")

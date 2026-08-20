@@ -615,10 +615,15 @@ def save_municipality(
         return None
 
 
-def get_municipality(bfs_number=None, subdomain=None):
+def get_municipality(bfs_number=None, subdomain=None, municipality_id=None):
     try:
         with get_connection() as conn, conn.cursor() as cur:
-            if bfs_number:
+            if municipality_id:
+                cur.execute(
+                    "SELECT * FROM municipalities WHERE id = %s",
+                    (municipality_id,),
+                )
+            elif bfs_number:
                 cur.execute(
                     "SELECT * FROM municipalities WHERE bfs_number = %s",
                     (bfs_number,),
@@ -634,6 +639,21 @@ def get_municipality(bfs_number=None, subdomain=None):
             return dict(row) if row else None
     except Exception as e:
         logger.error(f"[DB] Error getting municipality: {e}")
+        return None
+
+
+def get_municipality_by_admin_email(email: str) -> dict | None:
+    """Find a municipality by its registered admin email address."""
+    try:
+        with get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM municipalities WHERE LOWER(admin_email) = LOWER(%s)",
+                (email,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting municipality by admin email: {e}")
         return None
 
 
@@ -1009,6 +1029,11 @@ from store.metering import (  # noqa: F401
     record_sdat_import,
     save_metering_point_readings,
     upsert_metering_points,
+)
+from store.municipality_access import (  # noqa: F401
+    consume_municipality_access_token,
+    revoke_municipality_access_tokens,
+    save_municipality_access_token,
 )
 from store.profile import (  # noqa: F401
     get_all_elcom_tariffs,

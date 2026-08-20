@@ -61,7 +61,8 @@ def resident_client():
 def rendered(resident_client):
     pages = {}
     for route in ("/", "/fuer-bewohner", "/how-it-works", "/leg-kalkulator"):
-        response = resident_client.get(route)
+        request_path = "/public-preview" if route == "/" else route
+        response = resident_client.get(request_path)
         assert response.status_code == 200
         pages[route] = response.get_data(as_text=True)
     return pages

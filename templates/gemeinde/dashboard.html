@@ -24,6 +24,10 @@
         <span class="h-2 w-2 rounded-full bg-brand" aria-hidden="true"></span>
         {{ status_label }}
       </span>
+      <form action="/gemeinde/logout" method="post">
+        <input type="hidden" name="csrf_token" value="{{ session.municipality_csrf_token }}">
+        <button type="submit" class="text-sm font-semibold text-ink-muted underline hover:text-ink">Abmelden</button>
+      </form>
     </div>
 
     <section class="grid grid-cols-2 md:grid-cols-4 border-t border-line mb-8" aria-label="Gemeindestatistik">
@@ -114,6 +118,18 @@
           {% endif %}
         </section>
       </div>
+    </div>
+  {% elif access_required %}
+    <div class="max-w-xl mx-auto py-16">
+      <h1 class="text-2xl font-bold mb-3">Gemeinde-Dashboard öffnen</h1>
+      <p class="text-ink-muted mb-6">Wir senden den Zugangslink an die hinterlegte E-Mail-Adresse Ihrer Gemeinde.</p>
+      {% if error %}<p class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">{{ error }}</p>{% endif %}
+      {% if access_request_message %}<p class="mb-4 rounded-lg border border-line bg-white p-3 text-sm" role="status">{{ access_request_message }}</p>{% endif %}
+      <form action="/gemeinde/access/request" method="post" class="space-y-4">
+        <label for="municipality-email" class="block text-sm font-semibold">E-Mail-Adresse</label>
+        <input id="municipality-email" name="email" type="email" required autocomplete="email" class="w-full rounded-lg border border-line px-4 py-3">
+        <button type="submit" class="w-full rounded-lg bg-brand px-5 py-3 font-semibold text-white hover:bg-brand-dark">Zugangslink anfordern</button>
+      </form>
     </div>
   {% else %}
     <div class="max-w-xl mx-auto text-center py-16" role="alert">

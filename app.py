@@ -17,9 +17,11 @@ from flask import (
     current_app,
     g,
     jsonify,
+    redirect,
     render_template,
     request,
     send_from_directory,
+    session,
 )
 
 import billing_runner
@@ -45,17 +47,16 @@ from municipality import PILOT_MUNICIPALITIES, municipality_bp, pilot_bp
 from rangliste import rangliste_bp
 from ranking import Ranking
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
+from security_extensions import limiter
 from security_utils import log_security_event
 from self_host import self_host_bp
 from utility_portal import utility_bp
 
 # --- Security imports ---
 try:
-    from flask_limiter import Limiter
-    from flask_limiter.util import get_remote_address
     from flask_talisman import Talisman
 
-    HAS_SECURITY_LIBS = True
+    HAS_SECURITY_LIBS = limiter is not None
 except ImportError:
     HAS_SECURITY_LIBS = False
 
@@ -80,17 +81,6 @@ def handle_rate_limit(_error):
     )
 
 
-# --- Rate Limiting & Security ---
-if HAS_SECURITY_LIBS:
-    limiter = Limiter(
-        get_remote_address,
-        default_limits=["500 per hour"],
-        strategy="fixed-window",
-    )
-else:
-    limiter = None
-
-
 def render_city_template(template_name, **kwargs):
     """Render the canonical template with tenant context."""
     tenant = getattr(g, "tenant", tenant_module.DEFAULT_TENANT)
@@ -112,9 +102,14 @@ def apply_basic_security_headers(response):
         dashboard_routes._dashboard_session_building_id()
     )
     is_private_leg_document = request.path.startswith("/leg/document/")
+    is_private_municipality_dashboard = request.path == "/gemeinde/dashboard" and bool(
+        session.get("municipality_id")
+    )
     if (
         request.path.startswith("/dashboard/access/")
+        or request.path.startswith("/gemeinde/access/")
         or is_private_dashboard
+        or is_private_municipality_dashboard
         or is_private_leg_dashboard
         or is_private_leg_document
     ):
@@ -304,13 +299,23 @@ def _ranking_extremes(n=3):
 
 @main_bp.route("/")
 def index():
+    if session.get("dashboard_building_id"):
+        return redirect("/dashboard")
+    if session.get("municipality_id"):
+        return redirect("/gemeinde/dashboard")
+    return render_city_template("role_access.html")
+
+
+@main_bp.route("/public-preview")
+def public_preview():
+    """Keep the existing public site renderable until the ops cutover."""
     city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
     stats = db.get_stats(city_id=city_id)
     user_count = stats.get("total_buildings", 0)
     referral_code = request.args.get("ref", "")
-    referrer_info = None
-    if referral_code:
-        referrer_info = db.get_building_by_referral_code(referral_code)
+    referrer_info = (
+        db.get_building_by_referral_code(referral_code) if referral_code else None
+    )
     ranking_best, ranking_worst, ranking_total = _ranking_extremes()
     return render_city_template(
         "index.html",
@@ -319,9 +324,7 @@ def index():
         ranking_best=ranking_best,
         ranking_worst=ranking_worst,
         ranking_total=ranking_total,
-        referrer_street=referrer_info.get("address", "").split(",")[0]
-        if referrer_info
-        else "",
+        referrer_street=(referrer_info or {}).get("address", "").split(",")[0],
     )
 
 

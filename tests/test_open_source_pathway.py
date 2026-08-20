@@ -46,7 +46,7 @@ def _html(client, route):
 def test_install_command_renders_verbatim_on_self_host_and_homepage(full_app_module):
     client = full_app_module.web.test_client()
 
-    for route in ("/self-host", "/"):
+    for route in ("/self-host", "/public-preview"):
         assert INSTALL_COMMAND in _html(client, route)
 
 

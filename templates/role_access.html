@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>OpenLEG Zugang</title>
+  {% include "partials/tailwind_brand.html" %}
+</head>
+<body class="min-h-screen bg-paper text-ink">
+  <header class="mx-auto max-w-3xl px-4 py-6">
+    {% set brand_class = "text-2xl" %}
+    {% include "partials/brand_wordmark.html" %}
+  </header>
+  <main class="mx-auto flex max-w-3xl items-center px-4 py-16">
+    <section class="w-full rounded-2xl border border-line bg-white p-8 shadow-sm md:p-12">
+      <p class="text-sm font-semibold text-brand">Dashboard-Zugang</p>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight">Wie möchten Sie OpenLEG nutzen?</h1>
+      <p class="mt-4 text-ink-muted">Wählen Sie den passenden Zugang. Danach melden Sie sich sicher per E-Mail-Link an.</p>
+      <div class="mt-10 grid gap-4 md:grid-cols-2">
+        <a href="/dashboard" class="rounded-xl bg-brand px-6 py-5 font-semibold text-white hover:bg-brand-dark">
+          Eigentümer-Dashboard
+        </a>
+        <a href="/gemeinde/dashboard" class="rounded-xl border border-line px-6 py-5 font-semibold text-ink hover:border-brand hover:text-brand">
+          Gemeinde-Dashboard
+        </a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

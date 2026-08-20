@@ -96,11 +96,11 @@ class TestGemeindeDashboardDemo:
 
 
 class TestGemeindeDashboardEmptyState:
-    def test_missing_municipality_shows_onboarding_cta(self):
+    def test_anonymous_dashboard_shows_access_request(self):
         client = _client()
         with patch("database.get_municipality", return_value=None):
             resp = client.get("/gemeinde/dashboard")
         html = resp.get_data(as_text=True)
         assert resp.status_code == 200
-        assert 'href="/gemeinde/onboarding"' in html
+        assert 'action="/gemeinde/access/request"' in html
         assert "cdn.tailwindcss.com" not in html

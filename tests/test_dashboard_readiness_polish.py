@@ -101,17 +101,22 @@ def test_dashboard_statistics_use_mono_tabular_numerals(client):
 def test_dashboard_empty_states_are_actionable(client):
     municipality = _html(client, "/gemeinde/dashboard")
     leg = _html(client, "/leg/dashboard/demo")
-    assert "Hier sehen Sie" in municipality
-    assert 'href="/gemeinde/onboarding"' in municipality
+    assert "Zugangslink" in municipality
+    assert 'action="/gemeinde/access/request"' in municipality
     assert "Hier erscheinen" in leg
     assert "Vollzugriff im persönlichen Dashboard anfordern" in leg
 
 
 def test_dashboard_errors_are_announced(client):
-    for path in ("/dashboard", "/gemeinde/dashboard", "/leg/dashboard"):
+    for path in (
+        "/dashboard",
+        "/gemeinde/dashboard?access=invalid",
+        "/leg/dashboard",
+    ):
         html = _html(client, path)
         assert re.search(r'<[^>]+role="alert"[^>]*>', html)
-        assert "Öffnen" in html or "Prüfen" in html or "registrieren" in html
+        lowered = html.lower()
+        assert "öffnen" in lowered or "prüfen" in lowered or "registrieren" in lowered
 
 
 def test_readiness_score_explains_four_equal_checks(client):

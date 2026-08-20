@@ -30,7 +30,7 @@ def _index_html():
 
         app = create_app(load_environment=False)
         client = app.test_client()
-        response = client.get("/")
+        response = client.get("/public-preview")
         assert response.status_code == 200
         return response.get_data(as_text=True)
 
