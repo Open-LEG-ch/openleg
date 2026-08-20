@@ -14,6 +14,7 @@ import formation_wizard
 import homepage_view_model
 import municipality_profile
 import public_data
+import ranking as ranking_module
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,54 @@ def site_home():
             "schema_version": model["schema_version"],
             "stats": model["stats"],
             "ranking": model["ranking"],
+        }
+    )
+
+
+@public_api_bp.route("/site/rankings")
+def site_rankings():
+    """Return the public Solarnutzungs ranking used by the website BFF."""
+    kanton, _display_kanton = _normalize_kanton_param(request.args.get("kanton"))
+    size = _normalize_choice(
+        request.args.get("size"), {"small", "medium", "large", "xl"}
+    )
+    density = _normalize_choice(
+        request.args.get("density"), {"low", "mid", "high", "very_high"}
+    )
+    limit = _normalize_limit(
+        request.args.get("limit"), default=250, minimum=1, maximum=3000
+    )
+    rows = ranking_module.Ranking.load().standings(
+        kanton=kanton, size=size, density=density
+    )
+    return jsonify(
+        {
+            "rankings": [_serialize_site_ranking(row) for row in rows[:limit]],
+            "count": len(rows),
+            "limit": limit,
+        }
+    )
+
+
+@public_api_bp.route("/site/rankings/movers")
+def site_ranking_movers():
+    """Return public year-over-year Solarnutzungs changes for the website BFF."""
+    kanton, _display_kanton = _normalize_kanton_param(request.args.get("kanton"))
+    size = _normalize_choice(
+        request.args.get("size"), {"small", "medium", "large", "xl"}
+    )
+    density = _normalize_choice(
+        request.args.get("density"), {"low", "mid", "high", "very_high"}
+    )
+    limit = _normalize_limit(
+        request.args.get("limit"), default=100, minimum=1, maximum=3000
+    )
+    rows = ranking_module.Ranking([]).movers(kanton=kanton, size=size, density=density)
+    return jsonify(
+        {
+            "movers": [_serialize_site_mover(row) for row in rows[:limit]],
+            "count": len(rows),
+            "limit": limit,
         }
     )
 
@@ -564,6 +613,36 @@ def _serialize_profiles(profiles):
     return [_serialize_profile(p) for p in profiles]
 
 
+def _serialize_site_ranking(row):
+    """Whitelist Solarnutzungs ranking fields for the public website."""
+    fields = (
+        "rank",
+        "bfs_number",
+        "name",
+        "kanton",
+        "population",
+        "pv_score_pct",
+        "display_score",
+        "score_over_100",
+        "pv_untapped_kw",
+    )
+    return {field: row.get(field) for field in fields}
+
+
+def _serialize_site_mover(row):
+    """Whitelist Solarnutzungs change fields for the public website."""
+    fields = (
+        "bfs_number",
+        "name",
+        "kanton",
+        "year",
+        "score_now",
+        "score_prev",
+        "delta",
+    )
+    return {field: row.get(field) for field in fields}
+
+
 def _serialize_registry_entry(entry):
     """Whitelist fields intended for the public LEG directory."""
     return {
@@ -625,6 +704,11 @@ def _normalize_kanton_param(raw_value):
     if raw in SWISS_CANTONS:
         return raw, raw
     return None, "all"
+
+
+def _normalize_choice(raw_value, allowed):
+    value = (raw_value or "").strip().lower()
+    return value if value in allowed else None
 
 
 def _normalize_limit(raw_value, default=10, minimum=1, maximum=50):
