@@ -945,6 +945,9 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     public_site_base = _validated_public_site_url(application.config["PUBLIC_SITE_URL"])
 
     def public_site_url(path):
+        parsed_path = urlparse(path)
+        if parsed_path.scheme or parsed_path.netloc:
+            raise ValueError("public site link must be a relative path")
         return urljoin(f"{public_site_base}/", path.lstrip("/"))
 
     application.jinja_env.globals["public_site_url"] = public_site_url

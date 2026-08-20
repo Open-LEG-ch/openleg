@@ -14,6 +14,7 @@ def _client():
                 "DATABASE_URL": "postgresql://x:x@localhost/x",
                 "REDIS_URL": "memory://",
                 "APP_BASE_URL": "http://localhost:5003",
+                "PUBLIC_SITE_URL": "https://openleg.ch",
             },
         ),
         patch("database.is_db_available", return_value=True),

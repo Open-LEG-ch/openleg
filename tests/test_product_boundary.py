@@ -126,10 +126,10 @@ def test_app_factory_registers_product_routes_only():
 
 def test_product_templates_use_dashboard_shell_without_public_navigation():
     for relative_path in PRODUCT_TEMPLATES:
-        source = (ROOT / "templates" / relative_path).read_text()
+        source = (ROOT / "templates" / relative_path).read_text(encoding="utf-8")
         assert '{% extends "product_base.html" %}' in source, relative_path
 
-    shell = (ROOT / "templates/product_base.html").read_text()
+    shell = (ROOT / "templates/product_base.html").read_text(encoding="utf-8")
     assert "partials/site_nav.html" not in shell
     assert "partials/site_footer.html" not in shell
 
@@ -154,6 +154,24 @@ def test_public_site_links_use_the_configured_origin():
     assert application.jinja_env.globals["public_site_url"]("/how-it-works") == (
         "https://www.openleg.ch/how-it-works"
     )
+
+
+@pytest.mark.parametrize(
+    "path", ("https://attacker.example/path", "//attacker.example/path")
+)
+def test_public_site_links_reject_external_paths(path):
+    application = app_module.create_app(
+        {
+            "TESTING": True,
+            "RATELIMIT_STORAGE_URI": "memory://",
+            "PUBLIC_SITE_URL": "https://www.openleg.ch/",
+        },
+        load_environment=False,
+        check_database=False,
+    )
+
+    with pytest.raises(ValueError, match="relative path"):
+        application.jinja_env.globals["public_site_url"](path)
 
 
 @pytest.mark.parametrize(

@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_documented_install_paths_are_backed_by_repository_files():
-    readme = (ROOT / "README.md").read_text()
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "curl -fsSL https://openleg.ch/install.sh | bash" in readme
     assert (ROOT / "scripts/install.sh").is_file()
