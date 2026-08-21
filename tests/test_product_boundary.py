@@ -208,6 +208,7 @@ def test_public_site_links_reject_external_paths(path):
         ("https://open_leg.ch", r"valid hostname"),
         ("https://_openleg.ch", r"valid hostname"),
         ("https://openleg.ch%2Fevil.example", r"valid hostname"),
+        (f"https://{_253_CHAR_HOSTNAME}.a", r"valid hostname"),
     ],
     ids=[
         "bare_hostname",
@@ -231,6 +232,7 @@ def test_public_site_links_reject_external_paths(path):
         "underscore_in_label",
         "leading_underscore",
         "percent_encoded_hostname",
+        "hostname_exceeds_253_chars",
     ],
 )
 def test_public_site_origin_rejects_unsafe_values(public_site_url, expected_message):
