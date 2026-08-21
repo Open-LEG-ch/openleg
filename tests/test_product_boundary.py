@@ -10,6 +10,8 @@ import app as app_module
 
 ROOT = Path(__file__).resolve().parents[1]
 
+_253_CHAR_HOSTNAME = ".".join(["a"] * 127)
+
 PRODUCT_RULES = {
     "/",
     "/dashboard",
@@ -183,23 +185,141 @@ def test_public_site_links_reject_external_paths(path):
 
 
 @pytest.mark.parametrize(
-    "value",
-    (
-        "openleg.ch",
-        "https://user:secret@openleg.ch",
-        "https://openleg.ch/path",
-        "https://openleg.ch?next=dashboard",
-        "https://openleg.ch#dashboard",
-    ),
+    "public_site_url, expected_message",
+    [
+        ("openleg.ch", r"absolute HTTP\(S\) URL"),
+        ("https://:443", r"absolute HTTP\(S\) URL"),
+        (" https://openleg.ch", r"absolute HTTP\(S\) URL"),
+        ("https://openleg.ch ", r"absolute HTTP\(S\) URL"),
+        ("https://openleg.ch\n", r"absolute HTTP\(S\) URL"),
+        ("https://[::1", r"absolute HTTP\(S\) URL"),
+        ("https://user:secret@openleg.ch", r"credentials or suffixes"),
+        ("https://@openleg.ch", r"credentials or suffixes"),
+        ("https://:@openleg.ch", r"credentials or suffixes"),
+        ("https://openleg.ch/path", r"credentials or suffixes"),
+        ("https://openleg.ch?next=dashboard", r"credentials or suffixes"),
+        ("https://openleg.ch#dashboard", r"credentials or suffixes"),
+        ("https://openleg.ch/;", r"credentials or suffixes"),
+        ("https://openleg.ch?", r"credentials or suffixes"),
+        ("https://openleg.ch#", r"credentials or suffixes"),
+        ("https://openleg.ch:bad", r"valid port"),
+        ("https://openleg.ch:", r"valid port"),
+        ("https://openleg.ch:0", r"valid port"),
+        ("https://open_leg.ch", r"valid hostname"),
+        ("https://_openleg.ch", r"valid hostname"),
+        ("https://openleg.ch%2Fevil.example", r"valid hostname"),
+    ],
+    ids=[
+        "bare_hostname",
+        "empty_hostname_with_port",
+        "leading_whitespace",
+        "trailing_whitespace",
+        "trailing_newline",
+        "malformed_ipv6",
+        "credentials",
+        "empty_username",
+        "empty_userinfo",
+        "path_suffix",
+        "query_suffix",
+        "fragment_suffix",
+        "semicolon_path_suffix",
+        "empty_query",
+        "empty_fragment",
+        "non_numeric_port",
+        "empty_port",
+        "port_zero",
+        "underscore_in_label",
+        "leading_underscore",
+        "percent_encoded_hostname",
+    ],
 )
-def test_public_site_origin_rejects_unsafe_or_ambiguous_values(value):
-    with pytest.raises(ValueError, match="PUBLIC_SITE_URL"):
+def test_public_site_origin_rejects_unsafe_values(public_site_url, expected_message):
+    with pytest.raises(ValueError, match=expected_message):
         app_module.create_app(
             {
                 "TESTING": True,
                 "RATELIMIT_STORAGE_URI": "memory://",
-                "PUBLIC_SITE_URL": value,
+                "PUBLIC_SITE_URL": public_site_url,
             },
             load_environment=False,
             check_database=False,
         )
+
+
+def test_public_site_origin_malformed_ipv6_error_has_value_error_cause():
+    with pytest.raises(ValueError, match=r"absolute HTTP\(S\) URL") as exc_info:
+        app_module.create_app(
+            {
+                "TESTING": True,
+                "RATELIMIT_STORAGE_URI": "memory://",
+                "PUBLIC_SITE_URL": "https://[::1",
+            },
+            load_environment=False,
+            check_database=False,
+        )
+    assert isinstance(exc_info.value.__cause__, ValueError)
+
+
+@pytest.mark.parametrize(
+    "public_site_url, path, expected_url",
+    [
+        (
+            "https://www.openleg.ch/",
+            "/how-it-works",
+            "https://www.openleg.ch/how-it-works",
+        ),
+        (
+            "https://openleg.ch:443/",
+            "/how-it-works",
+            "https://openleg.ch:443/how-it-works",
+        ),
+        (
+            "https://127.0.0.1:443/",
+            "/how-it-works",
+            "https://127.0.0.1:443/how-it-works",
+        ),
+        ("https://[::1]:443/", "/how-it-works", "https://[::1]:443/how-it-works"),
+        (
+            "https://münchen.example/",
+            "/how-it-works",
+            "https://münchen.example/how-it-works",
+        ),
+        (
+            "https://openleg.ch./",
+            "/how-it-works",
+            "https://openleg.ch./how-it-works",
+        ),
+        (
+            "https://openleg.ch.:443/",
+            "/how-it-works",
+            "https://openleg.ch.:443/how-it-works",
+        ),
+        (
+            f"https://{_253_CHAR_HOSTNAME}./",
+            "/how-it-works",
+            f"https://{_253_CHAR_HOSTNAME}./how-it-works",
+        ),
+    ],
+    ids=[
+        "ordinary_domain",
+        "explicit_port",
+        "ipv4",
+        "bracketed_ipv6",
+        "idn",
+        "trailing_dot_fqdn",
+        "trailing_dot_fqdn_with_port",
+        "max_length_fqdn_with_trailing_dot",
+    ],
+)
+def test_public_site_origin_accepts_safe_values(public_site_url, path, expected_url):
+    application = app_module.create_app(
+        {
+            "TESTING": True,
+            "RATELIMIT_STORAGE_URI": "memory://",
+            "PUBLIC_SITE_URL": public_site_url,
+        },
+        load_environment=False,
+        check_database=False,
+    )
+
+    assert application.jinja_env.globals["public_site_url"](path) == expected_url

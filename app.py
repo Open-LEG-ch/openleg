@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import hashlib
 import hmac
+import ipaddress
 import logging
 import math
 import os
+import re
 import secrets
 import threading
 from datetime import timedelta
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlsplit
 
 import numpy as np
 import pandas as pd
@@ -868,20 +870,80 @@ def _parse_dashboard_ttl_seconds(raw, default):
     return max(60, min(value, 86_400))
 
 
+_DNS_LABEL_RE = re.compile(r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)$")
+
+
+def _contains_invalid_characters(value):
+    return any(char.isspace() or ord(char) < 32 for char in value)
+
+
+def _is_valid_hostname(hostname):
+    if not hostname or "%" in hostname:
+        return False
+    if _contains_invalid_characters(hostname):
+        return False
+    if "[" in hostname or "]" in hostname:
+        return False
+    try:
+        ipaddress.ip_address(hostname)
+        return True
+    except ValueError:
+        pass
+    try:
+        ascii_hostname = hostname.encode("idna").decode("ascii")
+    except UnicodeError:
+        return False
+    has_trailing_dot = ascii_hostname.endswith(".")
+    if has_trailing_dot:
+        ascii_hostname = ascii_hostname[:-1]
+    if len(ascii_hostname) > 253:
+        return False
+    labels = ascii_hostname.split(".")
+    return all(_DNS_LABEL_RE.match(label) for label in labels)
+
+
+def _canonical_origin(parsed):
+    scheme = parsed.scheme
+    hostname = parsed.hostname
+    port = parsed.port
+    host = f"[{hostname}]" if ":" in hostname else hostname
+    if port is not None:
+        return f"{scheme}://{host}:{port}"
+    return f"{scheme}://{host}"
+
+
 def _validated_public_site_url(value):
-    parsed = urlparse(value)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+    if _contains_invalid_characters(value):
+        raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL")
+    if "?" in value or "#" in value or ";" in value:
+        raise ValueError("PUBLIC_SITE_URL must not contain credentials or suffixes")
+    try:
+        parsed = urlsplit(value)
+    except ValueError as error:
+        raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL") from error
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.netloc
+        or not parsed.hostname
+    ):
         raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL")
     if (
-        parsed.username
-        or parsed.password
+        parsed.username is not None
+        or parsed.password is not None
         or parsed.path not in {"", "/"}
-        or parsed.params
         or parsed.query
         or parsed.fragment
     ):
         raise ValueError("PUBLIC_SITE_URL must not contain credentials or suffixes")
-    return value.rstrip("/")
+    try:
+        port = parsed.port
+    except ValueError as error:
+        raise ValueError("PUBLIC_SITE_URL must have a valid port") from error
+    if parsed.netloc.endswith(":") or (port is not None and port < 1):
+        raise ValueError("PUBLIC_SITE_URL must have a valid port")
+    if not _is_valid_hostname(parsed.hostname):
+        raise ValueError("PUBLIC_SITE_URL must have a valid hostname")
+    return _canonical_origin(parsed)
 
 
 def create_app(config=None, *, load_environment=True, check_database=True):
