@@ -176,6 +176,60 @@ def test_a_broken_connection_never_leaks_the_exception(
     assert getattr(access_token, revoke_name)(subject) == 0
 
 
+def test_both_kinds_run_through_one_save_implementation(monkeypatch):
+    """Concatenating the two old modules into one file is not a collapse."""
+    calls = []
+    monkeypatch.setattr(
+        access_token,
+        "_save_token",
+        lambda table, column, token_hash, subject, ttl_seconds: (
+            calls.append((table, column)) or True
+        ),
+    )
+
+    access_token.save_dashboard_access_token("a" * 64, "building-1", 900)
+    access_token.save_municipality_access_token("a" * 64, 7, 900)
+
+    assert calls == [
+        ("dashboard_access_tokens", "building_id"),
+        ("municipality_access_tokens", "municipality_id"),
+    ]
+
+
+def test_both_kinds_run_through_one_consume_implementation(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        access_token,
+        "_consume_token",
+        lambda table, column, token_hash: calls.append((table, column)),
+    )
+
+    access_token.consume_dashboard_access_token("a" * 64)
+    access_token.consume_municipality_access_token("a" * 64)
+
+    assert calls == [
+        ("dashboard_access_tokens", "building_id"),
+        ("municipality_access_tokens", "municipality_id"),
+    ]
+
+
+def test_both_kinds_run_through_one_revoke_implementation(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        access_token,
+        "_revoke_tokens",
+        lambda table, column, subject: calls.append((table, column)) or 0,
+    )
+
+    access_token.revoke_dashboard_access_tokens("building-1")
+    access_token.revoke_municipality_access_tokens(7)
+
+    assert calls == [
+        ("dashboard_access_tokens", "building_id"),
+        ("municipality_access_tokens", "municipality_id"),
+    ]
+
+
 @pytest.mark.parametrize(
     "module", ("store.dashboard_access", "store.municipality_access")
 )

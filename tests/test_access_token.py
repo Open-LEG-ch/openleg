@@ -171,6 +171,23 @@ def test_access_url_encodes_the_token_and_names_no_subject(kind, expected):
     assert "municipality" not in url
 
 
+def test_a_padded_dashboard_subject_is_stored_stripped():
+    """The old module stripped before persisting; the collapse must keep that."""
+    repository = _Repository()
+
+    issued = access_token.issue(
+        access_token.DASHBOARD,
+        repository,
+        "  building-1  ",
+        token_factory=lambda _size: RAW_TOKEN,
+    )
+
+    assert issued == RAW_TOKEN
+    assert repository.save_calls == [
+        (hashlib.sha256(RAW_TOKEN.encode()).hexdigest(), "building-1", 900)
+    ]
+
+
 def test_both_kinds_hash_through_the_same_implementation(monkeypatch):
     """Divergence is the failure mode this module exists to prevent."""
     calls = []
