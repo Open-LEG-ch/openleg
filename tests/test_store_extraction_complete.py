@@ -124,17 +124,21 @@ def test_count_consented_buildings_reads_through_the_seam(monkeypatch):
     assert consent.count_consented_buildings() == 3
 
 
-def test_list_leg_documents_reads_through_the_seam(monkeypatch):
-    """This one builds its dicts from cur.description, so the double must too."""
-    cursor = _FakeCursor(
-        rows=[(1, "gemeinschaftsvereinbarung")],
-        description=[("id",), ("doc_type",)],
-    )
-    monkeypatch.setattr(database, "get_connection", _conn_ctx(cursor))
+def test_list_leg_documents_returns_the_rows_as_dicts(monkeypatch):
+    """The pool uses RealDictCursor, so a row is already a mapping.
 
-    assert document.list_leg_documents("community-a") == [
-        {"id": 1, "doc_type": "gemeinschaftsvereinbarung"}
+    This one zipped cur.description against the row instead, and iterating a
+    dict yields its keys, so every document came back as {column: column}. The
+    same RealDictCursor mistake was fixed in store_leg_document before; this
+    function was missed.
+    """
+    rows = [
+        {"id": 1, "doc_type": "gemeinschaftsvereinbarung", "filename": "gv.pdf"},
+        {"id": 2, "doc_type": "teilnehmervertrag", "filename": "tv.pdf"},
     ]
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(_FakeCursor(rows=rows)))
+
+    assert document.list_leg_documents("community-a") == rows
 
 
 def test_get_lea_reports_reads_through_the_seam(monkeypatch):

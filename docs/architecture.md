@@ -81,8 +81,8 @@ Application and API routes:
 
 - `app.py`: Flask product app, security policy, admin and cron routes.
 - `tenant.py`: hostname to territory resolution, tenant config, template context.
-- `database.py`: connection pool, schema creation, unextracted query helpers,
-  and the store re-exports.
+- `database.py`: connection pool, the `get_connection` seam, schema creation,
+  and the store re-exports. It holds no queries of its own.
 - `store/`: per-domain repositories (see the data layer below).
 - `api_public.py`: unauthenticated public JSON API.
 - `municipality.py`: municipality onboarding, access, and dashboard routes.

@@ -84,8 +84,7 @@ def list_leg_documents(community_id: str) -> list[dict]:
                 """,
                     (community_id,),
                 )
-                cols = [d[0] for d in cur.description]
-                return [dict(zip(cols, row)) for row in cur.fetchall()]
+                return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error listing leg documents: {e}")
         return []
