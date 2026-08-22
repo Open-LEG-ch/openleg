@@ -54,6 +54,7 @@ without code changes.
 | `utility_bp` | `utility_portal.py` | `/utility` |
 | `health_bp` | `health.py` | none |
 | `admin_bp` | `admin.py` | none |
+| `cron_bp` | `cron.py` | none |
 
 ## Route map
 
@@ -79,7 +80,7 @@ Application and API routes:
 
 ## Code map
 
-- `app.py`: Flask product app, security policy, admin and cron routes.
+- `app.py`: Flask product app, security policy, and the application factory.
 - `tenant.py`: hostname to territory resolution, tenant config, template context.
 - `database.py`: connection pool, schema creation, unextracted query helpers,
   and the store re-exports.
@@ -90,6 +91,7 @@ Application and API routes:
 - `utility_portal.py`: EVU and VNB portal.
 - `access_token.py`: magic-link access policy. One module, two kinds: the
   dashboard building and the municipality. `store/access_token.py` holds the SQL.
+- `cron.py`: the scheduled-job surface behind `CRON_SECRET`, fail-closed.
 - `health.py`: health and liveness endpoints.
 - `public_data.py`: open data fetchers for ElCom, Energie Reporter, Sonnendach.
 - `neighbor_view.py`: neighbour read policy: anonymity radius, jittered map locations, provisional match summary.
