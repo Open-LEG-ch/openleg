@@ -48,13 +48,19 @@ def test_the_mutant_cache_is_not_committed():
     ignored = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
 
     assert "mutants/" in ignored
+    assert ".mutmut-cache" in ignored
 
 
 def test_the_gate_script_offers_the_mutation_pass():
+    """The branch has to run mutmut, not merely mention it."""
     script = (PROJECT_ROOT / "scripts" / "tdd_cycle.sh").read_text(encoding="utf-8")
 
-    assert "mutants" in script
-    assert "source_paths" in script or "pyproject" in script, (
+    start = script.index("  mutants)")
+    branch = script[start : script.index("    ;;", start)]
+
+    assert "-m mutmut run" in branch
+    assert "-m mutmut results" in branch
+    assert "pyproject" in branch, (
         "the command must run the configured scope, not an ad-hoc path list"
     )
 
