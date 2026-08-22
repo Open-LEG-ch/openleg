@@ -88,6 +88,8 @@ Application and API routes:
 - `municipality.py`: municipality onboarding, access, and dashboard routes.
 - `leg_registry.py`: registry federation API and verification operations.
 - `utility_portal.py`: EVU and VNB portal.
+- `access_token.py`: magic-link access policy. One module, two kinds: the
+  dashboard building and the municipality. `store/access_token.py` holds the SQL.
 - `health.py`: health and liveness endpoints.
 - `public_data.py`: open data fetchers for ElCom, Energie Reporter, Sonnendach.
 - `neighbor_view.py`: neighbour read policy: anonymity radius, jittered map locations, provisional match summary.
@@ -111,7 +113,7 @@ domains move into `store/`, each resolving the seam through a lazy
 
 Shipped stores: `store/ranking`, `store/profile`, `store/billing`,
 `store/email_queue`, `store/utility`, `store/metering`, `store/meter`,
-`store/registry`, `store/tenant`, `store/token`.
+`store/registry`, `store/tenant`, `store/token`, `store/access_token`.
 
 New storage code for a cohesive domain goes into `store/`, not into
 `database.py`.

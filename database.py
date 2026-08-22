@@ -966,6 +966,14 @@ def is_db_available() -> bool:
 # that monkeypatch `database.get_connection` keep working unchanged. The import
 # is at module end to avoid a circular import (store.ranking imports database).
 # ---------------------------------------------------------------------------
+from store.access_token import (  # noqa: F401
+    consume_dashboard_access_token,
+    consume_municipality_access_token,
+    revoke_dashboard_access_tokens,
+    revoke_municipality_access_tokens,
+    save_dashboard_access_token,
+    save_municipality_access_token,
+)
 from store.api_client import (  # noqa: F401
     get_api_client_by_key,
     get_api_usage_count,
@@ -986,11 +994,6 @@ from store.correspondence import (  # noqa: F401
     get_correspondence_attachment,
     list_correspondence,
     log_correspondence,
-)
-from store.dashboard_access import (  # noqa: F401
-    consume_dashboard_access_token,
-    revoke_dashboard_access_tokens,
-    save_dashboard_access_token,
 )
 from store.dashboard_profile import update_dashboard_profile  # noqa: F401
 from store.email_queue import (  # noqa: F401
@@ -1023,11 +1026,6 @@ from store.metering import (  # noqa: F401
 from store.municipality import (  # noqa: F401
     get_municipality,
     get_municipality_by_admin_email,
-)
-from store.municipality_access import (  # noqa: F401
-    consume_municipality_access_token,
-    revoke_municipality_access_tokens,
-    save_municipality_access_token,
 )
 from store.profile import (  # noqa: F401
     get_all_elcom_tariffs,

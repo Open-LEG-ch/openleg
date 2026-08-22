@@ -10,7 +10,7 @@ import time
 
 from flask import render_template
 
-import dashboard_access
+import access_token
 import database as db
 from email_utils import send_email
 
@@ -115,7 +115,8 @@ def process_email_queue(app=None):
         ttl_seconds = 86_400
         if app:
             ttl_seconds = app.config.get("DASHBOARD_EMAIL_TOKEN_TTL_SECONDS", 86_400)
-        dashboard_token = dashboard_access.issue_access_token(
+        dashboard_token = access_token.issue(
+            access_token.DASHBOARD,
             db,
             item["building_id"],
             ttl_seconds=ttl_seconds,
@@ -124,7 +125,9 @@ def process_email_queue(app=None):
             db.mark_email_failed(email_id, "Dashboard access token could not be issued")
             failed += 1
             continue
-        dashboard_url = dashboard_access.access_url(APP_BASE_URL + "/", dashboard_token)
+        dashboard_url = access_token.access_url(
+            access_token.DASHBOARD, APP_BASE_URL, dashboard_token
+        )
 
         # Render template with tenant context
         try:

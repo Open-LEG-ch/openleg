@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+import access_token
 from tests.test_app_organic_routes import _disable_rate_limit_hooks
 
 
@@ -146,9 +147,9 @@ def test_access_request_has_same_public_response_for_known_and_unknown_email(
     send = MagicMock(return_value=True)
     monkeypatch.setattr(app_module, "send_email", send)
     monkeypatch.setattr(
-        app_module.dashboard_access_module,
-        "issue_access_token",
-        lambda _db, _building_id, **_kwargs: "a" * 43,
+        access_token,
+        "issue",
+        lambda _kind, _db, _building_id, **_kwargs: "a" * 43,
     )
 
     monkeypatch.setattr(app_module.db, "get_building_by_email", lambda _email: [])
@@ -184,9 +185,9 @@ def test_access_request_stays_generic_when_mail_delivery_raises(
         lambda _email: [{"building_id": "building-known"}],
     )
     monkeypatch.setattr(
-        app_module.dashboard_access_module,
-        "issue_access_token",
-        lambda _db, _building_id, **_kwargs: "a" * 43,
+        access_token,
+        "issue",
+        lambda _kind, _db, _building_id, **_kwargs: "a" * 43,
     )
     monkeypatch.setattr(
         app_module,

@@ -23,8 +23,8 @@ from flask import (
     session,
 )
 
+import access_token
 import dashboard as dashboard_module
-import dashboard_access as dashboard_access_module
 import database as db
 import security_utils
 
@@ -179,7 +179,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @bp.route("/dashboard/access/<token>")
     @_rate_limit(limiter, "10 per minute")
     def dashboard_access_exchange(token):
-        building_id = dashboard_access_module.consume_access_token(db, token)
+        building_id = access_token.consume(access_token.DASHBOARD, db, token)
         if not building_id:
             return _exchange_response("/dashboard?access=invalid")
         _set_dashboard_session(building_id)
@@ -211,15 +211,16 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             building_id = (profile.get("building_id") or "").strip()
             if not building_id:
                 continue
-            token = dashboard_access_module.issue_access_token(
+            token = access_token.issue(
+                access_token.DASHBOARD,
                 db,
                 building_id,
                 ttl_seconds=current_app.config["DASHBOARD_ACCESS_TOKEN_TTL_SECONDS"],
             )
             if not token:
                 continue
-            url = dashboard_access_module.access_url(
-                current_app.config["APP_BASE_URL"].rstrip("/") + "/", token
+            url = access_token.access_url(
+                access_token.DASHBOARD, current_app.config["APP_BASE_URL"], token
             )
             try:
                 send_email(
