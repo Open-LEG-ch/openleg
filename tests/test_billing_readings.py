@@ -306,7 +306,31 @@ def test_all_problems_are_reported_at_once(monkeypatch, rows):
     )
 
 
-def test_empty_period_is_rejected(monkeypatch, rows):
+@pytest.mark.parametrize(
+    "period_end",
+    (
+        pytest.param(datetime(2026, 2, 1, tzinfo=ZURICH), id="equal-to-the-start"),
+        pytest.param(datetime(2026, 1, 31, tzinfo=ZURICH), id="before-the-start"),
+    ),
+)
+def test_a_period_that_does_not_move_forward_is_rejected(monkeypatch, rows, period_end):
+    """The period_end <= period_start guard, which fires before any lookup.
+
+    It had no test: the one named test_empty_period_is_rejected passed a valid,
+    ordered range with no matching readings and reached the no_readings branch
+    instead. That test is renamed below for what it actually covers.
+    """
+    _install(monkeypatch, _points(), rows)
+
+    with pytest.raises(billing_readings.PeriodDataError) as excinfo:
+        billing_readings.load_period_frames(
+            COMMUNITY, datetime(2026, 2, 1, tzinfo=ZURICH), period_end
+        )
+
+    assert "empty_period" in _kinds(excinfo)
+
+
+def test_a_period_with_no_readings_is_rejected(monkeypatch, rows):
     _install(monkeypatch, _points(), rows)
 
     with pytest.raises(billing_readings.PeriodDataError) as excinfo:

@@ -28,13 +28,23 @@ class TestSavingsEstimate:
             < result["assumptions"]["grid_buy_price_rp"]
         )
 
-    def test_larger_community(self):
+    def test_savings_grow_with_the_community_until_the_surplus_is_absorbed(self):
+        """The old assertion compared sizes 3 and 10, which both return 1140.0.
+
+        `leg_sales` is capped at `consumption_kwh * (community_size - 1)`, so a
+        10 kWp producer next to 4500 kWh households runs out of surplus to sell
+        at three members. Below that each neighbour buys more; above it the
+        number of neighbours stops mattering.
+        """
         from formation_wizard import calculate_savings_estimate
 
-        small = calculate_savings_estimate(4500, 10, 3)
-        large = calculate_savings_estimate(4500, 10, 10)
-        # Larger community should sell more locally
-        assert large["annual_savings_chf"] >= small["annual_savings_chf"]
+        savings = [
+            calculate_savings_estimate(4500, 10, size)["annual_savings_chf"]
+            for size in (1, 2, 3, 5, 10, 50)
+        ]
+
+        assert savings[0] < savings[1] < savings[2]
+        assert savings[2] == savings[3] == savings[4] == savings[5]
 
 
 class TestContractTemplates:
