@@ -34,6 +34,30 @@ OUTER_WITH_PREDICATE_IN_WHERE = """
 NO_CONSENT_JOIN = """
     SELECT b.building_id FROM buildings b WHERE b.verified = TRUE
 """
+PREDICATE_INSIDE_AN_OR = """
+    SELECT b.building_id FROM buildings b
+    INNER JOIN consents c ON b.building_id = c.building_id
+    WHERE b.verified = TRUE OR c.share_with_neighbors = TRUE
+"""
+PREDICATE_WIDENED_BY_IS_NULL = """
+    SELECT b.building_id FROM buildings b
+    INNER JOIN consents c ON b.building_id = c.building_id
+    AND (c.share_with_neighbors = TRUE OR c.share_with_neighbors IS NULL)
+    WHERE b.verified = TRUE
+"""
+PREDICATE_IN_AN_INNER_ON_CLAUSE = """
+    SELECT b.building_id FROM buildings b
+    INNER JOIN consents c ON b.building_id = c.building_id
+    AND c.share_with_neighbors = TRUE
+    WHERE b.verified = TRUE
+"""
+PREDICATE_BEFORE_A_TRAILING_CLAUSE = """
+    SELECT b.building_id, COUNT(r.id) FROM buildings b
+    JOIN referrals r ON b.building_id = r.referrer_id
+    INNER JOIN consents c ON b.building_id = c.building_id
+    WHERE c.share_with_neighbors = TRUE
+    GROUP BY b.building_id ORDER BY 2 DESC LIMIT %s
+"""
 
 
 @pytest.mark.parametrize(
@@ -49,6 +73,16 @@ NO_CONSENT_JOIN = """
             OUTER_WITH_PREDICATE_IN_WHERE, True, id="outer-join-predicate-in-where"
         ),
         pytest.param(NO_CONSENT_JOIN, False, id="no-consent-join"),
+        pytest.param(PREDICATE_INSIDE_AN_OR, False, id="predicate-inside-an-or"),
+        pytest.param(
+            PREDICATE_WIDENED_BY_IS_NULL, False, id="predicate-widened-by-is-null"
+        ),
+        pytest.param(
+            PREDICATE_IN_AN_INNER_ON_CLAUSE, True, id="inner-join-predicate-in-on"
+        ),
+        pytest.param(
+            PREDICATE_BEFORE_A_TRAILING_CLAUSE, True, id="predicate-before-group-by"
+        ),
     ),
 )
 def test_the_double_matches_what_postgres_would_do(query, filters):
