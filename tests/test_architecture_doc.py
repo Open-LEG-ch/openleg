@@ -119,7 +119,11 @@ def test_extraction_order_does_not_list_already_extracted_stores() -> None:
         text,
         re.DOTALL,
     )
-    assert extraction_section is not None, "Could not find extraction order section"
+    if extraction_section is None:
+        # The list is empty because the extraction finished (#334). The doc has
+        # to say so, otherwise a reader cannot tell "done" from "undocumented".
+        assert "extraction is finished" in text.lower()
+        return
 
     shipped = []
     for match in re.finditer(
