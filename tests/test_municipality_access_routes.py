@@ -104,11 +104,13 @@ def test_access_request_does_not_disclose_registered_email(app_module, monkeypat
         raising=False,
     )
     monkeypatch.setattr(access_token, "issue", issue_token)
-    monkeypatch.setattr(
-        access_token,
-        "access_url",
-        lambda _kind, base_url, token: f"{base_url}/gemeinde/access/{token}",
-    )
+    built_urls = []
+
+    def build_url(kind, base_url, token):
+        built_urls.append(kind)
+        return f"{base_url}/gemeinde/access/{token}"
+
+    monkeypatch.setattr(access_token, "access_url", build_url)
     monkeypatch.setattr(
         municipality,
         "email_utils",
@@ -132,14 +134,22 @@ def test_access_request_does_not_disclose_registered_email(app_module, monkeypat
     )
     send_email.assert_called_once()
     assert "/gemeinde/access/" in send_email.call_args.args[2]
+    assert built_urls == [access_token.MUNICIPALITY]
 
 
 def test_magic_link_is_single_use_and_creates_clean_session(app_module, monkeypatch):
+    import municipality
 
     consume = MagicMock(side_effect=[7, None])
-    monkeypatch.setattr(
-        access_token, "consume", lambda _kind, _repository, token: consume(token)
-    )
+    consumed_kinds = []
+
+    def consume_token(kind, repository, token):
+        assert kind is access_token.MUNICIPALITY
+        assert repository is municipality.db
+        consumed_kinds.append(kind)
+        return consume(token)
+
+    monkeypatch.setattr(access_token, "consume", consume_token)
     token = "a" * 43
     client = app_module.web.test_client()
 
@@ -157,6 +167,7 @@ def test_magic_link_is_single_use_and_creates_clean_session(app_module, monkeypa
     replay = app_module.web.test_client().get(f"/gemeinde/access/{token}")
     assert replay.status_code == 302
     assert replay.headers["Location"].endswith("/gemeinde/dashboard?access=invalid")
+    assert consumed_kinds == [access_token.MUNICIPALITY, access_token.MUNICIPALITY]
 
 
 def test_logout_requires_csrf_revokes_links_and_clears_session(app_module, monkeypatch):
