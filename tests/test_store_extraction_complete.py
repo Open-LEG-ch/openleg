@@ -43,10 +43,11 @@ DOMAINS = {
 
 
 class _FakeCursor:
-    def __init__(self, rows=None, one=None, rowcount=1):
+    def __init__(self, rows=None, one=None, rowcount=1, description=None):
         self.rows = rows or []
         self.one = one
         self.rowcount = rowcount
+        self.description = description
         self.executed = []
 
     def execute(self, query, params=None):
@@ -124,10 +125,16 @@ def test_count_consented_buildings_reads_through_the_seam(monkeypatch):
 
 
 def test_list_leg_documents_reads_through_the_seam(monkeypatch):
-    rows = [{"id": 1, "doc_type": "gemeinschaftsvereinbarung"}]
-    monkeypatch.setattr(database, "get_connection", _conn_ctx(_FakeCursor(rows=rows)))
+    """This one builds its dicts from cur.description, so the double must too."""
+    cursor = _FakeCursor(
+        rows=[(1, "gemeinschaftsvereinbarung")],
+        description=[("id",), ("doc_type",)],
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cursor))
 
-    assert document.list_leg_documents("community-a") == rows
+    assert document.list_leg_documents("community-a") == [
+        {"id": 1, "doc_type": "gemeinschaftsvereinbarung"}
+    ]
 
 
 def test_get_lea_reports_reads_through_the_seam(monkeypatch):
