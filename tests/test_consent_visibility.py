@@ -51,6 +51,26 @@ PREDICATE_IN_AN_INNER_ON_CLAUSE = """
     AND c.share_with_neighbors = TRUE
     WHERE b.verified = TRUE
 """
+CROSS_JOIN_ON_TRUE = """
+    SELECT b.building_id FROM buildings b
+    INNER JOIN consents c ON TRUE
+    WHERE c.share_with_neighbors = TRUE
+"""
+PREDICATE_IN_A_LINE_COMMENT = """
+    SELECT b.building_id FROM buildings b
+    INNER JOIN consents c ON b.building_id = c.building_id
+    WHERE b.verified = TRUE -- AND c.share_with_neighbors = TRUE
+"""
+PREDICATE_IN_A_BLOCK_COMMENT = """
+    SELECT b.building_id FROM buildings b
+    INNER JOIN consents c ON b.building_id = c.building_id
+    WHERE b.verified = TRUE /* AND c.share_with_neighbors = TRUE */
+"""
+PREDICATE_WIDENED_BY_OR_TRUE = """
+    SELECT b.building_id FROM buildings b
+    INNER JOIN consents c ON b.building_id = c.building_id
+    WHERE c.share_with_neighbors = TRUE OR TRUE
+"""
 PREDICATE_BEFORE_A_TRAILING_CLAUSE = """
     SELECT b.building_id, COUNT(r.id) FROM buildings b
     JOIN referrals r ON b.building_id = r.referrer_id
@@ -82,6 +102,16 @@ PREDICATE_BEFORE_A_TRAILING_CLAUSE = """
         ),
         pytest.param(
             PREDICATE_BEFORE_A_TRAILING_CLAUSE, True, id="predicate-before-group-by"
+        ),
+        pytest.param(CROSS_JOIN_ON_TRUE, False, id="cross-join-on-true"),
+        pytest.param(
+            PREDICATE_IN_A_LINE_COMMENT, False, id="predicate-in-a-line-comment"
+        ),
+        pytest.param(
+            PREDICATE_IN_A_BLOCK_COMMENT, False, id="predicate-in-a-block-comment"
+        ),
+        pytest.param(
+            PREDICATE_WIDENED_BY_OR_TRUE, False, id="predicate-widened-by-or-true"
         ),
     ),
 )
