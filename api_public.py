@@ -16,38 +16,11 @@ import municipality_profile
 import public_data
 import ranking as ranking_module
 import registry_intake
+from cantons import SWISS_CANTONS
 
 logger = logging.getLogger(__name__)
 
 public_api_bp = Blueprint("public_api", __name__, url_prefix="/api/v1")
-SWISS_CANTONS = {
-    "AG",
-    "AI",
-    "AR",
-    "BE",
-    "BL",
-    "BS",
-    "FR",
-    "GE",
-    "GL",
-    "GR",
-    "JU",
-    "LU",
-    "NE",
-    "NW",
-    "OW",
-    "SG",
-    "SH",
-    "SO",
-    "SZ",
-    "TG",
-    "TI",
-    "UR",
-    "VD",
-    "VS",
-    "ZG",
-    "ZH",
-}
 
 
 # === CORS ===
