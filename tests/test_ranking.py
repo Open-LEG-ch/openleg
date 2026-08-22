@@ -368,68 +368,6 @@ class TestRankingMovers:
             assert result == [rows[1]]
 
 
-class TestRankingBadgeSvg:
-    def test_badge_svg_delegates_to_pv_badge(self):
-        profiles = [{"bfs_number": 1, "name": "A", "pv_score_pct": 120, "kanton": "ZH"}]
-        r = ranking.Ranking(profiles)
-        with patch("ranking.pv_badge.badge_svg") as mock_badge:
-            mock_badge.return_value = "<svg>badge</svg>"
-            result = r.badge_svg(1)
-
-            mock_badge.assert_called_once_with("A", 100.0, 1)
-            assert result == "<svg>badge</svg>"
-
-    def test_badge_svg_not_found_returns_empty(self):
-        r = ranking.Ranking([])
-        assert r.badge_svg(1) == ""
-
-    def test_badge_svg_uses_fallback_profile(self):
-        profiles = [{"bfs_number": 2, "name": "B", "pv_score_pct": 80, "kanton": "ZH"}]
-        fallback = {"bfs_number": 1, "name": "A", "kanton": "AG"}
-        r = ranking.Ranking(profiles)
-        with patch("ranking.pv_badge.badge_svg") as mock_badge:
-            mock_badge.return_value = "<svg>badge</svg>"
-            result = r.badge_svg(1, profile=fallback)
-
-            mock_badge.assert_called_once_with("A", None, None)
-            assert result == "<svg>badge</svg>"
-
-
-class TestRankingOgCardSvg:
-    def test_og_card_svg_delegates_to_pv_badge(self):
-        profiles = [
-            {
-                "bfs_number": 1,
-                "name": "A",
-                "pv_score_pct": 120,
-                "kanton": "ZH",
-                "pv_untapped_kw": 1000,
-            }
-        ]
-        r = ranking.Ranking(profiles)
-        with patch("ranking.pv_badge.og_card_svg") as mock_og:
-            mock_og.return_value = "<svg>og</svg>"
-            result = r.og_card_svg(1)
-
-            mock_og.assert_called_once_with("A", "ZH", 100.0, 1, 1000)
-            assert result == "<svg>og</svg>"
-
-    def test_og_card_svg_not_found_returns_empty(self):
-        r = ranking.Ranking([])
-        assert r.og_card_svg(1) == ""
-
-    def test_og_card_svg_uses_fallback_profile(self):
-        profiles = [{"bfs_number": 2, "name": "B", "pv_score_pct": 80, "kanton": "ZH"}]
-        fallback = {"bfs_number": 1, "name": "A", "kanton": "AG"}
-        r = ranking.Ranking(profiles)
-        with patch("ranking.pv_badge.og_card_svg") as mock_og:
-            mock_og.return_value = "<svg>og</svg>"
-            result = r.og_card_svg(1, profile=fallback)
-
-            mock_og.assert_called_once_with("A", "AG", None, None, None)
-            assert result == "<svg>og</svg>"
-
-
 class TestRankingSeamBoundary:
     """Issue #210: app.py und rangliste.py duerfen pv_ranking nicht mehr direkt nutzen."""
 

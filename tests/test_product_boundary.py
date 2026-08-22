@@ -105,6 +105,7 @@ PUBLIC_SITE_FILES = {
     "static/images/og-image.png",
     "static/js/install_console.js",
     "static/js/landing_segments.js",
+    "pv_badge.py",
     "rangliste.py",
     "self_host.py",
 }
@@ -136,6 +137,18 @@ def test_product_templates_use_dashboard_shell_without_public_navigation():
     shell = (ROOT / "templates/product_base.html").read_text(encoding="utf-8")
     assert "partials/site_nav.html" not in shell
     assert "partials/site_footer.html" not in shell
+
+
+def test_ranking_facade_renders_no_badges_here():
+    """The badge routes belong to the public site; the facade must not keep a copy.
+
+    The unreachable copy also diverged: it interpolated an unescaped rank into
+    the SVG and truncated after escaping, both fixed only in the other repo.
+    """
+    import ranking
+
+    assert not hasattr(ranking.Ranking, "badge_svg")
+    assert not hasattr(ranking.Ranking, "og_card_svg")
 
 
 def test_public_site_files_are_absent_from_product_repository():
