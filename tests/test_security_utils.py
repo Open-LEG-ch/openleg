@@ -12,6 +12,8 @@ import pytest
 
 import security_utils
 
+MAX_REQUEST_BYTES = 1024 * 1024
+
 # ---------------------------------------------------------------------------
 # sanitize_string
 # ---------------------------------------------------------------------------
@@ -201,13 +203,13 @@ def test_check_request_size_allows_an_unknown_length():
 
 
 def test_check_request_size_allows_the_limit_itself():
-    request = SimpleNamespace(content_length=1024 * 1024)
+    request = SimpleNamespace(content_length=MAX_REQUEST_BYTES)
 
     assert security_utils.check_request_size(request) == (True, None)
 
 
 def test_check_request_size_rejects_one_byte_over():
-    request = SimpleNamespace(content_length=1024 * 1024 + 1)
+    request = SimpleNamespace(content_length=MAX_REQUEST_BYTES + 1)
     is_valid, error = security_utils.check_request_size(request)
 
     assert is_valid is False
