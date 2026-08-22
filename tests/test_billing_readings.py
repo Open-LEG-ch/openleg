@@ -314,10 +314,11 @@ def test_all_problems_are_reported_at_once(monkeypatch, rows):
     ),
 )
 def test_a_period_that_does_not_move_forward_is_rejected(monkeypatch, rows, period_end):
-    """The guard at billing_readings.py, not the no_readings branch beside it.
+    """The period_end <= period_start guard, which fires before any lookup.
 
-    The test below is named for this guard but passes a valid, ordered range
-    with no matching readings, so it exercises a different branch entirely.
+    It had no test: the one named test_empty_period_is_rejected passed a valid,
+    ordered range with no matching readings and reached the no_readings branch
+    instead. That test is renamed below for what it actually covers.
     """
     _install(monkeypatch, _points(), rows)
 
