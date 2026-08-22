@@ -21,7 +21,6 @@ CRON_RULES = {
     "/api/cron/backfill-elcom",
     "/api/cron/process-billing",
     "/api/cron/verify-registry-entries",
-    "/api/email/stats",
 }
 
 SKIP_DIRS = {
@@ -73,6 +72,33 @@ def test_every_cron_route_is_served_by_the_cron_blueprint(application):
     }
 
     assert owners == dict.fromkeys(CRON_RULES, "cron")
+
+
+def test_every_route_on_the_blueprint_requires_the_cron_secret():
+    """The blueprint's whole point. An admin-guarded route does not belong here."""
+    source = (ROOT / "cron.py").read_text(encoding="utf-8")
+    tree = ast.parse(source, filename="cron.py")
+
+    guarded = {}
+    for node in tree.body:
+        if not isinstance(node, ast.FunctionDef) or node.name.startswith("_"):
+            continue
+        calls = {
+            child.func.id
+            for child in ast.walk(node)
+            if isinstance(child, ast.Call) and isinstance(child.func, ast.Name)
+        }
+        guarded[node.name] = "_require_cron_secret" in calls
+
+    assert guarded and all(guarded.values()), guarded
+
+
+def test_the_email_queue_read_sits_with_the_other_operator_routes():
+    """It answers to an admin token, not to the cron secret."""
+    admin_source = (ROOT / "admin.py").read_text(encoding="utf-8")
+
+    assert "/api/email/stats" in admin_source
+    assert "/api/email/stats" not in (ROOT / "cron.py").read_text(encoding="utf-8")
 
 
 def test_the_cron_secret_guard_has_one_home():

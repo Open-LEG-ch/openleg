@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The scheduled-job surface.
 
-No product request ever reaches these routes. They run behind ``CRON_SECRET``
-and fail closed: an unset secret denies every call, so a misconfigured
-deployment cannot silently expose them. The operator surface moved out of
-``app.py`` the same way in #271.
+No product request ever reaches these routes. Every one of them runs behind
+``CRON_SECRET`` and fails closed: an unset secret denies every call, so a
+misconfigured deployment cannot silently expose them. A test asserts that
+property for the whole blueprint, so an admin-guarded or unguarded route cannot
+be added here by accident. The operator surface moved out of ``app.py`` the same
+way in #271.
 """
 
 import logging
@@ -15,7 +17,6 @@ import billing_runner
 import database as db
 import email_automation
 import leg_registry
-from admin import require_admin
 from security_utils import log_security_event
 
 logger = logging.getLogger(__name__)
@@ -76,12 +77,6 @@ def api_cron_backfill_elcom():
             logger.exception("ElCom backfill failed for BFS %s", bfs)
             result["errors"].append({"bfs": bfs, "error": "fetch_failed"})
     return jsonify(result)
-
-
-@cron_bp.route("/api/email/stats")
-def api_email_stats():
-    require_admin()
-    return jsonify(db.get_email_stats())
 
 
 @cron_bp.route("/api/cron/process-billing", methods=["POST"])
