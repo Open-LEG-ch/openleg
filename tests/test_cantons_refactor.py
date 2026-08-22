@@ -45,6 +45,17 @@ def test_api_public_reads_the_shared_set_rather_than_a_copy():
     assert api_public.SWISS_CANTONS is cantons.SWISS_CANTONS
 
 
+def _bound_names(target):
+    """Every name a target binds, including inside tuple and list unpacking."""
+    if isinstance(target, ast.Name):
+        yield target.id
+    elif isinstance(target, ast.Starred):
+        yield from _bound_names(target.value)
+    elif isinstance(target, (ast.Tuple, ast.List)):
+        for element in target.elts:
+            yield from _bound_names(element)
+
+
 def test_no_other_module_defines_a_canton_constant():
     """Pasting the literal back into a consumer must turn this red."""
     offenders = []
@@ -56,13 +67,15 @@ def test_no_other_module_defines_a_canton_constant():
             targets = []
             if isinstance(node, ast.Assign):
                 targets = node.targets
-            elif isinstance(node, ast.AnnAssign):
+            elif isinstance(
+                node,
+                (ast.AnnAssign, ast.AugAssign, ast.For, ast.AsyncFor, ast.NamedExpr),
+            ):
                 targets = [node.target]
             for target in targets:
-                if isinstance(target, ast.Name) and target.id.startswith(
-                    "SWISS_CANTON"
-                ):
-                    offenders.append(f"{path.relative_to(PROJECT_ROOT)}:{target.id}")
+                for name in _bound_names(target):
+                    if name.startswith("SWISS_CANTON"):
+                        offenders.append(f"{path.relative_to(PROJECT_ROOT)}:{name}")
 
     assert offenders == []
 
