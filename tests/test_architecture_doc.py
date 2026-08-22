@@ -20,6 +20,7 @@ BLUEPRINTS = {
     "health_bp": "health.py",
     "utility_bp": "utility_portal.py",
     "admin_bp": "admin.py",
+    "cron_bp": "cron.py",
 }
 
 
