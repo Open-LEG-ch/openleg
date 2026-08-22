@@ -90,6 +90,7 @@ Application and API routes:
 - `utility_portal.py`: EVU and VNB portal.
 - `health.py`: health and liveness endpoints.
 - `public_data.py`: open data fetchers for ElCom, Energie Reporter, Sonnendach.
+- `neighbor_view.py`: neighbour read policy: anonymity radius, jittered map locations, provisional match summary.
 - `billing_engine.py`: energy allocation and network discount computation.
 - `billing_readings.py`: validated billing frames and VNB reconciliation from
   imported quarter-hour readings.

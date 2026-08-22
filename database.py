@@ -259,6 +259,38 @@ def get_all_building_profiles(city_id: str | None = None) -> list[dict]:
             if city_id:
                 cur.execute(
                     """
+                        SELECT b.building_id, b.address, b.lat, b.lon, b.plz, b.building_type,
+                               b.annual_consumption_kwh, b.potential_pv_kwp, b.user_type
+                        FROM buildings b
+                        INNER JOIN consents c ON b.building_id = c.building_id
+                        AND c.share_with_neighbors = TRUE
+                        WHERE b.verified = TRUE
+                          AND b.city_id = %s
+                    """,
+                    (city_id,),
+                )
+            else:
+                cur.execute("""
+                        SELECT b.building_id, b.address, b.lat, b.lon, b.plz, b.building_type,
+                               b.annual_consumption_kwh, b.potential_pv_kwp, b.user_type
+                        FROM buildings b
+                        INNER JOIN consents c ON b.building_id = c.building_id
+                        AND c.share_with_neighbors = TRUE
+                        WHERE b.verified = TRUE
+                    """)
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting building profiles: {e}")
+        return []
+
+
+def get_operator_building_profiles(city_id: str | None = None) -> list[dict]:
+    """Operator-only read of all building profiles. Must never feed a resident-visible response."""
+    try:
+        with get_connection() as conn, conn.cursor() as cur:
+            if city_id:
+                cur.execute(
+                    """
                         SELECT building_id, address, lat, lon, plz, building_type,
                                annual_consumption_kwh, potential_pv_kwp, user_type
                         FROM buildings
@@ -275,7 +307,7 @@ def get_all_building_profiles(city_id: str | None = None) -> list[dict]:
                     """)
             return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting building profiles: {e}")
+        logger.error(f"[DB] Error getting operator building profiles: {e}")
         return []
 
 

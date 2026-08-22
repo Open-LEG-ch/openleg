@@ -24,6 +24,7 @@ concept never travels under two labels.
 | Territory | A tenant slug resolved from the hostname (`dietikon.openleg.ch` to `dietikon`). Also called `city_id` in older call sites. |
 | Gemeinde | Municipality. Its public page is the Gemeindeprofil. |
 | LEA | The AI agent persona served through the OpenClaw gateway. |
+| Neighbour view | The resident-visible map and match summary: jittered coordinates, no identities, consent-gated. |
 
 ## Seams
 
@@ -84,6 +85,7 @@ Domain logic sits above storage and stays free of SQL:
 | `formation_wizard.py`, `document_generator.py` | LEG formation and documents |
 | `sdat_e66.py`, `sdat_datahub.py`, `meter_data.py` | Meter data parsing and retrieval |
 | `ml_models.py`, `data_enricher.py` | Clustering and enrichment |
+| `neighbor_view.py` | Neighbour read policy: anonymity radius, jittered map locations, provisional match summary |
 
 ## Naming Rules
 

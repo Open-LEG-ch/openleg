@@ -170,7 +170,7 @@ def admin_export():
     fmt = (request.args.get("format") or "json").lower()
     city_id = request.args.get("city_id")
 
-    buildings = db.get_all_building_profiles(city_id=city_id)
+    buildings = db.get_operator_building_profiles(city_id=city_id)
     if fmt == "csv":
         output = io.StringIO()
         if buildings:
