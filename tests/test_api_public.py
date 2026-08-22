@@ -50,6 +50,98 @@ class TestMunicipalityEndpoints:
         assert data["bfs_number"] == 261
         assert data["name"] == "Dietikon"
 
+
+REGISTRY_ENTRY = {
+    "id": 9,
+    "slug": "leg-baden",
+    "name": "LEG Baden",
+    "kanton": "AG",
+    "plz": "5400",
+    "ort": "Baden",
+    "vnb_name": "Regionalwerke Baden",
+    "leg_status": "aktiv",
+    "member_count_estimate": 12,
+    "description": "Lokale Gemeinschaft.",
+    "website_url": "https://example.ch",
+    "contact_email": "private@example.ch",
+    "claim_token_hash": "private-token",
+    "moderation_status": "published",
+}
+
+
+class TestRegistryReadEndpoints:
+    @patch("api_public.db")
+    def test_registry_list_is_published_only_and_field_filtered(self, mock_db, client):
+        mock_db.list_registry_entries.return_value = [REGISTRY_ENTRY]
+
+        response = client.get(
+            "/api/v1/registry?kanton=ag&plz=5400&leg_status=aktiv&q=Baden&limit=50"
+            "&moderation_status=pending"
+        )
+
+        assert response.status_code == 200
+        payload = response.get_json()
+        assert payload == {
+            "entries": [
+                {
+                    "slug": "leg-baden",
+                    "name": "LEG Baden",
+                    "kanton": "AG",
+                    "plz": "5400",
+                    "ort": "Baden",
+                    "vnb_name": "Regionalwerke Baden",
+                    "leg_status": "aktiv",
+                    "member_count_estimate": 12,
+                    "description": "Lokale Gemeinschaft.",
+                    "website_url": "https://example.ch",
+                }
+            ],
+            "count": 1,
+        }
+        mock_db.list_registry_entries.assert_called_once_with(
+            kanton="AG",
+            plz="5400",
+            leg_status="aktiv",
+            q="Baden",
+            moderation_status="published",
+            limit=50,
+        )
+        serialized = repr(payload)
+        assert "private@example.ch" not in serialized
+        assert "private-token" not in serialized
+
+    @patch("api_public.db")
+    def test_registry_detail_rejects_unpublished_and_filters_fields(
+        self, mock_db, client
+    ):
+        mock_db.get_registry_entry_by_slug.side_effect = [
+            REGISTRY_ENTRY,
+            {**REGISTRY_ENTRY, "moderation_status": "pending"},
+        ]
+
+        published = client.get("/api/v1/registry/leg-baden")
+        pending = client.get("/api/v1/registry/leg-baden")
+
+        assert published.status_code == 200
+        assert published.get_json()["slug"] == "leg-baden"
+        assert "contact_email" not in published.get_json()
+        assert "claim_token_hash" not in published.get_json()
+        assert pending.status_code == 404
+
+    @patch("api_public.db")
+    def test_registry_clears_non_http_website_url(self, mock_db, client):
+        mock_db.get_registry_entry_by_slug.return_value = {
+            **REGISTRY_ENTRY,
+            "website_url": "javascript:alert(1)",
+        }
+
+        response = client.get("/api/v1/registry/leg-baden")
+
+        assert response.status_code == 200
+        assert response.get_json()["website_url"] == ""
+
+
+class TestMunicipalityDetailEndpoints:
     @patch("api_public.db")
     def test_get_municipality_not_found(self, mock_db, client):
         mock_db.get_municipality_profile.return_value = None
@@ -234,6 +326,91 @@ class TestRankingsEndpoint:
         assert data["rankings"][0]["rank"] == 1
         assert data["kanton"] == "all"
         assert mock_db.get_all_municipality_profiles.call_args.kwargs["kanton"] is None
+
+
+class TestPublicSitePvRankings:
+    @patch("api_public.ranking_module.Ranking")
+    def test_site_rankings_filter_limit_and_whitelist(self, mock_ranking, client):
+        mock_ranking.load.return_value.standings.return_value = [
+            {
+                "rank": 1,
+                "bfs_number": 4021,
+                "name": "Baden",
+                "kanton": "AG",
+                "population": 23000,
+                "pv_score_pct": 77.0,
+                "display_score": 77.0,
+                "score_over_100": False,
+                "pv_untapped_kw": 4200.0,
+                "private_note": "do not publish",
+            },
+            {"rank": 2, "bfs_number": 261, "name": "Dietikon", "kanton": "ZH"},
+        ]
+
+        response = client.get(
+            "/api/v1/site/rankings?kanton=ag&size=large&density=mid&limit=1"
+        )
+
+        assert response.status_code == 200
+        assert response.get_json() == {
+            "rankings": [
+                {
+                    "rank": 1,
+                    "bfs_number": 4021,
+                    "name": "Baden",
+                    "kanton": "AG",
+                    "population": 23000,
+                    "pv_score_pct": 77.0,
+                    "display_score": 77.0,
+                    "score_over_100": False,
+                    "pv_untapped_kw": 4200.0,
+                }
+            ],
+            "count": 2,
+            "limit": 1,
+        }
+        mock_ranking.load.assert_called_once_with()
+        mock_ranking.load.return_value.standings.assert_called_once_with(
+            kanton="AG", size="large", density="mid"
+        )
+
+    @patch("api_public.ranking_module.Ranking")
+    def test_site_movers_filter_limit_and_whitelist(self, mock_ranking, client):
+        mock_ranking.return_value.movers.return_value = [
+            {
+                "bfs_number": 4021,
+                "name": "Baden",
+                "kanton": "AG",
+                "year": 2025,
+                "score_now": 77.0,
+                "score_prev": 70.5,
+                "delta": 6.5,
+                "private_note": "do not publish",
+            }
+        ]
+
+        response = client.get("/api/v1/site/rankings/movers?kanton=ag&limit=20")
+
+        assert response.status_code == 200
+        assert response.get_json() == {
+            "movers": [
+                {
+                    "bfs_number": 4021,
+                    "name": "Baden",
+                    "kanton": "AG",
+                    "year": 2025,
+                    "score_now": 77.0,
+                    "score_prev": 70.5,
+                    "delta": 6.5,
+                }
+            ],
+            "count": 1,
+            "limit": 20,
+        }
+        mock_ranking.assert_called_once_with([])
+        mock_ranking.return_value.movers.assert_called_once_with(
+            kanton="AG", size=None, density=None
+        )
 
     @patch("api_public.db")
     def test_rankings_kanton_all_supported(self, mock_db, client):

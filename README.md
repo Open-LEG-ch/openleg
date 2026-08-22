@@ -6,7 +6,7 @@ Open-source infrastructure for Swiss Local Electricity Communities. Offene Infra
 
 ## English
 
-OpenLEG is the public application for founding and operating a Swiss Local Electricity Community, known as a LEG. Runtime code, tests, database migrations, templates, and public documentation live here. Production secrets and host-specific operations do not.
+OpenLEG is the public product application and API for founding and operating a Swiss Local Electricity Community, known as a LEG. The marketing website runs separately from `openleg-ops` and links here for dashboard actions.
 
 ### What this repo is
 
@@ -20,10 +20,10 @@ OpenLEG is the public application for founding and operating a Swiss Local Elect
 
 | You are | Start here | What you can do |
 | --- | --- | --- |
-| Resident or founder | `/fuer-bewohner` | Check an address, find neighbours, start a LEG. |
-| LEG operator | `/leg-gruenden` | Organise members, contracts, metering, and billing. |
-| Municipality | `/fuer-gemeinden` | Review local solar use and create a municipality page. |
-| Developer or self-hoster | `/open-source` | Trace the code, use the API, or run your own instance. |
+| Owner or founder | `/dashboard` | Open the owner dashboard and organise a LEG. |
+| LEG operator | `/leg/dashboard` | Manage members, contracts, metering, and billing. |
+| Municipality | `/gemeinde/dashboard` | Open the municipality dashboard. |
+| Developer or self-hoster | `/api/v1/docs` | Use the API or run your own instance. |
 
 ### Current billing boundary
 
@@ -67,11 +67,11 @@ Read [Architecture](docs/architecture.md), [Data pipeline](docs/data-pipeline.md
 
 ### Route map
 
-- `/` entry point for residents and municipalities
-- `/rangliste` solar utilization ranking
-- `/gemeinde/profil/4021` municipality profile example
-- `/open-source` technical pathway and self-hosting context
-- `/self-host` self-hosting guide
+- `/` role chooser for owners and municipalities
+- `/dashboard` owner dashboard and secure access request
+- `/leg/dashboard` LEG operator dashboard
+- `/gemeinde/dashboard` municipality dashboard and secure access request
+- `/utility/login` grid-operator login
 - `/api/v1/docs` public API documentation
 - `/health` and `/livez` runtime checks
 
@@ -99,7 +99,7 @@ Never commit credentials or personal data. Use `.env.example` locally and report
 
 ## Deutsch
 
-OpenLEG ist die öffentliche Anwendung für die Gründung und den Betrieb einer Schweizer Lokalen Elektrizitätsgemeinschaft, kurz LEG. Laufzeitcode, Tests, Datenbankmigrationen, Templates und öffentliche Dokumentation liegen hier. Produktive Secrets und hostspezifischer Betrieb gehören nicht in dieses Repo.
+OpenLEG ist die öffentliche Produktanwendung und API für die Gründung und den Betrieb einer Schweizer Lokalen Elektrizitätsgemeinschaft, kurz LEG. Die Marketing-Website läuft getrennt aus `openleg-ops` und verlinkt für Dashboard-Aktionen hierher.
 
 ### Was dieses Repo enthält
 
@@ -113,10 +113,10 @@ OpenLEG ist die öffentliche Anwendung für die Gründung und den Betrieb einer 
 
 | Sie sind | Einstieg | Das können Sie tun |
 | --- | --- | --- |
-| Bewohner oder Gründer | `/fuer-bewohner` | Adresse prüfen, Nachbarn finden, LEG starten. |
-| LEG-Betreiber | `/leg-gruenden` | Mitglieder, Verträge, Messung und Abrechnung organisieren. |
-| Gemeinde | `/fuer-gemeinden` | Lokale Solarnutzung prüfen und Gemeindeseite erstellen. |
-| Entwickler oder Selbsthoster | `/open-source` | Code verfolgen, API nutzen oder eigene Instanz betreiben. |
+| Eigentümer oder Gründer | `/dashboard` | Eigentümer-Dashboard öffnen und eine LEG organisieren. |
+| LEG-Betreiber | `/leg/dashboard` | Mitglieder, Verträge, Messung und Abrechnung verwalten. |
+| Gemeinde | `/gemeinde/dashboard` | Gemeinde-Dashboard öffnen. |
+| Entwickler oder Selbsthoster | `/api/v1/docs` | API nutzen oder eigene Instanz betreiben. |
 
 ### Aktuelle Abrechnungsgrenze
 
@@ -160,11 +160,11 @@ Lesen Sie [Architektur](docs/architecture.md), [Datenpipeline](docs/data-pipelin
 
 ### Routen
 
-- `/` Einstieg für Bewohner und Gemeinden
-- `/rangliste` Rangliste zur Solarnutzung
-- `/gemeinde/profil/4021` Beispiel für ein Gemeindeprofil
-- `/open-source` technischer Einstieg und Kontext zum Eigenbetrieb
-- `/self-host` Anleitung für den Eigenbetrieb
+- `/` Rollenwahl für Eigentümer und Gemeinden
+- `/dashboard` Eigentümer-Dashboard mit sicherer Zugangsanfrage
+- `/leg/dashboard` Dashboard für LEG-Betreiber
+- `/gemeinde/dashboard` Gemeinde-Dashboard mit sicherer Zugangsanfrage
+- `/utility/login` Login für Netzbetreiber
 - `/api/v1/docs` öffentliche API-Dokumentation
 - `/health` und `/livez` Laufzeitprüfungen
 

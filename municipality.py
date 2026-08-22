@@ -2,27 +2,33 @@
 """
 Municipality onboarding for OpenLEG platform.
 Handles Gemeinde signup, admin dashboard, LEG formation KPIs.
-Public profile pages and directory for municipalities.
 """
 
+import hmac
 import logging
 import os
+import secrets
 
-from flask import Blueprint, abort, jsonify, render_template, request
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+)
 
 import database as db
-import municipality_profile
-import pv_data
+import email_utils
+import municipality_access
 import security_utils
-from cantons import SWISS_CANTON_OPTIONS, SWISS_CANTONS
-from ranking import Ranking
+from security_extensions import rate_limit
 
 logger = logging.getLogger(__name__)
 
 municipality_bp = Blueprint("municipality", __name__, url_prefix="/gemeinde")
-pilot_bp = Blueprint("pilot", __name__, url_prefix="/pilotgemeinde")
-
-PILOT_MUNICIPALITIES = municipality_profile.PILOT_MUNICIPALITIES
 
 
 @municipality_bp.route("/onboarding")
@@ -122,17 +128,20 @@ def _dashboard_context(muni):
 
 @municipality_bp.route("/dashboard")
 def dashboard():
-    subdomain = request.args.get("subdomain", "").strip()
-    bfs = request.args.get("bfs", "")
+    municipality_id = session.get("municipality_id")
+    if not municipality_id:
+        return render_template(
+            "gemeinde/dashboard.html",
+            municipality=None,
+            error=(
+                "Der Zugangslink ist ungültig oder bereits verwendet."
+                if request.args.get("access") == "invalid"
+                else None
+            ),
+            access_required=True,
+        )
 
-    muni = None
-    if subdomain:
-        muni = db.get_municipality(subdomain=subdomain)
-    elif bfs:
-        try:
-            muni = db.get_municipality(bfs_number=int(bfs))
-        except ValueError:
-            muni = None
+    muni = db.get_municipality(municipality_id=municipality_id)
 
     if not muni:
         return render_template(
@@ -142,6 +151,86 @@ def dashboard():
         )
 
     return render_template("gemeinde/dashboard.html", **_dashboard_context(muni))
+
+
+@municipality_bp.route("/access/request", methods=["POST"])
+@rate_limit("5 per minute")
+def access_request():
+    email = (request.form.get("email") or "").strip().lower()
+    generic_message = (
+        "Falls eine Gemeinde zu dieser E-Mail-Adresse existiert, haben wir einen "
+        "neuen Zugangslink gesendet."
+    )
+    is_valid, normalized_email, _error = security_utils.validate_email_address(email)
+    municipality = (
+        db.get_municipality_by_admin_email(normalized_email)
+        if is_valid and normalized_email
+        else None
+    )
+    if municipality:
+        municipality_id = municipality.get("id")
+        token = municipality_access.issue_access_token(
+            db, municipality_id, ttl_seconds=900
+        )
+        if token:
+            url = municipality_access.access_url(
+                current_app.config["APP_BASE_URL"], token
+            )
+            try:
+                email_utils.send_email(
+                    normalized_email,
+                    "Ihr Gemeinde-Dashboard-Zugangslink",
+                    "Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n\n"
+                    f"{url}\n\n"
+                    "Falls Sie diesen Link nicht angefordert haben, können Sie "
+                    "diese E-Mail ignorieren.",
+                )
+            except Exception:
+                current_app.logger.exception(
+                    "Failed to send municipality dashboard access email"
+                )
+    return render_template(
+        "gemeinde/dashboard.html",
+        municipality=None,
+        error=None,
+        access_required=True,
+        access_request_message=generic_message,
+    )
+
+
+@municipality_bp.route("/access/<token>")
+def access_exchange(token):
+    municipality_id = municipality_access.consume_access_token(db, token)
+    if not municipality_id:
+        response = redirect("/gemeinde/dashboard?access=invalid")
+    else:
+        session.clear()
+        session.permanent = True
+        session["municipality_id"] = municipality_id
+        session["municipality_csrf_token"] = secrets.token_urlsafe(32)
+        response = redirect("/gemeinde/dashboard")
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@municipality_bp.route("/logout", methods=["POST"])
+def logout():
+    municipality_id = session.get("municipality_id")
+    submitted = request.form.get("csrf_token", "")
+    expected = session.get("municipality_csrf_token", "")
+    if not municipality_id:
+        abort(401)
+    if (
+        not isinstance(submitted, str)
+        or not submitted.isascii()
+        or not expected
+        or not hmac.compare_digest(submitted, expected)
+    ):
+        abort(400)
+    db.revoke_municipality_access_tokens(municipality_id)
+    session.clear()
+    return redirect("/")
 
 
 @municipality_bp.route("/dashboard/demo")
@@ -182,83 +271,3 @@ def api_municipalities():
             ]
         }
     )
-
-
-# === Public Profile Pages ===
-
-
-@municipality_bp.route("/profil/<int:bfs>")
-def profil(bfs):
-    """Public municipality profile page with energy data visualization."""
-    ctx = municipality_profile.profile_context(
-        bfs, site_url=request.url_root.rstrip("/")
-    )
-    if ctx is None:
-        abort(404)
-
-    return render_template("gemeinde/profil.html", **ctx)
-
-
-@pilot_bp.route("/<slug>")
-def pilot_case_study(slug):
-    """Data-driven trust page for selected pilot municipalities."""
-    ctx = municipality_profile.pilot_context(
-        slug, site_url=request.url_root.rstrip("/")
-    )
-    if ctx is None:
-        abort(404)
-
-    return render_template("gemeinde/pilotgemeinde.html", **ctx)
-
-
-@municipality_bp.route("/verzeichnis")
-def verzeichnis():
-    """Searchable municipality directory."""
-    kanton_filter, kanton = _normalize_kanton_param(request.args.get("kanton"))
-    order_by = request.args.get("sort", "energy_transition_score")
-    q = request.args.get("q", "").strip()
-
-    profiles = db.get_all_municipality_profiles(kanton=kanton_filter, order_by=order_by)
-    # Reverse for descending score/gap
-    if order_by in (
-        "energy_transition_score",
-        "leg_value_gap_chf",
-        "population",
-        "pv_score_pct",
-    ):
-        profiles = list(reversed(profiles))
-
-    if q:
-        profiles = [
-            p for p in profiles if q.lower() in (p.get("name", "") or "").lower()
-        ]
-
-    # Nationaler Solarnutzungs-Rang je Gemeinde
-    ranking_rows = {r["bfs_number"]: r for r in Ranking.load().national()}
-    for profile in profiles:
-        row = ranking_rows.get(profile.get("bfs_number"), {})
-        profile["pv_rank"] = row.get("rank")
-        profile["display_score"] = row.get("display_score")
-        profile["score_over_100"] = row.get("score_over_100")
-
-    return render_template(
-        "gemeinde/verzeichnis.html",
-        profiles=profiles,
-        kanton=kanton,
-        query=q,
-        sort=order_by,
-        site_url=request.url_root.rstrip("/"),
-        canton_options=SWISS_CANTON_OPTIONS,
-        canonical_path="/gemeinde/verzeichnis",
-        data_vintage=pv_data.SNAPSHOT_YEAR,
-        plant_match_rate=pv_data.PLANT_MATCH_RATE_PCT,
-    )
-
-
-def _normalize_kanton_param(raw_value):
-    raw = (raw_value or "all").strip().upper()
-    if raw in ("", "ALL"):
-        return None, "all"
-    if raw in SWISS_CANTONS:
-        return raw, raw
-    return None, "all"

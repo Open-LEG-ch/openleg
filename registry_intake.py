@@ -2,6 +2,7 @@
 """Validate and persist one registry submission from any transport."""
 
 import re
+from urllib.parse import urlsplit
 
 import database as db
 import security_utils
@@ -10,6 +11,24 @@ VALID_LEG_STATUSES = {"planung", "gruendung", "aktiv", "pausiert"}
 _UMLAUT_MAP = str.maketrans(
     {"ä": "ae", "ö": "oe", "ü": "ue", "Ä": "ae", "Ö": "oe", "Ü": "ue", "ß": "ss"}
 )
+
+
+def normalize_website_url(raw_value) -> str:
+    """Return a safe absolute HTTP(S) URL or an empty string."""
+    value = (raw_value or "").strip()
+    if not value:
+        return ""
+    if len(value) > 512:
+        return ""
+    parsed = urlsplit(value)
+    if (
+        parsed.scheme.lower() not in {"http", "https"}
+        or not parsed.netloc
+        or parsed.username
+        or parsed.password
+    ):
+        return ""
+    return value
 
 
 def _unique_slug(name: str) -> str:
@@ -46,6 +65,13 @@ def submit(payload, source: str) -> dict:
     except (TypeError, ValueError):
         member_count_estimate = None
 
+    raw_website_url = (payload.get("website_url") or "").strip()
+    website_url = normalize_website_url(raw_website_url)
+    if raw_website_url and not website_url:
+        return {
+            "error": "Website-URL muss mit http:// oder https:// beginnen.",
+            "status": 400,
+        }
     slug = _unique_slug(name)
     kanton = (payload.get("kanton") or "").strip().upper()
     saved = db.save_registry_entry(
@@ -59,7 +85,7 @@ def submit(payload, source: str) -> dict:
         member_count_estimate=member_count_estimate,
         leg_status=leg_status,
         description=(payload.get("description") or "").strip(),
-        website_url=(payload.get("website_url") or "").strip(),
+        website_url=website_url,
         source=source,
     )
     if not saved:

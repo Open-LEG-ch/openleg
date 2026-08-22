@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "product_base.html" %}
 
 {% block meta %}
   <title>Gemeinde-Dashboard{% if municipality %} {{ municipality.name }}{% endif %} | OpenLEG</title>
@@ -24,6 +24,10 @@
         <span class="h-2 w-2 rounded-full bg-brand" aria-hidden="true"></span>
         {{ status_label }}
       </span>
+      <form action="/gemeinde/logout" method="post">
+        <input type="hidden" name="csrf_token" value="{{ session.municipality_csrf_token }}">
+        <button type="submit" class="text-sm font-semibold text-ink-muted underline hover:text-ink">Abmelden</button>
+      </form>
     </div>
 
     <section class="grid grid-cols-2 md:grid-cols-4 border-t border-line mb-8" aria-label="Gemeindestatistik">
@@ -39,7 +43,7 @@
         <p class="text-xs text-ink-muted uppercase tracking-wide">Solarnutzung</p>
         {% if solar_score is not none %}
           <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ "%.0f"|format(solar_score|float) }}<span data-statistic-unit class="text-sm font-normal text-ink-muted">%</span></p>
-          <a href="/rangliste/methodik" class="text-xs text-brand underline">Formel und Datengrenzen ansehen</a>
+          <a href="{{ public_site_url('/rangliste/methodik') }}" class="text-xs text-brand underline">Formel und Datengrenzen ansehen</a>
         {% else %}
           <p class="text-sm text-ink-muted mt-2">Noch keine Daten</p>
         {% endif %}
@@ -49,7 +53,7 @@
         {% if energy_score is not none %}
           <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ "%.0f"|format(energy_score|float) }} <span data-statistic-unit class="text-sm font-normal text-ink-muted">/100</span></p>
           <p class="text-xs text-ink-muted mt-2">Gewichtung: Solar 30 Prozent, Elektroautos 20 Prozent, erneuerbare Heizungen 25 Prozent, erneuerbare Produktion 25 Prozent.</p>
-          <a href="/rangliste/methodik" class="text-xs text-brand underline">Methodik ansehen</a>
+          <a href="{{ public_site_url('/rangliste/methodik') }}" class="text-xs text-brand underline">Methodik ansehen</a>
         {% else %}
           <p class="text-sm text-ink-muted mt-2">Noch keine Daten</p>
         {% endif %}
@@ -84,7 +88,7 @@
             </a>
           </li>
           <li>
-            <a href="/leg-gruenden" class="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
+            <a href="{{ public_site_url('/leg-gruenden') }}" class="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
               <span class="flex items-center gap-3">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-brand text-sm font-bold" aria-hidden="true">4</span>
                 <span><strong>Erste LEG gründen</strong><br><span class="text-ink-muted">Schritt für Schritt zur Stromgemeinschaft</span></span>
@@ -110,10 +114,22 @@
           <h2 id="profile-title" class="text-lg font-semibold mb-1">Öffentliches Energieprofil</h2>
           <p class="text-sm text-ink-muted mb-3">So sehen Bewohner Ihre Gemeinde: Stromtarife, Solarnutzung und Sparpotenzial aus offenen Daten.</p>
           {% if municipality.bfs_number %}
-          <a href="/gemeinde/profil/{{ municipality.bfs_number }}" class="inline-block bg-brand text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark">Profil ansehen</a>
+          <a href="{{ public_site_url('/gemeinde/profil/' ~ municipality.bfs_number) }}" class="inline-block bg-brand text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark">Profil ansehen</a>
           {% endif %}
         </section>
       </div>
+    </div>
+  {% elif access_required %}
+    <div class="max-w-xl mx-auto py-16">
+      <h1 class="text-2xl font-bold mb-3">Gemeinde-Dashboard öffnen</h1>
+      <p class="text-ink-muted mb-6">Wir senden den Zugangslink an die hinterlegte E-Mail-Adresse Ihrer Gemeinde.</p>
+      {% if error %}<p class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">{{ error }}</p>{% endif %}
+      {% if access_request_message %}<p class="mb-4 rounded-lg border border-line bg-white p-3 text-sm" role="status">{{ access_request_message }}</p>{% endif %}
+      <form action="/gemeinde/access/request" method="post" class="space-y-4">
+        <label for="municipality-email" class="block text-sm font-semibold">E-Mail-Adresse</label>
+        <input id="municipality-email" name="email" type="email" required autocomplete="email" class="w-full rounded-lg border border-line px-4 py-3">
+        <button type="submit" class="w-full rounded-lg bg-brand px-5 py-3 font-semibold text-white hover:bg-brand-dark">Zugangslink anfordern</button>
+      </form>
     </div>
   {% else %}
     <div class="max-w-xl mx-auto text-center py-16" role="alert">

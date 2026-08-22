@@ -37,7 +37,7 @@ def _client(monkeypatch, saved=1):
     monkeypatch.setattr(leg_registry_module.db, "save_registry_entry", save)
     monkeypatch.setattr(leg_registry_module.db, "track_event", MagicMock())
     app = Flask(__name__)
-    app.register_blueprint(leg_registry_module.registry_bp)
+    app.register_blueprint(leg_registry_module.registry_api_bp)
     return app.test_client(), save
 
 

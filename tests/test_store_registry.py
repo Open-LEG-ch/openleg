@@ -108,6 +108,17 @@ def test_list_registry_entries_always_includes_moderation_status_param(monkeypat
     assert cur.executed[0][1][0] == "published"
 
 
+def test_list_registry_entries_applies_bounded_sql_limit(monkeypatch):
+    cur = _FakeCursor(rows=[])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    registry.list_registry_entries(limit=10_000)
+
+    query, params = cur.executed[0]
+    assert "LIMIT %s" in query
+    assert params[-1] == 500
+
+
 def test_get_registry_entry_by_slug_missing_returns_none(monkeypatch):
     cur = _FakeCursor(one=None)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))

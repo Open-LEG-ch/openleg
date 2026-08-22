@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import public_data
-from ranking import Ranking
 
 
 def _disable_rate_limit_hooks(flask_app):
@@ -58,18 +57,9 @@ def full_app_module():
             app_module.web.before_request_funcs[None] = hooks
 
 
-def test_robots_allows_api_docs_but_blocks_api(full_app_module):
-    client = full_app_module.web.test_client()
-    resp = client.get("/robots.txt")
-    assert resp.status_code == 200
-    body = resp.data.decode("utf-8", errors="ignore")
-    assert "Allow: /api/v1/docs" in body
-    assert "Disallow: /api/" in body
-
-
 def test_security_policy_allows_google_analytics_region_collect(full_app_module):
     client = full_app_module.web.test_client()
-    resp = client.get("/robots.txt")
+    resp = client.get("/dashboard/demo")
 
     csp = resp.headers.get("Content-Security-Policy", "")
     assert _csp_sources(csp, "connect-src") == {
@@ -114,74 +104,6 @@ def test_shared_tailwind_partial_uses_local_css():
 
     assert "cdn.tailwindcss.com" not in content
     assert "/static/css/openleg.css" in content
-
-
-def test_sitemap_contains_directory_docs_and_profile_urls(full_app_module, monkeypatch):
-    monkeypatch.setattr(
-        full_app_module.db,
-        "get_all_municipality_profile_bfs_numbers",
-        lambda: [261, 247],
-    )
-    client = full_app_module.web.test_client()
-
-    resp = client.get("/sitemap.xml")
-    assert resp.status_code == 200
-    xml = resp.data.decode("utf-8", errors="ignore")
-    assert "/gemeinde/verzeichnis" in xml
-    assert "/api/v1/docs" in xml
-    assert "/rangliste/fortschritte" in xml
-    assert "/rangliste/vergleich" in xml
-    assert "/gemeinde/profil/261" in xml
-    assert "/gemeinde/profil/247" in xml
-    assert "/admin/" not in xml
-    assert "/api/v1/municipalities" not in xml
-
-
-def test_open_source_page_explains_codebase(full_app_module):
-    client = full_app_module.web.test_client()
-
-    resp = client.get("/open-source")
-    assert resp.status_code == 200
-    html = resp.data.decode("utf-8", errors="ignore")
-    assert "Open Source" in html
-    assert "Flask" in html
-    assert "PostgreSQL" in html
-    assert "Redis" in html
-    assert "Caddy" in html
-    assert "Datenpipeline" in html
-    assert "Öffentliches App-Repo" in html
-    assert "Privates Ops-Repo" in html
-    assert "git clone https://github.com/Open-LEG-ch/openleg.git" in html
-    assert "github.com/Open-LEG-ch/openleg" in html
-    assert 'type="application/ld+json"' in html
-    assert '"@type": "SoftwareApplication"' in html
-    assert '"applicationCategory": "EnergyApplication"' in html
-
-
-@pytest.mark.parametrize(
-    ("route", "headline"),
-    [
-        ("/how-it-works", "So funktioniert"),
-        ("/leg-gruenden", "LEG gründen"),
-        ("/leg-kalkulator", "LEG-Kalkulator"),
-        ("/pricing", "Kostenlos"),
-    ],
-)
-def test_public_guides_have_share_metadata(full_app_module, route, headline):
-    client = full_app_module.web.test_client()
-
-    resp = client.get(route)
-
-    assert resp.status_code == 200
-    html = resp.data.decode("utf-8", errors="ignore")
-    assert headline in html
-    assert '<meta name="description"' in html
-    assert f'rel="canonical" href="http://localhost:5003{route}"' in html
-    assert 'property="og:title"' in html
-    assert 'property="og:description"' in html
-    assert f'property="og:url" content="http://localhost:5003{route}"' in html
-    assert 'name="twitter:card" content="summary_large_image"' in html
-    assert '"@type": "BreadcrumbList"' in html
 
 
 def test_backfill_elcom_invalid_secret_returns_403_and_no_mutation(
@@ -246,58 +168,3 @@ def test_backfill_elcom_processes_batch_and_returns_summary(
     assert data["processed"] == 2
     assert data["saved"] == 2
     assert data["errors"] == []
-
-
-# === Issue #210: homepage ranking preview routed through the Ranking facade ===
-
-_RANKING_EXTREMES_PROFILES = [
-    {"bfs_number": 1, "name": "Overcap", "kanton": "ZH", "pv_score_pct": 140},
-    {"bfs_number": 2, "name": "G2", "kanton": "ZH", "pv_score_pct": 95},
-    {"bfs_number": 3, "name": "G3", "kanton": "ZH", "pv_score_pct": 90},
-    {"bfs_number": 4, "name": "G4", "kanton": "ZH", "pv_score_pct": 85},
-    {"bfs_number": 5, "name": "G5", "kanton": "ZH", "pv_score_pct": 80},
-    {"bfs_number": 6, "name": "G6", "kanton": "ZH", "pv_score_pct": 75},
-    {"bfs_number": 7, "name": "G7", "kanton": "ZH", "pv_score_pct": 70},
-    {"bfs_number": 8, "name": "Unscored", "kanton": "ZH", "pv_score_pct": None},
-]
-
-
-def test_ranking_extremes_uses_facade(full_app_module, monkeypatch):
-    mock_load = MagicMock(return_value=Ranking(_RANKING_EXTREMES_PROFILES))
-    monkeypatch.setattr(full_app_module.Ranking, "load", mock_load)
-
-    best, worst, total = full_app_module._ranking_extremes(n=3)
-
-    mock_load.assert_called_once_with()
-    assert total == 7  # bfs 8 has no score and is excluded
-    assert best == [
-        {"rank": 1, "name": "Overcap", "kanton": "ZH", "bfs_number": 1, "score": 100.0},
-        {"rank": 2, "name": "G2", "kanton": "ZH", "bfs_number": 2, "score": 95.0},
-        {"rank": 3, "name": "G3", "kanton": "ZH", "bfs_number": 3, "score": 90.0},
-    ]
-    assert worst == [
-        {"rank": 7, "name": "G7", "kanton": "ZH", "bfs_number": 7, "score": 70.0},
-        {"rank": 6, "name": "G6", "kanton": "ZH", "bfs_number": 6, "score": 75.0},
-        {"rank": 5, "name": "G5", "kanton": "ZH", "bfs_number": 5, "score": 80.0},
-    ]
-
-
-def test_ranking_extremes_empty_when_too_few_scored(full_app_module, monkeypatch):
-    profiles = _RANKING_EXTREMES_PROFILES[:2]
-    mock_load = MagicMock(return_value=Ranking(profiles))
-    monkeypatch.setattr(full_app_module.Ranking, "load", mock_load)
-
-    best, worst, total = full_app_module._ranking_extremes(n=3)
-
-    assert (best, worst, total) == ([], [], 2)
-
-
-def test_ranking_extremes_falls_back_on_load_failure(full_app_module, monkeypatch):
-    def _boom(*args, **kwargs):
-        raise RuntimeError("db down")
-
-    monkeypatch.setattr(full_app_module.Ranking, "load", _boom)
-
-    best, worst, total = full_app_module._ranking_extremes(n=3)
-
-    assert (best, worst, total) == ([], [], 0)

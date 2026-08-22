@@ -111,7 +111,7 @@ def save_building(
                         referrer_id, referral_code, city_id
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        to_timestamp(%s), %s, %s, %s, %s, %s, %s
+                        to_timestamp(%s), %s, to_timestamp(%s), %s, %s, %s, %s
                     )
                     ON CONFLICT (building_id) DO UPDATE SET
                         email = EXCLUDED.email,
@@ -615,28 +615,6 @@ def save_municipality(
         return None
 
 
-def get_municipality(bfs_number=None, subdomain=None):
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            if bfs_number:
-                cur.execute(
-                    "SELECT * FROM municipalities WHERE bfs_number = %s",
-                    (bfs_number,),
-                )
-            elif subdomain:
-                cur.execute(
-                    "SELECT * FROM municipalities WHERE subdomain = %s",
-                    (subdomain,),
-                )
-            else:
-                return None
-            row = cur.fetchone()
-            return dict(row) if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error getting municipality: {e}")
-        return None
-
-
 def get_all_municipalities(kanton=None):
     try:
         with get_connection() as conn, conn.cursor() as cur:
@@ -1009,6 +987,15 @@ from store.metering import (  # noqa: F401
     record_sdat_import,
     save_metering_point_readings,
     upsert_metering_points,
+)
+from store.municipality import (  # noqa: F401
+    get_municipality,
+    get_municipality_by_admin_email,
+)
+from store.municipality_access import (  # noqa: F401
+    consume_municipality_access_token,
+    revoke_municipality_access_tokens,
+    save_municipality_access_token,
 )
 from store.profile import (  # noqa: F401
     get_all_elcom_tariffs,

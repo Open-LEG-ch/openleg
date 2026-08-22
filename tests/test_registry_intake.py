@@ -37,3 +37,23 @@ def test_submit_normalizes_and_persists_once(monkeypatch):
     assert save.call_args.kwargs["member_count_estimate"] == 4
     assert save.call_args.kwargs["source"] == "self_hosted"
     track.assert_called_once()
+
+
+def test_submit_rejects_non_http_website_url(monkeypatch):
+    save = MagicMock()
+    monkeypatch.setattr(registry_intake.db, "save_registry_entry", save)
+
+    result = registry_intake.submit(
+        {
+            "name": "LEG Baden",
+            "contact_email": "info@example.ch",
+            "website_url": "javascript:alert(1)",
+        },
+        source="self_hosted",
+    )
+
+    assert result == {
+        "error": "Website-URL muss mit http:// oder https:// beginnen.",
+        "status": 400,
+    }
+    save.assert_not_called()

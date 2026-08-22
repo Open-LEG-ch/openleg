@@ -15,13 +15,10 @@ APP_PATH = PROJECT_ROOT / "app.py"
 BLUEPRINTS = {
     "main_bp": "app.py",
     "municipality_bp": "municipality.py",
-    "pilot_bp": "municipality.py",
+    "registry_api_bp": "leg_registry.py",
     "public_api_bp": "api_public.py",
     "health_bp": "health.py",
     "utility_bp": "utility_portal.py",
-    "rangliste_bp": "rangliste.py",
-    "registry_bp": "leg_registry.py",
-    "self_host_bp": "self_host.py",
     "admin_bp": "admin.py",
 }
 
@@ -144,7 +141,7 @@ def test_extraction_order_does_not_list_already_extracted_stores() -> None:
 
 def test_documented_route_prefixes_match_the_blueprints() -> None:
     text = _doc_text()
-    for prefix in ("/gemeinde", "/api/v1", "/utility", "/pilotgemeinde"):
+    for prefix in ("/gemeinde", "/api/v1", "/utility"):
         assert prefix in text, f"Route map must document the {prefix} prefix"
 
 

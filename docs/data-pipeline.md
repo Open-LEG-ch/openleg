@@ -1,8 +1,9 @@
 # Data Pipeline
 
-OpenLEG combines public Swiss energy datasets into municipality profiles,
-ranking pages, and API responses. The pipeline is deterministic and safe to run
-against an empty development database.
+OpenLEG combines public Swiss energy datasets into municipality read models and
+API responses. The separately deployed public website renders ranking and profile
+pages from those APIs. The pipeline is deterministic and safe to run against an
+empty development database.
 
 ## Sources
 
@@ -20,8 +21,6 @@ against an empty development database.
 - `database.py` owns idempotent table creation and upsert helpers.
 - `pv_ranking.py` computes utilization, peer comparisons, progress, and target
   guidance.
-- `rangliste.py` renders ranking, progress, comparison, method, profile share,
-  and badge routes.
 - `api_public.py` exposes selected public read models.
 
 ## PV Import

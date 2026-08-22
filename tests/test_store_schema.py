@@ -24,6 +24,7 @@ CORE_TABLES = (
     "dashboard_access_tokens",
     "scheduled_emails",
     "municipality_profiles",
+    "municipality_access_tokens",
     "elcom_tariffs",
     "communities",
     "billing_periods",
@@ -92,6 +93,13 @@ class TestSchemaModule:
         executed = _run(monkeypatch, schema.create_tables)
 
         assert "create index if not exists" in executed
+
+    def test_municipality_exists_before_access_token_foreign_key(self, monkeypatch):
+        executed = _run(monkeypatch, schema.create_tables)
+
+        assert executed.index(
+            "create table if not exists municipalities"
+        ) < executed.index("create table if not exists municipality_access_tokens")
 
     def test_ddl_is_idempotent_by_construction(self, monkeypatch):
         executed = _run(monkeypatch, schema.create_tables)

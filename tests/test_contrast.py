@@ -74,19 +74,6 @@ class TestInverseWordmarkOnDark:
         )
 
 
-class TestFooterTextOnDark:
-    """Footer separator (2.36:1) and EVU login link (3.75:1) on ink."""
-
-    def test_no_underscaled_slate_on_dark_footer(self):
-        footer = _read(os.path.join("templates", "partials", "site_footer.html"))
-        assert "text-slate-600" not in footer, (
-            "slate-600 is 2.36:1 on the ink footer; use slate-400 or lighter"
-        )
-        assert "text-slate-500" not in footer, (
-            "slate-500 is 3.75:1 on the ink footer; use slate-400 or lighter"
-        )
-
-
 class TestDashboardDarkHero:
     """Dashboard hero on ink: Tailwind utilities must keep WCAG contrast.
 
@@ -118,52 +105,6 @@ class TestDashboardDarkHero:
     def test_progress_fill_visible(self):
         assert "bg-accent" in self.html
         assert contrast(self.SCORE_ON_PANEL, self.PANEL) >= 3, "UI component needs 3:1"
-
-
-class TestGrayMicrocopyOnPaper:
-    """gray-400 (2.3-2.5:1) and gray-500 (4.4:1) fail on the paper body."""
-
-    @pytest.mark.parametrize(
-        "template",
-        [
-            os.path.join("templates", "gemeinde", "profil.html"),
-            os.path.join("templates", "gemeinde", "verzeichnis.html"),
-        ],
-    )
-    def test_no_gray_400_text(self, template):
-        assert "text-gray-400" not in _read(template), (
-            f"{template}: gray-400 is under 2.6:1 on white and paper"
-        )
-
-    @pytest.mark.parametrize(
-        "template",
-        [
-            os.path.join("templates", "gemeinde", "profil.html"),
-            os.path.join("templates", "gemeinde", "pilotgemeinde.html"),
-        ],
-    )
-    def test_no_gray_500_text_on_paper_pages(self, template):
-        assert "text-gray-500" not in _read(template), (
-            f"{template}: gray-500 is 4.4:1 on the paper background "
-            "(and slate-500 is 4.33:1); use text-ink-muted"
-        )
-
-    def test_savings_green_readable_on_paper(self):
-        profil = _read(os.path.join("templates", "gemeinde", "profil.html"))
-        assert "text-green-600" not in profil, (
-            "green-600 is 3.0:1 on paper; use green-700"
-        )
-
-
-class TestKalkulatorDisabledButton:
-    """Disabled submit was white text on slate-300 (1.48:1, unreadable)."""
-
-    def test_disabled_state_overrides_text_color(self):
-        html = _read(os.path.join("templates", "leg_kalkulator.html"))
-        assert "disabled:text-" in html, (
-            "the disabled Berechnen button keeps text-white on a light "
-            "disabled background; add a disabled: text override"
-        )
 
 
 def test_replacement_pairs_actually_pass():

@@ -5,8 +5,6 @@ import ast
 from pathlib import Path
 
 import cantons
-import municipality
-import rangliste
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SKIP_DIRS = {
@@ -33,12 +31,6 @@ def test_cantons_exports_options_and_code_set():
     assert cantons.SWISS_CANTONS == {
         code for code, _ in cantons.SWISS_CANTON_OPTIONS if code != "all"
     }
-
-
-def test_route_modules_use_shared_canton_options():
-    assert municipality.SWISS_CANTON_OPTIONS is cantons.SWISS_CANTON_OPTIONS
-    assert municipality.SWISS_CANTONS is cantons.SWISS_CANTONS
-    assert rangliste.SWISS_CANTON_OPTIONS is cantons.SWISS_CANTON_OPTIONS
 
 
 def test_no_module_imports_canton_options_from_municipality():

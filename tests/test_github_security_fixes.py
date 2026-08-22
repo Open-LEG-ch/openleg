@@ -278,19 +278,3 @@ def test_test_workflow_has_top_level_permissions():
     with open(".github/workflows/deploy.yml") as f:
         content = f.read()
     assert "permissions:" in content
-
-
-def test_leg_kalkulator_template_avoids_unsafe_inner_html():
-    with open("templates/leg_kalkulator.html") as f:
-        content = f.read()
-    # The old vulnerable construction passed raw data into an inline onclick.
-    assert "m.name.replace" not in content
-    assert "JSON.stringify(m).replace" not in content
-    assert "resultsDiv.innerHTML = data.municipalities" not in content
-
-
-def test_gemeinde_verzeichnis_template_avoids_inline_location_href():
-    with open("templates/gemeinde/verzeichnis.html") as f:
-        content = f.read()
-    assert "location.href='?kanton=" not in content
-    assert "location.href='?sort=" not in content

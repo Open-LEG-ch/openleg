@@ -14,6 +14,7 @@ def _client():
                 "DATABASE_URL": "postgresql://x:x@localhost/x",
                 "REDIS_URL": "memory://",
                 "APP_BASE_URL": "http://localhost:5003",
+                "PUBLIC_SITE_URL": "https://openleg.ch",
             },
         ),
         patch("database.is_db_available", return_value=True),
@@ -38,12 +39,12 @@ class TestGemeindeDashboardDemo:
         html = client.get("/gemeinde/dashboard/demo").get_data(as_text=True)
         assert "cdn.tailwindcss.com" not in html
 
-    def test_uses_built_stylesheet_and_shared_nav(self):
+    def test_uses_built_stylesheet_and_product_shell(self):
         client = _client()
         html = client.get("/gemeinde/dashboard/demo").get_data(as_text=True)
         assert "/static/css/openleg.css" in html
-        # base.html brings the shared footer; the page must not be standalone
-        assert "site-footer" in html or "footer" in html.lower()
+        assert "Dashboard" in html
+        assert "site-footer" not in html
 
     def test_no_raw_status_enum(self):
         client = _client()
@@ -66,8 +67,8 @@ class TestGemeindeDashboardDemo:
         client = _client()
         html = client.get("/gemeinde/dashboard/demo").get_data(as_text=True)
         # every open next step links somewhere concrete
-        assert 'href="/leg-gruenden"' in html
-        assert "hallo@openleg.ch" in html or 'href="/fuer-gemeinden"' in html
+        assert 'href="https://openleg.ch/leg-gruenden"' in html
+        assert "hallo@openleg.ch" in html
 
     def test_demo_shows_demo_stats_not_hardcoded_zeros(self):
         client = _client()
@@ -80,7 +81,7 @@ class TestGemeindeDashboardDemo:
         html = client.get("/gemeinde/dashboard/demo").get_data(as_text=True)
         tile = re.search(r"Solarnutzung.*?</div>", html, re.DOTALL)
         assert tile
-        assert 'href="/rangliste/methodik"' in tile.group(0)
+        assert 'href="https://openleg.ch/rangliste/methodik"' in tile.group(0)
         assert "Formel und Datengrenzen ansehen" in tile.group(0)
 
     def test_energy_score_shows_weighting_and_links_to_methodology(self):
@@ -88,7 +89,7 @@ class TestGemeindeDashboardDemo:
         html = client.get("/gemeinde/dashboard/demo").get_data(as_text=True)
         tile = re.search(r"Energiewende-Score.*?</div>", html, re.DOTALL)
         assert tile
-        assert 'href="/rangliste/methodik"' in tile.group(0)
+        assert 'href="https://openleg.ch/rangliste/methodik"' in tile.group(0)
         assert (
             "Gewichtung: Solar 30 Prozent, Elektroautos 20 Prozent, erneuerbare "
             "Heizungen 25 Prozent, erneuerbare Produktion 25 Prozent." in tile.group(0)
@@ -96,11 +97,11 @@ class TestGemeindeDashboardDemo:
 
 
 class TestGemeindeDashboardEmptyState:
-    def test_missing_municipality_shows_onboarding_cta(self):
+    def test_anonymous_dashboard_shows_access_request(self):
         client = _client()
         with patch("database.get_municipality", return_value=None):
             resp = client.get("/gemeinde/dashboard")
         html = resp.get_data(as_text=True)
         assert resp.status_code == 200
-        assert 'href="/gemeinde/onboarding"' in html
+        assert 'action="/gemeinde/access/request"' in html
         assert "cdn.tailwindcss.com" not in html

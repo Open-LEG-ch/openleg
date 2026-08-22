@@ -1,10 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import hashlib
+import hmac
+import ipaddress
 import logging
 import math
 import os
+import re
+import secrets
 import threading
 from datetime import timedelta
+from urllib.parse import urljoin, urlparse, urlsplit
 
 import numpy as np
 import pandas as pd
@@ -12,18 +17,19 @@ from dotenv import load_dotenv
 from flask import (
     Blueprint,
     Flask,
-    Response,
     abort,
     current_app,
     g,
     jsonify,
+    redirect,
     render_template,
     request,
     send_from_directory,
+    session,
 )
+from flask_talisman import Talisman
 
 import billing_runner
-import cache as cache_module
 import dashboard as dashboard_module  # noqa: F401
 import dashboard_access as dashboard_access_module  # noqa: F401
 import dashboard_routes
@@ -40,24 +46,12 @@ from admin import admin_bp, require_admin
 from api_public import public_api_bp
 from email_utils import send_email
 from health import health_bp
-from leg_registry import registry_bp
-from municipality import PILOT_MUNICIPALITIES, municipality_bp, pilot_bp
-from rangliste import rangliste_bp
-from ranking import Ranking
+from leg_registry import registry_api_bp
+from municipality import municipality_bp
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
+from security_extensions import limiter
 from security_utils import log_security_event
-from self_host import self_host_bp
 from utility_portal import utility_bp
-
-# --- Security imports ---
-try:
-    from flask_limiter import Limiter
-    from flask_limiter.util import get_remote_address
-    from flask_talisman import Talisman
-
-    HAS_SECURITY_LIBS = True
-except ImportError:
-    HAS_SECURITY_LIBS = False
 
 logger = logging.getLogger(__name__)
 
@@ -78,17 +72,6 @@ def handle_rate_limit(_error):
         ),
         429,
     )
-
-
-# --- Rate Limiting & Security ---
-if HAS_SECURITY_LIBS:
-    limiter = Limiter(
-        get_remote_address,
-        default_limits=["500 per hour"],
-        strategy="fixed-window",
-    )
-else:
-    limiter = None
 
 
 def render_city_template(template_name, **kwargs):
@@ -112,9 +95,15 @@ def apply_basic_security_headers(response):
         dashboard_routes._dashboard_session_building_id()
     )
     is_private_leg_document = request.path.startswith("/leg/document/")
+    is_private_municipality_dashboard = request.path == "/gemeinde/dashboard" and bool(
+        session.get("municipality_id")
+    )
     if (
         request.path.startswith("/dashboard/access/")
+        or request.path.startswith("/gemeinde/access/")
+        or request.path.startswith("/registry/verify/")
         or is_private_dashboard
+        or is_private_municipality_dashboard
         or is_private_leg_dashboard
         or is_private_leg_document
     ):
@@ -273,106 +262,13 @@ def find_provisional_matches(new_profile):
 # ===========================
 
 
-def _ranking_extremes(n=3):
-    """Top und Schluss der Solarnutzungs-Rangliste für die Startseiten-Vorschau.
-
-    Gibt (vorbilder, chancen, total) zurück. Leer, wenn zu wenige Daten.
-    """
-    try:
-        ranked = Ranking.load().national()
-    except Exception:
-        logger.exception("ranking preview failed")
-        return [], [], 0
-    scored = [r for r in ranked if r.get("pv_score_pct") is not None]
-    total = len(scored)
-    if total < 2 * n:
-        return [], [], total
-
-    def shape(row):
-        return {
-            "rank": row.get("rank"),
-            "name": row.get("name"),
-            "kanton": row.get("kanton"),
-            "bfs_number": row.get("bfs_number"),
-            "score": row.get("display_score"),
-        }
-
-    best = [shape(r) for r in scored[:n]]
-    worst = [shape(r) for r in reversed(scored[-n:])]
-    return best, worst, total
-
-
 @main_bp.route("/")
 def index():
-    city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
-    stats = db.get_stats(city_id=city_id)
-    user_count = stats.get("total_buildings", 0)
-    referral_code = request.args.get("ref", "")
-    referrer_info = None
-    if referral_code:
-        referrer_info = db.get_building_by_referral_code(referral_code)
-    ranking_best, ranking_worst, ranking_total = _ranking_extremes()
-    return render_city_template(
-        "index.html",
-        user_count=user_count,
-        referral_code=referral_code,
-        ranking_best=ranking_best,
-        ranking_worst=ranking_worst,
-        ranking_total=ranking_total,
-        referrer_street=referrer_info.get("address", "").split(",")[0]
-        if referrer_info
-        else "",
-    )
-
-
-@main_bp.route("/how-it-works")
-def how_it_works():
-    return render_city_template("how-it-works.html")
-
-
-@main_bp.route("/fuer-bewohner")
-def fuer_bewohner():
-    return render_city_template("fuer_bewohner.html")
-
-
-@main_bp.route("/fuer-gemeinden")
-def fuer_gemeinden():
-    return render_city_template("fuer_gemeinden.html")
-
-
-@main_bp.route("/open-source")
-def open_source():
-    return render_city_template("open_source.html")
-
-
-@main_bp.route("/leg-gruenden")
-def leg_gruenden():
-    return render_city_template("leg_gruenden.html")
-
-
-@main_bp.route("/leg-kalkulator")
-def leg_kalkulator():
-    return render_city_template("leg_kalkulator.html")
-
-
-@main_bp.route("/pricing")
-def pricing():
-    return render_city_template("pricing.html")
-
-
-@main_bp.route("/robots.txt")
-def robots_txt():
-    lines = [
-        "User-agent: *",
-        "Allow: /",
-        "Allow: /api/v1/docs",
-        "Disallow: /api/",
-        "Disallow: /admin/",
-        "Disallow: /confirm/",
-        "Disallow: /unsubscribe/",
-        f"Sitemap: {current_app.config['SITE_URL']}/sitemap.xml",
-    ]
-    return Response("\n".join(lines) + "\n", mimetype="text/plain")
+    if session.get("dashboard_building_id"):
+        return redirect("/dashboard")
+    if session.get("municipality_id"):
+        return redirect("/gemeinde/dashboard")
+    return render_city_template("role_access.html")
 
 
 @main_bp.route("/favicon.ico")
@@ -384,56 +280,12 @@ def favicon():
     )
 
 
-@main_bp.route("/sitemap.xml")
-def sitemap_xml():
-    """Render and briefly cache the public sitemap for the current site and day."""
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-
-    current_date = datetime.now(ZoneInfo("Europe/Zurich")).strftime("%Y-%m-%d")
-    cache_key = f"sitemap:{current_app.config['SITE_URL']}:{current_date}"
-    cached_xml = cache_module.cache_get(cache_key)
-    if cached_xml is not None:
-        return Response(cached_xml, mimetype="application/xml")
-    pages = [
-        ("/", "1.0", "daily", current_date),
-        ("/how-it-works", "0.8", "weekly", current_date),
-        ("/fuer-bewohner", "0.9", "weekly", current_date),
-        ("/fuer-gemeinden", "0.8", "weekly", current_date),
-        ("/leg-gruenden", "0.9", "weekly", current_date),
-        ("/leg-kalkulator", "0.9", "weekly", current_date),
-        ("/pricing", "0.7", "monthly", current_date),
-        ("/open-source", "0.8", "weekly", current_date),
-        ("/self-host", "0.8", "weekly", current_date),
-        ("/gemeinde/verzeichnis", "0.9", "weekly", current_date),
-        ("/leg-verzeichnis", "0.9", "weekly", current_date),
-        ("/leg-check", "0.9", "weekly", current_date),
-        ("/rangliste", "0.9", "daily", current_date),
-        ("/rangliste/fortschritte", "0.8", "daily", current_date),
-        ("/rangliste/vergleich", "0.7", "weekly", current_date),
-        ("/rangliste/methodik", "0.6", "monthly", current_date),
-        ("/api/v1/docs", "0.8", "weekly", current_date),
-        ("/gemeinde/onboarding", "0.9", "weekly", current_date),
-        ("/impressum", "0.3", "yearly", "2026-01-01"),
-        ("/datenschutz", "0.3", "yearly", "2026-01-01"),
-    ]
-    for bfs in db.get_all_municipality_profile_bfs_numbers():
-        pages.append((f"/gemeinde/profil/{bfs}", "0.8", "weekly", current_date))
-    for slug in PILOT_MUNICIPALITIES:
-        pages.append((f"/pilotgemeinde/{slug}", "0.8", "weekly", current_date))
-    xml = render_template(
-        "sitemap.xml", site_url=current_app.config["SITE_URL"], pages=pages
-    )
-    cache_module.cache_set(cache_key, xml, ttl=3600)
-    return Response(xml, mimetype="application/xml")
-
-
 ## Health endpoints registered via health_bp
 
 
 # --- Address API ---
 @main_bp.route("/api/suggest_addresses")
-@limiter.limit("30 per minute") if limiter else lambda f: f
+@limiter.limit("30 per minute")
 def api_suggest_addresses():
     query = request.args.get("q", "").strip()
     query = security_utils.sanitize_string(query, max_length=100)
@@ -464,7 +316,7 @@ def api_suggest_addresses():
 
 # --- Check Potential ---
 @main_bp.route("/api/check_potential", methods=["POST"])
-@limiter.limit("10 per minute") if limiter else lambda f: f
+@limiter.limit("10 per minute")
 def api_check_potential():
     try:
         is_valid_size, size_error = security_utils.check_request_size(request)
@@ -547,20 +399,20 @@ def _registration_response(user_type):
 
 
 @main_bp.route("/api/register_anonymous", methods=["POST"])
-@limiter.limit("5 per minute") if limiter else lambda f: f
+@limiter.limit("5 per minute")
 def api_register_anonymous():
     return _registration_response("anonymous")
 
 
 @main_bp.route("/api/register_full", methods=["POST"])
-@limiter.limit("5 per minute") if limiter else lambda f: f
+@limiter.limit("5 per minute")
 def api_register_full():
     return _registration_response("registered")
 
 
 # --- Meter Data Upload ---
 @main_bp.route("/api/meter-data/upload", methods=["POST"])
-@limiter.limit("10 per minute") if limiter else lambda f: f
+@limiter.limit("10 per minute")
 def api_meter_data_upload():
     import meter_data
 
@@ -605,18 +457,8 @@ def meter_upload_page():
 
 
 # --- Unsubscribe ---
-@main_bp.route("/impressum")
-def impressum():
-    return render_city_template("impressum.html")
-
-
-@main_bp.route("/datenschutz")
-def datenschutz():
-    return render_city_template("datenschutz.html")
-
-
 @main_bp.route("/unsubscribe", methods=["GET", "POST"])
-@limiter.limit("5 per minute") if limiter else lambda f: f
+@limiter.limit("5 per minute")
 def unsubscribe_page():
     status = None
     message = None
@@ -668,7 +510,7 @@ def unsubscribe_page():
 
 
 @main_bp.route("/unsubscribe/<token>", methods=["GET", "POST"])
-@limiter.limit("10 per minute") if limiter else lambda f: f
+@limiter.limit("10 per minute")
 def unsubscribe_token(token):
     try:
         token_uuid = security_utils.validate_uuid(token)
@@ -707,6 +549,35 @@ def unsubscribe_token(token):
         message="Ihre Daten wurden erfolgreich gelöscht.",
         email="",
     )
+
+
+@main_bp.route("/registry/verify/<token>", methods=["GET", "POST"])
+def verify_registry_entry(token):
+    entry = db.get_registry_entry_by_verification_token(token)
+    if not entry:
+        abort(404)
+
+    csrf_token = session.get("registry_verification_csrf_token")
+    if not isinstance(csrf_token, str) or not csrf_token:
+        csrf_token = secrets.token_urlsafe(32)
+        session["registry_verification_csrf_token"] = csrf_token
+
+    if request.method == "GET":
+        return render_template(
+            "registry_verify.html", entry=entry, csrf_token=csrf_token
+        )
+
+    submitted = request.form.get("csrf_token", "")
+    if (
+        not isinstance(submitted, str)
+        or not submitted.isascii()
+        or not hmac.compare_digest(submitted, csrf_token)
+    ):
+        abort(400)
+
+    db.mark_registry_entry_verified(entry["id"])
+    session.pop("registry_verification_csrf_token", None)
+    return redirect("/?registry=verified")
 
 
 # --- Dashboard ---
@@ -999,6 +870,82 @@ def _parse_dashboard_ttl_seconds(raw, default):
     return max(60, min(value, 86_400))
 
 
+_DNS_LABEL_RE = re.compile(r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)$")
+
+
+def _contains_invalid_characters(value):
+    return any(char.isspace() or ord(char) < 32 for char in value)
+
+
+def _is_valid_hostname(hostname):
+    if not hostname or "%" in hostname:
+        return False
+    if _contains_invalid_characters(hostname):
+        return False
+    if "[" in hostname or "]" in hostname:
+        return False
+    try:
+        ipaddress.ip_address(hostname)
+        return True
+    except ValueError:
+        pass
+    try:
+        ascii_hostname = hostname.encode("idna").decode("ascii")
+    except UnicodeError:
+        return False
+    has_trailing_dot = ascii_hostname.endswith(".")
+    if has_trailing_dot:
+        ascii_hostname = ascii_hostname[:-1]
+    if len(ascii_hostname) > 253:
+        return False
+    labels = ascii_hostname.split(".")
+    return all(_DNS_LABEL_RE.match(label) for label in labels)
+
+
+def _canonical_origin(parsed):
+    scheme = parsed.scheme
+    hostname = parsed.hostname
+    port = parsed.port
+    host = f"[{hostname}]" if ":" in hostname else hostname
+    if port is not None:
+        return f"{scheme}://{host}:{port}"
+    return f"{scheme}://{host}"
+
+
+def _validated_public_site_url(value):
+    if _contains_invalid_characters(value):
+        raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL")
+    if "?" in value or "#" in value or ";" in value:
+        raise ValueError("PUBLIC_SITE_URL must not contain credentials or suffixes")
+    try:
+        parsed = urlsplit(value)
+    except ValueError as error:
+        raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL") from error
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.netloc
+        or not parsed.hostname
+    ):
+        raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL")
+    if (
+        parsed.username is not None
+        or parsed.password is not None
+        or parsed.path not in {"", "/"}
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("PUBLIC_SITE_URL must not contain credentials or suffixes")
+    try:
+        port = parsed.port
+    except ValueError as error:
+        raise ValueError("PUBLIC_SITE_URL must have a valid port") from error
+    if parsed.netloc.endswith(":") or (port is not None and port < 1):
+        raise ValueError("PUBLIC_SITE_URL must have a valid port")
+    if not _is_valid_hostname(parsed.hostname):
+        raise ValueError("PUBLIC_SITE_URL must have a valid hostname")
+    return _canonical_origin(parsed)
+
+
 def create_app(config=None, *, load_environment=True, check_database=True):
     """Create one configured OpenLEG Flask application."""
     if load_environment:
@@ -1040,6 +987,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         MAX_CONTENT_LENGTH=10 * 1024 * 1024,
         APP_BASE_URL=app_base_url,
         SITE_URL=app_base_url.rstrip("/"),
+        PUBLIC_SITE_URL=os.getenv("PUBLIC_SITE_URL", "https://openleg.ch"),
         ALLOWED_HOSTS=os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(","),
         ADMIN_EMAIL=os.getenv("ADMIN_EMAIL", "hallo@openleg.ch"),
         CRON_SECRET=os.getenv("CRON_SECRET", "").strip(),
@@ -1056,54 +1004,64 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         ):
             application.config["SESSION_COOKIE_SECURE"] = True
 
+    public_site_base = _validated_public_site_url(application.config["PUBLIC_SITE_URL"])
+
+    def public_site_url(path):
+        if path.startswith("//"):
+            raise ValueError("public site link must be a relative path")
+        relative_path = path.lstrip("/")
+        parsed_path = urlparse(relative_path)
+        if parsed_path.scheme or parsed_path.netloc:
+            raise ValueError("public site link must be a relative path")
+        return urljoin(f"{public_site_base}/", relative_path)
+
+    application.jinja_env.globals["public_site_url"] = public_site_url
+
     for blueprint in (
         main_bp,
         municipality_bp,
-        pilot_bp,
+        registry_api_bp,
         public_api_bp,
         health_bp,
         utility_bp,
-        rangliste_bp,
-        registry_bp,
-        self_host_bp,
         admin_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)
 
-    if HAS_SECURITY_LIBS:
-        limiter.init_app(application)
-        Talisman(
-            application,
-            force_https=application.config["APP_BASE_URL"].startswith("https://"),
-            content_security_policy={
-                "default-src": "'self'",
-                "script-src": [
-                    "'self'",
-                    "'unsafe-inline'",
-                    "https://unpkg.com",
-                    "https://cdn.jsdelivr.net",
-                    "https://www.googletagmanager.com",
-                ],
-                "style-src": [
-                    "'self'",
-                    "'unsafe-inline'",
-                    "https://unpkg.com",
-                    "https://cdn.jsdelivr.net",
-                    "https://fonts.googleapis.com",
-                ],
-                "img-src": ["'self'", "data:", "https:", "http:"],
-                "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
-                "connect-src": [
-                    "'self'",
-                    "https://www.google-analytics.com",
-                    "https://region1.google-analytics.com",
-                    "https://www.googletagmanager.com",
-                ],
-            },
-            content_security_policy_nonce_in=None,
-        )
-        logger.info("Security features enabled")
+    limiter.init_app(application)
+    Talisman(
+        application,
+        force_https=application.config["APP_BASE_URL"].startswith("https://"),
+        session_cookie_secure=application.config["SESSION_COOKIE_SECURE"],
+        content_security_policy={
+            "default-src": "'self'",
+            "script-src": [
+                "'self'",
+                "'unsafe-inline'",
+                "https://unpkg.com",
+                "https://cdn.jsdelivr.net",
+                "https://www.googletagmanager.com",
+            ],
+            "style-src": [
+                "'self'",
+                "'unsafe-inline'",
+                "https://unpkg.com",
+                "https://cdn.jsdelivr.net",
+                "https://fonts.googleapis.com",
+            ],
+            "img-src": ["'self'", "data:", "https:", "http:"],
+            "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
+            "connect-src": [
+                "'self'",
+                "https://www.google-analytics.com",
+                "https://region1.google-analytics.com",
+                "https://www.googletagmanager.com",
+            ],
+        },
+        content_security_policy_nonce_in=None,
+    )
+    logger.info("Security features enabled")
 
     return application
 
