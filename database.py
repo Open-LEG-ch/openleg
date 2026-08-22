@@ -111,7 +111,7 @@ def save_building(
                         referrer_id, referral_code, city_id
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        to_timestamp(%s), %s, %s, %s, %s, %s, %s
+                        to_timestamp(%s), %s, to_timestamp(%s), %s, %s, %s, %s
                     )
                     ON CONFLICT (building_id) DO UPDATE SET
                         email = EXCLUDED.email,

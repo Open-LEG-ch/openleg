@@ -1033,6 +1033,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     Talisman(
         application,
         force_https=application.config["APP_BASE_URL"].startswith("https://"),
+        session_cookie_secure=application.config["SESSION_COOKIE_SECURE"],
         content_security_policy={
             "default-src": "'self'",
             "script-src": [

@@ -310,6 +310,42 @@ def test_logout_requires_csrf_revokes_links_and_clears_session(app_module, monke
         assert "dashboard_csrf_token" not in state
 
 
+def test_http_access_exchange_emits_session_cookie_without_secure_attribute(
+    monkeypatch,
+):
+    import app as app_module
+
+    raw_token = "a" * 43
+    monkeypatch.setattr(
+        app_module.db,
+        "consume_dashboard_access_token",
+        lambda _token_hash: {"building_id": "building-session"},
+    )
+    web = app_module.create_app(
+        {
+            "TESTING": True,
+            "SECRET_KEY": "dashboard-access-test-key",
+            "APP_BASE_URL": "http://localhost:5003",
+            "SESSION_COOKIE_SECURE": False,
+            "RATELIMIT_STORAGE_URI": "memory://",
+        },
+        load_environment=False,
+        check_database=False,
+    )
+    hooks = _disable_rate_limit_hooks(web)
+    try:
+        client = web.test_client()
+        response = client.get(f"/dashboard/access/{raw_token}", follow_redirects=False)
+    finally:
+        web.before_request_funcs[None] = hooks
+
+    assert response.status_code == 302
+    set_cookies = response.headers.getlist("Set-Cookie")
+    session_cookie = next((c for c in set_cookies if c.startswith("session=")), None)
+    assert session_cookie is not None
+    assert "Secure" not in session_cookie
+
+
 def test_https_base_url_defaults_session_cookie_to_secure(monkeypatch):
     import app as app_module
 
