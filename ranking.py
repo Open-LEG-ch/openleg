@@ -5,7 +5,6 @@ The class works with an injected profile list, so it stays pure and easy to
 unit-test. Database access is only performed through ``Ranking.load()``.
 """
 
-import pv_badge
 import pv_ranking
 from store import ranking as store_ranking
 
@@ -115,41 +114,3 @@ class Ranking:
             if row.get("bfs_number") == bfs:
                 return row.get("rank")
         return None
-
-    def badge_svg(self, bfs: int, profile: dict | None = None) -> str:
-        """SVG badge for one municipality.
-
-        If ``profile`` is provided, it is used as the data source and only the
-        national rank is resolved against the loaded ranking. This supports
-        municipalities that exist in the profile table but are not part of the
-        PV ranking because they have no score yet.
-        """
-        if profile is None:
-            for row in self._profiles:
-                if row.get("bfs_number") == bfs:
-                    profile = row
-                    break
-            if profile is None:
-                return ""
-        display_score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
-        rank = self._rank_for_bfs(bfs)
-        return pv_badge.badge_svg(profile.get("name"), display_score, rank)
-
-    def og_card_svg(self, bfs: int, profile: dict | None = None) -> str:
-        """SVG OpenGraph card for one municipality."""
-        if profile is None:
-            for row in self._profiles:
-                if row.get("bfs_number") == bfs:
-                    profile = row
-                    break
-            if profile is None:
-                return ""
-        display_score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
-        rank = self._rank_for_bfs(bfs)
-        return pv_badge.og_card_svg(
-            profile.get("name"),
-            profile.get("kanton"),
-            display_score,
-            rank,
-            profile.get("pv_untapped_kw"),
-        )
