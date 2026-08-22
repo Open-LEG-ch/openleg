@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import database
+from tests.consent_visibility import filters_by_consent
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -213,23 +214,9 @@ class _ProfileVisibilityCursor:
         self.query = " ".join(query.split())
         self.params = params or ()
 
-    def _filters_by_consent(self):
-        """What Postgres would actually do with the join this query wrote.
-
-        A substring test for "JOIN consents" cannot tell INNER from LEFT, and a
-        LEFT JOIN carrying the predicate in its ON clause keeps every building,
-        consented or not. Model both shapes so the double can catch either.
-        """
-        if "INNER JOIN consents" in self.query:
-            return "share_with_neighbors = TRUE" in self.query
-        if "LEFT JOIN consents" in self.query:
-            where_clause = self.query.partition(" WHERE ")[2]
-            return "share_with_neighbors = TRUE" in where_clause
-        return False
-
     def _visible(self):
         rows = list(self.buildings)
-        if self._filters_by_consent():
+        if filters_by_consent(self.query):
             rows = [
                 row for row in rows if self.consents.get(row["building_id"]) is True
             ]
