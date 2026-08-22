@@ -20,6 +20,7 @@ BLUEPRINTS = {
     "health_bp": "health.py",
     "utility_bp": "utility_portal.py",
     "admin_bp": "admin.py",
+    "cron_bp": "cron.py",
 }
 
 
@@ -156,22 +157,36 @@ def test_doc_keeps_operations_out_of_the_public_repo() -> None:
 
 
 def test_doc_matches_billing_orchestration_boundary() -> None:
-    """The doc must describe the billing seam that app.py actually wires up.
+    """The doc must describe the billing seam the app actually wires up.
 
-    app.py drives billing_runner from a cron route and per-community routes. A
+    The app drives billing_runner from a cron route and per-community routes. A
     doc that calls the billing code uncalled, or its period table empty, sends a
     reader looking for work that is already shipped, and hides the work that is
     genuinely missing: there is no member UI or invoice PDF.
+
+    Asserted against the registered route map rather than one module's source,
+    because the cron surface moved into its own blueprint (#335) and the check
+    should follow the route, not the file.
     """
-    app_source = APP_PATH.read_text(encoding="utf-8")
-    assert "billing_runner.run_billing_period" in app_source, (
-        "app.py must call billing_runner.run_billing_period"
+    import app as app_module
+
+    application = app_module.create_app(
+        {
+            "TESTING": True,
+            "RATELIMIT_STORAGE_URI": "memory://",
+            "APP_BASE_URL": "http://localhost",
+        },
+        load_environment=False,
+        check_database=False,
     )
-    assert "/api/cron/process-billing" in app_source, (
-        "app.py must expose the /api/cron/process-billing route"
-    )
-    assert "/api/billing/community/" in app_source, (
-        "app.py must expose the /api/billing/community/ routes"
+    registered = {str(rule) for rule in application.url_map.iter_rules()}
+
+    assert "/api/cron/process-billing" in registered
+    assert any(rule.startswith("/api/billing/community/") for rule in registered)
+
+    cron_source = (PROJECT_ROOT / "cron.py").read_text(encoding="utf-8")
+    assert "billing_runner.run_billing_period" in cron_source, (
+        "the billing cron must call billing_runner.run_billing_period"
     )
 
     lowered = " ".join(_doc_text().lower().split())
