@@ -59,6 +59,8 @@ Storage lives in `store/`, one module per self-contained domain:
 
 | Module | Owns |
 | --- | --- |
+| `store/building` | Building registrations, consent-gated building reads, dashboard building data |
+| `store/cluster` | Provisional cluster assignments and cluster metadata |
 | `store/ranking` | PV snapshots, the ten-year panel, Rangliste read models |
 | `store/profile` | Gemeindeprofil: ElCom tariffs, profiles, Sonnendach |
 | `store/billing` | LEG communities and billing periods |
@@ -71,10 +73,10 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/token` | Auth and claim tokens |
 | `store/access_token` | Hashed, single-use magic-link tokens, dashboard and municipality |
 
-`database.py` still holds the domains that have not been extracted: buildings,
-clusters, referrals, analytics events, municipalities, consents, API clients,
-documents, and ops snapshots. New storage code for a cohesive domain belongs in
-`store/`, never appended to `database.py`.
+`database.py` still holds the domains that have not been extracted: referrals,
+analytics events, municipalities, consents, API clients, documents, and ops
+snapshots. New storage code for a cohesive domain belongs in `store/`, never
+appended to `database.py`.
 
 Domain logic sits above storage and stays free of SQL:
 
