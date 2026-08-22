@@ -69,6 +69,7 @@ Commands:
   green     Run one targeted pytest node (expected to pass after implementation)
   refactor  Re-run one targeted pytest node during cleanup
   gate      Run full regression gates (pytest + ruff checks)
+  mutants   Run mutmut over the scope declared in pyproject.toml
 EOF
 }
 
@@ -100,6 +101,14 @@ case "${command}" in
     pytest tests/ -q
     "${py_cmd}" -m ruff check .
     "${py_cmd}" -m ruff format --check .
+    ;;
+  mutants)
+    # Mutation testing reports on the tests, not on the program. It runs over
+    # the source_paths declared in pyproject.toml; widening that scope to make a
+    # score look better is the one thing this command must never do.
+    py_cmd="$(python_cmd || true)"
+    "${py_cmd}" -m mutmut run
+    "${py_cmd}" -m mutmut results
     ;;
   *)
     echo "Unknown command: ${command}" >&2

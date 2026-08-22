@@ -20,3 +20,11 @@ ignore = ["BLE001", "SIM117"]
 [tool.ruff.lint.per-file-ignores]
 # Meter storage currently uses PostgreSQL TIMESTAMP and tests its naive contract.
 "tests/test_meter_connectors.py" = ["DTZ001"]
+
+[tool.mutmut]
+# Scoped deliberately. A mutation pass over the whole tree would bury the signal
+# from the two places a survivor actually costs something: the money path, and
+# the import guard that decides whether a meter correction is noticed. Coverage
+# reads high across store/ because the tests execute the surrounding Python
+# while asserting only the shape of the SQL.
+source_paths = ["billing_runner.py", "store/metering.py"]

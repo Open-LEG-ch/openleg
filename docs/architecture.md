@@ -165,6 +165,26 @@ for audit, but there is no member UI and no invoice PDF generation or download y
 5. Templates render HTML with tenant context and public-safe metadata, or API
    routes return JSON from stable read models.
 
+## Verifying a guard
+
+CLAUDE.md requires every security or privacy claim to be verified by mutation:
+break the production code the test is meant to catch, confirm the suite goes
+red, revert, confirm green.
+
+`scripts/tdd_cycle.sh mutants` automates that check for the scope declared in
+`[tool.mutmut]`, today `billing_runner.py` and `store/metering.py`: the two
+places where a surviving mutant costs money or loses a meter correction. It does
+not cover the whole repository, and it is not meant to. A guard outside that
+scope, the neighbour consent gate or the access-token policy for instance, is
+still verified by hand: break it, watch the named test go red, revert, and
+report the red output in the pull request. Widen `source_paths` when a module
+earns the runtime, never to make a score look better.
+
+A coverage percentage over the `store/` layer is **not evidence**. Those tests
+execute the surrounding Python while asserting only the shape of the SQL, so
+coverage reads high while the predicate stays unverified. Only a behavioural
+test, or a killed mutant, says anything about the query.
+
 ## Contribution boundaries
 
 - Keep product code, public docs, tests, fixtures, and examples here.
