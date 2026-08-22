@@ -263,8 +263,8 @@ def get_all_building_profiles(city_id: str | None = None) -> list[dict]:
                                b.annual_consumption_kwh, b.potential_pv_kwp, b.user_type
                         FROM buildings b
                         INNER JOIN consents c ON b.building_id = c.building_id
+                        AND c.share_with_neighbors = TRUE
                         WHERE b.verified = TRUE
-                          AND c.share_with_neighbors = TRUE
                           AND b.city_id = %s
                     """,
                     (city_id,),
@@ -275,8 +275,8 @@ def get_all_building_profiles(city_id: str | None = None) -> list[dict]:
                                b.annual_consumption_kwh, b.potential_pv_kwp, b.user_type
                         FROM buildings b
                         INNER JOIN consents c ON b.building_id = c.building_id
+                        AND c.share_with_neighbors = TRUE
                         WHERE b.verified = TRUE
-                          AND c.share_with_neighbors = TRUE
                     """)
             return [dict(row) for row in cur.fetchall()]
     except Exception as e:

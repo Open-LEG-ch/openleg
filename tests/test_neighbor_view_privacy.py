@@ -274,7 +274,11 @@ def test_profile_visibility_double_requires_the_predicate(visibility_cursor):
         WHERE b.verified = TRUE
         """
     )
-    assert any(row["building_id"] == "revoked" for row in visibility_cursor.fetchall())
+    assert {row["building_id"] for row in visibility_cursor.fetchall()} == {
+        "consented",
+        "revoked",
+        "missing",
+    }
 
 
 def test_profile_visibility_double_sees_through_an_outer_join(visibility_cursor):
@@ -287,13 +291,24 @@ def test_profile_visibility_double_sees_through_an_outer_join(visibility_cursor)
         WHERE b.verified = TRUE
         """
     )
-    assert any(row["building_id"] == "revoked" for row in visibility_cursor.fetchall())
+    assert {row["building_id"] for row in visibility_cursor.fetchall()} == {
+        "consented",
+        "revoked",
+        "missing",
+    }
 
 
 def test_building_profiles_read_excludes_revoked_and_missing_consent(
     visibility_cursor,
 ):
     visible = database.get_all_building_profiles()
+
+    assert [row["building_id"] for row in visible] == ["consented"]
+
+
+def test_the_city_scoped_read_is_gated_too(visibility_cursor):
+    """Both branches of the query carry the gate, not only the unscoped one."""
+    visible = database.get_all_building_profiles(city_id="baden")
 
     assert [row["building_id"] for row in visible] == ["consented"]
 
