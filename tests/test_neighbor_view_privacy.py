@@ -190,7 +190,10 @@ class _ProfileVisibilityCursor:
 
     def _visible(self):
         rows = list(self.buildings)
-        if "JOIN consents" in self.query and "share_with_neighbors = TRUE" in self.query:
+        if (
+            "JOIN consents" in self.query
+            and "share_with_neighbors = TRUE" in self.query
+        ):
             rows = [
                 row for row in rows if self.consents.get(row["building_id"]) is True
             ]

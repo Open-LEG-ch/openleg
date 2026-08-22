@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-import hashlib
 import hmac
 import ipaddress
 import logging
-import math
 import os
 import re
 import secrets
@@ -11,7 +9,6 @@ import threading
 from datetime import timedelta
 from urllib.parse import urljoin, urlparse, urlsplit
 
-import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from flask import (
@@ -48,6 +45,7 @@ from email_utils import send_email
 from health import health_bp
 from leg_registry import registry_api_bp
 from municipality import municipality_bp
+from neighbor_view import collect_building_locations, find_provisional_matches
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import limiter
 from security_utils import log_security_event
@@ -112,33 +110,6 @@ def apply_basic_security_headers(response):
     return response
 
 
-# --- Anonymity ---
-ANONYMITY_RADIUS_METERS = 120
-
-
-def jitter_coordinates(lat, lon, radius_meters=ANONYMITY_RADIUS_METERS, seed=None):
-    if lat is None or lon is None or radius_meters <= 0:
-        return lat, lon
-    if seed is not None:
-        if not isinstance(seed, str):
-            seed = str(seed)
-        seed_hash = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16]
-        seed_value = int(seed_hash, 16)
-    else:
-        seed_value = None
-    rng = np.random.default_rng(seed_value)
-    distance = radius_meters * math.sqrt(rng.random())
-    angle = rng.uniform(0, 2 * math.pi)
-    earth_radius = 6_378_137.0
-    lat_rad = math.radians(lat)
-    delta_lat = (distance * math.cos(angle)) / earth_radius
-    denom = earth_radius * math.cos(lat_rad)
-    if abs(denom) < 1e-9:
-        denom = earth_radius
-    delta_lon = (distance * math.sin(angle)) / denom
-    return lat + math.degrees(delta_lat), lon + math.degrees(delta_lon)
-
-
 def _tenant_name():
     try:
         return getattr(g, "tenant", {}).get("platform_name", "OpenLEG")
@@ -172,26 +143,6 @@ def send_confirmation_email(email, unsubscribe_url, building_id=None, address=No
     send_email(email, subject, message_body)
 
 
-def collect_building_locations(city_id=None, exclude_building_id=None):
-    """Get all verified building locations with jittered coordinates."""
-    buildings = db.get_all_buildings(city_id=city_id)
-    locations = []
-    for b in buildings:
-        if exclude_building_id and b.get("building_id") == exclude_building_id:
-            continue
-        lat = b.get("lat")
-        lon = b.get("lon")
-        if lat is None or lon is None:
-            continue
-        jlat, jlon = jitter_coordinates(
-            float(lat), float(lon), seed=b.get("building_id")
-        )
-        locations.append(
-            {"lat": jlat, "lon": jlon, "type": b.get("user_type", "anonymous")}
-        )
-    return locations
-
-
 def run_full_ml_task(new_building_id=None, city_id=None):
     """Background ML clustering task using PostgreSQL data."""
     logger.info("[ML] Starting background clustering...")
@@ -217,44 +168,6 @@ def run_full_ml_task(new_building_id=None, city_id=None):
         db.save_cluster_info(community["community_id"], community)
 
     logger.info(f"[ML] Clustering done: {len(ranked_communities)} clusters")
-
-
-def find_provisional_matches(new_profile):
-    """Fast provisional match search (distance only, no DBSCAN)."""
-    profiles = db.get_all_building_profiles()
-    if not profiles:
-        return None
-
-    new_coords = (new_profile["lat"], new_profile["lon"])
-    provisional = [new_profile]
-
-    for p in profiles:
-        dist = ml_models.calculate_distance(
-            new_coords[0], new_coords[1], float(p["lat"]), float(p["lon"])
-        )
-        if dist <= 150:
-            provisional.append(p)
-
-    if len(provisional) < 2:
-        return None
-
-    community_df = pd.DataFrame(provisional)
-    autarky_score, _, _ = ml_models.calculate_community_autarky(community_df, None)
-
-    members = [
-        {
-            "building_id": p.get("building_id", ""),
-            "lat": float(p["lat"]),
-            "lon": float(p["lon"]),
-        }
-        for p in provisional
-    ]
-    return {
-        "community_id": "provisional",
-        "num_members": len(members),
-        "members": members,
-        "autarky_percent": autarky_score * 100,
-    }
 
 
 # ===========================
