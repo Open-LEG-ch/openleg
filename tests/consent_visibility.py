@@ -45,7 +45,7 @@ _PREDICATE = re.compile(
     r"^\(*\s*(?:(\w+)\.)?share_with_neighbors\s*=\s*TRUE\s*\)*$", re.IGNORECASE
 )
 _BUILDING_BINDING = re.compile(
-    r"\b(\w+)\.building_id\s*=\s*(\w+)\.building_id\b", re.IGNORECASE
+    r"(\w+)\.building_id\s*=\s*(\w+)\.building_id", re.IGNORECASE
 )
 
 
@@ -100,13 +100,17 @@ def _join_condition(normalized: str, join_end: int) -> str:
 def _binds_the_building(condition: str, consent_alias: str) -> bool:
     """The join must match one consent row per building, not any consent row.
 
-    The binding has to name the consents alias itself. A query that joins
-    `consents c` but writes `ON b.building_id = r.building_id` binds some other
-    table and cross joins the consent rows, so one granted row would expose
-    every revoked building.
+    The binding has to name the consents alias itself and stand as its own
+    conjunct. A query that joins `consents c` but writes
+    `ON b.building_id = r.building_id` binds some other table, and one widened
+    with `OR c.share_with_neighbors = TRUE` matches every building as soon as a
+    single consent row is granted. Either way the consent rows are cross joined.
     """
     alias = consent_alias.lower()
-    for match in _BUILDING_BINDING.finditer(condition):
+    for term in _top_level_terms(condition):
+        match = _BUILDING_BINDING.fullmatch(term.strip().strip("()").strip())
+        if not match:
+            continue
         left, right = match.group(1).lower(), match.group(2).lower()
         if left != right and alias in (left, right):
             return True
