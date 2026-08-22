@@ -4,7 +4,6 @@ PostgreSQL Database Layer for OpenLEG
 Replaces JSON file persistence with proper database storage.
 """
 
-import json
 import logging
 import os
 from contextlib import contextmanager
@@ -80,470 +79,7 @@ def _create_tables():
     create_tables()
 
 
-# === Analytics Operations ===
-
-
-def track_event(
-    event_type: str, building_id: str | None = None, data: dict | None = None
-) -> bool:
-    """Track an analytics event."""
-    try:
-        import json
-
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    INSERT INTO analytics_events (event_type, building_id, data)
-                    VALUES (%s, %s, %s)
-                """,
-                (
-                    event_type,
-                    building_id or "",
-                    json.dumps(data if data is not None else {}),
-                ),
-            )
-            return True
-    except Exception as e:
-        logger.error(f"[DB] Error tracking event: {e}")
-        return False
-
-
-def get_stats(city_id: str | None = None) -> dict:
-    """Get platform statistics, optionally scoped by city_id."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                stats = {}
-                city_filter = " AND city_id = %s" if city_id else ""
-                city_params = (city_id,) if city_id else ()
-
-                # Total buildings
-                cur.execute(
-                    f"SELECT COUNT(*) as count FROM buildings WHERE verified = TRUE{city_filter}",
-                    city_params,
-                )
-                stats["total_buildings"] = cur.fetchone()["count"]
-
-                # By type
-                cur.execute(
-                    f"""
-                    SELECT user_type, COUNT(*) as count
-                    FROM buildings WHERE verified = TRUE{city_filter}
-                    GROUP BY user_type
-                """,
-                    city_params,
-                )
-                for row in cur.fetchall():
-                    stats[f"{row['user_type']}_count"] = row["count"]
-
-                # Total referrals
-                if city_id:
-                    cur.execute(
-                        """
-                        SELECT COUNT(*) as count FROM referrals r
-                        JOIN buildings b ON r.referrer_id = b.building_id
-                        WHERE b.city_id = %s
-                    """,
-                        (city_id,),
-                    )
-                else:
-                    cur.execute("SELECT COUNT(*) as count FROM referrals")
-                stats["total_referrals"] = cur.fetchone()["count"]
-
-                # Registrations today
-                cur.execute(
-                    f"""
-                    SELECT COUNT(*) as count FROM buildings
-                    WHERE DATE(registered_at) = CURRENT_DATE{city_filter}
-                """,
-                    city_params,
-                )
-                stats["registrations_today"] = cur.fetchone()["count"]
-
-                return stats
-    except Exception as e:
-        logger.error(f"[DB] Error getting stats: {e}")
-        return {}
-
-
-# === Migration from JSON ===
-
-
-def migrate_from_json(json_data: dict) -> tuple[int, int]:
-    """
-    Migrate data from JSON format to PostgreSQL.
-    Returns (success_count, error_count).
-    """
-    success = 0
-    errors = 0
-
-    buildings = json_data.get("buildings", {})
-    interest_pool = json_data.get("interest_pool", {})
-
-    # Migrate registered buildings
-    for building_id, data in buildings.items():
-        try:
-            profile = data.get("profile", {})
-            consents = data.get("consents", {})
-
-            save_building(
-                building_id=building_id,
-                email=data.get("email", ""),
-                profile=profile,
-                consents=consents,
-                user_type="registered",
-                phone=data.get("phone"),
-            )
-            success += 1
-        except Exception as e:
-            logger.error(f"[MIGRATION] Error migrating building {building_id}: {e}")
-            errors += 1
-
-    # Migrate interest pool (anonymous)
-    for building_id, data in interest_pool.items():
-        try:
-            profile = data.get("profile", {})
-            consents = data.get("consents", {})
-
-            save_building(
-                building_id=building_id,
-                email=data.get("email", ""),
-                profile=profile,
-                consents=consents,
-                user_type="anonymous",
-                phone=data.get("phone"),
-            )
-            success += 1
-        except Exception as e:
-            logger.error(f"[MIGRATION] Error migrating interest {building_id}: {e}")
-            errors += 1
-
-    logger.info(f"[MIGRATION] Completed: {success} success, {errors} errors")
-    return success, errors
-
-
-# === Municipality Operations ===
-
-
-def save_municipality(
-    bfs_number, name, kanton="ZH", dso_name=None, population=None, subdomain=None
-):
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO municipalities (bfs_number, name, kanton, dso_name, population, subdomain)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (bfs_number) DO UPDATE SET
-                        name = EXCLUDED.name, dso_name = EXCLUDED.dso_name,
-                        population = EXCLUDED.population, updated_at = CURRENT_TIMESTAMP
-                    RETURNING id
-                """,
-                    (bfs_number, name, kanton, dso_name, population, subdomain),
-                )
-                row = cur.fetchone()
-                return row["id"] if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error saving municipality: {e}")
-        return None
-
-
-def get_all_municipalities(kanton=None):
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            if kanton:
-                cur.execute(
-                    "SELECT * FROM municipalities WHERE kanton = %s ORDER BY name",
-                    (kanton,),
-                )
-            else:
-                cur.execute("SELECT * FROM municipalities ORDER BY name")
-            return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[DB] Error getting municipalities: {e}")
-        return []
-
-
-def update_municipality_status(bfs_number, status, admin_email=None):
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                if admin_email:
-                    cur.execute(
-                        """
-                        UPDATE municipalities SET onboarding_status = %s, admin_email = %s, updated_at = CURRENT_TIMESTAMP
-                        WHERE bfs_number = %s
-                    """,
-                        (status, admin_email, bfs_number),
-                    )
-                else:
-                    cur.execute(
-                        """
-                        UPDATE municipalities SET onboarding_status = %s, updated_at = CURRENT_TIMESTAMP
-                        WHERE bfs_number = %s
-                    """,
-                        (status, bfs_number),
-                    )
-                return cur.rowcount > 0
-    except Exception as e:
-        logger.error(f"[DB] Error updating municipality status: {e}")
-        return False
-
-
-# === Data Consent Operations ===
-
-
-def save_data_consent(
-    building_id,
-    tier=1,
-    share_municipality=True,
-    share_research=False,
-    share_providers=False,
-    version="1.0",
-):
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO data_consents (building_id, tier, share_with_municipality, share_anonymized_research,
-                        share_aggregated_providers, consent_version)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (building_id) DO UPDATE SET
-                        tier = EXCLUDED.tier,
-                        share_with_municipality = EXCLUDED.share_with_municipality,
-                        share_anonymized_research = EXCLUDED.share_anonymized_research,
-                        share_aggregated_providers = EXCLUDED.share_aggregated_providers,
-                        consent_version = EXCLUDED.consent_version,
-                        consented_at = CURRENT_TIMESTAMP, revoked_at = NULL
-                """,
-                    (
-                        building_id,
-                        tier,
-                        share_municipality,
-                        share_research,
-                        share_providers,
-                        version,
-                    ),
-                )
-                return True
-    except Exception as e:
-        logger.error(f"[DB] Error saving data consent: {e}")
-        return False
-
-
-def get_data_consent(building_id):
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT * FROM data_consents WHERE building_id = %s AND revoked_at IS NULL",
-                    (building_id,),
-                )
-                row = cur.fetchone()
-                return dict(row) if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error getting data consent: {e}")
-        return None
-
-
-def count_consented_buildings(tier=None):
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                if tier:
-                    cur.execute(
-                        "SELECT COUNT(*) as count FROM data_consents WHERE tier >= %s AND revoked_at IS NULL",
-                        (tier,),
-                    )
-                else:
-                    cur.execute(
-                        "SELECT COUNT(*) as count FROM data_consents WHERE revoked_at IS NULL"
-                    )
-                return cur.fetchone()["count"]
-    except Exception as e:
-        logger.error(f"[DB] Error counting consented buildings: {e}")
-        return 0
-
-
-# === Initialization check ===
-
 _db_initialized = False
-
-
-def update_document_signing_status(deepsign_document_id: str, status: str) -> bool:
-    """Update LEG document signing status from DeepSign webhook."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    UPDATE leg_documents SET signing_status = %s, updated_at = CURRENT_TIMESTAMP
-                    WHERE deepsign_document_id = %s
-                """,
-                    (status, deepsign_document_id),
-                )
-                return cur.rowcount > 0
-    except Exception as e:
-        logger.error(f"[DB] Error updating document signing status: {e}")
-        return False
-
-
-def store_leg_document(
-    community_id: str, doc_type: str, pdf_bytes: bytes, filename: str
-) -> int:
-    """Store generated LEG document PDF."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO leg_documents (community_id, doc_type, filename, pdf_data)
-                    VALUES (%s, %s, %s, %s) RETURNING id
-                """,
-                    (community_id, doc_type, filename, pdf_bytes),
-                )
-                return dict(cur.fetchone())["id"]
-    except Exception as e:
-        logger.error(f"[DB] Error storing leg document: {e}")
-        return 0
-
-
-def get_leg_document(doc_id: int) -> dict | None:
-    """Get one stored LEG document including its PDF bytes."""
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    SELECT id, community_id, doc_type, filename, pdf_data,
-                           signing_status, created_at
-                    FROM leg_documents WHERE id = %s
-                """,
-                (doc_id,),
-            )
-            row = cur.fetchone()
-            return dict(row) if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error getting leg document: {e}")
-        return None
-
-
-def list_leg_documents(community_id: str) -> list[dict]:
-    """List all documents for a community."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT id, doc_type, filename, signing_status, deepsign_document_id, created_at
-                    FROM leg_documents WHERE community_id = %s ORDER BY created_at DESC
-                """,
-                    (community_id,),
-                )
-                cols = [d[0] for d in cur.description]
-                return [dict(zip(cols, row)) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[DB] Error listing leg documents: {e}")
-        return []
-
-
-def save_lea_report(job_name: str, summary_text: str, status: str = "ok") -> bool:
-    """Save an autonomous LEA report from a cron job webhook."""
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    INSERT INTO lea_reports (job_name, summary_text, status)
-                    VALUES (%s, %s, %s)
-                """,
-                (job_name, summary_text, status),
-            )
-            return True
-    except Exception as e:
-        logger.error(f"[DB] Error saving LEA report: {e}")
-        return False
-
-
-def get_lea_reports(limit: int = 50) -> list[dict]:
-    """Get recent LEA reports, newest first."""
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    SELECT id, job_name, created_at, summary_text, status
-                    FROM lea_reports
-                    ORDER BY created_at DESC
-                    LIMIT %s
-                """,
-                (limit,),
-            )
-            return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[DB] Error getting LEA reports: {e}")
-        return []
-
-
-def save_ops_snapshot(
-    source: str,
-    category: str,
-    summary_text: str = "",
-    status: str = "ok",
-    payload: dict | None = None,
-) -> bool:
-    """Save a structured operator snapshot for the admin ops dashboard."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO ops_snapshots (source, category, status, summary_text, payload)
-                    VALUES (%s, %s, %s, %s, %s::jsonb)
-                """,
-                    (
-                        source,
-                        category,
-                        status,
-                        summary_text,
-                        json.dumps(payload or {}),
-                    ),
-                )
-                return True
-    except Exception as e:
-        logger.error(f"[DB] Error saving ops snapshot: {e}")
-        return False
-
-
-def get_ops_snapshots(
-    limit: int = 50,
-    source: str | None = None,
-    category: str | None = None,
-) -> list[dict]:
-    """Get structured operator snapshots, newest first."""
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                where = []
-                params: list = []
-                if source:
-                    where.append("source = %s")
-                    params.append(source)
-                if category:
-                    where.append("category = %s")
-                    params.append(category)
-                query = """
-                    SELECT id, source, category, status, summary_text, payload, created_at
-                    FROM ops_snapshots
-                """
-                if where:
-                    query += " WHERE " + " AND ".join(where)
-                query += " ORDER BY created_at DESC LIMIT %s"
-                params.append(limit)
-                cur.execute(query, tuple(params))
-                return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[DB] Error getting ops snapshots: {e}")
-        return []
 
 
 def is_db_available() -> bool:
@@ -576,6 +112,7 @@ from store.access_token import (  # noqa: F401
     save_dashboard_access_token,
     save_municipality_access_token,
 )
+from store.analytics import get_stats, track_event  # noqa: F401
 from store.api_client import (  # noqa: F401
     get_api_client_by_key,
     get_api_usage_count,
@@ -609,12 +146,23 @@ from store.cluster import (  # noqa: F401
     save_cluster,
     save_cluster_info,
 )
+from store.consent import (  # noqa: F401
+    count_consented_buildings,
+    get_data_consent,
+    save_data_consent,
+)
 from store.correspondence import (  # noqa: F401
     get_correspondence_attachment,
     list_correspondence,
     log_correspondence,
 )
 from store.dashboard_profile import update_dashboard_profile  # noqa: F401
+from store.document import (  # noqa: F401
+    get_leg_document,
+    list_leg_documents,
+    store_leg_document,
+    update_document_signing_status,
+)
 from store.email_queue import (  # noqa: F401
     cancel_emails_for_building,
     get_email_stats,
@@ -643,8 +191,17 @@ from store.metering import (  # noqa: F401
     upsert_metering_points,
 )
 from store.municipality import (  # noqa: F401
+    get_all_municipalities,
     get_municipality,
     get_municipality_by_admin_email,
+    save_municipality,
+    update_municipality_status,
+)
+from store.ops import (  # noqa: F401
+    get_lea_reports,
+    get_ops_snapshots,
+    save_lea_report,
+    save_ops_snapshot,
 )
 from store.profile import (  # noqa: F401
     get_all_elcom_tariffs,

@@ -82,8 +82,8 @@ Application and API routes:
 
 - `app.py`: Flask product app, security policy, and the application factory.
 - `tenant.py`: hostname to territory resolution, tenant config, template context.
-- `database.py`: connection pool, schema creation, unextracted query helpers,
-  and the store re-exports.
+- `database.py`: connection pool, the `get_connection` seam, schema creation,
+  and the store re-exports. It holds no queries of its own.
 - `store/`: per-domain repositories (see the data layer below).
 - `api_public.py`: unauthenticated public JSON API.
 - `municipality.py`: municipality onboarding, access, and dashboard routes.
@@ -114,27 +114,24 @@ domains move into `store/`, each resolving the seam through a lazy
 `database.get_connection` lookup and re-exported at the end of `database.py`, so
 `import database as db; db.<fn>()` keeps working unchanged.
 
-Shipped stores: `store/building`, `store/cluster`, `store/ranking`,
-`store/profile`, `store/billing`, `store/email_queue`, `store/utility`,
-`store/metering`, `store/meter`, `store/registry`, `store/tenant`,
-`store/token`, `store/access_token`.
+Shipped stores: `store/access_token`, `store/analytics`, `store/api_client`,
+`store/billing`, `store/building`, `store/cluster`, `store/consent`,
+`store/correspondence`, `store/dashboard_profile`, `store/document`,
+`store/email_queue`, `store/formation_documents`, `store/meter`,
+`store/metering`, `store/municipality`, `store/ops`, `store/profile`,
+`store/ranking`, `store/referral`, `store/registry`, `store/tenant`,
+`store/token`, `store/utility`.
 
 New storage code for a cohesive domain goes into `store/`, not into
 `database.py`.
 
-### Extraction order
+### The extraction is finished
 
-Remaining in `database.py`, in the order they should be extracted. Each move is
-mechanical: lift the functions, add the lazy `_get_connection`, re-export, and
-keep the existing tests green.
+`database.py` now owns the connection pool, `get_connection`, the schema call,
+and the re-export block, and nothing else. Every domain lives in `store/`.
 
-1. `store/analytics` — events and aggregate stats.
-2. `store/consent` — data consents and consent counts.
-3. `store/document` — LEG documents and signing status.
-4. `store/ops` — LEA reports and ops snapshots.
-
-`_create_tables()` and `get_connection` stay in `database.py`. Extraction is
-finished when nothing but the pool, the schema, and the re-exports remain.
+New storage code for a cohesive domain gets its own module there. Nothing is
+appended to `database.py`.
 
 ## Data pipelines
 
