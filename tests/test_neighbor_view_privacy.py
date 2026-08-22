@@ -94,6 +94,31 @@ def test_provisional_match_summary_carries_no_member_identities():
         )
 
 
+def test_a_neighbour_without_coordinates_cannot_break_the_match():
+    """buildings.lat is nullable: collect_building_locations already skips those."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    profiles = [
+        {**NEIGHBOUR_PROFILES[0], "lat": None},
+        {**NEIGHBOUR_PROFILES[1], "lon": ""},
+        NEIGHBOUR_PROFILES[0],
+    ]
+
+    with patch.object(database, "get_all_building_profiles", return_value=profiles):
+        summary = neighbor_view.find_provisional_matches(dict(CALLER_PROFILE))
+
+    assert summary["num_members"] == 2
+
+
+def test_a_caller_without_coordinates_gets_no_match_rather_than_an_error():
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    with patch.object(
+        database, "get_all_building_profiles", return_value=NEIGHBOUR_PROFILES
+    ):
+        assert neighbor_view.find_provisional_matches({"lat": None, "lon": 8.5}) is None
+        assert neighbor_view.find_provisional_matches({}) is None
+
+
 # ---------------------------------------------------------------------------
 # The route a stranger calls
 # ---------------------------------------------------------------------------

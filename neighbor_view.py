@@ -56,18 +56,35 @@ def collect_building_locations(city_id=None, exclude_building_id=None):
     return locations
 
 
+def _coordinates(profile):
+    """Latitude and longitude as floats, or None when the row carries neither.
+
+    buildings.lat and buildings.lon are nullable, so a neighbour without
+    coordinates must be skipped rather than abort the whole request.
+    """
+    try:
+        return float(profile["lat"]), float(profile["lon"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def find_provisional_matches(new_profile):
     """Fast provisional match search (distance only, no DBSCAN)."""
     profiles = db.get_all_building_profiles()
     if not profiles:
         return None
 
-    new_coords = (new_profile["lat"], new_profile["lon"])
+    new_coords = _coordinates(new_profile)
+    if new_coords is None:
+        return None
     provisional = [new_profile]
 
     for p in profiles:
+        coords = _coordinates(p)
+        if coords is None:
+            continue
         dist = ml_models.calculate_distance(
-            new_coords[0], new_coords[1], float(p["lat"]), float(p["lon"])
+            new_coords[0], new_coords[1], coords[0], coords[1]
         )
         if dist <= 150:
             provisional.append(p)
