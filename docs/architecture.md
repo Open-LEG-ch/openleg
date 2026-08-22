@@ -113,7 +113,7 @@ domains move into `store/`, each resolving the seam through a lazy
 
 Shipped stores: `store/ranking`, `store/profile`, `store/billing`,
 `store/email_queue`, `store/utility`, `store/metering`, `store/meter`,
-`store/registry`, `store/tenant`, `store/token`.
+`store/registry`, `store/tenant`, `store/token`, `store/access_token`.
 
 New storage code for a cohesive domain goes into `store/`, not into
 `database.py`.

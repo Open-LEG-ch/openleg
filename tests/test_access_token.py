@@ -188,6 +188,30 @@ def test_a_padded_dashboard_subject_is_stored_stripped():
     ]
 
 
+@pytest.mark.parametrize("kind, subject", _kinds())
+@pytest.mark.parametrize(
+    "base_url",
+    (
+        pytest.param("https://openleg.ch", id="no-trailing-slash"),
+        pytest.param("https://openleg.ch/", id="trailing-slash"),
+    ),
+)
+def test_access_url_keeps_the_origin_however_the_base_is_written(
+    kind, subject, base_url
+):
+    url = access_token.access_url(kind, base_url, "a" * 43)
+
+    assert url == f"https://openleg.ch/{kind.url_path}/" + "a" * 43
+
+
+@pytest.mark.parametrize("kind, subject", _kinds())
+def test_access_url_keeps_a_path_prefix(kind, subject):
+    """urljoin drops the last segment of a base without a trailing slash."""
+    url = access_token.access_url(kind, "https://example.ch/openleg", "a" * 43)
+
+    assert url == f"https://example.ch/openleg/{kind.url_path}/" + "a" * 43
+
+
 def test_both_kinds_hash_through_the_same_implementation(monkeypatch):
     """Divergence is the failure mode this module exists to prevent."""
     calls = []

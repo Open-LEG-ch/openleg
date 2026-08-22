@@ -220,9 +220,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             if not token:
                 continue
             url = access_token.access_url(
-                access_token.DASHBOARD,
-                current_app.config["APP_BASE_URL"].rstrip("/") + "/",
-                token,
+                access_token.DASHBOARD, current_app.config["APP_BASE_URL"], token
             )
             try:
                 send_email(

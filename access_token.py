@@ -115,5 +115,12 @@ def consume(kind: AccessTokenKind, repository, raw_token: str):
 
 
 def access_url(kind: AccessTokenKind, base_url: str, raw_token: str) -> str:
+    """Build the magic-link URL under `base_url`, keeping any path prefix.
+
+    urljoin drops the last segment of a base without a trailing slash, so a
+    deployment under https://example.ch/openleg would lose its prefix. The rule
+    lives here rather than in each caller.
+    """
     encoded_token = quote(raw_token, safe="")
-    return urljoin(base_url, f"{kind.url_path}/{encoded_token}")
+    base = base_url if base_url.endswith("/") else base_url + "/"
+    return urljoin(base, f"{kind.url_path}/{encoded_token}")

@@ -126,7 +126,7 @@ def process_email_queue(app=None):
             failed += 1
             continue
         dashboard_url = access_token.access_url(
-            access_token.DASHBOARD, APP_BASE_URL + "/", dashboard_token
+            access_token.DASHBOARD, APP_BASE_URL, dashboard_token
         )
 
         # Render template with tenant context
