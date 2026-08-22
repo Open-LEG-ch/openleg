@@ -1,9 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Contract tests for the shared Swiss canton constants."""
+"""Contract tests for the shared Swiss canton constants.
+
+The module was created but never adopted: `api_public.py` kept its own literal
+set of the same 26 codes, and the old test only forbade importing the options
+from `municipality`, so nothing noticed. These tests pin the single source.
+"""
 
 import ast
 from pathlib import Path
 
+import api_public
 import cantons
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -14,7 +20,10 @@ SKIP_DIRS = {
     ".ruff_cache",
     ".venv",
     "__pycache__",
+    "archive",
     "node_modules",
+    "private",
+    "tests",
 }
 
 
@@ -25,22 +34,39 @@ def _python_files():
         yield path
 
 
-def test_cantons_exports_options_and_code_set():
-    assert cantons.SWISS_CANTON_OPTIONS[0] == ("all", "Alle Kantone")
-    assert cantons.SWISS_CANTON_OPTIONS[-1] == ("ZH", "Zürich")
-    assert cantons.SWISS_CANTONS == {
-        code for code, _ in cantons.SWISS_CANTON_OPTIONS if code != "all"
-    }
+def test_swiss_cantons_holds_all_twenty_six_codes():
+    assert isinstance(cantons.SWISS_CANTONS, frozenset)
+    assert len(cantons.SWISS_CANTONS) == 26
+    assert {"AG", "GR", "JU", "TI", "VS", "ZH"} <= cantons.SWISS_CANTONS
+    assert "all" not in cantons.SWISS_CANTONS
 
 
-def test_no_module_imports_canton_options_from_municipality():
+def test_api_public_reads_the_shared_set_rather_than_a_copy():
+    assert api_public.SWISS_CANTONS is cantons.SWISS_CANTONS
+
+
+def test_no_other_module_defines_a_canton_constant():
+    """Pasting the literal back into a consumer must turn this red."""
     offenders = []
     for path in _python_files():
+        if path.name == "cantons.py":
+            continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
-            if not isinstance(node, ast.ImportFrom) or node.module != "municipality":
-                continue
-            if any(alias.name == "SWISS_CANTON_OPTIONS" for alias in node.names):
-                offenders.append(str(path.relative_to(PROJECT_ROOT)))
+            targets = []
+            if isinstance(node, ast.Assign):
+                targets = node.targets
+            elif isinstance(node, ast.AnnAssign):
+                targets = [node.target]
+            for target in targets:
+                if isinstance(target, ast.Name) and target.id.startswith(
+                    "SWISS_CANTON"
+                ):
+                    offenders.append(f"{path.relative_to(PROJECT_ROOT)}:{target.id}")
 
     assert offenders == []
+
+
+def test_the_unused_label_list_is_gone():
+    """The code plus label pairs fed the public canton filter, now in the site repo."""
+    assert not hasattr(cantons, "SWISS_CANTON_OPTIONS")
