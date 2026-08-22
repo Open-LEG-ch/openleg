@@ -176,3 +176,7 @@ logo-explore/
 
 # Local throwaway scripts: seeding, bootstrapping, one-off utilities
 scratch/
+
+# mutmut working directory
+mutants/
+.mutmut-cache
