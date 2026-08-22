@@ -56,6 +56,17 @@ CROSS_JOIN_ON_TRUE = """
     INNER JOIN consents c ON TRUE
     WHERE c.share_with_neighbors = TRUE
 """
+JOIN_BOUND_TO_ANOTHER_TABLE = """
+    SELECT b.building_id FROM buildings b
+    JOIN referrals r ON b.building_id = r.referrer_id
+    INNER JOIN consents c ON b.building_id = r.building_id
+    WHERE c.share_with_neighbors = TRUE
+"""
+JOIN_WITHOUT_AN_ALIAS = """
+    SELECT b.building_id FROM buildings b
+    INNER JOIN consents ON b.building_id = consents.building_id
+    WHERE consents.share_with_neighbors = TRUE
+"""
 PREDICATE_IN_A_LINE_COMMENT = """
     SELECT b.building_id FROM buildings b
     INNER JOIN consents c ON b.building_id = c.building_id
@@ -104,6 +115,10 @@ PREDICATE_BEFORE_A_TRAILING_CLAUSE = """
             PREDICATE_BEFORE_A_TRAILING_CLAUSE, True, id="predicate-before-group-by"
         ),
         pytest.param(CROSS_JOIN_ON_TRUE, False, id="cross-join-on-true"),
+        pytest.param(
+            JOIN_BOUND_TO_ANOTHER_TABLE, False, id="join-bound-to-another-table"
+        ),
+        pytest.param(JOIN_WITHOUT_AN_ALIAS, True, id="join-without-an-alias"),
         pytest.param(
             PREDICATE_IN_A_LINE_COMMENT, False, id="predicate-in-a-line-comment"
         ),

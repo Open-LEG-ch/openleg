@@ -8,8 +8,9 @@ these query shapes keeps every substring while filtering nobody:
 - ``LEFT JOIN consents`` with the predicate in ``ON``: unmatched rows survive
 - ``share_with_neighbors = TRUE OR share_with_neighbors IS NULL``: a disjunction
   is not a filter
-- ``JOIN consents c ON TRUE``: a cross join matches any granted row, so one
-  consenting neighbour lets every revoked one through
+- ``JOIN consents c ON TRUE``, or an ``ON`` that binds some other table: a
+  cross join matches any granted row, so one consenting neighbour lets every
+  revoked one through
 - ``-- share_with_neighbors = TRUE``: a commented predicate is not a predicate
 
 ``filters_by_consent`` answers whether Postgres would really drop a building
@@ -22,7 +23,9 @@ import re
 
 _LINE_COMMENT = re.compile(r"--[^\n]*")
 _BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
-_CONSENT_JOIN = re.compile(r"\bJOIN\s+consents\b", re.IGNORECASE)
+_CONSENT_JOIN = re.compile(
+    r"\bJOIN\s+consents\b(?:\s+AS)?(?:\s+(?!ON\b)(\w+))?", re.IGNORECASE
+)
 _OUTER_CONSENT_JOIN = re.compile(
     r"\b(LEFT|RIGHT|FULL)\s+(OUTER\s+)?JOIN\s+consents\b", re.IGNORECASE
 )
@@ -83,10 +86,20 @@ def _join_condition(normalized: str, join_end: int) -> str:
     return tail[: boundary.start()] if boundary else tail
 
 
-def _binds_the_building(condition: str) -> bool:
-    """The join must match one consent row per building, not any consent row."""
-    match = _BUILDING_BINDING.search(condition)
-    return bool(match) and match.group(1).lower() != match.group(2).lower()
+def _binds_the_building(condition: str, consent_alias: str) -> bool:
+    """The join must match one consent row per building, not any consent row.
+
+    The binding has to name the consents alias itself. A query that joins
+    `consents c` but writes `ON b.building_id = r.building_id` binds some other
+    table and cross joins the consent rows, so one granted row would expose
+    every revoked building.
+    """
+    alias = consent_alias.lower()
+    for match in _BUILDING_BINDING.finditer(condition):
+        left, right = match.group(1).lower(), match.group(2).lower()
+        if left != right and alias in (left, right):
+            return True
+    return False
 
 
 def is_conjunctive_filter(query: str, predicate: re.Pattern) -> bool:
@@ -111,7 +124,8 @@ def filters_by_consent(query: str) -> bool:
     join = _CONSENT_JOIN.search(normalized)
     if not join:
         return False
-    if not _binds_the_building(_join_condition(normalized, join.end())):
+    consent_alias = join.group(1) or "consents"
+    if not _binds_the_building(_join_condition(normalized, join.end()), consent_alias):
         return False
 
     if _OUTER_CONSENT_JOIN.search(normalized):
