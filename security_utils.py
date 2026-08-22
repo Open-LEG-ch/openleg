@@ -7,7 +7,6 @@ Provides input validation, sanitization, and security helpers
 import logging
 import re
 import uuid
-from urllib.parse import urlparse
 
 import bleach
 from email_validator import EmailNotValidError, validate_email
@@ -233,66 +232,6 @@ def validate_uuid(token: str) -> str:
     return token.lower()
 
 
-def is_safe_redirect_url(url, allowed_hosts=None):
-    """
-    Check if redirect URL is safe (prevents open redirect vulnerabilities)
-
-    Args:
-        url: URL to check
-        allowed_hosts: List of allowed hostnames
-
-    Returns:
-        bool: True if URL is safe
-    """
-    if not url:
-        return True
-
-    # Parse URL
-    try:
-        parsed = urlparse(url)
-    except Exception:
-        return False
-
-    # Relative URLs are safe
-    if not parsed.netloc:
-        return True
-
-    # Check against allowed hosts
-    if allowed_hosts:
-        return parsed.netloc in allowed_hosts
-
-    return False
-
-
-def sanitize_json_output(data):
-    """
-    Sanitize data before JSON output
-    Prevents potential XSS in JSON responses
-
-    Args:
-        data: Dictionary or list to sanitize
-
-    Returns:
-        Sanitized data
-    """
-    if isinstance(data, dict):
-        return {k: sanitize_json_output(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [sanitize_json_output(item) for item in data]
-    elif isinstance(data, str):
-        # Escape HTML special characters in strings
-        return (
-            data.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&#x27;")
-            .replace("/", "&#x2F;")
-        )
-    else:
-        return data
-
-
 def check_request_size(request, max_content_length=1024 * 1024):
     """
     Check if request size is within limits
@@ -313,17 +252,6 @@ def check_request_size(request, max_content_length=1024 * 1024):
         return False, "Anfrage ist zu gross"
 
     return True, None
-
-
-def rate_limit_key_func():
-    """
-    Generate rate limit key based on IP address
-    For use with Flask-Limiter
-    """
-    from flask import request
-
-    # Use X-Forwarded-For if behind proxy, otherwise use remote_addr
-    return request.headers.get("X-Forwarded-For", request.remote_addr)
 
 
 # Security headers configuration

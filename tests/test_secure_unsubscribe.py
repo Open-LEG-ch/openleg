@@ -147,3 +147,26 @@ def test_failed_atomic_deletion_does_not_report_success(app_module, monkeypatch)
 
     assert response.status_code == 409
     assert "nicht gelöscht" in response.get_data(as_text=True)
+
+
+@pytest.mark.parametrize(
+    "token",
+    (
+        pytest.param("not-a-uuid", id="not-a-uuid"),
+        pytest.param("../../etc/passwd", id="traversal"),
+        pytest.param("12345678-1234-1234-1234-12345678901", id="one-digit-short"),
+        pytest.param("g2345678-1234-1234-1234-123456789012", id="non-hex"),
+    ),
+)
+def test_a_malformed_token_is_a_404_and_never_reaches_the_database(
+    app_module, monkeypatch, token
+):
+    """Every token in the tests above is well formed, so this branch never ran."""
+    imported_app, web = app_module
+    get_token = MagicMock()
+    monkeypatch.setattr(imported_app.db, "get_token", get_token)
+
+    response = web.test_client().get(f"/unsubscribe/{token}")
+
+    assert response.status_code == 404
+    get_token.assert_not_called()
