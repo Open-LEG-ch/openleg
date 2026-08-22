@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Interface tests for the referral repository (store.referral)."""
 
+import re
 import subprocess
 import sys
 from contextlib import contextmanager
+from typing import ClassVar
 
 import database
 from store import referral
+from tests.consent_visibility import filters_by_consent, is_conjunctive_filter
 
 _REEXPORTED = (
     "get_referral_code",
@@ -79,22 +82,96 @@ def test_referral_uses_database_connection_seam(monkeypatch):
     assert cur.executed[0][1] == ("building-1",)
 
 
-def test_leaderboard_keeps_city_scope_and_limit(monkeypatch):
-    cur = _FakeCursor(
-        rows=[
-            {"building_id": "building-1", "street": "Badstrasse 1", "referral_count": 2}
-        ]
+_CITY_SCOPE = re.compile(r"^b\.city_id\s*=\s*%s$", re.IGNORECASE)
+_PARAMETERISED_LIMIT = re.compile(r"\bLIMIT\s+%s\b", re.IGNORECASE)
+
+
+class _LeaderboardCursor(_FakeCursor):
+    """Returns the referrers the query as written would really return.
+
+    Models the three things the statement claims to do: drop revoked and
+    missing consent, keep the requested city, and stop at the limit. A double
+    that only models the consent gate lets a widened city predicate pass.
+    """
+
+    ROWS: ClassVar[tuple] = (
+        {
+            "building_id": "consented",
+            "street": "Badstrasse 1",
+            "referral_count": 4,
+            "city_id": "baden",
+        },
+        {
+            "building_id": "revoked",
+            "street": "Badstrasse 3",
+            "referral_count": 9,
+            "city_id": "baden",
+        },
+        {
+            "building_id": "never-consented",
+            "street": "Badstrasse 5",
+            "referral_count": 7,
+            "city_id": "baden",
+        },
+        {
+            "building_id": "other-city",
+            "street": "Bahnhofstrasse 2",
+            "referral_count": 6,
+            "city_id": "aarau",
+        },
+        {
+            "building_id": "consented-second",
+            "street": "Badstrasse 7",
+            "referral_count": 2,
+            "city_id": "baden",
+        },
     )
+    CONSENTS: ClassVar[dict] = {
+        "consented": True,
+        "revoked": False,
+        "other-city": True,
+        "consented-second": True,
+    }
+
+    def fetchall(self):
+        query, params = self.executed[-1]
+        rows = sorted(
+            (dict(row) for row in self.ROWS),
+            key=lambda row: row["referral_count"],
+            reverse=True,
+        )
+        if filters_by_consent(query):
+            rows = [
+                row for row in rows if self.CONSENTS.get(row["building_id"]) is True
+            ]
+        if is_conjunctive_filter(query, _CITY_SCOPE):
+            rows = [row for row in rows if row["city_id"] == params[0]]
+        if _PARAMETERISED_LIMIT.search(" ".join(query.split())):
+            rows = rows[: params[-1]]
+        return [
+            {key: value for key, value in row.items() if key != "city_id"}
+            for row in rows
+        ]
+
+
+def test_leaderboard_excludes_revoked_and_missing_consent(monkeypatch):
+    """The top referrer is the one who revoked sharing; the board must not name them."""
+    cur = _LeaderboardCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
     rows = referral.get_referral_leaderboard(limit=5, city_id="baden")
-    assert rows[0]["referral_count"] == 2
-    query, params = cur.executed[0]
-    assert "b.city_id = %s" in query
-    assert "JOIN consents" in query
-    assert "share_with_neighbors = TRUE" in query
-    assert "LIMIT %s" in query
-    assert params == ("baden", 5)
+
+    assert [row["building_id"] for row in rows] == ["consented", "consented-second"]
+
+
+def test_leaderboard_keeps_city_scope_and_limit(monkeypatch):
+    cur = _LeaderboardCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    scoped = referral.get_referral_leaderboard(limit=1, city_id="baden")
+
+    assert [row["building_id"] for row in scoped] == ["consented"]
+    assert cur.executed[0][1] == ("baden", 1)
 
 
 def test_missing_referral_stats_default_to_zero(monkeypatch):

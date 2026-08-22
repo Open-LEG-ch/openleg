@@ -2,22 +2,82 @@
 """Tests for formation nudge email template and registration."""
 
 import os
+from contextlib import contextmanager
 
 import formation_wizard
+from tests.consent_visibility import filters_by_consent
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+NEIGHBOURS = (
+    {"building_id": "consented-a", "address": "Badstrasse 1, Baden"},
+    {"building_id": "consented-b", "address": "Badstrasse 3, Baden"},
+    {"building_id": "revoked", "address": "Badstrasse 5, Baden"},
+    {"building_id": "never-consented", "address": "Badstrasse 7, Baden"},
+)
+CONSENTS = {"consented-a": True, "consented-b": True, "revoked": False}
 
-def test_formation_neighbor_search_requires_current_sharing_consent():
-    with open(formation_wizard.__file__, encoding="utf-8") as source_file:
-        source = source_file.read()
-    start = source.index("def get_formable_clusters")
-    query = source[
-        start : source.index("def calculate_municipality_business_case", start)
-    ]
 
-    assert "JOIN consents" in query
-    assert "share_with_neighbors = TRUE" in query
+class _FormationCursor:
+    """Answers the two statements get_formable_clusters issues, in order."""
+
+    def __init__(self):
+        self.queries = []
+
+    def execute(self, query, params=None):
+        self.queries.append(" ".join(query.split()))
+        self.params = params or ()
+
+    def fetchone(self):
+        return {"lat": 47.4736, "lon": 8.3060}
+
+    def fetchall(self):
+        rows = [
+            {**row, "email": f"{row['building_id']}@example.ch", "distance": 40.0}
+            for row in NEIGHBOURS
+        ]
+        if filters_by_consent(self.queries[-1]):
+            rows = [row for row in rows if CONSENTS.get(row["building_id"]) is True]
+        return rows
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+
+class _FormationConnection:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def cursor(self):
+        return self._cursor
+
+
+class _FormationDb:
+    def __init__(self):
+        self.cursor = _FormationCursor()
+
+    @contextmanager
+    def get_connection(self):
+        yield _FormationConnection(self.cursor)
+
+
+def test_formation_neighbor_search_excludes_revoked_and_missing_consent():
+    """Executed, not read.
+
+    This test used to read the function's own source and assert two substrings.
+    A LEFT JOIN carrying the predicate in its ON clause keeps both substrings
+    and every revoked neighbour with them.
+    """
+    clusters = formation_wizard.get_formable_clusters(_FormationDb(), "searcher")
+
+    assert clusters, "two consenting neighbours are enough to form"
+    nearby = {row["building_id"] for row in clusters[0]["nearby_buildings"]}
+    assert nearby == {"consented-a", "consented-b"}
+    assert clusters[0]["potential_members"] == 3
+    assert clusters[0]["ready_to_form"] is True
 
 
 class TestFormationNudgeTemplate:
