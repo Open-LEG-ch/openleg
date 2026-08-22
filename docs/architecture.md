@@ -111,9 +111,10 @@ domains move into `store/`, each resolving the seam through a lazy
 `database.get_connection` lookup and re-exported at the end of `database.py`, so
 `import database as db; db.<fn>()` keeps working unchanged.
 
-Shipped stores: `store/ranking`, `store/profile`, `store/billing`,
-`store/email_queue`, `store/utility`, `store/metering`, `store/meter`,
-`store/registry`, `store/tenant`, `store/token`, `store/access_token`.
+Shipped stores: `store/building`, `store/cluster`, `store/ranking`,
+`store/profile`, `store/billing`, `store/email_queue`, `store/utility`,
+`store/metering`, `store/meter`, `store/registry`, `store/tenant`,
+`store/token`, `store/access_token`.
 
 New storage code for a cohesive domain goes into `store/`, not into
 `database.py`.
@@ -124,13 +125,10 @@ Remaining in `database.py`, in the order they should be extracted. Each move is
 mechanical: lift the functions, add the lazy `_get_connection`, re-export, and
 keep the existing tests green.
 
-1. `store/building` — buildings, profiles, dashboard reads. The largest block
-   and the most called, so it pays back first.
-2. `store/cluster` — clusters and cluster info, which depend only on buildings.
-3. `store/analytics` — events and aggregate stats.
-4. `store/consent` — data consents and consent counts.
-5. `store/document` — LEG documents and signing status.
-6. `store/ops` — LEA reports and ops snapshots.
+1. `store/analytics` — events and aggregate stats.
+2. `store/consent` — data consents and consent counts.
+3. `store/document` — LEG documents and signing status.
+4. `store/ops` — LEA reports and ops snapshots.
 
 `_create_tables()` and `get_connection` stay in `database.py`. Extraction is
 finished when nothing but the pool, the schema, and the re-exports remain.
