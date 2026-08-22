@@ -615,48 +615,6 @@ def save_municipality(
         return None
 
 
-def get_municipality(bfs_number=None, subdomain=None, municipality_id=None):
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            if municipality_id:
-                cur.execute(
-                    "SELECT * FROM municipalities WHERE id = %s",
-                    (municipality_id,),
-                )
-            elif bfs_number:
-                cur.execute(
-                    "SELECT * FROM municipalities WHERE bfs_number = %s",
-                    (bfs_number,),
-                )
-            elif subdomain:
-                cur.execute(
-                    "SELECT * FROM municipalities WHERE subdomain = %s",
-                    (subdomain,),
-                )
-            else:
-                return None
-            row = cur.fetchone()
-            return dict(row) if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error getting municipality: {e}")
-        return None
-
-
-def get_municipality_by_admin_email(email: str) -> dict | None:
-    """Find a municipality by its registered admin email address."""
-    try:
-        with get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                "SELECT * FROM municipalities WHERE LOWER(admin_email) = LOWER(%s)",
-                (email,),
-            )
-            row = cur.fetchone()
-            return dict(row) if row else None
-    except Exception as e:
-        logger.error(f"[DB] Error getting municipality by admin email: {e}")
-        return None
-
-
 def get_all_municipalities(kanton=None):
     try:
         with get_connection() as conn, conn.cursor() as cur:
@@ -1029,6 +987,10 @@ from store.metering import (  # noqa: F401
     record_sdat_import,
     save_metering_point_readings,
     upsert_metering_points,
+)
+from store.municipality import (  # noqa: F401
+    get_municipality,
+    get_municipality_by_admin_email,
 )
 from store.municipality_access import (  # noqa: F401
     consume_municipality_access_token,
