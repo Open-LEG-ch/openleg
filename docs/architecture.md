@@ -81,6 +81,10 @@ Application and API routes:
 ## Code map
 
 - `app.py`: Flask product app, security policy, and the application factory.
+  It wires Flask; the configuration it hands Flask comes from `app_config.py`.
+- `app_config.py`: the application configuration as a value. Environment
+  parsing, the token TTL bounds, and the `PUBLIC_SITE_URL` origin validation,
+  with no Flask import.
 - `tenant.py`: hostname to territory resolution, tenant config, template context.
 - `database.py`: connection pool, schema creation, unextracted query helpers,
   and the store re-exports.

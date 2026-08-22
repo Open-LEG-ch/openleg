@@ -115,6 +115,15 @@ def test_the_environment_overrides_the_inference(raw, expected):
     assert config["SESSION_COOKIE_SECURE"] is expected
 
 
+def test_an_explicit_false_survives_an_https_base_url():
+    """An override says so on purpose; the https inference must not undo it."""
+    config = app_config.build_config(
+        _env(APP_BASE_URL="https://openleg.ch"), {"SESSION_COOKIE_SECURE": False}
+    )
+
+    assert config["SESSION_COOKIE_SECURE"] is False
+
+
 def test_an_explicit_override_beats_the_environment():
     config = app_config.build_config(
         _env(APP_BASE_URL="https://openleg.ch", SESSION_COOKIE_SECURE="false"),
@@ -175,6 +184,18 @@ def test_a_secret_key_is_generated_when_the_environment_omits_one():
 
 def test_no_flask_import_is_needed_to_build_a_config():
     """The point of the seam: config is a value, testable without an app."""
-    source = __import__("pathlib").Path(app_config.__file__).read_text(encoding="utf-8")
+    import ast
+    import pathlib
 
-    assert "flask" not in source.lower()
+    tree = ast.parse(
+        pathlib.Path(app_config.__file__).read_text(encoding="utf-8"),
+        filename="app_config.py",
+    )
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split(".")[0])
+
+    assert "flask" not in imported
