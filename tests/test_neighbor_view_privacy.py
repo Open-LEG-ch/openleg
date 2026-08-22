@@ -213,12 +213,23 @@ class _ProfileVisibilityCursor:
         self.query = " ".join(query.split())
         self.params = params or ()
 
+    def _filters_by_consent(self):
+        """What Postgres would actually do with the join this query wrote.
+
+        A substring test for "JOIN consents" cannot tell INNER from LEFT, and a
+        LEFT JOIN carrying the predicate in its ON clause keeps every building,
+        consented or not. Model both shapes so the double can catch either.
+        """
+        if "INNER JOIN consents" in self.query:
+            return "share_with_neighbors = TRUE" in self.query
+        if "LEFT JOIN consents" in self.query:
+            where_clause = self.query.partition(" WHERE ")[2]
+            return "share_with_neighbors = TRUE" in where_clause
+        return False
+
     def _visible(self):
         rows = list(self.buildings)
-        if (
-            "JOIN consents" in self.query
-            and "share_with_neighbors = TRUE" in self.query
-        ):
+        if self._filters_by_consent():
             rows = [
                 row for row in rows if self.consents.get(row["building_id"]) is True
             ]
@@ -260,6 +271,19 @@ def test_profile_visibility_double_requires_the_predicate(visibility_cursor):
         """
         SELECT b.building_id FROM buildings b
         INNER JOIN consents c ON b.building_id = c.building_id
+        WHERE b.verified = TRUE
+        """
+    )
+    assert any(row["building_id"] == "revoked" for row in visibility_cursor.fetchall())
+
+
+def test_profile_visibility_double_sees_through_an_outer_join(visibility_cursor):
+    """A LEFT JOIN with the predicate in its ON clause keeps everyone; say so."""
+    visibility_cursor.execute(
+        """
+        SELECT b.building_id FROM buildings b
+        LEFT JOIN consents c ON b.building_id = c.building_id
+        AND c.share_with_neighbors = TRUE
         WHERE b.verified = TRUE
         """
     )
