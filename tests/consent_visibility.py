@@ -12,6 +12,8 @@ these query shapes keeps every substring while filtering nobody:
   cross join matches any granted row, so one consenting neighbour lets every
   revoked one through
 - ``-- share_with_neighbors = TRUE``: a commented predicate is not a predicate
+- ``r.share_with_neighbors = TRUE``: a lookalike column on another table is not
+  the consent row's
 
 ``filters_by_consent`` answers whether Postgres would really drop a building
 whose neighbour sharing is revoked, absent, or unknown. Doubles call it instead
@@ -40,7 +42,7 @@ _TRAILING_CLAUSE = re.compile(
     r"\b(GROUP\s+BY|ORDER\s+BY|HAVING|LIMIT|OFFSET|RETURNING|UNION)\b", re.IGNORECASE
 )
 _PREDICATE = re.compile(
-    r"^\(*\s*\w*\.?share_with_neighbors\s*=\s*TRUE\s*\)*$", re.IGNORECASE
+    r"^\(*\s*(?:(\w+)\.)?share_with_neighbors\s*=\s*TRUE\s*\)*$", re.IGNORECASE
 )
 _BUILDING_BINDING = re.compile(
     r"\b(\w+)\.building_id\s*=\s*(\w+)\.building_id\b", re.IGNORECASE
@@ -71,8 +73,17 @@ def _top_level_terms(clause: str) -> list[str]:
     return [term.strip() for term in terms if term.strip()]
 
 
-def _states_the_predicate(term: str) -> bool:
-    return bool(_PREDICATE.match(_TRAILING_CLAUSE.split(term, maxsplit=1)[0].strip()))
+def _states_the_predicate(term: str, consent_alias: str) -> bool:
+    """The predicate has to filter the consents row, not a lookalike column.
+
+    A query can join `consents c` correctly and then filter
+    `r.share_with_neighbors`, which is a different table's column.
+    """
+    match = _PREDICATE.match(_TRAILING_CLAUSE.split(term, maxsplit=1)[0].strip())
+    if not match:
+        return False
+    qualifier = match.group(1)
+    return qualifier is None or qualifier.lower() == consent_alias.lower()
 
 
 def _join_condition(normalized: str, join_end: int) -> str:
@@ -136,4 +147,6 @@ def filters_by_consent(query: str) -> bool:
         # An inner join makes its own ON terms conjunctive with the WHERE terms.
         clause = _WHERE.sub(" AND ", normalized[join.end() :])
 
-    return any(_states_the_predicate(term) for term in _top_level_terms(clause))
+    return any(
+        _states_the_predicate(term, consent_alias) for term in _top_level_terms(clause)
+    )

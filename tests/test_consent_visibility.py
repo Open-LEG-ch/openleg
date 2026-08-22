@@ -67,6 +67,12 @@ JOIN_WITHOUT_AN_ALIAS = """
     INNER JOIN consents ON b.building_id = consents.building_id
     WHERE consents.share_with_neighbors = TRUE
 """
+PREDICATE_ON_ANOTHER_TABLE = """
+    SELECT b.building_id FROM buildings b
+    JOIN referrals r ON b.building_id = r.referrer_id
+    INNER JOIN consents c ON b.building_id = c.building_id
+    WHERE r.share_with_neighbors = TRUE
+"""
 PREDICATE_IN_A_LINE_COMMENT = """
     SELECT b.building_id FROM buildings b
     INNER JOIN consents c ON b.building_id = c.building_id
@@ -119,6 +125,9 @@ PREDICATE_BEFORE_A_TRAILING_CLAUSE = """
             JOIN_BOUND_TO_ANOTHER_TABLE, False, id="join-bound-to-another-table"
         ),
         pytest.param(JOIN_WITHOUT_AN_ALIAS, True, id="join-without-an-alias"),
+        pytest.param(
+            PREDICATE_ON_ANOTHER_TABLE, False, id="predicate-on-another-table"
+        ),
         pytest.param(
             PREDICATE_IN_A_LINE_COMMENT, False, id="predicate-in-a-line-comment"
         ),
