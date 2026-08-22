@@ -4,9 +4,11 @@
 import subprocess
 import sys
 from contextlib import contextmanager
+from typing import ClassVar
 
 import database
 from store import referral
+from tests.consent_visibility import filters_by_consent
 
 _REEXPORTED = (
     "get_referral_code",
@@ -79,20 +81,48 @@ def test_referral_uses_database_connection_seam(monkeypatch):
     assert cur.executed[0][1] == ("building-1",)
 
 
-def test_leaderboard_keeps_city_scope_and_limit(monkeypatch):
-    cur = _FakeCursor(
-        rows=[
-            {"building_id": "building-1", "street": "Badstrasse 1", "referral_count": 2}
-        ]
+class _LeaderboardCursor(_FakeCursor):
+    """Returns the referrers the query as written would really return."""
+
+    ROWS = (
+        {"building_id": "consented", "street": "Badstrasse 1", "referral_count": 4},
+        {"building_id": "revoked", "street": "Badstrasse 3", "referral_count": 9},
+        {
+            "building_id": "never-consented",
+            "street": "Badstrasse 5",
+            "referral_count": 7,
+        },
     )
+    CONSENTS: ClassVar[dict] = {"consented": True, "revoked": False}
+
+    def fetchall(self):
+        query = self.executed[-1][0]
+        rows = [dict(row) for row in self.ROWS]
+        if filters_by_consent(query):
+            rows = [
+                row for row in rows if self.CONSENTS.get(row["building_id"]) is True
+            ]
+        return rows
+
+
+def test_leaderboard_excludes_revoked_and_missing_consent(monkeypatch):
+    """The top referrer is the one who revoked sharing; the board must not name them."""
+    cur = _LeaderboardCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
     rows = referral.get_referral_leaderboard(limit=5, city_id="baden")
-    assert rows[0]["referral_count"] == 2
+
+    assert [row["building_id"] for row in rows] == ["consented"]
+
+
+def test_leaderboard_keeps_city_scope_and_limit(monkeypatch):
+    cur = _LeaderboardCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    referral.get_referral_leaderboard(limit=5, city_id="baden")
+
     query, params = cur.executed[0]
     assert "b.city_id = %s" in query
-    assert "JOIN consents" in query
-    assert "share_with_neighbors = TRUE" in query
     assert "LIMIT %s" in query
     assert params == ("baden", 5)
 

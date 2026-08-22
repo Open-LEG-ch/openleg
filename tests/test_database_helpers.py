@@ -4,6 +4,7 @@
 from contextlib import contextmanager
 
 import database
+from tests.consent_visibility import filters_by_consent
 
 
 class _FakeCursor:
@@ -48,9 +49,7 @@ class _NeighborVisibilityCursor:
 
     def _visible(self):
         rows = list(self.buildings)
-        has_consent_join = "JOIN consents" in self.query
-        has_consent_predicate = "share_with_neighbors = TRUE" in self.query
-        if has_consent_join and has_consent_predicate:
+        if filters_by_consent(self.query):
             rows = [
                 row for row in rows if self.consents.get(row["building_id"]) is True
             ]
@@ -107,6 +106,21 @@ def test_neighbor_queries_keep_consented_buildings_and_city_scope(monkeypatch):
     assert [
         row["building_id"] for row in database.get_all_buildings(city_id="baden")
     ] == ["consented"]
+
+
+def test_neighbor_visibility_double_sees_through_an_outer_join(monkeypatch):
+    """A LEFT JOIN with the predicate in its ON clause keeps everyone."""
+    cursor = _neighbor_visibility_connection(monkeypatch)
+
+    cursor.execute(
+        """
+        SELECT b.building_id FROM buildings b
+        LEFT JOIN consents c ON b.building_id = c.building_id
+        AND c.share_with_neighbors = TRUE
+        WHERE b.verified = TRUE
+        """
+    )
+    assert any(row["building_id"] == "revoked" for row in cursor.fetchall())
 
 
 def test_neighbor_visibility_double_requires_predicate(monkeypatch):
