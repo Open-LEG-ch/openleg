@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+import access_token
 from tests.test_app_organic_routes import _disable_rate_limit_hooks
 
 
@@ -102,14 +103,11 @@ def test_access_request_does_not_disclose_registered_email(app_module, monkeypat
         find_by_email,
         raising=False,
     )
+    monkeypatch.setattr(access_token, "issue", issue_token)
     monkeypatch.setattr(
-        municipality,
-        "municipality_access",
-        SimpleNamespace(
-            issue_access_token=issue_token,
-            access_url=lambda base_url, token: f"{base_url}/gemeinde/access/{token}",
-        ),
-        raising=False,
+        access_token,
+        "access_url",
+        lambda _kind, base_url, token: f"{base_url}/gemeinde/access/{token}",
     )
     monkeypatch.setattr(
         municipality,
@@ -129,20 +127,18 @@ def test_access_request_does_not_disclose_registered_email(app_module, monkeypat
     message = "Falls eine Gemeinde zu dieser E-Mail-Adresse existiert"
     assert message in unknown.get_data(as_text=True)
     assert message in known.get_data(as_text=True)
-    issue_token.assert_called_once_with(municipality.db, 7, ttl_seconds=900)
+    issue_token.assert_called_once_with(
+        access_token.MUNICIPALITY, municipality.db, 7, ttl_seconds=900
+    )
     send_email.assert_called_once()
     assert "/gemeinde/access/" in send_email.call_args.args[2]
 
 
 def test_magic_link_is_single_use_and_creates_clean_session(app_module, monkeypatch):
-    import municipality
 
     consume = MagicMock(side_effect=[7, None])
     monkeypatch.setattr(
-        municipality,
-        "municipality_access",
-        SimpleNamespace(consume_access_token=consume),
-        raising=False,
+        access_token, "consume", lambda _kind, _repository, token: consume(token)
     )
     token = "a" * 43
     client = app_module.web.test_client()

@@ -26,9 +26,9 @@ from flask import (
 )
 from flask_talisman import Talisman
 
+import access_token  # noqa: F401
 import billing_runner
 import dashboard as dashboard_module  # noqa: F401
-import dashboard_access as dashboard_access_module  # noqa: F401
 import dashboard_routes
 import data_enricher
 import database as db

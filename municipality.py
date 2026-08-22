@@ -20,9 +20,9 @@ from flask import (
     session,
 )
 
+import access_token
 import database as db
 import email_utils
-import municipality_access
 import security_utils
 from security_extensions import rate_limit
 
@@ -169,12 +169,12 @@ def access_request():
     )
     if municipality:
         municipality_id = municipality.get("id")
-        token = municipality_access.issue_access_token(
-            db, municipality_id, ttl_seconds=900
+        token = access_token.issue(
+            access_token.MUNICIPALITY, db, municipality_id, ttl_seconds=900
         )
         if token:
-            url = municipality_access.access_url(
-                current_app.config["APP_BASE_URL"], token
+            url = access_token.access_url(
+                access_token.MUNICIPALITY, current_app.config["APP_BASE_URL"], token
             )
             try:
                 email_utils.send_email(
@@ -200,7 +200,7 @@ def access_request():
 
 @municipality_bp.route("/access/<token>")
 def access_exchange(token):
-    municipality_id = municipality_access.consume_access_token(db, token)
+    municipality_id = access_token.consume(access_token.MUNICIPALITY, db, token)
     if not municipality_id:
         response = redirect("/gemeinde/dashboard?access=invalid")
     else:

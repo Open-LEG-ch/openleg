@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 from flask import Flask
 
+import access_token
 import email_automation
 
 
@@ -46,7 +47,7 @@ def _patch_queue(monkeypatch):
 def test_queue_render_uses_fresh_magic_link_without_building_id(monkeypatch):
     _patch_queue(monkeypatch)
     issue = MagicMock(return_value="a" * 43)
-    monkeypatch.setattr(email_automation.dashboard_access, "issue_access_token", issue)
+    monkeypatch.setattr(access_token, "issue", issue)
     captured = {}
     monkeypatch.setattr(
         email_automation,
@@ -61,7 +62,12 @@ def test_queue_render_uses_fresh_magic_link_without_building_id(monkeypatch):
     result = email_automation.process_email_queue(app=app)
 
     assert result == {"sent": 1, "failed": 0, "total": 1}
-    issue.assert_called_once_with(email_automation.db, "building-1", ttl_seconds=86_400)
+    issue.assert_called_once_with(
+        access_token.DASHBOARD,
+        email_automation.db,
+        "building-1",
+        ttl_seconds=86_400,
+    )
     assert captured["dashboard_url"] == (
         "https://openleg.ch/dashboard/access/" + "a" * 43
     )
@@ -71,11 +77,7 @@ def test_queue_render_uses_fresh_magic_link_without_building_id(monkeypatch):
 
 def test_queue_fails_closed_when_access_token_cannot_be_issued(monkeypatch):
     _patch_queue(monkeypatch)
-    monkeypatch.setattr(
-        email_automation.dashboard_access,
-        "issue_access_token",
-        lambda *_args, **_kwargs: None,
-    )
+    monkeypatch.setattr(access_token, "issue", lambda *_args, **_kwargs: None)
     send = MagicMock(return_value=True)
     monkeypatch.setattr(email_automation, "_send_email", send)
     app = Flask(__name__)

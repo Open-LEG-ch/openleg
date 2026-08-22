@@ -69,6 +69,7 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/registry` | LEG registry entries and verification |
 | `store/tenant` | White-label tenant configs |
 | `store/token` | Auth and claim tokens |
+| `store/access_token` | Hashed, single-use magic-link tokens, dashboard and municipality |
 
 `database.py` still holds the domains that have not been extracted: buildings,
 clusters, referrals, analytics events, municipalities, consents, API clients,
@@ -86,6 +87,7 @@ Domain logic sits above storage and stays free of SQL:
 | `sdat_e66.py`, `sdat_datahub.py`, `meter_data.py` | Meter data parsing and retrieval |
 | `ml_models.py`, `data_enricher.py` | Clustering and enrichment |
 | `neighbor_view.py` | Neighbour read policy: anonymity radius, jittered map locations, provisional match summary |
+| `access_token.py` | Magic-link access policy: token format, hashing, expiry bounds, access URLs |
 
 ## Naming Rules
 
