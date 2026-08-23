@@ -217,10 +217,20 @@ def test_oversize_input_is_rejected(monkeypatch):
 
 
 def test_parser_never_raises_on_truncated_input():
+    """Not raising is half of it; the other half is saying what went wrong.
+
+    The arity of the return value passed even for a parser that swallowed the
+    truncation and answered with an empty document and no error, which the
+    importer would have stored as a delivery containing nothing.
+    """
     sample = _sample()
     for cut in range(0, len(sample), max(1, len(sample) // 12)):
-        result = sdat_e66.parse_e66_xml(sample[:cut])
-        assert isinstance(result, tuple) and len(result) == 2
+        document, errors = sdat_e66.parse_e66_xml(sample[:cut])
+
+        assert errors, f"truncation at {cut} reported no error"
+        assert not document.get("rows"), (
+            f"truncation at {cut} yielded rows the file does not contain"
+        )
 
 
 def test_duplicate_sequence_keeps_the_last_value():
