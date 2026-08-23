@@ -28,3 +28,25 @@ ignore = ["BLE001", "SIM117"]
 # reads high across store/ because the tests execute the surrounding Python
 # while asserting only the shape of the SQL.
 source_paths = ["billing_runner.py", "store/metering.py"]
+# Mutation testing asks whether the tests of these modules detect faults in
+# them, so the run uses their own tests. The repository-contract layer is left
+# out on purpose: those tests shell out to `git ls-files` and read tracked
+# files, and mutmut's sandbox is a copied directory, not a git working tree.
+pytest_add_cli_args = [
+    "tests/test_billing_runner.py",
+    "tests/test_billing_readings.py",
+    "tests/test_store_metering.py",
+]
+# mutmut copies only what it mutates into that sandbox, so everything those
+# tests import has to be listed here or they cannot even be collected.
+also_copy = [
+    "billing_engine.py",
+    "billing_readings.py",
+    "conftest.py",
+    "database.py",
+    "pyproject.toml",
+    "scripts",
+    "sdat_e66.py",
+    "store",
+    "tests",
+]
