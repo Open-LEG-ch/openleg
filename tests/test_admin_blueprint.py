@@ -540,11 +540,17 @@ class TestAgentmailSignatureVerification:
     def test_a_missing_svix_library_fails_closed_with_503(
         self, app_with_agentmail_secret
     ):
-        import admin
+        import sys
 
         module = app_with_agentmail_secret
+        # Resolved from the registered view rather than by importing `admin`,
+        # so the patch cannot land on a different module object than the one
+        # the route closes over if the import order ever changes.
+        view = module.app.view_functions["admin.api_internal_agentmail"]
+        admin_module = sys.modules[view.__module__]
+
         with (
-            patch.object(admin, "HAS_SVIX", False),
+            patch.object(admin_module, "HAS_SVIX", False),
             patch.object(module.db, "save_ops_snapshot", return_value=True) as saved,
         ):
             response = module.app.test_client().post(
@@ -555,3 +561,7 @@ class TestAgentmailSignatureVerification:
 
         assert response.status_code == 503
         saved.assert_not_called()
+        assert view.__globals__["HAS_SVIX"] is True, (
+            "the patch must have been reverted, and must have applied to the "
+            "module the route actually uses"
+        )
