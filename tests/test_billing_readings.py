@@ -480,3 +480,22 @@ def test_frames_are_plain_pandas(monkeypatch, rows):
 
     assert isinstance(frames.consumption, pd.DataFrame)
     assert isinstance(frames.production, pd.DataFrame)
+
+
+def test_an_unknown_direction_is_refused_rather_than_dropped(monkeypatch, rows):
+    """A reading the module cannot classify must not vanish from a bill.
+
+    load_period_frames looked the direction up in a two-entry dict and skipped
+    anything it did not recognise, with no warning and no record. Every other
+    defect in this module is collected and raised, and billing_runner fails
+    closed on all of them, so a VNB sending an unexpected direction code was the
+    one way to get a quietly incomplete period instead of a refused one.
+    """
+    stray = dict(rows[0])
+    stray["direction"] = "storage"
+    _install(monkeypatch, _points(), [*rows, stray])
+
+    with pytest.raises(billing_readings.PeriodDataError) as excinfo:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert "unknown_direction" in _kinds(excinfo)
