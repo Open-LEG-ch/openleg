@@ -263,3 +263,59 @@ def test_second_run_reports_no_changes(tmp_path):
     assert FIXTURE.exists(), (
         "the suite must not consume its own fixture; every later test reads it"
     )
+
+
+@pytest.mark.integration
+def test_a_changed_reading_is_reported_as_a_correction(tmp_path):
+    """The guard that decides new from corrected, executed rather than grepped.
+
+    `store/metering.py` classifies a row with an `IS DISTINCT FROM` list. The
+    unit tests around it check that the SQL text mentions the right columns and
+    feed a hand-authored result list into a mocked `execute_values`, so which
+    rows Postgres would really call corrected is asserted nowhere. The existing
+    integration test only reimports an identical file, which proves the opposite
+    direction: nothing changed, nothing reported.
+
+    Point 1's first consumption interval is total 0.100 = grid 0.060 + community
+    0.040. Moving community to 0.041 touches that column alone and leaves the
+    balance 0.001 kWh out, inside E66_BALANCE_TOLERANCE_KWH, so the row still
+    imports. Drop `community_kwh` from the guard and this correction becomes
+    invisible.
+    """
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    delivery = tmp_path / "first" / "sdat_e66_sample.xml"
+    delivery.parent.mkdir()
+    shutil.copy(FIXTURE, delivery)
+
+    first = _run(str(delivery), env={"DATABASE_URL": os.environ["DATABASE_URL"]})
+    assert first.returncode == 0, first.stderr
+
+    original = FIXTURE.read_text(encoding="utf-8")
+    community_first_interval = """    <rsm:Observation>
+      <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
+      <rsm:Volume>0.040</rsm:Volume>
+    </rsm:Observation>"""
+    assert community_first_interval in original, "fixture shape changed"
+    corrected_text = original.replace(
+        community_first_interval,
+        community_first_interval.replace("0.040", "0.041"),
+        1,
+    )
+    assert corrected_text != original
+
+    correction = tmp_path / "second" / "sdat_e66_sample.xml"
+    correction.parent.mkdir()
+    correction.write_text(corrected_text, encoding="utf-8")
+
+    second = _run(
+        str(correction.parent),
+        "--force",
+        env={"DATABASE_URL": os.environ["DATABASE_URL"]},
+    )
+
+    assert second.returncode == 0, second.stderr
+    assert "neu 0" in second.stdout, second.stdout
+    assert "korrigiert 1" in second.stdout, second.stdout
+    assert FIXTURE.exists(), "the suite must not consume its own fixture"
