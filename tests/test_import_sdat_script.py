@@ -329,10 +329,14 @@ def test_a_changed_reading_is_reported_as_a_correction(tmp_path):
         cleanup = tmp_path / "cleanup" / "sdat_e66_sample.xml"
         cleanup.parent.mkdir(exist_ok=True)
         shutil.copy(FIXTURE, cleanup)
-        _run(
+        restored = _run(
             str(cleanup),
             "--force",
             env={"DATABASE_URL": os.environ["DATABASE_URL"]},
         )
 
+    # Checked here rather than inside the finally on purpose: a failed restore
+    # must be visible, but asserting it while an exception is in flight would
+    # replace the real failure with this one.
+    assert restored.returncode == 0, restored.stderr
     assert FIXTURE.exists(), "the suite must not consume its own fixture"
