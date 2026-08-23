@@ -284,6 +284,13 @@ def load_period_frames(
         direction = row["direction"]
         frame = frames.get(direction)
         if frame is None:
+            problems.append(
+                _problem(
+                    "unknown_direction",
+                    f"{direction} is not a recognised direction",
+                    row["metering_point_id"],
+                )
+            )
             continue
         moment = pd.Timestamp(row["measured_at"]).tz_convert(tzinfo)
         total = float(row.get("total_kwh") or 0.0)
@@ -293,6 +300,9 @@ def load_period_frames(
             vnb_totals[direction][participant] += float(community)
         if row.get("source_document_id"):
             documents.add(row["source_document_id"])
+
+    if problems:
+        raise PeriodDataError(problems)
 
     vnb_reference = {
         "community_consumption_kwh": round(sum(vnb_totals["consumption"].values()), 6),
