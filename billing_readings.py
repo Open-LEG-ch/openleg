@@ -292,11 +292,11 @@ def load_period_frames(
     for row in readings:
         participant = mapping[row["metering_point_id"]]
         direction = row["direction"]
-        frame = frames.get(direction)
-        if frame is None:
-            # Unreachable in practice: _check_rows reports an unrecognised
-            # direction and load_period_frames raises before this loop runs.
-            continue
+        # Indexed, not fetched with a default: _check_rows has already reported
+        # an unrecognised direction and raised, so a miss here is a broken
+        # invariant. billing_runner wraps the KeyError into a BillingRunError,
+        # which fails the period closed rather than billing a partial one.
+        frame = frames[direction]
         moment = pd.Timestamp(row["measured_at"]).tz_convert(tzinfo)
         total = float(row.get("total_kwh") or 0.0)
         frame.loc[moment, participant] += total
