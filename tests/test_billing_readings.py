@@ -491,17 +491,9 @@ def test_an_unknown_direction_is_refused_rather_than_dropped(monkeypatch, rows):
     closed on all of them, so a VNB sending an unexpected direction code was the
     one way to get a quietly incomplete period instead of a refused one.
     """
-    # A complete set, so the interval-completeness check upstream passes it
-    # through and the direction lookup in the frame loop is what decides.
-    strays = []
-    for row in rows:
-        if row["direction"] != "consumption":
-            continue
-        stray = dict(row)
-        stray["direction"] = "storage"
-        strays.append(stray)
-    assert strays, "fixture shape changed"
-    _install(monkeypatch, _points(), [*rows, *strays])
+    stray = dict(rows[0])
+    stray["direction"] = "storage"
+    _install(monkeypatch, _points(), [*rows, stray])
 
     with pytest.raises(billing_readings.PeriodDataError) as excinfo:
         billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)

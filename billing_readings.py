@@ -160,6 +160,16 @@ def _check_rows(readings, mapping, expected_index, problems):
                         point_id,
                     )
                 )
+        if direction not in {"consumption", "production"}:
+            problems.append(
+                _problem(
+                    "unknown_direction",
+                    f"{point_id} at {measured_at} has direction {direction!r}, "
+                    "which is neither consumption nor production",
+                    point_id,
+                )
+            )
+
         if (
             direction in {"consumption", "production"}
             and row.get("community_kwh") is None
@@ -284,13 +294,8 @@ def load_period_frames(
         direction = row["direction"]
         frame = frames.get(direction)
         if frame is None:
-            problems.append(
-                _problem(
-                    "unknown_direction",
-                    f"{direction} is not a recognised direction",
-                    row["metering_point_id"],
-                )
-            )
+            # Unreachable in practice: _check_rows reports an unrecognised
+            # direction and load_period_frames raises before this loop runs.
             continue
         moment = pd.Timestamp(row["measured_at"]).tz_convert(tzinfo)
         total = float(row.get("total_kwh") or 0.0)
