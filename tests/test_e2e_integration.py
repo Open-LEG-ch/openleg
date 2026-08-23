@@ -20,12 +20,30 @@ class TestSchemaModule:
         assert "CREATE TABLE IF NOT EXISTS ops_snapshots" in content
 
     def test_database_has_lea_report_functions(self):
-        with open(os.path.join(PROJECT_ROOT, "database.py")) as f:
+        """Reachable through `db.`, wherever the definition now lives.
+
+        The ops domain moved to store/ops.py (#334); the contract callers rely on
+        is the name on `database`, not the file that defines it.
+        """
+        import database
+
+        for name in (
+            "save_lea_report",
+            "get_lea_reports",
+            "save_ops_snapshot",
+            "get_ops_snapshots",
+        ):
+            assert callable(getattr(database, name)), name
+
+        with open(os.path.join(PROJECT_ROOT, "store", "ops.py")) as f:
             content = f.read()
-        assert "def save_lea_report" in content
-        assert "def get_lea_reports" in content
-        assert "def save_ops_snapshot" in content
-        assert "def get_ops_snapshots" in content
+        for name in (
+            "save_lea_report",
+            "get_lea_reports",
+            "save_ops_snapshot",
+            "get_ops_snapshots",
+        ):
+            assert f"def {name}" in content, name
 
 
 class TestCSVFixtureParse:

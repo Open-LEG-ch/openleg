@@ -8,10 +8,22 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class TestRateLimiterRedis:
     def test_app_uses_redis_storage(self):
-        with open(os.path.join(PROJECT_ROOT, "app.py")) as f:
-            content = f.read()
-        assert "redis://" in content
-        assert "storage_uri='memory://'" not in content
+        """Asserted on the built config, not on one module's source text.
+
+        The default moved into app_config.build_config (#336); the contract is
+        that the limiter talks to Redis unless the environment says otherwise.
+        """
+        import app_config
+
+        assert app_config.build_config({})["RATELIMIT_STORAGE_URI"].startswith(
+            "redis://"
+        )
+        assert (
+            app_config.build_config({"REDIS_URL": "redis://cache:6379/2"})[
+                "RATELIMIT_STORAGE_URI"
+            ]
+            == "redis://cache:6379/2"
+        )
 
     def test_required_security_extensions_never_fall_back_to_noop(self):
         with open(os.path.join(PROJECT_ROOT, "security_extensions.py")) as f:
