@@ -53,8 +53,6 @@ _READING_UPSERT_SQL = f"""
               IS DISTINCT FROM EXCLUDED.total_kwh
        OR metering_point_readings.grid_kwh
               IS DISTINCT FROM EXCLUDED.grid_kwh
-       OR metering_point_readings.community_kwh
-              IS DISTINCT FROM EXCLUDED.community_kwh
        OR metering_point_readings.condition_code
               IS DISTINCT FROM EXCLUDED.condition_code
        OR metering_point_readings.resolution_minutes

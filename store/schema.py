@@ -627,7 +627,7 @@ def create_tables():
                         SELECT 1 FROM information_schema.columns
                         WHERE table_name = 'billing_periods'
                             AND column_name = 'community_id'
-                            AND data_type = 'integer'
+                            AND data_type = 'bigint'
                     ) THEN
                         ALTER TABLE billing_periods
                             ALTER COLUMN community_id TYPE VARCHAR(64);
