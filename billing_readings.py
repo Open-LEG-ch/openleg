@@ -160,6 +160,16 @@ def _check_rows(readings, mapping, expected_index, problems):
                         point_id,
                     )
                 )
+        if direction not in {"consumption", "production"}:
+            problems.append(
+                _problem(
+                    "unknown_direction",
+                    f"{point_id} at {measured_at} has direction {direction!r}, "
+                    "which is neither consumption nor production",
+                    point_id,
+                )
+            )
+
         if (
             direction in {"consumption", "production"}
             and row.get("community_kwh") is None
@@ -282,9 +292,11 @@ def load_period_frames(
     for row in readings:
         participant = mapping[row["metering_point_id"]]
         direction = row["direction"]
-        frame = frames.get(direction)
-        if frame is None:
-            continue
+        # Indexed, not fetched with a default: _check_rows has already reported
+        # an unrecognised direction and raised, so a miss here is a broken
+        # invariant. billing_runner wraps the KeyError into a BillingRunError,
+        # which fails the period closed rather than billing a partial one.
+        frame = frames[direction]
         moment = pd.Timestamp(row["measured_at"]).tz_convert(tzinfo)
         total = float(row.get("total_kwh") or 0.0)
         frame.loc[moment, participant] += total
@@ -293,6 +305,9 @@ def load_period_frames(
             vnb_totals[direction][participant] += float(community)
         if row.get("source_document_id"):
             documents.add(row["source_document_id"])
+
+    if problems:
+        raise PeriodDataError(problems)
 
     vnb_reference = {
         "community_consumption_kwh": round(sum(vnb_totals["consumption"].values()), 6),

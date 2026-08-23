@@ -9,7 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_documented_install_paths_are_backed_by_repository_files():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    assert "curl -fsSL https://openleg.ch/install.sh | bash" in readme
+    # openleg-ops owns the https://openleg.ch/install.sh route; this public
+    # repo no longer serves it. See tests/test_product_boundary.py.
+    assert "cp .env.example .env" in readme
+    assert "docker compose up -d" in readme
     assert (ROOT / "scripts/install.sh").is_file()
     assert (ROOT / "scripts/openleg").is_file()
     assert (ROOT / "docker-compose.yml").is_file()
