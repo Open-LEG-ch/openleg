@@ -285,13 +285,6 @@ def test_a_changed_reading_is_reported_as_a_correction(tmp_path):
     if not os.environ.get("DATABASE_URL"):
         pytest.skip("needs a live database")
 
-    delivery = tmp_path / "first" / "sdat_e66_sample.xml"
-    delivery.parent.mkdir()
-    shutil.copy(FIXTURE, delivery)
-
-    first = _run(str(delivery), env={"DATABASE_URL": os.environ["DATABASE_URL"]})
-    assert first.returncode == 0, first.stderr
-
     original = FIXTURE.read_text(encoding="utf-8")
     community_first_interval = """    <rsm:Observation>
       <rsm:Position><rsm:Sequence>1</rsm:Sequence></rsm:Position>
@@ -305,17 +298,41 @@ def test_a_changed_reading_is_reported_as_a_correction(tmp_path):
     )
     assert corrected_text != original
 
-    correction = tmp_path / "second" / "sdat_e66_sample.xml"
-    correction.parent.mkdir()
-    correction.write_text(corrected_text, encoding="utf-8")
+    # Establish a known baseline so the test is independent of order.
+    baseline = tmp_path / "baseline" / "sdat_e66_sample.xml"
+    baseline.parent.mkdir()
+    shutil.copy(FIXTURE, baseline)
 
-    second = _run(
-        str(correction.parent),
-        "--force",
-        env={"DATABASE_URL": os.environ["DATABASE_URL"]},
-    )
+    try:
+        base = _run(
+            str(baseline),
+            "--force",
+            env={"DATABASE_URL": os.environ["DATABASE_URL"]},
+        )
+        assert base.returncode == 0, base.stderr
 
-    assert second.returncode == 0, second.stderr
-    assert "neu 0" in second.stdout, second.stdout
-    assert "korrigiert 1" in second.stdout, second.stdout
+        correction = tmp_path / "second" / "sdat_e66_sample.xml"
+        correction.parent.mkdir()
+        correction.write_text(corrected_text, encoding="utf-8")
+
+        second = _run(
+            str(correction.parent),
+            "--force",
+            env={"DATABASE_URL": os.environ["DATABASE_URL"]},
+        )
+
+        assert second.returncode == 0, second.stderr
+        assert "neu 0" in second.stdout, second.stdout
+        assert "korrigiert 1" in second.stdout, second.stdout
+    finally:
+        # Leave the database holding the pristine 0.040 for whatever runs next.
+        cleanup = tmp_path / "cleanup" / "sdat_e66_sample.xml"
+        cleanup.parent.mkdir(exist_ok=True)
+        shutil.copy(FIXTURE, cleanup)
+        _run(
+            str(cleanup),
+            "--force",
+            env={"DATABASE_URL": os.environ["DATABASE_URL"]},
+        )
+
     assert FIXTURE.exists(), "the suite must not consume its own fixture"

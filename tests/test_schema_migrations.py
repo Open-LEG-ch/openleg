@@ -17,13 +17,20 @@ that would notice either one:
 - a type change needs its own guarded `ALTER`, written by hand, per column
 
 Marked `integration`, so it runs in CI against the disposable `postgres:16`
-service and skips everywhere else. It rebuilds `billing_periods` and the two
-tables that reference it, which `create_tables()` restores as it goes.
+service and skips everywhere else. It creates a temporary database, builds a
+pre-migration `billing_periods` table inside it, and lets `create_tables()`
+migrate that table forward.
 """
 
 import os
+import secrets
+from contextlib import contextmanager
 from datetime import datetime, timezone
+from urllib.parse import urlsplit, urlunsplit
 
+import psycopg2
+import psycopg2.extras
+import psycopg2.pool
 import pytest
 
 PRE_MIGRATION_BILLING_PERIODS = """
@@ -55,6 +62,56 @@ def _column(cur, table, column):
     return row["data_type"] if row else None
 
 
+@contextmanager
+def _temporary_database():
+    """Create a throw-away Postgres database and yield its URL."""
+    original_url = os.environ["DATABASE_URL"]
+    parsed = urlsplit(original_url)
+    admin_url = urlunsplit(parsed._replace(path="/postgres"))
+    db_name = f"openleg_migration_{secrets.token_hex(6)}"
+    db_url = urlunsplit(parsed._replace(path=f"/{db_name}"))
+
+    admin_conn = psycopg2.connect(admin_url)
+    admin_conn.autocommit = True
+    try:
+        with admin_conn.cursor() as cur:
+            cur.execute(f'CREATE DATABASE "{db_name}"')
+    finally:
+        admin_conn.close()
+
+    try:
+        yield db_url
+    finally:
+        admin_conn = psycopg2.connect(admin_url)
+        admin_conn.autocommit = True
+        try:
+            with admin_conn.cursor() as cur:
+                cur.execute(
+                    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s",
+                    (db_name,),
+                )
+                cur.execute(f'DROP DATABASE IF EXISTS "{db_name}"')
+        finally:
+            admin_conn.close()
+
+
+@contextmanager
+def _pool_against(url):
+    """Point ``database._connection_pool`` at *url* for the duration."""
+    import database
+
+    old_pool = database._connection_pool
+    new_pool = psycopg2.pool.ThreadedConnectionPool(
+        1, 2, url, cursor_factory=psycopg2.extras.RealDictCursor
+    )
+    database._connection_pool = new_pool
+    try:
+        yield
+    finally:
+        new_pool.closeall()
+        database._connection_pool = old_pool
+
+
 @pytest.mark.integration
 def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
     if not os.environ.get("DATABASE_URL"):
@@ -63,54 +120,60 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
     import database
     from store.schema import create_tables
 
-    assert database.init_db(), "the pool must come up before the migration runs"
+    with _temporary_database() as url, _pool_against(url):
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(PRE_MIGRATION_BILLING_PERIODS)
+            cur.execute(
+                """
+                INSERT INTO billing_periods (community_id, period_start, period_end)
+                VALUES (42, TIMESTAMP '2026-01-15 00:00:00',
+                            TIMESTAMP '2026-02-15 00:00:00')
+                RETURNING id
+                """
+            )
+            period_id = cur.fetchone()["id"]
 
-    with database.get_connection() as conn, conn.cursor() as cur:
-        cur.execute("DROP TABLE IF EXISTS invoices CASCADE")
-        cur.execute("DROP TABLE IF EXISTS billing_line_items CASCADE")
-        cur.execute("DROP TABLE IF EXISTS billing_periods CASCADE")
-        cur.execute(PRE_MIGRATION_BILLING_PERIODS)
-        cur.execute(
-            """
-            INSERT INTO billing_periods (community_id, period_start, period_end)
-            VALUES (42, TIMESTAMP '2026-01-15 00:00:00',
-                        TIMESTAMP '2026-02-15 00:00:00')
-            RETURNING id
-            """
-        )
-        period_id = cur.fetchone()["id"]
+            assert _column(cur, "billing_periods", "community_id") == "integer"
+            assert (
+                _column(cur, "billing_periods", "period_start")
+                == "timestamp without time zone"
+            )
+            assert _column(cur, "billing_periods", "input_fingerprint") is None
 
-        assert _column(cur, "billing_periods", "community_id") == "integer"
-        assert (
-            _column(cur, "billing_periods", "period_start")
-            == "timestamp without time zone"
-        )
-        assert _column(cur, "billing_periods", "input_fingerprint") is None
+        create_tables()
 
-    create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            assert (
+                _column(cur, "billing_periods", "community_id") == "character varying"
+            )
+            assert (
+                _column(cur, "billing_periods", "period_start")
+                == "timestamp with time zone"
+            )
+            assert (
+                _column(cur, "billing_periods", "period_end")
+                == "timestamp with time zone"
+            )
+            # The additive block: a column that exists only inside the CREATE TABLE
+            # statement would never have reached this table.
+            assert _column(cur, "billing_periods", "input_fingerprint") is not None
 
-    with database.get_connection() as conn, conn.cursor() as cur:
-        assert _column(cur, "billing_periods", "community_id") == "character varying"
-        assert (
-            _column(cur, "billing_periods", "period_start")
-            == "timestamp with time zone"
-        )
-        # The additive block: a column that exists only inside the CREATE TABLE
-        # statement would never have reached this table.
-        assert _column(cur, "billing_periods", "input_fingerprint") is not None
-
-        cur.execute(
-            """
-            SELECT community_id, period_start
-            FROM billing_periods WHERE id = %s
-            """,
-            (period_id,),
-        )
-        row = cur.fetchone()
+            cur.execute(
+                """
+                SELECT community_id, period_start, period_end
+                FROM billing_periods WHERE id = %s
+                """,
+                (period_id,),
+            )
+            row = cur.fetchone()
 
     assert row is not None, "the migration must carry the existing row across"
     assert row["community_id"] == "42", "the integer key becomes its own text"
     # Midnight in Zurich on 15 January is 23:00 UTC the day before.
     assert row["period_start"] == datetime(2026, 1, 14, 23, 0, tzinfo=timezone.utc), (
+        "a naive timestamp is read as Europe/Zurich, not as UTC"
+    )
+    # Midnight in Zurich on 15 February is 23:00 UTC the day before.
+    assert row["period_end"] == datetime(2026, 2, 14, 23, 0, tzinfo=timezone.utc), (
         "a naive timestamp is read as Europe/Zurich, not as UTC"
     )
