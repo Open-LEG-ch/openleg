@@ -9,6 +9,13 @@ updates:
     labels:
       - dependencies
       - python
+    ignore:
+      # numpy 2.5 requires Python >= 3.12. CI, the Dockerfile and the docs all
+      # target 3.11, so every 2.5 bump fails to install before a test can run.
+      # Lift this together with the Python version, not on its own.
+      - dependency-name: numpy
+        versions:
+          - ">=2.5"
 
   - package-ecosystem: github-actions
     directory: /
