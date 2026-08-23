@@ -15,6 +15,7 @@ import runpy
 import shutil
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 
 import dotenv
@@ -334,9 +335,18 @@ def test_a_changed_reading_is_reported_as_a_correction(tmp_path):
             "--force",
             env={"DATABASE_URL": os.environ["DATABASE_URL"]},
         )
+        if restored.returncode != 0:
+            # Reported here as well as asserted below, because if the body is
+            # already failing, the assertion after this block never runs and a
+            # database left holding 0.041 would go unmentioned.
+            warnings.warn(
+                "SDAT restore failed; the database may still hold the corrected "
+                f"0.041 reading: {restored.stderr}",
+                stacklevel=2,
+            )
 
-    # Checked here rather than inside the finally on purpose: a failed restore
-    # must be visible, but asserting it while an exception is in flight would
-    # replace the real failure with this one.
+    # Asserted here rather than inside the finally on purpose: raising there
+    # while an exception is in flight would replace the real failure with this
+    # one. The warning above covers that case.
     assert restored.returncode == 0, restored.stderr
     assert FIXTURE.exists(), "the suite must not consume its own fixture"
