@@ -445,3 +445,123 @@ class TestGuardsStayFailClosed:
 
         assert "–" not in template
         assert "—" not in template
+
+
+AGENTMAIL_TEST_SECRET = "whsec_" + "A" * 43 + "="
+AGENTMAIL_PAYLOAD = {
+    "event_type": "message.received",
+    "message": {
+        "message_id": "msg_1",
+        "inbox_id": "hallo@openleg.ch",
+        "subject": "LEG Anfrage",
+        "text": "Guten Tag",
+    },
+}
+
+
+class TestAgentmailSignatureVerification:
+    @pytest.fixture
+    def app_with_agentmail_secret(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": "postgresql://x:x@localhost/x",
+                "REDIS_URL": "memory://",
+                "APP_BASE_URL": "http://localhost:5003",
+                "ADMIN_TOKEN": "admin-token",
+                "INTERNAL_TOKEN": "internal-token",
+                "AGENTMAIL_WEBHOOK_SECRET": AGENTMAIL_TEST_SECRET,
+            },
+        ):
+            yield _load_app()
+
+    def _signed_headers(self, body: bytes) -> dict:
+        import datetime
+
+        from svix.webhooks import Webhook
+
+        timestamp = datetime.datetime.now(datetime.timezone.utc)
+        signature = Webhook(AGENTMAIL_TEST_SECRET).sign(
+            "msg_test", timestamp, body.decode()
+        )
+        return {
+            "svix-id": "msg_test",
+            "svix-timestamp": str(int(timestamp.timestamp())),
+            "svix-signature": signature,
+        }
+
+    def test_a_correctly_signed_request_is_accepted(self, app_with_agentmail_secret):
+        import json
+
+        module = app_with_agentmail_secret
+        body = json.dumps(AGENTMAIL_PAYLOAD).encode()
+        with patch.object(module.db, "save_ops_snapshot", return_value=True) as saved:
+            response = module.app.test_client().post(
+                "/api/internal/agentmail",
+                data=body,
+                content_type="application/json",
+                headers=self._signed_headers(body),
+            )
+
+        assert response.status_code == 200
+        saved.assert_called_once()
+        assert saved.call_args.kwargs["payload"]["subject"] == "LEG Anfrage"
+
+    def test_a_signature_mismatch_is_rejected_with_403(self, app_with_agentmail_secret):
+        import json
+
+        module = app_with_agentmail_secret
+        signed_body = json.dumps(AGENTMAIL_PAYLOAD).encode()
+        tampered_body = json.dumps({"event_type": "message.received"}).encode()
+        with patch.object(module.db, "save_ops_snapshot", return_value=True) as saved:
+            response = module.app.test_client().post(
+                "/api/internal/agentmail",
+                data=tampered_body,
+                content_type="application/json",
+                headers=self._signed_headers(signed_body),
+            )
+
+        assert response.status_code == 403
+        saved.assert_not_called()
+
+    def test_a_request_without_svix_headers_is_rejected_with_403(
+        self, app_with_agentmail_secret
+    ):
+        module = app_with_agentmail_secret
+        with patch.object(module.db, "save_ops_snapshot", return_value=True) as saved:
+            response = module.app.test_client().post(
+                "/api/internal/agentmail",
+                json=AGENTMAIL_PAYLOAD,
+            )
+
+        assert response.status_code == 403
+        saved.assert_not_called()
+
+    def test_a_missing_svix_library_fails_closed_with_503(
+        self, app_with_agentmail_secret
+    ):
+        import sys
+
+        module = app_with_agentmail_secret
+        # Resolved from the registered view rather than by importing `admin`,
+        # so the patch cannot land on a different module object than the one
+        # the route closes over if the import order ever changes.
+        view = module.app.view_functions["admin.api_internal_agentmail"]
+        admin_module = sys.modules[view.__module__]
+
+        with (
+            patch.object(admin_module, "HAS_SVIX", False),
+            patch.object(module.db, "save_ops_snapshot", return_value=True) as saved,
+        ):
+            response = module.app.test_client().post(
+                "/api/internal/agentmail",
+                json=AGENTMAIL_PAYLOAD,
+                headers={"X-Internal-Token": "internal-token"},
+            )
+
+        assert response.status_code == 503
+        saved.assert_not_called()
+        assert view.__globals__["HAS_SVIX"] is True, (
+            "the patch must have been reverted, and must have applied to the "
+            "module the route actually uses"
+        )
