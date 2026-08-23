@@ -318,3 +318,9 @@ def admin_registry_reject(entry_id):
     db.update_registry_entry_moderation(entry_id, "rejected", reason)
     admin_token = os.getenv("ADMIN_TOKEN", "").strip()
     return redirect(f"/admin/ops?token={admin_token}")
+
+
+@admin_bp.route("/api/email/stats")
+def api_email_stats():
+    require_admin()
+    return jsonify(db.get_email_stats())

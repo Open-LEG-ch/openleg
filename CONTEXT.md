@@ -71,12 +71,16 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/registry` | LEG registry entries and verification |
 | `store/tenant` | White-label tenant configs |
 | `store/token` | Auth and claim tokens |
+| `store/analytics` | Event log and the aggregate counts the dashboards read |
+| `store/consent` | The consent record a resident gives and can revoke |
+| `store/document` | Generated LEG documents and their signing status |
+| `store/ops` | LEA job reports and operational snapshots |
 | `store/access_token` | Hashed, single-use magic-link tokens, dashboard and municipality |
 
-`database.py` still holds the domains that have not been extracted: referrals,
-analytics events, municipalities, consents, API clients, documents, and ops
-snapshots. New storage code for a cohesive domain belongs in `store/`, never
-appended to `database.py`.
+The extraction is finished. `database.py` owns the connection pool,
+`get_connection`, the schema call, and the re-export block, and nothing else.
+New storage code for a cohesive domain gets its own module in `store/`, never
+an append to `database.py`.
 
 Domain logic sits above storage and stays free of SQL:
 

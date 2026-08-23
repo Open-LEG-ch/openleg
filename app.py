@@ -1,13 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import hmac
-import ipaddress
 import logging
 import os
-import re
 import secrets
 import threading
-from datetime import timedelta
-from urllib.parse import urljoin, urlparse, urlsplit
+from urllib.parse import urljoin, urlparse
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -27,20 +24,20 @@ from flask import (
 from flask_talisman import Talisman
 
 import access_token  # noqa: F401
-import billing_runner
+import app_config
 import dashboard as dashboard_module  # noqa: F401
 import dashboard_routes
 import data_enricher
 import database as db
 import email_automation
 import formation_wizard
-import leg_registry
 import ml_models
 import registration
 import security_utils
 import tenant as tenant_module
 from admin import admin_bp, require_admin
 from api_public import public_api_bp
+from cron import cron_bp
 from email_utils import send_email
 from health import health_bp
 from leg_registry import registry_api_bp
@@ -614,68 +611,6 @@ def api_formation_financial_model():
     return jsonify(result)
 
 
-# --- Cron ---
-def _require_cron_secret():
-    """Cron endpoints fail closed: no CRON_SECRET configured means no access."""
-    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
-    configured = current_app.config["CRON_SECRET"]
-    if not configured or secret != configured:
-        log_security_event("CRON_ACCESS_DENIED", "Invalid cron secret", "WARNING")
-        abort(403)
-
-
-@main_bp.route("/api/cron/process-emails", methods=["POST"])
-def api_cron_process_emails():
-    _require_cron_secret()
-    result = email_automation.process_email_queue(app=current_app)
-    return jsonify(result)
-
-
-@main_bp.route("/api/cron/refresh-public-data", methods=["POST"])
-def api_cron_refresh_public_data():
-    _require_cron_secret()
-    import public_data
-
-    result = public_data.refresh_canton("ZH")
-    return jsonify(result)
-
-
-@main_bp.route("/api/cron/backfill-elcom", methods=["POST"])
-def api_cron_backfill_elcom():
-    _require_cron_secret()
-    import public_data
-
-    year = request.args.get("year", 2026, type=int)
-    limit = request.args.get("limit", 25, type=int) or 25
-    safe_limit = max(1, min(limit, 200))
-    bfs_numbers = db.get_profile_bfs_missing_elcom_tariffs(year=year, limit=safe_limit)
-
-    result = {
-        "year": year,
-        "limit": safe_limit,
-        "candidates": len(bfs_numbers),
-        "processed": 0,
-        "saved": 0,
-        "errors": [],
-    }
-    for bfs in bfs_numbers:
-        result["processed"] += 1
-        try:
-            tariffs = public_data.fetch_elcom_tariffs(bfs, year=year)
-            if tariffs:
-                result["saved"] += int(db.save_elcom_tariffs(tariffs) or 0)
-        except Exception:
-            logger.exception("ElCom backfill failed for BFS %s", bfs)
-            result["errors"].append({"bfs": bfs, "error": "fetch_failed"})
-    return jsonify(result)
-
-
-@main_bp.route("/api/email/stats")
-def api_email_stats():
-    require_admin()
-    return jsonify(db.get_email_stats())
-
-
 # --- Webhooks ---
 
 
@@ -694,55 +629,6 @@ def webhook_deepsign():
         f"[DEEPSIGN] Webhook: {result.get('action')} for {result.get('document_id')}"
     )
     return jsonify(result), 200
-
-
-# --- Billing Cron ---
-@main_bp.route("/api/cron/process-billing", methods=["POST"])
-def api_cron_process_billing():
-    _require_cron_secret()
-
-    communities = db.get_active_communities()
-    period_start, period_end = billing_runner.previous_complete_month()
-    processed = 0
-    already_processed = 0
-    failures = []
-    for community in communities:
-        community_id = community["community_id"]
-        try:
-            result = billing_runner.run_billing_period(
-                community_id, period_start, period_end
-            )
-        except billing_runner.BillingRunError:
-            logger.error("Billing run failed for community %s", community_id)
-            failures.append(
-                {"community_id": community_id, "error": "billing_run_failed"}
-            )
-            continue
-        if result["status"] == "created":
-            processed += 1
-        elif result["status"] == "already_processed":
-            already_processed += 1
-    return jsonify(
-        {
-            "activated": True,
-            "status": "ok" if not failures else "partial_failure",
-            "processed": processed,
-            "already_processed": already_processed,
-            "failed": len(failures),
-            "failures": failures,
-            "communities": len(communities),
-        }
-    )
-
-
-@main_bp.route("/api/cron/verify-registry-entries", methods=["POST"])
-def api_cron_verify_registry_entries():
-    _require_cron_secret()
-
-    result = leg_registry.send_verification_nudges(
-        base_url=current_app.config["SITE_URL"]
-    )
-    return jsonify(result)
 
 
 @main_bp.route("/api/billing/community/<community_id>/period/<int:period_id>")
@@ -771,94 +657,6 @@ def metrics():
     )
 
 
-def _parse_dashboard_ttl_seconds(raw, default):
-    """Parse a dashboard token TTL env value with safe bounds."""
-    if raw is None:
-        return default
-    try:
-        value = int(raw)
-    except (TypeError, ValueError):
-        logger.warning("Invalid dashboard TTL value %r, using default %s", raw, default)
-        return default
-    return max(60, min(value, 86_400))
-
-
-_DNS_LABEL_RE = re.compile(r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)$")
-
-
-def _contains_invalid_characters(value):
-    return any(char.isspace() or ord(char) < 32 for char in value)
-
-
-def _is_valid_hostname(hostname):
-    if not hostname or "%" in hostname:
-        return False
-    if _contains_invalid_characters(hostname):
-        return False
-    if "[" in hostname or "]" in hostname:
-        return False
-    try:
-        ipaddress.ip_address(hostname)
-        return True
-    except ValueError:
-        pass
-    try:
-        ascii_hostname = hostname.encode("idna").decode("ascii")
-    except UnicodeError:
-        return False
-    has_trailing_dot = ascii_hostname.endswith(".")
-    if has_trailing_dot:
-        ascii_hostname = ascii_hostname[:-1]
-    if len(ascii_hostname) > 253:
-        return False
-    labels = ascii_hostname.split(".")
-    return all(_DNS_LABEL_RE.match(label) for label in labels)
-
-
-def _canonical_origin(parsed):
-    scheme = parsed.scheme
-    hostname = parsed.hostname
-    port = parsed.port
-    host = f"[{hostname}]" if ":" in hostname else hostname
-    if port is not None:
-        return f"{scheme}://{host}:{port}"
-    return f"{scheme}://{host}"
-
-
-def _validated_public_site_url(value):
-    if _contains_invalid_characters(value):
-        raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL")
-    if "?" in value or "#" in value or ";" in value:
-        raise ValueError("PUBLIC_SITE_URL must not contain credentials or suffixes")
-    try:
-        parsed = urlsplit(value)
-    except ValueError as error:
-        raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL") from error
-    if (
-        parsed.scheme not in {"http", "https"}
-        or not parsed.netloc
-        or not parsed.hostname
-    ):
-        raise ValueError("PUBLIC_SITE_URL must be an absolute HTTP(S) URL")
-    if (
-        parsed.username is not None
-        or parsed.password is not None
-        or parsed.path not in {"", "/"}
-        or parsed.query
-        or parsed.fragment
-    ):
-        raise ValueError("PUBLIC_SITE_URL must not contain credentials or suffixes")
-    try:
-        port = parsed.port
-    except ValueError as error:
-        raise ValueError("PUBLIC_SITE_URL must have a valid port") from error
-    if parsed.netloc.endswith(":") or (port is not None and port < 1):
-        raise ValueError("PUBLIC_SITE_URL must have a valid port")
-    if not _is_valid_hostname(parsed.hostname):
-        raise ValueError("PUBLIC_SITE_URL must have a valid hostname")
-    return _canonical_origin(parsed)
-
-
 def create_app(config=None, *, load_environment=True, check_database=True):
     """Create one configured OpenLEG Flask application."""
     if load_environment:
@@ -872,52 +670,11 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         raise RuntimeError("PostgreSQL required. Set DATABASE_URL.")
 
     application = Flask(__name__)
-    app_base_url = os.getenv("APP_BASE_URL", "http://localhost:5003")
-    secure_cookie_env = os.getenv("SESSION_COOKIE_SECURE")
-    default_session_cookie_secure = app_base_url.startswith("https://")
-    if secure_cookie_env is not None:
-        default_session_cookie_secure = secure_cookie_env.strip().lower() in {
-            "true",
-            "1",
-            "yes",
-            "on",
-        }
-    application.config.from_mapping(
-        JSON_SORT_KEYS=False,
-        SECRET_KEY=os.getenv("SECRET_KEY", os.urandom(32).hex()),
-        SESSION_COOKIE_SECURE=default_session_cookie_secure,
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE=os.getenv("SESSION_COOKIE_SAMESITE", "Lax"),
-        PERMANENT_SESSION_LIFETIME=timedelta(
-            seconds=int(os.getenv("PERMANENT_SESSION_LIFETIME", "3600"))
-        ),
-        DASHBOARD_ACCESS_TOKEN_TTL_SECONDS=_parse_dashboard_ttl_seconds(
-            os.getenv("DASHBOARD_ACCESS_TOKEN_TTL_SECONDS"), 900
-        ),
-        DASHBOARD_EMAIL_TOKEN_TTL_SECONDS=_parse_dashboard_ttl_seconds(
-            os.getenv("DASHBOARD_EMAIL_TOKEN_TTL_SECONDS"), 86_400
-        ),
-        MAX_CONTENT_LENGTH=10 * 1024 * 1024,
-        APP_BASE_URL=app_base_url,
-        SITE_URL=app_base_url.rstrip("/"),
-        PUBLIC_SITE_URL=os.getenv("PUBLIC_SITE_URL", "https://openleg.ch"),
-        ALLOWED_HOSTS=os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(","),
-        ADMIN_EMAIL=os.getenv("ADMIN_EMAIL", "hallo@openleg.ch"),
-        CRON_SECRET=os.getenv("CRON_SECRET", "").strip(),
-        RATELIMIT_STORAGE_URI=os.getenv("REDIS_URL", "redis://redis:6379/1"),
-    )
-    if config:
-        application.config.update(config)
-        if "APP_BASE_URL" in config and "SITE_URL" not in config:
-            application.config["SITE_URL"] = config["APP_BASE_URL"].rstrip("/")
-        if (
-            "SESSION_COOKIE_SECURE" not in config
-            and secure_cookie_env is None
-            and application.config["APP_BASE_URL"].startswith("https://")
-        ):
-            application.config["SESSION_COOKIE_SECURE"] = True
+    application.config.from_mapping(app_config.build_config(os.environ, config))
 
-    public_site_base = _validated_public_site_url(application.config["PUBLIC_SITE_URL"])
+    public_site_base = app_config.validated_public_site_url(
+        application.config["PUBLIC_SITE_URL"]
+    )
 
     def public_site_url(path):
         if path.startswith("//"):
@@ -938,6 +695,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         health_bp,
         utility_bp,
         admin_bp,
+        cron_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)
