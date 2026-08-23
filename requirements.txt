@@ -21,5 +21,5 @@ weasyprint==69.0
 # Optional: For production
 gunicorn==22.0.0
 requests==2.34.2
-svix==1.99.1
+svix==2.0.0
 werkzeug==3.1.6
