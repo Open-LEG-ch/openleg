@@ -565,9 +565,7 @@ def create_tables():
                     ) THEN
                         ALTER TABLE billing_periods
                             ALTER COLUMN period_start TYPE TIMESTAMPTZ
-                                USING period_start AT TIME ZONE 'Europe/Zurich',
-                            ALTER COLUMN period_end TYPE TIMESTAMPTZ
-                                USING period_end AT TIME ZONE 'Europe/Zurich';
+                                USING period_start AT TIME ZONE 'Europe/Zurich';
                     END IF;
                 END $$
             """)
