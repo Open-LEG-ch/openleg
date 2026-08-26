@@ -50,11 +50,13 @@ def _points(status_a="confirmed", status_b="confirmed", building_a=BUILDING_A):
             "metering_point_id": POINT_A,
             "building_id": building_a,
             "member_status": status_a,
+            "expected_directions": ["consumption"],
         },
         {
             "metering_point_id": POINT_B,
             "building_id": BUILDING_B,
             "member_status": status_b,
+            "expected_directions": ["consumption", "production"],
         },
     ]
 
@@ -220,6 +222,40 @@ def test_missing_interval_is_rejected(monkeypatch, rows):
 
     assert "missing_interval" in _kinds(excinfo)
     assert "00:15" in str(excinfo.value)
+
+
+def test_completely_missing_declared_series_is_rejected(monkeypatch, rows):
+    without_point_a = [row for row in rows if row["metering_point_id"] != POINT_A]
+    _install(monkeypatch, _points(), without_point_a)
+
+    with pytest.raises(billing_readings.PeriodDataError) as excinfo:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert "missing_series" in _kinds(excinfo)
+    assert POINT_A in str(excinfo.value)
+
+
+def test_point_without_declared_directions_is_rejected(monkeypatch, rows):
+    points = _points()
+    points[0]["expected_directions"] = None
+    _install(monkeypatch, points, rows)
+
+    with pytest.raises(billing_readings.PeriodDataError) as excinfo:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert "undeclared_direction" in _kinds(excinfo)
+    assert "unknown_point" not in _kinds(excinfo)
+
+
+def test_series_outside_the_declared_directions_is_rejected(monkeypatch, rows):
+    points = _points()
+    points[1]["expected_directions"] = ["consumption"]
+    _install(monkeypatch, points, rows)
+
+    with pytest.raises(billing_readings.PeriodDataError) as excinfo:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert "unexpected_direction" in _kinds(excinfo)
 
 
 def test_negative_value_is_rejected(monkeypatch, rows):
