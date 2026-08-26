@@ -24,12 +24,28 @@ def previous_complete_month(now=None):
     return period_start, period_end
 
 
+def _canonical_frame(frame):
+    """JSON-safe deterministic content: index, participant columns, values."""
+    return {
+        "index": [moment.isoformat() for moment in frame.index],
+        "columns": [str(column) for column in frame.columns],
+        "values": [[float(value) for value in row] for row in frame.to_numpy()],
+    }
+
+
 def _fingerprint(frames, policy, summary, reconciliation):
+    provenance = frames.provenance
     payload = {
         "community_id": policy["community_id"],
-        "period_start": frames.provenance["period_start"].isoformat(),
-        "period_end": frames.provenance["period_end"].isoformat(),
-        "source_document_ids": list(frames.provenance["source_document_ids"]),
+        "period_start": provenance["period_start"].isoformat(),
+        "period_end": provenance["period_end"].isoformat(),
+        "source_document_ids": list(provenance["source_document_ids"]),
+        "interval_count": provenance["interval_count"],
+        "resolution_minutes": provenance["resolution_minutes"],
+        "timezone": provenance["timezone"],
+        "production": _canonical_frame(frames.production),
+        "consumption": _canonical_frame(frames.consumption),
+        "participants": list(frames.participants),
         "tariff_id": policy["tariff_id"],
         "internal_price_chf_per_kwh": str(policy["internal_price_chf_per_kwh"]),
         "grid_fee_chf_per_kwh": str(policy["grid_fee_chf_per_kwh"]),

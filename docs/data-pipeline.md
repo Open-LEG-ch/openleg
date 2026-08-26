@@ -196,6 +196,11 @@ draft and applies these fail-closed rules:
 - identical input fingerprints are retry no-ops; changed inputs require review
 - the cron counts work only after `save_billing_period` returns a committed ID
 
+The fingerprint covers the complete period provenance, canonical production and
+consumption frames, participant IDs, VNB reference, tariff, generated summary,
+and reconciliation. Its public runner contract pins a stable SHA-256 vector, so
+removing any of those inputs is observable before an immutable draft is reused.
+
 Invoice issuance remains disabled until the LEG and its VNB approve tax, HKN,
 tariff-class, rounding-tolerance, and operational cutoff rules.
 
