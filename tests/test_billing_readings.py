@@ -59,7 +59,7 @@ def _points(status_a="confirmed", status_b="confirmed", building_a=BUILDING_A):
     ]
 
 
-def _install(monkeypatch, points, rows):
+def _install(monkeypatch, points, rows, *, unassigned=None):
     """Fake the repository seam the way the real SQL behaves."""
 
     def _get_points(community_id):
@@ -74,8 +74,18 @@ def _install(monkeypatch, points, rows):
             if period_start <= row["measured_at"] < period_end
         ]
 
+    def _get_unassigned(community_id, period_start, period_end):
+        assert community_id == COMMUNITY
+        return deepcopy(unassigned or [])
+
     monkeypatch.setattr(database, "get_community_metering_points", _get_points)
     monkeypatch.setattr(database, "get_period_readings", _get_readings)
+    monkeypatch.setattr(
+        database,
+        "get_unassigned_period_metering_point_ids",
+        _get_unassigned,
+        raising=False,
+    )
 
 
 @pytest.fixture
@@ -189,6 +199,17 @@ def test_point_without_a_member_is_rejected(monkeypatch, rows):
 
     assert "unmapped_point" in _kinds(excinfo)
     assert POINT_A in str(excinfo.value)
+
+
+def test_relevant_imported_but_unassigned_point_is_rejected(monkeypatch, rows):
+    unassigned = "CH000000000000000000000000000099"
+    _install(monkeypatch, _points(), rows, unassigned=[unassigned])
+
+    with pytest.raises(billing_readings.PeriodDataError) as excinfo:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert "unassigned_point" in _kinds(excinfo)
+    assert unassigned in str(excinfo.value)
 
 
 def test_unknown_metering_point_is_rejected(monkeypatch, rows):

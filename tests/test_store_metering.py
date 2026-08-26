@@ -13,6 +13,8 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
+import pytest
+
 import database
 from store import metering
 
@@ -102,6 +104,7 @@ def test_database_reexports_are_identical_objects():
         "upsert_metering_points",
         "get_metering_points",
         "get_metering_point",
+        "get_unassigned_period_metering_point_ids",
         "save_metering_point_readings",
         "get_metering_point_readings",
         "get_metering_point_reading_stats",
@@ -350,6 +353,15 @@ def test_community_points_expose_membership_status(monkeypatch):
     assert "active = TRUE" in query
     assert params == ("COMM-1",)
     assert points[0]["member_status"] == "confirmed"
+
+
+def test_unassigned_period_point_lookup_propagates_storage_failure(monkeypatch):
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    with pytest.raises(RuntimeError, match="db down"):
+        metering.get_unassigned_period_metering_point_ids(
+            "COMM-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
+        )
 
 
 def test_period_readings_use_a_half_open_interval(monkeypatch):

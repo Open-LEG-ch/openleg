@@ -8,6 +8,9 @@ database-backed test in the suite runs against a freshly created container,
 where every existence check evaluates against a database that never had the old
 shape. The `ALTER` branches were unreachable by anything in this repository.
 
+The same disposable PostgreSQL harness also covers repository queries whose
+privacy or scoping contract cannot be proved with fake-cursor SQL assertions.
+
 Two structural traps follow from the design, and this test is the only thing
 that would notice either one:
 
@@ -25,7 +28,7 @@ migrate that table forward.
 import os
 import secrets
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit, urlunsplit
 
 import psycopg2
@@ -177,3 +180,74 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
     assert row["period_end"] == datetime(2026, 2, 14, 23, 0, tzinfo=timezone.utc), (
         "a naive timestamp is read as Europe/Zurich, not as UTC"
     )
+
+
+@pytest.mark.integration
+def test_unassigned_period_points_are_scoped_by_public_vnb_leg_identifier():
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    end = datetime(2026, 2, 1, tzinfo=timezone.utc)
+    with _temporary_database() as url, _pool_against(url):
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                CREATE TABLE metering_points (
+                    metering_point_id VARCHAR(64) PRIMARY KEY,
+                    community_id VARCHAR(64),
+                    active BOOLEAN NOT NULL DEFAULT TRUE
+                );
+                CREATE TABLE sdat_imports (
+                    document_id VARCHAR(64) PRIMARY KEY,
+                    vnb_community_id VARCHAR(64)
+                );
+                CREATE TABLE metering_point_readings (
+                    metering_point_id VARCHAR(64) NOT NULL,
+                    measured_at TIMESTAMPTZ NOT NULL,
+                    source_document_id VARCHAR(64)
+                )
+                """
+            )
+            cur.execute(
+                """
+                INSERT INTO metering_points (metering_point_id, community_id)
+                VALUES
+                    ('POINT-A', 'LEG-A'),
+                    ('UNASSIGNED-A', NULL),
+                    ('POINT-B', 'LEG-B'),
+                    ('UNASSIGNED-B', NULL),
+                    ('ASSIGNED-ELSEWHERE', 'LEG-B');
+                INSERT INTO sdat_imports (document_id, vnb_community_id)
+                VALUES
+                    ('DOC-A-OWNED', 'VNB-LEG-A'),
+                    ('DOC-A-STRAY', 'VNB-LEG-A'),
+                    ('DOC-B-OWNED', 'VNB-LEG-B'),
+                    ('DOC-B-STRAY', 'VNB-LEG-B');
+                INSERT INTO metering_point_readings (
+                    metering_point_id, measured_at, source_document_id
+                ) VALUES
+                    ('POINT-A', %s, 'DOC-A-OWNED'),
+                    ('UNASSIGNED-A', %s, 'DOC-A-STRAY'),
+                    ('UNASSIGNED-A', %s, 'DOC-A-STRAY'),
+                    ('POINT-B', %s, 'DOC-B-OWNED'),
+                    ('UNASSIGNED-B', %s, 'DOC-B-STRAY'),
+                    ('ASSIGNED-ELSEWHERE', %s, 'DOC-A-STRAY')
+                """,
+                (
+                    start,
+                    start,
+                    start + timedelta(minutes=15),
+                    start,
+                    start,
+                    start,
+                ),
+            )
+
+        found = database.get_unassigned_period_metering_point_ids("LEG-A", start, end)
+
+    assert found == ["UNASSIGNED-A"]
+    assert "UNASSIGNED-B" not in found, "another LEG's point ID must stay private"
+    assert "ASSIGNED-ELSEWHERE" not in found

@@ -186,6 +186,7 @@ from store.metering import (  # noqa: F401
     get_period_readings,
     get_sdat_import,
     get_sdat_import_index,
+    get_unassigned_period_metering_point_ids,
     record_sdat_import,
     save_metering_point_readings,
     upsert_metering_points,
