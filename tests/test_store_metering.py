@@ -7,11 +7,14 @@ skip rows whose values did not move, and report how many rows were new versus
 corrected so an import can be audited without a revision table.
 """
 
+import logging
 import subprocess
 import sys
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+
+import pytest
 
 import database
 from store import metering
@@ -21,12 +24,21 @@ POINT = "CH000000000000000000000000000001"
 
 
 class _FakeCursor:
-    def __init__(self, rows=None, one=None):
+    def __init__(self, rows=None, one=None, required_sql=(), expected_params=None):
         self.rows = rows or []
         self.one = one
         self.executed = []
+        self.required_sql = tuple(part.lower() for part in required_sql)
+        self.expected_params = expected_params
 
     def execute(self, query, params=None):
+        normalized = " ".join(query.split()).lower() if isinstance(query, str) else ""
+        if isinstance(query, str) and ("XX" in query or "%S" in query):
+            raise ValueError("database rejected malformed query")
+        if any(part not in normalized for part in self.required_sql):
+            raise ValueError("database rejected malformed query")
+        if self.expected_params is not None and params != self.expected_params:
+            raise ValueError("database rejected query parameters")
         self.executed.append((query, params))
 
     def fetchall(self):
@@ -85,7 +97,15 @@ def _capture_execute_values(monkeypatch, returned):
     calls = []
 
     def _fake(cur, sql, values, page_size=None, fetch=False):
-        calls.append({"sql": sql, "values": list(values), "fetch": fetch})
+        calls.append(
+            {
+                "cur": cur,
+                "sql": sql,
+                "values": list(values),
+                "page_size": page_size,
+                "fetch": fetch,
+            }
+        )
         return returned if fetch else None
 
     import psycopg2.extras
@@ -176,6 +196,8 @@ def test_readings_upsert_registers_points_before_readings(monkeypatch):
     assert "INSERT INTO metering_points" in calls[0]["sql"]
     assert "ON CONFLICT (metering_point_id) DO NOTHING" in calls[0]["sql"]
     assert "INSERT INTO metering_point_readings" in calls[1]["sql"]
+    assert calls[0]["cur"] is cur
+    assert calls[1]["cur"] is cur
 
 
 def test_readings_upsert_reports_new_and_corrected_counts(monkeypatch):
@@ -205,6 +227,98 @@ def test_readings_upsert_reports_new_and_corrected_counts(monkeypatch):
     assert result["new"] == 1
     assert result["corrected"] == 1
     assert result["unchanged"] == 3
+    assert result["samples"] == [(POINT, "consumption", MEASURED_AT)]
+
+
+def test_readings_upsert_samples_only_corrected_rows_and_caps_at_twenty(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    returned = [
+        {
+            "metering_point_id": POINT,
+            "direction": "consumption",
+            "measured_at": MEASURED_AT,
+            "inserted": True,
+        }
+    ] + [
+        {
+            "metering_point_id": POINT,
+            "direction": "consumption",
+            "measured_at": MEASURED_AT + timedelta(minutes=15 * index),
+            "inserted": False,
+        }
+        for index in range(1, 23)
+    ]
+    _capture_execute_values(monkeypatch, returned)
+
+    rows = [_row(index) for index in range(1, 24)]
+    result = metering.save_metering_point_readings(rows)
+
+    assert len(result["samples"]) == 20
+    assert result["samples"][0] == (
+        POINT,
+        "consumption",
+        MEASURED_AT + timedelta(minutes=15),
+    )
+    assert result["samples"][-1] == (
+        POINT,
+        "consumption",
+        MEASURED_AT + timedelta(minutes=15 * 20),
+    )
+    assert (POINT, "consumption", MEASURED_AT) not in result["samples"]
+
+
+def test_readings_upsert_uses_fallback_source_document_id_and_page_size(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    calls = _capture_execute_values(monkeypatch, [])
+
+    row_with_default = _row(1)
+    row_with_default.pop("source_document_id", None)
+    row_with_override = _row(2)
+    row_with_override["source_document_id"] = "DOC-ROW"
+
+    metering.save_metering_point_readings(
+        [row_with_default, row_with_override],
+        source_document_id="DOC-DEFAULT",
+    )
+
+    assert calls[1]["page_size"] == 1000
+    assert calls[1]["values"] == [
+        (
+            POINT,
+            "consumption",
+            MEASURED_AT,
+            15,
+            Decimal("0.100"),
+            Decimal("0.060"),
+            Decimal("0.040"),
+            None,
+            "DOC-DEFAULT",
+        ),
+        (
+            POINT,
+            "consumption",
+            MEASURED_AT + timedelta(minutes=15),
+            15,
+            Decimal("0.100"),
+            Decimal("0.060"),
+            Decimal("0.040"),
+            None,
+            "DOC-ROW",
+        ),
+    ]
+
+
+def test_readings_upsert_honours_the_default_batch_boundary(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    calls = _capture_execute_values(monkeypatch, [])
+
+    metering.save_metering_point_readings([_row(index) for index in range(1, 5002)])
+
+    reading_calls = [call for call in calls if call["fetch"]]
+    assert [len(call["values"]) for call in reading_calls] == [5000, 1]
 
 
 def test_readings_upsert_dedupes_repeated_keys(monkeypatch):
@@ -235,17 +349,33 @@ def test_readings_upsert_accepts_an_iterator(monkeypatch):
 def test_saving_no_rows_touches_no_database(monkeypatch):
     monkeypatch.setattr(database, "get_connection", _broken_conn())
     result = metering.save_metering_point_readings([])
-    assert result["written"] == 0
+    assert result == {
+        "written": 0,
+        "new": 0,
+        "corrected": 0,
+        "unchanged": 0,
+        "samples": [],
+    }
 
 
 # ==== Reads ====
 
 
 def test_get_readings_applies_direction_and_time_window(monkeypatch):
-    cur = _FakeCursor(rows=[])
+    cur = _FakeCursor(
+        rows=[{"metering_point_id": POINT}],
+        required_sql=(
+            "select * from metering_point_readings where metering_point_id = %s",
+            "and direction = %s",
+            "and measured_at >= %s",
+            "and measured_at <= %s",
+            "order by measured_at desc limit %s",
+        ),
+        expected_params=[POINT, "production", MEASURED_AT, MEASURED_AT, 50],
+    )
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    metering.get_metering_point_readings(
+    readings = metering.get_metering_point_readings(
         POINT, direction="production", start=MEASURED_AT, end=MEASURED_AT, limit=50
     )
 
@@ -254,6 +384,18 @@ def test_get_readings_applies_direction_and_time_window(monkeypatch):
     assert "direction = %s" in query
     assert "measured_at >= %s" in query and "measured_at <= %s" in query
     assert params == [POINT, "production", MEASURED_AT, MEASURED_AT, 50]
+    assert readings == [{"metering_point_id": POINT}]
+
+
+def test_get_readings_uses_the_documented_default_limit(monkeypatch):
+    cur = _FakeCursor(
+        rows=[{"metering_point_id": POINT}],
+        required_sql=("order by measured_at desc limit %s",),
+        expected_params=[POINT, 1000],
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.get_metering_point_readings(POINT) == [{"metering_point_id": POINT}]
 
 
 def test_get_readings_coerces_numerics_to_float(monkeypatch):
@@ -287,6 +429,55 @@ def test_get_metering_points_filters_by_community(monkeypatch):
     assert "leg-1" in params
 
 
+def test_get_metering_points_defaults_to_active_sorted_rows(monkeypatch):
+    cur = _FakeCursor(
+        rows=[
+            {"metering_point_id": "CH001", "active": True},
+            {"metering_point_id": "CH002", "active": True},
+        ],
+        required_sql=(
+            "select * from metering_points where 1 = 1",
+            "and active = true",
+            "order by metering_point_id",
+        ),
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    points = metering.get_metering_points()
+
+    query, params = cur.executed[0]
+    assert "active = TRUE" in query
+    assert "ORDER BY metering_point_id" in query
+    assert params == []
+    assert points == [
+        {"metering_point_id": "CH001", "active": True},
+        {"metering_point_id": "CH002", "active": True},
+    ]
+
+
+def test_get_metering_points_can_include_inactive_rows(monkeypatch):
+    cur = _FakeCursor(rows=[])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    metering.get_metering_points(active_only=False)
+
+    query, _ = cur.executed[0]
+    assert "active = TRUE" not in query
+
+
+def test_get_metering_point_returns_the_requested_point(monkeypatch):
+    row = {"metering_point_id": POINT, "alias": "Haus 1"}
+    cur = _FakeCursor(
+        one=row,
+        required_sql=("select * from metering_points where metering_point_id = %s",),
+        expected_params=(POINT,),
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.get_metering_point(POINT) == row
+    assert cur.executed[0][1] == (POINT,)
+
+
 # ==== Registry enrichment ====
 
 
@@ -303,24 +494,120 @@ def test_upsert_points_does_not_blank_existing_fields(monkeypatch):
     )
 
 
+def test_upsert_points_passes_every_registry_value(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    calls = _capture_execute_values(monkeypatch, [])
+    point = {
+        "metering_point_id": POINT,
+        "vnb_community_id": "VNB-LEG-1",
+        "community_id": "LEG-1",
+        "building_id": "BLD-1",
+        "alias": "Haus 1",
+        "address": "Dorfstrasse 1",
+    }
+
+    assert metering.upsert_metering_points([point]) == 1
+    assert calls[0]["cur"] is cur
+    assert calls[0]["values"] == [
+        (
+            POINT,
+            "VNB-LEG-1",
+            "LEG-1",
+            "BLD-1",
+            "Haus 1",
+            "Dorfstrasse 1",
+        )
+    ]
+
+
+def test_upsert_points_ignores_entries_without_an_identifier(monkeypatch):
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    assert metering.upsert_metering_points([{}, {"alias": "Haus 1"}]) == 0
+
+
 # ==== File ledger ====
 
 
-def test_record_sdat_import_is_idempotent(monkeypatch):
+def test_record_sdat_import_passes_the_complete_ledger_record(monkeypatch):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    metering.record_sdat_import({"document_id": "DOC-1", "doc_type": "E66"})
+    created_at = datetime(2026, 1, 6, 1, 0, tzinfo=timezone.utc)
+    period_end = MEASURED_AT + timedelta(days=5)
+    result = metering.record_sdat_import(
+        {
+            "document_id": "DOC-1",
+            "doc_type": "E66",
+            "file_name": "delivery.xml",
+            "vnb_community_id": "VNB-LEG-1",
+            "document_created_at": created_at,
+            "period_start": MEASURED_AT,
+            "period_end": period_end,
+            "block_count": 2,
+            "row_count": 6,
+            "new_count": 4,
+            "corrected_count": 2,
+        }
+    )
 
-    query, _ = cur.executed[0]
+    query, params = cur.executed[0]
+    assert result is True
     assert "INSERT INTO sdat_imports" in query
     assert "ON CONFLICT (document_id) DO UPDATE" in query
+    assert params == (
+        "DOC-1",
+        "E66",
+        "delivery.xml",
+        "VNB-LEG-1",
+        created_at,
+        MEASURED_AT,
+        period_end,
+        2,
+        6,
+        4,
+        2,
+    )
+
+
+def test_record_sdat_import_defaults_missing_counts_to_zero(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.record_sdat_import({"document_id": "DOC-1"}) is True
+    assert cur.executed[0][1] == (
+        "DOC-1",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        0,
+        0,
+        0,
+        0,
+    )
 
 
 def test_get_sdat_import_returns_none_when_absent(monkeypatch):
     cur = _FakeCursor(one=None)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
     assert metering.get_sdat_import("nope") is None
+
+
+def test_get_sdat_import_returns_the_requested_ledger_row(monkeypatch):
+    row = {"document_id": "DOC-1", "doc_type": "E66"}
+    cur = _FakeCursor(
+        one=row,
+        required_sql=("select * from sdat_imports where document_id = %s",),
+        expected_params=("DOC-1",),
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.get_sdat_import("DOC-1") == row
+    assert cur.executed[0][1] == ("DOC-1",)
 
 
 # ==== Billing reads ====
@@ -381,6 +668,32 @@ def test_period_readings_convert_numerics_to_float(monkeypatch):
     assert not isinstance(readings[0]["total_kwh"], Decimal)
 
 
+def test_reading_stats_return_the_database_aggregate(monkeypatch):
+    row = {
+        "total_readings": 3,
+        "total_points": 1,
+        "first_reading": MEASURED_AT,
+        "last_reading": MEASURED_AT + timedelta(minutes=30),
+        "total_kwh": Decimal("0.300"),
+        "grid_kwh": Decimal("0.180"),
+        "community_kwh": Decimal("0.120"),
+    }
+    cur = _FakeCursor(
+        one=row,
+        required_sql=(
+            "select count(*) as total_readings",
+            "where metering_point_id = %s",
+        ),
+        expected_params=[POINT],
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.get_metering_point_reading_stats(POINT) == row
+    query, params = cur.executed[0]
+    assert "WHERE metering_point_id = %s" in query
+    assert params == [POINT]
+
+
 # ==== Failure behaviour ====
 
 
@@ -404,6 +717,92 @@ def test_connection_failure_returns_safe_defaults(monkeypatch):
     assert metering.save_metering_point_readings([_row()])["written"] == 0
 
 
+def test_save_metering_point_readings_logs_the_database_error(monkeypatch, caplog):
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    with caplog.at_level(logging.ERROR):
+        result = metering.save_metering_point_readings([_row()])
+
+    assert result == {
+        "written": 0,
+        "new": 0,
+        "corrected": 0,
+        "unchanged": 0,
+        "samples": [],
+    }
+    assert caplog.messages == ["[DB] Error saving metering point readings: db down"]
+
+
+@pytest.mark.parametrize(
+    ("call", "message"),
+    [
+        (
+            lambda: metering.upsert_metering_points([{"metering_point_id": POINT}]),
+            "[DB] Error upserting metering points: db down",
+        ),
+        (
+            lambda: metering.get_metering_points(),
+            "[DB] Error getting metering points: db down",
+        ),
+        (
+            lambda: metering.get_metering_point(POINT),
+            "[DB] Error getting metering point: db down",
+        ),
+        (
+            lambda: metering.get_metering_point_readings(POINT),
+            "[DB] Error getting metering point readings: db down",
+        ),
+        (
+            lambda: metering.get_metering_point_reading_stats(POINT),
+            "[DB] Error getting metering point stats: db down",
+        ),
+        (
+            lambda: metering.record_sdat_import({"document_id": "DOC-1"}),
+            "[DB] Error recording SDAT import: db down",
+        ),
+        (
+            lambda: metering.get_sdat_import("DOC-1"),
+            "[DB] Error getting SDAT import: db down",
+        ),
+        (
+            metering.get_sdat_import_index,
+            "[DB] Error getting SDAT import index: db down",
+        ),
+    ],
+)
+def test_repository_failures_log_the_operation(monkeypatch, caplog, call, message):
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    with caplog.at_level(logging.ERROR):
+        call()
+
+    assert caplog.messages == [message]
+
+
+@pytest.mark.parametrize(
+    ("call", "message"),
+    [
+        (
+            lambda: metering.get_community_metering_points("COMM-1"),
+            "[DB] Error getting community metering points: db down",
+        ),
+        (
+            lambda: metering.get_period_readings(
+                "COMM-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
+            ),
+            "[DB] Error getting period readings: db down",
+        ),
+    ],
+)
+def test_billing_read_failures_log_the_operation(monkeypatch, caplog, call, message):
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    with caplog.at_level(logging.ERROR):
+        call()
+
+    assert caplog.messages == [message]
+
+
 # ==== The import index ====
 
 
@@ -412,7 +811,8 @@ def test_import_index_returns_both_keys_in_one_query(monkeypatch):
         rows=[
             {"document_id": "DOC-1", "file_name": "a.xml"},
             {"document_id": "DOC-2", "file_name": "b.xml"},
-        ]
+        ],
+        required_sql=("select document_id, file_name from sdat_imports",),
     )
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
