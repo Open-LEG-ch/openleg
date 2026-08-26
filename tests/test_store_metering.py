@@ -178,33 +178,39 @@ def test_readings_upsert_registers_points_before_readings(monkeypatch):
     assert "INSERT INTO metering_point_readings" in calls[1]["sql"]
 
 
-def test_readings_upsert_reports_new_and_corrected_counts(monkeypatch):
+def test_readings_upsert_reports_counts_and_correction_samples(monkeypatch):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
     returned = [
         {
             "metering_point_id": POINT,
             "direction": "consumption",
-            "measured_at": MEASURED_AT,
-            "inserted": True,
-        },
-        {
-            "metering_point_id": POINT,
-            "direction": "consumption",
-            "measured_at": MEASURED_AT,
-            "inserted": False,
-        },
+            "measured_at": MEASURED_AT + timedelta(minutes=15 * offset),
+            "inserted": offset == 0,
+        }
+        for offset in range(25)
     ]
     _capture_execute_values(monkeypatch, returned)
 
     result = metering.save_metering_point_readings(
-        [_row(1), _row(2), _row(3), _row(4), _row(5)]
+        [_row(sequence) for sequence in range(1, 27)]
     )
 
-    assert result["written"] == 5
+    assert result["written"] == 26
     assert result["new"] == 1
-    assert result["corrected"] == 1
-    assert result["unchanged"] == 3
+    assert result["corrected"] == 24
+    assert result["unchanged"] == 1
+    assert len(result["samples"]) == 20
+    assert result["samples"][0] == (
+        POINT,
+        "consumption",
+        MEASURED_AT + timedelta(minutes=15),
+    )
+    assert result["samples"][-1] == (
+        POINT,
+        "consumption",
+        MEASURED_AT + timedelta(minutes=15 * 20),
+    )
 
 
 def test_readings_upsert_dedupes_repeated_keys(monkeypatch):
@@ -306,15 +312,43 @@ def test_upsert_points_does_not_blank_existing_fields(monkeypatch):
 # ==== File ledger ====
 
 
-def test_record_sdat_import_is_idempotent(monkeypatch):
+def test_record_sdat_import_passes_the_complete_ledger_record(monkeypatch):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    metering.record_sdat_import({"document_id": "DOC-1", "doc_type": "E66"})
+    created_at = datetime(2026, 1, 6, 1, 0, tzinfo=timezone.utc)
+    period_end = MEASURED_AT + timedelta(days=5)
+    result = metering.record_sdat_import(
+        {
+            "document_id": "DOC-1",
+            "doc_type": "E66",
+            "file_name": "delivery.xml",
+            "vnb_community_id": "VNB-LEG-1",
+            "document_created_at": created_at,
+            "period_start": MEASURED_AT,
+            "period_end": period_end,
+            "block_count": 2,
+            "row_count": 6,
+            "new_count": 4,
+            "corrected_count": 2,
+        }
+    )
 
-    query, _ = cur.executed[0]
-    assert "INSERT INTO sdat_imports" in query
-    assert "ON CONFLICT (document_id) DO UPDATE" in query
+    assert result is True
+    _, params = cur.executed[0]
+    assert params == (
+        "DOC-1",
+        "E66",
+        "delivery.xml",
+        "VNB-LEG-1",
+        created_at,
+        MEASURED_AT,
+        period_end,
+        2,
+        6,
+        4,
+        2,
+    )
 
 
 def test_get_sdat_import_returns_none_when_absent(monkeypatch):
