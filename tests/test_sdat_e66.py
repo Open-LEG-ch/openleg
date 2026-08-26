@@ -233,11 +233,12 @@ def test_parser_never_raises_on_truncated_input():
         )
 
 
-def test_duplicate_sequence_keeps_the_last_value():
+def test_duplicate_sequence_is_rejected():
     document, errors = sdat_e66.parse_e66_xml(E66_DUPLICATE_SEQUENCE)
-    assert errors == []
-    assert len(document["rows"]) == 1
-    assert document["rows"][0]["total_kwh"] == Decimal("0.900")
+    assert document == {}
+    assert errors and "doppelte Sequenz" in errors[0]
+    assert POINT_ONE not in errors[0]
+    assert "...000001" in errors[0]
 
 
 # ==== Document type detection ====

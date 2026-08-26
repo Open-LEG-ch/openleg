@@ -233,6 +233,17 @@ def test_negative_value_is_rejected(monkeypatch, rows):
     assert "negative_value" in _kinds(excinfo)
 
 
+def test_missing_total_is_rejected_instead_of_billed_as_zero(monkeypatch, rows):
+    dirty = deepcopy(rows)
+    dirty[0]["total_kwh"] = None
+    _install(monkeypatch, _points(), dirty)
+
+    with pytest.raises(billing_readings.PeriodDataError) as excinfo:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert "missing_total" in _kinds(excinfo)
+
+
 def test_misaligned_interval_is_rejected(monkeypatch, rows):
     """A timestamp off the quarter-hour grid must not silently add a row.
 
