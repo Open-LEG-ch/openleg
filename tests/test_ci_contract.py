@@ -127,6 +127,9 @@ def test_release_image_is_immutable_and_attested():
         for step in steps
         if step.get("name") == "Block high-severity image vulnerabilities"
     )
+    runtime_assets = next(
+        step for step in steps if step.get("name") == "Verify runtime image assets"
+    )
     push = next(step for step in steps if step.get("name") == "Push scanned image")
     provenance = next(
         step for step in steps if step.get("name") == "Attest image provenance"
@@ -145,6 +148,12 @@ def test_release_image_is_immutable_and_attested():
     assert build_steps[0]["with"]["tags"] == "${{ steps.meta.outputs.tags }}"
     assert scan["with"]["image-ref"].endswith(":${{ steps.meta.outputs.version }}")
     assert scan["with"]["image-ref"].startswith("${{ steps.image.outputs.name }}:")
+    assert runtime_assets["env"]["IMAGE_REF"] == scan["with"]["image-ref"]
+    assert steps.index(runtime_assets) < steps.index(scan)
+    assert "docker run --rm --entrypoint test" in runtime_assets["run"]
+    assert "/app/app.py" in runtime_assets["run"]
+    assert "/app/templates/index.html" in runtime_assets["run"]
+    assert "/app/static/css/openleg.css" in runtime_assets["run"]
     assert job["env"]["TRIVY_IMAGE_SRC"] == "docker"
     assert push["env"]["IMAGE_TAGS"] == build_steps[0]["with"]["tags"]
     assert steps.index(scan) < steps.index(push)

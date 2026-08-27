@@ -54,6 +54,14 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Verify runtime image assets
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.name }}:${{ steps.meta.outputs.version }}
+        run: |
+          docker run --rm --entrypoint test "${IMAGE_REF}" -f /app/app.py
+          docker run --rm --entrypoint test "${IMAGE_REF}" -f /app/templates/index.html
+          docker run --rm --entrypoint test "${IMAGE_REF}" -f /app/static/css/openleg.css
+
       - name: Block high-severity image vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
