@@ -193,11 +193,21 @@ def _channel(block):
     return CHANNEL_BY_PRODUCT_CODE.get(code)
 
 
-def _observations(block):
-    """Beobachtungen als {sequence: (volume, condition)}; letzte Sequenz gewinnt.
+class _DuplicateSequence(ValueError):
+    """Gleiche Sequenz zweimal innerhalb eines Kanals."""
 
-    Doppelte Sequenzen würden sonst denselben Konfliktschlüssel zweimal in eine
-    INSERT-Anweisung bringen, was Postgres abbricht.
+    def __init__(self, sequence):
+        self.sequence = sequence
+        super().__init__(sequence)
+
+
+def _observations(block):
+    """Beobachtungen als {sequence: (volume, condition)}.
+
+    Wirft :class:`_DuplicateSequence`, sobald eine Sequenz im selben Block
+    doppelt vorkommt. Doppelte Sequenzen sind defekte Daten: die letzte
+    Beobachtung still gewinnen zu lassen würde eine der beiden Messungen
+    verwerfen, ohne dass jemand davon erfährt.
     """
     values = {}
     for observation in block:
@@ -207,7 +217,10 @@ def _observations(block):
         volume = _text(observation, "Volume")
         if sequence is None or volume is None:
             continue
-        values[int(sequence)] = (Decimal(volume), _text(observation, "Condition"))
+        sequence = int(sequence)
+        if sequence in values:
+            raise _DuplicateSequence(sequence)
+        values[sequence] = (Decimal(volume), _text(observation, "Condition"))
     return values
 
 
@@ -336,7 +349,15 @@ def _collect_groups(root, document):
             key,
             {"start": interval_start, "resolution": resolution, "channels": {}},
         )
-        group["channels"][channel] = _observations(block)
+        try:
+            channel_observations = _observations(block)
+        except _DuplicateSequence as duplicate:
+            detail = (
+                f"SDAT E66: Messpunkt {mask_point_id(point_id)} ({direction}), "
+                f"Kanal {channel}: doppelte Sequenz {duplicate.sequence}."
+            )
+            return groups, warnings, detail
+        group["channels"][channel] = channel_observations
 
     return groups, warnings, unit_error
 

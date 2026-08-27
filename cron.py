@@ -83,7 +83,11 @@ def api_cron_backfill_elcom():
 def api_cron_process_billing():
     _require_cron_secret()
 
-    communities = db.get_active_communities()
+    try:
+        communities = db.get_active_communities()
+    except db.BillingStoreError:
+        logger.error("Billing cron aborted: could not load active communities")
+        return jsonify({"status": "error", "error": "billing_store_unavailable"}), 503
     period_start, period_end = billing_runner.previous_complete_month()
     processed = 0
     already_processed = 0
