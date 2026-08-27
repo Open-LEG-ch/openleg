@@ -29,12 +29,16 @@ import os
 import secrets
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from urllib.parse import urlsplit, urlunsplit
+from zoneinfo import ZoneInfo
 
 import psycopg2
 import psycopg2.extras
 import psycopg2.pool
 import pytest
+
+import billing_policy
 
 PRE_MIGRATION_BILLING_PERIODS = """
     CREATE TABLE billing_periods (
@@ -77,6 +81,17 @@ def _column(cur, table, column):
     )
     row = cur.fetchone()
     return row["data_type"] if row else None
+
+
+def _constraint(cur, table, constraint_name):
+    cur.execute(
+        """
+        SELECT conname FROM pg_constraint
+        WHERE conrelid = %s::regclass AND conname = %s
+        """,
+        (table, constraint_name),
+    )
+    return cur.fetchone()
 
 
 @contextmanager
@@ -302,3 +317,430 @@ def test_unassigned_period_points_are_scoped_by_public_vnb_leg_identifier():
     assert found == ["UNASSIGNED-A"]
     assert "UNASSIGNED-B" not in found, "another LEG's point ID must stay private"
     assert "ASSIGNED-ELSEWHERE" not in found
+
+
+PRE_MIGRATION_BILLING_TARIFFS = """
+    CREATE TABLE billing_tariffs (
+        id SERIAL PRIMARY KEY,
+        community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id),
+        effective_from TIMESTAMPTZ NOT NULL,
+        effective_to TIMESTAMPTZ,
+        internal_price_chf_per_kwh DECIMAL(12, 6) NOT NULL,
+        grid_fee_chf_per_kwh DECIMAL(12, 6) NOT NULL,
+        network_level VARCHAR(16) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(community_id, effective_from)
+    )
+"""
+
+
+def _complete_policy(effective_from):
+    return {
+        "effective_from": effective_from,
+        "internal_price_chf_per_kwh": Decimal("0.15"),
+        "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": Decimal(0),
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+
+
+@pytest.mark.integration
+def test_billing_tariffs_migration_keeps_legacy_rows_incomplete():
+    """The additive policy columns must not invent values for existing rows."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    end = datetime(2026, 2, 1, tzinfo=timezone.utc)
+
+    with _temporary_database() as url, _pool_against(url):
+        # Start from the complete current schema so unrelated tables and indexes
+        # remain valid, then replace only the table whose old shape we exercise.
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("DROP TABLE billing_tariffs")
+            cur.execute(PRE_MIGRATION_BILLING_TARIFFS)
+            cur.execute("""
+                INSERT INTO communities (community_id, name, status)
+                VALUES ('LEG-A', 'LEG A', 'active')
+            """)
+            cur.execute(
+                """
+                INSERT INTO billing_tariffs
+                    (community_id, effective_from, internal_price_chf_per_kwh,
+                     grid_fee_chf_per_kwh, network_level)
+                VALUES ('LEG-A', %s, 0.15, 0.08, 'same')
+                """,
+                (start,),
+            )
+            assert _column(cur, "billing_tariffs", "vat_mode") is None
+
+        create_tables()
+
+        with database.get_connection() as conn, conn.cursor() as cur:
+            for column in (
+                "distribution_model",
+                "vat_mode",
+                "vat_rate_pct",
+                "payment_days",
+                "invoice_prefix",
+                "delivery_method",
+            ):
+                assert _column(cur, "billing_tariffs", column) is not None
+            cur.execute(
+                """
+                SELECT vat_mode, vat_rate_pct, payment_days, invoice_prefix,
+                       delivery_method
+                FROM billing_tariffs WHERE community_id = 'LEG-A'
+                """
+            )
+            legacy = cur.fetchone()
+
+        legacy_policy = database.get_billing_policy("LEG-A", start, end)
+
+    assert legacy == {
+        "vat_mode": None,
+        "vat_rate_pct": None,
+        "payment_days": None,
+        "invoice_prefix": None,
+        "delivery_method": None,
+    }, "the migration must not invent policy values for legacy rows"
+    assert legacy_policy is None, "an incomplete legacy row is not a resolvable policy"
+
+
+@pytest.mark.integration
+def test_get_billing_policy_fails_closed_across_a_policy_boundary_live():
+    """Executable proof: a newer version inside the period refuses the period."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    january = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    february = datetime(2026, 2, 1, tzinfo=timezone.utc)
+    mid_january = datetime(2026, 1, 15, tzinfo=timezone.utc)
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO communities (community_id, name, status)
+                VALUES ('LEG-A', 'LEG A', 'active')
+                """
+            )
+        database.save_billing_policy("LEG-A", _complete_policy(january))
+        database.save_billing_policy("LEG-A", _complete_policy(mid_january))
+
+        covering = database.get_billing_policy("LEG-A", mid_january, february)
+        split = database.get_billing_policy("LEG-A", january, february)
+        before_boundary = database.get_billing_policy("LEG-A", january, mid_january)
+
+    assert covering is not None
+    assert covering["effective_from"] == mid_january
+    assert split is None, "a policy boundary inside the period must fail closed"
+    assert before_boundary is not None
+    assert before_boundary["effective_from"] == january
+
+
+@pytest.mark.integration
+def test_get_billing_policy_fails_closed_on_newest_incomplete_version():
+    """The newest version at/before period_start must be complete; no fallback."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    december = datetime(2025, 12, 1, tzinfo=timezone.utc)
+    january = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    february = datetime(2026, 2, 1, tzinfo=timezone.utc)
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO communities (community_id, name, status)
+                VALUES ('LEG-A', 'LEG A', 'active')
+                """
+            )
+        # Older complete version, then newer incomplete version.
+        old = _complete_policy(december)
+        database.save_billing_policy("LEG-A", old)
+        incomplete = {
+            "effective_from": january,
+            "internal_price_chf_per_kwh": Decimal("0.15"),
+            "grid_fee_chf_per_kwh": Decimal("0.08"),
+            "network_level": "same",
+            # missing distribution_model and other versioned fields
+        }
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO billing_tariffs
+                    (community_id, effective_from, internal_price_chf_per_kwh,
+                     grid_fee_chf_per_kwh, network_level)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (
+                    "LEG-A",
+                    incomplete["effective_from"],
+                    incomplete["internal_price_chf_per_kwh"],
+                    incomplete["grid_fee_chf_per_kwh"],
+                    incomplete["network_level"],
+                ),
+            )
+
+        resolved = database.get_billing_policy("LEG-A", january, february)
+
+    assert resolved is None, "newest incomplete version must not fall back to old"
+
+
+@pytest.mark.integration
+def test_get_billing_policy_fails_closed_on_newest_expired_version():
+    """The newest version at/before period_start must cover the period; no fallback."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    december = datetime(2025, 12, 1, tzinfo=timezone.utc)
+    mid_december = datetime(2025, 12, 15, tzinfo=timezone.utc)
+    late_december = datetime(2025, 12, 20, tzinfo=timezone.utc)
+    january = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    february = datetime(2026, 2, 1, tzinfo=timezone.utc)
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO communities (community_id, name, status)
+                VALUES ('LEG-A', 'LEG A', 'active')
+                """
+            )
+        old = _complete_policy(december)
+        database.save_billing_policy("LEG-A", old)
+        expired = _complete_policy(mid_december)
+        database.save_billing_policy("LEG-A", expired)
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE billing_tariffs SET effective_to = %s
+                WHERE community_id = 'LEG-A' AND effective_from = %s
+                """,
+                (late_december, mid_december),
+            )
+
+        resolved = database.get_billing_policy("LEG-A", january, february)
+
+    assert resolved is None, "newest expired version must not fall back to old"
+
+
+@pytest.mark.integration
+def test_billing_policy_effective_date_matches_zurich_boundary():
+    """A form date resolves to Europe/Zurich midnight and matches period boundaries."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO communities (community_id, name, status)
+                VALUES ('LEG-A', 'LEG A', 'active')
+                """
+            )
+        form_policy = billing_policy.validate_policy_form(
+            {
+                "effective_from": "2026-01-01",
+                "internal_price_rp": "15.00",
+                "grid_fee_rp": "8.00",
+                "network_level": "same",
+                "distribution_model": "proportional",
+                "vat_mode": "none",
+                "vat_rate_pct": "",
+                "payment_days": "30",
+                "invoice_prefix": "LEG-2026",
+                "delivery_method": "email",
+            }
+        )["policy"]
+        database.save_billing_policy("LEG-A", form_policy)
+
+        period_end = datetime(2026, 2, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+        resolved = database.get_billing_policy(
+            "LEG-A", form_policy["effective_from"], period_end
+        )
+
+    assert resolved is not None
+    assert resolved["effective_from"] == form_policy["effective_from"]
+    assert resolved["effective_from"].astimezone(
+        ZoneInfo("Europe/Zurich")
+    ).utcoffset() == timedelta(hours=1)
+
+
+@pytest.mark.integration
+def test_billing_tariffs_check_constraints_are_installed_idempotently():
+    """Pre-migration table gets constraints; running create_tables again is safe."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("DROP TABLE billing_tariffs")
+            cur.execute(PRE_MIGRATION_BILLING_TARIFFS)
+            cur.execute(
+                """
+                INSERT INTO communities (community_id, name, status)
+                VALUES ('LEG-A', 'LEG A', 'active')
+                """
+            )
+            cur.execute(
+                """
+                INSERT INTO billing_tariffs
+                    (community_id, effective_from, internal_price_chf_per_kwh,
+                     grid_fee_chf_per_kwh, network_level)
+                VALUES ('LEG-A', %s, 0.15, 0.08, 'same')
+                """,
+                (start,),
+            )
+
+        create_tables()
+        create_tables()  # idempotency
+
+        with database.get_connection() as conn, conn.cursor() as cur:
+            for constraint in (
+                "chk_billing_tariffs_distribution_model",
+                "chk_billing_tariffs_vat_mode",
+                "chk_billing_tariffs_vat_rate",
+                "chk_billing_tariffs_payment_days",
+                "chk_billing_tariffs_invoice_prefix",
+                "chk_billing_tariffs_delivery_method",
+            ):
+                assert _constraint(cur, "billing_tariffs", constraint) is not None
+            cur.execute(
+                """
+                SELECT distribution_model, vat_mode, vat_rate_pct, payment_days,
+                       invoice_prefix, delivery_method
+                FROM billing_tariffs WHERE community_id = 'LEG-A'
+                """
+            )
+            legacy = cur.fetchone()
+
+    assert all(v is None for v in legacy.values()), "legacy NULL row must survive"
+
+
+@pytest.mark.integration
+def test_billing_tariffs_nullable_check_constraints_reject_invalid_values():
+    """CHECK constraints allow NULL legacy rows but refuse invalid non-NULL data."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO communities (community_id, name, status)
+                VALUES ('LEG-A', 'LEG A', 'active')
+                """
+            )
+            # Legacy NULL row must survive.
+            cur.execute(
+                """
+                INSERT INTO billing_tariffs
+                    (community_id, effective_from, internal_price_chf_per_kwh,
+                     grid_fee_chf_per_kwh, network_level)
+                VALUES ('LEG-A', %s, 0.15, 0.08, 'same')
+                """,
+                (start,),
+            )
+
+        # Single-field invalid updates on a legacy NULL row must fail.
+        invalid_cases = [
+            ("distribution_model", "'simple'"),
+            ("vat_mode", "'reduced'"),
+            ("vat_rate_pct", "101"),
+            ("vat_rate_pct", "-1"),
+            ("payment_days", "0"),
+            ("payment_days", "366"),
+            ("invoice_prefix", "'lowercase'"),
+            ("invoice_prefix", "'A'"),
+            ("delivery_method", "'post'"),
+        ]
+        for column, value in invalid_cases:
+            with pytest.raises(psycopg2.Error):
+                with database.get_connection() as conn, conn.cursor() as cur:
+                    cur.execute(
+                        f"""
+                        UPDATE billing_tariffs
+                        SET {column} = {value}
+                        WHERE community_id = 'LEG-A'
+                        """
+                    )
+
+        # Valid vat pairs must be accepted.
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE billing_tariffs
+                SET vat_mode = 'none', vat_rate_pct = 0
+                WHERE community_id = 'LEG-A'
+                """
+            )
+            cur.execute(
+                """
+                UPDATE billing_tariffs
+                SET vat_mode = 'standard', vat_rate_pct = 8.1
+                WHERE community_id = 'LEG-A'
+                """
+            )
+
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT distribution_model, vat_mode, vat_rate_pct, payment_days,
+                       invoice_prefix, delivery_method
+                FROM billing_tariffs WHERE community_id = 'LEG-A'
+                """
+            )
+            legacy = cur.fetchone()
+
+    assert legacy["vat_mode"] == "standard"
+    assert legacy["vat_rate_pct"] == Decimal("8.10")
+    # Other columns stayed NULL because each invalid update rolled back.
+    assert all(
+        legacy[c] is None
+        for c in (
+            "distribution_model",
+            "payment_days",
+            "invoice_prefix",
+            "delivery_method",
+        )
+    )

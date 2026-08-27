@@ -27,6 +27,11 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
         "grid_fee_chf_per_kwh": 0.08,
         "network_level": "same",
         "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": 0,
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
     }
     policy_calls = []
     frame_calls = []
@@ -239,6 +244,11 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
         "grid_fee_chf_per_kwh": 0.08,
         "network_level": "same",
         "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": 0,
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
     }
     summary = {"z": 1, "a": 2}
     reconciliation = {"difference_kwh": 0, "production_difference_kwh": 0}
@@ -266,6 +276,11 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
         "grid_fee_chf_per_kwh": "0.08",
         "network_level": "same",
         "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": "0",
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
         "vnb_reference": {"vnb_total_kwh": 3.0},
         "summary": {"z": 1, "a": 2},
         "reconciliation": {"difference_kwh": 0, "production_difference_kwh": 0},
@@ -291,6 +306,11 @@ DEFAULT_POLICY = {
     "grid_fee_chf_per_kwh": 0.08,
     "network_level": "same",
     "distribution_model": "proportional",
+    "vat_mode": "none",
+    "vat_rate_pct": 0,
+    "payment_days": 30,
+    "invoice_prefix": "LEG-2026",
+    "delivery_method": "email",
 }
 
 
@@ -538,7 +558,7 @@ def test_public_billing_fingerprint_matches_the_contract_vector(monkeypatch):
     fingerprint = _fingerprint_through_runner(monkeypatch, _fingerprint_case())
 
     assert fingerprint == (
-        "d530ebb158743b6ebb0efdb3514c06ac408f3c942df38fecbcb12c90e0dc9d2d"
+        "4f16b38457c142869b04f600a964263827848e553f5938112d0361acf30dad96"
     )
 
 

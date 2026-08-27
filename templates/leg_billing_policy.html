@@ -1,0 +1,128 @@
+{% extends "product_base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+  <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="text-brand hover:underline font-semibold">Zurück zum LEG-Dashboard</a></p>
+  <h1 class="text-2xl font-bold mb-2">Abrechnungs-Richtlinie</h1>
+  <p class="text-sm text-ink-muted mb-4">Jede Version gilt ab dem gewählten Datum. Gespeicherte Versionen bleiben unverändert und nachvollziehbar.</p>
+
+  <div class="rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm mb-6" role="note">
+    {{ policy_disclaimer }}
+  </div>
+
+  {% if policy_saved %}
+  <p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">Neue Version gespeichert.</p>
+  {% endif %}
+
+  <section class="bg-white rounded-xl border p-6 mb-8">
+    <h2 class="font-bold mb-4">Neue Version erfassen</h2>
+    <form method="post" action="/leg/community/{{ community_id }}/billing-policy" class="grid sm:grid-cols-2 gap-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div>
+        <label for="policy-effective-from" class="block text-sm font-semibold mb-1">Gültig ab</label>
+        <input id="policy-effective-from" type="date" name="effective_from" required value="{{ form_values.get('effective_from', '') }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+        {% if form_errors.get('effective_from') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['effective_from'] }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="policy-internal-price" class="block text-sm font-semibold mb-1">Interner Preis (Rp./kWh)</label>
+        <input id="policy-internal-price" type="text" inputmode="decimal" name="internal_price_rp" required value="{{ form_values.get('internal_price_rp', '') }}" placeholder="z. B. 15.00" class="w-full border rounded-lg px-3 py-2 text-sm">
+        {% if form_errors.get('internal_price_rp') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['internal_price_rp'] }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="policy-grid-fee" class="block text-sm font-semibold mb-1">Netzentgelt (Rp./kWh)</label>
+        <input id="policy-grid-fee" type="text" inputmode="decimal" name="grid_fee_rp" required value="{{ form_values.get('grid_fee_rp', '') }}" placeholder="z. B. 8.00" class="w-full border rounded-lg px-3 py-2 text-sm">
+        {% if form_errors.get('grid_fee_rp') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['grid_fee_rp'] }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="policy-network-level" class="block text-sm font-semibold mb-1">Netzebene</label>
+        <select id="policy-network-level" name="network_level" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+          {% for value, label in policy_labels.network_level.items() %}
+          <option value="{{ value }}" {% if form_values.get('network_level') == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if form_errors.get('network_level') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['network_level'] }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="policy-distribution-model" class="block text-sm font-semibold mb-1">Verteilmodell</label>
+        <select id="policy-distribution-model" name="distribution_model" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+          {% for value, label in policy_labels.distribution_model.items() %}
+          <option value="{{ value }}" {% if form_values.get('distribution_model') == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if form_errors.get('distribution_model') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['distribution_model'] }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="policy-vat-mode" class="block text-sm font-semibold mb-1">Mehrwertsteuer</label>
+        <select id="policy-vat-mode" name="vat_mode" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+          {% for value, label in policy_labels.vat_mode.items() %}
+          <option value="{{ value }}" {% if form_values.get('vat_mode') == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if form_errors.get('vat_mode') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['vat_mode'] }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="policy-vat-rate" class="block text-sm font-semibold mb-1">MwSt-Satz (%) <span class="font-normal text-ink-muted">nur bei Mehrwertsteuer</span></label>
+        <input id="policy-vat-rate" type="text" inputmode="decimal" name="vat_rate_pct" value="{{ form_values.get('vat_rate_pct', '') }}" placeholder="z. B. 8.1" class="w-full border rounded-lg px-3 py-2 text-sm">
+        {% if form_errors.get('vat_rate_pct') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['vat_rate_pct'] }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="policy-payment-days" class="block text-sm font-semibold mb-1">Zahlungsfrist (Tage)</label>
+        <input id="policy-payment-days" type="text" inputmode="numeric" name="payment_days" required value="{{ form_values.get('payment_days', '') }}" placeholder="z. B. 30" class="w-full border rounded-lg px-3 py-2 text-sm">
+        {% if form_errors.get('payment_days') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['payment_days'] }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="policy-invoice-prefix" class="block text-sm font-semibold mb-1">Rechnungspräfix</label>
+        <input id="policy-invoice-prefix" type="text" name="invoice_prefix" required value="{{ form_values.get('invoice_prefix', '') }}" placeholder="z. B. LEG-2026" class="w-full border rounded-lg px-3 py-2 text-sm">
+        {% if form_errors.get('invoice_prefix') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['invoice_prefix'] }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="policy-delivery-method" class="block text-sm font-semibold mb-1">Zustellung</label>
+        <select id="policy-delivery-method" name="delivery_method" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+          {% for value, label in policy_labels.delivery_method.items() %}
+          <option value="{{ value }}" {% if form_values.get('delivery_method') == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if form_errors.get('delivery_method') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['delivery_method'] }}</p>{% endif %}
+      </div>
+      <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Version speichern</button>
+    </form>
+  </section>
+
+  <section class="bg-white rounded-xl border p-6">
+    <h2 class="font-bold mb-2">Bisherige Versionen</h2>
+    {% if policy_versions %}
+    <div class="overflow-x-auto"><table class="w-full min-w-[42rem] text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-3 py-2 text-left">Gültig ab</th>
+          <th class="px-3 py-2 text-left">Interner Preis</th>
+          <th class="px-3 py-2 text-left">Netzentgelt</th>
+          <th class="px-3 py-2 text-left">Netzebene</th>
+          <th class="px-3 py-2 text-left">Verteilmodell</th>
+          <th class="px-3 py-2 text-left">MwSt</th>
+          <th class="px-3 py-2 text-right">Zahlungsfrist</th>
+          <th class="px-3 py-2 text-left">Präfix</th>
+          <th class="px-3 py-2 text-left">Zustellung</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for version in policy_versions %}
+        <tr>
+          <td class="px-3 py-2">{{ version.effective_from_display }}</td>
+          <td class="px-3 py-2">{{ version.internal_price_display }}</td>
+          <td class="px-3 py-2">{{ version.grid_fee_display }}</td>
+          <td class="px-3 py-2">{{ version.network_level_label }}</td>
+          <td class="px-3 py-2">{{ version.distribution_model_label }}</td>
+          <td class="px-3 py-2">{{ version.vat_label }}{% if version.vat_mode == 'standard' %} ({{ version.vat_rate_pct }} %){% endif %}</td>
+          <td class="px-3 py-2 text-right">{{ version.payment_days_display }}</td>
+          <td class="px-3 py-2">{{ version.invoice_prefix_display }}</td>
+          <td class="px-3 py-2">{{ version.delivery_method_label }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <p class="text-sm text-ink-muted">Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

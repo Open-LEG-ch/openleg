@@ -10,9 +10,12 @@ so legacy callers and existing monkeypatches keep working unchanged. Mirrors
 import subprocess
 import sys
 from contextlib import contextmanager
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pytest
 
+import billing_policy
 import database
 from store import billing
 
@@ -216,5 +219,34 @@ def test_get_effective_policy_and_existing_period_use_the_connection_seam(monkey
         "community-a",
         "2026-01-01",
         "2026-02-01",
+        "2026-01-01",
+        "2026-02-01",
     )
     assert "period_start" in period_cur.executed[0][0]
+
+
+def test_save_billing_policy_receives_aware_zurich_midnight(monkeypatch):
+    """The form date must become an aware datetime before insertion."""
+    policy = billing_policy.validate_policy_form(
+        {
+            "effective_from": "2026-09-01",
+            "internal_price_rp": "15.00",
+            "grid_fee_rp": "8.00",
+            "network_level": "same",
+            "distribution_model": "proportional",
+            "vat_mode": "none",
+            "vat_rate_pct": "",
+            "payment_days": "30",
+            "invoice_prefix": "LEG-2026",
+            "delivery_method": "email",
+        }
+    )["policy"]
+    cur = _FakeCursor(one={"id": 9})
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    billing.save_billing_policy("community-a", policy)
+
+    query, params = cur.executed[0]
+    assert "INSERT INTO billing_tariffs" in query
+    assert params[1] == datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+    assert params[1].utcoffset().total_seconds() == 7200

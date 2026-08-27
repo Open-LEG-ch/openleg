@@ -497,9 +497,135 @@ def create_tables():
                     internal_price_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (internal_price_chf_per_kwh >= 0),
                     grid_fee_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (grid_fee_chf_per_kwh >= 0),
                     network_level VARCHAR(16) NOT NULL CHECK (network_level IN ('same', 'cross')),
+                    distribution_model VARCHAR(20),
+                    vat_mode VARCHAR(16),
+                    vat_rate_pct DECIMAL(5, 2),
+                    payment_days INTEGER,
+                    invoice_prefix VARCHAR(32),
+                    delivery_method VARCHAR(16),
                     created_at TIMESTAMPTZ DEFAULT NOW(),
+                    CONSTRAINT chk_billing_tariffs_distribution_model
+                        CHECK (distribution_model IS NULL OR distribution_model IN ('proportional', 'einfach')),
+                    CONSTRAINT chk_billing_tariffs_vat_mode
+                        CHECK (vat_mode IS NULL OR vat_mode IN ('none', 'standard')),
+                    CONSTRAINT chk_billing_tariffs_vat_rate
+                        CHECK (
+                            CASE
+                                WHEN vat_mode IS NULL AND vat_rate_pct IS NULL THEN TRUE
+                                WHEN vat_mode = 'none' AND vat_rate_pct = 0 THEN TRUE
+                                WHEN vat_mode = 'standard' AND vat_rate_pct > 0 AND vat_rate_pct <= 100 THEN TRUE
+                                ELSE FALSE
+                            END
+                        ),
+                    CONSTRAINT chk_billing_tariffs_payment_days
+                        CHECK (payment_days IS NULL OR (payment_days BETWEEN 1 AND 365)),
+                    CONSTRAINT chk_billing_tariffs_invoice_prefix
+                        CHECK (invoice_prefix IS NULL OR invoice_prefix ~ '^[A-Z0-9][A-Z0-9-]{1,15}$'),
+                    CONSTRAINT chk_billing_tariffs_delivery_method
+                        CHECK (delivery_method IS NULL OR delivery_method IN ('email', 'download')),
                     UNIQUE(community_id, effective_from)
                 )
+            """)
+
+            # Migration: versioned billing policy columns and their nullable
+            # CHECK constraints. Columns stay nullable without defaults so legacy
+            # rows are never assigned invented money-path values;
+            # get_billing_policy refuses them as incomplete.
+            # PostgreSQL 16 does not support ADD CONSTRAINT IF NOT EXISTS, so each
+            # constraint is added inside a DO block that checks pg_constraint.
+            cur.execute("""
+                ALTER TABLE billing_tariffs
+                    ADD COLUMN IF NOT EXISTS distribution_model VARCHAR(20),
+                    ADD COLUMN IF NOT EXISTS vat_mode VARCHAR(16),
+                    ADD COLUMN IF NOT EXISTS vat_rate_pct DECIMAL(5, 2),
+                    ADD COLUMN IF NOT EXISTS payment_days INTEGER,
+                    ADD COLUMN IF NOT EXISTS invoice_prefix VARCHAR(32),
+                    ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16);
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_distribution_model'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_distribution_model
+                        CHECK (distribution_model IS NULL OR distribution_model IN ('proportional', 'einfach'));
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_vat_mode'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_vat_mode
+                        CHECK (vat_mode IS NULL OR vat_mode IN ('none', 'standard'));
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_vat_rate'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_vat_rate
+                        CHECK (
+                            CASE
+                                WHEN vat_mode IS NULL AND vat_rate_pct IS NULL THEN TRUE
+                                WHEN vat_mode = 'none' AND vat_rate_pct = 0 THEN TRUE
+                                WHEN vat_mode = 'standard' AND vat_rate_pct > 0 AND vat_rate_pct <= 100 THEN TRUE
+                                ELSE FALSE
+                            END
+                        );
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_payment_days'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_payment_days
+                        CHECK (payment_days IS NULL OR (payment_days BETWEEN 1 AND 365));
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_invoice_prefix'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_invoice_prefix
+                        CHECK (invoice_prefix IS NULL OR invoice_prefix ~ '^[A-Z0-9][A-Z0-9-]{1,15}$');
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_delivery_method'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_delivery_method
+                        CHECK (delivery_method IS NULL OR delivery_method IN ('email', 'download'));
+                    END IF;
+                END $$;
             """)
 
             cur.execute("""
