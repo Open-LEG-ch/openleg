@@ -120,7 +120,8 @@ def _participant_map(points, problems):
 
 
 def _check_rows(readings, mapping, expected_index, problems):
-    """Reject unknown points, mixed resolutions, negatives and duplicates."""
+    """Reject unknown points, mixed resolutions, missing totals, negatives
+    and duplicates."""
     seen = set()
     grid = {moment.to_pydatetime() for moment in expected_index}
     for row in readings:
@@ -146,6 +147,18 @@ def _check_rows(readings, mapping, expected_index, problems):
                     "mixed_resolution",
                     f"{point_id} at {measured_at} has resolution {resolution}, "
                     f"expected {RESOLUTION_MINUTES}",
+                    point_id,
+                )
+            )
+
+        total = row.get("total_kwh")
+        if total is None:
+            # Billing this interval as 0 kWh would quietly shift the VNB
+            # allocation onto the other members of the community.
+            problems.append(
+                _problem(
+                    "missing_total",
+                    f"{point_id} ({direction}) at {measured_at} has no total_kwh",
                     point_id,
                 )
             )
@@ -298,7 +311,9 @@ def load_period_frames(
         # which fails the period closed rather than billing a partial one.
         frame = frames[direction]
         moment = pd.Timestamp(row["measured_at"]).tz_convert(tzinfo)
-        total = float(row.get("total_kwh") or 0.0)
+        # Indexed, not defaulted to zero: _check_rows has already reported a
+        # missing total and raised, so a None here is a broken invariant.
+        total = float(row["total_kwh"])
         frame.loc[moment, participant] += total
         community = row.get("community_kwh")
         if community is not None:
