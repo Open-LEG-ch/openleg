@@ -49,6 +49,20 @@ PRE_MIGRATION_BILLING_PERIODS = """
     )
 """
 
+PRE_MIGRATION_METERING_POINTS = """
+    CREATE TABLE metering_points (
+        metering_point_id VARCHAR(64) PRIMARY KEY,
+        vnb_community_id VARCHAR(64),
+        community_id VARCHAR(64),
+        building_id VARCHAR(64),
+        alias VARCHAR(128),
+        address TEXT,
+        active BOOLEAN DEFAULT TRUE,
+        first_seen_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+"""
+
 
 def _column(cur, table, column):
     cur.execute(
@@ -123,6 +137,13 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
     with _temporary_database() as url, _pool_against(url):
         with database.get_connection() as conn, conn.cursor() as cur:
             cur.execute(PRE_MIGRATION_BILLING_PERIODS)
+            cur.execute(PRE_MIGRATION_METERING_POINTS)
+            cur.execute(
+                """
+                INSERT INTO metering_points (metering_point_id)
+                VALUES ('CH000000000000000000000000000001')
+                """
+            )
             cur.execute(
                 """
                 INSERT INTO billing_periods (community_id, period_start, period_end)
@@ -139,6 +160,7 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
                 == "timestamp without time zone"
             )
             assert _column(cur, "billing_periods", "input_fingerprint") is None
+            assert _column(cur, "metering_points", "expected_directions") is None
 
         create_tables()
 
@@ -157,6 +179,14 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
             # The additive block: a column that exists only inside the CREATE TABLE
             # statement would never have reached this table.
             assert _column(cur, "billing_periods", "input_fingerprint") is not None
+            assert _column(cur, "metering_points", "expected_directions") == "ARRAY"
+            cur.execute(
+                """
+                SELECT expected_directions FROM metering_points
+                WHERE metering_point_id = 'CH000000000000000000000000000001'
+                """
+            )
+            legacy_point = cur.fetchone()
 
             cur.execute(
                 """
@@ -167,7 +197,28 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
             )
             row = cur.fetchone()
 
+        assert (
+            database.upsert_metering_points(
+                [
+                    {
+                        "metering_point_id": "CH000000000000000000000000000001",
+                        "expected_directions": [
+                            "production",
+                            "consumption",
+                            "production",
+                        ],
+                    }
+                ]
+            )
+            == 1
+        )
+        enriched_point = database.get_metering_point("CH000000000000000000000000000001")
+
     assert row is not None, "the migration must carry the existing row across"
+    assert legacy_point["expected_directions"] is None, (
+        "the migration must not invent a direction for existing citizen data"
+    )
+    assert enriched_point["expected_directions"] == ["consumption", "production"]
     assert row["community_id"] == "42", "the integer key becomes its own text"
     # Midnight in Zurich on 15 January is 23:00 UTC the day before.
     assert row["period_start"] == datetime(2026, 1, 14, 23, 0, tzinfo=timezone.utc), (
