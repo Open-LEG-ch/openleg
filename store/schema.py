@@ -909,9 +909,36 @@ def create_tables():
                     alias VARCHAR(128),
                     address TEXT,
                     active BOOLEAN DEFAULT TRUE,
+                    expected_directions VARCHAR(16)[] CHECK (
+                        expected_directions IS NULL OR (
+                            cardinality(expected_directions) > 0
+                            AND expected_directions <@ ARRAY['consumption', 'production']::VARCHAR(16)[]
+                        )
+                    ),
                     first_seen_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 )
+            """)
+            # Migration: add expected_directions to existing metering_points
+            # tables. Legacy rows stay NULL: the migration must not invent a
+            # direction for existing citizen data.
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'metering_points'
+                          AND column_name = 'expected_directions'
+                    ) THEN
+                        ALTER TABLE metering_points
+                            ADD COLUMN expected_directions VARCHAR(16)[] CHECK (
+                                expected_directions IS NULL OR (
+                                    cardinality(expected_directions) > 0
+                                    AND expected_directions <@ ARRAY['consumption', 'production']::VARCHAR(16)[]
+                                )
+                            );
+                    END IF;
+                END $$
             """)
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_metering_points_building ON metering_points(building_id)"

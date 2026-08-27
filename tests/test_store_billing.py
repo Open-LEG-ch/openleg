@@ -93,6 +93,18 @@ def test_billing_uses_database_connection_seam(monkeypatch):
     assert "status = 'active'" in cur.executed[0][0]
 
 
+def test_get_active_communities_propagates_storage_failure(monkeypatch):
+    @contextmanager
+    def unavailable_connection():
+        raise RuntimeError("database unavailable")
+        yield
+
+    monkeypatch.setattr(database, "get_connection", unavailable_connection)
+
+    with pytest.raises(billing.BillingStoreError):
+        billing.get_active_communities()
+
+
 def test_get_billing_period_missing_returns_none(monkeypatch):
     cur = _FakeCursor(one=None)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))

@@ -12,10 +12,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+from scripts import import_metering_points
+
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "import_metering_points.py"
 
-HEADER = "messpunktnummer,alias,adresse,building_id,community_id\n"
+HEADER = "messpunktnummer,alias,adresse,building_id,community_id,expected_directions\n"
 
 
 def _run(*args):
@@ -64,6 +66,33 @@ def test_dry_run_masks_metering_point_ids(tmp_path):
     assert point not in result.stdout
 
 
+def test_reads_declared_directions_for_billing(tmp_path):
+    csv_path = tmp_path / "points.csv"
+    csv_path.write_text(
+        HEADER
+        + "CH000000000000000000000000000001,Haus 1,,,leg-1,production|consumption\n",
+        encoding="utf-8",
+    )
+
+    points, errors = import_metering_points._read_points(csv_path)
+
+    assert errors == []
+    assert points[0]["expected_directions"] == ["consumption", "production"]
+
+
+def test_rejects_unknown_declared_direction(tmp_path):
+    csv_path = tmp_path / "points.csv"
+    csv_path.write_text(
+        HEADER + "CH000000000000000000000000000001,Haus 1,,,leg-1,export\n",
+        encoding="utf-8",
+    )
+
+    points, errors = import_metering_points._read_points(csv_path)
+
+    assert points == []
+    assert errors and "expected_directions" in errors[0]
+
+
 def test_rows_without_a_metering_point_are_reported(tmp_path):
     csv_path = tmp_path / "points.csv"
     csv_path.write_text(HEADER + ",Haus ohne Messpunkt,,,\n", encoding="utf-8")
@@ -81,7 +110,7 @@ def test_a_row_with_surplus_columns_is_reported_not_crashed(tmp_path):
     # mapping it carries decides who gets billed for that metering point.
     csv_path = tmp_path / "points.csv"
     csv_path.write_text(
-        HEADER + "CH123,Haus,Dorfstrasse 1, Bern,BLD-1,COMM-1\n",
+        HEADER + "CH123,Haus,Dorfstrasse 1, Bern,BLD-1,COMM-1,consumption\n",
         encoding="utf-8",
     )
 

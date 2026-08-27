@@ -122,6 +122,7 @@ def test_database_reexports_are_identical_objects():
         "upsert_metering_points",
         "get_metering_points",
         "get_metering_point",
+        "get_unassigned_period_metering_point_ids",
         "save_metering_point_readings",
         "get_metering_point_readings",
         "get_metering_point_reading_stats",
@@ -200,60 +201,28 @@ def test_readings_upsert_registers_points_before_readings(monkeypatch):
     assert calls[1]["cur"] is cur
 
 
-def test_readings_upsert_reports_new_and_corrected_counts(monkeypatch):
+def test_readings_upsert_reports_counts_and_correction_samples(monkeypatch):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
     returned = [
         {
             "metering_point_id": POINT,
             "direction": "consumption",
-            "measured_at": MEASURED_AT,
-            "inserted": True,
-        },
-        {
-            "metering_point_id": POINT,
-            "direction": "consumption",
-            "measured_at": MEASURED_AT,
-            "inserted": False,
-        },
+            "measured_at": MEASURED_AT + timedelta(minutes=15 * offset),
+            "inserted": offset == 0,
+        }
+        for offset in range(25)
     ]
     _capture_execute_values(monkeypatch, returned)
 
     result = metering.save_metering_point_readings(
-        [_row(1), _row(2), _row(3), _row(4), _row(5)]
+        [_row(sequence) for sequence in range(1, 27)]
     )
 
-    assert result["written"] == 5
+    assert result["written"] == 26
     assert result["new"] == 1
-    assert result["corrected"] == 1
-    assert result["unchanged"] == 3
-    assert result["samples"] == [(POINT, "consumption", MEASURED_AT)]
-
-
-def test_readings_upsert_samples_only_corrected_rows_and_caps_at_twenty(monkeypatch):
-    cur = _FakeCursor()
-    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
-    returned = [
-        {
-            "metering_point_id": POINT,
-            "direction": "consumption",
-            "measured_at": MEASURED_AT,
-            "inserted": True,
-        }
-    ] + [
-        {
-            "metering_point_id": POINT,
-            "direction": "consumption",
-            "measured_at": MEASURED_AT + timedelta(minutes=15 * index),
-            "inserted": False,
-        }
-        for index in range(1, 23)
-    ]
-    _capture_execute_values(monkeypatch, returned)
-
-    rows = [_row(index) for index in range(1, 24)]
-    result = metering.save_metering_point_readings(rows)
-
+    assert result["corrected"] == 24
+    assert result["unchanged"] == 1
     assert len(result["samples"]) == 20
     assert result["samples"][0] == (
         POINT,
@@ -517,6 +486,7 @@ def test_upsert_points_passes_every_registry_value(monkeypatch):
             "BLD-1",
             "Haus 1",
             "Dorfstrasse 1",
+            None,
         )
     ]
 
@@ -525,6 +495,41 @@ def test_upsert_points_ignores_entries_without_an_identifier(monkeypatch):
     monkeypatch.setattr(database, "get_connection", _broken_conn())
 
     assert metering.upsert_metering_points([{}, {"alias": "Haus 1"}]) == 0
+
+
+def test_upsert_points_canonicalises_declared_directions(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    calls = _capture_execute_values(monkeypatch, [])
+
+    result = metering.upsert_metering_points(
+        [
+            {
+                "metering_point_id": POINT,
+                "expected_directions": [
+                    "production",
+                    "consumption",
+                    "production",
+                ],
+            }
+        ]
+    )
+
+    assert result == 1
+    assert calls[0]["values"][0][-1] == ["consumption", "production"]
+
+
+def test_upsert_points_rejects_unknown_declared_directions(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    calls = _capture_execute_values(monkeypatch, [])
+
+    result = metering.upsert_metering_points(
+        [{"metering_point_id": POINT, "expected_directions": ["export"]}]
+    )
+
+    assert result == 0
+    assert calls == []
 
 
 # ==== File ledger ====
@@ -621,6 +626,7 @@ def test_community_points_expose_membership_status(monkeypatch):
                 "metering_point_id": POINT,
                 "building_id": "BLD-A",
                 "alias": None,
+                "expected_directions": ["consumption"],
                 "member_status": "confirmed",
             }
         ]
@@ -637,6 +643,17 @@ def test_community_points_expose_membership_status(monkeypatch):
     assert "active = TRUE" in query
     assert params == ("COMM-1",)
     assert points[0]["member_status"] == "confirmed"
+    assert points[0]["expected_directions"] == ["consumption"]
+    assert "mp.expected_directions" in query
+
+
+def test_unassigned_period_point_lookup_propagates_storage_failure(monkeypatch):
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    with pytest.raises(RuntimeError, match="db down"):
+        metering.get_unassigned_period_metering_point_ids(
+            "COMM-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
+        )
 
 
 def test_period_readings_use_a_half_open_interval(monkeypatch):

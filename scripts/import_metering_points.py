@@ -6,10 +6,12 @@ Adresse. Diese Zuordnung kommt aus der Teilnehmerliste des Betreibers, als CSV
 exportiert (LibreOffice: Datei, Speichern unter, Text CSV).
 
 Erwartete Kopfzeile:
-    messpunktnummer,alias,adresse,building_id,community_id
+    messpunktnummer,alias,adresse,building_id,community_id,expected_directions
 
-Leere Felder überschreiben nichts. Die CSV enthält Personendaten und gehört
-unter data/, das nicht versioniert wird.
+`expected_directions` ist optional und trägt die deklarierten Messrichtungen,
+pipe-getrennt (`consumption|production`). Leere Felder überschreiben nichts.
+Die CSV enthält Personendaten und gehört unter data/, das nicht versioniert
+wird.
 
 Aufruf:
     python scripts/import_metering_points.py data/sdat/teilnehmer.csv
@@ -37,10 +39,40 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 REQUIRED_COLUMN = "messpunktnummer"
-OPTIONAL_COLUMNS = ("alias", "adresse", "building_id", "community_id")
+OPTIONAL_COLUMNS = (
+    "alias",
+    "adresse",
+    "building_id",
+    "community_id",
+    "expected_directions",
+)
 SUPPORTED_COLUMNS = {REQUIRED_COLUMN, *OPTIONAL_COLUMNS}
 # Schlüssel, unter dem überzählige Felder einer Zeile landen.
 SURPLUS_KEY = "__surplus__"
+
+# Kanonische Reihenfolge der Richtungen, wie sie das Register speichert.
+DIRECTION_ORDER = ("consumption", "production")
+
+
+def _parse_directions(raw, number):
+    """Pipe-getrennte Richtungen kanonisieren. Gibt (Wert, Fehler) zurück.
+
+    Leer bleibt None: ein leeres Feld darf einen vorhandenen Wert nie leeren.
+    Unbekannte Richtungen sind ein Fehler, weil die Deklaration entscheidet,
+    ob eine fehlende Serie als Lücke oder als fehlender Zähler gelesen wird.
+    """
+    if not raw:
+        return None, None
+    parts = [part.strip() for part in raw.split("|") if part.strip()]
+    unknown = [part for part in parts if part not in DIRECTION_ORDER]
+    if unknown:
+        return None, (
+            f"Zeile {number}: unbekannte expected_directions "
+            f"({', '.join(unknown)}). Erlaubte Spalten-Werte: "
+            f"{'|'.join(DIRECTION_ORDER)}"
+        )
+    declared = set(parts)
+    return [direction for direction in DIRECTION_ORDER if direction in declared], None
 
 
 def _normalise(row):
@@ -99,6 +131,12 @@ def _read_points(path):
             if not point_id:
                 errors.append(f"Zeile {number}: ohne Messpunktnummer, übersprungen.")
                 continue
+            directions, direction_error = _parse_directions(
+                row.get("expected_directions", ""), number
+            )
+            if direction_error:
+                errors.append(direction_error)
+                continue
             points.append(
                 {
                     "metering_point_id": point_id,
@@ -106,6 +144,7 @@ def _read_points(path):
                     "address": row.get("adresse") or None,
                     "building_id": row.get("building_id") or None,
                     "community_id": row.get("community_id") or None,
+                    "expected_directions": directions,
                 }
             )
     return points, errors
