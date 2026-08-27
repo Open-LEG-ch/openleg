@@ -9,6 +9,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = PROJECT_ROOT / ".github" / "workflows"
 DEPENDABOT_CONFIG = PROJECT_ROOT / ".github" / "dependabot.yml"
+DOCKERFILE = PROJECT_ROOT / "Dockerfile"
 
 
 def _on_section(data):
@@ -141,6 +142,10 @@ def test_release_image_is_immutable_and_attested():
     assert "${GITHUB_REPOSITORY_OWNER,,}" in image["run"]
     assert metadata["with"]["images"] == "${{ steps.image.outputs.name }}"
     assert len(build_steps) == 1
+    assert (
+        build_steps[0]["uses"]
+        == "docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8"
+    )
     assert build_steps[0]["with"]["load"] is True
     assert build_steps[0]["with"].get("push") is not True
     assert "sbom" not in build_steps[0]["with"]
@@ -167,3 +172,8 @@ def test_release_image_is_immutable_and_attested():
     assert "sbom-path: sbom.cdx.json" in text
     assert "attest-build-provenance" in text
     assert "trivy-action@" in text
+
+    dockerfile = DOCKERFILE.read_text(encoding="utf-8")
+    assert "RUN test -f /app/app.py" in dockerfile
+    assert "test -f /app/templates/index.html" in dockerfile
+    assert "test -f /app/static/css/openleg.css" in dockerfile
