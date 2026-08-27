@@ -24,6 +24,7 @@ from flask import (
 )
 
 import access_token
+import billing_policy
 import dashboard as dashboard_module
 import database as db
 import security_utils
@@ -333,6 +334,65 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         _require_dashboard_csrf()
         dashboard_module.leg_generate_documents(community_id, building_id)
         return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/billing-policy")
+    def leg_billing_policy_page(community_id):
+        building_id = _require_dashboard_session()
+        try:
+            view = dashboard_module.leg_billing_policy_view(
+                community_id,
+                building_id,
+                policy_saved=request.args.get("saved") == "1",
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if view["error"]:
+            abort(403)
+        return _mark_private_response(
+            render_city_template(
+                "leg_billing_policy.html",
+                csrf_token=_dashboard_csrf_token(),
+                **view,
+            )
+        )
+
+    @bp.route("/leg/community/<community_id>/billing-policy", methods=["POST"])
+    def leg_billing_policy_save(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            result = dashboard_module.leg_save_billing_policy(
+                community_id, building_id, request.form
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"]:
+            abort(403)
+        if result["errors"]:
+            try:
+                view = dashboard_module.leg_billing_policy_view(
+                    community_id, building_id
+                )
+            except db.BillingStoreError:
+                abort(503)
+            view["form_errors"] = result["errors"]
+            view["form_values"] = {
+                field: request.form.get(field, "")
+                for field in billing_policy.FORM_FIELDS
+            }
+            return (
+                _mark_private_response(
+                    render_city_template(
+                        "leg_billing_policy.html",
+                        csrf_token=_dashboard_csrf_token(),
+                        **view,
+                    )
+                ),
+                400,
+            )
+        return redirect(
+            dashboard_module.leg_billing_policy_location(community_id) + "?saved=1"
+        )
 
     @bp.route("/leg/community/<community_id>/correspondence", methods=["POST"])
     def leg_community_correspondence(community_id):

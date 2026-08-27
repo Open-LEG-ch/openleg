@@ -2,8 +2,9 @@
 """Dashboard readiness verb."""
 
 import math
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
+import billing_policy
 import database as db
 import formation_documents
 import formation_wizard
@@ -175,6 +176,66 @@ def _require_role(community_id: str, building_id: str, role: str):
         ),
         None,
     )
+
+
+def _require_confirmed_admin(community_id: str, building_id: str):
+    """Return the member row for a confirmed community admin, else None."""
+    member = _require_role(community_id, building_id, "admin")
+    if not member or member.get("status") != "confirmed":
+        return None
+    return member
+
+
+def leg_billing_policy_location(community_id: str) -> str:
+    """Build the billing policy path; quote keeps it a relative path."""
+    return "/leg/community/" + quote(community_id, safe="") + "/billing-policy"
+
+
+def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dict:
+    """Admin-gated view model for the versioned billing policy page."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff."}
+    versions = db.list_billing_policies(community_id)
+    view = {
+        "error": None,
+        "community_id": community_id,
+        "policy_versions": [
+            billing_policy.describe_version(version) for version in versions
+        ],
+        "policy_disclaimer": billing_policy.POLICY_DISCLAIMER,
+        "policy_labels": {
+            "network_level": billing_policy.NETWORK_LEVEL_LABELS,
+            "distribution_model": billing_policy.DISTRIBUTION_MODEL_LABELS,
+            "vat_mode": billing_policy.VAT_MODE_LABELS,
+            "delivery_method": billing_policy.DELIVERY_METHOD_LABELS,
+        },
+        "form_errors": {},
+        "form_values": {},
+        "policy_saved": False,
+    }
+    view.update(extra)
+    return view
+
+
+def leg_save_billing_policy(community_id: str, building_id: str, form) -> dict:
+    """Validate and persist one new policy version; only the admin may write."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff.", "errors": {}}
+    result = billing_policy.validate_policy_form(form)
+    if result["errors"]:
+        return {"error": None, "errors": result["errors"]}
+    try:
+        db.save_billing_policy(community_id, result["policy"])
+    except db.BillingPolicyConflict:
+        return {
+            "error": None,
+            "errors": {
+                "effective_from": (
+                    "Für dieses Gültig-ab-Datum existiert bereits eine Version."
+                )
+            },
+        }
+    return {"error": None, "errors": {}}
 
 
 def leg_create(name: str, building_id: str, distribution_model: str) -> dict:
