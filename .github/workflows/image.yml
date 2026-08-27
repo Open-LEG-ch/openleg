@@ -59,7 +59,7 @@ jobs:
           IMAGE_REF: ${{ steps.image.outputs.name }}:${{ steps.meta.outputs.version }}
         run: |
           docker run --rm --entrypoint test "${IMAGE_REF}" -f /app/app.py
-          docker run --rm --entrypoint test "${IMAGE_REF}" -f /app/templates/index.html
+          docker run --rm --entrypoint test "${IMAGE_REF}" -f /app/templates/dashboard.html
           docker run --rm --entrypoint test "${IMAGE_REF}" -f /app/static/css/openleg.css
 
       - name: Block high-severity image vulnerabilities

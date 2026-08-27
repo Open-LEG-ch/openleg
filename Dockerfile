@@ -28,7 +28,7 @@ COPY static/ static/
 COPY scripts/ scripts/
 
 RUN test -f /app/app.py \
-    && test -f /app/templates/index.html \
+    && test -f /app/templates/dashboard.html \
     && test -f /app/static/css/openleg.css
 
 RUN mkdir -p /data
