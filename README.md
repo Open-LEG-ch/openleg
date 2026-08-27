@@ -42,6 +42,8 @@ pytest tests/ -q
 python app.py
 ```
 
+The dev server listens on the port from `APP_BASE_URL` in `.env` (default 5003).
+
 For self-hosting:
 
 ```bash
@@ -134,6 +136,8 @@ cp .env.example .env
 pytest tests/ -q
 python app.py
 ```
+
+Der Entwicklungsserver läuft auf dem Port aus `APP_BASE_URL` in `.env` (Standard 5003).
 
 Für den Eigenbetrieb:
 
