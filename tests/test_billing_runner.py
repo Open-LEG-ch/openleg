@@ -21,11 +21,13 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
             "metering_point_id": "CH001",
             "building_id": "building-a",
             "member_status": "confirmed",
+            "expected_directions": ["consumption"],
         },
         {
             "metering_point_id": "CH002",
             "building_id": "building-a",
             "member_status": "confirmed",
+            "expected_directions": ["production"],
         },
     ]
     readings = []
@@ -68,6 +70,11 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
 
     monkeypatch.setattr(
         database, "get_community_metering_points", lambda _community: points
+    )
+    monkeypatch.setattr(
+        database,
+        "get_unassigned_period_metering_point_ids",
+        lambda _community, _start, _end: [],
     )
     monkeypatch.setattr(
         database,
@@ -166,11 +173,13 @@ def _install_billing_fixture(
             "metering_point_id": "CH001",
             "building_id": "building-a",
             "member_status": "confirmed",
+            "expected_directions": ["consumption"],
         },
         {
             "metering_point_id": "CH002",
             "building_id": "building-a",
             "member_status": "confirmed",
+            "expected_directions": ["production"],
         },
     ]
     readings = []
@@ -206,6 +215,11 @@ def _install_billing_fixture(
         database, "get_community_metering_points", lambda _community: points
     )
     monkeypatch.setattr(
+        database,
+        "get_unassigned_period_metering_point_ids",
+        lambda _community, _start, _end: [],
+    )
+    monkeypatch.setattr(
         database, "get_period_readings", lambda _community, _start, _end: readings
     )
     monkeypatch.setattr(
@@ -238,6 +252,23 @@ def test_a_vnb_allocation_mismatch_refuses_to_persist(monkeypatch):
         run_billing_period(COMMUNITY, START, END)
 
     assert saved == [], "a period the VNB contradicts must never reach the database"
+
+
+def test_an_unassigned_period_point_refuses_to_persist(monkeypatch):
+    from billing_runner import BillingRunError, run_billing_period
+
+    saved = _install_billing_fixture(monkeypatch)
+    point_id = "CH000000000000000000000000000099"
+    monkeypatch.setattr(
+        database,
+        "get_unassigned_period_metering_point_ids",
+        lambda _community, _start, _end: [point_id],
+    )
+
+    with pytest.raises(BillingRunError, match=point_id):
+        run_billing_period(COMMUNITY, START, END)
+
+    assert saved == [], "an unassigned point must block the draft"
 
 
 def test_a_missing_tariff_refuses_to_persist(monkeypatch):

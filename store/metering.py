@@ -67,7 +67,7 @@ _READING_UPSERT_SQL = f"""
 _POINT_UPSERT_SQL = """
     INSERT INTO metering_points
         (metering_point_id, vnb_community_id, community_id, building_id,
-         alias, address)
+         alias, address, expected_directions)
     VALUES %s
     ON CONFLICT (metering_point_id) DO UPDATE SET
         vnb_community_id = COALESCE(
@@ -78,8 +78,31 @@ _POINT_UPSERT_SQL = """
             EXCLUDED.building_id, metering_points.building_id),
         alias = COALESCE(EXCLUDED.alias, metering_points.alias),
         address = COALESCE(EXCLUDED.address, metering_points.address),
+        expected_directions = COALESCE(
+            EXCLUDED.expected_directions, metering_points.expected_directions),
         updated_at = NOW()
 """
+
+_DIRECTION_ORDER = ("consumption", "production")
+
+
+def _canonical_directions(value):
+    """Eindeutige Richtungen in kanonischer Reihenfolge, oder None.
+
+    None bleibt None, damit COALESCE im Upsert einen vorhandenen Wert nie
+    leert. Duplikate und Reihenfolge der Eingabe spielen keine Rolle.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = [value]
+    declared = {str(item).strip() for item in value if str(item).strip()}
+    unknown = declared.difference(_DIRECTION_ORDER)
+    if unknown:
+        raise ValueError(f"Unbekannte Messrichtung(en): {', '.join(sorted(unknown))}")
+    if not declared:
+        return None
+    return [direction for direction in _DIRECTION_ORDER if direction in declared]
 
 
 def _get_connection():
@@ -191,6 +214,7 @@ def upsert_metering_points(points):
                         point.get("building_id") or None,
                         point.get("alias") or None,
                         point.get("address") or None,
+                        _canonical_directions(point.get("expected_directions")),
                     )
                     for point in points
                 ]
@@ -278,6 +302,7 @@ def get_community_metering_points(community_id):
                     SELECT mp.metering_point_id,
                            mp.building_id,
                            mp.alias,
+                           mp.expected_directions,
                            cm.status AS member_status
                     FROM metering_points mp
                     LEFT JOIN community_members cm
@@ -293,6 +318,62 @@ def get_community_metering_points(community_id):
     except Exception as e:
         logger.error(f"[DB] Error getting community metering points: {e}")
         return []
+
+
+def get_unassigned_period_metering_point_ids(community_id, period_start, period_end):
+    """Aktive, nicht zugeordnete Messpunkte finden, die zu dieser LEG gehören.
+
+    Ein Messpunkt, der noch keiner OpenLEG Community zugeordnet ist
+    (community_id IS NULL), aber im abgefragten Zeitraum Messwerte aus
+    SDAT Importen mit denselben öffentlichen VNB LEG Identifikatoren
+    (sdat_imports.vnb_community_id) liefert wie die bereits zugeordneten
+    aktiven Messpunkte dieser Community, gehört fachlich zu dieser LEG und
+    muss vor der Abrechnung zugeordnet werden.
+
+    Die VNB Identifikatoren werden aus den aktiven, dieser Community
+    zugeordneten Messpunkten und deren Messwerten im halboffenen Intervall
+    [period_start, period_end) abgeleitet. Messpunkte anderer VNB LEGs
+    bleiben unsichtbar.
+
+    Ein Fehler wird nicht als leeres Ergebnis verschluckt: die Abrechnung
+    muss geschlossen ausfallen statt eine Periode ohne die fehlenden
+    Messpunkte zu verrechnen.
+
+    Returns:
+        Sortierte Liste eindeutiger metering_point_id.
+    """
+    with _get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT DISTINCT mp.metering_point_id
+                FROM metering_points mp
+                JOIN metering_point_readings r
+                  ON r.metering_point_id = mp.metering_point_id
+                 AND r.measured_at >= %s
+                 AND r.measured_at < %s
+                JOIN sdat_imports si
+                  ON si.document_id = r.source_document_id
+                WHERE mp.community_id IS NULL
+                  AND mp.active = TRUE
+                  AND si.vnb_community_id IN (
+                      SELECT DISTINCT si2.vnb_community_id
+                      FROM metering_points mp2
+                      JOIN metering_point_readings r2
+                        ON r2.metering_point_id = mp2.metering_point_id
+                       AND r2.measured_at >= %s
+                       AND r2.measured_at < %s
+                      JOIN sdat_imports si2
+                        ON si2.document_id = r2.source_document_id
+                      WHERE mp2.community_id = %s
+                        AND mp2.active = TRUE
+                        AND si2.vnb_community_id IS NOT NULL
+                  )
+                ORDER BY mp.metering_point_id
+                """,
+                (period_start, period_end, period_start, period_end, community_id),
+            )
+            return [row["metering_point_id"] for row in cur.fetchall()]
 
 
 def get_period_readings(community_id, period_start, period_end):
