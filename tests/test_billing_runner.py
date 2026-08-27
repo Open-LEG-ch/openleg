@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """End-to-end contract for one fail-closed billing-period run."""
 
+import hashlib
+import json
 from copy import deepcopy
 from datetime import datetime, timedelta
 from types import SimpleNamespace
@@ -19,48 +21,6 @@ END = START + timedelta(minutes=45)
 def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
     from billing_runner import BillingRunError, run_billing_period
 
-    points = [
-        {
-            "metering_point_id": "CH001",
-            "building_id": "building-a",
-            "member_status": "confirmed",
-            "expected_directions": ["consumption"],
-        },
-        {
-            "metering_point_id": "CH002",
-            "building_id": "building-a",
-            "member_status": "confirmed",
-            "expected_directions": ["production"],
-        },
-    ]
-    readings = []
-    for offset in range(3):
-        measured_at = START + timedelta(minutes=15 * offset)
-        readings.extend(
-            (
-                {
-                    "metering_point_id": "CH001",
-                    "direction": "consumption",
-                    "measured_at": measured_at,
-                    "resolution_minutes": 15,
-                    "total_kwh": 1.0,
-                    "grid_kwh": 0.5,
-                    "community_kwh": 0.5,
-                    "source_document_id": "E66-CONSUMPTION",
-                },
-                {
-                    "metering_point_id": "CH002",
-                    "direction": "production",
-                    "measured_at": measured_at,
-                    "resolution_minutes": 15,
-                    "total_kwh": 0.5,
-                    "grid_kwh": 0.0,
-                    "community_kwh": 0.5,
-                    "source_document_id": "E66-PRODUCTION",
-                },
-            )
-        )
-
     policy = {
         "tariff_id": 7,
         "internal_price_chf_per_kwh": 0.12,
@@ -68,33 +28,73 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
         "network_level": "same",
         "distribution_model": "proportional",
     }
+    policy_calls = []
+    frame_calls = []
+    summary_calls = []
+    window_calls = []
     saved = []
     existing = []
+    index = pd.date_range(START, periods=3, freq="15min")
+    frames = SimpleNamespace(
+        production=pd.DataFrame({"CH002": [0.5, 0.5, 0.5]}, index=index),
+        consumption=pd.DataFrame({"CH001": [1.0, 1.0, 1.0]}, index=index),
+        participants=("CH001", "CH002"),
+        provenance={
+            "period_start": START,
+            "period_end": END,
+            "source_document_ids": ("E66-CONSUMPTION", "E66-PRODUCTION"),
+            "interval_count": 3,
+            "resolution_minutes": 15,
+            "timezone": "Europe/Zurich",
+        },
+        vnb_reference={"community_kwh": 1.5},
+    )
+    summary_result = {"participant_count": 2}
+    reconciliation_result = {
+        "difference_kwh": 0,
+        "production_difference_kwh": 0,
+        "per_participant": {
+            "CH001": {"difference_kwh": 0},
+            "CH002": {"difference_kwh": 0},
+        },
+        "production_per_participant": {
+            "CH002": {"difference_kwh": 0},
+        },
+    }
 
-    monkeypatch.setattr(
-        database, "get_community_metering_points", lambda _community: points
-    )
-    monkeypatch.setattr(
-        database,
-        "get_unassigned_period_metering_point_ids",
-        lambda _community, _start, _end: [],
-    )
-    monkeypatch.setattr(
-        database,
-        "get_period_readings",
-        lambda _community, _start, _end: readings,
-    )
     monkeypatch.setattr(
         database,
         "get_billing_policy",
-        lambda _community, _start, _end: policy,
+        lambda community, period_start, period_end: (
+            policy_calls.append((community, period_start, period_end)) or policy
+        ),
         raising=False,
     )
     monkeypatch.setattr(
         database,
         "get_billing_period_for_window",
-        lambda _community, _start, _end: existing[0] if existing else None,
+        lambda community, period_start, period_end: (
+            window_calls.append((community, period_start, period_end))
+            or (existing[0] if existing else None)
+        ),
         raising=False,
+    )
+    monkeypatch.setattr(
+        "billing_readings.load_period_frames",
+        lambda community, period_start, period_end: (
+            frame_calls.append((community, period_start, period_end)) or frames
+        ),
+    )
+    monkeypatch.setattr(
+        "billing_readings.reconcile_with_vnb",
+        lambda actual_frames, summary: reconciliation_result,
+    )
+    monkeypatch.setattr(
+        "billing_engine.generate_billing_summary",
+        lambda production, consumption, **kwargs: (
+            summary_calls.append((production, consumption, kwargs))
+            or dict(summary_result)
+        ),
     )
 
     def save(community_id, period_start, period_end, summary):
@@ -106,15 +106,31 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
     created = run_billing_period(COMMUNITY, START, END)
 
     assert created == {"status": "created", "period_id": 42}
+    assert policy_calls == [(COMMUNITY, START, END)]
+    assert frame_calls == [(COMMUNITY, START, END)]
+    assert window_calls == [(COMMUNITY, START, END)]
+    assert summary_calls == [
+        (
+            frames.production,
+            frames.consumption,
+            {
+                "grid_fee_per_kwh": policy["grid_fee_chf_per_kwh"],
+                "internal_price_per_kwh": policy["internal_price_chf_per_kwh"],
+                "network_level": policy["network_level"],
+                "distribution_model": policy["distribution_model"],
+            },
+        )
+    ]
     assert len(saved) == 1
+    assert saved[0][:3] == (COMMUNITY, START, END)
     summary = saved[0][3]
     assert summary["input_fingerprint"]
     assert summary["source_document_ids"] == [
         "E66-CONSUMPTION",
         "E66-PRODUCTION",
     ]
-    assert summary["reconciliation"]["difference_kwh"] == 0
-    assert summary["reconciliation"]["production_difference_kwh"] == 0
+    assert summary["reconciliation"] == reconciliation_result
+    assert summary["timezone"] == "Europe/Zurich"
 
     existing.append({"id": 42, "input_fingerprint": summary["input_fingerprint"]})
     retried = run_billing_period(COMMUNITY, START, END)
@@ -122,27 +138,143 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
     assert retried == {"status": "already_processed", "period_id": 42}
     assert len(saved) == 1
 
-    readings[0]["total_kwh"] = 2.0
-    with pytest.raises(BillingRunError, match="inputs changed"):
+    summary_result["participant_count"] = 99
+    with pytest.raises(BillingRunError) as changed_summary:
         run_billing_period(COMMUNITY, START, END)
+    assert (
+        str(changed_summary.value) == "Billing period inputs changed after processing"
+    )
+
+    summary_result["participant_count"] = 2
+    reconciliation_result["audit_note"] = "changed"
+    with pytest.raises(BillingRunError) as changed_reconciliation_fingerprint:
+        run_billing_period(COMMUNITY, START, END)
+    assert (
+        str(changed_reconciliation_fingerprint.value)
+        == "Billing period inputs changed after processing"
+    )
+
+    reconciliation_result.pop("audit_note")
+    reconciliation_result["difference_kwh"] = 1
+    with pytest.raises(BillingRunError) as changed_reconciliation_guard:
+        run_billing_period(COMMUNITY, START, END)
+    assert (
+        str(changed_reconciliation_guard.value)
+        == "OpenLEG allocation does not match the VNB allocation"
+    )
+
+    reconciliation_result["difference_kwh"] = 0
+    frames.vnb_reference = {"community_kwh": 9.9}
+    with pytest.raises(BillingRunError) as changed:
+        run_billing_period(COMMUNITY, START, END)
+    assert str(changed.value) == "Billing period inputs changed after processing"
 
     existing.clear()
-    for reading in readings:
-        reading["source_document_id"] = None
-    with pytest.raises(BillingRunError, match="provenance"):
+    frames.provenance["source_document_ids"] = ()
+    with pytest.raises(BillingRunError) as missing_provenance:
         run_billing_period(COMMUNITY, START, END)
+    assert str(missing_provenance.value) == "Billing readings have no import provenance"
 
 
 def test_previous_complete_month_uses_zurich_calendar_boundaries():
     from billing_runner import previous_complete_month
 
     start, end = previous_complete_month(
-        datetime(2026, 11, 15, tzinfo=ZoneInfo("Europe/Zurich"))
+        datetime(
+            2026,
+            11,
+            15,
+            14,
+            37,
+            8,
+            654321,
+            tzinfo=ZoneInfo("Europe/Zurich"),
+        )
     )
 
     assert start == datetime(2026, 10, 1, tzinfo=ZoneInfo("Europe/Zurich"))
     assert end == datetime(2026, 11, 1, tzinfo=ZoneInfo("Europe/Zurich"))
     assert start.utcoffset() != end.utcoffset()
+
+
+def test_previous_complete_month_asks_datetime_for_zurich_now(monkeypatch):
+    import billing_runner
+
+    class _FakeDatetime:
+        @staticmethod
+        def now(tz):
+            assert tz == ZoneInfo("Europe/Zurich")
+            return datetime(2026, 3, 15, 9, 1, tzinfo=tz)
+
+    monkeypatch.setattr(billing_runner, "datetime", _FakeDatetime)
+
+    start, end = billing_runner.previous_complete_month()
+
+    assert start == datetime(2026, 2, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+    assert end == datetime(2026, 3, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+
+
+def test_fingerprint_is_the_sha256_of_the_canonical_payload():
+    from billing_runner import _fingerprint
+
+    index = pd.date_range(START, periods=1, freq="15min")
+    frames = SimpleNamespace(
+        production=pd.DataFrame({"CH002": [0.5]}, index=index),
+        consumption=pd.DataFrame({"CH001": [1.0]}, index=index),
+        participants=("CH001", "CH002"),
+        provenance={
+            "period_start": START,
+            "period_end": END,
+            "source_document_ids": ("DOC-B", "DOC-A"),
+            "interval_count": 1,
+            "resolution_minutes": 15,
+            "timezone": "Europe/Zurich",
+        },
+        vnb_reference={"vnb_total_kwh": 3.0},
+    )
+    policy = {
+        "community_id": COMMUNITY,
+        "tariff_id": 7,
+        "internal_price_chf_per_kwh": 0.12,
+        "grid_fee_chf_per_kwh": 0.08,
+        "network_level": "same",
+        "distribution_model": "proportional",
+    }
+    summary = {"z": 1, "a": 2}
+    reconciliation = {"difference_kwh": 0, "production_difference_kwh": 0}
+    expected_payload = {
+        "community_id": COMMUNITY,
+        "period_start": START.isoformat(),
+        "period_end": END.isoformat(),
+        "source_document_ids": ["DOC-B", "DOC-A"],
+        "interval_count": 1,
+        "resolution_minutes": 15,
+        "timezone": "Europe/Zurich",
+        "production": {
+            "index": [START.isoformat()],
+            "columns": ["CH002"],
+            "values": [[0.5]],
+        },
+        "consumption": {
+            "index": [START.isoformat()],
+            "columns": ["CH001"],
+            "values": [[1.0]],
+        },
+        "participants": ["CH001", "CH002"],
+        "tariff_id": 7,
+        "internal_price_chf_per_kwh": "0.12",
+        "grid_fee_chf_per_kwh": "0.08",
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vnb_reference": {"vnb_total_kwh": 3.0},
+        "summary": {"z": 1, "a": 2},
+        "reconciliation": {"difference_kwh": 0, "production_difference_kwh": 0},
+    }
+    expected = hashlib.sha256(
+        json.dumps(expected_payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+    assert _fingerprint(frames, policy, summary, reconciliation) == expected
 
 
 # ---------------------------------------------------------------------------
@@ -527,8 +659,9 @@ def test_a_missing_tariff_refuses_to_persist(monkeypatch):
 
     saved = _install_billing_fixture(monkeypatch, policy=None)
 
-    with pytest.raises(BillingRunError, match="No effective billing tariff"):
+    with pytest.raises(BillingRunError) as exc:
         run_billing_period(COMMUNITY, START, END)
+    assert str(exc.value) == "No effective billing tariff configured"
 
     assert saved == []
 
@@ -541,7 +674,104 @@ def test_an_incomplete_tariff_surfaces_as_a_billing_run_error(monkeypatch):
     del incomplete["grid_fee_chf_per_kwh"]
     saved = _install_billing_fixture(monkeypatch, policy=incomplete)
 
-    with pytest.raises(BillingRunError):
+    with pytest.raises(BillingRunError) as exc:
+        run_billing_period(COMMUNITY, START, END)
+    assert str(exc.value) == "'grid_fee_chf_per_kwh'"
+
+    assert saved == []
+
+
+@pytest.mark.parametrize(
+    ("reconciliation", "expected_message"),
+    [
+        (
+            {
+                "difference_kwh": 1,
+                "production_difference_kwh": 0,
+                "per_participant": {"CH001": {"difference_kwh": 0}},
+                "production_per_participant": {"CH002": {"difference_kwh": 0}},
+            },
+            "OpenLEG allocation does not match the VNB allocation",
+        ),
+        (
+            {
+                "difference_kwh": 0,
+                "production_difference_kwh": 1,
+                "per_participant": {"CH001": {"difference_kwh": 0}},
+                "production_per_participant": {"CH002": {"difference_kwh": 0}},
+            },
+            "OpenLEG allocation does not match the VNB allocation",
+        ),
+        (
+            {
+                "difference_kwh": 0,
+                "production_difference_kwh": 0,
+                "per_participant": {"CH001": {"difference_kwh": 1}},
+                "production_per_participant": {"CH002": {"difference_kwh": 0}},
+            },
+            "OpenLEG allocation does not match the VNB allocation",
+        ),
+        (
+            {
+                "difference_kwh": 0,
+                "production_difference_kwh": 0,
+                "per_participant": {"CH001": {"difference_kwh": 0}},
+                "production_per_participant": {"CH002": {"difference_kwh": 1}},
+            },
+            "OpenLEG allocation does not match the VNB allocation",
+        ),
+    ],
+)
+def test_every_non_zero_reconciliation_gap_blocks_persistence(
+    monkeypatch, reconciliation, expected_message
+):
+    from billing_runner import BillingRunError, run_billing_period
+
+    frames = SimpleNamespace(
+        production=[{"slot": "prod"}],
+        consumption=[{"slot": "cons"}],
+        provenance={
+            "period_start": START,
+            "period_end": END,
+            "source_document_ids": ("DOC-1",),
+            "timezone": "Europe/Zurich",
+        },
+        vnb_reference={"community_kwh": 1.5},
+    )
+    saved = []
+
+    monkeypatch.setattr(
+        database,
+        "get_billing_policy",
+        lambda community, period_start, period_end: DEFAULT_POLICY,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "billing_readings.load_period_frames",
+        lambda community, period_start, period_end: frames,
+    )
+    monkeypatch.setattr(
+        "billing_engine.generate_billing_summary",
+        lambda *args, **kwargs: {"participant_count": 2},
+    )
+    monkeypatch.setattr(
+        "billing_readings.reconcile_with_vnb",
+        lambda actual_frames, summary: reconciliation,
+    )
+    monkeypatch.setattr(
+        database,
+        "get_billing_period_for_window",
+        lambda *args: None,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        database,
+        "save_billing_period",
+        lambda *args: saved.append(args) or 42,
+    )
+
+    with pytest.raises(BillingRunError) as exc:
         run_billing_period(COMMUNITY, START, END)
 
+    assert str(exc.value) == expected_message
     assert saved == []
