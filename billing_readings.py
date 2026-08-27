@@ -314,6 +314,22 @@ def load_period_frames(
     mapping, declarations = _participant_map(points, problems)
     readings = db.get_period_readings(community_id, period_start, period_end)
 
+    # Ein aktiver Messpunkt ohne Community-Zuordnung, dessen Messwerte aus
+    # Importen dieser VNB LEG stammen, gehört fachlich zur Periode. Ihn still
+    # zu übergehen würde eine unvollständige Rechnung erzeugen.
+    for point_id in db.get_unassigned_period_metering_point_ids(
+        community_id, period_start, period_end
+    ):
+        problems.append(
+            _problem(
+                "unassigned_point",
+                f"{point_id} liefert Messwerte dieser VNB LEG im Zeitraum, "
+                "ist aber keiner Community zugeordnet; Messpunkt vor der "
+                "Abrechnung zuordnen",
+                point_id,
+            )
+        )
+
     if not readings:
         problems.append(
             _problem(

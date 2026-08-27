@@ -320,6 +320,62 @@ def get_community_metering_points(community_id):
         return []
 
 
+def get_unassigned_period_metering_point_ids(community_id, period_start, period_end):
+    """Aktive, nicht zugeordnete Messpunkte finden, die zu dieser LEG gehören.
+
+    Ein Messpunkt, der noch keiner OpenLEG Community zugeordnet ist
+    (community_id IS NULL), aber im abgefragten Zeitraum Messwerte aus
+    SDAT Importen mit denselben öffentlichen VNB LEG Identifikatoren
+    (sdat_imports.vnb_community_id) liefert wie die bereits zugeordneten
+    aktiven Messpunkte dieser Community, gehört fachlich zu dieser LEG und
+    muss vor der Abrechnung zugeordnet werden.
+
+    Die VNB Identifikatoren werden aus den aktiven, dieser Community
+    zugeordneten Messpunkten und deren Messwerten im halboffenen Intervall
+    [period_start, period_end) abgeleitet. Messpunkte anderer VNB LEGs
+    bleiben unsichtbar.
+
+    Ein Fehler wird nicht als leeres Ergebnis verschluckt: die Abrechnung
+    muss geschlossen ausfallen statt eine Periode ohne die fehlenden
+    Messpunkte zu verrechnen.
+
+    Returns:
+        Sortierte Liste eindeutiger metering_point_id.
+    """
+    with _get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT DISTINCT mp.metering_point_id
+                FROM metering_points mp
+                JOIN metering_point_readings r
+                  ON r.metering_point_id = mp.metering_point_id
+                 AND r.measured_at >= %s
+                 AND r.measured_at < %s
+                JOIN sdat_imports si
+                  ON si.document_id = r.source_document_id
+                WHERE mp.community_id IS NULL
+                  AND mp.active = TRUE
+                  AND si.vnb_community_id IN (
+                      SELECT DISTINCT si2.vnb_community_id
+                      FROM metering_points mp2
+                      JOIN metering_point_readings r2
+                        ON r2.metering_point_id = mp2.metering_point_id
+                       AND r2.measured_at >= %s
+                       AND r2.measured_at < %s
+                      JOIN sdat_imports si2
+                        ON si2.document_id = r2.source_document_id
+                      WHERE mp2.community_id = %s
+                        AND mp2.active = TRUE
+                        AND si2.vnb_community_id IS NOT NULL
+                  )
+                ORDER BY mp.metering_point_id
+                """,
+                (period_start, period_end, period_start, period_end, community_id),
+            )
+            return [row["metering_point_id"] for row in cur.fetchall()]
+
+
 def get_period_readings(community_id, period_start, period_end):
     """Messwerte einer LEG im halboffenen Intervall [period_start, period_end).
 

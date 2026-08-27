@@ -133,6 +133,12 @@ An unmapped point or an unconfirmed member is a hard error, never a silent
 skip: billing a period while a participant is missing would spread that
 participant's share across everyone else.
 
+Billing also checks imported, unassigned points before it builds a draft. It
+derives the relevant public VNB LEG identifiers from in-period readings of
+points already assigned to the requested OpenLEG community, then reports only
+the unassigned metering point IDs in that VNB scope. It returns no readings or
+participant details and returns no identifiers from another VNB LEG scope.
+
 ### Declared directions
 
 `metering_points.expected_directions` declares which series a point is expected
