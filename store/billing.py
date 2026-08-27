@@ -135,7 +135,7 @@ def get_active_communities() -> list[dict]:
             return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting active communities: {e}")
-        return []
+        raise BillingStoreError("Could not load active communities") from e
 
 
 def get_community_for_building(building_id: str) -> dict | None:

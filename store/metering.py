@@ -67,7 +67,7 @@ _READING_UPSERT_SQL = f"""
 _POINT_UPSERT_SQL = """
     INSERT INTO metering_points
         (metering_point_id, vnb_community_id, community_id, building_id,
-         alias, address)
+         alias, address, expected_directions)
     VALUES %s
     ON CONFLICT (metering_point_id) DO UPDATE SET
         vnb_community_id = COALESCE(
@@ -78,8 +78,31 @@ _POINT_UPSERT_SQL = """
             EXCLUDED.building_id, metering_points.building_id),
         alias = COALESCE(EXCLUDED.alias, metering_points.alias),
         address = COALESCE(EXCLUDED.address, metering_points.address),
+        expected_directions = COALESCE(
+            EXCLUDED.expected_directions, metering_points.expected_directions),
         updated_at = NOW()
 """
+
+_DIRECTION_ORDER = ("consumption", "production")
+
+
+def _canonical_directions(value):
+    """Eindeutige Richtungen in kanonischer Reihenfolge, oder None.
+
+    None bleibt None, damit COALESCE im Upsert einen vorhandenen Wert nie
+    leert. Duplikate und Reihenfolge der Eingabe spielen keine Rolle.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = [value]
+    declared = {str(item).strip() for item in value if str(item).strip()}
+    unknown = declared.difference(_DIRECTION_ORDER)
+    if unknown:
+        raise ValueError(f"Unbekannte Messrichtung(en): {', '.join(sorted(unknown))}")
+    if not declared:
+        return None
+    return [direction for direction in _DIRECTION_ORDER if direction in declared]
 
 
 def _get_connection():
@@ -191,6 +214,7 @@ def upsert_metering_points(points):
                         point.get("building_id") or None,
                         point.get("alias") or None,
                         point.get("address") or None,
+                        _canonical_directions(point.get("expected_directions")),
                     )
                     for point in points
                 ]
@@ -278,6 +302,7 @@ def get_community_metering_points(community_id):
                     SELECT mp.metering_point_id,
                            mp.building_id,
                            mp.alias,
+                           mp.expected_directions,
                            cm.status AS member_status
                     FROM metering_points mp
                     LEFT JOIN community_members cm

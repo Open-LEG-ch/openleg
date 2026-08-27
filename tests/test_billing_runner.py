@@ -21,11 +21,13 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
             "metering_point_id": "CH001",
             "building_id": "building-a",
             "member_status": "confirmed",
+            "expected_directions": ["consumption"],
         },
         {
             "metering_point_id": "CH002",
             "building_id": "building-a",
             "member_status": "confirmed",
+            "expected_directions": ["production"],
         },
     ]
     readings = []
@@ -171,11 +173,13 @@ def _install_billing_fixture(
             "metering_point_id": "CH001",
             "building_id": "building-a",
             "member_status": "confirmed",
+            "expected_directions": ["consumption"],
         },
         {
             "metering_point_id": "CH002",
             "building_id": "building-a",
             "member_status": "confirmed",
+            "expected_directions": ["production"],
         },
     ]
     readings = []

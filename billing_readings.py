@@ -92,6 +92,7 @@ def _expected_index(period_start, period_end, tzinfo):
 def _participant_map(points, problems):
     """metering_point_id -> building_id, rejecting anything unbillable."""
     mapping = {}
+    declarations = {}
     for point in points:
         point_id = point.get("metering_point_id")
         building_id = point.get("building_id")
@@ -115,12 +116,25 @@ def _participant_map(points, problems):
                 )
             )
             continue
+        expected = point.get("expected_directions") or []
         mapping[point_id] = building_id
-    return mapping
+        if not expected:
+            problems.append(
+                _problem(
+                    "undeclared_direction",
+                    f"{point_id} declares no expected directions, so a missing "
+                    "series cannot be told apart from an absent meter",
+                    point_id,
+                )
+            )
+            continue
+        declarations[point_id] = set(expected)
+    return mapping, declarations
 
 
-def _check_rows(readings, mapping, expected_index, problems):
-    """Reject unknown points, mixed resolutions, negatives and duplicates."""
+def _check_rows(readings, mapping, declarations, expected_index, problems):
+    """Reject unknown points, mixed resolutions, missing totals, negatives,
+    and duplicates."""
     seen = set()
     grid = {moment.to_pydatetime() for moment in expected_index}
     for row in readings:
@@ -150,6 +164,18 @@ def _check_rows(readings, mapping, expected_index, problems):
                 )
             )
 
+        total = row.get("total_kwh")
+        if total is None:
+            # Billing this interval as 0 kWh would quietly shift the VNB
+            # allocation onto the other members of the community.
+            problems.append(
+                _problem(
+                    "missing_total",
+                    f"{point_id} ({direction}) at {measured_at} has no total_kwh",
+                    point_id,
+                )
+            )
+
         for channel in ("total_kwh", "grid_kwh", "community_kwh"):
             value = row.get(channel)
             if value is not None and float(value) < 0:
@@ -166,6 +192,15 @@ def _check_rows(readings, mapping, expected_index, problems):
                     "unknown_direction",
                     f"{point_id} at {measured_at} has direction {direction!r}, "
                     "which is neither consumption nor production",
+                    point_id,
+                )
+            )
+        elif direction not in declarations.get(point_id, set()):
+            problems.append(
+                _problem(
+                    "unexpected_direction",
+                    f"{point_id} at {measured_at} delivers {direction}, which "
+                    "the point does not declare",
                     point_id,
                 )
             )
@@ -206,34 +241,50 @@ def _check_rows(readings, mapping, expected_index, problems):
             )
         seen.add(key)
 
-    _check_gaps(seen, mapping, expected_index, problems)
+    _check_gaps(seen, declarations, expected_index, problems)
 
 
-def _check_gaps(seen, mapping, expected_index, problems):
-    """Every series present in the period must cover every interval.
+def _check_gaps(seen, declarations, expected_index, problems):
+    """Every declared series must cover every interval of the period.
 
-    A series that is absent altogether is not a gap: a member without a
-    production meter simply has no production series.
+    A declared series with no rows at all is a missing series, not a gap: a
+    member without a production meter simply declares no production, so an
+    absent production series is only acceptable when it is also undeclared.
     """
-    series = {(point_id, direction) for point_id, direction, _ in seen}
-    for point_id, direction in sorted(series):
-        missing = [
-            moment
-            for moment in expected_index
-            if (point_id, direction, moment.to_pydatetime()) not in seen
-        ]
-        if missing:
-            shown = ", ".join(
-                m.strftime("%Y-%m-%d %H:%M") for m in missing[:_MAX_REPORTED]
-            )
-            problems.append(
-                _problem(
-                    "missing_interval",
-                    f"{point_id} ({direction}) is missing {len(missing)} "
-                    f"interval(s): {shown}",
-                    point_id,
+    for point_id in sorted(declarations):
+        for direction in sorted(declarations[point_id]):
+            present = [
+                moment
+                for moment in expected_index
+                if (point_id, direction, moment.to_pydatetime()) in seen
+            ]
+            if not present:
+                problems.append(
+                    _problem(
+                        "missing_series",
+                        f"{point_id} ({direction}) declares the direction but "
+                        "delivers no readings in this period",
+                        point_id,
+                    )
                 )
-            )
+                continue
+            missing = [
+                moment
+                for moment in expected_index
+                if (point_id, direction, moment.to_pydatetime()) not in seen
+            ]
+            if missing:
+                shown = ", ".join(
+                    m.strftime("%Y-%m-%d %H:%M") for m in missing[:_MAX_REPORTED]
+                )
+                problems.append(
+                    _problem(
+                        "missing_interval",
+                        f"{point_id} ({direction}) is missing {len(missing)} "
+                        f"interval(s): {shown}",
+                        point_id,
+                    )
+                )
 
 
 def _empty_frame(index, participants):
@@ -260,7 +311,7 @@ def load_period_frames(
 
     problems = []
     points = db.get_community_metering_points(community_id)
-    mapping = _participant_map(points, problems)
+    mapping, declarations = _participant_map(points, problems)
     readings = db.get_period_readings(community_id, period_start, period_end)
 
     # Ein aktiver Messpunkt ohne Community-Zuordnung, dessen Messwerte aus
@@ -290,7 +341,7 @@ def load_period_frames(
         raise PeriodDataError(problems)
 
     index = _expected_index(period_start, period_end, tzinfo)
-    _check_rows(readings, mapping, index, problems)
+    _check_rows(readings, mapping, declarations, index, problems)
     if problems:
         raise PeriodDataError(problems)
 
@@ -314,7 +365,9 @@ def load_period_frames(
         # which fails the period closed rather than billing a partial one.
         frame = frames[direction]
         moment = pd.Timestamp(row["measured_at"]).tz_convert(tzinfo)
-        total = float(row.get("total_kwh") or 0.0)
+        # Indexed, not defaulted to zero: _check_rows has already reported a
+        # missing total and raised, so a None here is a broken invariant.
+        total = float(row["total_kwh"])
         frame.loc[moment, participant] += total
         community = row.get("community_kwh")
         if community is not None:

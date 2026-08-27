@@ -306,6 +306,41 @@ def test_upsert_points_does_not_blank_existing_fields(monkeypatch):
     )
 
 
+def test_upsert_points_canonicalises_declared_directions(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    calls = _capture_execute_values(monkeypatch, [])
+
+    result = metering.upsert_metering_points(
+        [
+            {
+                "metering_point_id": POINT,
+                "expected_directions": [
+                    "production",
+                    "consumption",
+                    "production",
+                ],
+            }
+        ]
+    )
+
+    assert result == 1
+    assert calls[0]["values"][0][-1] == ["consumption", "production"]
+
+
+def test_upsert_points_rejects_unknown_declared_directions(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    calls = _capture_execute_values(monkeypatch, [])
+
+    result = metering.upsert_metering_points(
+        [{"metering_point_id": POINT, "expected_directions": ["export"]}]
+    )
+
+    assert result == 0
+    assert calls == []
+
+
 # ==== File ledger ====
 
 
@@ -337,6 +372,7 @@ def test_community_points_expose_membership_status(monkeypatch):
                 "metering_point_id": POINT,
                 "building_id": "BLD-A",
                 "alias": None,
+                "expected_directions": ["consumption"],
                 "member_status": "confirmed",
             }
         ]
@@ -353,6 +389,8 @@ def test_community_points_expose_membership_status(monkeypatch):
     assert "active = TRUE" in query
     assert params == ("COMM-1",)
     assert points[0]["member_status"] == "confirmed"
+    assert points[0]["expected_directions"] == ["consumption"]
+    assert "mp.expected_directions" in query
 
 
 def test_unassigned_period_point_lookup_propagates_storage_failure(monkeypatch):

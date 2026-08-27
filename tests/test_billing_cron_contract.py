@@ -34,6 +34,41 @@ def _post_process_billing(application):
 
 
 class TestBillingCronHonesty:
+    def test_community_discovery_failure_is_service_unavailable(
+        self, app_with_cron_secret
+    ):
+        with patch.object(
+            database,
+            "get_active_communities",
+            side_effect=database.BillingStoreError("database unavailable"),
+        ):
+            response = _post_process_billing(app_with_cron_secret)
+
+        assert response.status_code == 503
+        assert "database unavailable" not in response.get_data(as_text=True)
+
+    def test_empty_community_result_is_an_explicit_success(self, app_with_cron_secret):
+        with (
+            patch.object(database, "get_active_communities", return_value=[]),
+            patch.object(
+                billing_runner,
+                "previous_complete_month",
+                return_value=("start", "end"),
+            ),
+        ):
+            response = _post_process_billing(app_with_cron_secret)
+
+        assert response.status_code == 200
+        assert response.get_json() == {
+            "activated": True,
+            "status": "ok",
+            "communities": 0,
+            "processed": 0,
+            "already_processed": 0,
+            "failed": 0,
+            "failures": [],
+        }
+
     def test_counts_only_newly_persisted_periods(self, app_with_cron_secret):
         communities = [
             {"community_id": "c1"},
