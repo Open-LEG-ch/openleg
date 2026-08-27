@@ -133,6 +133,30 @@ An unmapped point or an unconfirmed member is a hard error, never a silent
 skip: billing a period while a participant is missing would spread that
 participant's share across everyone else.
 
+Billing also checks imported, unassigned points before it builds a draft. It
+derives the relevant public VNB LEG identifiers from in-period readings of
+points already assigned to the requested OpenLEG community, then reports only
+the unassigned metering point IDs in that VNB scope. It returns no readings or
+participant details and returns no identifiers from another VNB LEG scope.
+
+### Declared directions
+
+`metering_points.expected_directions` declares which series a point is expected
+to deliver: `consumption`, `production`, or both, stored as a canonical array
+in that order. Billing reads the declaration through
+`get_community_metering_points` and treats a point without it as a hard error,
+because a missing series cannot otherwise be told apart from an absent meter.
+
+The operator declares the directions in the participant list CSV, in the
+optional `expected_directions` column, pipe-separated
+(`consumption|production`). `scripts/import_metering_points.py` canonicalizes
+the values, rejects unknown ones, and never blanks a stored declaration with an
+empty field.
+
+Points registered before the column existed carry NULL. Those legacy points
+must be enriched through the participant list before billing, because the
+billing gate refuses a point whose declaration is missing.
+
 ### Units and directions
 
 Volumes are kWh throughout. The readings table carries no unit column, so the
