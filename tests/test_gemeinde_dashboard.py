@@ -6,7 +6,7 @@ import re
 from unittest.mock import MagicMock, patch
 
 
-def _client():
+def _client(config_overrides=None):
     with (
         patch.dict(
             os.environ,
@@ -23,7 +23,7 @@ def _client():
     ):
         from app import create_app
 
-        app = create_app(load_environment=False)
+        app = create_app(config_overrides, load_environment=False)
         return app.test_client()
 
 
@@ -105,3 +105,26 @@ class TestGemeindeDashboardEmptyState:
         assert resp.status_code == 200
         assert 'action="/gemeinde/access/request"' in html
         assert "cdn.tailwindcss.com" not in html
+
+
+class TestGemeindeDashboardInviteLink:
+    def test_invite_link_without_subdomain_follows_the_apps_configured_base_url(self):
+        client = _client(
+            config_overrides={
+                "APP_BASE_URL": "http://from-config.example",
+                "SECRET_KEY": "x",
+                "RATELIMIT_STORAGE_URI": "memory://",
+            }
+        )
+        with client.session_transaction() as sess:
+            sess["municipality_id"] = 1
+        with (
+            patch(
+                "database.get_municipality",
+                return_value={"municipality_id": 1, "subdomain": ""},
+            ),
+            patch("database.get_stats", return_value={}),
+        ):
+            html = client.get("/gemeinde/dashboard").get_data(as_text=True)
+
+        assert "http://from-config.example" in html

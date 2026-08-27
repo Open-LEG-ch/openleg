@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import app
+
 
 def test_import_is_inert_and_factory_instances_are_isolated():
     result = subprocess.run(
@@ -59,3 +61,12 @@ def test_documented_gunicorn_target_uses_wsgi_entrypoint():
 
     assert "gunicorn -w 4 -b 0.0.0.0:8000 wsgi:app" in security
     assert "app:app" not in security
+
+
+def test_dev_port_follows_an_explicit_port_in_the_base_url():
+    assert app._dev_port("http://localhost:5099") == 5099
+
+
+def test_dev_port_falls_back_to_the_default_when_the_base_url_has_none():
+    assert app._dev_port("https://openleg.ch") == 5003
+    assert app._dev_port("https://openleg.ch", default=8080) == 8080
