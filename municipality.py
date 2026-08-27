@@ -6,7 +6,6 @@ Handles Gemeinde signup, admin dashboard, LEG formation KPIs.
 
 import hmac
 import logging
-import os
 import secrets
 
 from flask import (
@@ -112,7 +111,7 @@ def _dashboard_context(muni):
     if subdomain:
         invite_url = f"https://{subdomain}.openleg.ch"
     else:
-        invite_url = os.getenv("APP_BASE_URL", "https://openleg.ch").rstrip("/")
+        invite_url = current_app.config["APP_BASE_URL"].rstrip("/")
     return {
         "municipality": muni,
         "status_label": ONBOARDING_STATUS_LABELS.get(

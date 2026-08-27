@@ -14,6 +14,7 @@ from functools import wraps
 
 from flask import (
     Blueprint,
+    current_app,
     g,
     jsonify,
     redirect,
@@ -31,8 +32,11 @@ logger = logging.getLogger(__name__)
 
 utility_bp = Blueprint("utility", __name__, url_prefix="/utility")
 
-SITE_URL = os.getenv("APP_BASE_URL", "http://localhost:5003").rstrip("/")
 MAGIC_LINK_TTL = 900  # 15 minutes
+
+
+def _site_url():
+    return current_app.config["APP_BASE_URL"].rstrip("/")
 
 
 def _get_current_client():
@@ -63,7 +67,7 @@ def require_utility_auth(f):
 @utility_bp.route("/register", methods=["GET"])
 def register_page():
     return render_template(
-        "utility/register.html", site_url=SITE_URL, tenant=getattr(g, "tenant", {})
+        "utility/register.html", site_url=_site_url(), tenant=getattr(g, "tenant", {})
     )
 
 
@@ -161,14 +165,14 @@ def login_page():
         return render_template(
             "utility/login.html",
             error="Ungültiger oder abgelaufener Login-Link.",
-            site_url=SITE_URL,
+            site_url=_site_url(),
             tenant=getattr(g, "tenant", {}),
         )
 
     return render_template(
         "utility/login.html",
         registered=registered,
-        site_url=SITE_URL,
+        site_url=_site_url(),
         tenant=getattr(g, "tenant", {}),
     )
 
@@ -212,7 +216,7 @@ def dashboard():
     return render_template(
         "utility/dashboard.html",
         client=client,
-        site_url=SITE_URL,
+        site_url=_site_url(),
         tenant=getattr(g, "tenant", {}),
     )
 
@@ -252,7 +256,7 @@ def settings_page():
     return render_template(
         "utility/settings.html",
         client=client,
-        site_url=SITE_URL,
+        site_url=_site_url(),
         tenant=getattr(g, "tenant", {}),
     )
 
@@ -283,7 +287,7 @@ def _send_magic_link(client_id: str, email: str):
     token = secrets.token_urlsafe(48)
     db.set_utility_magic_token(client_id, token, MAGIC_LINK_TTL)
 
-    login_url = f"{SITE_URL}/utility/login?token={token}"
+    login_url = f"{_site_url()}/utility/login?token={token}"
     subject = "OpenLEG: Ihr Login-Link"
     body = (
         f"Guten Tag,\n\n"

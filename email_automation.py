@@ -82,6 +82,7 @@ def _get_tenant_for_building(building_id: str) -> dict:
 
 def process_email_queue(app=None):
     """Process pending emails. Call from cron endpoint."""
+    base_url = (app.config.get("APP_BASE_URL") if app else None) or APP_BASE_URL
     pending = db.get_pending_emails(limit=50)
     sent = 0
     failed = 0
@@ -100,7 +101,7 @@ def process_email_queue(app=None):
             continue
 
         # Build unsubscribe URL
-        unsubscribe_url = f"{APP_BASE_URL}/unsubscribe"
+        unsubscribe_url = f"{base_url}/unsubscribe"
 
         # Get neighbor count for personalization
         neighbor_count = 0
@@ -111,7 +112,7 @@ def process_email_queue(app=None):
 
         # Get referral code
         referral_code = db.get_referral_code(item["building_id"]) or ""
-        referral_link = f"{APP_BASE_URL}/?ref={referral_code}" if referral_code else ""
+        referral_link = f"{base_url}/?ref={referral_code}" if referral_code else ""
         ttl_seconds = 86_400
         if app:
             ttl_seconds = app.config.get("DASHBOARD_EMAIL_TOKEN_TTL_SECONDS", 86_400)
@@ -126,7 +127,7 @@ def process_email_queue(app=None):
             failed += 1
             continue
         dashboard_url = access_token.access_url(
-            access_token.DASHBOARD, APP_BASE_URL, dashboard_token
+            access_token.DASHBOARD, base_url, dashboard_token
         )
 
         # Render template with tenant context
@@ -140,7 +141,7 @@ def process_email_queue(app=None):
                         neighbor_count=neighbor_count,
                         unsubscribe_url=unsubscribe_url,
                         referral_link=referral_link,
-                        site_url=APP_BASE_URL,
+                        site_url=base_url,
                         dashboard_url=dashboard_url,
                         tenant=tenant,
                         platform_name=tenant.get("platform_name", "OpenLEG"),
