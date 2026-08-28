@@ -761,7 +761,7 @@ def create_tables():
 
             # Migration: issued_at is the audit timestamp of a legal document and
             # must be timezone-aware. Legacy naive timestamps are interpreted as
-            # Europe/Zurich local time, matching the billing_periods conversion.
+            # UTC, the repository-wide timestamp standard (CONTEXT.md).
             cur.execute("""
                 DO $$
                 BEGIN
@@ -773,7 +773,7 @@ def create_tables():
                     ) THEN
                         ALTER TABLE invoices
                             ALTER COLUMN issued_at TYPE TIMESTAMPTZ
-                                USING issued_at AT TIME ZONE 'Europe/Zurich';
+                                USING issued_at AT TIME ZONE 'UTC';
                     END IF;
                 END $$
             """)

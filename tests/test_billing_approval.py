@@ -20,6 +20,7 @@ WORKSPACE_URL = f"/leg/community/{COMMUNITY}/billing"
 def _policy(**overrides):
     policy = {
         "tariff_id": 7,
+        "community_id": COMMUNITY,
         "effective_from": "2026-01-01T00:00:00+01:00",
         "internal_price_chf_per_kwh": "0.150000",
         "grid_fee_chf_per_kwh": "0.080000",
@@ -45,13 +46,25 @@ def _draft(**overrides):
         "input_fingerprint": "a" * 64,
         "source_document_ids": ["swisseldex-bkw-2026-01"],
         "reconciliation": {
+            "vnb_allocated_kwh": 13.366667,
+            "engine_allocated_kwh": 13.366667,
             "difference_kwh": 0,
-            "production_difference_kwh": 0,
             "per_participant": {
-                "building-a": {"difference_kwh": 0},
+                "building-a": {
+                    "vnb_kwh": 13.366667,
+                    "engine_kwh": 13.366667,
+                    "difference_kwh": 0,
+                },
             },
+            "vnb_production_kwh": 13.36667,
+            "engine_production_kwh": 13.36667,
+            "production_difference_kwh": 0,
             "production_per_participant": {
-                "building-b": {"difference_kwh": 0},
+                "building-b": {
+                    "vnb_kwh": 13.36667,
+                    "engine_kwh": 13.36667,
+                    "difference_kwh": 0,
+                },
             },
         },
         "billing_policy_snapshot": _policy(),
@@ -60,17 +73,17 @@ def _draft(**overrides):
                 "id": 3,
                 "participant_id": "building-b",
                 "item_type": "producer_credit",
-                "quantity_kwh": Decimal("13.366667"),
+                "quantity_kwh": Decimal("13.366670"),
                 "unit_price_chf_per_kwh": Decimal("0.150000"),
-                "amount_chf": Decimal("-2.005000"),
+                "amount_chf": Decimal("-2.005001"),
             },
             {
                 "id": 1,
                 "participant_id": "building-a",
                 "item_type": "consumer_charge",
-                "quantity_kwh": Decimal("66.700000"),
+                "quantity_kwh": Decimal("13.366667"),
                 "unit_price_chf_per_kwh": Decimal("0.150000"),
-                "amount_chf": Decimal("10.004000"),
+                "amount_chf": Decimal("2.005000"),
             },
             {
                 "id": 2,
@@ -78,7 +91,7 @@ def _draft(**overrides):
                 "item_type": "rounding_adjustment",
                 "quantity_kwh": None,
                 "unit_price_chf_per_kwh": None,
-                "amount_chf": Decimal("0.001000"),
+                "amount_chf": Decimal("0.000001"),
             },
         ],
     }
@@ -96,10 +109,10 @@ def test_prepare_snapshots_groups_participants_and_rounds_chf_half_up():
         "building-b",
     ]
     charged, credited = snapshots
-    assert charged["net_chf"] == Decimal("10.01")
+    assert charged["net_chf"] == Decimal("2.01")
     assert charged["vat_rate_pct"] == Decimal("8.1")
-    assert charged["vat_chf"] == Decimal("0.81")
-    assert charged["gross_chf"] == Decimal("10.82")
+    assert charged["vat_chf"] == Decimal("0.16")
+    assert charged["gross_chf"] == Decimal("2.17")
     assert credited["net_chf"] == Decimal("-2.01")
     assert credited["vat_chf"] == Decimal("-0.16")
     assert credited["gross_chf"] == Decimal("-2.17")
@@ -364,12 +377,20 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
                 psycopg2.extras.Json(["DOC-1"]),
                 psycopg2.extras.Json(
                     {
+                        "vnb_allocated_kwh": 10 * len(participants),
+                        "engine_allocated_kwh": 10 * len(participants),
                         "difference_kwh": 0,
-                        "production_difference_kwh": 0,
                         "per_participant": {
-                            participant: {"difference_kwh": 0}
+                            participant: {
+                                "vnb_kwh": 10,
+                                "engine_kwh": 10,
+                                "difference_kwh": 0,
+                            }
                             for participant in participants
                         },
+                        "vnb_production_kwh": 0,
+                        "engine_production_kwh": 0,
+                        "production_difference_kwh": 0,
                         "production_per_participant": {},
                     }
                 ),
@@ -377,7 +398,7 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
             ),
         )
         period_id = cur.fetchone()["id"]
-        for offset, participant in enumerate(participants, start=1):
+        for participant in participants:
             cur.execute(
                 """
                 INSERT INTO billing_line_items (
@@ -385,7 +406,7 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
                     quantity_kwh, unit_price_chf_per_kwh, amount_chf
                 ) VALUES (%s, %s, 'consumer_charge', 10, 0.15, %s)
                 """,
-                (period_id, participant, Decimal(offset)),
+                (period_id, participant, Decimal("1.500000")),
             )
         return period_id
 
@@ -465,15 +486,15 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
         assert [
             item["participant_id"] for item in stored[0]["line_items_snapshot"]
         ] == ["building-a"]
-        assert stored[0]["net_chf"] == Decimal("1.00")
+        assert stored[0]["net_chf"] == Decimal("1.50")
         assert stored[0]["vat_rate_pct"] == Decimal("8.1")
-        assert stored[0]["vat_chf"] == Decimal("0.08")
-        assert stored[0]["gross_chf"] == Decimal("1.08")
+        assert stored[0]["vat_chf"] == Decimal("0.12")
+        assert stored[0]["gross_chf"] == Decimal("1.62")
         assert stored[0]["issue_date"] == date(2026, 2, 5)
         assert stored[0]["due_date"] == date(2026, 3, 7)
-        assert stored[1]["net_chf"] == Decimal("2.00")
-        assert stored[1]["vat_chf"] == Decimal("0.16")
-        assert stored[1]["gross_chf"] == Decimal("2.16")
+        assert stored[1]["net_chf"] == Decimal("1.50")
+        assert stored[1]["vat_chf"] == Decimal("0.12")
+        assert stored[1]["gross_chf"] == Decimal("1.62")
 
         with database.get_connection() as conn, conn.cursor() as cur:
             continuation_period_id = seed_period(
@@ -956,3 +977,533 @@ def test_workspace_omits_the_approval_action_without_source_documents(
     assert 'name="confirm_approval"' not in html
     assert WORKSPACE_URL + "/period/42/approve" not in html
     assert "nicht freigabebereit" in html
+
+
+# ---------------------------------------------------------------------------
+# Regression contracts from the final #399 re-review (money-path evidence).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "missing_key",
+    [
+        "vnb_allocated_kwh",
+        "engine_allocated_kwh",
+        "vnb_production_kwh",
+        "engine_production_kwh",
+    ],
+)
+def test_prepare_requires_canonical_reconciliation_totals(missing_key):
+    draft = _draft()
+    draft["reconciliation"].pop(missing_key)
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    ("section", "participant"),
+    [
+        ("per_participant", "building-a"),
+        ("production_per_participant", "building-b"),
+    ],
+)
+@pytest.mark.parametrize("missing_key", ["vnb_kwh", "engine_kwh"])
+def test_prepare_requires_canonical_participant_evidence(
+    section, participant, missing_key
+):
+    draft = _draft()
+    draft["reconciliation"][section][participant].pop(missing_key)
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        # Difference no longer equals engine minus vnb.
+        (("vnb_allocated_kwh",), "13.0"),
+        (("vnb_production_kwh",), "13.0"),
+        (("per_participant", "building-a", "vnb_kwh"), "13.0"),
+        # Non-finite evidence is not evidence.
+        (("engine_allocated_kwh",), "nan"),
+        (("vnb_production_kwh",), "inf"),
+        (("per_participant", "building-a", "vnb_kwh"), "-inf"),
+        (("production_per_participant", "building-b", "engine_kwh"), "nan"),
+    ],
+)
+def test_prepare_refuses_inconsistent_or_nonfinite_reconciliation_evidence(path, value):
+    draft = _draft()
+    node = draft["reconciliation"]
+    for key in path[:-1]:
+        node = node[key]
+    node[path[-1]] = value
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    ("allocated_key", "production_key"),
+    [
+        (("vnb_allocated_kwh", "engine_allocated_kwh"), None),
+        (None, ("vnb_production_kwh", "engine_production_kwh")),
+    ],
+)
+def test_prepare_cross_checks_engine_totals_against_line_quantities(
+    allocated_key, production_key
+):
+    """Internally consistent zeros still fail when line quantities say 13.4."""
+    draft = _draft()
+    for key in allocated_key or production_key:
+        draft["reconciliation"][key] = 0
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    ("section", "participant"),
+    [
+        ("per_participant", "building-a"),
+        ("production_per_participant", "building-b"),
+    ],
+)
+def test_prepare_cross_checks_participant_engine_kwh_against_line_quantity(
+    section, participant
+):
+    """A self-consistent participant entry must still match the billed kWh."""
+    draft = _draft()
+    entry = draft["reconciliation"][section][participant]
+    entry["vnb_kwh"] = 5
+    entry["engine_kwh"] = 5
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize("item_type", ["grid_fee", "", None, 42])
+def test_prepare_refuses_unknown_line_item_types(item_type):
+    draft = _draft()
+    draft["line_items"][0] = {**draft["line_items"][0], "item_type": item_type}
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    ("index", "field", "value"),
+    [
+        # Sign discipline: consumers pay, producers are credited.
+        (1, "amount_chf", Decimal("-2.005000")),
+        (0, "amount_chf", Decimal("2.005001")),
+        # Amount must equal quantity times unit price at 6-decimal precision.
+        (1, "amount_chf", Decimal("2.005001")),
+        (0, "amount_chf", Decimal("-2.005000")),
+        # Quantities and unit prices are finite and non-negative.
+        (1, "quantity_kwh", Decimal("-13.366667")),
+        (1, "quantity_kwh", Decimal("NaN")),
+        (1, "quantity_kwh", None),
+        (0, "unit_price_chf_per_kwh", Decimal("-0.150000")),
+        (0, "unit_price_chf_per_kwh", Decimal("Infinity")),
+        # Unit price must equal the stored policy internal price.
+        (1, "unit_price_chf_per_kwh", Decimal("0.160000")),
+        (0, "unit_price_chf_per_kwh", Decimal("0.080000")),
+        # Amount is required and finite.
+        (1, "amount_chf", None),
+        (1, "amount_chf", Decimal("NaN")),
+        # Rounding adjustments carry no quantity or unit price.
+        (2, "quantity_kwh", Decimal("0.000007")),
+        (2, "unit_price_chf_per_kwh", Decimal("0.150000")),
+        (2, "amount_chf", Decimal("Infinity")),
+    ],
+)
+def test_prepare_refuses_line_items_that_break_the_money_math(index, field, value):
+    draft = _draft()
+    draft["line_items"][index] = {**draft["line_items"][index], field: value}
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_a_second_rounding_adjustment():
+    draft = _draft()
+    draft["line_items"].append(
+        {
+            "id": 4,
+            "participant_id": "building-b",
+            "item_type": "rounding_adjustment",
+            "quantity_kwh": None,
+            "unit_price_chf_per_kwh": None,
+            "amount_chf": Decimal(0),
+        }
+    )
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_requires_a_zero_sum_pool_when_producer_credits_exist():
+    """Without the rounding adjustment the pool leaks 0.000001 CHF."""
+    draft = _draft()
+    draft["line_items"] = [
+        item
+        for item in draft["line_items"]
+        if item["item_type"] != "rounding_adjustment"
+    ]
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("internal_price_chf_per_kwh", "0.1500005"),
+        ("grid_fee_chf_per_kwh", "0.0800001"),
+        ("vat_rate_pct", "8.125"),
+    ],
+)
+def test_prepare_refuses_policy_values_beyond_persisted_precision(field, value):
+    draft = _draft(billing_policy_snapshot=_policy(**{field: value}))
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize("community_id", [None, "", "   ", "community-b", 42])
+def test_prepare_requires_the_policy_snapshot_community_to_match(community_id):
+    draft = _draft(billing_policy_snapshot=_policy(community_id=community_id))
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize("community_id", [None, "", "   ", 42])
+def test_prepare_requires_a_valid_period_community_id(community_id):
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(
+            _draft(community_id=community_id), issue_date=date(2026, 2, 5)
+        )
+
+
+def test_store_defaults_issue_date_via_public_today(monkeypatch):
+    """approve_billing_period must not reach into billing_approval privates."""
+    assert not hasattr(billing_approval, "_today")
+    monkeypatch.setattr(billing_approval, "today", lambda: date(2026, 2, 5))
+    cursor = _ApprovalCursor(_period_row(), _draft()["line_items"])
+    _approve_connection(monkeypatch, cursor)
+
+    database.approve_billing_period(42, COMMUNITY)
+
+    inserts = [
+        params for query, params in cursor.executed if "INSERT INTO invoices" in query
+    ]
+    assert inserts
+    assert all(
+        date(2026, 2, 5) in params and date(2026, 3, 7) in params for params in inserts
+    )
+
+
+def test_prepare_isolates_the_amount_equals_quantity_times_price_guard():
+    """Everything else stays consistent; only the money math can catch this."""
+    draft = _draft()
+    draft["line_items"][1]["amount_chf"] = Decimal("2.005001")  # 0.000001 too much
+    draft["line_items"][2]["amount_chf"] = Decimal(0)  # pool stays closed
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_isolates_the_unit_price_matches_policy_guard():
+    """A repriced credit is refused even with consistent math and a closed pool."""
+    draft = _draft()
+    draft["line_items"][0].update(
+        unit_price_chf_per_kwh=Decimal("0.160000"),
+        amount_chf=Decimal("-2.138667"),  # 13.366670 x 0.16 at 6 decimals
+    )
+    draft["line_items"][2]["amount_chf"] = Decimal("0.133667")  # pool stays closed
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+# ---------------------------------------------------------------------------
+# Orchestrator review corrections (#399): zero lines, exact reconciliation
+# keys, and fail-closed overflow handling.
+# ---------------------------------------------------------------------------
+
+
+def test_prepare_accepts_zero_quantity_consumer_and_producer_lines():
+    """The billing engine emits zero lines when a meter has no activity."""
+    draft = _draft()
+    # building-b produces nothing this month but stays a producer participant.
+    draft["line_items"][0].update(quantity_kwh=Decimal(0), amount_chf=Decimal(0))
+    # Move the rounding credit to building-b so the pool closes.
+    draft["line_items"][2].update(
+        participant_id="building-b", amount_chf=Decimal("-2.005000")
+    )
+    reconciliation = draft["reconciliation"]
+    reconciliation["vnb_production_kwh"] = 0
+    reconciliation["engine_production_kwh"] = 0
+    reconciliation["production_per_participant"]["building-b"] = {
+        "vnb_kwh": 0,
+        "engine_kwh": 0,
+        "difference_kwh": 0,
+    }
+
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        draft, issue_date=date(2026, 2, 5)
+    )
+
+    assert {row["participant_id"] for row in snapshots} == {"building-a", "building-b"}
+    by_id = {row["participant_id"]: row for row in snapshots}
+    assert by_id["building-a"]["net_chf"] == Decimal("2.01")
+    assert by_id["building-b"]["net_chf"] == Decimal("-2.01")
+
+
+def test_prepare_accepts_zero_quantity_consumer_participant():
+    draft = _draft()
+    # building-c consumes nothing and carries the tiny rounding amount to close the pool.
+    draft["line_items"].insert(
+        1,
+        {
+            "id": 4,
+            "participant_id": "building-c",
+            "item_type": "consumer_charge",
+            "quantity_kwh": Decimal(0),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal(0),
+        },
+    )
+    draft["line_items"][3].update(
+        participant_id="building-c", amount_chf=Decimal("0.000001")
+    )  # close the pool
+    reconciliation = draft["reconciliation"]
+    reconciliation["vnb_allocated_kwh"] = 13.366667
+    reconciliation["engine_allocated_kwh"] = 13.366667
+    reconciliation["per_participant"]["building-c"] = {
+        "vnb_kwh": 0,
+        "engine_kwh": 0,
+        "difference_kwh": 0,
+    }
+
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        draft, issue_date=date(2026, 2, 5)
+    )
+
+    assert {row["participant_id"] for row in snapshots} == {
+        "building-a",
+        "building-b",
+        "building-c",
+    }
+
+
+@pytest.mark.parametrize(
+    ("section", "participant", "other_section"),
+    [
+        ("per_participant", "building-a", "production_per_participant"),
+        ("production_per_participant", "building-b", "per_participant"),
+    ],
+)
+def test_prepare_refuses_reconciliation_key_in_wrong_section(
+    section, participant, other_section
+):
+    """A producer must not appear under per_participant or vice versa."""
+    draft = _draft()
+    entry = draft["reconciliation"][section].pop(participant)
+    draft["reconciliation"][other_section][participant] = entry
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    ("section", "participant", "line_builder"),
+    [
+        (
+            "per_participant",
+            "building-c",
+            lambda: {
+                "id": 4,
+                "participant_id": "building-c",
+                "item_type": "consumer_charge",
+                "quantity_kwh": Decimal(0),
+                "unit_price_chf_per_kwh": Decimal("0.150000"),
+                "amount_chf": Decimal(0),
+            },
+        ),
+        (
+            "production_per_participant",
+            "building-c",
+            lambda: {
+                "id": 4,
+                "participant_id": "building-c",
+                "item_type": "producer_credit",
+                "quantity_kwh": Decimal(0),
+                "unit_price_chf_per_kwh": Decimal("0.150000"),
+                "amount_chf": Decimal(0),
+            },
+        ),
+    ],
+)
+def test_prepare_refuses_missing_reconciliation_key_for_zero_line_item(
+    section, participant, line_builder
+):
+    """A billed participant must have a key in the correct reconciliation section."""
+    draft = _draft()
+    draft["line_items"].insert(1, line_builder())
+    # Do NOT add the matching reconciliation key.
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    ("section", "participant", "line_builder"),
+    [
+        (
+            "per_participant",
+            "building-c",
+            lambda: {
+                "id": 4,
+                "participant_id": "building-c",
+                "item_type": "consumer_charge",
+                "quantity_kwh": Decimal(0),
+                "unit_price_chf_per_kwh": Decimal("0.150000"),
+                "amount_chf": Decimal(0),
+            },
+        ),
+        (
+            "production_per_participant",
+            "building-c",
+            lambda: {
+                "id": 4,
+                "participant_id": "building-c",
+                "item_type": "producer_credit",
+                "quantity_kwh": Decimal(0),
+                "unit_price_chf_per_kwh": Decimal("0.150000"),
+                "amount_chf": Decimal(0),
+            },
+        ),
+    ],
+)
+def test_prepare_refuses_extra_reconciliation_key_for_unbilled_participant(
+    section, participant, line_builder
+):
+    """A reconciliation key must correspond to a billed line item."""
+    draft = _draft()
+    draft["reconciliation"][section][participant] = {
+        "vnb_kwh": 0,
+        "engine_kwh": 0,
+        "difference_kwh": 0,
+    }
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        ("vnb_allocated_kwh",),
+        ("engine_allocated_kwh",),
+        ("per_participant", "building-a", "vnb_kwh"),
+    ],
+)
+def test_prepare_fails_closed_on_reconciliation_decimal_overflow(path):
+    """Absurd reconciliation values must raise BillingApprovalError."""
+    draft = _draft()
+    node = draft["reconciliation"]
+    for key in path[:-1]:
+        node = node[key]
+    node[path[-1]] = "1E+999999"
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    ("index", "field"),
+    [
+        (1, "quantity_kwh"),
+        (1, "amount_chf"),
+        (2, "amount_chf"),
+    ],
+)
+def test_prepare_fails_closed_on_line_item_decimal_overflow(index, field):
+    """Absurd line-item values must raise BillingApprovalError."""
+    draft = _draft()
+    draft["line_items"][index][field] = "1E+999999"
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_union_only_section_swap_of_zero_participants():
+    """Exact section keys matter: a zero consumer must not live under production.
+
+    The billed set is {building-a, building-c, building-d, building-b}. Every
+    numeric is zero and canonical, the pool closes, and the union of the two
+    reconciliation sections equals the billed set. Union-only matching would
+    accept this; exact section-key equality must refuse because building-c is
+    billed as a consumer and building-d as a producer, but their reconciliation
+    sections are swapped.
+    """
+    draft = _draft()
+    draft["line_items"] = [
+        {
+            "id": 1,
+            "participant_id": "building-a",
+            "item_type": "consumer_charge",
+            "quantity_kwh": Decimal(0),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal(0),
+        },
+        {
+            "id": 2,
+            "participant_id": "building-c",
+            "item_type": "consumer_charge",
+            "quantity_kwh": Decimal(0),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal(0),
+        },
+        {
+            "id": 3,
+            "participant_id": "building-d",
+            "item_type": "producer_credit",
+            "quantity_kwh": Decimal(0),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal(0),
+        },
+        {
+            "id": 4,
+            "participant_id": "building-b",
+            "item_type": "producer_credit",
+            "quantity_kwh": Decimal(0),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal(0),
+        },
+    ]
+    draft["reconciliation"] = {
+        "vnb_allocated_kwh": 0,
+        "engine_allocated_kwh": 0,
+        "difference_kwh": 0,
+        "per_participant": {
+            # building-c is billed as a consumer but placed in production.
+            "building-d": {"vnb_kwh": 0, "engine_kwh": 0, "difference_kwh": 0},
+            "building-a": {"vnb_kwh": 0, "engine_kwh": 0, "difference_kwh": 0},
+        },
+        "vnb_production_kwh": 0,
+        "engine_production_kwh": 0,
+        "production_difference_kwh": 0,
+        "production_per_participant": {
+            # building-d is billed as a producer but placed in consumption.
+            "building-c": {"vnb_kwh": 0, "engine_kwh": 0, "difference_kwh": 0},
+            "building-b": {"vnb_kwh": 0, "engine_kwh": 0, "difference_kwh": 0},
+        },
+    }
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))

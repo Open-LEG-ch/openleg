@@ -17,11 +17,13 @@ from zoneinfo import ZoneInfo
 import billing_policy
 
 _CENT = Decimal("0.01")
+_KWH_QUANTUM = Decimal("0.000001")
 
 _FINGERPRINT_PATTERN = re.compile(r"[0-9a-f]{64}")
 
 REQUIRED_POLICY_FIELDS = (
     "tariff_id",
+    "community_id",
     "effective_from",
     "internal_price_chf_per_kwh",
     "grid_fee_chf_per_kwh",
@@ -34,14 +36,14 @@ REQUIRED_POLICY_FIELDS = (
     "delivery_method",
 )
 
-_RECONCILIATION_SECTIONS = ("per_participant", "production_per_participant")
+_ALLOWED_ITEM_TYPES = ("consumer_charge", "producer_credit", "rounding_adjustment")
 
 
 class BillingApprovalError(RuntimeError):
     """A billing draft is incomplete, unreconciled, malformed, or not approvable."""
 
 
-def _today():
+def today():
     """Return the current Swiss local date for default issue dates."""
     return datetime.now(ZoneInfo("Europe/Zurich")).date()
 
@@ -70,7 +72,7 @@ def _as_decimal(value):
 def _require_issue_date(issue_date):
     """Accept a plain date; refuse datetimes, strings, numbers, and bools."""
     if issue_date is None:
-        return _today()
+        return today()
     if (
         isinstance(issue_date, bool)
         or not isinstance(issue_date, date)
@@ -139,67 +141,138 @@ def _require_source_document_ids(value):
     return list(value)
 
 
-def _require_finite_zero_difference(value):
-    """Require one recorded difference to be finite and exactly zero."""
-    difference = _as_decimal(value)
-    if not difference.is_finite() or difference != 0:
+def _require_finite_decimal(value, message):
+    """Require one value to parse as a finite decimal; return it."""
+    number = _as_decimal(value)
+    if not number.is_finite():
+        raise BillingApprovalError(message)
+    return number
+
+
+def _validated_difference(node, vnb_key, engine_key, difference_key):
+    """Require finite vnb/engine evidence and a documented true zero gap.
+
+    The difference must equal engine minus vnb at the 6-decimal persisted
+    precision and must be exactly zero. Returns the engine value for the
+    cross-check against billed quantities.
+    """
+    for key in (vnb_key, engine_key, difference_key):
+        if key not in node:
+            raise BillingApprovalError("Der dokumentierte Abgleich ist unvollständig.")
+    vnb = _require_finite_decimal(
+        node[vnb_key], "Der Abgleich enthält keinen gültigen Energiewert."
+    )
+    engine = _require_finite_decimal(
+        node[engine_key], "Der Abgleich enthält keinen gültigen Energiewert."
+    )
+    difference = _as_decimal(node[difference_key])
+    expected = (engine - vnb).quantize(_KWH_QUANTUM, rounding=ROUND_HALF_UP)
+    if not difference.is_finite() or difference != expected or difference != 0:
         raise BillingApprovalError("Der Abgleich zwischen OpenLEG und VNB weicht ab.")
+    return engine
 
 
-def _require_canonical_reconciliation(reconciliation):
-    """Require the exact complete shape billing_runner persists, all gaps zero.
+def _require_canonical_reconciliation(reconciliation, consumption_kwh, production_kwh):
+    """Require the complete reconcile_with_vnb evidence, cross-checked.
 
-    Canonical contract: top-level ``difference_kwh`` and
-    ``production_difference_kwh`` plus a ``per_participant`` and a
-    ``production_per_participant`` dict whose entries are dicts carrying their
-    own ``difference_kwh``. Every difference must be finite and exactly zero;
-    any missing or malformed component fails closed.
+    Canonical contract: top-level vnb/engine totals for allocation and
+    production with their differences, plus a ``per_participant`` and a
+    ``production_per_participant`` dict whose entries carry vnb/engine/diff
+    triples. The keys in each section must exactly match the billed
+    consumer-charge or producer-credit participants (including zero lines),
+    and every engine figure must match the billed quantities. Any missing,
+    malformed, or inconsistent component fails closed.
     """
     if not isinstance(reconciliation, dict):
         raise BillingApprovalError(
             "Der Abrechnungsentwurf hat keinen dokumentierten Abgleich."
         )
-    for key in ("difference_kwh", "production_difference_kwh"):
-        if key not in reconciliation:
-            raise BillingApprovalError("Der dokumentierte Abgleich ist unvollständig.")
-        _require_finite_zero_difference(reconciliation[key])
-    for section in _RECONCILIATION_SECTIONS:
+    try:
+        engine_allocated = _validated_difference(
+            reconciliation,
+            "vnb_allocated_kwh",
+            "engine_allocated_kwh",
+            "difference_kwh",
+        )
+        engine_production = _validated_difference(
+            reconciliation,
+            "vnb_production_kwh",
+            "engine_production_kwh",
+            "production_difference_kwh",
+        )
+    except ArithmeticError:
+        raise BillingApprovalError(
+            "Der Abgleich enthält einen ungültigen Energiewert."
+        ) from None
+    for section, billed_quantities in (
+        ("per_participant", consumption_kwh),
+        ("production_per_participant", production_kwh),
+    ):
         entries = reconciliation.get(section)
         if not isinstance(entries, dict):
             raise BillingApprovalError(
                 "Der Abgleich hat eine ungültige Teilnehmerstruktur."
             )
-        for entry in entries.values():
-            if not isinstance(entry, dict) or "difference_kwh" not in entry:
+        if set(entries) != set(billed_quantities):
+            raise BillingApprovalError(
+                "Abgleich und Abrechnungspositionen decken nicht dieselben "
+                "Teilnehmer ab."
+            )
+        for participant, entry in entries.items():
+            if not isinstance(entry, dict):
                 raise BillingApprovalError(
                     "Der Abgleich hat eine ungültige Teilnehmerstruktur."
                 )
-            _require_finite_zero_difference(entry["difference_kwh"])
-
-
-def _reconciled_participants(reconciliation):
-    """Union of participants named by the reconciliation; malformed is refused."""
-    participants = set()
-    for section in _RECONCILIATION_SECTIONS:
-        entries = reconciliation.get(section)
-        if entries is None:
-            continue
-        if not isinstance(entries, dict):
+            try:
+                engine_kwh = _validated_difference(
+                    entry, "vnb_kwh", "engine_kwh", "difference_kwh"
+                )
+            except ArithmeticError:
+                raise BillingApprovalError(
+                    "Der Abgleich enthält einen ungültigen Energiewert."
+                ) from None
+            if engine_kwh != billed_quantities.get(participant, Decimal(0)):
+                raise BillingApprovalError(
+                    "Abgleich und Abrechnungspositionen melden unterschiedliche Mengen."
+                )
+    try:
+        if engine_allocated != sum(consumption_kwh.values(), Decimal(0)):
             raise BillingApprovalError(
-                "Der Abgleich hat eine ungültige Teilnehmerstruktur."
+                "Abgleich und Abrechnungspositionen melden unterschiedliche Mengen."
             )
-        participants.update(entries)
-    return participants
+        if engine_production != sum(production_kwh.values(), Decimal(0)):
+            raise BillingApprovalError(
+                "Abgleich und Abrechnungspositionen melden unterschiedliche Mengen."
+            )
+    except ArithmeticError:
+        raise BillingApprovalError(
+            "Abgleich und Abrechnungspositionen melden unterschiedliche Mengen."
+        ) from None
 
 
-def _require_wellformed_line_items(line_items):
-    """Require a non-empty list of dicts with non-empty string participant ids."""
+def _require_wellformed_line_items(line_items, internal_price):
+    """Fail closed on anything but the exact shapes the billing engine emits.
+
+    Consumer charges and producer credits carry a finite non-negative
+    quantity, the policy internal unit price, and an amount equal to quantity
+    times price at 6-decimal precision (non-negative for consumers,
+    non-positive for producers). A rounding adjustment carries neither quantity nor price, at
+    most one exists, and when producer credits exist the six-decimal sum of
+    all amounts must close to zero. Returns ``(line_items, consumption_kwh,
+    production_kwh)`` with the billed quantity per participant for the
+    reconciliation cross-check.
+    """
     if isinstance(line_items, (list, tuple)) and not line_items:
         raise BillingApprovalError("Der Abrechnungsentwurf hat keine Positionen.")
     if not isinstance(line_items, (list, tuple)):
         raise BillingApprovalError(
             "Die Abrechnungspositionen haben eine ungültige Struktur."
         )
+    consumption_kwh = {}
+    production_kwh = {}
+    rounding_adjustments = 0
+    has_producer_credit = False
+    total_amount = Decimal(0)
     for item in line_items:
         if not isinstance(item, dict):
             raise BillingApprovalError(
@@ -210,15 +283,105 @@ def _require_wellformed_line_items(line_items):
             raise BillingApprovalError(
                 "Eine Abrechnungsposition hat keine gültige Teilnehmer-ID."
             )
-    return line_items
+        item_type = item.get("item_type")
+        if item_type not in _ALLOWED_ITEM_TYPES:
+            raise BillingApprovalError(
+                "Eine Abrechnungsposition hat einen ungültigen Typ."
+            )
+        amount = _require_finite_decimal(
+            item.get("amount_chf"),
+            "Eine Abrechnungsposition hat keinen gültigen Betrag.",
+        )
+        if item_type == "rounding_adjustment":
+            rounding_adjustments += 1
+            if (
+                item.get("quantity_kwh") is not None
+                or item.get("unit_price_chf_per_kwh") is not None
+            ):
+                raise BillingApprovalError(
+                    "Ein Rundungsausgleich darf weder Menge noch Preis tragen."
+                )
+        else:
+            quantity = _require_finite_decimal(
+                item.get("quantity_kwh"),
+                "Eine Abrechnungsposition hat keine gültige Menge.",
+            )
+            unit_price = _require_finite_decimal(
+                item.get("unit_price_chf_per_kwh"),
+                "Eine Abrechnungsposition hat keinen gültigen Preis.",
+            )
+            if quantity < 0 or unit_price < 0:
+                raise BillingApprovalError(
+                    "Menge und Preis einer Abrechnungsposition müssen nicht-negativ "
+                    "sein."
+                )
+            if unit_price != internal_price:
+                raise BillingApprovalError(
+                    "Der Preis einer Abrechnungsposition weicht von der Richtlinie ab."
+                )
+            try:
+                expected = (quantity * unit_price).quantize(
+                    _KWH_QUANTUM, rounding=ROUND_HALF_UP
+                )
+            except ArithmeticError:
+                raise BillingApprovalError(
+                    "Eine Abrechnungsposition enthält einen ungültigen Betrag."
+                ) from None
+            if item_type == "producer_credit":
+                expected = -expected
+            if amount != expected:
+                raise BillingApprovalError(
+                    "Der Betrag einer Abrechnungsposition entspricht nicht Menge "
+                    "mal Preis."
+                )
+            if item_type == "consumer_charge":
+                if amount < 0:
+                    raise BillingApprovalError(
+                        "Eine Verbrauchsladung muss einen nicht-negativen Betrag haben."
+                    )
+                consumption_kwh[participant_id] = (
+                    consumption_kwh.get(participant_id, Decimal(0)) + quantity
+                )
+            else:
+                if amount > 0:
+                    raise BillingApprovalError(
+                        "Eine Produzentengutschrift muss einen nicht-positiven "
+                        "Betrag haben."
+                    )
+                has_producer_credit = True
+                production_kwh[participant_id] = (
+                    production_kwh.get(participant_id, Decimal(0)) + quantity
+                )
+        try:
+            total_amount += amount
+        except ArithmeticError:
+            raise BillingApprovalError(
+                "Die Abrechnungssumme kann nicht berechnet werden."
+            ) from None
+    if rounding_adjustments > 1:
+        raise BillingApprovalError(
+            "Der Abrechnungsentwurf hat mehr als einen Rundungsausgleich."
+        )
+    if has_producer_credit and total_amount != 0:
+        raise BillingApprovalError(
+            "Verbrauchs- und Produktionsbeträge gleichen sich nicht aus."
+        )
+    return line_items, consumption_kwh, production_kwh
 
 
-def _require_valid_policy(policy, period_start):
+def _exceeds_precision(value, places):
+    """Return whether a finite decimal carries more than ``places`` decimals."""
+    return -value.as_tuple().exponent > places
+
+
+def _require_valid_policy(policy, period_start, community_id):
     """Require every invoice-relevant policy field inside its domain.
 
     The value domains come from ``billing_policy`` so approval applies exactly
-    the rules the policy form enforces. The snapshot is only read, never
-    mutated. Returns the validated ``(vat_rate, payment_days)`` pair.
+    the rules the policy form enforces, including the persisted precision of
+    the money fields, and the snapshot must name the period's community. The
+    snapshot is only read, never mutated. Returns the validated
+    ``(vat_rate, payment_days, internal_price)`` triple.
     """
     if not isinstance(policy, dict) or not policy:
         raise BillingApprovalError(
@@ -229,17 +392,33 @@ def _require_valid_policy(policy, period_start):
         raise BillingApprovalError(
             "Die Richtlinien-Kopie ist unvollständig: " + ", ".join(missing)
         )
+    policy_community = policy.get("community_id")
+    if (
+        not isinstance(policy_community, str)
+        or not policy_community.strip()
+        or policy_community != community_id
+    ):
+        raise BillingApprovalError(
+            "Die Richtlinien-Kopie gehört nicht zur Community des Entwurfs."
+        )
     tariff_id = policy.get("tariff_id")
     if isinstance(tariff_id, bool) or not isinstance(tariff_id, int) or tariff_id <= 0:
         raise BillingApprovalError("Die Tarif-ID der Richtlinie ist ungültig.")
     max_price_chf = billing_policy.MAX_PRICE_RP / Decimal(100)
+    prices = {}
     for field in ("internal_price_chf_per_kwh", "grid_fee_chf_per_kwh"):
         price = _as_decimal(policy.get(field))
-        if not price.is_finite() or price < 0 or price > max_price_chf:
+        if (
+            not price.is_finite()
+            or price < 0
+            or price > max_price_chf
+            or _exceeds_precision(price, 6)
+        ):
             raise BillingApprovalError(
                 "Ein Energiepreis der Richtlinie liegt ausserhalb des zulässigen "
                 "Bereichs."
             )
+        prices[field] = price
     effective_from = _parse_temporal(
         policy.get("effective_from"),
         "Das Inkrafttretungsdatum der Richtlinie ist ungültig.",
@@ -275,6 +454,10 @@ def _require_valid_policy(policy, period_start):
             "Der Mehrwertsteuer-Modus der Richtlinie ist ungültig."
         )
     vat_rate = _as_decimal(policy.get("vat_rate_pct"))
+    if vat_rate.is_finite() and _exceeds_precision(vat_rate, 2):
+        raise BillingApprovalError(
+            "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
+        )
     if vat_mode == "none":
         if not vat_rate.is_finite() or vat_rate != 0:
             raise BillingApprovalError("Ohne Mehrwertsteuer muss der Satz 0 sein.")
@@ -287,7 +470,7 @@ def _require_valid_policy(policy, period_start):
         raise BillingApprovalError(
             "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
         )
-    return vat_rate, payment_days
+    return vat_rate, payment_days, prices["internal_price_chf_per_kwh"]
 
 
 def prepare_invoice_snapshots(period, issue_date=None):
@@ -301,23 +484,24 @@ def prepare_invoice_snapshots(period, issue_date=None):
     issue_date = _require_issue_date(issue_date)
     if not isinstance(period, dict) or period.get("status") != "draft":
         raise BillingApprovalError("Nur ein Entwurf kann freigegeben werden.")
+    community_id = period.get("community_id")
+    if not isinstance(community_id, str) or not community_id.strip():
+        raise BillingApprovalError(
+            "Der Abrechnungsentwurf hat keine gültige Community-ID."
+        )
     period_start, _period_end = _require_increasing_window(period)
     _require_fingerprint(period.get("input_fingerprint"))
     source_document_ids = _require_source_document_ids(
         period.get("source_document_ids")
     )
-    reconciliation = period.get("reconciliation")
-    _require_canonical_reconciliation(reconciliation)
-    vat_rate, payment_days = _require_valid_policy(
-        period.get("billing_policy_snapshot"), period_start
+    vat_rate, payment_days, internal_price = _require_valid_policy(
+        period.get("billing_policy_snapshot"), period_start, community_id
     )
-    line_items = _require_wellformed_line_items(period.get("line_items"))
-
-    billed = {item["participant_id"] for item in line_items}
-    if billed != _reconciled_participants(reconciliation):
-        raise BillingApprovalError(
-            "Abgleich und Abrechnungspositionen decken nicht dieselben Teilnehmer ab."
-        )
+    line_items, consumption_kwh, production_kwh = _require_wellformed_line_items(
+        period.get("line_items"), internal_price
+    )
+    reconciliation = period.get("reconciliation")
+    _require_canonical_reconciliation(reconciliation, consumption_kwh, production_kwh)
 
     policy = period["billing_policy_snapshot"]
     due_date = issue_date + timedelta(days=payment_days)
@@ -330,7 +514,7 @@ def prepare_invoice_snapshots(period, issue_date=None):
     }
 
     snapshots = []
-    for participant_id in sorted(billed):
+    for participant_id in sorted({item["participant_id"] for item in line_items}):
         items = [
             item for item in line_items if item.get("participant_id") == participant_id
         ]
@@ -340,8 +524,15 @@ def prepare_invoice_snapshots(period, issue_date=None):
             raise BillingApprovalError(
                 "Eine Abrechnungsposition hat keinen gültigen Betrag."
             )
-        net = net.quantize(_CENT, rounding=ROUND_HALF_UP)
-        vat = (net * vat_rate / Decimal(100)).quantize(_CENT, rounding=ROUND_HALF_UP)
+        try:
+            net = net.quantize(_CENT, rounding=ROUND_HALF_UP)
+            vat = (net * vat_rate / Decimal(100)).quantize(
+                _CENT, rounding=ROUND_HALF_UP
+            )
+        except ArithmeticError:
+            raise BillingApprovalError(
+                "Eine Abrechnungsposition hat keinen gültigen Betrag."
+            ) from None
         snapshots.append(
             {
                 "participant_id": participant_id,

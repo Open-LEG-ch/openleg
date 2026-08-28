@@ -300,7 +300,7 @@ def approve_billing_period(
     back.
     """
     if issue_date is None:
-        issue_date = billing_approval._today()
+        issue_date = billing_approval.today()
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(

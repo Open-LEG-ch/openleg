@@ -406,7 +406,7 @@ def test_fresh_invoices_schema_stores_issued_at_with_time_zone():
 
 @pytest.mark.integration
 def test_create_tables_migrates_legacy_invoices_issued_at_to_timestamptz():
-    """A naive issued_at is read as Europe/Zurich, not as UTC, and carried across."""
+    """A naive issued_at is read as UTC (the CONTEXT.md standard), not Zurich."""
     if not os.environ.get("DATABASE_URL"):
         pytest.skip("needs a live database")
 
@@ -439,9 +439,9 @@ def test_create_tables_migrates_legacy_invoices_issued_at_to_timestamptz():
             row = cur.fetchone()
 
     assert row is not None, "the migration must carry the existing row across"
-    # 09:30 in Zurich on 5 February (CET) is 08:30 UTC.
-    assert row["issued_at"] == datetime(2026, 2, 5, 8, 30, tzinfo=timezone.utc), (
-        "a naive timestamp is read as Europe/Zurich, not as UTC"
+    # A naive timestamp is already UTC: 09:30 stays 09:30, no one-hour shift.
+    assert row["issued_at"] == datetime(2026, 2, 5, 9, 30, tzinfo=timezone.utc), (
+        "a naive timestamp is read as UTC, per the CONTEXT.md timestamp standard"
     )
 
 
