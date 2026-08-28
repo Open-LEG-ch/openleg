@@ -46,13 +46,13 @@ def _draft(**overrides):
         "input_fingerprint": "a" * 64,
         "source_document_ids": ["swisseldex-bkw-2026-01"],
         "reconciliation": {
-            "vnb_allocated_kwh": 13.366667,
-            "engine_allocated_kwh": 13.366667,
+            "vnb_allocated_kwh": 13.366670,
+            "engine_allocated_kwh": 13.366670,
             "difference_kwh": 0,
             "per_participant": {
                 "building-a": {
-                    "vnb_kwh": 13.366667,
-                    "engine_kwh": 13.366667,
+                    "vnb_kwh": 13.366670,
+                    "engine_kwh": 13.366670,
                     "difference_kwh": 0,
                 },
             },
@@ -93,6 +93,14 @@ def _draft(**overrides):
                 "unit_price_chf_per_kwh": None,
                 "amount_chf": Decimal("0.000001"),
             },
+            {
+                "id": 4,
+                "participant_id": "building-a",
+                "item_type": "consumer_charge",
+                "quantity_kwh": Decimal("0.000003"),
+                "unit_price_chf_per_kwh": Decimal("0.150000"),
+                "amount_chf": Decimal("0.000000"),
+            },
         ],
     }
     period.update(overrides)
@@ -121,7 +129,7 @@ def test_prepare_snapshots_groups_participants_and_rounds_chf_half_up():
     assert charged["policy_snapshot"] == _policy()
     assert charged["source_document_ids"] == ["swisseldex-bkw-2026-01"]
     assert charged["input_fingerprint"] == "a" * 64
-    assert [item["id"] for item in charged["line_items_snapshot"]] == [1]
+    assert [item["id"] for item in charged["line_items_snapshot"]] == [1, 4]
 
 
 def test_prepare_snapshots_applies_no_vat_when_policy_says_none():
@@ -1262,31 +1270,44 @@ def test_prepare_isolates_the_unit_price_matches_policy_guard():
 
 
 def test_prepare_accepts_zero_quantity_consumer_and_producer_lines():
-    """The billing engine emits zero lines when a meter has no activity."""
+    """Zero lines are allowed when the overall pool still conserves energy."""
     draft = _draft()
     # building-b produces nothing this month but stays a producer participant.
     draft["line_items"][0].update(quantity_kwh=Decimal(0), amount_chf=Decimal(0))
-    # Move the rounding credit to building-b so the pool closes.
-    draft["line_items"][2].update(
-        participant_id="building-b", amount_chf=Decimal("-2.005000")
+    # A second producer supplies the matching energy.
+    draft["line_items"].append(
+        {
+            "id": 5,
+            "participant_id": "building-z",
+            "item_type": "producer_credit",
+            "quantity_kwh": Decimal("13.366670"),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal("-2.005001"),
+        }
     )
     reconciliation = draft["reconciliation"]
-    reconciliation["vnb_production_kwh"] = 0
-    reconciliation["engine_production_kwh"] = 0
-    reconciliation["production_per_participant"]["building-b"] = {
-        "vnb_kwh": 0,
-        "engine_kwh": 0,
-        "difference_kwh": 0,
+    reconciliation["production_per_participant"] = {
+        "building-b": {"vnb_kwh": 0, "engine_kwh": 0, "difference_kwh": 0},
+        "building-z": {
+            "vnb_kwh": 13.36667,
+            "engine_kwh": 13.36667,
+            "difference_kwh": 0,
+        },
     }
 
     snapshots = billing_approval.prepare_invoice_snapshots(
         draft, issue_date=date(2026, 2, 5)
     )
 
-    assert {row["participant_id"] for row in snapshots} == {"building-a", "building-b"}
+    assert {row["participant_id"] for row in snapshots} == {
+        "building-a",
+        "building-b",
+        "building-z",
+    }
     by_id = {row["participant_id"]: row for row in snapshots}
     assert by_id["building-a"]["net_chf"] == Decimal("2.01")
-    assert by_id["building-b"]["net_chf"] == Decimal("-2.01")
+    assert by_id["building-b"]["net_chf"] == Decimal("0.00")
+    assert by_id["building-z"]["net_chf"] == Decimal("-2.01")
 
 
 def test_prepare_accepts_zero_quantity_consumer_participant():
@@ -1296,7 +1317,7 @@ def test_prepare_accepts_zero_quantity_consumer_participant():
     draft["line_items"].insert(
         1,
         {
-            "id": 4,
+            "id": 5,
             "participant_id": "building-c",
             "item_type": "consumer_charge",
             "quantity_kwh": Decimal(0),
@@ -1308,8 +1329,8 @@ def test_prepare_accepts_zero_quantity_consumer_participant():
         participant_id="building-b", amount_chf=Decimal("0.000001")
     )  # close the pool
     reconciliation = draft["reconciliation"]
-    reconciliation["vnb_allocated_kwh"] = 13.366667
-    reconciliation["engine_allocated_kwh"] = 13.366667
+    reconciliation["vnb_allocated_kwh"] = 13.366670
+    reconciliation["engine_allocated_kwh"] = 13.366670
     reconciliation["per_participant"]["building-c"] = {
         "vnb_kwh": 0,
         "engine_kwh": 0,
@@ -1654,15 +1675,40 @@ def test_prepare_refuses_unnecessary_rounding_adjustment():
     """When the non-rounding total is already zero, no rounding may exist."""
     draft = _draft()
     # Make consumer and producer amounts equal so the non-rounding total is zero.
-    draft["line_items"][0].update(
-        quantity_kwh=Decimal("13.366667"), amount_chf=Decimal("-2.005000")
-    )
-    draft["line_items"][1].update(
-        quantity_kwh=Decimal("13.366667"), amount_chf=Decimal("2.005000")
+    draft["line_items"] = [
+        {
+            "id": 3,
+            "participant_id": "building-b",
+            "item_type": "producer_credit",
+            "quantity_kwh": Decimal("13.366667"),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal("-2.005000"),
+        },
+        {
+            "id": 1,
+            "participant_id": "building-a",
+            "item_type": "consumer_charge",
+            "quantity_kwh": Decimal("13.366667"),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal("2.005000"),
+        },
+        {
+            "id": 2,
+            "participant_id": "building-b",
+            "item_type": "rounding_adjustment",
+            "quantity_kwh": None,
+            "unit_price_chf_per_kwh": None,
+            "amount_chf": Decimal("0.000001"),
+        },
+    ]
+    draft["reconciliation"]["per_participant"]["building-a"].update(
+        vnb_kwh=13.366667, engine_kwh=13.366667
     )
     draft["reconciliation"]["production_per_participant"]["building-b"].update(
         vnb_kwh=13.366667, engine_kwh=13.366667
     )
+    draft["reconciliation"]["vnb_allocated_kwh"] = 13.366667
+    draft["reconciliation"]["engine_allocated_kwh"] = 13.366667
     draft["reconciliation"]["vnb_production_kwh"] = 13.366667
     draft["reconciliation"]["engine_production_kwh"] = 13.366667
 
@@ -1674,15 +1720,25 @@ def test_prepare_accepts_rounding_adjustment_with_zero_amount_producer():
     """A zero producer still counts as a producer participant for rounding."""
     draft = _draft()
     draft["line_items"][0].update(quantity_kwh=Decimal(0), amount_chf=Decimal(0))
-    draft["line_items"][1].update(
-        quantity_kwh=Decimal("13.366667"), amount_chf=Decimal("2.005000")
+    # A second producer supplies the matching energy.
+    draft["line_items"].append(
+        {
+            "id": 5,
+            "participant_id": "building-z",
+            "item_type": "producer_credit",
+            "quantity_kwh": Decimal("13.366670"),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal("-2.005001"),
+        }
     )
-    draft["line_items"][2]["amount_chf"] = Decimal("-2.005000")
-    draft["reconciliation"]["production_per_participant"]["building-b"].update(
-        vnb_kwh=0, engine_kwh=0
-    )
-    draft["reconciliation"]["vnb_production_kwh"] = 0
-    draft["reconciliation"]["engine_production_kwh"] = 0
+    draft["reconciliation"]["production_per_participant"] = {
+        "building-b": {"vnb_kwh": 0, "engine_kwh": 0, "difference_kwh": 0},
+        "building-z": {
+            "vnb_kwh": 13.36667,
+            "engine_kwh": 13.36667,
+            "difference_kwh": 0,
+        },
+    }
 
     snapshots = billing_approval.prepare_invoice_snapshots(
         draft, issue_date=date(2026, 2, 5)
@@ -1690,13 +1746,16 @@ def test_prepare_accepts_rounding_adjustment_with_zero_amount_producer():
 
     by_id = {row["participant_id"]: row for row in snapshots}
     assert by_id["building-a"]["net_chf"] == Decimal("2.01")
-    assert by_id["building-b"]["net_chf"] == Decimal("-2.01")
+    assert by_id["building-b"]["net_chf"] == Decimal("0.00")
+    assert by_id["building-z"]["net_chf"] == Decimal("-2.01")
 
 
 def test_prepare_accepts_billing_engine_shaped_rounding():
     """A realistic engine output: rounding closes a nonzero cent residue."""
     draft = _draft()
-    # 13.366670 * 0.15 = 2.0050005 -> 2.005001; 13.366667 * 0.15 = 2.00500005 -> 2.005000
+    # 13.366670 * 0.15 = 2.0050005 -> 2.005001;
+    # 13.366667 * 0.15 = 2.00500005 -> 2.005000;
+    # the remaining 0.000003 kWh round to a zero-cent charge.
     draft["line_items"] = [
         {
             "id": 1,
@@ -1722,6 +1781,14 @@ def test_prepare_accepts_billing_engine_shaped_rounding():
             "unit_price_chf_per_kwh": None,
             "amount_chf": Decimal("0.000001"),
         },
+        {
+            "id": 4,
+            "participant_id": "building-a",
+            "item_type": "consumer_charge",
+            "quantity_kwh": Decimal("0.000003"),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal("0.000000"),
+        },
     ]
 
     snapshots = billing_approval.prepare_invoice_snapshots(
@@ -1729,3 +1796,210 @@ def test_prepare_accepts_billing_engine_shaped_rounding():
     )
 
     assert snapshots
+
+
+# ---------------------------------------------------------------------------
+# Energy conservation and monetary residue bounds.
+# ---------------------------------------------------------------------------
+
+
+def test_prepare_refuses_phantom_energy_rounding_exploit():
+    """A zero producer cannot offset a large consumer via rounding alone.
+
+    With energy conserved only by assertion, a reconciled consumer of
+    99,999.9 kWh, a zero producer_credit, and a -999,999.00 CHF rounding
+    adjustment assigned to that producer currently closes the money pool.
+    Approval must reject this because the billed energies do not conserve.
+    """
+    draft = _draft()
+    draft["billing_policy_snapshot"] = _policy(
+        internal_price_chf_per_kwh=Decimal("10.000000")
+    )
+    draft["line_items"] = [
+        {
+            "id": 1,
+            "participant_id": "building-a",
+            "item_type": "consumer_charge",
+            "quantity_kwh": Decimal("99999.9"),
+            "unit_price_chf_per_kwh": Decimal("10.000000"),
+            "amount_chf": Decimal("999999.000000"),
+        },
+        {
+            "id": 2,
+            "participant_id": "building-b",
+            "item_type": "producer_credit",
+            "quantity_kwh": Decimal(0),
+            "unit_price_chf_per_kwh": Decimal("10.000000"),
+            "amount_chf": Decimal(0),
+        },
+        {
+            "id": 3,
+            "participant_id": "building-b",
+            "item_type": "rounding_adjustment",
+            "quantity_kwh": None,
+            "unit_price_chf_per_kwh": None,
+            "amount_chf": Decimal("-999999.000000"),
+        },
+    ]
+    draft["reconciliation"] = {
+        "vnb_allocated_kwh": 99999.9,
+        "engine_allocated_kwh": 99999.9,
+        "difference_kwh": 0,
+        "per_participant": {
+            "building-a": {
+                "vnb_kwh": 99999.9,
+                "engine_kwh": 99999.9,
+                "difference_kwh": 0,
+            },
+        },
+        "vnb_production_kwh": 0,
+        "engine_production_kwh": 0,
+        "production_difference_kwh": 0,
+        "production_per_participant": {
+            "building-b": {
+                "vnb_kwh": 0,
+                "engine_kwh": 0,
+                "difference_kwh": 0,
+            },
+        },
+    }
+
+    with pytest.raises(billing_approval.BillingApprovalError, match="Energiemengen"):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_accepts_energy_mismatch_within_aggregate_rounding_tolerance():
+    """Independent 6dp rounding per line can leave a sub-milliwatt-hour residue."""
+    draft = _draft()
+    # Producer quantity one micro-kWh larger than the consumer total; the
+    # monetary residue is still closed by the existing rounding adjustment.
+    draft["line_items"][0].update(
+        quantity_kwh=Decimal("13.366671"), amount_chf=Decimal("-2.005001")
+    )
+    draft["reconciliation"]["production_per_participant"]["building-b"].update(
+        vnb_kwh=13.366671, engine_kwh=13.366671
+    )
+    draft["reconciliation"]["vnb_production_kwh"] = 13.366671
+    draft["reconciliation"]["engine_production_kwh"] = 13.366671
+
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        draft, issue_date=date(2026, 2, 5)
+    )
+
+    assert snapshots
+
+
+def test_prepare_refuses_energy_mismatch_exceeding_aggregate_rounding_tolerance():
+    draft = _draft()
+    draft["line_items"].append(
+        {
+            "id": 5,
+            "participant_id": "building-a",
+            "item_type": "consumer_charge",
+            "quantity_kwh": Decimal("0.001000"),
+            "unit_price_chf_per_kwh": Decimal("0.150000"),
+            "amount_chf": Decimal("0.000150"),
+        }
+    )
+
+    with pytest.raises(billing_approval.BillingApprovalError, match="Energiemengen"):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_zero_producer_as_sole_source_against_positive_consumption():
+    draft = _draft()
+    draft["line_items"][0].update(quantity_kwh=Decimal(0), amount_chf=Decimal(0))
+    draft["line_items"][2].update(
+        participant_id="building-b", amount_chf=Decimal("-2.005000")
+    )
+    draft["reconciliation"]["production_per_participant"]["building-b"].update(
+        vnb_kwh=0, engine_kwh=0
+    )
+    draft["reconciliation"]["vnb_production_kwh"] = 0
+    draft["reconciliation"]["engine_production_kwh"] = 0
+
+    with pytest.raises(billing_approval.BillingApprovalError, match="Energiemengen"):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_rounding_adjustment_exceeding_residue_bound():
+    """A rounding adjustment must stay within the energy-derived residue bound."""
+    draft = _draft()
+    draft["line_items"][2]["amount_chf"] = Decimal("1.000000")
+
+    with pytest.raises(
+        billing_approval.BillingApprovalError, match="zulässigen Restbetrag"
+    ):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_accepts_real_billing_engine_output_with_multiple_participants():
+    """Canonical reconciliation built from actual engine quantities is approved."""
+    import pandas as pd
+
+    import billing_engine
+
+    index = pd.date_range("2026-01-01", periods=3, freq="15min", tz="Europe/Zurich")
+    production = pd.DataFrame(
+        {"building-b": [0.3, 0.3, 0.3], "building-d": [0.2, 0.2, 0.2]},
+        index=index,
+    )
+    consumption = pd.DataFrame(
+        {"building-a": [0.5, 0.5, 0.5], "building-c": [0.5, 0.5, 0.5]},
+        index=index,
+    )
+    summary = billing_engine.generate_billing_summary(
+        production,
+        consumption,
+        grid_fee_per_kwh=0.08,
+        internal_price_per_kwh=0.15,
+        network_level="same",
+        distribution_model="proportional",
+    )
+
+    per_participant = {}
+    production_per_participant = {}
+    for item in summary["line_items"]:
+        participant_id = item["participant_id"]
+        quantity = item["quantity_kwh"]
+        entry = {"vnb_kwh": quantity, "engine_kwh": quantity, "difference_kwh": 0}
+        if item["item_type"] == "consumer_charge":
+            per_participant[participant_id] = entry
+        elif item["item_type"] == "producer_credit":
+            production_per_participant[participant_id] = entry
+
+    allocated = sum(p["engine_kwh"] for p in per_participant.values())
+    produced = sum(p["engine_kwh"] for p in production_per_participant.values())
+    reconciliation = {
+        "vnb_allocated_kwh": allocated,
+        "engine_allocated_kwh": allocated,
+        "difference_kwh": 0,
+        "per_participant": per_participant,
+        "vnb_production_kwh": produced,
+        "engine_production_kwh": produced,
+        "production_difference_kwh": 0,
+        "production_per_participant": production_per_participant,
+    }
+
+    period = {
+        "id": 1,
+        "community_id": COMMUNITY,
+        "status": "draft",
+        "period_start": "2026-01-01T00:00:00+01:00",
+        "period_end": "2026-01-01T00:45:00+01:00",
+        "input_fingerprint": "a" * 64,
+        "source_document_ids": ["E66-CONSUMPTION", "E66-PRODUCTION"],
+        "reconciliation": reconciliation,
+        "billing_policy_snapshot": _policy(),
+        "line_items": summary["line_items"],
+    }
+
+    snapshots = billing_approval.prepare_invoice_snapshots(period)
+
+    assert snapshots
+    assert {s["participant_id"] for s in snapshots} == {
+        "building-a",
+        "building-b",
+        "building-c",
+        "building-d",
+    }

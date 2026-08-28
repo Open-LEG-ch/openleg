@@ -256,12 +256,16 @@ def _require_wellformed_line_items(line_items, internal_price):
     Consumer charges and producer credits carry a finite non-negative
     quantity, the policy internal unit price, and an amount equal to quantity
     times price at 6-decimal precision (non-negative for consumers,
-    non-positive for producers). A rounding adjustment is permitted only when
-    producer credits exist, it is assigned to the deterministic minimum
-    producer participant id, its amount is exactly the negative of the
-    non-rounding total at persisted 6-decimal precision, and at most one
-    exists. Returns ``(line_items, consumption_kwh, production_kwh)`` with the
-    billed quantity per participant for the reconciliation cross-check.
+    non-positive for producers). When producer credits exist, the total
+    billed consumer and producer quantities must conserve allocated energy
+    within the aggregate rounding tolerance of 0.5e-6 kWh per non-rounding
+    line. A rounding adjustment is permitted only when producer credits exist,
+    it is assigned to the deterministic minimum producer participant id, its
+    amount is exactly the negative of the non-rounding total at persisted
+    6-decimal precision, its magnitude does not exceed the derived monetary
+    residue bound, and at most one exists. Returns ``(line_items,
+    consumption_kwh, production_kwh)`` with the billed quantity per participant
+    for the reconciliation cross-check.
     """
     if isinstance(line_items, (list, tuple)) and not line_items:
         raise BillingApprovalError("Der Abrechnungsentwurf hat keine Positionen.")
@@ -273,6 +277,10 @@ def _require_wellformed_line_items(line_items, internal_price):
     production_kwh = {}
     rounding_items = []
     non_rounding_total = Decimal(0)
+    consumer_count = 0
+    producer_count = 0
+    consumer_qty_total = Decimal(0)
+    producer_qty_total = Decimal(0)
 
     for item in line_items:
         if not isinstance(item, dict):
@@ -347,6 +355,13 @@ def _require_wellformed_line_items(line_items, internal_price):
                 consumption_kwh[participant_id] = (
                     consumption_kwh.get(participant_id, Decimal(0)) + quantity
                 )
+                consumer_count += 1
+                try:
+                    consumer_qty_total += quantity
+                except ArithmeticError:
+                    raise BillingApprovalError(
+                        "Die abgerechneten Energiemengen sind nicht ausgeglichen."
+                    ) from None
             else:
                 if amount > 0:
                     raise BillingApprovalError(
@@ -356,6 +371,13 @@ def _require_wellformed_line_items(line_items, internal_price):
                 production_kwh[participant_id] = (
                     production_kwh.get(participant_id, Decimal(0)) + quantity
                 )
+                producer_count += 1
+                try:
+                    producer_qty_total += quantity
+                except ArithmeticError:
+                    raise BillingApprovalError(
+                        "Die abgerechneten Energiemengen sind nicht ausgeglichen."
+                    ) from None
         if item_type != "rounding_adjustment":
             try:
                 non_rounding_total += amount
@@ -363,6 +385,29 @@ def _require_wellformed_line_items(line_items, internal_price):
                 raise BillingApprovalError(
                     "Die Abrechnungssumme kann nicht berechnet werden."
                 ) from None
+
+    try:
+        non_rounding_count = consumer_count + producer_count
+        quantity_tolerance = (_KWH_QUANTUM / Decimal(2)) * Decimal(non_rounding_count)
+        quantity_mismatch = (consumer_qty_total - producer_qty_total).copy_abs()
+    except ArithmeticError:
+        raise BillingApprovalError(
+            "Die abgerechneten Energiemengen sind nicht ausgeglichen."
+        ) from None
+
+    if producer_count and quantity_mismatch > quantity_tolerance:
+        raise BillingApprovalError(
+            "Die abgerechneten Energiemengen sind nicht ausgeglichen."
+        )
+
+    try:
+        max_rounding_abs = quantity_mismatch * internal_price + (
+            _KWH_QUANTUM / Decimal(2)
+        ) * Decimal(non_rounding_count)
+    except ArithmeticError:
+        raise BillingApprovalError(
+            "Der Rundungsausgleich enthält einen ungültigen Betrag."
+        ) from None
 
     producer_ids = list(production_kwh.keys())
     if not producer_ids:
@@ -408,6 +453,15 @@ def _require_wellformed_line_items(line_items, internal_price):
             expected_rounding_amount = (-non_rounding_total).quantize(
                 _KWH_QUANTUM, rounding=ROUND_HALF_UP
             )
+        except ArithmeticError:
+            raise BillingApprovalError(
+                "Der Rundungsausgleich enthält einen ungültigen Betrag."
+            ) from None
+        try:
+            if rounding_total.copy_abs() > max_rounding_abs:
+                raise BillingApprovalError(
+                    "Der Rundungsausgleich übersteigt den zulässigen Restbetrag."
+                )
         except ArithmeticError:
             raise BillingApprovalError(
                 "Der Rundungsausgleich enthält einen ungültigen Betrag."
