@@ -648,6 +648,107 @@ def test_prepare_refuses_malformed_reconciliation_participant_sections(section):
         billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
 
 
+@pytest.mark.parametrize(
+    "missing_path",
+    [
+        ("difference_kwh",),
+        ("production_difference_kwh",),
+        ("per_participant", "building-a", "difference_kwh"),
+        ("production_per_participant", "building-b", "difference_kwh"),
+    ],
+)
+def test_prepare_requires_every_canonical_reconciliation_gap(missing_path):
+    draft = _draft()
+    parent = draft["reconciliation"]
+    for key in missing_path[:-1]:
+        parent = parent[key]
+    parent.pop(missing_path[-1])
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    "fingerprint",
+    [True, 42, "a", "g" * 64, "a" * 63, "a" * 65, " a" * 32],
+)
+def test_prepare_requires_a_sha256_shaped_input_fingerprint(fingerprint):
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(
+            _draft(input_fingerprint=fingerprint), issue_date=date(2026, 2, 5)
+        )
+
+
+@pytest.mark.parametrize(
+    "source_document_ids",
+    ["DOC-1", {"DOC-1"}, {"id": "DOC-1"}, [""], ["   "], [42], ["DOC-1", None]],
+)
+def test_prepare_requires_a_nonempty_document_id_sequence(source_document_ids):
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(
+            _draft(source_document_ids=source_document_ids),
+            issue_date=date(2026, 2, 5),
+        )
+
+
+@pytest.mark.parametrize(
+    ("period_start", "period_end"),
+    [
+        (None, "2026-02-01T00:00:00+01:00"),
+        ("not-a-date", "2026-02-01T00:00:00+01:00"),
+        ("2026-02-01T00:00:00+01:00", "2026-01-01T00:00:00+01:00"),
+        ("2026-01-01T00:00:00+01:00", "not-a-date"),
+    ],
+)
+def test_prepare_requires_a_valid_increasing_billing_window(period_start, period_end):
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(
+            _draft(period_start=period_start, period_end=period_end),
+            issue_date=date(2026, 2, 5),
+        )
+
+
+@pytest.mark.parametrize("tariff_id", [True, False, 0, -1, "7", ""])
+def test_prepare_requires_a_positive_integer_tariff_id(tariff_id):
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(
+            _draft(billing_policy_snapshot=_policy(tariff_id=tariff_id)),
+            issue_date=date(2026, 2, 5),
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("internal_price_chf_per_kwh", "NaN"),
+        ("internal_price_chf_per_kwh", "Infinity"),
+        ("internal_price_chf_per_kwh", "-0.01"),
+        ("internal_price_chf_per_kwh", "10.000001"),
+        ("grid_fee_chf_per_kwh", "not-a-number"),
+        ("grid_fee_chf_per_kwh", "-0.01"),
+        ("grid_fee_chf_per_kwh", "10.000001"),
+    ],
+)
+def test_prepare_requires_valid_policy_prices(field, value):
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(
+            _draft(billing_policy_snapshot=_policy(**{field: value})),
+            issue_date=date(2026, 2, 5),
+        )
+
+
+@pytest.mark.parametrize(
+    "effective_from",
+    ["never", "", "2026-01-02T00:00:00+01:00"],
+)
+def test_prepare_requires_policy_effective_at_period_start(effective_from):
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(
+            _draft(billing_policy_snapshot=_policy(effective_from=effective_from)),
+            issue_date=date(2026, 2, 5),
+        )
+
+
 class _ApprovalCursor:
     """Fake cursor answering the approve_billing_period query sequence."""
 
@@ -780,6 +881,15 @@ def test_approve_wraps_storage_outages_as_store_errors(monkeypatch):
 
     with pytest.raises(database.BillingStoreError):
         database.approve_billing_period(42, COMMUNITY, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize("bad_issue_date", [False, 0, ""])
+def test_store_does_not_replace_falsey_invalid_issue_dates(monkeypatch, bad_issue_date):
+    cursor = _ApprovalCursor(_period_row(), _draft()["line_items"])
+    _approve_connection(monkeypatch, cursor)
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        database.approve_billing_period(42, COMMUNITY, issue_date=bad_issue_date)
 
 
 def test_billing_approval_domain_conflict_returns_a_private_409_without_details(
