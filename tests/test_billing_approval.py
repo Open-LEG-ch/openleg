@@ -374,6 +374,8 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
         period_start="2026-01-01 00:00:00+01",
         period_end="2026-02-01 00:00:00+01",
     ):
+        consumer = participants[0]
+        producer = participants[1] if len(participants) > 1 else participants[0]
         cur.execute(
             """
             INSERT INTO billing_periods (
@@ -392,37 +394,50 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
                 psycopg2.extras.Json(["DOC-1"]),
                 psycopg2.extras.Json(
                     {
-                        "vnb_allocated_kwh": 10 * len(participants),
-                        "engine_allocated_kwh": 10 * len(participants),
+                        "vnb_allocated_kwh": 10,
+                        "engine_allocated_kwh": 10,
                         "difference_kwh": 0,
                         "per_participant": {
-                            participant: {
+                            consumer: {
                                 "vnb_kwh": 10,
                                 "engine_kwh": 10,
                                 "difference_kwh": 0,
                             }
-                            for participant in participants
                         },
-                        "vnb_production_kwh": 0,
-                        "engine_production_kwh": 0,
+                        "vnb_production_kwh": 10,
+                        "engine_production_kwh": 10,
                         "production_difference_kwh": 0,
-                        "production_per_participant": {},
+                        "production_per_participant": {
+                            producer: {
+                                "vnb_kwh": 10,
+                                "engine_kwh": 10,
+                                "difference_kwh": 0,
+                            }
+                        },
                     }
                 ),
                 psycopg2.extras.Json(_policy()),
             ),
         )
         period_id = cur.fetchone()["id"]
-        for participant in participants:
-            cur.execute(
-                """
-                INSERT INTO billing_line_items (
-                    billing_period_id, participant_id, item_type,
-                    quantity_kwh, unit_price_chf_per_kwh, amount_chf
-                ) VALUES (%s, %s, 'consumer_charge', 10, 0.15, %s)
-                """,
-                (period_id, participant, Decimal("1.500000")),
-            )
+        cur.execute(
+            """
+            INSERT INTO billing_line_items (
+                billing_period_id, participant_id, item_type,
+                quantity_kwh, unit_price_chf_per_kwh, amount_chf
+            ) VALUES (%s, %s, 'consumer_charge', 10, 0.15, %s)
+            """,
+            (period_id, consumer, Decimal("1.500000")),
+        )
+        cur.execute(
+            """
+            INSERT INTO billing_line_items (
+                billing_period_id, participant_id, item_type,
+                quantity_kwh, unit_price_chf_per_kwh, amount_chf
+            ) VALUES (%s, %s, 'producer_credit', 10, 0.15, %s)
+            """,
+            (period_id, producer, Decimal("-1.500000")),
+        )
         return period_id
 
     with _temporary_database() as url, _pool_against(url):
@@ -507,9 +522,9 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
         assert stored[0]["gross_chf"] == Decimal("1.62")
         assert stored[0]["issue_date"] == date(2026, 2, 5)
         assert stored[0]["due_date"] == date(2026, 3, 7)
-        assert stored[1]["net_chf"] == Decimal("1.50")
-        assert stored[1]["vat_chf"] == Decimal("0.12")
-        assert stored[1]["gross_chf"] == Decimal("1.62")
+        assert stored[1]["net_chf"] == Decimal("-1.50")
+        assert stored[1]["vat_chf"] == Decimal("-0.12")
+        assert stored[1]["gross_chf"] == Decimal("-1.62")
 
         with database.get_connection() as conn, conn.cursor() as cur:
             continuation_period_id = seed_period(
