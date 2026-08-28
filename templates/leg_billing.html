@@ -1,0 +1,50 @@
+{% extends "product_base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+  <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="text-brand hover:underline font-semibold">Zurück zum LEG-Dashboard</a></p>
+  <h1 class="text-2xl font-bold mb-2">Abrechnungen</h1>
+  <p class="text-sm text-ink-muted mb-4">Hier prüfen Sie Abrechnungsentwürfe und geben sie frei. Die Freigabe erstellt unveränderliche Rechnungen pro Teilnehmer mit der eingefrorenen Richtlinie, dem Abgleich und den Quelldokumenten der Periode.</p>
+
+  <div class="rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm mb-6" role="note">
+    Freigegebene Rechnungen bleiben unverändert und nachvollziehbar. Prüfen Sie Tarif, Abgleich und Quelldokumente vor der Freigabe.
+  </div>
+
+  {% if billing_approved %}
+  <p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">Die Rechnungen wurden freigegeben.</p>
+  {% endif %}
+  {% if approval_error %}
+  <p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ approval_error }}</p>
+  {% endif %}
+
+  {% if periods %}
+  <div class="space-y-6">
+    {% for period in periods %}
+    <section class="bg-white rounded-xl border p-6">
+      <h2 class="font-bold mb-2">{{ period.period_label }}</h2>
+      <p class="text-sm mb-2">Status: <span class="font-semibold">{{ period.status_label }}</span></p>
+      <p class="text-sm text-ink-muted mb-4">
+        {% if period.reconciled %}Abgleich mit dem VNB: vollständig abgeglichen.{% else %}Abgleich mit dem VNB: Abweichung prüfen.{% endif %}
+        Quelldokumente: {{ period.source_count }}.
+      </p>
+      {% if period.approvable %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/approve">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="confirm-approval-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">
+          <input id="confirm-approval-{{ period.id }}" type="checkbox" name="confirm_approval" value="yes" required class="mt-1">
+          <span>Ich habe Tarif, Abgleich und Quelldokumente geprüft und gebe die Rechnungen dieser Periode verbindlich frei.</span>
+        </label>
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Rechnungen freigeben</button>
+      </form>
+      {% elif period.status == 'draft' %}
+      <p class="text-sm text-ink-muted">Dieser Entwurf ist nicht freigabebereit: Der Abgleich weicht ab oder Quelldokumente fehlen. Die Freigabe ist erst nach einem vollständigen Abgleich möglich.</p>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+  <section class="bg-white rounded-xl border p-6">
+    <p class="text-sm text-ink-muted">Noch keine Abrechnungsperioden vorhanden. Der Abrechnungslauf erstellt Entwürfe, sobald eine Richtlinie gespeichert ist und Messdaten vorliegen.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -5,6 +5,7 @@ import math
 from urllib.parse import quote, urlencode
 
 import billing_policy
+import billing_workspace
 import database as db
 import formation_documents
 import formation_wizard
@@ -184,6 +185,57 @@ def _require_confirmed_admin(community_id: str, building_id: str):
     if not member or member.get("status") != "confirmed":
         return None
     return member
+
+
+def leg_billing_workspace_location(community_id: str) -> str:
+    """Build the billing workspace path; quote keeps it a relative path."""
+    return "/leg/community/" + quote(community_id, safe="") + "/billing"
+
+
+_BILLING_STATUS_LABELS = {"draft": "Entwurf", "issued": "Freigegeben"}
+
+
+def _billing_workspace_period(period: dict) -> dict:
+    """Compact display row for one billing period in the workspace."""
+    status = str(period.get("status") or "")
+    flags = billing_workspace.readiness_flags(period)
+    return {
+        "id": period.get("id"),
+        "status": status,
+        "status_label": _BILLING_STATUS_LABELS.get(status, status),
+        "period_label": billing_workspace.period_label(period.get("period_start")),
+        "reconciled": flags["reconciled"],
+        "source_count": flags["source_count"],
+        "approvable": (
+            status == "draft" and flags["reconciled"] and flags["source_count"] > 0
+        ),
+    }
+
+
+def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> dict:
+    """Admin-gated view model for the billing approval workspace."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff."}
+    periods = db.list_community_billing_periods(community_id)
+    view = {
+        "error": None,
+        "community_id": community_id,
+        "periods": [_billing_workspace_period(period) for period in periods],
+        "billing_approved": False,
+        "approval_error": None,
+    }
+    view.update(extra)
+    return view
+
+
+def leg_approve_billing_period(
+    community_id: str, building_id: str, period_id: int
+) -> dict:
+    """Issue invoices for one reconciled draft; only the confirmed admin may."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff.", "invoices": []}
+    invoices = db.approve_billing_period(period_id, community_id)
+    return {"error": None, "invoices": invoices}
 
 
 def leg_billing_policy_location(community_id: str) -> str:

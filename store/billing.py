@@ -10,6 +10,10 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 
 import json
 import logging
+from datetime import date, datetime
+from decimal import Decimal
+
+import billing_approval
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +36,15 @@ def _get_connection():
     return database.get_connection()
 
 
+def _json_default(value):
+    """Serialize decimals and temporals in policy snapshots."""
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    return str(value)
+
+
 # === Billing Operations ===
 
 
@@ -49,9 +62,9 @@ def save_billing_period(
                      total_surplus_kwh, total_network_discount_chf, distribution_model,
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
                      timezone, input_fingerprint, source_document_ids,
-                     reconciliation, status)
+                     reconciliation, billing_policy_snapshot, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s::jsonb, %s::jsonb, 'draft')
+                            %s, %s::jsonb, %s::jsonb, %s::jsonb, 'draft')
                     RETURNING id
                 """,
                     (
@@ -70,6 +83,14 @@ def save_billing_period(
                         summary.get("input_fingerprint"),
                         json.dumps(summary.get("source_document_ids", [])),
                         json.dumps(summary.get("reconciliation", {})),
+                        (
+                            json.dumps(
+                                summary["billing_policy_snapshot"],
+                                default=_json_default,
+                            )
+                            if summary.get("billing_policy_snapshot")
+                            else None
+                        ),
                     ),
                 )
                 period_id = cur.fetchone()["id"]
@@ -212,6 +233,173 @@ def get_billing_period(period_id: int, community_id: str | None = None) -> dict 
     except Exception as e:
         logger.error(f"[DB] Error getting billing period: {e}")
         raise BillingStoreError("Could not load billing period") from e
+
+
+def list_community_billing_periods(community_id: str) -> list[dict]:
+    """List one community's billing periods, newest period first."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM billing_periods
+                WHERE community_id = %s
+                ORDER BY period_start DESC, id DESC
+                """,
+                (community_id,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing community billing periods: {e}")
+        raise BillingStoreError("Could not list community billing periods") from e
+
+
+def _period_invoices(cur, period_id: int) -> list[dict]:
+    cur.execute(
+        """
+        SELECT * FROM invoices
+        WHERE billing_period_id = %s
+        ORDER BY participant_id
+        """,
+        (period_id,),
+    )
+    return [dict(row) for row in cur.fetchall()]
+
+
+def _next_invoice_sequence(cur, community_id: str, prefix: str, year: int) -> int:
+    """Return the next deterministic sequence for prefix/year of a community."""
+    cur.execute(
+        """
+        SELECT invoice_number FROM invoices
+        WHERE community_id = %s AND invoice_number LIKE %s
+        """,
+        (community_id, f"{prefix}-{year}-%"),
+    )
+    sequence = 0
+    for row in cur.fetchall():
+        suffix = (row["invoice_number"] or "").rsplit("-", 1)[-1]
+        if suffix.isdigit():
+            sequence = max(sequence, int(suffix))
+    return sequence + 1
+
+
+def approve_billing_period(
+    period_id: int, community_id: str, issue_date=None
+) -> list[dict]:
+    """Issue immutable invoices for one reconciled draft period, atomically.
+
+    The exact active community row is locked first, so invoice numbering is
+    serialised across concurrent approvals of different periods of the same
+    community; then the period row is locked. Every invoice is inserted with
+    its frozen policy/provenance/line snapshots in one transaction, and only
+    then does the period flip to ``issued``. Retrying an already issued
+    period is a no-op that returns the stored invoices.
+
+    Domain conflicts (unknown/inactive community, unknown, stale, or
+    unreconciled draft) raise ``billing_approval.BillingApprovalError``;
+    storage outages fail closed with BillingStoreError and roll everything
+    back.
+    """
+    issue_date = issue_date or billing_approval._today()
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT community_id FROM communities
+                WHERE community_id = %s AND status = 'active'
+                FOR UPDATE
+                """,
+                (community_id,),
+            )
+            if not cur.fetchone():
+                raise billing_approval.BillingApprovalError(
+                    "Community is not active or does not exist"
+                )
+            cur.execute(
+                """
+                SELECT * FROM billing_periods
+                WHERE id = %s AND community_id = %s
+                FOR UPDATE
+                """,
+                (period_id, community_id),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise billing_approval.BillingApprovalError("Billing period not found")
+            period = dict(row)
+            status = period.get("status")
+            if status == "issued":
+                invoices = _period_invoices(cur, period_id)
+                if not invoices:
+                    raise billing_approval.BillingApprovalError(
+                        "Issued billing period has no invoices"
+                    )
+                return invoices
+            if status != "draft":
+                raise billing_approval.BillingApprovalError(
+                    "Only a draft billing period can be approved"
+                )
+            cur.execute(
+                """
+                SELECT * FROM billing_line_items
+                WHERE billing_period_id = %s
+                ORDER BY id
+                """,
+                (period_id,),
+            )
+            period["line_items"] = [dict(item) for item in cur.fetchall()]
+            snapshots = billing_approval.prepare_invoice_snapshots(
+                period, issue_date=issue_date
+            )
+
+            prefix = str(snapshots[0]["policy_snapshot"]["invoice_prefix"])
+            sequence = _next_invoice_sequence(
+                cur, community_id, prefix, issue_date.year
+            )
+            for snapshot in snapshots:
+                invoice_number = f"{prefix}-{issue_date.year}-{sequence:06d}"
+                sequence += 1
+                cur.execute(
+                    """
+                    INSERT INTO invoices (
+                        billing_period_id, community_id, participant_id,
+                        invoice_number, total_chf, policy_snapshot,
+                        provenance_snapshot, line_items_snapshot,
+                        net_chf, vat_rate_pct, vat_chf, gross_chf,
+                        issue_date, due_date, status, issued_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb,
+                        %s, %s, %s, %s, %s, %s, 'issued', NOW()
+                    )
+                    """,
+                    (
+                        period_id,
+                        community_id,
+                        snapshot["participant_id"],
+                        invoice_number,
+                        snapshot["gross_chf"],
+                        json.dumps(snapshot["policy_snapshot"]),
+                        json.dumps(snapshot["provenance_snapshot"]),
+                        json.dumps(snapshot["line_items_snapshot"]),
+                        snapshot["net_chf"],
+                        snapshot["vat_rate_pct"],
+                        snapshot["vat_chf"],
+                        snapshot["gross_chf"],
+                        snapshot["issue_date"],
+                        snapshot["due_date"],
+                    ),
+                )
+            cur.execute(
+                "UPDATE billing_periods SET status = 'issued' WHERE id = %s",
+                (period_id,),
+            )
+            return _period_invoices(cur, period_id)
+    except billing_approval.BillingApprovalError:
+        raise
+    except BillingStoreError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error approving billing period: {e}")
+        raise BillingStoreError("Could not approve billing period") from e
 
 
 def get_billing_period_for_window(

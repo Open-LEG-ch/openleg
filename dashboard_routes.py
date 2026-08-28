@@ -335,6 +335,76 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         dashboard_module.leg_generate_documents(community_id, building_id)
         return _leg_dashboard_redirect(community_id)
 
+    @bp.route("/leg/community/<community_id>/billing")
+    def leg_billing_workspace(community_id):
+        building_id = _require_dashboard_session()
+        try:
+            view = dashboard_module.leg_billing_workspace_view(
+                community_id,
+                building_id,
+                billing_approved=request.args.get("approved") == "1",
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if view["error"]:
+            abort(403)
+        return _mark_private_response(
+            render_city_template(
+                "leg_billing.html",
+                csrf_token=_dashboard_csrf_token(),
+                **view,
+            )
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/period/<int:period_id>/approve",
+        methods=["POST"],
+    )
+    def leg_billing_period_approve(community_id, period_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        if request.form.get("confirm_approval") != "yes":
+            abort(400)
+        try:
+            result = dashboard_module.leg_approve_billing_period(
+                community_id, building_id, period_id
+            )
+        except db.BillingApprovalError:
+            # Domain conflict (invalid, stale, or unreconciled draft): tell the
+            # admin without leaking storage or reconciliation internals.
+            try:
+                view = dashboard_module.leg_billing_workspace_view(
+                    community_id, building_id
+                )
+            except db.BillingStoreError:
+                abort(503)
+            if view["error"]:
+                abort(403)
+            view["approval_error"] = (
+                "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. "
+                "Er ist unvollständig, nicht vollständig abgeglichen oder wurde "
+                "zwischenzeitlich verändert. Prüfen Sie die Periode und versuchen "
+                "Sie es erneut."
+            )
+            return (
+                _mark_private_response(
+                    render_city_template(
+                        "leg_billing.html",
+                        csrf_token=_dashboard_csrf_token(),
+                        **view,
+                    )
+                ),
+                409,
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"]:
+            abort(403)
+        return redirect(
+            dashboard_module.leg_billing_workspace_location(community_id)
+            + "?approved=1"
+        )
+
     @bp.route("/leg/community/<community_id>/billing-policy")
     def leg_billing_policy_page(community_id):
         building_id = _require_dashboard_session()

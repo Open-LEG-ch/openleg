@@ -701,6 +701,22 @@ def test_an_incomplete_tariff_surfaces_as_a_billing_run_error(monkeypatch):
     assert saved == []
 
 
+def test_runner_persists_the_complete_effective_policy_snapshot(monkeypatch):
+    """Approval must never reconstruct historic choices from mutable tables."""
+    from billing_runner import run_billing_period
+
+    saved = _install_billing_fixture(monkeypatch)
+
+    run_billing_period(COMMUNITY, START, END)
+
+    assert len(saved) == 1
+    summary = saved[0][3]
+    snapshot = summary["billing_policy_snapshot"]
+    assert snapshot["community_id"] == COMMUNITY
+    for key, value in DEFAULT_POLICY.items():
+        assert snapshot[key] == value
+
+
 @pytest.mark.parametrize(
     ("reconciliation", "expected_message"),
     [

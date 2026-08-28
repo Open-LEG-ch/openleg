@@ -112,6 +112,9 @@ def run_billing_period(community_id, period_start, period_end):
             source_document_ids=list(frames.provenance["source_document_ids"]),
             reconciliation=reconciliation,
             timezone=frames.provenance["timezone"],
+            # Freeze the complete effective policy so approval never
+            # reconstructs historic choices from mutable tariff tables.
+            billing_policy_snapshot=dict(policy),
         )
         period_id = db.save_billing_period(
             community_id, period_start, period_end, summary
