@@ -256,8 +256,9 @@ def _require_wellformed_line_items(line_items, internal_price):
     Consumer charges and producer credits carry a finite non-negative
     quantity, the policy internal unit price, and an amount equal to quantity
     times price at 6-decimal precision (non-negative for consumers,
-    non-positive for producers). When producer credits exist, the total
-    billed consumer and producer quantities must conserve allocated energy
+    non-positive for producers). Non-rounding lines must be unique per
+    (participant_id, item_type). The total billed consumer and producer
+    quantities must conserve allocated energy
     within the aggregate rounding tolerance of 0.5e-6 kWh per non-rounding
     line. A rounding adjustment is permitted only when producer credits exist,
     it is assigned to the deterministic minimum producer participant id, its
@@ -281,6 +282,7 @@ def _require_wellformed_line_items(line_items, internal_price):
     producer_count = 0
     consumer_qty_total = Decimal(0)
     producer_qty_total = Decimal(0)
+    seen_non_rounding_keys = set()
 
     for item in line_items:
         if not isinstance(item, dict):
@@ -347,6 +349,12 @@ def _require_wellformed_line_items(line_items, internal_price):
                     "Der Betrag einer Abrechnungsposition entspricht nicht Menge "
                     "mal Preis."
                 )
+            item_key = (participant_id, item_type)
+            if item_key in seen_non_rounding_keys:
+                raise BillingApprovalError(
+                    "Jeder Teilnehmer darf pro Positionstyp nur eine Position haben."
+                )
+            seen_non_rounding_keys.add(item_key)
             if item_type == "consumer_charge":
                 if amount < 0:
                     raise BillingApprovalError(
@@ -395,7 +403,7 @@ def _require_wellformed_line_items(line_items, internal_price):
             "Die abgerechneten Energiemengen sind nicht ausgeglichen."
         ) from None
 
-    if producer_count and quantity_mismatch > quantity_tolerance:
+    if quantity_mismatch > quantity_tolerance:
         raise BillingApprovalError(
             "Die abgerechneten Energiemengen sind nicht ausgeglichen."
         )
