@@ -18,6 +18,14 @@ class BillingStoreError(RuntimeError):
     """Billing data could not be loaded from persistent storage."""
 
 
+class BillingPolicyConflict(BillingStoreError):
+    """A billing policy version already exists for this effective date."""
+
+
+def _is_unique_violation(error) -> bool:
+    return getattr(error, "pgcode", None) == "23505"
+
+
 def _get_connection():
     import database
 
@@ -223,25 +231,113 @@ def get_billing_period_for_window(
 
 
 def get_billing_policy(community_id: str, period_start, period_end) -> dict | None:
-    """Return one tariff covering the complete billing period."""
+    """Return the complete effective policy covering the billing period.
+
+    Fails closed: the newest version with ``effective_from <= period_start`` is
+    selected first. Coverage, completeness and interior-boundary checks are
+    applied only to that exact row, so an expired or incomplete newest version
+    can never fall back to an older complete version.
+    """
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT t.id AS tariff_id, t.internal_price_chf_per_kwh,
-                   t.grid_fee_chf_per_kwh, t.network_level,
-                   CASE c.distribution_model
-                       WHEN 'simple' THEN 'einfach'
-                       ELSE c.distribution_model
-                   END AS distribution_model
-            FROM billing_tariffs t
-            JOIN communities c ON c.community_id = t.community_id
-            WHERE t.community_id = %s AND c.status = 'active'
-              AND t.effective_from <= %s
-              AND (t.effective_to IS NULL OR t.effective_to >= %s)
-            ORDER BY t.effective_from DESC
-            LIMIT 1
+            WITH newest AS (
+                SELECT t.id, t.community_id, t.internal_price_chf_per_kwh,
+                       t.grid_fee_chf_per_kwh, t.network_level,
+                       t.distribution_model, t.vat_mode, t.vat_rate_pct,
+                       t.payment_days, t.invoice_prefix, t.delivery_method,
+                       t.effective_from, t.effective_to
+                FROM billing_tariffs t
+                JOIN communities c ON c.community_id = t.community_id
+                WHERE t.community_id = %s
+                  AND c.status = 'active'
+                  AND t.effective_from <= %s
+                ORDER BY t.effective_from DESC
+                LIMIT 1
+            )
+            SELECT id AS tariff_id, internal_price_chf_per_kwh,
+                   grid_fee_chf_per_kwh, network_level,
+                   distribution_model, vat_mode, vat_rate_pct,
+                   payment_days, invoice_prefix, delivery_method,
+                   effective_from
+            FROM newest t
+            WHERE (t.effective_to IS NULL OR t.effective_to >= %s)
+              AND t.distribution_model IS NOT NULL
+              AND t.vat_mode IS NOT NULL
+              AND t.vat_rate_pct IS NOT NULL
+              AND t.payment_days IS NOT NULL
+              AND t.invoice_prefix IS NOT NULL
+              AND t.delivery_method IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM billing_tariffs newer
+                  WHERE newer.community_id = t.community_id
+                    AND newer.effective_from > %s
+                    AND newer.effective_from < %s
+              )
             """,
-            (community_id, period_start, period_end),
+            (community_id, period_start, period_end, period_start, period_end),
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+def save_billing_policy(community_id: str, policy: dict) -> int:
+    """Insert one immutable billing policy version.
+
+    Insert-only: a new effective version never mutates earlier versions. A
+    duplicate (community_id, effective_from) is refused with
+    BillingPolicyConflict; any other storage failure fails closed with
+    BillingStoreError.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO billing_tariffs
+                (community_id, effective_from, internal_price_chf_per_kwh,
+                 grid_fee_chf_per_kwh, network_level, distribution_model,
+                 vat_mode, vat_rate_pct, payment_days, invoice_prefix,
+                 delivery_method)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    community_id,
+                    policy["effective_from"],
+                    policy["internal_price_chf_per_kwh"],
+                    policy["grid_fee_chf_per_kwh"],
+                    policy["network_level"],
+                    policy["distribution_model"],
+                    policy["vat_mode"],
+                    policy["vat_rate_pct"],
+                    policy["payment_days"],
+                    policy["invoice_prefix"],
+                    policy["delivery_method"],
+                ),
+            )
+            return cur.fetchone()["id"]
+    except Exception as e:
+        if _is_unique_violation(e):
+            raise BillingPolicyConflict(
+                "A billing policy version already exists for this effective date"
+            ) from e
+        logger.error(f"[DB] Error saving billing policy: {e}")
+        raise BillingStoreError("Could not save billing policy") from e
+
+
+def list_billing_policies(community_id: str) -> list[dict]:
+    """List all policy versions of one community, newest effective date first."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM billing_tariffs
+                WHERE community_id = %s
+                ORDER BY effective_from DESC, id DESC
+                """,
+                (community_id,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing billing policies: {e}")
+        raise BillingStoreError("Could not list billing policies") from e
