@@ -163,10 +163,12 @@ def test_doc_keeps_operations_out_of_the_public_repo() -> None:
 def test_doc_matches_billing_orchestration_boundary() -> None:
     """The doc must describe the billing seam the app actually wires up.
 
-    The app drives billing_runner from a cron route and per-community routes. A
-    doc that calls the billing code uncalled, or its period table empty, sends a
-    reader looking for work that is already shipped, and hides the work that is
-    genuinely missing: there is no member UI or invoice PDF.
+    The app drives billing_runner from a cron route and per-community routes,
+    and a confirmed community admin approves a reconciled draft through
+    billing_approval.py and store.billing's approval seam. A doc that calls the
+    billing code uncalled, its period table empty, or its surface read-only
+    sends a reader looking for work that is already shipped, and hides the work
+    that is genuinely missing: there is no invoice PDF.
 
     Asserted against the registered route map rather than one module's source,
     because the cron surface moved into its own blueprint (#335) and the check
@@ -203,11 +205,17 @@ def test_doc_matches_billing_orchestration_boundary() -> None:
     assert "/api/billing/community/" in lowered, (
         "docs/architecture.md must document the /api/billing/community/ routes"
     )
-    assert "read-only operator ui" in lowered, (
-        "docs/architecture.md must document the operator audit UI"
+    assert "billing_approval.py" in lowered, (
+        "docs/architecture.md must name billing_approval.py as the approval validator"
     )
-    assert "no member ui" in lowered, (
-        "docs/architecture.md must state that no member billing UI exists yet"
+    assert "approve_billing_period" in lowered, (
+        "docs/architecture.md must name the store.billing approval seam"
+    )
+    assert "/leg/community/<community_id>/billing" in lowered, (
+        "docs/architecture.md must document the billing approval workspace"
+    )
+    assert "read-only audit" in lowered, (
+        "docs/architecture.md must keep the admin audit view read-only"
     )
     assert "no invoice pdf" in lowered, (
         "docs/architecture.md must state that no invoice PDF exists yet"

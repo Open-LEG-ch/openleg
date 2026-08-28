@@ -9,6 +9,7 @@ outside the policy value domains of ``billing_policy`` is refused with
 :class:`BillingApprovalError`.
 """
 
+import re
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
@@ -16,6 +17,8 @@ from zoneinfo import ZoneInfo
 import billing_policy
 
 _CENT = Decimal("0.01")
+
+_FINGERPRINT_PATTERN = re.compile(r"[0-9a-f]{64}")
 
 REQUIRED_POLICY_FIELDS = (
     "tariff_id",
@@ -77,29 +80,101 @@ def _require_issue_date(issue_date):
     return issue_date
 
 
-def _collect_differences(node, differences, key=""):
-    """Collect every nested value stored under a ``*difference_kwh`` key."""
-    if isinstance(node, dict):
-        for child_key, child in node.items():
-            _collect_differences(child, differences, str(child_key))
-    elif key.endswith("difference_kwh"):
-        differences.append(node)
+def _parse_temporal(value, message):
+    """Parse a date, datetime, or ISO string; refuse everything else."""
+    if isinstance(value, (datetime, date)):
+        return value
+    if isinstance(value, str) and value.strip():
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            try:
+                return date.fromisoformat(value)
+            except ValueError:
+                pass
+    raise BillingApprovalError(message)
 
 
-def _require_balanced_reconciliation(reconciliation):
-    """Require at least one recorded difference and all of them exactly zero."""
-    differences = []
-    if isinstance(reconciliation, dict):
-        _collect_differences(reconciliation, differences)
-    if not differences:
+def _require_order(start, end, message):
+    """Require start before or at end; refuse incomparable time bases."""
+    try:
+        ordered = start <= end
+    except TypeError:
+        raise BillingApprovalError(
+            "Die Zeitangaben haben inkonsistente Zeitformate."
+        ) from None
+    if not ordered:
+        raise BillingApprovalError(message)
+
+
+def _require_increasing_window(period):
+    """Require a valid, strictly increasing billing window."""
+    start = _parse_temporal(
+        period.get("period_start"), "Der Periodenbeginn ist ungültig."
+    )
+    end = _parse_temporal(period.get("period_end"), "Das Periodenende ist ungültig.")
+    _require_order(start, end, "Der Periodenbeginn muss vor dem Periodenende liegen.")
+    if start == end:
+        raise BillingApprovalError(
+            "Der Periodenbeginn muss vor dem Periodenende liegen."
+        )
+    return start, end
+
+
+def _require_fingerprint(value):
+    """Require the SHA-256 hex shape billing_runner persists."""
+    if not isinstance(value, str) or not _FINGERPRINT_PATTERN.fullmatch(value):
+        raise BillingApprovalError(
+            "Der Abrechnungsentwurf hat keinen gültigen Fingerprint."
+        )
+    return value
+
+
+def _require_source_document_ids(value):
+    """Require a non-empty list of non-empty source document id strings."""
+    if not isinstance(value, (list, tuple)) or not value:
+        raise BillingApprovalError("Der Abrechnungsentwurf hat keine Quelldokumente.")
+    if any(not isinstance(item, str) or not item.strip() for item in value):
+        raise BillingApprovalError("Ein Quelldokument hat eine ungültige ID.")
+    return list(value)
+
+
+def _require_finite_zero_difference(value):
+    """Require one recorded difference to be finite and exactly zero."""
+    difference = _as_decimal(value)
+    if not difference.is_finite() or difference != 0:
+        raise BillingApprovalError("Der Abgleich zwischen OpenLEG und VNB weicht ab.")
+
+
+def _require_canonical_reconciliation(reconciliation):
+    """Require the exact complete shape billing_runner persists, all gaps zero.
+
+    Canonical contract: top-level ``difference_kwh`` and
+    ``production_difference_kwh`` plus a ``per_participant`` and a
+    ``production_per_participant`` dict whose entries are dicts carrying their
+    own ``difference_kwh``. Every difference must be finite and exactly zero;
+    any missing or malformed component fails closed.
+    """
+    if not isinstance(reconciliation, dict):
         raise BillingApprovalError(
             "Der Abrechnungsentwurf hat keinen dokumentierten Abgleich."
         )
-    if any(
-        not difference.is_finite() or difference != 0
-        for difference in map(_as_decimal, differences)
-    ):
-        raise BillingApprovalError("Der Abgleich zwischen OpenLEG und VNB weicht ab.")
+    for key in ("difference_kwh", "production_difference_kwh"):
+        if key not in reconciliation:
+            raise BillingApprovalError("Der dokumentierte Abgleich ist unvollständig.")
+        _require_finite_zero_difference(reconciliation[key])
+    for section in _RECONCILIATION_SECTIONS:
+        entries = reconciliation.get(section)
+        if not isinstance(entries, dict):
+            raise BillingApprovalError(
+                "Der Abgleich hat eine ungültige Teilnehmerstruktur."
+            )
+        for entry in entries.values():
+            if not isinstance(entry, dict) or "difference_kwh" not in entry:
+                raise BillingApprovalError(
+                    "Der Abgleich hat eine ungültige Teilnehmerstruktur."
+                )
+            _require_finite_zero_difference(entry["difference_kwh"])
 
 
 def _reconciled_participants(reconciliation):
@@ -138,12 +213,12 @@ def _require_wellformed_line_items(line_items):
     return line_items
 
 
-def _require_valid_policy(policy):
+def _require_valid_policy(policy, period_start):
     """Require every invoice-relevant policy field inside its domain.
 
     The value domains come from ``billing_policy`` so approval applies exactly
-    the rules the policy form enforces. Returns the validated
-    ``(vat_rate, payment_days)`` pair.
+    the rules the policy form enforces. The snapshot is only read, never
+    mutated. Returns the validated ``(vat_rate, payment_days)`` pair.
     """
     if not isinstance(policy, dict) or not policy:
         raise BillingApprovalError(
@@ -154,6 +229,26 @@ def _require_valid_policy(policy):
         raise BillingApprovalError(
             "Die Richtlinien-Kopie ist unvollständig: " + ", ".join(missing)
         )
+    tariff_id = policy.get("tariff_id")
+    if isinstance(tariff_id, bool) or not isinstance(tariff_id, int) or tariff_id <= 0:
+        raise BillingApprovalError("Die Tarif-ID der Richtlinie ist ungültig.")
+    max_price_chf = billing_policy.MAX_PRICE_RP / Decimal(100)
+    for field in ("internal_price_chf_per_kwh", "grid_fee_chf_per_kwh"):
+        price = _as_decimal(policy.get(field))
+        if not price.is_finite() or price < 0 or price > max_price_chf:
+            raise BillingApprovalError(
+                "Ein Energiepreis der Richtlinie liegt ausserhalb des zulässigen "
+                "Bereichs."
+            )
+    effective_from = _parse_temporal(
+        policy.get("effective_from"),
+        "Das Inkrafttretungsdatum der Richtlinie ist ungültig.",
+    )
+    _require_order(
+        effective_from,
+        period_start,
+        "Die Richtlinie gilt noch nicht zum Periodenbeginn.",
+    )
     if policy.get("network_level") not in billing_policy.NETWORK_LEVELS:
         raise BillingApprovalError("Die Netzebene der Richtlinie ist ungültig.")
     if policy.get("distribution_model") not in billing_policy.DISTRIBUTION_MODELS:
@@ -206,15 +301,15 @@ def prepare_invoice_snapshots(period, issue_date=None):
     issue_date = _require_issue_date(issue_date)
     if not isinstance(period, dict) or period.get("status") != "draft":
         raise BillingApprovalError("Nur ein Entwurf kann freigegeben werden.")
-    if not period.get("input_fingerprint"):
-        raise BillingApprovalError("Der Abrechnungsentwurf hat keinen Fingerprint.")
-    source_document_ids = period.get("source_document_ids")
-    if not source_document_ids:
-        raise BillingApprovalError("Der Abrechnungsentwurf hat keine Quelldokumente.")
+    period_start, _period_end = _require_increasing_window(period)
+    _require_fingerprint(period.get("input_fingerprint"))
+    source_document_ids = _require_source_document_ids(
+        period.get("source_document_ids")
+    )
     reconciliation = period.get("reconciliation")
-    _require_balanced_reconciliation(reconciliation)
+    _require_canonical_reconciliation(reconciliation)
     vat_rate, payment_days = _require_valid_policy(
-        period.get("billing_policy_snapshot")
+        period.get("billing_policy_snapshot"), period_start
     )
     line_items = _require_wellformed_line_items(period.get("line_items"))
 

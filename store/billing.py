@@ -299,7 +299,8 @@ def approve_billing_period(
     storage outages fail closed with BillingStoreError and roll everything
     back.
     """
-    issue_date = issue_date or billing_approval._today()
+    if issue_date is None:
+        issue_date = billing_approval._today()
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(

@@ -197,6 +197,9 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
             assert _column(cur, "billing_periods", "billing_policy_snapshot") is None
             assert _column(cur, "invoices", "participant_id") is None
             assert _column(cur, "invoices", "policy_snapshot") is None
+            assert (
+                _column(cur, "invoices", "issued_at") == "timestamp without time zone"
+            )
             assert _column(cur, "metering_points", "expected_directions") is None
 
         create_tables()
@@ -232,6 +235,7 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
                 "due_date",
             ):
                 assert _column(cur, "invoices", column) is not None
+            assert _column(cur, "invoices", "issued_at") == "timestamp with time zone"
             cur.execute("SELECT indexdef FROM pg_indexes WHERE tablename = 'invoices'")
             invoice_indexes = [row["indexdef"] for row in cur.fetchall()]
             assert any(
@@ -383,6 +387,62 @@ def test_issued_invoice_snapshots_are_unique_per_participant_and_immutable():
                     """,
                     (invoice_id,),
                 )
+
+
+@pytest.mark.integration
+def test_fresh_invoices_schema_stores_issued_at_with_time_zone():
+    """A freshly created invoices table records issuance as TIMESTAMPTZ."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            assert _column(cur, "invoices", "issued_at") == "timestamp with time zone"
+
+
+@pytest.mark.integration
+def test_create_tables_migrates_legacy_invoices_issued_at_to_timestamptz():
+    """A naive issued_at is read as Europe/Zurich, not as UTC, and carried across."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("DROP TABLE invoices")
+            cur.execute(PRE_MIGRATION_INVOICES)
+            cur.execute(
+                """
+                INSERT INTO invoices (community_id, invoice_number, issued_at)
+                VALUES ('LEG-A', 'LEG-2026-000001', TIMESTAMP '2026-02-05 09:30:00')
+                """
+            )
+            assert (
+                _column(cur, "invoices", "issued_at") == "timestamp without time zone"
+            )
+
+        create_tables()
+
+        with database.get_connection() as conn, conn.cursor() as cur:
+            assert _column(cur, "invoices", "issued_at") == "timestamp with time zone"
+            cur.execute(
+                "SELECT issued_at FROM invoices"
+                " WHERE invoice_number = 'LEG-2026-000001'"
+            )
+            row = cur.fetchone()
+
+    assert row is not None, "the migration must carry the existing row across"
+    # 09:30 in Zurich on 5 February (CET) is 08:30 UTC.
+    assert row["issued_at"] == datetime(2026, 2, 5, 8, 30, tzinfo=timezone.utc), (
+        "a naive timestamp is read as Europe/Zurich, not as UTC"
+    )
 
 
 _INVOICE_NUMBERS_DDL = """

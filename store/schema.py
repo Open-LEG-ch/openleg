@@ -731,7 +731,7 @@ def create_tables():
                     issue_date DATE,
                     due_date DATE,
                     status VARCHAR(32) DEFAULT 'draft',
-                    issued_at TIMESTAMP,
+                    issued_at TIMESTAMPTZ,
                     paid_at TIMESTAMP,
                     pdf_url TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -757,6 +757,25 @@ def create_tables():
             cur.execute("""
                 CREATE UNIQUE INDEX IF NOT EXISTS uq_invoices_period_participant
                 ON invoices (billing_period_id, participant_id)
+            """)
+
+            # Migration: issued_at is the audit timestamp of a legal document and
+            # must be timezone-aware. Legacy naive timestamps are interpreted as
+            # Europe/Zurich local time, matching the billing_periods conversion.
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'invoices'
+                          AND column_name = 'issued_at'
+                          AND data_type = 'timestamp without time zone'
+                    ) THEN
+                        ALTER TABLE invoices
+                            ALTER COLUMN issued_at TYPE TIMESTAMPTZ
+                                USING issued_at AT TIME ZONE 'Europe/Zurich';
+                    END IF;
+                END $$
             """)
 
             # Migration: invoice numbers are unique per community, not globally.

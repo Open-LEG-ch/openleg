@@ -365,10 +365,12 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
                 psycopg2.extras.Json(
                     {
                         "difference_kwh": 0,
+                        "production_difference_kwh": 0,
                         "per_participant": {
                             participant: {"difference_kwh": 0}
                             for participant in participants
                         },
+                        "production_per_participant": {},
                     }
                 ),
                 psycopg2.extras.Json(_policy()),
