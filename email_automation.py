@@ -82,7 +82,9 @@ def _get_tenant_for_building(building_id: str) -> dict:
 
 def process_email_queue(app=None):
     """Process pending emails. Call from cron endpoint."""
-    base_url = (app.config.get("APP_BASE_URL") if app else None) or APP_BASE_URL
+    base_url = (
+        (app.config.get("APP_BASE_URL") if app else None) or APP_BASE_URL
+    ).rstrip("/")
     pending = db.get_pending_emails(limit=50)
     sent = 0
     failed = 0
