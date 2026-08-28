@@ -70,6 +70,21 @@ PRE_MIGRATION_METERING_POINTS = """
     )
 """
 
+PRE_MIGRATION_INVOICES = """
+    CREATE TABLE invoices (
+        id SERIAL PRIMARY KEY,
+        billing_period_id INTEGER REFERENCES billing_periods(id),
+        community_id VARCHAR(64) NOT NULL,
+        invoice_number VARCHAR(64) UNIQUE,
+        total_chf DECIMAL(10, 2) DEFAULT 0,
+        status VARCHAR(32) DEFAULT 'draft',
+        issued_at TIMESTAMP,
+        paid_at TIMESTAMP,
+        pdf_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+"""
+
 
 def _column(cur, table, column):
     cur.execute(
@@ -156,6 +171,7 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
         with database.get_connection() as conn, conn.cursor() as cur:
             cur.execute(PRE_MIGRATION_BILLING_PERIODS)
             cur.execute(PRE_MIGRATION_METERING_POINTS)
+            cur.execute(PRE_MIGRATION_INVOICES)
             cur.execute(
                 """
                 INSERT INTO metering_points (metering_point_id)
@@ -178,6 +194,12 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
                 == "timestamp without time zone"
             )
             assert _column(cur, "billing_periods", "input_fingerprint") is None
+            assert _column(cur, "billing_periods", "billing_policy_snapshot") is None
+            assert _column(cur, "invoices", "participant_id") is None
+            assert _column(cur, "invoices", "policy_snapshot") is None
+            assert (
+                _column(cur, "invoices", "issued_at") == "timestamp without time zone"
+            )
             assert _column(cur, "metering_points", "expected_directions") is None
 
         create_tables()
@@ -197,6 +219,43 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
             # The additive block: a column that exists only inside the CREATE TABLE
             # statement would never have reached this table.
             assert _column(cur, "billing_periods", "input_fingerprint") is not None
+            assert (
+                _column(cur, "billing_periods", "billing_policy_snapshot") is not None
+            )
+            for column in (
+                "participant_id",
+                "policy_snapshot",
+                "provenance_snapshot",
+                "line_items_snapshot",
+                "net_chf",
+                "vat_rate_pct",
+                "vat_chf",
+                "gross_chf",
+                "issue_date",
+                "due_date",
+            ):
+                assert _column(cur, "invoices", column) is not None
+            assert _column(cur, "invoices", "issued_at") == "timestamp with time zone"
+            cur.execute("SELECT indexdef FROM pg_indexes WHERE tablename = 'invoices'")
+            invoice_indexes = [row["indexdef"] for row in cur.fetchall()]
+            assert any(
+                "(billing_period_id, participant_id)" in definition
+                for definition in invoice_indexes
+            )
+            cur.execute(
+                """
+                SELECT pg_get_triggerdef(oid) AS definition
+                FROM pg_trigger
+                WHERE tgrelid = 'invoices'::regclass AND NOT tgisinternal
+                """
+            )
+            invoice_triggers = [row["definition"] for row in cur.fetchall()]
+            assert any(
+                "UPDATE" in definition
+                and "DELETE" in definition
+                and "invoices" in definition
+                for definition in invoice_triggers
+            )
             assert _column(cur, "metering_points", "expected_directions") == "ARRAY"
             cur.execute(
                 """
@@ -246,6 +305,276 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
     assert row["period_end"] == datetime(2026, 2, 14, 23, 0, tzinfo=timezone.utc), (
         "a naive timestamp is read as Europe/Zurich, not as UTC"
     )
+
+
+@pytest.mark.integration
+def test_issued_invoice_snapshots_are_unique_per_participant_and_immutable():
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO buildings (building_id, email, address, lat, lon)
+                VALUES ('building-a', 'a@example.ch', 'Musterweg 1', 47, 8);
+                INSERT INTO communities (community_id, name, status)
+                VALUES ('LEG-A', 'LEG A', 'active');
+                INSERT INTO billing_periods (
+                    community_id, period_start, period_end, status,
+                    input_fingerprint, source_document_ids, reconciliation,
+                    billing_policy_snapshot
+                ) VALUES (
+                    'LEG-A', %s, %s, 'issued', %s, '["DOC-1"]'::jsonb,
+                    '{"difference_kwh": 0}'::jsonb,
+                    '{"invoice_prefix":"LEGA","payment_days":30}'::jsonb
+                ) RETURNING id
+                """,
+                (
+                    datetime(2026, 1, 1, tzinfo=timezone.utc),
+                    datetime(2026, 2, 1, tzinfo=timezone.utc),
+                    "a" * 64,
+                ),
+            )
+            period_id = cur.fetchone()["id"]
+            cur.execute(
+                """
+                INSERT INTO invoices (
+                    billing_period_id, community_id, participant_id,
+                    invoice_number, policy_snapshot, provenance_snapshot,
+                    line_items_snapshot, net_chf, vat_rate_pct, vat_chf,
+                    gross_chf, issue_date, due_date, status, issued_at
+                ) VALUES (
+                    %s, 'LEG-A', 'building-a', 'LEGA-2026-000001',
+                    '{}'::jsonb, '{}'::jsonb, '[]'::jsonb,
+                    10.01, 8.1, 0.81, 10.82,
+                    DATE '2026-02-05', DATE '2026-03-07', 'issued', NOW()
+                ) RETURNING id
+                """,
+                (period_id,),
+            )
+            invoice_id = cur.fetchone()["id"]
+
+        with pytest.raises(psycopg2.Error):
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE invoices SET gross_chf = 1 WHERE id = %s", (invoice_id,)
+                )
+
+        with pytest.raises(psycopg2.Error):
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute("DELETE FROM invoices WHERE id = %s", (invoice_id,))
+
+        with pytest.raises(psycopg2.IntegrityError):
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO invoices (
+                        billing_period_id, community_id, participant_id,
+                        invoice_number, policy_snapshot, provenance_snapshot,
+                        line_items_snapshot, net_chf, vat_rate_pct, vat_chf,
+                        gross_chf, issue_date, due_date, status, issued_at
+                    ) SELECT
+                        billing_period_id, community_id, participant_id,
+                        'LEGA-2026-000002', policy_snapshot, provenance_snapshot,
+                        line_items_snapshot, net_chf, vat_rate_pct, vat_chf,
+                        gross_chf, issue_date, due_date, status, issued_at
+                    FROM invoices WHERE id = %s
+                    """,
+                    (invoice_id,),
+                )
+
+
+@pytest.mark.integration
+def test_fresh_invoices_schema_stores_issued_at_with_time_zone():
+    """A freshly created invoices table records issuance as TIMESTAMPTZ."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            assert _column(cur, "invoices", "issued_at") == "timestamp with time zone"
+
+
+@pytest.mark.integration
+def test_create_tables_migrates_legacy_invoices_issued_at_to_timestamptz():
+    """A naive issued_at is read as UTC (the CONTEXT.md standard), not Zurich."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("DROP TABLE invoices")
+            cur.execute(PRE_MIGRATION_INVOICES)
+            cur.execute(
+                """
+                INSERT INTO invoices (community_id, invoice_number, issued_at)
+                VALUES ('LEG-A', 'LEG-2026-000001', TIMESTAMP '2026-02-05 09:30:00')
+                """
+            )
+            assert (
+                _column(cur, "invoices", "issued_at") == "timestamp without time zone"
+            )
+
+        create_tables()
+
+        with database.get_connection() as conn, conn.cursor() as cur:
+            assert _column(cur, "invoices", "issued_at") == "timestamp with time zone"
+            cur.execute(
+                "SELECT issued_at FROM invoices"
+                " WHERE invoice_number = 'LEG-2026-000001'"
+            )
+            row = cur.fetchone()
+
+    assert row is not None, "the migration must carry the existing row across"
+    # A naive timestamp is already UTC: 09:30 stays 09:30, no one-hour shift.
+    assert row["issued_at"] == datetime(2026, 2, 5, 9, 30, tzinfo=timezone.utc), (
+        "a naive timestamp is read as UTC, per the CONTEXT.md timestamp standard"
+    )
+
+
+_INVOICE_NUMBERS_DDL = """
+    INSERT INTO invoices (community_id, participant_id, invoice_number, status)
+    VALUES (%s, %s, %s, %s)
+"""
+
+
+@pytest.mark.integration
+def test_invoice_numbers_are_unique_per_community_not_globally():
+    """Two LEGs may share a number; one LEG may never issue it twice."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                _INVOICE_NUMBERS_DDL,
+                ("LEG-A", "building-a", "LEG-2026-000001", "issued"),
+            )
+            cur.execute(
+                _INVOICE_NUMBERS_DDL,
+                ("LEG-B", "building-b", "LEG-2026-000001", "issued"),
+            )
+
+        with pytest.raises(psycopg2.IntegrityError):
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    _INVOICE_NUMBERS_DDL,
+                    ("LEG-A", "building-c", "LEG-2026-000001", "issued"),
+                )
+
+
+@pytest.mark.integration
+def test_legacy_global_invoice_number_constraint_is_migrated_away():
+    """The pre-#399 global UNIQUE on invoice_number must not survive migration."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("DROP TABLE invoices")
+            cur.execute(PRE_MIGRATION_INVOICES)
+
+        create_tables()
+
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT conname FROM pg_constraint
+                WHERE conrelid = 'invoices'::regclass
+                  AND conname = 'invoices_invoice_number_key'
+                """
+            )
+            assert cur.fetchone() is None
+            cur.execute(
+                _INVOICE_NUMBERS_DDL,
+                ("LEG-A", "building-a", "LEG-2026-000001", "issued"),
+            )
+            cur.execute(
+                _INVOICE_NUMBERS_DDL,
+                ("LEG-B", "building-b", "LEG-2026-000001", "issued"),
+            )
+
+        with pytest.raises(psycopg2.IntegrityError):
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    _INVOICE_NUMBERS_DDL,
+                    ("LEG-B", "building-d", "LEG-2026-000001", "issued"),
+                )
+
+
+@pytest.mark.integration
+def test_only_issued_invoices_are_immutable():
+    """Legacy non-issued rows stay mutable and deletable; issued never change."""
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    import database
+    from store.schema import create_tables
+
+    with _temporary_database() as url, _pool_against(url):
+        create_tables()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO invoices (community_id, participant_id, invoice_number, status)
+                VALUES
+                    ('LEG-A', 'building-a', 'LEG-2026-000001', 'draft'),
+                    ('LEG-A', 'building-b', 'LEG-2026-000002', 'issued'),
+                    ('LEG-A', 'building-c', 'LEG-2026-000003', NULL)
+                """
+            )
+
+        # Legacy draft rows stay mutable and deletable.
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE invoices SET total_chf = 12.5 WHERE invoice_number = 'LEG-2026-000001'"
+            )
+            cur.execute("DELETE FROM invoices WHERE invoice_number = 'LEG-2026-000001'")
+        # Legacy rows without a status stay mutable as well.
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE invoices SET total_chf = 7.5 WHERE invoice_number = 'LEG-2026-000003'"
+            )
+
+        # Issued rows reject both verbs.
+        with pytest.raises(psycopg2.Error):
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE invoices SET total_chf = 1 WHERE invoice_number = 'LEG-2026-000002'"
+                )
+        with pytest.raises(psycopg2.Error):
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM invoices WHERE invoice_number = 'LEG-2026-000002'"
+                )
+
+        # An issued row cannot be smuggled out via a status change either.
+        with pytest.raises(psycopg2.Error):
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE invoices SET status = 'draft' WHERE invoice_number = 'LEG-2026-000002'"
+                )
 
 
 @pytest.mark.integration

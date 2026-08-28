@@ -94,6 +94,25 @@ def _period_label(value):
     return "Periode"
 
 
+def period_label(value):
+    """Public seam: Swiss High German month and year label for a period start."""
+    return _period_label(value)
+
+
+def readiness_flags(period):
+    """Public seam: reconciliation balance and source count of one period.
+
+    Tolerates the JSONB representations produced by PostgreSQL (dicts/lists)
+    as well as raw JSON strings.
+    """
+    reconciliation = _json_value(period.get("reconciliation"), {})
+    source_ids = _json_value(period.get("source_document_ids"), [])
+    return {
+        "reconciled": _is_balanced(reconciliation),
+        "source_count": len(source_ids),
+    }
+
+
 def _period_summary(period):
     """Build the compact period data used by the selector."""
     result = _normalise(period)

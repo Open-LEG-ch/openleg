@@ -74,6 +74,9 @@ Application and API routes:
   active community behind that cron secret.
 - `/api/billing/community/<community_id>/period/<int:period_id>` returns one
   persisted draft billing period as JSON to admins.
+- `/leg/community/<community_id>/billing` is the admin-gated approval
+  workspace: a confirmed community admin reviews a reconciled draft and
+  approves it, which issues one immutable invoice snapshot per participant.
 - `/admin/abrechnungen` renders the same persisted drafts as a read-only audit
   workspace with tariff, VNB reconciliation, provenance, and signed line items.
 - `/admin/*` and `/api/internal/*` sit behind an admin or internal token.
@@ -105,6 +108,10 @@ Application and API routes:
   imported quarter-hour readings.
 - `billing_runner.py`: fail-closed orchestration and persistence for one billing
   period.
+- `billing_approval.py`: fail-closed approval validation. Turns one reconciled
+  draft period into immutable per-participant invoice snapshots, requiring the
+  canonical reconciliation shape, SHA-256 provenance, and a complete policy
+  snapshot inside the `billing_policy` value domains.
 - `billing_workspace.py`: display-ready audit model for persisted billing drafts.
 - `sdat_datahub.py`, `sdat_e66.py`, `meter_data.py`: meter data retrieval,
   SDAT parsing, and upload ingestion.
@@ -157,8 +164,13 @@ environment-variable names are documented in `docs/data-pipeline.md`.
 frames. `billing_runner.py` validates tariff coverage, import provenance, and
 VNB reconciliation, calls `generate_billing_summary`, and persists an immutable
 draft `billing_periods` row. The secret-protected billing cron invokes this flow
-for the previous complete month. A read-only operator UI exposes persisted drafts
-for audit, but there is no member UI and no invoice PDF generation or download yet.
+for the previous complete month. Approval is the write seam: a confirmed
+community admin approves a reconciled draft in the billing workspace, and
+`store/billing.approve_billing_period` validates it through
+`billing_approval.prepare_invoice_snapshots` and atomically issues one
+immutable, timezone-aware `invoices` row per participant with frozen policy,
+provenance, and line-item snapshots. `/admin/abrechnungen` stays a read-only
+audit view; there is no invoice PDF generation or download yet.
 
 ## Request flow
 

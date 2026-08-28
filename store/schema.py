@@ -646,6 +646,7 @@ def create_tables():
                     input_fingerprint VARCHAR(64),
                     source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
                     reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    billing_policy_snapshot JSONB,
                     status VARCHAR(32) DEFAULT 'draft',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(community_id, period_start, period_end)
@@ -677,7 +678,8 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich',
                     ADD COLUMN IF NOT EXISTS input_fingerprint VARCHAR(64),
                     ADD COLUMN IF NOT EXISTS source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
-                    ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb
+                    ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB
             """)
 
             cur.execute("""
@@ -716,14 +718,102 @@ def create_tables():
                     id SERIAL PRIMARY KEY,
                     billing_period_id INTEGER REFERENCES billing_periods(id),
                     community_id VARCHAR(64) NOT NULL,
-                    invoice_number VARCHAR(64) UNIQUE,
+                    participant_id VARCHAR(64),
+                    invoice_number VARCHAR(64),
                     total_chf DECIMAL(10, 2) DEFAULT 0,
+                    policy_snapshot JSONB,
+                    provenance_snapshot JSONB,
+                    line_items_snapshot JSONB,
+                    net_chf DECIMAL(10, 2),
+                    vat_rate_pct DECIMAL(6, 3),
+                    vat_chf DECIMAL(10, 2),
+                    gross_chf DECIMAL(10, 2),
+                    issue_date DATE,
+                    due_date DATE,
                     status VARCHAR(32) DEFAULT 'draft',
-                    issued_at TIMESTAMP,
+                    issued_at TIMESTAMPTZ,
                     paid_at TIMESTAMP,
                     pdf_url TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+
+            # Migration: legacy invoices tables predate the immutable per
+            # participant snapshots and gain every new column additively.
+            cur.execute("""
+                ALTER TABLE invoices
+                    ADD COLUMN IF NOT EXISTS participant_id VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS policy_snapshot JSONB,
+                    ADD COLUMN IF NOT EXISTS provenance_snapshot JSONB,
+                    ADD COLUMN IF NOT EXISTS line_items_snapshot JSONB,
+                    ADD COLUMN IF NOT EXISTS net_chf DECIMAL(10, 2),
+                    ADD COLUMN IF NOT EXISTS vat_rate_pct DECIMAL(6, 3),
+                    ADD COLUMN IF NOT EXISTS vat_chf DECIMAL(10, 2),
+                    ADD COLUMN IF NOT EXISTS gross_chf DECIMAL(10, 2),
+                    ADD COLUMN IF NOT EXISTS issue_date DATE,
+                    ADD COLUMN IF NOT EXISTS due_date DATE
+            """)
+
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_invoices_period_participant
+                ON invoices (billing_period_id, participant_id)
+            """)
+
+            # Migration: issued_at is the audit timestamp of a legal document and
+            # must be timezone-aware. Legacy naive timestamps are interpreted as
+            # UTC, the repository-wide timestamp standard (CONTEXT.md).
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'invoices'
+                          AND column_name = 'issued_at'
+                          AND data_type = 'timestamp without time zone'
+                    ) THEN
+                        ALTER TABLE invoices
+                            ALTER COLUMN issued_at TYPE TIMESTAMPTZ
+                                USING issued_at AT TIME ZONE 'UTC';
+                    END IF;
+                END $$
+            """)
+
+            # Migration: invoice numbers are unique per community, not globally.
+            # Two LEGs may share a number; one LEG may never issue it twice.
+            cur.execute("""
+                ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_invoice_number_key
+            """)
+
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_invoices_community_invoice_number
+                ON invoices (community_id, invoice_number)
+            """)
+
+            # Issued invoices are immutable audit records: no UPDATE, no DELETE.
+            # Legacy non-issued rows stay mutable and deletable.
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION reject_invoice_mutation()
+                RETURNS trigger AS $$
+                BEGIN
+                    IF OLD.status = 'issued' THEN
+                        RAISE EXCEPTION 'Issued invoices are immutable';
+                    END IF;
+                    IF TG_OP = 'DELETE' THEN
+                        RETURN OLD;
+                    END IF;
+                    RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+
+            cur.execute("""
+                DROP TRIGGER IF EXISTS invoices_immutable ON invoices
+            """)
+
+            cur.execute("""
+                CREATE TRIGGER invoices_immutable
+                BEFORE UPDATE OR DELETE ON invoices
+                FOR EACH ROW EXECUTE FUNCTION reject_invoice_mutation()
             """)
 
             cur.execute("""
