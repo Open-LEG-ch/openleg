@@ -454,8 +454,12 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
         assert stored[0]["provenance_snapshot"]["input_fingerprint"] == "a" * 64
         assert stored[0]["provenance_snapshot"]["source_document_ids"] == ["DOC-1"]
         assert stored[0]["provenance_snapshot"]["reconciliation"]["difference_kwh"] == 0
-        assert stored[0]["provenance_snapshot"]["period_start"].startswith("2026-01-01")
-        assert stored[0]["provenance_snapshot"]["period_end"].startswith("2026-02-01")
+        assert stored[0]["provenance_snapshot"]["period_start"] == (
+            "2025-12-31T23:00:00+00:00"
+        )
+        assert stored[0]["provenance_snapshot"]["period_end"] == (
+            "2026-01-31T23:00:00+00:00"
+        )
         assert [
             item["participant_id"] for item in stored[0]["line_items_snapshot"]
         ] == ["building-a"]

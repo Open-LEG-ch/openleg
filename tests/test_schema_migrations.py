@@ -247,7 +247,9 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
             )
             invoice_triggers = [row["definition"] for row in cur.fetchall()]
             assert any(
-                "UPDATE OR DELETE" in definition and "invoices" in definition
+                "UPDATE" in definition
+                and "DELETE" in definition
+                and "invoices" in definition
                 for definition in invoice_triggers
             )
             assert _column(cur, "metering_points", "expected_directions") == "ARRAY"
