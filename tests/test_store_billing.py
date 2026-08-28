@@ -250,3 +250,41 @@ def test_save_billing_policy_receives_aware_zurich_midnight(monkeypatch):
     assert "INSERT INTO billing_tariffs" in query
     assert params[1] == datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich"))
     assert params[1].utcoffset().total_seconds() == 7200
+
+
+def test_get_billing_policy_outer_select_projects_community_id(monkeypatch):
+    """The resolved policy must include the tariff's community_id.
+
+    The CTE already selects t.community_id, but the storage seam must project
+    it in the outer SELECT so callers receive a complete, community-scoped
+    policy. Direct consumers of the seam must not rely on billing_runner's
+    defensive community_id enrichment.
+    """
+    import re
+
+    policy = {
+        "tariff_id": 7,
+        "community_id": "community-a",
+        "internal_price_chf_per_kwh": 0.12,
+        "grid_fee_chf_per_kwh": 0.08,
+        "network_level": "same",
+        "distribution_model": "proportional",
+    }
+    cur = _FakeCursor(one=policy)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    result = billing.get_billing_policy("community-a", "2026-01-01", "2026-02-01")
+
+    assert result == policy
+    query = cur.executed[0][0]
+    # Capture only the outer SELECT projection, after the CTE closes.
+    match = re.search(
+        r"\)\s*SELECT\s+(.*?)\s+FROM\s+newest\s+t",
+        query,
+        re.IGNORECASE | re.DOTALL,
+    )
+    assert match is not None, "could not locate outer SELECT projection"
+    outer_projection = match.group(1)
+    assert "community_id" in outer_projection, (
+        "outer SELECT must project community_id, not only the CTE"
+    )

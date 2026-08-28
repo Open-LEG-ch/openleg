@@ -444,9 +444,9 @@ def get_billing_policy(community_id: str, period_start, period_end) -> dict | No
                 ORDER BY t.effective_from DESC
                 LIMIT 1
             )
-            SELECT id AS tariff_id, internal_price_chf_per_kwh,
-                   grid_fee_chf_per_kwh, network_level,
-                   distribution_model, vat_mode, vat_rate_pct,
+            SELECT id AS tariff_id, t.community_id,
+                   internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
+                   network_level, distribution_model, vat_mode, vat_rate_pct,
                    payment_days, invoice_prefix, delivery_method,
                    effective_from
             FROM newest t
