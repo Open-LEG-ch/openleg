@@ -305,15 +305,21 @@ def approve_billing_period(
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT community_id FROM communities
+                SELECT community_id, name FROM communities
                 WHERE community_id = %s AND status = 'active'
                 FOR UPDATE
                 """,
                 (community_id,),
             )
-            if not cur.fetchone():
+            community_row = cur.fetchone()
+            if not community_row:
                 raise billing_approval.BillingApprovalError(
                     "Community is not active or does not exist"
+                )
+            community_name = community_row.get("name")
+            if not isinstance(community_name, str) or not community_name.strip():
+                raise billing_approval.BillingApprovalError(
+                    "Community has no valid issuer name"
                 )
             cur.execute(
                 """
@@ -357,6 +363,11 @@ def approve_billing_period(
                 cur, community_id, prefix, issue_date.year
             )
             for snapshot in snapshots:
+                provenance_snapshot = dict(snapshot["provenance_snapshot"])
+                provenance_snapshot["issuer"] = {
+                    "community_id": community_id,
+                    "name": community_name,
+                }
                 invoice_number = f"{prefix}-{issue_date.year}-{sequence:06d}"
                 sequence += 1
                 cur.execute(
@@ -379,7 +390,7 @@ def approve_billing_period(
                         invoice_number,
                         snapshot["gross_chf"],
                         json.dumps(snapshot["policy_snapshot"]),
-                        json.dumps(snapshot["provenance_snapshot"]),
+                        json.dumps(provenance_snapshot),
                         json.dumps(snapshot["line_items_snapshot"]),
                         snapshot["net_chf"],
                         snapshot["vat_rate_pct"],
@@ -512,6 +523,56 @@ def save_billing_policy(community_id: str, policy: dict) -> int:
             ) from e
         logger.error(f"[DB] Error saving billing policy: {e}")
         raise BillingStoreError("Could not save billing policy") from e
+
+
+def get_invoices_for_participant(building_id: str) -> list[dict]:
+    """List one member's own issued invoices, newest issue date first.
+
+    Selects the frozen integrity fields needed to validate each summary before
+    display. The route still returns only the display-ready summary fields.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, community_id, participant_id, invoice_number,
+                       policy_snapshot, provenance_snapshot,
+                       line_items_snapshot, net_chf, vat_rate_pct, vat_chf,
+                       gross_chf, issue_date, due_date
+                FROM invoices
+                WHERE participant_id = %s AND status = 'issued'
+                ORDER BY issue_date DESC, id DESC
+                """,
+                (building_id,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing participant invoices: {e}")
+        raise BillingStoreError("Could not list invoices") from e
+
+
+def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | None:
+    """Return one issued invoice only if it belongs to building_id.
+
+    The participant_id filter is in the same query as the id lookup, so a
+    missing invoice and another participant's invoice are indistinguishable.
+    Issuer identity comes from the immutable provenance snapshot; this read
+    never joins mutable community data.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM invoices
+                WHERE id = %s AND participant_id = %s AND status = 'issued'
+                """,
+                (invoice_id, building_id),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting participant invoice: {e}")
+        raise BillingStoreError("Could not load invoice") from e
 
 
 def list_billing_policies(community_id: str) -> list[dict]:

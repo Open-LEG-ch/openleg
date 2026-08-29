@@ -256,6 +256,49 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             "dashboard.html", **dashboard_module.demo_readiness()
         )
 
+    @bp.route("/dashboard/invoices")
+    def dashboard_invoices():
+        building_id = _require_dashboard_session()
+        try:
+            view = dashboard_module.member_invoices_view(building_id)
+        except (db.BillingStoreError, dashboard_module.MemberInvoiceDataError):
+            abort(503)
+        return _mark_private_response(
+            render_city_template("member_invoices.html", **view)
+        )
+
+    @bp.route("/dashboard/invoices/<int:invoice_id>")
+    def dashboard_invoice_detail(invoice_id):
+        building_id = _require_dashboard_session()
+        try:
+            invoice = dashboard_module.member_invoice_detail(invoice_id, building_id)
+        except (db.BillingStoreError, dashboard_module.MemberInvoiceDataError):
+            abort(503)
+        if not invoice:
+            abort(404)
+        return _mark_private_response(
+            render_city_template("member_invoice_detail.html", invoice=invoice)
+        )
+
+    @bp.route("/dashboard/invoices/<int:invoice_id>/pdf")
+    def dashboard_invoice_pdf(invoice_id):
+        building_id = _require_dashboard_session()
+        try:
+            invoice = dashboard_module.member_invoice_detail(invoice_id, building_id)
+        except (db.BillingStoreError, dashboard_module.MemberInvoiceDataError):
+            abort(503)
+        if not invoice:
+            abort(404)
+        pdf_bytes = dashboard_module.member_invoice_pdf_bytes(invoice)
+        return _mark_private_response(
+            send_file(
+                io.BytesIO(pdf_bytes),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=f"rechnung-{invoice['invoice_number']}.pdf",
+            )
+        )
+
     @bp.route("/leg/dashboard")
     def leg_dashboard():
         community_id = request.args.get("cid", "").strip()

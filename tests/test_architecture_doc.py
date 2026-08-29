@@ -165,10 +165,11 @@ def test_doc_matches_billing_orchestration_boundary() -> None:
 
     The app drives billing_runner from a cron route and per-community routes,
     and a confirmed community admin approves a reconciled draft through
-    billing_approval.py and store.billing's approval seam. A doc that calls the
-    billing code uncalled, its period table empty, or its surface read-only
-    sends a reader looking for work that is already shipped, and hides the work
-    that is genuinely missing: there is no invoice PDF.
+    billing_approval.py and store.billing's approval seam. A member then reads
+    their own issued invoices and downloads a PDF through /dashboard/invoices
+    (member_invoices.py). A doc that calls the billing code uncalled, its
+    period table empty, its surface read-only, or invoice PDF download
+    unbuilt sends a reader looking for work that is already shipped.
 
     Asserted against the registered route map rather than one module's source,
     because the cron surface moved into its own blueprint (#335) and the check
@@ -189,6 +190,9 @@ def test_doc_matches_billing_orchestration_boundary() -> None:
 
     assert "/api/cron/process-billing" in registered
     assert any(rule.startswith("/api/billing/community/") for rule in registered)
+    assert "/dashboard/invoices" in registered
+    assert "/dashboard/invoices/<int:invoice_id>" in registered
+    assert "/dashboard/invoices/<int:invoice_id>/pdf" in registered
 
     cron_source = (PROJECT_ROOT / "cron.py").read_text(encoding="utf-8")
     assert "billing_runner.run_billing_period" in cron_source, (
@@ -217,8 +221,20 @@ def test_doc_matches_billing_orchestration_boundary() -> None:
     assert "read-only audit" in lowered, (
         "docs/architecture.md must keep the admin audit view read-only"
     )
-    assert "no invoice pdf" in lowered, (
-        "docs/architecture.md must state that no invoice PDF exists yet"
+    assert "no invoice pdf" not in lowered, (
+        "docs/architecture.md must not claim invoice PDF download is still "
+        "missing now that /dashboard/invoices ships it"
+    )
+    assert "/dashboard/invoices" in lowered, (
+        "docs/architecture.md must document the private member invoice routes"
+    )
+    assert "member_invoices.py" in lowered, (
+        "docs/architecture.md must name member_invoices.py as the member "
+        "invoice display/PDF model"
+    )
+    assert "immutable" in lowered and "snapshot" in lowered, (
+        "docs/architecture.md must say the member view renders only the "
+        "frozen invoice snapshot, never a recomputation"
     )
 
     assert "has no callers" not in lowered, (

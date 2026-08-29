@@ -9,6 +9,7 @@ import billing_workspace
 import database as db
 import formation_documents
 import formation_wizard
+import member_invoices
 import security_utils
 
 _PROFILE_EXPORT_FIELDS = (
@@ -288,6 +289,24 @@ def leg_save_billing_policy(community_id: str, building_id: str, form) -> dict:
             },
         }
     return {"error": None, "errors": {}}
+
+
+MemberInvoiceDataError = member_invoices.MemberInvoiceDataError
+
+
+def member_invoices_view(building_id: str) -> dict:
+    """Own issued invoices only, newest first. Thin seam over member_invoices."""
+    return member_invoices.list_view(building_id)
+
+
+def member_invoice_detail(invoice_id: int, building_id: str) -> dict | None:
+    """One own issued invoice, or None for a missing or another member's id."""
+    return member_invoices.detail_view(invoice_id, building_id)
+
+
+def member_invoice_pdf_bytes(invoice: dict) -> bytes:
+    """Render the exact detail view dict as a printable PDF."""
+    return member_invoices.render_pdf(invoice)
 
 
 def leg_create(name: str, building_id: str, distribution_model: str) -> dict:

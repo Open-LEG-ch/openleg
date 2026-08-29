@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Acceptance contract for approving reconciled billing drafts (#399)."""
 
+import json
 import os
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -812,7 +813,11 @@ class _ApprovalCursor:
         self._line_items = line_items
         self._invoices = list(invoices)
         self._community_row = (
-            {"community_id": COMMUNITY, "status": "active"}
+            {
+                "community_id": COMMUNITY,
+                "name": "LEG Musterweg",
+                "status": "active",
+            }
             if community_active
             else None
         )
@@ -882,10 +887,39 @@ def test_approve_locks_the_active_community_row_before_the_period(monkeypatch):
     community_lock = next(q for q in queries if "FROM communities" in q)
     period_lock = next(q for q in queries if "FROM billing_periods" in q)
     assert "FOR UPDATE" in community_lock
+    assert "name" in community_lock
     assert "community_id = %s" in community_lock
     assert "status = 'active'" in community_lock
     assert "FOR UPDATE" in period_lock
     assert queries.index(community_lock) < queries.index(period_lock)
+
+    invoice_insert = next(
+        params for query, params in cursor.executed if "INSERT INTO invoices" in query
+    )
+    provenance = json.loads(invoice_insert[6])
+    assert provenance["issuer"] == {
+        "community_id": COMMUNITY,
+        "name": "LEG Musterweg",
+    }
+
+
+def test_prepare_freezes_the_validated_rounding_adjustment_proof():
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        _draft(), issue_date=date(2026, 2, 5)
+    )
+
+    proofs = {
+        snapshot["participant_id"]: snapshot["provenance_snapshot"][
+            "rounding_adjustment"
+        ]
+        for snapshot in snapshots
+    }
+    assert proofs["building-b"] == {
+        "participant_id": "building-b",
+        "amount_chf": "0.000001",
+    }
+    assert proofs["building-a"] is None
+    assert proofs["building-c"] is None
 
 
 def test_approve_refuses_a_missing_or_inactive_community_before_touching_periods(

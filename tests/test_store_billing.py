@@ -27,6 +27,8 @@ _REEXPORTED = (
     "get_billing_period",
     "get_billing_period_for_window",
     "get_billing_policy",
+    "get_invoices_for_participant",
+    "get_invoice_for_participant",
 )
 
 
@@ -250,6 +252,129 @@ def test_save_billing_policy_receives_aware_zurich_midnight(monkeypatch):
     assert "INSERT INTO billing_tariffs" in query
     assert params[1] == datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich"))
     assert params[1].utcoffset().total_seconds() == 7200
+
+
+def test_get_invoices_for_participant_scopes_to_building_and_issued(monkeypatch):
+    cur = _FakeCursor(
+        rows=[
+            {"id": 1, "invoice_number": "LEG-2026-000001", "issue_date": "2026-08-05"}
+        ]
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    rows = billing.get_invoices_for_participant("building-a")
+
+    assert rows == [
+        {"id": 1, "invoice_number": "LEG-2026-000001", "issue_date": "2026-08-05"}
+    ]
+    query, params = cur.executed[0]
+    normalised = " ".join(query.split())
+    assert "participant_id = %s" in normalised
+    assert "status = 'issued'" in normalised
+    assert "ORDER BY issue_date DESC, id DESC" in normalised
+    assert params == ("building-a",)
+
+
+def test_get_invoices_for_participant_selects_integrity_fields_explicitly(monkeypatch):
+    """The list returns only summary values to the browser, but reads all
+    frozen integrity fields needed to reject a corrupted finite total."""
+    cur = _FakeCursor(rows=[])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    billing.get_invoices_for_participant("building-a")
+
+    query = cur.executed[0][0]
+    normalised = " ".join(query.split())
+    assert "select *" not in normalised.lower()
+    select_clause = normalised.split("FROM")[0]
+    for column in (
+        "id",
+        "community_id",
+        "participant_id",
+        "invoice_number",
+        "issue_date",
+        "due_date",
+        "policy_snapshot",
+        "gross_chf",
+        "provenance_snapshot",
+        "line_items_snapshot",
+        "net_chf",
+        "vat_rate_pct",
+        "vat_chf",
+    ):
+        assert column in select_clause, f"list query must select {column}"
+
+
+def test_get_invoices_for_participant_propagates_storage_failure(monkeypatch):
+    @contextmanager
+    def unavailable_connection():
+        raise RuntimeError("database unavailable")
+        yield
+
+    monkeypatch.setattr(database, "get_connection", unavailable_connection)
+
+    with pytest.raises(billing.BillingStoreError):
+        billing.get_invoices_for_participant("building-a")
+
+
+def test_get_invoice_for_participant_uses_only_the_immutable_invoice(monkeypatch):
+    """Issuer identity is frozen in provenance_snapshot at approval time, so
+    reading an invoice must not join mutable community data."""
+    cur = _FakeCursor(one={"id": 7, "participant_id": "building-a"})
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    invoice = billing.get_invoice_for_participant(7, "building-a")
+
+    assert invoice == {
+        "id": 7,
+        "participant_id": "building-a",
+    }
+    query, params = cur.executed[0]
+    normalised = " ".join(query.split())
+    assert "join communities" not in normalised.lower()
+    assert "id = %s" in normalised
+    assert "participant_id = %s" in normalised
+    assert "status = 'issued'" in normalised
+    assert params == (7, "building-a")
+
+
+def test_get_invoice_for_participant_missing_returns_none(monkeypatch):
+    cur = _FakeCursor(one=None)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert billing.get_invoice_for_participant(999, "building-a") is None
+
+
+def test_get_invoice_for_participant_cross_member_is_indistinguishable_from_missing(
+    monkeypatch,
+):
+    """A wrong owner and a nonexistent id both fail the same WHERE clause, so
+    both return None through the identical code path: nothing downstream can
+    tell "exists, not yours" from "does not exist"."""
+    owner_cur = _FakeCursor(
+        one=None
+    )  # invoice 7 belongs to "building-b", not "building-a"
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(owner_cur))
+    cross_member = billing.get_invoice_for_participant(7, "building-a")
+
+    missing_cur = _FakeCursor(one=None)  # invoice 7 does not exist at all
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(missing_cur))
+    missing = billing.get_invoice_for_participant(7, "building-a")
+
+    assert cross_member is missing is None
+    assert owner_cur.executed == missing_cur.executed
+
+
+def test_get_invoice_for_participant_propagates_storage_failure(monkeypatch):
+    @contextmanager
+    def unavailable_connection():
+        raise RuntimeError("database unavailable")
+        yield
+
+    monkeypatch.setattr(database, "get_connection", unavailable_connection)
+
+    with pytest.raises(billing.BillingStoreError):
+        billing.get_invoice_for_participant(7, "building-a")
 
 
 def test_get_billing_policy_outer_select_projects_community_id(monkeypatch):
