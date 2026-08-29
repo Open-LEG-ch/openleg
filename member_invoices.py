@@ -21,6 +21,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from markupsafe import escape
 
+import billing_lifecycle
 import billing_policy
 import billing_workspace
 import database as db
@@ -200,6 +201,10 @@ def _summary(invoice: dict) -> dict:
     gross = _require_finite_decimal(
         invoice.get("gross_chf"), "Die Rechnung hat keinen gültigen Gesamtbetrag."
     )
+    try:
+        lifecycle = billing_lifecycle.describe_invoice(invoice)
+    except billing_lifecycle.InvoiceLifecycleError as exc:
+        raise MemberInvoiceDataError(str(exc)) from exc
     return {
         "id": invoice_id,
         "invoice_number": invoice_number,
@@ -207,6 +212,10 @@ def _summary(invoice: dict) -> dict:
         "issue_date": issue_date,
         "due_date": due_date,
         "display_gross_chf": _decimal_text(gross, 2),
+        "lifecycle_state": lifecycle["lifecycle_state"],
+        "status_label": lifecycle["status_label"],
+        "corrects_invoice_number": invoice.get("corrects_invoice_number"),
+        "corrected_by_invoice_number": invoice.get("corrected_by_invoice_number"),
     }
 
 
@@ -231,6 +240,10 @@ def list_view(building_id: str) -> dict:
                     "issue_date",
                     "due_date",
                     "display_gross_chf",
+                    "lifecycle_state",
+                    "status_label",
+                    "corrects_invoice_number",
+                    "corrected_by_invoice_number",
                 )
             }
         )
