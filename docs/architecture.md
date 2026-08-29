@@ -79,6 +79,23 @@ Application and API routes:
   approves it, which issues one immutable invoice snapshot per participant.
 - `/admin/abrechnungen` renders the same persisted drafts as a read-only audit
   workspace with tariff, VNB reconciliation, provenance, and signed line items.
+- `/dashboard/invoices` is the private member invoice list: an authenticated
+  dashboard session sees only their own issued invoices.
+  `/dashboard/invoices/<int:invoice_id>` renders one invoice's issuer, period,
+  number, issue/due dates, VAT treatment, and charges/credits/total, and
+  `/dashboard/invoices/<int:invoice_id>/pdf` downloads the identical figures
+  as a PDF. Every value
+  is read from the frozen, immutable invoice snapshot columns (`policy_
+  snapshot`, `provenance_snapshot`, `line_items_snapshot`, `net_chf`,
+  `vat_chf`, `gross_chf`) through `member_invoices.py`; nothing is
+  recomputed from mutable billing tables or the current policy. A missing
+  invoice_id and another participant's invoice_id return the identical 404;
+  a corrupted snapshot or a storage outage both fail closed to a
+  non-disclosing 503, never an invented value. All three routes are
+  session-gated and `Cache-Control: no-store`.
+  New invoices freeze the issuing LEG's ID and name in the provenance snapshot;
+  older invoices show their already-frozen `community_id` and never consult a
+  mutable community name.
 - `/admin/*` and `/api/internal/*` sit behind an admin or internal token.
 
 ## Code map
@@ -113,6 +130,11 @@ Application and API routes:
   canonical reconciliation shape, SHA-256 provenance, and a complete policy
   snapshot inside the `billing_policy` value domains.
 - `billing_workspace.py`: display-ready audit model for persisted billing drafts.
+- `member_invoices.py`: display-ready read model for one member's own issued
+  invoices, built strictly from the frozen invoice snapshot; fails closed
+  with `MemberInvoiceDataError` on a malformed or non-finite snapshot rather
+  than rendering an invented value, and renders the identical PDF through the
+  public `document_generator.render_pdf_html` seam.
 - `sdat_datahub.py`, `sdat_e66.py`, `meter_data.py`: meter data retrieval,
   SDAT parsing, and upload ingestion.
 - `templates/`, `static/`, `tests/`, `scripts/`.
@@ -170,7 +192,9 @@ community admin approves a reconciled draft in the billing workspace, and
 `billing_approval.prepare_invoice_snapshots` and atomically issues one
 immutable, timezone-aware `invoices` row per participant with frozen policy,
 provenance, and line-item snapshots. `/admin/abrechnungen` stays a read-only
-audit view; there is no invoice PDF generation or download yet.
+audit view. The member side is read-only too: `member_invoices.py` turns one
+issued invoice's frozen snapshot into the `/dashboard/invoices` list, its
+private detail page, and its PDF download, without recomputing any figure.
 
 ## Request flow
 

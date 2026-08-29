@@ -625,13 +625,25 @@ def prepare_invoice_snapshots(period, issue_date=None):
         "period_start": _json_safe(period.get("period_start")),
         "period_end": _json_safe(period.get("period_end")),
     }
-
     snapshots = []
     for participant_id in sorted({item["participant_id"] for item in line_items}):
         items = [
             item for item in line_items if item.get("participant_id") == participant_id
         ]
         items.sort(key=lambda item: item.get("id") or 0)
+        participant_rounding = next(
+            (item for item in items if item.get("item_type") == "rounding_adjustment"),
+            None,
+        )
+        participant_provenance = dict(provenance)
+        participant_provenance["rounding_adjustment"] = (
+            {
+                "participant_id": participant_id,
+                "amount_chf": _json_safe(participant_rounding["amount_chf"]),
+            }
+            if participant_rounding
+            else None
+        )
         net = sum((_as_decimal(item.get("amount_chf")) for item in items), Decimal(0))
         if not net.is_finite():
             raise BillingApprovalError(
@@ -657,7 +669,7 @@ def prepare_invoice_snapshots(period, issue_date=None):
                 "issue_date": issue_date,
                 "due_date": due_date,
                 "policy_snapshot": _json_safe(policy),
-                "provenance_snapshot": provenance,
+                "provenance_snapshot": participant_provenance,
                 "input_fingerprint": period["input_fingerprint"],
                 "source_document_ids": _json_safe(list(source_document_ids)),
             }

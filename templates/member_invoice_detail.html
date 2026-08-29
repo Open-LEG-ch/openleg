@@ -1,0 +1,108 @@
+{% extends "product_base.html" %}
+
+{% block meta %}
+  <title>Rechnung {{ invoice.invoice_number }} | {{ platform_name }}</title>
+  <meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
+{% block head_extra %}
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    body { background: #fff; }
+  }
+  .invoice-table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
+  .invoice-table th, .invoice-table td { border-bottom: 1px solid #ded7c6; padding: 0.5rem; text-align: left; }
+  .invoice-table th.num, .invoice-table td.num { text-align: right; }
+  .invoice-totals { max-width: 20rem; margin-left: auto; }
+  .invoice-totals > div { display: flex; justify-content: space-between; gap: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+  <div class="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
+    <a href="/dashboard/invoices" class="text-brand hover:underline font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Zurück zu meinen Rechnungen</a>
+    <div class="flex gap-2">
+      <a href="/dashboard/invoices/{{ invoice.id }}/pdf" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Als PDF herunterladen</a>
+      <button type="button" onclick="window.print()" class="border border-line px-4 py-2 rounded-lg font-semibold hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Drucken</button>
+    </div>
+  </div>
+
+  <article class="bg-white rounded-xl border border-line p-6" aria-labelledby="invoice-title">
+    <h1 id="invoice-title" class="text-2xl font-bold mb-4">Rechnung {{ invoice.invoice_number }}</h1>
+    <dl class="grid gap-2 text-sm mb-6">
+      <div><dt class="font-semibold text-ink inline">Aussteller:</dt> <dd class="inline">{{ invoice.issuer_name }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">Periode:</dt> <dd class="inline">{{ invoice.period_label }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">Rechnungsdatum:</dt> <dd class="inline">{{ invoice.issue_date }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">Fällig am:</dt> <dd class="inline">{{ invoice.due_date }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">Mehrwertsteuer:</dt> <dd class="inline">{{ invoice.vat_mode_label }} ({{ invoice.display_vat_rate_pct }}%)</dd></div>
+    </dl>
+
+    <h2 class="text-lg font-bold mb-2">Verbrauchskosten</h2>
+    {% if invoice.charges %}
+    <div class="overflow-x-auto">
+    <table class="invoice-table text-sm">
+      <caption class="sr-only">Verbrauchskosten dieser Rechnung</caption>
+      <thead>
+        <tr>
+          <th scope="col">Position</th>
+          <th scope="col" class="num">Menge (kWh)</th>
+          <th scope="col" class="num">Preis (Rp./kWh)</th>
+          <th scope="col" class="num">Betrag (CHF)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in invoice.charges %}
+        <tr>
+          <td>{{ item.item_type_label }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_quantity_kwh }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_unit_price_rp }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_amount_chf }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-ink-muted mb-6">Keine Verbrauchskosten.</p>
+    {% endif %}
+
+    <h2 class="text-lg font-bold mb-2">Gutschriften und Ausgleich</h2>
+    {% set credit_items = invoice.credits + invoice.rounding_adjustments %}
+    {% if credit_items %}
+    <div class="overflow-x-auto">
+    <table class="invoice-table text-sm">
+      <caption class="sr-only">Gutschriften und Rundungsausgleich dieser Rechnung</caption>
+      <thead>
+        <tr>
+          <th scope="col">Position</th>
+          <th scope="col" class="num">Menge (kWh)</th>
+          <th scope="col" class="num">Preis (Rp./kWh)</th>
+          <th scope="col" class="num">Betrag (CHF)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in credit_items %}
+        <tr>
+          <td>{{ item.item_type_label }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_quantity_kwh or "-" }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_unit_price_rp or "-" }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_amount_chf }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-ink-muted mb-6">Keine Gutschriften.</p>
+    {% endif %}
+
+    <dl class="invoice-totals text-sm">
+      <div><dt>Nettobetrag</dt><dd class="font-mono tabular-nums">{{ invoice.display_net_chf }} CHF</dd></div>
+      <div><dt>Mehrwertsteuer</dt><dd class="font-mono tabular-nums">{{ invoice.display_vat_chf }} CHF</dd></div>
+      <div class="font-bold text-base"><dt>Gesamtbetrag</dt><dd class="font-mono tabular-nums">{{ invoice.display_gross_chf }} CHF</dd></div>
+    </dl>
+  </article>
+</div>
+{% endblock %}
