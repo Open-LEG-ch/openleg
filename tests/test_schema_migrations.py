@@ -109,6 +109,16 @@ def _constraint(cur, table, constraint_name):
     return cur.fetchone()
 
 
+def _drop_invoice_schema_for_legacy_fixture(cur):
+    """Remove fresh tables that depend on invoices before installing old DDL."""
+    cur.execute(
+        """
+        DROP TABLE invoice_corrections, invoice_delivery_jobs,
+                   invoice_lifecycle_events, invoices
+        """
+    )
+
+
 @contextmanager
 def _temporary_database():
     """Create a throw-away Postgres database and yield its URL."""
@@ -441,7 +451,7 @@ def test_create_tables_migrates_legacy_invoices_issued_at_to_timestamptz():
     with _temporary_database() as url, _pool_against(url):
         create_tables()
         with database.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("DROP TABLE invoices")
+            _drop_invoice_schema_for_legacy_fixture(cur)
             cur.execute(PRE_MIGRATION_INVOICES)
             cur.execute(
                 """
@@ -517,7 +527,7 @@ def test_legacy_global_invoice_number_constraint_is_migrated_away():
     with _temporary_database() as url, _pool_against(url):
         create_tables()
         with database.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("DROP TABLE invoices")
+            _drop_invoice_schema_for_legacy_fixture(cur)
             cur.execute(PRE_MIGRATION_INVOICES)
 
         create_tables()
