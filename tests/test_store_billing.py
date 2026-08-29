@@ -271,7 +271,7 @@ def test_get_invoices_for_participant_scopes_to_building_and_issued(monkeypatch)
     normalised = " ".join(query.split())
     assert "participant_id = %s" in normalised
     assert "status = 'issued'" in normalised
-    assert "ORDER BY issue_date DESC, id DESC" in normalised
+    assert "ORDER BY i.issue_date DESC, i.id DESC" in normalised
     assert params == ("building-a",)
 
 

@@ -2,8 +2,10 @@
 """Dashboard readiness verb."""
 
 import math
+from datetime import date
 from urllib.parse import quote, urlencode
 
+import billing_lifecycle
 import billing_policy
 import billing_workspace
 import database as db
@@ -194,6 +196,7 @@ def leg_billing_workspace_location(community_id: str) -> str:
 
 
 _BILLING_STATUS_LABELS = {"draft": "Entwurf", "issued": "Freigegeben"}
+InvoiceLifecycleError = billing_lifecycle.InvoiceLifecycleError
 
 
 def _billing_workspace_period(period: dict) -> dict:
@@ -218,15 +221,139 @@ def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> 
     if not _require_confirmed_admin(community_id, building_id):
         return {"error": "Kein Zugriff."}
     periods = db.list_community_billing_periods(community_id)
+    invoices = [
+        billing_lifecycle.describe_invoice(invoice)
+        for invoice in db.list_community_invoices(community_id)
+    ]
+    events_by_invoice = {}
+    community_events = (
+        db.list_community_invoice_events(community_id) if invoices else []
+    )
+    for event in community_events:
+        events_by_invoice.setdefault(event["invoice_id"], []).append(event)
+    for invoice in invoices:
+        invoice["display_gross_chf"] = f"{invoice.get('gross_chf', 0):.2f}"
+        policy_snapshot = invoice.get("policy_snapshot")
+        delivery_method = (
+            policy_snapshot.get("delivery_method")
+            if isinstance(policy_snapshot, dict)
+            else None
+        )
+        invoice["delivery_method_label"] = billing_policy.DELIVERY_METHOD_LABELS.get(
+            delivery_method, "Nicht angegeben"
+        )
+        invoice["events"] = [
+            {
+                **event,
+                "previous_status_label": billing_lifecycle.STATE_LABELS.get(
+                    event.get("previous_state"), event.get("previous_state")
+                ),
+                "new_status_label": billing_lifecycle.STATE_LABELS.get(
+                    event.get("new_state"), event.get("new_state")
+                ),
+            }
+            for event in events_by_invoice.get(invoice["id"], [])
+        ]
+        invoice["correction_candidates"] = [
+            {
+                "id": candidate["id"],
+                "invoice_number": candidate["invoice_number"],
+            }
+            for candidate in invoices
+            if candidate["id"] != invoice["id"]
+            and candidate.get("participant_id") == invoice.get("participant_id")
+            and candidate["lifecycle_state"] == "issued"
+            and not candidate.get("corrects_invoice_number")
+        ]
     view = {
         "error": None,
         "community_id": community_id,
         "periods": [_billing_workspace_period(period) for period in periods],
+        "invoices": invoices,
         "billing_approved": False,
         "approval_error": None,
     }
     view.update(extra)
     return view
+
+
+def leg_deliver_invoice(
+    community_id, building_id, invoice_id, *, send_email, invoice_url
+):
+    """Reserve and complete one idempotent portal or email delivery."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff."}
+    delivery = db.prepare_invoice_delivery(invoice_id, community_id, building_id)
+    if delivery.get("already_delivered"):
+        return {"error": None, **delivery}
+    if delivery.get("confirmation_required"):
+        return {"error": None, **delivery}
+    if delivery["delivery_method"] == "email":
+        recipient = delivery.get("recipient_email")
+        sent = bool(
+            recipient
+            and send_email(
+                recipient,
+                f"Ihre Rechnung {delivery['invoice_number']}",
+                (
+                    "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard "
+                    f"verfügbar: {invoice_url}"
+                ),
+            )
+        )
+        if not sent:
+            error = "E-Mail-Versand fehlgeschlagen"
+            db.fail_invoice_delivery(invoice_id, community_id, building_id, error)
+            return {"error": "Die Rechnung konnte nicht per E-Mail zugestellt werden."}
+    completed = db.complete_invoice_delivery(invoice_id, community_id, building_id)
+    return {"error": None, **completed}
+
+
+def leg_confirm_invoice_delivery(community_id, building_id, invoice_id):
+    """Let an admin resolve an uncertain send without repeating the email."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff."}
+    confirmed = db.confirm_invoice_delivery(invoice_id, community_id, building_id)
+    return {"error": None, **confirmed}
+
+
+def leg_record_invoice_payment(
+    community_id, building_id, invoice_id, paid_date, reference
+):
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff."}
+    try:
+        parsed_date = date.fromisoformat(paid_date)
+    except (TypeError, ValueError):
+        raise InvoiceLifecycleError(
+            "Ein gültiges Zahlungsdatum ist erforderlich."
+        ) from None
+    db.record_invoice_payment(
+        invoice_id, community_id, building_id, parsed_date, reference
+    )
+    return {"error": None}
+
+
+def leg_cancel_invoice(community_id, building_id, invoice_id, reason):
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff."}
+    db.cancel_invoice(invoice_id, community_id, building_id, reason)
+    return {"error": None}
+
+
+def leg_correct_invoice(
+    community_id, building_id, invoice_id, corrected_invoice_id, reason
+):
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff."}
+    try:
+        corrected_id = int(corrected_invoice_id)
+    except (TypeError, ValueError):
+        raise InvoiceLifecycleError(
+            "Eine gültige Ersatzrechnung ist erforderlich."
+        ) from None
+    db.correct_invoice(invoice_id, corrected_id, community_id, building_id, reason)
+    return {"error": None}
 
 
 def leg_approve_billing_period(

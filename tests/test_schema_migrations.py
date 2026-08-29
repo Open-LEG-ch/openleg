@@ -350,7 +350,7 @@ def test_issued_invoice_snapshots_are_unique_per_participant_and_immutable():
                     gross_chf, issue_date, due_date, status, issued_at
                 ) VALUES (
                     %s, 'LEG-A', 'building-a', 'LEGA-2026-000001',
-                    '{}'::jsonb, '{}'::jsonb, '[]'::jsonb,
+                    '{"delivery_method":"download"}'::jsonb, '{}'::jsonb, '[]'::jsonb,
                     10.01, 8.1, 0.81, 10.82,
                     DATE '2026-02-05', DATE '2026-03-07', 'issued', NOW()
                 ) RETURNING id
@@ -387,6 +387,31 @@ def test_issued_invoice_snapshots_are_unique_per_participant_and_immutable():
                     """,
                     (invoice_id,),
                 )
+
+        delivery = database.prepare_invoice_delivery(
+            invoice_id, "LEG-A", "building-admin"
+        )
+        assert delivery["delivery_method"] == "download"
+        completed = database.complete_invoice_delivery(
+            invoice_id, "LEG-A", "building-admin"
+        )
+        assert completed["lifecycle_state"] == "delivered"
+        events = database.list_invoice_events(invoice_id, "LEG-A")
+        assert events[0]["actor_id"] == "building-admin"
+        assert events[0]["previous_state"] == "issued"
+        assert events[0]["new_state"] == "delivered"
+
+        with pytest.raises(psycopg2.Error):
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE invoice_lifecycle_events SET actor_id = 'changed'"
+                    " WHERE invoice_id = %s",
+                    (invoice_id,),
+                )
+
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT to_regclass('invoice_corrections') AS table_name")
+            assert cur.fetchone()["table_name"] == "invoice_corrections"
 
 
 @pytest.mark.integration

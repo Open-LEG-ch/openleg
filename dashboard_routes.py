@@ -448,6 +448,135 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             + "?approved=1"
         )
 
+    def _invoice_lifecycle_response(community_id, action):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            result = action(building_id)
+        except dashboard_module.InvoiceLifecycleError:
+            try:
+                view = dashboard_module.leg_billing_workspace_view(
+                    community_id, building_id
+                )
+            except db.BillingStoreError:
+                abort(503)
+            view["lifecycle_error"] = (
+                "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
+            )
+            return (
+                _mark_private_response(
+                    render_city_template(
+                        "leg_billing.html",
+                        csrf_token=_dashboard_csrf_token(),
+                        **view,
+                    )
+                ),
+                409,
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"] == "Kein Zugriff.":
+            abort(403)
+        if result["error"]:
+            try:
+                view = dashboard_module.leg_billing_workspace_view(
+                    community_id, building_id
+                )
+            except db.BillingStoreError:
+                abort(503)
+            view["lifecycle_error"] = result["error"]
+            return (
+                _mark_private_response(
+                    render_city_template(
+                        "leg_billing.html",
+                        csrf_token=_dashboard_csrf_token(),
+                        **view,
+                    )
+                ),
+                502,
+            )
+        return redirect(
+            dashboard_module.leg_billing_workspace_location(community_id) + "?updated=1"
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/deliver",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_deliver(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_deliver_invoice(
+                community_id,
+                building_id,
+                invoice_id,
+                send_email=send_email,
+                invoice_url=(
+                    current_app.config["APP_BASE_URL"].rstrip("/")
+                    + f"/dashboard/invoices/{invoice_id}"
+                ),
+            ),
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/delivery-confirmed",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_delivery_confirmed(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_confirm_invoice_delivery(
+                community_id, building_id, invoice_id
+            ),
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/paid",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_paid(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_record_invoice_payment(
+                community_id,
+                building_id,
+                invoice_id,
+                request.form.get("paid_date", ""),
+                request.form.get("reference", ""),
+            ),
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/cancel",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_cancel(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_cancel_invoice(
+                community_id,
+                building_id,
+                invoice_id,
+                request.form.get("reason", ""),
+            ),
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/correct",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_correct(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_correct_invoice(
+                community_id,
+                building_id,
+                invoice_id,
+                request.form.get("corrected_invoice_id", ""),
+                request.form.get("reason", ""),
+            ),
+        )
+
     @bp.route("/leg/community/<community_id>/billing-policy")
     def leg_billing_policy_page(community_id):
         building_id = _require_dashboard_session()

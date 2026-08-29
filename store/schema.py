@@ -817,6 +817,68 @@ def create_tables():
             """)
 
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoice_lifecycle_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+                    community_id VARCHAR(64) NOT NULL,
+                    actor_id VARCHAR(64) NOT NULL,
+                    event_type VARCHAR(32) NOT NULL,
+                    previous_state VARCHAR(32) NOT NULL,
+                    new_state VARCHAR(32) NOT NULL,
+                    reason TEXT,
+                    reference TEXT,
+                    effective_date DATE,
+                    idempotency_key VARCHAR(128) NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE (invoice_id, idempotency_key),
+                    CHECK (previous_state IN ('issued', 'delivered', 'paid', 'cancelled', 'corrected')),
+                    CHECK (new_state IN ('issued', 'delivered', 'paid', 'cancelled', 'corrected'))
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoice_delivery_jobs (
+                    invoice_id INTEGER PRIMARY KEY REFERENCES invoices(id),
+                    community_id VARCHAR(64) NOT NULL,
+                    delivery_method VARCHAR(16) NOT NULL,
+                    status VARCHAR(16) NOT NULL DEFAULT 'pending',
+                    attempt_count INTEGER NOT NULL DEFAULT 1,
+                    last_error TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CHECK (delivery_method IN ('email', 'download')),
+                    CHECK (status IN ('pending', 'sent', 'failed'))
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoice_corrections (
+                    original_invoice_id INTEGER PRIMARY KEY REFERENCES invoices(id),
+                    corrected_invoice_id INTEGER NOT NULL UNIQUE REFERENCES invoices(id),
+                    community_id VARCHAR(64) NOT NULL,
+                    actor_id VARCHAR(64) NOT NULL,
+                    reason TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CHECK (original_invoice_id <> corrected_invoice_id)
+                )
+            """)
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION reject_invoice_event_mutation()
+                RETURNS trigger AS $$
+                BEGIN
+                    RAISE EXCEPTION 'Invoice lifecycle events are append-only';
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+            cur.execute("""
+                DROP TRIGGER IF EXISTS invoice_events_append_only
+                ON invoice_lifecycle_events
+            """)
+            cur.execute("""
+                CREATE TRIGGER invoice_events_append_only
+                BEFORE UPDATE OR DELETE ON invoice_lifecycle_events
+                FOR EACH ROW EXECUTE FUNCTION reject_invoice_event_mutation()
+            """)
+
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS leg_documents (
                     id SERIAL PRIMARY KEY,
                     community_id VARCHAR(64) NOT NULL,

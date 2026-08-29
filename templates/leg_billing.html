@@ -15,6 +15,7 @@
   {% if approval_error %}
   <p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ approval_error }}</p>
   {% endif %}
+  {% if lifecycle_error %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ lifecycle_error }}</p>{% endif %}
 
   {% if periods %}
   <div class="space-y-6">
@@ -45,6 +46,82 @@
   <section class="bg-white rounded-xl border p-6">
     <p class="text-sm text-ink-muted">Noch keine Abrechnungsperioden vorhanden. Der Abrechnungslauf erstellt Entwürfe, sobald eine Richtlinie gespeichert ist und Messdaten vorliegen.</p>
   </section>
+  {% endif %}
+
+  <h2 class="text-xl font-bold mt-10 mb-4">Freigegebene Rechnungen</h2>
+  {% if invoices %}
+  <div class="space-y-4">
+    {% for invoice in invoices %}
+    <section class="bg-white rounded-xl border p-6">
+      <div class="flex flex-wrap justify-between gap-2 mb-3">
+        <h3 class="font-bold">{{ invoice.invoice_number }}</h3>
+        <span class="text-sm font-semibold text-brand">{{ invoice.status_label }}</span>
+      </div>
+      <p class="text-sm text-ink-muted mb-4">Teilnehmer: {{ invoice.participant_id }} · {{ invoice.display_gross_chf }} CHF · Zustellart: {{ invoice.delivery_method_label }}</p>
+      {% if invoice.lifecycle_state == 'issued' and not invoice.delivery_job_status %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/deliver" class="mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">Zustellen</button>
+      </form>
+      {% endif %}
+      {% if invoice.lifecycle_state == 'issued' and invoice.delivery_job_status in ('pending', 'failed') %}
+      <div class="mb-3 rounded-lg border border-accent bg-accent/10 p-4 text-sm">
+        <p class="mb-3">Der letzte Zustellversuch ist unklar. OpenLEG sendet nicht automatisch erneut, damit das Mitglied keine doppelte E-Mail erhält. Prüfen Sie den Versand und bestätigen Sie die Zustellung anschliessend.</p>
+        <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/delivery-confirmed">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="border border-brand px-4 py-2 rounded-lg font-semibold">Zustellung als erfolgt bestätigen</button>
+        </form>
+      </div>
+      {% endif %}
+      {% if invoice.lifecycle_state == 'delivered' %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/paid" class="grid sm:grid-cols-3 gap-2 mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="date" name="paid_date" required class="border rounded-lg px-3 py-2">
+        <input type="text" name="reference" required placeholder="Zahlungsreferenz" class="border rounded-lg px-3 py-2">
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">Zahlung erfassen</button>
+      </form>
+      {% endif %}
+      {% if invoice.lifecycle_state in ('issued', 'delivered') %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/cancel" class="grid sm:grid-cols-[1fr_auto] gap-2 mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="text" name="reason" required placeholder="Stornierungsgrund" class="border rounded-lg px-3 py-2">
+        <button type="submit" class="border border-accent px-4 py-2 rounded-lg font-semibold">Stornieren</button>
+      </form>
+      {% endif %}
+      {% if invoice.lifecycle_state == 'cancelled' and invoice.correction_candidates %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/correct" class="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <select name="corrected_invoice_id" required class="border rounded-lg px-3 py-2">
+          <option value="">Ersatzrechnung wählen</option>
+          {% for candidate in invoice.correction_candidates %}<option value="{{ candidate.id }}">{{ candidate.invoice_number }}</option>{% endfor %}
+        </select>
+        <input type="text" name="reason" required placeholder="Korrekturgrund" class="border rounded-lg px-3 py-2">
+        <button type="submit" class="border border-brand px-4 py-2 rounded-lg font-semibold">Korrektur verknüpfen</button>
+      </form>
+      {% endif %}
+      <details class="mt-4 border-t pt-4">
+        <summary class="cursor-pointer font-semibold">Audit-Verlauf</summary>
+        {% if invoice.events %}
+        <ol class="mt-3 space-y-3 text-sm">
+          {% for event in invoice.events %}
+          <li class="border-l-2 border-brand pl-3">
+            <p><span class="font-semibold">{{ event.previous_status_label }}</span> zu <span class="font-semibold">{{ event.new_status_label }}</span></p>
+            <p class="text-ink-muted">{{ event.created_at }} · {{ event.actor_id }}</p>
+            {% if event.reason %}<p>Grund: {{ event.reason }}</p>{% endif %}
+            {% if event.reference %}<p>Referenz: {{ event.reference }}</p>{% endif %}
+            {% if event.effective_date %}<p>Datum: {{ event.effective_date }}</p>{% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="mt-3 text-sm text-ink-muted">Noch keine Statusänderung protokolliert.</p>
+        {% endif %}
+      </details>
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-ink-muted">Noch keine freigegebenen Rechnungen vorhanden.</p>
   {% endif %}
 </div>
 {% endblock %}
