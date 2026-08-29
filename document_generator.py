@@ -27,6 +27,11 @@ def _render_pdf(html_str):
     return HTML(string=html_str).write_pdf()
 
 
+def render_pdf_html(html_str):
+    """Render trusted, already-escaped document HTML through the PDF backend."""
+    return _render_pdf(html_str)
+
+
 def generate_gemeinschaftsvereinbarung(
     community_name,
     participants,

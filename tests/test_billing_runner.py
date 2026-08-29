@@ -27,6 +27,11 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
         "grid_fee_chf_per_kwh": 0.08,
         "network_level": "same",
         "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": 0,
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
     }
     policy_calls = []
     frame_calls = []
@@ -239,6 +244,11 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
         "grid_fee_chf_per_kwh": 0.08,
         "network_level": "same",
         "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": 0,
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
     }
     summary = {"z": 1, "a": 2}
     reconciliation = {"difference_kwh": 0, "production_difference_kwh": 0}
@@ -266,6 +276,11 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
         "grid_fee_chf_per_kwh": "0.08",
         "network_level": "same",
         "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": "0",
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
         "vnb_reference": {"vnb_total_kwh": 3.0},
         "summary": {"z": 1, "a": 2},
         "reconciliation": {"difference_kwh": 0, "production_difference_kwh": 0},
@@ -291,6 +306,11 @@ DEFAULT_POLICY = {
     "grid_fee_chf_per_kwh": 0.08,
     "network_level": "same",
     "distribution_model": "proportional",
+    "vat_mode": "none",
+    "vat_rate_pct": 0,
+    "payment_days": 30,
+    "invoice_prefix": "LEG-2026",
+    "delivery_method": "email",
 }
 
 
@@ -538,7 +558,7 @@ def test_public_billing_fingerprint_matches_the_contract_vector(monkeypatch):
     fingerprint = _fingerprint_through_runner(monkeypatch, _fingerprint_case())
 
     assert fingerprint == (
-        "d530ebb158743b6ebb0efdb3514c06ac408f3c942df38fecbcb12c90e0dc9d2d"
+        "4f16b38457c142869b04f600a964263827848e553f5938112d0361acf30dad96"
     )
 
 
@@ -679,6 +699,38 @@ def test_an_incomplete_tariff_surfaces_as_a_billing_run_error(monkeypatch):
     assert str(exc.value) == "'grid_fee_chf_per_kwh'"
 
     assert saved == []
+
+
+def test_runner_persists_the_complete_effective_policy_snapshot(monkeypatch):
+    """Approval must never reconstruct historic choices from mutable tables."""
+    import billing_approval
+    from billing_runner import run_billing_period
+
+    policy = {**DEFAULT_POLICY, "effective_from": START}
+    saved = _install_billing_fixture(monkeypatch, policy=policy)
+
+    run_billing_period(COMMUNITY, START, END)
+
+    assert len(saved) == 1
+    community_id, period_start, period_end, summary = saved[0]
+    snapshot = summary["billing_policy_snapshot"]
+    assert snapshot == {**policy, "community_id": COMMUNITY}
+
+    period = {
+        "id": 42,
+        "community_id": community_id,
+        "status": "draft",
+        "period_start": period_start,
+        "period_end": period_end,
+        "input_fingerprint": summary["input_fingerprint"],
+        "source_document_ids": summary["source_document_ids"],
+        "reconciliation": summary["reconciliation"],
+        "billing_policy_snapshot": snapshot,
+        "line_items": summary["line_items"],
+    }
+    snapshots = billing_approval.prepare_invoice_snapshots(period)
+    assert snapshots
+    assert any(s["participant_id"] == "building-a" for s in snapshots)
 
 
 @pytest.mark.parametrize(

@@ -197,6 +197,13 @@
     </section>
 
     <section class="bg-white rounded-xl border p-6">
+      <h2 class="font-bold mb-2">Abrechnungs-Richtlinie</h2>
+      <p class="text-sm text-ink-muted mb-4">Legen Sie Preise, Netzentgelt, Mehrwertsteuer und Zustellung versioniert fest. Die Richtlinie steuert künftige Abrechnungsentwürfe.</p>
+      <a href="/leg/community/{{ community.community_id }}/billing-policy" class="inline-flex items-center rounded-lg bg-brand text-white px-6 py-3 font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Richtlinie verwalten</a>
+      <a href="/leg/community/{{ community.community_id }}/billing" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Abrechnungen freigeben</a>
+    </section>
+
+    <section class="bg-white rounded-xl border p-6">
       <h2 class="font-bold mb-2">Gründung starten</h2>
       <p class="text-sm text-ink-muted mb-4">Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.</p>
       <form method="post" action="/leg/community/{{ community.community_id }}/start-formation">

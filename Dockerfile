@@ -27,6 +27,10 @@ COPY templates/ templates/
 COPY static/ static/
 COPY scripts/ scripts/
 
+RUN test -f /app/app.py \
+    && test -f /app/templates/dashboard.html \
+    && test -f /app/static/css/openleg.css
+
 RUN mkdir -p /data
 
 EXPOSE 5000

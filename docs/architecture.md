@@ -74,8 +74,31 @@ Application and API routes:
   active community behind that cron secret.
 - `/api/billing/community/<community_id>/period/<int:period_id>` returns one
   persisted draft billing period as JSON to admins.
+- `/leg/community/<community_id>/billing` is the admin-gated approval
+  workspace: a confirmed community admin reviews a reconciled draft and
+  approves it, which issues one immutable invoice snapshot per participant.
+  The same workspace delivers an issued invoice through its frozen channel,
+  records payment, cancels unpaid invoices, links separately approved
+  corrections, and displays the append-only lifecycle audit.
 - `/admin/abrechnungen` renders the same persisted drafts as a read-only audit
   workspace with tariff, VNB reconciliation, provenance, and signed line items.
+- `/dashboard/invoices` is the private member invoice list: an authenticated
+  dashboard session sees only their own issued invoices.
+  `/dashboard/invoices/<int:invoice_id>` renders one invoice's issuer, period,
+  number, issue/due dates, VAT treatment, and charges/credits/total, and
+  `/dashboard/invoices/<int:invoice_id>/pdf` downloads the identical figures
+  as a PDF. Every value
+  is read from the frozen, immutable invoice snapshot columns (`policy_
+  snapshot`, `provenance_snapshot`, `line_items_snapshot`, `net_chf`,
+  `vat_chf`, `gross_chf`) through `member_invoices.py`; nothing is
+  recomputed from mutable billing tables or the current policy. A missing
+  invoice_id and another participant's invoice_id return the identical 404;
+  a corrupted snapshot or a storage outage both fail closed to a
+  non-disclosing 503, never an invented value. All three routes are
+  session-gated and `Cache-Control: no-store`.
+  New invoices freeze the issuing LEG's ID and name in the provenance snapshot;
+  older invoices show their already-frozen `community_id` and never consult a
+  mutable community name.
 - `/admin/*` and `/api/internal/*` sit behind an admin or internal token.
 
 ## Code map
@@ -105,7 +128,18 @@ Application and API routes:
   imported quarter-hour readings.
 - `billing_runner.py`: fail-closed orchestration and persistence for one billing
   period.
+- `billing_approval.py`: fail-closed approval validation. Turns one reconciled
+  draft period into immutable per-participant invoice snapshots, requiring the
+  canonical reconciliation shape, SHA-256 provenance, and a complete policy
+  snapshot inside the `billing_policy` value domains.
+- `billing_lifecycle.py`: validates issued, delivered, paid, cancelled, and
+  corrected state transitions without reading or writing storage.
 - `billing_workspace.py`: display-ready audit model for persisted billing drafts.
+- `member_invoices.py`: display-ready read model for one member's own issued
+  invoices, built strictly from the frozen invoice snapshot; fails closed
+  with `MemberInvoiceDataError` on a malformed or non-finite snapshot rather
+  than rendering an invented value, and renders the identical PDF through the
+  public `document_generator.render_pdf_html` seam.
 - `sdat_datahub.py`, `sdat_e66.py`, `meter_data.py`: meter data retrieval,
   SDAT parsing, and upload ingestion.
 - `templates/`, `static/`, `tests/`, `scripts/`.
@@ -157,8 +191,24 @@ environment-variable names are documented in `docs/data-pipeline.md`.
 frames. `billing_runner.py` validates tariff coverage, import provenance, and
 VNB reconciliation, calls `generate_billing_summary`, and persists an immutable
 draft `billing_periods` row. The secret-protected billing cron invokes this flow
-for the previous complete month. A read-only operator UI exposes persisted drafts
-for audit, but there is no member UI and no invoice PDF generation or download yet.
+for the previous complete month. Approval is the write seam: a confirmed
+community admin approves a reconciled draft in the billing workspace, and
+`store/billing.approve_billing_period` validates it through
+`billing_approval.prepare_invoice_snapshots` and atomically issues one
+immutable, timezone-aware `invoices` row per participant with frozen policy,
+provenance, and line-item snapshots. `/admin/abrechnungen` stays a read-only
+draft audit view. Admin lifecycle actions append actor, timestamp, previous and
+new state, and supporting reason or reference to `invoice_lifecycle_events`;
+they never update or delete the immutable invoice. Delivery uses a reservation
+row around the external email boundary so retries never send a duplicate. If
+the process cannot prove whether the external send completed, it neither sends
+again nor changes the invoice state; the workspace requires the admin to check
+the provider and explicitly confirm delivery. The member side is read-only
+too: `member_invoices.py` turns one
+issued invoice's frozen snapshot into the `/dashboard/invoices` list, its
+private detail page, and its PDF download, without recomputing any figure. The
+list and detail derive the current lifecycle status and correction links from
+the append-only audit.
 
 ## Request flow
 

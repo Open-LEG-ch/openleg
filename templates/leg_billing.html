@@ -1,0 +1,127 @@
+{% extends "product_base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+  <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="text-brand hover:underline font-semibold">Zurück zum LEG-Dashboard</a></p>
+  <h1 class="text-2xl font-bold mb-2">Abrechnungen</h1>
+  <p class="text-sm text-ink-muted mb-4">Hier prüfen Sie Abrechnungsentwürfe und geben sie frei. Die Freigabe erstellt unveränderliche Rechnungen pro Teilnehmer mit der eingefrorenen Richtlinie, dem Abgleich und den Quelldokumenten der Periode.</p>
+
+  <div class="rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm mb-6" role="note">
+    Freigegebene Rechnungen bleiben unverändert und nachvollziehbar. Prüfen Sie Tarif, Abgleich und Quelldokumente vor der Freigabe.
+  </div>
+
+  {% if billing_approved %}
+  <p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">Die Rechnungen wurden freigegeben.</p>
+  {% endif %}
+  {% if approval_error %}
+  <p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ approval_error }}</p>
+  {% endif %}
+  {% if lifecycle_error %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ lifecycle_error }}</p>{% endif %}
+
+  {% if periods %}
+  <div class="space-y-6">
+    {% for period in periods %}
+    <section class="bg-white rounded-xl border p-6">
+      <h2 class="font-bold mb-2">{{ period.period_label }}</h2>
+      <p class="text-sm mb-2">Status: <span class="font-semibold">{{ period.status_label }}</span></p>
+      <p class="text-sm text-ink-muted mb-4">
+        {% if period.reconciled %}Abgleich mit dem VNB: vollständig abgeglichen.{% else %}Abgleich mit dem VNB: Abweichung prüfen.{% endif %}
+        Quelldokumente: {{ period.source_count }}.
+      </p>
+      {% if period.approvable %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/approve">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="confirm-approval-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">
+          <input id="confirm-approval-{{ period.id }}" type="checkbox" name="confirm_approval" value="yes" required class="mt-1">
+          <span>Ich habe Tarif, Abgleich und Quelldokumente geprüft und gebe die Rechnungen dieser Periode verbindlich frei.</span>
+        </label>
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Rechnungen freigeben</button>
+      </form>
+      {% elif period.status == 'draft' %}
+      <p class="text-sm text-ink-muted">Dieser Entwurf ist nicht freigabebereit: Der Abgleich weicht ab oder Quelldokumente fehlen. Die Freigabe ist erst nach einem vollständigen Abgleich möglich.</p>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+  <section class="bg-white rounded-xl border p-6">
+    <p class="text-sm text-ink-muted">Noch keine Abrechnungsperioden vorhanden. Der Abrechnungslauf erstellt Entwürfe, sobald eine Richtlinie gespeichert ist und Messdaten vorliegen.</p>
+  </section>
+  {% endif %}
+
+  <h2 class="text-xl font-bold mt-10 mb-4">Freigegebene Rechnungen</h2>
+  {% if invoices %}
+  <div class="space-y-4">
+    {% for invoice in invoices %}
+    <section class="bg-white rounded-xl border p-6">
+      <div class="flex flex-wrap justify-between gap-2 mb-3">
+        <h3 class="font-bold">{{ invoice.invoice_number }}</h3>
+        <span class="text-sm font-semibold text-brand">{{ invoice.status_label }}</span>
+      </div>
+      <p class="text-sm text-ink-muted mb-4">Teilnehmer: {{ invoice.participant_id }} · {{ invoice.display_gross_chf }} CHF · Zustellart: {{ invoice.delivery_method_label }}</p>
+      {% if invoice.lifecycle_state == 'issued' and not invoice.delivery_job_status %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/deliver" class="mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">Zustellen</button>
+      </form>
+      {% endif %}
+      {% if invoice.lifecycle_state == 'issued' and invoice.delivery_job_status in ('pending', 'failed') %}
+      <div class="mb-3 rounded-lg border border-accent bg-accent/10 p-4 text-sm">
+        <p class="mb-3">Der letzte Zustellversuch ist unklar. OpenLEG sendet nicht automatisch erneut, damit das Mitglied keine doppelte E-Mail erhält. Prüfen Sie den Versand und bestätigen Sie die Zustellung anschliessend.</p>
+        <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/delivery-confirmed">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="border border-brand px-4 py-2 rounded-lg font-semibold">Zustellung als erfolgt bestätigen</button>
+        </form>
+      </div>
+      {% endif %}
+      {% if invoice.lifecycle_state == 'delivered' %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/paid" class="grid sm:grid-cols-3 gap-2 mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="date" name="paid_date" required class="border rounded-lg px-3 py-2">
+        <input type="text" name="reference" required placeholder="Zahlungsreferenz" class="border rounded-lg px-3 py-2">
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">Zahlung erfassen</button>
+      </form>
+      {% endif %}
+      {% if invoice.lifecycle_state in ('issued', 'delivered') %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/cancel" class="grid sm:grid-cols-[1fr_auto] gap-2 mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="text" name="reason" required placeholder="Stornierungsgrund" class="border rounded-lg px-3 py-2">
+        <button type="submit" class="border border-accent px-4 py-2 rounded-lg font-semibold">Stornieren</button>
+      </form>
+      {% endif %}
+      {% if invoice.lifecycle_state == 'cancelled' and invoice.correction_candidates %}
+      <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/correct" class="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <select name="corrected_invoice_id" required class="border rounded-lg px-3 py-2">
+          <option value="">Ersatzrechnung wählen</option>
+          {% for candidate in invoice.correction_candidates %}<option value="{{ candidate.id }}">{{ candidate.invoice_number }}</option>{% endfor %}
+        </select>
+        <input type="text" name="reason" required placeholder="Korrekturgrund" class="border rounded-lg px-3 py-2">
+        <button type="submit" class="border border-brand px-4 py-2 rounded-lg font-semibold">Korrektur verknüpfen</button>
+      </form>
+      {% endif %}
+      <details class="mt-4 border-t pt-4">
+        <summary class="cursor-pointer font-semibold">Audit-Verlauf</summary>
+        {% if invoice.events %}
+        <ol class="mt-3 space-y-3 text-sm">
+          {% for event in invoice.events %}
+          <li class="border-l-2 border-brand pl-3">
+            <p><span class="font-semibold">{{ event.previous_status_label }}</span> zu <span class="font-semibold">{{ event.new_status_label }}</span></p>
+            <p class="text-ink-muted">{{ event.created_at }} · {{ event.actor_id }}</p>
+            {% if event.reason %}<p>Grund: {{ event.reason }}</p>{% endif %}
+            {% if event.reference %}<p>Referenz: {{ event.reference }}</p>{% endif %}
+            {% if event.effective_date %}<p>Datum: {{ event.effective_date }}</p>{% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="mt-3 text-sm text-ink-muted">Noch keine Statusänderung protokolliert.</p>
+        {% endif %}
+      </details>
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-ink-muted">Noch keine freigegebenen Rechnungen vorhanden.</p>
+  {% endif %}
+</div>
+{% endblock %}

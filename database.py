@@ -104,6 +104,7 @@ def is_db_available() -> bool:
 # that monkeypatch `database.get_connection` keep working unchanged. The import
 # is at module end to avoid a circular import (store.ranking imports database).
 # ---------------------------------------------------------------------------
+from billing_approval import BillingApprovalError  # noqa: F401
 from store.access_token import (  # noqa: F401
     consume_dashboard_access_token,
     consume_municipality_access_token,
@@ -120,14 +121,31 @@ from store.api_client import (  # noqa: F401
     track_api_usage,
 )
 from store.billing import (  # noqa: F401
+    BillingPolicyConflict,
     BillingStoreError,
+    approve_billing_period,
+    cancel_invoice,
+    complete_invoice_delivery,
+    confirm_invoice_delivery,
+    correct_invoice,
+    fail_invoice_delivery,
     get_active_communities,
     get_billing_period,
     get_billing_period_for_window,
     get_billing_policy,
     get_community_for_building,
+    get_invoice_for_participant,
+    get_invoices_for_participant,
     list_billing_periods,
+    list_billing_policies,
+    list_community_billing_periods,
+    list_community_invoice_events,
+    list_community_invoices,
+    list_invoice_events,
+    prepare_invoice_delivery,
+    record_invoice_payment,
     save_billing_period,
+    save_billing_policy,
 )
 from store.building import (  # noqa: F401
     NEIGHBOR_BOX_HALF_WIDTH_KM,

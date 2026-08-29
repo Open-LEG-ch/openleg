@@ -10,6 +10,11 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 
 import json
 import logging
+from datetime import date, datetime
+from decimal import Decimal
+
+import billing_approval
+import billing_lifecycle
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +23,27 @@ class BillingStoreError(RuntimeError):
     """Billing data could not be loaded from persistent storage."""
 
 
+class BillingPolicyConflict(BillingStoreError):
+    """A billing policy version already exists for this effective date."""
+
+
+def _is_unique_violation(error) -> bool:
+    return getattr(error, "pgcode", None) == "23505"
+
+
 def _get_connection():
     import database
 
     return database.get_connection()
+
+
+def _json_default(value):
+    """Serialize decimals and temporals in policy snapshots."""
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    return str(value)
 
 
 # === Billing Operations ===
@@ -41,9 +63,9 @@ def save_billing_period(
                      total_surplus_kwh, total_network_discount_chf, distribution_model,
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
                      timezone, input_fingerprint, source_document_ids,
-                     reconciliation, status)
+                     reconciliation, billing_policy_snapshot, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s::jsonb, %s::jsonb, 'draft')
+                            %s, %s::jsonb, %s::jsonb, %s::jsonb, 'draft')
                     RETURNING id
                 """,
                     (
@@ -62,6 +84,14 @@ def save_billing_period(
                         summary.get("input_fingerprint"),
                         json.dumps(summary.get("source_document_ids", [])),
                         json.dumps(summary.get("reconciliation", {})),
+                        (
+                            json.dumps(
+                                summary["billing_policy_snapshot"],
+                                default=_json_default,
+                            )
+                            if summary.get("billing_policy_snapshot")
+                            else None
+                        ),
                     ),
                 )
                 period_id = cur.fetchone()["id"]
@@ -206,6 +236,185 @@ def get_billing_period(period_id: int, community_id: str | None = None) -> dict 
         raise BillingStoreError("Could not load billing period") from e
 
 
+def list_community_billing_periods(community_id: str) -> list[dict]:
+    """List one community's billing periods, newest period first."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM billing_periods
+                WHERE community_id = %s
+                ORDER BY period_start DESC, id DESC
+                """,
+                (community_id,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing community billing periods: {e}")
+        raise BillingStoreError("Could not list community billing periods") from e
+
+
+def _period_invoices(cur, period_id: int) -> list[dict]:
+    cur.execute(
+        """
+        SELECT * FROM invoices
+        WHERE billing_period_id = %s
+        ORDER BY participant_id
+        """,
+        (period_id,),
+    )
+    return [dict(row) for row in cur.fetchall()]
+
+
+def _next_invoice_sequence(cur, community_id: str, prefix: str, year: int) -> int:
+    """Return the next deterministic sequence for prefix/year of a community."""
+    cur.execute(
+        """
+        SELECT invoice_number FROM invoices
+        WHERE community_id = %s AND invoice_number LIKE %s
+        """,
+        (community_id, f"{prefix}-{year}-%"),
+    )
+    sequence = 0
+    for row in cur.fetchall():
+        suffix = (row["invoice_number"] or "").rsplit("-", 1)[-1]
+        if suffix.isdigit():
+            sequence = max(sequence, int(suffix))
+    return sequence + 1
+
+
+def approve_billing_period(
+    period_id: int, community_id: str, issue_date=None
+) -> list[dict]:
+    """Issue immutable invoices for one reconciled draft period, atomically.
+
+    The exact active community row is locked first, so invoice numbering is
+    serialised across concurrent approvals of different periods of the same
+    community; then the period row is locked. Every invoice is inserted with
+    its frozen policy/provenance/line snapshots in one transaction, and only
+    then does the period flip to ``issued``. Retrying an already issued
+    period is a no-op that returns the stored invoices.
+
+    Domain conflicts (unknown/inactive community, unknown, stale, or
+    unreconciled draft) raise ``billing_approval.BillingApprovalError``;
+    storage outages fail closed with BillingStoreError and roll everything
+    back.
+    """
+    if issue_date is None:
+        issue_date = billing_approval.today()
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT community_id, name FROM communities
+                WHERE community_id = %s AND status = 'active'
+                FOR UPDATE
+                """,
+                (community_id,),
+            )
+            community_row = cur.fetchone()
+            if not community_row:
+                raise billing_approval.BillingApprovalError(
+                    "Community is not active or does not exist"
+                )
+            community_name = community_row.get("name")
+            if not isinstance(community_name, str) or not community_name.strip():
+                raise billing_approval.BillingApprovalError(
+                    "Community has no valid issuer name"
+                )
+            cur.execute(
+                """
+                SELECT * FROM billing_periods
+                WHERE id = %s AND community_id = %s
+                FOR UPDATE
+                """,
+                (period_id, community_id),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise billing_approval.BillingApprovalError("Billing period not found")
+            period = dict(row)
+            status = period.get("status")
+            if status == "issued":
+                invoices = _period_invoices(cur, period_id)
+                if not invoices:
+                    raise billing_approval.BillingApprovalError(
+                        "Issued billing period has no invoices"
+                    )
+                return invoices
+            if status != "draft":
+                raise billing_approval.BillingApprovalError(
+                    "Only a draft billing period can be approved"
+                )
+            cur.execute(
+                """
+                SELECT * FROM billing_line_items
+                WHERE billing_period_id = %s
+                ORDER BY id
+                """,
+                (period_id,),
+            )
+            period["line_items"] = [dict(item) for item in cur.fetchall()]
+            snapshots = billing_approval.prepare_invoice_snapshots(
+                period, issue_date=issue_date
+            )
+
+            prefix = str(snapshots[0]["policy_snapshot"]["invoice_prefix"])
+            sequence = _next_invoice_sequence(
+                cur, community_id, prefix, issue_date.year
+            )
+            for snapshot in snapshots:
+                provenance_snapshot = dict(snapshot["provenance_snapshot"])
+                provenance_snapshot["issuer"] = {
+                    "community_id": community_id,
+                    "name": community_name,
+                }
+                invoice_number = f"{prefix}-{issue_date.year}-{sequence:06d}"
+                sequence += 1
+                cur.execute(
+                    """
+                    INSERT INTO invoices (
+                        billing_period_id, community_id, participant_id,
+                        invoice_number, total_chf, policy_snapshot,
+                        provenance_snapshot, line_items_snapshot,
+                        net_chf, vat_rate_pct, vat_chf, gross_chf,
+                        issue_date, due_date, status, issued_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb,
+                        %s, %s, %s, %s, %s, %s, 'issued', NOW()
+                    )
+                    """,
+                    (
+                        period_id,
+                        community_id,
+                        snapshot["participant_id"],
+                        invoice_number,
+                        snapshot["gross_chf"],
+                        json.dumps(snapshot["policy_snapshot"]),
+                        json.dumps(provenance_snapshot),
+                        json.dumps(snapshot["line_items_snapshot"]),
+                        snapshot["net_chf"],
+                        snapshot["vat_rate_pct"],
+                        snapshot["vat_chf"],
+                        snapshot["gross_chf"],
+                        snapshot["issue_date"],
+                        snapshot["due_date"],
+                    ),
+                )
+            cur.execute(
+                "UPDATE billing_periods SET status = 'issued' WHERE id = %s",
+                (period_id,),
+            )
+            return _period_invoices(cur, period_id)
+    except billing_approval.BillingApprovalError:
+        raise
+    except BillingStoreError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error approving billing period: {e}")
+        raise BillingStoreError("Could not approve billing period") from e
+
+
 def get_billing_period_for_window(
     community_id: str, period_start, period_end
 ) -> dict | None:
@@ -223,25 +432,718 @@ def get_billing_period_for_window(
 
 
 def get_billing_policy(community_id: str, period_start, period_end) -> dict | None:
-    """Return one tariff covering the complete billing period."""
+    """Return the complete effective policy covering the billing period.
+
+    Fails closed: the newest version with ``effective_from <= period_start`` is
+    selected first. Coverage, completeness and interior-boundary checks are
+    applied only to that exact row, so an expired or incomplete newest version
+    can never fall back to an older complete version.
+    """
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT t.id AS tariff_id, t.internal_price_chf_per_kwh,
-                   t.grid_fee_chf_per_kwh, t.network_level,
-                   CASE c.distribution_model
-                       WHEN 'simple' THEN 'einfach'
-                       ELSE c.distribution_model
-                   END AS distribution_model
-            FROM billing_tariffs t
-            JOIN communities c ON c.community_id = t.community_id
-            WHERE t.community_id = %s AND c.status = 'active'
-              AND t.effective_from <= %s
-              AND (t.effective_to IS NULL OR t.effective_to >= %s)
-            ORDER BY t.effective_from DESC
-            LIMIT 1
+            WITH newest AS (
+                SELECT t.id, t.community_id, t.internal_price_chf_per_kwh,
+                       t.grid_fee_chf_per_kwh, t.network_level,
+                       t.distribution_model, t.vat_mode, t.vat_rate_pct,
+                       t.payment_days, t.invoice_prefix, t.delivery_method,
+                       t.effective_from, t.effective_to
+                FROM billing_tariffs t
+                JOIN communities c ON c.community_id = t.community_id
+                WHERE t.community_id = %s
+                  AND c.status = 'active'
+                  AND t.effective_from <= %s
+                ORDER BY t.effective_from DESC
+                LIMIT 1
+            )
+            SELECT id AS tariff_id, t.community_id,
+                   internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
+                   network_level, distribution_model, vat_mode, vat_rate_pct,
+                   payment_days, invoice_prefix, delivery_method,
+                   effective_from
+            FROM newest t
+            WHERE (t.effective_to IS NULL OR t.effective_to >= %s)
+              AND t.distribution_model IS NOT NULL
+              AND t.vat_mode IS NOT NULL
+              AND t.vat_rate_pct IS NOT NULL
+              AND t.payment_days IS NOT NULL
+              AND t.invoice_prefix IS NOT NULL
+              AND t.delivery_method IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM billing_tariffs newer
+                  WHERE newer.community_id = t.community_id
+                    AND newer.effective_from > %s
+                    AND newer.effective_from < %s
+              )
             """,
-            (community_id, period_start, period_end),
+            (community_id, period_start, period_end, period_start, period_end),
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+def save_billing_policy(community_id: str, policy: dict) -> int:
+    """Insert one immutable billing policy version.
+
+    Insert-only: a new effective version never mutates earlier versions. A
+    duplicate (community_id, effective_from) is refused with
+    BillingPolicyConflict; any other storage failure fails closed with
+    BillingStoreError.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO billing_tariffs
+                (community_id, effective_from, internal_price_chf_per_kwh,
+                 grid_fee_chf_per_kwh, network_level, distribution_model,
+                 vat_mode, vat_rate_pct, payment_days, invoice_prefix,
+                 delivery_method)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    community_id,
+                    policy["effective_from"],
+                    policy["internal_price_chf_per_kwh"],
+                    policy["grid_fee_chf_per_kwh"],
+                    policy["network_level"],
+                    policy["distribution_model"],
+                    policy["vat_mode"],
+                    policy["vat_rate_pct"],
+                    policy["payment_days"],
+                    policy["invoice_prefix"],
+                    policy["delivery_method"],
+                ),
+            )
+            return cur.fetchone()["id"]
+    except Exception as e:
+        if _is_unique_violation(e):
+            raise BillingPolicyConflict(
+                "A billing policy version already exists for this effective date"
+            ) from e
+        logger.error(f"[DB] Error saving billing policy: {e}")
+        raise BillingStoreError("Could not save billing policy") from e
+
+
+def get_invoices_for_participant(building_id: str) -> list[dict]:
+    """List one member's own issued invoices, newest issue date first.
+
+    Selects the frozen integrity fields needed to validate each summary before
+    display. The route still returns only the display-ready summary fields.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
+                       policy_snapshot, provenance_snapshot,
+                       line_items_snapshot, net_chf, vat_rate_pct, vat_chf,
+                       gross_chf, issue_date, due_date,
+                       COALESCE((
+                           SELECT e.new_state FROM invoice_lifecycle_events e
+                           WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
+                       ), 'issued') AS lifecycle_state,
+                       original.invoice_number AS corrects_invoice_number,
+                       replacement.invoice_number AS corrected_by_invoice_number
+                FROM invoices i
+                LEFT JOIN invoice_corrections correction
+                  ON correction.corrected_invoice_id = i.id
+                LEFT JOIN invoices original
+                  ON original.id = correction.original_invoice_id
+                LEFT JOIN invoice_corrections reverse_correction
+                  ON reverse_correction.original_invoice_id = i.id
+                LEFT JOIN invoices replacement
+                  ON replacement.id = reverse_correction.corrected_invoice_id
+                WHERE i.participant_id = %s AND i.status = 'issued'
+                ORDER BY i.issue_date DESC, i.id DESC
+                """,
+                (building_id,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing participant invoices: {e}")
+        raise BillingStoreError("Could not list invoices") from e
+
+
+def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | None:
+    """Return one issued invoice only if it belongs to building_id.
+
+    The participant_id filter is in the same query as the id lookup, so a
+    missing invoice and another participant's invoice are indistinguishable.
+    Issuer identity comes from the immutable provenance snapshot; this read
+    never joins mutable community data.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT i.*,
+                       COALESCE((
+                           SELECT e.new_state FROM invoice_lifecycle_events e
+                           WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
+                       ), 'issued') AS lifecycle_state,
+                       original.invoice_number AS corrects_invoice_number,
+                       replacement.invoice_number AS corrected_by_invoice_number
+                FROM invoices i
+                LEFT JOIN invoice_corrections correction
+                  ON correction.corrected_invoice_id = i.id
+                LEFT JOIN invoices original
+                  ON original.id = correction.original_invoice_id
+                LEFT JOIN invoice_corrections reverse_correction
+                  ON reverse_correction.original_invoice_id = i.id
+                LEFT JOIN invoices replacement
+                  ON replacement.id = reverse_correction.corrected_invoice_id
+                WHERE i.id = %s AND i.participant_id = %s AND i.status = 'issued'
+                """,
+                (invoice_id, building_id),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error getting participant invoice: {e}")
+        raise BillingStoreError("Could not load invoice") from e
+
+
+def _locked_invoice(cur, invoice_id, community_id):
+    cur.execute(
+        """
+        SELECT i.*, b.email AS recipient_email
+        FROM invoices i
+        LEFT JOIN buildings b ON b.building_id = i.participant_id
+        WHERE i.id = %s AND i.community_id = %s AND i.status = 'issued'
+        FOR UPDATE OF i
+        """,
+        (invoice_id, community_id),
+    )
+    row = cur.fetchone()
+    if not row:
+        raise billing_lifecycle.InvoiceLifecycleError("Rechnung nicht gefunden.")
+    return dict(row)
+
+
+def _current_invoice_state(cur, invoice_id):
+    cur.execute(
+        """
+        SELECT new_state FROM invoice_lifecycle_events
+        WHERE invoice_id = %s ORDER BY id DESC LIMIT 1
+        """,
+        (invoice_id,),
+    )
+    row = cur.fetchone()
+    return row["new_state"] if row else "issued"
+
+
+def _append_invoice_event(
+    cur,
+    *,
+    invoice_id,
+    community_id,
+    actor_id,
+    event_type,
+    previous_state,
+    new_state,
+    idempotency_key,
+    reason=None,
+    reference=None,
+    effective_date=None,
+):
+    cur.execute(
+        """
+        INSERT INTO invoice_lifecycle_events (
+            invoice_id, community_id, actor_id, event_type,
+            previous_state, new_state, reason, reference, effective_date,
+            idempotency_key
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (invoice_id, idempotency_key) DO NOTHING
+        """,
+        (
+            invoice_id,
+            community_id,
+            actor_id,
+            event_type,
+            previous_state,
+            new_state,
+            reason,
+            reference,
+            effective_date,
+            idempotency_key,
+        ),
+    )
+
+
+def _policy_dict(value):
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            decoded = json.loads(value)
+        except ValueError:
+            decoded = None
+        if isinstance(decoded, dict):
+            return decoded
+    raise billing_lifecycle.InvoiceLifecycleError(
+        "Die Rechnung hat keine gültige Zustellrichtlinie."
+    )
+
+
+def list_community_invoices(community_id: str) -> list[dict]:
+    """List issued invoices with their derived lifecycle and correction links."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
+                       i.gross_chf, i.issue_date, i.due_date, i.policy_snapshot,
+                       COALESCE((
+                           SELECT e.new_state FROM invoice_lifecycle_events e
+                           WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
+                       ), 'issued') AS lifecycle_state,
+                       original.invoice_number AS corrects_invoice_number,
+                       replacement.invoice_number AS corrected_by_invoice_number,
+                       delivery.status AS delivery_job_status
+                FROM invoices i
+                LEFT JOIN invoice_delivery_jobs delivery ON delivery.invoice_id = i.id
+                LEFT JOIN invoice_corrections correction
+                  ON correction.corrected_invoice_id = i.id
+                LEFT JOIN invoices original
+                  ON original.id = correction.original_invoice_id
+                LEFT JOIN invoice_corrections reverse_correction
+                  ON reverse_correction.original_invoice_id = i.id
+                LEFT JOIN invoices replacement
+                  ON replacement.id = reverse_correction.corrected_invoice_id
+                WHERE i.community_id = %s AND i.status = 'issued'
+                ORDER BY i.issue_date DESC, i.id DESC
+                """,
+                (community_id,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing community invoices: {e}")
+        raise BillingStoreError("Could not list community invoices") from e
+
+
+def prepare_invoice_delivery(invoice_id, community_id, actor_id):
+    """Reserve one delivery attempt so concurrent/retried posts cannot duplicate it."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            invoice = _locked_invoice(cur, invoice_id, community_id)
+            state = _current_invoice_state(cur, invoice_id)
+            if state == "delivered":
+                return {"already_delivered": True, "lifecycle_state": state}
+            billing_lifecycle.next_state(state, "deliver")
+            policy = _policy_dict(invoice.get("policy_snapshot"))
+            method = policy.get("delivery_method")
+            if method not in {"email", "download"}:
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Die Rechnung hat keine gültige Zustellart."
+                )
+            if method == "email" and not invoice.get("recipient_email"):
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Für diesen Teilnehmer fehlt eine E-Mail-Adresse."
+                )
+            cur.execute(
+                "SELECT status FROM invoice_delivery_jobs WHERE invoice_id = %s FOR UPDATE",
+                (invoice_id,),
+            )
+            job = cur.fetchone()
+            if job and job["status"] == "sent":
+                return {"already_delivered": True, "lifecycle_state": "delivered"}
+            if job and job["status"] in {"pending", "failed"}:
+                return {
+                    "confirmation_required": True,
+                    "delivery_job_status": job["status"],
+                    "lifecycle_state": state,
+                }
+            if not job:
+                cur.execute(
+                    """
+                    INSERT INTO invoice_delivery_jobs (
+                        invoice_id, community_id, delivery_method
+                    ) VALUES (%s, %s, %s)
+                    """,
+                    (invoice_id, community_id, method),
+                )
+            return {
+                "already_delivered": False,
+                "delivery_method": method,
+                "recipient_email": invoice.get("recipient_email"),
+                "invoice_number": invoice["invoice_number"],
+            }
+    except billing_lifecycle.InvoiceLifecycleError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error preparing invoice delivery: {e}")
+        raise BillingStoreError("Could not prepare invoice delivery") from e
+
+
+def fail_invoice_delivery(invoice_id, community_id, actor_id, error):
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE invoice_delivery_jobs
+                SET status = 'failed', last_error = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE invoice_id = %s AND community_id = %s AND status = 'pending'
+                RETURNING attempt_count, delivery_method
+                """,
+                (str(error)[:500], invoice_id, community_id),
+            )
+            attempt = cur.fetchone()
+            if not attempt:
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Es gibt keinen offenen Zustellversuch."
+                )
+            state = _current_invoice_state(cur, invoice_id)
+            _append_invoice_event(
+                cur,
+                invoice_id=invoice_id,
+                community_id=community_id,
+                actor_id=actor_id,
+                event_type="delivery_failed",
+                previous_state=state,
+                new_state=state,
+                reason=str(error)[:500],
+                reference=attempt.get("delivery_method"),
+                idempotency_key=f"delivery_failed:{attempt['attempt_count']}",
+            )
+    except billing_lifecycle.InvoiceLifecycleError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error failing invoice delivery: {e}")
+        raise BillingStoreError("Could not record delivery failure") from e
+
+
+def complete_invoice_delivery(invoice_id, community_id, actor_id):
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            _locked_invoice(cur, invoice_id, community_id)
+            state = _current_invoice_state(cur, invoice_id)
+            cur.execute(
+                "SELECT status FROM invoice_delivery_jobs WHERE invoice_id = %s FOR UPDATE",
+                (invoice_id,),
+            )
+            job = cur.fetchone()
+            if state == "delivered" or (job and job["status"] == "sent"):
+                return {"already_delivered": True, "lifecycle_state": "delivered"}
+            if not job or job["status"] != "pending":
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Die Zustellung wurde nicht vorbereitet."
+                )
+            new_state = billing_lifecycle.next_state(state, "deliver")
+            _append_invoice_event(
+                cur,
+                invoice_id=invoice_id,
+                community_id=community_id,
+                actor_id=actor_id,
+                event_type="delivered",
+                previous_state=state,
+                new_state=new_state,
+                idempotency_key="delivered",
+            )
+            cur.execute(
+                """
+                UPDATE invoice_delivery_jobs
+                SET status = 'sent', updated_at = CURRENT_TIMESTAMP
+                WHERE invoice_id = %s
+                """,
+                (invoice_id,),
+            )
+            return {"already_delivered": False, "lifecycle_state": new_state}
+    except billing_lifecycle.InvoiceLifecycleError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error completing invoice delivery: {e}")
+        raise BillingStoreError("Could not complete invoice delivery") from e
+
+
+def confirm_invoice_delivery(invoice_id, community_id, actor_id):
+    """Resolve an uncertain external attempt without sending a duplicate."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            _locked_invoice(cur, invoice_id, community_id)
+            state = _current_invoice_state(cur, invoice_id)
+            cur.execute(
+                "SELECT status FROM invoice_delivery_jobs WHERE invoice_id = %s FOR UPDATE",
+                (invoice_id,),
+            )
+            job = cur.fetchone()
+            if state == "delivered" or (job and job["status"] == "sent"):
+                return {"already_delivered": True, "lifecycle_state": "delivered"}
+            if not job or job["status"] not in {"pending", "failed"}:
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Es gibt keine unklare Zustellung zum Bestätigen."
+                )
+            new_state = billing_lifecycle.next_state(state, "deliver")
+            _append_invoice_event(
+                cur,
+                invoice_id=invoice_id,
+                community_id=community_id,
+                actor_id=actor_id,
+                event_type="delivery_confirmed",
+                previous_state=state,
+                new_state=new_state,
+                reason="Zustellung durch Admin bestätigt",
+                idempotency_key="delivered",
+            )
+            cur.execute(
+                """
+                UPDATE invoice_delivery_jobs
+                SET status = 'sent', updated_at = CURRENT_TIMESTAMP
+                WHERE invoice_id = %s
+                """,
+                (invoice_id,),
+            )
+            return {"already_delivered": False, "lifecycle_state": new_state}
+    except billing_lifecycle.InvoiceLifecycleError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error confirming invoice delivery: {e}")
+        raise BillingStoreError("Could not confirm invoice delivery") from e
+
+
+def _transition_invoice(
+    invoice_id,
+    community_id,
+    actor_id,
+    event,
+    *,
+    reason=None,
+    reference=None,
+    effective_date=None,
+):
+    reason = reason.strip() if isinstance(reason, str) else reason
+    reference = reference.strip() if isinstance(reference, str) else reference
+    with _get_connection() as conn, conn.cursor() as cur:
+        _locked_invoice(cur, invoice_id, community_id)
+        state = _current_invoice_state(cur, invoice_id)
+        event_type = {"pay": "paid", "cancel": "cancelled"}[event]
+        if state == event_type:
+            cur.execute(
+                """
+                SELECT reason, reference, effective_date
+                FROM invoice_lifecycle_events
+                WHERE invoice_id = %s AND idempotency_key = %s
+                """,
+                (invoice_id, event_type),
+            )
+            existing = cur.fetchone()
+            if existing and (
+                existing.get("reason"),
+                existing.get("reference"),
+                existing.get("effective_date"),
+            ) == (reason, reference, effective_date):
+                return {"lifecycle_state": state, "already_recorded": True}
+            raise billing_lifecycle.InvoiceLifecycleError(
+                "Dieser Statuswechsel wurde bereits mit anderen Angaben erfasst."
+            )
+        new_state = billing_lifecycle.next_state(
+            state,
+            event,
+            reason=reason,
+            reference=reference,
+            effective_date=effective_date,
+        )
+        _append_invoice_event(
+            cur,
+            invoice_id=invoice_id,
+            community_id=community_id,
+            actor_id=actor_id,
+            event_type=event_type,
+            previous_state=state,
+            new_state=new_state,
+            idempotency_key=event_type,
+            reason=reason,
+            reference=reference,
+            effective_date=effective_date,
+        )
+        return {"lifecycle_state": new_state}
+
+
+def record_invoice_payment(invoice_id, community_id, actor_id, paid_date, reference):
+    try:
+        return _transition_invoice(
+            invoice_id,
+            community_id,
+            actor_id,
+            "pay",
+            reference=reference,
+            effective_date=paid_date,
+        )
+    except billing_lifecycle.InvoiceLifecycleError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error recording invoice payment: {e}")
+        raise BillingStoreError("Could not record invoice payment") from e
+
+
+def cancel_invoice(invoice_id, community_id, actor_id, reason):
+    try:
+        return _transition_invoice(
+            invoice_id, community_id, actor_id, "cancel", reason=reason
+        )
+    except billing_lifecycle.InvoiceLifecycleError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error cancelling invoice: {e}")
+        raise BillingStoreError("Could not cancel invoice") from e
+
+
+def correct_invoice(
+    original_invoice_id, corrected_invoice_id, community_id, actor_id, reason
+):
+    """Link a cancelled original to a separately approved replacement invoice."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, participant_id, invoice_number FROM invoices
+                WHERE id IN (%s, %s) AND community_id = %s AND status = 'issued'
+                ORDER BY id FOR UPDATE
+                """,
+                (original_invoice_id, corrected_invoice_id, community_id),
+            )
+            rows = {row["id"]: dict(row) for row in cur.fetchall()}
+            if set(rows) != {original_invoice_id, corrected_invoice_id}:
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Original- oder Ersatzrechnung wurde nicht gefunden."
+                )
+            original = rows[original_invoice_id]
+            corrected = rows[corrected_invoice_id]
+            if original["participant_id"] != corrected["participant_id"]:
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Die Ersatzrechnung gehört zu einem anderen Teilnehmer."
+                )
+            cur.execute(
+                """
+                SELECT original_invoice_id, corrected_invoice_id, reason
+                FROM invoice_corrections
+                WHERE original_invoice_id = %s OR corrected_invoice_id = %s
+                """,
+                (original_invoice_id, corrected_invoice_id),
+            )
+            existing = cur.fetchone()
+            if existing:
+                if (
+                    existing["original_invoice_id"] == original_invoice_id
+                    and existing["corrected_invoice_id"] == corrected_invoice_id
+                    and existing["reason"] == reason.strip()
+                ):
+                    return {"lifecycle_state": "corrected", "already_corrected": True}
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Eine Rechnung ist bereits mit einer Korrektur verknüpft."
+                )
+            original_state = _current_invoice_state(cur, original_invoice_id)
+            corrected_state = _current_invoice_state(cur, corrected_invoice_id)
+            new_state = billing_lifecycle.next_state(
+                original_state, "correct", reason=reason
+            )
+            if corrected_state != "issued":
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Die Ersatzrechnung ist nicht verfügbar."
+                )
+            cur.execute(
+                """
+                INSERT INTO invoice_corrections (
+                    original_invoice_id, corrected_invoice_id,
+                    community_id, actor_id, reason
+                ) VALUES (%s, %s, %s, %s, %s)
+                """,
+                (
+                    original_invoice_id,
+                    corrected_invoice_id,
+                    community_id,
+                    actor_id,
+                    reason.strip(),
+                ),
+            )
+            _append_invoice_event(
+                cur,
+                invoice_id=original_invoice_id,
+                community_id=community_id,
+                actor_id=actor_id,
+                event_type="corrected",
+                previous_state=original_state,
+                new_state=new_state,
+                reason=reason.strip(),
+                reference=corrected["invoice_number"],
+                idempotency_key=f"corrected:{corrected_invoice_id}",
+            )
+            _append_invoice_event(
+                cur,
+                invoice_id=corrected_invoice_id,
+                community_id=community_id,
+                actor_id=actor_id,
+                event_type="correction_issued",
+                previous_state="issued",
+                new_state="issued",
+                reason=reason.strip(),
+                reference=original["invoice_number"],
+                idempotency_key=f"corrects:{original_invoice_id}",
+            )
+            return {"lifecycle_state": new_state, "already_corrected": False}
+    except billing_lifecycle.InvoiceLifecycleError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error correcting invoice: {e}")
+        raise BillingStoreError("Could not correct invoice") from e
+
+
+def list_invoice_events(invoice_id, community_id):
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT event_type, actor_id, previous_state, new_state,
+                       reason, reference, effective_date, created_at
+                FROM invoice_lifecycle_events
+                WHERE invoice_id = %s AND community_id = %s
+                ORDER BY id
+                """,
+                (invoice_id, community_id),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing invoice events: {e}")
+        raise BillingStoreError("Could not list invoice events") from e
+
+
+def list_community_invoice_events(community_id):
+    """Load one community's invoice audit in one query for the admin workspace."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT e.invoice_id, e.event_type, e.actor_id,
+                       e.previous_state, e.new_state, e.reason, e.reference,
+                       e.effective_date, e.created_at
+                FROM invoice_lifecycle_events e
+                JOIN invoices i ON i.id = e.invoice_id
+                WHERE e.community_id = %s AND i.community_id = %s
+                ORDER BY e.invoice_id, e.id
+                """,
+                (community_id, community_id),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing community invoice events: {e}")
+        raise BillingStoreError("Could not list community invoice events") from e
+
+
+def list_billing_policies(community_id: str) -> list[dict]:
+    """List all policy versions of one community, newest effective date first."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM billing_tariffs
+                WHERE community_id = %s
+                ORDER BY effective_from DESC, id DESC
+                """,
+                (community_id,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing billing policies: {e}")
+        raise BillingStoreError("Could not list billing policies") from e

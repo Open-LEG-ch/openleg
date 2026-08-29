@@ -90,6 +90,7 @@ def apply_basic_security_headers(response):
         dashboard_routes._dashboard_session_building_id()
     )
     is_private_leg_document = request.path.startswith("/leg/document/")
+    is_private_member_invoices = request.path.startswith("/dashboard/invoices")
     is_private_municipality_dashboard = request.path == "/gemeinde/dashboard" and bool(
         session.get("municipality_id")
     )
@@ -101,6 +102,7 @@ def apply_basic_security_headers(response):
         or is_private_municipality_dashboard
         or is_private_leg_dashboard
         or is_private_leg_document
+        or is_private_member_invoices
     ):
         response.headers["Cache-Control"] = "no-store"
         response.headers["Referrer-Policy"] = "no-referrer"

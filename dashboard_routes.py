@@ -24,6 +24,7 @@ from flask import (
 )
 
 import access_token
+import billing_policy
 import dashboard as dashboard_module
 import database as db
 import security_utils
@@ -255,6 +256,49 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             "dashboard.html", **dashboard_module.demo_readiness()
         )
 
+    @bp.route("/dashboard/invoices")
+    def dashboard_invoices():
+        building_id = _require_dashboard_session()
+        try:
+            view = dashboard_module.member_invoices_view(building_id)
+        except (db.BillingStoreError, dashboard_module.MemberInvoiceDataError):
+            abort(503)
+        return _mark_private_response(
+            render_city_template("member_invoices.html", **view)
+        )
+
+    @bp.route("/dashboard/invoices/<int:invoice_id>")
+    def dashboard_invoice_detail(invoice_id):
+        building_id = _require_dashboard_session()
+        try:
+            invoice = dashboard_module.member_invoice_detail(invoice_id, building_id)
+        except (db.BillingStoreError, dashboard_module.MemberInvoiceDataError):
+            abort(503)
+        if not invoice:
+            abort(404)
+        return _mark_private_response(
+            render_city_template("member_invoice_detail.html", invoice=invoice)
+        )
+
+    @bp.route("/dashboard/invoices/<int:invoice_id>/pdf")
+    def dashboard_invoice_pdf(invoice_id):
+        building_id = _require_dashboard_session()
+        try:
+            invoice = dashboard_module.member_invoice_detail(invoice_id, building_id)
+        except (db.BillingStoreError, dashboard_module.MemberInvoiceDataError):
+            abort(503)
+        if not invoice:
+            abort(404)
+        pdf_bytes = dashboard_module.member_invoice_pdf_bytes(invoice)
+        return _mark_private_response(
+            send_file(
+                io.BytesIO(pdf_bytes),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=f"rechnung-{invoice['invoice_number']}.pdf",
+            )
+        )
+
     @bp.route("/leg/dashboard")
     def leg_dashboard():
         community_id = request.args.get("cid", "").strip()
@@ -333,6 +377,264 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         _require_dashboard_csrf()
         dashboard_module.leg_generate_documents(community_id, building_id)
         return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/billing")
+    def leg_billing_workspace(community_id):
+        building_id = _require_dashboard_session()
+        try:
+            view = dashboard_module.leg_billing_workspace_view(
+                community_id,
+                building_id,
+                billing_approved=request.args.get("approved") == "1",
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if view["error"]:
+            abort(403)
+        return _mark_private_response(
+            render_city_template(
+                "leg_billing.html",
+                csrf_token=_dashboard_csrf_token(),
+                **view,
+            )
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/period/<int:period_id>/approve",
+        methods=["POST"],
+    )
+    def leg_billing_period_approve(community_id, period_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        if request.form.get("confirm_approval") != "yes":
+            abort(400)
+        try:
+            result = dashboard_module.leg_approve_billing_period(
+                community_id, building_id, period_id
+            )
+        except db.BillingApprovalError:
+            # Domain conflict (invalid, stale, or unreconciled draft): tell the
+            # admin without leaking storage or reconciliation internals.
+            try:
+                view = dashboard_module.leg_billing_workspace_view(
+                    community_id, building_id
+                )
+            except db.BillingStoreError:
+                abort(503)
+            if view["error"]:
+                abort(403)
+            view["approval_error"] = (
+                "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. "
+                "Er ist unvollständig, nicht vollständig abgeglichen oder wurde "
+                "zwischenzeitlich verändert. Prüfen Sie die Periode und versuchen "
+                "Sie es erneut."
+            )
+            return (
+                _mark_private_response(
+                    render_city_template(
+                        "leg_billing.html",
+                        csrf_token=_dashboard_csrf_token(),
+                        **view,
+                    )
+                ),
+                409,
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"]:
+            abort(403)
+        return redirect(
+            dashboard_module.leg_billing_workspace_location(community_id)
+            + "?approved=1"
+        )
+
+    def _invoice_lifecycle_response(community_id, action):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            result = action(building_id)
+        except dashboard_module.InvoiceLifecycleError:
+            try:
+                view = dashboard_module.leg_billing_workspace_view(
+                    community_id, building_id
+                )
+            except db.BillingStoreError:
+                abort(503)
+            view["lifecycle_error"] = (
+                "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
+            )
+            return (
+                _mark_private_response(
+                    render_city_template(
+                        "leg_billing.html",
+                        csrf_token=_dashboard_csrf_token(),
+                        **view,
+                    )
+                ),
+                409,
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"] == "Kein Zugriff.":
+            abort(403)
+        if result["error"]:
+            try:
+                view = dashboard_module.leg_billing_workspace_view(
+                    community_id, building_id
+                )
+            except db.BillingStoreError:
+                abort(503)
+            view["lifecycle_error"] = result["error"]
+            return (
+                _mark_private_response(
+                    render_city_template(
+                        "leg_billing.html",
+                        csrf_token=_dashboard_csrf_token(),
+                        **view,
+                    )
+                ),
+                502,
+            )
+        return redirect(
+            dashboard_module.leg_billing_workspace_location(community_id) + "?updated=1"
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/deliver",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_deliver(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_deliver_invoice(
+                community_id,
+                building_id,
+                invoice_id,
+                send_email=send_email,
+                invoice_url=(
+                    current_app.config["APP_BASE_URL"].rstrip("/")
+                    + f"/dashboard/invoices/{invoice_id}"
+                ),
+            ),
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/delivery-confirmed",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_delivery_confirmed(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_confirm_invoice_delivery(
+                community_id, building_id, invoice_id
+            ),
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/paid",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_paid(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_record_invoice_payment(
+                community_id,
+                building_id,
+                invoice_id,
+                request.form.get("paid_date", ""),
+                request.form.get("reference", ""),
+            ),
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/cancel",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_cancel(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_cancel_invoice(
+                community_id,
+                building_id,
+                invoice_id,
+                request.form.get("reason", ""),
+            ),
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/invoice/<int:invoice_id>/correct",
+        methods=["POST"],
+    )
+    def leg_billing_invoice_correct(community_id, invoice_id):
+        return _invoice_lifecycle_response(
+            community_id,
+            lambda building_id: dashboard_module.leg_correct_invoice(
+                community_id,
+                building_id,
+                invoice_id,
+                request.form.get("corrected_invoice_id", ""),
+                request.form.get("reason", ""),
+            ),
+        )
+
+    @bp.route("/leg/community/<community_id>/billing-policy")
+    def leg_billing_policy_page(community_id):
+        building_id = _require_dashboard_session()
+        try:
+            view = dashboard_module.leg_billing_policy_view(
+                community_id,
+                building_id,
+                policy_saved=request.args.get("saved") == "1",
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if view["error"]:
+            abort(403)
+        return _mark_private_response(
+            render_city_template(
+                "leg_billing_policy.html",
+                csrf_token=_dashboard_csrf_token(),
+                **view,
+            )
+        )
+
+    @bp.route("/leg/community/<community_id>/billing-policy", methods=["POST"])
+    def leg_billing_policy_save(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            result = dashboard_module.leg_save_billing_policy(
+                community_id, building_id, request.form
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"]:
+            abort(403)
+        if result["errors"]:
+            try:
+                view = dashboard_module.leg_billing_policy_view(
+                    community_id, building_id
+                )
+            except db.BillingStoreError:
+                abort(503)
+            view["form_errors"] = result["errors"]
+            view["form_values"] = {
+                field: request.form.get(field, "")
+                for field in billing_policy.FORM_FIELDS
+            }
+            return (
+                _mark_private_response(
+                    render_city_template(
+                        "leg_billing_policy.html",
+                        csrf_token=_dashboard_csrf_token(),
+                        **view,
+                    )
+                ),
+                400,
+            )
+        return redirect(
+            dashboard_module.leg_billing_policy_location(community_id) + "?saved=1"
+        )
 
     @bp.route("/leg/community/<community_id>/correspondence", methods=["POST"])
     def leg_community_correspondence(community_id):

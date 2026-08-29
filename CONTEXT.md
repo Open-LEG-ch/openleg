@@ -63,7 +63,7 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/cluster` | Provisional cluster assignments and cluster metadata |
 | `store/ranking` | PV snapshots, the ten-year panel, Rangliste read models |
 | `store/profile` | Gemeindeprofil: ElCom tariffs, profiles, Sonnendach |
-| `store/billing` | LEG communities and billing periods |
+| `store/billing` | LEG communities, billing periods, versioned billing policies, atomic invoice approval snapshots, append-only invoice lifecycle audit |
 | `store/email_queue` | Outbound mail queue |
 | `store/utility` | EVU/VNB utility clients |
 | `store/metering` | Messpunkte, 15-minute E66 readings, SDAT import ledger |
@@ -87,6 +87,10 @@ Domain logic sits above storage and stays free of SQL:
 | Module | Owns |
 | --- | --- |
 | `billing_engine.py` | `allocate_energy`, `compute_network_discount`, `generate_billing_summary` |
+| `billing_policy.py` | Billing policy validation, option labels, the no-legal-advice disclaimer |
+| `billing_runner.py` | Fail-closed draft run; resolves and fingerprints the complete effective policy |
+| `billing_approval.py` | Fail-closed approval validation; immutable invoice snapshots from the stored policy/provenance seam |
+| `billing_lifecycle.py` | Allowed invoice state transitions and shared member/admin status labels |
 | `pv_ranking.py`, `ranking.py` | Utilization, peer comparison, progress |
 | `municipality_profile.py` | Tariff, solar, and value-gap assembly |
 | `formation_wizard.py`, `document_generator.py` | LEG formation and documents |

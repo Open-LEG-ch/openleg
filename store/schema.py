@@ -497,9 +497,135 @@ def create_tables():
                     internal_price_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (internal_price_chf_per_kwh >= 0),
                     grid_fee_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (grid_fee_chf_per_kwh >= 0),
                     network_level VARCHAR(16) NOT NULL CHECK (network_level IN ('same', 'cross')),
+                    distribution_model VARCHAR(20),
+                    vat_mode VARCHAR(16),
+                    vat_rate_pct DECIMAL(5, 2),
+                    payment_days INTEGER,
+                    invoice_prefix VARCHAR(32),
+                    delivery_method VARCHAR(16),
                     created_at TIMESTAMPTZ DEFAULT NOW(),
+                    CONSTRAINT chk_billing_tariffs_distribution_model
+                        CHECK (distribution_model IS NULL OR distribution_model IN ('proportional', 'einfach')),
+                    CONSTRAINT chk_billing_tariffs_vat_mode
+                        CHECK (vat_mode IS NULL OR vat_mode IN ('none', 'standard')),
+                    CONSTRAINT chk_billing_tariffs_vat_rate
+                        CHECK (
+                            CASE
+                                WHEN vat_mode IS NULL AND vat_rate_pct IS NULL THEN TRUE
+                                WHEN vat_mode = 'none' AND vat_rate_pct = 0 THEN TRUE
+                                WHEN vat_mode = 'standard' AND vat_rate_pct > 0 AND vat_rate_pct <= 100 THEN TRUE
+                                ELSE FALSE
+                            END
+                        ),
+                    CONSTRAINT chk_billing_tariffs_payment_days
+                        CHECK (payment_days IS NULL OR (payment_days BETWEEN 1 AND 365)),
+                    CONSTRAINT chk_billing_tariffs_invoice_prefix
+                        CHECK (invoice_prefix IS NULL OR invoice_prefix ~ '^[A-Z0-9][A-Z0-9-]{1,15}$'),
+                    CONSTRAINT chk_billing_tariffs_delivery_method
+                        CHECK (delivery_method IS NULL OR delivery_method IN ('email', 'download')),
                     UNIQUE(community_id, effective_from)
                 )
+            """)
+
+            # Migration: versioned billing policy columns and their nullable
+            # CHECK constraints. Columns stay nullable without defaults so legacy
+            # rows are never assigned invented money-path values;
+            # get_billing_policy refuses them as incomplete.
+            # PostgreSQL 16 does not support ADD CONSTRAINT IF NOT EXISTS, so each
+            # constraint is added inside a DO block that checks pg_constraint.
+            cur.execute("""
+                ALTER TABLE billing_tariffs
+                    ADD COLUMN IF NOT EXISTS distribution_model VARCHAR(20),
+                    ADD COLUMN IF NOT EXISTS vat_mode VARCHAR(16),
+                    ADD COLUMN IF NOT EXISTS vat_rate_pct DECIMAL(5, 2),
+                    ADD COLUMN IF NOT EXISTS payment_days INTEGER,
+                    ADD COLUMN IF NOT EXISTS invoice_prefix VARCHAR(32),
+                    ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16);
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_distribution_model'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_distribution_model
+                        CHECK (distribution_model IS NULL OR distribution_model IN ('proportional', 'einfach'));
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_vat_mode'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_vat_mode
+                        CHECK (vat_mode IS NULL OR vat_mode IN ('none', 'standard'));
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_vat_rate'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_vat_rate
+                        CHECK (
+                            CASE
+                                WHEN vat_mode IS NULL AND vat_rate_pct IS NULL THEN TRUE
+                                WHEN vat_mode = 'none' AND vat_rate_pct = 0 THEN TRUE
+                                WHEN vat_mode = 'standard' AND vat_rate_pct > 0 AND vat_rate_pct <= 100 THEN TRUE
+                                ELSE FALSE
+                            END
+                        );
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_payment_days'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_payment_days
+                        CHECK (payment_days IS NULL OR (payment_days BETWEEN 1 AND 365));
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_invoice_prefix'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_invoice_prefix
+                        CHECK (invoice_prefix IS NULL OR invoice_prefix ~ '^[A-Z0-9][A-Z0-9-]{1,15}$');
+                    END IF;
+                END $$;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_delivery_method'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_delivery_method
+                        CHECK (delivery_method IS NULL OR delivery_method IN ('email', 'download'));
+                    END IF;
+                END $$;
             """)
 
             cur.execute("""
@@ -520,6 +646,7 @@ def create_tables():
                     input_fingerprint VARCHAR(64),
                     source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
                     reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    billing_policy_snapshot JSONB,
                     status VARCHAR(32) DEFAULT 'draft',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(community_id, period_start, period_end)
@@ -551,7 +678,8 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich',
                     ADD COLUMN IF NOT EXISTS input_fingerprint VARCHAR(64),
                     ADD COLUMN IF NOT EXISTS source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
-                    ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb
+                    ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB
             """)
 
             cur.execute("""
@@ -590,14 +718,164 @@ def create_tables():
                     id SERIAL PRIMARY KEY,
                     billing_period_id INTEGER REFERENCES billing_periods(id),
                     community_id VARCHAR(64) NOT NULL,
-                    invoice_number VARCHAR(64) UNIQUE,
+                    participant_id VARCHAR(64),
+                    invoice_number VARCHAR(64),
                     total_chf DECIMAL(10, 2) DEFAULT 0,
+                    policy_snapshot JSONB,
+                    provenance_snapshot JSONB,
+                    line_items_snapshot JSONB,
+                    net_chf DECIMAL(10, 2),
+                    vat_rate_pct DECIMAL(6, 3),
+                    vat_chf DECIMAL(10, 2),
+                    gross_chf DECIMAL(10, 2),
+                    issue_date DATE,
+                    due_date DATE,
                     status VARCHAR(32) DEFAULT 'draft',
-                    issued_at TIMESTAMP,
+                    issued_at TIMESTAMPTZ,
                     paid_at TIMESTAMP,
                     pdf_url TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+
+            # Migration: legacy invoices tables predate the immutable per
+            # participant snapshots and gain every new column additively.
+            cur.execute("""
+                ALTER TABLE invoices
+                    ADD COLUMN IF NOT EXISTS participant_id VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS policy_snapshot JSONB,
+                    ADD COLUMN IF NOT EXISTS provenance_snapshot JSONB,
+                    ADD COLUMN IF NOT EXISTS line_items_snapshot JSONB,
+                    ADD COLUMN IF NOT EXISTS net_chf DECIMAL(10, 2),
+                    ADD COLUMN IF NOT EXISTS vat_rate_pct DECIMAL(6, 3),
+                    ADD COLUMN IF NOT EXISTS vat_chf DECIMAL(10, 2),
+                    ADD COLUMN IF NOT EXISTS gross_chf DECIMAL(10, 2),
+                    ADD COLUMN IF NOT EXISTS issue_date DATE,
+                    ADD COLUMN IF NOT EXISTS due_date DATE
+            """)
+
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_invoices_period_participant
+                ON invoices (billing_period_id, participant_id)
+            """)
+
+            # Migration: issued_at is the audit timestamp of a legal document and
+            # must be timezone-aware. Legacy naive timestamps are interpreted as
+            # UTC, the repository-wide timestamp standard (CONTEXT.md).
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'invoices'
+                          AND column_name = 'issued_at'
+                          AND data_type = 'timestamp without time zone'
+                    ) THEN
+                        ALTER TABLE invoices
+                            ALTER COLUMN issued_at TYPE TIMESTAMPTZ
+                                USING issued_at AT TIME ZONE 'UTC';
+                    END IF;
+                END $$
+            """)
+
+            # Migration: invoice numbers are unique per community, not globally.
+            # Two LEGs may share a number; one LEG may never issue it twice.
+            cur.execute("""
+                ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_invoice_number_key
+            """)
+
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_invoices_community_invoice_number
+                ON invoices (community_id, invoice_number)
+            """)
+
+            # Issued invoices are immutable audit records: no UPDATE, no DELETE.
+            # Legacy non-issued rows stay mutable and deletable.
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION reject_invoice_mutation()
+                RETURNS trigger AS $$
+                BEGIN
+                    IF OLD.status = 'issued' THEN
+                        RAISE EXCEPTION 'Issued invoices are immutable';
+                    END IF;
+                    IF TG_OP = 'DELETE' THEN
+                        RETURN OLD;
+                    END IF;
+                    RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+
+            cur.execute("""
+                DROP TRIGGER IF EXISTS invoices_immutable ON invoices
+            """)
+
+            cur.execute("""
+                CREATE TRIGGER invoices_immutable
+                BEFORE UPDATE OR DELETE ON invoices
+                FOR EACH ROW EXECUTE FUNCTION reject_invoice_mutation()
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoice_lifecycle_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+                    community_id VARCHAR(64) NOT NULL,
+                    actor_id VARCHAR(64) NOT NULL,
+                    event_type VARCHAR(32) NOT NULL,
+                    previous_state VARCHAR(32) NOT NULL,
+                    new_state VARCHAR(32) NOT NULL,
+                    reason TEXT,
+                    reference TEXT,
+                    effective_date DATE,
+                    idempotency_key VARCHAR(128) NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE (invoice_id, idempotency_key),
+                    CHECK (previous_state IN ('issued', 'delivered', 'paid', 'cancelled', 'corrected')),
+                    CHECK (new_state IN ('issued', 'delivered', 'paid', 'cancelled', 'corrected'))
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoice_delivery_jobs (
+                    invoice_id INTEGER PRIMARY KEY REFERENCES invoices(id),
+                    community_id VARCHAR(64) NOT NULL,
+                    delivery_method VARCHAR(16) NOT NULL,
+                    status VARCHAR(16) NOT NULL DEFAULT 'pending',
+                    attempt_count INTEGER NOT NULL DEFAULT 1,
+                    last_error TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CHECK (delivery_method IN ('email', 'download')),
+                    CHECK (status IN ('pending', 'sent', 'failed'))
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoice_corrections (
+                    original_invoice_id INTEGER PRIMARY KEY REFERENCES invoices(id),
+                    corrected_invoice_id INTEGER NOT NULL UNIQUE REFERENCES invoices(id),
+                    community_id VARCHAR(64) NOT NULL,
+                    actor_id VARCHAR(64) NOT NULL,
+                    reason TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CHECK (original_invoice_id <> corrected_invoice_id)
+                )
+            """)
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION reject_invoice_event_mutation()
+                RETURNS trigger AS $$
+                BEGIN
+                    RAISE EXCEPTION 'Invoice lifecycle events are append-only';
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+            cur.execute("""
+                DROP TRIGGER IF EXISTS invoice_events_append_only
+                ON invoice_lifecycle_events
+            """)
+            cur.execute("""
+                CREATE TRIGGER invoice_events_append_only
+                BEFORE UPDATE OR DELETE ON invoice_lifecycle_events
+                FOR EACH ROW EXECUTE FUNCTION reject_invoice_event_mutation()
             """)
 
             cur.execute("""
