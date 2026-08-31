@@ -1,4 +1,4 @@
-"""Product/public-site repository boundary contract."""
+"""Public website and authenticated product boundary contract."""
 
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -111,7 +111,7 @@ PUBLIC_SITE_FILES = {
 }
 
 
-def test_app_factory_registers_product_routes_only():
+def test_app_factory_registers_public_website_and_product_routes():
     application = app_module.create_app(
         {
             "TESTING": True,
@@ -124,7 +124,19 @@ def test_app_factory_registers_product_routes_only():
     registered = {str(rule) for rule in application.url_map.iter_rules()}
 
     assert PRODUCT_RULES <= registered
-    assert PUBLIC_SITE_RULES.isdisjoint(registered)
+    assert {
+        "/how-it-works",
+        "/fuer-bewohner",
+        "/fuer-gemeinden",
+        "/open-source",
+        "/leg-gruenden",
+        "/leg-kalkulator",
+        "/pricing",
+        "/impressum",
+        "/datenschutz",
+        "/self-host",
+        "/rangliste",
+    } <= registered
 
 
 def test_product_templates_use_dashboard_shell_without_public_navigation():
@@ -139,22 +151,24 @@ def test_product_templates_use_dashboard_shell_without_public_navigation():
     assert "partials/site_footer.html" not in shell
 
 
-def test_ranking_facade_renders_no_badges_here():
-    """The badge routes belong to the public site; the facade must not keep a copy.
-
-    The unreachable copy also diverged: it interpolated an unescaped rank into
-    the SVG and truncated after escaping, both fixed only in the other repo.
-    """
+def test_restored_public_ranking_facade_renders_badges():
     import ranking
 
-    assert not hasattr(ranking.Ranking, "badge_svg")
-    assert not hasattr(ranking.Ranking, "og_card_svg")
+    assert hasattr(ranking.Ranking, "badge_svg")
+    assert hasattr(ranking.Ranking, "og_card_svg")
 
 
-def test_public_site_files_are_absent_from_product_repository():
-    remaining = sorted(path for path in PUBLIC_SITE_FILES if (ROOT / path).exists())
+def test_public_homepage_files_are_present_in_public_app_repository():
+    required = {
+        "templates/base.html",
+        "templates/index.html",
+        "templates/partials/site_nav.html",
+        "templates/partials/site_footer.html",
+        "static/images/landing",
+        "static/images/og-image.png",
+    }
 
-    assert remaining == []
+    assert sorted(path for path in required if not (ROOT / path).exists()) == []
 
 
 def test_public_site_links_use_the_configured_origin():

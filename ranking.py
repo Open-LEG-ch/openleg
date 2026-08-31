@@ -5,6 +5,7 @@ The class works with an injected profile list, so it stays pure and easy to
 unit-test. Database access is only performed through ``Ranking.load()``.
 """
 
+import pv_badge
 import pv_ranking
 from store import ranking as store_ranking
 
@@ -114,3 +115,32 @@ class Ranking:
             if row.get("bfs_number") == bfs:
                 return row.get("rank")
         return None
+
+    def badge_svg(self, bfs: int, profile: dict | None = None) -> str:
+        if profile is None:
+            profile = next(
+                (row for row in self._profiles if row.get("bfs_number") == bfs),
+                None,
+            )
+        if not profile:
+            return ""
+        display_score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
+        return pv_badge.badge_svg(
+            profile.get("name"), display_score, self._rank_for_bfs(bfs)
+        )
+
+    def og_card_svg(self, bfs: int, profile: dict | None = None) -> str:
+        if profile is None:
+            profile = next(
+                (row for row in self._profiles if row.get("bfs_number") == bfs),
+                None,
+            )
+        if not profile:
+            return ""
+        display_score, _ = pv_ranking.capped_score(profile.get("pv_score_pct"))
+        return pv_badge.og_card_svg(
+            profile.get("name"),
+            profile.get("kanton"),
+            display_score,
+            self._rank_for_bfs(bfs),
+        )

@@ -39,22 +39,56 @@ def _hrefs(html):
     return re.findall(r'href="([^"]+)"', html)
 
 
-def test_anonymous_root_offers_exactly_owner_and_municipality_access(app_module):
+def test_anonymous_root_renders_public_homepage_not_dashboard_access(app_module):
     response = app_module.web.test_client().get("/")
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
+    assert "Ihr Strom." in html
+    assert "Ihre Gemeinschaft." in html
+    assert "Dashboard-Zugang" not in html
+    assert 'class="site-nav ' in html
+    assert "<footer" in html
+
+
+def test_login_offers_exactly_owner_and_municipality_access(app_module):
+    response = app_module.web.test_client().get("/login")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
     assert "Eigentümer" in html
-    assert "Bewohner-Dashboard" not in html
-    assert "site-nav" not in html
-    assert "site-footer" not in html
-    assert 'href="/fuer-bewohner"' not in html
+    assert "Dashboard-Zugang" in html
     role_hrefs = [
         href for href in _hrefs(html) if href in {"/dashboard", "/gemeinde/dashboard"}
     ]
     assert role_hrefs.count("/dashboard") == 1
     assert role_hrefs.count("/gemeinde/dashboard") == 1
     assert len(role_hrefs) == 2
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/how-it-works",
+        "/fuer-bewohner",
+        "/fuer-gemeinden",
+        "/open-source",
+        "/leg-gruenden",
+        "/leg-kalkulator",
+        "/pricing",
+        "/impressum",
+        "/datenschutz",
+        "/self-host",
+        "/rangliste",
+        "/rangliste/methodik",
+        "/robots.txt",
+        "/sitemap.xml",
+    ],
+)
+def test_restored_public_website_navigation_targets_render(app_module, path):
+    response = app_module.web.test_client().get(path)
+
+    assert response.status_code == 200
 
 
 def test_owner_session_redirects_root_to_owner_dashboard(app_module):

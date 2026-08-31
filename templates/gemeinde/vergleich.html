@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
+
+{% block meta %}
+{{ page_meta(
+  title="Zwei Gemeinden vergleichen | OpenLEG",
+  description="Vergleichen Sie zwei Schweizer Gemeinden direkt bei Solarnutzung, ungenutztem Potenzial und nationalem Rang.",
+  path=canonical_path,
+  og_type="website",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold">Gemeinden vergleichen</h1>
+      <p class="text-ink-muted mt-2 max-w-2xl">
+        Stellen Sie zwei Gemeinden nebeneinander. Wer nutzt mehr vom eigenen Dachpotenzial?
+      </p>
+      <p class="text-sm text-ink-muted mt-2">
+        <a href="/rangliste" class="text-brand hover:underline">Zurück zur Rangliste</a>
+      </p>
+    </header>
+
+    {{ data_provenance(
+      "Stand",
+      data_vintage,
+      ["BFE Elektrizitätsproduktionsanlagen", "BFE Sonnendach", "BFS Regionalporträts"],
+      plant_match_rate,
+    ) }}
+
+    <form method="get" action="/rangliste/vergleich" class="border-y border-slate-200 py-4 mb-8 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+      <div>
+        <label class="block text-xs text-ink-muted mb-1" for="vergleich-a">Gemeinde A</label>
+        <select id="vergleich-a" name="a" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          <option value="">Bitte wählen</option>
+          {% for m in municipalities %}
+          <option value="{{ m.bfs_number }}" {{ 'selected' if m.bfs_number == bfs_a }}>{{ m.name }} ({{ m.kanton }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-ink-muted mb-1" for="vergleich-b">Gemeinde B</label>
+        <select id="vergleich-b" name="b" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          <option value="">Bitte wählen</option>
+          {% for m in municipalities %}
+          <option value="{{ m.bfs_number }}" {{ 'selected' if m.bfs_number == bfs_b }}>{{ m.name }} ({{ m.kanton }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark w-full">Vergleichen</button>
+      </div>
+    </form>
+
+    {% if a and b %}
+    {% set a_lead = (a.display_score|default(0)|float) >= (b.display_score|default(0)|float) %}
+
+    <!-- Head-to-head sheet: a shared label spine, each metric compared on one line. -->
+    <div class="border-t border-slate-200">
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-0 py-4 border-b border-slate-200">
+        <a href="/gemeinde/profil/{{ a.bfs_number }}" class="text-lg font-bold hover:text-brand {{ 'text-brand' if a_lead else '' }}">{{ a.name }}</a>
+        <span class="text-xs uppercase tracking-wide text-ink-muted self-center px-4">vs</span>
+        <a href="/gemeinde/profil/{{ b.bfs_number }}" class="text-lg font-bold text-right hover:text-brand {{ 'text-brand' if not a_lead else '' }}">{{ b.name }}</a>
+      </div>
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-0 pb-4 border-b border-slate-200 text-xs text-ink-muted">
+        <span>Kanton {{ a.kanton }}{% if a.population %} · {{ "{:,}".format(a.population|int).replace(",", "'") }} Einwohner{% endif %}</span>
+        <span></span>
+        <span class="text-right">Kanton {{ b.kanton }}{% if b.population %} · {{ "{:,}".format(b.population|int).replace(",", "'") }} Einwohner{% endif %}</span>
+      </div>
+
+      {% macro pair_row(label, a_value, b_value, a_wins=none) %}
+      <div class="ol-pair-row grid grid-cols-[1fr_9rem_1fr] items-center gap-2 py-4 border-b border-slate-100">
+        <span class="font-mono tabular-nums text-lg font-semibold {{ 'text-brand' if a_wins == true else 'text-ink' }}">{{ a_value }}</span>
+        <span class="text-xs uppercase tracking-wide text-ink-muted text-center">{{ label }}</span>
+        <span class="font-mono tabular-nums text-lg font-semibold text-right {{ 'text-brand' if a_wins == false else 'text-ink' }}">{{ b_value }}</span>
+      </div>
+      {% endmacro %}
+
+      {{ pair_row(
+        "Solarnutzung",
+        (("%.1f"|format(a.display_score|float) ~ "%" ~ ("+" if a.score_over_100 else "")) if a.display_score is not none else "k. A."),
+        (("%.1f"|format(b.display_score|float) ~ "%" ~ ("+" if b.score_over_100 else "")) if b.display_score is not none else "k. A."),
+        a_lead,
+      ) }}
+      {{ pair_row(
+        "Nationaler Rang",
+        (a.pv_rank if a.pv_rank else "k. A."),
+        (b.pv_rank if b.pv_rank else "k. A."),
+        (a.pv_rank is not none and b.pv_rank is not none and a.pv_rank < b.pv_rank) if (a.pv_rank and b.pv_rank) else none,
+      ) }}
+      {{ pair_row(
+        "Ungenutztes Potenzial",
+        (("{:,}".format(a.pv_untapped_kw|int).replace(",", "'") ~ " kW") if a.pv_untapped_kw is not none else "k. A."),
+        (("{:,}".format(b.pv_untapped_kw|int).replace(",", "'") ~ " kW") if b.pv_untapped_kw is not none else "k. A."),
+        (a.pv_untapped_kw is not none and b.pv_untapped_kw is not none and a.pv_untapped_kw < b.pv_untapped_kw) if (a.pv_untapped_kw is not none and b.pv_untapped_kw is not none) else none,
+      ) }}
+    </div>
+    <p class="text-xs text-ink-muted mt-4">Solarnutzung gedeckelt bei 100 %.</p>
+    {% elif bfs_a or bfs_b %}
+    <div class="border border-slate-200 rounded-xl p-8 text-center">
+      <p class="text-ink-muted">Bitte zwei Gemeinden mit verfügbaren Daten wählen.</p>
+    </div>
+    {% else %}
+    <div class="border border-slate-200 rounded-xl p-8 text-center">
+      <p class="text-ink-muted">Wählen Sie zwei Gemeinden, um sie zu vergleichen.</p>
+    </div>
+    {% endif %}
+  </div>
+{% endblock %}

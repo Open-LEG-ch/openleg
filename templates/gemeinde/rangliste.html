@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
+
+{% block meta %}
+{{ page_meta(
+  title="Solarnutzungs-Rangliste der Schweizer Gemeinden | OpenLEG",
+  description="Wie viel Solardach-Potenzial nutzt Ihre Gemeinde schon? Vergleichen Sie Gemeinden nach Kanton, Grösse und Dichte. Offene Daten von BFE und BFS.",
+  path=canonical_path,
+  og_type="website",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold">Solarnutzungs-Rangliste</h1>
+      <p class="text-ink-muted mt-2 max-w-2xl">
+        Solarnutzung zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt.
+        Vergleichen Sie ähnliche Gemeinden und sehen Sie, wo noch Dächer fehlen.
+      </p>
+      <p class="text-sm text-ink-muted mt-2">
+        <a href="/rangliste/vergleich" class="text-brand hover:underline">Zwei Gemeinden vergleichen</a>
+        <span class="mx-2">·</span>
+        <a href="/rangliste/methodik" class="text-brand hover:underline">Methodik und Datenquellen</a>
+      </p>
+    </header>
+
+    {{ data_provenance(
+      "Stand",
+      data_vintage,
+      ["BFE Elektrizitätsproduktionsanlagen", "BFE Sonnendach", "BFS Regionalporträts"],
+      plant_match_rate,
+    ) }}
+
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-6">
+      <a href="/rangliste" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-white' if active_tab == 'rangliste' else 'text-ink border border-slate-200 hover:border-slate-300' }}">Rangliste</a>
+      <a href="/rangliste/fortschritte" class="px-4 py-2 rounded-lg text-sm font-medium {{ 'bg-brand text-white' if active_tab == 'fortschritte' else 'text-ink border border-slate-200 hover:border-slate-300' }}">Grösste Fortschritte</a>
+    </div>
+
+    <!-- Liga-Filter: compact rail, no card chrome -->
+    <form method="get" action="/rangliste" class="border-y border-slate-200 py-4 mb-6 flex flex-wrap items-end gap-4">
+      <div>
+        <label class="block text-xs text-ink-muted mb-1" for="rangliste-kanton">Kanton</label>
+        <select id="rangliste-kanton" name="kanton" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          {% for code, label in canton_options %}
+          <option value="{{ '' if code == 'all' else code }}" {{ 'selected' if (code == 'all' and not kanton) or code == kanton }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-ink-muted mb-1" for="rangliste-size">Grösse</label>
+        <select id="rangliste-size" name="size" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          {% for value, label in size_options %}
+          <option value="{{ value }}" {{ 'selected' if value == size }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-ink-muted mb-1" for="rangliste-density">Dichte</label>
+        <select id="rangliste-density" name="density" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          {% for value, label in density_options %}
+          <option value="{{ value }}" {{ 'selected' if value == density }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-dark">Liga filtern</button>
+        <a href="/rangliste" class="px-3 py-2 rounded-lg text-sm text-ink-muted hover:text-ink">Zurücksetzen</a>
+      </div>
+    </form>
+
+    {% if rows %}
+    <p class="text-sm text-ink-muted mb-2">
+      {{ total }} Gemeinden in dieser Liga{% if rows|length < total %}, angezeigt die ersten {{ rows|length }}{% endif %}.
+    </p>
+    <div class="overflow-x-auto border-t border-slate-200">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="text-left text-xs uppercase tracking-wide text-ink-muted">
+            <th class="sticky left-0 z-10 bg-[#f6f4ef] w-12 min-w-[3rem] px-3 py-3 font-medium border-b border-slate-200">Rang</th>
+            <th class="sticky left-12 z-10 bg-[#f6f4ef] min-w-[9rem] px-3 py-3 font-medium border-b border-slate-200">Gemeinde</th>
+            <th class="sticky left-[12rem] z-10 bg-[#f6f4ef] min-w-[9rem] px-3 py-3 font-medium text-right border-b border-r border-slate-200">Solarnutzung</th>
+            <th class="px-3 py-3 font-medium border-b border-slate-200">Kanton</th>
+            <th class="px-3 py-3 font-medium text-right border-b border-slate-200">Ungenutzt</th>
+            <th class="px-3 py-3 font-medium border-b border-slate-200">Einordnung</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          {% set fill_pct = [r.display_score|float, 100]|min %}
+          <tr class="group border-b border-slate-100 hover:bg-slate-50/60">
+            <td class="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-3 py-3 font-mono tabular-nums text-ink-muted">{{ r.rank }}</td>
+            <td class="sticky left-12 z-10 bg-white group-hover:bg-slate-50 px-3 py-3 font-medium">
+              <a href="/gemeinde/profil/{{ r.bfs_number }}" class="hover:text-brand">{{ r.name }}</a>
+            </td>
+            <td class="sticky left-[12rem] z-10 bg-white group-hover:bg-slate-50 px-3 py-3 border-r border-slate-200">
+              <div class="flex items-center justify-end gap-2">
+                <span class="font-mono tabular-nums font-semibold whitespace-nowrap">
+                  {{ "%.1f"|format(r.display_score|float) }}%{% if r.score_over_100 %}<span class="text-[10px] text-ink-muted ml-0.5">+</span>{% endif %}
+                </span>
+                <span class="ol-fillbar-track w-16 shrink-0" aria-hidden="true">
+                  <span class="ol-fillbar" style="width: {{ "%.1f"|format(fill_pct) }}%" data-score-over-100="{{ 'true' if r.score_over_100 else 'false' }}"></span>
+                </span>
+              </div>
+            </td>
+            <td class="px-3 py-3 text-ink-muted">{{ r.kanton }}</td>
+            <td class="px-3 py-3 text-right font-mono tabular-nums text-ink-muted">
+              {% if r.pv_untapped_kw is not none %}{{ "{:,}".format(r.pv_untapped_kw|int).replace(",", "'") }} kW{% else %}k. A.{% endif %}
+            </td>
+            <td class="px-3 py-3">
+              {% if r.recommendation == 'vorbild' %}
+              <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">Vorbild</span>
+              {% elif r.recommendation == 'grosse_chance' %}
+              <span class="bg-brand/10 text-brand-dark text-xs px-2 py-1 rounded">Grosse Chance</span>
+              {% else %}
+              <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded">Auf Kurs</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="text-xs text-ink-muted mt-4">
+      Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.
+      Werte über 100 % sind mit + markiert und im Balken schraffiert.
+    </p>
+    {% else %}
+    <div class="border border-slate-200 rounded-xl p-8 text-center">
+      <p class="text-ink-muted">Noch keine Gemeinden in dieser Liga. Filter zurücksetzen oder später erneut prüfen.</p>
+    </div>
+    {% endif %}
+  </div>
+{% endblock %}

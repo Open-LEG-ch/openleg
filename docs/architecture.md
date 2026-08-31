@@ -55,17 +55,19 @@ without code changes.
 | `health_bp` | `health.py` | none |
 | `admin_bp` | `admin.py` | none |
 | `cron_bp` | `cron.py` | none |
+| `rangliste_bp` | `rangliste.py` | `/rangliste` |
+| `self_host_bp` | `self_host.py` | `/self-host`, `/install.sh` |
 
 ## Route map
 
-The public website, ranking pages, municipality profiles, registry directory,
-legal pages, sitemap, and installer delivery run from `openleg-ops`. This app
-does not register those HTML routes. `PUBLIC_SITE_URL` is the explicit link seam.
+The public website, ranking pages, legal pages, sitemap, and installer delivery
+run from this public app. Authenticated dashboards remain separate product
+routes. `PUBLIC_SITE_URL` is the explicit link seam for product templates.
 
 Application and API routes:
 
-- `/` chooses the Eigentümer or Gemeinde dashboard. `/dashboard` and `/leg/*`
-  drive registration, community formation, documents,
+- `/` renders the public homepage. `/login` chooses the Eigentümer or Gemeinde
+  dashboard. `/dashboard` and `/leg/*` drive registration, community formation, documents,
   and correspondence.
 - `/meter-upload` accepts a meter file; `/api/meter-data/upload` ingests it.
 - `/api/v1/*` is the unauthenticated public JSON API, documented at `/api/v1/docs`.

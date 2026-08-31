@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
+
+{% block meta %}
+{{ page_meta(
+  title="Für Gemeinden | OpenLEG",
+  description="OpenLEG für Gemeinden: Dashboard prüfen, Verantwortlichkeiten klären und das passende Betriebsmodell wählen.",
+  path="/fuer-gemeinden",
+  og_title="OpenLEG für Gemeinden",
+  og_description="Sehen Sie im Dashboard, was Ihre Gemeinde erhält und wer beim Aufbau einer LEG wofür verantwortlich ist.",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-12">
+  <header class="max-w-3xl mb-8">
+    <p class="text-sm font-semibold text-brand mb-2">Für Gemeinden</p>
+    <h1 class="text-4xl font-bold mb-3">Ihre Gemeinde sieht, was als Nächstes ansteht</h1>
+    <p class="text-lg text-ink-muted">Das Gemeinde-Dashboard bündelt Anmeldungen, Solarnutzung und nächste Schritte. So entscheiden Sie auf einer klaren Grundlage, ohne zuerst ein IT-Projekt zu starten.</p>
+  </header>
+
+  <section aria-labelledby="dashboard-title" class="border-y border-slate-200 py-8">
+    <div class="grid lg:grid-cols-[2fr_1fr] gap-8 items-center">
+      <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <picture>
+          <source srcset="/static/images/product/municipality-dashboard-static.webp" media="(prefers-reduced-motion: reduce)">
+          <img src="/static/images/product/municipality-dashboard.gif" alt="Echtes Gemeinde-Dashboard beim Wechsel zwischen Kennzahlen und nächsten Schritten" width="960" height="540" loading="lazy" class="w-full h-auto">
+        </picture>
+      </div>
+      <div>
+        <h2 id="dashboard-title" class="text-2xl font-bold mb-3">Ein Arbeitsstand statt einer Werbepräsentation</h2>
+        <ul class="space-y-3 text-ink-muted">
+          <li><strong class="text-ink">Anmeldungen:</strong> Sie sehen, wie viele Interessierte sich gemeldet haben.</li>
+          <li><strong class="text-ink">Solarnutzung:</strong> Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein.</li>
+          <li><strong class="text-ink">Nächster Schritt:</strong> Das Dashboard zeigt, was für die Aktivierung noch fehlt.</li>
+        </ul>
+        <div class="mt-5 flex flex-col sm:flex-row gap-3">
+          <a href="/gemeinde/dashboard/demo" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Demo-Dashboard öffnen</a>
+          <a href="/gemeinde/onboarding" class="inline-block border border-line bg-white text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 text-center">Gemeinde anmelden</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="responsibility-title" class="py-12">
+    <div class="max-w-3xl mb-6">
+      <h2 id="responsibility-title" class="text-3xl font-bold mb-2">Wer wofür verantwortlich ist</h2>
+      <p class="text-ink-muted">Sie behalten die fachliche Verantwortung. OpenLEG stellt die Infrastruktur bereit. Der Verteilnetzbetreiber erfüllt seine gesetzlich geregelten Aufgaben.</p>
+    </div>
+    <div class="grid md:grid-cols-3 border-y border-slate-200 md:divide-x divide-slate-200">
+      <article data-responsible-party="Gemeinde" class="py-6 md:px-6 md:first:pl-0 border-b md:border-b-0 border-slate-200">
+        <h3 class="text-xl font-bold mb-3">Gemeinde</h3>
+        <ul class="space-y-2 text-sm text-ink-muted">
+          <li>Bestimmt eine Ansprechperson.</li>
+          <li>Wählt das Betriebsmodell.</li>
+          <li>Informiert lokale Beteiligte und begleitet die Anmeldung.</li>
+        </ul>
+      </article>
+      <article data-responsible-party="OpenLEG" class="py-6 md:px-6 border-b md:border-b-0 border-slate-200">
+        <h3 class="text-xl font-bold mb-3">OpenLEG</h3>
+        <ul class="space-y-2 text-sm text-ink-muted">
+          <li>Stellt Gemeinde-Seite und Dashboard bereit.</li>
+          <li>Bündelt Anmeldungen und nächste Schritte.</li>
+          <li>Unabhängig vom Netzbetreiber betreibt OpenLEG die Plattform, wenn die Gemeinde das gehostete Modell wählt.</li>
+        </ul>
+      </article>
+      <article data-responsible-party="Verteilnetzbetreiber" class="py-6 md:pl-6">
+        <h3 class="text-xl font-bold mb-3">Verteilnetzbetreiber</h3>
+        <ul class="space-y-2 text-sm text-ink-muted">
+          <li>Die LEG-Vertretung meldet ihm die Bildung der LEG drei Monate im Voraus auf ein Monatsende. <a href="#data-provenance" data-source-marker="legal" class="font-mono text-xs text-brand underline">Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV</a></li>
+          <li>Beantragt die LEG ein intelligentes Messsystem, installiert er es innert drei Monaten. <a href="#data-provenance" data-source-marker="legal" class="font-mono text-xs text-brand underline">Art. 8a decies Abs. 6 StromVV</a></li>
+        </ul>
+      </article>
+    </div>
+    <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance("Rechtsstand", "2026", ["Art. 17d und 17e StromVG", "Art. 19e bis 19h StromVV", "Art. 8a decies Abs. 6 StromVV"]) }}</div>
+  </section>
+
+  <section aria-labelledby="model-title" class="border-t border-slate-200 pt-12">
+    <div class="max-w-3xl mb-6">
+      <h2 id="model-title" class="text-3xl font-bold mb-2">Betriebsmodell vergleichen</h2>
+      <p class="text-ink-muted">Beide Modelle nutzen dieselbe Open-Source-Software. Wählen Sie nach Verantwortung, Datenhaltung und internem Aufwand.</p>
+    </div>
+    <div class="overflow-x-auto border-y border-slate-200">
+      <table class="w-full min-w-[42rem] text-left">
+        <thead>
+          <tr class="border-b border-slate-200">
+            <th scope="col" class="py-4 pr-4 text-sm text-ink-muted">Dimension</th>
+            <th scope="col" data-operating-model="self-hosted" class="p-4 text-lg">Selbst betreiben</th>
+            <th scope="col" data-operating-model="hosted" class="p-4 text-lg">Gehostet auf openleg.ch</th>
+          </tr>
+        </thead>
+        <tbody class="text-sm">
+          <tr class="border-b border-slate-200"><th scope="row" class="py-4 pr-4">Betrieb</th><td data-model-dimension="self-hosted:Betrieb" class="p-4">Gemeinde oder Hostingpartner</td><td data-model-dimension="hosted:Betrieb" class="p-4">OpenLEG</td></tr>
+          <tr class="border-b border-slate-200"><th scope="row" class="py-4 pr-4">Datenhaltung</th><td data-model-dimension="self-hosted:Datenhaltung" class="p-4">Auf eigener Infrastruktur</td><td data-model-dimension="hosted:Datenhaltung" class="p-4">Auf Schweizer Infrastruktur</td></tr>
+          <tr class="border-b border-slate-200"><th scope="row" class="py-4 pr-4">Aufwand</th><td data-model-dimension="self-hosted:Aufwand" class="p-4">Eigenes Setup, Wartung und Updates</td><td data-model-dimension="hosted:Aufwand" class="p-4">Kein eigener technischer Betrieb</td></tr>
+          <tr><th scope="row" class="py-4 pr-4">Einstieg</th><td data-model-dimension="self-hosted:Einstieg" class="p-4"><a href="/self-host" class="text-brand font-semibold underline">Schnellstart öffnen</a></td><td data-model-dimension="hosted:Einstieg" class="p-4"><a href="/gemeinde/onboarding" class="text-brand font-semibold underline">Gemeinde anmelden</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="next-title" class="py-12 grid md:grid-cols-2 gap-8">
+    <div>
+      <h2 id="next-title" class="text-2xl font-bold mb-2">Mit einem prüfbaren Schritt beginnen</h2>
+      <p class="text-ink-muted mb-5">Prüfen Sie zuerst die Solarnutzung oder bestehende Gemeinschaften im <a href="/leg-verzeichnis" class="text-brand underline">LEG-Verzeichnis</a>. Kein Anbieter-Lock-in: Sie können das Betriebsmodell wechseln.</p>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <a href="/gemeinde/onboarding" class="text-center bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Gemeinde anmelden</a>
+        <a href="/rangliste" class="text-center border border-slate-200 bg-white text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">Rangliste ansehen</a>
+      </div>
+    </div>
+    <div class="border-l border-slate-200 pl-6">
+      <h3 class="font-bold mb-2">Fragen zum Betrieb?</h3>
+      <p class="text-sm text-ink-muted mb-4">Vergleichen Sie Preise, lesen Sie den Code oder besprechen Sie Projektsupport.</p>
+      <div class="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+        <a href="/pricing" class="text-brand font-semibold underline">Preise ansehen</a>
+        <a href="/open-source" class="text-brand font-semibold underline">Codebase verstehen</a>
+        <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="text-brand font-semibold underline">Code auf GitHub</a>
+        <a href="mailto:hallo@openleg.ch?subject=OpenLEG%20Gemeinde%20Projektsupport" class="text-brand font-semibold underline">Projektsupport anfragen</a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

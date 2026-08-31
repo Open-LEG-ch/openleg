@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from flask import (
     Blueprint,
     Flask,
+    Response,
     abort,
     current_app,
     g,
@@ -31,6 +32,7 @@ import data_enricher
 import database as db
 import email_automation
 import formation_wizard
+import homepage_view_model
 import ml_models
 import registration
 import security_utils
@@ -43,9 +45,11 @@ from health import health_bp
 from leg_registry import registry_api_bp
 from municipality import municipality_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
+from rangliste import rangliste_bp
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import limiter
 from security_utils import log_security_event
+from self_host import self_host_bp
 from utility_portal import utility_bp
 
 logger = logging.getLogger(__name__)
@@ -180,7 +184,117 @@ def index():
         return redirect("/dashboard")
     if session.get("municipality_id"):
         return redirect("/gemeinde/dashboard")
+    territory = (
+        g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
+    )
+    model = homepage_view_model.build_homepage_view_model(
+        territory, referral_code=request.args.get("ref", "")
+    )
+    return render_city_template(
+        "index.html",
+        user_count=model["stats"]["registered_buildings"],
+        referral_code=model["referral"]["code"],
+        referrer_street=model["referral"]["street"],
+        ranking_best=model["ranking"]["best"],
+        ranking_worst=model["ranking"]["needs_action"],
+        ranking_total=model["ranking"]["total"],
+    )
+
+
+@main_bp.route("/login")
+def login():
     return render_city_template("role_access.html")
+
+
+@main_bp.route("/how-it-works")
+def how_it_works():
+    return render_city_template("how-it-works.html")
+
+
+@main_bp.route("/fuer-bewohner")
+def fuer_bewohner():
+    return render_city_template("fuer_bewohner.html")
+
+
+@main_bp.route("/fuer-gemeinden")
+def fuer_gemeinden():
+    return render_city_template("fuer_gemeinden.html")
+
+
+@main_bp.route("/open-source")
+def open_source():
+    return render_city_template("open_source.html")
+
+
+@main_bp.route("/leg-gruenden")
+def leg_gruenden():
+    return render_city_template("leg_gruenden.html")
+
+
+@main_bp.route("/leg-kalkulator")
+def leg_kalkulator():
+    return render_city_template("leg_kalkulator.html")
+
+
+@main_bp.route("/pricing")
+def pricing():
+    return render_city_template("pricing.html")
+
+
+@main_bp.route("/impressum")
+def impressum():
+    return render_city_template("impressum.html")
+
+
+@main_bp.route("/datenschutz")
+def datenschutz():
+    return render_city_template("datenschutz.html")
+
+
+@main_bp.route("/robots.txt")
+def robots_txt():
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Allow: /api/v1/docs",
+        "Disallow: /api/",
+        "Disallow: /admin/",
+        "Disallow: /confirm/",
+        "Disallow: /unsubscribe/",
+        f"Sitemap: {current_app.config['SITE_URL']}/sitemap.xml",
+    ]
+    return Response("\n".join(lines) + "\n", mimetype="text/plain")
+
+
+@main_bp.route("/sitemap.xml")
+def sitemap_xml():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    current_date = datetime.now(ZoneInfo("Europe/Zurich")).date().isoformat()
+    pages = [
+        ("/", "1.0", "daily", current_date),
+        ("/how-it-works", "0.8", "weekly", current_date),
+        ("/fuer-bewohner", "0.9", "weekly", current_date),
+        ("/fuer-gemeinden", "0.8", "weekly", current_date),
+        ("/leg-gruenden", "0.9", "weekly", current_date),
+        ("/leg-kalkulator", "0.9", "weekly", current_date),
+        ("/pricing", "0.7", "monthly", current_date),
+        ("/open-source", "0.8", "weekly", current_date),
+        ("/self-host", "0.8", "weekly", current_date),
+        ("/rangliste", "0.9", "daily", current_date),
+        ("/rangliste/fortschritte", "0.8", "daily", current_date),
+        ("/rangliste/vergleich", "0.7", "weekly", current_date),
+        ("/rangliste/methodik", "0.6", "monthly", current_date),
+        ("/api/v1/docs", "0.8", "weekly", current_date),
+        ("/gemeinde/onboarding", "0.9", "weekly", current_date),
+        ("/impressum", "0.3", "yearly", "2026-01-01"),
+        ("/datenschutz", "0.3", "yearly", "2026-01-01"),
+    ]
+    xml = render_template(
+        "sitemap.xml", site_url=current_app.config["SITE_URL"], pages=pages
+    )
+    return Response(xml, mimetype="application/xml")
 
 
 @main_bp.route("/favicon.ico")
@@ -696,6 +810,8 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         public_api_bp,
         health_bp,
         utility_bp,
+        rangliste_bp,
+        self_host_bp,
         admin_bp,
         cron_bp,
     ):

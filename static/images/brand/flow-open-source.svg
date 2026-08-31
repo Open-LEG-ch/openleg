@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" role="img" aria-label="Kostenlos und Open Source">
+  <defs>
+    <linearGradient id="osky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f6f4ef"/>
+    </linearGradient>
+    <pattern id="odots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.4" fill="#0f172a" opacity="0.05"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="400" fill="url(#osky)"/>
+  <rect width="1200" height="400" fill="url(#odots)"/>
+
+  <!-- terminal window -->
+  <g transform="translate(90,90)">
+    <rect x="0" y="0" width="560" height="240" rx="16" fill="#0f172a"/>
+    <g fill="#475569"><circle cx="28" cy="28" r="7"/><circle cx="52" cy="28" r="7"/><circle cx="76" cy="28" r="7"/></g>
+    <line x1="0" y1="52" x2="560" y2="52" stroke="#1e293b" stroke-width="2"/>
+    <g font-family="ui-monospace,Menlo,monospace" font-size="26">
+      <text x="32" y="104" fill="#4f46e5">&gt;</text>
+      <text x="62" y="104" fill="#f6f4ef">git clone openLEG</text>
+      <text x="32" y="150" fill="#64748b">  Lizenz   AGPL-3.0</text>
+      <text x="32" y="190" fill="#64748b">  Preis    </text>
+      <text x="150" y="190" fill="#4f46e5">CHF 0</text>
+    </g>
+    <!-- blinking-ish caret -->
+    <rect x="32" y="212" width="16" height="26" fill="#4f46e5"/>
+  </g>
+
+  <!-- open-source node graph (right) -->
+  <g transform="translate(760,70)" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round">
+    <line x1="160" y1="60" x2="60"  y2="150"/>
+    <line x1="160" y1="60" x2="270" y2="140"/>
+    <line x1="60"  y1="150" x2="120" y2="250"/>
+    <line x1="270" y1="140" x2="210" y2="250"/>
+    <line x1="120" y1="250" x2="210" y2="250"/>
+    <g stroke="#4338ca" stroke-width="3">
+      <circle cx="160" cy="60"  r="26" fill="#4f46e5"/>
+      <circle cx="60"  cy="150" r="20" fill="#ffffff"/>
+      <circle cx="270" cy="140" r="20" fill="#ffffff"/>
+      <circle cx="120" cy="250" r="20" fill="#ffffff"/>
+      <circle cx="210" cy="250" r="20" fill="#ffffff"/>
+    </g>
+    <!-- center fork glyph -->
+    <path d="M160 50 v20 M152 60 h16" stroke="#0f172a" stroke-width="3"/>
+  </g>
+</svg>
