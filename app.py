@@ -43,7 +43,7 @@ from cron import cron_bp
 from email_utils import send_email
 from health import health_bp
 from leg_registry import registry_api_bp
-from municipality import municipality_bp
+from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
 from rangliste import rangliste_bp
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
@@ -806,6 +806,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     for blueprint in (
         main_bp,
         municipality_bp,
+        pilot_bp,
         registry_api_bp,
         public_api_bp,
         health_bp,

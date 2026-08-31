@@ -93,3 +93,26 @@ def test_register_rejects_invalid_email(monkeypatch):
 
     assert response.status_code == 400
     assert "Ungültige E-Mail" in response.get_json()["error"]
+
+
+def test_public_municipality_profile_route_is_restored(monkeypatch):
+    profile = {
+        "bfs_number": 261,
+        "name": "Dietikon",
+        "kanton": "ZH",
+        "energy_transition_score": 0,
+        "pv_score_pct": 42.0,
+    }
+    monkeypatch.setattr(
+        municipality.db, "get_municipality_profile", lambda _bfs: profile
+    )
+    monkeypatch.setattr(
+        municipality.db, "get_elcom_tariffs", lambda *_args, **_kwargs: []
+    )
+    monkeypatch.setattr(municipality.db, "get_sonnendach_municipal", lambda _bfs: None)
+    monkeypatch.setattr(municipality.db, "list_registry_entries", lambda **_kwargs: [])
+
+    response = _client().get("/gemeinde/profil/261")
+
+    assert response.status_code == 200
+    assert "Dietikon" in response.get_data(as_text=True)
