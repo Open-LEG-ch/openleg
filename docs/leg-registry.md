@@ -8,8 +8,8 @@ self-service submit and claim, honestly scoped eligibility guidance, and a
 real freshness/verification pipeline so listings stay trustworthy over time.
 
 The product repository owns registry storage, verification actions, moderation,
-and API endpoints. The public directory and stakeholder pages are rendered by the
-separately deployed website in `openleg-ops`.
+and API endpoints. Its public website renders the directory and stakeholder
+pages. `openleg-ops` owns their production deployment.
 
 ## Why This Matters
 

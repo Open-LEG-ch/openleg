@@ -13,6 +13,10 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _squash(text: str) -> str:
+    return " ".join(text.split())
+
+
 def test_public_engineering_contract_keeps_project_rules_discoverable():
     content = _read(ENGINEERING_PATH)
     for section in (
@@ -41,8 +45,10 @@ def test_public_docs_pin_site_ownership_and_release_safety():
     release_contract = _read(PUBLIC_SITE_PATH)
     readme = _read(PROJECT_ROOT / "README.md")
     boundary = _read(PROJECT_ROOT / "docs" / "repo-boundary.md")
+    registry = _read(PROJECT_ROOT / "docs" / "leg-registry.md")
+    pipeline = _read(PROJECT_ROOT / "docs" / "data-pipeline.md")
 
-    for content in (engineering, readme, boundary):
+    for content in (engineering, readme, boundary, registry):
         assert "public website" in content
         assert "openleg-ops" in content
 
@@ -51,14 +57,16 @@ def test_public_docs_pin_site_ownership_and_release_safety():
     assert "at\n   most six requests" in release_contract
     assert "Do not crawl the full municipality directory" in release_contract
 
+    public_docs = _squash(f"{readme}\n{boundary}\n{registry}\n{pipeline}")
     stale_claims = (
         "The marketing website runs separately from `openleg-ops`",
-        "Put the marketing website runtime, public directories, ranking and legal pages\n  in `openleg-ops`",
+        "Put the marketing website runtime, public directories, ranking and legal pages in `openleg-ops`",
         "Die Marketing-Website läuft getrennt aus `openleg-ops`",
+        "separately deployed website in `openleg-ops`",
+        "separately deployed public website",
     )
     for claim in stale_claims:
-        assert claim not in readme
-        assert claim not in boundary
+        assert claim not in public_docs
 
 
 def test_public_engineering_contract_stays_public_safe():

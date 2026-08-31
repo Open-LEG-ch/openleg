@@ -1,9 +1,9 @@
 # Data Pipeline
 
 OpenLEG combines public Swiss energy datasets into municipality read models and
-API responses. The separately deployed public website renders ranking and profile
-pages from those APIs. The pipeline is deterministic and safe to run against an
-empty development database.
+API responses. Public website routes in this repository render ranking and
+profile pages from those APIs. The pipeline is deterministic and safe to run
+against an empty development database.
 
 ## Sources
 
