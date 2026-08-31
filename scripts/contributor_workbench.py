@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import fnmatch
+import json
 import os
 import shutil
 import subprocess
@@ -282,6 +284,24 @@ def render(report: Report) -> None:
             print(line)
 
 
+def render_report_json(report: Report) -> None:
+    print(
+        json.dumps(
+            {
+                "checks": [
+                    {
+                        "group": check.group,
+                        "name": check.name,
+                        "ok": check.ok,
+                        "detail": check.detail,
+                    }
+                    for check in report.checks
+                ]
+            }
+        )
+    )
+
+
 def read_section(context_file: Path, heading: str) -> list[str]:
     lines = context_file.read_text(encoding="utf-8").splitlines()
     marker = f"## {heading}"
@@ -407,25 +427,113 @@ def setup_environment(repo_root: Path, dry_run: bool) -> int:
     return 0
 
 
+def forbidden_path_violations(
+    paths: list[str], policy_file: Path
+) -> list[tuple[str, str]]:
+    patterns = [
+        line.strip()
+        for line in policy_file.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    violations = []
+    for path in paths:
+        pattern = next(
+            (
+                candidate
+                for candidate in patterns
+                if fnmatch.fnmatchcase(path, candidate)
+            ),
+            None,
+        )
+        if pattern is not None:
+            violations.append((path, pattern))
+    return violations
+
+
+def staged_paths(repo_root: Path) -> tuple[list[str] | None, str]:
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as error:
+        return None, str(error)
+    if result.returncode != 0:
+        detail = result.stderr.strip() or f"git exited with code {result.returncode}"
+        return None, detail
+    return result.stdout.splitlines(), ""
+
+
+def render_check_json(
+    violations: list[tuple[str, str]], error: str | None = None
+) -> None:
+    payload: dict[str, object] = {
+        "violations": [
+            {"path": path, "pattern": pattern} for path, pattern in violations
+        ]
+    }
+    if error is not None:
+        payload["error"] = error
+    print(json.dumps(payload))
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="scripts/contribute")
     subparsers = parser.add_subparsers(dest="command")
-    subparsers.add_parser("doctor")
+    doctor = subparsers.add_parser("doctor")
+    doctor.add_argument("--json", action="store_true")
+    check = subparsers.add_parser("check")
+    check.add_argument("paths", nargs="*")
+    check.add_argument("--staged", action="store_true")
+    check.add_argument("--json", action="store_true")
     glossary = subparsers.add_parser("glossary")
     glossary.add_argument("term", nargs="?")
+    glossary.add_argument("--json", action="store_true")
     subparsers.add_parser("gate")
     test = subparsers.add_parser("test")
     test.add_argument("node")
     test.add_argument("--phase", choices=("red", "green", "refactor"), default="red")
     setup = subparsers.add_parser("setup")
     setup.add_argument("--dry-run", action="store_true")
-    subparsers.add_parser("tour")
+    tour = subparsers.add_parser("tour")
+    tour.add_argument("--json", action="store_true")
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
     repo_root = Path(__file__).resolve().parents[1]
+    if args.command == "check":
+        paths = list(args.paths)
+        if args.staged or not paths:
+            found_paths, error = staged_paths(repo_root)
+            if found_paths is None:
+                detail = f"cannot read staged paths: {error}"
+                if args.json:
+                    render_check_json([], detail)
+                else:
+                    print(f"FAIL check: {detail}")
+                return 1
+            paths.extend(found_paths)
+        policy_file = repo_root / ".github" / "forbidden-paths.txt"
+        try:
+            violations = forbidden_path_violations(paths, policy_file)
+        except (OSError, UnicodeError) as error:
+            detail = f"cannot read {policy_file}: {error}"
+            if args.json:
+                render_check_json([], detail)
+            else:
+                print(f"FAIL check: {detail}")
+            return 1
+        if args.json:
+            render_check_json(violations)
+        else:
+            for path, pattern in violations:
+                print(f"FAIL check: {path} matches forbidden pattern {pattern}")
+        return 1 if violations else 0
     if args.command == "setup":
         return setup_environment(repo_root, args.dry_run)
     if args.command == "gate":
@@ -451,10 +559,13 @@ def main() -> int:
         try:
             terms = read_domain_terms(repo_root / "CONTEXT.md")
         except (OSError, ValueError) as error:
+            if args.json:
+                print(json.dumps({"terms": [], "error": f"CONTEXT.md: {error}"}))
+                return 1
             return report_context_error(error)
+        selected_terms = terms
         if args.term is None:
-            for term, meaning in terms.items():
-                print(f"{term}: {meaning}")
+            pass
         else:
             terms_by_key = {term.casefold(): term for term in terms}
             matching_term = terms_by_key.get(args.term.casefold())
@@ -463,16 +574,75 @@ def main() -> int:
                     args.term.casefold(), terms_by_key, n=3, cutoff=0
                 )
                 suggested_terms = ", ".join(terms_by_key[key] for key in suggestions)
-                print(f"Unknown glossary term {args.term}. Closest: {suggested_terms}")
+                detail = (
+                    f"Unknown glossary term {args.term}. Closest: {suggested_terms}"
+                )
+                if args.json:
+                    print(json.dumps({"terms": [], "error": detail}))
+                else:
+                    print(detail)
                 return 1
-            print(terms[matching_term])
+            selected_terms = {matching_term: terms[matching_term]}
+        if args.json:
+            print(
+                json.dumps(
+                    {
+                        "terms": [
+                            {"term": term, "meaning": meaning}
+                            for term, meaning in selected_terms.items()
+                        ]
+                    }
+                )
+            )
+        elif args.term is None:
+            for term, meaning in terms.items():
+                print(f"{term}: {meaning}")
+        else:
+            print(next(iter(selected_terms.values())))
         return 0
     if args.command == "tour":
         try:
             seams = read_seams(repo_root / "CONTEXT.md")
             store_modules = read_store_modules(repo_root / "CONTEXT.md")
         except (OSError, ValueError) as error:
+            if args.json:
+                print(
+                    json.dumps(
+                        {
+                            "seams": [],
+                            "store_modules": [],
+                            "error": f"CONTEXT.md: {error}",
+                        }
+                    )
+                )
+                return 1
             return report_context_error(error)
+        if args.json:
+            print(
+                json.dumps(
+                    {
+                        "entry_points": [
+                            {
+                                "path": "app.py",
+                                "purpose": "application factory and local development server",
+                            },
+                            {
+                                "path": "wsgi.py",
+                                "purpose": "production WSGI entry point",
+                            },
+                            {"path": "api_public.py", "purpose": "public JSON API"},
+                        ],
+                        "seams": seams,
+                        "store_modules": [
+                            {"module": module, "purpose": purpose}
+                            for module, purpose in store_modules.items()
+                        ],
+                        "tests": ["tests/: pytest tests and contract tests"],
+                        "gate": "scripts/test.sh gate",
+                    }
+                )
+            )
+            return 0
         print("OpenLEG orientation")
         print("Entry points")
         print("- app.py: application factory and local development server")
@@ -496,12 +666,23 @@ def main() -> int:
         except (OSError, ValueError) as error:
             # doctor is what a contributor runs when things are broken, so a
             # broken repository has to be reported, never raised at them.
-            print(HEADINGS[GATE])
-            print(f"FAIL ruff: cannot read the pin from requirements-dev.txt: {error}")
-            print(
-                "     restore an exact `ruff==<version>` line in requirements-dev.txt"
+            report = Report(
+                [
+                    Check(
+                        GATE,
+                        "ruff",
+                        False,
+                        f"cannot read the pin from requirements-dev.txt: {error}",
+                        "restore an exact `ruff==<version>` line in requirements-dev.txt",
+                    )
+                ],
+                1,
             )
-            return 1
+            if args.json:
+                render_report_json(report)
+            else:
+                render(report)
+            return report.exit_code
         report = evaluate(
             Environment(
                 python=detect_python(),
@@ -516,7 +697,10 @@ def main() -> int:
                 venv_active=venv_active,
             )
         )
-        render(report)
+        if args.json:
+            render_report_json(report)
+        else:
+            render(report)
         return report.exit_code
     return 0
 

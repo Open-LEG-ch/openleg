@@ -2,6 +2,7 @@
 """Contract tests for the contributor workbench CLI."""
 
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -937,3 +938,297 @@ def test_doctor_reports_broken_ruff_executable_without_traceback(tmp_path):
     assert result.returncode != 0
     assert "Traceback" not in output
     assert "ruff executable" in output
+
+
+def test_check_rejects_forbidden_path_and_names_matching_pattern():
+    result = subprocess.run(
+        [CONTRIBUTE, "check", "strategy/notes.md"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "strategy/notes.md" in output
+    assert "strategy/**" in output
+
+
+def test_check_accepts_allowed_path():
+    result = subprocess.run(
+        [CONTRIBUTE, "check", "README.md"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_check_reports_every_forbidden_path_and_pattern():
+    result = subprocess.run(
+        [
+            CONTRIBUTE,
+            "check",
+            "strategy/notes.md",
+            "README.md",
+            "private/brief.md",
+            "AGENTS.md",
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "strategy/notes.md" in output
+    assert "strategy/**" in output
+    assert "private/brief.md" in output
+    assert "private/**" in output
+    assert "AGENTS.md" in output
+
+
+def _check_checkout(tmp_path):
+    checkout = tmp_path / "checkout"
+    scripts = checkout / "scripts"
+    policy_directory = checkout / ".github"
+    scripts.mkdir(parents=True)
+    policy_directory.mkdir()
+    shutil.copy(CONTRIBUTE, scripts / "contribute")
+    shutil.copy(
+        PROJECT_ROOT / "scripts" / "contributor_workbench.py",
+        scripts / "contributor_workbench.py",
+    )
+    shutil.copy(
+        PROJECT_ROOT / ".github" / "forbidden-paths.txt",
+        policy_directory / "forbidden-paths.txt",
+    )
+    subprocess.run(["git", "init"], cwd=checkout, check=True, capture_output=True)
+    return checkout
+
+
+@pytest.mark.parametrize("arguments", [[], ["--staged"]])
+def test_check_reads_staged_paths_from_temporary_repository(tmp_path, arguments):
+    checkout = _check_checkout(tmp_path)
+    forbidden = checkout / "strategy" / "notes.md"
+    forbidden.parent.mkdir()
+    forbidden.write_text("private notes\n", encoding="utf-8")
+    subprocess.run(
+        ["git", "add", "strategy/notes.md"],
+        cwd=checkout,
+        check=True,
+        capture_output=True,
+    )
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "check", *arguments],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "strategy/notes.md" in output
+    assert "strategy/**" in output
+
+
+def test_check_fails_closed_when_policy_file_is_missing(tmp_path):
+    checkout = _check_checkout(tmp_path)
+    (checkout / ".github" / "forbidden-paths.txt").unlink()
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "check", "README.md"],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "forbidden-paths.txt" in output
+    assert "Traceback" not in output
+
+
+def test_check_fails_closed_when_policy_file_is_undecodable(tmp_path):
+    checkout = _check_checkout(tmp_path)
+    (checkout / ".github" / "forbidden-paths.txt").write_bytes(b"\xff")
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "check", "README.md"],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "forbidden-paths.txt" in output
+    assert "Traceback" not in output
+
+
+def test_check_reads_new_policy_pattern_at_runtime(tmp_path):
+    checkout = _check_checkout(tmp_path)
+    policy = checkout / ".github" / "forbidden-paths.txt"
+    with policy.open("a", encoding="utf-8") as handle:
+        handle.write("\ncustom-private/**\n")
+
+    result = subprocess.run(
+        [
+            checkout / "scripts" / "contribute",
+            "check",
+            "custom-private/notes.md",
+        ],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "custom-private/notes.md" in output
+    assert "custom-private/**" in output
+
+
+def test_doctor_json_emits_only_parseable_structured_checks(tmp_path):
+    result = subprocess.run(
+        [CONTRIBUTE, "doctor", "--json"],
+        cwd=PROJECT_ROOT,
+        env=_fake_python(
+            tmp_path,
+            "3.12.0",
+            ruff_version=_ruff_pin(),
+            commands=("node", "npm", "mypy"),
+        ),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stderr == ""
+    assert payload["checks"]
+    assert all(
+        {"group", "name", "ok", "detail"} <= check.keys() for check in payload["checks"]
+    )
+
+
+def test_check_json_emits_path_pattern_violation_objects():
+    result = subprocess.run(
+        [
+            CONTRIBUTE,
+            "check",
+            "--json",
+            "strategy/notes.md",
+            "private/brief.md",
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode != 0
+    assert result.stderr == ""
+    assert payload["violations"] == [
+        {"path": "strategy/notes.md", "pattern": "strategy/**"},
+        {"path": "private/brief.md", "pattern": "private/**"},
+    ]
+
+
+def test_json_and_human_commands_use_identical_exit_codes(tmp_path):
+    env = _fake_python(
+        tmp_path,
+        "3.12.0",
+        ruff_version=_ruff_pin(),
+        commands=("node", "npm", "mypy"),
+    )
+    doctor_human = subprocess.run(
+        [CONTRIBUTE, "doctor"],
+        cwd=PROJECT_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    doctor_json = subprocess.run(
+        [CONTRIBUTE, "doctor", "--json"],
+        cwd=PROJECT_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    check_human = subprocess.run(
+        [CONTRIBUTE, "check", "strategy/notes.md"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    check_json = subprocess.run(
+        [CONTRIBUTE, "check", "--json", "strategy/notes.md"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert doctor_json.returncode == doctor_human.returncode
+    assert check_json.returncode == check_human.returncode
+
+
+def test_glossary_and_tour_json_emit_context_data():
+    glossary = subprocess.run(
+        [CONTRIBUTE, "glossary", "--json"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    tour = subprocess.run(
+        [CONTRIBUTE, "tour", "--json"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    glossary_payload = json.loads(glossary.stdout)
+    tour_payload = json.loads(tour.stdout)
+    assert glossary.returncode == 0, glossary.stdout + glossary.stderr
+    assert tour.returncode == 0, tour.stdout + tour.stderr
+    assert glossary.stderr == ""
+    assert tour.stderr == ""
+    assert glossary_payload["terms"] == [
+        {"term": term, "meaning": meaning} for term, meaning in _domain_terms().items()
+    ]
+    assert [item["module"] for item in tour_payload["store_modules"]] == (
+        _store_modules()
+    )
+    assert all("purpose" in item for item in tour_payload["store_modules"])
+
+
+def test_help_names_contributor_command_not_python_module():
+    result = subprocess.run(
+        [CONTRIBUTE, "--help"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode == 0, output
+    assert "scripts/contribute" in output
+    assert "contributor_workbench.py" not in output
