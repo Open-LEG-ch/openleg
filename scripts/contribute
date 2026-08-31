@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# OpenLEG contributor workbench.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "Python not found on PATH; install Python 3.11 or newer." >&2
+  exit 1
+fi
+
+# Gate the interpreter here, not in the Python module. The module uses syntax
+# that older interpreters cannot even parse, so a contributor on a stock macOS
+# Python 3.9 would get a traceback instead of the verdict they came for.
+version="$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || true)"
+if [ -z "$version" ]; then
+  echo "Python on PATH could not report its version; install Python 3.11 or newer." >&2
+  exit 1
+fi
+major="${version%%.*}"
+minor="${version##*.}"
+if [ "$major" -lt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -lt 11 ]; }; then
+  echo "Required to run the gate"
+  echo "FAIL Python: ${version}, need 3.11 or newer"
+  echo "     install Python 3.11 or newer, then rerun scripts/contribute doctor"
+  exit 1
+fi
+
+exec python3 scripts/contributor_workbench.py "$@"
