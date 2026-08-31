@@ -103,6 +103,7 @@ def test_dockerfile_gunicorn_command_serves_livez():
                 "APP_BASE_URL": f"http://127.0.0.1:{port}",
                 "DATABASE_URL": isolated_database_url,
                 "PUBLIC_SITE_URL": f"http://127.0.0.1:{port}",
+                "REDIS_URL": "memory://",
             },
             stdout=gunicorn_log,
             stderr=subprocess.STDOUT,
