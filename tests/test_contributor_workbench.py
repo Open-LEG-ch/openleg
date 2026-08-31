@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Contract tests for the contributor workbench CLI."""
 
+import hashlib
 import os
 import shutil
 import subprocess
@@ -567,6 +568,179 @@ def _command_checkout(tmp_path, *, test_exit=0, cycle_exit=0):
         )
         stub.chmod(0o755)
     return checkout
+
+
+def _setup_checkout(tmp_path):
+    checkout = tmp_path / "checkout"
+    scripts = checkout / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy(CONTRIBUTE, scripts / "contribute")
+    shutil.copy(
+        PROJECT_ROOT / "scripts" / "contributor_workbench.py",
+        scripts / "contributor_workbench.py",
+    )
+    (checkout / "requirements-dev.txt").write_text(
+        "pytest==9.1.1\nruff==0.16.5\n", encoding="utf-8"
+    )
+    return checkout
+
+
+def _setup_env(tmp_path, checkout, *, install_exit=0):
+    fake_bin = tmp_path / "setup-bin"
+    fake_bin.mkdir()
+    fake_python = fake_bin / "python3"
+    command_log = checkout / "python3.args"
+    fake_python.write_text(
+        "#!/bin/sh\n"
+        f'if [ "$1" = "-c" ]; then exec \'{sys.executable}\' "$@"; fi\n'
+        'if [ "$1" = "scripts/contributor_workbench.py" ]; '
+        f"then exec '{sys.executable}' \"$@\"; fi\n"
+        f"printf '%s\\n' \"$*\" >> '{command_log}'\n"
+        'if [ "$1" = "-m" ] && [ "$2" = "venv" ]; then\n'
+        '  mkdir -p "$3/bin"\n'
+        '  ln -s "$0" "$3/bin/python"\n'
+        "  exit 0\n"
+        "fi\n"
+        f"exit {install_exit}\n",
+        encoding="utf-8",
+    )
+    fake_python.chmod(0o755)
+    return os.environ | {"PATH": f"{fake_bin}:{os.environ['PATH']}"}
+
+
+def _tree_hashes(root):
+    return {
+        path.relative_to(root): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+
+
+def test_setup_dry_run_leaves_checkout_byte_identical_and_prints_commands(tmp_path):
+    checkout = _setup_checkout(tmp_path)
+    before = _tree_hashes(checkout)
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "setup", "--dry-run"],
+        cwd=checkout,
+        env=_setup_env(tmp_path, checkout),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "python3 -m venv .venv" in result.stdout
+    assert ".venv/bin/python -m pip install -r requirements-dev.txt" in result.stdout
+    assert _tree_hashes(checkout) == before
+
+
+def test_setup_creates_venv_then_installs_dev_requirements(tmp_path):
+    checkout = _setup_checkout(tmp_path)
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "setup"],
+        cwd=checkout,
+        env=_setup_env(tmp_path, checkout),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (checkout / "python3.args").read_text(encoding="utf-8").splitlines() == [
+        "-m venv .venv",
+        "-m pip install -r requirements-dev.txt",
+    ]
+
+
+def test_setup_twice_does_not_recreate_existing_venv(tmp_path):
+    checkout = _setup_checkout(tmp_path)
+    env = _setup_env(tmp_path, checkout)
+
+    first = subprocess.run(
+        [checkout / "scripts" / "contribute", "setup"],
+        cwd=checkout,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    first_commands = (
+        (checkout / "python3.args").read_text(encoding="utf-8").splitlines()
+    )
+    second = subprocess.run(
+        [checkout / "scripts" / "contribute", "setup"],
+        cwd=checkout,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    all_commands = (checkout / "python3.args").read_text(encoding="utf-8").splitlines()
+
+    assert first.returncode == 0, first.stdout + first.stderr
+    assert second.returncode == 0, second.stdout + second.stderr
+    assert all_commands[len(first_commands) :] == [
+        "-m pip install -r requirements-dev.txt"
+    ]
+
+
+def test_setup_reports_failing_install_and_exits_nonzero(tmp_path):
+    checkout = _setup_checkout(tmp_path)
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "setup"],
+        cwd=checkout,
+        env=_setup_env(tmp_path, checkout, install_exit=7),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "install failed" in output.lower()
+    assert "success" not in output.lower()
+
+
+def test_successful_setup_prints_activation_and_current_shell_warning(tmp_path):
+    checkout = _setup_checkout(tmp_path)
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "setup"],
+        cwd=checkout,
+        env=_setup_env(tmp_path, checkout),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode == 0, output
+    assert "source .venv/bin/activate" in output
+    assert "current shell is unchanged" in output.lower()
+
+
+def test_setup_never_writes_env_when_example_exists(tmp_path):
+    checkout = _setup_checkout(tmp_path)
+    (checkout / ".env.example").write_text(
+        "POSTGRES_PASSWORD=your-secure-postgres-password\n"
+        "SECRET_KEY=your-secret-key-here\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "setup"],
+        cwd=checkout,
+        env=_setup_env(tmp_path, checkout),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert not (checkout / ".env").exists()
 
 
 def test_gate_invokes_canonical_gate_harness(tmp_path):
