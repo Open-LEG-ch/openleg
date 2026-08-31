@@ -73,6 +73,8 @@ AI-assisted or not, you own every hunk. Before opening the PR:
 
 ### Development Setup
 
+Start with the [contributor onboarding guide](docs/contributor-onboarding.md) if this is your first change to OpenLEG.
+
 ```bash
 # Clone repository
 git clone https://github.com/Open-LEG-ch/openleg.git

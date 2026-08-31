@@ -84,6 +84,8 @@ Public data fetchers live in `public_data.py`. Database persistence uses `databa
 
 ### Contributing
 
+New to the codebase? Follow the [contributor onboarding guide](docs/contributor-onboarding.md).
+
 Open an issue before a larger change. Keep the pull request small, start with a failing test, and run:
 
 ```bash
@@ -179,6 +181,8 @@ Lesen Sie den [Entwicklungsvertrag](docs/engineering-contract.md), die [Architek
 `public_data.py` lädt öffentliche Daten. `database.py` und `store/` speichern sie. `scripts/load_pv_data.py` importiert die PV-Rangliste; `sdat_datahub.py` und `scripts/fetch_sdat.py` holen SDAT-Dateien vom Swisseldex Datahub. `api_public.py` und die Ranglisten-Blueprints liefern die Daten aus.
 
 ### Mitwirken
+
+Neu im Code? Folgen Sie der [Anleitung für Mitwirkende](docs/contributor-onboarding.md).
 
 Eröffnen Sie vor einer grösseren Änderung ein Issue. Halten Sie den Pull Request klein, beginnen Sie mit einem fehlschlagenden Test und führen Sie danach aus:
 
