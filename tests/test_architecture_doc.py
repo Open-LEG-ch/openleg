@@ -15,6 +15,7 @@ APP_PATH = PROJECT_ROOT / "app.py"
 BLUEPRINTS = {
     "main_bp": "app.py",
     "municipality_bp": "municipality.py",
+    "pilot_bp": "municipality.py",
     "registry_api_bp": "leg_registry.py",
     "public_api_bp": "api_public.py",
     "health_bp": "health.py",

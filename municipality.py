@@ -22,12 +22,19 @@ from flask import (
 import access_token
 import database as db
 import email_utils
+import municipality_profile
+import pv_data
 import security_utils
+from cantons import SWISS_CANTONS
+from ranking import Ranking
 from security_extensions import rate_limit
 
 logger = logging.getLogger(__name__)
 
 municipality_bp = Blueprint("municipality", __name__, url_prefix="/gemeinde")
+pilot_bp = Blueprint("pilot", __name__, url_prefix="/pilotgemeinde")
+
+PILOT_MUNICIPALITIES = municipality_profile.PILOT_MUNICIPALITIES
 
 
 @municipality_bp.route("/onboarding")
@@ -269,4 +276,75 @@ def api_municipalities():
                 for p in profiles
             ]
         }
+    )
+
+
+@municipality_bp.route("/profil/<int:bfs>")
+def profil(bfs):
+    ctx = municipality_profile.profile_context(
+        bfs, site_url=request.url_root.rstrip("/")
+    )
+    if ctx is None:
+        abort(404)
+    return render_template("gemeinde/profil.html", **ctx)
+
+
+@pilot_bp.route("/<slug>")
+def pilot_case_study(slug):
+    ctx = municipality_profile.pilot_context(
+        slug, site_url=request.url_root.rstrip("/")
+    )
+    if ctx is None:
+        abort(404)
+    return render_template("gemeinde/pilotgemeinde.html", **ctx)
+
+
+def _normalize_kanton_param(raw_value):
+    raw = (raw_value or "all").strip().upper()
+    if raw in ("", "ALL"):
+        return None, "all"
+    if raw in SWISS_CANTONS:
+        return raw, raw
+    return None, "all"
+
+
+@municipality_bp.route("/verzeichnis")
+def verzeichnis():
+    kanton_filter, kanton = _normalize_kanton_param(request.args.get("kanton"))
+    order_by = request.args.get("sort", "energy_transition_score")
+    query = request.args.get("q", "").strip()
+    profiles = db.get_all_municipality_profiles(kanton=kanton_filter, order_by=order_by)
+    if order_by in {
+        "energy_transition_score",
+        "leg_value_gap_chf",
+        "population",
+        "pv_score_pct",
+    }:
+        profiles = list(reversed(profiles))
+    if query:
+        profiles = [
+            profile
+            for profile in profiles
+            if query.lower() in (profile.get("name", "") or "").lower()
+        ]
+    ranking_rows = {row["bfs_number"]: row for row in Ranking.load().national()}
+    for profile in profiles:
+        row = ranking_rows.get(profile.get("bfs_number"), {})
+        profile["pv_rank"] = row.get("rank")
+        profile["display_score"] = row.get("display_score")
+        profile["score_over_100"] = row.get("score_over_100")
+    return render_template(
+        "gemeinde/verzeichnis.html",
+        profiles=profiles,
+        kanton=kanton,
+        query=query,
+        sort=order_by,
+        site_url=request.url_root.rstrip("/"),
+        canton_options=[
+            ("all", "Alle Kantone"),
+            *((code, code) for code in sorted(SWISS_CANTONS)),
+        ],
+        canonical_path="/gemeinde/verzeichnis",
+        data_vintage=pv_data.SNAPSHOT_YEAR,
+        plant_match_rate=pv_data.PLANT_MATCH_RATE_PCT,
     )

@@ -49,6 +49,7 @@ without code changes.
 | --- | --- | --- |
 | `main_bp` | `app.py` | none |
 | `municipality_bp` | `municipality.py` | `/gemeinde` |
+| `pilot_bp` | `municipality.py` | `/pilotgemeinde` |
 | `registry_api_bp` | `leg_registry.py` | none |
 | `public_api_bp` | `api_public.py` | `/api/v1` |
 | `utility_bp` | `utility_portal.py` | `/utility` |
