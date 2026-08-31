@@ -2,7 +2,8 @@
 
 Status: draft for maintainer review. Owner: registry/self-host workstream (Phase 9).
 Related: `docs/leg-registry.md` (the durable goal), `README.md` (self-host on-ramp),
-`docs/codex-execution.md` (execution + review rubric), `SECURITY.md` (data policy).
+`docs/codex-execution.md` (execution + review rubric),
+`docs/engineering-contract.md` (data policy).
 
 ## Why this exists (the growth thesis under "no direct outreach")
 

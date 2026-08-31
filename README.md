@@ -6,7 +6,7 @@ Open-source infrastructure for Swiss Local Electricity Communities. Offene Infra
 
 ## English
 
-OpenLEG is the public product application and API for founding and operating a Swiss Local Electricity Community, known as a LEG. The marketing website runs separately from `openleg-ops` and links here for dashboard actions.
+OpenLEG is the public website, product application, and API for founding and operating a Swiss Local Electricity Community, known as a LEG. The private `openleg-ops` repository owns production deployment, not the public site runtime or assets.
 
 ### What this repo is
 
@@ -65,11 +65,12 @@ docker compose ps
 - Cache: Redis 7
 - Reverse proxy: Caddy
 
-Read [Architecture](docs/architecture.md), [Data pipeline](docs/data-pipeline.md), [dashboard access](docs/dashboard-access.md), and [API examples](docs/api-examples.md).
+Read the [engineering contract](docs/engineering-contract.md), [architecture](docs/architecture.md), [data pipeline](docs/data-pipeline.md), [dashboard access](docs/dashboard-access.md), and [API examples](docs/api-examples.md).
 
 ### Route map
 
-- `/` role chooser for owners and municipalities
+- `/` public website for anonymous visitors
+- `/login` role chooser for owners and municipalities
 - `/dashboard` owner dashboard and secure access request
 - `/leg/dashboard` LEG operator dashboard
 - `/gemeinde/dashboard` municipality dashboard and secure access request
@@ -101,7 +102,7 @@ Never commit credentials or personal data. Use `.env.example` locally and report
 
 ## Deutsch
 
-OpenLEG ist die öffentliche Produktanwendung und API für die Gründung und den Betrieb einer Schweizer Lokalen Elektrizitätsgemeinschaft, kurz LEG. Die Marketing-Website läuft getrennt aus `openleg-ops` und verlinkt für Dashboard-Aktionen hierher.
+OpenLEG ist die öffentliche Website, Produktanwendung und API für die Gründung und den Betrieb einer Schweizer Lokalen Elektrizitätsgemeinschaft, kurz LEG. Das private Repo `openleg-ops` verantwortet die Produktionsbereitstellung, nicht die öffentliche Website oder ihre Assets.
 
 ### Was dieses Repo enthält
 
@@ -160,11 +161,12 @@ docker compose ps
 - Cache: Redis 7
 - Reverse Proxy: Caddy
 
-Lesen Sie [Architektur](docs/architecture.md), [Datenpipeline](docs/data-pipeline.md), [Dashboard-Zugriff](docs/dashboard-access.md) und [API-Beispiele](docs/api-examples.md).
+Lesen Sie den [Entwicklungsvertrag](docs/engineering-contract.md), die [Architektur](docs/architecture.md), die [Datenpipeline](docs/data-pipeline.md), den [Dashboard-Zugriff](docs/dashboard-access.md) und die [API-Beispiele](docs/api-examples.md).
 
 ### Routen
 
-- `/` Rollenwahl für Eigentümer und Gemeinden
+- `/` öffentliche Website für nicht angemeldete Personen
+- `/login` Rollenwahl für Eigentümer und Gemeinden
 - `/dashboard` Eigentümer-Dashboard mit sicherer Zugangsanfrage
 - `/leg/dashboard` Dashboard für LEG-Betreiber
 - `/gemeinde/dashboard` Gemeinde-Dashboard mit sicherer Zugangsanfrage

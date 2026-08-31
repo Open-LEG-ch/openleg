@@ -21,7 +21,14 @@ def test_frontend_build_is_pinned_and_documented():
     frontend_docs = (ROOT / "docs" / "frontend-build.md").read_text(encoding="utf-8")
     assert "npm ci" in frontend_docs
     assert "npm run build:css" in frontend_docs
+    assert "static/css/tailwind.css" in frontend_docs
+    assert "static/css/openleg.css" in frontend_docs
+    assert "partials/tailwind_brand.html" in frontend_docs
+    assert "Tailwind CDN" in frontend_docs
     assert "npx tailwindcss" not in frontend_docs
+    contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    assert "docs/frontend-build.md" in contributing
+    assert "docs/engineering-contract.md" in contributing
     lint_workflow = (ROOT / ".github" / "workflows" / "lint.yml").read_text(
         encoding="utf-8"
     )

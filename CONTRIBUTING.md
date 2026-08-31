@@ -101,6 +101,8 @@ scripts/tdd_cycle.sh gate
 - Update architecture or system docs for structural changes
 - Document new API endpoints
 - Swiss German for user-facing text
+- Follow the public rules in `docs/engineering-contract.md`
+- Follow `docs/frontend-build.md` when changing templates, styles, or CSS utilities
 
 ## License
 

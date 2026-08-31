@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """One home for the question every consent test actually has to answer.
 
-The test contract states it: "A fake that accepts the *shape* of a query as proof of
-its behaviour proves nothing." Matching substrings is not enough, and each of
-these query shapes keeps every substring while filtering nobody:
+`docs/engineering-contract.md` explains why matching the shape of a query proves
+nothing. Each of these query shapes keeps every expected substring while
+filtering nobody:
 
 - ``LEFT JOIN consents`` with the predicate in ``ON``: unmatched rows survive
 - ``share_with_neighbors = TRUE OR share_with_neighbors IS NULL``: a disjunction

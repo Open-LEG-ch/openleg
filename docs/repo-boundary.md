@@ -21,7 +21,8 @@ configuration, host inventory, incident notes, or secret-handling procedures.
 
 - Put reusable product code, tests, and public docs in `openleg`.
 - Put the dashboard and API runtime in `openleg`.
-- Put the marketing website runtime, public directories, ranking and legal pages
-  in `openleg-ops`; link to it through the `PUBLIC_SITE_URL` origin seam.
+- Put the public website runtime, public directories, ranking and legal pages in
+  `openleg`; `PUBLIC_SITE_URL` remains a link-generation seam.
 - Keep local handoff notes untracked.
-- Put production status, incident logs, operations, and internal planning in `openleg-ops`.
+- Put public-site deployment, production status, incident logs, operations, and
+  internal planning in `openleg-ops`.

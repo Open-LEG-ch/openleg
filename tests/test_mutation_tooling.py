@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The quality contract demands mutation verification and reproducible tooling.
+"""The public engineering contract requires reproducible mutation verification.
 
 Every security claim in this repository is meant to be checked by breaking the
 production code and watching the suite go red. That was done by hand, one edit

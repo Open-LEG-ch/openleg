@@ -227,8 +227,8 @@ the append-only audit.
 
 ## Verifying a guard
 
-The project quality contract requires every security or privacy claim to be
-verified by mutation:
+The public engineering contract in `docs/engineering-contract.md` requires every
+security or privacy claim to be verified by mutation:
 break the production code the test is meant to catch, confirm the suite goes
 red, revert, confirm green.
 

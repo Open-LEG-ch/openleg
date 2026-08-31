@@ -66,7 +66,8 @@ For a session driving Kimi Code CLI:
   `ci/security`. QA stays human: a maintainer reviews every PR before merge.
 - Local agent contracts are private, untracked files. Never commit them to the
   public repository. Public engineering requirements belong in `CONTRIBUTING.md`
-  or a focused document under `docs/`.
+  or a focused document under `docs/`. The shared public rules live in
+  `docs/engineering-contract.md`.
 
 ## Review Rubric
 

@@ -76,5 +76,13 @@ def test_shipped_store_modules_actually_exist() -> None:
         assert module.exists() or (PROJECT_ROOT / name).is_dir(), f"{name} is missing"
 
 
+def test_engineering_contract_points_to_public_context() -> None:
+    contract = (PROJECT_ROOT / "docs" / "engineering-contract.md").read_text(
+        encoding="utf-8"
+    )
+    assert "CONTEXT.md" in contract
+    assert "prd/" not in contract
+
+
 def test_project_root_is_a_repository() -> None:
     assert (PROJECT_ROOT / ".git").exists()
