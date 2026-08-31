@@ -222,9 +222,9 @@ ruff check .
 ruff format --check .
 ```
 
-Ruff is pinned to `ruff==0.16.1` in `requirements-dev.txt`. A system ruff on an
+Ruff is pinned to `ruff==0.16.4` in `requirements-dev.txt`. A system ruff on an
 older version reports about 30 phantom `E402`s that CI never sees, so check your
-version and run `uvx ruff@0.16.1 ...` when it differs.
+version and run `uvx ruff@0.16.4 ...` when it differs.
 
 `uv` is not this project's dependency manager: CI installs from `requirements.txt`,
 and `uv run` drops a stub `uv.lock` that pins nothing and claims the wrong Python

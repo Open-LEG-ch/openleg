@@ -91,5 +91,5 @@ def test_gate_uses_the_selected_python_in_ruff_install_guidance(tmp_path):
     )
 
     assert result.returncode == 2
-    assert "Ruff 0.16.3 required; found 0.15.20" in result.stderr
+    assert "Ruff 0.16.4 required; found 0.15.20" in result.stderr
     assert "python -m pip install -r requirements-dev.txt" in result.stderr
