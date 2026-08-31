@@ -1,7 +1,7 @@
 # Context
 
-Domain vocabulary and module/seam names for OpenLEG. CLAUDE.md and AGENTS.md
-point here. Use these names in code, tests, commits, and issues so the same
+Domain vocabulary and module/seam names for OpenLEG. Project instructions point
+here. Use these names in code, tests, commits, and issues so the same
 concept never travels under two labels.
 
 ## Domain Terms

@@ -64,9 +64,9 @@ For a session driving Kimi Code CLI:
 - Branches: `codex/<slug>`. PR titles: `[codex]` prefix.
 - `main` is PR-only; required checks are exactly `ci/lint`, `ci/test`,
   `ci/security`. QA stays human: a maintainer reviews every PR before merge.
-- `AGENTS.md` at the repo root is the agent contract. It stays byte-identical
-  to `CLAUDE.md`, enforced by `tests/test_docs_boundary_contract.py`. Change
-  both together, never one alone.
+- Local agent contracts are private, untracked files. Never commit them to the
+  public repository. Public engineering requirements belong in `CONTRIBUTING.md`
+  or a focused document under `docs/`.
 
 ## Review Rubric
 

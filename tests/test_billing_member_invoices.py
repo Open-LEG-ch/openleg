@@ -250,7 +250,7 @@ def test_member_invoice_pdf_bytes_renders_swiss_german_html_from_the_detail_dict
     assert "13.01" in html
     assert "Erstellt mit OpenLEG" in html
 
-    # Swiss High German: no ß, no en/em dashes (AGENTS.md typography rules).
+    # Swiss High German: no ß, no en/em dashes (project typography rules).
     assert "ß" not in html
     assert "–" not in html, "no en dash in generated invoice PDF HTML"
     assert "—" not in html, "no em dash in generated invoice PDF HTML"
@@ -296,7 +296,7 @@ def test_member_invoice_pdf_bytes_escapes_hostile_snapshot_strings():
 def test_member_invoice_pdf_bytes_uses_plain_hyphen_for_missing_line_item_fields():
     """A rounding adjustment carries neither quantity nor unit price. The
     placeholder for that empty cell must be a plain hyphen or explicit
-    "Nicht angegeben", never a typographic en/em dash (AGENTS.md)."""
+    "Nicht angegeben", never a typographic en/em dash (project rules)."""
     import dashboard
     import document_generator
 
@@ -942,7 +942,7 @@ def test_member_invoice_templates_keep_controls_keyboard_focusable():
 
 
 def test_member_invoice_templates_never_use_en_or_em_dashes():
-    """AGENTS.md: Swiss High German user-facing text must not use en or em
+    """Swiss High German user-facing text must not use en or em
     dashes; a plain hyphen or "Nicht angegeben" is required instead."""
     for name in ("member_invoices.html", "member_invoice_detail.html"):
         text = _read_template(name)

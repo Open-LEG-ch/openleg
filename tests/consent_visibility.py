@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """One home for the question every consent test actually has to answer.
 
-CLAUDE.md states it: "A fake that accepts the *shape* of a query as proof of
+The test contract states it: "A fake that accepts the *shape* of a query as proof of
 its behaviour proves nothing." Matching substrings is not enough, and each of
 these query shapes keeps every substring while filtering nobody:
 

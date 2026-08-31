@@ -227,7 +227,8 @@ the append-only audit.
 
 ## Verifying a guard
 
-CLAUDE.md requires every security or privacy claim to be verified by mutation:
+The project quality contract requires every security or privacy claim to be
+verified by mutation:
 break the production code the test is meant to catch, confirm the suite goes
 red, revert, confirm green.
 

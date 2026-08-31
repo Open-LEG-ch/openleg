@@ -18,10 +18,10 @@ def test_frontend_build_is_pinned_and_documented():
     assert (ROOT / "package-lock.json").is_file()
     lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
     assert lock["name"] == "openleg"
-    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-    assert "npm ci" in agents
-    assert "npm run build:css" in agents
-    assert "npx tailwindcss" not in agents
+    frontend_docs = (ROOT / "docs" / "frontend-build.md").read_text(encoding="utf-8")
+    assert "npm ci" in frontend_docs
+    assert "npm run build:css" in frontend_docs
+    assert "npx tailwindcss" not in frontend_docs
     lint_workflow = (ROOT / ".github" / "workflows" / "lint.yml").read_text(
         encoding="utf-8"
     )

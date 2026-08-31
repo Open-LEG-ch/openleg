@@ -117,8 +117,6 @@ def _public_docs():
         "README.md",
         "CONTRIBUTING.md",
         "SECURITY.md",
-        "CLAUDE.md",
-        "AGENTS.md",
         "CONTEXT.md",
     ]
     docs_dir = os.path.join(PROJECT_ROOT, "docs")

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""CLAUDE.md demands mutation verification; the tooling for it has to exist.
+"""The quality contract demands mutation verification and reproducible tooling.
 
 Every security claim in this repository is meant to be checked by breaking the
 production code and watching the suite go red. That was done by hand, one edit

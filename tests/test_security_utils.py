@@ -227,7 +227,7 @@ def test_check_request_size_rejects_one_byte_over():
 def test_the_uncalled_helpers_are_gone(name):
     """An unused security control reads as protection that is not in the path.
 
-    None of these three had a caller anywhere in the repository. CLAUDE.md's
+    None of these three had a caller anywhere in the repository. The project
     precedent is to delete rather than gate what nothing consumes.
     """
     assert not hasattr(security_utils, name)
