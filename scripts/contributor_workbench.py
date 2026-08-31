@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import os
 import shutil
 import subprocess
@@ -211,17 +212,144 @@ def render(report: Report) -> None:
             print(line)
 
 
+def read_section(context_file: Path, heading: str) -> list[str]:
+    lines = context_file.read_text(encoding="utf-8").splitlines()
+    marker = f"## {heading}"
+    try:
+        start = lines.index(marker) + 1
+    except ValueError as error:
+        raise ValueError(f"missing {marker} section") from error
+    end = next(
+        (index for index in range(start, len(lines)) if lines[index].startswith("## ")),
+        len(lines),
+    )
+    return lines[start:end]
+
+
+def read_table(
+    context_file: Path, heading: str, expected_headers: tuple[str, str]
+) -> list[tuple[str, str]]:
+    section = read_section(context_file, heading)
+    header = f"| {expected_headers[0]} | {expected_headers[1]} |"
+    try:
+        header_index = section.index(header)
+        separator = section[header_index + 1]
+    except (IndexError, ValueError) as error:
+        raise ValueError(f"missing or malformed {heading} table") from error
+    separator_cells = [cell.strip() for cell in separator.strip("|").split("|")]
+    if len(separator_cells) != 2 or any(
+        len(cell.strip(":")) < 3 or cell.strip(":-") for cell in separator_cells
+    ):
+        raise ValueError(f"missing or malformed {heading} table")
+
+    rows = []
+    for line in section[header_index + 2 :]:
+        if not line.startswith("|"):
+            break
+        # Split on every delimiter, not the first: a capped split silently
+        # folds a stray third column into the meaning.
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if len(cells) != 2 or not all(cells):
+            raise ValueError(f"missing or malformed {heading} table")
+        rows.append((cells[0], cells[1]))
+    if not rows:
+        raise ValueError(f"missing or malformed {heading} table")
+    return rows
+
+
+def read_domain_terms(context_file: Path) -> dict[str, str]:
+    return dict(read_table(context_file, "Domain Terms", ("Term", "Meaning")))
+
+
+def read_seams(context_file: Path) -> list[str]:
+    section = read_section(context_file, "Seams")
+    # Require the full `- **`name`**` shape. A truncated line yields an empty
+    # name that passes a bare emptiness check and renders as a blank bullet.
+    seams = []
+    for line in section:
+        if not line.startswith("- **`"):
+            continue
+        rest = line[len("- **`") :]
+        name, sep, tail = rest.partition("`")
+        if not sep or not name.strip() or not tail.startswith("**"):
+            raise ValueError("missing or malformed Seams definitions")
+        seams.append(name.strip())
+    if not seams:
+        raise ValueError("missing or malformed Seams definitions")
+    return seams
+
+
+def read_store_modules(context_file: Path) -> dict[str, str]:
+    rows = read_table(context_file, "Module Names", ("Module", "Owns"))
+    if any(
+        not module.startswith("`store/") or not module.endswith("`")
+        for module, _ in rows
+    ):
+        raise ValueError("missing or malformed store module table")
+    return {module.strip("`"): purpose for module, purpose in rows}
+
+
+def report_context_error(error: Exception) -> int:
+    print(f"FAIL CONTEXT.md: {error}")
+    return 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("doctor")
+    glossary = subparsers.add_parser("glossary")
+    glossary.add_argument("term", nargs="?")
+    subparsers.add_parser("tour")
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
+    repo_root = Path(__file__).resolve().parents[1]
+    if args.command == "glossary":
+        try:
+            terms = read_domain_terms(repo_root / "CONTEXT.md")
+        except (OSError, ValueError) as error:
+            return report_context_error(error)
+        if args.term is None:
+            for term, meaning in terms.items():
+                print(f"{term}: {meaning}")
+        else:
+            terms_by_key = {term.casefold(): term for term in terms}
+            matching_term = terms_by_key.get(args.term.casefold())
+            if matching_term is None:
+                suggestions = difflib.get_close_matches(
+                    args.term.casefold(), terms_by_key, n=3, cutoff=0
+                )
+                suggested_terms = ", ".join(terms_by_key[key] for key in suggestions)
+                print(f"Unknown glossary term {args.term}. Closest: {suggested_terms}")
+                return 1
+            print(terms[matching_term])
+        return 0
+    if args.command == "tour":
+        try:
+            seams = read_seams(repo_root / "CONTEXT.md")
+            store_modules = read_store_modules(repo_root / "CONTEXT.md")
+        except (OSError, ValueError) as error:
+            return report_context_error(error)
+        print("OpenLEG orientation")
+        print("Entry points")
+        print("- app.py: application factory and local development server")
+        print("- wsgi.py: production WSGI entry point")
+        print("- api_public.py: public JSON API")
+        print("Named seams")
+        for seam in seams:
+            print(f"- {seam}")
+        print("Store modules")
+        for module, purpose in store_modules.items():
+            print(f"- {module}: {purpose}")
+        print("Tests")
+        print("- tests/: pytest tests and contract tests")
+        print("Gate")
+        print("- scripts/test.sh gate")
+        return 0
     if args.command == "doctor":
-        repo_root = Path(__file__).resolve().parents[1]
         venv_exists, venv_active = venv_status(repo_root)
         try:
             ruff_pin = read_ruff_pin(repo_root / "requirements-dev.txt")
