@@ -17,6 +17,8 @@ CI = "ci"
 INFO = "info"
 MINIMUM_PYTHON = (3, 11)
 PIP_INSTALL = "python3 -m pip install -r requirements-dev.txt"
+VENV_CREATE = "python3 -m venv .venv"
+VENV_INSTALL = ".venv/bin/python -m pip install -r requirements-dev.txt"
 HEADINGS = {
     GATE: "Required to run the gate",
     CI: "Required to match CI",
@@ -362,6 +364,49 @@ def report_context_error(error: Exception) -> int:
     return 1
 
 
+def setup_environment(repo_root: Path, dry_run: bool) -> int:
+    if dry_run:
+        if not (repo_root / ".venv").exists():
+            print(VENV_CREATE)
+        print(VENV_INSTALL)
+        return 0
+
+    if not (repo_root / ".venv").exists():
+        print(VENV_CREATE)
+        try:
+            result = subprocess.run(
+                ["python3", "-m", "venv", ".venv"],
+                cwd=repo_root,
+                check=False,
+            )
+        except OSError as error:
+            print(f"FAIL setup: virtual environment creation failed: {error}")
+            return 1
+        if result.returncode != 0:
+            print(
+                "FAIL setup: virtual environment creation failed with exit code "
+                f"{result.returncode}"
+            )
+            return result.returncode
+
+    print(VENV_INSTALL)
+    try:
+        result = subprocess.run(
+            [".venv/bin/python", "-m", "pip", "install", "-r", "requirements-dev.txt"],
+            cwd=repo_root,
+            check=False,
+        )
+    except OSError as error:
+        print(f"FAIL setup: install failed: {error}")
+        return 1
+    if result.returncode != 0:
+        print(f"FAIL setup: install failed with exit code {result.returncode}")
+        return result.returncode
+    print("The current shell is unchanged. Activate the virtual environment now:")
+    print("source .venv/bin/activate")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command")
@@ -372,6 +417,8 @@ def build_parser() -> argparse.ArgumentParser:
     test = subparsers.add_parser("test")
     test.add_argument("node")
     test.add_argument("--phase", choices=("red", "green", "refactor"), default="red")
+    setup = subparsers.add_parser("setup")
+    setup.add_argument("--dry-run", action="store_true")
     subparsers.add_parser("tour")
     return parser
 
@@ -379,6 +426,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_parser().parse_args()
     repo_root = Path(__file__).resolve().parents[1]
+    if args.command == "setup":
+        return setup_environment(repo_root, args.dry_run)
     if args.command == "gate":
         try:
             result = subprocess.run(
