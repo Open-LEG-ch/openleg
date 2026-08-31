@@ -124,6 +124,11 @@ if it fails, it is telling the truth.
 
 ## Templates and Pathways
 
+- Public entry contract: anonymous `GET /` renders the public website;
+  `GET /login` renders the Eigentümer/Gemeinde dashboard chooser. An authenticated
+  session may redirect `/` to its dashboard. Changes to root routing, public
+  templates, `PUBLIC_SITE_URL`, proxying, or release assets must follow
+  `docs/public-site-release-contract.md`.
 - Product pages extend `templates/product_base.html` and use
   `partials/tailwind_brand.html` (built CSS, never the Tailwind CDN). The product
   shell has no marketing navigation or footer.
@@ -134,8 +139,9 @@ if it fails, it is telling the truth.
   operators), `/gemeinde/dashboard` (municipalities), `/utility/login` (VNB/EVU),
   and `/api/v1/docs` (developers).
 - Marketing pages, public directories, ranking pages, legal pages, and their
-  assets live in `openleg-ops`. Product templates link to their configured origin
-  through `PUBLIC_SITE_URL`; never copy those pages back into this repository.
+  assets live in this public app repository. `openleg-ops` owns only their
+  production deployment. `PUBLIC_SITE_URL` is a link-generation seam, not a
+  transfer of public-site ownership.
 
 ## Development Workflow
 
@@ -252,6 +258,10 @@ approval, database backup, digest promotion, health verification, ledger, and
 rollback belong exclusively to private `openleg-ops`.
 
 Production deployment procedures are documented in `openleg-ops`.
+
+A release is not complete until the bounded public-site smoke checks in
+`docs/public-site-release-contract.md` pass against production. Never replace
+those checks with an unbounded crawl of municipality profile links.
 
 ## Current Blocker
 

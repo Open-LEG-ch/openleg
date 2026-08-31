@@ -157,7 +157,11 @@ def test_release_image_is_immutable_and_attested():
     assert steps.index(runtime_assets) < steps.index(scan)
     assert "docker run --rm --entrypoint test" in runtime_assets["run"]
     assert "/app/app.py" in runtime_assets["run"]
+    assert "/app/templates/index.html" in runtime_assets["run"]
+    assert "/app/templates/role_access.html" in runtime_assets["run"]
     assert "/app/templates/dashboard.html" in runtime_assets["run"]
+    assert "/app/static/js/landing_segments.js" in runtime_assets["run"]
+    assert "/app/static/images/landing/urban.webp" in runtime_assets["run"]
     assert "/app/static/css/openleg.css" in runtime_assets["run"]
     assert job["env"]["TRIVY_IMAGE_SRC"] == "docker"
     assert push["env"]["IMAGE_TAGS"] == build_steps[0]["with"]["tags"]

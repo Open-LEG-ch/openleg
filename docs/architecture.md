@@ -65,6 +65,9 @@ The public website, ranking pages, legal pages, sitemap, and installer delivery
 run from this public app. Authenticated dashboards remain separate product
 routes. `PUBLIC_SITE_URL` is the explicit link seam for product templates.
 
+The public entry and release invariants are normative in
+`docs/public-site-release-contract.md`.
+
 Application and API routes:
 
 - `/` renders the public homepage. `/login` chooses the Eigentümer or Gemeinde
