@@ -148,7 +148,9 @@ def test_gitignore_covers_local_artifacts():
     unignored = []
     for path in should_ignore:
         result = subprocess.run(
-            ["git", "check-ignore", "-q", path], cwd=PROJECT_ROOT, check=False
+            ["git", "check-ignore", "--no-index", "-q", path],
+            cwd=PROJECT_ROOT,
+            check=False,
         )
         if result.returncode != 0:
             unignored.append(path)
@@ -157,7 +159,9 @@ def test_gitignore_covers_local_artifacts():
     # Public configuration examples must remain trackable.
     for path in (".env.example",):
         result = subprocess.run(
-            ["git", "check-ignore", "-q", path], cwd=PROJECT_ROOT, check=False
+            ["git", "check-ignore", "--no-index", "-q", path],
+            cwd=PROJECT_ROOT,
+            check=False,
         )
         assert result.returncode != 0, f"{path} must not be gitignored"
 
