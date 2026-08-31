@@ -14,6 +14,8 @@ CONTRIBUTE = PROJECT_ROOT / "scripts" / "contribute"
 
 pytestmark = pytest.mark.contract
 
+_MATCH_MODULE_RUFF = object()
+
 
 def _fake_python(
     tmp_path,
@@ -21,6 +23,7 @@ def _fake_python(
     *,
     pytest_present=True,
     ruff_version=None,
+    bare_ruff_version=_MATCH_MODULE_RUFF,
     commands=(),
     isolated_path=False,
 ):
@@ -38,6 +41,21 @@ def _fake_python(
     )
     fake_python.chmod(0o755)
     (fake_bin / "python3").symlink_to(fake_python)
+    shadow_missing_ruff = (
+        bare_ruff_version is _MATCH_MODULE_RUFF and ruff_version is None
+    )
+    if bare_ruff_version is _MATCH_MODULE_RUFF:
+        bare_ruff_version = ruff_version
+    if shadow_missing_ruff:
+        bare_ruff = fake_bin / "ruff"
+        bare_ruff.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+        bare_ruff.chmod(0o755)
+    elif bare_ruff_version is not None:
+        bare_ruff = fake_bin / "ruff"
+        bare_ruff.write_text(
+            f"#!/bin/sh\necho 'ruff {bare_ruff_version}'\n", encoding="utf-8"
+        )
+        bare_ruff.chmod(0o755)
     for command in commands:
         executable = fake_bin / command
         executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
@@ -528,3 +546,220 @@ def test_table_row_with_extra_columns_is_rejected(tmp_path):
     assert result.returncode != 0, output
     assert "Traceback" not in output, output
     assert "stray" not in output, output
+
+
+def _command_checkout(tmp_path, *, test_exit=0, cycle_exit=0):
+    checkout = tmp_path / "checkout"
+    scripts = checkout / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy(CONTRIBUTE, scripts / "contribute")
+    shutil.copy(
+        PROJECT_ROOT / "scripts" / "contributor_workbench.py",
+        scripts / "contributor_workbench.py",
+    )
+    for name, exit_code in (("test.sh", test_exit), ("tdd_cycle.sh", cycle_exit)):
+        stub = scripts / name
+        stub.write_text(
+            "#!/bin/sh\n"
+            f"printf '%s\\n' \"$@\" > '{checkout / f'{name}.args'}'\n"
+            f"exit {exit_code}\n",
+            encoding="utf-8",
+        )
+        stub.chmod(0o755)
+    return checkout
+
+
+def test_gate_invokes_canonical_gate_harness(tmp_path):
+    checkout = _command_checkout(tmp_path)
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "gate"],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (checkout / "test.sh.args").read_text(encoding="utf-8") == "gate\n"
+
+
+def test_gate_forwards_nonzero_exit_code(tmp_path):
+    checkout = _command_checkout(tmp_path, test_exit=7)
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "gate"],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 7, result.stdout + result.stderr
+
+
+def test_test_defaults_to_red_phase(tmp_path):
+    checkout = _command_checkout(tmp_path)
+    node = "tests/test_widget.py::test_rejects_invalid_widget"
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "test", node],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (checkout / "tdd_cycle.sh.args").read_text(encoding="utf-8") == (
+        f"red\n{node}\n"
+    )
+
+
+@pytest.mark.parametrize("phase", ["green", "refactor"])
+def test_test_forwards_selected_phase(tmp_path, phase):
+    checkout = _command_checkout(tmp_path)
+    node = "tests/test_widget.py::test_accepts_widget"
+
+    result = subprocess.run(
+        [
+            checkout / "scripts" / "contribute",
+            "test",
+            node,
+            "--phase",
+            phase,
+        ],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (checkout / "tdd_cycle.sh.args").read_text(encoding="utf-8") == (
+        f"{phase}\n{node}\n"
+    )
+
+
+def test_test_rejects_unrecognised_phase_and_names_valid_phases(tmp_path):
+    checkout = _command_checkout(tmp_path)
+
+    result = subprocess.run(
+        [
+            checkout / "scripts" / "contribute",
+            "test",
+            "tests/test_widget.py",
+            "--phase",
+            "maybe",
+        ],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert all(phase in output for phase in ("red", "green", "refactor"))
+
+
+def test_doctor_checks_bare_ruff_executable_at_pin(tmp_path):
+    pin = _ruff_pin()
+    result = subprocess.run(
+        [CONTRIBUTE, "doctor"],
+        cwd=PROJECT_ROOT,
+        env=_fake_python(
+            tmp_path,
+            "3.12.0",
+            ruff_version=pin,
+            bare_ruff_version=pin,
+            commands=("node", "npm", "mypy"),
+        ),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode == 0, output
+    assert "ruff executable" in output
+    assert pin in output
+
+
+def test_doctor_rejects_disagreeing_ruff_sources(tmp_path):
+    pin = _ruff_pin()
+    stale = "0.15.20"
+    result = subprocess.run(
+        [CONTRIBUTE, "doctor"],
+        cwd=PROJECT_ROOT,
+        env=_fake_python(
+            tmp_path,
+            "3.12.0",
+            ruff_version=pin,
+            bare_ruff_version=stale,
+            commands=("node", "npm", "mypy"),
+        ),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "ruff executable" in output
+    assert "python3 -m ruff" in output
+    assert pin in output
+    assert stale in output
+
+
+def test_doctor_rejects_missing_bare_ruff_when_module_works(tmp_path):
+    pin = _ruff_pin()
+    result = subprocess.run(
+        [CONTRIBUTE, "doctor"],
+        cwd=PROJECT_ROOT,
+        env=_fake_python(
+            tmp_path,
+            "3.12.0",
+            ruff_version=pin,
+            bare_ruff_version=None,
+            commands=("node", "npm", "mypy"),
+            isolated_path=True,
+        ),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "ruff executable" in output
+    assert "not found" in output
+    assert f"python3 -m ruff {pin}" in output
+    assert "python3 -m pip install -r requirements-dev.txt" in output
+
+
+def test_doctor_reports_broken_ruff_executable_without_traceback(tmp_path):
+    pin = _ruff_pin()
+    env = _fake_python(
+        tmp_path,
+        "3.12.0",
+        ruff_version=pin,
+        bare_ruff_version=pin,
+        commands=("node", "npm", "mypy"),
+    )
+    fake_bin = Path(env["PATH"].split(os.pathsep)[0])
+    (fake_bin / "ruff").write_text("#!/missing/ruff-interpreter\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [CONTRIBUTE, "doctor"],
+        cwd=PROJECT_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "Traceback" not in output
+    assert "ruff executable" in output
