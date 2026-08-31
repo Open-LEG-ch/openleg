@@ -21,6 +21,8 @@ BLUEPRINTS = {
     "utility_bp": "utility_portal.py",
     "admin_bp": "admin.py",
     "cron_bp": "cron.py",
+    "rangliste_bp": "rangliste.py",
+    "self_host_bp": "self_host.py",
 }
 
 

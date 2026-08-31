@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block body_class %}bg-gray-50 text-gray-800{% endblock %}
+
+{% block meta %}
+{{ page_meta(
+  title="Impressum | " ~ platform_name,
+  description="Impressum von " ~ platform_name ~ ": Kontakt und rechtliche Hinweise zum kostenlosen Service für Lokale Elektrizitätsgemeinschaften in " ~ city_name ~ ".",
+  path="/impressum",
+  og_title="Impressum | " ~ platform_name,
+  og_description="Kontakt und rechtliche Hinweise zu " ~ platform_name ~ ".",
+  og_type="article",
+  robots="index, follow",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-4">Impressum</h1>
+    <p class="mb-4">
+      <strong>{{ platform_name }}</strong><br>
+      Quelloffene Infrastruktur für Lokale Elektrizitätsgemeinschaften
+    </p>
+
+    <p class="mb-2"><strong>Verantwortlich für den Inhalt</strong></p>
+    <p class="mb-4">
+      {{ platform_name }}<br>
+      {% if legal_entity %}{{ legal_entity }}<br>{% endif %}
+      <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
+    </p>
+
+    <p class="mb-2"><strong>Kontakt</strong></p>
+    <p class="mb-4">
+      E-Mail: <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
+    </p>
+
+    <p class="mb-2"><strong>Haftungsausschluss</strong></p>
+    <p class="mb-4">
+      Wir erstellen die Inhalte sorgfältig. Für Richtigkeit, Vollständigkeit und
+      Aktualität übernehmen wir keine Gewähr. Verlinkte externe Inhalte liegen in
+      der Verantwortung der jeweiligen Anbieter.
+    </p>
+
+    <p class="mb-2"><strong>Urheberrecht</strong></p>
+    <p class="mb-4">
+      Die Inhalte auf dieser Website unterliegen dem Urheberrecht. Jede Verwertung
+      bedarf der vorherigen Zustimmung der Rechteinhaber, soweit nicht gesetzlich zulässig.
+    </p>
+
+    <p class="mb-2"><strong>Nutzungshinweis</strong></p>
+    <p class="mb-4">
+      Dies ist ein kostenloser Service. Wir verwenden Ihre Daten ausschliesslich für das Matching innerhalb von {{ platform_name }}
+      und geben sie nicht an Dritte weiter.
+    </p>
+
+    <a href="/" class="inline-block mt-6 text-sm underline">Zurück zur Startseite</a>
+  </div>
+{% endblock %}

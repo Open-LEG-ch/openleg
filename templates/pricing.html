@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="Kostenlos und Open Source | OpenLEG",
+  description="OpenLEG ist kostenlose Open Source Infrastruktur für Schweizer Stromgemeinschaften: für Bewohner, Gemeinden und Entwickler, ohne Lizenzkosten oder Datenverkauf.",
+  path="/pricing",
+  og_title="Kostenlos und Open Source | OpenLEG",
+  og_description="Keine Lizenzkosten, keine Anbieterbindung, kein Datenverkauf. So finanziert sich OpenLEG.",
+  og_type="website",
+  og_image="/static/images/og-image.png",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "OpenLEG", "item": "{{ site_url }}/"},
+      {"@type": "ListItem", "position": 2, "name": "Kosten", "item": "{{ site_url }}/pricing"}
+    ]
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-5xl mx-auto px-4 py-12">
+    <header class="max-w-3xl mb-10 border-b border-slate-200 pb-8">
+      <p class="font-mono text-sm text-ink-muted mb-2">/pricing</p>
+      <h1 class="text-4xl font-bold mb-2">Kostenlos. Open Source. Für immer.</h1>
+      <p class="text-ink-muted max-w-2xl">OpenLEG ist freie Infrastruktur für Schweizer Stromgemeinschaften. Keine versteckten Kosten, keine Abhängigkeit von einem Anbieter, kein Datenverkauf.</p>
+    </header>
+
+    <section aria-labelledby="commitments-title" class="grid md:grid-cols-3 border-y border-slate-200 mb-10">
+      <div class="py-6 md:pr-6 border-b md:border-b-0 md:border-r border-slate-200"><p class="font-mono text-xs uppercase tracking-wide text-ink-muted">Lizenz</p><h2 id="commitments-title" class="text-xl font-bold mt-1 mb-2">AGPL-3.0-or-later</h2><p class="text-sm text-ink-muted">Wer eine veränderte Version über ein Netzwerk anbietet, muss den Nutzenden den entsprechenden Quellcode gemäss <a href="https://github.com/Open-LEG-ch/openleg/blob/main/LICENSE" class="text-brand underline">LICENSE</a> zugänglich machen.</p></div>
+      <div class="py-6 md:px-6 border-b md:border-b-0 md:border-r border-slate-200"><p class="font-mono text-xs uppercase tracking-wide text-ink-muted">Daten</p><h2 class="text-xl font-bold mt-1 mb-2">Kein Geschäftsmodell</h2><p class="text-sm text-ink-muted">Smart-Meter-Daten bleiben innerhalb jeder LEG. Sie werden nicht verkauft und nicht für Dritte aggregiert.</p></div>
+      <div class="py-6 md:pl-6"><p class="font-mono text-xs uppercase tracking-wide text-ink-muted">Betrieb</p><h2 class="text-xl font-bold mt-1 mb-2">Zwei Modelle</h2><p class="text-sm text-ink-muted"><strong class="text-ink">Selbst betreiben</strong> oder <strong class="text-ink">Gehostet auf openleg.ch</strong>.</p></div>
+    </section>
+
+    <section class="mb-10" aria-label="OpenLEG installieren">
+      {% include "partials/install_console.html" %}
+    </section>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <section class="border-t border-slate-200 py-6">
+        <h2 class="text-xl font-bold mb-1">Für Bewohner</h2>
+        <div class="font-mono tabular-nums text-3xl font-bold mb-1">CHF 0</div>
+        <p class="text-sm text-ink-muted mb-4">Adresse prüfen und Interesse anmelden.</p>
+        <ul class="text-sm space-y-2 mb-6 text-ink-muted">
+          <li>&#10003; Adresse prüfen, Nachbarn finden</li>
+          <li>&#10003; Stromgemeinschaft gründen</li>
+          <li>&#10003; Dokumente vorbereiten</li>
+          <li>&#10003; Smart-Meter-Daten auswerten</li>
+          <li>&#10003; Daten bleiben bei Ihnen</li>
+        </ul>
+        <a href="/#registrieren" class="block text-center bg-brand text-white py-2 rounded-lg font-medium hover:bg-brand-dark">Adresse prüfen</a>
+      </section>
+
+      <section class="border-t border-slate-200 py-6">
+        <h2 class="text-xl font-bold mb-1">Für Gemeinden</h2>
+        <div class="font-mono tabular-nums text-3xl font-bold mb-1">CHF 0</div>
+        <p class="text-sm text-ink-muted mb-4">Eigene Gemeinde-Seite, ohne Startkosten</p>
+        <ul class="text-sm space-y-2 mb-6 text-ink-muted">
+          <li>&#10003; Eigene Subdomain (gemeinde.openleg.ch)</li>
+          <li>&#10003; Gemeinde-Branding</li>
+          <li>&#10003; Registrierung und Matching für Bewohner</li>
+          <li>&#10003; Fortschritt und Übersicht</li>
+          <li>&#10003; Netzbetreiber-Anmeldung inklusive</li>
+        </ul>
+        <a href="/gemeinde/onboarding" class="block text-center bg-brand text-white py-2 rounded-lg font-medium hover:bg-brand-dark">Gemeinde anmelden</a>
+      </section>
+
+      <section class="border-t border-slate-200 py-6">
+        <h2 class="text-xl font-bold mb-1">Freie API</h2>
+        <div class="font-mono tabular-nums text-3xl font-bold mb-1">CHF 0</div>
+        <p class="text-sm text-ink-muted mb-4">Offene Schweizer Energiedaten</p>
+        <ul class="text-sm space-y-2 mb-6 text-ink-muted">
+          <li>&#10003; ElCom Tarife für alle Gemeinden</li>
+          <li>&#10003; Sonnendach Solarpotenzial</li>
+          <li>&#10003; Energie Reporter Gemeinde-Daten</li>
+          <li>&#10003; LEG Value-Gap Rechner</li>
+          <li>&#10003; Ohne API-Key nutzbar</li>
+        </ul>
+        <a href="/api/v1/docs" class="block text-center bg-brand text-white py-2 rounded-lg font-medium hover:bg-brand-dark">API Dokumentation</a>
+      </section>
+    </div>
+
+    <div class="mt-12 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-4">So finanziert sich OpenLEG</h2>
+      <div class="grid md:grid-cols-2 gap-6 text-sm text-ink-muted">
+        <div>
+          <h3 class="font-semibold text-ink mb-2">Was kostenlos bleibt</h3>
+          <ul class="space-y-2">
+            <li>&#10003; Plattform-Kern und öffentliche API</li>
+            <li>&#10003; Rangliste und Gemeindeprofile</li>
+            <li>&#10003; Matching für Bewohner</li>
+            <li>&#10003; Open Source Code unter AGPL</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-ink mb-2">Optionale Einnahmen</h3>
+          <ul class="space-y-2">
+            <li>&#10003; Projektsupport für Gemeinden</li>
+            <li>&#10003; Hilfe bei Self-Hosting und Migration</li>
+            <li>&#10003; Schulungen und Datenintegration</li>
+            <li>&#10003; Keine Werbung, kein Datenverkauf</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-12 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-2">Wie Sie OpenLEG betreiben</h2>
+      <p class="text-sm text-ink-muted mb-6">Von voller Datenhoheit bis ohne eigenen Aufwand. Dieselbe Open-Source-Software läuft auf jeder Stufe, und Sie wechseln jederzeit. Wir verkaufen Komfort, Hardware und Betrieb, niemals Ihre Daten.</p>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="border border-slate-200 rounded-lg p-5">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="font-bold">Selbst betreiben</h3>
+            <span class="text-xs font-semibold text-green-700">Verfügbar</span>
+          </div>
+          <p class="text-sm text-ink-muted mb-3">Auf eigener Hardware, ein Befehl. Ihre LEG besitzt Box und Daten. Kostenlos und offen.</p>
+          <a href="/self-host" class="text-brand font-semibold text-sm underline">Zum Schnellstart</a>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-5">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="font-bold">Gehostet auf openleg.ch</h3>
+            <span class="text-xs font-semibold text-green-700">Verfügbar</span>
+          </div>
+          <p class="text-sm text-ink-muted">Ohne eigenen Betrieb, wir übernehmen Wartung und Verfügbarkeit. Kostenlos für Bewohner und Gemeinden.</p>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-5">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="font-bold">OpenLEG-Box oder Schweizer VPS in Ihrer Nähe</h3>
+            <span class="text-xs font-semibold text-slate-500">In Vorbereitung</span>
+          </div>
+          <p class="text-sm text-ink-muted">Vorkonfigurierte Hardware bei Ihnen im Quartier oder ein Server in der Schweiz, nahe an Ihrer Nachbarschaft. Auf Anfrage.</p>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-5">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="font-bold">OpenLEG-Netzwerk</h3>
+            <span class="text-xs font-semibold text-slate-500">In Vorbereitung</span>
+          </div>
+          <p class="text-sm text-ink-muted">Ein privates Netzwerk, damit Nachbarn die Box ohne offene Ports erreichen. Selbst gehostet oder als Abo, für berechtigte LEG gesponsert. Der Koordinator sieht Verbindungsdaten, nie Ihre Messdaten.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 text-center">
+      <p class="text-ink-muted mb-4">Fragen zu Betrieb, Finanzierung oder Self-Hosting?</p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="/fuer-gemeinden" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Für Gemeinden</a>
+        <a href="/open-source" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white">Code auf GitHub</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/static/js/install_console.js"></script>
+{% endblock %}

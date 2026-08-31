@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+{% from "partials/data_provenance.html" import data_provenance %}
+
+{% block meta %}
+{{ page_meta(
+  title="Für Bewohner und Gründer | OpenLEG",
+  description="OpenLEG für Bewohner: Adresse prüfen, Nachbarn finden und eine lokale Stromgemeinschaft (LEG) gründen. Kostenlos, Open Source, ohne Datenverkauf.",
+  path="/fuer-bewohner",
+  og_title="OpenLEG für Bewohner und Gründer",
+  og_description="In drei Schritten zur eigenen Stromgemeinschaft: Adresse prüfen, Nachbarn finden, LEG starten. Bis 40% weniger Netzgebühren.",
+  og_image="/static/images/og-image.png",
+  site_url=site_url,
+) }}
+{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "OpenLEG", "item": "{{ site_url }}/"},
+      {"@type": "ListItem", "position": 2, "name": "Für Bewohner", "item": "{{ site_url }}/fuer-bewohner"}
+    ]
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-6xl mx-auto px-4 py-12">
+    <header class="max-w-2xl mb-12">
+      <p class="text-sm font-semibold text-brand mb-2">Für Bewohner und Gründer</p>
+      <h1 class="text-4xl font-bold tracking-tight mb-3">Ihr Strom. Ihre Nachbarn. Ihre Gemeinschaft.</h1>
+      <p class="text-lg text-ink-muted">Prüfen Sie Ihre Adresse, finden Sie interessierte Nachbarn und entscheiden Sie mit verlässlichen Daten.</p>
+      <a href="/#registrieren" class="mt-6 inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Adresse prüfen</a>
+    </header>
+
+    <section aria-labelledby="produkt-motion" class="mb-14">
+      <div class="grid lg:grid-cols-[2fr_1fr] gap-8 items-center">
+        <div class="rounded-2xl border border-line shadow-lg overflow-hidden bg-white">
+          <div class="flex items-center gap-2 border-b border-line bg-paper-deep px-4 py-2.5">
+            <span class="flex gap-1.5" aria-hidden="true">
+              <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+              <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+              <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+            </span>
+            <span class="ml-2 truncate rounded-md bg-white border border-slate-200 px-3 py-1 text-xs text-ink-muted font-mono">openleg.ch/dashboard</span>
+          </div>
+          <picture>
+            <source srcset="/static/images/product/resident-dashboard-static.webp" media="(prefers-reduced-motion: reduce)">
+            <img src="/static/images/product/resident-dashboard.gif" alt="Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner" width="960" height="540" loading="lazy" class="w-full h-auto">
+          </picture>
+        </div>
+        <div>
+          <h2 id="produkt-motion" class="text-2xl font-bold mb-3">So sieht Ihr Dashboard aus.</h2>
+          <p class="text-ink-muted mb-5">Echte Ansicht aus dem laufenden Produkt. Klicken Sie sich direkt durch die Demo oder registrieren Sie Ihre Adresse.</p>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <a href="/dashboard/demo" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Demo ansehen</a>
+            <a href="/#registrieren" class="inline-block border border-line bg-white text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 text-center">Adresse prüfen</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="schritte" class="mb-14">
+      <h2 id="schritte" class="text-2xl font-bold mb-6">Von der Adresse zur Entscheidung</h2>
+      <ol class="border-t border-slate-200">
+        <li data-journey-step="1" class="grid md:grid-cols-2 border-b border-slate-200">
+          <img src="/static/images/landing/urban.webp" alt="Menschen in einem Schweizer Stadtquartier" width="1280" height="854" class="h-full min-h-64 w-full object-cover" loading="lazy">
+          <div class="p-6 md:p-10 self-center">
+            <div class="font-mono tabular-nums text-sm text-ink-muted">01</div>
+            <h3 class="font-semibold text-2xl mt-2">Adresse prüfen</h3>
+            <p class="text-ink-muted mt-3">OpenLEG prüft Solarpotenzial und anonymisierte Anmeldungen in Ihrer Nähe. Sie sehen sofort, ob ein gemeinsamer Start realistisch ist.</p>
+          </div>
+        </li>
+        <li data-journey-step="2" class="grid md:grid-cols-2 border-b border-slate-200">
+          <div class="p-6 md:p-10 self-center md:order-1">
+            <div class="font-mono tabular-nums text-sm text-ink-muted">02</div>
+            <h3 class="font-semibold text-2xl mt-2">Nachbarn finden</h3>
+            <p class="text-ink-muted mt-3">Merken Sie sich vor. Interessierte Haushalte können sich verbinden, ohne dass OpenLEG Standorte offenlegt oder Daten verkauft.</p>
+          </div>
+          <img src="/static/images/landing/suburban.webp" alt="Nachbarschaft in einer Schweizer Agglomeration" width="1280" height="854" class="h-full min-h-64 w-full object-cover md:order-2" loading="lazy">
+        </li>
+        <li data-journey-step="3" class="grid md:grid-cols-2 border-b border-slate-200">
+          <img src="/static/images/landing/rural.webp" alt="Schweizer Dorf mit lokaler Gemeinschaft" width="1280" height="854" class="h-full min-h-64 w-full object-cover" loading="lazy">
+          <div class="p-6 md:p-10 self-center">
+            <div class="font-mono tabular-nums text-sm text-ink-muted">03</div>
+            <h3 class="font-semibold text-2xl mt-2">Entscheiden</h3>
+            <p class="text-ink-muted mt-3">Vergleichen Sie Tarifdaten, mögliche Einsparungen und Aufwand. Erst dann entscheiden Sie gemeinsam über die Gründung.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section data-evidence-tier="measured" class="border-y border-slate-200 py-8 mb-10">
+      <p class="text-xs uppercase tracking-wide text-ink-muted">Gesetzlich festgelegt</p>
+      <h2 class="text-2xl font-bold mt-1">Weniger Netznutzungsentgelt für lokalen Strom</h2>
+      <p class="mt-4 text-ink-muted max-w-3xl">Für Strom, den eine LEG lokal erzeugt und verbraucht, gilt ein Abschlag von <strong class="font-mono tabular-nums text-ink">40%</strong> ohne Spannungstransformation oder <strong class="font-mono tabular-nums text-ink">20%</strong> mit Spannungstransformation.</p>
+      <a href="#data-provenance" data-source-marker="stromvv" class="inline-block mt-3 font-mono text-xs text-ink-muted hover:text-brand">Quelle: Art. 19h StromVV</a>
+    </section>
+
+    <section class="bg-brand/5 border border-brand/20 rounded-2xl p-6">
+      <h2 class="text-xl font-bold mb-3">Ihre Daten bleiben bei Ihnen</h2>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-ink-muted">
+        <li>&#10003; Kostenlos nutzbar</li>
+        <li>&#10003; Open Source, gehostet in der Schweiz</li>
+        <li>&#10003; Smart-Meter-Daten bleiben in Ihrer LEG</li>
+        <li>&#10003; Kein Datenverkauf, jederzeit löschbar</li>
+        <li>&#10003; Funktioniert unabhängig vom Netzbetreiber</li>
+      </ul>
+      <p class="text-sm text-ink-muted mt-4">Alle Funktionen sind kostenlos. Die <a href="/pricing" class="text-brand underline">Preisübersicht</a> zeigt das transparent, ganz ohne Anfrage.</p>
+    </section>
+
+    <div class="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+      <a href="/leg-check" class="text-brand underline">Gemeinde prüfen</a>
+      <a href="/leg-kalkulator" class="text-brand underline">Ersparnis berechnen</a>
+      <a href="/leg-gruenden" class="text-brand underline">Gründung verstehen</a>
+      <a href="/pilotgemeinde/baden" class="text-brand underline">Fallstudie Baden</a>
+    </div>
+    <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance("Rechtsstand", "2026", ["Art. 19h StromVV", "ElCom / LINDAS", "BFE Sonnendach"]) }}</div>
+  </div>
+{% endblock %}
