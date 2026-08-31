@@ -102,6 +102,27 @@ def test_queue_render_prefers_the_apps_configured_base_url(monkeypatch):
     assert captured["site_url"] == "https://from-config.example"
 
 
+def test_queue_render_uses_the_active_apps_base_url(monkeypatch):
+    _patch_queue(monkeypatch)
+    monkeypatch.setattr(access_token, "issue", MagicMock(return_value="a" * 43))
+    captured = {}
+    monkeypatch.setattr(
+        email_automation,
+        "render_template",
+        lambda _template, **context: captured.update(context) or "email body",
+    )
+    monkeypatch.setattr(email_automation, "_send_email", MagicMock(return_value=True))
+    app = Flask(__name__)
+    app.config["DASHBOARD_EMAIL_TOKEN_TTL_SECONDS"] = 86_400
+    app.config["APP_BASE_URL"] = "https://active-app.example"
+
+    with app.app_context():
+        result = email_automation.process_email_queue()
+
+    assert result == {"sent": 1, "failed": 0, "total": 1}
+    assert captured["site_url"] == "https://active-app.example"
+
+
 def test_queue_render_strips_a_trailing_slash_from_the_configured_base_url(
     monkeypatch,
 ):
