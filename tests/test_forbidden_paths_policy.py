@@ -47,7 +47,7 @@ def test_policy_includes_private_only_patterns():
     assert not missing, f"Missing patterns: {sorted(missing)}"
 
 
-def test_policy_does_not_block_public_docs():
+def test_policy_blocks_local_agent_contracts():
     patterns = set(_patterns())
-    assert "AGENTS.md" not in patterns
-    assert "CLAUDE.md" not in patterns
+    assert "AGENTS.md" in patterns
+    assert "CLAUDE.md" in patterns

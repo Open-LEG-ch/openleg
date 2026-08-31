@@ -154,12 +154,19 @@ def test_gitignore_covers_local_artifacts():
             unignored.append(path)
     assert unignored == []
 
-    # Tracked keep-set must be excluded from the /*.md catch-all.
-    for path in (".env.example", "CLAUDE.md", "AGENTS.md"):
+    # Public configuration examples must remain trackable.
+    for path in (".env.example",):
         result = subprocess.run(
             ["git", "check-ignore", "-q", path], cwd=PROJECT_ROOT, check=False
         )
         assert result.returncode != 0, f"{path} must not be gitignored"
+
+    # Local agent contracts must never be tracked in the public repository.
+    for path in ("CLAUDE.md", "AGENTS.md"):
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", path], cwd=PROJECT_ROOT, check=False
+        )
+        assert result.returncode == 0, f"{path} must be gitignored"
 
 
 def test_dead_deploy_configs_are_untracked():

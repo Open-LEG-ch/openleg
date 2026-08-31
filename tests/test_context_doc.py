@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Contract tests for CONTEXT.md, the domain vocabulary CLAUDE.md points at."""
+"""Contract tests for the public domain vocabulary in CONTEXT.md."""
 
 import subprocess
 from pathlib import Path
-
-import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DOC_PATH = PROJECT_ROOT / "CONTEXT.md"
@@ -24,7 +22,7 @@ def _doc_text() -> str:
 
 
 def test_context_doc_exists() -> None:
-    assert DOC_PATH.exists(), "CONTEXT.md must exist; CLAUDE.md points at it"
+    assert DOC_PATH.exists(), "CONTEXT.md must exist"
 
 
 def test_context_doc_is_tracked_not_gitignored() -> None:
@@ -76,23 +74,6 @@ def test_shipped_store_modules_actually_exist() -> None:
     for name in SHIPPED_STORES:
         module = PROJECT_ROOT / f"{name}.py"
         assert module.exists() or (PROJECT_ROOT / name).is_dir(), f"{name} is missing"
-
-
-def test_no_stale_prd_pointer_in_agent_contract() -> None:
-    for name in ("CLAUDE.md", "AGENTS.md"):
-        path = PROJECT_ROOT / name
-        if not path.exists():
-            continue
-        assert "prd/architecture-deepening.md" not in path.read_text(
-            encoding="utf-8"
-        ), f"{name} points at prd/, which is a forbidden path in the public repo"
-
-
-def test_context_doc_is_referenced_by_the_agent_contract() -> None:
-    claude = PROJECT_ROOT / "CLAUDE.md"
-    if not claude.exists():
-        pytest.skip("CLAUDE.md ist in dieser Checkout-Variante nicht vorhanden")
-    assert "CONTEXT.md" in claude.read_text(encoding="utf-8")
 
 
 def test_project_root_is_a_repository() -> None:

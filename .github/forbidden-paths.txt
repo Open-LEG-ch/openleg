@@ -1,4 +1,6 @@
 # Private planning and docs
+AGENTS.md
+CLAUDE.md
 archive/**
 grants/**
 internal/**
