@@ -59,6 +59,29 @@ def _ruff_pin(root=PROJECT_ROOT):
     )
 
 
+def _domain_terms(root=PROJECT_ROOT):
+    context = (root / "CONTEXT.md").read_text(encoding="utf-8")
+    section = context.split("## Domain Terms", 1)[1].split("\n## ", 1)[0]
+    rows = [line for line in section.splitlines() if line.startswith("|")]
+    return {
+        cells[0]: cells[1]
+        for line in rows[2:]
+        if len(cells := [cell.strip() for cell in line.strip("|").split("|")]) == 2
+    }
+
+
+def _store_modules(root=PROJECT_ROOT):
+    context = (root / "CONTEXT.md").read_text(encoding="utf-8")
+    section = context.split("## Module Names", 1)[1].split("\n## ", 1)[0]
+    rows = [line for line in section.splitlines() if line.startswith("|")]
+    return [
+        cells[0].strip("`")
+        for line in rows[2:]
+        if len(cells := [cell.strip() for cell in line.strip("|").split("|")]) == 2
+        and cells[0].startswith("`store/")
+    ]
+
+
 def test_help_exits_zero():
     result = subprocess.run(
         [CONTRIBUTE, "--help"],
@@ -323,3 +346,185 @@ def test_doctor_reports_a_missing_ruff_pin_instead_of_crashing(tmp_path):
     assert result.returncode != 0, output
     assert "Traceback" not in output, output
     assert "requirements-dev.txt" in output, output
+
+
+def test_glossary_term_prints_context_meaning():
+    result = subprocess.run(
+        [CONTRIBUTE, "glossary", "LEG"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip() == _domain_terms()["LEG"]
+
+
+def test_bare_glossary_lists_every_context_term():
+    result = subprocess.run(
+        [CONTRIBUTE, "glossary"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    terms = _domain_terms()
+    output_lines = result.stdout.splitlines()
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert len(output_lines) == len(terms)
+    assert output_lines == [f"{term}: {meaning}" for term, meaning in terms.items()]
+
+
+def test_glossary_term_matching_is_case_insensitive():
+    uppercase = subprocess.run(
+        [CONTRIBUTE, "glossary", "LEG"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    lowercase = subprocess.run(
+        [CONTRIBUTE, "glossary", "leg"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert lowercase.returncode == 0, lowercase.stdout + lowercase.stderr
+    assert lowercase.stdout == uppercase.stdout
+
+
+def test_unknown_glossary_term_suggests_a_context_term():
+    result = subprocess.run(
+        [CONTRIBUTE, "glossary", "ZZZNOTATERM"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert any(term in output for term in _domain_terms())
+
+
+def test_tour_names_both_context_seams():
+    result = subprocess.run(
+        [CONTRIBUTE, "tour"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode == 0, output
+    assert "database.get_connection" in output
+    assert "tenant.get_tenant_config" in output
+
+
+def test_tour_lists_every_context_store_module():
+    result = subprocess.run(
+        [CONTRIBUTE, "tour"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode == 0, output
+    assert all(module in output for module in _store_modules())
+
+
+def test_missing_context_sections_are_reported_without_tracebacks(tmp_path):
+    checkout = tmp_path / "checkout"
+    scripts = checkout / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy(CONTRIBUTE, scripts / "contribute")
+    shutil.copy(
+        PROJECT_ROOT / "scripts" / "contributor_workbench.py",
+        scripts / "contributor_workbench.py",
+    )
+    (checkout / "CONTEXT.md").write_text(
+        "# Context\n\nThis checkout has no glossary or seam definitions.\n",
+        encoding="utf-8",
+    )
+
+    for command in ("glossary", "tour"):
+        result = subprocess.run(
+            [scripts / "contribute", command],
+            cwd=checkout,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        output = result.stdout + result.stderr
+        assert result.returncode != 0, output
+        assert "CONTEXT.md" in output
+        assert "Traceback" not in output
+
+
+def _context_checkout(tmp_path, context_body):
+    checkout = tmp_path / "checkout"
+    scripts = checkout / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy(CONTRIBUTE, scripts / "contribute")
+    shutil.copy(
+        PROJECT_ROOT / "scripts" / "contributor_workbench.py",
+        scripts / "contributor_workbench.py",
+    )
+    (checkout / "CONTEXT.md").write_text(context_body, encoding="utf-8")
+    return checkout
+
+
+def test_malformed_seam_entry_is_rejected_not_printed_blank(tmp_path):
+    """A broken seam line must fail loudly, not render as an empty bullet.
+
+    Parsing CONTEXT.md at runtime is only worth doing if the output is wrong
+    loudly or right. A blank seam is wrong quietly.
+    """
+    checkout = _context_checkout(
+        tmp_path,
+        "# Context\n\n## Seams\n\n- **`\n\n## Module Names\n\n"
+        "| Module | Owns |\n| --- | --- |\n| `store/x` | Something |\n",
+    )
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "tour"],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0, output
+    assert "Traceback" not in output, output
+    assert "CONTEXT.md" in output, output
+
+
+def test_table_row_with_extra_columns_is_rejected(tmp_path):
+    """A three column row must fail, not smuggle the third cell into the meaning."""
+    checkout = _context_checkout(
+        tmp_path,
+        "# Context\n\n## Domain Terms\n\n"
+        "| Term | Meaning |\n| --- | --- |\n| LEG | a thing | stray |\n",
+    )
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "glossary", "LEG"],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0, output
+    assert "Traceback" not in output, output
+    assert "stray" not in output, output
