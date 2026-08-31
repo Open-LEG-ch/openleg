@@ -5,18 +5,15 @@ Handles scheduled email sequences for user nurturing.
 """
 
 import logging
-import os
 import time
 
-from flask import render_template
+from flask import current_app, has_app_context, render_template
 
 import access_token
 import database as db
 from email_utils import send_email
 
 logger = logging.getLogger(__name__)
-
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5003").rstrip("/")
 
 
 def get_email_sequence(platform_name="OpenLEG"):
@@ -82,6 +79,12 @@ def _get_tenant_for_building(building_id: str) -> dict:
 
 def process_email_queue(app=None):
     """Process pending emails. Call from cron endpoint."""
+    if app is None:
+        if not has_app_context():
+            raise RuntimeError("Email queue processing requires a Flask app")
+        app = current_app
+
+    base_url = app.config["APP_BASE_URL"].rstrip("/")
     pending = db.get_pending_emails(limit=50)
     sent = 0
     failed = 0
@@ -100,7 +103,7 @@ def process_email_queue(app=None):
             continue
 
         # Build unsubscribe URL
-        unsubscribe_url = f"{APP_BASE_URL}/unsubscribe"
+        unsubscribe_url = f"{base_url}/unsubscribe"
 
         # Get neighbor count for personalization
         neighbor_count = 0
@@ -111,10 +114,8 @@ def process_email_queue(app=None):
 
         # Get referral code
         referral_code = db.get_referral_code(item["building_id"]) or ""
-        referral_link = f"{APP_BASE_URL}/?ref={referral_code}" if referral_code else ""
-        ttl_seconds = 86_400
-        if app:
-            ttl_seconds = app.config.get("DASHBOARD_EMAIL_TOKEN_TTL_SECONDS", 86_400)
+        referral_link = f"{base_url}/?ref={referral_code}" if referral_code else ""
+        ttl_seconds = app.config.get("DASHBOARD_EMAIL_TOKEN_TTL_SECONDS", 86_400)
         dashboard_token = access_token.issue(
             access_token.DASHBOARD,
             db,
@@ -126,32 +127,28 @@ def process_email_queue(app=None):
             failed += 1
             continue
         dashboard_url = access_token.access_url(
-            access_token.DASHBOARD, APP_BASE_URL, dashboard_token
+            access_token.DASHBOARD, base_url, dashboard_token
         )
 
         # Render template with tenant context
         try:
-            if app:
-                with app.app_context():
-                    html_body = render_template(
-                        config["template"],
-                        email=item["email"],
-                        address=item.get("address", ""),
-                        neighbor_count=neighbor_count,
-                        unsubscribe_url=unsubscribe_url,
-                        referral_link=referral_link,
-                        site_url=APP_BASE_URL,
-                        dashboard_url=dashboard_url,
-                        tenant=tenant,
-                        platform_name=tenant.get("platform_name", "OpenLEG"),
-                        city_name=tenant.get("city_name", "Zürich"),
-                        primary_color=tenant.get("primary_color", "#c7021a"),
-                        contact_email=tenant.get("contact_email", "hallo@openleg.ch"),
-                        utility_name=tenant.get("utility_name", "Netzbetreiber"),
-                    )
-            else:
-                pname = tenant.get("platform_name", "OpenLEG")
-                html_body = f"<p>{pname}: {config['subject']}</p>"
+            with app.app_context():
+                html_body = render_template(
+                    config["template"],
+                    email=item["email"],
+                    address=item.get("address", ""),
+                    neighbor_count=neighbor_count,
+                    unsubscribe_url=unsubscribe_url,
+                    referral_link=referral_link,
+                    site_url=base_url,
+                    dashboard_url=dashboard_url,
+                    tenant=tenant,
+                    platform_name=tenant.get("platform_name", "OpenLEG"),
+                    city_name=tenant.get("city_name", "Zürich"),
+                    primary_color=tenant.get("primary_color", "#c7021a"),
+                    contact_email=tenant.get("contact_email", "hallo@openleg.ch"),
+                    utility_name=tenant.get("utility_name", "Netzbetreiber"),
+                )
         except Exception as e:
             logger.error(f"[EMAIL_AUTO] Template render error for {template_key}: {e}")
             db.mark_email_failed(email_id, str(e))

@@ -55,9 +55,9 @@ def test_queue_render_uses_fresh_magic_link_without_building_id(monkeypatch):
         lambda _template, **context: captured.update(context) or "email body",
     )
     monkeypatch.setattr(email_automation, "_send_email", MagicMock(return_value=True))
-    monkeypatch.setattr(email_automation, "APP_BASE_URL", "https://openleg.ch")
     app = Flask(__name__)
     app.config["DASHBOARD_EMAIL_TOKEN_TTL_SECONDS"] = 86_400
+    app.config["APP_BASE_URL"] = "https://openleg.ch"
 
     result = email_automation.process_email_queue(app=app)
 
@@ -75,6 +75,73 @@ def test_queue_render_uses_fresh_magic_link_without_building_id(monkeypatch):
     assert "building-1" not in captured["dashboard_url"]
 
 
+def test_queue_render_prefers_the_apps_configured_base_url(monkeypatch):
+    _patch_queue(monkeypatch)
+    issue = MagicMock(return_value="a" * 43)
+    monkeypatch.setattr(access_token, "issue", issue)
+    captured = {}
+    monkeypatch.setattr(
+        email_automation,
+        "render_template",
+        lambda _template, **context: captured.update(context) or "email body",
+    )
+    monkeypatch.setattr(email_automation, "_send_email", MagicMock(return_value=True))
+    app = Flask(__name__)
+    app.config["DASHBOARD_EMAIL_TOKEN_TTL_SECONDS"] = 86_400
+    app.config["APP_BASE_URL"] = "https://from-config.example"
+
+    result = email_automation.process_email_queue(app=app)
+
+    assert result == {"sent": 1, "failed": 0, "total": 1}
+    assert captured["dashboard_url"] == (
+        "https://from-config.example/dashboard/access/" + "a" * 43
+    )
+    assert captured["site_url"] == "https://from-config.example"
+
+
+def test_queue_render_uses_the_active_apps_base_url(monkeypatch):
+    _patch_queue(monkeypatch)
+    monkeypatch.setattr(access_token, "issue", MagicMock(return_value="a" * 43))
+    captured = {}
+    monkeypatch.setattr(
+        email_automation,
+        "render_template",
+        lambda _template, **context: captured.update(context) or "email body",
+    )
+    monkeypatch.setattr(email_automation, "_send_email", MagicMock(return_value=True))
+    app = Flask(__name__)
+    app.config["DASHBOARD_EMAIL_TOKEN_TTL_SECONDS"] = 86_400
+    app.config["APP_BASE_URL"] = "https://active-app.example"
+
+    with app.app_context():
+        result = email_automation.process_email_queue()
+
+    assert result == {"sent": 1, "failed": 0, "total": 1}
+    assert captured["site_url"] == "https://active-app.example"
+
+
+def test_queue_render_strips_a_trailing_slash_from_the_configured_base_url(
+    monkeypatch,
+):
+    _patch_queue(monkeypatch)
+    monkeypatch.setattr(access_token, "issue", MagicMock(return_value="a" * 43))
+    captured = {}
+    monkeypatch.setattr(
+        email_automation,
+        "render_template",
+        lambda _template, **context: captured.update(context) or "email body",
+    )
+    monkeypatch.setattr(email_automation, "_send_email", MagicMock(return_value=True))
+    app = Flask(__name__)
+    app.config["DASHBOARD_EMAIL_TOKEN_TTL_SECONDS"] = 86_400
+    app.config["APP_BASE_URL"] = "https://from-config.example/"
+
+    email_automation.process_email_queue(app=app)
+
+    assert captured["unsubscribe_url"] == "https://from-config.example/unsubscribe"
+    assert captured["site_url"] == "https://from-config.example"
+
+
 def test_queue_fails_closed_when_access_token_cannot_be_issued(monkeypatch):
     _patch_queue(monkeypatch)
     monkeypatch.setattr(access_token, "issue", lambda *_args, **_kwargs: None)
@@ -82,6 +149,7 @@ def test_queue_fails_closed_when_access_token_cannot_be_issued(monkeypatch):
     monkeypatch.setattr(email_automation, "_send_email", send)
     app = Flask(__name__)
     app.config["DASHBOARD_EMAIL_TOKEN_TTL_SECONDS"] = 86_400
+    app.config["APP_BASE_URL"] = "https://openleg.ch"
 
     result = email_automation.process_email_queue(app=app)
 

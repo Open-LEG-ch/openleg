@@ -856,5 +856,12 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     return application
 
 
+def _dev_port(app_base_url, default=5003):
+    return urlparse(app_base_url).port or default
+
+
 if __name__ == "__main__":
-    create_app().run(port=5003, host="127.0.0.1")
+    application = create_app()
+    application.run(
+        port=_dev_port(application.config["APP_BASE_URL"]), host="127.0.0.1"
+    )
