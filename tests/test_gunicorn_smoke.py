@@ -19,15 +19,26 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def _dockerfile_command():
     dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
-    match = re.search(r"^CMD\s+(\[.*?^\s*\])", dockerfile, re.MULTILINE | re.DOTALL)
+    logical_lines = dockerfile.replace("\\\n", "")
+    match = re.search(r"^CMD\s+(\[.*\])\s*$", logical_lines, re.MULTILINE)
     assert match, "Dockerfile must define a JSON-form CMD"
-    return json.loads(match.group(1).replace("\\\n", ""))
+    return json.loads(match.group(1))
 
 
 def _free_port():
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
         return listener.getsockname()[1]
+
+
+@pytest.mark.deploy
+def test_dockerfile_gunicorn_command_keeps_production_settings():
+    command = _dockerfile_command()
+    assert command[:2] == ["gunicorn", "wsgi:app"]
+    assert command[command.index("--worker-class") + 1] == "gthread"
+    assert command[command.index("--workers") + 1] == "2"
+    assert command[command.index("--threads") + 1] == "4"
+    assert "--preload" in command
 
 
 @pytest.mark.deploy
@@ -38,12 +49,6 @@ def test_dockerfile_gunicorn_command_serves_livez():
         pytest.skip("PostgreSQL is required for the Gunicorn smoke test")
 
     command = _dockerfile_command()
-    assert command[:2] == ["gunicorn", "wsgi:app"]
-    assert command[command.index("--worker-class") + 1] == "gthread"
-    assert command[command.index("--workers") + 1] == "2"
-    assert command[command.index("--threads") + 1] == "4"
-    assert "--preload" in command
-
     port = _free_port()
     command[command.index("--bind") + 1] = f"127.0.0.1:{port}"
     process = subprocess.Popen(
