@@ -1,0 +1,642 @@
+{% extends "base.html" %}
+{% from "partials/page_meta.html" import page_meta with context %}
+
+{% block meta %}
+{{ page_meta(
+  title="OpenLEG: Freie Infrastruktur für Schweizer Stromgemeinschaften",
+  description="OpenLEG hilft Nachbarn und Gemeinden, lokale Stromgemeinschaften in der Schweiz zu starten. Adresse prüfen, Nachbarn finden, Netzgebühren sparen.",
+  path="/",
+  og_title="OpenLEG: Freie Infrastruktur für Schweizer Stromgemeinschaften",
+  og_description="Prüfen Sie Ihre Adresse, finden Sie Nachbarn und starten Sie eine lokale Stromgemeinschaft. Kostenlos, Open Source, Schweizer Hosting.",
+  og_image="/static/images/og-image.png",
+  site_url=site_url
+) }}
+{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% if ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ ga4_id }}');
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+  <!-- Hero -->
+  <section class="relative overflow-hidden bg-paper" data-home-hero>
+    <div class="relative max-w-7xl mx-auto px-4 pt-10 pb-20 md:pt-14 md:pb-24 grid lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-center">
+      <div>
+        <div class="inline-flex rounded-full border border-line bg-paper-deep p-1 text-sm" role="tablist" aria-label="Zielgruppe">
+          <button class="rounded-full bg-white px-4 py-2 font-semibold text-ink shadow-sm" data-seg-tab="bewohner" role="tab" aria-selected="true">Bewohner</button>
+          <button class="rounded-full px-4 py-2 font-medium text-ink-muted" data-seg-tab="gemeinde" role="tab" aria-selected="false">Gemeinde</button>
+        </div>
+
+        <div class="mt-7" aria-live="polite">
+          <div data-seg-panel="bewohner">
+            <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] text-ink">Ihr Strom.<br>Ihre Nachbarn.<br><span class="underline decoration-accent decoration-4 underline-offset-[6px] sm:decoration-[6px]">Ihre Gemeinschaft.</span></h1>
+            <p class="mt-6 text-lg leading-8 text-ink-muted max-w-xl">Prüfen Sie Ihre Adresse, finden Sie Nachbarn und führen Sie Ihre LEG von der Gründung bis zur Abrechnung. OpenLEG verkauft keine Daten.</p>
+            <div class="mt-7 flex flex-col sm:flex-row gap-3">
+              <a href="#registrieren" class="rounded-xl bg-brand px-6 py-3.5 font-semibold text-white shadow-sm hover:bg-brand-dark text-center">Adresse prüfen</a>
+              <a href="/leg-gruenden" class="rounded-xl border border-line bg-white px-6 py-3.5 font-semibold text-ink hover:border-brand hover:text-brand text-center">LEG gründen</a>
+            </div>
+            <div class="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-muted">
+              <span class="flex items-center gap-2"><span class="text-sage-dark" aria-hidden="true">✓</span>Kostenlos und Open Source</span>
+              <span class="flex items-center gap-2"><span class="text-sage-dark" aria-hidden="true">✓</span>Schweizer Hosting</span>
+              <span class="flex items-center gap-2"><span class="text-sage-dark" aria-hidden="true">✓</span>Keine Datenverkäufe</span>
+            </div>
+          </div>
+
+          <div data-seg-panel="gemeinde" class="hidden">
+            <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] text-ink">Solarpotenzial sehen.<br><span class="underline decoration-accent decoration-4 underline-offset-[6px] sm:decoration-[6px]">LEG ermöglichen.</span></h1>
+            <p class="mt-6 text-lg leading-8 text-ink-muted max-w-xl">Vergleichen Sie Ihre Solarnutzung mit ähnlichen Gemeinden, finden Sie ungenutzte Dächer und ermöglichen Sie lokale Stromgemeinschaften.</p>
+            <div class="mt-7 flex flex-col sm:flex-row gap-3">
+              <a href="/rangliste" class="rounded-xl bg-brand px-6 py-3.5 font-semibold text-white shadow-sm hover:bg-brand-dark text-center">Rangliste ansehen</a>
+              <a href="/gemeinde/onboarding" class="rounded-xl border border-line bg-white px-6 py-3.5 font-semibold text-ink hover:border-brand hover:text-brand text-center">Gemeinde anmelden</a>
+            </div>
+            <div class="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-muted">
+              <span class="flex items-center gap-2"><span class="text-sage-dark" aria-hidden="true">✓</span>Vergleich mit 2'000+ Gemeinden</span>
+              <span class="flex items-center gap-2"><span class="text-sage-dark" aria-hidden="true">✓</span>Kostenlos starten</span>
+              <span class="flex items-center gap-2"><span class="text-sage-dark" aria-hidden="true">✓</span>Nachvollziehbare Daten</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative mx-auto w-full max-w-2xl">
+        <div class="rounded-[2rem] bg-paper-deep p-3 shadow-sm ring-1 ring-line">
+          <div class="grid h-[420px] grid-cols-12 grid-rows-12 gap-2.5 sm:h-[520px]">
+            <div class="relative col-span-7 row-span-12 overflow-hidden rounded-2xl border border-line bg-paper-deep">
+              <img src="/static/images/landing/urban.webp" alt="Menschen und öffentlicher Verkehr in einer Schweizer Stadt" width="1280" height="854" class="h-full w-full object-cover" fetchpriority="high">
+            </div>
+            <div class="relative col-span-5 row-span-6 overflow-hidden rounded-2xl border border-line bg-paper-deep">
+              <img src="/static/images/landing/suburban.webp" alt="Wohnquartier in der Schweizer Agglomeration" width="1280" height="854" class="h-full w-full object-cover" loading="eager">
+            </div>
+            <div class="relative col-span-5 row-span-6 overflow-hidden rounded-2xl border border-line bg-paper-deep">
+              <img src="/static/images/landing/rural.webp" alt="Dorf und Landschaft im ländlichen Raum" width="1280" height="854" class="h-full w-full object-cover" loading="eager">
+            </div>
+          </div>
+        </div>
+        <div class="absolute -bottom-5 left-5 right-5 grid grid-cols-2 overflow-hidden rounded-2xl border border-line bg-white shadow-md sm:left-8 sm:right-8">
+          <div class="border-r border-line px-4 py-3 sm:px-5">
+            <div class="text-xs text-ink-muted">Seit 1. Januar 2026</div>
+            <div class="mt-1 text-sm font-semibold text-ink">LEG gesetzlich möglich</div>
+          </div>
+          <div class="px-4 py-3 sm:px-5">
+            <div class="text-xs font-semibold text-accent-dark">Bis zu 40% Rabatt</div>
+            <div class="mt-1 text-sm font-semibold text-ink">auf lokale Netznutzung</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Installation -->
+  <section class="bg-paper-deep pb-14 pt-12 sm:pb-16 sm:pt-14 border-t border-line" data-home-installer>
+    <div class="max-w-6xl mx-auto px-4">
+      {% include "partials/install_console.html" %}
+    </div>
+  </section>
+
+  <!-- Pathways: für wen ist OpenLEG -->
+  <section id="pfade" class="py-16 bg-white border-t border-slate-200/60">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="max-w-2xl mb-8">
+        <h2 class="text-3xl font-bold tracking-tight">Starten Sie dort, wo Sie heute stehen.</h2>
+        <p class="text-ink-muted mt-3">Bewohner prüfen ihre Adresse. Gemeinden sehen ihr Solarpotenzial. Betreiber finden den Gründungsweg, Entwickler bekommen Code und Daten.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="/fuer-bewohner" class="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 border-t-4 border-t-brand shadow-sm hover:shadow-md hover:-translate-y-0.5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+          <span aria-hidden="true" class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand mb-3">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+          </span>
+          <h3 class="font-semibold text-lg">Bewohner und Gründer</h3>
+          <p class="text-sm text-ink-muted mt-1 flex-1">Prüfen Sie Ihre Adresse und sehen Sie, ob Nachbarn schon Interesse angemeldet haben.</p>
+          <span class="mt-4 text-sm font-semibold text-brand inline-flex items-center gap-1">Einstieg für Bewohner <span aria-hidden="true" class="transition group-hover:translate-x-0.5">&rarr;</span></span>
+        </a>
+
+        <a href="/leg-gruenden" class="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 border-t-4 border-t-brand shadow-sm hover:shadow-md hover:-translate-y-0.5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+          <span aria-hidden="true" class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand mb-3">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg>
+          </span>
+          <h3 class="font-semibold text-lg">LEG-Betreiber</h3>
+          <p class="text-sm text-ink-muted mt-1 flex-1">Klären Sie Mitglieder, Verträge, Netzbetreiber und Abrechnung.</p>
+          <span class="mt-4 text-sm font-semibold text-brand inline-flex items-center gap-1">LEG gründen <span aria-hidden="true" class="transition group-hover:translate-x-0.5">&rarr;</span></span>
+        </a>
+
+        <a href="/fuer-gemeinden" class="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 border-t-4 border-t-accent shadow-sm hover:shadow-md hover:-translate-y-0.5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+          <span aria-hidden="true" class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent mb-3">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M12 9h.01M15 9h.01M9 13h.01M12 13h.01M15 13h.01"/></svg>
+          </span>
+          <h3 class="font-semibold text-lg">Gemeinde</h3>
+          <p class="text-sm text-ink-muted mt-1 flex-1">Vergleichen Sie Ihre Gemeinde und starten Sie eine Seite für Interessierte.</p>
+          <span class="mt-4 text-sm font-semibold text-brand inline-flex items-center gap-1">Für Gemeinden <span aria-hidden="true" class="transition group-hover:translate-x-0.5">&rarr;</span></span>
+        </a>
+
+        <a href="/open-source" class="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 border-t-4 border-t-ink shadow-sm hover:shadow-md hover:-translate-y-0.5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+          <span aria-hidden="true" class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-ink/10 text-ink mb-3">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 6-6 6 6 6"/><path d="m16 6 6 6-6 6"/></svg>
+          </span>
+          <h3 class="font-semibold text-lg">Entwickler und Self-Hosting</h3>
+          <p class="text-sm text-ink-muted mt-1 flex-1">Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst.</p>
+          <span class="mt-4 text-sm font-semibold text-brand inline-flex items-center gap-1">Codebase und Install <span aria-hidden="true" class="transition group-hover:translate-x-0.5">&rarr;</span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fakten-Leiste: hairline measurement strip, each fact typed by its own nature -->
+  <section class="py-12 bg-[#f6f4ef]" aria-labelledby="fakten-title">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 id="fakten-title" class="sr-only">Wichtigste Fakten zur LEG</h2>
+      <dl class="grid gap-x-8 gap-y-8 border-t border-slate-300 pt-8 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-slate-300">
+        <div class="lg:pl-8 lg:first:pl-0">
+          <dt class="text-xs uppercase tracking-wide text-ink-muted">Ihr Recht</dt>
+          <dd class="mt-2 font-mono tabular-nums text-4xl font-bold leading-none">2026</dd>
+          <p class="mt-2 text-sm text-ink-muted">Lokale Stromgemeinschaften seit dem 1. Januar erlaubt.</p>
+        </div>
+        <div class="lg:pl-8">
+          <dt class="text-xs uppercase tracking-wide text-ink-muted">Netzgebühren</dt>
+          <dd class="mt-2 font-mono tabular-nums text-4xl font-bold leading-none">bis 40<span class="text-2xl align-top">%</span></dd>
+          <p class="mt-2 text-sm text-ink-muted">Rabatt auf lokal erzeugten und verbrauchten Strom.</p>
+        </div>
+        <div class="lg:pl-8">
+          <dt class="text-xs uppercase tracking-wide text-ink-muted">Smart Meter</dt>
+          <dd class="mt-2 font-mono tabular-nums text-4xl font-bold leading-none">3 <span class="text-xl font-normal">Monate</span></dd>
+          <p class="mt-2 text-sm text-ink-muted">Frist für den Netzbetreiber, das Messsystem zu installieren.</p>
+        </div>
+        <div class="lg:pl-8">
+          <dt class="text-xs uppercase tracking-wide text-ink-muted">Plattform</dt>
+          <dd class="mt-2 text-3xl font-bold leading-none">Kostenlos</dd>
+          <p class="mt-2 text-sm text-ink-muted">Open Source, gehostet in der Schweiz.</p>
+        </div>
+      </dl>
+      <p class="mt-6 text-xs text-ink-muted">Rechtsgrundlage: Art. 17d/17e Stromversorgungsgesetz, Art. 19e-19h Stromversorgungsverordnung, Art. 8a decies Abs. 6 StromVV.</p>
+    </div>
+  </section>
+
+  <!-- Blick ins Produkt -->
+  <section id="produkt" class="py-16 bg-white border-t border-slate-200/60">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="max-w-2xl mb-8">
+        <h2 class="text-3xl font-bold tracking-tight">So sieht OpenLEG von innen aus.</h2>
+        <p class="text-ink-muted mt-3">Aufnahmen aus dem laufenden Produkt, keine Mockups. Klicken Sie sich durch die Demo.</p>
+      </div>
+
+      <div class="grid gap-12">
+        <figure>
+          <div class="rounded-2xl border border-line shadow-lg overflow-hidden bg-white">
+            <div class="flex items-center gap-2 border-b border-line bg-paper-deep px-4 py-2.5">
+              <span class="flex gap-1.5" aria-hidden="true">
+                <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+              </span>
+              <span class="ml-2 truncate rounded-md bg-white border border-slate-200 px-3 py-1 text-xs text-ink-muted font-mono">openleg.ch/dashboard</span>
+            </div>
+            <picture>
+              <source srcset="/static/images/product/resident-dashboard-static.webp" media="(prefers-reduced-motion: reduce)">
+              <img src="/static/images/product/resident-dashboard.gif" alt="Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner" width="960" height="540" loading="lazy" class="w-full h-auto">
+            </picture>
+          </div>
+          <figcaption class="mt-4 flex flex-wrap items-start justify-between gap-4">
+            <span class="text-sm text-ink-muted"><strong class="text-ink">Für Bewohner:</strong> Bereitschaft, Checkliste und Ersparnis.</span>
+            <span class="flex gap-4 text-sm font-semibold shrink-0">
+              <a href="/dashboard/demo" class="text-brand hover:underline">Demo ansehen <span aria-hidden="true">&rarr;</span></a>
+              <a href="/#registrieren" class="text-brand hover:underline">Adresse prüfen <span aria-hidden="true">&rarr;</span></a>
+            </span>
+          </figcaption>
+        </figure>
+
+        <figure>
+          <div class="rounded-2xl border border-line shadow-lg overflow-hidden bg-white">
+            <div class="flex items-center gap-2 border-b border-line bg-paper-deep px-4 py-2.5">
+              <span class="flex gap-1.5" aria-hidden="true">
+                <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+              </span>
+              <span class="ml-2 truncate rounded-md bg-white border border-slate-200 px-3 py-1 text-xs text-ink-muted font-mono">openleg.ch/gemeinde/dashboard</span>
+            </div>
+            <img src="/static/images/screenshots/dashboard-gemeinde.webp" alt="Gemeinde-Dashboard mit Anmeldungen, Solarnutzung und nächsten Schritten" width="1360" height="900" loading="lazy" class="w-full h-auto">
+          </div>
+          <figcaption class="mt-4 flex flex-wrap items-start justify-between gap-4">
+            <span class="text-sm text-ink-muted"><strong class="text-ink">Für Gemeinden:</strong> Anmeldungen, Solarnutzung und nächste Schritte.</span>
+            <a href="/gemeinde/dashboard/demo" class="text-sm font-semibold text-brand hover:underline shrink-0">Live ansehen <span aria-hidden="true">&rarr;</span></a>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gemeinde -->
+  <section class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <h2 class="text-3xl font-bold">Für Gemeinden: Potenzial sehen, Einstieg schaffen.</h2>
+          <p class="text-ink-muted mt-3">Die Rangliste zeigt, wie viel Dachpotenzial Ihre Gemeinde nutzt, wer im Vergleich weiter ist und wie viele Dächer bis zum oberen Viertel fehlen.</p>
+          <ol class="mt-5 grid md:grid-cols-3 gap-3 text-sm">
+            <li class="rounded-lg border border-slate-200 bg-white p-3">
+              <div class="font-semibold">1. Rang prüfen</div>
+              <p class="text-ink-muted mt-1">Gemeinde und faire Vergleichsgruppe ansehen.</p>
+            </li>
+            <li class="rounded-lg border border-slate-200 bg-white p-3">
+              <div class="font-semibold">2. Ziel sehen</div>
+              <p class="text-ink-muted mt-1">Zählen, wie viele Dächer bis zum oberen Viertel fehlen.</p>
+            </li>
+            <li class="rounded-lg border border-slate-200 bg-white p-3">
+              <div class="font-semibold">3. Gemeinde anmelden</div>
+              <p class="text-ink-muted mt-1">Eigene Seite und Onboarding starten.</p>
+            </li>
+          </ol>
+          <ul class="mt-4 space-y-2 text-ink-muted list-disc list-inside">
+            <li>Fairer Vergleich nach Kanton, Grösse und Dichte</li>
+            <li>Eigene Webseite unter gemeinde.openleg.ch, kostenlos</li>
+            <li>Alle Dokumente: Vereinbarung, Verträge, Netzbetreiber-Anmeldung</li>
+          </ul>
+          <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <a href="/rangliste" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Rangliste ansehen</a>
+            <a href="/fuer-gemeinden" class="inline-block border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">Wie Ihre Gemeinde teilnimmt</a>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-brand/5 p-6">
+          <div class="text-sm text-ink-muted">Kurz gesagt</div>
+          <div class="mt-2 text-2xl font-semibold">In wenigen Tagen live.</div>
+          <div class="mt-3 text-ink-muted">Kostenlos starten, ohne eigenes IT-Projekt. OpenLEG übernimmt Technik und Betrieb, wenn Ihre Gemeinde das möchte.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rangliste-Vorschau -->
+  {% if ranking_best and ranking_worst %}
+  <section class="py-16 bg-white border-t border-slate-200/60">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+        <div>
+          <h2 class="text-3xl font-bold">Solarnutzungs-Rangliste</h2>
+          <p class="text-ink-muted mt-2 max-w-2xl">Wie viel Dachpotenzial Schweizer Gemeinden nutzen. Daten von ElCom, Sonnendach und Energie Reporter.</p>
+        </div>
+        <a href="/rangliste" class="inline-flex items-center gap-2 bg-brand text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-brand-dark">Ganze Rangliste ansehen <span aria-hidden="true">&rarr;</span></a>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="min-w-0 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white text-sm font-bold" aria-hidden="true">&#9733;</span>
+            <h3 class="text-lg font-bold">Vorbilder</h3>
+            <span class="text-sm text-ink-muted">höchste Solarnutzung</span>
+          </div>
+          <ul class="space-y-2">
+            {% for m in ranking_best %}
+            <li>
+              <a href="/gemeinde/profil/{{ m.bfs_number }}" class="flex items-center justify-between gap-3 rounded-lg bg-white border border-emerald-100 px-4 py-3 hover:border-emerald-300 hover:shadow-sm transition">
+                <span class="flex items-center gap-3 min-w-0">
+                  <span class="font-mono text-sm text-emerald-700 w-10 shrink-0">#{{ m.rank }}</span>
+                  <span class="truncate"><span class="font-semibold">{{ m.name }}</span> <span class="text-ink-muted text-sm">{{ m.kanton }}</span></span>
+                </span>
+                <span class="font-mono font-bold text-emerald-700 shrink-0">{{ m.score }}%</span>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="min-w-0 rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-rose-500 text-white text-sm font-bold" aria-hidden="true">&uarr;</span>
+            <h3 class="text-lg font-bold">Grösste Chancen</h3>
+            <span class="text-sm text-ink-muted">meiste ungenutzte Dächer</span>
+          </div>
+          <ul class="space-y-2">
+            {% for m in ranking_worst %}
+            <li>
+              <a href="/gemeinde/profil/{{ m.bfs_number }}" class="flex items-center justify-between gap-3 rounded-lg bg-white border border-rose-100 px-4 py-3 hover:border-rose-300 hover:shadow-sm transition">
+                <span class="flex items-center gap-3 min-w-0">
+                  <span class="font-mono text-sm text-rose-700 w-12 shrink-0">#{{ m.rank }}</span>
+                  <span class="truncate"><span class="font-semibold">{{ m.name }}</span> <span class="text-ink-muted text-sm">{{ m.kanton }}</span></span>
+                </span>
+                <span class="font-mono font-bold text-rose-700 shrink-0">{{ m.score }}%</span>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+          <p class="text-xs text-ink-muted mt-3">Von {{ ranking_total }} Gemeinden mit Daten.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Bewohner -->
+  <section id="bewohner" class="py-16 bg-[#f6f4ef]">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="mb-6">
+        <h2 class="text-3xl font-bold">Erst Adresse prüfen, dann Nachbarn finden</h2>
+        <p class="text-ink-muted mt-2">Geben Sie Ihre Adresse ein. OpenLEG prüft die Umgebung, zeigt anonymisierte Interessierte und sagt, ob sich eine LEG lohnt.</p>
+        {% if user_count > 0 %}
+        <p class="text-ink-muted mt-2">Bereits <strong class="text-ink">{{ user_count }}</strong> Haushalte registriert</p>
+        {% endif %}
+      </div>
+
+      <div id="registrieren" class="grid md:grid-cols-2 gap-8">
+        <!-- Map -->
+        <div>
+          <div id="map" class="w-full h-96 rounded-xl shadow-md z-0"></div>
+        </div>
+        <!-- Form -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+          <ol class="grid grid-cols-3 gap-2 text-xs mb-4">
+            <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <div class="font-semibold">1. Adresse prüfen</div>
+            </li>
+            <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <div class="font-semibold">2. Nachbarn finden</div>
+            </li>
+            <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <div class="font-semibold">3. LEG starten</div>
+            </li>
+          </ol>
+          <div id="step-address">
+            <label for="address-input" class="block text-sm font-medium mb-1">Ihre Adresse</label>
+            <input type="text" id="address-input" placeholder="Strasse, PLZ Ort" class="w-full border rounded-lg px-3 py-2 mb-1 focus:ring-2 focus:ring-brand focus:outline-none" autocomplete="off" aria-describedby="address-status address-privacy">
+            <p id="address-status" role="status" aria-live="polite" class="text-sm text-ink-muted mt-1">Adresse eingeben. Wir zeigen Vorschläge und prüfen dann Nachbarschaft und Solarpotenzial.</p>
+            <div id="suggestions" class="bg-white border rounded-lg max-h-48 overflow-y-auto hidden"></div>
+            <div class="mt-3 space-y-2 text-sm">
+              <div data-address-state="empty" class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-ink-muted">Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert.</div>
+              <div data-address-state="loading" class="hidden rounded-lg border border-blue-200 bg-blue-50 p-3 text-blue-900">Wir prüfen Ihre Adresse und laden Solarpotenzial und Nachbarschaft.</div>
+              <div data-address-state="found" class="hidden rounded-lg border border-green-200 bg-green-50 p-3 text-green-900">Nachbarn gefunden. Sie können sich jetzt registrieren.</div>
+              <div data-address-state="not-found" class="hidden rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-700">Noch keine Nachbarn gefunden. Sie können den Startpunkt setzen und andere einladen.</div>
+            </div>
+            <div id="profile-summary" class="text-sm text-ink-muted mt-2 hidden"></div>
+            <p id="address-privacy" class="text-xs text-ink-muted mt-3">Wir nutzen Ihre Adresse nur für die Prüfung. Ihre Smart-Meter-Daten bleiben in Ihrer LEG, wir verkaufen sie nicht.</p>
+            <button id="btn-check" class="w-full bg-brand text-white py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50" disabled>Adresse prüfen</button>
+          </div>
+          <div id="step-register" class="hidden">
+            <div id="match-info" class="bg-brand/10 p-3 rounded-lg mb-3 text-sm"></div>
+            <label for="email-input" class="block text-sm font-medium mb-1">E-Mail</label>
+            <input type="email" id="email-input" placeholder="ihre@email.ch" class="w-full border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-brand focus:outline-none">
+            <label for="phone-input" class="block text-sm font-medium mb-1">Telefon (optional)</label>
+            <input type="tel" id="phone-input" placeholder="+41 79 ..." class="w-full border rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-brand focus:outline-none">
+            <div class="space-y-2 mb-4 text-sm">
+              <div class="flex items-start gap-2"><input type="checkbox" id="consent-neighbors" class="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand" required><label for="consent-neighbors">Ich bin einverstanden, dass interessierte Nachbarn in meiner Nähe mich kontaktieren. (erforderlich)</label></div>
+              <div class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand" required><label for="consent-utility">Ich bin einverstanden, dass OpenLEG meine Daten für die LEG-Anmeldung an den Netzbetreiber übermittelt. (erforderlich)</label></div>
+              <div class="flex items-start gap-2"><input type="checkbox" id="consent-updates" class="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"><label for="consent-updates">Ich möchte Updates per E-Mail erhalten. (optional)</label></div>
+            </div>
+            <p class="text-xs text-ink-muted mb-3">Wir verkaufen Ihre Daten nicht. An den Netzbetreiber übermitteln wir sie nur für die LEG-Anmeldung und nur mit Ihrer Zustimmung. Ihre bei OpenLEG gespeicherten Daten <a href="/unsubscribe" class="underline hover:text-ink">löschen Sie jederzeit</a>.</p>
+            <button id="btn-register" class="w-full bg-brand text-white py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Registrieren</button>
+          </div>
+          <div id="step-success" class="hidden text-center py-6">
+            <div class="text-4xl mb-3">&#9889;</div>
+            <h3 class="text-lg font-semibold mb-2">Registrierung erfolgreich!</h3>
+            <p class="text-ink-muted mb-4">Sie erhalten eine Bestätigung per E-Mail.</p>
+            <div id="referral-link-box" class="bg-gray-50 p-3 rounded-lg text-sm hidden">
+              <label for="referral-link" class="font-medium mb-1 block">Teilen Sie Ihren Einladungslink</label>
+              <input type="text" id="referral-link" class="w-full border rounded px-2 py-1 text-xs focus:ring-2 focus:ring-brand focus:outline-none" readonly>
+            </div>
+          </div>
+          <div id="form-error" role="alert" aria-live="assertive" class="text-red-600 text-sm mt-2 hidden"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open Source / Mission -->
+  <section class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <h2 class="text-3xl font-bold">Open Source. Weil Energieinfrastruktur allen gehört.</h2>
+          <p class="text-ink-muted mt-3">OpenLEG ist freie Software. Der Code liegt offen, jede Gemeinde kann die Plattform selbst betreiben, und niemand kontrolliert Ihre Energiedaten.</p>
+          <ul class="mt-4 space-y-2 text-ink-muted list-disc list-inside">
+            <li>Gesamter Code auf GitHub, AGPL-3.0 Lizenz</li>
+            <li>In einer Zeile selbst installieren, auf einem Raspberry Pi oder Mini-PC</li>
+            <li>Freie API für Schweizer Energiedaten (ElCom Tarife, Sonnendach, Energie Reporter)</li>
+            <li>Keine Anbieterbindung: jederzeit selbst hosten oder migrieren</li>
+            <li>Community-Beiträge willkommen</li>
+          </ul>
+          <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <a href="/open-source" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center">Codebase verstehen</a>
+            <a href="https://github.com/Open-LEG-ch/openleg" target="_blank" rel="noopener" class="inline-block border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 text-center">GitHub ansehen</a>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="rounded-xl border border-slate-200 bg-[#f6f4ef] p-5">
+            <div class="font-semibold">Betrieb dokumentiert</div>
+            <p class="text-sm text-ink-muted mt-1">Die Anleitung beschreibt Installation, Updates, Backups und den Zugriff über ein privates Netzwerk.</p>
+            <a href="/self-host" class="text-sm text-brand mt-2 inline-block">Betriebsanleitung öffnen</a>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-[#f6f4ef] p-5">
+            <div class="font-semibold">Freie Energiedaten API</div>
+            <p class="text-sm text-ink-muted mt-1">ElCom Tarife, Solarpotenzial und Gemeinde-Profile aus öffentlichen Datenquellen. Kein API-Key nötig.</p>
+            <a href="/api/v1/docs" class="text-sm text-brand mt-2 inline-block">API Dokumentation</a>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-[#f6f4ef] p-5">
+            <div class="font-semibold">Datenhoheit</div>
+            <p class="text-sm text-ink-muted mt-1">Ihre Smart-Meter-Daten bleiben in Ihrer Stromgemeinschaft. Wir verkaufen keine Daten an Energieversorger oder Dritte.</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-[#f6f4ef] p-5">
+            <div class="font-semibold">Schweizer Hosting</div>
+            <p class="text-sm text-ink-muted mt-1">Läuft auf Schweizer Infrastruktur, konform mit dem Schweizer Datenschutzgesetz (nDSG).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/static/js/landing_segments.js"></script>
+  <script src="/static/js/install_console.js"></script>
+
+  <script>
+  // Map (Leaflet kommt von einem CDN; der Funnel muss auch ohne Karte funktionieren)
+  let map = null;
+  if (typeof L !== 'undefined') {
+      map = L.map('map').setView([{{ map_center_lat }}, {{ map_center_lon }}], {{ map_zoom }});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18, attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+  } else {
+      document.getElementById('map').classList.add('hidden');
+  }
+
+  let selectedProfile = null;
+  let addressTimeout = null;
+  const referralCode = new URLSearchParams(window.location.search).get('ref');
+
+  // Address autocomplete
+  const addressInput = document.getElementById('address-input');
+  const suggestionsDiv = document.getElementById('suggestions');
+  const btnCheck = document.getElementById('btn-check');
+  const addressStatus = document.getElementById('address-status');
+  const addressStateEls = Array.from(document.querySelectorAll('[data-address-state]'));
+
+  function setAddressState(state, message) {
+      addressStateEls.forEach((el) => {
+          el.classList.toggle('hidden', el.dataset.addressState !== state);
+      });
+      if (message) addressStatus.textContent = message;
+  }
+
+  addressInput.addEventListener('input', function() {
+      clearTimeout(addressTimeout);
+      const q = this.value.trim();
+      if (q.length < 3) {
+          suggestionsDiv.classList.add('hidden');
+          btnCheck.disabled = true;
+          setAddressState('empty', 'Adresse eingeben. Ab 3 Zeichen zeigen wir Vorschläge.');
+          return;
+      }
+      addressTimeout = setTimeout(async () => {
+          try {
+              const res = await fetch(`/api/suggest_addresses?q=${encodeURIComponent(q)}`)
+                  .catch(e => {
+                      suggestionsDiv.classList.add('hidden');
+                      throw e;
+                  });
+              if (!res.ok) throw new Error(`Address suggestions failed: ${res.status}`);
+              const data = await res.json();
+              if (data.suggestions && data.suggestions.length > 0) {
+                  suggestionsDiv.replaceChildren();
+                  data.suggestions.forEach(s => {
+                      const el = document.createElement('div');
+                      el.className = 'px-3 py-2 hover:bg-slate-50 cursor-pointer text-sm border-b';
+                      el.textContent = s.label;
+                      el.dataset.lat = s.lat;
+                      el.dataset.lon = s.lon;
+                      el.dataset.plz = s.plz;
+                      el.dataset.label = s.label;
+                      el.addEventListener('click', function() {
+                          addressInput.value = this.dataset.label;
+                          suggestionsDiv.classList.add('hidden');
+                          btnCheck.disabled = false;
+                          setAddressState('empty', 'Adresse gewählt. Jetzt prüfen.');
+                      });
+                      suggestionsDiv.appendChild(el);
+                  });
+                  suggestionsDiv.classList.remove('hidden');
+              } else {
+                  suggestionsDiv.classList.add('hidden');
+                  btnCheck.disabled = true;
+                  setAddressState('not-found', 'Keine passende Adresse gefunden. Prüfen Sie Schreibweise und PLZ.');
+              }
+          } catch(e) {
+              btnCheck.disabled = false;
+              setAddressState('empty', 'Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen.');
+              console.warn('Address autocomplete failed:', e);
+              suggestionsDiv.classList.add('hidden');
+          }
+      }, 300);
+  });
+
+  // Check potential
+  btnCheck.addEventListener('click', async function() {
+      this.disabled = true;
+      this.textContent = 'Prüfe...';
+      setAddressState('loading', 'Wir prüfen Ihre Adresse. Einen Moment bitte.');
+      document.getElementById('form-error').classList.add('hidden');
+      try {
+          const res = await fetch('/api/check_potential', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({address: addressInput.value})
+          });
+          if (res.status === 429) {
+              document.getElementById('form-error').textContent = 'Zu viele Anfragen. Bitte warten Sie eine Minute.';
+              document.getElementById('form-error').classList.remove('hidden');
+              this.disabled = false;
+              this.textContent = 'Adresse prüfen';
+              setAddressState('empty', 'Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut.');
+              return;
+          }
+          const data = await res.json();
+          if (data.error) {
+              document.getElementById('form-error').textContent = data.error;
+              document.getElementById('form-error').classList.remove('hidden');
+              this.disabled = false;
+              this.textContent = 'Adresse prüfen';
+              setAddressState('empty', 'Wir konnten die Adresse nicht prüfen.');
+              return;
+          }
+          selectedProfile = data.profile_summary;
+          const matchInfo = document.getElementById('match-info');
+          if (data.potential) {
+              const ci = data.cluster_info;
+              matchInfo.innerHTML = `<strong>${ci.num_members} Nachbarn gefunden!</strong> Autarkie-Potenzial: ${ci.autarky_percent.toFixed(0)}%`;
+              setAddressState('found', 'Nachbarn gefunden. Sie können sich jetzt registrieren.');
+          } else {
+              matchInfo.innerHTML = '<strong>Noch keine Nachbarn gefunden.</strong> Sie können trotzdem registrieren.';
+              setAddressState('not-found', 'Noch keine Nachbarn gefunden. Sie können trotzdem starten.');
+          }
+          document.getElementById('step-address').classList.add('hidden');
+          document.getElementById('step-register').classList.remove('hidden');
+      } catch(e) {
+          document.getElementById('form-error').textContent = 'Netzwerkfehler. Bitte erneut versuchen.';
+          document.getElementById('form-error').classList.remove('hidden');
+          this.disabled = false;
+          this.textContent = 'Adresse prüfen';
+          setAddressState('empty', 'Netzwerkfehler. Bitte erneut versuchen.');
+      }
+  });
+
+  // Register
+  document.getElementById('btn-register').addEventListener('click', async function() {
+      const email = document.getElementById('email-input').value;
+      const phone = document.getElementById('phone-input').value;
+      const cn = document.getElementById('consent-neighbors').checked;
+      const cu = document.getElementById('consent-utility').checked;
+      const co = document.getElementById('consent-updates').checked;
+      if (!email) {
+          document.getElementById('form-error').textContent = 'Bitte E-Mail angeben.';
+          document.getElementById('form-error').classList.remove('hidden');
+          return;
+      }
+      if (!cn || !cu) {
+          document.getElementById('form-error').textContent = 'Bitte stimmen Sie den beiden erforderlichen Punkten zu.';
+          document.getElementById('form-error').classList.remove('hidden');
+          return;
+      }
+      try {
+          const payload = {
+              email, phone, profile: selectedProfile,
+              consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co}
+          };
+          if (referralCode) payload.referral_code = referralCode;
+          const res = await fetch('/api/register_anonymous', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(payload)
+          });
+          let data = {};
+          try {
+              data = await res.json();
+          } catch(e) {
+              data = {};
+          }
+          if (res.ok) {
+              document.getElementById('form-error').classList.add('hidden');
+              document.getElementById('step-register').classList.add('hidden');
+              document.getElementById('step-success').classList.remove('hidden');
+              if (data.referral_link) {
+                  document.getElementById('referral-link').value = data.referral_link;
+                  document.getElementById('referral-link-box').classList.remove('hidden');
+              }
+          } else {
+              document.getElementById('form-error').textContent = res.status === 429
+                  ? 'Zu viele Anfragen. Bitte warten Sie eine Minute.'
+                  : (data.error || 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+              document.getElementById('form-error').classList.remove('hidden');
+          }
+      } catch(e) {
+          document.getElementById('form-error').textContent = 'Netzwerkfehler.';
+          document.getElementById('form-error').classList.remove('hidden');
+      }
+  });
+  </script>
+{% endblock %}
