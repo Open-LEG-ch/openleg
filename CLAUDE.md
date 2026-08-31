@@ -163,13 +163,13 @@ the red output. An untested guard is worse than none, because it is trusted.
 
 The `Execution` stage runs as an orchestrator-executor loop. The primary agent
 plans slices, writes or approves failing tests, reviews every hunk, drives the
-real app, and verifies all gates. Kimi Code implements almost all execution
-tasks through the project-local CLI. The primary agent edits directly only for
-tiny mechanical changes. If Kimi Code is unavailable, use Claude Code. If both
-are unavailable, use ChatGPT 5.4. Record every fallback and its reason.
+real app, and verifies all gates. Codex CLI implements almost all execution
+tasks through `codex exec -s workspace-write`, one run per ticket, clearing
+context between tickets. The primary agent edits directly only for tiny
+mechanical changes.
 
 - One slice, one issue, one `codex/<slug>` branch, one `[codex]` PR.
-- Red tests first; Kimi Code iterates until the full suite is green; the
+- Red tests first; Codex CLI iterates until the full suite is green; the
   orchestrator reviews every hunk and drives the real app before shipping.
 - **A green suite does not mean the change stayed in scope.** Executors widen
   silently: one rewired `/api/calculate_savings` to a different model, changing the
