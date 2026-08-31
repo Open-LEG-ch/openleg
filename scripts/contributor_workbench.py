@@ -28,7 +28,8 @@ HEADINGS = {
 class Environment:
     python: tuple[int, ...] | None
     pytest: bool
-    ruff: str | None
+    ruff_executable: str | None
+    ruff_module: str | None
     ruff_pin: str
     node: bool
     npm: bool
@@ -88,20 +89,69 @@ def evaluate(environment: Environment) -> Report:
             "" if environment.pytest else PIP_INSTALL,
         )
     )
-    if environment.ruff is None:
-        checks.append(Check(GATE, "ruff", False, "not found", PIP_INSTALL))
-    elif environment.ruff != environment.ruff_pin:
+    if environment.ruff_executable is None:
+        detail = "not found"
+        if environment.ruff_module is not None:
+            detail += (
+                f"; python3 -m ruff {environment.ruff_module} works, but "
+                "scripts/test.sh requires the executable"
+            )
+        checks.append(Check(GATE, "ruff executable", False, detail, PIP_INSTALL))
+    elif environment.ruff_executable != environment.ruff_pin:
         checks.append(
             Check(
                 GATE,
-                "ruff",
+                "ruff executable",
                 False,
-                f"required {environment.ruff_pin}, found {environment.ruff}",
+                f"required {environment.ruff_pin}, found {environment.ruff_executable}",
                 PIP_INSTALL,
             )
         )
     else:
-        checks.append(Check(GATE, "ruff", True, f"{environment.ruff}, matches pin"))
+        checks.append(
+            Check(
+                GATE,
+                "ruff executable",
+                True,
+                f"{environment.ruff_executable}, matches pin",
+            )
+        )
+    if (
+        environment.ruff_executable is not None
+        and environment.ruff_module is not None
+        and environment.ruff_executable != environment.ruff_module
+    ):
+        checks.append(
+            Check(
+                GATE,
+                "ruff sources",
+                False,
+                f"ruff executable {environment.ruff_executable}; "
+                f"python3 -m ruff {environment.ruff_module}; versions disagree",
+                PIP_INSTALL,
+            )
+        )
+    if environment.ruff_module is None:
+        checks.append(Check(GATE, "python3 -m ruff", False, "not found", PIP_INSTALL))
+    elif environment.ruff_module != environment.ruff_pin:
+        checks.append(
+            Check(
+                GATE,
+                "python3 -m ruff",
+                False,
+                f"required {environment.ruff_pin}, found {environment.ruff_module}",
+                PIP_INSTALL,
+            )
+        )
+    else:
+        checks.append(
+            Check(
+                GATE,
+                "python3 -m ruff",
+                True,
+                f"{environment.ruff_module}, matches pin",
+            )
+        )
 
     for name, present in (
         ("node", environment.node),
@@ -160,7 +210,25 @@ def detect_pytest() -> bool:
     return result.returncode == 0
 
 
-def detect_ruff() -> str | None:
+def detect_ruff_executable() -> str | None:
+    command = shutil.which("ruff")
+    if command is None:
+        return None
+    try:
+        result = subprocess.run(
+            [command, "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0 or not result.stdout.startswith("ruff "):
+        return None
+    return result.stdout.removeprefix("ruff ").strip()
+
+
+def detect_ruff_module() -> str | None:
     command = shutil.which("python3")
     if command is None:
         return None
@@ -300,6 +368,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("doctor")
     glossary = subparsers.add_parser("glossary")
     glossary.add_argument("term", nargs="?")
+    subparsers.add_parser("gate")
+    test = subparsers.add_parser("test")
+    test.add_argument("node")
+    test.add_argument("--phase", choices=("red", "green", "refactor"), default="red")
     subparsers.add_parser("tour")
     return parser
 
@@ -307,6 +379,25 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_parser().parse_args()
     repo_root = Path(__file__).resolve().parents[1]
+    if args.command == "gate":
+        try:
+            result = subprocess.run(
+                [repo_root / "scripts" / "test.sh", "gate"], check=False
+            )
+        except OSError as error:
+            print(f"FAIL gate: {error}")
+            return 1
+        return result.returncode
+    if args.command == "test":
+        try:
+            result = subprocess.run(
+                [repo_root / "scripts" / "tdd_cycle.sh", args.phase, args.node],
+                check=False,
+            )
+        except OSError as error:
+            print(f"FAIL test: {error}")
+            return 1
+        return result.returncode
     if args.command == "glossary":
         try:
             terms = read_domain_terms(repo_root / "CONTEXT.md")
@@ -366,7 +457,8 @@ def main() -> int:
             Environment(
                 python=detect_python(),
                 pytest=detect_pytest(),
-                ruff=detect_ruff(),
+                ruff_executable=detect_ruff_executable(),
+                ruff_module=detect_ruff_module(),
                 ruff_pin=ruff_pin,
                 node=shutil.which("node") is not None,
                 npm=shutil.which("npm") is not None,
