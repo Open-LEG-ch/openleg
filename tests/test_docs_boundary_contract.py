@@ -31,6 +31,21 @@ def test_docs_contain_boundary_sections():
         assert section in content
 
 
+def test_docs_pin_public_site_ownership_and_entry_contract():
+    content = _read(CLAUDE_PATH)
+    release_contract = _read(
+        os.path.join(PROJECT_ROOT, "docs", "public-site-release-contract.md")
+    )
+
+    assert "docs/public-site-release-contract.md" in content
+    assert "anonymous `GET /` renders the public website" in content
+    assert "assets live in this public app repository" in content
+    assert "never copy those pages back" not in content
+    assert "assets live in `openleg-ops`" not in content
+    assert "at\n   most six requests" in release_contract
+    assert "Do not crawl the full municipality directory" in release_contract
+
+
 def test_docs_do_not_contain_private_ops_details():
     content = _read(CLAUDE_PATH)
     forbidden_patterns = [
