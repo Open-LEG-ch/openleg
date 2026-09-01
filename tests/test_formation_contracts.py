@@ -7,7 +7,7 @@ full status model, the savings arithmetic, and the neighbour cap. Each test
 asserts exact values so a changed constant or operator fails loudly.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
@@ -138,9 +138,9 @@ def _full_row():
         "status": FormationStatus.DSO_SUBMITTED.value,
         "distribution_model": "proportional",
         "admin_building_id": "b-admin",
-        "created_at": datetime(2026, 8, 1, 12, 0, 0),
-        "formation_started_at": datetime(2026, 8, 2, 12, 0, 0),
-        "dso_submitted_at": datetime(2026, 8, 3, 12, 0, 0),
+        "created_at": datetime(2026, 8, 1, 12, 0, 0, tzinfo=timezone.utc),
+        "formation_started_at": datetime(2026, 8, 2, 12, 0, 0, tzinfo=timezone.utc),
+        "dso_submitted_at": datetime(2026, 8, 3, 12, 0, 0, tzinfo=timezone.utc),
         "members": [
             {"building_id": "b-admin", "status": "confirmed"},
             {"building_id": "b-2", "status": "confirmed"},
@@ -160,9 +160,9 @@ def test_community_status_is_pinned_in_full():
         "status": "dso_submitted",
         "distribution_model": "proportional",
         "admin_building_id": "b-admin",
-        "created_at": "2026-08-01T12:00:00",
-        "formation_started_at": "2026-08-02T12:00:00",
-        "dso_submitted_at": "2026-08-03T12:00:00",
+        "created_at": "2026-08-01T12:00:00+00:00",
+        "formation_started_at": "2026-08-02T12:00:00+00:00",
+        "dso_submitted_at": "2026-08-03T12:00:00+00:00",
         "member_count": {"total": 4, "confirmed": 3, "invited": 1},
         "readiness_score": 80,
         "members": _full_row()["members"],
