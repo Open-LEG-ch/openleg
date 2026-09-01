@@ -27,6 +27,13 @@ def _requirements_dev():
     return (PROJECT_ROOT / "requirements-dev.txt").read_text(encoding="utf-8")
 
 
+def _mutmut_config():
+    config = _pyproject()
+    assert "tool" in config, "pyproject.toml requires a [tool] table"
+    assert "mutmut" in config["tool"], "the skill requires a [tool.mutmut] table"
+    return config["tool"]["mutmut"]
+
+
 def test_the_mutation_tools_are_pinned_as_dev_dependencies():
     requirements = _requirements_dev().splitlines()
 
@@ -37,15 +44,18 @@ def test_the_mutation_tools_are_pinned_as_dev_dependencies():
 
 
 def test_mutmut_is_scoped_to_the_modules_where_a_survivor_would_matter():
-    config = _pyproject()
+    config = _mutmut_config()
 
-    assert "mutmut" in config["tool"], "the skill requires a [tool.mutmut] table"
-    source_paths = config["tool"]["mutmut"]["source_paths"]
+    assert "source_paths" in config, "mutmut requires an explicit source scope"
+    source_paths = config["source_paths"]
     assert list(source_paths) == list(SCOPED_MODULES)
 
 
 def test_mutmut_copies_billing_dependencies_needed_for_collection():
-    also_copy = set(_pyproject()["tool"]["mutmut"]["also_copy"])
+    config = _mutmut_config()
+
+    assert "also_copy" in config, "mutmut requires explicit sandbox dependencies"
+    also_copy = set(config["also_copy"])
 
     assert {
         "billing_approval.py",
