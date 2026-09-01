@@ -80,7 +80,7 @@ def test_reads_declared_directions_for_billing(tmp_path):
     assert points[0]["expected_directions"] == ["consumption", "production"]
 
 
-def test_blank_declared_directions_do_not_overwrite_the_register(tmp_path):
+def test_reads_blank_declared_directions_as_none(tmp_path):
     csv_path = tmp_path / "points.csv"
     csv_path.write_text(
         HEADER + "CH000000000000000000000000000001,Haus 1,,,leg-1,\n",

@@ -528,6 +528,29 @@ def test_upsert_points_canonicalises_declared_directions(monkeypatch):
     assert calls[0]["values"][0][-1] == ["consumption", "production"]
 
 
+@pytest.mark.parametrize("expected_directions", ["", ["consumption", 1]])
+def test_upsert_points_rejects_values_outside_direction_type_contract(
+    monkeypatch, caplog, expected_directions
+):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    calls = _capture_execute_values(monkeypatch, [])
+
+    with caplog.at_level(logging.ERROR):
+        result = metering.upsert_metering_points(
+            [
+                {
+                    "metering_point_id": POINT,
+                    "expected_directions": expected_directions,
+                }
+            ]
+        )
+
+    assert result == 0
+    assert calls == []
+    assert "expected_directions erwartet list[str] oder None" in caplog.text
+
+
 def test_upsert_points_rejects_unknown_declared_directions(monkeypatch, caplog):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))

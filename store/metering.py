@@ -93,6 +93,12 @@ def _canonical_directions(value: list[str] | None) -> list[str] | None:
     leert. Die CSV-Aufbereitung liefert eine Liste ohne Leerzeichen.
     Duplikate und Reihenfolge der Eingabe spielen keine Rolle.
     """
+    if value is None:
+        return None
+    if not isinstance(value, list) or not all(
+        isinstance(direction, str) for direction in value
+    ):
+        raise TypeError("expected_directions erwartet list[str] oder None")
     if not value:
         return None
     declared = set(value)
