@@ -450,17 +450,26 @@ def test_get_metering_point_returns_the_requested_point(monkeypatch):
 # ==== Registry enrichment ====
 
 
-def test_upsert_points_does_not_blank_existing_fields(monkeypatch):
+@pytest.mark.parametrize("expected_directions", [None, []])
+def test_upsert_points_passes_no_direction_overwrite_for_none_or_empty_list(
+    monkeypatch, expected_directions
+):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
     calls = _capture_execute_values(monkeypatch, [])
 
-    metering.upsert_metering_points([{"metering_point_id": POINT, "alias": "Haus 1"}])
-
-    sql = calls[-1]["sql"]
-    assert "COALESCE" in sql, (
-        "a re-run with blank columns must not erase existing registry data"
+    metering.upsert_metering_points(
+        [
+            {
+                "metering_point_id": POINT,
+                "alias": "Haus 1",
+                "expected_directions": expected_directions,
+            }
+        ]
     )
+
+    assert isinstance(calls[-1]["sql"], str) and calls[-1]["sql"].strip()
+    assert calls[-1]["values"][0][-1] is None
 
 
 def test_upsert_points_passes_every_registry_value(monkeypatch):
@@ -519,17 +528,48 @@ def test_upsert_points_canonicalises_declared_directions(monkeypatch):
     assert calls[0]["values"][0][-1] == ["consumption", "production"]
 
 
-def test_upsert_points_rejects_unknown_declared_directions(monkeypatch):
+@pytest.mark.parametrize("expected_directions", ["", ["consumption", 1]])
+def test_upsert_points_rejects_values_outside_direction_type_contract(
+    monkeypatch, caplog, expected_directions
+):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
     calls = _capture_execute_values(monkeypatch, [])
 
-    result = metering.upsert_metering_points(
-        [{"metering_point_id": POINT, "expected_directions": ["export"]}]
-    )
+    with caplog.at_level(logging.ERROR):
+        result = metering.upsert_metering_points(
+            [
+                {
+                    "metering_point_id": POINT,
+                    "expected_directions": expected_directions,
+                }
+            ]
+        )
 
     assert result == 0
     assert calls == []
+    assert "expected_directions erwartet list[str] oder None" in caplog.text
+
+
+def test_upsert_points_rejects_unknown_declared_directions(monkeypatch, caplog):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    calls = _capture_execute_values(monkeypatch, [])
+
+    with caplog.at_level(logging.ERROR):
+        result = metering.upsert_metering_points(
+            [
+                {
+                    "metering_point_id": POINT,
+                    "expected_directions": ["export", "feed-in"],
+                }
+            ]
+        )
+
+    assert result == 0
+    assert calls == []
+    assert "export" in caplog.text
+    assert "feed-in" in caplog.text
 
 
 # ==== File ledger ====
@@ -654,6 +694,27 @@ def test_unassigned_period_point_lookup_propagates_storage_failure(monkeypatch):
         metering.get_unassigned_period_metering_point_ids(
             "COMM-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
         )
+
+
+def test_unassigned_period_point_lookup_executes_and_returns_ordered_ids(monkeypatch):
+    start = MEASURED_AT
+    end = start + timedelta(hours=1)
+    expected_params = (start, end, start, end, "COMM-1")
+    cur = _FakeCursor(
+        rows=[
+            {"metering_point_id": "point-a"},
+            {"metering_point_id": "point-b"},
+        ],
+        expected_params=expected_params,
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    found = metering.get_unassigned_period_metering_point_ids("COMM-1", start, end)
+
+    query, params = cur.executed[0]
+    assert isinstance(query, str) and query.strip()
+    assert params == expected_params
+    assert found == ["point-a", "point-b"]
 
 
 def test_period_readings_use_a_half_open_interval(monkeypatch):
