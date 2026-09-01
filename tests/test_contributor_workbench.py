@@ -992,6 +992,79 @@ def test_check_reports_every_forbidden_path_and_pattern():
     assert "AGENTS.md" in output
 
 
+def _ci_forbidden_pattern(path):
+    script = r"""
+path_to_check=$1
+policy_file=$2
+while IFS= read -r pattern || [ -n "$pattern" ]; do
+    case "$pattern" in
+        ""|\#*) continue ;;
+    esac
+    if [[ "$path_to_check" == $pattern ]]; then
+        printf '%s\n' "$pattern"
+        exit 0
+    fi
+done < "$policy_file"
+exit 1
+"""
+    result = subprocess.run(
+        [
+            "/bin/bash",
+            "-c",
+            script,
+            "bash",
+            path,
+            PROJECT_ROOT / ".github" / "forbidden-paths.txt",
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode in {0, 1}, result.stdout + result.stderr
+    return result.stdout.strip() or None
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "AGENTS.md",
+        "README.md",
+        "archive/notes.md",
+        "archive/2026/notes.md",
+        ".github/scripts/check.sh",
+        ".github/scripts/release/check.sh",
+        "research.md",
+        "research-findings.md",
+        "docs/launch-plan.md",
+        "docs/releases/launch-plan.md",
+        "deploy.sh",
+        "src/deploy.sh",
+    ],
+)
+def test_check_matches_ci_bash_pattern(path):
+    result = subprocess.run(
+        [CONTRIBUTE, "check", path, "--json"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    ci_pattern = _ci_forbidden_pattern(path)
+    workbench_pattern = next(
+        (
+            violation["pattern"]
+            for violation in payload["violations"]
+            if violation["path"] == path
+        ),
+        None,
+    )
+    assert (result.returncode != 0) is (ci_pattern is not None)
+    assert workbench_pattern == ci_pattern
+
+
 def _check_checkout(tmp_path):
     checkout = tmp_path / "checkout"
     scripts = checkout / "scripts"
