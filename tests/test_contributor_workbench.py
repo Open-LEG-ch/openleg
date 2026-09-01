@@ -992,12 +992,21 @@ def test_check_reports_every_forbidden_path_and_pattern():
     assert "AGENTS.md" in output
 
 
-def _ci_forbidden_pattern(path):
+def _ci_forbidden_pattern(path, policy_file=None):
+    if policy_file is None:
+        policy_file = PROJECT_ROOT / ".github" / "forbidden-paths.txt"
     script = r"""
 path_to_check=$1
 policy_file=$2
 while IFS= read -r pattern || [ -n "$pattern" ]; do
-    case "$pattern" in
+    policy_entry=$pattern
+    while :; do
+        case "$policy_entry" in
+            [[:space:]]*) policy_entry=${policy_entry#?} ;;
+            *) break ;;
+        esac
+    done
+    case "$policy_entry" in
         ""|\#*) continue ;;
     esac
     if [[ "$path_to_check" == $pattern ]]; then
@@ -1014,7 +1023,7 @@ exit 1
             script,
             "bash",
             path,
-            PROJECT_ROOT / ".github" / "forbidden-paths.txt",
+            policy_file,
         ],
         cwd=PROJECT_ROOT,
         capture_output=True,
@@ -1023,6 +1032,15 @@ exit 1
     )
     assert result.returncode in {0, 1}, result.stdout + result.stderr
     return result.stdout.strip() or None
+
+
+@pytest.mark.parametrize("ignored_line", ["  # indented comment", " \t"])
+def test_ci_oracle_ignores_policy_whitespace(tmp_path, ignored_line):
+    policy = tmp_path / "forbidden-paths.txt"
+    policy.write_text(f"{ignored_line}\nAGENTS.md\n", encoding="utf-8")
+
+    assert _ci_forbidden_pattern(ignored_line, policy) is None
+    assert _ci_forbidden_pattern("AGENTS.md", policy) == "AGENTS.md"
 
 
 @pytest.mark.parametrize(
@@ -1051,7 +1069,21 @@ def test_check_matches_ci_bash_pattern(path):
         check=False,
     )
 
-    payload = json.loads(result.stdout)
+    diagnostics = (
+        "scripts/contribute check output:\n"
+        f"stdout:\n{result.stdout}\n"
+        f"stderr:\n{result.stderr}"
+    )
+    assert result.stdout.strip(), (
+        f"scripts/contribute check returned no JSON\n{diagnostics}"
+    )
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        pytest.fail(
+            f"scripts/contribute check returned invalid JSON\n{diagnostics}",
+            pytrace=False,
+        )
     ci_pattern = _ci_forbidden_pattern(path)
     workbench_pattern = next(
         (
