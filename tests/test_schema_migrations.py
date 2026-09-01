@@ -643,34 +643,61 @@ def test_unassigned_period_points_are_scoped_by_public_vnb_leg_identifier():
             )
             cur.execute(
                 """
-                INSERT INTO metering_points (metering_point_id, community_id)
-                VALUES
-                    ('POINT-A', 'LEG-A'),
-                    ('UNASSIGNED-A', NULL),
-                    ('POINT-B', 'LEG-B'),
-                    ('UNASSIGNED-B', NULL),
-                    ('ASSIGNED-ELSEWHERE', 'LEG-B');
+                INSERT INTO metering_points (
+                    metering_point_id, community_id, active
+                ) VALUES
+                    ('POINT-A', 'LEG-A', TRUE),
+                    ('POINT-B', 'LEG-B', TRUE),
+                    ('INACTIVE-ANCHOR', 'LEG-A', FALSE),
+                    ('END-ANCHOR', 'LEG-A', TRUE),
+                    ('A-FIRST', NULL, TRUE),
+                    ('A-LAST', NULL, TRUE),
+                    ('OTHER-LEG', NULL, TRUE),
+                    ('ASSIGNED-ELSEWHERE', 'LEG-B', TRUE),
+                    ('INACTIVE-CANDIDATE', NULL, FALSE),
+                    ('BEFORE-START', NULL, TRUE),
+                    ('AT-END', NULL, TRUE),
+                    ('END-ANCHOR-CANDIDATE', NULL, TRUE),
+                    ('INACTIVE-ANCHOR-CANDIDATE', NULL, TRUE);
                 INSERT INTO sdat_imports (document_id, vnb_community_id)
                 VALUES
                     ('DOC-A-OWNED', 'VNB-LEG-A'),
                     ('DOC-A-STRAY', 'VNB-LEG-A'),
                     ('DOC-B-OWNED', 'VNB-LEG-B'),
-                    ('DOC-B-STRAY', 'VNB-LEG-B');
+                    ('DOC-B-STRAY', 'VNB-LEG-B'),
+                    ('DOC-END-ANCHOR', 'VNB-END-ANCHOR'),
+                    ('DOC-INACTIVE-ANCHOR', 'VNB-INACTIVE-ANCHOR');
                 INSERT INTO metering_point_readings (
                     metering_point_id, measured_at, source_document_id
                 ) VALUES
                     ('POINT-A', %s, 'DOC-A-OWNED'),
-                    ('UNASSIGNED-A', %s, 'DOC-A-STRAY'),
-                    ('UNASSIGNED-A', %s, 'DOC-A-STRAY'),
                     ('POINT-B', %s, 'DOC-B-OWNED'),
-                    ('UNASSIGNED-B', %s, 'DOC-B-STRAY'),
-                    ('ASSIGNED-ELSEWHERE', %s, 'DOC-A-STRAY')
+                    ('INACTIVE-ANCHOR', %s, 'DOC-INACTIVE-ANCHOR'),
+                    ('END-ANCHOR', %s, 'DOC-END-ANCHOR'),
+                    ('A-FIRST', %s, 'DOC-A-STRAY'),
+                    ('A-LAST', %s, 'DOC-A-STRAY'),
+                    ('A-LAST', %s, 'DOC-A-STRAY'),
+                    ('OTHER-LEG', %s, 'DOC-B-STRAY'),
+                    ('ASSIGNED-ELSEWHERE', %s, 'DOC-A-STRAY'),
+                    ('INACTIVE-CANDIDATE', %s, 'DOC-A-STRAY'),
+                    ('BEFORE-START', %s, 'DOC-A-STRAY'),
+                    ('AT-END', %s, 'DOC-A-STRAY'),
+                    ('END-ANCHOR-CANDIDATE', %s, 'DOC-END-ANCHOR'),
+                    ('INACTIVE-ANCHOR-CANDIDATE', %s, 'DOC-INACTIVE-ANCHOR')
                 """,
                 (
                     start,
                     start,
+                    start,
+                    end,
+                    start,
+                    start + timedelta(minutes=15),
                     start + timedelta(minutes=15),
                     start,
+                    start,
+                    start,
+                    start - timedelta(minutes=15),
+                    end,
                     start,
                     start,
                 ),
@@ -678,9 +705,7 @@ def test_unassigned_period_points_are_scoped_by_public_vnb_leg_identifier():
 
         found = database.get_unassigned_period_metering_point_ids("LEG-A", start, end)
 
-    assert found == ["UNASSIGNED-A"]
-    assert "UNASSIGNED-B" not in found, "another LEG's point ID must stay private"
-    assert "ASSIGNED-ELSEWHERE" not in found
+    assert found == ["A-FIRST", "A-LAST"]
 
 
 PRE_MIGRATION_BILLING_TARIFFS = """
