@@ -335,6 +335,29 @@ def test_doctor_reports_old_interpreter_instead_of_crashing(tmp_path):
     assert "3.11" in output, output
 
 
+def test_workbench_annotations_are_safe_on_python_3_9():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "--isolated",
+            "--target-version",
+            "py39",
+            "--select",
+            "FA102",
+            PROJECT_ROOT / "scripts" / "contributor_workbench.py",
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 def test_doctor_reports_a_missing_ruff_pin_instead_of_crashing(tmp_path):
     """doctor runs on broken machines, so no path may end in a traceback.
 
