@@ -656,6 +656,27 @@ def test_unassigned_period_point_lookup_propagates_storage_failure(monkeypatch):
         )
 
 
+def test_unassigned_period_point_lookup_executes_and_returns_ordered_ids(monkeypatch):
+    start = MEASURED_AT
+    end = start + timedelta(hours=1)
+    expected_params = (start, end, start, end, "COMM-1")
+    cur = _FakeCursor(
+        rows=[
+            {"metering_point_id": "point-a"},
+            {"metering_point_id": "point-b"},
+        ],
+        expected_params=expected_params,
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    found = metering.get_unassigned_period_metering_point_ids("COMM-1", start, end)
+
+    query, params = cur.executed[0]
+    assert isinstance(query, str) and query.strip()
+    assert params == expected_params
+    assert found == ["point-a", "point-b"]
+
+
 def test_period_readings_use_a_half_open_interval(monkeypatch):
     cur = _FakeCursor(rows=[])
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
