@@ -335,7 +335,7 @@ def test_doctor_reports_old_interpreter_instead_of_crashing(tmp_path):
     assert "3.11" in output, output
 
 
-def test_workbench_annotations_are_safe_on_python_39():
+def test_workbench_annotations_are_safe_on_python_3_9():
     result = subprocess.run(
         [
             sys.executable,
