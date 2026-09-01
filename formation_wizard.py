@@ -2,11 +2,15 @@
 """
 Formation Wizard Module for OpenLEG
 Handles LEG community formation workflow, document generation, and status tracking.
+
+Formation rules, readiness, next steps, and status assembly live here; the SQL
+lives in store/formation and is reached through the database re-exports.
 """
 
 import logging
-import uuid
 from enum import Enum
+
+import database as db
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +156,6 @@ CONTRACT_TEMPLATES = get_contract_templates()
 
 
 def create_community(
-    db,
     name: str,
     admin_building_id: str,
     distribution_model: str = "simple",
@@ -162,7 +165,6 @@ def create_community(
     Create a new LEG community.
 
     Args:
-        db: Database module
         name: Community name
         admin_building_id: Building ID of the community admin
         distribution_model: Distribution model (simple/proportional/custom)
@@ -171,61 +173,27 @@ def create_community(
     Returns:
         Community dict or None if failed
     """
-    try:
-        community_id = str(uuid.uuid4())
-
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO communities (
-                        community_id, name, admin_building_id, distribution_model,
-                        description, status, created_at, updated_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                """,
-                    (
-                        community_id,
-                        name,
-                        admin_building_id,
-                        distribution_model,
-                        description,
-                        FormationStatus.INTERESTED.value,
-                    ),
-                )
-
-                # Add admin as first member
-                cur.execute(
-                    """
-                    INSERT INTO community_members (
-                        community_id, building_id, role, status, joined_at
-                    ) VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
-                """,
-                    (community_id, admin_building_id, "admin", "confirmed"),
-                )
-
-                logger.info(
-                    f"[FORMATION] Created community {community_id} by {admin_building_id}"
-                )
-
-                return {
-                    "community_id": community_id,
-                    "name": name,
-                    "admin_building_id": admin_building_id,
-                    "distribution_model": distribution_model,
-                    "status": FormationStatus.INTERESTED.value,
-                    "member_count": 1,
-                }
-    except Exception as e:
-        logger.error(f"[FORMATION] Error creating community: {e}")
+    community_id = db.create_community_record(
+        name, admin_building_id, distribution_model, description
+    )
+    if not community_id:
         return None
 
+    return {
+        "community_id": community_id,
+        "name": name,
+        "admin_building_id": admin_building_id,
+        "distribution_model": distribution_model,
+        "status": FormationStatus.INTERESTED.value,
+        "member_count": 1,
+    }
 
-def invite_member(db, community_id: str, building_id: str, invited_by: str) -> bool:
+
+def invite_member(community_id: str, building_id: str, invited_by: str) -> bool:
     """
     Invite a building to join a community.
 
     Args:
-        db: Database module
         community_id: Community ID
         building_id: Building ID to invite
         invited_by: Building ID of inviter
@@ -233,264 +201,115 @@ def invite_member(db, community_id: str, building_id: str, invited_by: str) -> b
     Returns:
         True if successful
     """
-    try:
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                # Check if already member
-                cur.execute(
-                    """
-                    SELECT 1 FROM community_members
-                    WHERE community_id = %s AND building_id = %s
-                """,
-                    (community_id, building_id),
-                )
-
-                if cur.fetchone():
-                    logger.warning(
-                        f"[FORMATION] Building {building_id} already in community {community_id}"
-                    )
-                    return False
-
-                # Add as invited member
-                cur.execute(
-                    """
-                    INSERT INTO community_members (
-                        community_id, building_id, role, status, invited_by, joined_at
-                    ) VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                """,
-                    (community_id, building_id, "member", "invited", invited_by),
-                )
-
-                # Track event
-                db.track_event(
-                    "member_invited",
-                    building_id,
-                    {"community_id": community_id, "invited_by": invited_by},
-                )
-
-                logger.info(
-                    f"[FORMATION] Invited {building_id} to community {community_id}"
-                )
-                return True
-    except Exception as e:
-        logger.error(f"[FORMATION] Error inviting member: {e}")
-        return False
+    return db.insert_invited_member(community_id, building_id, invited_by)
 
 
-def confirm_membership(db, community_id: str, building_id: str) -> bool:
+def confirm_membership(community_id: str, building_id: str) -> bool:
     """
     Confirm membership after invitation.
 
     Args:
-        db: Database module
         community_id: Community ID
         building_id: Building ID confirming
 
     Returns:
         True if successful
     """
-    try:
-        with db.get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    UPDATE community_members
-                    SET status = 'confirmed', confirmed_at = CURRENT_TIMESTAMP
-                    WHERE community_id = %s AND building_id = %s AND status = 'invited'
-                """,
-                (community_id, building_id),
-            )
-
-            if cur.rowcount > 0:
-                db.track_event(
-                    "member_confirmed", building_id, {"community_id": community_id}
-                )
-                logger.info(
-                    f"[FORMATION] {building_id} confirmed membership in {community_id}"
-                )
-                return True
-            return False
-    except Exception as e:
-        logger.error(f"[FORMATION] Error confirming membership: {e}")
-        return False
+    return db.confirm_invited_member(community_id, building_id)
 
 
-def start_formation(db, community_id: str) -> bool:
+def start_formation(community_id: str) -> bool:
     """
     Start the formal LEG formation process.
 
     Args:
-        db: Database module
         community_id: Community ID
 
     Returns:
         True if successful
     """
-    try:
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                # Check minimum members
-                cur.execute(
-                    """
-                    SELECT COUNT(*) as count FROM community_members
-                    WHERE community_id = %s AND status = 'confirmed'
-                """,
-                    (community_id,),
-                )
-
-                count = cur.fetchone()["count"]
-                if count < FORMATION_CONFIG["min_community_size"]:
-                    logger.warning(
-                        f"[FORMATION] Community {community_id} has only {count} members, need {FORMATION_CONFIG['min_community_size']}"
-                    )
-                    return False
-
-                # Update status
-                cur.execute(
-                    """
-                    UPDATE communities
-                    SET status = %s, formation_started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-                    WHERE community_id = %s
-                """,
-                    (FormationStatus.FORMATION_STARTED.value, community_id),
-                )
-
-                db.track_event(
-                    "formation_started", None, {"community_id": community_id}
-                )
-                logger.info(
-                    f"[FORMATION] Started formation for community {community_id}"
-                )
-                return True
-    except Exception as e:
-        logger.error(f"[FORMATION] Error starting formation: {e}")
+    count = db.count_confirmed_members(community_id)
+    if count is None or count < FORMATION_CONFIG["min_community_size"]:
+        logger.warning(
+            f"[FORMATION] Community {community_id} has only {count} members, need {FORMATION_CONFIG['min_community_size']}"
+        )
         return False
 
+    return db.mark_formation_started(community_id)
 
-def submit_to_dso(db, community_id: str) -> bool:
+
+def submit_to_dso(community_id: str) -> bool:
     """
     Submit DSO notification for a community.
 
     Args:
-        db: Database module
         community_id: Community ID
 
     Returns:
         True if submitted successfully
     """
-    try:
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    UPDATE communities
-                    SET status = %s, dso_submitted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-                    WHERE community_id = %s AND status = %s
-                """,
-                    (
-                        FormationStatus.DSO_SUBMITTED.value,
-                        community_id,
-                        FormationStatus.SIGNATURES_PENDING.value,
-                    ),
-                )
-
-                if cur.rowcount > 0:
-                    db.track_event(
-                        "dso_submitted", None, {"community_id": community_id}
-                    )
-                    logger.info(
-                        f"[FORMATION] Submitted DSO notification for community {community_id}"
-                    )
-                    return True
-                return False
-    except Exception as e:
-        logger.error(f"[FORMATION] Error submitting to DSO: {e}")
-        return False
+    return db.submit_community_to_dso(community_id)
 
 
-def get_community_status(db, community_id: str) -> dict | None:
+def _member_counts(members: list[dict]) -> dict:
+    """Count members by status."""
+    confirmed = sum(1 for member in members if member["status"] == "confirmed")
+    total = len(members)
+    return {
+        "total": total,
+        "confirmed": confirmed,
+        "invited": total - confirmed,
+    }
+
+
+def _readiness_score(status: str, confirmed_count: int) -> int:
+    """Weighted formation progress for the current state and member base."""
+    score = _FORMATION_PROCESS_POINTS.get(status, 0)
+    if (
+        status != FormationStatus.REJECTED.value
+        and confirmed_count >= FORMATION_CONFIG["min_community_size"]
+    ):
+        score += 30
+    return score
+
+
+def _iso(value) -> str | None:
+    """ISO timestamp for a raw column value."""
+    return value.isoformat() if value else None
+
+
+def get_community_status(community_id: str) -> dict | None:
     """
     Get full status of a community formation.
 
     Args:
-        db: Database module
         community_id: Community ID
 
     Returns:
         Community status dict or None
     """
-    try:
-        with db.get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    SELECT 
-                        c.*,
-                        array_agg(
-                            jsonb_build_object(
-                                'building_id', cm.building_id,
-                                'role', cm.role,
-                                'status', cm.status,
-                                'email', b.email,
-                                'address', b.address,
-                                'confirmed_at', cm.confirmed_at
-                            ) ORDER BY cm.joined_at
-                        ) FILTER (WHERE cm.building_id IS NOT NULL) as members
-                    FROM communities c
-                    LEFT JOIN community_members cm ON c.community_id = cm.community_id
-                    LEFT JOIN buildings b ON cm.building_id = b.building_id
-                    WHERE c.community_id = %s
-                    GROUP BY c.community_id
-                """,
-                (community_id,),
-            )
-
-            row = cur.fetchone()
-            if not row:
-                return None
-
-            members = row["members"] or []
-
-            # Calculate readiness score
-            confirmed_count = sum(
-                1 for member in members if member["status"] == "confirmed"
-            )
-            total_count = len(members)
-
-            status = row["status"]
-            readiness_score = _FORMATION_PROCESS_POINTS.get(status, 0)
-            if (
-                status != FormationStatus.REJECTED.value
-                and confirmed_count >= FORMATION_CONFIG["min_community_size"]
-            ):
-                readiness_score += 30
-
-            return {
-                "community_id": row["community_id"],
-                "name": row["name"],
-                "status": row["status"],
-                "distribution_model": row["distribution_model"],
-                "admin_building_id": row["admin_building_id"],
-                "created_at": row["created_at"].isoformat()
-                if row["created_at"]
-                else None,
-                "formation_started_at": row["formation_started_at"].isoformat()
-                if row["formation_started_at"]
-                else None,
-                "dso_submitted_at": row["dso_submitted_at"].isoformat()
-                if row["dso_submitted_at"]
-                else None,
-                "member_count": {
-                    "total": total_count,
-                    "confirmed": confirmed_count,
-                    "invited": total_count - confirmed_count,
-                },
-                "readiness_score": readiness_score,
-                "members": members,
-                "documents": None,
-                "next_steps": _get_next_steps(row["status"], confirmed_count),
-            }
-    except Exception as e:
-        logger.error(f"[FORMATION] Error getting community status: {e}")
+    row = db.fetch_community_with_members(community_id)
+    if not row:
         return None
+
+    members = row["members"] or []
+    counts = _member_counts(members)
+
+    return {
+        "community_id": row["community_id"],
+        "name": row["name"],
+        "status": row["status"],
+        "distribution_model": row["distribution_model"],
+        "admin_building_id": row["admin_building_id"],
+        "created_at": _iso(row["created_at"]),
+        "formation_started_at": _iso(row["formation_started_at"]),
+        "dso_submitted_at": _iso(row["dso_submitted_at"]),
+        "member_count": counts,
+        "readiness_score": _readiness_score(row["status"], counts["confirmed"]),
+        "members": members,
+        "documents": None,
+        "next_steps": _get_next_steps(row["status"], counts["confirmed"]),
+    }
 
 
 def _get_next_steps(status: str, confirmed_count: int) -> list[str]:
@@ -528,116 +347,45 @@ def _get_next_steps(status: str, confirmed_count: int) -> list[str]:
     return steps
 
 
-def get_user_communities(db, building_id: str) -> list[dict]:
+def get_user_communities(building_id: str) -> list[dict]:
     """
     Get all communities a user is part of.
 
     Args:
-        db: Database module
         building_id: Building ID
 
     Returns:
         List of community dicts
     """
-    try:
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT 
-                        c.community_id,
-                        c.name,
-                        c.status,
-                        c.distribution_model,
-                        cm.role,
-                        cm.status as member_status,
-                        (SELECT COUNT(*) FROM community_members WHERE community_id = c.community_id) as member_count
-                    FROM communities c
-                    JOIN community_members cm ON c.community_id = cm.community_id
-                    WHERE cm.building_id = %s
-                    ORDER BY c.created_at DESC
-                """,
-                    (building_id,),
-                )
-
-                return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[FORMATION] Error getting user communities: {e}")
-        return []
+    return db.fetch_user_communities(building_id) or []
 
 
-def get_formable_clusters(db, building_id: str, radius_meters: int = 150) -> list[dict]:
+def get_formable_clusters(building_id: str, radius_meters: int = 150) -> list[dict]:
     """
     Get clusters that are ready for formation (have enough members).
 
     Args:
-        db: Database module
         building_id: Building ID to center search
         radius_meters: Search radius
 
     Returns:
         List of formable cluster dicts
     """
-    try:
-        # Get user's location
-        with db.get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    SELECT lat, lon FROM buildings WHERE building_id = %s
-                """,
-                (building_id,),
-            )
-
-            user = cur.fetchone()
-            if not user:
-                return []
-
-            # Find nearby buildings not in communities
-            cur.execute(
-                """
-                    SELECT 
-                        b.building_id,
-                        b.address,
-                        b.email,
-                        b.lat,
-                        b.lon,
-                        (6371000 * acos(
-                            cos(radians(%s)) * cos(radians(b.lat)) *
-                            cos(radians(b.lon) - radians(%s)) +
-                            sin(radians(%s)) * sin(radians(b.lat))
-                        )) as distance
-                    FROM buildings b
-                    INNER JOIN consents c ON b.building_id = c.building_id
-                    WHERE b.verified = TRUE
-                    AND c.share_with_neighbors = TRUE
-                    AND b.building_id != %s
-                    AND NOT EXISTS (
-                        SELECT 1 FROM community_members cm
-                        WHERE cm.building_id = b.building_id
-                        AND cm.status IN ('confirmed', 'invited')
-                    )
-                    HAVING distance <= %s
-                    ORDER BY distance
-                """,
-                (user["lat"], user["lon"], user["lat"], building_id, radius_meters),
-            )
-
-            nearby = [dict(row) for row in cur.fetchall()]
-
-            if len(nearby) >= FORMATION_CONFIG["min_community_size"] - 1:
-                return [
-                    {
-                        "potential_members": len(nearby) + 1,  # +1 for user
-                        "nearby_buildings": nearby[:10],  # Top 10
-                        "radius_meters": radius_meters,
-                        "ready_to_form": len(nearby) + 1
-                        >= FORMATION_CONFIG["min_community_size"],
-                    }
-                ]
-            return []
-    except Exception as e:
-        logger.error(f"[FORMATION] Error getting formable clusters: {e}")
+    nearby = db.fetch_nearby_consenting_neighbours(building_id, radius_meters)
+    if nearby is None:
         return []
+
+    if len(nearby) >= FORMATION_CONFIG["min_community_size"] - 1:
+        return [
+            {
+                "potential_members": len(nearby) + 1,  # +1 for user
+                "nearby_buildings": nearby[:10],  # Top 10
+                "radius_meters": radius_meters,
+                "ready_to_form": len(nearby) + 1
+                >= FORMATION_CONFIG["min_community_size"],
+            }
+        ]
+    return []
 
 
 def calculate_municipality_business_case(

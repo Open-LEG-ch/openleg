@@ -687,7 +687,7 @@ def api_formation_optimize():
     if not building_id:
         return jsonify({"error": "building_id required"}), 400
 
-    clusters = formation_wizard.get_formable_clusters(db, building_id)
+    clusters = formation_wizard.get_formable_clusters(building_id)
     return jsonify({"clusters": clusters})
 
 
