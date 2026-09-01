@@ -84,16 +84,26 @@ def test_contract_templates_follow_the_requested_jurisdiction_and_dso():
             1,
             ["Laden Sie mindestens 2 weitere Nachbarn ein."],
         ),
-        (FormationStatus.INTERESTED.value, MIN_SIZE, ["Starten Sie den Gründungsprozess."]),
+        (
+            FormationStatus.INTERESTED.value,
+            MIN_SIZE,
+            ["Starten Sie den Gründungsprozess."],
+        ),
         (
             FormationStatus.FORMATION_STARTED.value,
             MIN_SIZE,
-            ["Erstellen Sie die rechtlichen Dokumente.", "Prüfen Sie die Gemeinschaftsvereinbarung."],
+            [
+                "Erstellen Sie die rechtlichen Dokumente.",
+                "Prüfen Sie die Gemeinschaftsvereinbarung.",
+            ],
         ),
         (
             FormationStatus.DOCUMENTS_GENERATED.value,
             MIN_SIZE,
-            ["Sammeln Sie die Unterschriften aller Mitglieder.", "Prüfen Sie die Teilnehmerverträge."],
+            [
+                "Sammeln Sie die Unterschriften aller Mitglieder.",
+                "Prüfen Sie die Teilnehmerverträge.",
+            ],
         ),
         (
             FormationStatus.SIGNATURES_PENDING.value,
@@ -103,12 +113,17 @@ def test_contract_templates_follow_the_requested_jurisdiction_and_dso():
         (
             FormationStatus.DSO_SUBMITTED.value,
             MIN_SIZE,
-            ["Warten Sie auf die Bewilligung durch den Netzbetreiber (bis zu 30 Tage)."],
+            [
+                "Warten Sie auf die Bewilligung durch den Netzbetreiber (bis zu 30 Tage)."
+            ],
         ),
         (
             FormationStatus.DSO_APPROVED.value,
             MIN_SIZE,
-            ["Legen Sie das Aktivierungsdatum fest.", "Richten Sie die Abrechnung ein."],
+            [
+                "Legen Sie das Aktivierungsdatum fest.",
+                "Richten Sie die Abrechnung ein.",
+            ],
         ),
         (FormationStatus.ACTIVE.value, MIN_SIZE, []),
         (FormationStatus.REJECTED.value, MIN_SIZE, []),
@@ -175,7 +190,8 @@ def test_community_status_is_pinned_in_full():
 
 def test_formable_clusters_cap_the_neighbour_list_at_ten():
     nearby = [
-        {"building_id": f"b-{number}", "distance": float(number)} for number in range(12)
+        {"building_id": f"b-{number}", "distance": float(number)}
+        for number in range(12)
     ]
     with patch(
         "database.fetch_nearby_consenting_neighbours", return_value=nearby
