@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for canton-scoped refresh behavior."""
 
+import logging
+
 import database
 import public_data
 
@@ -21,6 +23,7 @@ def test_refresh_canton_non_zh_does_not_union_zh_seed(monkeypatch):
 
     monkeypatch.setattr(database, "save_sonnendach_municipal", lambda _entry: True)
     monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(database, "get_municipality_profile", lambda _bfs: None)
     monkeypatch.setattr(
         database,
         "save_municipality_profile",
@@ -43,6 +46,7 @@ def test_refresh_canton_zh_keeps_seed_list(monkeypatch):
 
     monkeypatch.setattr(database, "save_sonnendach_municipal", lambda _entry: True)
     monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(database, "get_municipality_profile", lambda _bfs: None)
     monkeypatch.setattr(
         database,
         "save_municipality_profile",
@@ -54,7 +58,7 @@ def test_refresh_canton_zh_keeps_seed_list(monkeypatch):
     assert {p["bfs_number"] for p in saved_profiles} == {247, 261}
 
 
-def test_refresh_canton_does_not_leak_exception_detail(monkeypatch):
+def test_refresh_canton_does_not_leak_exception_detail(monkeypatch, caplog):
     """Per-municipality failures must not expose exception text in the result.
 
     Guards against py/stack-trace-exposure: refresh_canton is returned via
@@ -74,10 +78,160 @@ def test_refresh_canton_does_not_leak_exception_detail(monkeypatch):
     monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
     monkeypatch.setattr(database, "save_municipality_profile", lambda profile: True)
 
-    result = public_data.refresh_canton("ZH", year=2026)
+    with caplog.at_level(logging.ERROR):
+        result = public_data.refresh_canton("ZH", year=2026)
 
     assert result["errors"], "expected the failing municipality to be recorded"
     for entry in result["errors"]:
         assert entry.get("bfs") == 261
         assert secret not in str(entry)
         assert "hunter2" not in str(entry)
+    assert secret not in caplog.text
+    assert "hunter2" not in caplog.text
+
+
+_EXISTING_PROFILE = {
+    "bfs_number": 261,
+    "name": "Bestehende Gemeinde",
+    "kanton": "ZH",
+    "population": 12345,
+    "solar_potential_pct": 41.0,
+    "solar_installed_kwp": 222.0,
+    "ev_share_pct": 12.0,
+    "renewable_heating_pct": 55.0,
+    "electricity_consumption_mwh": 1000.0,
+    "renewable_production_mwh": 350.0,
+    "leg_value_gap_chf": 90.0,
+    "energy_transition_score": 44.0,
+    "data_sources": {"existing": True},
+}
+
+
+def _patch_profile_repository(monkeypatch):
+    saved_profiles = []
+    saved_sonnendach = []
+    monkeypatch.setattr(public_data, "ZH_BFS_NUMBERS", [261])
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        database,
+        "get_municipality_profile",
+        lambda _bfs: dict(_EXISTING_PROFILE),
+    )
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: saved_profiles.append(profile) or True,
+    )
+    monkeypatch.setattr(
+        database,
+        "save_sonnendach_municipal",
+        lambda entry: saved_sonnendach.append(entry) or True,
+    )
+    return saved_profiles, saved_sonnendach
+
+
+def test_energie_reporter_outage_preserves_its_fields_and_saves_sonnendach(
+    monkeypatch,
+):
+    saved_profiles, saved_sonnendach = _patch_profile_repository(monkeypatch)
+    solar = {"bfs_number": 261, "potential_kwp": 999.0}
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: None)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", lambda: [solar])
+
+    result = public_data.refresh_canton("ZH", year=2026)
+
+    assert result["errors"] == [{"source": "energie_reporter", "error": "fetch_failed"}]
+    assert saved_sonnendach == [solar]
+    assert len(saved_profiles) == 1
+    profile = saved_profiles[0]
+    for field in (
+        "name",
+        "kanton",
+        "population",
+        "solar_potential_pct",
+        "ev_share_pct",
+        "renewable_heating_pct",
+        "electricity_consumption_mwh",
+        "renewable_production_mwh",
+        "energy_transition_score",
+    ):
+        assert profile[field] == _EXISTING_PROFILE[field]
+    assert profile["solar_installed_kwp"] == 999.0
+    assert profile["data_sources"]["existing"] is True
+    assert "energie_reporter" not in profile["data_sources"]
+
+
+def test_sonnendach_outage_preserves_solar_fields_and_saves_energie_reporter(
+    monkeypatch,
+):
+    saved_profiles, saved_sonnendach = _patch_profile_repository(monkeypatch)
+    reporter = {
+        "bfs_number": 261,
+        "name": "Neue Gemeinde",
+        "kanton": "ZH",
+        "population": 13000,
+        "solar_potential_pct": 60.0,
+        "ev_share_pct": 20.0,
+        "renewable_heating_pct": 70.0,
+        "electricity_consumption_mwh": 1200.0,
+        "renewable_production_mwh": 600.0,
+    }
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: [reporter])
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", lambda: None)
+
+    result = public_data.refresh_canton("ZH", year=2026)
+
+    assert result["errors"] == [{"source": "sonnendach", "error": "fetch_failed"}]
+    assert saved_sonnendach == []
+    assert len(saved_profiles) == 1
+    profile = saved_profiles[0]
+    assert profile["name"] == "Neue Gemeinde"
+    assert profile["population"] == 13000
+    assert (
+        profile["energy_transition_score"]
+        != _EXISTING_PROFILE["energy_transition_score"]
+    )
+    assert profile["solar_installed_kwp"] == _EXISTING_PROFILE["solar_installed_kwp"]
+    assert profile["data_sources"]["existing"] is True
+    assert "sonnendach" not in profile["data_sources"]
+
+
+def test_full_bulk_source_outage_does_not_save_seeded_profiles(monkeypatch):
+    saved_profiles, saved_sonnendach = _patch_profile_repository(monkeypatch)
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: None)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", lambda: None)
+
+    result = public_data.refresh_canton("ZH", year=2026)
+
+    assert result["municipalities"] == 0
+    assert result["errors"] == [
+        {"source": "energie_reporter", "error": "fetch_failed"},
+        {"source": "sonnendach", "error": "fetch_failed"},
+    ]
+    assert saved_profiles == []
+    assert saved_sonnendach == []
+
+
+def test_bulk_source_outage_still_saves_an_elcom_update(monkeypatch):
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    tariff = {
+        "bfs_number": 261,
+        "category": "H4",
+        "grid_rp_kwh": 10,
+        "total_rp_kwh": 20,
+    }
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: None)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", lambda: None)
+    monkeypatch.setattr(
+        public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [tariff]
+    )
+
+    result = public_data.refresh_canton("ZH", year=2026)
+
+    assert result["municipalities"] == 1
+    assert len(saved_profiles) == 1
+    profile = saved_profiles[0]
+    assert profile["name"] == _EXISTING_PROFILE["name"]
+    assert profile["solar_installed_kwp"] == _EXISTING_PROFILE["solar_installed_kwp"]
+    assert profile["leg_value_gap_chf"] > 0

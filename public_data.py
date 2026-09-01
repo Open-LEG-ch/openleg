@@ -13,6 +13,31 @@ from datetime import datetime, timezone
 import requests
 
 logger = logging.getLogger(__name__)
+_BFS_COLUMNS = ("BFS_NR", "bfs_nr", "gemeinde_bfs")
+_ENERGIE_REPORTER_REQUIRED_COLUMNS = (
+    _BFS_COLUMNS,
+    ("GEMEINDENAME", "gemeindename", "name"),
+    ("KANTON", "kanton"),
+    ("anteil_dachflaechen_solar", "solar_potential_pct"),
+    ("anteil_ev", "ev_share_pct"),
+    ("anteil_erneuerbar_heizen", "renewable_heating_pct"),
+    ("stromverbrauch_mwh", "electricity_consumption_mwh"),
+    ("erneuerbare_produktion_mwh", "renewable_production_mwh"),
+)
+_SONNENDACH_REQUIRED_COLUMNS = (
+    _BFS_COLUMNS,
+    ("dachflaeche_total_m2", "total_roof_area_m2"),
+    ("dachflaeche_geeignet_m2", "suitable_roof_area_m2"),
+    ("potenzial_kwh_jahr", "potential_kwh_year"),
+    ("potenzial_kwp", "potential_kwp"),
+    ("auslastung_pct", "utilization_pct"),
+)
+
+
+def _has_required_columns(reader, required_columns) -> bool:
+    fieldnames = set(reader.fieldnames or ())
+    return all(fieldnames.intersection(aliases) for aliases in required_columns)
+
 
 # === SPARQL / ElCom ===
 
@@ -77,8 +102,8 @@ def fetch_elcom_tariffs(bfs_number: int, year: int = 2026) -> list[dict]:
             f"[PUBLIC_DATA] ElCom: {len(results)} tariff records for BFS {bfs_number}/{year}"
         )
         return results
-    except Exception as e:
-        logger.error(f"[PUBLIC_DATA] ElCom fetch failed for BFS {bfs_number}: {e}")
+    except Exception:
+        logger.error("[PUBLIC_DATA] ElCom fetch failed for BFS %s", bfs_number)
         return []
 
 
@@ -115,7 +140,7 @@ ENERGIE_REPORTER_URL = (
 )
 
 
-def fetch_energie_reporter() -> list[dict]:
+def fetch_energie_reporter() -> list[dict] | None:
     """Download Energie Reporter data from opendata.swiss and parse into per-municipality dicts."""
     try:
         # Get dataset metadata to find CSV resource
@@ -130,13 +155,16 @@ def fetch_energie_reporter() -> list[dict]:
 
         if not csv_url:
             logger.warning("[PUBLIC_DATA] Energie Reporter: no CSV resource found")
-            return []
+            return None
 
         csv_resp = requests.get(csv_url, timeout=30)
         csv_resp.raise_for_status()
         csv_resp.encoding = csv_resp.apparent_encoding or "utf-8"
 
         reader = csv.DictReader(io.StringIO(csv_resp.text), delimiter=";")
+        if not _has_required_columns(reader, _ENERGIE_REPORTER_REQUIRED_COLUMNS):
+            logger.error("[PUBLIC_DATA] Energie Reporter CSV schema is incompatible")
+            return None
         results = []
         for row in reader:
             bfs = _safe_int(
@@ -176,9 +204,9 @@ def fetch_energie_reporter() -> list[dict]:
             f"[PUBLIC_DATA] Energie Reporter: {len(results)} municipalities parsed"
         )
         return results
-    except Exception as e:
-        logger.error(f"[PUBLIC_DATA] Energie Reporter fetch failed: {e}")
-        return []
+    except Exception:
+        logger.error("[PUBLIC_DATA] Energie Reporter fetch failed")
+        return None
 
 
 # === Sonnendach ===
@@ -186,7 +214,7 @@ def fetch_energie_reporter() -> list[dict]:
 SONNENDACH_URL = "https://opendata.swiss/api/3/action/package_show?id=sonnendach-ch"
 
 
-def fetch_sonnendach_municipal() -> list[dict]:
+def fetch_sonnendach_municipal() -> list[dict] | None:
     """Download municipal-level solar potential from opendata.swiss."""
     try:
         resp = requests.get(SONNENDACH_URL, timeout=15)
@@ -210,13 +238,16 @@ def fetch_sonnendach_municipal() -> list[dict]:
 
         if not csv_url:
             logger.warning("[PUBLIC_DATA] Sonnendach: no CSV resource found")
-            return []
+            return None
 
         csv_resp = requests.get(csv_url, timeout=30)
         csv_resp.raise_for_status()
         csv_resp.encoding = csv_resp.apparent_encoding or "utf-8"
 
         reader = csv.DictReader(io.StringIO(csv_resp.text), delimiter=";")
+        if not _has_required_columns(reader, _SONNENDACH_REQUIRED_COLUMNS):
+            logger.error("[PUBLIC_DATA] Sonnendach CSV schema is incompatible")
+            return None
         results = []
         for row in reader:
             bfs = _safe_int(
@@ -247,9 +278,9 @@ def fetch_sonnendach_municipal() -> list[dict]:
             )
         logger.info(f"[PUBLIC_DATA] Sonnendach: {len(results)} municipalities parsed")
         return results
-    except Exception as e:
-        logger.error(f"[PUBLIC_DATA] Sonnendach fetch failed: {e}")
-        return []
+    except Exception:
+        logger.error("[PUBLIC_DATA] Sonnendach fetch failed")
+        return None
 
 
 # === Computed Metrics ===
@@ -363,8 +394,11 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> dict:
 
     # 1. Energie Reporter (bulk)
     er_data = fetch_energie_reporter()
+    er_failed = er_data is None
+    if er_failed:
+        result["errors"].append({"source": "energie_reporter", "error": "fetch_failed"})
     er_by_bfs = {}
-    for entry in er_data:
+    for entry in er_data or []:
         bfs = entry.get("bfs_number")
         k = entry.get("kanton", "")
         if bfs and (not target_kanton or k.upper() == target_kanton):
@@ -373,8 +407,11 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> dict:
 
     # 2. Sonnendach (bulk)
     sd_data = fetch_sonnendach_municipal()
+    sd_failed = sd_data is None
+    if sd_failed:
+        result["errors"].append({"source": "sonnendach", "error": "fetch_failed"})
     sd_by_bfs = {}
-    for entry in sd_data:
+    for entry in sd_data or []:
         bfs = entry.get("bfs_number")
         if bfs:
             sd_by_bfs[bfs] = entry
@@ -382,50 +419,79 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> dict:
     result["sonnendach_records"] = len(sd_by_bfs)
 
     # 3. Merge and save profiles
-    all_bfs = set(er_by_bfs.keys())
+    all_bfs = set(er_by_bfs)
     if target_kanton == "ZH":
         all_bfs.update(ZH_BFS_NUMBERS)
     for bfs in all_bfs:
         try:
             er = er_by_bfs.get(bfs, {})
             sd = sd_by_bfs.get(bfs, {})
+            existing = db.get_municipality_profile(bfs) or {}
 
             # ElCom tariffs
             tariffs = fetch_elcom_tariffs(bfs, year)
             if tariffs:
                 db.save_elcom_tariffs(tariffs)
+            if er_failed and sd_failed and not tariffs:
+                continue
 
             h4 = next(
                 (t for t in tariffs if t.get("category", "").startswith("H4")), None
             )
             value_gap = compute_leg_value_gap(h4) if h4 else {"annual_savings_chf": 0}
 
+            data_sources = dict(existing.get("data_sources") or {})
+            data_sources["elcom"] = bool(tariffs)
+            if not er_failed:
+                data_sources["energie_reporter"] = bfs in er_by_bfs
+            if not sd_failed:
+                data_sources["sonnendach"] = bfs in sd_by_bfs
+            data_sources["last_refresh"] = datetime.now(timezone.utc).isoformat()
+
             profile = {
                 "bfs_number": bfs,
-                "name": er.get("name", ""),
-                "kanton": er.get("kanton", target_kanton),
-                "population": er.get("population"),
-                "solar_potential_pct": er.get("solar_potential_pct"),
-                "solar_installed_kwp": sd.get("potential_kwp"),
-                "ev_share_pct": er.get("ev_share_pct"),
-                "renewable_heating_pct": er.get("renewable_heating_pct"),
-                "electricity_consumption_mwh": er.get("electricity_consumption_mwh"),
-                "renewable_production_mwh": er.get("renewable_production_mwh"),
+                "name": existing.get("name", ""),
+                "kanton": existing.get("kanton", target_kanton),
+                "population": existing.get("population"),
+                "solar_potential_pct": existing.get("solar_potential_pct"),
+                "solar_installed_kwp": existing.get("solar_installed_kwp"),
+                "ev_share_pct": existing.get("ev_share_pct"),
+                "renewable_heating_pct": existing.get("renewable_heating_pct"),
+                "electricity_consumption_mwh": existing.get(
+                    "electricity_consumption_mwh"
+                ),
+                "renewable_production_mwh": existing.get("renewable_production_mwh"),
                 "leg_value_gap_chf": value_gap.get("annual_savings_chf", 0),
-                "data_sources": {
-                    "elcom": bool(tariffs),
-                    "energie_reporter": bfs in er_by_bfs,
-                    "sonnendach": bfs in sd_by_bfs,
-                    "last_refresh": datetime.now(timezone.utc).isoformat(),
-                },
+                "data_sources": data_sources,
             }
-            profile["energy_transition_score"] = compute_energy_transition_score(
-                profile
-            )
+            if not er_failed:
+                profile.update(
+                    {
+                        "name": er.get("name", ""),
+                        "kanton": er.get("kanton", target_kanton),
+                        "population": er.get("population", existing.get("population")),
+                        "solar_potential_pct": er.get("solar_potential_pct"),
+                        "ev_share_pct": er.get("ev_share_pct"),
+                        "renewable_heating_pct": er.get("renewable_heating_pct"),
+                        "electricity_consumption_mwh": er.get(
+                            "electricity_consumption_mwh"
+                        ),
+                        "renewable_production_mwh": er.get("renewable_production_mwh"),
+                    }
+                )
+                profile["energy_transition_score"] = compute_energy_transition_score(
+                    profile
+                )
+            else:
+                profile["energy_transition_score"] = existing.get(
+                    "energy_transition_score"
+                )
+            if not sd_failed:
+                profile["solar_installed_kwp"] = sd.get("potential_kwp")
             db.save_municipality_profile(profile)
             result["municipalities"] += 1
-        except Exception as e:
-            logger.error(f"[PUBLIC_DATA] Error refreshing BFS {bfs}: {e}")
+        except Exception:
+            logger.error("[PUBLIC_DATA] Municipality refresh failed for BFS %s", bfs)
             result["errors"].append({"bfs": bfs, "error": "refresh_failed"})
 
     return result
