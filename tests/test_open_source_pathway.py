@@ -24,7 +24,7 @@ def test_readme_orients_english_and_german_technical_users():
 
     assert "## English" in readme
     assert "## Deutsch" in readme
-    assert "### Current billing boundary" in readme
-    assert "### Aktuelle Abrechnungsgrenze" in readme
+    assert "### From meter reading to invoice" in readme
+    assert "### Vom Zählerwert zur Rechnung" in readme
     assert "billing_engine.py" in readme
     assert "scripts/tdd_cycle.sh gate" in readme

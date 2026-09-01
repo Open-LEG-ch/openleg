@@ -25,11 +25,16 @@ OpenLEG is the public website, product application, and API for founding and ope
 | Municipality | `/gemeinde/dashboard` | Open the municipality dashboard. |
 | Developer or self-hoster | `/api/v1/docs` | Use the API or run your own instance. |
 
-### Current billing boundary
+### From meter reading to invoice
 
-`billing_engine.py` accepts participant-keyed 15-minute consumption and production frames plus explicit prices. It creates an auditable draft with positive `consumer_charge` items and negative `producer_credit` items. `store/billing.py` persists the period, price snapshot, and signed line items.
+The path from raw metering data to a member invoice runs as one workflow in this repository:
 
-Metering import, member mapping, a CLI command to start a billing run, and final invoice or credit documents are not one automated public workflow yet. The repository contains the reviewed billing core, not a promise that raw meter data can already produce final documents without integration work.
+1. **Import.** `scripts/fetch_sdat.py` collects SDAT files from the Swisseldex Datahub, `scripts/import_sdat.py` parses ebIX E66 documents into `store/metering.py`; `sdat_datahub.py` and `sdat_e66.py` hold the transport and parsing logic, `scripts/sdat_pipeline.sh` chains the steps. `scripts/import_metering_points.py` maps metering points to buildings.
+2. **Allocation.** `billing_readings.py` turns point-keyed readings into participant frames and refuses a period it cannot bill. `billing_engine.py` allocates the quarter hours and produces an auditable draft with positive `consumer_charge` items and negative `producer_credit` items; `store/billing.py` persists period, price snapshot, and signed line items. `billing_runner.py` orchestrates one period, and `POST /api/cron/process-billing` in `cron.py` runs the previous complete month for every active community.
+3. **Policy and approval.** The operator maintains a versioned tariff at `/leg/community/<community_id>/billing-policy` (`billing_policy.py`, `templates/leg_billing_policy.html`) and reviews the draft at `/leg/community/<community_id>/billing` (`templates/leg_billing.html`). Approval freezes one immutable invoice per participant from the persisted policy snapshot (`billing_approval.py`).
+4. **Lifecycle and delivery.** An issued invoice moves through `issued`, `delivered`, `paid`, `cancelled`, and `corrected` (`billing_lifecycle.py`). Members read their own invoices at `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>`, and `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
+
+What still needs a human or a shell: the SDAT fetch and import run as command line scripts, no cron route triggers them; approval stays a deliberate operator action; payment has no bank reconciliation, so an operator marks an invoice paid.
 
 ### Quick start
 
@@ -123,11 +128,16 @@ OpenLEG ist die öffentliche Website, Produktanwendung und API für die Gründun
 | Gemeinde | `/gemeinde/dashboard` | Gemeinde-Dashboard öffnen. |
 | Entwickler oder Selbsthoster | `/api/v1/docs` | API nutzen oder eigene Instanz betreiben. |
 
-### Aktuelle Abrechnungsgrenze
+### Vom Zählerwert zur Rechnung
 
-`billing_engine.py` übernimmt nach Teilnehmern geordnete Viertelstundenwerte für Bezug und Einspeisung sowie explizite Preise. Daraus entsteht ein prüfbarer Entwurf mit positiven `consumer_charge` Positionen und negativen `producer_credit` Positionen. `store/billing.py` speichert Periode, Preisstand und Positionen mit Vorzeichen.
+Der Weg von Rohmessdaten zur Mitgliederrechnung läuft als ein Ablauf in diesem Repo:
 
-Messdatenimport, Mitgliederzuordnung, ein CLI-Befehl für den Abrechnungslauf und definitive Rechnungs- oder Gutschriftdokumente bilden noch keinen automatisierten öffentlichen Ablauf. Das Repo enthält den geprüften Abrechnungskern. Rohdaten allein erzeugen ohne Integrationsarbeit noch keine definitiven Dokumente.
+1. **Import.** `scripts/fetch_sdat.py` holt SDAT-Dateien vom Swisseldex Datahub, `scripts/import_sdat.py` liest ebIX-E66-Dokumente nach `store/metering.py`; `sdat_datahub.py` und `sdat_e66.py` enthalten Transport und Parsing, `scripts/sdat_pipeline.sh` verkettet die Schritte. `scripts/import_metering_points.py` ordnet Messpunkte den Gebäuden zu.
+2. **Verteilung.** `billing_readings.py` formt messpunktbezogene Werte in Teilnehmerreihen um und weist eine Periode zurück, die es nicht abrechnen kann. `billing_engine.py` verteilt die Viertelstunden und erzeugt einen prüfbaren Entwurf mit positiven `consumer_charge` Positionen und negativen `producer_credit` Positionen; `store/billing.py` speichert Periode, Preisstand und Positionen mit Vorzeichen. `billing_runner.py` steuert einen Lauf, `POST /api/cron/process-billing` in `cron.py` rechnet den letzten vollen Monat für jede aktive Gemeinschaft.
+3. **Policy und Freigabe.** Die Betreiberin pflegt den versionierten Tarif unter `/leg/community/<community_id>/billing-policy` (`billing_policy.py`, `templates/leg_billing_policy.html`) und prüft den Entwurf unter `/leg/community/<community_id>/billing` (`templates/leg_billing.html`). Die Freigabe friert je Teilnehmer eine unveränderliche Rechnung aus dem gespeicherten Policy-Snapshot ein (`billing_approval.py`).
+4. **Lebenszyklus und Zustellung.** Eine freigegebene Rechnung durchläuft `issued`, `delivered`, `paid`, `cancelled` und `corrected` (`billing_lifecycle.py`). Mitglieder lesen ihre Rechnungen unter `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>` und `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
+
+Das bleibt Handarbeit oder Shell: Abruf und Import der SDAT-Dateien starten über Kommandozeilenskripte, kein Cron-Endpunkt löst sie aus; die Freigabe bleibt eine bewusste Entscheidung der Betreiberin; für Zahlungen gibt es keinen Bankabgleich, eine Person setzt die Rechnung auf bezahlt.
 
 ### Schnellstart
 
