@@ -78,6 +78,19 @@ FORMATION_CONFIG = {
     "signature_timeout_days": 14,
 }
 
+_FORMATION_PROCESS_POINTS = {
+    FormationStatus.INTERESTED.value: 0,
+    FormationStatus.INVITED.value: 0,
+    FormationStatus.CONFIRMED.value: 0,
+    FormationStatus.FORMATION_STARTED.value: 0,
+    FormationStatus.DOCUMENTS_GENERATED.value: 30,
+    FormationStatus.SIGNATURES_PENDING.value: 30,
+    FormationStatus.DSO_SUBMITTED.value: 50,
+    FormationStatus.DSO_APPROVED.value: 70,
+    FormationStatus.ACTIVE.value: 70,
+    FormationStatus.REJECTED.value: 0,
+}
+
 DEFAULT_GRID_BUY_PRICE_RP = 25.0
 DEFAULT_GRID_SELL_PRICE_RP = 6.0
 DEFAULT_LEG_PRICE_RP = 15.0
@@ -434,24 +447,21 @@ def get_community_status(db, community_id: str) -> dict | None:
             if not row:
                 return None
 
+            members = row["members"] or []
+
             # Calculate readiness score
             confirmed_count = sum(
-                1 for m in row["members"] if m["status"] == "confirmed"
+                1 for member in members if member["status"] == "confirmed"
             )
-            total_count = len(row["members"])
+            total_count = len(members)
 
-            readiness_score = 0
-            if confirmed_count >= FORMATION_CONFIG["min_community_size"]:
+            status = row["status"]
+            readiness_score = _FORMATION_PROCESS_POINTS.get(status, 0)
+            if (
+                status != FormationStatus.REJECTED.value
+                and confirmed_count >= FORMATION_CONFIG["min_community_size"]
+            ):
                 readiness_score += 30
-            if row["status"] in [
-                FormationStatus.DOCUMENTS_GENERATED.value,
-                FormationStatus.SIGNATURES_PENDING.value,
-            ]:
-                readiness_score += 30
-            if row["status"] == FormationStatus.DSO_SUBMITTED.value:
-                readiness_score += 20
-            if row["status"] == FormationStatus.DSO_APPROVED.value:
-                readiness_score += 20
 
             return {
                 "community_id": row["community_id"],
@@ -474,7 +484,7 @@ def get_community_status(db, community_id: str) -> dict | None:
                     "invited": total_count - confirmed_count,
                 },
                 "readiness_score": readiness_score,
-                "members": row["members"],
+                "members": members,
                 "documents": None,
                 "next_steps": _get_next_steps(row["status"], confirmed_count),
             }
