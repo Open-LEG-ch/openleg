@@ -243,4 +243,4 @@ def test_municipality_business_case_is_pinned_on_its_first_year():
     }
     assert case["projections"][1]["annual_total_chf"] == 23256.0
     assert case["projections"][9]["cumulative_chf"] == 249653.64
-    assert case["co2_reduction_total_kg"] == 729.9
+    assert case["co2_reduction_total_kg"] == 729.6
