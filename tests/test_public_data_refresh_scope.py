@@ -197,6 +197,32 @@ def test_sonnendach_outage_preserves_solar_fields_and_saves_energie_reporter(
     assert "sonnendach" not in profile["data_sources"]
 
 
+def test_healthy_partial_sources_preserve_a_missing_seed_profile(monkeypatch):
+    saved_profiles, saved_sonnendach = _patch_profile_repository(monkeypatch)
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
+
+    result = public_data.refresh_canton("ZH", year=2026)
+
+    assert result["errors"] == []
+    assert saved_sonnendach == []
+    assert len(saved_profiles) == 1
+    profile = saved_profiles[0]
+    for field in (
+        "name",
+        "kanton",
+        "population",
+        "solar_potential_pct",
+        "solar_installed_kwp",
+        "ev_share_pct",
+        "renewable_heating_pct",
+        "electricity_consumption_mwh",
+        "renewable_production_mwh",
+        "energy_transition_score",
+    ):
+        assert profile[field] == _EXISTING_PROFILE[field]
+
+
 def test_full_bulk_source_outage_does_not_save_seeded_profiles(monkeypatch):
     saved_profiles, saved_sonnendach = _patch_profile_repository(monkeypatch)
     monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: None)

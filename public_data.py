@@ -464,7 +464,7 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> dict:
                 "leg_value_gap_chf": value_gap.get("annual_savings_chf", 0),
                 "data_sources": data_sources,
             }
-            if not er_failed:
+            if bfs in er_by_bfs:
                 profile.update(
                     {
                         "name": er.get("name", ""),
@@ -486,7 +486,7 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> dict:
                 profile["energy_transition_score"] = existing.get(
                     "energy_transition_score"
                 )
-            if not sd_failed:
+            if bfs in sd_by_bfs:
                 profile["solar_installed_kwp"] = sd.get("potential_kwp")
             db.save_municipality_profile(profile)
             result["municipalities"] += 1
