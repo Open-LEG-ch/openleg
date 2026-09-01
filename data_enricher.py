@@ -7,12 +7,49 @@ import requests
 
 # Importiere Profil-Generator aus ml_models
 import ml_models
+import security_utils
 
 # --- API-Endpunkte ---
 GEO_API_URL = "https://api3.geo.admin.ch/rest/services/api/SearchServer"
 SOLAR_API_URL = (
     "https://api3.geo.admin.ch/rest/services/api/MapServer/ch.bfe.sonnendach"
 )
+_ADDRESS_SUGGESTIONS_UNAVAILABLE = "Adressvorschläge sind derzeit nicht verfügbar."
+
+
+def _normalize_address_suggestions(suggestions):
+    """Return the public address-suggestion field set with safe labels."""
+    normalized = []
+    for suggestion in suggestions:
+        if not isinstance(suggestion, dict):
+            continue
+        raw_label = suggestion.get("label")
+        if not isinstance(raw_label, str):
+            continue
+        label = security_utils.sanitize_string(raw_label, max_length=200)
+        if not label:
+            continue
+        normalized.append(
+            {
+                "label": label,
+                "lat": suggestion.get("lat"),
+                "lon": suggestion.get("lon"),
+                "plz": suggestion.get("plz"),
+            }
+        )
+    return normalized
+
+
+def resolve_address_suggestions(query_string, *, limit, plz_ranges):
+    """Resolve an address query to the shared route payload and status."""
+    if not query_string or len(query_string) < 2:
+        return {"suggestions": []}, 200
+    suggestions = get_address_suggestions(
+        query_string, limit=limit, plz_ranges=plz_ranges
+    )
+    if suggestions is None:
+        return {"error": _ADDRESS_SUGGESTIONS_UNAVAILABLE}, 503
+    return {"suggestions": _normalize_address_suggestions(suggestions)}, 200
 
 
 # --- Mock-Funktionen (Simulation von GWR/MOFIS-Datenbanken) ---
