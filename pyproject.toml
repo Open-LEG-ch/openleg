@@ -40,7 +40,10 @@ pytest_add_cli_args = [
 # mutmut copies only what it mutates into that sandbox, so everything those
 # tests import has to be listed here or they cannot even be collected.
 also_copy = [
+    "billing_approval.py",
     "billing_engine.py",
+    "billing_lifecycle.py",
+    "billing_policy.py",
     "billing_readings.py",
     "conftest.py",
     "database.py",
