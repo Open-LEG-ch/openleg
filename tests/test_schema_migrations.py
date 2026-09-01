@@ -300,12 +300,34 @@ def test_create_tables_migrates_a_billing_periods_table_in_its_old_shape():
             == 1
         )
         enriched_point = database.get_metering_point("CH000000000000000000000000000001")
+        preserved_directions = []
+        for expected_directions in (None, []):
+            assert (
+                database.upsert_metering_points(
+                    [
+                        {
+                            "metering_point_id": "CH000000000000000000000000000001",
+                            "expected_directions": expected_directions,
+                        }
+                    ]
+                )
+                == 1
+            )
+            preserved_directions.append(
+                database.get_metering_point("CH000000000000000000000000000001")[
+                    "expected_directions"
+                ]
+            )
 
     assert row is not None, "the migration must carry the existing row across"
     assert legacy_point["expected_directions"] is None, (
         "the migration must not invent a direction for existing citizen data"
     )
     assert enriched_point["expected_directions"] == ["consumption", "production"]
+    assert preserved_directions == [
+        ["consumption", "production"],
+        ["consumption", "production"],
+    ]
     assert row["community_id"] == "42", "the integer key becomes its own text"
     # Midnight in Zurich on 15 January is 23:00 UTC the day before.
     assert row["period_start"] == datetime(2026, 1, 14, 23, 0, tzinfo=timezone.utc), (
