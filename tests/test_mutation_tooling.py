@@ -44,6 +44,16 @@ def test_mutmut_is_scoped_to_the_modules_where_a_survivor_would_matter():
     assert list(source_paths) == list(SCOPED_MODULES)
 
 
+def test_mutmut_copies_billing_dependencies_needed_for_collection():
+    also_copy = set(_pyproject()["tool"]["mutmut"]["also_copy"])
+
+    assert {
+        "billing_approval.py",
+        "billing_lifecycle.py",
+        "billing_policy.py",
+    } <= also_copy
+
+
 def test_the_mutant_cache_is_not_committed():
     ignored = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
 
