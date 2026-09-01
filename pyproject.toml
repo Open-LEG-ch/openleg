@@ -35,6 +35,7 @@ source_paths = ["formation_wizard.py", "store/formation.py"]
 # out on purpose: those tests shell out to `git ls-files` and read tracked
 # files, and mutmut's sandbox is a copied directory, not a git working tree.
 pytest_add_cli_args = [
+    "tests/test_formation_contracts.py",
     "tests/test_formation_status.py",
     "tests/test_formation_transitions.py",
     "tests/test_formation_nudge.py",
@@ -44,12 +45,19 @@ pytest_add_cli_args = [
 # tests import has to be listed here or they cannot even be collected.
 also_copy = [
     "access_token.py",
+    "billing_approval.py",
+    "billing_engine.py",
+    "billing_lifecycle.py",
+    "billing_policy.py",
+    "billing_readings.py",
     "conftest.py",
     "database.py",
     "email_automation.py",
     "email_utils.py",
     "pyproject.toml",
     "scripts",
+    "sdat_e66.py",
     "store",
+    "templates",
     "tests",
 ]
