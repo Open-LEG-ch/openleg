@@ -371,6 +371,10 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
         saved = db.save_elcom_tariffs(tariffs)
         result["sources"]["elcom"] = {"records": len(tariffs), "saved": saved}
 
+    if er_data is None and sd_data is None and not tariffs:
+        result["persistence"] = "skipped"
+        return result
+
     # Find H4 tariff for value-gap calculation
     h4 = next((t for t in tariffs if t.get("category", "").startswith("H4")), None)
     value_gap = compute_leg_value_gap(h4) if h4 else {"annual_savings_chf": 0}

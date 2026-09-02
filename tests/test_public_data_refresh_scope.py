@@ -333,3 +333,22 @@ def test_refresh_municipality_reporter_outage_preserves_fields_and_applies_sonne
     ):
         assert profile[field] == _EXISTING_PROFILE[field]
     assert profile["solar_installed_kwp"] == 480.0
+
+
+def test_refresh_municipality_all_sources_outage_skips_persistence(monkeypatch):
+    """Energie Reporter outage, Sonnendach outage, empty ElCom tariff list.
+
+    With every source unavailable the single-municipality refresh must
+    report both bulk-source fetch failures, write no profile through the
+    database adapter, and distinctly report that persistence was skipped.
+    """
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: None)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", lambda: None)
+
+    result = public_data.refresh_municipality(261, year=2026)
+
+    assert result["sources"]["energie_reporter"] == "fetch_failed"
+    assert result["sources"]["sonnendach"] == "fetch_failed"
+    assert saved_profiles == []
+    assert result["persistence"] == "skipped"
