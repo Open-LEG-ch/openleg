@@ -1,45 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Direct contracts for the community formation status read model."""
 
-from contextlib import contextmanager
+from unittest.mock import patch
 
 import pytest
 
 from formation_wizard import FormationStatus, get_community_status
-
-
-class _Cursor:
-    def __init__(self, row):
-        self.row = row
-
-    def execute(self, _query, _params=None):
-        pass
-
-    def fetchone(self):
-        return self.row
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *_):
-        return False
-
-
-class _Connection:
-    def __init__(self, cursor):
-        self._cursor = cursor
-
-    def cursor(self):
-        return self._cursor
-
-
-class _Database:
-    def __init__(self, row):
-        self.cursor = _Cursor(row)
-
-    @contextmanager
-    def get_connection(self):
-        yield _Connection(self.cursor)
 
 
 def _row(status, members):
@@ -76,20 +42,41 @@ def _confirmed_members(count=3):
     ],
 )
 def test_community_readiness_follows_the_weighted_state_table(status, expected_score):
-    result = get_community_status(
-        _Database(_row(status, _confirmed_members())), "community-1"
-    )
+    with patch(
+        "database.fetch_community_with_members",
+        return_value=_row(status, _confirmed_members()),
+    ):
+        result = get_community_status("community-1")
 
     assert result is not None
     assert result["readiness_score"] == expected_score
 
 
 def test_existing_community_without_members_returns_an_empty_status_model():
-    result = get_community_status(
-        _Database(_row(FormationStatus.INTERESTED.value, None)), "community-1"
-    )
+    with patch(
+        "database.fetch_community_with_members",
+        return_value=_row(FormationStatus.INTERESTED.value, None),
+    ):
+        result = get_community_status("community-1")
 
     assert result is not None
     assert result["members"] == []
     assert result["member_count"] == {"total": 0, "confirmed": 0, "invited": 0}
     assert result["readiness_score"] == 0
+
+
+def test_unknown_community_is_reported_as_missing():
+    with patch("database.fetch_community_with_members", return_value=None):
+        result = get_community_status("community-1")
+
+    assert result is None
+
+
+def test_status_assembly_failure_is_reported_as_missing():
+    with patch(
+        "database.fetch_community_with_members",
+        return_value={"community_id": "broken"},
+    ):
+        result = get_community_status("broken")
+
+    assert result is None
