@@ -260,6 +260,119 @@ def test_validate_persisted_policy_refuses_truthy_non_dict_policy(policy):
         )
 
 
+# --- Issue #461: canonical diagnostics from validate_persisted_policy --------
+
+_DIAGNOSTIC_PERIOD_START = datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+
+_PERSISTED_POLICY_DIAGNOSTICS = (
+    (
+        "empty-snapshot",
+        dict,
+        "Der Abrechnungsentwurf hat keine Richtlinien-Kopie.",
+    ),
+    (
+        "missing-canonical-field",
+        lambda: {**_IDENTITY_VALID_POLICY, "network_level": None},
+        "Die Richtlinien-Kopie ist unvollständig: network_level",
+    ),
+    (
+        "wrong-community",
+        lambda: {**_IDENTITY_VALID_POLICY, "community_id": "community-b"},
+        "Die Richtlinien-Kopie gehört nicht zur Community des Entwurfs.",
+    ),
+    (
+        "invalid-tariff-id",
+        lambda: {**_IDENTITY_VALID_POLICY, "tariff_id": 0},
+        "Die Tarif-ID der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-energy-price",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "internal_price_chf_per_kwh": Decimal("10.01"),
+        },
+        "Ein Energiepreis der Richtlinie liegt ausserhalb des zulässigen Bereichs.",
+    ),
+    (
+        "not-yet-effective",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "effective_from": datetime(2026, 10, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        },
+        "Die Richtlinie gilt noch nicht zum Periodenbeginn.",
+    ),
+    (
+        "invalid-network-level",
+        lambda: {**_IDENTITY_VALID_POLICY, "network_level": "different"},
+        "Die Netzebene der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-distribution-model",
+        lambda: {**_IDENTITY_VALID_POLICY, "distribution_model": "simple"},
+        "Das Verteilmodell der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-delivery-method",
+        lambda: {**_IDENTITY_VALID_POLICY, "delivery_method": "post"},
+        "Die Zustellmethode der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-invoice-prefix",
+        lambda: {**_IDENTITY_VALID_POLICY, "invoice_prefix": "leg-2026"},
+        "Das Rechnungspräfix der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-payment-days",
+        lambda: {**_IDENTITY_VALID_POLICY, "payment_days": 366},
+        "Die Zahlungsfrist der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-vat-rate-precision",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "vat_mode": "standard",
+            "vat_rate_pct": Decimal("8.123"),
+        },
+        "Der Mehrwertsteuersatz der Richtlinie ist ungültig.",
+    ),
+    (
+        "none-mode-with-nonzero-vat-rate",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "vat_mode": "none",
+            "vat_rate_pct": Decimal("0.01"),
+        },
+        "Ohne Mehrwertsteuer muss der Satz 0 sein.",
+    ),
+    (
+        "standard-vat-rate-outside-range",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "vat_mode": "standard",
+            "vat_rate_pct": Decimal("100.01"),
+        },
+        "Der Mehrwertsteuersatz der Richtlinie ist ungültig.",
+    ),
+)
+
+
+@pytest.mark.parametrize(
+    ("case", "policy_factory", "expected_message"),
+    _PERSISTED_POLICY_DIAGNOSTICS,
+    ids=[diagnostic[0] for diagnostic in _PERSISTED_POLICY_DIAGNOSTICS],
+)
+def test_persisted_policy_diagnostic_contract(case, policy_factory, expected_message):
+    """Each distinct refusal path exposes its one fixed German diagnostic."""
+    with pytest.raises(billing_policy.InvalidPersistedPolicy) as exc:
+        billing_policy.validate_persisted_policy(
+            policy_factory(),
+            period_start=_DIAGNOSTIC_PERIOD_START,
+            community_id="community-a",
+        )
+
+    assert str(exc.value) == expected_message
+
+
 # --- Issue #461: persisted energy price validation ---------------------------
 
 _ENERGY_PRICE_FIELDS = (
