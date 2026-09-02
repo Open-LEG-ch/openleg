@@ -64,8 +64,8 @@ def create_community_record(
                 )
 
                 return community_id
-    except Exception as e:
-        logger.error(f"[FORMATION] Error creating community: {e}")
+    except Exception:
+        logger.exception("[FORMATION] Error creating community")
         return None
 
 
@@ -107,8 +107,8 @@ def insert_invited_member(community_id: str, building_id: str, invited_by: str) 
                     f"[FORMATION] Invited {building_id} to community {community_id}"
                 )
                 return True
-    except Exception as e:
-        logger.error(f"[FORMATION] Error inviting member: {e}")
+    except Exception:
+        logger.exception("[FORMATION] Error inviting member")
         return False
 
 
@@ -134,8 +134,8 @@ def confirm_invited_member(community_id: str, building_id: str) -> bool:
                 )
                 return True
             return False
-    except Exception as e:
-        logger.error(f"[FORMATION] Error confirming membership: {e}")
+    except Exception:
+        logger.exception("[FORMATION] Error confirming membership")
         return False
 
 
@@ -152,8 +152,8 @@ def count_confirmed_members(community_id: str) -> int | None:
                     (community_id,),
                 )
                 return cur.fetchone()["count"]
-    except Exception as e:
-        logger.error(f"[FORMATION] Error counting confirmed members: {e}")
+    except Exception:
+        logger.exception("[FORMATION] Error counting confirmed members")
         return None
 
 
@@ -175,8 +175,8 @@ def mark_formation_started(community_id: str) -> bool:
                     f"[FORMATION] Started formation for community {community_id}"
                 )
                 return True
-    except Exception as e:
-        logger.error(f"[FORMATION] Error starting formation: {e}")
+    except Exception:
+        logger.exception("[FORMATION] Error starting formation")
         return False
 
 
@@ -201,8 +201,8 @@ def submit_community_to_dso(community_id: str) -> bool:
                     )
                     return True
                 return False
-    except Exception as e:
-        logger.error(f"[FORMATION] Error submitting to DSO: {e}")
+    except Exception:
+        logger.exception("[FORMATION] Error submitting to DSO")
         return False
 
 
@@ -235,8 +235,8 @@ def fetch_community_with_members(community_id: str) -> dict | None:
                 (community_id,),
             )
             return cur.fetchone()
-    except Exception as e:
-        logger.error(f"[FORMATION] Error getting community status: {e}")
+    except Exception:
+        logger.exception("[FORMATION] Error getting community status")
         return None
 
 
@@ -269,8 +269,8 @@ def fetch_user_communities(building_id: str) -> list[dict] | None:
                     (building_id,),
                 )
                 return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[FORMATION] Error getting user communities: {e}")
+    except Exception:
+        logger.exception("[FORMATION] Error getting user communities")
         return None
 
 
@@ -325,6 +325,6 @@ def fetch_nearby_consenting_neighbours(
             )
 
             return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        logger.error(f"[FORMATION] Error getting formable clusters: {e}")
+    except Exception:
+        logger.exception("[FORMATION] Error getting formable clusters")
         return None

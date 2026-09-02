@@ -229,7 +229,12 @@ def start_formation(community_id: str) -> bool:
         True if successful
     """
     count = db.count_confirmed_members(community_id)
-    if count is None or count < FORMATION_CONFIG["min_community_size"]:
+    if count is None:
+        logger.error(
+            "[FORMATION] Could not count members for community %s", community_id
+        )
+        return False
+    if count < FORMATION_CONFIG["min_community_size"]:
         logger.warning(
             f"[FORMATION] Community {community_id} has only {count} members, need {FORMATION_CONFIG['min_community_size']}"
         )
