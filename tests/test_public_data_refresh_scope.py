@@ -56,6 +56,7 @@ def test_refresh_canton_zh_keeps_seed_list(monkeypatch):
 
     result = public_data.refresh_canton("ZH", year=2026)
     assert result["kanton"] == "ZH"
+    assert result["municipalities"] == 2
     assert {p["bfs_number"] for p in saved_profiles} == {247, 261}
 
 
@@ -98,6 +99,35 @@ def test_refresh_canton_delegates_selected_bfs_once_with_single_bulk_fetch(
     assert [p["bfs_number"] for p in saved_profiles] == [261]
     assert saved_profiles[0]["name"] == "Reporter Gemeinde"
     assert saved_profiles[0]["solar_installed_kwp"] == 310.0
+
+
+def test_refresh_canton_continues_past_skipped_bfs_in_sorted_order(monkeypatch):
+    """A skipped municipality must not stop later seed BFS values.
+
+    Mutation guard for refresh_canton's persistence loop: a municipality
+    reporting persistence == "skipped" must not end the loop, and the
+    selected seed BFS values must be visited in deterministic ascending
+    order instead of set-iteration order.
+    """
+    calls = []
+    outcomes = {
+        247: {"bfs_number": 247, "sources": {}, "persistence": "skipped"},
+        261: {"bfs_number": 261, "sources": {}},
+    }
+
+    def _spy_refresh_municipality(bfs_number, year=2026, **kwargs):
+        calls.append(bfs_number)
+        return outcomes[bfs_number]
+
+    monkeypatch.setattr(public_data, "ZH_BFS_NUMBERS", [261, 247])
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
+    monkeypatch.setattr(public_data, "refresh_municipality", _spy_refresh_municipality)
+
+    result = public_data.refresh_canton("ZH", year=2026)
+
+    assert calls == [247, 261]
+    assert result["municipalities"] == 1
 
 
 def test_refresh_canton_does_not_leak_exception_detail(monkeypatch, caplog):

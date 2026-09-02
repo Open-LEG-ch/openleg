@@ -502,7 +502,7 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> dict:
         all_bfs.update(ZH_BFS_NUMBERS)
     er_preloaded = None if er_failed else list(er_by_bfs.values())
     sd_preloaded = None if sd_failed else list(sd_by_bfs.values())
-    for bfs in all_bfs:
+    for bfs in sorted(all_bfs):
         try:
             municipal = refresh_municipality(
                 bfs,
