@@ -139,6 +139,16 @@ def test_missing_file_is_reported(tmp_path):
     assert result.returncode == 1
 
 
+def test_missing_file_message_is_stable_in_process(tmp_path, capsys):
+    missing = str(tmp_path / "nope.csv")
+
+    exit_code = import_metering_points.main([missing, "--dry-run"])
+
+    out = capsys.readouterr().out
+    assert exit_code == 1
+    assert f"Fehler: Datei nicht gefunden: {missing}" in out
+
+
 def test_unknown_header_is_reported(tmp_path):
     csv_path = tmp_path / "points.csv"
     csv_path.write_text("foo,bar\n1,2\n", encoding="utf-8")
@@ -191,6 +201,32 @@ def test_dry_run_success_is_exact_and_masks_ids_in_stdout_and_stderr(tmp_path):
     assert point not in result.stdout
     assert point not in result.stderr
     assert "...000001" in result.stdout
+
+
+def test_dry_run_main_never_touches_the_database(tmp_path, monkeypatch, capsys):
+    """In-process: a dry run decides from the CSV alone, never the database."""
+    point = "CH000000000000000000000000000001"
+    csv_path = tmp_path / "points.csv"
+    csv_path.write_text(
+        HEADER + f"{point},Haus 1,Dorfstrasse 1,b-1,leg-1\n", encoding="utf-8"
+    )
+    calls = []
+    monkeypatch.setattr(
+        import_metering_points.db, "init_db", lambda: calls.append("init_db") or True
+    )
+    monkeypatch.setattr(
+        import_metering_points.db,
+        "upsert_metering_points",
+        lambda points: calls.append("upsert") or len(points),
+    )
+
+    exit_code = import_metering_points.main([str(csv_path), "--dry-run"])
+
+    assert exit_code == 0
+    assert calls == [], "a dry run must not touch the database"
+    out = capsys.readouterr().out
+    assert point not in out
+    assert "...000001" in out
 
 
 def test_help_text_uses_swiss_high_german():
