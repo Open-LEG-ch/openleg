@@ -1,7 +1,130 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for public_data.py: fetchers and computed metrics."""
 
+import csv
+import logging
 from unittest.mock import MagicMock, patch
+
+import pytest
+
+import public_data
+
+_ER_HEADER_WITHOUT_KANTON = (
+    "BFS_NR;GEMEINDENAME;anteil_dachflaechen_solar;anteil_ev;"
+    "anteil_erneuerbar_heizen;stromverbrauch_mwh;erneuerbare_produktion_mwh"
+)
+_ER_HEADER = f"{_ER_HEADER_WITHOUT_KANTON};KANTON\n"
+_SD_HEADER = (
+    "BFS_NR;dachflaeche_total_m2;dachflaeche_geeignet_m2;"
+    "potenzial_kwh_jahr;potenzial_kwp;auslastung_pct\n"
+)
+
+
+def _metadata_response():
+    response = MagicMock()
+    response.json.return_value = {
+        "result": {
+            "resources": [
+                {
+                    "format": "CSV",
+                    "name": "Gemeindedaten",
+                    "url": "https://data.example/municipalities.csv",
+                }
+            ]
+        }
+    }
+    return response
+
+
+def _csv_response(text):
+    response = MagicMock(text=text, apparent_encoding="utf-8")
+    return response
+
+
+@pytest.mark.parametrize(
+    ("fetcher", "header"),
+    [
+        (
+            public_data.fetch_energie_reporter,
+            _ER_HEADER,
+        ),
+        (public_data.fetch_sonnendach_municipal, _SD_HEADER),
+    ],
+)
+def test_bulk_fetchers_distinguish_a_healthy_empty_dataset(
+    monkeypatch, fetcher, header
+):
+    get = MagicMock(side_effect=[_metadata_response(), _csv_response(header)])
+    monkeypatch.setattr(public_data.requests, "get", get)
+
+    assert fetcher() == []
+
+
+@pytest.mark.parametrize(
+    ("fetcher", "header"),
+    [
+        (public_data.fetch_energie_reporter, "upstream-secret-column;OTHER\n1;2\n"),
+        (public_data.fetch_energie_reporter, "BFS_NR;GEMEINDENAME\n261;Town\n"),
+        (
+            public_data.fetch_energie_reporter,
+            f"{_ER_HEADER_WITHOUT_KANTON}\n261;Town;1;2;3;4;5\n",
+        ),
+        (
+            public_data.fetch_sonnendach_municipal,
+            "upstream-secret-column;OTHER\n1;2\n",
+        ),
+        (public_data.fetch_sonnendach_municipal, "BFS_NR;OTHER\n261;2\n"),
+        (
+            public_data.fetch_sonnendach_municipal,
+            "BFS_NR;potenzial_kwp\n261;500\n",
+        ),
+    ],
+)
+def test_bulk_fetchers_reject_an_incompatible_csv_schema(
+    monkeypatch, caplog, fetcher, header
+):
+    secret = "upstream-secret-column"
+    get = MagicMock(side_effect=[_metadata_response(), _csv_response(header)])
+    monkeypatch.setattr(public_data.requests, "get", get)
+
+    with caplog.at_level(logging.WARNING):
+        result = fetcher()
+
+    assert result is None
+    assert secret not in caplog.text
+
+
+@pytest.mark.parametrize(
+    "fetcher",
+    [public_data.fetch_energie_reporter, public_data.fetch_sonnendach_municipal],
+)
+@pytest.mark.parametrize("failure", ["request", "metadata", "download", "parse"])
+def test_bulk_fetchers_return_failure_without_leaking_details(
+    monkeypatch, caplog, fetcher, failure
+):
+    secret = "token=upstream-secret response=private-body"
+    metadata = _metadata_response()
+    if failure == "request":
+        get = MagicMock(side_effect=RuntimeError(secret))
+    elif failure == "metadata":
+        metadata.json.return_value = {"result": {"resources": []}}
+        get = MagicMock(return_value=metadata)
+    elif failure == "download":
+        get = MagicMock(side_effect=[metadata, RuntimeError(secret)])
+    else:
+        get = MagicMock(side_effect=[metadata, _csv_response("broken")])
+        monkeypatch.setattr(
+            public_data.csv,
+            "DictReader",
+            MagicMock(side_effect=csv.Error(secret)),
+        )
+    monkeypatch.setattr(public_data.requests, "get", get)
+
+    with caplog.at_level(logging.WARNING):
+        result = fetcher()
+
+    assert result is None
+    assert secret not in caplog.text
 
 
 class TestComputeValueGap:
@@ -119,11 +242,14 @@ class TestFetchElcom:
         assert fetch_elcom_tariffs(999, 2026) == []
 
     @patch("public_data.requests.post")
-    def test_fetch_network_error(self, mock_post):
+    def test_fetch_network_error(self, mock_post, caplog):
         from public_data import fetch_elcom_tariffs
 
-        mock_post.side_effect = Exception("Connection timeout")
-        assert fetch_elcom_tariffs(261, 2026) == []
+        secret = "token=elcom-upstream-secret"
+        mock_post.side_effect = Exception(secret)
+        with caplog.at_level(logging.ERROR):
+            assert fetch_elcom_tariffs(261, 2026) == []
+        assert secret not in caplog.text
 
 
 class TestSafeHelpers:

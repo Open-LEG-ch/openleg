@@ -335,6 +335,29 @@ def test_doctor_reports_old_interpreter_instead_of_crashing(tmp_path):
     assert "3.11" in output, output
 
 
+def test_workbench_annotations_are_safe_on_python_3_9():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "--isolated",
+            "--target-version",
+            "py39",
+            "--select",
+            "FA102",
+            PROJECT_ROOT / "scripts" / "contributor_workbench.py",
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 def test_doctor_reports_a_missing_ruff_pin_instead_of_crashing(tmp_path):
     """doctor runs on broken machines, so no path may end in a traceback.
 
@@ -990,6 +1013,111 @@ def test_check_reports_every_forbidden_path_and_pattern():
     assert "private/brief.md" in output
     assert "private/**" in output
     assert "AGENTS.md" in output
+
+
+def _ci_forbidden_pattern(path, policy_file=None):
+    if policy_file is None:
+        policy_file = PROJECT_ROOT / ".github" / "forbidden-paths.txt"
+    script = r"""
+path_to_check=$1
+policy_file=$2
+while IFS= read -r pattern || [ -n "$pattern" ]; do
+    policy_entry=$pattern
+    while :; do
+        case "$policy_entry" in
+            [[:space:]]*) policy_entry=${policy_entry#?} ;;
+            *) break ;;
+        esac
+    done
+    case "$policy_entry" in
+        ""|\#*) continue ;;
+    esac
+    if [[ "$path_to_check" == $pattern ]]; then
+        printf '%s\n' "$pattern"
+        exit 0
+    fi
+done < "$policy_file"
+exit 1
+"""
+    result = subprocess.run(
+        [
+            "/bin/bash",
+            "-c",
+            script,
+            "bash",
+            path,
+            policy_file,
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode in {0, 1}, result.stdout + result.stderr
+    return result.stdout.strip() or None
+
+
+@pytest.mark.parametrize("ignored_line", ["  # indented comment", " \t"])
+def test_ci_oracle_ignores_policy_whitespace(tmp_path, ignored_line):
+    policy = tmp_path / "forbidden-paths.txt"
+    policy.write_text(f"{ignored_line}\nAGENTS.md\n", encoding="utf-8")
+
+    assert _ci_forbidden_pattern(ignored_line, policy) is None
+    assert _ci_forbidden_pattern("AGENTS.md", policy) == "AGENTS.md"
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "AGENTS.md",
+        "README.md",
+        "archive/notes.md",
+        "archive/2026/notes.md",
+        ".github/scripts/check.sh",
+        ".github/scripts/release/check.sh",
+        "research.md",
+        "research-findings.md",
+        "docs/launch-plan.md",
+        "docs/releases/launch-plan.md",
+        "deploy.sh",
+        "src/deploy.sh",
+    ],
+)
+def test_check_matches_ci_bash_pattern(path):
+    result = subprocess.run(
+        [CONTRIBUTE, "check", path, "--json"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    diagnostics = (
+        "scripts/contribute check output:\n"
+        f"stdout:\n{result.stdout}\n"
+        f"stderr:\n{result.stderr}"
+    )
+    assert result.stdout.strip(), (
+        f"scripts/contribute check returned no JSON\n{diagnostics}"
+    )
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        pytest.fail(
+            f"scripts/contribute check returned invalid JSON\n{diagnostics}",
+            pytrace=False,
+        )
+    ci_pattern = _ci_forbidden_pattern(path)
+    workbench_pattern = next(
+        (
+            violation["pattern"]
+            for violation in payload["violations"]
+            if violation["path"] == path
+        ),
+        None,
+    )
+    assert (result.returncode != 0) is (ci_pattern is not None)
+    assert workbench_pattern == ci_pattern
 
 
 def _check_checkout(tmp_path):

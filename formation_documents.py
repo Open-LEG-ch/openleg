@@ -8,7 +8,7 @@ import formation_wizard
 
 def generate(community_id: str, building_id: str) -> dict:
     """Generate and atomically persist documents for a community administrator."""
-    status = formation_wizard.get_community_status(db, community_id)
+    status = formation_wizard.get_community_status(community_id)
     if not status or not any(
         member["building_id"] == building_id and member["role"] == "admin"
         for member in status["members"] or []

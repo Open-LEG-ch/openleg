@@ -1,7 +1,7 @@
 # Billing mutation survivor classification
 
-This record covers the native `mutmut 3.7.0` run for `billing_runner.py` and
-`store/metering.py` completed for issue #382.
+This record covers native `mutmut 3.7.0` runs for `billing_runner.py` and
+`store/metering.py`, first for #382 and again for the direction cleanup in #436.
 
 Run from the repository root:
 
@@ -14,12 +14,18 @@ python -m mutmut results
 
 | Run | Total | Killed | Survived |
 | --- | ---: | ---: | ---: |
-| Baseline | 569 | 333 | 236 |
-| After behavior tests | 569 | 559 | 10 |
+| Baseline for #382 | 569 | 333 | 236 |
+| After #382 behavior tests | 569 | 559 | 10 |
+| #436 fresh run | 643 | 626 | 17 |
 
-The added tests cover billing orchestration, reconciliation, fingerprints,
-provenance, metering writes, query behavior, defaults, and failure logging.
-All remaining survivors are intentional equivalents. They do not change
+The #436 run used an empty cache after the mutmut sandbox repair in #434. It
+removed five direction survivors by deleting unsupported scalar and whitespace
+normalization and by checking that logs name every unknown list value. One
+direction survivor remains: it changes only the separator between those logged
+values.
+
+Six of the other survivors are the unassigned-period behavior gaps tracked in
+#435. The remaining ten were classified during #382 and do not change
 application or PostgreSQL behavior.
 
 ## Intentional equivalents
@@ -27,6 +33,7 @@ application or PostgreSQL behavior.
 | Mutant | Mutation | Why behavior is unchanged |
 | --- | --- | --- |
 | `billing_runner.x_previous_complete_month__mutmut_26` | Subtract two days instead of one from the first day of the current month, then replace the day with 1. | Both dates are inside the previous calendar month, so both produce its first day. |
+| `store.metering.x__canonical_directions__mutmut_8` | Replace `, ` with `XX, XX` between unknown direction values. | Every bad value remains in the error and the write still fails. Separator punctuation is not a repository contract. |
 | `store.metering.x_get_metering_points__mutmut_10` | Lowercase `AND` in SQL. | PostgreSQL keywords are case-insensitive. |
 | `store.metering.x_get_metering_point__mutmut_6` | Lowercase the complete `SELECT` statement. | PostgreSQL folds unquoted identifiers and treats keywords case-insensitively. |
 | `store.metering.x_get_metering_point_readings__mutmut_10` | Lowercase the direction clause's `AND`. | PostgreSQL keywords are case-insensitive. |

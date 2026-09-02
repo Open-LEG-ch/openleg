@@ -549,7 +549,7 @@ def test_policy_page_refuses_members_and_strangers(app_module, monkeypatch):  # 
 def test_policy_page_refuses_unknown_community(app_module, monkeypatch):  # noqa: F811
     _patch_admin(monkeypatch, app_module)
     app_module.dashboard_module.formation_wizard.get_community_status = MagicMock(
-        side_effect=lambda _db, cid: dict(STATUS) if cid == COMMUNITY else None
+        side_effect=lambda cid: dict(STATUS) if cid == COMMUNITY else None
     )
     client = app_module.web.test_client()
     _set_session(client, building_id="b-admin")

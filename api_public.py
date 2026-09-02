@@ -508,8 +508,6 @@ def address_suggest():
     """Address autocomplete."""
     q = request.args.get("q", "").strip()
     plz_range = request.args.get("plz_range", "")
-    if not q or len(q) < 2:
-        return jsonify({"suggestions": []})
 
     import data_enricher
 
@@ -521,10 +519,10 @@ def address_suggest():
         except (ValueError, IndexError):
             pass
 
-    suggestions = (
-        data_enricher.get_address_suggestions(q, limit=10, plz_ranges=plz_ranges) or []
+    payload, status = data_enricher.resolve_address_suggestions(
+        q, limit=10, plz_ranges=plz_ranges
     )
-    return jsonify({"suggestions": suggestions})
+    return jsonify(payload), status
 
 
 @public_api_bp.route("/address/profile")

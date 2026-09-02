@@ -14,6 +14,26 @@ def test_import_is_inert_and_factory_instances_are_isolated():
             sys.executable,
             "-c",
             """
+import os
+
+os.environ.update({
+    "DATABASE_URL": "postgresql://x:x@localhost/x",
+    "ADMIN_TOKEN": "test123",
+    "INTERNAL_TOKEN": "secret-internal",
+    "APP_BASE_URL": "http://localhost:5003",
+    "PUBLIC_SITE_URL": "https://openleg.ch",
+    "ALLOWED_HOSTS": "localhost,127.0.0.1",
+    "ADMIN_EMAIL": "admin@example.com",
+    "SECRET_KEY": "app-factory-test-key",
+    "SESSION_COOKIE_SECURE": "",
+    "SESSION_COOKIE_SAMESITE": "Lax",
+    "PERMANENT_SESSION_LIFETIME": "3600",
+    "DASHBOARD_ACCESS_TOKEN_TTL_SECONDS": "",
+    "DASHBOARD_EMAIL_TOKEN_TTL_SECONDS": "",
+    "CRON_SECRET": "",
+    "REDIS_URL": "",
+})
+
 from unittest.mock import patch
 
 with (
