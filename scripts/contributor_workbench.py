@@ -60,6 +60,18 @@ class Report:
         return [check for check in self.checks if check.group == group]
 
 
+@dataclass
+class CommandResult:
+    exit_code: int
+    json_payload: dict[str, object]
+    human_lines: tuple[str, ...]
+
+    def render(self, json_mode: bool) -> str:
+        if json_mode:
+            return json.dumps(self.json_payload)
+        return "\n".join(self.human_lines)
+
+
 def evaluate(environment: Environment) -> Report:
     if environment.python is None:
         python_check = Check(
@@ -266,9 +278,10 @@ def venv_status(repo_root: Path) -> tuple[bool, bool]:
     return venv.exists(), active
 
 
-def render(report: Report) -> None:
+def report_command_result(report: Report) -> CommandResult:
+    human_lines = []
     for group in (GATE, CI, INFO):
-        print(HEADINGS[group])
+        human_lines.append(HEADINGS[group])
         for check in report.of(group):
             if group == INFO:
                 status = "INFO"
@@ -281,25 +294,62 @@ def render(report: Report) -> None:
             line = f"{status} {check.name}: {check.detail}"
             if check.fix:
                 line += f". Next: {check.fix}"
-            print(line)
-
-
-def render_report_json(report: Report) -> None:
-    print(
-        json.dumps(
-            {
-                "checks": [
-                    {
-                        "group": check.group,
-                        "name": check.name,
-                        "ok": check.ok,
-                        "detail": check.detail,
-                    }
-                    for check in report.checks
-                ]
-            }
-        )
+            human_lines.append(line)
+    return CommandResult(
+        report.exit_code,
+        {
+            "checks": [
+                {
+                    "group": check.group,
+                    "name": check.name,
+                    "ok": check.ok,
+                    "detail": check.detail,
+                }
+                for check in report.checks
+            ]
+        },
+        tuple(human_lines),
     )
+
+
+def doctor_command(
+    repo_root: Path, environment: Environment | None = None
+) -> CommandResult:
+    if environment is None:
+        venv_exists, venv_active = venv_status(repo_root)
+        try:
+            ruff_pin = read_ruff_pin(repo_root / "requirements-dev.txt")
+        except (OSError, ValueError) as error:
+            # doctor is what a contributor runs when things are broken, so a
+            # broken repository has to be reported, never raised at them.
+            return report_command_result(
+                Report(
+                    [
+                        Check(
+                            GATE,
+                            "ruff",
+                            False,
+                            f"cannot read the pin from requirements-dev.txt: {error}",
+                            "restore an exact `ruff==<version>` line in "
+                            "requirements-dev.txt",
+                        )
+                    ],
+                    1,
+                )
+            )
+        environment = Environment(
+            python=detect_python(),
+            pytest=detect_pytest(),
+            ruff_executable=detect_ruff_executable(),
+            ruff_module=detect_ruff_module(),
+            ruff_pin=ruff_pin,
+            node=shutil.which("node") is not None,
+            npm=shutil.which("npm") is not None,
+            mypy=shutil.which("mypy") is not None,
+            venv_exists=venv_exists,
+            venv_active=venv_active,
+        )
+    return report_command_result(evaluate(environment))
 
 
 def read_section(context_file: Path, heading: str) -> list[str]:
@@ -351,6 +401,89 @@ def read_domain_terms(context_file: Path) -> dict[str, str]:
     return dict(read_table(context_file, "Domain Terms", ("Term", "Meaning")))
 
 
+def glossary_command(context_file: Path, term: str | None) -> CommandResult:
+    try:
+        terms = read_domain_terms(context_file)
+    except (OSError, ValueError) as error:
+        return CommandResult(
+            1,
+            {"terms": [], "error": f"CONTEXT.md: {error}"},
+            (f"FAIL CONTEXT.md: {error}",),
+        )
+    if term is None:
+        return CommandResult(
+            0,
+            {
+                "terms": [
+                    {"term": name, "meaning": meaning}
+                    for name, meaning in terms.items()
+                ]
+            },
+            tuple(f"{name}: {meaning}" for name, meaning in terms.items()),
+        )
+    terms_by_key = {name.casefold(): name for name in terms}
+    matching_term = terms_by_key.get(term.casefold())
+    if matching_term is None:
+        suggestions = difflib.get_close_matches(
+            term.casefold(), terms_by_key, n=3, cutoff=0
+        )
+        suggested_terms = ", ".join(terms_by_key[key] for key in suggestions)
+        detail = f"Unknown glossary term {term}. Closest: {suggested_terms}"
+        return CommandResult(1, {"terms": [], "error": detail}, (detail,))
+    return CommandResult(
+        0,
+        {"terms": [{"term": matching_term, "meaning": terms[matching_term]}]},
+        (terms[matching_term],),
+    )
+
+
+def tour_command(context_file: Path) -> CommandResult:
+    try:
+        seams = read_seams(context_file)
+        store_modules = read_store_modules(context_file)
+    except (OSError, ValueError) as error:
+        return CommandResult(
+            1,
+            {"seams": [], "store_modules": [], "error": f"CONTEXT.md: {error}"},
+            (f"FAIL CONTEXT.md: {error}",),
+        )
+    return CommandResult(
+        0,
+        {
+            "entry_points": [
+                {
+                    "path": "app.py",
+                    "purpose": "application factory and local development server",
+                },
+                {"path": "wsgi.py", "purpose": "production WSGI entry point"},
+                {"path": "api_public.py", "purpose": "public JSON API"},
+            ],
+            "seams": seams,
+            "store_modules": [
+                {"module": module, "purpose": purpose}
+                for module, purpose in store_modules.items()
+            ],
+            "tests": ["tests/: pytest tests and contract tests"],
+            "gate": "scripts/test.sh gate",
+        },
+        (
+            "OpenLEG orientation",
+            "Entry points",
+            "- app.py: application factory and local development server",
+            "- wsgi.py: production WSGI entry point",
+            "- api_public.py: public JSON API",
+            "Named seams",
+            *(f"- {seam}" for seam in seams),
+            "Store modules",
+            *(f"- {module}: {purpose}" for module, purpose in store_modules.items()),
+            "Tests",
+            "- tests/: pytest tests and contract tests",
+            "Gate",
+            "- scripts/test.sh gate",
+        ),
+    )
+
+
 def read_seams(context_file: Path) -> list[str]:
     section = read_section(context_file, "Seams")
     # Require the full `- **`name`**` shape. A truncated line yields an empty
@@ -377,11 +510,6 @@ def read_store_modules(context_file: Path) -> dict[str, str]:
     ):
         raise ValueError("missing or malformed store module table")
     return {module.strip("`"): purpose for module, purpose in rows}
-
-
-def report_context_error(error: Exception) -> int:
-    print(f"FAIL CONTEXT.md: {error}")
-    return 1
 
 
 def setup_environment(repo_root: Path, dry_run: bool) -> int:
@@ -467,17 +595,40 @@ def staged_paths(repo_root: Path) -> tuple[list[str] | None, str]:
     return result.stdout.splitlines(), ""
 
 
-def render_check_json(
-    violations: list[tuple[str, str]], error: str | None = None
-) -> None:
-    payload: dict[str, object] = {
-        "violations": [
-            {"path": path, "pattern": pattern} for path, pattern in violations
-        ]
-    }
-    if error is not None:
-        payload["error"] = error
-    print(json.dumps(payload))
+def check_command(paths: list[str], repo_root: Path, *, staged: bool) -> CommandResult:
+    resolved_paths = list(paths)
+    if staged or not resolved_paths:
+        found_paths, error = staged_paths(repo_root)
+        if found_paths is None:
+            detail = f"cannot read staged paths: {error}"
+            return CommandResult(
+                1,
+                {"violations": [], "error": detail},
+                (f"FAIL check: {detail}",),
+            )
+        resolved_paths.extend(found_paths)
+    policy_file = repo_root / ".github" / "forbidden-paths.txt"
+    try:
+        violations = forbidden_path_violations(resolved_paths, policy_file)
+    except (OSError, UnicodeError) as error:
+        detail = f"cannot read {policy_file}: {error}"
+        return CommandResult(
+            1,
+            {"violations": [], "error": detail},
+            (f"FAIL check: {detail}",),
+        )
+    return CommandResult(
+        1 if violations else 0,
+        {
+            "violations": [
+                {"path": path, "pattern": pattern} for path, pattern in violations
+            ]
+        },
+        tuple(
+            f"FAIL check: {path} matches forbidden pattern {pattern}"
+            for path, pattern in violations
+        ),
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -507,33 +658,11 @@ def main() -> int:
     args = build_parser().parse_args()
     repo_root = Path(__file__).resolve().parents[1]
     if args.command == "check":
-        paths = list(args.paths)
-        if args.staged or not paths:
-            found_paths, error = staged_paths(repo_root)
-            if found_paths is None:
-                detail = f"cannot read staged paths: {error}"
-                if args.json:
-                    render_check_json([], detail)
-                else:
-                    print(f"FAIL check: {detail}")
-                return 1
-            paths.extend(found_paths)
-        policy_file = repo_root / ".github" / "forbidden-paths.txt"
-        try:
-            violations = forbidden_path_violations(paths, policy_file)
-        except (OSError, UnicodeError) as error:
-            detail = f"cannot read {policy_file}: {error}"
-            if args.json:
-                render_check_json([], detail)
-            else:
-                print(f"FAIL check: {detail}")
-            return 1
-        if args.json:
-            render_check_json(violations)
-        else:
-            for path, pattern in violations:
-                print(f"FAIL check: {path} matches forbidden pattern {pattern}")
-        return 1 if violations else 0
+        result = check_command(list(args.paths), repo_root, staged=args.staged)
+        rendered = result.render(args.json)
+        if rendered:
+            print(rendered)
+        return result.exit_code
     if args.command == "setup":
         return setup_environment(repo_root, args.dry_run)
     if args.command == "gate":
@@ -556,152 +685,17 @@ def main() -> int:
             return 1
         return result.returncode
     if args.command == "glossary":
-        try:
-            terms = read_domain_terms(repo_root / "CONTEXT.md")
-        except (OSError, ValueError) as error:
-            if args.json:
-                print(json.dumps({"terms": [], "error": f"CONTEXT.md: {error}"}))
-                return 1
-            return report_context_error(error)
-        selected_terms = terms
-        if args.term is None:
-            pass
-        else:
-            terms_by_key = {term.casefold(): term for term in terms}
-            matching_term = terms_by_key.get(args.term.casefold())
-            if matching_term is None:
-                suggestions = difflib.get_close_matches(
-                    args.term.casefold(), terms_by_key, n=3, cutoff=0
-                )
-                suggested_terms = ", ".join(terms_by_key[key] for key in suggestions)
-                detail = (
-                    f"Unknown glossary term {args.term}. Closest: {suggested_terms}"
-                )
-                if args.json:
-                    print(json.dumps({"terms": [], "error": detail}))
-                else:
-                    print(detail)
-                return 1
-            selected_terms = {matching_term: terms[matching_term]}
-        if args.json:
-            print(
-                json.dumps(
-                    {
-                        "terms": [
-                            {"term": term, "meaning": meaning}
-                            for term, meaning in selected_terms.items()
-                        ]
-                    }
-                )
-            )
-        elif args.term is None:
-            for term, meaning in terms.items():
-                print(f"{term}: {meaning}")
-        else:
-            print(next(iter(selected_terms.values())))
-        return 0
+        result = glossary_command(repo_root / "CONTEXT.md", args.term)
+        print(result.render(args.json))
+        return result.exit_code
     if args.command == "tour":
-        try:
-            seams = read_seams(repo_root / "CONTEXT.md")
-            store_modules = read_store_modules(repo_root / "CONTEXT.md")
-        except (OSError, ValueError) as error:
-            if args.json:
-                print(
-                    json.dumps(
-                        {
-                            "seams": [],
-                            "store_modules": [],
-                            "error": f"CONTEXT.md: {error}",
-                        }
-                    )
-                )
-                return 1
-            return report_context_error(error)
-        if args.json:
-            print(
-                json.dumps(
-                    {
-                        "entry_points": [
-                            {
-                                "path": "app.py",
-                                "purpose": "application factory and local development server",
-                            },
-                            {
-                                "path": "wsgi.py",
-                                "purpose": "production WSGI entry point",
-                            },
-                            {"path": "api_public.py", "purpose": "public JSON API"},
-                        ],
-                        "seams": seams,
-                        "store_modules": [
-                            {"module": module, "purpose": purpose}
-                            for module, purpose in store_modules.items()
-                        ],
-                        "tests": ["tests/: pytest tests and contract tests"],
-                        "gate": "scripts/test.sh gate",
-                    }
-                )
-            )
-            return 0
-        print("OpenLEG orientation")
-        print("Entry points")
-        print("- app.py: application factory and local development server")
-        print("- wsgi.py: production WSGI entry point")
-        print("- api_public.py: public JSON API")
-        print("Named seams")
-        for seam in seams:
-            print(f"- {seam}")
-        print("Store modules")
-        for module, purpose in store_modules.items():
-            print(f"- {module}: {purpose}")
-        print("Tests")
-        print("- tests/: pytest tests and contract tests")
-        print("Gate")
-        print("- scripts/test.sh gate")
-        return 0
+        result = tour_command(repo_root / "CONTEXT.md")
+        print(result.render(args.json))
+        return result.exit_code
     if args.command == "doctor":
-        venv_exists, venv_active = venv_status(repo_root)
-        try:
-            ruff_pin = read_ruff_pin(repo_root / "requirements-dev.txt")
-        except (OSError, ValueError) as error:
-            # doctor is what a contributor runs when things are broken, so a
-            # broken repository has to be reported, never raised at them.
-            report = Report(
-                [
-                    Check(
-                        GATE,
-                        "ruff",
-                        False,
-                        f"cannot read the pin from requirements-dev.txt: {error}",
-                        "restore an exact `ruff==<version>` line in requirements-dev.txt",
-                    )
-                ],
-                1,
-            )
-            if args.json:
-                render_report_json(report)
-            else:
-                render(report)
-            return report.exit_code
-        report = evaluate(
-            Environment(
-                python=detect_python(),
-                pytest=detect_pytest(),
-                ruff_executable=detect_ruff_executable(),
-                ruff_module=detect_ruff_module(),
-                ruff_pin=ruff_pin,
-                node=shutil.which("node") is not None,
-                npm=shutil.which("npm") is not None,
-                mypy=shutil.which("mypy") is not None,
-                venv_exists=venv_exists,
-                venv_active=venv_active,
-            )
-        )
-        if args.json:
-            render_report_json(report)
-        else:
-            render(report)
-        return report.exit_code
+        result = doctor_command(repo_root)
+        print(result.render(args.json))
+        return result.exit_code
     return 0
 
 

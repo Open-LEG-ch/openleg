@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from scripts import contributor_workbench as workbench
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CONTRIBUTE = PROJECT_ROOT / "scripts" / "contribute"
 
@@ -452,6 +454,157 @@ def test_unknown_glossary_term_suggests_a_context_term():
     output = result.stdout + result.stderr
     assert result.returncode != 0
     assert any(term in output for term in _domain_terms())
+
+
+def test_glossary_command_result_drives_human_and_json_renderings(tmp_path):
+    """Human and JSON glossary output must render from one command result."""
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    (checkout / "CONTEXT.md").write_text(
+        "# Context\n\n## Domain Terms\n\n"
+        "| Term | Meaning |\n| --- | --- |\n"
+        "| LEG | Local Enforcement Graph |\n",
+        encoding="utf-8",
+    )
+
+    bare = workbench.glossary_command(checkout / "CONTEXT.md", None)
+    single = workbench.glossary_command(checkout / "CONTEXT.md", "LEG")
+
+    assert bare.exit_code == 0
+    assert bare.human_lines == ("LEG: Local Enforcement Graph",)
+    assert bare.json_payload == {
+        "terms": [{"term": "LEG", "meaning": "Local Enforcement Graph"}]
+    }
+    assert single.exit_code == 0
+    assert single.human_lines == ("Local Enforcement Graph",)
+    assert single.json_payload == {
+        "terms": [{"term": "LEG", "meaning": "Local Enforcement Graph"}]
+    }
+
+
+def test_tour_command_result_drives_human_and_json_renderings(tmp_path):
+    """Human and JSON tour output must render from one command result."""
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    (checkout / "CONTEXT.md").write_text(
+        "# Context\n\n## Seams\n\n"
+        "- **`database.get_connection`** is the connection seam\n\n"
+        "## Module Names\n\n"
+        "| Module | Owns |\n| --- | --- |\n| `store/audit` | audit trail writes |\n",
+        encoding="utf-8",
+    )
+
+    result = workbench.tour_command(checkout / "CONTEXT.md")
+
+    assert result.exit_code == 0
+    assert result.human_lines == (
+        "OpenLEG orientation",
+        "Entry points",
+        "- app.py: application factory and local development server",
+        "- wsgi.py: production WSGI entry point",
+        "- api_public.py: public JSON API",
+        "Named seams",
+        "- database.get_connection",
+        "Store modules",
+        "- store/audit: audit trail writes",
+        "Tests",
+        "- tests/: pytest tests and contract tests",
+        "Gate",
+        "- scripts/test.sh gate",
+    )
+    assert result.json_payload == {
+        "entry_points": [
+            {
+                "path": "app.py",
+                "purpose": "application factory and local development server",
+            },
+            {"path": "wsgi.py", "purpose": "production WSGI entry point"},
+            {"path": "api_public.py", "purpose": "public JSON API"},
+        ],
+        "seams": ["database.get_connection"],
+        "store_modules": [{"module": "store/audit", "purpose": "audit trail writes"}],
+        "tests": ["tests/: pytest tests and contract tests"],
+        "gate": "scripts/test.sh gate",
+    }
+
+
+def test_check_command_result_drives_human_and_json_renderings(tmp_path):
+    """Human and JSON check output must render from one command result."""
+    policy_directory = tmp_path / ".github"
+    policy_directory.mkdir()
+    (policy_directory / "forbidden-paths.txt").write_text(
+        "strategy/**\n", encoding="utf-8"
+    )
+
+    clean = workbench.check_command(["README.md"], tmp_path, staged=False)
+    violating = workbench.check_command(["strategy/notes.md"], tmp_path, staged=False)
+
+    assert clean.exit_code == 0
+    assert clean.human_lines == ()
+    assert clean.json_payload == {"violations": []}
+    assert violating.exit_code == 1
+    assert violating.human_lines == (
+        "FAIL check: strategy/notes.md matches forbidden pattern strategy/**",
+    )
+    assert violating.json_payload == {
+        "violations": [{"path": "strategy/notes.md", "pattern": "strategy/**"}]
+    }
+
+
+def test_doctor_command_result_drives_human_and_json_renderings():
+    """Human and JSON doctor output must render from one command result."""
+    pin = "0.16.5"
+    environment = workbench.Environment(
+        python=(3, 12, 0),
+        pytest=True,
+        ruff_executable=pin,
+        ruff_module=pin,
+        ruff_pin=pin,
+        node=True,
+        npm=False,
+        mypy=False,
+        venv_exists=False,
+        venv_active=False,
+    )
+
+    result = workbench.doctor_command(PROJECT_ROOT, environment)
+
+    assert result.exit_code == 0
+    assert result.human_lines == (
+        "Required to run the gate",
+        "OK Python: 3.12.0",
+        "OK pytest: importable",
+        f"OK ruff executable: {pin}, matches pin",
+        f"OK python3 -m ruff: {pin}, matches pin",
+        "Required to match CI",
+        "OK node: present",
+        "WARNING npm: not found. Next: CI runs npm; install it to match CI locally",
+        "WARNING mypy: not found. Next: CI runs mypy; install it to match CI locally",
+        "Reported only",
+        "INFO .venv: absent",
+    )
+    assert result.json_payload == {
+        "checks": [
+            {"group": "gate", "name": "Python", "ok": True, "detail": "3.12.0"},
+            {"group": "gate", "name": "pytest", "ok": True, "detail": "importable"},
+            {
+                "group": "gate",
+                "name": "ruff executable",
+                "ok": True,
+                "detail": f"{pin}, matches pin",
+            },
+            {
+                "group": "gate",
+                "name": "python3 -m ruff",
+                "ok": True,
+                "detail": f"{pin}, matches pin",
+            },
+            {"group": "ci", "name": "node", "ok": True, "detail": "present"},
+            {"group": "ci", "name": "npm", "ok": False, "detail": "not found"},
+            {"group": "ci", "name": "mypy", "ok": False, "detail": "not found"},
+            {"group": "info", "name": ".venv", "ok": True, "detail": "absent"},
+        ]
+    }
 
 
 def test_tour_names_both_context_seams():
