@@ -22,7 +22,7 @@ MAX_PAYMENT_DAYS = 365
 MAX_VAT_RATE_PCT = Decimal(100)
 MAX_PRICE_RP = Decimal(1000)
 MAX_PRICE_DECIMALS_RP = 4
-INVOICE_PREFIX_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9-]{1,15}$")
+INVOICE_PREFIX_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9-]{1,15}\Z")
 _STRICT_DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PLAIN_DECIMAL_PATTERN = re.compile(r"^\d+(\.\d+)?$")
 

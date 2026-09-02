@@ -263,6 +263,182 @@ def test_validate_persisted_policy_refuses_invalid_energy_price(field, value):
         )
 
 
+_INVALID_EFFECTIVE_FROM_CASES = (
+    "",
+    "2026-13-01",
+    "2026-09-32",
+    "01.09.2026",
+    "20260901",
+    "not-a-date",
+    20260901,
+    datetime(2026, 9, 1),  # noqa: DTZ001 - deliberately incomparable with aware time
+    datetime(2026, 10, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+)
+
+
+@pytest.mark.parametrize("value", _INVALID_EFFECTIVE_FROM_CASES)
+def test_validate_persisted_policy_refuses_invalid_effective_from(value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["effective_from"] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+# --- Invalid persisted payment_days cases -------------------------------------
+
+_INVALID_PERSISTED_PAYMENT_DAYS_CASES = (
+    True,
+    False,
+    0,
+    -1,
+    -30,
+    366,
+    1000,
+    30.0,
+    30.5,
+    "30",
+    "30.5",
+    "abc",
+    "",
+    None,
+)
+
+
+@pytest.mark.parametrize("value", _INVALID_PERSISTED_PAYMENT_DAYS_CASES)
+def test_invalid_persisted_payment_days_is_refused(value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["payment_days"] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+# --- Invalid persisted enum choices ------------------------------------------
+
+_INVALID_PERSISTED_ENUM_CASES = (
+    ("network_level", "different"),
+    ("network_level", ""),
+    ("network_level", 7),
+    ("network_level", True),
+    ("network_level", ["same"]),
+    ("distribution_model", "simple"),
+    ("distribution_model", ""),
+    ("distribution_model", 3),
+    ("distribution_model", False),
+    ("distribution_model", ["proportional"]),
+    ("delivery_method", "post"),
+    ("delivery_method", ""),
+    ("delivery_method", 9),
+    ("delivery_method", True),
+    ("delivery_method", ["email"]),
+)
+
+
+@pytest.mark.parametrize(("field", "value"), _INVALID_PERSISTED_ENUM_CASES)
+def test_invalid_persisted_enum_choices_are_refused(field, value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[field] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+# --- Invalid persisted vat_mode/vat_rate_pct combinations ---------------------
+
+_INVALID_PERSISTED_VAT_CASES = (
+    ("partial", Decimal(0)),
+    ("reduced", Decimal(0)),
+    ("", Decimal(0)),
+    (" ", Decimal(0)),
+    (7, Decimal(0)),
+    (True, Decimal(0)),
+    (["none"], Decimal(0)),
+    (None, Decimal(0)),
+    ("none", Decimal("0.01")),
+    ("none", Decimal("8.1")),
+    ("none", Decimal("-0.01")),
+    ("none", 8.1),
+    ("none", Decimal("NaN")),
+    ("none", Decimal("Infinity")),
+    ("none", "abc"),
+    ("none", None),
+    ("standard", Decimal(0)),
+    ("standard", Decimal(-1)),
+    ("standard", Decimal("100.01")),
+    ("standard", "abc"),
+    ("standard", Decimal("8.123")),
+)
+
+
+@pytest.mark.parametrize(("vat_mode", "vat_rate_pct"), _INVALID_PERSISTED_VAT_CASES)
+def test_invalid_persisted_vat_combination_is_refused(vat_mode, vat_rate_pct):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["vat_mode"] = vat_mode
+    policy["vat_rate_pct"] = vat_rate_pct
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+# --- Invalid persisted invoice_prefix cases -----------------------------------
+
+_INVALID_PERSISTED_INVOICE_PREFIX_CASES = (
+    "",
+    " ",
+    "\t",
+    " LEG-2026",
+    "LEG-2026 ",
+    "LEG 2026",
+    7,
+    None,
+    True,
+    ["LEG-2026"],
+    ("LEG-2026",),
+    9.5,
+    "A" * 17,
+    "B" * 32,
+    "leg-2026",
+    "Leg-2026",
+    "LEG_2026",
+    "LEG/2026",
+    "LEG.1",
+    "LEG-2026!",
+    "<script>",
+    "égü",
+    "LEG-2026\n",
+)
+
+
+@pytest.mark.parametrize("value", _INVALID_PERSISTED_INVOICE_PREFIX_CASES)
+def test_invalid_persisted_invoice_prefix_is_refused(value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["invoice_prefix"] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
 def test_disclaimer_promises_no_legal_advice():
     disclaimer = billing_policy.POLICY_DISCLAIMER
     assert "Verantwortung der LEG" in disclaimer
