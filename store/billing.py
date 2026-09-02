@@ -15,6 +15,7 @@ from decimal import Decimal
 
 import billing_approval
 import billing_lifecycle
+import billing_policy
 
 logger = logging.getLogger(__name__)
 
@@ -491,30 +492,19 @@ def save_billing_policy(community_id: str, policy: dict) -> int:
     BillingStoreError.
     """
     try:
+        columns = ("community_id", *billing_policy.EDITABLE_POLICY_FIELDS)
+        column_sql = ", ".join(columns)
+        placeholders = ", ".join("%s" for _ in columns)
+        values = (community_id, *(policy[field] for field in columns[1:]))
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
-                """
+                f"""
                 INSERT INTO billing_tariffs
-                (community_id, effective_from, internal_price_chf_per_kwh,
-                 grid_fee_chf_per_kwh, network_level, distribution_model,
-                 vat_mode, vat_rate_pct, payment_days, invoice_prefix,
-                 delivery_method)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ({column_sql})
+                VALUES ({placeholders})
                 RETURNING id
                 """,
-                (
-                    community_id,
-                    policy["effective_from"],
-                    policy["internal_price_chf_per_kwh"],
-                    policy["grid_fee_chf_per_kwh"],
-                    policy["network_level"],
-                    policy["distribution_model"],
-                    policy["vat_mode"],
-                    policy["vat_rate_pct"],
-                    policy["payment_days"],
-                    policy["invoice_prefix"],
-                    policy["delivery_method"],
-                ),
+                values,
             )
             return cur.fetchone()["id"]
     except Exception as e:

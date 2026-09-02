@@ -55,6 +55,61 @@ def test_valid_form_produces_complete_policy():
     assert policy["delivery_method"] == "email"
 
 
+def test_persisted_policy_definition_owns_the_complete_field_set():
+    assert billing_policy.PERSISTED_POLICY_FIELDS == (
+        "tariff_id",
+        "community_id",
+        "effective_from",
+        "internal_price_chf_per_kwh",
+        "grid_fee_chf_per_kwh",
+        "network_level",
+        "distribution_model",
+        "vat_mode",
+        "vat_rate_pct",
+        "payment_days",
+        "invoice_prefix",
+        "delivery_method",
+    )
+
+
+def test_fingerprint_projection_uses_every_persisted_policy_field():
+    policy = {
+        "tariff_id": 7,
+        "community_id": "community-a",
+        "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        "internal_price_chf_per_kwh": Decimal("0.15"),
+        "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": Decimal(0),
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+
+    projected = billing_policy.policy_fingerprint_values(policy)
+
+    assert tuple(projected) == billing_policy.FINGERPRINT_POLICY_FIELDS
+    assert "effective_from" not in projected
+    assert projected["internal_price_chf_per_kwh"] == "0.15"
+
+
+def test_persisted_policy_refuses_temporal_types_that_cannot_be_compared():
+    policy = _policy(
+        tariff_id=7,
+        community_id="community-a",
+        effective_from=date(2026, 9, 1),
+    )
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
 def test_disclaimer_promises_no_legal_advice():
     disclaimer = billing_policy.POLICY_DISCLAIMER
     assert "Verantwortung der LEG" in disclaimer

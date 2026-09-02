@@ -20,6 +20,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # seam refactor (#453) moved readiness, transitions, and the consent-gated
 # cluster decision into formation_wizard and store/formation.
 SCOPED_MODULES = (
+    "billing_policy.py",
+    "billing_approval.py",
     "billing_runner.py",
     "store/metering.py",
     "formation_wizard.py",

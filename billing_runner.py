@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import billing_engine
+import billing_policy
 import billing_readings
 import database as db
 
@@ -46,20 +47,11 @@ def _fingerprint(frames, policy, summary, reconciliation):
         "production": _canonical_frame(frames.production),
         "consumption": _canonical_frame(frames.consumption),
         "participants": list(frames.participants),
-        "tariff_id": policy["tariff_id"],
-        "internal_price_chf_per_kwh": str(policy["internal_price_chf_per_kwh"]),
-        "grid_fee_chf_per_kwh": str(policy["grid_fee_chf_per_kwh"]),
-        "network_level": policy["network_level"],
-        "distribution_model": policy["distribution_model"],
-        "vat_mode": policy["vat_mode"],
-        "vat_rate_pct": str(policy["vat_rate_pct"]),
-        "payment_days": policy["payment_days"],
-        "invoice_prefix": policy["invoice_prefix"],
-        "delivery_method": policy["delivery_method"],
         "vnb_reference": frames.vnb_reference,
         "summary": summary,
         "reconciliation": reconciliation,
     }
+    payload.update(billing_policy.policy_fingerprint_values(policy))
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
 
