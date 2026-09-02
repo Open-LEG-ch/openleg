@@ -352,16 +352,10 @@ def refresh_municipality(
 
     # Energie Reporter (bulk): locate this municipality's row
     er_data = (
-        fetch_energie_reporter()
-        if _energie_reporter is _UNSET
-        else _energie_reporter
+        fetch_energie_reporter() if _energie_reporter is _UNSET else _energie_reporter
     )
     er_row = next(
-        (
-            entry
-            for entry in er_data or []
-            if entry.get("bfs_number") == bfs_number
-        ),
+        (entry for entry in er_data or [] if entry.get("bfs_number") == bfs_number),
         None,
     )
     if er_data is None:
@@ -374,11 +368,7 @@ def refresh_municipality(
         result["sources"]["energie_reporter"] = "ok"
 
     # Sonnendach (bulk): locate this municipality's row
-    sd_data = (
-        fetch_sonnendach_municipal()
-        if _sonnendach is _UNSET
-        else _sonnendach
-    )
+    sd_data = fetch_sonnendach_municipal() if _sonnendach is _UNSET else _sonnendach
     sd_row = None
     if sd_data is None:
         result["sources"]["sonnendach"] = "fetch_failed"
