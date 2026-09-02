@@ -131,7 +131,7 @@ def test_verzeichnis_renders_empty_state_with_canonical(monkeypatch):
     monkeypatch.setattr(
         municipality.Ranking,
         "load",
-        classmethod(lambda cls, _kanton=None: _EmptyRanking()),
+        classmethod(lambda cls, kanton=None: _EmptyRanking()),
     )
 
     response = _client().get("/gemeinde/verzeichnis")
@@ -188,7 +188,7 @@ def test_verzeichnis_filters_by_query_and_projects_ranking(monkeypatch):
     monkeypatch.setattr(
         municipality.Ranking,
         "load",
-        classmethod(lambda cls, _kanton=None: _Ranking()),
+        classmethod(lambda cls, kanton=None: _Ranking()),
     )
 
     response = _client().get("/gemeinde/verzeichnis?q=Diet&kanton=ZH&sort=population")
