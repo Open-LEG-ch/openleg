@@ -315,29 +315,12 @@ def favicon():
 def api_suggest_addresses():
     query = request.args.get("q", "").strip()
     query = security_utils.sanitize_string(query, max_length=100)
-    if not query or len(query) < 2:
-        return jsonify({"suggestions": []})
     limit = 15 if len(query) < 5 else 10
     plz_ranges = g.tenant.get("plz_ranges") if hasattr(g, "tenant") else None
-    suggestions_raw = data_enricher.get_address_suggestions(
+    payload, status = data_enricher.resolve_address_suggestions(
         query, limit=limit, plz_ranges=plz_ranges
     )
-    if suggestions_raw is None:
-        return jsonify({"error": "Adressvorschläge sind derzeit nicht verfügbar."}), 503
-    suggestions = []
-    for s in suggestions_raw:
-        if isinstance(s, dict) and s.get("label") and s.get("label").strip():
-            label = security_utils.sanitize_string(s.get("label", ""), max_length=200)
-            if label:
-                suggestions.append(
-                    {
-                        "label": label,
-                        "lat": s.get("lat"),
-                        "lon": s.get("lon"),
-                        "plz": s.get("plz"),
-                    }
-                )
-    return jsonify({"suggestions": suggestions})
+    return jsonify(payload), status
 
 
 # --- Check Potential ---
@@ -704,7 +687,7 @@ def api_formation_optimize():
     if not building_id:
         return jsonify({"error": "building_id required"}), 400
 
-    clusters = formation_wizard.get_formable_clusters(db, building_id)
+    clusters = formation_wizard.get_formable_clusters(building_id)
     return jsonify({"clusters": clusters})
 
 

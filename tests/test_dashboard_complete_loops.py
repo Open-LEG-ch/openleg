@@ -28,7 +28,7 @@ def test_leg_invite_resolves_email_without_exposing_profile_id(monkeypatch):
     result = dashboard.leg_invite_by_email("c0ffee", "b-admin", "person@example.ch")
 
     assert result == {"error": None}
-    invite.assert_called_once_with(dashboard.db, "c0ffee", "b-new", "b-admin")
+    invite.assert_called_once_with("c0ffee", "b-new", "b-admin")
 
 
 def test_leg_invite_email_response_is_generic(monkeypatch):

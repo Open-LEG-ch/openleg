@@ -86,22 +86,25 @@ _POINT_UPSERT_SQL = """
 _DIRECTION_ORDER = ("consumption", "production")
 
 
-def _canonical_directions(value):
-    """Eindeutige Richtungen in kanonischer Reihenfolge, oder None.
+def _canonical_directions(value: list[str] | None) -> list[str] | None:
+    """Deklarierte Richtungen in kanonischer Reihenfolge, oder None.
 
     None bleibt None, damit COALESCE im Upsert einen vorhandenen Wert nie
-    leert. Duplikate und Reihenfolge der Eingabe spielen keine Rolle.
+    leert. Die CSV-Aufbereitung liefert eine Liste ohne Leerzeichen.
+    Duplikate und Reihenfolge der Eingabe spielen keine Rolle.
     """
     if value is None:
         return None
-    if isinstance(value, str):
-        value = [value]
-    declared = {str(item).strip() for item in value if str(item).strip()}
+    if not isinstance(value, list) or not all(
+        isinstance(direction, str) for direction in value
+    ):
+        raise TypeError("expected_directions erwartet list[str] oder None")
+    if not value:
+        return None
+    declared = set(value)
     unknown = declared.difference(_DIRECTION_ORDER)
     if unknown:
         raise ValueError(f"Unbekannte Messrichtung(en): {', '.join(sorted(unknown))}")
-    if not declared:
-        return None
     return [direction for direction in _DIRECTION_ORDER if direction in declared]
 
 
@@ -197,7 +200,11 @@ def save_metering_point_readings(rows, source_document_id=None, batch_size=5000)
 
 
 def upsert_metering_points(points):
-    """Register anreichern, ohne bestehende Werte zu leeren."""
+    """Register anreichern, ohne bestehende Werte zu leeren.
+
+    ``expected_directions`` akzeptiert ``list[str] | None``. Die CSV-Aufbereitung
+    übernimmt das Parsen und Entfernen von Leerzeichen.
+    """
     points = [p for p in points if p.get("metering_point_id")]
     if not points:
         return 0

@@ -14,9 +14,17 @@ import tomllib
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-# The modules where a surviving mutant would mean money or privacy, and where
-# the suite already asserts SQL shape rather than SQL behaviour.
-SCOPED_MODULES = ("billing_runner.py", "store/metering.py")
+# The modules where a surviving mutant would mean money, privacy, or a wrong
+# formation decision, and where the suite already asserts SQL shape rather than
+# SQL behaviour. The scope follows the slice under evidence; the formation
+# seam refactor (#453) moved readiness, transitions, and the consent-gated
+# cluster decision into formation_wizard and store/formation.
+SCOPED_MODULES = (
+    "billing_runner.py",
+    "store/metering.py",
+    "formation_wizard.py",
+    "store/formation.py",
+)
 
 
 def _pyproject():
@@ -25,6 +33,13 @@ def _pyproject():
 
 def _requirements_dev():
     return (PROJECT_ROOT / "requirements-dev.txt").read_text(encoding="utf-8")
+
+
+def _mutmut_config():
+    config = _pyproject()
+    assert "tool" in config, "pyproject.toml requires a [tool] table"
+    assert "mutmut" in config["tool"], "the skill requires a [tool.mutmut] table"
+    return config["tool"]["mutmut"]
 
 
 def test_the_mutation_tools_are_pinned_as_dev_dependencies():
@@ -37,11 +52,27 @@ def test_the_mutation_tools_are_pinned_as_dev_dependencies():
 
 
 def test_mutmut_is_scoped_to_the_modules_where_a_survivor_would_matter():
-    config = _pyproject()
+    config = _mutmut_config()
 
-    assert "mutmut" in config["tool"], "the skill requires a [tool.mutmut] table"
-    source_paths = config["tool"]["mutmut"]["source_paths"]
+    assert "source_paths" in config, "mutmut requires an explicit source scope"
+    source_paths = config["source_paths"]
     assert list(source_paths) == list(SCOPED_MODULES)
+
+
+def test_mutmut_copies_formation_dependencies_needed_for_collection():
+    config = _mutmut_config()
+
+    assert "also_copy" in config, "mutmut requires explicit sandbox dependencies"
+    also_copy = set(config["also_copy"])
+
+    assert {
+        "access_token.py",
+        "billing_approval.py",
+        "billing_lifecycle.py",
+        "billing_policy.py",
+        "email_automation.py",
+        "email_utils.py",
+    } <= also_copy
 
 
 def test_the_mutant_cache_is_not_committed():

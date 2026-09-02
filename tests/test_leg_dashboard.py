@@ -135,8 +135,8 @@ def test_leg_create_calls_formation_wizard(monkeypatch):
     assert result["error"] is None
     assert result["community_id"] == "new-cid"
     args, _ = mock_create.call_args
-    assert args[1] == "LEG Neu"
-    assert args[2] == "b-admin"
+    assert args[0] == "LEG Neu"
+    assert args[1] == "b-admin"
 
 
 def test_leg_create_requires_name_and_bid(monkeypatch):
@@ -167,9 +167,9 @@ def test_leg_invite_as_admin_calls_wizard(monkeypatch):
     result = dashboard_module.leg_invite("c0ffee", "b-admin", "b-new")
     assert result["error"] is None
     args, _ = mock_invite.call_args
-    assert args[1] == "c0ffee"
-    assert args[2] == "b-new"
-    assert args[3] == "b-admin"
+    assert args[0] == "c0ffee"
+    assert args[1] == "b-new"
+    assert args[2] == "b-admin"
 
 
 def test_leg_confirm_confirms_own_membership(monkeypatch):
@@ -180,8 +180,8 @@ def test_leg_confirm_confirms_own_membership(monkeypatch):
     result = dashboard_module.leg_confirm("c0ffee", "b-guest")
     assert result["error"] is None
     args, _ = mock_confirm.call_args
-    assert args[1] == "c0ffee"
-    assert args[2] == "b-guest"
+    assert args[0] == "c0ffee"
+    assert args[1] == "b-guest"
 
 
 def test_leg_start_formation_requires_admin(monkeypatch):

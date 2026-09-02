@@ -73,7 +73,7 @@ def register_page():
 
 @utility_bp.route("/register", methods=["POST"])
 def register():
-    data = request.json or request.form.to_dict()
+    data = request.get_json(silent=True) or request.form.to_dict()
 
     company_name = (data.get("company_name") or "").strip()
     contact_name = (data.get("contact_name") or "").strip()
@@ -114,7 +114,7 @@ def register():
 
     client_id = str(uuid.uuid4())
 
-    db.save_utility_client(
+    saved = db.save_utility_client(
         client_id=client_id,
         company_name=company_name,
         contact_email=contact_email,
@@ -124,6 +124,13 @@ def register():
         population=population,
         kanton=kanton,
     )
+    if not saved:
+        return jsonify(
+            {
+                "error": "Wir konnten die Registrierung nicht speichern. "
+                "Bitte versuchen Sie es später erneut."
+            }
+        ), 503
 
     db.track_event(
         "utility_registered",
