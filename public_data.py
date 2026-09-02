@@ -334,6 +334,21 @@ def compute_energy_transition_score(profile: dict) -> float:
 _UNSET = object()
 
 
+def _select_bulk_row(
+    data: list[dict] | None, bfs_number: int
+) -> tuple[dict | None, str]:
+    """Locate a municipality row in a bulk result and classify the outcome."""
+    if data is None:
+        return None, "fetch_failed"
+    if not data:
+        return None, "empty"
+    row = next(
+        (entry for entry in data if entry.get("bfs_number") == bfs_number),
+        None,
+    )
+    return row, "ok" if row else "missing_row"
+
+
 def refresh_municipality(
     bfs_number: int,
     year: int = 2026,
@@ -354,32 +369,13 @@ def refresh_municipality(
     er_data = (
         fetch_energie_reporter() if _energie_reporter is _UNSET else _energie_reporter
     )
-    er_row = next(
-        (entry for entry in er_data or [] if entry.get("bfs_number") == bfs_number),
-        None,
-    )
-    if er_data is None:
-        result["sources"]["energie_reporter"] = "fetch_failed"
-    elif not er_data:
-        result["sources"]["energie_reporter"] = "empty"
-    elif er_row is None:
-        result["sources"]["energie_reporter"] = "missing_row"
-    else:
-        result["sources"]["energie_reporter"] = "ok"
+    er_row, er_status = _select_bulk_row(er_data, bfs_number)
+    result["sources"]["energie_reporter"] = er_status
 
     # Sonnendach (bulk): locate this municipality's row
     sd_data = fetch_sonnendach_municipal() if _sonnendach is _UNSET else _sonnendach
-    sd_row = None
-    if sd_data is None:
-        result["sources"]["sonnendach"] = "fetch_failed"
-    elif not sd_data:
-        result["sources"]["sonnendach"] = "empty"
-    else:
-        sd_row = next(
-            (entry for entry in sd_data if entry.get("bfs_number") == bfs_number),
-            None,
-        )
-        result["sources"]["sonnendach"] = "ok" if sd_row else "missing_row"
+    sd_row, sd_status = _select_bulk_row(sd_data, bfs_number)
+    result["sources"]["sonnendach"] = sd_status
 
     # ElCom tariffs
     tariffs = fetch_elcom_tariffs(bfs_number, year)
