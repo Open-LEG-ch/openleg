@@ -30,6 +30,7 @@ SCOPED_MODULES = (
     "store/formation.py",
     "public_data.py",
     "data_enricher.py",
+    "member_invoices.py",
 )
 
 
