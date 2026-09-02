@@ -116,3 +116,87 @@ def test_public_municipality_profile_route_is_restored(monkeypatch):
 
     assert response.status_code == 200
     assert "Dietikon" in response.get_data(as_text=True)
+
+
+def test_verzeichnis_renders_empty_state_with_canonical(monkeypatch):
+    monkeypatch.setattr(
+        municipality.db, "get_all_municipality_profiles", lambda **_kwargs: []
+    )
+
+    class _EmptyRanking:
+        @staticmethod
+        def national():
+            return []
+
+    monkeypatch.setattr(
+        municipality.Ranking,
+        "load",
+        classmethod(lambda cls, kanton=None: _EmptyRanking()),
+    )
+
+    response = _client().get("/gemeinde/verzeichnis")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Keine Gemeinden gefunden" in html
+    assert 'rel="canonical" href="http://localhost/gemeinde/verzeichnis"' in html
+
+
+def test_verzeichnis_filters_by_query_and_projects_ranking(monkeypatch):
+    captured = {}
+    profiles = [
+        {
+            "bfs_number": 261,
+            "name": "Dietikon",
+            "kanton": "ZH",
+            "population": 29000,
+        },
+        {
+            "bfs_number": 230,
+            "name": "Winterthur",
+            "kanton": "ZH",
+            "population": 115000,
+        },
+    ]
+
+    def _fake_profiles(**kwargs):
+        captured.update(kwargs)
+        return profiles
+
+    monkeypatch.setattr(
+        municipality.db, "get_all_municipality_profiles", _fake_profiles
+    )
+
+    class _Ranking:
+        @staticmethod
+        def national():
+            return [
+                {
+                    "bfs_number": 261,
+                    "rank": 7,
+                    "display_score": 42.0,
+                    "score_over_100": False,
+                },
+                {
+                    "bfs_number": 230,
+                    "rank": 3,
+                    "display_score": 55.0,
+                    "score_over_100": False,
+                },
+            ]
+
+    monkeypatch.setattr(
+        municipality.Ranking,
+        "load",
+        classmethod(lambda cls, kanton=None: _Ranking()),
+    )
+
+    response = _client().get("/gemeinde/verzeichnis?q=Diet&kanton=ZH&sort=population")
+    html = response.get_data(as_text=True)
+
+    assert captured == {"kanton": "ZH", "order_by": "population"}
+    assert response.status_code == 200
+    assert "Dietikon" in html
+    assert "Winterthur" not in html
+    assert "Rang 7 CH" in html
+    assert "42%" in html
