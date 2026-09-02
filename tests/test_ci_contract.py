@@ -144,7 +144,7 @@ def test_release_image_is_immutable_and_attested():
     assert len(build_steps) == 1
     assert (
         build_steps[0]["uses"]
-        == "docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8"
+        == "docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a"
     )
     assert build_steps[0]["with"]["load"] is True
     assert build_steps[0]["with"].get("push") is not True
