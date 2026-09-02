@@ -261,3 +261,38 @@ def test_bulk_source_outage_still_saves_an_elcom_update(monkeypatch):
     assert profile["name"] == _EXISTING_PROFILE["name"]
     assert profile["solar_installed_kwp"] == _EXISTING_PROFILE["solar_installed_kwp"]
     assert profile["leg_value_gap_chf"] > 0
+
+
+def test_refresh_municipality_missing_reporter_row_preserves_profile(monkeypatch):
+    """Healthy Energie Reporter bulk result without a row for BFS 261.
+
+    The single-municipality refresh must keep the existing profile's
+    source-owned fields field-for-field and report a distinct missing-row
+    outcome instead of silently treating the bulk hit as success.
+    """
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    monkeypatch.setattr(
+        public_data,
+        "fetch_energie_reporter",
+        lambda: [
+            {"bfs_number": 1002, "name": "Andere Gemeinde", "kanton": "ZH"},
+        ],
+    )
+
+    result = public_data.refresh_municipality(261, year=2026)
+
+    assert result["sources"]["energie_reporter"] == "missing_row"
+    assert len(saved_profiles) == 1
+    profile = saved_profiles[0]
+    for field in (
+        "name",
+        "kanton",
+        "population",
+        "solar_potential_pct",
+        "ev_share_pct",
+        "renewable_heating_pct",
+        "electricity_consumption_mwh",
+        "renewable_production_mwh",
+        "energy_transition_score",
+    ):
+        assert profile[field] == _EXISTING_PROFILE[field]

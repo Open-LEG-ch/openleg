@@ -338,6 +338,18 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
 
     result = {"bfs_number": bfs_number, "sources": {}}
 
+    # Energie Reporter (bulk): locate this municipality's row
+    er_row = next(
+        (
+            entry
+            for entry in fetch_energie_reporter() or []
+            if entry.get("bfs_number") == bfs_number
+        ),
+        None,
+    )
+    if er_row is None:
+        result["sources"]["energie_reporter"] = "missing_row"
+
     # ElCom tariffs
     tariffs = fetch_elcom_tariffs(bfs_number, year)
     if tariffs:
@@ -377,7 +389,12 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
             "last_refresh": datetime.now(timezone.utc).isoformat(),
         },
     }
-    profile["energy_transition_score"] = compute_energy_transition_score(profile)
+    if er_row is None:
+        profile["energy_transition_score"] = (
+            existing.get("energy_transition_score") if existing else None
+        )
+    else:
+        profile["energy_transition_score"] = compute_energy_transition_score(profile)
     db.save_municipality_profile(profile)
     result["profile"] = profile
     result["value_gap"] = value_gap
