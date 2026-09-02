@@ -596,6 +596,61 @@ def test_detail_view_rejects_rounding_proof_without_rounding_item(monkeypatch):
     assert str(excinfo.value) == "Der Rundungsausgleich ist nicht zulässig."
 
 
+def test_detail_view_rejects_frozen_rounding_proof_participant_mismatch(monkeypatch):
+    """The frozen rounding_adjustment proof must name the invoice's own
+    participant; a proof reassigned to another participant must fail closed
+    with the stable rounding error text, never render the adjustment."""
+    import member_invoices
+
+    row = _corrupt_invoice_row(
+        line_items_snapshot=[
+            {
+                "participant_id": "building-session",
+                "item_type": "producer_credit",
+                "quantity_kwh": "40.000000",
+                "unit_price_chf_per_kwh": "0.150000",
+                "amount_chf": "-6.000000",
+            },
+            {
+                "participant_id": "building-session",
+                "item_type": "rounding_adjustment",
+                "quantity_kwh": None,
+                "unit_price_chf_per_kwh": None,
+                "amount_chf": "0.01",
+            },
+        ],
+        net_chf="-5.99",
+        vat_chf="-0.46",
+        gross_chf="-6.45",
+        provenance_snapshot={
+            **INVOICE_ROW["provenance_snapshot"],
+            "rounding_adjustment": {
+                "participant_id": "building-session",
+                "amount_chf": "0.01",
+            },
+            "reconciliation": {
+                "production_per_participant": {
+                    "building-session": "40.000000",
+                    "building-zeta": "10.000000",
+                }
+            },
+        },
+    )
+    row["provenance_snapshot"]["rounding_adjustment"]["participant_id"] = (
+        "building-other"
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as excinfo:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(excinfo.value) == "Der Rundungsausgleich ist nicht zulässig."
+
+
 def test_detail_view_rejects_issuer_snapshot_from_another_community(monkeypatch):
     """A frozen issuer whose community_id differs from the invoice's own
     community_id is an invalid issuer and must fail closed."""
