@@ -352,6 +352,8 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
         result["sources"]["energie_reporter"] = "fetch_failed"
     elif er_row is None:
         result["sources"]["energie_reporter"] = "missing_row"
+    else:
+        result["sources"]["energie_reporter"] = "ok"
 
     # Sonnendach (bulk): locate this municipality's row
     sd_data = fetch_sonnendach_municipal()
@@ -413,6 +415,20 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
             existing.get("energy_transition_score") if existing else None
         )
     else:
+        profile.update(
+            {
+                "name": er_row.get("name", ""),
+                "kanton": er_row.get("kanton", profile["kanton"]),
+                "population": er_row.get("population", profile["population"]),
+                "solar_potential_pct": er_row.get("solar_potential_pct"),
+                "ev_share_pct": er_row.get("ev_share_pct"),
+                "renewable_heating_pct": er_row.get("renewable_heating_pct"),
+                "electricity_consumption_mwh": er_row.get(
+                    "electricity_consumption_mwh"
+                ),
+                "renewable_production_mwh": er_row.get("renewable_production_mwh"),
+            }
+        )
         profile["energy_transition_score"] = compute_energy_transition_score(profile)
     if sd_row:
         profile["solar_installed_kwp"] = sd_row.get("potential_kwp")

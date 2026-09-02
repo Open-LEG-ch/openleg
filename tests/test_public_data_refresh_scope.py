@@ -352,3 +352,46 @@ def test_refresh_municipality_all_sources_outage_skips_persistence(monkeypatch):
     assert result["sources"]["sonnendach"] == "fetch_failed"
     assert saved_profiles == []
     assert result["persistence"] == "skipped"
+
+
+def test_refresh_municipality_reporter_row_applies_values_and_reports_ok(monkeypatch):
+    """Healthy Energie Reporter bulk containing a fixed BFS 261 row, healthy-empty
+    Sonnendach, and no ElCom tariffs.
+
+    The single-municipality refresh must report the Reporter outcome as ok,
+    save the row's source-owned values into the profile, derive the energy
+    transition score from those values, and keep the stored Sonnendach-owned
+    solar_installed_kwp.
+    """
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    reporter = {
+        "bfs_number": 261,
+        "name": "Reporter Gemeinde",
+        "kanton": "ZH",
+        "population": 14000,
+        "solar_potential_pct": 50.0,
+        "ev_share_pct": 15.0,
+        "renewable_heating_pct": 64.0,
+        "electricity_consumption_mwh": 1100.0,
+        "renewable_production_mwh": 550.0,
+    }
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: [reporter])
+
+    result = public_data.refresh_municipality(261, year=2026)
+
+    assert result["sources"]["energie_reporter"] == "ok"
+    assert len(saved_profiles) == 1
+    profile = saved_profiles[0]
+    for field in (
+        "name",
+        "kanton",
+        "population",
+        "solar_potential_pct",
+        "ev_share_pct",
+        "renewable_heating_pct",
+        "electricity_consumption_mwh",
+        "renewable_production_mwh",
+    ):
+        assert profile[field] == reporter[field]
+    assert profile["energy_transition_score"] == 53.5
+    assert profile["solar_installed_kwp"] == _EXISTING_PROFILE["solar_installed_kwp"]
