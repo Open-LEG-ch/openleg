@@ -47,6 +47,8 @@ def test_contract_templates_are_pinned_exactly():
         "governing_law",
     ]
     assert templates["participant_contract"]["title"] == "Teilnehmervertrag LEG"
+    assert templates["participant_contract"]["jurisdiction"] == "Kanton Zürich"
+    assert templates["participant_contract"]["language"] == "de"
     assert templates["participant_contract"]["sections"] == [
         "participant_info",
         "community_info",
@@ -166,9 +168,12 @@ def _full_row():
 
 
 def test_community_status_is_pinned_in_full():
-    with patch("database.fetch_community_with_members", return_value=_full_row()):
+    with patch(
+        "database.fetch_community_with_members", return_value=_full_row()
+    ) as read:
         status = get_community_status("community-1")
 
+    read.assert_called_once_with("community-1")
     assert status == {
         "community_id": "community-1",
         "name": "LEG Musterweg",
@@ -238,6 +243,46 @@ def test_producer_savings_are_pinned_exactly():
     assert estimate["five_year_savings_chf"] == 5700.0
 
 
+def test_producer_savings_pin_the_capped_leg_sales_and_grid_credit():
+    estimate = calculate_savings_estimate(
+        consumption_kwh=100, pv_kwp=50, community_size=5
+    )
+
+    assert estimate == {
+        "annual_savings_chf": 55.0,
+        "monthly_savings_chf": 4.58,
+        "five_year_savings_chf": 275.0,
+        "assumptions": {
+            "grid_buy_price_rp": 25.0,
+            "grid_sell_price_rp": 6.0,
+            "leg_price_rp": 15.0,
+            "community_size": 5,
+            "solar_kwh_per_kwp": 950,
+            "self_consumption_share_pct": 30.0,
+        },
+    }
+
+
+def test_a_tiny_producer_stays_in_the_producer_branch():
+    estimate = calculate_savings_estimate(
+        consumption_kwh=4500, pv_kwp=0.0005, community_size=5
+    )
+
+    assert estimate["annual_savings_chf"] == 0.06
+    assert estimate["monthly_savings_chf"] == 0.0
+    assert estimate["five_year_savings_chf"] == 0.29
+
+
+def test_savings_are_rounded_to_two_decimals():
+    estimate = calculate_savings_estimate(
+        consumption_kwh=1234.5, pv_kwp=0, community_size=5
+    )
+
+    assert estimate["annual_savings_chf"] == 37.04
+    assert estimate["monthly_savings_chf"] == 3.09
+    assert estimate["five_year_savings_chf"] == 185.18
+
+
 def test_municipality_business_case_is_pinned_on_its_first_year():
     case = calculate_municipality_business_case(
         bfs_number=261,
@@ -257,6 +302,52 @@ def test_municipality_business_case_is_pinned_on_its_first_year():
         "annual_total_chf": 22800.0,
         "cumulative_chf": 22800.0,
     }
+    assert len(case["projections"]) == 10
     assert case["projections"][1]["annual_total_chf"] == 23256.0
     assert case["projections"][9]["cumulative_chf"] == 249653.64
     assert case["co2_reduction_total_kg"] == 729.6
+    assert case["assumptions"] == {
+        "grid_buy_price_rp": 25.0,
+        "grid_sell_price_rp": 6.0,
+        "leg_price_rp": 15.0,
+        "community_size": 10,
+        "solar_kwh_per_kwp": 950,
+        "self_consumption_share_pct": 30.0,
+    }
+
+
+def test_municipality_business_case_defaults_to_its_configuration():
+    case = calculate_municipality_business_case(bfs_number=261)
+
+    assert case["num_legs"] == 5
+    assert case["total_households"] == 50
+    assert case["annual_savings_per_household"] == 3015.0
+    assert case["annual_total_savings"] == 150750.0
+    assert case["co2_reduction_total_kg"] == 5472.0
+
+
+def test_municipality_business_case_rounds_year_aggregates_to_two_decimals():
+    case = calculate_municipality_business_case(
+        bfs_number=261,
+        num_legs=1,
+        avg_community_size=3,
+        avg_pv_kwp=0,
+        avg_consumption_kwh=1234.5,
+    )
+
+    assert case["annual_savings_per_household"] == 37.04
+    assert case["annual_total_savings"] == 111.12
+    assert case["projections"][0] == {
+        "year": 1,
+        "annual_total_chf": 111.12,
+        "cumulative_chf": 111.12,
+    }
+    assert case["projections"][1]["annual_total_chf"] == 113.34
+
+
+def test_co2_reduction_keeps_one_decimal():
+    case = calculate_municipality_business_case(
+        bfs_number=261, num_legs=1, avg_pv_kwp=10.003
+    )
+
+    assert case["co2_reduction_total_kg"] == 364.9

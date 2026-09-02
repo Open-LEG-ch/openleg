@@ -7,6 +7,7 @@ community members, and the consent-gated neighbour search.
 
 import subprocess
 import sys
+import uuid
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
@@ -96,13 +97,14 @@ def test_create_community_record_inserts_community_and_admin(monkeypatch):
     )
 
     assert community_id
+    uuid.UUID(community_id)
     assert len(cur.executed) == 2
     community_sql, community_params = cur.executed[0]
     assert "INSERT INTO communities" in community_sql
     assert "interested" in community_params
     member_sql, member_params = cur.executed[1]
     assert "INSERT INTO community_members" in member_sql
-    assert member_params[:2] == (community_id, "b-admin")
+    assert member_params == (community_id, "b-admin", "admin", "confirmed")
 
 
 def test_insert_invited_member_blocks_duplicates(monkeypatch):
@@ -112,6 +114,22 @@ def test_insert_invited_member_blocks_duplicates(monkeypatch):
 
     assert formation.insert_invited_member("c1", "b2", "b1") is False
     assert len(cur.executed) == 1
+    select_sql, select_params = cur.executed[0]
+    assert select_sql.split() == [
+        "SELECT",
+        "1",
+        "FROM",
+        "community_members",
+        "WHERE",
+        "community_id",
+        "=",
+        "%s",
+        "AND",
+        "building_id",
+        "=",
+        "%s",
+    ]
+    assert select_params == ("c1", "b2")
     events.assert_not_called()
 
 
@@ -144,9 +162,10 @@ def test_confirm_invited_member_tracks_the_confirmation(monkeypatch):
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
     assert formation.confirm_invited_member("c1", "b2") is True
-    update_sql = cur.executed[0][0]
+    update_sql, update_params = cur.executed[0]
     assert "UPDATE community_members" in update_sql
     assert "invited" in update_sql
+    assert update_params == ("c1", "b2")
     events.assert_called_once_with("member_confirmed", "b2", {"community_id": "c1"})
 
 
@@ -190,7 +209,7 @@ def test_submit_community_to_dso_tracks_the_submission(monkeypatch):
     assert formation.submit_community_to_dso("c1") is True
     query, params = cur.executed[0]
     assert "UPDATE communities" in query
-    assert "signatures_pending" in params
+    assert params == ("dso_submitted", "c1", "signatures_pending")
     events.assert_called_once_with("dso_submitted", None, {"community_id": "c1"})
 
 
@@ -214,6 +233,24 @@ def test_fetch_user_communities_reads_the_membership_rows(monkeypatch):
     query, params = cur.executed[0]
     assert "community_members" in query
     assert params == ("b1",)
+
+
+def test_fetch_nearby_consenting_neighbours_pins_location_and_boundary_params(
+    monkeypatch,
+):
+    rows = [{"building_id": "b2"}]
+    cur = _FakeCursor(one={"lat": 47.4736, "lon": 8.3060}, rows=rows)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert formation.fetch_nearby_consenting_neighbours("searcher", 150) == rows
+
+    location_sql, location_params = cur.executed[0]
+    assert "WHERE building_id = %s" in location_sql
+    assert location_params == ("searcher",)
+
+    list_sql, list_params = cur.executed[1]
+    assert "HAVING distance <= %s" in list_sql
+    assert list_params == (47.4736, 8.3060, 47.4736, "searcher", 150)
 
 
 def test_a_broken_connection_never_leaks_the_exception(monkeypatch):
