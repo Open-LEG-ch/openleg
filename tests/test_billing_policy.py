@@ -378,6 +378,32 @@ def test_invalid_persisted_payment_days_is_refused(value):
         )
 
 
+def test_minimum_persisted_payment_days_one_is_accepted():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["payment_days"] = 1
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["payment_days"] == 1
+
+
+def test_maximum_persisted_payment_days_365_is_accepted():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["payment_days"] = 365
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["payment_days"] == 365
+
+
 # --- Invalid persisted enum choices ------------------------------------------
 
 _INVALID_PERSISTED_ENUM_CASES = (
