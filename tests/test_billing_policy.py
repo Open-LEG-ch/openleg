@@ -373,6 +373,38 @@ def test_persisted_policy_diagnostic_contract(case, policy_factory, expected_mes
     assert str(exc.value) == expected_message
 
 
+def test_multiple_missing_persisted_fields_use_one_comma_separator():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    del policy["network_level"]
+    del policy["delivery_method"]
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy) as exc:
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=_DIAGNOSTIC_PERIOD_START,
+            community_id="community-a",
+        )
+
+    assert str(exc.value) == (
+        "Die Richtlinien-Kopie ist unvollständig: network_level, delivery_method"
+    )
+
+
+def test_malformed_persisted_effective_from_diagnostic():
+    """A non-temporal effective_from exposes its one fixed German diagnostic."""
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["effective_from"] = "not-a-temporal-value"
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy) as exc:
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=_DIAGNOSTIC_PERIOD_START,
+            community_id="community-a",
+        )
+
+    assert str(exc.value) == "Das Inkrafttretungsdatum der Richtlinie ist ungültig."
+
+
 # --- Issue #461: persisted energy price validation ---------------------------
 
 _ENERGY_PRICE_FIELDS = (

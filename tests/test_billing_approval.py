@@ -2156,3 +2156,19 @@ def test_prepare_refuses_duplicate_zero_lines_inflating_tolerance():
         billing_approval.BillingApprovalError, match="nur eine Position"
     ):
         billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+# ---------------------------------------------------------------------------
+# Issue #461: the approval seam must preserve the canonical policy diagnostic.
+# ---------------------------------------------------------------------------
+
+
+def test_prepare_approval_preserves_policy_diagnostic():
+    """An invalid network level surfaces the canonical validator message."""
+    with pytest.raises(billing_approval.BillingApprovalError) as exc:
+        billing_approval.prepare_invoice_snapshots(
+            _draft(billing_policy_snapshot=_policy(network_level="different")),
+            issue_date=date(2026, 2, 5),
+        )
+
+    assert str(exc.value) == "Die Netzebene der Richtlinie ist ungültig."
