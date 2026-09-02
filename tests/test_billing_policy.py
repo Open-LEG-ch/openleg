@@ -840,6 +840,33 @@ def test_safe_invoice_prefixes_are_accepted(value):
     assert result["policy"]["invoice_prefix"] == value
 
 
+# --- Issue #454: form output keys project through the canonical policy --------
+
+
+def test_form_output_keys_project_through_editable_policy_fields(monkeypatch):
+    """The admin form output keys come from the canonical persisted definition.
+
+    Repointing EDITABLE_POLICY_FIELDS at a subset must re-project the output
+    keys of ``validate_policy_form``; a handwritten output mapping would keep
+    emitting all ten keys regardless of the canonical definition.
+    """
+    result = billing_policy.validate_policy_form(VALID_FORM)
+    assert result["errors"] == {}
+    assert tuple(result["policy"]) == billing_policy.EDITABLE_POLICY_FIELDS
+
+    monkeypatch.setattr(
+        billing_policy,
+        "EDITABLE_POLICY_FIELDS",
+        ("effective_from", "internal_price_chf_per_kwh"),
+    )
+    subset = billing_policy.validate_policy_form(VALID_FORM)
+    assert subset["errors"] == {}
+    assert tuple(subset["policy"]) == (
+        "effective_from",
+        "internal_price_chf_per_kwh",
+    )
+
+
 # --- Cycle 2: store.billing versioned policy seams ---------------------------
 
 from contextlib import contextmanager

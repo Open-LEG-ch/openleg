@@ -32,19 +32,6 @@ POLICY_DISCLAIMER = (
     "nicht fest. Prüfen Sie Ihre Wahl vor dem Speichern."
 )
 
-FORM_FIELDS = (
-    "effective_from",
-    "internal_price_rp",
-    "grid_fee_rp",
-    "network_level",
-    "distribution_model",
-    "vat_mode",
-    "vat_rate_pct",
-    "payment_days",
-    "invoice_prefix",
-    "delivery_method",
-)
-
 PERSISTED_POLICY_FIELDS = (
     "tariff_id",
     "community_id",
@@ -61,6 +48,15 @@ PERSISTED_POLICY_FIELDS = (
 )
 
 EDITABLE_POLICY_FIELDS = PERSISTED_POLICY_FIELDS[2:]
+
+_FORM_INPUT_FOR_POLICY_FIELD = {
+    "internal_price_chf_per_kwh": "internal_price_rp",
+    "grid_fee_chf_per_kwh": "grid_fee_rp",
+}
+
+FORM_FIELDS = tuple(
+    _FORM_INPUT_FOR_POLICY_FIELD.get(field, field) for field in EDITABLE_POLICY_FIELDS
+)
 FINGERPRINT_POLICY_FIELDS = tuple(
     field for field in PERSISTED_POLICY_FIELDS if field != "effective_from"
 )
@@ -391,18 +387,21 @@ def validate_policy_form(form) -> dict:
 
     if errors:
         return {"policy": None, "errors": errors}
+    parsed_policy_fields = {
+        "effective_from": effective_from,
+        "internal_price_chf_per_kwh": internal_price_rp / 100,
+        "grid_fee_chf_per_kwh": grid_fee_rp / 100,
+        "network_level": network_level,
+        "distribution_model": distribution_model,
+        "vat_mode": vat_mode,
+        "vat_rate_pct": vat_rate_pct,
+        "payment_days": payment_days,
+        "invoice_prefix": invoice_prefix,
+        "delivery_method": delivery_method,
+    }
     return {
         "policy": {
-            "effective_from": effective_from,
-            "internal_price_chf_per_kwh": internal_price_rp / 100,
-            "grid_fee_chf_per_kwh": grid_fee_rp / 100,
-            "network_level": network_level,
-            "distribution_model": distribution_model,
-            "vat_mode": vat_mode,
-            "vat_rate_pct": vat_rate_pct,
-            "payment_days": payment_days,
-            "invoice_prefix": invoice_prefix,
-            "delivery_method": delivery_method,
+            field: parsed_policy_fields[field] for field in EDITABLE_POLICY_FIELDS
         },
         "errors": {},
     }
