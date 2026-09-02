@@ -317,10 +317,10 @@ def api_suggest_addresses():
     query = security_utils.sanitize_string(query, max_length=100)
     limit = 15 if len(query) < 5 else 10
     plz_ranges = g.tenant.get("plz_ranges") if hasattr(g, "tenant") else None
-    payload, status = data_enricher.resolve_address_suggestions(
+    outcome = data_enricher.resolve_address_suggestions(
         query, limit=limit, plz_ranges=plz_ranges
     )
-    return jsonify(payload), status
+    return jsonify({"suggestions": data_enricher.public_address_suggestions(outcome)})
 
 
 # --- Check Potential ---
@@ -341,28 +341,18 @@ def api_check_potential():
             return jsonify({"error": error_msg}), 400
         address = sanitized_address
 
-        estimates, _profiles = None, None
-        try:
-            estimates, _profiles = data_enricher.get_energy_profile_for_address(address)
-            if not estimates:
-                estimates, _profiles = (
-                    data_enricher.get_mock_energy_profile_for_address(address)
-                )
-        except Exception:
-            estimates, _profiles = data_enricher.get_mock_energy_profile_for_address(
-                address
-            )
+        outcome = data_enricher.resolve_address_profile(address)
 
-        if not estimates:
+        if not outcome.estimates:
             return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
 
-        cluster_info = find_provisional_matches(estimates)
+        cluster_info = find_provisional_matches(outcome.estimates)
         if not cluster_info:
             return jsonify(
                 {
                     "potential": False,
                     "message": "Keine direkten Partner gefunden.",
-                    "profile_summary": estimates,
+                    "profile_summary": outcome.estimates,
                 }
             )
         return jsonify(
@@ -370,7 +360,7 @@ def api_check_potential():
                 "potential": True,
                 "message": "Partner gefunden!",
                 "cluster_info": cluster_info,
-                "profile_summary": estimates,
+                "profile_summary": outcome.estimates,
             }
         )
     except Exception:

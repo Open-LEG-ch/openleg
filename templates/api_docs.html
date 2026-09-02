@@ -210,10 +210,7 @@ const spec = {
                     { name: "q", in: "query", required: true, schema: { type: "string" } },
                     { name: "plz_range", in: "query", schema: { type: "string" }, description: "PLZ range e.g. 8000-8999" }
                 ],
-                responses: {
-                    "200": { description: "Address suggestions" },
-                    "503": { description: "Adressvorschläge sind derzeit nicht verfügbar." }
-                }
+                responses: { "200": { description: "Address suggestions" } }
             }
         },
         "/address/profile": {

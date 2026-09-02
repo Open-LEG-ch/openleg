@@ -227,6 +227,12 @@ the append-only audit.
 5. Templates render HTML with tenant context and public-safe metadata, or API
    routes return JSON from stable read models.
 
+Address routes cross the enrichment seam in `data_enricher.py`. That module
+owns live and deterministic mock adapters, normalization, fallback selection,
+and semantic source outcomes. The website and public HTTP adapters retain
+request validation, tenant PLZ policy, response language and shape, and
+neighbour matching.
+
 ## Verifying a guard
 
 The public engineering contract in `docs/engineering-contract.md` requires every
@@ -235,13 +241,14 @@ break the production code the test is meant to catch, confirm the suite goes
 red, revert, confirm green.
 
 `scripts/tdd_cycle.sh mutants` automates that check for the scope declared in
-`[tool.mutmut]`, today `billing_runner.py` and `store/metering.py`: the two
-places where a surviving mutant costs money or loses a meter correction. It does
-not cover the whole repository, and it is not meant to. A guard outside that
-scope, the neighbour consent gate or the access-token policy for instance, is
-still verified by hand: break it, watch the named test go red, revert, and
-report the red output in the pull request. Widen `source_paths` when a module
-earns the runtime, never to make a score look better.
+`[tool.mutmut]`. Its tracked scope covers billing policy and approval, meter
+corrections, formation persistence and transitions, public-data refresh, and
+address enrichment outcomes. It does not cover the whole repository, and it is
+not meant to. A guard outside that scope, the neighbour consent gate or the
+access-token policy for instance, is still verified by hand: break it, watch
+the named test go red, revert, and report the red output in the pull request.
+Widen `source_paths` when a module earns the runtime, never to make a score look
+better.
 
 A coverage percentage over the `store/` layer is **not evidence**. Those tests
 execute the surrounding Python while asserting only the shape of the SQL, so
