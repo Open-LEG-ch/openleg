@@ -339,16 +339,31 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
     result = {"bfs_number": bfs_number, "sources": {}}
 
     # Energie Reporter (bulk): locate this municipality's row
+    er_data = fetch_energie_reporter()
     er_row = next(
         (
             entry
-            for entry in fetch_energie_reporter() or []
+            for entry in er_data or []
             if entry.get("bfs_number") == bfs_number
         ),
         None,
     )
-    if er_row is None:
+    if er_data is None:
+        result["sources"]["energie_reporter"] = "fetch_failed"
+    elif er_row is None:
         result["sources"]["energie_reporter"] = "missing_row"
+
+    # Sonnendach (bulk): locate this municipality's row
+    sd_data = fetch_sonnendach_municipal()
+    sd_row = None
+    if sd_data is None:
+        result["sources"]["sonnendach"] = "fetch_failed"
+    else:
+        sd_row = next(
+            (entry for entry in sd_data if entry.get("bfs_number") == bfs_number),
+            None,
+        )
+        result["sources"]["sonnendach"] = "ok" if sd_row else "missing_row"
 
     # ElCom tariffs
     tariffs = fetch_elcom_tariffs(bfs_number, year)
@@ -395,6 +410,8 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
         )
     else:
         profile["energy_transition_score"] = compute_energy_transition_score(profile)
+    if sd_row:
+        profile["solar_installed_kwp"] = sd_row.get("potential_kwp")
     db.save_municipality_profile(profile)
     result["profile"] = profile
     result["value_gap"] = value_gap

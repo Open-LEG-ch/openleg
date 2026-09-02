@@ -112,6 +112,7 @@ def _patch_profile_repository(monkeypatch):
     saved_sonnendach = []
     monkeypatch.setattr(public_data, "ZH_BFS_NUMBERS", [261])
     monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
     monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
     monkeypatch.setattr(
         database,
@@ -296,3 +297,39 @@ def test_refresh_municipality_missing_reporter_row_preserves_profile(monkeypatch
         "energy_transition_score",
     ):
         assert profile[field] == _EXISTING_PROFILE[field]
+
+
+def test_refresh_municipality_reporter_outage_preserves_fields_and_applies_sonnendach(
+    monkeypatch,
+):
+    """Energie Reporter outage (None) while Sonnendach returns a valid BFS 261 row.
+
+    The single-municipality refresh must report the outage as fetch_failed
+    (distinct from the slice-1 missing_row outcome), keep the existing
+    profile's reporter-owned fields and score, and update solar_installed_kwp
+    from the Sonnendach row.
+    """
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    solar = {"bfs_number": 261, "potential_kwp": 480.0}
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", lambda: None)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", lambda: [solar])
+
+    result = public_data.refresh_municipality(261, year=2026)
+
+    assert result["sources"]["energie_reporter"] == "fetch_failed"
+    assert result["sources"]["sonnendach"] == "ok"
+    assert len(saved_profiles) == 1
+    profile = saved_profiles[0]
+    for field in (
+        "name",
+        "kanton",
+        "population",
+        "solar_potential_pct",
+        "ev_share_pct",
+        "renewable_heating_pct",
+        "electricity_consumption_mwh",
+        "renewable_production_mwh",
+        "energy_transition_score",
+    ):
+        assert profile[field] == _EXISTING_PROFILE[field]
+    assert profile["solar_installed_kwp"] == 480.0
