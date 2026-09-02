@@ -18,7 +18,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # formation decision, and where the suite already asserts SQL shape rather than
 # SQL behaviour. The scope follows the slice under evidence; the formation
 # seam refactor (#453) moved readiness, transitions, and the consent-gated
-# cluster decision into formation_wizard and store/formation.
+# cluster decision into formation_wizard and store/formation. Gemeindeprofil
+# source outcomes and preservation policy are owned by public_data (#455).
 SCOPED_MODULES = (
     "billing_policy.py",
     "billing_approval.py",
@@ -26,6 +27,7 @@ SCOPED_MODULES = (
     "store/metering.py",
     "formation_wizard.py",
     "store/formation.py",
+    "public_data.py",
 )
 
 

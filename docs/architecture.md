@@ -127,7 +127,9 @@ Application and API routes:
 - `cron.py`: the scheduled-job surface. Every route on it requires
   `CRON_SECRET` and fails closed without one.
 - `health.py`: health and liveness endpoints.
-- `public_data.py`: open data fetchers for ElCom, Energie Reporter, Sonnendach.
+- `public_data.py`: open data adapters for ElCom, Energie Reporter, and
+  Sonnendach, plus the Gemeindeprofil refresh policy that classifies source
+  outcomes, preserves stored source-owned fields, and persists merged profiles.
 - `neighbor_view.py`: neighbour read policy: anonymity radius, jittered map locations, provisional match summary.
 - `billing_engine.py`: energy allocation and network discount computation.
 - `billing_readings.py`: validated billing frames and VNB reconciliation from

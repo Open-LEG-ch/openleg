@@ -34,6 +34,7 @@ source_paths = [
     "store/metering.py",
     "formation_wizard.py",
     "store/formation.py",
+    "public_data.py",
 ]
 # Mutation testing asks whether the tests of these modules detect faults in
 # them, so the run uses their own tests. The repository-contract layer is left
@@ -50,6 +51,8 @@ pytest_add_cli_args = [
     "tests/test_formation_transitions.py",
     "tests/test_formation_nudge.py",
     "tests/test_store_formation.py",
+    "tests/test_public_data.py",
+    "tests/test_public_data_refresh_scope.py",
 ]
 # mutmut copies only what it mutates into that sandbox, so everything those
 # tests import has to be listed here or they cannot even be collected.
