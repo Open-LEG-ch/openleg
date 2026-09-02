@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+import dataclasses
 import hashlib
 import re
 
@@ -14,7 +15,6 @@ GEO_API_URL = "https://api3.geo.admin.ch/rest/services/api/SearchServer"
 SOLAR_API_URL = (
     "https://api3.geo.admin.ch/rest/services/api/MapServer/ch.bfe.sonnendach"
 )
-_ADDRESS_SUGGESTIONS_UNAVAILABLE = "Adressvorschläge sind derzeit nicht verfügbar."
 
 
 def _normalize_address_suggestions(suggestions):
@@ -40,16 +40,122 @@ def _normalize_address_suggestions(suggestions):
     return normalized
 
 
+def _get_mock_address_suggestions(query_string):
+    """Deterministic offline stand-in used only on a live-suggest outage."""
+    return [{"label": query_string, "lat": None, "lon": None, "plz": None}]
+
+
+@dataclasses.dataclass(frozen=True)
+class AddressSuggestionOutcome:
+    """Immutable domain result of resolving an address-suggestion query.
+
+    source: where the suggestions came from ("live" or "mock").
+    live_status: semantic live-source state ("success", "no_match",
+    "malformed", "upstream_failure") — never an HTTP code.
+    """
+
+    suggestions: tuple
+    source: str
+    live_status: str
+
+    def __post_init__(self):
+        object.__setattr__(self, "suggestions", tuple(self.suggestions))
+
+
 def resolve_address_suggestions(query_string, *, limit, plz_ranges):
-    """Resolve an address query to the shared route payload and status."""
+    """Resolve an address query to an AddressSuggestionOutcome.
+
+    A live outage falls back to the deterministic offline adapter with
+    source="mock" and the outage preserved as live_status="upstream_failure";
+    an empty live result stays source="live" with live_status="no_match";
+    live results that are non-empty but survive normalization to nothing
+    stay source="live" with live_status="malformed". Suggestions are
+    normalized here, so domain consumers only ever see validated fields.
+    """
     if not query_string or len(query_string) < 2:
-        return {"suggestions": []}, 200
-    suggestions = get_address_suggestions(
+        return AddressSuggestionOutcome(
+            suggestions=[], source="live", live_status="malformed"
+        )
+    raw_suggestions = get_address_suggestions(
         query_string, limit=limit, plz_ranges=plz_ranges
     )
-    if suggestions is None:
-        return {"error": _ADDRESS_SUGGESTIONS_UNAVAILABLE}, 503
-    return {"suggestions": _normalize_address_suggestions(suggestions)}, 200
+    if raw_suggestions is None:
+        return AddressSuggestionOutcome(
+            suggestions=_normalize_address_suggestions(
+                _get_mock_address_suggestions(query_string)
+            ),
+            source="mock",
+            live_status="upstream_failure",
+        )
+    suggestions = _normalize_address_suggestions(raw_suggestions)
+    if raw_suggestions and not suggestions:
+        return AddressSuggestionOutcome(
+            suggestions=[], source="live", live_status="malformed"
+        )
+    return AddressSuggestionOutcome(
+        suggestions=suggestions,
+        source="live",
+        live_status="success" if suggestions else "no_match",
+    )
+
+
+def public_address_suggestions(outcome):
+    """Return the JSON-safe public suggestion fields for HTTP adapters."""
+    return _normalize_address_suggestions(outcome.suggestions)
+
+
+@dataclasses.dataclass(frozen=True)
+class AddressProfileOutcome:
+    """Immutable domain result of resolving an address energy profile.
+
+    source: where the estimates came from ("live" or "mock").
+    live_status: semantic live-source state ("success", "no_match",
+    "upstream_failure") — never an HTTP code.
+    """
+
+    estimates: dict
+    profiles: tuple
+    source: str
+    live_status: str
+
+    def __post_init__(self):
+        object.__setattr__(self, "profiles", tuple(self.profiles or ()))
+
+
+def resolve_address_profile(address):
+    """Resolve an address to an AddressProfileOutcome.
+
+    The live resolver runs once. Successful estimates return source="live"
+    with live_status="success"; a falsey live result falls back once to the
+    deterministic mock builder with source="mock" and live_status="no_match";
+    a live exception falls back once with live_status="upstream_failure".
+    The fallback cause is preserved even when the mock succeeds; if the mock
+    also yields no estimates, callers still see a falsey estimates outcome.
+    """
+    try:
+        estimates, profiles = get_energy_profile_for_address(address)
+    except Exception:
+        estimates, profiles = get_mock_energy_profile_for_address(address)
+        return AddressProfileOutcome(
+            estimates=estimates,
+            profiles=profiles,
+            source="mock",
+            live_status="upstream_failure",
+        )
+    if not estimates:
+        estimates, profiles = get_mock_energy_profile_for_address(address)
+        return AddressProfileOutcome(
+            estimates=estimates,
+            profiles=profiles,
+            source="mock",
+            live_status="no_match",
+        )
+    return AddressProfileOutcome(
+        estimates=estimates,
+        profiles=profiles,
+        source="live",
+        live_status="success",
+    )
 
 
 # --- Mock-Funktionen (Simulation von GWR/MOFIS-Datenbanken) ---
@@ -87,8 +193,8 @@ def get_address_suggestions(query_string, limit=10, plz_ranges=None):
     Returns a list of suggestion dicts; an empty list means the query
     genuinely matched nothing. Returns None when the upstream request
     fails, so callers can distinguish an outage from no matches and must
-    not treat None as an empty result (see /api/suggest_addresses, which
-    turns None into a 503).
+    not treat None as an empty result (resolve_address_suggestions turns
+    None into the offline mock fallback).
     """
     if not query_string or len(query_string) < 2:
         return []
@@ -135,7 +241,7 @@ def get_address_suggestions(query_string, limit=10, plz_ranges=None):
                         "label": clean_label,
                         "lat": attrs.get("lat"),
                         "lon": attrs.get("lon"),
-                        "plz": plz if plz else plz_int,
+                        "plz": plz_int,
                     }
                 )
 

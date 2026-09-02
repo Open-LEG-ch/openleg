@@ -20,6 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # seam refactor (#453) moved readiness, transitions, and the consent-gated
 # cluster decision into formation_wizard and store/formation. Gemeindeprofil
 # source outcomes and preservation policy are owned by public_data (#455).
+# Address normalization and fallback outcomes are owned by data_enricher (#456).
 SCOPED_MODULES = (
     "billing_policy.py",
     "billing_approval.py",
@@ -28,6 +29,7 @@ SCOPED_MODULES = (
     "formation_wizard.py",
     "store/formation.py",
     "public_data.py",
+    "data_enricher.py",
 )
 
 

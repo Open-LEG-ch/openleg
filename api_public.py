@@ -519,10 +519,10 @@ def address_suggest():
         except (ValueError, IndexError):
             pass
 
-    payload, status = data_enricher.resolve_address_suggestions(
+    outcome = data_enricher.resolve_address_suggestions(
         q, limit=10, plz_ranges=plz_ranges
     )
-    return jsonify(payload), status
+    return jsonify({"suggestions": data_enricher.public_address_suggestions(outcome)})
 
 
 @public_api_bp.route("/address/profile")
@@ -534,21 +534,12 @@ def address_profile():
 
     import data_enricher
 
-    try:
-        estimates, _profiles = data_enricher.get_energy_profile_for_address(address)
-        if not estimates:
-            estimates, _profiles = data_enricher.get_mock_energy_profile_for_address(
-                address
-            )
-    except Exception:
-        estimates, _profiles = data_enricher.get_mock_energy_profile_for_address(
-            address
-        )
+    outcome = data_enricher.resolve_address_profile(address)
 
-    if not estimates:
+    if not outcome.estimates:
         return jsonify({"error": "Address could not be analyzed"}), 404
 
-    return jsonify(estimates)
+    return jsonify(outcome.estimates)
 
 
 # === API docs ===

@@ -96,7 +96,8 @@ Domain logic sits above storage and stays free of SQL:
 | `municipality_profile.py` | Gemeindeprofil presentation helpers |
 | `formation_wizard.py`, `document_generator.py` | LEG formation and documents |
 | `sdat_e66.py`, `sdat_datahub.py`, `meter_data.py` | Meter data parsing and retrieval |
-| `ml_models.py`, `data_enricher.py` | Clustering and enrichment |
+| `data_enricher.py` | Address-suggestion and profile outcomes; live/mock selection, normalization, and fallback cause |
+| `ml_models.py` | Clustering and generated load profiles |
 | `neighbor_view.py` | Neighbour read policy: anonymity radius, jittered map locations, provisional match summary |
 | `access_token.py` | Magic-link access policy: token format, hashing, expiry bounds, access URLs |
 
