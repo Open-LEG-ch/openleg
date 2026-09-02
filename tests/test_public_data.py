@@ -248,7 +248,7 @@ class TestFetchElcom:
         secret = "token=elcom-upstream-secret"
         mock_post.side_effect = Exception(secret)
         with caplog.at_level(logging.ERROR):
-            assert fetch_elcom_tariffs(261, 2026) == []
+            assert fetch_elcom_tariffs(261, 2026) is None
         assert secret not in caplog.text
 
 

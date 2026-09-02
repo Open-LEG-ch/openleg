@@ -69,8 +69,11 @@ ORDER BY ?operator ?category
 """
 
 
-def fetch_elcom_tariffs(bfs_number: int, year: int = 2026) -> list[dict]:
-    """Query LINDAS SPARQL endpoint for ElCom tariffs of a municipality."""
+def fetch_elcom_tariffs(bfs_number: int, year: int = 2026) -> list[dict] | None:
+    """Query LINDAS SPARQL endpoint for ElCom tariffs of a municipality.
+
+    Returns None when the upstream cannot be fetched, [] when it has no rows.
+    """
     sparql = ELCOM_SPARQL_TEMPLATE.format(bfs=bfs_number, year=year)
     try:
         resp = requests.post(
@@ -104,7 +107,7 @@ def fetch_elcom_tariffs(bfs_number: int, year: int = 2026) -> list[dict]:
         return results
     except Exception:
         logger.error("[PUBLIC_DATA] ElCom fetch failed for BFS %s", bfs_number)
-        return []
+        return None
 
 
 def fetch_all_elcom_tariffs(
@@ -116,7 +119,8 @@ def fetch_all_elcom_tariffs(
     all_tariffs = []
     for bfs in bfs_numbers:
         tariffs = fetch_elcom_tariffs(bfs, year)
-        all_tariffs.extend(tariffs)
+        if tariffs:
+            all_tariffs.extend(tariffs)
     logger.info(
         f"[PUBLIC_DATA] Batch ElCom: {len(all_tariffs)} total records for {len(bfs_numbers)} municipalities"
     )
@@ -379,7 +383,11 @@ def refresh_municipality(
 
     # ElCom tariffs
     tariffs = fetch_elcom_tariffs(bfs_number, year)
-    if tariffs:
+    if tariffs is None:
+        result["sources"]["elcom"] = "fetch_failed"
+    elif not tariffs:
+        result["sources"]["elcom"] = "empty"
+    else:
         saved = db.save_elcom_tariffs(tariffs)
         result["sources"]["elcom"] = {"records": len(tariffs), "saved": saved}
 
@@ -388,7 +396,9 @@ def refresh_municipality(
         return result
 
     # Find H4 tariff for value-gap calculation
-    h4 = next((t for t in tariffs if t.get("category", "").startswith("H4")), None)
+    h4 = next(
+        (t for t in (tariffs or []) if t.get("category", "").startswith("H4")), None
+    )
     value_gap = compute_leg_value_gap(h4) if h4 else {"annual_savings_chf": 0}
 
     # Get existing profile or create stub

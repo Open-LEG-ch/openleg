@@ -464,6 +464,31 @@ def test_refresh_municipality_empty_bulk_results_preserve_profile(monkeypatch):
         assert profile[field] == _EXISTING_PROFILE[field]
 
 
+def test_refresh_municipality_empty_tariffs_report_elcom_empty(monkeypatch):
+    """Healthy-empty ElCom result must surface as an explicit empty outcome."""
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+
+    result = public_data.refresh_municipality(261, year=2026)
+
+    assert result["sources"]["elcom"] == "empty"
+    assert len(saved_profiles) == 1
+
+
+def test_refresh_municipality_elcom_outage_reports_fetch_failed(monkeypatch):
+    """ElCom adapter failure (None) must surface as fetch_failed, not empty."""
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+    monkeypatch.setattr(
+        public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: None
+    )
+
+    result = public_data.refresh_municipality(261, year=2026)
+
+    assert result["sources"]["elcom"] == "fetch_failed"
+    assert len(saved_profiles) == 1
+
+
 def test_refresh_municipality_empty_sources_flags_false_and_marker_kept(monkeypatch):
     """Healthy-empty Energie Reporter, Sonnendach, and ElCom results.
 
