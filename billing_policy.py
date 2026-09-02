@@ -22,7 +22,7 @@ MAX_PAYMENT_DAYS = 365
 MAX_VAT_RATE_PCT = Decimal(100)
 MAX_PRICE_RP = Decimal(1000)
 MAX_PRICE_DECIMALS_RP = 4
-INVOICE_PREFIX_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9-]{1,15}$")
+INVOICE_PREFIX_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9-]{1,15}\Z")
 _STRICT_DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PLAIN_DECIMAL_PATTERN = re.compile(r"^\d+(\.\d+)?$")
 
@@ -32,10 +32,12 @@ POLICY_DISCLAIMER = (
     "nicht fest. Prüfen Sie Ihre Wahl vor dem Speichern."
 )
 
-FORM_FIELDS = (
+PERSISTED_POLICY_FIELDS = (
+    "tariff_id",
+    "community_id",
     "effective_from",
-    "internal_price_rp",
-    "grid_fee_rp",
+    "internal_price_chf_per_kwh",
+    "grid_fee_chf_per_kwh",
     "network_level",
     "distribution_model",
     "vat_mode",
@@ -43,6 +45,25 @@ FORM_FIELDS = (
     "payment_days",
     "invoice_prefix",
     "delivery_method",
+)
+
+EDITABLE_POLICY_FIELDS = PERSISTED_POLICY_FIELDS[2:]
+
+_FORM_INPUT_FOR_POLICY_FIELD = {
+    "internal_price_chf_per_kwh": "internal_price_rp",
+    "grid_fee_chf_per_kwh": "grid_fee_rp",
+}
+
+FORM_FIELDS = tuple(
+    _FORM_INPUT_FOR_POLICY_FIELD.get(field, field) for field in EDITABLE_POLICY_FIELDS
+)
+FINGERPRINT_POLICY_FIELDS = tuple(
+    field for field in PERSISTED_POLICY_FIELDS if field != "effective_from"
+)
+_DECIMAL_POLICY_FIELDS = (
+    "internal_price_chf_per_kwh",
+    "grid_fee_chf_per_kwh",
+    "vat_rate_pct",
 )
 
 NETWORK_LEVEL_LABELS = {
@@ -61,6 +82,135 @@ DELIVERY_METHOD_LABELS = {
     "email": "E-Mail",
     "download": "PDF-Download",
 }
+
+
+class InvalidPersistedPolicy(ValueError):
+    """A stored billing policy is incomplete or outside its value domain."""
+
+
+def _persisted_decimal(value):
+    try:
+        return Decimal(str(value))
+    except (ArithmeticError, TypeError, ValueError):
+        return Decimal("NaN")
+
+
+def _persisted_temporal(value):
+    if isinstance(value, (datetime, date)):
+        return value
+    if isinstance(value, str) and value.strip():
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            try:
+                return date.fromisoformat(value)
+            except ValueError:
+                pass
+    raise InvalidPersistedPolicy(
+        "Das Inkrafttretungsdatum der Richtlinie ist ungültig."
+    )
+
+
+def _has_precision(value, places):
+    return value.is_finite() and -value.as_tuple().exponent <= places
+
+
+def validate_persisted_policy(policy, *, period_start, community_id) -> dict:
+    """Validate and normalize one stored policy snapshot, failing closed."""
+    if not isinstance(policy, dict) or not policy:
+        raise InvalidPersistedPolicy(
+            "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
+        )
+    missing = [field for field in PERSISTED_POLICY_FIELDS if policy.get(field) is None]
+    if missing:
+        raise InvalidPersistedPolicy(
+            "Die Richtlinien-Kopie ist unvollständig: " + ", ".join(missing)
+        )
+    if policy["community_id"] != community_id or not isinstance(
+        policy["community_id"], str
+    ):
+        raise InvalidPersistedPolicy(
+            "Die Richtlinien-Kopie gehört nicht zur Community des Entwurfs."
+        )
+    tariff_id = policy["tariff_id"]
+    if isinstance(tariff_id, bool) or not isinstance(tariff_id, int) or tariff_id <= 0:
+        raise InvalidPersistedPolicy("Die Tarif-ID der Richtlinie ist ungültig.")
+
+    normalized = dict(policy)
+    max_price_chf = MAX_PRICE_RP / Decimal(100)
+    for field in _DECIMAL_POLICY_FIELDS[:2]:
+        value = _persisted_decimal(policy[field])
+        if not _has_precision(value, 6) or value < 0 or value > max_price_chf:
+            raise InvalidPersistedPolicy(
+                "Ein Energiepreis der Richtlinie liegt ausserhalb des zulässigen Bereichs."
+            )
+        normalized[field] = value
+
+    effective_from = _persisted_temporal(policy["effective_from"])
+    try:
+        effective = effective_from <= period_start
+    except TypeError:
+        effective = False
+    if not effective:
+        raise InvalidPersistedPolicy(
+            "Die Richtlinie gilt noch nicht zum Periodenbeginn."
+        )
+
+    for field, allowed, message in (
+        ("network_level", NETWORK_LEVELS, "Die Netzebene der Richtlinie ist ungültig."),
+        (
+            "distribution_model",
+            DISTRIBUTION_MODELS,
+            "Das Verteilmodell der Richtlinie ist ungültig.",
+        ),
+        (
+            "delivery_method",
+            DELIVERY_METHODS,
+            "Die Zustellmethode der Richtlinie ist ungültig.",
+        ),
+    ):
+        if policy[field] not in allowed:
+            raise InvalidPersistedPolicy(message)
+
+    if not isinstance(
+        policy["invoice_prefix"], str
+    ) or not INVOICE_PREFIX_PATTERN.match(policy["invoice_prefix"]):
+        raise InvalidPersistedPolicy("Das Rechnungspräfix der Richtlinie ist ungültig.")
+    payment_days = policy["payment_days"]
+    if (
+        isinstance(payment_days, bool)
+        or not isinstance(payment_days, int)
+        or not MIN_PAYMENT_DAYS <= payment_days <= MAX_PAYMENT_DAYS
+    ):
+        raise InvalidPersistedPolicy("Die Zahlungsfrist der Richtlinie ist ungültig.")
+
+    vat_mode = policy["vat_mode"]
+    vat_rate = _persisted_decimal(policy["vat_rate_pct"])
+    if vat_mode not in VAT_MODES or not _has_precision(vat_rate, 2):
+        raise InvalidPersistedPolicy(
+            "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
+        )
+    if vat_mode == "none" and vat_rate != 0:
+        raise InvalidPersistedPolicy("Ohne Mehrwertsteuer muss der Satz 0 sein.")
+    if vat_mode == "standard" and not 0 < vat_rate <= MAX_VAT_RATE_PCT:
+        raise InvalidPersistedPolicy(
+            "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
+        )
+    normalized["vat_rate_pct"] = vat_rate
+    return normalized
+
+
+def policy_fingerprint_values(policy: dict) -> dict:
+    """Project the complete persisted policy into deterministic JSON values."""
+    projected = {}
+    for field in FINGERPRINT_POLICY_FIELDS:
+        value = policy[field]
+        if field in _DECIMAL_POLICY_FIELDS:
+            value = str(value)
+        elif isinstance(value, (datetime, date)):
+            value = value.isoformat()
+        projected[field] = value
+    return projected
 
 
 def _rate_rp_text(value):
@@ -237,18 +387,21 @@ def validate_policy_form(form) -> dict:
 
     if errors:
         return {"policy": None, "errors": errors}
+    parsed_policy_fields = {
+        "effective_from": effective_from,
+        "internal_price_chf_per_kwh": internal_price_rp / 100,
+        "grid_fee_chf_per_kwh": grid_fee_rp / 100,
+        "network_level": network_level,
+        "distribution_model": distribution_model,
+        "vat_mode": vat_mode,
+        "vat_rate_pct": vat_rate_pct,
+        "payment_days": payment_days,
+        "invoice_prefix": invoice_prefix,
+        "delivery_method": delivery_method,
+    }
     return {
         "policy": {
-            "effective_from": effective_from,
-            "internal_price_chf_per_kwh": internal_price_rp / 100,
-            "grid_fee_chf_per_kwh": grid_fee_rp / 100,
-            "network_level": network_level,
-            "distribution_model": distribution_model,
-            "vat_mode": vat_mode,
-            "vat_rate_pct": vat_rate_pct,
-            "payment_days": payment_days,
-            "invoice_prefix": invoice_prefix,
-            "delivery_method": delivery_method,
+            field: parsed_policy_fields[field] for field in EDITABLE_POLICY_FIELDS
         },
         "errors": {},
     }

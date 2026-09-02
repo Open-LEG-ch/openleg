@@ -55,6 +55,649 @@ def test_valid_form_produces_complete_policy():
     assert policy["delivery_method"] == "email"
 
 
+def test_persisted_policy_definition_owns_the_complete_field_set():
+    assert billing_policy.PERSISTED_POLICY_FIELDS == (
+        "tariff_id",
+        "community_id",
+        "effective_from",
+        "internal_price_chf_per_kwh",
+        "grid_fee_chf_per_kwh",
+        "network_level",
+        "distribution_model",
+        "vat_mode",
+        "vat_rate_pct",
+        "payment_days",
+        "invoice_prefix",
+        "delivery_method",
+    )
+
+
+def test_fingerprint_projection_uses_every_persisted_policy_field():
+    policy = {
+        "tariff_id": 7,
+        "community_id": "community-a",
+        "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        "internal_price_chf_per_kwh": Decimal("0.15"),
+        "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": Decimal(0),
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+
+    projected = billing_policy.policy_fingerprint_values(policy)
+
+    assert tuple(projected) == billing_policy.FINGERPRINT_POLICY_FIELDS
+    assert "effective_from" not in projected
+    assert projected["internal_price_chf_per_kwh"] == "0.15"
+
+
+def test_persisted_policy_refuses_temporal_types_that_cannot_be_compared():
+    policy = _policy(
+        tariff_id=7,
+        community_id="community-a",
+        effective_from=date(2026, 9, 1),
+    )
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "tariff_id",
+        "community_id",
+        "effective_from",
+        "internal_price_chf_per_kwh",
+        "grid_fee_chf_per_kwh",
+        "network_level",
+        "distribution_model",
+        "vat_mode",
+        "vat_rate_pct",
+        "payment_days",
+        "invoice_prefix",
+        "delivery_method",
+    ),
+)
+def test_validate_persisted_policy_refuses_each_missing_canonical_field(field):
+    policy = _policy(tariff_id=7, community_id="community-a")
+    del policy[field]
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+def test_validate_persisted_policy_normalizes_one_complete_policy():
+    policy = {
+        "tariff_id": 7,
+        "community_id": "community-a",
+        "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        "internal_price_chf_per_kwh": 0.15,
+        "grid_fee_chf_per_kwh": 0.08,
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": 0.0,
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized == {
+        "tariff_id": 7,
+        "community_id": "community-a",
+        "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        "internal_price_chf_per_kwh": Decimal("0.15"),
+        "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": Decimal("0.0"),
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+
+
+# --- Issue #461: persisted policy identity validation ------------------------
+
+_IDENTITY_VALID_POLICY = {
+    "tariff_id": 7,
+    "community_id": "community-a",
+    "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+    "internal_price_chf_per_kwh": Decimal("0.15"),
+    "grid_fee_chf_per_kwh": Decimal("0.08"),
+    "network_level": "same",
+    "distribution_model": "proportional",
+    "vat_mode": "none",
+    "vat_rate_pct": Decimal(0),
+    "payment_days": 30,
+    "invoice_prefix": "LEG-2026",
+    "delivery_method": "email",
+}
+
+_INVALID_IDENTITY_CASES = (
+    ("community_id", "community-b"),
+    ("community_id", ""),
+    ("community_id", "community-a "),
+    ("community_id", " community-a"),
+    ("community_id", 7),
+    ("community_id", ["community-a"]),
+    ("tariff_id", True),
+    ("tariff_id", False),
+    ("tariff_id", 0),
+    ("tariff_id", -1),
+    ("tariff_id", "7"),
+    ("tariff_id", "007"),
+    ("tariff_id", 7.0),
+)
+
+
+@pytest.mark.parametrize(("field", "value"), _INVALID_IDENTITY_CASES)
+def test_validate_persisted_policy_refuses_invalid_identity(field, value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[field] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+def test_minimum_tariff_id_one_is_accepted():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["tariff_id"] = 1
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["tariff_id"] == 1
+
+
+# --- Issue #461: truthy non-dict policies are refused --------------------------
+
+_TRUTHY_NON_DICT_POLICIES = (
+    "community-a",
+    7,
+    7.5,
+    True,
+    ["community-a"],
+    ("community-a",),
+    {"community-a"},
+)
+
+
+@pytest.mark.parametrize("policy", _TRUTHY_NON_DICT_POLICIES)
+def test_validate_persisted_policy_refuses_truthy_non_dict_policy(policy):
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+# --- Issue #461: canonical diagnostics from validate_persisted_policy --------
+
+_DIAGNOSTIC_PERIOD_START = datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+
+_PERSISTED_POLICY_DIAGNOSTICS = (
+    (
+        "empty-snapshot",
+        dict,
+        "Der Abrechnungsentwurf hat keine Richtlinien-Kopie.",
+    ),
+    (
+        "missing-canonical-field",
+        lambda: {**_IDENTITY_VALID_POLICY, "network_level": None},
+        "Die Richtlinien-Kopie ist unvollständig: network_level",
+    ),
+    (
+        "wrong-community",
+        lambda: {**_IDENTITY_VALID_POLICY, "community_id": "community-b"},
+        "Die Richtlinien-Kopie gehört nicht zur Community des Entwurfs.",
+    ),
+    (
+        "invalid-tariff-id",
+        lambda: {**_IDENTITY_VALID_POLICY, "tariff_id": 0},
+        "Die Tarif-ID der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-energy-price",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "internal_price_chf_per_kwh": Decimal("10.01"),
+        },
+        "Ein Energiepreis der Richtlinie liegt ausserhalb des zulässigen Bereichs.",
+    ),
+    (
+        "not-yet-effective",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "effective_from": datetime(2026, 10, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        },
+        "Die Richtlinie gilt noch nicht zum Periodenbeginn.",
+    ),
+    (
+        "invalid-network-level",
+        lambda: {**_IDENTITY_VALID_POLICY, "network_level": "different"},
+        "Die Netzebene der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-distribution-model",
+        lambda: {**_IDENTITY_VALID_POLICY, "distribution_model": "simple"},
+        "Das Verteilmodell der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-delivery-method",
+        lambda: {**_IDENTITY_VALID_POLICY, "delivery_method": "post"},
+        "Die Zustellmethode der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-invoice-prefix",
+        lambda: {**_IDENTITY_VALID_POLICY, "invoice_prefix": "leg-2026"},
+        "Das Rechnungspräfix der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-payment-days",
+        lambda: {**_IDENTITY_VALID_POLICY, "payment_days": 366},
+        "Die Zahlungsfrist der Richtlinie ist ungültig.",
+    ),
+    (
+        "invalid-vat-rate-precision",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "vat_mode": "standard",
+            "vat_rate_pct": Decimal("8.123"),
+        },
+        "Der Mehrwertsteuersatz der Richtlinie ist ungültig.",
+    ),
+    (
+        "none-mode-with-nonzero-vat-rate",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "vat_mode": "none",
+            "vat_rate_pct": Decimal("0.01"),
+        },
+        "Ohne Mehrwertsteuer muss der Satz 0 sein.",
+    ),
+    (
+        "standard-vat-rate-outside-range",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "vat_mode": "standard",
+            "vat_rate_pct": Decimal("100.01"),
+        },
+        "Der Mehrwertsteuersatz der Richtlinie ist ungültig.",
+    ),
+)
+
+
+@pytest.mark.parametrize(
+    ("case", "policy_factory", "expected_message"),
+    _PERSISTED_POLICY_DIAGNOSTICS,
+    ids=[diagnostic[0] for diagnostic in _PERSISTED_POLICY_DIAGNOSTICS],
+)
+def test_persisted_policy_diagnostic_contract(case, policy_factory, expected_message):
+    """Each distinct refusal path exposes its one fixed German diagnostic."""
+    with pytest.raises(billing_policy.InvalidPersistedPolicy) as exc:
+        billing_policy.validate_persisted_policy(
+            policy_factory(),
+            period_start=_DIAGNOSTIC_PERIOD_START,
+            community_id="community-a",
+        )
+
+    assert str(exc.value) == expected_message
+
+
+def test_multiple_missing_persisted_fields_use_one_comma_separator():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    del policy["network_level"]
+    del policy["delivery_method"]
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy) as exc:
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=_DIAGNOSTIC_PERIOD_START,
+            community_id="community-a",
+        )
+
+    assert str(exc.value) == (
+        "Die Richtlinien-Kopie ist unvollständig: network_level, delivery_method"
+    )
+
+
+def test_malformed_persisted_effective_from_diagnostic():
+    """A non-temporal effective_from exposes its one fixed German diagnostic."""
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["effective_from"] = "not-a-temporal-value"
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy) as exc:
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=_DIAGNOSTIC_PERIOD_START,
+            community_id="community-a",
+        )
+
+    assert str(exc.value) == "Das Inkrafttretungsdatum der Richtlinie ist ungültig."
+
+
+# --- Issue #461: persisted energy price validation ---------------------------
+
+_ENERGY_PRICE_FIELDS = (
+    "internal_price_chf_per_kwh",
+    "grid_fee_chf_per_kwh",
+)
+
+_INVALID_ENERGY_PRICE_CASES = (
+    "abc",
+    "",
+    Decimal("NaN"),
+    Decimal("Infinity"),
+    Decimal("-Infinity"),
+    float("nan"),
+    float("inf"),
+    float("-inf"),
+    Decimal("-0.01"),
+    "-0.01",
+    Decimal("10.01"),
+    "10.01",
+    Decimal("0.1234567"),
+    "0.1234567",
+)
+
+
+@pytest.mark.parametrize("field", _ENERGY_PRICE_FIELDS)
+@pytest.mark.parametrize("value", _INVALID_ENERGY_PRICE_CASES)
+def test_validate_persisted_policy_refuses_invalid_energy_price(field, value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[field] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+_ZERO_ENERGY_PRICE_FIELDS = (
+    "internal_price_chf_per_kwh",
+    "grid_fee_chf_per_kwh",
+)
+
+
+@pytest.mark.parametrize("field", _ZERO_ENERGY_PRICE_FIELDS)
+def test_zero_persisted_energy_price_is_accepted(field):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[field] = Decimal(0)
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized[field] == Decimal(0)
+
+
+_INVALID_EFFECTIVE_FROM_CASES = (
+    "",
+    "2026-13-01",
+    "2026-09-32",
+    "01.09.2026",
+    "20260901",
+    "not-a-date",
+    20260901,
+    datetime(2026, 9, 1),  # noqa: DTZ001 - deliberately incomparable with aware time
+    datetime(2026, 10, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+)
+
+
+@pytest.mark.parametrize("value", _INVALID_EFFECTIVE_FROM_CASES)
+def test_validate_persisted_policy_refuses_invalid_effective_from(value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["effective_from"] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+# --- Invalid persisted payment_days cases -------------------------------------
+
+_INVALID_PERSISTED_PAYMENT_DAYS_CASES = (
+    True,
+    False,
+    0,
+    -1,
+    -30,
+    366,
+    1000,
+    30.0,
+    30.5,
+    "30",
+    "30.5",
+    "abc",
+    "",
+    None,
+)
+
+
+@pytest.mark.parametrize("value", _INVALID_PERSISTED_PAYMENT_DAYS_CASES)
+def test_invalid_persisted_payment_days_is_refused(value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["payment_days"] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+def test_minimum_persisted_payment_days_one_is_accepted():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["payment_days"] = 1
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["payment_days"] == 1
+
+
+def test_maximum_persisted_payment_days_365_is_accepted():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["payment_days"] = 365
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["payment_days"] == 365
+
+
+# --- Invalid persisted enum choices ------------------------------------------
+
+_INVALID_PERSISTED_ENUM_CASES = (
+    ("network_level", "different"),
+    ("network_level", ""),
+    ("network_level", 7),
+    ("network_level", True),
+    ("network_level", ["same"]),
+    ("distribution_model", "simple"),
+    ("distribution_model", ""),
+    ("distribution_model", 3),
+    ("distribution_model", False),
+    ("distribution_model", ["proportional"]),
+    ("delivery_method", "post"),
+    ("delivery_method", ""),
+    ("delivery_method", 9),
+    ("delivery_method", True),
+    ("delivery_method", ["email"]),
+)
+
+
+@pytest.mark.parametrize(("field", "value"), _INVALID_PERSISTED_ENUM_CASES)
+def test_invalid_persisted_enum_choices_are_refused(field, value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[field] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+# --- Invalid persisted vat_mode/vat_rate_pct combinations ---------------------
+
+_INVALID_PERSISTED_VAT_CASES = (
+    ("partial", Decimal(0)),
+    ("reduced", Decimal(0)),
+    ("", Decimal(0)),
+    (" ", Decimal(0)),
+    (7, Decimal(0)),
+    (True, Decimal(0)),
+    (["none"], Decimal(0)),
+    (None, Decimal(0)),
+    ("none", Decimal("0.01")),
+    ("none", Decimal("8.1")),
+    ("none", Decimal("-0.01")),
+    ("none", 8.1),
+    ("none", Decimal("NaN")),
+    ("none", Decimal("Infinity")),
+    ("none", "abc"),
+    ("none", None),
+    ("standard", Decimal(0)),
+    ("standard", Decimal(-1)),
+    ("standard", Decimal("100.01")),
+    ("standard", "abc"),
+    ("standard", Decimal("8.123")),
+)
+
+
+@pytest.mark.parametrize(("vat_mode", "vat_rate_pct"), _INVALID_PERSISTED_VAT_CASES)
+def test_invalid_persisted_vat_combination_is_refused(vat_mode, vat_rate_pct):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["vat_mode"] = vat_mode
+    policy["vat_rate_pct"] = vat_rate_pct
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+def test_minimum_positive_persisted_vat_rate_is_accepted():
+    """The standard-VAT lower bound is exclusive zero, so 0.01 must pass."""
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["vat_mode"] = "standard"
+    policy["vat_rate_pct"] = Decimal("0.01")
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["vat_mode"] == "standard"
+    assert normalized["vat_rate_pct"] == Decimal("0.01")
+
+
+def test_maximum_persisted_vat_rate_100_is_accepted():
+    """The standard-VAT upper bound is inclusive, so exactly 100 must pass."""
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["vat_mode"] = "standard"
+    policy["vat_rate_pct"] = Decimal(100)
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["vat_mode"] == "standard"
+    assert normalized["vat_rate_pct"] == Decimal(100)
+
+
+# --- Invalid persisted invoice_prefix cases -----------------------------------
+
+_INVALID_PERSISTED_INVOICE_PREFIX_CASES = (
+    "",
+    " ",
+    "\t",
+    " LEG-2026",
+    "LEG-2026 ",
+    "LEG 2026",
+    7,
+    None,
+    True,
+    ["LEG-2026"],
+    ("LEG-2026",),
+    9.5,
+    "A" * 17,
+    "B" * 32,
+    "leg-2026",
+    "Leg-2026",
+    "LEG_2026",
+    "LEG/2026",
+    "LEG.1",
+    "LEG-2026!",
+    "<script>",
+    "égü",
+    "LEG-2026\n",
+)
+
+
+@pytest.mark.parametrize("value", _INVALID_PERSISTED_INVOICE_PREFIX_CASES)
+def test_invalid_persisted_invoice_prefix_is_refused(value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["invoice_prefix"] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
 def test_disclaimer_promises_no_legal_advice():
     disclaimer = billing_policy.POLICY_DISCLAIMER
     assert "Verantwortung der LEG" in disclaimer
@@ -195,6 +838,33 @@ def test_safe_invoice_prefixes_are_accepted(value):
     result = billing_policy.validate_policy_form(_form(invoice_prefix=value))
     assert result["errors"] == {}
     assert result["policy"]["invoice_prefix"] == value
+
+
+# --- Issue #454: form output keys project through the canonical policy --------
+
+
+def test_form_output_keys_project_through_editable_policy_fields(monkeypatch):
+    """The admin form output keys come from the canonical persisted definition.
+
+    Repointing EDITABLE_POLICY_FIELDS at a subset must re-project the output
+    keys of ``validate_policy_form``; a handwritten output mapping would keep
+    emitting all ten keys regardless of the canonical definition.
+    """
+    result = billing_policy.validate_policy_form(VALID_FORM)
+    assert result["errors"] == {}
+    assert tuple(result["policy"]) == billing_policy.EDITABLE_POLICY_FIELDS
+
+    monkeypatch.setattr(
+        billing_policy,
+        "EDITABLE_POLICY_FIELDS",
+        ("effective_from", "internal_price_chf_per_kwh"),
+    )
+    subset = billing_policy.validate_policy_form(VALID_FORM)
+    assert subset["errors"] == {}
+    assert tuple(subset["policy"]) == (
+        "effective_from",
+        "internal_price_chf_per_kwh",
+    )
 
 
 # --- Cycle 2: store.billing versioned policy seams ---------------------------

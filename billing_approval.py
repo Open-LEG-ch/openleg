@@ -21,21 +21,6 @@ _KWH_QUANTUM = Decimal("0.000001")
 
 _FINGERPRINT_PATTERN = re.compile(r"[0-9a-f]{64}")
 
-REQUIRED_POLICY_FIELDS = (
-    "tariff_id",
-    "community_id",
-    "effective_from",
-    "internal_price_chf_per_kwh",
-    "grid_fee_chf_per_kwh",
-    "network_level",
-    "distribution_model",
-    "vat_mode",
-    "vat_rate_pct",
-    "payment_days",
-    "invoice_prefix",
-    "delivery_method",
-)
-
 _ALLOWED_ITEM_TYPES = ("consumer_charge", "producer_credit", "rounding_adjustment")
 
 
@@ -496,94 +481,17 @@ def _require_valid_policy(policy, period_start, community_id):
     snapshot is only read, never mutated. Returns the validated
     ``(vat_rate, payment_days, internal_price)`` triple.
     """
-    if not isinstance(policy, dict) or not policy:
-        raise BillingApprovalError(
-            "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
+    try:
+        validated = billing_policy.validate_persisted_policy(
+            policy, period_start=period_start, community_id=community_id
         )
-    missing = [field for field in REQUIRED_POLICY_FIELDS if policy.get(field) is None]
-    if missing:
-        raise BillingApprovalError(
-            "Die Richtlinien-Kopie ist unvollständig: " + ", ".join(missing)
-        )
-    policy_community = policy.get("community_id")
-    if (
-        not isinstance(policy_community, str)
-        or not policy_community.strip()
-        or policy_community != community_id
-    ):
-        raise BillingApprovalError(
-            "Die Richtlinien-Kopie gehört nicht zur Community des Entwurfs."
-        )
-    tariff_id = policy.get("tariff_id")
-    if isinstance(tariff_id, bool) or not isinstance(tariff_id, int) or tariff_id <= 0:
-        raise BillingApprovalError("Die Tarif-ID der Richtlinie ist ungültig.")
-    max_price_chf = billing_policy.MAX_PRICE_RP / Decimal(100)
-    prices = {}
-    for field in ("internal_price_chf_per_kwh", "grid_fee_chf_per_kwh"):
-        price = _as_decimal(policy.get(field))
-        if (
-            not price.is_finite()
-            or price < 0
-            or price > max_price_chf
-            or _exceeds_precision(price, 6)
-        ):
-            raise BillingApprovalError(
-                "Ein Energiepreis der Richtlinie liegt ausserhalb des zulässigen "
-                "Bereichs."
-            )
-        prices[field] = price
-    effective_from = _parse_temporal(
-        policy.get("effective_from"),
-        "Das Inkrafttretungsdatum der Richtlinie ist ungültig.",
+    except billing_policy.InvalidPersistedPolicy as exc:
+        raise BillingApprovalError(str(exc)) from exc
+    return (
+        validated["vat_rate_pct"],
+        validated["payment_days"],
+        validated["internal_price_chf_per_kwh"],
     )
-    _require_order(
-        effective_from,
-        period_start,
-        "Die Richtlinie gilt noch nicht zum Periodenbeginn.",
-    )
-    if policy.get("network_level") not in billing_policy.NETWORK_LEVELS:
-        raise BillingApprovalError("Die Netzebene der Richtlinie ist ungültig.")
-    if policy.get("distribution_model") not in billing_policy.DISTRIBUTION_MODELS:
-        raise BillingApprovalError("Das Verteilmodell der Richtlinie ist ungültig.")
-    if policy.get("delivery_method") not in billing_policy.DELIVERY_METHODS:
-        raise BillingApprovalError("Die Zustellmethode der Richtlinie ist ungültig.")
-    invoice_prefix = policy.get("invoice_prefix")
-    if not isinstance(
-        invoice_prefix, str
-    ) or not billing_policy.INVOICE_PREFIX_PATTERN.match(invoice_prefix):
-        raise BillingApprovalError("Das Rechnungspräfix der Richtlinie ist ungültig.")
-    payment_days = policy.get("payment_days")
-    if (
-        isinstance(payment_days, bool)
-        or not isinstance(payment_days, int)
-        or not billing_policy.MIN_PAYMENT_DAYS
-        <= payment_days
-        <= billing_policy.MAX_PAYMENT_DAYS
-    ):
-        raise BillingApprovalError("Die Zahlungsfrist der Richtlinie ist ungültig.")
-    vat_mode = policy.get("vat_mode")
-    if vat_mode not in billing_policy.VAT_MODES:
-        raise BillingApprovalError(
-            "Der Mehrwertsteuer-Modus der Richtlinie ist ungültig."
-        )
-    vat_rate = _as_decimal(policy.get("vat_rate_pct"))
-    if vat_rate.is_finite() and _exceeds_precision(vat_rate, 2):
-        raise BillingApprovalError(
-            "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
-        )
-    if vat_mode == "none":
-        if not vat_rate.is_finite() or vat_rate != 0:
-            raise BillingApprovalError("Ohne Mehrwertsteuer muss der Satz 0 sein.")
-        vat_rate = Decimal(0)
-    elif (
-        not vat_rate.is_finite()
-        or vat_rate <= 0
-        or vat_rate > billing_policy.MAX_VAT_RATE_PCT
-    ):
-        raise BillingApprovalError(
-            "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
-        )
-    return vat_rate, payment_days, prices["internal_price_chf_per_kwh"]
 
 
 def prepare_invoice_snapshots(period, issue_date=None):
