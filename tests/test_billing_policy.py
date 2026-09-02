@@ -110,6 +110,159 @@ def test_persisted_policy_refuses_temporal_types_that_cannot_be_compared():
         )
 
 
+@pytest.mark.parametrize(
+    "field",
+    (
+        "tariff_id",
+        "community_id",
+        "effective_from",
+        "internal_price_chf_per_kwh",
+        "grid_fee_chf_per_kwh",
+        "network_level",
+        "distribution_model",
+        "vat_mode",
+        "vat_rate_pct",
+        "payment_days",
+        "invoice_prefix",
+        "delivery_method",
+    ),
+)
+def test_validate_persisted_policy_refuses_each_missing_canonical_field(field):
+    policy = _policy(tariff_id=7, community_id="community-a")
+    del policy[field]
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+def test_validate_persisted_policy_normalizes_one_complete_policy():
+    policy = {
+        "tariff_id": 7,
+        "community_id": "community-a",
+        "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        "internal_price_chf_per_kwh": 0.15,
+        "grid_fee_chf_per_kwh": 0.08,
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": 0.0,
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized == {
+        "tariff_id": 7,
+        "community_id": "community-a",
+        "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        "internal_price_chf_per_kwh": Decimal("0.15"),
+        "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": Decimal("0.0"),
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+
+
+# --- Issue #461: persisted policy identity validation ------------------------
+
+_IDENTITY_VALID_POLICY = {
+    "tariff_id": 7,
+    "community_id": "community-a",
+    "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+    "internal_price_chf_per_kwh": Decimal("0.15"),
+    "grid_fee_chf_per_kwh": Decimal("0.08"),
+    "network_level": "same",
+    "distribution_model": "proportional",
+    "vat_mode": "none",
+    "vat_rate_pct": Decimal(0),
+    "payment_days": 30,
+    "invoice_prefix": "LEG-2026",
+    "delivery_method": "email",
+}
+
+_INVALID_IDENTITY_CASES = (
+    ("community_id", "community-b"),
+    ("community_id", ""),
+    ("community_id", "community-a "),
+    ("community_id", " community-a"),
+    ("community_id", 7),
+    ("community_id", ["community-a"]),
+    ("tariff_id", True),
+    ("tariff_id", False),
+    ("tariff_id", 0),
+    ("tariff_id", -1),
+    ("tariff_id", "7"),
+    ("tariff_id", "007"),
+    ("tariff_id", 7.0),
+)
+
+
+@pytest.mark.parametrize(("field", "value"), _INVALID_IDENTITY_CASES)
+def test_validate_persisted_policy_refuses_invalid_identity(field, value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[field] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
+# --- Issue #461: persisted energy price validation ---------------------------
+
+_ENERGY_PRICE_FIELDS = (
+    "internal_price_chf_per_kwh",
+    "grid_fee_chf_per_kwh",
+)
+
+_INVALID_ENERGY_PRICE_CASES = (
+    "abc",
+    "",
+    Decimal("NaN"),
+    Decimal("Infinity"),
+    Decimal("-Infinity"),
+    float("nan"),
+    float("inf"),
+    float("-inf"),
+    Decimal("-0.01"),
+    "-0.01",
+    Decimal("10.01"),
+    "10.01",
+    Decimal("0.1234567"),
+    "0.1234567",
+)
+
+
+@pytest.mark.parametrize("field", _ENERGY_PRICE_FIELDS)
+@pytest.mark.parametrize("value", _INVALID_ENERGY_PRICE_CASES)
+def test_validate_persisted_policy_refuses_invalid_energy_price(field, value):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[field] = value
+
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
 def test_disclaimer_promises_no_legal_advice():
     disclaimer = billing_policy.POLICY_DISCLAIMER
     assert "Verantwortung der LEG" in disclaimer
