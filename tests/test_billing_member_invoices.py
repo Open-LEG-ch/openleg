@@ -464,6 +464,35 @@ def test_detail_view_fails_closed_on_corrupted_snapshot(monkeypatch, overrides, 
         member_invoices.detail_view(42, "building-session")
 
 
+def test_detail_view_rejects_zero_vat_rate_in_standard_mode(monkeypatch):
+    """A standard-mode invoice with a zero frozen rate is arithmetically
+    coherent (vat 0.00, gross equal net) yet violates the standard-mode rule
+    that the rate must be positive, so it must fail closed."""
+    import member_invoices
+
+    corrupted = _corrupt_invoice_row(
+        policy_snapshot={
+            **INVOICE_ROW["policy_snapshot"],
+            "vat_rate_pct": "0",
+        },
+        vat_rate_pct="0",
+        vat_chf="0.00",
+        gross_chf="12.08",
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=corrupted),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as excinfo:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(excinfo.value) == (
+        "Die Rechnung hat einen ungültigen Mehrwertsteuersatz."
+    )
+
+
 def test_list_view_fails_closed_on_corrupted_snapshot(monkeypatch):
     import member_invoices
 
@@ -541,6 +570,55 @@ def test_detail_view_rejects_unbounded_or_unjustified_rounding(monkeypatch, line
         member_invoices.detail_view(42, "building-session")
 
 
+def test_detail_view_rejects_rounding_proof_without_rounding_item(monkeypatch):
+    """A non-null frozen rounding_adjustment proof without a matching
+    rounding_adjustment line item is an orphaned proof and must fail closed."""
+    import member_invoices
+
+    corrupted = _corrupt_invoice_row(
+        provenance_snapshot={
+            **INVOICE_ROW["provenance_snapshot"],
+            "rounding_adjustment": {
+                "participant_id": "building-session",
+                "amount_chf": "0.01",
+            },
+        }
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=corrupted),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as excinfo:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(excinfo.value) == "Der Rundungsausgleich ist nicht zulässig."
+
+
+def test_detail_view_rejects_issuer_snapshot_from_another_community(monkeypatch):
+    """A frozen issuer whose community_id differs from the invoice's own
+    community_id is an invalid issuer and must fail closed."""
+    import member_invoices
+
+    corrupted = _corrupt_invoice_row(
+        provenance_snapshot={
+            **INVOICE_ROW["provenance_snapshot"],
+            "issuer": {"community_id": "community-b", "name": "Fremde LEG"},
+        }
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=corrupted),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as excinfo:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(excinfo.value) == "Die Rechnung hat keinen gültigen Aussteller."
+
+
 def test_detail_view_rejects_duplicate_non_rounding_positions(monkeypatch):
     import copy
 
@@ -611,6 +689,32 @@ def test_detail_view_rejects_impossible_date_order(monkeypatch, overrides):
 
     with pytest.raises(member_invoices.MemberInvoiceDataError):
         member_invoices.detail_view(42, "building-session")
+
+
+def test_detail_view_rejects_negative_frozen_tariff_price(monkeypatch):
+    """A frozen policy_snapshot with a negative internal_price_chf_per_kwh
+    must fail closed with the stable tariff-policy error text, never render
+    the negative price as if it were a real tariff."""
+    import member_invoices
+
+    corrupted = _corrupt_invoice_row(
+        policy_snapshot={
+            **INVOICE_ROW["policy_snapshot"],
+            "internal_price_chf_per_kwh": "-0.150000",
+        }
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=corrupted),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as excinfo:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(excinfo.value) == (
+        "Die Richtlinien-Kopie hat einen ungültigen Tarifpreis."
+    )
 
 
 @pytest.mark.parametrize(

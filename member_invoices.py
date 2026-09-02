@@ -176,6 +176,72 @@ def _line_item_view(
     )
 
 
+def _require_line_item_cardinality_and_rounding(
+    rendered_items: list[tuple[dict, Decimal]],
+    provenance: dict,
+    participant_id: str,
+) -> None:
+    """Fail closed unless the rendered line items are cardinality-consistent
+    and any rounding adjustment is a single residual that is either exactly
+    proven by the frozen period proof or, for legacy snapshots, cent-bounded
+    and carried by the period's selected producer."""
+    line_items = [item for item, _ in rendered_items]
+    non_rounding_types = [
+        item["item_type"]
+        for item in line_items
+        if item["item_type"] != "rounding_adjustment"
+    ]
+    if len(non_rounding_types) != len(set(non_rounding_types)):
+        raise MemberInvoiceDataError("Die Rechnung enthält doppelte Positionen.")
+    rounding_items = [
+        pair for pair in rendered_items if pair[0]["item_type"] == "rounding_adjustment"
+    ]
+    producer_credits = [
+        pair for pair in rendered_items if pair[0]["item_type"] == "producer_credit"
+    ]
+    if len(rounding_items) > 1 or (rounding_items and not producer_credits):
+        raise MemberInvoiceDataError("Der Rundungsausgleich ist nicht zulässig.")
+    has_rounding_proof = "rounding_adjustment" in provenance
+    frozen_rounding = provenance.get("rounding_adjustment")
+    if rounding_items:
+        rounding_amount = rounding_items[0][1]
+        if has_rounding_proof:
+            if not isinstance(frozen_rounding, dict):
+                raise MemberInvoiceDataError(
+                    "Der Rundungsausgleich ist nicht zulässig."
+                )
+            frozen_amount = _require_finite_decimal(
+                frozen_rounding.get("amount_chf"),
+                "Der Rundungsausgleich ist nicht zulässig.",
+            )
+            if (
+                frozen_rounding.get("participant_id") != participant_id
+                or frozen_amount != rounding_amount
+            ):
+                raise MemberInvoiceDataError(
+                    "Der Rundungsausgleich ist nicht zulässig."
+                )
+        elif rounding_amount.copy_abs() > Decimal("0.01"):
+            # Legacy snapshots predate the exact frozen rounding proof. They
+            # may still render only when the residual is cent-bounded.
+            raise MemberInvoiceDataError(
+                "Der Rundungsausgleich übersteigt den zulässigen Restbetrag."
+            )
+        reconciliation = provenance.get("reconciliation")
+        production = (
+            reconciliation.get("production_per_participant")
+            if isinstance(reconciliation, dict)
+            else None
+        )
+        if not isinstance(production, dict) or not production:
+            raise MemberInvoiceDataError("Der Rundungsausgleich ist nicht zulässig.")
+        producer_ids = [key for key in production if isinstance(key, str) and key]
+        if not producer_ids or participant_id != min(producer_ids):
+            raise MemberInvoiceDataError("Der Rundungsausgleich ist nicht zulässig.")
+    elif has_rounding_proof and frozen_rounding is not None:
+        raise MemberInvoiceDataError("Der Rundungsausgleich ist nicht zulässig.")
+
+
 def _summary(invoice: dict) -> dict:
     provenance = _require_json_dict(
         invoice.get("provenance_snapshot"),
@@ -250,15 +316,10 @@ def list_view(building_id: str) -> dict:
     return {"invoices": summaries}
 
 
-def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
-    """Validate and render one already owner-scoped immutable invoice row."""
-    participant_id = _require_text(
-        invoice.get("participant_id"),
-        "Die Rechnung hat keine gültige Teilnehmer-ID.",
-    )
-    if participant_id != building_id:
-        raise MemberInvoiceDataError("Die Rechnung hat eine ungültige Zuordnung.")
-
+def _policy_snapshot_view(invoice: dict) -> tuple:
+    """Validate the frozen policy_snapshot and return exactly the four values
+    the detail view needs: vat_mode, policy_vat_rate, policy_unit_price,
+    payment_days."""
     policy = _require_json_dict(
         invoice.get("policy_snapshot"),
         "Die Rechnung hat keine gültige Richtlinien-Kopie.",
@@ -291,96 +352,34 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
         raise MemberInvoiceDataError(
             "Die Richtlinien-Kopie hat keine gültige Zahlungsfrist."
         )
+    return vat_mode, policy_vat_rate, policy_unit_price, payment_days
 
-    provenance = _require_json_dict(
-        invoice.get("provenance_snapshot"),
-        "Die Rechnung hat keine gültige Periodenangabe.",
-    )
-    period_start = _require_date_text(
-        provenance.get("period_start"),
-        "Die Rechnung hat keine gültige Periodenangabe.",
-    )
-    period_end = _require_date_text(
-        provenance.get("period_end"), "Die Rechnung hat keine gültige Periodenangabe."
-    )
 
-    line_items_raw = _require_json_list(
-        invoice.get("line_items_snapshot"),
-        "Die Rechnung hat keine gültigen Positionen.",
-    )
-    rendered_items = [
-        _line_item_view(item, participant_id, policy_unit_price)
-        for item in line_items_raw
-    ]
-    line_items = [item for item, _ in rendered_items]
-    non_rounding_types = [
-        item["item_type"]
-        for item in line_items
-        if item["item_type"] != "rounding_adjustment"
-    ]
-    if len(non_rounding_types) != len(set(non_rounding_types)):
-        raise MemberInvoiceDataError("Die Rechnung enthält doppelte Positionen.")
-    rounding_items = [
-        pair for pair in rendered_items if pair[0]["item_type"] == "rounding_adjustment"
-    ]
-    producer_credits = [
-        pair for pair in rendered_items if pair[0]["item_type"] == "producer_credit"
-    ]
-    if len(rounding_items) > 1 or (rounding_items and not producer_credits):
-        raise MemberInvoiceDataError("Der Rundungsausgleich ist nicht zulässig.")
-    has_rounding_proof = "rounding_adjustment" in provenance
-    frozen_rounding = provenance.get("rounding_adjustment")
-    if rounding_items:
-        rounding_amount = rounding_items[0][1]
-        if has_rounding_proof:
-            if not isinstance(frozen_rounding, dict):
-                raise MemberInvoiceDataError(
-                    "Der Rundungsausgleich ist nicht zulässig."
-                )
-            frozen_amount = _require_finite_decimal(
-                frozen_rounding.get("amount_chf"),
-                "Der Rundungsausgleich ist nicht zulässig.",
-            )
-            if (
-                frozen_rounding.get("participant_id") != participant_id
-                or frozen_amount != rounding_amount
-            ):
-                raise MemberInvoiceDataError(
-                    "Der Rundungsausgleich ist nicht zulässig."
-                )
-        elif rounding_amount.copy_abs() > Decimal("0.01"):
-            # Legacy snapshots predate the exact frozen rounding proof. They
-            # may still render only when the residual is cent-bounded.
-            raise MemberInvoiceDataError(
-                "Der Rundungsausgleich übersteigt den zulässigen Restbetrag."
-            )
-        reconciliation = provenance.get("reconciliation")
-        production = (
-            reconciliation.get("production_per_participant")
-            if isinstance(reconciliation, dict)
-            else None
-        )
-        if not isinstance(production, dict) or not production:
-            raise MemberInvoiceDataError("Der Rundungsausgleich ist nicht zulässig.")
-        producer_ids = [key for key in production if isinstance(key, str) and key]
-        if not producer_ids or participant_id != min(producer_ids):
-            raise MemberInvoiceDataError("Der Rundungsausgleich ist nicht zulässig.")
-    elif has_rounding_proof and frozen_rounding is not None:
-        raise MemberInvoiceDataError("Der Rundungsausgleich ist nicht zulässig.")
-
+def _issuer_name(invoice: dict, provenance: dict) -> str:
+    """Resolve the frozen issuer display name: the provenance issuer snapshot
+    when present, otherwise the invoice's community_id for legacy snapshots
+    issued before issuer-name snapshots existed."""
     community_id = _require_text(
         invoice.get("community_id"), "Die Rechnung hat keinen gültigen Aussteller."
     )
     issuer = provenance.get("issuer")
     if issuer is None:
-        issuer_name = community_id
-    else:
-        if not isinstance(issuer, dict) or issuer.get("community_id") != community_id:
-            raise MemberInvoiceDataError("Die Rechnung hat keinen gültigen Aussteller.")
-        issuer_name = _require_text(
-            issuer.get("name"), "Die Rechnung hat keinen gültigen Aussteller."
-        )
+        return community_id
+    if not isinstance(issuer, dict) or issuer.get("community_id") != community_id:
+        raise MemberInvoiceDataError("Die Rechnung hat keinen gültigen Aussteller.")
+    return _require_text(
+        issuer.get("name"), "Die Rechnung hat keinen gültigen Aussteller."
+    )
 
+
+def _require_invoice_totals(
+    invoice: dict,
+    vat_mode: str,
+    policy_vat_rate: Decimal,
+    rendered_items: list[tuple[dict, Decimal]],
+) -> tuple[Decimal, Decimal, Decimal]:
+    """Parse the frozen VAT/net/vat/gross figures and validate them against
+    the policy snapshot and the rendered line items; return them in order."""
     vat_rate = _require_finite_decimal(
         invoice.get("vat_rate_pct"),
         "Die Rechnung hat keinen gültigen Mehrwertsteuersatz.",
@@ -431,6 +430,52 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
         raise MemberInvoiceDataError(
             "Die Rechnungssummen sind rechnerisch inkonsistent."
         )
+    return vat_rate, net, vat
+
+
+def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
+    """Validate and render one already owner-scoped immutable invoice row."""
+    participant_id = _require_text(
+        invoice.get("participant_id"),
+        "Die Rechnung hat keine gültige Teilnehmer-ID.",
+    )
+    if participant_id != building_id:
+        raise MemberInvoiceDataError("Die Rechnung hat eine ungültige Zuordnung.")
+
+    vat_mode, policy_vat_rate, policy_unit_price, payment_days = _policy_snapshot_view(
+        invoice
+    )
+
+    provenance = _require_json_dict(
+        invoice.get("provenance_snapshot"),
+        "Die Rechnung hat keine gültige Periodenangabe.",
+    )
+    period_start = _require_date_text(
+        provenance.get("period_start"),
+        "Die Rechnung hat keine gültige Periodenangabe.",
+    )
+    period_end = _require_date_text(
+        provenance.get("period_end"), "Die Rechnung hat keine gültige Periodenangabe."
+    )
+
+    line_items_raw = _require_json_list(
+        invoice.get("line_items_snapshot"),
+        "Die Rechnung hat keine gültigen Positionen.",
+    )
+    rendered_items = [
+        _line_item_view(item, participant_id, policy_unit_price)
+        for item in line_items_raw
+    ]
+    line_items = [item for item, _ in rendered_items]
+    _require_line_item_cardinality_and_rounding(
+        rendered_items, provenance, participant_id
+    )
+
+    issuer_name = _issuer_name(invoice, provenance)
+
+    vat_rate, net, vat = _require_invoice_totals(
+        invoice, vat_mode, policy_vat_rate, rendered_items
+    )
 
     summary = _summary(invoice)
     period_start_date = date.fromisoformat(period_start)
