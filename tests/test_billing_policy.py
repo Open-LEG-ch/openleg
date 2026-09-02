@@ -299,6 +299,26 @@ def test_validate_persisted_policy_refuses_invalid_energy_price(field, value):
         )
 
 
+_ZERO_ENERGY_PRICE_FIELDS = (
+    "internal_price_chf_per_kwh",
+    "grid_fee_chf_per_kwh",
+)
+
+
+@pytest.mark.parametrize("field", _ZERO_ENERGY_PRICE_FIELDS)
+def test_zero_persisted_energy_price_is_accepted(field):
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[field] = Decimal(0)
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized[field] == Decimal(0)
+
+
 _INVALID_EFFECTIVE_FROM_CASES = (
     "",
     "2026-13-01",
