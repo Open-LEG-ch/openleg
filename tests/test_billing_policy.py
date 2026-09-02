@@ -224,6 +224,19 @@ def test_validate_persisted_policy_refuses_invalid_identity(field, value):
         )
 
 
+def test_minimum_tariff_id_one_is_accepted():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["tariff_id"] = 1
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["tariff_id"] == 1
+
+
 # --- Issue #461: truthy non-dict policies are refused --------------------------
 
 _TRUTHY_NON_DICT_POLICIES = (
