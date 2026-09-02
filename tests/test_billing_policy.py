@@ -479,6 +479,38 @@ def test_invalid_persisted_vat_combination_is_refused(vat_mode, vat_rate_pct):
         )
 
 
+def test_minimum_positive_persisted_vat_rate_is_accepted():
+    """The standard-VAT lower bound is exclusive zero, so 0.01 must pass."""
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["vat_mode"] = "standard"
+    policy["vat_rate_pct"] = Decimal("0.01")
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["vat_mode"] == "standard"
+    assert normalized["vat_rate_pct"] == Decimal("0.01")
+
+
+def test_maximum_persisted_vat_rate_100_is_accepted():
+    """The standard-VAT upper bound is inclusive, so exactly 100 must pass."""
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["vat_mode"] = "standard"
+    policy["vat_rate_pct"] = Decimal(100)
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized["vat_mode"] == "standard"
+    assert normalized["vat_rate_pct"] == Decimal(100)
+
+
 # --- Invalid persisted invoice_prefix cases -----------------------------------
 
 _INVALID_PERSISTED_INVOICE_PREFIX_CASES = (
