@@ -23,18 +23,24 @@ ignore = ["BLE001", "SIM117"]
 
 [tool.mutmut]
 # Scoped deliberately. A mutation pass over the whole tree would bury the signal
-# from the places a survivor actually costs something. Current scope: the
-# formation slice moved behind its store seam (readiness, transitions, and the
-# consent-gated cluster decision) plus the money path and the import guard that
-# decides whether a meter correction is noticed. Coverage reads high across
-# store/ because the tests execute the surrounding Python while asserting only
-# the shape of the SQL.
-source_paths = ["formation_wizard.py", "store/formation.py"]
+# from the places a survivor actually costs something: the formation slice,
+# the money path, and the import guard that decides whether a meter correction
+# is noticed. Coverage reads high across store/ because tests execute the
+# surrounding Python while asserting only the required SQL contracts.
+source_paths = [
+    "billing_runner.py",
+    "store/metering.py",
+    "formation_wizard.py",
+    "store/formation.py",
+]
 # Mutation testing asks whether the tests of these modules detect faults in
 # them, so the run uses their own tests. The repository-contract layer is left
 # out on purpose: those tests shell out to `git ls-files` and read tracked
 # files, and mutmut's sandbox is a copied directory, not a git working tree.
 pytest_add_cli_args = [
+    "tests/test_billing_runner.py",
+    "tests/test_billing_readings.py",
+    "tests/test_store_metering.py",
     "tests/test_formation_contracts.py",
     "tests/test_formation_status.py",
     "tests/test_formation_transitions.py",

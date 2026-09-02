@@ -288,28 +288,32 @@ def get_community_status(community_id: str) -> dict | None:
     Returns:
         Community status dict or None
     """
-    row = db.fetch_community_with_members(community_id)
-    if not row:
+    try:
+        row = db.fetch_community_with_members(community_id)
+        if not row:
+            return None
+
+        members = row["members"] or []
+        counts = _member_counts(members)
+
+        return {
+            "community_id": row["community_id"],
+            "name": row["name"],
+            "status": row["status"],
+            "distribution_model": row["distribution_model"],
+            "admin_building_id": row["admin_building_id"],
+            "created_at": _iso(row["created_at"]),
+            "formation_started_at": _iso(row["formation_started_at"]),
+            "dso_submitted_at": _iso(row["dso_submitted_at"]),
+            "member_count": counts,
+            "readiness_score": _readiness_score(row["status"], counts["confirmed"]),
+            "members": members,
+            "documents": None,
+            "next_steps": _get_next_steps(row["status"], counts["confirmed"]),
+        }
+    except Exception:
+        logger.exception("[FORMATION] Error assembling community status")
         return None
-
-    members = row["members"] or []
-    counts = _member_counts(members)
-
-    return {
-        "community_id": row["community_id"],
-        "name": row["name"],
-        "status": row["status"],
-        "distribution_model": row["distribution_model"],
-        "admin_building_id": row["admin_building_id"],
-        "created_at": _iso(row["created_at"]),
-        "formation_started_at": _iso(row["formation_started_at"]),
-        "dso_submitted_at": _iso(row["dso_submitted_at"]),
-        "member_count": counts,
-        "readiness_score": _readiness_score(row["status"], counts["confirmed"]),
-        "members": members,
-        "documents": None,
-        "next_steps": _get_next_steps(row["status"], counts["confirmed"]),
-    }
 
 
 def _get_next_steps(status: str, confirmed_count: int) -> list[str]:

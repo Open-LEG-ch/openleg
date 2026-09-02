@@ -212,7 +212,7 @@ def fetch_community_with_members(community_id: str) -> dict | None:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                    SELECT 
+                    SELECT
                         c.*,
                         array_agg(
                             jsonb_build_object(
@@ -227,6 +227,8 @@ def fetch_community_with_members(community_id: str) -> dict | None:
                     FROM communities c
                     LEFT JOIN community_members cm ON c.community_id = cm.community_id
                     LEFT JOIN buildings b ON cm.building_id = b.building_id
+                    INNER JOIN consents cns ON b.building_id = cns.building_id
+                        AND cns.share_with_neighbors = TRUE
                     WHERE c.community_id = %s
                     GROUP BY c.community_id
                 """,
@@ -245,14 +247,20 @@ def fetch_user_communities(building_id: str) -> list[dict] | None:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT 
+                    SELECT
                         c.community_id,
                         c.name,
                         c.status,
                         c.distribution_model,
                         cm.role,
                         cm.status as member_status,
-                        (SELECT COUNT(*) FROM community_members WHERE community_id = c.community_id) as member_count
+                        (
+                            SELECT COUNT(*)
+                            FROM community_members counted
+                            INNER JOIN consents cns ON counted.building_id = cns.building_id
+                                AND cns.share_with_neighbors = TRUE
+                            WHERE counted.community_id = c.community_id
+                        ) as member_count
                     FROM communities c
                     JOIN community_members cm ON c.community_id = cm.community_id
                     WHERE cm.building_id = %s
@@ -289,7 +297,7 @@ def fetch_nearby_consenting_neighbours(
 
             cur.execute(
                 """
-                    SELECT 
+                    SELECT
                         b.building_id,
                         b.address,
                         b.email,

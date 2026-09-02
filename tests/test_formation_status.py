@@ -70,3 +70,13 @@ def test_unknown_community_is_reported_as_missing():
         result = get_community_status("community-1")
 
     assert result is None
+
+
+def test_status_assembly_failure_is_reported_as_missing():
+    with patch(
+        "database.fetch_community_with_members",
+        return_value={"community_id": "broken"},
+    ):
+        result = get_community_status("broken")
+
+    assert result is None

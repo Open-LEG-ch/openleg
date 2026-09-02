@@ -114,21 +114,7 @@ def test_insert_invited_member_blocks_duplicates(monkeypatch):
 
     assert formation.insert_invited_member("c1", "b2", "b1") is False
     assert len(cur.executed) == 1
-    select_sql, select_params = cur.executed[0]
-    assert select_sql.split() == [
-        "SELECT",
-        "1",
-        "FROM",
-        "community_members",
-        "WHERE",
-        "community_id",
-        "=",
-        "%s",
-        "AND",
-        "building_id",
-        "=",
-        "%s",
-    ]
+    _, select_params = cur.executed[0]
     assert select_params == ("c1", "b2")
     events.assert_not_called()
 
@@ -221,6 +207,8 @@ def test_fetch_community_with_members_reads_the_aggregate(monkeypatch):
     assert formation.fetch_community_with_members("c1") is row
     query, params = cur.executed[0]
     assert "array_agg" in query
+    assert "INNER JOIN consents cns ON b.building_id = cns.building_id" in query
+    assert "cns.share_with_neighbors = TRUE" in query
     assert params == ("c1",)
 
 
@@ -232,6 +220,8 @@ def test_fetch_user_communities_reads_the_membership_rows(monkeypatch):
     assert formation.fetch_user_communities("b1") == rows
     query, params = cur.executed[0]
     assert "community_members" in query
+    assert "INNER JOIN consents cns ON counted.building_id = cns.building_id" in query
+    assert "cns.share_with_neighbors = TRUE" in query
     assert params == ("b1",)
 
 

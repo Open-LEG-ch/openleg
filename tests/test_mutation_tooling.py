@@ -19,7 +19,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # SQL behaviour. The scope follows the slice under evidence; the formation
 # seam refactor (#453) moved readiness, transitions, and the consent-gated
 # cluster decision into formation_wizard and store/formation.
-SCOPED_MODULES = ("formation_wizard.py", "store/formation.py")
+SCOPED_MODULES = (
+    "billing_runner.py",
+    "store/metering.py",
+    "formation_wizard.py",
+    "store/formation.py",
+)
 
 
 def _pyproject():
@@ -62,6 +67,9 @@ def test_mutmut_copies_formation_dependencies_needed_for_collection():
 
     assert {
         "access_token.py",
+        "billing_approval.py",
+        "billing_lifecycle.py",
+        "billing_policy.py",
         "email_automation.py",
         "email_utils.py",
     } <= also_copy
