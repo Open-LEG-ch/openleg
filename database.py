@@ -189,6 +189,17 @@ from store.email_queue import (  # noqa: F401
     mark_email_sent,
     schedule_email,
 )
+from store.formation import (  # noqa: F401
+    confirm_invited_member,
+    count_confirmed_members,
+    create_community_record,
+    fetch_community_with_members,
+    fetch_nearby_consenting_neighbours,
+    fetch_user_communities,
+    insert_invited_member,
+    mark_formation_started,
+    submit_community_to_dso,
+)
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
 from store.meter import (  # noqa: F401
     get_meter_reading_stats,

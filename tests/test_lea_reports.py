@@ -6,18 +6,29 @@ from unittest.mock import MagicMock, patch
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+PINNED_ENV = {
+    "DATABASE_URL": "postgresql://x:x@localhost/x",
+    "ADMIN_TOKEN": "test123",
+    "INTERNAL_TOKEN": "secret-internal",
+    "APP_BASE_URL": "http://localhost:5003",
+    "PUBLIC_SITE_URL": "https://openleg.ch",
+    "ALLOWED_HOSTS": "localhost,127.0.0.1",
+    "ADMIN_EMAIL": "admin@example.com",
+    "SECRET_KEY": "lea-reports-test-key",
+    "SESSION_COOKIE_SECURE": "",
+    "SESSION_COOKIE_SAMESITE": "Lax",
+    "PERMANENT_SESSION_LIFETIME": "3600",
+    "DASHBOARD_ACCESS_TOKEN_TTL_SECONDS": "",
+    "DASHBOARD_EMAIL_TOKEN_TTL_SECONDS": "",
+    "CRON_SECRET": "",
+    "REDIS_URL": "",
+}
+
 
 class TestLeaReportWebhook:
     def test_lea_report_rejects_without_token(self):
         with (
-            patch.dict(
-                os.environ,
-                {
-                    "DATABASE_URL": "postgresql://x:x@localhost/x",
-                    "ADMIN_TOKEN": "test123",
-                    "INTERNAL_TOKEN": "secret-internal",
-                },
-            ),
+            patch.dict(os.environ, PINNED_ENV),
             patch("database.init_db", return_value=True),
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
@@ -35,14 +46,7 @@ class TestLeaReportWebhook:
 
     def test_lea_report_accepts_with_valid_token(self):
         with (
-            patch.dict(
-                os.environ,
-                {
-                    "DATABASE_URL": "postgresql://x:x@localhost/x",
-                    "ADMIN_TOKEN": "test123",
-                    "INTERNAL_TOKEN": "secret-internal",
-                },
-            ),
+            patch.dict(os.environ, PINNED_ENV),
             patch("database.init_db", return_value=True),
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
@@ -64,13 +68,7 @@ class TestLeaReportWebhook:
 class TestAdminLeaReports:
     def test_admin_lea_reports_requires_admin(self):
         with (
-            patch.dict(
-                os.environ,
-                {
-                    "DATABASE_URL": "postgresql://x:x@localhost/x",
-                    "ADMIN_TOKEN": "test123",
-                },
-            ),
+            patch.dict(os.environ, PINNED_ENV),
             patch("database.init_db", return_value=True),
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
@@ -85,13 +83,7 @@ class TestAdminLeaReports:
 
     def test_admin_lea_reports_returns_json(self):
         with (
-            patch.dict(
-                os.environ,
-                {
-                    "DATABASE_URL": "postgresql://x:x@localhost/x",
-                    "ADMIN_TOKEN": "test123",
-                },
-            ),
+            patch.dict(os.environ, PINNED_ENV),
             patch("database.init_db", return_value=True),
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
