@@ -2,6 +2,7 @@
 """Tests for canton-scoped refresh behavior."""
 
 import logging
+from datetime import datetime, timedelta
 
 import database
 import public_data
@@ -420,3 +421,53 @@ def test_refresh_municipality_empty_bulk_results_preserve_profile(monkeypatch):
         "energy_transition_score",
     ):
         assert profile[field] == _EXISTING_PROFILE[field]
+
+
+def test_refresh_municipality_empty_sources_flags_false_and_marker_kept(monkeypatch):
+    """Healthy-empty Energie Reporter, Sonnendach, and ElCom results.
+
+    The saved profile must keep unrelated data_sources markers, record all
+    three source flags as false for this run, and write a parseable UTC
+    last_refresh timestamp.
+    """
+    saved_profiles = []
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        database,
+        "get_municipality_profile",
+        lambda _bfs: {
+            "bfs_number": 261,
+            "name": "Marker Gemeinde",
+            "kanton": "ZH",
+            "population": 100,
+            "energy_transition_score": 42.0,
+            "data_sources": {
+                "unrelated_marker": "keep-me",
+                "elcom": True,
+                "energie_reporter": True,
+                "sonnendach": True,
+            },
+        },
+    )
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: saved_profiles.append(profile) or True,
+    )
+
+    result = public_data.refresh_municipality(261, year=2026)
+
+    assert result["sources"]["energie_reporter"] == "empty"
+    assert result["sources"]["sonnendach"] == "empty"
+    assert len(saved_profiles) == 1
+    sources = saved_profiles[0]["data_sources"]
+    assert sources["unrelated_marker"] == "keep-me"
+    assert sources["elcom"] is False
+    assert sources["energie_reporter"] is False
+    assert sources["sonnendach"] is False
+    last_refresh = datetime.fromisoformat(sources["last_refresh"])
+    assert last_refresh.tzinfo is not None
+    assert last_refresh.utcoffset() == timedelta(0)

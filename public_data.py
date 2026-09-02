@@ -387,6 +387,13 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
 
     # Get existing profile or create stub
     existing = db.get_municipality_profile(bfs_number)
+    data_sources = dict(existing.get("data_sources") or {}) if existing else {}
+    data_sources["elcom"] = bool(tariffs)
+    if er_data is not None:
+        data_sources["energie_reporter"] = er_row is not None
+    if sd_data is not None:
+        data_sources["sonnendach"] = sd_row is not None
+    data_sources["last_refresh"] = datetime.now(timezone.utc).isoformat()
     profile = {
         "bfs_number": bfs_number,
         "name": existing.get("name", "") if existing else "",
@@ -409,10 +416,7 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
         if existing
         else None,
         "leg_value_gap_chf": value_gap.get("annual_savings_chf", 0),
-        "data_sources": {
-            "elcom": True,
-            "last_refresh": datetime.now(timezone.utc).isoformat(),
-        },
+        "data_sources": data_sources,
     }
     if er_row is None:
         profile["energy_transition_score"] = (
