@@ -395,3 +395,28 @@ def test_refresh_municipality_reporter_row_applies_values_and_reports_ok(monkeyp
         assert profile[field] == reporter[field]
     assert profile["energy_transition_score"] == 53.5
     assert profile["solar_installed_kwp"] == _EXISTING_PROFILE["solar_installed_kwp"]
+
+
+def test_refresh_municipality_empty_bulk_results_preserve_profile(monkeypatch):
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+
+    result = public_data.refresh_municipality(261, year=2026)
+
+    assert result["sources"]["energie_reporter"] == "empty"
+    assert result["sources"]["sonnendach"] == "empty"
+    assert len(saved_profiles) == 1
+    profile = saved_profiles[0]
+    for field in (
+        "name",
+        "kanton",
+        "population",
+        "solar_potential_pct",
+        "solar_installed_kwp",
+        "ev_share_pct",
+        "renewable_heating_pct",
+        "electricity_consumption_mwh",
+        "renewable_production_mwh",
+        "energy_transition_score",
+    ):
+        assert profile[field] == _EXISTING_PROFILE[field]

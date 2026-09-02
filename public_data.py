@@ -350,6 +350,8 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
     )
     if er_data is None:
         result["sources"]["energie_reporter"] = "fetch_failed"
+    elif not er_data:
+        result["sources"]["energie_reporter"] = "empty"
     elif er_row is None:
         result["sources"]["energie_reporter"] = "missing_row"
     else:
@@ -360,6 +362,8 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
     sd_row = None
     if sd_data is None:
         result["sources"]["sonnendach"] = "fetch_failed"
+    elif not sd_data:
+        result["sources"]["sonnendach"] = "empty"
     else:
         sd_row = next(
             (entry for entry in sd_data if entry.get("bfs_number") == bfs_number),
