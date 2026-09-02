@@ -224,6 +224,29 @@ def test_validate_persisted_policy_refuses_invalid_identity(field, value):
         )
 
 
+# --- Issue #461: truthy non-dict policies are refused --------------------------
+
+_TRUTHY_NON_DICT_POLICIES = (
+    "community-a",
+    7,
+    7.5,
+    True,
+    ["community-a"],
+    ("community-a",),
+    {"community-a"},
+)
+
+
+@pytest.mark.parametrize("policy", _TRUTHY_NON_DICT_POLICIES)
+def test_validate_persisted_policy_refuses_truthy_non_dict_policy(policy):
+    with pytest.raises(billing_policy.InvalidPersistedPolicy):
+        billing_policy.validate_persisted_policy(
+            policy,
+            period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+            community_id="community-a",
+        )
+
+
 # --- Issue #461: persisted energy price validation ---------------------------
 
 _ENERGY_PRICE_FIELDS = (
