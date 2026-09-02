@@ -59,6 +59,47 @@ def test_refresh_canton_zh_keeps_seed_list(monkeypatch):
     assert {p["bfs_number"] for p in saved_profiles} == {247, 261}
 
 
+def test_refresh_canton_delegates_selected_bfs_once_with_single_bulk_fetch(
+    monkeypatch,
+):
+    """refresh_canton must delegate the selected BFS through refresh_municipality
+    exactly once, preloading the bulk results so Energie Reporter and Sonnendach
+    are each fetched exactly once for the whole canton run.
+    """
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    calls = {"municipality": [], "energie_reporter": 0, "sonnendach": 0}
+    reporter_row = {"bfs_number": 261, "name": "Reporter Gemeinde", "kanton": "ZH"}
+    solar_row = {"bfs_number": 261, "potential_kwp": 310.0}
+
+    real_refresh_municipality = public_data.refresh_municipality
+
+    def _spy_refresh_municipality(bfs_number, year=2026, **kwargs):
+        calls["municipality"].append(bfs_number)
+        return real_refresh_municipality(bfs_number, year=year, **kwargs)
+
+    def _spy_energie_reporter():
+        calls["energie_reporter"] += 1
+        return [reporter_row]
+
+    def _spy_sonnendach():
+        calls["sonnendach"] += 1
+        return [solar_row]
+
+    monkeypatch.setattr(public_data, "refresh_municipality", _spy_refresh_municipality)
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", _spy_energie_reporter)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", _spy_sonnendach)
+
+    result = public_data.refresh_canton("ZH", year=2026)
+
+    assert calls["municipality"] == [261]
+    assert calls["energie_reporter"] == 1
+    assert calls["sonnendach"] == 1
+    assert result["municipalities"] == 1
+    assert [p["bfs_number"] for p in saved_profiles] == [261]
+    assert saved_profiles[0]["name"] == "Reporter Gemeinde"
+    assert saved_profiles[0]["solar_installed_kwp"] == 310.0
+
+
 def test_refresh_canton_does_not_leak_exception_detail(monkeypatch, caplog):
     """Per-municipality failures must not expose exception text in the result.
 

@@ -331,15 +331,31 @@ def compute_energy_transition_score(profile: dict) -> float:
 
 # === Orchestration ===
 
+_UNSET = object()
 
-def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
-    """Fetch all sources for one municipality, compute derived fields."""
+
+def refresh_municipality(
+    bfs_number: int,
+    year: int = 2026,
+    *,
+    _energie_reporter=_UNSET,
+    _sonnendach=_UNSET,
+) -> dict:
+    """Fetch all sources for one municipality, compute derived fields.
+
+    Keyword-only _energie_reporter/_sonnendach accept preloaded bulk results
+    from refresh_canton; when left unset each source is fetched here.
+    """
     import database as db
 
     result = {"bfs_number": bfs_number, "sources": {}}
 
     # Energie Reporter (bulk): locate this municipality's row
-    er_data = fetch_energie_reporter()
+    er_data = (
+        fetch_energie_reporter()
+        if _energie_reporter is _UNSET
+        else _energie_reporter
+    )
     er_row = next(
         (
             entry
@@ -358,7 +374,11 @@ def refresh_municipality(bfs_number: int, year: int = 2026) -> dict:
         result["sources"]["energie_reporter"] = "ok"
 
     # Sonnendach (bulk): locate this municipality's row
-    sd_data = fetch_sonnendach_municipal()
+    sd_data = (
+        fetch_sonnendach_municipal()
+        if _sonnendach is _UNSET
+        else _sonnendach
+    )
     sd_row = None
     if sd_data is None:
         result["sources"]["sonnendach"] = "fetch_failed"
@@ -484,73 +504,18 @@ def refresh_canton(kanton: str = "ZH", year: int = 2026) -> dict:
     all_bfs = set(er_by_bfs)
     if target_kanton == "ZH":
         all_bfs.update(ZH_BFS_NUMBERS)
+    er_preloaded = None if er_failed else list(er_by_bfs.values())
+    sd_preloaded = None if sd_failed else list(sd_by_bfs.values())
     for bfs in all_bfs:
         try:
-            er = er_by_bfs.get(bfs, {})
-            sd = sd_by_bfs.get(bfs, {})
-            existing = db.get_municipality_profile(bfs) or {}
-
-            # ElCom tariffs
-            tariffs = fetch_elcom_tariffs(bfs, year)
-            if tariffs:
-                db.save_elcom_tariffs(tariffs)
-            if er_failed and sd_failed and not tariffs:
-                continue
-
-            h4 = next(
-                (t for t in tariffs if t.get("category", "").startswith("H4")), None
+            municipal = refresh_municipality(
+                bfs,
+                year=year,
+                _energie_reporter=er_preloaded,
+                _sonnendach=sd_preloaded,
             )
-            value_gap = compute_leg_value_gap(h4) if h4 else {"annual_savings_chf": 0}
-
-            data_sources = dict(existing.get("data_sources") or {})
-            data_sources["elcom"] = bool(tariffs)
-            if not er_failed:
-                data_sources["energie_reporter"] = bfs in er_by_bfs
-            if not sd_failed:
-                data_sources["sonnendach"] = bfs in sd_by_bfs
-            data_sources["last_refresh"] = datetime.now(timezone.utc).isoformat()
-
-            profile = {
-                "bfs_number": bfs,
-                "name": existing.get("name", ""),
-                "kanton": existing.get("kanton", target_kanton),
-                "population": existing.get("population"),
-                "solar_potential_pct": existing.get("solar_potential_pct"),
-                "solar_installed_kwp": existing.get("solar_installed_kwp"),
-                "ev_share_pct": existing.get("ev_share_pct"),
-                "renewable_heating_pct": existing.get("renewable_heating_pct"),
-                "electricity_consumption_mwh": existing.get(
-                    "electricity_consumption_mwh"
-                ),
-                "renewable_production_mwh": existing.get("renewable_production_mwh"),
-                "leg_value_gap_chf": value_gap.get("annual_savings_chf", 0),
-                "data_sources": data_sources,
-            }
-            if bfs in er_by_bfs:
-                profile.update(
-                    {
-                        "name": er.get("name", ""),
-                        "kanton": er.get("kanton", target_kanton),
-                        "population": er.get("population", existing.get("population")),
-                        "solar_potential_pct": er.get("solar_potential_pct"),
-                        "ev_share_pct": er.get("ev_share_pct"),
-                        "renewable_heating_pct": er.get("renewable_heating_pct"),
-                        "electricity_consumption_mwh": er.get(
-                            "electricity_consumption_mwh"
-                        ),
-                        "renewable_production_mwh": er.get("renewable_production_mwh"),
-                    }
-                )
-                profile["energy_transition_score"] = compute_energy_transition_score(
-                    profile
-                )
-            else:
-                profile["energy_transition_score"] = existing.get(
-                    "energy_transition_score"
-                )
-            if bfs in sd_by_bfs:
-                profile["solar_installed_kwp"] = sd.get("potential_kwp")
-            db.save_municipality_profile(profile)
+            if municipal.get("persistence") == "skipped":
+                continue
             result["municipalities"] += 1
         except Exception:
             logger.error("[PUBLIC_DATA] Municipality refresh failed for BFS %s", bfs)
