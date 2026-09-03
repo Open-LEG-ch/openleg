@@ -407,6 +407,25 @@ def test_deterministic_seed_jitters_reproducibly_within_the_anonymity_radius():
     )
 
 
+@pytest.mark.parametrize(
+    ("lat", "lon", "radius_meters"),
+    [
+        (None, 8.54, 120),
+        (47.37, None, 120),
+        (47.37, 8.54, 0),
+        (47.37, 8.54, -1),
+    ],
+)
+def test_jitter_coordinates_invalid_jitter_input_returns_it_unchanged(
+    lat, lon, radius_meters
+):
+    """A missing coordinate or a non-positive radius must pass through
+    unchanged: the guard returns the inputs as-is instead of raising."""
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    assert neighbor_view.jitter_coordinates(lat, lon, radius_meters) == (lat, lon)
+
+
 # ---------------------------------------------------------------------------
 # The map a fresh registration receives
 # ---------------------------------------------------------------------------
