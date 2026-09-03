@@ -314,6 +314,72 @@ def _validated_line_item(item, internal_price):
     return participant_id, item_type, amount, quantity
 
 
+def _require_rounding_adjustment(
+    producer_ids, rounding_items, non_rounding_total, max_rounding_abs
+):
+    """Require the exact rounding adjustment the billed totals imply.
+
+    With producer credits present, the balanced case forbids any rounding
+    adjustment; otherwise exactly one must exist, assigned to the smallest
+    producer participant id, with a summed amount that equals the negated
+    non-rounding total at 6-decimal precision and does not exceed the
+    derived monetary residue bound.
+    """
+    expected_rounding_participant = min(producer_ids, key=str)
+
+    try:
+        rounding_total = (
+            sum(
+                (_as_decimal(item.get("amount_chf")) for item in rounding_items),
+                Decimal(0),
+            )
+            if rounding_items
+            else Decimal(0)
+        )
+    except ArithmeticError:
+        raise BillingApprovalError(
+            "Der Rundungsausgleich enthält einen ungültigen Betrag."
+        ) from None
+
+    if non_rounding_total == 0:
+        if rounding_items:
+            raise BillingApprovalError(
+                "Ein Rundungsausgleich ist bei ausgeglichenen Beträgen nicht "
+                "erforderlich."
+            )
+    else:
+        if len(rounding_items) != 1:
+            raise BillingApprovalError(
+                "Der Abrechnungsentwurf braucht genau einen Rundungsausgleich."
+            )
+        rounding = rounding_items[0]
+        if rounding["participant_id"] != expected_rounding_participant:
+            raise BillingApprovalError(
+                "Der Rundungsausgleich muss dem kleinsten Produzenten zugeordnet sein."
+            )
+        try:
+            expected_rounding_amount = (-non_rounding_total).quantize(
+                _KWH_QUANTUM, rounding=ROUND_HALF_UP
+            )
+        except ArithmeticError:
+            raise BillingApprovalError(
+                "Der Rundungsausgleich enthält einen ungültigen Betrag."
+            ) from None
+        try:
+            if rounding_total.copy_abs() > max_rounding_abs:
+                raise BillingApprovalError(
+                    "Der Rundungsausgleich übersteigt den zulässigen Restbetrag."
+                )
+        except ArithmeticError:
+            raise BillingApprovalError(
+                "Der Rundungsausgleich enthält einen ungültigen Betrag."
+            ) from None
+        if rounding_total != expected_rounding_amount:
+            raise BillingApprovalError(
+                "Der Rundungsausgleich schliesst den Betrag nicht korrekt ab."
+            )
+
+
 def _require_wellformed_line_items(line_items, internal_price):
     """Fail closed on anything but the exact shapes the billing engine emits.
 
@@ -431,59 +497,9 @@ def _require_wellformed_line_items(line_items, internal_price):
             )
         return line_items, consumption_kwh, production_kwh
 
-    expected_rounding_participant = min(producer_ids, key=str)
-
-    try:
-        rounding_total = (
-            sum(
-                (_as_decimal(item.get("amount_chf")) for item in rounding_items),
-                Decimal(0),
-            )
-            if rounding_items
-            else Decimal(0)
-        )
-    except ArithmeticError:
-        raise BillingApprovalError(
-            "Der Rundungsausgleich enthält einen ungültigen Betrag."
-        ) from None
-
-    if non_rounding_total == 0:
-        if rounding_items:
-            raise BillingApprovalError(
-                "Ein Rundungsausgleich ist bei ausgeglichenen Beträgen nicht "
-                "erforderlich."
-            )
-    else:
-        if len(rounding_items) != 1:
-            raise BillingApprovalError(
-                "Der Abrechnungsentwurf braucht genau einen Rundungsausgleich."
-            )
-        rounding = rounding_items[0]
-        if rounding["participant_id"] != expected_rounding_participant:
-            raise BillingApprovalError(
-                "Der Rundungsausgleich muss dem kleinsten Produzenten zugeordnet sein."
-            )
-        try:
-            expected_rounding_amount = (-non_rounding_total).quantize(
-                _KWH_QUANTUM, rounding=ROUND_HALF_UP
-            )
-        except ArithmeticError:
-            raise BillingApprovalError(
-                "Der Rundungsausgleich enthält einen ungültigen Betrag."
-            ) from None
-        try:
-            if rounding_total.copy_abs() > max_rounding_abs:
-                raise BillingApprovalError(
-                    "Der Rundungsausgleich übersteigt den zulässigen Restbetrag."
-                )
-        except ArithmeticError:
-            raise BillingApprovalError(
-                "Der Rundungsausgleich enthält einen ungültigen Betrag."
-            ) from None
-        if rounding_total != expected_rounding_amount:
-            raise BillingApprovalError(
-                "Der Rundungsausgleich schliesst den Betrag nicht korrekt ab."
-            )
+    _require_rounding_adjustment(
+        producer_ids, rounding_items, non_rounding_total, max_rounding_abs
+    )
 
     return line_items, consumption_kwh, production_kwh
 
