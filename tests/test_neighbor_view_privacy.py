@@ -448,3 +448,41 @@ def test_collect_building_locations_omits_the_excluded_building():
         "the jitter is deterministic per building_id, so this point is the only "
         "way the excluded record could appear; it must not appear"
     )
+
+
+def test_collect_building_locations_skips_rows_with_incomplete_coordinates():
+    """buildings.lat and buildings.lon are nullable: a row missing either must
+    be dropped from the map, leaving the complete rows jittered and typed."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    buildings = [
+        {
+            "building_id": "row-without-lat",
+            "lat": None,
+            "lon": 8.5400,
+            "user_type": "owner",
+        },
+        {
+            "building_id": "row-complete",
+            "lat": 47.3700,
+            "lon": 8.5400,
+            "user_type": "tenant",
+        },
+        {
+            "building_id": "row-without-lon",
+            "lat": 47.3701,
+            "lon": None,
+            "user_type": "owner",
+        },
+    ]
+
+    with patch.object(neighbor_view.db, "get_all_buildings", return_value=buildings):
+        locations = neighbor_view.collect_building_locations()
+
+    assert len(locations) == 1, (
+        "a missing latitude or longitude must drop that building from the map"
+    )
+    complete = locations[0]
+    assert complete["type"] == "tenant"
+    assert (complete["lat"], complete["lon"]) != (47.3700, 8.5400), (
+        "the exact stored coordinate must not reach the map; it must be jittered"
+    )
