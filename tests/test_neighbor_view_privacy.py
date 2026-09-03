@@ -531,3 +531,26 @@ def test_collect_building_locations_passes_the_requested_city_to_the_read():
     assert locations == [{"lat": point[0], "lon": point[1], "type": "owner"}], (
         "exactly the supplied building must come back, jittered and typed"
     )
+
+
+def test_collect_building_locations_defaults_to_anonymous_without_user_type():
+    """A complete building row can carry no user_type at all: it must still
+    reach the map, typed anonymous instead of raising or leaking a key."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    buildings = [
+        {
+            "building_id": "map-untyped",
+            "lat": 47.3700,
+            "lon": 8.5400,
+        },
+    ]
+
+    with patch.object(neighbor_view.db, "get_all_buildings", return_value=buildings):
+        locations = neighbor_view.collect_building_locations()
+
+    assert len(locations) == 1, (
+        "a complete row without user_type must not be dropped from the map"
+    )
+    assert locations[0]["type"] == "anonymous", (
+        "a building with no user_type must be typed anonymous"
+    )
