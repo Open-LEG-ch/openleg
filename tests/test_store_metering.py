@@ -548,7 +548,10 @@ def test_upsert_points_rejects_values_outside_direction_type_contract(
 
     assert result == 0
     assert calls == []
-    assert "expected_directions erwartet list[str] oder None" in caplog.text
+    assert caplog.records[-1].getMessage() == (
+        "[DB] Error upserting metering points: "
+        "expected_directions erwartet list[str] oder None"
+    )
 
 
 def test_upsert_points_rejects_unknown_declared_directions(monkeypatch, caplog):
@@ -568,8 +571,10 @@ def test_upsert_points_rejects_unknown_declared_directions(monkeypatch, caplog):
 
     assert result == 0
     assert calls == []
-    assert "export" in caplog.text
-    assert "feed-in" in caplog.text
+    assert caplog.records[-1].getMessage() == (
+        "[DB] Error upserting metering points: "
+        "Unbekannte Messrichtung(en): export, feed-in"
+    )
 
 
 # ==== File ledger ====
