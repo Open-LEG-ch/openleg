@@ -21,6 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # cluster decision into formation_wizard and store/formation. Gemeindeprofil
 # source outcomes and preservation policy are owned by public_data (#455).
 # Address normalization and fallback outcomes are owned by data_enricher (#456).
+# neighbor_view.py owns privacy-critical coordinate disclosure decisions.
 SCOPED_MODULES = (
     "billing_policy.py",
     "billing_approval.py",
@@ -31,6 +32,7 @@ SCOPED_MODULES = (
     "public_data.py",
     "data_enricher.py",
     "member_invoices.py",
+    "neighbor_view.py",
 )
 
 
