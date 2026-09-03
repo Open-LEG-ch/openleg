@@ -397,6 +397,9 @@ def test_deterministic_seed_jitters_reproducibly_within_the_anonymity_radius():
 
     assert first == second, "a fixed seed must reproduce the same jittered point"
     assert first != (lat, lon), "the jittered point must not be the stored coordinate"
+    assert first == pytest.approx((47.370086804814235, 8.540551330974948)), (
+        "the seeded jitter must land on the known fixed point for this input"
+    )
 
     displacement = _haversine_meters(lat, lon, first[0], first[1])
     assert displacement <= neighbor_view.ANONYMITY_RADIUS_METERS, (
