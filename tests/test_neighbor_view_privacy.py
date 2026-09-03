@@ -337,6 +337,7 @@ SKIP_DIRS = {
     ".venv",
     "__pycache__",
     "archive",
+    "mutants",
     "node_modules",
     "private",
     "scripts",
