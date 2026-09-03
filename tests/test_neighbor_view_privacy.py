@@ -402,3 +402,49 @@ def test_deterministic_seed_jitters_reproducibly_within_the_anonymity_radius():
     assert displacement <= neighbor_view.ANONYMITY_RADIUS_METERS, (
         "the jitter must not carry the point beyond the anonymity radius"
     )
+
+
+# ---------------------------------------------------------------------------
+# The map a fresh registration receives
+# ---------------------------------------------------------------------------
+
+
+def test_collect_building_locations_omits_the_excluded_building():
+    """registration.py hands the caller a map of others; the caller's own
+    building must not be representable anywhere in that result."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    buildings = [
+        {
+            "building_id": "map-caller",
+            "lat": 47.3700,
+            "lon": 8.5400,
+            "user_type": "owner",
+            "verified": True,
+        },
+        {
+            "building_id": "map-other",
+            "lat": 47.3701,
+            "lon": 8.5401,
+            "user_type": "tenant",
+            "verified": True,
+        },
+    ]
+
+    with patch.object(neighbor_view.db, "get_all_buildings", return_value=buildings):
+        locations = neighbor_view.collect_building_locations(
+            exclude_building_id="map-caller"
+        )
+
+    other_point = neighbor_view.jitter_coordinates(47.3701, 8.5401, seed="map-other")
+    assert locations == [
+        {"lat": other_point[0], "lon": other_point[1], "type": "tenant"}
+    ], "exactly the non-excluded building must come back, jittered and typed"
+
+    excluded_point = neighbor_view.jitter_coordinates(
+        47.3700, 8.5400, seed="map-caller"
+    )
+    coordinates = {(loc["lat"], loc["lon"]) for loc in locations}
+    assert excluded_point not in coordinates, (
+        "the jitter is deterministic per building_id, so this point is the only "
+        "way the excluded record could appear; it must not appear"
+    )
