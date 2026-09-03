@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for api_public.py: REST API endpoints."""
 
+import re
 from unittest.mock import patch
 
 from tests.conftest import (
@@ -522,6 +523,24 @@ class TestApiDocs:
             in html
         )
         assert "/api/cron/" not in html
+
+    def test_api_docs_wraps_copy_paste_examples_on_mobile(self, client):
+        resp = client.get("/api/v1/docs")
+        assert resp.status_code == 200
+        html = resp.data.decode("utf-8", errors="ignore")
+        pre_blocks = re.findall(r"<pre\b[^>]*>.*?</pre>", html, re.DOTALL)
+        example_blocks = [
+            block for block in pre_blocks if 'curl -s "https://openleg.ch/' in block
+        ]
+        assert len(example_blocks) == 3
+        for block in example_blocks:
+            opening_tag = block[: block.index(">") + 1]
+            style_match = re.search(r'style="([^"]*)"', opening_tag)
+            assert style_match, f"missing inline style on example pre: {opening_tag}"
+            style = re.sub(r"\s+", " ", style_match.group(1)).lower()
+            assert "white-space: pre-wrap" in style, opening_tag
+            assert "overflow-wrap: anywhere" in style, opening_tag
+            assert "overflow-x:auto" not in style.replace(" ", ""), opening_tag
 
     def test_api_docs_has_share_metadata(self, client):
         resp = client.get("/api/v1/docs")

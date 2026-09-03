@@ -114,6 +114,19 @@ def test_leg_dashboard_template_contract():
     assert "next_steps" in html
 
 
+def test_member_table_fits_mobile():
+    path = os.path.join(PROJECT_ROOT, "templates", "leg_dashboard.html")
+    with open(path, encoding="utf-8") as handle:
+        html = handle.read()
+    start = html.index("Mitglieder</h2>")
+    members_table = html[start : html.index("</section>", start)]
+    assert "min-w-[32rem]" not in members_table
+    assert "table-fixed" in members_table
+    assert "sm:table-auto" in members_table
+    for segment in members_table.split("<td")[1:]:
+        assert "break-words" in segment.split(">", 1)[0]
+
+
 # --- Formation actions (Slice 3) ---
 
 
