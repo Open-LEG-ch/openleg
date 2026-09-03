@@ -11,6 +11,7 @@ so a resident who revoked neighbour sharing was disclosed anyway.
 
 import ast
 import importlib
+import math
 import os
 from contextlib import contextmanager
 from pathlib import Path
@@ -366,4 +367,190 @@ def test_the_neighbour_policy_is_defined_once_in_neighbor_view():
 
     assert homes == {name: ["neighbor_view.py"] for name in POLICY_NAMES}, (
         "the anonymity policy must have exactly one home"
+    )
+
+
+# ---------------------------------------------------------------------------
+# The jitter that hides the exact address
+# ---------------------------------------------------------------------------
+
+
+def _haversine_meters(lat1, lon1, lat2, lon2):
+    """Great-circle distance in metres between two WGS84 points."""
+    earth_radius = 6_378_137.0
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dphi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    )
+    return 2 * earth_radius * math.asin(math.sqrt(a))
+
+
+def test_deterministic_seed_jitters_reproducibly_within_the_anonymity_radius():
+    neighbor_view = importlib.import_module("neighbor_view")
+    lat, lon = 47.3700, 8.5400
+
+    first = neighbor_view.jitter_coordinates(lat, lon, seed="neighbour-one")
+    second = neighbor_view.jitter_coordinates(lat, lon, seed="neighbour-one")
+
+    assert first == second, "a fixed seed must reproduce the same jittered point"
+    assert first != (lat, lon), "the jittered point must not be the stored coordinate"
+    assert first == pytest.approx((47.370086804814235, 8.540551330974948)), (
+        "the seeded jitter must land on the known fixed point for this input"
+    )
+
+    displacement = _haversine_meters(lat, lon, first[0], first[1])
+    assert displacement <= neighbor_view.ANONYMITY_RADIUS_METERS, (
+        "the jitter must not carry the point beyond the anonymity radius"
+    )
+
+
+@pytest.mark.parametrize(
+    ("lat", "lon", "radius_meters"),
+    [
+        (None, 8.54, 120),
+        (47.37, None, 120),
+        (47.37, 8.54, 0),
+        (47.37, 8.54, -1),
+    ],
+)
+def test_jitter_coordinates_invalid_jitter_input_returns_it_unchanged(
+    lat, lon, radius_meters
+):
+    """A missing coordinate or a non-positive radius must pass through
+    unchanged: the guard returns the inputs as-is instead of raising."""
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    assert neighbor_view.jitter_coordinates(lat, lon, radius_meters) == (lat, lon)
+
+
+# ---------------------------------------------------------------------------
+# The map a fresh registration receives
+# ---------------------------------------------------------------------------
+
+
+def test_collect_building_locations_omits_the_excluded_building():
+    """registration.py hands the caller a map of others; the caller's own
+    building must not be representable anywhere in that result."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    buildings = [
+        {
+            "building_id": "map-caller",
+            "lat": 47.3700,
+            "lon": 8.5400,
+            "user_type": "owner",
+            "verified": True,
+        },
+        {
+            "building_id": "map-other",
+            "lat": 47.3701,
+            "lon": 8.5401,
+            "user_type": "tenant",
+            "verified": True,
+        },
+    ]
+
+    with patch.object(neighbor_view.db, "get_all_buildings", return_value=buildings):
+        locations = neighbor_view.collect_building_locations(
+            exclude_building_id="map-caller"
+        )
+
+    other_point = neighbor_view.jitter_coordinates(47.3701, 8.5401, seed="map-other")
+    assert locations == [
+        {"lat": other_point[0], "lon": other_point[1], "type": "tenant"}
+    ], "exactly the non-excluded building must come back, jittered and typed"
+
+    excluded_point = neighbor_view.jitter_coordinates(
+        47.3700, 8.5400, seed="map-caller"
+    )
+    coordinates = {(loc["lat"], loc["lon"]) for loc in locations}
+    assert excluded_point not in coordinates, (
+        "the jitter is deterministic per building_id, so this point is the only "
+        "way the excluded record could appear; it must not appear"
+    )
+
+
+def test_collect_building_locations_skips_rows_with_incomplete_coordinates():
+    """buildings.lat and buildings.lon are nullable: a row missing either must
+    be dropped from the map, leaving the complete rows jittered and typed."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    buildings = [
+        {
+            "building_id": "row-without-lat",
+            "lat": None,
+            "lon": 8.5400,
+            "user_type": "owner",
+        },
+        {
+            "building_id": "row-complete",
+            "lat": 47.3700,
+            "lon": 8.5400,
+            "user_type": "tenant",
+        },
+        {
+            "building_id": "row-without-lon",
+            "lat": 47.3701,
+            "lon": None,
+            "user_type": "owner",
+        },
+    ]
+
+    with patch.object(neighbor_view.db, "get_all_buildings", return_value=buildings):
+        locations = neighbor_view.collect_building_locations()
+
+    assert len(locations) == 1, (
+        "a missing latitude or longitude must drop that building from the map"
+    )
+    complete = locations[0]
+    assert complete["type"] == "tenant"
+    assert (complete["lat"], complete["lon"]) != (47.3700, 8.5400), (
+        "the exact stored coordinate must not reach the map; it must be jittered"
+    )
+
+
+def test_collect_building_locations_passes_the_requested_city_to_the_read():
+    """A city-scoped map must scope the read itself, not filter afterwards."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    buildings = [
+        {
+            "building_id": "map-baden",
+            "lat": 47.3700,
+            "lon": 8.5400,
+            "user_type": "owner",
+        },
+    ]
+    read = MagicMock(return_value=buildings)
+
+    with patch.object(neighbor_view.db, "get_all_buildings", read):
+        locations = neighbor_view.collect_building_locations(city_id="baden")
+
+    read.assert_called_once_with(city_id="baden")
+    point = neighbor_view.jitter_coordinates(47.3700, 8.5400, seed="map-baden")
+    assert locations == [{"lat": point[0], "lon": point[1], "type": "owner"}], (
+        "exactly the supplied building must come back, jittered and typed"
+    )
+
+
+def test_collect_building_locations_defaults_to_anonymous_without_user_type():
+    """A complete building row can carry no user_type at all: it must still
+    reach the map, typed anonymous instead of raising or leaking a key."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    buildings = [
+        {
+            "building_id": "map-untyped",
+            "lat": 47.3700,
+            "lon": 8.5400,
+        },
+    ]
+
+    with patch.object(neighbor_view.db, "get_all_buildings", return_value=buildings):
+        locations = neighbor_view.collect_building_locations()
+
+    assert len(locations) == 1, (
+        "a complete row without user_type must not be dropped from the map"
+    )
+    assert locations[0]["type"] == "anonymous", (
+        "a building with no user_type must be typed anonymous"
     )

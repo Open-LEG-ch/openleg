@@ -37,6 +37,7 @@ source_paths = [
     "public_data.py",
     "data_enricher.py",
     "member_invoices.py",
+    "neighbor_view.py",
 ]
 # Mutation testing asks whether the tests of these modules detect faults in
 # them, so the run uses their own tests. The repository-contract layer is left
@@ -57,6 +58,7 @@ pytest_add_cli_args = [
     "tests/test_public_data_refresh_scope.py",
     "tests/test_conversion_paths.py",
     "tests/test_billing_member_invoices.py",
+    "tests/test_neighbor_view_privacy.py",
 ]
 # mutmut copies only what it mutates into that sandbox, so everything those
 # tests import has to be listed here or they cannot even be collected.
