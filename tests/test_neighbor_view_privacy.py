@@ -11,6 +11,7 @@ so a resident who revoked neighbour sharing was disclosed anyway.
 
 import ast
 import importlib
+import math
 import os
 from contextlib import contextmanager
 from pathlib import Path
@@ -366,4 +367,38 @@ def test_the_neighbour_policy_is_defined_once_in_neighbor_view():
 
     assert homes == {name: ["neighbor_view.py"] for name in POLICY_NAMES}, (
         "the anonymity policy must have exactly one home"
+    )
+
+
+# ---------------------------------------------------------------------------
+# The jitter that hides the exact address
+# ---------------------------------------------------------------------------
+
+
+def _haversine_meters(lat1, lon1, lat2, lon2):
+    """Great-circle distance in metres between two WGS84 points."""
+    earth_radius = 6_378_137.0
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dphi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    )
+    return 2 * earth_radius * math.asin(math.sqrt(a))
+
+
+def test_deterministic_seed_jitters_reproducibly_within_the_anonymity_radius():
+    neighbor_view = importlib.import_module("neighbor_view")
+    lat, lon = 47.3700, 8.5400
+
+    first = neighbor_view.jitter_coordinates(lat, lon, seed="neighbour-one")
+    second = neighbor_view.jitter_coordinates(lat, lon, seed="neighbour-one")
+
+    assert first == second, "a fixed seed must reproduce the same jittered point"
+    assert first != (lat, lon), "the jittered point must not be the stored coordinate"
+
+    displacement = _haversine_meters(lat, lon, first[0], first[1])
+    assert displacement <= neighbor_view.ANONYMITY_RADIUS_METERS, (
+        "the jitter must not carry the point beyond the anonymity radius"
     )
