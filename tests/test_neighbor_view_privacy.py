@@ -486,3 +486,26 @@ def test_collect_building_locations_skips_rows_with_incomplete_coordinates():
     assert (complete["lat"], complete["lon"]) != (47.3700, 8.5400), (
         "the exact stored coordinate must not reach the map; it must be jittered"
     )
+
+
+def test_collect_building_locations_passes_the_requested_city_to_the_read():
+    """A city-scoped map must scope the read itself, not filter afterwards."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    buildings = [
+        {
+            "building_id": "map-baden",
+            "lat": 47.3700,
+            "lon": 8.5400,
+            "user_type": "owner",
+        },
+    ]
+    read = MagicMock(return_value=buildings)
+
+    with patch.object(neighbor_view.db, "get_all_buildings", read):
+        locations = neighbor_view.collect_building_locations(city_id="baden")
+
+    read.assert_called_once_with(city_id="baden")
+    point = neighbor_view.jitter_coordinates(47.3700, 8.5400, seed="map-baden")
+    assert locations == [{"lat": point[0], "lon": point[1], "type": "owner"}], (
+        "exactly the supplied building must come back, jittered and typed"
+    )
