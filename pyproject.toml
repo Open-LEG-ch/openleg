@@ -43,7 +43,7 @@ source_paths = [
 # them, so the run uses their own tests. The repository-contract layer is left
 # out on purpose: those tests shell out to `git ls-files` and read tracked
 # files, and mutmut's sandbox is a copied directory, not a git working tree.
-pytest_add_cli_args = [
+pytest_add_cli_args_test_selection = [
     "tests/test_billing_policy.py",
     "tests/test_billing_approval.py",
     "tests/test_billing_runner.py",

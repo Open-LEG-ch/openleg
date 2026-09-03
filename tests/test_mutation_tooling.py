@@ -84,6 +84,34 @@ def test_mutmut_copies_formation_dependencies_needed_for_collection():
     } <= also_copy
 
 
+def test_the_test_file_list_is_selection_args_not_mutant_child_args():
+    """mutmut appends pytest_add_cli_args to every mutant child's pytest run.
+
+    The list of test files decides which tests score the mutants; it is not a
+    command to execute inside each child against mutated code. Those paths
+    belong in pytest_add_cli_args_test_selection, which limits stats
+    collection. A test path left in pytest_add_cli_args would also be appended
+    to every mutant child.
+    """
+    config = _mutmut_config()
+
+    selection = config.get("pytest_add_cli_args_test_selection")
+    assert selection, (
+        "the test file list must live in pytest_add_cli_args_test_selection"
+    )
+    assert all(
+        str(path).startswith("tests/") and str(path).endswith(".py")
+        for path in selection
+    ), "pytest_add_cli_args_test_selection selects the scoring test files"
+
+    appended = config.get("pytest_add_cli_args", ())
+    stray = [str(arg) for arg in appended if str(arg).startswith("tests/")]
+    assert not stray, (
+        "pytest_add_cli_args reaches every mutant child; test file paths "
+        f"belong in pytest_add_cli_args_test_selection instead: {stray}"
+    )
+
+
 def test_the_mutant_cache_is_not_committed():
     ignored = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
 
