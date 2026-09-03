@@ -275,7 +275,11 @@ def _require_wellformed_line_items(line_items, internal_price):
                 "Eine Abrechnungsposition hat eine ungültige Struktur."
             )
         participant_id = item.get("participant_id")
-        if not isinstance(participant_id, str) or not participant_id.strip():
+        if (
+            not isinstance(participant_id, str)
+            or not participant_id.strip()
+            or participant_id != participant_id.strip()
+        ):
             raise BillingApprovalError(
                 "Eine Abrechnungsposition hat keine gültige Teilnehmer-ID."
             )

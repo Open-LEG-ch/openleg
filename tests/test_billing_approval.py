@@ -693,6 +693,17 @@ def test_prepare_refuses_empty_or_non_string_participant_ids(participant_id):
         billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
 
 
+def test_prepare_refuses_surrounding_whitespace_in_participant_id():
+    draft = _draft()
+    draft["line_items"][0] = {
+        **draft["line_items"][0],
+        "participant_id": " building-b ",
+    }
+
+    with pytest.raises(billing_approval.BillingApprovalError, match="Teilnehmer-ID"):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
 @pytest.mark.parametrize(
     "section",
     [
