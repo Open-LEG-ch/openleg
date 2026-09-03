@@ -56,7 +56,7 @@
       <div class="px-5 py-3 border-b">
         <h2 class="font-bold">Mitglieder</h2>
       </div>
-      <div class="overflow-x-auto"><table class="w-full min-w-[32rem] text-sm">
+      <div class="overflow-x-auto"><table class="w-full table-fixed sm:table-auto text-sm">
         <thead class="bg-slate-50">
           <tr>
             <th class="px-5 py-3 text-left">Adresse</th>
@@ -67,9 +67,9 @@
         <tbody class="divide-y">
           {% for member in community.members %}
           <tr>
-            <td class="px-5 py-3">{{ member.address or member.building_id }}{% if member.building_id == viewer_building_id %} <span class="text-xs text-brand">(Sie)</span>{% endif %}</td>
-            <td class="px-5 py-3 text-ink-muted">{{ member.role_label }}</td>
-            <td class="px-5 py-3">
+            <td class="px-5 py-3 break-words">{{ member.address or member.building_id }}{% if member.building_id == viewer_building_id %} <span class="text-xs text-brand">(Sie)</span>{% endif %}</td>
+            <td class="px-5 py-3 break-words text-ink-muted">{{ member.role_label }}</td>
+            <td class="px-5 py-3 break-words">
               <span class="text-xs font-semibold {{ 'text-ink' if member.status == 'confirmed' else 'text-ink-muted' }}">{{ member.status_label }}</span>
             </td>
           </tr>

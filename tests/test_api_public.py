@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for api_public.py: REST API endpoints."""
 
+import re
 from unittest.mock import patch
 
 from tests.conftest import (
@@ -522,6 +523,59 @@ class TestApiDocs:
             in html
         )
         assert "/api/cron/" not in html
+
+    def test_api_docs_wraps_copy_paste_examples_on_mobile(self, client):
+        resp = client.get("/api/v1/docs")
+        assert resp.status_code == 200
+        html = resp.data.decode("utf-8", errors="ignore")
+        pre_blocks = re.findall(r"<pre\b[^>]*>.*?</pre>", html, re.DOTALL)
+        example_blocks = [
+            block for block in pre_blocks if 'curl -s "https://openleg.ch/' in block
+        ]
+        assert len(example_blocks) == 3
+
+        opening_tags = [block[: block.index(">") + 1] for block in example_blocks]
+        class_token_sets = []
+        for tag in opening_tags:
+            class_match = re.search(r'class="([^"]*)"', tag)
+            assert class_match, f"missing semantic class on example pre: {tag}"
+            tokens = class_match.group(1).split()
+            assert tokens, f"empty class on example pre: {tag}"
+            class_token_sets.append(set(tokens))
+        shared_classes = set.intersection(*class_token_sets)
+        assert shared_classes, f"example pre blocks share no class: {opening_tags}"
+        css_class = min(shared_classes)
+
+        css = "\n".join(re.findall(r"<style\b[^>]*>(.*?)</style>", html, re.DOTALL))
+        media_match = re.search(
+            r"@media[^{]*max-width:\s*639px[^{]*\{((?:[^{}]|\{[^{}]*\})*)\}", css
+        )
+        assert media_match, "missing max-width:639px media rule"
+        css_outside_media = re.sub(r"@media[^{]*\{(?:[^{}]|\{[^{}]*\})*\}", "", css)
+
+        def declarations(css_fragment):
+            found = []
+            for selector, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css_fragment):
+                if re.search(rf"\.{re.escape(css_class)}(?![\w-])", selector):
+                    found.append(re.sub(r"\s+", " ", body).strip().lower())
+            return found
+
+        desktop = declarations(css_outside_media)
+        assert any("overflow-x: auto" in body for body in desktop), (
+            f"desktop rules for .{css_class} must keep horizontal scrolling"
+        )
+
+        mobile = declarations(media_match.group(1))
+        assert any("white-space: pre-wrap" in body for body in mobile), (
+            f"mobile rules for .{css_class} must wrap command text"
+        )
+        assert any("overflow-wrap: anywhere" in body for body in mobile), (
+            f"mobile rules for .{css_class} must break long commands"
+        )
+        assert any(
+            "overflow-x: visible" in body or "overflow: visible" in body
+            for body in mobile
+        ), f"mobile rules for .{css_class} must disable horizontal clipping"
 
     def test_api_docs_has_share_metadata(self, client):
         resp = client.get("/api/v1/docs")
