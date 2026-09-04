@@ -18,3 +18,18 @@ The behavior tests pin duplicate detection, lookup and insert parameters,
 confirmation from the invited state, confirmed-member counting, audit events,
 and success, warning, and failure diagnostics. Native verification killed all
 16 targeted survivors; none were classified as equivalent.
+
+## Community lifecycle
+
+Issue #504 covered 70 mutants across `create_community_record`,
+`mark_formation_started`, and `submit_community_to_dso`.
+
+| Run | Total | Killed | Survived |
+| --- | ---: | ---: | ---: |
+| Baseline | 70 | 55 | 15 |
+| After #504 | 70 | 70 | 0 |
+
+Existing tests already pin creation defaults, legal and idempotent transition
+predicates, status timestamps, and audit events. The added assertions pin the
+success and failure diagnostics. Native verification killed all 15 targeted
+survivors; none were classified as equivalent.

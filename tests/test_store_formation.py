@@ -89,9 +89,10 @@ def test_store_formation_imports_without_database_bootstrap():
     assert result.stdout.strip() == "ok"
 
 
-def test_create_community_record_inserts_community_and_admin(monkeypatch):
+def test_create_community_record_inserts_community_and_admin(monkeypatch, caplog):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    caplog.set_level(logging.INFO)
 
     community_id = formation.create_community_record(
         "LEG Musterweg", "b-admin", "simple", ""
@@ -106,6 +107,9 @@ def test_create_community_record_inserts_community_and_admin(monkeypatch):
     member_sql, member_params = cur.executed[1]
     assert "INSERT INTO community_members" in member_sql
     assert member_params == (community_id, "b-admin", "admin", "confirmed")
+    assert caplog.messages == [
+        f"[FORMATION] Created community {community_id} by b-admin"
+    ]
 
 
 def test_insert_invited_member_blocks_duplicates(monkeypatch):
@@ -252,16 +256,18 @@ def test_membership_error_paths_report_the_formation_diagnostic(monkeypatch, cap
     ]
 
 
-def test_mark_formation_started_updates_the_community(monkeypatch):
+def test_mark_formation_started_updates_the_community(monkeypatch, caplog):
     cur = _FakeCursor()
     events = _events(monkeypatch)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    caplog.set_level(logging.INFO)
 
     assert formation.mark_formation_started("c1") is True
     query, params = cur.executed[0]
     assert "UPDATE communities" in query
     assert "formation_started" in params
     events.assert_called_once_with("formation_started", None, {"community_id": "c1"})
+    assert caplog.messages == ["[FORMATION] Started formation for community c1"]
 
 
 def test_submit_community_to_dso_requires_signatures_pending(monkeypatch):
@@ -273,16 +279,20 @@ def test_submit_community_to_dso_requires_signatures_pending(monkeypatch):
     events.assert_not_called()
 
 
-def test_submit_community_to_dso_tracks_the_submission(monkeypatch):
+def test_submit_community_to_dso_tracks_the_submission(monkeypatch, caplog):
     cur = _FakeCursor(rowcount=1)
     events = _events(monkeypatch)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+    caplog.set_level(logging.INFO)
 
     assert formation.submit_community_to_dso("c1") is True
     query, params = cur.executed[0]
     assert "UPDATE communities" in query
     assert params == ("dso_submitted", "c1", "signatures_pending")
     events.assert_called_once_with("dso_submitted", None, {"community_id": "c1"})
+    assert caplog.messages == [
+        "[FORMATION] Submitted DSO notification for community c1"
+    ]
 
 
 def test_fetch_community_with_members_reads_the_aggregate(monkeypatch):
@@ -329,7 +339,7 @@ def test_fetch_nearby_consenting_neighbours_pins_location_and_boundary_params(
     assert list_params == (47.4736, 8.3060, 47.4736, "searcher", 150)
 
 
-def test_a_broken_connection_never_leaks_the_exception(monkeypatch):
+def test_a_broken_connection_never_leaks_the_exception(monkeypatch, caplog):
     @contextmanager
     def _broken():
         raise RuntimeError("db down")
@@ -347,3 +357,6 @@ def test_a_broken_connection_never_leaks_the_exception(monkeypatch):
     assert formation.fetch_community_with_members("c1") is None
     assert formation.fetch_user_communities("b1") is None
     assert formation.fetch_nearby_consenting_neighbours("b1", 150) is None
+    assert "[FORMATION] Error creating community" in caplog.messages
+    assert "[FORMATION] Error starting formation" in caplog.messages
+    assert "[FORMATION] Error submitting to DSO" in caplog.messages
