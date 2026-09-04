@@ -62,32 +62,21 @@ def _points(status_a="confirmed", status_b="confirmed", building_a=BUILDING_A):
 
 
 def _install(monkeypatch, points, rows, *, unassigned=None):
-    """Fake the repository seam the way the real SQL behaves."""
+    """Fake the repository seam the way the real snapshot behaves."""
 
-    def _get_points(community_id):
+    def _get_snapshot(community_id, period_start, period_end):
         assert community_id == COMMUNITY
-        return deepcopy(points)
+        return {
+            "points": deepcopy(points),
+            "readings": [
+                deepcopy(row)
+                for row in rows
+                if period_start <= row["measured_at"] < period_end
+            ],
+            "unassigned_point_ids": deepcopy(unassigned or []),
+        }
 
-    def _get_readings(community_id, period_start, period_end):
-        assert community_id == COMMUNITY
-        return [
-            deepcopy(row)
-            for row in rows
-            if period_start <= row["measured_at"] < period_end
-        ]
-
-    def _get_unassigned(community_id, period_start, period_end):
-        assert community_id == COMMUNITY
-        return deepcopy(unassigned or [])
-
-    monkeypatch.setattr(database, "get_community_metering_points", _get_points)
-    monkeypatch.setattr(database, "get_period_readings", _get_readings)
-    monkeypatch.setattr(
-        database,
-        "get_unassigned_period_metering_point_ids",
-        _get_unassigned,
-        raising=False,
-    )
+    monkeypatch.setattr(database, "get_billable_period_snapshot", _get_snapshot)
 
 
 @pytest.fixture
@@ -409,6 +398,25 @@ def test_a_period_with_no_readings_is_rejected(monkeypatch, rows):
         )
 
     assert "no_readings" in _kinds(excinfo)
+
+
+def test_a_storage_failure_propagates_instead_of_becoming_an_empty_period(
+    monkeypatch,
+):
+    """The snapshot fails closed; the adapter must not turn that into data.
+
+    A swallowed error would surface as the no_readings problem or, worse, an
+    empty but valid period. Billing a storage outage is worse than refusing
+    to bill, so the original exception must reach the caller unchanged.
+    """
+
+    def _broken(community_id, period_start, period_end):
+        raise RuntimeError("db down")
+
+    monkeypatch.setattr(database, "get_billable_period_snapshot", _broken)
+
+    with pytest.raises(RuntimeError, match="db down"):
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
 
 
 # --- Step 5: the frames drive the billing engine ---

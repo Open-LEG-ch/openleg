@@ -65,6 +65,7 @@ pytest_add_cli_args_test_selection = [
 also_copy = [
     "access_token.py",
     "admin.py",
+    "agentmail_event.py",
     "api_public.py",
     "app.py",
     "app_config.py",
@@ -100,6 +101,7 @@ also_copy = [
     "neighbor_view.py",
     "pyproject.toml",
     "public_data.py",
+    "private_http.py",
     "pv_badge.py",
     "pv_data.py",
     "pv_ranking.py",

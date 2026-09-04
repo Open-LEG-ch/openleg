@@ -3,6 +3,7 @@
 
 import os
 import secrets
+import threading
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -14,13 +15,30 @@ import psycopg2.pool
 import pytest
 
 import database
+import store.metering
 
 POINT = "CH000000000000000000000000000001"
 MEASURED_AT = datetime(2026, 1, 5, 23, 0, tzinfo=timezone.utc)
 
 METERING_SCHEMA = """
     CREATE TABLE metering_points (
-        metering_point_id VARCHAR(64) PRIMARY KEY
+        metering_point_id VARCHAR(64) PRIMARY KEY,
+        vnb_community_id VARCHAR(64),
+        community_id VARCHAR(64),
+        building_id VARCHAR(64),
+        alias VARCHAR(128),
+        address TEXT,
+        active BOOLEAN DEFAULT TRUE,
+        expected_directions VARCHAR(16)[],
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE community_members (
+        id SERIAL PRIMARY KEY,
+        community_id VARCHAR(64),
+        building_id VARCHAR(64),
+        role VARCHAR(20) DEFAULT 'member',
+        status VARCHAR(20) DEFAULT 'invited',
+        UNIQUE (community_id, building_id)
     );
     CREATE TABLE metering_point_readings (
         id BIGSERIAL PRIMARY KEY,
@@ -244,3 +262,162 @@ def test_sdat_ledger_conflict_updates_audit_fields_without_replacing_identity():
     assert updated["document_created_at"] == created_at
     assert updated["period_start"] == period_start
     assert updated["period_end"] == period_end
+
+
+@pytest.mark.integration
+def test_billable_period_snapshot_holds_under_concurrent_assignment(monkeypatch):
+    """A mid-read assignment cannot remove a point from both returned sets.
+
+    The reader pauses after reading assigned points and readings. A writer on
+    a separate connection assigns the formerly unassigned point and commits
+    before the final unassigned query. REPEATABLE READ preserves its earlier
+    classification; READ COMMITTED would omit it from both returned sets.
+    """
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    community_id = "LEG-SNAP-1"
+    vnb_community_id = "VNB-LEG-SNAP-1"
+    assigned_point = "CH000000000000000000000000000001"
+    unassigned_point = "CH000000000000000000000000000002"
+    period_start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    period_end = datetime(2026, 2, 1, tzinfo=timezone.utc)
+
+    with _temporary_database() as url, _pool_against(url):
+        _setup_schema()
+        with database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO metering_points
+                    (metering_point_id, community_id, vnb_community_id, active)
+                VALUES (%s, %s, %s, TRUE), (%s, NULL, %s, TRUE)
+                """,
+                (
+                    assigned_point,
+                    community_id,
+                    vnb_community_id,
+                    unassigned_point,
+                    vnb_community_id,
+                ),
+            )
+            cur.execute(
+                """
+                INSERT INTO sdat_imports (document_id, doc_type, vnb_community_id)
+                VALUES ('DOC-ASSIGNED', 'E66', %(vnb)s),
+                       ('DOC-UNASSIGNED', 'E66', %(vnb)s)
+                """,
+                {"vnb": vnb_community_id},
+            )
+            cur.execute(
+                """
+                INSERT INTO metering_point_readings
+                    (metering_point_id, direction, measured_at,
+                     resolution_minutes, total_kwh, grid_kwh, community_kwh,
+                     source_document_id)
+                VALUES
+                    (%(assigned)s, 'consumption', %(at)s, 15,
+                     0.1, 0.06, 0.04, 'DOC-ASSIGNED'),
+                    (%(unassigned)s, 'consumption', %(at)s, 15,
+                     0.1, 0.06, 0.04, 'DOC-UNASSIGNED')
+                """,
+                {
+                    "assigned": assigned_point,
+                    "unassigned": unassigned_point,
+                    "at": MEASURED_AT,
+                },
+            )
+
+        readings_completed = threading.Event()
+        release_reader = threading.Event()
+        writer_committed = threading.Event()
+        writer_errors = []
+
+        real_get_connection = database.get_connection
+
+        class _PausingCursor:
+            def __init__(self, cursor):
+                self._cursor = cursor
+                self._select_count = 0
+
+            def execute(self, sql, params=None):
+                self._cursor.execute(sql, params)
+                if sql.lstrip().upper().startswith("SELECT"):
+                    self._select_count += 1
+                if self._select_count == 2:
+                    # Points and readings are fixed. Commit the assignment
+                    # before the final unassigned-point query.
+                    readings_completed.set()
+                    if not release_reader.wait(timeout=30):
+                        raise RuntimeError("writer did not release the reader")
+
+            def __getattr__(self, name):
+                return getattr(self._cursor, name)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return self._cursor.__exit__(exc_type, exc, tb)
+
+        class _PausingConnection:
+            def __init__(self, conn):
+                self._conn = conn
+
+            def cursor(self):
+                return _PausingCursor(self._conn.cursor())
+
+            def __getattr__(self, name):
+                return getattr(self._conn, name)
+
+        @contextmanager
+        def _pausing_get_connection():
+            with real_get_connection() as conn:
+                yield _PausingConnection(conn)
+
+        def _assign_point_concurrently():
+            try:
+                if not readings_completed.wait(timeout=30):
+                    raise RuntimeError("reader never completed its readings query")
+                writer = psycopg2.connect(url)
+                try:
+                    with writer.cursor() as cur:
+                        cur.execute(
+                            """
+                            UPDATE metering_points
+                            SET community_id = %s
+                            WHERE metering_point_id = %s
+                            """,
+                            (community_id, unassigned_point),
+                        )
+                    writer.commit()
+                finally:
+                    writer.close()
+                writer_committed.set()
+            except Exception as e:
+                writer_errors.append(e)
+            finally:
+                release_reader.set()
+
+        monkeypatch.setattr(store.metering, "_get_connection", _pausing_get_connection)
+        thread = threading.Thread(target=_assign_point_concurrently)
+        thread.start()
+        try:
+            snapshot = database.get_billable_period_snapshot(
+                community_id, period_start, period_end
+            )
+        finally:
+            release_reader.set()
+            thread.join(timeout=30)
+
+        assert not thread.is_alive()
+        assert writer_committed.is_set(), f"writer failed: {writer_errors}"
+        assert not writer_errors
+
+        represented_points = {
+            row["metering_point_id"] for row in snapshot["readings"]
+        } | set(snapshot["unassigned_point_ids"])
+        assert unassigned_point in represented_points
+        # Sanity: the seeded period data was actually visible to the reader.
+        assert assigned_point in {
+            row["metering_point_id"] for row in snapshot["readings"]
+        }

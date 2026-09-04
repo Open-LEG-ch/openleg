@@ -119,6 +119,7 @@ def _capture_execute_values(monkeypatch, returned):
 
 def test_database_reexports_are_identical_objects():
     for name in (
+        "get_billable_period_snapshot",
         "upsert_metering_points",
         "get_metering_points",
         "get_metering_point",
@@ -928,3 +929,180 @@ def test_import_index_is_empty_when_the_ledger_cannot_be_read(monkeypatch):
     index = metering.get_sdat_import_index()
 
     assert index == {"document_ids": frozenset(), "file_names": frozenset()}
+
+
+# ==== Billable period snapshot ====
+
+
+class _SnapshotCursor:
+    """Dispatches rows per query so the snapshot's three reads differ."""
+
+    def __init__(self, points=None, readings=None, unassigned=None, fail_at=None):
+        self._points = points or []
+        self._readings = readings or []
+        self._unassigned = unassigned or []
+        self._fail_at = fail_at
+        self.executed = []
+
+    def execute(self, query, params=None):
+        if self._fail_at is not None and len(self.executed) == self._fail_at:
+            raise RuntimeError("db down")
+        self.executed.append((query, params))
+
+    def fetchall(self):
+        normalized = " ".join(self.executed[-1][0].split()).lower()
+        if "left join community_members" in normalized:
+            return self._points
+        if "select distinct mp.metering_point_id" in normalized:
+            return self._unassigned
+        return self._readings
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+
+class _SnapshotConnection:
+    def __init__(self, cursor):
+        self._cursor = cursor
+        self.cursor_calls = 0
+
+    def cursor(self):
+        self.cursor_calls += 1
+        return self._cursor
+
+
+def _snapshot_conn(monkeypatch, cursor):
+    """One fake connection per get_connection call; counts how often asked."""
+    connection = _SnapshotConnection(cursor)
+    calls = {"count": 0}
+
+    @contextmanager
+    def _factory():
+        calls["count"] += 1
+        yield connection
+
+    monkeypatch.setattr(database, "get_connection", _factory)
+    return connection, calls
+
+
+SNAPSHOT_START = MEASURED_AT
+SNAPSHOT_END = MEASURED_AT + timedelta(hours=1)
+
+
+def test_snapshot_sets_repeatable_read_read_only_before_any_query(monkeypatch):
+    cur = _SnapshotCursor()
+    _snapshot_conn(monkeypatch, cur)
+
+    metering.get_billable_period_snapshot("COMM-1", SNAPSHOT_START, SNAPSHOT_END)
+
+    first_query, first_params = cur.executed[0]
+    normalized = " ".join(first_query.split()).lower()
+    assert normalized == (
+        "set transaction isolation level repeatable read read only"
+    ), "the stable snapshot must be established before any read runs"
+    assert first_params is None
+    assert "read committed" not in normalized
+    for query, _ in cur.executed[1:]:
+        assert "set transaction" not in " ".join(query.split()).lower()
+        assert query.lstrip().upper().startswith("SELECT")
+
+
+def test_snapshot_runs_every_read_on_one_connection_and_cursor(monkeypatch):
+    cur = _SnapshotCursor()
+    connection, calls = _snapshot_conn(monkeypatch, cur)
+
+    metering.get_billable_period_snapshot("COMM-1", SNAPSHOT_START, SNAPSHOT_END)
+
+    assert calls["count"] == 1, (
+        "one connection, one transaction: three reads on separate "
+        "connections could never share a stable snapshot"
+    )
+    assert connection.cursor_calls == 1
+    assert len(cur.executed) == 4, "isolation setup plus exactly three reads"
+
+
+def test_snapshot_reads_use_the_half_open_period(monkeypatch):
+    cur = _SnapshotCursor()
+    _snapshot_conn(monkeypatch, cur)
+
+    metering.get_billable_period_snapshot("COMM-1", SNAPSHOT_START, SNAPSHOT_END)
+
+    readings_query, readings_params = cur.executed[2]
+    assert "measured_at >= %s" in readings_query
+    assert "measured_at < %s" in readings_query, (
+        "the period end must be exclusive; an inclusive end double-counts "
+        "the boundary interval across two periods"
+    )
+    assert readings_params == ("COMM-1", SNAPSHOT_START, SNAPSHOT_END)
+
+    unassigned_query, unassigned_params = cur.executed[3]
+    assert "measured_at >= %s" in unassigned_query
+    assert "measured_at < %s" in unassigned_query
+    assert unassigned_params == (
+        SNAPSHOT_START,
+        SNAPSHOT_END,
+        SNAPSHOT_START,
+        SNAPSHOT_END,
+        "COMM-1",
+    )
+
+
+def test_snapshot_returns_the_full_aggregate(monkeypatch):
+    points = [
+        {
+            "metering_point_id": POINT,
+            "building_id": "BLD-A",
+            "alias": None,
+            "expected_directions": ["consumption"],
+            "vnb_community_id": "VNB-LEG-1",
+            "member_status": "confirmed",
+        }
+    ]
+    cur = _SnapshotCursor(
+        points=points,
+        readings=[_row(total="0.250")],
+        unassigned=[{"metering_point_id": "point-unassigned"}],
+    )
+    _snapshot_conn(monkeypatch, cur)
+
+    snapshot = metering.get_billable_period_snapshot(
+        "COMM-1", SNAPSHOT_START, SNAPSHOT_END
+    )
+
+    assert snapshot == {
+        "points": points,
+        "readings": [metering._floatify(_row(total="0.250"))],
+        "unassigned_point_ids": ["point-unassigned"],
+    }
+    assert isinstance(snapshot["readings"][0]["total_kwh"], float)
+
+    points_query, points_params = cur.executed[1]
+    assert "mp.expected_directions" in points_query, (
+        "billing validates against the declared directions, so they must "
+        "come with the snapshot"
+    )
+    assert "mp.vnb_community_id" in points_query, (
+        "the VNB provenance ties the snapshot to the delivering utility"
+    )
+    assert "active = TRUE" in points_query
+    assert points_params == ("COMM-1",)
+
+
+def test_snapshot_propagates_a_connection_failure(monkeypatch):
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    with pytest.raises(RuntimeError, match="db down"):
+        metering.get_billable_period_snapshot("COMM-1", SNAPSHOT_START, SNAPSHOT_END)
+
+
+@pytest.mark.parametrize("fail_at", [0, 1, 2, 3])
+def test_snapshot_propagates_a_failure_mid_transaction(monkeypatch, fail_at):
+    """A failed read must not be swallowed into an empty or partial result."""
+    cur = _SnapshotCursor(fail_at=fail_at)
+    _snapshot_conn(monkeypatch, cur)
+
+    with pytest.raises(RuntimeError, match="db down"):
+        metering.get_billable_period_snapshot("COMM-1", SNAPSHOT_START, SNAPSHOT_END)
