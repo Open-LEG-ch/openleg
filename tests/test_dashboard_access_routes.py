@@ -554,6 +554,18 @@ def test_public_dashboard_response_stays_public_without_session(app_module):
     assert response.headers.get("Referrer-Policy") != "no-referrer"
 
 
+def test_public_dashboard_response_stays_public_with_blank_session(app_module):
+    client = app_module.web.test_client()
+    with client.session_transaction() as flask_session:
+        flask_session["dashboard_building_id"] = "   "
+
+    response = client.get("/dashboard")
+
+    assert response.status_code == 200
+    assert "no-store" not in response.headers.get("Cache-Control", "")
+    assert response.headers.get("Referrer-Policy") != "no-referrer"
+
+
 def test_leg_forms_use_csrf_and_never_submit_building_id():
     source = Path("templates/leg_dashboard.html").read_text(encoding="utf-8")
 

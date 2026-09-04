@@ -52,9 +52,13 @@ def is_private_response(
 
 def apply_private_response_headers(response):
     """Stamp both private headers when the current request classified private."""
+    dashboard_building_id = session.get("dashboard_building_id")
     if is_private_response(
         request.path,
-        dashboard_session=bool(session.get("dashboard_building_id")),
+        dashboard_session=(
+            isinstance(dashboard_building_id, str)
+            and bool(dashboard_building_id.strip())
+        ),
         municipality_session=bool(session.get("municipality_id")),
     ):
         for header, value in PRIVATE_RESPONSE_HEADERS.items():
