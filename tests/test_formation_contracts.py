@@ -359,6 +359,7 @@ def test_municipality_business_case_handles_no_planned_communities():
     assert case["total_households"] == 0
     assert case["annual_total_savings"] == 0
     assert case["co2_reduction_total_kg"] == 0
+    assert len(case["projections"]) == 10
     assert all(
         projection["annual_total_chf"] == 0 and projection["cumulative_chf"] == 0
         for projection in case["projections"]

@@ -33,7 +33,9 @@ def jitter_coordinates(lat, lon, radius_meters=ANONYMITY_RADIUS_METERS, seed=Non
     if abs(denom) < 1e-9:
         denom = earth_radius
     delta_lon = (distance * math.sin(angle)) / denom
-    return lat + math.degrees(delta_lat), lon + math.degrees(delta_lon)
+    jittered_lat = max(-90.0, min(90.0, lat + math.degrees(delta_lat)))
+    jittered_lon = (lon + math.degrees(delta_lon) + 180.0) % 360.0 - 180.0
+    return jittered_lat, jittered_lon
 
 
 def collect_building_locations(city_id=None, exclude_building_id=None):
