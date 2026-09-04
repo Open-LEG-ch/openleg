@@ -515,9 +515,16 @@ def test_jitter_coordinates_a_non_string_seed_stays_deterministic():
 
 def test_jitter_coordinates_an_unseeded_call_still_jitters():
     neighbor_view = importlib.import_module("neighbor_view")
+    rng = MagicMock()
+    rng.random.return_value = 0.25
+    rng.uniform.return_value = math.pi / 4
 
-    jittered = neighbor_view.jitter_coordinates(47.37, 8.54)
+    with patch.object(
+        neighbor_view.np.random, "default_rng", return_value=rng
+    ) as make_rng:
+        jittered = neighbor_view.jitter_coordinates(47.37, 8.54)
 
+    make_rng.assert_called_once_with(None)
     assert jittered != (47.37, 8.54)
     assert _haversine_meters(47.37, 8.54, *jittered) <= (
         neighbor_view.ANONYMITY_RADIUS_METERS

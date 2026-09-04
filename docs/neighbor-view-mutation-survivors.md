@@ -16,7 +16,7 @@ python -m mutmut results
 | After #498 | 59 | 54 | 5 |
 
 The 11 baseline survivors were `jitter_coordinates` mutants #5, #6, #8, #9,
-#10, #15, #23, #38, #49, #50, #51.
+and #10, #15, #23, #38, #49, #50, #51.
 
 ## Intentional equivalents
 
@@ -36,6 +36,6 @@ guard are not classified as equivalent. The behavior tests in
 ## Provisional matching
 
 Issue #499 started with seven survivors in `find_provisional_matches`: #24, #25,
-#30, #37, #38, #43, and #44. Behavior tests now pin inclusion at 150 metres,
+and #30, #37, #38, #43, and #44. Behavior tests now pin inclusion at 150 metres,
 exclusion beyond 150 metres, the profiles sent to the autarky calculation, and
 the complete public summary. Native mutmut 3.7.0 verification killed all seven.
