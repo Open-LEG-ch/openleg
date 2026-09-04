@@ -491,8 +491,12 @@ def test_jitter_coordinates_invalid_jitter_input_returns_it_unchanged(
 
 def test_jitter_coordinates_a_small_positive_radius_still_jitters():
     neighbor_view = importlib.import_module("neighbor_view")
+    rng = MagicMock()
+    rng.random.return_value = 0.25
+    rng.uniform.return_value = math.pi / 4
 
-    jittered = neighbor_view.jitter_coordinates(47.37, 8.54, 1, seed="tiny")
+    with patch.object(neighbor_view.np.random, "default_rng", return_value=rng):
+        jittered = neighbor_view.jitter_coordinates(47.37, 8.54, 1, seed="tiny")
 
     assert jittered != (47.37, 8.54), (
         "a positive radius must displace the point, not pass it through"
@@ -557,6 +561,29 @@ def test_jitter_coordinates_handles_boundary_coordinates():
         assert _haversine_meters(lat, lon, *first) <= (
             neighbor_view.ANONYMITY_RADIUS_METERS
         ), f"{seed}: the displacement must stay inside the anonymity radius"
+
+
+def test_jitter_coordinates_normalizes_geographic_boundaries():
+    neighbor_view = importlib.import_module("neighbor_view")
+    rng = MagicMock()
+    rng.random.return_value = 1.0
+
+    for lat, lon, angle in [
+        (90.0, 8.54, math.pi),
+        (47.37, 180.0, math.pi / 2),
+        (47.37, -180.0, 3 * math.pi / 2),
+    ]:
+        rng.uniform.return_value = angle
+        with patch.object(neighbor_view.np.random, "default_rng", return_value=rng):
+            jittered = neighbor_view.jitter_coordinates(lat, lon)
+
+        assert all(math.isfinite(value) for value in jittered)
+        assert jittered != (lat, lon)
+        assert -90 <= jittered[0] <= 90
+        assert -180 <= jittered[1] <= 180
+        assert _haversine_meters(lat, lon, *jittered) <= (
+            neighbor_view.ANONYMITY_RADIUS_METERS + 1e-6
+        )
 
 
 # ---------------------------------------------------------------------------

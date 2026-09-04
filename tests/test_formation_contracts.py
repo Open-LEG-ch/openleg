@@ -351,3 +351,16 @@ def test_co2_reduction_keeps_one_decimal():
     )
 
     assert case["co2_reduction_total_kg"] == 364.9
+
+
+def test_municipality_business_case_handles_no_planned_communities():
+    case = calculate_municipality_business_case(bfs_number=261, num_legs=0)
+
+    assert case["total_households"] == 0
+    assert case["annual_total_savings"] == 0
+    assert case["co2_reduction_total_kg"] == 0
+    assert len(case["projections"]) == 10
+    assert all(
+        projection["annual_total_chf"] == 0 and projection["cumulative_chf"] == 0
+        for projection in case["projections"]
+    )
