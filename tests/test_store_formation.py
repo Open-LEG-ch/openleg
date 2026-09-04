@@ -360,3 +360,6 @@ def test_a_broken_connection_never_leaks_the_exception(monkeypatch, caplog):
     assert "[FORMATION] Error creating community" in caplog.messages
     assert "[FORMATION] Error starting formation" in caplog.messages
     assert "[FORMATION] Error submitting to DSO" in caplog.messages
+    assert "[FORMATION] Error getting community status" in caplog.messages
+    assert "[FORMATION] Error getting user communities" in caplog.messages
+    assert "[FORMATION] Error getting formable clusters" in caplog.messages

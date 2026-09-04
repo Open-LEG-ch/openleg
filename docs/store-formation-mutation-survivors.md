@@ -33,3 +33,12 @@ Existing tests already pin creation defaults, legal and idempotent transition
 predicates, status timestamps, and audit events. The added assertions pin the
 success and failure diagnostics. Native verification killed all 15 targeted
 survivors; none were classified as equivalent.
+
+## Community read seams
+
+Issue #505 covered the repository reads in `fetch_community_with_members`,
+`fetch_user_communities`, and `fetch_nearby_consenting_neighbours`. Existing
+tests pin join completeness, consent filters, distance boundaries, ordering,
+and user parameters. The added failure-diagnostic assertions killed all 12
+targeted survivors. The three-function slice moved from 26/38 to 38/38 killed;
+none were classified as equivalent.
