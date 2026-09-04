@@ -32,3 +32,22 @@ now pin that diagnostic alongside the not-found result, member classification,
 readiness boundaries, and next steps for every formation state. Native
 `mutmut 3.7.0` verification killed all four, taking the slice from 70/74 to
 74/74 killed.
+
+## Municipality business case
+
+Issue #502 started with seven survivors among 101
+`calculate_municipality_business_case` mutants: `#14`, `#16`, `#19`, `#75`,
+`#83`, `#97`, and `#99`. All seven are behavioral equivalents:
+
+- `#14`, `#16`, and `#19` change the fallback for `annual_savings_chf`, but
+  `calculate_savings_estimate` always returns that key.
+- `#75` and `#83` round monetary values to three places instead of two. The
+  source value is already rounded to two places, and multiplying it by the
+  integer household count cannot add a fractional decimal place.
+- `#97` and `#99` change the fallback for `assumptions`, but
+  `calculate_savings_estimate` always returns that key.
+
+The focused tests pin household and aggregate savings, yearly projections,
+rounding, CO2 totals, assumptions, defaults, and a zero-community plan. The
+native slice remains 94/101 killed because no public input can reach the three
+changed fallbacks or distinguish the two rounding expressions.
