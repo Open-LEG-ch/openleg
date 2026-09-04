@@ -34,6 +34,7 @@ import email_automation
 import formation_wizard
 import homepage_view_model
 import ml_models
+import private_http
 import registration
 import security_utils
 import tenant as tenant_module
@@ -87,30 +88,7 @@ def render_city_template(template_name, **kwargs):
 @main_bp.after_app_request
 def apply_basic_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
-    is_private_dashboard = request.path in {"/dashboard", "/dashboard/export"} and bool(
-        dashboard_routes._dashboard_session_building_id()
-    )
-    is_private_leg_dashboard = request.path == "/leg/dashboard" and bool(
-        dashboard_routes._dashboard_session_building_id()
-    )
-    is_private_leg_document = request.path.startswith("/leg/document/")
-    is_private_member_invoices = request.path.startswith("/dashboard/invoices")
-    is_private_municipality_dashboard = request.path == "/gemeinde/dashboard" and bool(
-        session.get("municipality_id")
-    )
-    if (
-        request.path.startswith("/dashboard/access/")
-        or request.path.startswith("/gemeinde/access/")
-        or request.path.startswith("/registry/verify/")
-        or is_private_dashboard
-        or is_private_municipality_dashboard
-        or is_private_leg_dashboard
-        or is_private_leg_document
-        or is_private_member_invoices
-    ):
-        response.headers["Cache-Control"] = "no-store"
-        response.headers["Referrer-Policy"] = "no-referrer"
-    return response
+    return private_http.apply_private_response_headers(response)
 
 
 def _tenant_name():
