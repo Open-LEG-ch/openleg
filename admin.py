@@ -15,6 +15,7 @@ from flask import (
     request,
 )
 
+import agentmail_event
 import billing_workspace
 import database as db
 import leg_registry
@@ -59,70 +60,6 @@ def _latest_snapshot_by_category(snapshots):
     for snapshot in snapshots:
         latest.setdefault(snapshot.get("category", "uncategorized"), snapshot)
     return latest
-
-
-def _first_email_identity(value):
-    if isinstance(value, list):
-        value = value[0] if value else ""
-    if isinstance(value, dict):
-        return {"email": value.get("email", ""), "name": value.get("name", "")}
-    if isinstance(value, str):
-        return {"email": value, "name": ""}
-    return {"email": "", "name": ""}
-
-
-def _sanitize_agentmail_payload(data):
-    message = data.get("message") or {}
-    if not isinstance(message, dict):
-        message = {}
-    headers = message.get("headers") or {}
-    if not isinstance(headers, dict):
-        headers = {}
-    sender = _first_email_identity(message.get("from") or message.get("from_") or {})
-    recipients = message.get("to") or []
-    preview = (
-        message.get("text_preview")
-        or message.get("extracted_text")
-        or message.get("snippet")
-        or message.get("text")
-        or data.get("text_preview")
-        or ""
-    )
-    if isinstance(recipients, dict):
-        recipients = [recipients]
-    normalized_to = []
-    for recipient in recipients[:5]:
-        if isinstance(recipient, dict):
-            normalized_to.append(
-                {
-                    "email": recipient.get("email", ""),
-                    "name": recipient.get("name", ""),
-                }
-            )
-        elif isinstance(recipient, str):
-            normalized_to.append({"email": recipient, "name": ""})
-    return {
-        "event_type": (
-            data.get("event_type") or data.get("type") or data.get("event") or "unknown"
-        ),
-        "event_id": data.get("event_id"),
-        "inbox_id": message.get("inbox_id"),
-        "message_id": (
-            message.get("message_id") or message.get("id") or data.get("message_id")
-        ),
-        "thread_id": message.get("thread_id") or data.get("thread_id"),
-        "from_email": sender.get("email") or headers.get("from") or "",
-        "from_name": sender.get("name") or "",
-        "to": normalized_to,
-        "subject": message.get("subject") or headers.get("subject") or "",
-        "received_at": (
-            message.get("received_at")
-            or message.get("timestamp")
-            or data.get("received_at")
-            or data.get("timestamp")
-        ),
-        "text_preview": str(preview)[:280],
-    }
 
 
 def _verify_agentmail_request():
@@ -221,22 +158,20 @@ def api_internal_ops_snapshot():
 @admin_bp.route("/api/internal/agentmail", methods=["POST"])
 def api_internal_agentmail():
     _verify_agentmail_request()
-    data = request.get_json(silent=True) or {}
-    event_type = data.get("event_type") or data.get("type") or data.get("event") or ""
-    if event_type not in {
+    event = agentmail_event.build_event(request.get_json(silent=True))
+    if event["event_type"] not in {
         "message.received",
         "message.received.unauthenticated",
         "inbound_email.received",
     }:
         return jsonify({"ok": True, "ignored": True})
-    payload = _sanitize_agentmail_payload(data)
-    summary = payload.get("subject") or payload.get("from_email") or "Inbound LEA mail"
+    summary = event.get("subject") or event.get("from_email") or "Inbound LEA mail"
     db.save_ops_snapshot(
         source="agentmail",
         category="lea_inbox",
         summary_text=summary,
         status="received",
-        payload=payload,
+        payload=event,
     )
     return jsonify({"ok": True})
 
