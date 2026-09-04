@@ -121,6 +121,69 @@ def test_a_caller_without_coordinates_gets_no_match_rather_than_an_error():
         assert neighbor_view.find_provisional_matches({}) is None
 
 
+def test_provisional_match_includes_the_150_metre_boundary():
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    with (
+        patch.object(
+            database, "get_all_building_profiles", return_value=[NEIGHBOUR_PROFILES[0]]
+        ),
+        patch.object(neighbor_view.ml_models, "calculate_distance", return_value=150),
+        patch.object(
+            neighbor_view.ml_models,
+            "calculate_community_autarky",
+            return_value=(0.5, 0, 0),
+        ),
+    ):
+        summary = neighbor_view.find_provisional_matches(dict(CALLER_PROFILE))
+
+    assert summary is not None
+    assert summary["num_members"] == 2
+
+
+def test_provisional_match_excludes_a_point_beyond_150_metres():
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    with (
+        patch.object(
+            database, "get_all_building_profiles", return_value=[NEIGHBOUR_PROFILES[0]]
+        ),
+        patch.object(neighbor_view.ml_models, "calculate_distance", return_value=150.5),
+    ):
+        summary = neighbor_view.find_provisional_matches(dict(CALLER_PROFILE))
+
+    assert summary is None
+
+
+def test_provisional_match_summary_reports_members_and_autarky_percentage():
+    neighbor_view = importlib.import_module("neighbor_view")
+    seen_buildings = []
+
+    def fixed_autarky(community, _profiles):
+        seen_buildings.extend(community["building_id"].tolist())
+        return 0.5, 0, 0
+
+    with (
+        patch.object(
+            database, "get_all_building_profiles", return_value=[NEIGHBOUR_PROFILES[0]]
+        ),
+        patch.object(neighbor_view.ml_models, "calculate_distance", return_value=10),
+        patch.object(
+            neighbor_view.ml_models,
+            "calculate_community_autarky",
+            side_effect=fixed_autarky,
+        ),
+    ):
+        summary = neighbor_view.find_provisional_matches(dict(CALLER_PROFILE))
+
+    assert seen_buildings == ["", "neighbour-one"]
+    assert summary == {
+        "community_id": "provisional",
+        "num_members": 2,
+        "autarky_percent": 50.0,
+    }
+
+
 # ---------------------------------------------------------------------------
 # The route a stranger calls
 # ---------------------------------------------------------------------------
@@ -424,6 +487,69 @@ def test_jitter_coordinates_invalid_jitter_input_returns_it_unchanged(
     neighbor_view = importlib.import_module("neighbor_view")
 
     assert neighbor_view.jitter_coordinates(lat, lon, radius_meters) == (lat, lon)
+
+
+def test_jitter_coordinates_a_small_positive_radius_still_jitters():
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    jittered = neighbor_view.jitter_coordinates(47.37, 8.54, 1, seed="tiny")
+
+    assert jittered != (47.37, 8.54), (
+        "a positive radius must displace the point, not pass it through"
+    )
+    assert _haversine_meters(47.37, 8.54, *jittered) <= 1, (
+        "even a one-metre radius must respect its own bound"
+    )
+
+
+def test_jitter_coordinates_a_non_string_seed_stays_deterministic():
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    first = neighbor_view.jitter_coordinates(47.37, 8.54, seed=123)
+    second = neighbor_view.jitter_coordinates(47.37, 8.54, seed=123)
+    assert first == second, "a non-string seed must still pin the jitter"
+
+    other = neighbor_view.jitter_coordinates(47.37, 8.54, seed=456)
+    assert first != other, "different seeds must not share one jittered point"
+
+
+def test_jitter_coordinates_an_unseeded_call_still_jitters():
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    jittered = neighbor_view.jitter_coordinates(47.37, 8.54)
+
+    assert jittered != (47.37, 8.54)
+    assert _haversine_meters(47.37, 8.54, *jittered) <= (
+        neighbor_view.ANONYMITY_RADIUS_METERS
+    )
+
+
+def test_jitter_coordinates_at_the_pole_uses_a_safe_longitude_displacement():
+    neighbor_view = importlib.import_module("neighbor_view")
+    lat, lon = 90.0, 8.54
+
+    jittered = neighbor_view.jitter_coordinates(lat, lon, seed="polar")
+
+    assert all(math.isfinite(value) for value in jittered)
+    assert jittered != (lat, lon), "the pole must not freeze the jitter"
+    assert abs(jittered[1] - lon) < 0.01, "the pole fallback must remain bounded"
+
+
+def test_jitter_coordinates_handles_boundary_coordinates():
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    for lat, lon, seed in [
+        (0.0, 8.54, "equator"),
+        (47.37, 180.0, "antimeridian"),
+        (47.37, -180.0, "antimeridian-west"),
+    ]:
+        first = neighbor_view.jitter_coordinates(lat, lon, seed=seed)
+        second = neighbor_view.jitter_coordinates(lat, lon, seed=seed)
+        assert first == second, f"{seed}: a fixed seed must reproduce the point"
+        assert first != (lat, lon), f"{seed}: the point must be displaced"
+        assert _haversine_meters(lat, lon, *first) <= (
+            neighbor_view.ANONYMITY_RADIUS_METERS
+        ), f"{seed}: the displacement must stay inside the anonymity radius"
 
 
 # ---------------------------------------------------------------------------
