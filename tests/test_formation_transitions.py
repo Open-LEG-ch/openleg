@@ -70,6 +70,7 @@ def test_start_formation_blocks_below_the_minimum_community_size(caplog):
 
     mark.assert_not_called()
     assert caplog.messages == ["[FORMATION] Community c1 has only 2 members, need 3"]
+    assert caplog.records[0].levelname == "WARNING"
 
 
 def test_start_formation_blocks_when_the_count_cannot_be_read(caplog):
@@ -81,6 +82,7 @@ def test_start_formation_blocks_when_the_count_cannot_be_read(caplog):
 
     mark.assert_not_called()
     assert caplog.messages == ["[FORMATION] Could not count members for community c1"]
+    assert caplog.records[0].levelname == "ERROR"
 
 
 def test_start_formation_passes_at_the_minimum_community_size():

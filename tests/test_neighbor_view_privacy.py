@@ -491,8 +491,12 @@ def test_jitter_coordinates_invalid_jitter_input_returns_it_unchanged(
 
 def test_jitter_coordinates_a_small_positive_radius_still_jitters():
     neighbor_view = importlib.import_module("neighbor_view")
+    rng = MagicMock()
+    rng.random.return_value = 0.25
+    rng.uniform.return_value = math.pi / 4
 
-    jittered = neighbor_view.jitter_coordinates(47.37, 8.54, 1, seed="tiny")
+    with patch.object(neighbor_view.np.random, "default_rng", return_value=rng):
+        jittered = neighbor_view.jitter_coordinates(47.37, 8.54, 1, seed="tiny")
 
     assert jittered != (47.37, 8.54), (
         "a positive radius must displace the point, not pass it through"
