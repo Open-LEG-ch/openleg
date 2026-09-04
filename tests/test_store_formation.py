@@ -5,6 +5,7 @@ The formation repository owns the SQL for LEG formation: communities,
 community members, and the consent-gated neighbour search.
 """
 
+import logging
 import subprocess
 import sys
 import uuid
@@ -133,6 +134,40 @@ def test_insert_invited_member_tracks_the_invitation(monkeypatch):
     )
 
 
+def test_insert_invited_member_matches_membership_tokens(monkeypatch, caplog):
+    cur = _FakeCursor(one={"1": 1})
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    with caplog.at_level(logging.WARNING):
+        assert formation.insert_invited_member("c1", "b2", "b1") is False
+
+    select_sql, select_params = cur.executed[0]
+    assert " ".join(select_sql.split()) == (
+        "SELECT 1 FROM community_members WHERE community_id = %s AND building_id = %s"
+    )
+    assert select_params == ("c1", "b2")
+    assert caplog.messages == ["[FORMATION] Building b2 already in community c1"]
+
+
+def test_insert_invited_member_pins_the_insert_statement_and_success_log(
+    monkeypatch, caplog
+):
+    cur = _FakeCursor(one=None)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    with caplog.at_level(logging.INFO):
+        assert formation.insert_invited_member("c1", "b2", "b1") is True
+
+    insert_sql, insert_params = cur.executed[1]
+    assert " ".join(insert_sql.split()) == (
+        "INSERT INTO community_members ( "
+        "community_id, building_id, role, status, invited_by, joined_at "
+        ") VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)"
+    )
+    assert insert_params == ("c1", "b2", "member", "invited", "b1")
+    assert caplog.messages == ["[FORMATION] Invited b2 to community c1"]
+
+
 def test_confirm_invited_member_requires_an_open_invitation(monkeypatch):
     cur = _FakeCursor(rowcount=0)
     events = _events(monkeypatch)
@@ -155,6 +190,24 @@ def test_confirm_invited_member_tracks_the_confirmation(monkeypatch):
     events.assert_called_once_with("member_confirmed", "b2", {"community_id": "c1"})
 
 
+def test_confirm_invited_member_pins_the_confirmed_transition(monkeypatch, caplog):
+    cur = _FakeCursor(rowcount=1)
+    events = _events(monkeypatch)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    with caplog.at_level(logging.INFO):
+        assert formation.confirm_invited_member("c1", "b2") is True
+
+    update_sql, update_params = cur.executed[0]
+    normalized = " ".join(update_sql.split())
+    assert "SET status = 'confirmed'" in normalized
+    assert "confirmed_at = CURRENT_TIMESTAMP" in normalized
+    assert "AND status = 'invited'" in normalized
+    assert update_params == ("c1", "b2")
+    assert caplog.messages == ["[FORMATION] b2 confirmed membership in c1"]
+    events.assert_called_once_with("member_confirmed", "b2", {"community_id": "c1"})
+
+
 def test_count_confirmed_members_reads_the_confirmed_count(monkeypatch):
     cur = _FakeCursor(one={"count": 4})
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
@@ -164,6 +217,39 @@ def test_count_confirmed_members_reads_the_confirmed_count(monkeypatch):
     assert "community_members" in query
     assert "confirmed" in query
     assert params == ("c1",)
+
+
+def test_count_confirmed_members_pins_the_confirmed_predicate(monkeypatch):
+    cur = _FakeCursor(one={"count": 0})
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert formation.count_confirmed_members("c1") == 0
+    query, params = cur.executed[0]
+    normalized = " ".join(query.split())
+    assert "COUNT(*) as count FROM community_members" in normalized
+    assert "WHERE community_id = %s AND status = 'confirmed'" in normalized
+    assert params == ("c1",)
+
+
+def test_membership_error_paths_report_the_formation_diagnostic(monkeypatch, caplog):
+    @contextmanager
+    def _broken():
+        raise RuntimeError("db down")
+        yield
+
+    monkeypatch.setattr(database, "get_connection", _broken)
+    _events(monkeypatch)
+
+    with caplog.at_level(logging.ERROR):
+        assert formation.insert_invited_member("c1", "b2", "b1") is False
+        assert formation.confirm_invited_member("c1", "b2") is False
+        assert formation.count_confirmed_members("c1") is None
+
+    assert caplog.messages == [
+        "[FORMATION] Error inviting member",
+        "[FORMATION] Error confirming membership",
+        "[FORMATION] Error counting confirmed members",
+    ]
 
 
 def test_mark_formation_started_updates_the_community(monkeypatch):
