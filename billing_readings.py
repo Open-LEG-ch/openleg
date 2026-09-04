@@ -310,16 +310,18 @@ def load_period_frames(
         )
 
     problems = []
-    points = db.get_community_metering_points(community_id)
+    # Ein Snapshot, drei Bestände: REPEATABLE READ READ ONLY garantiert, dass
+    # Messpunkte, Messwerte und unzugeordnete Punkte denselben Datenbankstand
+    # sehen. Ein Fehler pflanzt sich fort, statt als leere Periode durchzugehen.
+    snapshot = db.get_billable_period_snapshot(community_id, period_start, period_end)
+    points = snapshot["points"]
+    readings = snapshot["readings"]
     mapping, declarations = _participant_map(points, problems)
-    readings = db.get_period_readings(community_id, period_start, period_end)
 
     # Ein aktiver Messpunkt ohne Community-Zuordnung, dessen Messwerte aus
     # Importen dieser VNB LEG stammen, gehört fachlich zur Periode. Ihn still
     # zu übergehen würde eine unvollständige Rechnung erzeugen.
-    for point_id in db.get_unassigned_period_metering_point_ids(
-        community_id, period_start, period_end
-    ):
+    for point_id in snapshot["unassigned_point_ids"]:
         problems.append(
             _problem(
                 "unassigned_point",

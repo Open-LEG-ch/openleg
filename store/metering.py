@@ -85,6 +85,73 @@ _POINT_UPSERT_SQL = """
 
 _DIRECTION_ORDER = ("consumption", "production")
 
+# Ein explizites REPEATABLE READ READ ONLY, bevor irgendeine Abfrage läuft:
+# Punkte, Messwerte und die unzugeordnete Menge müssen denselben Stand sehen.
+# READ COMMITTED würde pro Statement einen neuen Snapshot ziehen; Importe
+# laufen parallel, also könnten Punkte und Messwerte auseinanderdriften.
+_SNAPSHOT_TRANSACTION_SQL = "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
+
+_COMMUNITY_POINTS_SQL = """
+    SELECT mp.metering_point_id,
+           mp.building_id,
+           mp.alias,
+           mp.expected_directions,
+           mp.vnb_community_id,
+           cm.status AS member_status
+    FROM metering_points mp
+    LEFT JOIN community_members cm
+           ON cm.community_id = mp.community_id
+          AND cm.building_id = mp.building_id
+    WHERE mp.community_id = %s
+      AND mp.active = TRUE
+    ORDER BY mp.metering_point_id
+"""
+
+_PERIOD_READINGS_SQL = """
+    SELECT r.metering_point_id,
+           r.direction,
+           r.measured_at,
+           r.resolution_minutes,
+           r.total_kwh,
+           r.grid_kwh,
+           r.community_kwh,
+           r.source_document_id
+    FROM metering_point_readings r
+    JOIN metering_points mp
+      ON mp.metering_point_id = r.metering_point_id
+    WHERE mp.community_id = %s
+      AND r.measured_at >= %s
+      AND r.measured_at < %s
+    ORDER BY r.measured_at, r.metering_point_id, r.direction
+"""
+
+_UNASSIGNED_PERIOD_POINTS_SQL = """
+    SELECT DISTINCT mp.metering_point_id
+    FROM metering_points mp
+    JOIN metering_point_readings r
+      ON r.metering_point_id = mp.metering_point_id
+     AND r.measured_at >= %s
+     AND r.measured_at < %s
+    JOIN sdat_imports si
+      ON si.document_id = r.source_document_id
+    WHERE mp.community_id IS NULL
+      AND mp.active = TRUE
+      AND si.vnb_community_id IN (
+          SELECT DISTINCT si2.vnb_community_id
+          FROM metering_points mp2
+          JOIN metering_point_readings r2
+            ON r2.metering_point_id = mp2.metering_point_id
+           AND r2.measured_at >= %s
+           AND r2.measured_at < %s
+          JOIN sdat_imports si2
+            ON si2.document_id = r2.source_document_id
+          WHERE mp2.community_id = %s
+            AND mp2.active = TRUE
+            AND si2.vnb_community_id IS NOT NULL
+      )
+    ORDER BY mp.metering_point_id
+"""
+
 
 def _canonical_directions(value: list[str] | None) -> list[str] | None:
     """Deklarierte Richtungen in kanonischer Reihenfolge, oder None.
@@ -304,23 +371,7 @@ def get_community_metering_points(community_id):
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT mp.metering_point_id,
-                           mp.building_id,
-                           mp.alias,
-                           mp.expected_directions,
-                           cm.status AS member_status
-                    FROM metering_points mp
-                    LEFT JOIN community_members cm
-                           ON cm.community_id = mp.community_id
-                          AND cm.building_id = mp.building_id
-                    WHERE mp.community_id = %s
-                      AND mp.active = TRUE
-                    ORDER BY mp.metering_point_id
-                    """,
-                    (community_id,),
-                )
+                cur.execute(_COMMUNITY_POINTS_SQL, (community_id,))
                 return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting community metering points: {e}")
@@ -352,32 +403,7 @@ def get_unassigned_period_metering_point_ids(community_id, period_start, period_
     with _get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                """
-                SELECT DISTINCT mp.metering_point_id
-                FROM metering_points mp
-                JOIN metering_point_readings r
-                  ON r.metering_point_id = mp.metering_point_id
-                 AND r.measured_at >= %s
-                 AND r.measured_at < %s
-                JOIN sdat_imports si
-                  ON si.document_id = r.source_document_id
-                WHERE mp.community_id IS NULL
-                  AND mp.active = TRUE
-                  AND si.vnb_community_id IN (
-                      SELECT DISTINCT si2.vnb_community_id
-                      FROM metering_points mp2
-                      JOIN metering_point_readings r2
-                        ON r2.metering_point_id = mp2.metering_point_id
-                       AND r2.measured_at >= %s
-                       AND r2.measured_at < %s
-                      JOIN sdat_imports si2
-                        ON si2.document_id = r2.source_document_id
-                      WHERE mp2.community_id = %s
-                        AND mp2.active = TRUE
-                        AND si2.vnb_community_id IS NOT NULL
-                  )
-                ORDER BY mp.metering_point_id
-                """,
+                _UNASSIGNED_PERIOD_POINTS_SQL,
                 (period_start, period_end, period_start, period_end, community_id),
             )
             return [row["metering_point_id"] for row in cur.fetchall()]
@@ -393,29 +419,50 @@ def get_period_readings(community_id, period_start, period_end):
         with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    """
-                    SELECT r.metering_point_id,
-                           r.direction,
-                           r.measured_at,
-                           r.resolution_minutes,
-                           r.total_kwh,
-                           r.grid_kwh,
-                           r.community_kwh,
-                           r.source_document_id
-                    FROM metering_point_readings r
-                    JOIN metering_points mp
-                      ON mp.metering_point_id = r.metering_point_id
-                    WHERE mp.community_id = %s
-                      AND r.measured_at >= %s
-                      AND r.measured_at < %s
-                    ORDER BY r.measured_at, r.metering_point_id, r.direction
-                    """,
+                    _PERIOD_READINGS_SQL,
                     (community_id, period_start, period_end),
                 )
                 return [_floatify(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error getting period readings: {e}")
         return []
+
+
+def get_billable_period_snapshot(community_id, period_start, period_end):
+    """Alle Abrechnungsgrundlagen einer Periode in einem stabilen Snapshot.
+
+    Die Transaktion wird vor der ersten Abfrage explizit als REPEATABLE READ
+    READ ONLY gesetzt. Erst dann sehen alle drei Abfragen garantiert denselben
+    Datenbankstand: die aktiven, dieser Community zugeordneten Messpunkte
+    (inklusive deklarierter Richtungen und VNB Provenienz), die Messwerte im
+    halboffenen Intervall [period_start, period_end) und die fachlich
+    zugehörigen, aber noch nicht zugeordneten Messpunkte. READ COMMITTED ist
+    ungültig: jedes Statement sähe einen eigenen Stand, und ein paralleler
+    Import könnte die Grundlage der Rechnung mitten im Lauf verändern.
+
+    Fehler werden nicht verschluckt: die Abrechnung muss geschlossen
+    ausfallen statt auf einem leeren oder halben Bestand weiterzurechnen.
+
+    Returns:
+        dict mit points, readings und unassigned_point_ids.
+    """
+    with _get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(_SNAPSHOT_TRANSACTION_SQL)
+            cur.execute(_COMMUNITY_POINTS_SQL, (community_id,))
+            points = [dict(row) for row in cur.fetchall()]
+            cur.execute(_PERIOD_READINGS_SQL, (community_id, period_start, period_end))
+            readings = [_floatify(row) for row in cur.fetchall()]
+            cur.execute(
+                _UNASSIGNED_PERIOD_POINTS_SQL,
+                (period_start, period_end, period_start, period_end, community_id),
+            )
+            unassigned = [row["metering_point_id"] for row in cur.fetchall()]
+    return {
+        "points": points,
+        "readings": readings,
+        "unassigned_point_ids": unassigned,
+    }
 
 
 def get_metering_point_reading_stats(metering_point_id=None):

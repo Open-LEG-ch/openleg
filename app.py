@@ -6,7 +6,6 @@ import secrets
 import threading
 from urllib.parse import urljoin, urlparse
 
-import pandas as pd
 from dotenv import load_dotenv
 from flask import (
     Blueprint,
@@ -26,6 +25,7 @@ from flask_talisman import Talisman
 
 import access_token  # noqa: F401
 import app_config
+import clustering_run
 import dashboard as dashboard_module  # noqa: F401
 import dashboard_routes
 import data_enricher
@@ -33,7 +33,6 @@ import database as db
 import email_automation
 import formation_wizard
 import homepage_view_model
-import ml_models
 import private_http
 import registration
 import security_utils
@@ -125,30 +124,14 @@ def send_confirmation_email(email, unsubscribe_url, building_id=None, address=No
 
 
 def run_full_ml_task(new_building_id=None, city_id=None):
-    """Background ML clustering task using PostgreSQL data."""
+    """Thin adapter: trigger one clustering run in the background.
+
+    All clustering decisions live in clustering_run; Flask only wires the call.
+    """
     logger.info("[ML] Starting background clustering...")
-    profiles = db.get_all_building_profiles(city_id=city_id)
-    if len(profiles) < 2:
-        logger.info("[ML] Not enough buildings for clustering.")
-        return
-
-    building_data = pd.DataFrame(profiles)
-    ranked_communities, buildings_with_clusters = ml_models.find_optimal_communities(
-        building_data, radius_meters=150, min_community_size=2
+    return clustering_run.run_clustering(
+        new_building_id=new_building_id, city_id=city_id
     )
-
-    # Save clusters to DB
-    if "building_id" in buildings_with_clusters.columns:
-        for _, row in buildings_with_clusters.iterrows():
-            bid = row.get("building_id")
-            cid = row.get("cluster", -1)
-            if bid and cid >= 0:
-                db.save_cluster(bid, cid)
-
-    for community in ranked_communities:
-        db.save_cluster_info(community["community_id"], community)
-
-    logger.info(f"[ML] Clustering done: {len(ranked_communities)} clusters")
 
 
 # ===========================

@@ -207,6 +207,7 @@ from store.meter import (  # noqa: F401
     save_meter_readings,
 )
 from store.metering import (  # noqa: F401
+    get_billable_period_snapshot,
     get_community_metering_points,
     get_metering_point,
     get_metering_point_reading_stats,

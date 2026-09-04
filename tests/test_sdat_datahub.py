@@ -32,6 +32,7 @@ class FakeFTP:
         self.cwd_calls = []
         self.deleted = []
         self.quit_called = False
+        self.close_called = False
 
     def cwd(self, path):
         self.cwd_calls.append(path)
@@ -83,6 +84,9 @@ class FakeFTP:
 
     def quit(self):
         self.quit_called = True
+
+    def close(self):
+        self.close_called = True
 
 
 SDAT_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
@@ -229,6 +233,95 @@ class TestListRemoteFiles:
         assert [f.name for f in sdat_datahub.list_remote_files(client)] == ["good.xml"]
 
 
+# === Transfer plan ===
+
+
+class TestPlanTransfers:
+    def test_undated_files_stay_eligible_and_limit_applies_after_filtering(self):
+        """Selection rules decide on explicit local-size facts alone.
+
+        The same plan result must come out of plain facts with no files on
+        disk: the plan performs no filesystem reads.
+        """
+        old = sdat_datahub.RemoteFile(
+            "old.xml", size=1, modified=datetime(2026, 1, 1, tzinfo=timezone.utc)
+        )
+        undated = sdat_datahub.RemoteFile("undated.xml", size=len(SDAT_XML))
+        existing = sdat_datahub.RemoteFile(
+            "existing.xml",
+            size=len(SDAT_XML),
+            modified=datetime(2026, 8, 8, 12, 0, tzinfo=timezone.utc),
+        )
+        local_sizes = {"existing.xml": len(SDAT_XML)}
+
+        pending, skipped = sdat_datahub.plan_transfers(
+            [old, undated, existing],
+            local_sizes,
+            since=datetime(2026, 8, 1, tzinfo=timezone.utc),
+            limit=1,
+        )
+
+        assert skipped == ["existing.xml"]
+        assert [f.path for f in pending] == ["undated.xml"]
+
+    def test_unsafe_paths_never_enter_the_plan(self):
+        evil = sdat_datahub.RemoteFile("evil.xml", size=1, path="../evil.xml")
+        good = sdat_datahub.RemoteFile("good.xml", size=1)
+
+        pending, skipped = sdat_datahub.plan_transfers([evil, good], {})
+
+        assert skipped == []
+        assert [f.path for f in pending] == ["good.xml"]
+
+    def test_local_size_facts_decide_skip_and_redownload(self):
+        """Same plan result from explicit local-size facts, no files created."""
+        complete = sdat_datahub.RemoteFile("complete.xml", size=len(SDAT_XML))
+        changed = sdat_datahub.RemoteFile("changed.xml", size=len(SDAT_XML))
+        missing = sdat_datahub.RemoteFile("missing.xml", size=len(SDAT_XML))
+        unknown = sdat_datahub.RemoteFile("unknown.xml", size=0)
+        local_sizes = {
+            "complete.xml": len(SDAT_XML),
+            "changed.xml": 3,
+            "unknown.xml": len(SDAT_XML),
+        }
+
+        pending, skipped = sdat_datahub.plan_transfers(
+            [complete, changed, missing, unknown], local_sizes
+        )
+
+        assert skipped == ["complete.xml"]
+        assert [f.path for f in pending] == [
+            "changed.xml",
+            "missing.xml",
+            "unknown.xml",
+        ]
+
+        pending, skipped = sdat_datahub.plan_transfers(
+            [complete, changed, missing, unknown], local_sizes, force=True
+        )
+
+        assert skipped == []
+        assert [f.path for f in pending] == [
+            "complete.xml",
+            "changed.xml",
+            "missing.xml",
+            "unknown.xml",
+        ]
+
+    def test_local_file_sizes_is_the_only_filesystem_effect(self, tmp_path):
+        """The effect helper collects exactly the facts the plan consumes."""
+        existing = sdat_datahub.RemoteFile("sub/existing.xml", size=1)
+        missing = sdat_datahub.RemoteFile("missing.xml", size=1)
+        unsafe = sdat_datahub.RemoteFile("evil.xml", size=1, path="../evil.xml")
+        target = tmp_path / "sub" / "existing.xml"
+        target.parent.mkdir(parents=True)
+        target.write_bytes(SDAT_XML)
+
+        sizes = sdat_datahub._local_file_sizes(tmp_path, [existing, missing, unsafe])
+
+        assert sizes == {"sub/existing.xml": len(SDAT_XML)}
+
+
 # === Download ===
 
 
@@ -328,6 +421,26 @@ class TestFetchLatest:
         assert client.deleted == ["a.xml"]
         assert result["deleted"] == ["a.xml"]
 
+    def test_an_unverified_byte_count_keeps_the_remote_file(self, config, monkeypatch):
+        """A download that appears successful but reports a byte count that
+        contradicts the remote size must not be deleted: only the
+        _transfer_is_complete guard in fetch_latest can catch this case."""
+        client = FakeFTP({"a.xml": (SDAT_XML, "20260807120000")})
+
+        def lying_download(client, remote, target):
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(SDAT_XML)
+            return len(SDAT_XML) - 1  # claims one byte less than remote.size
+
+        monkeypatch.setattr(sdat_datahub, "download_file", lying_download)
+
+        result = sdat_datahub.fetch_latest(config, client=client, delete_remote=True)
+
+        assert result["downloaded"] == ["a.xml"]
+        assert result["deleted"] == []
+        assert client.deleted == []
+        assert "a.xml" in client.files
+
     def test_a_short_transfer_is_failed_for_both_delete_remote_false_and_true(
         self, config, caplog
     ):
@@ -390,12 +503,71 @@ class TestFetchLatest:
         assert result["downloaded"] == []
         assert not target.exists()
 
-    def test_unknown_remote_size_never_marks_an_existing_file_complete(self, tmp_path):
-        target = tmp_path / "a.xml"
-        target.write_bytes(SDAT_XML)
+    def test_unknown_remote_size_never_marks_an_existing_file_complete(self):
         remote = sdat_datahub.RemoteFile("a.xml", size=0)
 
-        assert sdat_datahub._already_downloaded(target, remote) is False
+        assert sdat_datahub._already_downloaded(len(SDAT_XML), remote) is False
+
+    def test_a_failing_remote_delete_keeps_the_verified_download(self, config):
+        """When the Datahub refuses the delete, the local file stays put and
+        the summary reports the download without claiming a deletion."""
+        client = FakeFTP({"a.xml": (SDAT_XML, "20260807120000")})
+
+        def refusing_delete(name):
+            raise ftplib.error_perm("550 Delete operation failed")
+
+        client.delete = refusing_delete
+
+        result = sdat_datahub.fetch_latest(config, client=client, delete_remote=True)
+
+        assert result["downloaded"] == ["a.xml"]
+        assert result["deleted"] == []
+        assert "a.xml" in client.files
+        target = Path(config.local_dir) / "a.xml"
+        assert target.read_bytes() == SDAT_XML
+
+    def test_an_owned_client_is_quit_after_a_successful_fetch(
+        self, config, monkeypatch
+    ):
+        """Without an injected client, fetch_latest connects itself and must
+        hand the connection back politely once the work is done."""
+        client = FakeFTP({"a.xml": (SDAT_XML, "20260807120000")})
+        monkeypatch.setattr(sdat_datahub, "connect", lambda _config: client)
+
+        result = sdat_datahub.fetch_latest(config)
+
+        assert result["downloaded"] == ["a.xml"]
+        assert client.quit_called is True
+        assert client.close_called is False
+
+    def test_an_owned_client_falls_back_to_close_when_quit_fails(
+        self, config, monkeypatch
+    ):
+        """A refused QUIT must not strand the owned connection or mask the
+        fetch result: close is the last-resort cleanup."""
+        client = FakeFTP({"a.xml": (SDAT_XML, "20260807120000")})
+
+        def failing_quit():
+            raise ftplib.error_temp("421 Service not available")
+
+        client.quit = failing_quit
+        monkeypatch.setattr(sdat_datahub, "connect", lambda _config: client)
+
+        result = sdat_datahub.fetch_latest(config)
+
+        assert result["downloaded"] == ["a.xml"]
+        assert client.close_called is True
+
+    def test_an_injected_client_remains_caller_owned(self, config):
+        """A caller-supplied client is never closed by fetch_latest; its
+        lifecycle stays with the caller."""
+        client = FakeFTP({"a.xml": (SDAT_XML, "20260807120000")})
+
+        result = sdat_datahub.fetch_latest(config, client=client)
+
+        assert result["downloaded"] == ["a.xml"]
+        assert client.quit_called is False
+        assert client.close_called is False
 
     def test_repr_and_connected_log_omit_user(self, config, monkeypatch, caplog):
         assert "leg-user" not in repr(config)
@@ -427,6 +599,35 @@ class TestFetchLatest:
             sdat_datahub.connect(config)
         assert "leg-user" not in caplog.text
         assert "Verbunden mit" in caplog.text
+
+    def test_connect_closes_client_when_session_setup_fails(self, config, monkeypatch):
+        class FailingFTP:
+            def __init__(self, context):
+                self.closed = False
+
+            def connect(self, *, host, port, timeout):
+                return self
+
+            def auth(self):
+                raise ftplib.error_temp("TLS setup failed")
+
+            def close(self):
+                self.closed = True
+
+        client = None
+
+        def build_client(context):
+            nonlocal client
+            client = FailingFTP(context)
+            return client
+
+        monkeypatch.setattr(sdat_datahub, "_SessionReusingFTP_TLS", build_client)
+
+        with pytest.raises(ftplib.error_temp, match="TLS setup failed"):
+            sdat_datahub.connect(config)
+
+        assert client is not None
+        assert client.closed is True
 
     def test_a_failed_transfer_leaves_no_partial_file(self, config):
         client = FakeFTP({"a.xml": (SDAT_XML, "20260807120000")})

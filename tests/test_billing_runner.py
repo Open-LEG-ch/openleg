@@ -615,15 +615,13 @@ def _install_billing_fixture(
 
     saved = []
     monkeypatch.setattr(
-        database, "get_community_metering_points", lambda _community: points
-    )
-    monkeypatch.setattr(
         database,
-        "get_unassigned_period_metering_point_ids",
-        lambda _community, _start, _end: [],
-    )
-    monkeypatch.setattr(
-        database, "get_period_readings", lambda _community, _start, _end: readings
+        "get_billable_period_snapshot",
+        lambda _community, _start, _end: {
+            "points": points,
+            "readings": readings,
+            "unassigned_point_ids": [],
+        },
     )
     monkeypatch.setattr(
         database,
@@ -662,10 +660,14 @@ def test_an_unassigned_period_point_refuses_to_persist(monkeypatch):
 
     saved = _install_billing_fixture(monkeypatch)
     point_id = "CH000000000000000000000000000099"
+    original_snapshot = database.get_billable_period_snapshot
     monkeypatch.setattr(
         database,
-        "get_unassigned_period_metering_point_ids",
-        lambda _community, _start, _end: [point_id],
+        "get_billable_period_snapshot",
+        lambda community, start, end: {
+            **original_snapshot(community, start, end),
+            "unassigned_point_ids": [point_id],
+        },
     )
 
     with pytest.raises(BillingRunError, match=point_id):

@@ -175,11 +175,15 @@ def _build_ssl_context(config: DatahubConfig) -> ssl.SSLContext:
 def connect(config: DatahubConfig) -> ftplib.FTP_TLS:
     """Open an authenticated FTPS session with an encrypted data channel."""
     client = _SessionReusingFTP_TLS(context=_build_ssl_context(config))
-    client.connect(host=config.host, port=config.port, timeout=config.timeout)
-    client.auth()
-    client.login(user=config.user, passwd=config.password)
-    client.prot_p()
-    client.set_pasv(config.passive)
+    try:
+        client.connect(host=config.host, port=config.port, timeout=config.timeout)
+        client.auth()
+        client.login(user=config.user, passwd=config.password)
+        client.prot_p()
+        client.set_pasv(config.passive)
+    except Exception:
+        client.close()
+        raise
     logger.info("[SDAT] Verbunden mit %s:%s", config.host, config.port)
     return client
 
@@ -343,6 +347,56 @@ def sort_newest_first(entries: Iterable[RemoteFile]) -> list[RemoteFile]:
     )
 
 
+def plan_transfers(
+    remote_files: Iterable[RemoteFile],
+    local_sizes: dict[str, int],
+    *,
+    since: datetime | None = None,
+    limit: int | None = None,
+    pattern: str | None = None,
+    force: bool = False,
+) -> tuple[list[RemoteFile], list[str]]:
+    """Decide which remote files to download. Pure and deterministic.
+
+    No client, no writes, no filesystem reads: ``local_sizes`` carries the
+    only local facts the decision needs, mapping each remote path that
+    already exists locally to its size in bytes. Applies the pattern,
+    timestamp, safe-path, existing-file and force rules; files without a
+    modified timestamp stay eligible so an unavailable timestamp cannot hide
+    a delivery. ``limit`` applies last, after all filtering. Returns
+    ``(pending, skipped)`` where ``skipped`` holds the paths of files
+    already present locally at the advertised size.
+    """
+    candidates = list(remote_files)
+    if pattern:
+        candidates = [f for f in candidates if _matches(f.name, pattern)]
+    if since is not None:
+        candidates = [
+            f for f in candidates if f.modified is None or f.modified >= since
+        ]
+
+    pending: list[RemoteFile] = []
+    skipped: list[str] = []
+    for remote in candidates:
+        if not _is_safe_relpath(remote.path):
+            logger.warning("[SDAT] Pfad übersprungen (unsicher): %r", remote.path)
+            continue
+        if not force and _already_downloaded(local_sizes.get(remote.path), remote):
+            skipped.append(remote.path)
+            continue
+        pending.append(remote)
+
+    if limit is not None and limit >= 0:
+        dropped = pending[limit:]
+        pending = pending[:limit]
+        if dropped:
+            logger.info(
+                "[SDAT] %s weitere Dateien wegen --limit ausgelassen", len(dropped)
+            )
+
+    return pending, skipped
+
+
 def download_file(client, remote: RemoteFile, target: Path) -> int:
     """Download and verify one file atomically. Returns the byte count written."""
     partial = target.with_name(target.name + ".part")
@@ -431,33 +485,16 @@ def fetch_latest(
         remote_files = list_remote_files(client, config.remote_dir, recursive=recursive)
         summary["listed"] = len(remote_files)
 
-        if pattern:
-            remote_files = [f for f in remote_files if _matches(f.name, pattern)]
-        if since is not None:
-            remote_files = [
-                f for f in remote_files if f.modified is None or f.modified >= since
-            ]
-
-        pending = []
-        for remote in remote_files:
-            if not _is_safe_relpath(remote.path):
-                logger.warning("[SDAT] Pfad übersprungen (unsicher): %r", remote.path)
-                continue
-            if not force and _already_downloaded(
-                _target_for(local_dir, remote), remote
-            ):
-                summary["skipped"].append(remote.path)
-                continue
-            pending.append(remote)
-
-        if limit is not None and limit >= 0:
-            dropped = pending[limit:]
-            pending = pending[:limit]
-            if dropped:
-                logger.info(
-                    "[SDAT] %s weitere Dateien wegen --limit ausgelassen", len(dropped)
-                )
-
+        local_sizes = _local_file_sizes(local_dir, remote_files)
+        pending, skipped = plan_transfers(
+            remote_files,
+            local_sizes,
+            since=since,
+            limit=limit,
+            pattern=pattern,
+            force=force,
+        )
+        summary["skipped"].extend(skipped)
         summary["pending"] = [f.path for f in pending]
         if dry_run:
             return summary
@@ -534,14 +571,38 @@ def _matches(name: str, pattern: str) -> bool:
     return fnmatch(name.lower(), pattern.lower())
 
 
-def _already_downloaded(target: Path, remote: RemoteFile) -> bool:
-    """A local file counts as done when it exists at the advertised size."""
-    if not target.exists():
+def _local_file_sizes(
+    local_dir: Path, remote_files: Iterable[RemoteFile]
+) -> dict[str, int]:
+    """Filesystem effect: sizes of the local files a plan would compare against.
+
+    Collects the minimal facts :func:`plan_transfers` needs so the plan itself
+    stays free of filesystem reads: for each safe remote path, the size of the
+    matching local target when it exists. Unsafe paths are never resolved, so
+    no stat can escape the download directory.
+    """
+    sizes: dict[str, int] = {}
+    for remote in remote_files:
+        if not _is_safe_relpath(remote.path):
+            continue
+        try:
+            sizes[remote.path] = _target_for(local_dir, remote).stat().st_size
+        except OSError:
+            continue
+    return sizes
+
+
+def _already_downloaded(local_size: int | None, remote: RemoteFile) -> bool:
+    """A local file counts as done when it exists at the advertised size.
+
+    ``local_size`` is ``None`` when no local file exists for the remote path.
+    """
+    if local_size is None:
         return False
     if not remote.size:
         logger.info("[SDAT] Remote-Grösse unbekannt, lade %s erneut", remote.name)
         return False
-    if target.stat().st_size != remote.size:
+    if local_size != remote.size:
         logger.info("[SDAT] %s hat sich geändert, lade erneut", remote.name)
         return False
     return True
