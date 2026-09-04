@@ -92,8 +92,7 @@ def test_store_formation_imports_without_database_bootstrap():
 def test_create_community_record_inserts_community_and_admin(monkeypatch, caplog):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
-    caplog.set_level(logging.INFO)
-
+    caplog.set_level(logging.INFO, logger="store.formation")
     community_id = formation.create_community_record(
         "LEG Musterweg", "b-admin", "simple", ""
     )
