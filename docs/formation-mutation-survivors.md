@@ -23,3 +23,12 @@ Behavior tests pin unreadable and insufficient member counts, a successful
 transition, a refused already-started or invalid transition, and the cluster
 eligibility boundary. Killing the remaining mutant would require evaluating
 code excluded by the enclosing guard.
+
+## Community status
+
+Issue #501 started with four survivors among 74 `get_community_status` mutants:
+`#71`, `#72`, `#73`, and `#74`. They altered the exception diagnostic. The status tests
+now pin that diagnostic alongside the not-found result, member classification,
+readiness boundaries, and next steps for every formation state. Native
+`mutmut 3.7.0` verification killed all four, taking the slice from 70/74 to
+74/74 killed.
