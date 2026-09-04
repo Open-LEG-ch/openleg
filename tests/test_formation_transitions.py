@@ -61,7 +61,7 @@ def test_invite_and_confirm_delegate_to_the_repository():
     confirm.assert_called_once_with("c1", "b2")
 
 
-def test_start_formation_blocks_below_the_minimum_community_size():
+def test_start_formation_blocks_below_the_minimum_community_size(caplog):
     with (
         patch("database.count_confirmed_members", return_value=2),
         patch("database.mark_formation_started") as mark,
@@ -69,9 +69,10 @@ def test_start_formation_blocks_below_the_minimum_community_size():
         assert start_formation("c1") is False
 
     mark.assert_not_called()
+    assert caplog.messages == ["[FORMATION] Community c1 has only 2 members, need 3"]
 
 
-def test_start_formation_blocks_when_the_count_cannot_be_read():
+def test_start_formation_blocks_when_the_count_cannot_be_read(caplog):
     with (
         patch("database.count_confirmed_members", return_value=None),
         patch("database.mark_formation_started") as mark,
@@ -79,6 +80,7 @@ def test_start_formation_blocks_when_the_count_cannot_be_read():
         assert start_formation("c1") is False
 
     mark.assert_not_called()
+    assert caplog.messages == ["[FORMATION] Could not count members for community c1"]
 
 
 def test_start_formation_passes_at_the_minimum_community_size():
@@ -89,6 +91,17 @@ def test_start_formation_passes_at_the_minimum_community_size():
         assert start_formation("c1") is True
 
     count.assert_called_once_with("c1")
+    mark.assert_called_once_with("c1")
+
+
+def test_start_formation_propagates_a_declined_transition():
+    """The store refuses invalid or already-started states with False."""
+    with (
+        patch("database.count_confirmed_members", return_value=3),
+        patch("database.mark_formation_started", return_value=False) as mark,
+    ):
+        assert start_formation("c1") is False
+
     mark.assert_called_once_with("c1")
 
 
