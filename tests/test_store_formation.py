@@ -141,7 +141,7 @@ def test_insert_invited_member_matches_membership_tokens(monkeypatch, caplog):
     cur = _FakeCursor(one={"1": 1})
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.WARNING, logger="store.formation"):
         assert formation.insert_invited_member("c1", "b2", "b1") is False
 
     select_sql, select_params = cur.executed[0]
@@ -158,7 +158,7 @@ def test_insert_invited_member_pins_the_insert_statement_and_success_log(
     cur = _FakeCursor(one=None)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.INFO, logger="store.formation"):
         assert formation.insert_invited_member("c1", "b2", "b1") is True
 
     insert_sql, insert_params = cur.executed[1]
@@ -198,7 +198,7 @@ def test_confirm_invited_member_pins_the_confirmed_transition(monkeypatch, caplo
     events = _events(monkeypatch)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.INFO, logger="store.formation"):
         assert formation.confirm_invited_member("c1", "b2") is True
 
     update_sql, update_params = cur.executed[0]
@@ -243,7 +243,7 @@ def test_membership_error_paths_report_the_formation_diagnostic(monkeypatch, cap
     monkeypatch.setattr(database, "get_connection", _broken)
     _events(monkeypatch)
 
-    with caplog.at_level(logging.ERROR):
+    with caplog.at_level(logging.ERROR, logger="store.formation"):
         assert formation.insert_invited_member("c1", "b2", "b1") is False
         assert formation.confirm_invited_member("c1", "b2") is False
         assert formation.count_confirmed_members("c1") is None
@@ -259,7 +259,7 @@ def test_mark_formation_started_updates_the_community(monkeypatch, caplog):
     cur = _FakeCursor()
     events = _events(monkeypatch)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
-    caplog.set_level(logging.INFO)
+    caplog.set_level(logging.INFO, logger="store.formation")
 
     assert formation.mark_formation_started("c1") is True
     query, params = cur.executed[0]
@@ -282,7 +282,7 @@ def test_submit_community_to_dso_tracks_the_submission(monkeypatch, caplog):
     cur = _FakeCursor(rowcount=1)
     events = _events(monkeypatch)
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
-    caplog.set_level(logging.INFO)
+    caplog.set_level(logging.INFO, logger="store.formation")
 
     assert formation.submit_community_to_dso("c1") is True
     query, params = cur.executed[0]
