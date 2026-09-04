@@ -747,6 +747,37 @@ def _command_checkout(tmp_path, *, test_exit=0, cycle_exit=0):
     return checkout
 
 
+# Subprocess coverage blind spot: the gate/test spawn-failure branches in
+# main() only ever run inside the `scripts/contribute` child process, so
+# coverage.py measuring the pytest process never marks them covered. The
+# native CRAP evidence for scripts/contributor_workbench.py at c9411e2 scores
+# main() at 122.7 (complexity 11, 2.6% measured line coverage) and
+# setup_environment() at 65.4 (complexity 8, 3.6%), and adding these
+# subprocess tests leaves the entrypoint score unchanged. A flat entrypoint
+# score here is the measurement artifact, not proof the failure behavior is
+# untested: the tests below assert it end to end.
+def _harness_checkout(tmp_path, harness, blocker):
+    """A checkout whose gate or TDD harness cannot start.
+
+    blocker="missing" leaves the harness out of the checkout entirely;
+    blocker="not-executable" drops its execute bit. Both surface as OSError at
+    spawn and must reach the contributor as a clean FAIL line, not a crash.
+    """
+    checkout = tmp_path / "checkout"
+    scripts = checkout / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy(CONTRIBUTE, scripts / "contribute")
+    shutil.copy(
+        PROJECT_ROOT / "scripts" / "contributor_workbench.py",
+        scripts / "contributor_workbench.py",
+    )
+    if blocker == "not-executable":
+        harness_file = scripts / harness
+        harness_file.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        harness_file.chmod(0o644)
+    return checkout
+
+
 def _setup_checkout(tmp_path):
     checkout = tmp_path / "checkout"
     scripts = checkout / "scripts"
@@ -920,6 +951,29 @@ def test_setup_never_writes_env_when_example_exists(tmp_path):
     assert not (checkout / ".env").exists()
 
 
+def test_setup_without_a_spawnable_python_fails_and_creates_no_venv(
+    tmp_path, monkeypatch, capsys
+):
+    """An unspawnable python3 must stop setup before anything is built.
+
+    With no python3 on PATH the in-process setup run cannot even start the
+    interpreter. The contributor needs the setup failure and a nonzero exit,
+    and the checkout must be left without a half-made .venv.
+    """
+    empty_bin = tmp_path / "bin"
+    empty_bin.mkdir()
+    monkeypatch.setenv("PATH", str(empty_bin))
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+
+    exit_code = workbench.setup_environment(checkout, dry_run=False)
+
+    output = capsys.readouterr().out
+    assert exit_code != 0
+    assert "FAIL setup: virtual environment creation failed" in output
+    assert not (checkout / ".venv").exists()
+
+
 def test_gate_invokes_canonical_gate_harness(tmp_path):
     checkout = _command_checkout(tmp_path)
 
@@ -947,6 +1001,31 @@ def test_gate_forwards_nonzero_exit_code(tmp_path):
     )
 
     assert result.returncode == 7, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("blocker", ["missing", "not-executable"])
+def test_gate_fails_cleanly_when_the_gate_harness_cannot_start(tmp_path, blocker):
+    """A checkout without a startable gate harness gets a verdict, not a crash.
+
+    scripts/test.sh is the canonical gate. When it cannot even start, the
+    contributor still needs `FAIL gate:` and a nonzero exit, never a
+    traceback from the failed spawn.
+    """
+    checkout = _harness_checkout(tmp_path, "test.sh", blocker)
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "gate"],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0, output
+    assert "FAIL gate:" in output
+    assert "test.sh" in output
+    assert "Traceback" not in output
 
 
 def test_test_defaults_to_red_phase(tmp_path):
@@ -1012,6 +1091,31 @@ def test_test_rejects_unrecognised_phase_and_names_valid_phases(tmp_path):
     output = result.stdout + result.stderr
     assert result.returncode != 0
     assert all(phase in output for phase in ("red", "green", "refactor"))
+
+
+@pytest.mark.parametrize("blocker", ["missing", "not-executable"])
+def test_test_fails_cleanly_when_the_tdd_harness_cannot_start(tmp_path, blocker):
+    """A checkout without a startable TDD harness gets a verdict, not a crash.
+
+    scripts/tdd_cycle.sh drives the red/green/refactor cycle. When it cannot
+    even start, the contributor still needs `FAIL test:` and a nonzero exit,
+    never a traceback from the failed spawn.
+    """
+    checkout = _harness_checkout(tmp_path, "tdd_cycle.sh", blocker)
+
+    result = subprocess.run(
+        [checkout / "scripts" / "contribute", "test", "tests/test_widget.py"],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0, output
+    assert "FAIL test:" in output
+    assert "tdd_cycle.sh" in output
+    assert "Traceback" not in output
 
 
 def test_doctor_checks_bare_ruff_executable_at_pin(tmp_path):

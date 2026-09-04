@@ -16,7 +16,6 @@ from flask import (
     abort,
     current_app,
     g,
-    make_response,
     redirect,
     request,
     send_file,
@@ -44,20 +43,6 @@ def _set_dashboard_session(building_id: str):
     session.permanent = True
     session["dashboard_building_id"] = building_id
     session["dashboard_csrf_token"] = secrets.token_urlsafe(32)
-
-
-def _exchange_response(location: str):
-    response = redirect(location)
-    response.headers["Cache-Control"] = "no-store"
-    response.headers["Referrer-Policy"] = "no-referrer"
-    return response
-
-
-def _mark_private_response(response):
-    response = make_response(response)
-    response.headers["Cache-Control"] = "no-store"
-    response.headers["Referrer-Policy"] = "no-referrer"
-    return response
 
 
 def _require_dashboard_session():
@@ -124,14 +109,12 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def dashboard():
         session_building_id = _dashboard_session_building_id()
         if session_building_id:
-            return _mark_private_response(
-                render_city_template(
-                    "dashboard.html",
-                    **_dashboard_context(
-                        session_building_id,
-                        profile_saved=request.args.get("saved") == "1",
-                    ),
-                )
+            return render_city_template(
+                "dashboard.html",
+                **_dashboard_context(
+                    session_building_id,
+                    profile_saved=request.args.get("saved") == "1",
+                ),
             )
         return render_city_template("dashboard.html", **_dashboard_public_context())
 
@@ -150,15 +133,17 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             share_with_neighbors="share_with_neighbors" in request.form,
         )
         if result["error"]:
-            response = render_city_template(
-                "dashboard.html",
-                **_dashboard_context(
-                    building_id,
-                    profile_error=result["error"],
+            return (
+                render_city_template(
+                    "dashboard.html",
+                    **_dashboard_context(
+                        building_id,
+                        profile_error=result["error"],
+                    ),
                 ),
+                400,
             )
-            return _mark_private_response(response), 400
-        return _exchange_response("/dashboard?saved=1")
+        return redirect("/dashboard?saved=1")
 
     @bp.route("/dashboard/export")
     def dashboard_profile_export():
@@ -168,13 +153,11 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             ensure_ascii=False,
             indent=2,
         ).encode("utf-8")
-        return _mark_private_response(
-            send_file(
-                io.BytesIO(payload),
-                mimetype="application/json",
-                as_attachment=True,
-                download_name="openleg-profil.json",
-            )
+        return send_file(
+            io.BytesIO(payload),
+            mimetype="application/json",
+            as_attachment=True,
+            download_name="openleg-profil.json",
         )
 
     @bp.route("/dashboard/access/<token>")
@@ -182,9 +165,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def dashboard_access_exchange(token):
         building_id = access_token.consume(access_token.DASHBOARD, db, token)
         if not building_id:
-            return _exchange_response("/dashboard?access=invalid")
+            return redirect("/dashboard?access=invalid")
         _set_dashboard_session(building_id)
-        return _exchange_response("/dashboard")
+        return redirect("/dashboard")
 
     @bp.route("/dashboard/access/request", methods=["POST"])
     @_rate_limit(limiter, "5 per minute")
@@ -263,9 +246,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             view = dashboard_module.member_invoices_view(building_id)
         except (db.BillingStoreError, dashboard_module.MemberInvoiceDataError):
             abort(503)
-        return _mark_private_response(
-            render_city_template("member_invoices.html", **view)
-        )
+        return render_city_template("member_invoices.html", **view)
 
     @bp.route("/dashboard/invoices/<int:invoice_id>")
     def dashboard_invoice_detail(invoice_id):
@@ -276,9 +257,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if not invoice:
             abort(404)
-        return _mark_private_response(
-            render_city_template("member_invoice_detail.html", invoice=invoice)
-        )
+        return render_city_template("member_invoice_detail.html", invoice=invoice)
 
     @bp.route("/dashboard/invoices/<int:invoice_id>/pdf")
     def dashboard_invoice_pdf(invoice_id):
@@ -290,28 +269,23 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         if not invoice:
             abort(404)
         pdf_bytes = dashboard_module.member_invoice_pdf_bytes(invoice)
-        return _mark_private_response(
-            send_file(
-                io.BytesIO(pdf_bytes),
-                mimetype="application/pdf",
-                as_attachment=True,
-                download_name=f"rechnung-{invoice['invoice_number']}.pdf",
-            )
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"rechnung-{invoice['invoice_number']}.pdf",
         )
 
     @bp.route("/leg/dashboard")
     def leg_dashboard():
         community_id = request.args.get("cid", "").strip()
         session_building_id = _dashboard_session_building_id()
-        response = render_city_template(
+        return render_city_template(
             "leg_dashboard.html",
             **dashboard_module.leg_overview(community_id, session_building_id),
             viewer_has_session=bool(session_building_id),
             csrf_token=_dashboard_csrf_token(),
         )
-        if session_building_id:
-            return _mark_private_response(response)
-        return response
 
     @bp.route("/leg/dashboard/demo")
     def leg_dashboard_demo():
@@ -347,14 +321,16 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             community_id, building_id, invite_email
         )
         if result["error"]:
-            response = render_city_template(
-                "leg_dashboard.html",
-                **dashboard_module.leg_overview(community_id, building_id),
-                viewer_has_session=True,
-                csrf_token=_dashboard_csrf_token(),
-                invite_error=result["error"],
+            return (
+                render_city_template(
+                    "leg_dashboard.html",
+                    **dashboard_module.leg_overview(community_id, building_id),
+                    viewer_has_session=True,
+                    csrf_token=_dashboard_csrf_token(),
+                    invite_error=result["error"],
+                ),
+                400,
             )
-            return _mark_private_response(response), 400
         return _leg_dashboard_redirect(community_id)
 
     @bp.route("/leg/community/<community_id>/confirm", methods=["POST"])
@@ -391,12 +367,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if view["error"]:
             abort(403)
-        return _mark_private_response(
-            render_city_template(
-                "leg_billing.html",
-                csrf_token=_dashboard_csrf_token(),
-                **view,
-            )
+        return render_city_template(
+            "leg_billing.html",
+            csrf_token=_dashboard_csrf_token(),
+            **view,
         )
 
     @bp.route(
@@ -430,12 +404,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 "Sie es erneut."
             )
             return (
-                _mark_private_response(
-                    render_city_template(
-                        "leg_billing.html",
-                        csrf_token=_dashboard_csrf_token(),
-                        **view,
-                    )
+                render_city_template(
+                    "leg_billing.html",
+                    csrf_token=_dashboard_csrf_token(),
+                    **view,
                 ),
                 409,
             )
@@ -464,12 +436,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
             )
             return (
-                _mark_private_response(
-                    render_city_template(
-                        "leg_billing.html",
-                        csrf_token=_dashboard_csrf_token(),
-                        **view,
-                    )
+                render_city_template(
+                    "leg_billing.html",
+                    csrf_token=_dashboard_csrf_token(),
+                    **view,
                 ),
                 409,
             )
@@ -486,12 +456,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 abort(503)
             view["lifecycle_error"] = result["error"]
             return (
-                _mark_private_response(
-                    render_city_template(
-                        "leg_billing.html",
-                        csrf_token=_dashboard_csrf_token(),
-                        **view,
-                    )
+                render_city_template(
+                    "leg_billing.html",
+                    csrf_token=_dashboard_csrf_token(),
+                    **view,
                 ),
                 502,
             )
@@ -590,12 +558,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if view["error"]:
             abort(403)
-        return _mark_private_response(
-            render_city_template(
-                "leg_billing_policy.html",
-                csrf_token=_dashboard_csrf_token(),
-                **view,
-            )
+        return render_city_template(
+            "leg_billing_policy.html",
+            csrf_token=_dashboard_csrf_token(),
+            **view,
         )
 
     @bp.route("/leg/community/<community_id>/billing-policy", methods=["POST"])
@@ -623,12 +589,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 for field in billing_policy.FORM_FIELDS
             }
             return (
-                _mark_private_response(
-                    render_city_template(
-                        "leg_billing_policy.html",
-                        csrf_token=_dashboard_csrf_token(),
-                        **view,
-                    )
+                render_city_template(
+                    "leg_billing_policy.html",
+                    csrf_token=_dashboard_csrf_token(),
+                    **view,
                 ),
                 400,
             )
@@ -660,14 +624,16 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             attachment_data=attachment_data,
         )
         if result["error"]:
-            response = render_city_template(
-                "leg_dashboard.html",
-                **dashboard_module.leg_overview(community_id, building_id),
-                viewer_has_session=True,
-                csrf_token=_dashboard_csrf_token(),
-                correspondence_error=result["error"],
+            return (
+                render_city_template(
+                    "leg_dashboard.html",
+                    **dashboard_module.leg_overview(community_id, building_id),
+                    viewer_has_session=True,
+                    csrf_token=_dashboard_csrf_token(),
+                    correspondence_error=result["error"],
+                ),
+                400,
             )
-            return _mark_private_response(response), 400
         return _leg_dashboard_redirect(community_id)
 
     @bp.route("/leg/community/<community_id>/correspondence/<int:entry_id>/attachment")
@@ -680,13 +646,11 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if not attachment:
             abort(404)
-        return _mark_private_response(
-            send_file(
-                io.BytesIO(bytes(attachment["attachment_data"])),
-                mimetype="application/pdf",
-                as_attachment=True,
-                download_name=attachment["attachment_filename"],
-            )
+        return send_file(
+            io.BytesIO(bytes(attachment["attachment_data"])),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=attachment["attachment_filename"],
         )
 
     @bp.route("/leg/document/<int:doc_id>")
@@ -697,12 +661,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         doc = dashboard_module.leg_document_for_member(doc_id, building_id)
         if not doc:
             abort(404)
-        response = _mark_private_response(
-            send_file(
-                io.BytesIO(bytes(doc["pdf_data"])),
-                mimetype="application/pdf",
-                as_attachment=False,
-                download_name=doc["filename"],
-            )
+        return send_file(
+            io.BytesIO(bytes(doc["pdf_data"])),
+            mimetype="application/pdf",
+            as_attachment=False,
+            download_name=doc["filename"],
         )
-        return response

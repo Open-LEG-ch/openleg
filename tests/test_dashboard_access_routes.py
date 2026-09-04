@@ -464,6 +464,108 @@ def test_legacy_leg_view_does_not_offer_private_document_download(
     assert seen[-1] == ("community-1", "building-legacy")
 
 
+def _correspondence_overview():
+    return {
+        "error": None,
+        "community": {
+            "community_id": "community-1",
+            "name": "LEG Musterweg",
+            "status": "interested",
+            "distribution_model": "simple",
+            "readiness_score": 25,
+            "member_count": {"confirmed": 1, "total": 1, "invited": 0},
+            "members": [
+                {
+                    "building_id": "building-session",
+                    "role": "admin",
+                    "status": "confirmed",
+                    "address": "Musterweg 1",
+                }
+            ],
+            "next_steps": [],
+        },
+        "viewer_building_id": "building-session",
+        "is_admin": True,
+        "leg_documents": [],
+        "correspondence": [],
+    }
+
+
+def test_correspondence_post_success_is_private_and_redirects(app_module, monkeypatch):
+    log = MagicMock(return_value={"error": None, "entry_id": 5})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_log_correspondence", log)
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/correspondence",
+        data={
+            "csrf_token": "csrf-secret",
+            "direction": "outbound",
+            "channel": "email",
+            "counterparty": "VNB",
+            "subject": "Netzanschluss",
+            "notes": "Anfrage gesendet",
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/leg/dashboard?cid=community-1")
+    assert "bid=" not in response.headers["Location"]
+    assert "no-store" in response.headers["Cache-Control"]
+    assert response.headers["Referrer-Policy"] == "no-referrer"
+    assert log.call_args.args[:2] == ("community-1", "building-session")
+
+
+def test_correspondence_post_validation_failure_is_private(app_module, monkeypatch):
+    log = MagicMock(
+        return_value={"error": "Eintrag ungültig (Richtung oder Kanal unbekannt)."}
+    )
+    monkeypatch.setattr(app_module.dashboard_module, "leg_log_correspondence", log)
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_overview",
+        MagicMock(
+            side_effect=lambda community_id, building_id: _correspondence_overview()
+        ),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/correspondence",
+        data={"csrf_token": "csrf-secret", "direction": "", "channel": ""},
+    )
+
+    assert response.status_code == 400
+    assert "no-store" in response.headers["Cache-Control"]
+    assert response.headers["Referrer-Policy"] == "no-referrer"
+    assert "Eintrag ungültig" in response.get_data(as_text=True)
+    assert log.call_args.args[:2] == ("community-1", "building-session")
+
+
+def test_public_dashboard_response_stays_public_without_session(app_module):
+    client = app_module.web.test_client()
+
+    response = client.get("/dashboard")
+
+    assert response.status_code == 200
+    assert "no-store" not in response.headers.get("Cache-Control", "")
+    assert response.headers.get("Referrer-Policy") != "no-referrer"
+
+
+def test_public_dashboard_response_stays_public_with_blank_session(app_module):
+    client = app_module.web.test_client()
+    with client.session_transaction() as flask_session:
+        flask_session["dashboard_building_id"] = "   "
+
+    response = client.get("/dashboard")
+
+    assert response.status_code == 200
+    assert "no-store" not in response.headers.get("Cache-Control", "")
+    assert response.headers.get("Referrer-Policy") != "no-referrer"
+
+
 def test_leg_forms_use_csrf_and_never_submit_building_id():
     source = Path("templates/leg_dashboard.html").read_text(encoding="utf-8")
 
