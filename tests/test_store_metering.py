@@ -448,6 +448,27 @@ def test_get_metering_point_returns_the_requested_point(monkeypatch):
     assert cur.executed[0][1] == (POINT,)
 
 
+def test_get_metering_point_returns_none_for_an_absent_row(monkeypatch):
+    cur = _FakeCursor(one=None)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.get_metering_point("CH-missing") is None
+
+
+def test_get_metering_points_returns_an_empty_list_when_nothing_is_stored(monkeypatch):
+    cur = _FakeCursor(rows=[])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.get_metering_points() == []
+
+
+def test_get_readings_returns_an_empty_list_when_nothing_is_recorded(monkeypatch):
+    cur = _FakeCursor(rows=[])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.get_metering_point_readings(POINT) == []
+
+
 # ==== Registry enrichment ====
 
 
