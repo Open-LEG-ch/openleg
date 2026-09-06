@@ -804,6 +804,25 @@ _SEEDED_DRAWS = {
         "lat": 47.473639743605666,
         "lon": 8.30035763270587,
     },
+    # Discriminating reference addresses: their seeded draws sit where a
+    # shifted randint bound changes the outcome (18989 for the annual upper
+    # bound, 51 for the PV upper bound).
+    "W" * 18989: {
+        "plz": 5400,
+        "building_type": "MFH",
+        "annual_consumption_kwh": 19727.0,
+        "potential_pv_kwp": 28.0,
+        "lat": 47.48001405942026,
+        "lon": 8.305528854859302,
+    },
+    "X" * 51: {
+        "plz": 5430,
+        "building_type": "MFH",
+        "annual_consumption_kwh": 16181.0,
+        "potential_pv_kwp": 20.0,
+        "lat": 47.471547484133254,
+        "lon": 8.308560640235312,
+    },
 }
 
 

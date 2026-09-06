@@ -72,10 +72,14 @@ this wave's tickets.
 
 | Mutant | Mutation | Why behavior is unchanged |
 | --- | --- | --- |
-| `x_get_mock_energy_profile_for_address__mutmut_41` | Draw annual consumption from `randint(4000, 20001)`. | The shifted upper bound only differs for a draw of exactly 20000; no address seeded stream reaches that boundary, as the pinned reference addresses show. |
 | `x_get_mock_energy_profile_for_address__mutmut_46` | Draw PV as `randint(30)`. | `randint(30)` is `randint(0, 30)` by numpy's own signature. |
-| `x_get_mock_energy_profile_for_address__mutmut_49` | Draw PV from `randint(0, 31)`. | The shifted upper bound only differs for a draw of exactly 30; the seeded stream never lands there. |
 | `x_get_mock_energy_profile_for_address__mutmut_73` | Wrap the completion diagnostic in `XX`. | Operator stdout text is not a repository contract. |
+
+The randint upper bound shifts (`randint(4000, 20001)` for mutant 41 and
+`randint(0, 31)` for mutant 49) are not equivalents: their boundary draws are
+reachable, and reference addresses of length 18989 and 51 pin them
+(`annual_consumption_kwh` 19727 and `potential_pv_kwp` 20.0 change under the
+mutants). They are killed.
 
 Malformed SQL, wrong parameters, changed arithmetic, swapped operands,
 inverted filters, dropped limits, and diagnostic prints that lose their

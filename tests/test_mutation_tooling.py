@@ -85,22 +85,39 @@ def test_mutmut_copies_formation_dependencies_needed_for_collection():
 
 
 def _repo_module_imports(module_file):
-    """Repo-local modules the file imports, as file names.
+    """Repo paths the file reaches through imports, transitively.
 
     Imports inside function bodies count too: mutmut runs the scoring tests
     inside its sandbox, so a lazy import of an uncopied module breaks scoring
-    mid-suite, not just at collection time.
+    mid-suite, not just at collection time. Dotted names resolve to a sibling
+    module or into a package's modules.
     """
     import ast
 
-    tree = ast.parse(module_file.read_text(encoding="utf-8"))
-    names = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            names.update(alias.name.split(".")[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
-            names.add(node.module.split(".")[0])
-    return {f"{name}.py" for name in names if (PROJECT_ROOT / f"{name}.py").is_file()}
+    pending = [module_file]
+    seen = set()
+    while pending:
+        path = pending.pop()
+        if path in seen:
+            continue
+        seen.add(path)
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        names = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+                names.add(node.module)
+        for name in names:
+            candidate = PROJECT_ROOT / (name.replace(".", "/") + ".py")
+            if candidate.is_file():
+                pending.append(candidate)
+                continue
+            package_init = PROJECT_ROOT / name.replace(".", "/") / "__init__.py"
+            if package_init.is_file():
+                pending.append(package_init)
+                pending.extend(sorted(package_init.parent.glob("*.py")))
+    return {path.relative_to(PROJECT_ROOT).as_posix() for path in seen}
 
 
 def test_mutmut_copies_every_repo_module_the_app_imports():
@@ -109,16 +126,20 @@ def test_mutmut_copies_every_repo_module_the_app_imports():
     A repository module that app.py imports but also_copy omits makes every
     test session inside the sandbox die on ModuleNotFoundError before any
     mutant is scored. #372 hit this with access_token; the clustering_run
-    import in #453 hit it again. Read the imports from app.py itself so the
-    contract tracks the file instead of a copied list.
+    import in #453 hit it again. The contract walks the transitive import
+    closure of app.py so it tracks the code instead of a copied list.
     """
     config = _mutmut_config()
     copied = set(config["also_copy"]) | set(config["source_paths"])
+    copied_dirs = {
+        f"{entry.rstrip('/')}/" for entry in copied if (PROJECT_ROOT / entry).is_dir()
+    }
 
     missing = _repo_module_imports(PROJECT_ROOT / "app.py") - copied
+    missing = {path for path in missing if not path.startswith(tuple(copied_dirs))}
 
     assert not missing, (
-        f"app.py imports {sorted(missing)} and mutmut does not copy them "
+        f"app.py reaches {sorted(missing)} and mutmut does not copy them "
         "into the sandbox; add them to also_copy or scoring fails"
     )
 
