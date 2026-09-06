@@ -677,3 +677,129 @@ def test_resolve_address_profile_preserves_fallback_cause(
     assert mock.call_count == int(expected_source == "mock")
     if expected_source == "mock":
         mock.assert_called_once_with(_PROFILE_SEAM_ADDRESS)
+
+
+# ==== Mock fallback seams (#507) ====
+
+
+@pytest.mark.parametrize(
+    ("plz", "expected"),
+    (
+        (5430, ("EFH", 1, 160)),
+        (5432, ("EFH", 1, 160)),
+        (5400, ("MFH", 8, 700)),
+        (5496, ("EFH", 1, 150)),
+    ),
+)
+def test_mock_gwr_data_returns_the_expected_building_record(plz, expected):
+    assert data_enricher.mock_get_gwr_data(47.4, 8.3, plz) == expected
+
+
+@pytest.mark.parametrize(
+    ("plz", "expected"),
+    (
+        (5400, (15.0, 1.2)),
+        (5430, (10.0, 1.0)),
+        (5600, (5.0, 0.9)),
+    ),
+)
+def test_mock_plz_stats_returns_the_expected_density_and_income(plz, expected):
+    assert data_enricher.mock_get_plz_stats(plz) == expected
+
+
+def test_mock_energy_profile_is_reproducible_for_the_same_address():
+    estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
+        "Mellingerstrasse 12"
+    )
+    again, profiles_again = data_enricher.get_mock_energy_profile_for_address(
+        "Mellingerstrasse 12"
+    )
+
+    assert estimates == again
+    assert profiles.equals(profiles_again)
+
+
+def test_mock_energy_profile_fields_for_a_known_address():
+    estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
+        "Mellingerstrasse 12"
+    )
+
+    assert estimates["building_id"] == "da338d11ec"
+    assert estimates["address"] == "Mellingerstrasse 12"
+    assert estimates["plz"] in {5400, 5430, 5432}
+    assert estimates["building_type"] in {"EFH", "MFH"}
+    assert type(estimates["annual_consumption_kwh"]) is float
+    assert type(estimates["potential_pv_kwp"]) is float
+    assert type(estimates["lat"]) is float
+    assert type(estimates["lon"]) is float
+    assert 47.4 < estimates["lat"] < 47.55
+    assert 8.2 < estimates["lon"] < 8.4
+    assert list(profiles.columns) == ["consumption_kw", "production_kw"]
+    assert len(profiles) == 35040
+
+
+def test_mock_energy_profile_builds_profiles_from_its_own_estimates(monkeypatch):
+    captured = {}
+    marker = ("generated", "profiles")
+
+    def fake_profiles(annual_consumption_kwh, potential_pv_kwp):
+        captured["annual"] = annual_consumption_kwh
+        captured["pv"] = potential_pv_kwp
+        return marker
+
+    monkeypatch.setattr(
+        data_enricher.ml_models, "generate_mock_profiles", fake_profiles
+    )
+
+    estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
+        "Testweg 5"
+    )
+
+    assert captured["annual"] == estimates["annual_consumption_kwh"]
+    assert captured["pv"] == estimates["potential_pv_kwp"]
+    assert profiles is marker
+
+
+_SEEDED_DRAWS = {
+    "Mellingerstrasse 12": {
+        "plz": 5400,
+        "building_type": "MFH",
+        "annual_consumption_kwh": 5354.0,
+        "potential_pv_kwp": 2.0,
+        "lat": 47.47410501631341,
+        "lon": 8.306297674955108,
+    },
+    "Testweg 5": {
+        "plz": 5432,
+        "building_type": "EFH",
+        "annual_consumption_kwh": 9014.0,
+        "potential_pv_kwp": 29.0,
+        "lat": 47.47300554277356,
+        "lon": 8.306552279653749,
+    },
+    "Bahnhofstrasse 1": {
+        "plz": 5430,
+        "building_type": "EFH",
+        "annual_consumption_kwh": 4381.0,
+        "potential_pv_kwp": 4.0,
+        "lat": 47.473639743605666,
+        "lon": 8.30035763270587,
+    },
+}
+
+
+@pytest.mark.parametrize("address", sorted(_SEEDED_DRAWS))
+def test_mock_energy_profile_pins_the_seeded_draws_for_reference_addresses(address):
+    estimates, _profiles = data_enricher.get_mock_energy_profile_for_address(address)
+
+    for field, expected in _SEEDED_DRAWS[address].items():
+        assert estimates[field] == expected, f"{field} for {address!r}"
+
+
+def test_mock_energy_profile_announces_the_mock_run_to_the_operator(capsys):
+    data_enricher.get_mock_energy_profile_for_address("Testweg 5")
+
+    operator_output = capsys.readouterr().out
+    assert "Starte MOCK-Analyse" in operator_output
+    assert "Analyse abgeschlossen" in operator_output
+    assert "Testweg 5" in operator_output
