@@ -222,7 +222,64 @@ def robots_txt():
         "Disallow: /admin/",
         "Disallow: /confirm/",
         "Disallow: /unsubscribe/",
+        "",
+        "# LLM and AI crawlers are welcome.",
+        "User-agent: GPTBot",
+        "Allow: /",
+        "",
+        "User-agent: OAI-SearchBot",
+        "Allow: /",
+        "",
+        "User-agent: ChatGPT-User",
+        "Allow: /",
+        "",
+        "User-agent: ClaudeBot",
+        "Allow: /",
+        "",
+        "User-agent: PerplexityBot",
+        "Allow: /",
+        "",
+        "User-agent: Google-Extended",
+        "Allow: /",
+        "",
+        "User-agent: Applebot-Extended",
+        "Allow: /",
+        "",
         f"Sitemap: {current_app.config['SITE_URL']}/sitemap.xml",
+        f"# LLM summary: {current_app.config['SITE_URL']}/llms.txt",
+    ]
+    return Response("\n".join(lines) + "\n", mimetype="text/plain")
+
+
+@main_bp.route("/llms.txt")
+def llms_txt():
+    tenant = getattr(g, "tenant", tenant_module.DEFAULT_TENANT)
+    contact_email = tenant.get("contact_email", "hallo@openleg.ch")
+    lines = [
+        "# OpenLEG",
+        "",
+        f"> Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften (LEG), {current_app.config['SITE_URL']}. Code: https://github.com/Open-LEG-ch/openleg, Lizenz AGPL-3.0-or-later, Betrieb in der Schweiz.",
+        "",
+        "OpenLEG prüft Solarpotenzial pro Adresse, verbindet interessierte Haushalte im Umkreis von höchstens 150 Metern und bereitet Dokumente und die Netzbetreiber-Anmeldung vor. Alle Funktionen sind kostenlos.",
+        "",
+        "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das Netznutzungsentgelt um 40% ohne und 20% mit Spannungstransformation (Art. 19h StromVV). Voraussetzungen: gleiche politische Gemeinde, gleiche Netzebene, gleiches Netzgebiet, höchstens 36 kV, intelligente Messsysteme, mindestens 5% erneuerbare Anschlussleistung.",
+        "",
+        "## Seiten",
+        f"- [Homepage]({current_app.config['SITE_URL']}/): LEG-Definition, Kennzahlen, Einstiege",
+        f"- [So funktioniert eine Stromgemeinschaft]({current_app.config['SITE_URL']}/how-it-works): Ablauf in drei Schritten und häufige Fragen",
+        f"- [Für Bewohner und Gründer]({current_app.config['SITE_URL']}/fuer-bewohner): Adresse prüfen, Nachbarn finden, gründen",
+        f"- [Für Gemeinden]({current_app.config['SITE_URL']}/fuer-gemeinden): Dashboard, Verantwortlichkeiten, Betriebsmodelle",
+        f"- [Solarnutzungs-Rangliste]({current_app.config['SITE_URL']}/rangliste): alle Schweizer Gemeinden mit prüfbarer Solarnutzung",
+        f"- [LEG-Verzeichnis]({current_app.config['SITE_URL']}/leg-verzeichnis): bestehende Lokale Elektrizitätsgemeinschaften",
+        f"- [Gemeinde-Verzeichnis]({current_app.config['SITE_URL']}/gemeinde/verzeichnis): Profile aller Schweizer Gemeinden",
+        f"- [Ersparnis-Kalkulator]({current_app.config['SITE_URL']}/leg-kalkulator): Ersparnis für eine LEG berechnen",
+        f"- [Fallstudie Baden]({current_app.config['SITE_URL']}/pilotgemeinde/baden): Tarife, Solardaten und Potenzial für Baden AG",
+        f"- [Open Source]({current_app.config['SITE_URL']}/open-source): Architektur, Repos und Datenpipeline",
+        f"- [Selbst betreiben]({current_app.config['SITE_URL']}/self-host): Installation auf eigener Hardware",
+        f"- [Kosten]({current_app.config['SITE_URL']}/pricing): Kostenlos, ohne Datenverkauf; Finanzierung",
+        f"- [Öffentliche API]({current_app.config['SITE_URL']}/api/v1/docs): Tarife, Solardaten, Rangliste, ohne API-Key",
+        f"- [Kontakt](mailto:{contact_email}): E-Mail",
+        "",
     ]
     return Response("\n".join(lines) + "\n", mimetype="text/plain")
 

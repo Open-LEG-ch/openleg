@@ -3,11 +3,11 @@
 
 {% block meta %}
 {{ page_meta(
-  title="OpenLEG: Freie Infrastruktur für Schweizer Stromgemeinschaften",
-  description="OpenLEG hilft Nachbarn und Gemeinden, lokale Stromgemeinschaften in der Schweiz zu starten. Adresse prüfen, Nachbarn finden, Netzgebühren sparen.",
+  title="Lokale Elektrizitätsgemeinschaft gründen | OpenLEG",
+  description="Seit dem 1. Januar 2026 können Sie in der Schweiz eine Lokale Elektrizitätsgemeinschaft (LEG) bilden. OpenLEG prüft Ihre Adresse, findet Nachbarn im Umkreis von 150 m und führt durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz.",
   path="/",
-  og_title="OpenLEG: Freie Infrastruktur für Schweizer Stromgemeinschaften",
-  og_description="Prüfen Sie Ihre Adresse, finden Sie Nachbarn und starten Sie eine lokale Stromgemeinschaft. Kostenlos, Open Source, Schweizer Hosting.",
+  og_title="Lokale Elektrizitätsgemeinschaft gründen | OpenLEG",
+  og_description="Prüfen Sie Ihre Adresse, finden Sie Nachbarn und starten Sie eine lokale Stromgemeinschaft. Bis 40% weniger Netznutzungsentgelt. Kostenlos, Open Source, Schweizer Hosting.",
   og_image="/static/images/og-image.png",
   site_url=site_url
 ) }}
@@ -16,6 +16,26 @@
 {% block head_extra %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "OpenLEG",
+    "url": "{{ site_url }}/",
+    "logo": "{{ site_url }}/static/images/apple-touch-icon.png",
+    "sameAs": ["https://github.com/Open-LEG-ch/openleg"],
+    "description": "Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften."
+  }
+</script>
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "OpenLEG",
+    "url": "{{ site_url }}/",
+    "inLanguage": "de-CH"
+  }
+</script>
 {% if ga4_id %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
 <script>
@@ -39,8 +59,8 @@
 
         <div class="mt-7" aria-live="polite">
           <div data-seg-panel="bewohner">
-            <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] text-ink">Ihr Strom.<br>Ihre Nachbarn.<br><span class="underline decoration-accent decoration-4 underline-offset-[6px] sm:decoration-[6px]">Ihre Gemeinschaft.</span></h1>
-            <p class="mt-6 text-lg leading-8 text-ink-muted max-w-xl">Prüfen Sie Ihre Adresse, finden Sie Nachbarn und führen Sie Ihre LEG von der Gründung bis zur Abrechnung. OpenLEG verkauft keine Daten.</p>
+            <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] text-ink">Gründen Sie eine<br><span class="underline decoration-accent decoration-4 underline-offset-[6px] sm:decoration-[6px]">Stromgemeinschaft</span></h1>
+            <p class="mt-6 text-lg leading-8 text-ink-muted max-w-xl">Strom, den Ihre LEG selbst erzeugt und verbraucht, kostet bis zu 40% weniger Netznutzungsentgelt. OpenLEG prüft Ihre Adresse, findet Nachbarn im Umkreis von 150 Metern und führt Sie durch die Gründung. OpenLEG verkauft keine Daten.</p>
             <div class="mt-7 flex flex-col sm:flex-row gap-3">
               <a href="#registrieren" class="rounded-xl bg-brand px-6 py-3.5 font-semibold text-white shadow-sm hover:bg-brand-dark text-center">Adresse prüfen</a>
               <a href="/leg-gruenden" class="rounded-xl border border-line bg-white px-6 py-3.5 font-semibold text-ink hover:border-brand hover:text-brand text-center">LEG gründen</a>
@@ -92,6 +112,16 @@
             <div class="mt-1 text-sm font-semibold text-ink">auf lokale Netznutzung</div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Definition -->
+  <section class="py-14 border-t border-line bg-white">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="max-w-3xl">
+        <h2 class="text-3xl font-bold tracking-tight">Was ist eine LEG?</h2>
+        <p class="mt-4 text-lg leading-8 text-ink-muted">Eine Lokale Elektrizitätsgemeinschaft ist ein Zusammenschluss von Haushalten und Betrieben, die in derselben politischen Gemeinde an derselben Netzebene angeschlossen sind und gemeinsam Strom aus erneuerbaren Anlagen verbrauchen. Sie ist seit dem 1. Januar 2026 in der ganzen Schweiz möglich. Rechtsgrundlage: Art. 17d und 17e StromVG sowie Art. 19e bis 19h StromVV.</p>
       </div>
     </div>
   </section>

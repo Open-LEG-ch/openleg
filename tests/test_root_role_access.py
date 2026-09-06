@@ -44,8 +44,9 @@ def test_anonymous_root_renders_public_homepage_not_dashboard_access(app_module)
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert "Ihr Strom." in html
-    assert "Ihre Gemeinschaft." in html
+    assert "Stromgemeinschaft" in html
+    assert "Ihre Gemeinschaft." not in html
+    assert "Was ist eine LEG?" in html
     assert "Dashboard-Zugang" not in html
     assert 'class="site-nav ' in html
     assert "<footer" in html

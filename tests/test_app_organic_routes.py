@@ -98,6 +98,40 @@ def test_root_favicon_serves_static_icon(full_app_module):
     assert resp.mimetype == "image/vnd.microsoft.icon"
 
 
+def test_llms_txt_summarizes_facts_and_pages(full_app_module):
+    client = full_app_module.web.test_client()
+
+    resp = client.get("/llms.txt")
+
+    assert resp.status_code == 200
+    assert resp.mimetype == "text/plain"
+    body = resp.get_data(as_text=True)
+    assert body.startswith("# OpenLEG\n")
+    assert "40%" in body
+    assert "Art. 19h StromVV" in body
+    assert f"{full_app_module.web.config['SITE_URL']}/how-it-works" in body
+
+
+def test_robots_txt_welcomes_llm_crawlers_and_points_at_llms_txt(full_app_module):
+    client = full_app_module.web.test_client()
+
+    resp = client.get("/robots.txt")
+
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    for agent in (
+        "GPTBot",
+        "OAI-SearchBot",
+        "ChatGPT-User",
+        "ClaudeBot",
+        "PerplexityBot",
+    ):
+        assert f"User-agent: {agent}\nAllow: /" in body
+    assert body.count("\n\n") >= 7
+    assert "Sitemap: " in body
+    assert "/llms.txt" in body
+
+
 def test_shared_tailwind_partial_uses_local_css():
     with open("templates/partials/tailwind_brand.html") as f:
         content = f.read()
