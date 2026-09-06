@@ -219,6 +219,28 @@ def test_previous_complete_month_asks_datetime_for_zurich_now(monkeypatch):
     assert end == datetime(2026, 3, 1, tzinfo=ZoneInfo("Europe/Zurich"))
 
 
+def test_previous_complete_month_starts_from_a_first_of_month_now():
+    from billing_runner import previous_complete_month
+
+    start, end = previous_complete_month(
+        datetime(2026, 7, 1, 0, 0, 0, tzinfo=ZoneInfo("Europe/Zurich"))
+    )
+
+    assert start == datetime(2026, 6, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+    assert end == datetime(2026, 7, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+
+
+def test_previous_complete_month_rolls_january_back_to_december():
+    from billing_runner import previous_complete_month
+
+    start, end = previous_complete_month(
+        datetime(2027, 1, 15, 6, 30, tzinfo=ZoneInfo("Europe/Zurich"))
+    )
+
+    assert start == datetime(2026, 12, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+    assert end == datetime(2027, 1, 1, tzinfo=ZoneInfo("Europe/Zurich"))
+
+
 def test_fingerprint_is_the_sha256_of_the_canonical_payload():
     from billing_runner import _fingerprint
 
