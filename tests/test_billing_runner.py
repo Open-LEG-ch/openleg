@@ -185,7 +185,7 @@ def test_previous_complete_month_uses_zurich_calendar_boundaries():
     from billing_runner import previous_complete_month
 
     start, end = previous_complete_month(
-        datetime(
+        now=datetime(
             2026,
             11,
             15,
@@ -223,7 +223,7 @@ def test_previous_complete_month_starts_from_a_first_of_month_now():
     from billing_runner import previous_complete_month
 
     start, end = previous_complete_month(
-        datetime(2026, 7, 1, 0, 0, 0, tzinfo=ZoneInfo("Europe/Zurich"))
+        now=datetime(2026, 7, 1, 0, 0, 0, tzinfo=ZoneInfo("Europe/Zurich"))
     )
 
     assert start == datetime(2026, 6, 1, tzinfo=ZoneInfo("Europe/Zurich"))
@@ -234,7 +234,7 @@ def test_previous_complete_month_rolls_january_back_to_december():
     from billing_runner import previous_complete_month
 
     start, end = previous_complete_month(
-        datetime(2027, 1, 15, 6, 30, tzinfo=ZoneInfo("Europe/Zurich"))
+        now=datetime(2027, 1, 15, 6, 30, tzinfo=ZoneInfo("Europe/Zurich"))
     )
 
     assert start == datetime(2026, 12, 1, tzinfo=ZoneInfo("Europe/Zurich"))

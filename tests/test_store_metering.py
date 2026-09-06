@@ -462,7 +462,7 @@ def test_get_metering_points_returns_an_empty_list_when_nothing_is_stored(monkey
     assert metering.get_metering_points() == []
 
 
-def test_get_readings_return_an_empty_list_when_nothing_is_recorded(monkeypatch):
+def test_get_readings_returns_an_empty_list_when_nothing_is_recorded(monkeypatch):
     cur = _FakeCursor(rows=[])
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 

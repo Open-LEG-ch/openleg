@@ -85,7 +85,12 @@ def test_mutmut_copies_formation_dependencies_needed_for_collection():
 
 
 def _repo_module_imports(module_file):
-    """Repo-local modules the file imports at top level, as file names."""
+    """Repo-local modules the file imports, as file names.
+
+    Imports inside function bodies count too: mutmut runs the scoring tests
+    inside its sandbox, so a lazy import of an uncopied module breaks scoring
+    mid-suite, not just at collection time.
+    """
     import ast
 
     tree = ast.parse(module_file.read_text(encoding="utf-8"))
