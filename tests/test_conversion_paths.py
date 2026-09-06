@@ -1004,14 +1004,16 @@ def test_pv_potential_queries_the_sonnendach_layer(monkeypatch):
 
     args, kwargs = request.call_args
     assert args[0] == f"{data_enricher.SOLAR_API_URL}/identify"
+    map_extent = [float(part) for part in kwargs["params"]["mapExtent"].split(",")]
+    assert map_extent == pytest.approx([-1.7, 37.5, 18.3, 57.5])
     assert kwargs["params"] == {
         "geometry": "8.3,47.5",
         "geometryType": "esriGeometryPoint",
-        "mapExtent": "-1.6999999999999993,37.5,18.3,57.5",
         "imageDisplay": "1,1,1",
         "tolerance": 2,
         "returnGeometry": "false",
         "layers": "all:ch.bfe.sonnendach",
+        "mapExtent": kwargs["params"]["mapExtent"],
     }
 
 
