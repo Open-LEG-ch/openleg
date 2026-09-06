@@ -14,15 +14,18 @@ python -m mutmut results
 
 | Run | Total | Killed | Survived | No coverage |
 | --- | ---: | ---: | ---: | ---: |
-| Baseline at `50e5fd8` | 5682 (scope) | 3946 (scope) | 1363 (scope) | 373 (scope) |
-| data_enricher at baseline | 719 | 324 | 35 | 360 |
-| After the wave | 5682 (scope) | 4340 (scope) | 1331 (scope) | 273 (scope) |
-| data_enricher after the wave | 747 | 724 | 23 | 0 |
+| data_enricher at baseline `50e5fd8` | 637 | 242 | 35 | 360 |
+| data_enricher after the wave at `465e0b9` | 637 | 614 | 23 | 0 |
+| Scope at baseline `50e5fd8` | 5682 | 3946 | 1363 | 373 |
+| Scope after the wave at `465e0b9` | 5682 | 4318 | 1351 | 13 |
 
-Every one of the 360 uncovered mutants is now covered, and 372 of the 395
-previously unscored or surviving mutants are killed. The 23 remaining
+The scope's strict score moved from 69.45 to 75.99 percent. Every one of the
+360 previously uncovered mutants of data_enricher is now covered, and 372 of
+the 395 previously unscored or surviving mutants are killed. The 23 remaining
 survivors are classified below. None of them changes a pinned public
-outcome; they are recorded here instead of hidden or excluded.
+outcome; they are recorded here instead of hidden or excluded. The 13
+uncovered mutants left in the scope belong to `public_data` and are outside
+this wave's tickets.
 
 ## Intentional equivalents
 
