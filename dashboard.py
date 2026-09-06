@@ -242,6 +242,11 @@ def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> 
         invoice["delivery_method_label"] = billing_policy.DELIVERY_METHOD_LABELS.get(
             delivery_method, "Nicht angegeben"
         )
+        invoice["display_unit_price_rp"] = billing_policy.rate_rp_text(
+            policy_snapshot.get("internal_price_chf_per_kwh")
+            if isinstance(policy_snapshot, dict)
+            else None
+        )
         invoice["events"] = [
             {
                 **event,

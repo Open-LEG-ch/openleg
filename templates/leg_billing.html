@@ -57,7 +57,7 @@
         <h3 class="font-bold">{{ invoice.invoice_number }}</h3>
         <span class="text-sm font-semibold text-brand">{{ invoice.status_label }}</span>
       </div>
-      <p class="text-sm text-ink-muted mb-4">Teilnehmer: {{ invoice.participant_id }} · {{ invoice.display_gross_chf }} CHF · Zustellart: {{ invoice.delivery_method_label }}</p>
+      <p class="text-sm text-ink-muted mb-4">Teilnehmer: {{ invoice.participant_id }} · {{ invoice.display_gross_chf }} CHF · Interner Preis: {{ invoice.display_unit_price_rp }} · Zustellart: {{ invoice.delivery_method_label }}</p>
       {% if invoice.lifecycle_state == 'issued' and not invoice.delivery_job_status %}
       <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/deliver" class="mb-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

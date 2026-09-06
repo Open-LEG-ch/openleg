@@ -137,6 +137,7 @@ def test_admin_workspace_renders_every_lifecycle_control(
     base = {
         "participant_id": "member-building",
         "display_gross_chf": "12.00",
+        "display_unit_price_rp": "15.00 Rp./kWh",
         "delivery_method_label": "E-Mail",
         "events": [],
         "correction_candidates": [],
@@ -205,6 +206,8 @@ def test_admin_workspace_renders_every_lifecycle_control(
         "Stornieren",
         "Korrektur",
         "Zustellart",
+        "Interner Preis",
+        "15.00 Rp./kWh",
         "Audit-Verlauf",
     ):
         assert text in html
@@ -555,7 +558,10 @@ def test_workspace_loads_complete_audit_history(monkeypatch):
                     "invoice_number": "LEG-2026-000001",
                     "gross_chf": 12,
                     "lifecycle_state": "delivered",
-                    "policy_snapshot": {"delivery_method": "email"},
+                    "policy_snapshot": {
+                        "delivery_method": "email",
+                        "internal_price_chf_per_kwh": "0.150000",
+                    },
                 }
             ]
         ),
@@ -580,6 +586,41 @@ def test_workspace_loads_complete_audit_history(monkeypatch):
     assert view["invoices"][0]["events"][0]["previous_status_label"] == "Freigegeben"
     assert view["invoices"][0]["events"][0]["new_status_label"] == "Zugestellt"
     assert view["invoices"][0]["delivery_method_label"] == "E-Mail"
+    assert view["invoices"][0]["display_unit_price_rp"] == "15.00 Rp./kWh"
+
+
+def test_workspace_shows_nicht_angegangen_when_the_frozen_price_is_missing(monkeypatch):
+    """An invoice whose frozen snapshot carries no readable internal price is
+    shown as "Nicht angegeben", never as an invented tariff."""
+    import dashboard
+
+    _confirmed_admin(monkeypatch, dashboard)
+    monkeypatch.setattr(
+        dashboard.db, "list_community_billing_periods", MagicMock(return_value=[])
+    )
+    monkeypatch.setattr(
+        dashboard.db,
+        "list_community_invoices",
+        MagicMock(
+            return_value=[
+                {
+                    "id": 43,
+                    "participant_id": "member-building",
+                    "invoice_number": "LEG-2026-000002",
+                    "gross_chf": 12,
+                    "lifecycle_state": "issued",
+                    "policy_snapshot": {"delivery_method": "email"},
+                }
+            ]
+        ),
+    )
+    monkeypatch.setattr(
+        dashboard.db, "list_community_invoice_events", MagicMock(return_value=[])
+    )
+
+    view = dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
+
+    assert view["invoices"][0]["display_unit_price_rp"] == "Nicht angegeben"
 
 
 class _LifecycleCursor:

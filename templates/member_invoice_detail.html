@@ -37,6 +37,9 @@
       <div><dt class="font-semibold text-ink inline">Rechnungsdatum:</dt> <dd class="inline">{{ invoice.issue_date }}</dd></div>
       <div><dt class="font-semibold text-ink inline">Fällig am:</dt> <dd class="inline">{{ invoice.due_date }}</dd></div>
       <div><dt class="font-semibold text-ink inline">Mehrwertsteuer:</dt> <dd class="inline">{{ invoice.vat_mode_label }} ({{ invoice.display_vat_rate_pct }}%)</dd></div>
+      <div><dt class="font-semibold text-ink inline">Interner Preis:</dt> <dd class="inline">{{ invoice.display_policy_unit_price_rp }} Rp./kWh</dd></div>
+      {% if invoice.display_grid_fee_rp %}<div><dt class="font-semibold text-ink inline">Netzentgelt:</dt> <dd class="inline">{{ invoice.display_grid_fee_rp }} Rp./kWh</dd></div>{% endif %}
+      <div><dt class="font-semibold text-ink inline">Zahlungsfrist:</dt> <dd class="inline">{{ invoice.policy_payment_days }} Tage</dd></div>
       <div><dt class="font-semibold text-ink inline">Status:</dt> <dd class="inline">{{ invoice.status_label }}</dd></div>
       {% if invoice.corrects_invoice_number %}<div><dt class="font-semibold text-ink inline">Korrektur zu:</dt> <dd class="inline">{{ invoice.corrects_invoice_number }}</dd></div>{% endif %}
       {% if invoice.corrected_by_invoice_number %}<div><dt class="font-semibold text-ink inline">Korrigiert durch:</dt> <dd class="inline">{{ invoice.corrected_by_invoice_number }}</dd></div>{% endif %}

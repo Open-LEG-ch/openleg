@@ -31,6 +31,7 @@ INVOICE_ROW = {
         "vat_mode": "standard",
         "vat_rate_pct": "7.700",
         "internal_price_chf_per_kwh": "0.150000",
+        "grid_fee_chf_per_kwh": "0.080000",
         "payment_days": 30,
     },
     "provenance_snapshot": {
@@ -73,6 +74,9 @@ DETAIL_VIEW = {
     "due_date": "2026-09-04",
     "vat_mode_label": "Mehrwertsteuer ausweisen",
     "display_vat_rate_pct": "7.70",
+    "display_policy_unit_price_rp": "15.00",
+    "display_grid_fee_rp": "8.00",
+    "policy_payment_days": 30,
     "display_net_chf": "12.08",
     "display_vat_chf": "0.93",
     "display_gross_chf": "13.01",
@@ -164,6 +168,49 @@ def test_member_invoice_detail_uses_frozen_community_id_for_legacy_invoice(
     )
 
 
+def test_member_invoice_detail_view_carries_the_frozen_policy_figures(monkeypatch):
+    """The detail view restates what the frozen policy_snapshot priced: the
+    internal tariff, the grid fee, and the payment term, so the invoice is
+    traceable without consulting the policy page."""
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=dict(INVOICE_ROW)),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["display_policy_unit_price_rp"] == "15.00"
+    assert view["display_grid_fee_rp"] == "8.00"
+    assert view["policy_payment_days"] == 30
+
+
+def test_member_invoice_detail_view_tolerates_legacy_snapshot_without_grid_fee(
+    monkeypatch,
+):
+    """Invoices frozen before the grid fee became a persisted policy field
+    keep rendering: the Netzentgelt line is omitted, never invented."""
+    import copy
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    del row["policy_snapshot"]["grid_fee_chf_per_kwh"]
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["display_policy_unit_price_rp"] == "15.00"
+    assert view["display_grid_fee_rp"] is None
+    assert view["policy_payment_days"] == 30
+
+
 def test_every_participant_snapshot_from_approval_is_readable():
     """A period-wide rounding adjustment belongs only to its selected
     participant; it must not invalidate the other issued invoices."""
@@ -241,6 +288,13 @@ def test_member_invoice_pdf_bytes_renders_swiss_german_html_from_the_detail_dict
     assert "2026-09-04" in html
     assert "Mehrwertsteuer ausweisen" in html
     assert "7.70" in html
+    # The frozen policy summary restates the applied tariff on the PDF too.
+    assert "Interner Preis" in html
+    assert "15.00 Rp./kWh" in html
+    assert "Netzentgelt" in html
+    assert "8.00 Rp./kWh" in html
+    assert "Zahlungsfrist" in html
+    assert "30 Tage" in html
     assert "Verbrauchskosten" in html
     assert "18.08" in html
     assert "Produzentengutschrift" in html
@@ -254,6 +308,24 @@ def test_member_invoice_pdf_bytes_renders_swiss_german_html_from_the_detail_dict
     assert "ß" not in html
     assert "–" not in html, "no en dash in generated invoice PDF HTML"
     assert "—" not in html, "no em dash in generated invoice PDF HTML"
+
+
+def test_member_invoice_pdf_omits_grid_fee_for_legacy_snapshots():
+    """A legacy snapshot without a frozen grid fee prints no Netzentgelt line
+    instead of an invented placeholder price."""
+    import dashboard
+    import document_generator
+
+    legacy_view = {**DETAIL_VIEW, "display_grid_fee_rp": None}
+
+    with patch.object(
+        document_generator, "_render_pdf", return_value=b"%PDF-fake"
+    ) as render_pdf:
+        dashboard.member_invoice_pdf_bytes(legacy_view)
+
+    html = render_pdf.call_args.args[0]
+    assert "Netzentgelt" not in html
+    assert "Interner Preis" in html
 
 
 def test_member_invoice_pdf_bytes_escapes_hostile_snapshot_strings():
@@ -772,6 +844,32 @@ def test_detail_view_rejects_negative_frozen_tariff_price(monkeypatch):
     )
 
 
+@pytest.mark.parametrize("grid_fee", ["NaN", "-0.080000", "not-a-number"])
+def test_detail_view_fails_closed_on_corrupted_frozen_grid_fee(monkeypatch, grid_fee):
+    """A frozen grid fee that is not a finite, non-negative number must fail
+    closed with the stable grid-fee error text, never render as a tariff."""
+    import member_invoices
+
+    corrupted = _corrupt_invoice_row(
+        policy_snapshot={
+            **INVOICE_ROW["policy_snapshot"],
+            "grid_fee_chf_per_kwh": grid_fee,
+        }
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=corrupted),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as excinfo:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(excinfo.value) == (
+        "Die Richtlinien-Kopie hat ein ungültiges Netzentgelt."
+    )
+
+
 @pytest.mark.parametrize(
     "field,value", [("id", 0), ("provenance_snapshot", {"period_start": "not-a-date"})]
 )
@@ -878,6 +976,29 @@ def test_dashboard_invoice_detail_renders_own_invoice_privately(
     assert "LEG-2026-000001" in body
     assert "LEG Musterweg" in body
     assert "13.01" in body
+
+
+def test_dashboard_invoice_detail_renders_the_applied_policy_summary(
+    dashboard_app_module,  # noqa: F811
+    monkeypatch,
+):
+    """The detail page restates the frozen policy figures with the same
+    labels the policy page uses, so the price is traceable on both."""
+    _patch_invoice_detail(
+        dashboard_app_module, monkeypatch, view_by_owner={42: DETAIL_VIEW}
+    )
+    client = dashboard_app_module.web.test_client()
+    _set_session(client)
+
+    response = client.get("/dashboard/invoices/42")
+
+    body = response.get_data(as_text=True)
+    assert "Interner Preis" in body
+    assert "15.00 Rp./kWh" in body
+    assert "Netzentgelt" in body
+    assert "8.00 Rp./kWh" in body
+    assert "Zahlungsfrist" in body
+    assert "30 Tage" in body
 
 
 def test_dashboard_invoice_pdf_requires_session(dashboard_app_module):  # noqa: F811
