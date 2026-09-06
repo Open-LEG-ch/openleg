@@ -142,6 +142,194 @@ def test_live_address_suggestions_skip_short_queries(monkeypatch):
     request.assert_not_called()
 
 
+def _suggest_response(results):
+    response = MagicMock()
+    response.json.return_value = {"results": results}
+    return response
+
+
+def test_live_address_suggestions_take_their_default_limit_from_the_call_site(
+    monkeypatch,
+):
+    request = MagicMock(return_value=_suggest_response([]))
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_address_suggestions("Mellingen") == []
+
+    _, kwargs = request.call_args
+    assert kwargs["params"]["limit"] == 30, "10 requested suggestions * 3 fetch"
+
+
+def test_live_address_suggestions_accept_a_two_character_query(monkeypatch):
+    request = MagicMock(return_value=_suggest_response([]))
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_address_suggestions("Me") == []
+    request.assert_called_once()
+
+
+def test_live_address_suggestions_return_empty_for_a_payload_without_results(
+    monkeypatch,
+):
+    response = MagicMock()
+    response.json.return_value = {}
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+
+    assert data_enricher.get_address_suggestions("Mellingen") == []
+
+
+def test_live_address_suggestions_drop_results_without_attrs(monkeypatch):
+    response = _suggest_response([{"no_attrs": True}])
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_address_suggestions("Mellingen") == []
+
+
+def test_live_address_suggestions_drop_labelless_results_inside_the_range(
+    monkeypatch,
+):
+    response = _suggest_response([{"attrs": {"plz": 5507}}])
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert (
+        data_enricher.get_address_suggestions(
+            "Mellingen", plz_ranges=[[5000, 5999]]
+        )
+        == []
+    )
+
+
+def test_live_address_suggestions_keep_an_integer_plz_even_when_the_label_has_no_digits(
+    monkeypatch,
+):
+    response = _suggest_response(
+        [{"attrs": {"label": "Bahnhofstrasse 1", "plz": 5507, "lat": 47.4, "lon": 8.3}}]
+    )
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_address_suggestions(
+        "Mellingen", plz_ranges=[[5000, 5999]]
+    ) == [{"label": "Bahnhofstrasse 1", "lat": 47.4, "lon": 8.3, "plz": 5507}]
+
+
+def test_live_address_suggestions_read_the_plz_from_the_label_without_an_attrs_plz(
+    monkeypatch,
+):
+    response = _suggest_response(
+        [{"attrs": {"label": "Dorfstrasse 2, 5507 Mellingen", "lat": 47.5, "lon": 8.4}}]
+    )
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_address_suggestions(
+        "Mellingen", plz_ranges=[[5000, 5999]]
+    ) == [{"label": "Dorfstrasse 2, 5507 Mellingen", "lat": 47.5, "lon": 8.4, "plz": 5507}]
+
+
+def test_live_address_suggestions_default_to_the_zurich_plz_window(monkeypatch):
+    request = MagicMock(
+        return_value=_suggest_response(
+            [
+                {"attrs": {"label": "A, 7999 X", "plz": 7999, "lat": 1, "lon": 2}},
+                {"attrs": {"label": "B, 8000 Zuerich", "plz": 8000, "lat": 3, "lon": 4}},
+                {"attrs": {"label": "C, 8105 Zuerich", "plz": 8105, "lat": 5, "lon": 6}},
+                {"attrs": {"label": "D, 8999 Zuerich", "plz": 8999, "lat": 7, "lon": 8}},
+                {"attrs": {"label": "E, 9000 Rapperswil", "plz": 9000, "lat": 9, "lon": 10}},
+            ]
+        )
+    )
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    suggestions = data_enricher.get_address_suggestions("Zuerich")
+
+    assert [row["plz"] for row in suggestions] == [8000, 8105, 8999]
+
+
+def test_live_address_suggestions_keep_searching_after_an_excluded_result(monkeypatch):
+    response = _suggest_response(
+        [
+            {"attrs": {"label": "Outside 4000", "plz": 4000, "lat": 1, "lon": 2}},
+            {"attrs": {"label": "Inside 5507", "plz": 5507, "lat": 3, "lon": 4}},
+        ]
+    )
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    suggestions = data_enricher.get_address_suggestions(
+        "Mellingen", plz_ranges=[[5000, 5999]]
+    )
+
+    assert [row["plz"] for row in suggestions] == [5507]
+
+
+def test_live_address_suggestions_keep_searching_after_label_fallback_exclusions(
+    monkeypatch,
+):
+    response = _suggest_response(
+        [
+            # attrs plz is not numeric, label has no standalone four digit number
+            {"attrs": {"label": "Bahnhofstrasse 1", "plz": "invalid", "lat": 1, "lon": 2}},
+            # no attrs plz, label has no standalone four digit number
+            {"attrs": {"label": "Dorfstrasse 2", "lat": 3, "lon": 4}},
+            # no attrs plz, label has a four digit number outside the range
+            {"attrs": {"label": "Weg 9999 X", "lat": 5, "lon": 6}},
+            # attrs plz not numeric, label has a four digit number outside the range
+            {"attrs": {"label": "Aare 9999 Y", "plz": "invalid", "lat": 7, "lon": 8}},
+            {"attrs": {"label": "Inside 5507", "plz": 5507, "lat": 8, "lon": 9}},
+        ]
+    )
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    suggestions = data_enricher.get_address_suggestions(
+        "Mellingen", plz_ranges=[[5000, 5999]]
+    )
+
+    assert [row["plz"] for row in suggestions] == [5507]
+
+
+def test_live_address_suggestions_report_the_upstream_failure_to_the_operator(
+    monkeypatch, capsys
+):
+    def fail(*_args, **_kwargs):
+        raise RuntimeError("upstream down")
+
+    monkeypatch.setattr(data_enricher.requests, "get", fail)
+
+    assert data_enricher.get_address_suggestions("Mellingen") is None
+
+    operator_output = capsys.readouterr().out
+    assert "GEO FEHLER" in operator_output
+    assert "upstream down" in operator_output
+
+
+def test_live_address_suggestions_stop_at_the_requested_limit(monkeypatch):
+    response = _suggest_response(
+        [
+            {"attrs": {"label": "A, 5507", "plz": 5507, "lat": 1, "lon": 2}},
+            {"attrs": {"label": "B, 5508", "plz": 5508, "lat": 3, "lon": 4}},
+        ]
+    )
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    suggestions = data_enricher.get_address_suggestions(
+        "Mellingen", limit=1, plz_ranges=[[5000, 5999]]
+    )
+
+    assert [row["plz"] for row in suggestions] == [5507]
+
+
 def test_resolve_address_suggestions_classifies_short_query_as_malformed():
     outcome = data_enricher.resolve_address_suggestions(
         "M", limit=10, plz_ranges=[[5000, 5999]]
