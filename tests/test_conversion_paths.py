@@ -803,3 +803,418 @@ def test_mock_energy_profile_announces_the_mock_run_to_the_operator(capsys):
     assert "Starte MOCK-Analyse" in operator_output
     assert "Analyse abgeschlossen" in operator_output
     assert "Testweg 5" in operator_output
+
+
+# ==== Real geocoding and energy seams (#508) ====
+
+
+def test_consumption_estimate_per_building_type():
+    assert data_enricher.estimate_consumption_kwh("EFH", 9, 200, (15.0, 1.2)) == 5400.0
+    assert data_enricher.estimate_consumption_kwh("MFH", 8, 200, (15.0, 1.2)) == 24000.0
+    assert data_enricher.estimate_consumption_kwh("Gewerbe", 9, 200, (15.0, 0.9)) == 3600.0
+
+
+def test_consumption_estimate_scales_with_the_purchasing_power_index():
+    low = data_enricher.estimate_consumption_kwh("EFH", 9, 200, (15.0, 0.9))
+    high = data_enricher.estimate_consumption_kwh("EFH", 9, 200, (15.0, 1.2))
+
+    assert low == 4500 * 0.9
+    assert high == 4500 * 1.2
+
+
+def test_ev_estimate_charges_when_the_draw_is_below_the_probability(monkeypatch):
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.09))
+
+    assert data_enricher.estimate_ev_kwh("EFH", (10.0, 1.0)) == 2500.0
+
+
+def test_ev_estimate_charges_never_outside_single_family_homes(monkeypatch):
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.0))
+
+    assert data_enricher.estimate_ev_kwh("MFH", (15.0, 1.2)) == 0.0
+    assert data_enricher.estimate_ev_kwh("Gewerbe", (15.0, 1.2)) == 0.0
+
+
+def test_ev_estimate_skips_the_charge_when_the_draw_matches_the_probability(
+    monkeypatch,
+):
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.1))
+
+    assert data_enricher.estimate_ev_kwh("EFH", (10.0, 1.0)) == 0.0
+
+
+def test_ev_estimate_announces_its_chance_in_percent(monkeypatch, capsys):
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.09))
+
+    assert data_enricher.estimate_ev_kwh("EFH", (10.0, 1.0)) == 2500.0
+
+    operator_output = capsys.readouterr().out
+    assert "EV-Bedarf: Ja" in operator_output
+    assert "Chance: 10.0%" in operator_output
+
+
+def test_ev_estimate_applies_the_income_index_to_the_chance(monkeypatch, capsys):
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.05))
+
+    assert data_enricher.estimate_ev_kwh("EFH", (10.0, 0.8)) == 2500.0
+
+    assert "Chance: 8.0%" in capsys.readouterr().out
+
+
+def test_ev_estimate_announces_the_missed_charge_with_its_chance(monkeypatch, capsys):
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.5))
+
+    assert data_enricher.estimate_ev_kwh("EFH", (10.0, 1.0)) == 0.0
+
+    operator_output = capsys.readouterr().out
+    assert "EV-Bedarf: Nein" in operator_output
+    assert "Chance: 10.0%" in operator_output
+
+
+def _geo_response(payload):
+    response = MagicMock()
+    response.json.return_value = {"results": [
+        {"attrs": {"lat": 47.5, "lon": 8.3, "plz": 5400, "label": "Bahnhofstrasse 1, 5400 Baden"}}
+    ]}
+    return response
+
+
+def test_coordinates_pin_the_geoadmin_query(monkeypatch):
+    request = MagicMock(return_value=_geo_response({}))
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
+        47.5,
+        8.3,
+        5400,
+    )
+
+    args, kwargs = request.call_args
+    assert args[0] == data_enricher.GEO_API_URL
+    assert kwargs["params"] == {
+        "searchText": "Bahnhofstrasse 1 Baden",
+        "type": "locations",
+        "limit": 1,
+    }
+
+
+def test_coordinates_read_the_plz_from_the_label_without_an_attrs_plz(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {"results": [
+        {"attrs": {"lat": 47.5, "lon": 8.3, "label": "Bahnhofstrasse 1, 5400 Baden"}}
+    ]}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
+        47.5,
+        8.3,
+        5400,
+    )
+
+
+def test_coordinates_stay_none_without_any_plz(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {"results": [
+        {"attrs": {"lat": 47.5, "lon": 8.3, "label": "Bahnhofstrasse 1"}}
+    ]}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
+        47.5,
+        8.3,
+        None,
+    )
+
+
+def test_coordinates_report_nothing_when_the_search_finds_nothing(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {"results": []}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_coordinates_from_address("Nirgendwo 1") == (
+        None,
+        None,
+        None,
+    )
+
+
+def test_coordinates_report_nothing_when_the_upstream_fails(monkeypatch, capsys):
+    def fail(*_args, **_kwargs):
+        raise RuntimeError("upstream down")
+
+    monkeypatch.setattr(data_enricher.requests, "get", fail)
+
+    assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
+        None,
+        None,
+        None,
+    )
+
+    operator_output = capsys.readouterr().out
+    assert "GEO FEHLER" in operator_output
+    assert "upstream down" in operator_output
+
+
+def test_pv_potential_queries_the_sonnendach_layer(monkeypatch):
+    request = MagicMock()
+    response = MagicMock()
+    response.json.return_value = {"results": [{"attributes": {"strom_a": 9500}}]}
+    request.return_value = response
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (9500, 9.5)
+
+    args, kwargs = request.call_args
+    assert args[0] == f"{data_enricher.SOLAR_API_URL}/identify"
+    assert kwargs["params"] == {
+        "geometry": "8.3,47.5",
+        "geometryType": "esriGeometryPoint",
+        "mapExtent": "-1.6999999999999993,37.5,18.3,57.5",
+        "imageDisplay": "1,1,1",
+        "tolerance": 2,
+        "returnGeometry": "false",
+        "layers": "all:ch.bfe.sonnendach",
+    }
+
+
+def test_pv_potential_reports_zero_without_a_building(monkeypatch, capsys):
+    response = MagicMock()
+    response.json.return_value = {"results": []}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
+    assert "Kein Gebäude" in capsys.readouterr().out
+
+
+def test_pv_potential_reports_zero_without_a_production_value(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {"results": [{"attributes": {}}]}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
+
+
+def test_pv_potential_reports_zero_when_the_upstream_fails(monkeypatch, capsys):
+    def fail(*_args, **_kwargs):
+        raise RuntimeError("upstream down")
+
+    monkeypatch.setattr(data_enricher.requests, "get", fail)
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
+    assert "GEO FEHLER" in capsys.readouterr().out
+
+
+def test_profile_walks_coordinates_pv_statistics_and_profiles(monkeypatch, capsys):
+    captured_calls = []
+    captured_profiles = {}
+    marker = ("generated", "profiles")
+
+    def fake_get(url, params=None):
+        captured_calls.append(url)
+        if url == data_enricher.GEO_API_URL:
+            return _geo_response({})
+        response = MagicMock()
+        response.json.return_value = {"results": [{"attributes": {"strom_a": 9500}}]}
+        return response
+
+    def fake_profiles(annual_consumption_kwh, potential_pv_kwp):
+        captured_profiles["annual"] = annual_consumption_kwh
+        captured_profiles["pv"] = potential_pv_kwp
+        return marker
+
+    monkeypatch.setattr(data_enricher.requests, "get", fake_get)
+    monkeypatch.setattr(
+        data_enricher.ml_models, "generate_mock_profiles", fake_profiles
+    )
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.0))
+
+    estimates, profiles = data_enricher.get_energy_profile_for_address(
+        "Mellingerstrasse 12, <b>5400</b> Baden"
+    )
+
+    assert captured_calls == [data_enricher.GEO_API_URL, f"{data_enricher.SOLAR_API_URL}/identify"]
+    assert estimates == {
+        "building_id": "a37de1c8ca",
+        "address": "Mellingerstrasse 12, 5400 Baden",
+        "plz": 5400,
+        "lat": 47.5,
+        "lon": 8.3,
+        "building_type": "MFH",
+        "annual_consumption_kwh": 24000.0,
+        "potential_pv_kwp": 9.5,
+    }
+    assert captured_profiles["annual"] == 24000.0
+    assert captured_profiles["pv"] == 9.5
+    assert profiles is marker
+    flow_output = capsys.readouterr().out
+    assert "Starte ECHTE Analyse" in flow_output
+    assert "Analyse abgeschlossen" in flow_output
+    assert "Mellingerstrasse 12, 5400 Baden" in flow_output
+
+
+def test_profile_walks_a_single_family_home_with_an_ev_charge(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {"attrs": {"lat": 47.5, "lon": 8.4, "plz": 5430, "label": "Dorfstrasse 2, 5430 Mellingen"}}
+        ]
+    }
+
+    def fake_get(url, params=None):
+        if url == data_enricher.GEO_API_URL:
+            return response
+        solar = MagicMock()
+        solar.json.return_value = {"results": [{"attributes": {"strom_a": 7800}}]}
+        return solar
+
+    marker = ("generated", "profiles")
+    captured = {}
+    monkeypatch.setattr(data_enricher.requests, "get", fake_get)
+    monkeypatch.setattr(
+        data_enricher.ml_models,
+        "generate_mock_profiles",
+        lambda annual_consumption_kwh, potential_pv_kwp: captured.update(
+            annual=annual_consumption_kwh, pv=potential_pv_kwp
+        )
+        or marker,
+    )
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.05))
+
+    estimates, profiles = data_enricher.get_energy_profile_for_address(
+        "Dorfstrasse 2, 5430 Mellingen"
+    )
+
+    assert estimates["building_type"] == "EFH"
+    assert estimates["annual_consumption_kwh"] == 7000.0
+    assert estimates["potential_pv_kwp"] == 7.8
+    assert captured["annual"] == 7000.0
+    assert captured["pv"] == 7.8
+    assert profiles is marker
+
+
+def test_profile_reports_nothing_without_coordinates(monkeypatch, capsys):
+    response = MagicMock()
+    response.json.return_value = {"results": []}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+    profiles_builder = MagicMock()
+    monkeypatch.setattr(
+        data_enricher.ml_models, "generate_mock_profiles", profiles_builder
+    )
+
+    assert data_enricher.get_energy_profile_for_address("Nirgendwo 1") == (None, None)
+    assert data_enricher.requests.get.call_count == 1
+    profiles_builder.assert_not_called()
+    assert "Keine Koordinaten gefunden" in capsys.readouterr().out
+
+
+def test_profile_swallows_an_unclosed_markup_opening(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {"results": []}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+    captured = {}
+
+    def fake_get(url, params=None):
+        captured["search"] = params["searchText"]
+        return response
+
+    monkeypatch.setattr(data_enricher.requests, "get", fake_get)
+
+    data_enricher.get_energy_profile_for_address("Weg ohne Ende <x rest")
+
+    assert captured["search"] == "Weg ohne Ende"
+
+
+def test_coordinates_announce_the_search_to_the_operator(monkeypatch, capsys):
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=_geo_response({}))
+    )
+
+    data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden")
+
+    operator_output = capsys.readouterr().out
+    assert "Suche Koordinaten" in operator_output
+    assert "Bahnhofstrasse 1 Baden" in operator_output
+
+
+def test_coordinates_miss_is_announced_when_the_response_has_no_results(monkeypatch, capsys):
+    response = MagicMock()
+    response.json.return_value = {}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_coordinates_from_address("Nirgendwo 1") == (None, None, None)
+
+    assert "Adresse nicht gefunden." in capsys.readouterr().out
+
+
+def test_coordinates_use_the_attrs_plz_without_label_fallback(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {"results": [
+        {"attrs": {"lat": 47.5, "lon": 8.3, "plz": 5400, "label": "Bahnhofstrasse 1"}}
+    ]}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
+        47.5,
+        8.3,
+        5400,
+    )
+
+
+def test_coordinates_survive_attrs_without_label_and_plz(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {"results": [{"attrs": {"lat": 47.5, "lon": 8.3}}]}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
+        47.5,
+        8.3,
+        None,
+    )
+
+
+def test_pv_potential_announces_the_search(monkeypatch, capsys):
+    response = MagicMock()
+    response.json.return_value = {"results": [{"attributes": {"strom_a": 9500}}]}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    data_enricher.get_pv_potential_from_coords(47.5, 8.3)
+
+    operator_output = capsys.readouterr().out
+    assert "Suche PV-Potenzial bei (47.5, 8.3)" in operator_output
+    assert "GEO OK" in operator_output
+
+
+def test_pv_potential_announces_a_clean_zero_without_a_production_value(monkeypatch, capsys):
+    response = MagicMock()
+    response.json.return_value = {"results": [{"attributes": {}}]}
+    monkeypatch.setattr(
+        data_enricher.requests, "get", MagicMock(return_value=response)
+    )
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
+
+    operator_output = capsys.readouterr().out
+    assert "GEO OK" in operator_output
+    assert "Produktion: 0" in operator_output
