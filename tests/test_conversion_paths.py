@@ -180,9 +180,7 @@ def test_live_address_suggestions_return_empty_for_a_payload_without_results(
 
 def test_live_address_suggestions_drop_results_without_attrs(monkeypatch):
     response = _suggest_response([{"no_attrs": True}])
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_address_suggestions("Mellingen") == []
 
@@ -191,14 +189,10 @@ def test_live_address_suggestions_drop_labelless_results_inside_the_range(
     monkeypatch,
 ):
     response = _suggest_response([{"attrs": {"plz": 5507}}])
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert (
-        data_enricher.get_address_suggestions(
-            "Mellingen", plz_ranges=[[5000, 5999]]
-        )
+        data_enricher.get_address_suggestions("Mellingen", plz_ranges=[[5000, 5999]])
         == []
     )
 
@@ -209,9 +203,7 @@ def test_live_address_suggestions_keep_an_integer_plz_even_when_the_label_has_no
     response = _suggest_response(
         [{"attrs": {"label": "Bahnhofstrasse 1", "plz": 5507, "lat": 47.4, "lon": 8.3}}]
     )
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_address_suggestions(
         "Mellingen", plz_ranges=[[5000, 5999]]
@@ -224,13 +216,13 @@ def test_live_address_suggestions_read_the_plz_from_the_label_without_an_attrs_p
     response = _suggest_response(
         [{"attrs": {"label": "Dorfstrasse 2, 5507 Mellingen", "lat": 47.5, "lon": 8.4}}]
     )
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_address_suggestions(
         "Mellingen", plz_ranges=[[5000, 5999]]
-    ) == [{"label": "Dorfstrasse 2, 5507 Mellingen", "lat": 47.5, "lon": 8.4, "plz": 5507}]
+    ) == [
+        {"label": "Dorfstrasse 2, 5507 Mellingen", "lat": 47.5, "lon": 8.4, "plz": 5507}
+    ]
 
 
 def test_live_address_suggestions_default_to_the_zurich_plz_window(monkeypatch):
@@ -238,10 +230,38 @@ def test_live_address_suggestions_default_to_the_zurich_plz_window(monkeypatch):
         return_value=_suggest_response(
             [
                 {"attrs": {"label": "A, 7999 X", "plz": 7999, "lat": 1, "lon": 2}},
-                {"attrs": {"label": "B, 8000 Zuerich", "plz": 8000, "lat": 3, "lon": 4}},
-                {"attrs": {"label": "C, 8105 Zuerich", "plz": 8105, "lat": 5, "lon": 6}},
-                {"attrs": {"label": "D, 8999 Zuerich", "plz": 8999, "lat": 7, "lon": 8}},
-                {"attrs": {"label": "E, 9000 Rapperswil", "plz": 9000, "lat": 9, "lon": 10}},
+                {
+                    "attrs": {
+                        "label": "B, 8000 Zuerich",
+                        "plz": 8000,
+                        "lat": 3,
+                        "lon": 4,
+                    }
+                },
+                {
+                    "attrs": {
+                        "label": "C, 8105 Zuerich",
+                        "plz": 8105,
+                        "lat": 5,
+                        "lon": 6,
+                    }
+                },
+                {
+                    "attrs": {
+                        "label": "D, 8999 Zuerich",
+                        "plz": 8999,
+                        "lat": 7,
+                        "lon": 8,
+                    }
+                },
+                {
+                    "attrs": {
+                        "label": "E, 9000 Rapperswil",
+                        "plz": 9000,
+                        "lat": 9,
+                        "lon": 10,
+                    }
+                },
             ]
         )
     )
@@ -259,9 +279,7 @@ def test_live_address_suggestions_keep_searching_after_an_excluded_result(monkey
             {"attrs": {"label": "Inside 5507", "plz": 5507, "lat": 3, "lon": 4}},
         ]
     )
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     suggestions = data_enricher.get_address_suggestions(
         "Mellingen", plz_ranges=[[5000, 5999]]
@@ -276,7 +294,14 @@ def test_live_address_suggestions_keep_searching_after_label_fallback_exclusions
     response = _suggest_response(
         [
             # attrs plz is not numeric, label has no standalone four digit number
-            {"attrs": {"label": "Bahnhofstrasse 1", "plz": "invalid", "lat": 1, "lon": 2}},
+            {
+                "attrs": {
+                    "label": "Bahnhofstrasse 1",
+                    "plz": "invalid",
+                    "lat": 1,
+                    "lon": 2,
+                }
+            },
             # no attrs plz, label has no standalone four digit number
             {"attrs": {"label": "Dorfstrasse 2", "lat": 3, "lon": 4}},
             # no attrs plz, label has a four digit number outside the range
@@ -286,9 +311,7 @@ def test_live_address_suggestions_keep_searching_after_label_fallback_exclusions
             {"attrs": {"label": "Inside 5507", "plz": 5507, "lat": 8, "lon": 9}},
         ]
     )
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     suggestions = data_enricher.get_address_suggestions(
         "Mellingen", plz_ranges=[[5000, 5999]]
@@ -319,9 +342,7 @@ def test_live_address_suggestions_stop_at_the_requested_limit(monkeypatch):
             {"attrs": {"label": "B, 5508", "plz": 5508, "lat": 3, "lon": 4}},
         ]
     )
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     suggestions = data_enricher.get_address_suggestions(
         "Mellingen", limit=1, plz_ranges=[[5000, 5999]]
@@ -751,9 +772,7 @@ def test_mock_energy_profile_builds_profiles_from_its_own_estimates(monkeypatch)
         data_enricher.ml_models, "generate_mock_profiles", fake_profiles
     )
 
-    estimates, profiles = data_enricher.get_mock_energy_profile_for_address(
-        "Testweg 5"
-    )
+    estimates, profiles = data_enricher.get_mock_energy_profile_for_address("Testweg 5")
 
     assert captured["annual"] == estimates["annual_consumption_kwh"]
     assert captured["pv"] == estimates["potential_pv_kwp"]
@@ -811,7 +830,9 @@ def test_mock_energy_profile_announces_the_mock_run_to_the_operator(capsys):
 def test_consumption_estimate_per_building_type():
     assert data_enricher.estimate_consumption_kwh("EFH", 9, 200, (15.0, 1.2)) == 5400.0
     assert data_enricher.estimate_consumption_kwh("MFH", 8, 200, (15.0, 1.2)) == 24000.0
-    assert data_enricher.estimate_consumption_kwh("Gewerbe", 9, 200, (15.0, 0.9)) == 3600.0
+    assert (
+        data_enricher.estimate_consumption_kwh("Gewerbe", 9, 200, (15.0, 0.9)) == 3600.0
+    )
 
 
 def test_consumption_estimate_scales_with_the_purchasing_power_index():
@@ -873,9 +894,18 @@ def test_ev_estimate_announces_the_missed_charge_with_its_chance(monkeypatch, ca
 
 def _geo_response(payload):
     response = MagicMock()
-    response.json.return_value = {"results": [
-        {"attrs": {"lat": 47.5, "lon": 8.3, "plz": 5400, "label": "Bahnhofstrasse 1, 5400 Baden"}}
-    ]}
+    response.json.return_value = {
+        "results": [
+            {
+                "attrs": {
+                    "lat": 47.5,
+                    "lon": 8.3,
+                    "plz": 5400,
+                    "label": "Bahnhofstrasse 1, 5400 Baden",
+                }
+            }
+        ]
+    }
     return response
 
 
@@ -900,12 +930,18 @@ def test_coordinates_pin_the_geoadmin_query(monkeypatch):
 
 def test_coordinates_read_the_plz_from_the_label_without_an_attrs_plz(monkeypatch):
     response = MagicMock()
-    response.json.return_value = {"results": [
-        {"attrs": {"lat": 47.5, "lon": 8.3, "label": "Bahnhofstrasse 1, 5400 Baden"}}
-    ]}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    response.json.return_value = {
+        "results": [
+            {
+                "attrs": {
+                    "lat": 47.5,
+                    "lon": 8.3,
+                    "label": "Bahnhofstrasse 1, 5400 Baden",
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
         47.5,
@@ -916,12 +952,10 @@ def test_coordinates_read_the_plz_from_the_label_without_an_attrs_plz(monkeypatc
 
 def test_coordinates_stay_none_without_any_plz(monkeypatch):
     response = MagicMock()
-    response.json.return_value = {"results": [
-        {"attrs": {"lat": 47.5, "lon": 8.3, "label": "Bahnhofstrasse 1"}}
-    ]}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    response.json.return_value = {
+        "results": [{"attrs": {"lat": 47.5, "lon": 8.3, "label": "Bahnhofstrasse 1"}}]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
         47.5,
@@ -933,9 +967,7 @@ def test_coordinates_stay_none_without_any_plz(monkeypatch):
 def test_coordinates_report_nothing_when_the_search_finds_nothing(monkeypatch):
     response = MagicMock()
     response.json.return_value = {"results": []}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_coordinates_from_address("Nirgendwo 1") == (
         None,
@@ -986,9 +1018,7 @@ def test_pv_potential_queries_the_sonnendach_layer(monkeypatch):
 def test_pv_potential_reports_zero_without_a_building(monkeypatch, capsys):
     response = MagicMock()
     response.json.return_value = {"results": []}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
     assert "Kein Gebäude" in capsys.readouterr().out
@@ -997,9 +1027,7 @@ def test_pv_potential_reports_zero_without_a_building(monkeypatch, capsys):
 def test_pv_potential_reports_zero_without_a_production_value(monkeypatch):
     response = MagicMock()
     response.json.return_value = {"results": [{"attributes": {}}]}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
 
@@ -1042,7 +1070,10 @@ def test_profile_walks_coordinates_pv_statistics_and_profiles(monkeypatch, capsy
         "Mellingerstrasse 12, <b>5400</b> Baden"
     )
 
-    assert captured_calls == [data_enricher.GEO_API_URL, f"{data_enricher.SOLAR_API_URL}/identify"]
+    assert captured_calls == [
+        data_enricher.GEO_API_URL,
+        f"{data_enricher.SOLAR_API_URL}/identify",
+    ]
     assert estimates == {
         "building_id": "a37de1c8ca",
         "address": "Mellingerstrasse 12, 5400 Baden",
@@ -1066,7 +1097,14 @@ def test_profile_walks_a_single_family_home_with_an_ev_charge(monkeypatch):
     response = MagicMock()
     response.json.return_value = {
         "results": [
-            {"attrs": {"lat": 47.5, "lon": 8.4, "plz": 5430, "label": "Dorfstrasse 2, 5430 Mellingen"}}
+            {
+                "attrs": {
+                    "lat": 47.5,
+                    "lon": 8.4,
+                    "plz": 5430,
+                    "label": "Dorfstrasse 2, 5430 Mellingen",
+                }
+            }
         ]
     }
 
@@ -1083,10 +1121,10 @@ def test_profile_walks_a_single_family_home_with_an_ev_charge(monkeypatch):
     monkeypatch.setattr(
         data_enricher.ml_models,
         "generate_mock_profiles",
-        lambda annual_consumption_kwh, potential_pv_kwp: captured.update(
-            annual=annual_consumption_kwh, pv=potential_pv_kwp
-        )
-        or marker,
+        lambda annual_consumption_kwh, potential_pv_kwp: (
+            captured.update(annual=annual_consumption_kwh, pv=potential_pv_kwp)
+            or marker
+        ),
     )
     monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.05))
 
@@ -1105,9 +1143,7 @@ def test_profile_walks_a_single_family_home_with_an_ev_charge(monkeypatch):
 def test_profile_reports_nothing_without_coordinates(monkeypatch, capsys):
     response = MagicMock()
     response.json.return_value = {"results": []}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
     profiles_builder = MagicMock()
     monkeypatch.setattr(
         data_enricher.ml_models, "generate_mock_profiles", profiles_builder
@@ -1122,9 +1158,7 @@ def test_profile_reports_nothing_without_coordinates(monkeypatch, capsys):
 def test_profile_swallows_an_unclosed_markup_opening(monkeypatch):
     response = MagicMock()
     response.json.return_value = {"results": []}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
     captured = {}
 
     def fake_get(url, params=None):
@@ -1150,26 +1184,37 @@ def test_coordinates_announce_the_search_to_the_operator(monkeypatch, capsys):
     assert "Bahnhofstrasse 1 Baden" in operator_output
 
 
-def test_coordinates_miss_is_announced_when_the_response_has_no_results(monkeypatch, capsys):
+def test_coordinates_miss_is_announced_when_the_response_has_no_results(
+    monkeypatch, capsys
+):
     response = MagicMock()
     response.json.return_value = {}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
-    assert data_enricher.get_coordinates_from_address("Nirgendwo 1") == (None, None, None)
+    assert data_enricher.get_coordinates_from_address("Nirgendwo 1") == (
+        None,
+        None,
+        None,
+    )
 
     assert "Adresse nicht gefunden." in capsys.readouterr().out
 
 
 def test_coordinates_use_the_attrs_plz_without_label_fallback(monkeypatch):
     response = MagicMock()
-    response.json.return_value = {"results": [
-        {"attrs": {"lat": 47.5, "lon": 8.3, "plz": 5400, "label": "Bahnhofstrasse 1"}}
-    ]}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    response.json.return_value = {
+        "results": [
+            {
+                "attrs": {
+                    "lat": 47.5,
+                    "lon": 8.3,
+                    "plz": 5400,
+                    "label": "Bahnhofstrasse 1",
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
         47.5,
@@ -1181,9 +1226,7 @@ def test_coordinates_use_the_attrs_plz_without_label_fallback(monkeypatch):
 def test_coordinates_survive_attrs_without_label_and_plz(monkeypatch):
     response = MagicMock()
     response.json.return_value = {"results": [{"attrs": {"lat": 47.5, "lon": 8.3}}]}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_coordinates_from_address("Bahnhofstrasse 1 Baden") == (
         47.5,
@@ -1195,9 +1238,7 @@ def test_coordinates_survive_attrs_without_label_and_plz(monkeypatch):
 def test_pv_potential_announces_the_search(monkeypatch, capsys):
     response = MagicMock()
     response.json.return_value = {"results": [{"attributes": {"strom_a": 9500}}]}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     data_enricher.get_pv_potential_from_coords(47.5, 8.3)
 
@@ -1206,12 +1247,12 @@ def test_pv_potential_announces_the_search(monkeypatch, capsys):
     assert "GEO OK" in operator_output
 
 
-def test_pv_potential_announces_a_clean_zero_without_a_production_value(monkeypatch, capsys):
+def test_pv_potential_announces_a_clean_zero_without_a_production_value(
+    monkeypatch, capsys
+):
     response = MagicMock()
     response.json.return_value = {"results": [{"attributes": {}}]}
-    monkeypatch.setattr(
-        data_enricher.requests, "get", MagicMock(return_value=response)
-    )
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
 
     assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
 
