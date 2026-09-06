@@ -95,11 +95,7 @@ def _repo_module_imports(module_file):
             names.update(alias.name.split(".")[0] for alias in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
             names.add(node.module.split(".")[0])
-    return {
-        f"{name}.py"
-        for name in names
-        if (PROJECT_ROOT / f"{name}.py").is_file()
-    }
+    return {f"{name}.py" for name in names if (PROJECT_ROOT / f"{name}.py").is_file()}
 
 
 def test_mutmut_copies_every_repo_module_the_app_imports():
