@@ -213,7 +213,7 @@ def policy_fingerprint_values(policy: dict) -> dict:
     return projected
 
 
-def _rate_rp_text(value):
+def rate_rp_text(value):
     """Format a stored CHF/kWh price as Rp./kWh for display."""
     try:
         rate_rp = Decimal(str(value)) * 100
@@ -233,10 +233,10 @@ def describe_version(version: dict) -> dict:
         if hasattr(effective, "isoformat")
         else str(effective)
     )
-    described["internal_price_display"] = _rate_rp_text(
+    described["internal_price_display"] = rate_rp_text(
         version.get("internal_price_chf_per_kwh")
     )
-    described["grid_fee_display"] = _rate_rp_text(version.get("grid_fee_chf_per_kwh"))
+    described["grid_fee_display"] = rate_rp_text(version.get("grid_fee_chf_per_kwh"))
     described["network_level_label"] = NETWORK_LEVEL_LABELS.get(
         version.get("network_level"), "Nicht angegeben"
     )
