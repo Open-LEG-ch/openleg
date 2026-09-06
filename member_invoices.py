@@ -317,9 +317,10 @@ def list_view(building_id: str) -> dict:
 
 
 def _policy_snapshot_view(invoice: dict) -> tuple:
-    """Validate the frozen policy_snapshot and return exactly the four values
+    """Validate the frozen policy_snapshot and return exactly the five values
     the detail view needs: vat_mode, policy_vat_rate, policy_unit_price,
-    payment_days."""
+    payment_days, policy_grid_fee. The grid fee stays None for legacy
+    snapshots frozen before it became a persisted policy field."""
     policy = _require_json_dict(
         invoice.get("policy_snapshot"),
         "Die Rechnung hat keine gültige Richtlinien-Kopie.",
@@ -341,6 +342,18 @@ def _policy_snapshot_view(invoice: dict) -> tuple:
         raise MemberInvoiceDataError(
             "Die Richtlinien-Kopie hat einen ungültigen Tarifpreis."
         )
+    frozen_grid_fee = policy.get("grid_fee_chf_per_kwh")
+    if frozen_grid_fee is None:
+        policy_grid_fee = None
+    else:
+        policy_grid_fee = _require_finite_decimal(
+            frozen_grid_fee,
+            "Die Richtlinien-Kopie hat ein ungültiges Netzentgelt.",
+        )
+        if policy_grid_fee < 0:
+            raise MemberInvoiceDataError(
+                "Die Richtlinien-Kopie hat ein ungültiges Netzentgelt."
+            )
     payment_days = policy.get("payment_days")
     if (
         isinstance(payment_days, bool)
@@ -352,7 +365,13 @@ def _policy_snapshot_view(invoice: dict) -> tuple:
         raise MemberInvoiceDataError(
             "Die Richtlinien-Kopie hat keine gültige Zahlungsfrist."
         )
-    return vat_mode, policy_vat_rate, policy_unit_price, payment_days
+    return (
+        vat_mode,
+        policy_vat_rate,
+        policy_unit_price,
+        payment_days,
+        policy_grid_fee,
+    )
 
 
 def _issuer_name(invoice: dict, provenance: dict) -> str:
@@ -442,8 +461,8 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
     if participant_id != building_id:
         raise MemberInvoiceDataError("Die Rechnung hat eine ungültige Zuordnung.")
 
-    vat_mode, policy_vat_rate, policy_unit_price, payment_days = _policy_snapshot_view(
-        invoice
+    vat_mode, policy_vat_rate, policy_unit_price, payment_days, policy_grid_fee = (
+        _policy_snapshot_view(invoice)
     )
 
     provenance = _require_json_dict(
@@ -497,6 +516,15 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
         "period_end": period_end,
         "vat_mode_label": billing_policy.VAT_MODE_LABELS[vat_mode],
         "display_vat_rate_pct": _decimal_text(vat_rate, 2),
+        "display_policy_unit_price_rp": _decimal_text(
+            policy_unit_price, 2, Decimal(100)
+        ),
+        "display_grid_fee_rp": (
+            _decimal_text(policy_grid_fee, 2, Decimal(100))
+            if policy_grid_fee is not None
+            else None
+        ),
+        "policy_payment_days": payment_days,
         "display_net_chf": _decimal_text(net, 2),
         "display_vat_chf": _decimal_text(vat, 2),
         "charges": [i for i in line_items if i["item_type"] == "consumer_charge"],
@@ -555,9 +583,17 @@ def render_pdf(invoice: dict) -> bytes:
     due_date = escape(invoice.get("due_date", ""))
     vat_mode_label = escape(invoice.get("vat_mode_label", ""))
     vat_rate = escape(invoice.get("display_vat_rate_pct", "0.00"))
+    policy_unit_price = escape(invoice.get("display_policy_unit_price_rp", ""))
+    grid_fee_rp = invoice.get("display_grid_fee_rp")
+    payment_days = escape(str(invoice.get("policy_payment_days", "")))
     net_chf = escape(invoice.get("display_net_chf", "0.00"))
     vat_chf = escape(invoice.get("display_vat_chf", "0.00"))
     gross_chf = escape(invoice.get("display_gross_chf", "0.00"))
+    grid_fee_line = (
+        f"<strong>Netzentgelt:</strong> {escape(grid_fee_rp)} Rp./kWh<br>"
+        if grid_fee_rp
+        else ""
+    )
 
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -574,7 +610,9 @@ th {{ background: #f0f0f0; }}
 <p><strong>Aussteller:</strong> {issuer_name}<br>
 <strong>Periode:</strong> {period_label}<br>
 <strong>Rechnungsdatum:</strong> {issue_date}<br>
-<strong>Fällig am:</strong> {due_date}</p>
+<strong>Fällig am:</strong> {due_date}<br>
+<strong>Interner Preis:</strong> {policy_unit_price} Rp./kWh<br>
+{grid_fee_line}<strong>Zahlungsfrist:</strong> {payment_days} Tage</p>
 
 <h2>Verbrauchskosten</h2>
 <table><tr><th>Position</th><th>Menge (kWh)</th><th>Preis (Rp./kWh)</th><th>Betrag (CHF)</th></tr>
