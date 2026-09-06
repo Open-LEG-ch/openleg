@@ -78,6 +78,7 @@ also_copy = [
     "billing_workspace.py",
     "cache.py",
     "cantons.py",
+    "clustering_run.py",
     "conftest.py",
     "cron.py",
     "dashboard.py",

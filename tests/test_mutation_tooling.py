@@ -84,6 +84,44 @@ def test_mutmut_copies_formation_dependencies_needed_for_collection():
     } <= also_copy
 
 
+def _repo_module_imports(module_file):
+    """Repo-local modules the file imports at top level, as file names."""
+    import ast
+
+    tree = ast.parse(module_file.read_text(encoding="utf-8"))
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+            names.add(node.module.split(".")[0])
+    return {
+        f"{name}.py"
+        for name in names
+        if (PROJECT_ROOT / f"{name}.py").is_file()
+    }
+
+
+def test_mutmut_copies_every_repo_module_the_app_imports():
+    """The scoring tests import app.py, and mutmut runs them from the sandbox.
+
+    A repository module that app.py imports but also_copy omits makes every
+    test session inside the sandbox die on ModuleNotFoundError before any
+    mutant is scored. #372 hit this with access_token; the clustering_run
+    import in #453 hit it again. Read the imports from app.py itself so the
+    contract tracks the file instead of a copied list.
+    """
+    config = _mutmut_config()
+    copied = set(config["also_copy"]) | set(config["source_paths"])
+
+    missing = _repo_module_imports(PROJECT_ROOT / "app.py") - copied
+
+    assert not missing, (
+        f"app.py imports {sorted(missing)} and mutmut does not copy them "
+        "into the sandbox; add them to also_copy or scoring fails"
+    )
+
+
 def test_the_test_file_list_is_selection_args_not_mutant_child_args():
     """mutmut appends pytest_add_cli_args to every mutant child's pytest run.
 
