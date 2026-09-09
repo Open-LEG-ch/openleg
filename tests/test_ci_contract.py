@@ -119,6 +119,11 @@ def test_release_announcement_is_manual_or_release_driven():
     assert "https://openleg.ch/community" in text
     assert "createDiscussion" in text
     assert '"${DRY_RUN}" = "true"' in text
+    assert "github.event.release.node_id" in text
+    assert "<!-- openleg-release:${RELEASE_ID} -->" in text
+    assert "discussions(first: 100, categoryId: $categoryId)" in text
+    assert 'if [[ -n "${existing_url}" ]]' in text
+    assert "Announcement already exists" in text
 
 
 def test_dependabot_keeps_python_and_actions_updates():

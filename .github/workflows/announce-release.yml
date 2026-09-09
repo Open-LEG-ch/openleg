@@ -13,11 +13,6 @@ on:
         description: Release URL used for a dry run
         required: true
         type: string
-      dry_run:
-        description: Build the announcement without publishing it
-        required: true
-        default: true
-        type: boolean
 
 permissions:
   contents: read
@@ -31,7 +26,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       RELEASE_NAME: ${{ github.event.release.name || github.event.release.tag_name || inputs.release_name }}
       RELEASE_URL: ${{ github.event.release.html_url || inputs.release_url }}
-      DRY_RUN: ${{ inputs.dry_run || false }}
+      RELEASE_ID: ${{ github.event.release.node_id }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Publish announcement
         shell: bash
@@ -46,6 +42,11 @@ jobs:
             printf '## %s\n\n%s\n' "${title}" "${body}" >> "${GITHUB_STEP_SUMMARY}"
             exit 0
           fi
+          test -n "${RELEASE_ID}"
+          marker="<!-- openleg-release:${RELEASE_ID} -->"
+          body="${body}
+
+          ${marker}"
 
           repository_id="$(gh api graphql \
             -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { id } }' \
@@ -60,6 +61,18 @@ jobs:
             | head -n 1)"
           test -n "${repository_id}"
           test -n "${category_id}"
+
+          existing_url="$(gh api graphql \
+            -f query='query($owner: String!, $name: String!, $categoryId: ID!) { repository(owner: $owner, name: $name) { discussions(first: 100, categoryId: $categoryId) { nodes { body url } } } }' \
+            -f owner="${GITHUB_REPOSITORY_OWNER}" \
+            -f name="${GITHUB_REPOSITORY#*/}" \
+            -f categoryId="${category_id}" \
+            | jq -r --arg marker "${marker}" '.data.repository.discussions.nodes[] | select(.body | contains($marker)) | .url' \
+            | head -n 1)"
+          if [[ -n "${existing_url}" ]]; then
+            printf 'Announcement already exists: %s\n' "${existing_url}" | tee -a "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
 
           gh api graphql \
             -f query='mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) { createDiscussion(input: {repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body}) { discussion { url } } }' \
