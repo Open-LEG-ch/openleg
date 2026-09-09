@@ -112,7 +112,8 @@ By contributing, you agree that your contributions will be licensed under AGPL-3
 
 ## Questions?
 
-- Open an issue with the relevant template
-- Check existing issues and PRs
+- Ask usage and setup questions in [Q&A](https://github.com/Open-LEG-ch/openleg/discussions/categories/q-a).
+- Share feature ideas in [Discussions](https://github.com/Open-LEG-ch/openleg/discussions). Open an issue when the work is concrete enough to track.
+- Check existing issues, pull requests and discussions before starting a new thread.
 
 Thank you for helping build free infrastructure for Switzerland's energy future! 🇨🇭⚡

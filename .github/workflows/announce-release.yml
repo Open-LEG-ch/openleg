@@ -1,0 +1,100 @@
+name: Announce release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: Release name used for a dry run
+        required: true
+        type: string
+      release_url:
+        description: Release URL used for a dry run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  discussions: write
+
+jobs:
+  announce:
+    name: announce-release
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_NAME: ${{ github.event.release.name || github.event.release.tag_name || inputs.release_name }}
+      RELEASE_URL: ${{ github.event.release.html_url || inputs.release_url }}
+      RELEASE_ID: ${{ github.event.release.node_id }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Publish announcement
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="Neue Version: ${RELEASE_NAME}"
+          body="OpenLEG ${RELEASE_NAME} ist veröffentlicht: ${RELEASE_URL}
+
+          Fragen, Ideen und die aktuelle Arbeit der Community: https://openleg.ch/community"
+
+          if [[ "${DRY_RUN}" = "true" ]]; then
+            printf '## %s\n\n%s\n' "${title}" "${body}" >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          test -n "${RELEASE_ID}"
+          marker="<!-- openleg-release:${RELEASE_ID} -->"
+          body="${body}
+
+          ${marker}"
+
+          repository_id="$(gh api graphql \
+            -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { id } }' \
+            -f owner="${GITHUB_REPOSITORY_OWNER}" \
+            -f name="${GITHUB_REPOSITORY#*/}" \
+            --jq '.data.repository.id')"
+          category_id="$(gh api graphql \
+            -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { discussionCategories(first: 100) { nodes { id name slug } } } }' \
+            -f owner="${GITHUB_REPOSITORY_OWNER}" \
+            -f name="${GITHUB_REPOSITORY#*/}" \
+            --jq '.data.repository.discussionCategories.nodes[] | select(.slug == "announcements" or .name == "Ankündigungen") | .id' \
+            | head -n 1)"
+          test -n "${repository_id}"
+          test -n "${category_id}"
+
+          existing_url=""
+          after=""
+          while :; do
+            pagination_args=()
+            if [[ -n "${after}" ]]; then
+              pagination_args=(-f after="${after}")
+            fi
+            response="$(gh api graphql \
+              -f query='query($owner: String!, $name: String!, $categoryId: ID!, $after: String) { repository(owner: $owner, name: $name) { discussions(first: 100, after: $after, categoryId: $categoryId) { nodes { body url } pageInfo { hasNextPage endCursor } } } }' \
+              -f owner="${GITHUB_REPOSITORY_OWNER}" \
+              -f name="${GITHUB_REPOSITORY#*/}" \
+              -f categoryId="${category_id}" \
+              "${pagination_args[@]}")"
+            existing_url="$(jq -r --arg marker "${marker}" 'first(.data.repository.discussions.nodes[] | select(.body | contains($marker)) | .url) // empty' <<< "${response}")"
+            if [[ -n "${existing_url}" ]]; then
+              break
+            fi
+            if [[ "$(jq -r '.data.repository.discussions.pageInfo.hasNextPage' <<< "${response}")" != "true" ]]; then
+              break
+            fi
+            after="$(jq -r '.data.repository.discussions.pageInfo.endCursor' <<< "${response}")"
+            test -n "${after}"
+          done
+          if [[ -n "${existing_url}" ]]; then
+            printf 'Announcement already exists: %s\n' "${existing_url}" | tee -a "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          gh api graphql \
+            -f query='mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) { createDiscussion(input: {repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body}) { discussion { url } } }' \
+            -f repositoryId="${repository_id}" \
+            -f categoryId="${category_id}" \
+            -f title="${title}" \
+            -f body="${body}" \
+            --jq '.data.createDiscussion.discussion.url' \
+            | tee -a "${GITHUB_STEP_SUMMARY}"
