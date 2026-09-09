@@ -1,0 +1,71 @@
+name: Announce release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: Release name used for a dry run
+        required: true
+        type: string
+      release_url:
+        description: Release URL used for a dry run
+        required: true
+        type: string
+      dry_run:
+        description: Build the announcement without publishing it
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  discussions: write
+
+jobs:
+  announce:
+    name: announce-release
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_NAME: ${{ github.event.release.name || github.event.release.tag_name || inputs.release_name }}
+      RELEASE_URL: ${{ github.event.release.html_url || inputs.release_url }}
+      DRY_RUN: ${{ inputs.dry_run || false }}
+    steps:
+      - name: Publish announcement
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="Neue Version: ${RELEASE_NAME}"
+          body="OpenLEG ${RELEASE_NAME} ist veröffentlicht: ${RELEASE_URL}
+
+          Fragen, Ideen und die aktuelle Arbeit der Community: https://openleg.ch/community"
+
+          if [[ "${DRY_RUN}" = "true" ]]; then
+            printf '## %s\n\n%s\n' "${title}" "${body}" >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          repository_id="$(gh api graphql \
+            -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { id } }' \
+            -f owner="${GITHUB_REPOSITORY_OWNER}" \
+            -f name="${GITHUB_REPOSITORY#*/}" \
+            --jq '.data.repository.id')"
+          category_id="$(gh api graphql \
+            -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { discussionCategories(first: 100) { nodes { id name slug } } } }' \
+            -f owner="${GITHUB_REPOSITORY_OWNER}" \
+            -f name="${GITHUB_REPOSITORY#*/}" \
+            --jq '.data.repository.discussionCategories.nodes[] | select(.slug == "announcements" or .name == "Ankündigungen") | .id' \
+            | head -n 1)"
+          test -n "${repository_id}"
+          test -n "${category_id}"
+
+          gh api graphql \
+            -f query='mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) { createDiscussion(input: {repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body}) { discussion { url } } }' \
+            -f repositoryId="${repository_id}" \
+            -f categoryId="${category_id}" \
+            -f title="${title}" \
+            -f body="${body}" \
+            --jq '.data.createDiscussion.discussion.url' \
+            | tee -a "${GITHUB_STEP_SUMMARY}"
