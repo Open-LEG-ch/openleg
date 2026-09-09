@@ -62,13 +62,29 @@ jobs:
           test -n "${repository_id}"
           test -n "${category_id}"
 
-          existing_url="$(gh api graphql \
-            -f query='query($owner: String!, $name: String!, $categoryId: ID!) { repository(owner: $owner, name: $name) { discussions(first: 100, categoryId: $categoryId) { nodes { body url } } } }' \
-            -f owner="${GITHUB_REPOSITORY_OWNER}" \
-            -f name="${GITHUB_REPOSITORY#*/}" \
-            -f categoryId="${category_id}" \
-            | jq -r --arg marker "${marker}" '.data.repository.discussions.nodes[] | select(.body | contains($marker)) | .url' \
-            | head -n 1)"
+          existing_url=""
+          after=""
+          while :; do
+            pagination_args=()
+            if [[ -n "${after}" ]]; then
+              pagination_args=(-f after="${after}")
+            fi
+            response="$(gh api graphql \
+              -f query='query($owner: String!, $name: String!, $categoryId: ID!, $after: String) { repository(owner: $owner, name: $name) { discussions(first: 100, after: $after, categoryId: $categoryId) { nodes { body url } pageInfo { hasNextPage endCursor } } } }' \
+              -f owner="${GITHUB_REPOSITORY_OWNER}" \
+              -f name="${GITHUB_REPOSITORY#*/}" \
+              -f categoryId="${category_id}" \
+              "${pagination_args[@]}")"
+            existing_url="$(jq -r --arg marker "${marker}" 'first(.data.repository.discussions.nodes[] | select(.body | contains($marker)) | .url) // empty' <<< "${response}")"
+            if [[ -n "${existing_url}" ]]; then
+              break
+            fi
+            if [[ "$(jq -r '.data.repository.discussions.pageInfo.hasNextPage' <<< "${response}")" != "true" ]]; then
+              break
+            fi
+            after="$(jq -r '.data.repository.discussions.pageInfo.endCursor' <<< "${response}")"
+            test -n "${after}"
+          done
           if [[ -n "${existing_url}" ]]; then
             printf 'Announcement already exists: %s\n' "${existing_url}" | tee -a "${GITHUB_STEP_SUMMARY}"
             exit 0

@@ -121,7 +121,11 @@ def test_release_announcement_is_manual_or_release_driven():
     assert '"${DRY_RUN}" = "true"' in text
     assert "github.event.release.node_id" in text
     assert "<!-- openleg-release:${RELEASE_ID} -->" in text
-    assert "discussions(first: 100, categoryId: $categoryId)" in text
+    assert "discussions(first: 100, after: $after, categoryId: $categoryId)" in text
+    assert "pageInfo { hasNextPage endCursor }" in text
+    assert 'pagination_args=(-f after="${after}")' in text
+    assert "pageInfo.hasNextPage" in text
+    assert "pageInfo.endCursor" in text
     assert 'if [[ -n "${existing_url}" ]]' in text
     assert "Announcement already exists" in text
 
