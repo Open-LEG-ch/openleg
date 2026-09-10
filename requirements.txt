@@ -16,7 +16,7 @@ redis==8.1.0
 psycopg2-binary==2.9.9
 
 # PDF generation
-weasyprint==69.0
+weasyprint==70.0
 
 # Optional: For production
 gunicorn==26.2.0
