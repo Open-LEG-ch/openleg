@@ -46,6 +46,10 @@ class SessionLost(RuntimeError):
     """The Datahub session broke and could not be re-established."""
 
 
+class LocalStorageError(RuntimeError):
+    """The local disk refused a download while the session stayed healthy."""
+
+
 @dataclass(repr=False)
 class DatahubConfig:
     """Connection settings for the Swisseldex Datahub FTPS endpoint."""
@@ -405,18 +409,36 @@ def plan_transfers(
 
 
 def download_file(client, remote: RemoteFile, target: Path) -> int:
-    """Download and verify one file atomically. Returns the byte count written."""
+    """Download and verify one file atomically. Returns the byte count written.
+
+    Raises:
+        LocalStorageError: the local disk refused the file while no transfer
+            was in flight, so the Datahub session stays usable. A write that
+            fails mid-stream is not local news: it aborts the transfer and
+            leaves the control channel out of step like any other break.
+        TransferError: the download cannot be proven complete.
+    """
     partial = target.with_name(target.name + ".part")
     written = 0
+    opened = False
     try:
-        with open(partial, "wb") as handle:
+        try:
+            with open(partial, "wb") as handle:
+                opened = True
 
-            def write_chunk(chunk: bytes) -> None:
-                nonlocal written
-                written += len(chunk)
-                handle.write(chunk)
+                def write_chunk(chunk: bytes) -> None:
+                    nonlocal written
+                    written += len(chunk)
+                    handle.write(chunk)
 
-            client.retrbinary(f"RETR {remote.path}", write_chunk)
+                client.retrbinary(f"RETR {remote.path}", write_chunk)
+        except OSError as exc:
+            # Nur ein gescheitertes Öffnen ist rein lokal. Danach läuft ein
+            # Transfer, und ein Riss mittendrin lässt den Kontrollkanal
+            # ausser Tritt zurück wie jeder andere Abbruch auch.
+            if opened:
+                raise
+            raise LocalStorageError(f"{partial} nicht schreibbar: {exc}") from exc
         expected = remote.size
         if not expected:
             try:
@@ -431,7 +453,11 @@ def download_file(client, remote: RemoteFile, target: Path) -> int:
                 f"{written} statt {expected} Bytes."
             )
         remote.size = expected
-        os.replace(partial, target)
+        try:
+            os.replace(partial, target)
+        except OSError as exc:
+            # Der Transfer ist durch und quittiert, nur das Umbenennen scheitert.
+            raise LocalStorageError(f"{target} nicht ersetzbar: {exc}") from exc
         return written
     except BaseException:
         partial.unlink(missing_ok=True)
@@ -456,11 +482,19 @@ def _reconnect(client, config: DatahubConfig):
         client.close()
     except Exception as exc:  # pragma: no cover - closing a dead socket may throw
         logger.debug("[SDAT] Alte Sitzung liess sich nicht sauber schliessen: %s", exc)
+    fresh = None
     try:
         fresh = connect(config)
         if config.remote_dir:
             fresh.cwd(config.remote_dir)
     except Exception as exc:
+        if fresh is not None:
+            # Eine offene Sitzung, die von hier an niemand mehr erreicht,
+            # belegt auf dem Datahub bis zum Server-Timeout einen Platz.
+            try:
+                fresh.close()
+            except Exception as close_exc:  # pragma: no cover - dead socket
+                logger.debug("[SDAT] Neue Sitzung blieb offen: %s", close_exc)
         raise SessionLost(str(exc) or exc.__class__.__name__) from exc
     return fresh
 
@@ -475,12 +509,18 @@ def _download_with_retry(
         whenever an attempt had to reconnect, and the byte count written.
 
     Raises:
+        LocalStorageError: at once, without touching the session.
         SessionLost: if the session cannot be re-established.
         Exception: the last transfer error once the attempts are spent.
     """
     for attempt in range(1, attempts + 1):
         try:
             return client, download_file(client, remote, target)
+        except LocalStorageError:
+            # Nicht der Datahub, sondern die lokale Platte. Eine gesunde
+            # Sitzung dafür wegzuwerfen macht die Datei nicht schreibbar und
+            # kostet beim nächsten Fehler den ganzen Rest des Laufs.
+            raise
         except Exception as exc:
             if attempt >= attempts:
                 raise

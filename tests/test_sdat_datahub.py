@@ -774,6 +774,71 @@ class TestSessionRecovery:
         assert result["downloaded"] == []
         assert sorted(result["failed"]) == ["01.xml", "02.xml"]
 
+    def test_a_failed_cwd_never_leaks_the_fresh_session(self, config, monkeypatch):
+        """Scheitert das Zurückwechseln ins Outbox, darf die neue Sitzung nicht
+        offen liegen bleiben: erreichen kann sie danach niemand mehr, aber auf
+        dem Datahub belegt sie bis zum Server-Timeout einen Platz."""
+        opened = []
+
+        def connect_stub(_config):
+            client = FakeFTP(self._outbox(1))
+
+            def refuse_cwd(path):
+                raise ftplib.error_perm("550 Failed to change directory")
+
+            client.cwd = refuse_cwd
+            opened.append(client)
+            return client
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+        dead = FakeFTP({})
+
+        with pytest.raises(sdat_datahub.SessionLost, match="550"):
+            sdat_datahub._reconnect(dead, config)
+
+        assert len(opened) == 1
+        assert opened[0].close_called is True
+
+    def test_a_local_disk_error_never_drops_a_healthy_session(
+        self, config, monkeypatch
+    ):
+        """Eine volle Platte ist kein Grund, eine gesunde Sitzung wegzuwerfen.
+
+        Der Transfer ist durch und quittiert; nur das lokale Umbenennen
+        scheitert. Neu zu verbinden macht die Datei nicht schreibbar und würde
+        beim nächsten misslungenen Verbindungsversuch den Rest des Laufs
+        kosten -- gemeldet als Datahub-Fehler, obwohl der Datahub liefert.
+        """
+        outbox = self._outbox(2)
+        connects = {"n": 0}
+
+        def connect_stub(_config):
+            connects["n"] += 1
+            return FakeFTP(outbox)
+
+        def full_disk(src, dst):
+            raise OSError(28, "No space left on device")
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+        monkeypatch.setattr(sdat_datahub.os, "replace", full_disk)
+
+        result = sdat_datahub.fetch_latest(config)
+
+        assert result["downloaded"] == []
+        assert sorted(result["failed"]) == ["01.xml", "02.xml"]
+        assert connects["n"] == 1, "die Sitzung war gesund und bleibt bestehen"
+
+    def test_an_unwritable_target_is_a_local_error_not_a_transfer_error(
+        self, config, tmp_path
+    ):
+        """Schlägt schon das Öffnen fehl, ist kein FTP-Kommando abgesetzt."""
+        client = FakeFTP(self._outbox(1))
+        remote = sdat_datahub.RemoteFile(name="01.xml", size=len(SDAT_XML))
+        target = tmp_path / "fehlt" / "01.xml"
+
+        with pytest.raises(sdat_datahub.LocalStorageError):
+            sdat_datahub.download_file(client, remote, target)
+
     def test_retries_are_configurable_and_never_negative(self):
         env = {
             "SWISSELDEX_FTPS_USER": "leg-user",
