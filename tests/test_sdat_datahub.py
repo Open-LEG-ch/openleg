@@ -645,6 +645,154 @@ class TestFetchLatest:
         assert list(local.glob("*")) == []
 
 
+# === Broken sessions ===
+
+
+class TestSessionRecovery:
+    """Ein abgerissener Transfer darf nur die eine Datei kosten.
+
+    Stirbt ein RETR mittendrin, bleibt die Antwort auf dem Kontrollkanal
+    ungelesen: ftplib liest danach fremde Antworten oder läuft in den halb
+    geschlossenen TLS-Socket. Ohne neue Sitzung scheitert jede weitere Datei
+    an einem Fehler, der nichts über sie aussagt.
+    """
+
+    def _outbox(self, count):
+        return {
+            f"{index:02d}.xml": (SDAT_XML, f"202608{index:02d}120000")
+            for index in range(1, count + 1)
+        }
+
+    def test_a_dead_transfer_costs_one_file_not_the_rest(self, config, monkeypatch):
+        """Nur die Datei, an der die Sitzung starb, darf als Fehler zählen."""
+        outbox = self._outbox(4)
+        sessions = []
+
+        def connect_stub(_config):
+            client = FakeFTP(outbox)
+            original = client.retrbinary
+            failed = {"done": False}
+
+            def retrbinary(command, callback, blocksize=8192):
+                # Die zweite Datei dieser Sitzung reisst den Kanal ab, danach
+                # antwortet die Sitzung auf nichts mehr.
+                if client.transfers >= 1 and not failed["done"]:
+                    failed["done"] = True
+                    client.dead = True
+                if client.dead:
+                    raise ftplib.error_temp("426 Data connection closed")
+                client.transfers += 1
+                return original(command, callback, blocksize)
+
+            client.transfers = 0
+            client.dead = False
+            client.retrbinary = retrbinary
+            sessions.append(client)
+            return client
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+
+        result = sdat_datahub.fetch_latest(config)
+
+        # Jede Sitzung liefert eine Datei, dann wird neu verbunden.
+        assert sorted(result["downloaded"]) == sorted(outbox)
+        assert result["failed"] == []
+        assert len(sessions) > 1
+
+    def test_an_unreachable_datahub_stops_the_run_and_reports_every_open_file(
+        self, config, monkeypatch, caplog
+    ):
+        """Ist der Datahub weg, wird nicht 38-mal vergeblich neu verbunden."""
+        outbox = self._outbox(4)
+        first = FakeFTP(outbox)
+
+        def dead(command, callback, blocksize=8192):
+            raise ftplib.error_temp("426 Data connection closed")
+
+        first.retrbinary = dead
+        connects = {"n": 0}
+
+        def connect_stub(_config):
+            connects["n"] += 1
+            if connects["n"] == 1:
+                return first
+            raise OSError("Network is unreachable")
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+
+        with caplog.at_level("ERROR"):
+            result = sdat_datahub.fetch_latest(config)
+
+        assert result["downloaded"] == []
+        assert sorted(result["failed"]) == sorted(outbox)
+        assert connects["n"] == 2, "nach einem toten Datahub wird nicht weiter gewählt"
+        assert "Sitzung verloren" in caplog.text
+
+    def test_a_retry_reopens_the_configured_remote_directory(self, config, monkeypatch):
+        """Remote-Pfade sind relativ: die neue Sitzung muss zurück ins Outbox."""
+        outbox = self._outbox(1)
+        sessions = []
+
+        def connect_stub(_config):
+            client = FakeFTP(outbox)
+            original = client.retrbinary
+
+            def retrbinary(command, callback, blocksize=8192):
+                if not sessions[0].dead:
+                    sessions[0].dead = True
+                    raise ftplib.error_temp("426 Data connection closed")
+                return original(command, callback, blocksize)
+
+            client.dead = False
+            client.retrbinary = retrbinary
+            sessions.append(client)
+            return client
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+
+        result = sdat_datahub.fetch_latest(config)
+
+        assert result["downloaded"] == ["01.xml"]
+        assert sessions[-1].cwd_calls == ["/outbox"]
+
+    def test_an_injected_client_is_never_replaced(self, config, monkeypatch):
+        """Eine fremde Sitzung gehört dem Aufrufer; sie wird nicht ersetzt."""
+        client = FakeFTP(self._outbox(2))
+
+        def dead(command, callback, blocksize=8192):
+            raise ftplib.error_temp("426 Data connection closed")
+
+        client.retrbinary = dead
+
+        def forbidden(_config):
+            raise AssertionError("fetch_latest darf hier nicht neu verbinden")
+
+        monkeypatch.setattr(sdat_datahub, "connect", forbidden)
+
+        result = sdat_datahub.fetch_latest(config, client=client)
+
+        assert result["downloaded"] == []
+        assert sorted(result["failed"]) == ["01.xml", "02.xml"]
+
+    def test_retries_are_configurable_and_never_negative(self):
+        env = {
+            "SWISSELDEX_FTPS_USER": "leg-user",
+            "SWISSELDEX_FTPS_PASSWORD": "secret",
+            "SWISSELDEX_FTPS_RETRIES": "-3",
+        }
+        assert sdat_datahub.load_config(env).retries == 0
+        assert (
+            sdat_datahub.load_config(env | {"SWISSELDEX_FTPS_RETRIES": "5"}).retries
+            == 5
+        )
+        assert (
+            sdat_datahub.load_config(
+                {k: v for k, v in env.items() if k != "SWISSELDEX_FTPS_RETRIES"}
+            ).retries
+            == sdat_datahub.DEFAULT_RETRIES
+        )
+
+
 # === Repository contract ===
 
 
