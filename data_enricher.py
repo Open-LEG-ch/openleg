@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import dataclasses
 import hashlib
+import json
 import re
 
 import numpy as np
@@ -12,9 +13,11 @@ import security_utils
 
 # --- API-Endpunkte ---
 GEO_API_URL = "https://api3.geo.admin.ch/rest/services/api/SearchServer"
-SOLAR_API_URL = (
-    "https://api3.geo.admin.ch/rest/services/api/MapServer/ch.bfe.sonnendach"
-)
+SOLAR_API_URL = "https://api3.geo.admin.ch/rest/services/api/MapServer"
+SOLAR_LAYER_ID = "ch.bfe.solarenergie-eignung-daecher"
+SOLAR_QUERY_EXTENT = "5.5,45.5,10.8,48.0"
+SOLAR_PAGE_SIZE = 200
+SOLAR_MAX_PAGES = 20
 
 
 def _normalize_address_suggestions(suggestions):
@@ -287,22 +290,70 @@ def get_pv_potential_from_coords(lat, lon):
     params = {
         "geometry": geometry,
         "geometryType": "esriGeometryPoint",
-        "mapExtent": f"{lon - 10},{lat - 10},{lon + 10},{lat + 10}",
-        "imageDisplay": "1,1,1",
+        "sr": 4326,
+        "mapExtent": f"{lon - 0.001},{lat - 0.001},{lon + 0.001},{lat + 0.001}",
+        "imageDisplay": "500,500,96",
         "tolerance": 2,
         "returnGeometry": "false",
-        "layers": "all:ch.bfe.sonnendach",
+        "layers": f"all:{SOLAR_LAYER_ID}",
     }
     try:
-        response = requests.get(f"{SOLAR_API_URL}/identify", params=params)
+        response = requests.get(f"{SOLAR_API_URL}/identify", params=params, timeout=5)
         response.raise_for_status()
         results = response.json().get("results", [])
         if not results:
             print("  [GEO FEHLER] Kein Gebäude für PV-Potenzial gefunden.")
             return 0, 0
-        attrs = results[0]["attributes"]
-        # 'strom_a' = Jährliche Stromproduktion von *bestens* geeigneter Fläche (kWh)
-        potential_kwh_pa = attrs.get("strom_a", 0)
+        building_id = results[0]["attributes"].get("building_id")
+        if building_id is None:
+            print("  [GEO FEHLER] Keine Gebäude-ID für PV-Potenzial gefunden.")
+            return 0, 0
+        building_id = int(building_id)
+
+        roof_facets = {}
+        for page_number in range(SOLAR_MAX_PAGES):
+            response = requests.get(
+                f"{SOLAR_API_URL}/identify",
+                params={
+                    "geometry": SOLAR_QUERY_EXTENT,
+                    "geometryType": "esriGeometryEnvelope",
+                    "sr": 4326,
+                    "mapExtent": params["mapExtent"],
+                    "imageDisplay": params["imageDisplay"],
+                    "tolerance": 0,
+                    "returnGeometry": "false",
+                    "layers": f"all:{SOLAR_LAYER_ID}",
+                    "layerDefs": json.dumps(
+                        {SOLAR_LAYER_ID: f"building_id = {building_id}"}
+                    ),
+                    "limit": SOLAR_PAGE_SIZE,
+                    "offset": page_number * SOLAR_PAGE_SIZE,
+                },
+                timeout=5,
+            )
+            response.raise_for_status()
+            page = response.json().get("results", [])
+            previous_count = len(roof_facets)
+            for facet in page:
+                feature_id = facet.get("featureId")
+                if feature_id is None:
+                    print("  [GEO FEHLER] Unvollständige PV-Daten erhalten.")
+                    return 0, 0
+                roof_facets[feature_id] = facet
+            if len(page) < SOLAR_PAGE_SIZE:
+                break
+            if len(roof_facets) == previous_count:
+                print("  [GEO FEHLER] PV-Seitenabfrage macht keinen Fortschritt.")
+                return 0, 0
+        else:
+            print("  [GEO FEHLER] Zu viele PV-Dachflächen für sichere Summierung.")
+            return 0, 0
+
+        # 'stromertrag' = Jährliche Stromproduktion je Dachfläche (kWh)
+        potential_kwh_pa = sum(
+            facet.get("attributes", {}).get("stromertrag", 0) or 0
+            for facet in roof_facets.values()
+        )
         # Heuristik: 1 kWp produziert ca. 1000 kWh/a
         potential_kwp = potential_kwh_pa / 1000.0
         print(
