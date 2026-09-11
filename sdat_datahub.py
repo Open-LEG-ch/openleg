@@ -28,6 +28,7 @@ DEFAULT_PORT = 21
 DEFAULT_REMOTE_DIR = "/"
 DEFAULT_LOCAL_DIR = "data/sdat"
 DEFAULT_TIMEOUT = 60
+DEFAULT_RETRIES = 2
 MAX_RECURSION_DEPTH = 8
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -41,6 +42,10 @@ class TransferError(RuntimeError):
     """A download cannot be proven complete."""
 
 
+class SessionLost(RuntimeError):
+    """The Datahub session broke and could not be re-established."""
+
+
 @dataclass(repr=False)
 class DatahubConfig:
     """Connection settings for the Swisseldex Datahub FTPS endpoint."""
@@ -52,6 +57,7 @@ class DatahubConfig:
     remote_dir: str = DEFAULT_REMOTE_DIR
     local_dir: str = DEFAULT_LOCAL_DIR
     timeout: int = DEFAULT_TIMEOUT
+    retries: int = DEFAULT_RETRIES
     passive: bool = True
     verify_tls: bool = True
     ca_bundle: str | None = None
@@ -136,6 +142,7 @@ def load_config(env: dict[str, str] | None = None) -> DatahubConfig:
         ).strip(),
         local_dir=(env.get("SWISSELDEX_SDAT_DIR") or DEFAULT_LOCAL_DIR).strip(),
         timeout=_int(env, "SWISSELDEX_FTPS_TIMEOUT", DEFAULT_TIMEOUT),
+        retries=max(0, _int(env, "SWISSELDEX_FTPS_RETRIES", DEFAULT_RETRIES)),
         passive=_flag(env, "SWISSELDEX_FTPS_PASSIVE", True),
         verify_tls=_flag(env, "SWISSELDEX_FTPS_VERIFY_TLS", True),
         ca_bundle=(env.get("SWISSELDEX_FTPS_CA_BUNDLE") or "").strip() or None,
@@ -431,6 +438,62 @@ def download_file(client, remote: RemoteFile, target: Path) -> int:
         raise
 
 
+def _reconnect(client, config: DatahubConfig):
+    """Replace a broken session with a fresh one, positioned as before.
+
+    A transfer that dies mid-RETR leaves the control channel out of step: the
+    transfer response stays unread, so every later command reads the wrong
+    reply or runs into the half-closed TLS socket. ftplib cannot resynchronise
+    a session in that state, and the errors that follow say nothing about the
+    files they name. A new session is the only recovery, and it has to be put
+    back into the configured remote directory because every remote path is
+    relative to it.
+
+    Raises:
+        SessionLost: if a new session cannot be opened.
+    """
+    try:
+        client.close()
+    except Exception as exc:  # pragma: no cover - closing a dead socket may throw
+        logger.debug("[SDAT] Alte Sitzung liess sich nicht sauber schliessen: %s", exc)
+    try:
+        fresh = connect(config)
+        if config.remote_dir:
+            fresh.cwd(config.remote_dir)
+    except Exception as exc:
+        raise SessionLost(str(exc) or exc.__class__.__name__) from exc
+    return fresh
+
+
+def _download_with_retry(
+    client, config: DatahubConfig, remote: RemoteFile, target: Path, *, attempts: int
+):
+    """Download one file, opening a fresh session between attempts.
+
+    Returns:
+        ``(client, written)`` — the session to keep using, which is a new one
+        whenever an attempt had to reconnect, and the byte count written.
+
+    Raises:
+        SessionLost: if the session cannot be re-established.
+        Exception: the last transfer error once the attempts are spent.
+    """
+    for attempt in range(1, attempts + 1):
+        try:
+            return client, download_file(client, remote, target)
+        except Exception as exc:
+            if attempt >= attempts:
+                raise
+            logger.warning(
+                "[SDAT] Versuch %s/%s für %s fehlgeschlagen (%s), neue Sitzung",
+                attempt,
+                attempts,
+                remote.path,
+                exc,
+            )
+            client = _reconnect(client, config)
+
+
 def fetch_latest(
     config: DatahubConfig | None = None,
     *,
@@ -447,7 +510,10 @@ def fetch_latest(
 
     Args:
         config: connection settings; loaded from the environment when omitted.
-        client: an open FTP client; one is opened and closed when omitted.
+        client: an open FTP client; one is opened and closed when omitted. An
+            own connection is re-opened after a broken transfer and each file
+            gets ``config.retries`` further attempts; an injected client stays
+            untouched and each file gets a single attempt.
         since: only take files modified at or after this time; files without a
             modified timestamp are included so an unavailable timestamp cannot
             hide a delivery.
@@ -499,14 +565,33 @@ def fetch_latest(
         if dry_run:
             return summary
 
-        for remote in pending:
+        # Ohne eigene Verbindung gehört die Sitzung dem Aufrufer: dann darf
+        # sie hier nicht ersetzt werden und jede Datei hat genau einen Versuch.
+        attempts = max(1, config.retries + 1) if owns_client else 1
+
+        for index, remote in enumerate(pending):
             target = _target_for(local_dir, remote)
             try:
                 target.parent.mkdir(parents=True, exist_ok=True)
-                written = download_file(client, remote, target)
+                client, written = _download_with_retry(
+                    client, config, remote, target, attempts=attempts
+                )
                 summary["bytes"] += written
                 summary["downloaded"].append(remote.path)
                 logger.info("[SDAT] Geladen: %s", remote.path)
+            except SessionLost as exc:
+                # Der Datahub ist nicht mehr erreichbar. Weiterzulaufen hiesse,
+                # jede offene Datei gegen eine tote Sitzung zu werfen und sie
+                # mit einem Fehler zu melden, der nichts über sie aussagt.
+                remaining = [f.path for f in pending[index:]]
+                summary["failed"].extend(remaining)
+                logger.error(
+                    "[SDAT] Datahub-Sitzung verloren (%s), %s Datei(en) offen. "
+                    "Der nächste Lauf holt sie nach.",
+                    exc,
+                    len(remaining),
+                )
+                break
             except Exception as exc:
                 summary["failed"].append(remote.path)
                 logger.error(
