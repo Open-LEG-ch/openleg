@@ -114,12 +114,13 @@ class AddressProfileOutcome:
     """
 
     estimates: dict
-    profiles: tuple
+    profiles: object
     source: str
     live_status: str
 
     def __post_init__(self):
-        object.__setattr__(self, "profiles", tuple(self.profiles or ()))
+        if self.profiles is None:
+            object.__setattr__(self, "profiles", ())
 
 
 def resolve_address_profile(address):
