@@ -5,6 +5,7 @@ import importlib
 import os
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
 import pytest
 from werkzeug.exceptions import TooManyRequests
 
@@ -664,6 +665,31 @@ def test_profile_routes_consume_shared_domain_outcome(
     else:
         assert response.get_json() == _PROFILE_SEAM_ESTIMATES
     adapter.assert_called_once_with(_PROFILE_SEAM_ADDRESS)
+
+
+def test_website_accepts_dataframe_profiles_from_live_enricher(
+    monkeypatch, full_app_module
+):
+    monkeypatch.setattr(
+        data_enricher,
+        "get_energy_profile_for_address",
+        MagicMock(
+            return_value=(
+                dict(_PROFILE_SEAM_ESTIMATES),
+                pd.DataFrame({"consumption_kw": [1.0], "production_kw": [0.5]}),
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        full_app_module, "find_provisional_matches", MagicMock(return_value=None)
+    )
+
+    response = full_app_module.web.test_client().post(
+        "/api/check_potential", json={"address": _PROFILE_SEAM_ADDRESS}
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["profile_summary"] == _PROFILE_SEAM_ESTIMATES
 
 
 @pytest.mark.parametrize(
