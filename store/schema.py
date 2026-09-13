@@ -54,7 +54,8 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS canton VARCHAR(2),
                     ADD COLUMN IF NOT EXISTS roles JSONB NOT NULL DEFAULT '[]',
                     ADD COLUMN IF NOT EXISTS has_solar BOOLEAN,
-                    ADD COLUMN IF NOT EXISTS verification_revision BIGINT NOT NULL DEFAULT 0
+                    ADD COLUMN IF NOT EXISTS verification_revision BIGINT NOT NULL DEFAULT 0,
+                    ADD COLUMN IF NOT EXISTS verification_requested_at TIMESTAMP
             """)
 
             cur.execute("""
@@ -141,6 +142,12 @@ def create_tables():
             # confirm time; the column is never backfilled.
             cur.execute("""
                 ALTER TABLE tokens ADD COLUMN IF NOT EXISTS verification_revision BIGINT
+            """)
+            cur.execute("""
+                ALTER TABLE tokens ADD COLUMN IF NOT EXISTS coverage_request_id
+                    VARCHAR(64) REFERENCES coverage_requests(request_id) ON DELETE CASCADE
+                    CHECK (coverage_request_id IS NULL OR
+                           (building_id IS NULL AND token_type = 'unsubscribe'))
             """)
 
             # Idempotent migration: invalidate unused legacy verification

@@ -568,28 +568,29 @@ def unsubscribe_page():
         else:
             email_value = normalized_email
             matches = db.get_building_by_email(email_value)
-            if matches:
-                for m in matches:
-                    token = security_utils.generate_uuid()
-                    saved = db.save_token(
-                        token, m["building_id"], "unsubscribe", ttl_seconds=3600
+            tokens = []
+            for match in matches or []:
+                token = security_utils.generate_uuid()
+                if db.save_token(
+                    token, match["building_id"], "unsubscribe", ttl_seconds=3600
+                ):
+                    tokens.append(token)
+            tokens.extend(db.create_coverage_deletion_tokens(email_value))
+            for token in tokens:
+                unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
+                try:
+                    send_email(
+                        email_value,
+                        "OpenLEG: Löschung bestätigen",
+                        "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
+                        f"diesen Link:\n\n{unsubscribe_url}\n\n"
+                        "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
+                        "nicht angefordert haben, ignorieren Sie diese E-Mail.",
                     )
-                    if not saved:
-                        continue
-                    unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
-                    try:
-                        send_email(
-                            email_value,
-                            "OpenLEG: Löschung bestätigen",
-                            "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
-                            f"diesen Link:\n\n{unsubscribe_url}\n\n"
-                            "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
-                            "nicht angefordert haben, ignorieren Sie diese E-Mail.",
-                        )
-                    except Exception:
-                        current_app.logger.exception(
-                            "Failed to send profile deletion confirmation"
-                        )
+                except Exception:
+                    current_app.logger.exception(
+                        "Failed to send profile deletion confirmation"
+                    )
             email_value = ""
             status = "success"
             message = (

@@ -242,6 +242,8 @@ def test_verzeichnis_publishes_thresholded_verified_interest_and_sorts_it(
 
     assert response.status_code == 200
     assert html.index("Riedholz") < html.index("Zweiwil") < html.index("Nullwil")
+    # Hidden counts must not be recoverable from their relative ordering.
+    assert html.index("Einwil") < html.index("Zweiwil")
     assert "3 Interessierte" in html
     assert html.count("&lt; 3 Interessierte") == 2
     assert "0 Interessierte" in html

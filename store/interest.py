@@ -101,7 +101,8 @@ def cleanup_expired_interest():
                 f"""
                 DELETE FROM buildings
                 WHERE verified = FALSE
-                  AND registered_at < CURRENT_TIMESTAMP - INTERVAL '{UNVERIFIED_INTEREST_RETENTION_DAYS} days'
+                  AND COALESCE(verification_requested_at, registered_at)
+                      < CURRENT_TIMESTAMP - INTERVAL '{UNVERIFIED_INTEREST_RETENTION_DAYS} days'
                 """
             )
             return {

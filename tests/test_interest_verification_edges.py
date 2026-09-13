@@ -16,6 +16,66 @@ interest_database = test_interest_postgres.interest_database
 
 
 @pytest.mark.integration
+def test_cleanup_preserves_a_fresh_replacement_email_confirmation(interest_database):
+    assert test_interest_postgres.save_registration(verified=True)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE buildings SET registered_at = NOW() - INTERVAL '60 days'")
+    token = str(uuid.uuid4())
+    assert test_interest_postgres.save_registration(
+        "replacement@example.ch", verification_token=token
+    )
+    assert db.cleanup_expired_interest()["buildings_deleted"] == 0
+    assert db.get_building("interest-building") is not None
+    assert db.confirm_building_interest(token)["email"] == "replacement@example.ch"
+
+    assert test_interest_postgres.save_registration(
+        "abandoned@example.ch", verification_token=str(uuid.uuid4())
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE tokens SET expires_at = NOW() - INTERVAL '1 second'")
+        cur.execute(
+            "UPDATE buildings SET verification_requested_at = NOW() - INTERVAL '31 days'"
+        )
+    assert db.cleanup_expired_interest()["buildings_deleted"] == 1
+
+
+@pytest.mark.integration
+def test_cleanup_waiting_on_registration_keeps_the_refreshed_interest(
+    interest_database, monkeypatch
+):
+    assert save_registration()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("""UPDATE buildings SET registered_at = NOW() - INTERVAL '60 days',
+            verification_requested_at = NULL""")
+    token = str(uuid.uuid4())
+    with transaction_race(monkeypatch) as race:
+        registration = race.start(
+            lambda: save_registration("new@example.ch", verification_token=token),
+            pause_before_commit=True,
+        )
+        race.wait_until_staged(registration)
+        cleanup = race.start(db.cleanup_expired_interest)
+        race.wait_until_blocked_by(cleanup, registration)
+        registration.release.set()
+        assert race.finish(registration) is True
+        assert race.finish(cleanup)["buildings_deleted"] == 0
+    assert db.confirm_building_interest(token)["email"] == "new@example.ch"
+
+
+@pytest.mark.integration
+def test_cleanup_keeps_the_legacy_age_when_no_new_confirmation_was_requested(
+    interest_database,
+):
+    assert save_registration()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("""UPDATE buildings SET registered_at = NOW() - INTERVAL '31 days',
+            verification_requested_at = NULL""")
+    db.create_tables()
+    db.create_tables()
+    assert db.cleanup_expired_interest()["buildings_deleted"] == 1
+
+
+@pytest.mark.integration
 def test_returning_to_an_old_email_does_not_revive_its_link(interest_database):
     original, replacement, current = [str(uuid.uuid4()) for _ in range(3)]
     assert save_registration(verification_token=original)

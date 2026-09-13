@@ -9,6 +9,7 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 """
 
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -98,13 +99,45 @@ def use_token(token: str) -> bool:
         return False
 
 
+def create_coverage_deletion_tokens(email: str) -> list[str]:
+    """Bind one hour deletion links to the mailbox's existing coverage records."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                    SELECT request_id FROM coverage_requests
+                    WHERE LOWER(TRIM(email)) = LOWER(TRIM(%s))
+                    FOR UPDATE
+                """,
+                (email,),
+            )
+            records = cur.fetchall()
+            tokens = []
+            for record in records:
+                token = str(uuid.uuid4())
+                cur.execute(
+                    """
+                        INSERT INTO tokens
+                            (token, coverage_request_id, token_type, expires_at)
+                        VALUES (%s, %s, 'unsubscribe',
+                                CURRENT_TIMESTAMP + INTERVAL '1 hour')
+                    """,
+                    (token, record["request_id"]),
+                )
+                tokens.append(token)
+            return tokens
+    except Exception:
+        logger.exception("[DB] Error creating coverage deletion tokens")
+        return []
+
+
 def confirm_profile_deletion(token: str) -> bool:
     """Delete the profile for a valid unsubscribe token in one transaction."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                    SELECT building_id FROM tokens
+                    SELECT building_id, coverage_request_id FROM tokens
                     WHERE token = %s
                       AND token_type = 'unsubscribe'
                       AND used_at IS NULL
@@ -116,10 +149,18 @@ def confirm_profile_deletion(token: str) -> bool:
             row = cur.fetchone()
             if not row:
                 return False
-            cur.execute(
-                "DELETE FROM buildings WHERE building_id = %s",
-                (row["building_id"],),
-            )
+            if row["coverage_request_id"]:
+                if row["building_id"]:
+                    return False
+                cur.execute(
+                    "DELETE FROM coverage_requests WHERE request_id = %s",
+                    (row["coverage_request_id"],),
+                )
+            else:
+                cur.execute(
+                    "DELETE FROM buildings WHERE building_id = %s",
+                    (row["building_id"],),
+                )
             return cur.rowcount > 0
     except Exception:
         logger.exception("[DB] Error confirming profile deletion")

@@ -187,7 +187,8 @@ emails. Address-check registrations take priority over coverage requests. Within
 each source, the newest creation timestamp wins, followed by the stable record
 ID; missing timestamps sort last. Counts, recipients, and dashboard summaries in
 `store/interest.py` use this selection. Operator exports retain the source rows.
-Public pages still hide exact counts below three.
+Public pages still hide exact counts below three. Directory ordering treats one
+and two as the same bucket, then sorts by name.
 
 Registration saves the building and its verification token in one transaction.
 Changing the case-insensitive email clears verification and increments the
@@ -202,6 +203,16 @@ Schema initialization invalidates unused legacy verification tokens that lack a
 revision. They cannot safely be attached to the current email. Residents with
 those links must register again for a fresh link. Unsubscribe tokens are not
 changed. The migration is idempotent and preserves existing verified records.
+
+`verification_requested_at` starts the unverified retention period on each
+registration. It does not change the original creation date used by interest
+summaries. Legacy rows without that timestamp keep their original retention age.
+
+The existing `/unsubscribe` journey also issues one-hour deletion links for
+coverage requests. Each link targets one existing record, never a future record
+with the same email. GET displays the confirmation form; POST deletes the bound
+record and its tokens in one transaction. An email with both intake sources gets
+a link for each record.
 
 ## Data pipelines
 

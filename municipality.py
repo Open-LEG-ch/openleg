@@ -381,7 +381,11 @@ def verzeichnis():
     if order_by == "interest":
         profiles.sort(
             key=lambda profile: (
-                -profile["interest_count"],
+                -(
+                    1
+                    if 0 < profile["interest_count"] < 3
+                    else profile["interest_count"]
+                ),
                 (profile.get("name") or "").casefold(),
             )
         )

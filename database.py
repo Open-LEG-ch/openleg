@@ -299,6 +299,7 @@ from store.token import (  # noqa: F401
     VerificationConflict,
     confirm_building_interest,
     confirm_profile_deletion,
+    create_coverage_deletion_tokens,
     delete_tokens_for_building,
     get_token,
     save_token,

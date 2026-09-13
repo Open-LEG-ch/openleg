@@ -53,11 +53,12 @@ def save_building(
                         building_type, annual_consumption_kwh, potential_pv_kwp,
                         registered_at, verified, verified_at, user_type,
                         referrer_id, referral_code, city_id, bfs_number,
-                        municipality_name, canton, roles, has_solar
+                        municipality_name, canton, roles, has_solar,
+                        verification_requested_at
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s
+                        %s, %s, %s, %s, CURRENT_TIMESTAMP
                     )
                     ON CONFLICT (building_id) DO UPDATE SET
                         email = EXCLUDED.email,
@@ -83,6 +84,7 @@ def save_building(
                         canton = EXCLUDED.canton,
                         roles = EXCLUDED.roles,
                         has_solar = EXCLUDED.has_solar,
+                        verification_requested_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP
                     RETURNING verification_revision
                 """,
