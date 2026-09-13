@@ -25,8 +25,6 @@ class RegistrationDeps:
     app_base_url: str
     thread: Callable[..., Any] = threading.Thread
     send_confirmation_email: Callable[..., Any]
-    run_full_ml_task: Callable[..., Any]
-    schedule_sequence_for_user: Callable[..., Any]
     find_provisional_matches: Callable[..., Any]
     collect_building_locations: Callable[..., Any]
 
@@ -38,7 +36,7 @@ class RegistrationError(Exception):
         self.status = status
 
 
-def _coerce_bool(value):
+def coerce_bool(value):
     if isinstance(value, bool):
         return value
     if value is None:
@@ -53,9 +51,9 @@ def _coerce_bool(value):
 def parse_consents(raw_consents):
     consents = raw_consents or {}
     return {
-        "share_with_neighbors": _coerce_bool(consents.get("share_with_neighbors")),
+        "share_with_neighbors": coerce_bool(consents.get("share_with_neighbors")),
         "share_with_utility": False,
-        "updates_opt_in": _coerce_bool(consents.get("updates_opt_in")),
+        "updates_opt_in": coerce_bool(consents.get("updates_opt_in")),
         "consent_version": consents.get("consent_version") or CONSENT_VERSION,
         "consent_timestamp": time.time(),
     }
@@ -85,7 +83,7 @@ def register(data, *, city_id, user_type, deps: RegistrationDeps):
     referral_code = (data.get("referral_code") or "").strip()
     roles = parse_roles(data.get("roles"))
     raw_has_solar = data.get("has_solar")
-    has_solar = _coerce_bool(raw_has_solar) if raw_has_solar is not None else None
+    has_solar = coerce_bool(raw_has_solar) if raw_has_solar is not None else None
 
     referrer_id = None
     if referral_code:

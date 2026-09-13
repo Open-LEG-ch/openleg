@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Registration and emailed confirmation links against PostgreSQL."""
 
+import uuid
 from unittest.mock import MagicMock
 from urllib.parse import urlsplit
 
@@ -103,3 +104,152 @@ def test_emailed_link_confirms_only_its_email_and_defers_clustering(interest_cli
     assert cluster_tasks[0].args == ("interest-building", "zurich")
     assert cluster_tasks[0].daemon is True
     assert client.get(new_path).status_code == 404
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "failure",
+    [
+        "syntax",
+        "missing",
+        "expired",
+        "purpose",
+        "deleted",
+        "consumption",
+        "verification",
+    ],
+)
+def test_rejected_confirmation_has_no_success_effects(interest_client, failure):
+    client, tasks, cluster = interest_client
+    token = str(uuid.uuid4())
+    assert test_interest_postgres.save_registration(verification_token=token)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        if failure == "expired":
+            cur.execute("UPDATE tokens SET expires_at = NOW() - INTERVAL '1 second'")
+        elif failure == "purpose":
+            cur.execute("UPDATE tokens SET token_type = 'unsubscribe'")
+        elif failure == "deleted":
+            cur.execute("DELETE FROM buildings")
+        elif failure in ("consumption", "verification"):
+            table = "tokens" if failure == "consumption" else "buildings"
+            cur.execute("""CREATE FUNCTION reject_confirmation() RETURNS trigger AS $$
+                BEGIN RAISE EXCEPTION 'injected write failure'; END;
+                $$ LANGUAGE plpgsql""")
+            cur.execute(
+                f"CREATE TRIGGER reject_confirmation BEFORE UPDATE ON {table} "
+                "FOR EACH ROW EXECUTE FUNCTION reject_confirmation()"
+            )
+    path_token = (
+        "invalid"
+        if failure == "syntax"
+        else str(uuid.uuid4())
+        if failure == "missing"
+        else token
+    )
+    response = client.get(f"/confirm/{path_token}")
+    assert response.status_code == (
+        409 if failure in ("consumption", "verification") else 404
+    )
+    assert tasks == []
+    cluster.assert_not_called()
+    import app
+
+    app.email_automation._send_email.assert_not_called()
+    if failure != "deleted":
+        assert db.get_building("interest-building")["verified"] is False
+    if failure in ("consumption", "verification"):
+        assert db.get_token(token) is not None
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("source", ["building", "coverage"])
+@pytest.mark.parametrize("missing", ["bfs_number", "municipality_name"])
+def test_confirmation_without_municipality_does_not_notify(
+    interest_client, source, missing
+):
+    client, tasks, cluster = interest_client
+    token = str(uuid.uuid4())
+    if source == "building":
+        assert test_interest_postgres.save_registration(verification_token=token)
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(f"UPDATE buildings SET {missing} = NULL")
+        path = f"/confirm/{token}"
+    else:
+        assert db.save_coverage_request(
+            request_id=str(uuid.uuid4()),
+            email="one@example.ch",
+            address="Testweg 1",
+            plz="4533",
+            municipality_name="" if missing == "municipality_name" else "Riedholz",
+            canton="SO",
+            bfs_number=None if missing == "bfs_number" else 2554,
+            roles=[],
+            has_solar=False,
+            verification_token=token,
+        )
+        path = f"/interest/confirm/{token}"
+    assert client.get(path).status_code == 200
+    assert client.get(path).status_code == 404
+    import app
+
+    app.email_automation._send_email.assert_not_called()
+    assert len([task for task in tasks if task.target is cluster]) == (
+        source == "building"
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("failure", ["missing", "expired", "consumption"])
+def test_unavailable_coverage_confirmation_has_no_effects(interest_client, failure):
+    client, tasks, cluster = interest_client
+    token = str(uuid.uuid4())
+    assert db.save_coverage_request(
+        request_id=str(uuid.uuid4()),
+        email="one@example.ch",
+        address="Testweg 1",
+        plz="4533",
+        municipality_name="Riedholz",
+        canton="SO",
+        bfs_number=2554,
+        roles=[],
+        has_solar=False,
+        verification_token=token,
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        if failure == "expired":
+            cur.execute(
+                "UPDATE coverage_requests SET token_expires_at = NOW() - INTERVAL '1 second'"
+            )
+        elif failure == "consumption":
+            cur.execute("""CREATE FUNCTION reject_coverage() RETURNS trigger AS $$
+                BEGIN RAISE EXCEPTION 'injected write failure'; END;
+                $$ LANGUAGE plpgsql""")
+            cur.execute(
+                "CREATE TRIGGER reject_coverage BEFORE UPDATE ON coverage_requests "
+                "FOR EACH ROW EXECUTE FUNCTION reject_coverage()"
+            )
+    path_token = "missing" if failure == "missing" else token
+    assert client.get(f"/interest/confirm/{path_token}").status_code == 404
+    assert db.get_interest_count(2554) is None
+    assert tasks == []
+    cluster.assert_not_called()
+    import app
+
+    app.email_automation._send_email.assert_not_called()
+
+
+@pytest.mark.integration
+def test_coverage_intake_keeps_its_roles_validation_response(interest_client):
+    client, tasks, _cluster = interest_client
+    response = client.post(
+        "/api/register_interest",
+        json={
+            "email": "one@example.ch",
+            "plz": "4533",
+            "municipality_name": "Riedholz",
+            "roles": ["invalid-role"],
+        },
+    )
+    assert response.status_code == 400
+    assert response.json == {"error": "Bitte wählen Sie gültige Rollen aus."}
+    assert tasks == []

@@ -92,6 +92,7 @@ also_copy = [
     "formation_documents.py",
     "formation_wizard.py",
     "interest_intake.py",
+    "interest_confirmation.py",
     "health.py",
     "homepage_view_model.py",
     "leg_registry.py",

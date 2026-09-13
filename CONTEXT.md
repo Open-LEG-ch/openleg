@@ -73,6 +73,7 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/registry` | LEG registry entries and verification |
 | `store/tenant` | White-label tenant configs |
 | `store/token` | Auth and claim tokens |
+| `store/interest` | Verified municipality-interest counts, recipients, summaries, and raw operator exports |
 | `store/analytics` | Event log and the aggregate counts the dashboards read |
 | `store/consent` | The consent record a resident gives and can revoke |
 | `store/document` | Generated LEG documents and their signing status |
@@ -103,6 +104,8 @@ Domain logic sits above storage and stays free of SQL:
 | `clustering_run.py` | Complete clustering-run orchestration and persistence outcomes |
 | `neighbor_view.py` | Neighbour read policy: anonymity radius, jittered map locations, provisional match summary |
 | `access_token.py` | Magic-link access policy: token format, hashing, expiry bounds, access URLs |
+| `interest_intake.py` | Coverage-request validation and confirmation-mail submission |
+| `interest_confirmation.py` | Building and coverage confirmation outcomes, then mail scheduling, deferred clustering, and municipality notification |
 
 ## Naming Rules
 

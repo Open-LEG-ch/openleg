@@ -30,9 +30,10 @@ import dashboard as dashboard_module  # noqa: F401
 import dashboard_routes
 import data_enricher
 import database as db
-import email_automation
+import email_automation  # noqa: F401
 import formation_wizard
 import homepage_view_model
+import interest_confirmation
 import interest_intake
 import private_http
 import registration
@@ -499,8 +500,6 @@ def _registration_response(user_type):
         app_base_url=current_app.config["APP_BASE_URL"],
         thread=threading.Thread,
         send_confirmation_email=send_confirmation_email,
-        run_full_ml_task=run_full_ml_task,
-        schedule_sequence_for_user=email_automation.schedule_sequence_for_user,
         find_provisional_matches=find_provisional_matches,
         collect_building_locations=collect_building_locations,
     )
@@ -541,10 +540,7 @@ def api_register_interest():
             base_url=current_app.config["APP_BASE_URL"],
             send_email=send_email,
         )
-    except (
-        interest_intake.InterestIntakeError,
-        registration.RegistrationError,
-    ) as error:
+    except interest_intake.InterestIntakeError as error:
         return jsonify({"error": str(error)}), 400
     return jsonify(result), 202
 
@@ -556,31 +552,18 @@ def confirm_interest(token):
         token = security_utils.validate_uuid(token)
     except ValueError:
         abort(404)
-    try:
-        building = db.confirm_building_interest(token)
-    except db.VerificationConflict:
-        abort(409)
-    if not building:
-        abort(404)
-    email_automation.schedule_sequence_for_user(
-        building["building_id"], building.get("email", "")
+    result = interest_confirmation.confirm_building(
+        token,
+        db=db,
+        base_url=current_app.config["APP_BASE_URL"],
+        run_clustering=run_full_ml_task,
     )
-    threading.Thread(
-        target=run_full_ml_task,
-        args=(building["building_id"], building.get("city_id")),
-        daemon=True,
-    ).start()
-    bfs_number = building.get("bfs_number")
-    municipality_name = building.get("municipality_name")
-    if bfs_number and municipality_name:
-        email_automation.notify_new_municipality_interest(
-            bfs_number=int(bfs_number),
-            municipality_name=municipality_name,
-            newcomer_email=building.get("email", ""),
-            base_url=current_app.config["APP_BASE_URL"],
-        )
+    if result.status == "conflict":
+        abort(409)
+    if result.status == "invalid":
+        abort(404)
     return render_city_template(
-        "interest_confirmed.html", municipality_name=municipality_name
+        "interest_confirmed.html", municipality_name=result.municipality_name
     )
 
 
@@ -589,20 +572,13 @@ def confirm_interest(token):
 def confirm_coverage_interest(token):
     if not isinstance(token, str) or len(token) > 128:
         abort(404)
-    interest = db.verify_coverage_request(token)
-    if not interest:
+    result = interest_confirmation.confirm_coverage(
+        token, db=db, base_url=current_app.config["APP_BASE_URL"]
+    )
+    if result.status == "invalid":
         abort(404)
-    bfs_number = interest.get("bfs_number")
-    municipality_name = interest.get("municipality_name")
-    if bfs_number and municipality_name:
-        email_automation.notify_new_municipality_interest(
-            bfs_number=int(bfs_number),
-            municipality_name=municipality_name,
-            newcomer_email=interest.get("email", ""),
-            base_url=current_app.config["APP_BASE_URL"],
-        )
     return render_city_template(
-        "interest_confirmed.html", municipality_name=municipality_name
+        "interest_confirmed.html", municipality_name=result.municipality_name
     )
 
 

@@ -179,6 +179,30 @@ and the re-export block, and nothing else. Every domain lives in `store/`.
 New storage code for a cohesive domain gets its own module there. Nothing is
 appended to `database.py`.
 
+## Verified municipality interest
+
+`store/schema.py` defines the `verified_interest` view. It selects one verified
+record per BFS municipality and `LOWER(email)`, without trimming historical
+emails. Address-check registrations take priority over coverage requests. Within
+each source, the newest creation timestamp wins, followed by the stable record
+ID; missing timestamps sort last. Counts, recipients, and dashboard summaries in
+`store/interest.py` use this selection. Operator exports retain the source rows.
+Public pages still hide exact counts below three.
+
+Registration saves the building and its verification token in one transaction.
+Changing the case-insensitive email clears verification and increments the
+building's verification revision. Confirmation locks the building before
+consuming its revision-bound token, then verifies the building in that same
+transaction. Invalid links return 404; write conflicts return 409 without
+consuming the token. `interest_confirmation.py` runs downstream effects only
+after that transaction commits. These effects remain best-effort and are not
+replayed automatically after a failure.
+
+Schema initialization invalidates unused legacy verification tokens that lack a
+revision. They cannot safely be attached to the current email. Residents with
+those links must register again for a fresh link. Unsubscribe tokens are not
+changed. The migration is idempotent and preserves existing verified records.
+
 ## Data pipelines
 
 Two independent paths feed the database. Public-safe commands and required

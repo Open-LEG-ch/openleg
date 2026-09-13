@@ -101,7 +101,6 @@ def create_tables():
                 ON coverage_requests (bfs_number, verified)
             """)
 
-            # Tokens table (verification and unsubscribe)
             cur.execute("""
                 CREATE OR REPLACE VIEW verified_interest AS
                 SELECT DISTINCT ON (bfs_number, LOWER(email))

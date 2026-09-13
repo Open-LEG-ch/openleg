@@ -27,10 +27,13 @@ def submit(data, *, db, security, base_url, send_email):
     if len(municipality_name) < 2:
         raise InterestIntakeError("Bitte geben Sie Ihre Gemeinde an.")
     address = security.sanitize_string(data.get("address") or "", max_length=200)
-    roles = registration.parse_roles(data.get("roles"))
+    try:
+        roles = registration.parse_roles(data.get("roles"))
+    except registration.RegistrationError as error:
+        raise InterestIntakeError(str(error)) from error
     raw_has_solar = data.get("has_solar")
     has_solar = (
-        registration._coerce_bool(raw_has_solar) if raw_has_solar is not None else None
+        registration.coerce_bool(raw_has_solar) if raw_has_solar is not None else None
     )
 
     matches = db.search_municipality_profiles(municipality_name, limit=10)
