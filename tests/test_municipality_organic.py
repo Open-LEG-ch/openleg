@@ -111,7 +111,9 @@ def test_public_municipality_profile_route_is_restored(monkeypatch):
     )
     monkeypatch.setattr(municipality.db, "get_sonnendach_municipal", lambda _bfs: None)
     monkeypatch.setattr(municipality.db, "list_registry_entries", lambda **_kwargs: [])
-    monkeypatch.setattr(municipality.db, "get_interest_counts_by_bfs", lambda: {261: 2})
+    monkeypatch.setattr(
+        municipality.db, "get_interest_count", lambda bfs: 2 if bfs == 261 else None
+    )
 
     response = _client().get("/gemeinde/profil/261")
 

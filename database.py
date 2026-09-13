@@ -204,6 +204,7 @@ from store.formation import (  # noqa: F401
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
 from store.interest import (  # noqa: F401
     cleanup_expired_interest,
+    get_interest_count,
     get_interest_counts_by_bfs,
     get_municipality_interest_summary,
     get_operator_interest_records,

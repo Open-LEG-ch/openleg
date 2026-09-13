@@ -77,7 +77,9 @@ def notify_new_municipality_interest(
     recipients = db.get_verified_interest_recipients(
         bfs_number, exclude_email=newcomer_email
     )
-    total = db.get_interest_counts_by_bfs().get(int(bfs_number), 1)
+    total = db.get_interest_count(int(bfs_number))
+    if total is None:
+        total = 1
     subject = f"Neue LEG-Interessenmeldung in {municipality_name}"
     body = (
         f"In {municipality_name} gibt es jetzt {total} bestätigte Interessierte "

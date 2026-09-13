@@ -46,8 +46,8 @@ def test_verified_newcomer_notifies_each_existing_municipality_recipient_once(
     )
     monkeypatch.setattr(
         email_automation.db,
-        "get_interest_counts_by_bfs",
-        MagicMock(return_value={2554: 3}),
+        "get_interest_count",
+        MagicMock(return_value=3),
     )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(email_automation, "_send_email", send)
@@ -79,8 +79,8 @@ def test_new_interest_notification_uses_configured_unsubscribe_url(monkeypatch):
     )
     monkeypatch.setattr(
         email_automation.db,
-        "get_interest_counts_by_bfs",
-        MagicMock(return_value={2554: 2}),
+        "get_interest_count",
+        MagicMock(return_value=2),
     )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(email_automation, "_send_email", send)
@@ -120,8 +120,8 @@ def test_confirmation_link_makes_interest_visible_and_notifies_existing_user(
     )
     monkeypatch.setattr(
         app_module.db,
-        "get_interest_counts_by_bfs",
-        MagicMock(return_value={2554: 2}),
+        "get_interest_count",
+        MagicMock(return_value=2),
     )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(email_automation, "_send_email", send)
@@ -198,8 +198,8 @@ def test_coverage_confirmation_counts_and_notifies_without_exposing_address(
     )
     monkeypatch.setattr(
         app_module.db,
-        "get_interest_counts_by_bfs",
-        MagicMock(return_value={2554: 2}),
+        "get_interest_count",
+        MagicMock(return_value=2),
     )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(email_automation, "_send_email", send)

@@ -103,6 +103,29 @@ def create_tables():
 
             # Tokens table (verification and unsubscribe)
             cur.execute("""
+                CREATE OR REPLACE VIEW verified_interest AS
+                SELECT DISTINCT ON (bfs_number, LOWER(email))
+                       bfs_number, LOWER(email) AS email, roles, has_solar,
+                       created_at, address_problem
+                FROM (
+                    SELECT bfs_number, email, roles, has_solar,
+                           registered_at AS created_at,
+                           FALSE AS address_problem, 1 AS source_priority,
+                           building_id AS source_id
+                    FROM buildings
+                    WHERE verified = TRUE AND bfs_number IS NOT NULL
+                    UNION ALL
+                    SELECT bfs_number, email, roles, has_solar, created_at,
+                           TRUE AS address_problem, 2 AS source_priority,
+                           request_id AS source_id
+                    FROM coverage_requests
+                    WHERE verified = TRUE AND bfs_number IS NOT NULL
+                ) interest
+                ORDER BY bfs_number, LOWER(email), source_priority,
+                         created_at DESC NULLS LAST, source_id
+            """)
+
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS tokens (
                     token VARCHAR(128) PRIMARY KEY,
                     building_id VARCHAR(64) REFERENCES buildings(building_id) ON DELETE CASCADE,
