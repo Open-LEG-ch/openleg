@@ -10,6 +10,7 @@ import requests
 # Importiere Profil-Generator aus ml_models
 import ml_models
 import security_utils
+from cantons import SWISS_CANTONS
 
 # --- API-Endpunkte ---
 GEO_API_URL = "https://api3.geo.admin.ch/rest/services/api/SearchServer"
@@ -320,12 +321,15 @@ def get_municipality_from_coords(lat, lon):
         canton = attrs.get("kanton")
         if not bfs_number or not name or not canton:
             return None
+        canton = str(canton).strip().upper()
+        if canton not in SWISS_CANTONS:
+            return None
         return {
             "bfs_number": int(bfs_number),
             "municipality_name": security_utils.sanitize_string(
                 str(name), max_length=120
             ),
-            "canton": security_utils.sanitize_string(str(canton), max_length=2).upper(),
+            "canton": canton,
         }
     except Exception as exc:
         print(f"  [GEO FEHLER bei Gemeinde] {exc}")

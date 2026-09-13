@@ -149,6 +149,7 @@ from store.billing import (  # noqa: F401
 )
 from store.building import (  # noqa: F401
     NEIGHBOR_BOX_HALF_WIDTH_KM,
+    VerifiedRegistrationConflict,
     delete_building,
     get_all_building_profiles,
     get_all_buildings,
@@ -207,6 +208,7 @@ from store.interest import (  # noqa: F401
     get_interest_count,
     get_interest_counts_by_bfs,
     get_municipality_interest_summary,
+    get_operator_interest_counts,
     get_operator_interest_records,
     get_verified_interest_recipients,
     save_coverage_request,

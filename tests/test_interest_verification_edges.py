@@ -17,7 +17,7 @@ interest_database = test_interest_postgres.interest_database
 
 @pytest.mark.integration
 def test_cleanup_preserves_a_fresh_replacement_email_confirmation(interest_database):
-    assert test_interest_postgres.save_registration(verified=True)
+    assert test_interest_postgres.save_registration()
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("UPDATE buildings SET registered_at = NOW() - INTERVAL '60 days'")
     token = str(uuid.uuid4())
@@ -28,13 +28,18 @@ def test_cleanup_preserves_a_fresh_replacement_email_confirmation(interest_datab
     assert db.get_building("interest-building") is not None
     assert db.confirm_building_interest(token)["email"] == "replacement@example.ch"
 
-    assert test_interest_postgres.save_registration(
-        "abandoned@example.ch", verification_token=str(uuid.uuid4())
+    assert db.save_building(
+        building_id="abandoned-building",
+        email="abandoned@example.ch",
+        profile={"lat": 47.2, "lon": 8.2},
+        consents={},
+        verification_token=str(uuid.uuid4()),
     )
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("UPDATE tokens SET expires_at = NOW() - INTERVAL '1 second'")
         cur.execute(
-            "UPDATE buildings SET verification_requested_at = NOW() - INTERVAL '31 days'"
+            "UPDATE buildings SET verification_requested_at = NOW() - INTERVAL '31 days' "
+            "WHERE building_id = 'abandoned-building'"
         )
     assert db.cleanup_expired_interest()["buildings_deleted"] == 1
 

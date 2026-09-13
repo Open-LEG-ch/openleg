@@ -221,7 +221,7 @@ def transaction_race(monkeypatch):
 
 
 @pytest.mark.integration
-def test_confirmation_commits_before_re_registration_clears_new_email(
+def test_confirmation_commits_before_re_registration_rejects_other_email(
     interest_database, monkeypatch
 ):
     old_token, new_token = str(uuid.uuid4()), str(uuid.uuid4())
@@ -238,16 +238,17 @@ def test_confirmation_commits_before_re_registration_clears_new_email(
         race.wait_until_blocked_by(registration, confirmation)
         confirmation.release.set()
         confirmed = race.finish(confirmation)
-        assert race.finish(registration) is True
+        with pytest.raises(db.VerifiedRegistrationConflict):
+            race.finish(registration)
 
     # The returned snapshot belongs to the identity confirmed in that transaction.
     assert confirmed["email"] == "one@example.ch"
     building = db.get_building("interest-building")
-    assert building["email"] == "new@example.ch"
-    assert building["verified"] is False
-    assert building["verified_at"] is None
+    assert building["email"] == "one@example.ch"
+    assert building["verified"] is True
+    assert building["verified_at"] == confirmed["verified_at"]
     assert db.confirm_building_interest(old_token) is None
-    assert db.confirm_building_interest(new_token)["email"] == "new@example.ch"
+    assert db.confirm_building_interest(new_token) is None
 
 
 @pytest.mark.integration
@@ -364,7 +365,7 @@ def test_failed_token_insert_rolls_back_registration(
     assert (
         db.save_building(
             building_id="interest-building",
-            email="new@example.ch",
+            email="one@example.ch" if existing_registration else "new@example.ch",
             profile={
                 "address": "Testweg 2",
                 "lat": 47.2,
@@ -386,3 +387,16 @@ def test_failed_token_insert_rolls_back_registration(
             ("interest-building",),
         )
         assert cursor.fetchone()["count"] == int(existing_registration)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("with_token", [False, True])
+def test_verified_email_guard_applies_to_every_save_path(interest_database, with_token):
+    assert save_registration(verified=True)
+    before = db.get_building("interest-building")
+    token = str(uuid.uuid4()) if with_token else None
+    with pytest.raises(db.VerifiedRegistrationConflict):
+        save_registration("other@example.ch", verification_token=token)
+    assert db.get_building("interest-building") == before
+    if token:
+        assert db.get_token(token) is None

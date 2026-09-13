@@ -144,6 +144,29 @@ def get_operator_interest_records(limit=500):
         return []
 
 
+def get_operator_interest_counts():
+    """Count both raw intake sources independently of the displayed row limit."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FILTER (WHERE verified IS TRUE) AS interest_verified,
+                       COUNT(*) FILTER (WHERE verified IS NOT TRUE) AS interest_unverified
+                FROM (
+                    SELECT verified FROM buildings
+                    UNION ALL
+                    SELECT verified FROM coverage_requests
+                ) interest
+            """)
+            row = cur.fetchone()
+            return {
+                "interest_verified": int(row["interest_verified"]),
+                "interest_unverified": int(row["interest_unverified"]),
+            }
+    except Exception:
+        logger.exception("[DB] Error counting operator interest records")
+        return {"interest_verified": 0, "interest_unverified": 0}
+
+
 def get_interest_counts_by_bfs():
     """Return exact verified household totals keyed by BFS municipality."""
     try:

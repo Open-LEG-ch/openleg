@@ -1101,6 +1101,25 @@ def test_municipality_lookup_fails_closed_without_a_bfs_identity(monkeypatch):
     assert data_enricher.get_municipality_from_coords(47.23216, 7.56877) is None
 
 
+@pytest.mark.parametrize("canton", ["FL", "ZZ", "AG-invalid"])
+def test_municipality_lookup_rejects_non_swiss_canton_codes(monkeypatch, canton):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {
+                "attributes": {
+                    "gde_nr": 7001,
+                    "gemname": "Outside",
+                    "kanton": canton,
+                    "is_current_jahr": True,
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+    assert data_enricher.get_municipality_from_coords(47.1, 9.5) is None
+
+
 def test_pv_potential_queries_the_sonnendach_layer(monkeypatch):
     request = MagicMock()
     response = MagicMock()

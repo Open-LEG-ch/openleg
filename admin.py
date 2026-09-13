@@ -208,12 +208,7 @@ def admin_ops():
             ),
             "registry_pending": db.get_registry_pending_count(),
             "registry_stale": len(stale_registry),
-            "interest_verified": sum(
-                1 for record in interest_records if record.get("verified")
-            ),
-            "interest_unverified": sum(
-                1 for record in interest_records if not record.get("verified")
-            ),
+            **db.get_operator_interest_counts(),
         },
     }
     if "text/html" in (request.headers.get("Accept") or ""):

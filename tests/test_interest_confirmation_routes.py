@@ -253,3 +253,68 @@ def test_coverage_intake_keeps_its_roles_validation_response(interest_client):
     assert response.status_code == 400
     assert response.json == {"error": "Bitte wählen Sie gültige Rollen aus."}
     assert tasks == []
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("plz", ["45330", "4533abc"])
+def test_coverage_intake_rejects_the_complete_overlong_postal_code(
+    interest_client, monkeypatch, plz
+):
+    client, _tasks, _cluster = interest_client
+    import app
+
+    send = MagicMock()
+    monkeypatch.setattr(app, "send_email", send)
+    response = client.post(
+        "/api/register_interest",
+        json={
+            "email": "one@example.ch",
+            "plz": plz,
+            "municipality_name": "Riedholz",
+        },
+    )
+    assert response.status_code == 400
+    assert response.json == {"error": "Bitte geben Sie eine gültige Schweizer PLZ an."}
+    assert db.get_operator_interest_records() == []
+    send.assert_not_called()
+
+
+@pytest.mark.integration
+def test_verified_profile_rejects_another_email_without_changes(interest_client):
+    client, tasks, _cluster = interest_client
+    assert test_interest_postgres.save_registration(verified=True)
+    before = db.get_building("interest-building")
+    response = client.post(
+        "/api/register_anonymous", json=_registration("other@example.ch")
+    )
+    assert response.status_code == 409
+    assert db.get_building("interest-building") == before
+    assert tasks == []
+
+
+@pytest.mark.integration
+def test_coverage_intake_keeps_saved_request_when_bounded_mail_delivery_fails(
+    interest_client, monkeypatch
+):
+    client, _tasks, _cluster = interest_client
+    import email_utils
+
+    timeouts = []
+
+    def unavailable_smtp(_host, _port, *, timeout=None):
+        timeouts.append(timeout)
+        raise TimeoutError("simulated SMTP timeout")
+
+    monkeypatch.setattr(email_utils, "EMAIL_ENABLED", True)
+    monkeypatch.setattr(email_utils.smtplib, "SMTP", unavailable_smtp)
+    response = client.post(
+        "/api/register_interest",
+        json={
+            "email": "one@example.ch",
+            "plz": "4533",
+            "municipality_name": "Riedholz",
+        },
+    )
+    assert response.status_code == 202
+    assert len(db.get_operator_interest_records()) == 1
+    assert timeouts == [10]

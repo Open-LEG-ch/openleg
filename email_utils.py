@@ -15,6 +15,7 @@ SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@example.com")
 EMAIL_ENABLED = bool(SMTP_USER and SMTP_PASSWORD)
+SMTP_TIMEOUT_SECONDS = 10
 
 
 def send_email(to_email, subject, body, html=False, from_email=None):
@@ -28,7 +29,7 @@ def send_email(to_email, subject, body, html=False, from_email=None):
         msg["To"] = to_email
         msg["Subject"] = subject
         msg.attach(MIMEText(body, "html" if html else "plain", "utf-8"))
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT_SECONDS) as server:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)

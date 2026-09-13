@@ -18,7 +18,7 @@ def submit(data, *, db, security, base_url, send_email):
     if not valid:
         raise InterestIntakeError(error)
 
-    plz = security.sanitize_string(str(data.get("plz") or ""), max_length=4)
+    plz = str(data.get("plz") or "").strip()
     if not re.fullmatch(r"[1-9]\d{3}", plz):
         raise InterestIntakeError("Bitte geben Sie eine gültige Schweizer PLZ an.")
     municipality_name = security.sanitize_string(

@@ -121,6 +121,13 @@ class TestAdminOpsRoutes:
                 "database.get_registry_entries_needing_verification", return_value=[]
             ),
             patch("database.get_operator_interest_records", return_value=interest),
+            patch(
+                "database.get_operator_interest_counts",
+                return_value={
+                    "interest_verified": 1,
+                    "interest_unverified": 0,
+                },
+            ),
         ):
             from app import create_app
 

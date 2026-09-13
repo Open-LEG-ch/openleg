@@ -12,6 +12,10 @@ from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 
+class VerifiedRegistrationConflict(Exception):
+    """A verified building cannot be registered under another email."""
+
+
 def _get_connection():
     import database
 
@@ -36,7 +40,8 @@ def save_building(
 
     When ``verification_token`` is given, the token is bound to the current
     verification revision inside the same transaction (30-day lifetime).
-    An email change bumps the revision, so older links stop verifying.
+    An unverified email change bumps the revision, so older links stop verifying.
+    A verified building rejects registration under a different email.
     """
     token_ttl_seconds = 30 * 24 * 60 * 60
     try:
@@ -86,6 +91,8 @@ def save_building(
                         has_solar = EXCLUDED.has_solar,
                         verification_requested_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP
+                    WHERE buildings.verified IS NOT TRUE
+                       OR LOWER(buildings.email) = LOWER(EXCLUDED.email)
                     RETURNING verification_revision
                 """,
                 (
@@ -114,10 +121,13 @@ def save_building(
                 ),
             )
 
+            row = cur.fetchone()
+            if not row:
+                raise VerifiedRegistrationConflict(building_id)
+
             # A new verification link binds to the current revision; any
             # insert failure rolls back the whole save.
             if verification_token:
-                row = cur.fetchone()
                 revision = row["verification_revision"]
                 cur.execute(
                     """
@@ -168,6 +178,8 @@ def save_building(
                 )
 
             return True
+    except VerifiedRegistrationConflict:
+        raise
     except Exception as e:
         logger.error(f"[DB] Error saving building {building_id}: {e}")
         return False

@@ -119,20 +119,27 @@ def register(data, *, city_id, user_type, deps: RegistrationDeps):
 
     consents = parse_consents(data.get("consents"))
     verification_token = str(uuid.uuid4())
-    saved = db.save_building(
-        building_id=building_id,
-        email=email,
-        profile=profile,
-        consents=consents,
-        user_type=user_type,
-        phone=phone,
-        referrer_id=referrer_id,
-        city_id=city_id,
-        roles=roles,
-        has_solar=has_solar,
-        verified=False,
-        verification_token=verification_token,
-    )
+    try:
+        saved = db.save_building(
+            building_id=building_id,
+            email=email,
+            profile=profile,
+            consents=consents,
+            user_type=user_type,
+            phone=phone,
+            referrer_id=referrer_id,
+            city_id=city_id,
+            roles=roles,
+            has_solar=has_solar,
+            verified=False,
+            verification_token=verification_token,
+        )
+    except db.VerifiedRegistrationConflict as error:
+        raise RegistrationError(
+            "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung "
+            "mit einer anderen E-Mail-Adresse.",
+            status=409,
+        ) from error
     if not saved:
         raise RegistrationError(
             "Die Interessenmeldung konnte nicht gespeichert werden.", status=503

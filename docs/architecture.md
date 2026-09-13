@@ -191,8 +191,10 @@ Public pages still hide exact counts below three. Directory ordering treats one
 and two as the same bucket, then sorts by name.
 
 Registration saves the building and its verification token in one transaction.
-Changing the case-insensitive email clears verification and increments the
-building's verification revision. Confirmation locks the building before
+An existing verified profile rejects a different case-insensitive email with
+HTTP 409 before any writes. Same-email updates retain verification. An unverified
+profile can change email; this increments its verification revision and
+invalidates older links. Confirmation locks the building before
 consuming its revision-bound token, then verifies the building in that same
 transaction. Invalid links return 404; write conflicts return 409 without
 consuming the token. `interest_confirmation.py` runs downstream effects only
