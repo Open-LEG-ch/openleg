@@ -98,6 +98,7 @@ Domain logic sits above storage and stays free of SQL:
 | `public_data.py` | Gemeindeprofil refresh outcomes, source-field preservation, tariff/solar merge, and value-gap assembly |
 | `municipality_profile.py` | Gemeindeprofil presentation helpers |
 | `formation_wizard.py`, `document_generator.py` | LEG formation and documents |
+| `formation_guide.py` | Public formation-guide FAQ context and matching FAQPage data |
 | `sdat_e66.py`, `sdat_datahub.py`, `meter_data.py` | Meter data parsing and retrieval |
 | `data_enricher.py` | Address-suggestion and profile outcomes; live/mock selection, normalization, and fallback cause |
 | `ml_models.py` | Clustering algorithms and generated load profiles |

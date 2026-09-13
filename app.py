@@ -31,6 +31,7 @@ import dashboard_routes
 import data_enricher
 import database as db
 import email_automation  # noqa: F401
+import formation_guide
 import formation_wizard
 import homepage_view_model
 import interest_confirmation
@@ -58,72 +59,6 @@ logger = logging.getLogger(__name__)
 
 # --- App routes ---
 main_bp = Blueprint("main", __name__)
-
-LEG_FORMATION_FAQS = (
-    {
-        "question": "Brauchen die Teilnehmenden eigene Smart Meter?",
-        "answer": (
-            "Nein. Vorhandene gesetzeskonforme Smart Meter des "
-            "Verteilnetzbetreibers werden weiterverwendet. Fehlende erforderliche "
-            "Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
-            "Regulierte Messtarife können weiterhin anfallen."
-        ),
-    },
-    {
-        "question": "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?",
-        "answer": (
-            "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im "
-            "Netzgebiet eines Verteilnetzbetreibers. Für mehrere Gemeinden oder "
-            "VNB-Gebiete braucht es separate lokale LEGs."
-        ),
-    },
-    {
-        "question": "Wer ist für die Abrechnung zuständig?",
-        "answer": (
-            "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei "
-            "Teilnehmenden in der Grundversorgung auch den übrigen Strombezug. Die "
-            "LEG oder ihr Dienstleister rechnet den innerhalb der Gemeinschaft "
-            "ausgetauschten Strom ab."
-        ),
-    },
-    {
-        "question": "Darf ich OpenLEG installieren, anpassen oder forken?",
-        "answer": (
-            "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG "
-            "installieren, nutzen und anpassen. Auch ein Fork ist erlaubt. "
-            "Wenn Sie eine veränderte Version über ein Netzwerk anbieten, müssen "
-            "Sie den Nutzenden den entsprechenden Quellcode zugänglich machen. "
-            "Das ist eine praktische Zusammenfassung und keine Rechtsberatung."
-        ),
-        "links": (
-            {
-                "label": "Lizenz lesen",
-                "href": "https://github.com/Open-LEG-ch/openleg/blob/main/LICENSE",
-            },
-            {
-                "label": "Repository öffnen",
-                "href": "https://github.com/Open-LEG-ch/openleg",
-            },
-            {"label": "Anleitung zum eigenen Betrieb", "href": "/self-host"},
-        ),
-    },
-    {
-        "question": "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?",
-        "answer": (
-            "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. "
-            "Noch ist nicht jede VNB-Anbindung fertig umgesetzt. Anmeldung und "
-            "Datenlieferung müssen pro VNB konfiguriert werden."
-        ),
-    },
-    {
-        "question": "Kann OpenLEG unsere Gruppe persönlich unterstützen?",
-        "answer": (
-            "Vorträge, Workshops und Projektunterstützung bieten wir nach "
-            "vorgängiger Vereinbarung gegen Honorar an."
-        ),
-        "contact_label": "Unterstützung anfragen",
-    },
-)
 
 
 @main_bp.app_errorhandler(429)
@@ -261,22 +196,8 @@ def open_source():
 
 @main_bp.route("/leg-gruenden")
 def leg_gruenden():
-    faq_page_jsonld = {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-            {
-                "@type": "Question",
-                "name": faq["question"],
-                "acceptedAnswer": {"@type": "Answer", "text": faq["answer"]},
-            }
-            for faq in LEG_FORMATION_FAQS
-        ],
-    }
     return render_city_template(
-        "leg_gruenden.html",
-        formation_faqs=LEG_FORMATION_FAQS,
-        faq_page_jsonld=faq_page_jsonld,
+        "leg_gruenden.html", **formation_guide.build_guide_context()
     )
 
 
