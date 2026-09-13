@@ -202,6 +202,15 @@ from store.formation import (  # noqa: F401
     submit_community_to_dso,
 )
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
+from store.interest import (  # noqa: F401
+    cleanup_expired_interest,
+    get_interest_counts_by_bfs,
+    get_municipality_interest_summary,
+    get_operator_interest_records,
+    get_verified_interest_recipients,
+    save_coverage_request,
+    verify_coverage_request,
+)
 from store.meter import (  # noqa: F401
     get_meter_reading_stats,
     get_meter_readings,

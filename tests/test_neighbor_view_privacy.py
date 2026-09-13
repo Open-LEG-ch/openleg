@@ -2,8 +2,8 @@
 """The neighbour view must not disclose who the neighbours are or exactly where.
 
 `/api/check_potential` is unauthenticated. It once answered with the
-`building_id` and the raw coordinates of every verified registration within
-150 m of any address a caller typed, while the map path through
+`building_id` and the raw coordinates of every verified registration near
+any address a caller typed, while the map path through
 `collect_building_locations` jittered the same coordinates by 120 m first.
 The read that fed it, `get_all_building_profiles`, carried no consent gate,
 so a resident who revoked neighbour sharing was disclosed anyway.
@@ -35,6 +35,7 @@ NEIGHBOUR_PROFILES = [
         "annual_consumption_kwh": 12000,
         "potential_pv_kwp": 14.0,
         "user_type": "owner",
+        "bfs_number": 261,
     },
     {
         "building_id": "neighbour-two",
@@ -46,6 +47,7 @@ NEIGHBOUR_PROFILES = [
         "annual_consumption_kwh": 4500,
         "potential_pv_kwp": 8.0,
         "user_type": "owner",
+        "bfs_number": 261,
     },
 ]
 
@@ -56,6 +58,7 @@ CALLER_PROFILE = {
     "lon": 8.5399,
     "annual_consumption_kwh": 5000,
     "potential_pv_kwp": 9.0,
+    "bfs_number": 261,
 }
 
 
@@ -96,8 +99,8 @@ def test_provisional_match_summary_carries_no_member_identities():
         )
 
 
-def test_a_neighbour_without_coordinates_cannot_break_the_match():
-    """buildings.lat is nullable: collect_building_locations already skips those."""
+def test_a_neighbour_without_coordinates_still_counts_in_the_municipality():
+    """Municipality matching does not require a resident-visible map point."""
     neighbor_view = importlib.import_module("neighbor_view")
     profiles = [
         {**NEIGHBOUR_PROFILES[0], "lat": None},
@@ -108,7 +111,7 @@ def test_a_neighbour_without_coordinates_cannot_break_the_match():
     with patch.object(database, "get_all_building_profiles", return_value=profiles):
         summary = neighbor_view.find_provisional_matches(dict(CALLER_PROFILE))
 
-    assert summary["num_members"] == 2
+    assert summary["num_members"] == 4
 
 
 def test_a_caller_without_coordinates_gets_no_match_rather_than_an_error():
@@ -121,14 +124,14 @@ def test_a_caller_without_coordinates_gets_no_match_rather_than_an_error():
         assert neighbor_view.find_provisional_matches({}) is None
 
 
-def test_provisional_match_includes_the_150_metre_boundary():
+def test_provisional_match_includes_a_consented_household_in_the_same_municipality():
     neighbor_view = importlib.import_module("neighbor_view")
 
     with (
         patch.object(
             database, "get_all_building_profiles", return_value=[NEIGHBOUR_PROFILES[0]]
         ),
-        patch.object(neighbor_view.ml_models, "calculate_distance", return_value=150),
+        patch.object(neighbor_view.ml_models, "calculate_distance") as distance,
         patch.object(
             neighbor_view.ml_models,
             "calculate_community_autarky",
@@ -139,20 +142,54 @@ def test_provisional_match_includes_the_150_metre_boundary():
 
     assert summary is not None
     assert summary["num_members"] == 2
+    distance.assert_not_called()
 
 
-def test_provisional_match_excludes_a_point_beyond_150_metres():
+def test_provisional_match_excludes_a_household_from_another_municipality():
     neighbor_view = importlib.import_module("neighbor_view")
 
     with (
         patch.object(
-            database, "get_all_building_profiles", return_value=[NEIGHBOUR_PROFILES[0]]
+            database,
+            "get_all_building_profiles",
+            return_value=[{**NEIGHBOUR_PROFILES[0], "bfs_number": 9999}],
         ),
-        patch.object(neighbor_view.ml_models, "calculate_distance", return_value=150.5),
+        patch.object(neighbor_view.ml_models, "calculate_distance") as distance,
     ):
         summary = neighbor_view.find_provisional_matches(dict(CALLER_PROFILE))
 
     assert summary is None
+    distance.assert_not_called()
+
+
+def test_provisional_match_uses_the_same_bfs_municipality_not_distance():
+    neighbor_view = importlib.import_module("neighbor_view")
+    caller = {**CALLER_PROFILE, "bfs_number": 2554}
+    same_municipality = {
+        **NEIGHBOUR_PROFILES[0],
+        "bfs_number": 2554,
+        "lat": 47.30,
+        "lon": 7.60,
+    }
+
+    with (
+        patch.object(
+            database,
+            "get_all_building_profiles",
+            return_value=[same_municipality],
+        ) as profiles,
+        patch.object(neighbor_view.ml_models, "calculate_distance") as distance,
+        patch.object(
+            neighbor_view.ml_models,
+            "calculate_community_autarky",
+            return_value=(0.5, 0, 0),
+        ),
+    ):
+        summary = neighbor_view.find_provisional_matches(caller)
+
+    assert summary["num_members"] == 2
+    profiles.assert_called_once_with(bfs_number=2554)
+    distance.assert_not_called()
 
 
 def test_provisional_match_summary_reports_members_and_autarky_percentage():
@@ -687,7 +724,7 @@ def test_collect_building_locations_passes_the_requested_city_to_the_read():
     with patch.object(neighbor_view.db, "get_all_buildings", read):
         locations = neighbor_view.collect_building_locations(city_id="baden")
 
-    read.assert_called_once_with(city_id="baden")
+    read.assert_called_once_with(city_id="baden", bfs_number=None)
     point = neighbor_view.jitter_coordinates(47.3700, 8.5400, seed="map-baden")
     assert locations == [{"lat": point[0], "lon": point[1], "type": "owner"}], (
         "exactly the supplied building must come back, jittered and typed"

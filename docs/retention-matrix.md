@@ -18,6 +18,7 @@ below.
 | Domain (catalog) | Retention horizon | Deletion trigger | What deletion reaches | What it deliberately keeps |
 |---|---|---|---|---|
 | store/building | Life of the registration | Profile deletion (unsubscribe confirmation) | The `buildings` row; CASCADE removes consents, tokens, access tokens, queue rows, cluster assignments, memberships, meter CSV readings; `referrer_id` edges become `SET NULL` | Nothing - the registration is the data |
+| store/interest | Unverified: `UNVERIFIED_INTEREST_RETENTION_DAYS = 30`; verified unresolved request: `VERIFIED_COVERAGE_RETENTION_MONTHS = 12` | Scheduled `cleanup_expired_interest` | Expired `coverage_requests` and unverified `buildings` | Confirmed address profiles remain until profile deletion |
 | store/consent | Life of the registration | Profile deletion (CASCADE) | Both `consents` and `data_consents` rows | Revocation alone keeps the rows (visibility change, not deletion) |
 | store/cluster | Until the cluster resolves or the profile is deleted | Profile deletion (CASCADE on `clusters`) | Provisional assignments | Formation outcomes (`communities`) survive |
 | store/metering | Life of the LEG's accounting | Not implemented; metering points detach (`ON DELETE SET NULL`) on profile deletion | The link to the deleted building; readings and ledger stay | Readings and the SDAT ledger: the VNB's validated data is the billing basis; audit trail |
@@ -49,11 +50,9 @@ below.
    its cascades; issued invoices (billing accounting), analytics event rows
    and the detached metering points are deliberately or structurally kept.
    Filed: wording decision for a human.
-2. `templates/datenschutz.html` section 6 claims unconfirmed "Matches" are
-   deleted "nach angemessener Frist" - there is no matching concept and no
-   deadline deletion in code. Filed.
-3. "Server-Logs loeschen wir regelmaessig" (datenschutz.html) - hosting-level
-   reach, outside this repository's code.
+2. Hosting-level log retention remains outside this repository's code.
+   The former unsupported promise in `templates/datenschutz.html` was removed;
+   the hosting policy itself remains filed for operational definition.
 
 The wording decisions themselves are human calls; this matrix records what
 the code actually reaches so the claims can be brought in line.

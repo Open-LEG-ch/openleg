@@ -60,6 +60,23 @@
       </div>
     </section>
 
+    <section class="bg-white rounded-xl p-6 border border-line mb-8" aria-labelledby="interest-summary-title">
+      {% set interest = interest_summary if interest_summary is defined else {} %}
+      <h2 id="interest-summary-title" class="text-lg font-semibold">Interesse an einer LEG</h2>
+      <p class="text-sm text-ink-muted mt-1">Nur bestätigte Meldungen aus {{ municipality.name }}. Sie sehen keine Namen, Kontaktdaten oder Adressen.</p>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+        <div><p class="font-mono text-2xl font-bold">{{ interest.verified_total|default(0, true) }}</p><p class="text-sm text-ink-muted">bestätigte Interessierte</p></div>
+        <div><p class="font-mono text-2xl font-bold">{{ interest.last_30_days|default(0, true) }}</p><p class="text-sm text-ink-muted">in den letzten 30 Tagen</p></div>
+        <div><p class="font-mono text-2xl font-bold">{{ interest.has_solar|default(0, true) }}</p><p class="text-sm text-ink-muted">mit Solaranlage</p></div>
+        <div><p class="font-mono text-2xl font-bold">{{ interest.address_problems|default(0, true) }}</p><p class="text-sm text-ink-muted">offene Adresszuordnung</p></div>
+      </div>
+      {% if interest_roles %}
+      <div class="mt-5 flex flex-wrap gap-2" aria-label="Rollen der Interessierten">
+        {% for role in interest_roles %}<span class="rounded-full bg-paper px-3 py-1 text-sm">{{ role.label }}: <span class="font-mono">{{ role.count }}</span></span>{% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
     <div class="grid md:grid-cols-2 gap-6">
       <section class="bg-white rounded-xl p-6 border border-line" aria-labelledby="steps-title">
         <h2 id="steps-title" class="text-lg font-semibold mb-1">Nächste Schritte</h2>

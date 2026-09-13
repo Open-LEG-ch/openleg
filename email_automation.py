@@ -66,6 +66,41 @@ def schedule_sequence_for_user(building_id: str, email: str):
     return scheduled
 
 
+def notify_new_municipality_interest(
+    *,
+    bfs_number: int,
+    municipality_name: str,
+    newcomer_email: str,
+    base_url: str = "https://openleg.ch",
+):
+    """Tell existing verified participants that local demand has grown."""
+    recipients = db.get_verified_interest_recipients(
+        bfs_number, exclude_email=newcomer_email
+    )
+    total = db.get_interest_counts_by_bfs().get(int(bfs_number), 1)
+    subject = f"Neue LEG-Interessenmeldung in {municipality_name}"
+    body = (
+        f"In {municipality_name} gibt es jetzt {total} bestätigte Interessierte "
+        "für eine Lokale Elektrizitätsgemeinschaft.\n\n"
+        "Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine "
+        "passende Gruppe entsteht, erhalten Sie die nächsten Schritte.\n\n"
+        f"Abmelden: {base_url.rstrip('/')}/unsubscribe"
+    )
+    sent = 0
+    failed = 0
+    seen = set()
+    for raw_email in recipients:
+        email = (raw_email or "").strip().lower()
+        if not email or email == newcomer_email.strip().lower() or email in seen:
+            continue
+        seen.add(email)
+        if _send_email(email, subject, body):
+            sent += 1
+        else:
+            failed += 1
+    return {"sent": sent, "failed": failed}
+
+
 def _get_tenant_for_building(building_id: str) -> dict:
     """Load tenant config for a building's city_id."""
     from tenant import DEFAULT_TENANT, get_tenant_config

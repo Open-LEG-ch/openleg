@@ -36,7 +36,7 @@ def _connection_factory(cursor):
     return _factory
 
 
-def test_save_building_binds_verified_at_via_to_timestamp(monkeypatch):
+def test_save_building_keeps_a_new_registration_unverified(monkeypatch):
     cursor = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _connection_factory(cursor))
 
@@ -51,5 +51,6 @@ def test_save_building_binds_verified_at_via_to_timestamp(monkeypatch):
     normalized = " ".join(query.split())
 
     assert "registered_at, verified, verified_at, user_type" in normalized
-    assert "to_timestamp(%s), %s, to_timestamp(%s), %s" in normalized
-    assert isinstance(params[12], (int, float))
+    assert "to_timestamp(%s), %s, %s, %s" in normalized
+    assert params[11] is False
+    assert params[12] is None

@@ -37,22 +37,7 @@
     {"@type": "HowToStep", "position": 6, "name": "Messung klären und Betrieb aufnehmen", "url": "{{ site_url }}/leg-gruenden#schritt-6"}
   ]
 }</script>
-<script type="application/ld+json">{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Kann ich die OpenLEG-Software selbst betreiben?",
-      "acceptedAnswer": {"@type": "Answer", "text": "Ja. Die Anleitung zum eigenen Betrieb führt durch Installation und Konfiguration."}
-    },
-    {
-      "@type": "Question",
-      "name": "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?",
-      "acceptedAnswer": {"@type": "Answer", "text": "Nein. OpenLEG funktioniert mit jedem Schweizer Netzbetreiber. Die Anmeldung erfolgt beim zuständigen Verteilnetzbetreiber."}
-    }
-  ]
-}</script>
+<script type="application/ld+json">{{ faq_page_jsonld | tojson }}</script>
 {% endblock %}
 
 {% block content %}
@@ -80,6 +65,45 @@
     </div>
   </section>
 
+  <section aria-labelledby="common-requirements-title" class="max-w-3xl mb-12">
+    <h2 id="common-requirements-title" class="text-2xl font-bold">Was für jede LEG gilt</h2>
+    <p class="mt-3 text-ink-muted">Unabhängig vom Verteilnetzbetreiber gelten die Vorgaben des Bundes: Die Anschlüsse liegen in der gleichen Gemeinde und im gleichen Netzgebiet. Die LEG nutzt nur die zulässigen Netzebenen. Die Produktionsleistung beträgt mindestens 5 Prozent der gesamten Anschlussleistung. Ob die nötige Netztopologie vorliegt, bestätigt der zuständige Verteilnetzbetreiber.</p>
+  </section>
+
+  <section aria-labelledby="vnb-processes-title" class="mb-12">
+    <div class="max-w-3xl">
+      <h2 id="vnb-processes-title" class="text-2xl font-bold">So unterscheiden sich die Netzbetreiber</h2>
+      <p class="mt-2 text-sm text-ink-muted">Stand: 11. September 2026</p>
+      <p class="mt-3 text-ink-muted">Die Abläufe der Netzbetreiber können sich ändern. Prüfen Sie deshalb vor der Anmeldung die verlinkten Angaben des zuständigen VNB.</p>
+      <p class="mt-3 text-ink-muted">OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. Noch ist nicht jede VNB-Anbindung fertig umgesetzt. Anmeldung und Datenlieferung müssen pro VNB konfiguriert werden.</p>
+    </div>
+    <div class="mt-6 grid gap-5 lg:grid-cols-3">
+      <article class="rounded-xl border border-line bg-white p-5">
+        <h3 class="text-xl font-bold">BKW</h3>
+        <p class="mt-3 text-sm text-ink-muted">Die LEG-Karte dient als erste Orientierung. Verbindlich ist die Prüfung der Messpunktnummern nach der Anmeldung im LEG-Portal.</p>
+        <p class="mt-3 text-sm text-ink-muted">Für alle Teilnehmenden sind Smart Meter der BKW nötig. Fehlende Geräte baut die BKW im Rahmen der Anmeldung ein.</p>
+        <p class="mt-3 text-sm text-ink-muted">Die BKW liefert Rohdaten im ebIX-Format. Die LEG kann die interne Abrechnung selbst führen oder einen externen Dienstleister beauftragen.</p>
+        <a href="https://www.bkw.ch/de/strom-in-der-grundversorgung/eigenen-strom-teilen-und-verkaufen/strom-mit-nachbarn-teilen/lokale-elektrizitaetsgemeinschaft" class="mt-4 inline-block font-semibold text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">LEG-Angaben der BKW</a>
+      </article>
+
+      <article class="rounded-xl border border-line bg-white p-5">
+        <h3 class="text-xl font-bold">Primeo Energie</h3>
+        <p class="mt-3 text-sm text-ink-muted">Die LEG-Karte ist unverbindlich. Eine verbindliche Topologieauskunft muss bei Primeo Energie angefragt werden.</p>
+        <p class="mt-3 text-sm text-ink-muted">Die Anmeldung läuft über das myPrimeo-Kundenportal. Fehlende Smart Meter baut Primeo Energie während der technischen Vorbereitung ein.</p>
+        <p class="mt-3 text-sm text-ink-muted">Die LEG-Vertretung rechnet den intern ausgetauschten Strom ab. Primeo Energie stellt ihr dafür die Messdaten bereit.</p>
+        <a href="https://www.primeo-energie.ch/geschaeftskunden/photovoltaik/energiegemeinschaften/leg.html" class="mt-4 inline-block font-semibold text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">LEG-Angaben von Primeo Energie</a>
+      </article>
+
+      <article class="rounded-xl border border-line bg-white p-5">
+        <h3 class="text-xl font-bold">EBL</h3>
+        <p class="mt-3 text-sm text-ink-muted">Die Matching-Plattform zeigt nach der Adresseingabe mögliche Teilnehmende. Nach der technischen Prüfung erhalten Organisierende Zugang zur Verwaltung und können Ein- und Austritte online erfassen.</p>
+        <p class="mt-3 text-sm text-ink-muted">Nach einer gültigen Anmeldung ersetzt die EBL fehlende Smart Meter. Für die interne Verrechnung liefert sie Messdaten als CSV oder S-DAT.</p>
+        <p class="mt-3 text-sm text-ink-muted">Die EBL übernimmt keine interne Abrechnung. Dafür ist die LEG-Vertretung oder ein beauftragter Dienstleister zuständig.</p>
+        <a href="https://www.ebl.ch/de/strom/eigenverbrauch-lokale-elektrizitaetsgemeinschaft" class="mt-4 inline-block font-semibold text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">LEG-Angaben der EBL</a>
+      </article>
+    </div>
+  </section>
+
   <section aria-labelledby="timeline-title">
     <div class="max-w-3xl mb-6">
       <h2 id="timeline-title" class="text-3xl font-bold">Gründung als Arbeitsfolge</h2>
@@ -95,10 +119,12 @@
           <h3 class="text-xl font-bold mb-4">Gebiet und Voraussetzungen prüfen</h3>
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
             <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Sie die Adressen der interessierten Anschlüsse kennen.</dd></div>
-            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Prüfen Sie politische Gemeinde, Netzgebiet, Netzebene und die gemeinsame erneuerbare Produktion.</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Lassen Sie den Verteilnetzbetreiber Gemeinde, Netzgebiet, Netzebene und Netztopologie der Kandidatenadressen prüfen.</dd></div>
             <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Eine Liste der passenden Anschlüsse und Anlagen.</dd></div>
             <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg-check" class="text-brand font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Adresse im LEG-Check prüfen</a></dd></div>
           </dl>
+          <p class="text-sm text-ink-muted mt-4">Eine LEG bleibt innerhalb derselben politischen Gemeinde und im Netzgebiet desselben Verteilnetzbetreibers. Sie darf nur die gesetzlich zulässigen Netzebenen nutzen. Für ein Vorhaben über mehrere Gemeinden oder VNB-Gebiete braucht es separate lokale LEGs.</p>
+          <p class="text-sm text-ink-muted mt-4">Der Verteilnetzbetreiber prüft anhand seiner Netztopologie, welche Anschlüsse die Vorgaben erfüllen. Der Topologieentscheid des Verteilnetzbetreibers ist verbindlich. Die eingebrachten Anlagen für erneuerbare Energie müssen zusammen mindestens 5 Prozent der Anschlussleistung aller teilnehmenden Endverbraucher erreichen.</p>
           <p class="text-sm text-ink-muted mt-4">Für Gemeinden ist der Plattformstart kostenlos. <a href="/pricing" data-source-marker="pricing-municipalities" class="font-mono text-xs text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Quelle: Preisübersicht</a></p>
         </article>
       </li>
@@ -122,7 +148,7 @@
           <h3 class="text-xl font-bold mb-4">Vertretung und Vereinbarung festlegen</h3>
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
             <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Die künftigen Teilnehmenden bekannt sind.</dd></div>
-            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Bestimmen Sie die Vertretung und regeln Sie Teilnahme, Stromverteilung, Abrechnung und Austritt.</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Bestimmen Sie die Vertretung und regeln Sie Teilnahme, Preis und Verteilung des LEG-Stroms, Abrechnung sowie Ein- und Austritt schriftlich.</dd></div>
             <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Ein von der Gruppe geprüfter Vereinbarungsentwurf.</dd></div>
             <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Gründungsassistent und Vorlagen ansehen</a></dd></div>
           </dl>
@@ -161,10 +187,12 @@
           <h3 class="text-xl font-bold mb-4">Messung klären und Betrieb aufnehmen</h3>
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
             <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Der Netzbetreiber die Anmeldung bearbeitet und der Messbedarf geklärt ist.</dd></div>
-            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Beantragen Sie fehlende intelligente Messsysteme und legen Sie den Ablauf für Daten und Abrechnung fest.</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Beantragen Sie fehlende intelligente Messsysteme und legen Sie den Bezug der Messdaten sowie die interne Abrechnung fest.</dd></div>
             <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Verfügbare Messdaten und ein dokumentierter Abrechnungsablauf.</dd></div>
             <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/pricing" class="text-brand font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Betriebsangebote vergleichen</a></dd></div>
           </dl>
+          <p class="text-sm text-ink-muted mt-4">Für die LEG werden vorhandene gesetzeskonforme Smart Meter des Verteilnetzbetreibers verwendet. Die Teilnehmenden müssen keinen separaten LEG-Zähler kaufen. Nach einem gültigen Antrag installiert der Verteilnetzbetreiber fehlende erforderliche Smart Meter. Die regulierten Messtarife können weiterhin anfallen.</p>
+          <p class="text-sm text-ink-muted mt-4">Der Verteilnetzbetreiber misst die einzelnen Anschlüsse und ermittelt die Anteile von LEG-Strom und Netzstrom. Er stellt Netznutzung und Messung in Rechnung. Bei Teilnehmenden in der Grundversorgung rechnet er auch den übrigen Strombezug ab. Die LEG rechnet den innerhalb der Gemeinschaft ausgetauschten Strom ab oder beauftragt dafür einen Dienstleister.</p>
           <p class="text-sm text-ink-muted mt-4">OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos. <a href="/pricing" data-source-marker="pricing-software" class="font-mono text-xs text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Quelle: Preisübersicht</a></p>
           <p class="text-sm text-ink-muted mt-4">Beantragt die LEG ein intelligentes Messsystem, installiert der Verteilnetzbetreiber es innert drei Monaten. <a href="#data-provenance" data-source-marker="legal" class="font-mono text-xs text-brand underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Art. 8a decies Abs. 6 StromVV</a></p>
         </article>
@@ -201,14 +229,22 @@
   <section aria-labelledby="faq-title" class="max-w-3xl mt-10">
     <h2 id="faq-title" class="text-2xl font-bold">Fragen ausserhalb der Gründungsschritte</h2>
     <div class="divide-y divide-slate-200 border-y border-slate-200 mt-4">
+      {% for faq in formation_faqs %}
       <details data-faq-item class="py-5">
-        <summary class="font-semibold text-ink cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Kann ich die OpenLEG-Software selbst betreiben?</summary>
-        <p data-faq-answer class="mt-3 text-ink-muted">Ja. Die Anleitung zum eigenen Betrieb führt durch Installation und Konfiguration.</p>
+        <summary class="font-semibold text-ink cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ faq.question }}</summary>
+        <p data-faq-answer class="mt-3 text-ink-muted">{{ faq.answer }}</p>
+        {% if faq.links %}
+        <ul class="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-sm">
+          {% for link in faq.links %}
+          <li><a href="{{ link.href }}" class="text-brand font-semibold underline"{% if link.href.startswith('https://') %} target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% if faq.contact_label %}
+        <p class="mt-3 text-sm text-ink-muted">{{ faq.contact_label }}: <a href="mailto:{{ contact_email }}" class="text-brand font-semibold underline">{{ contact_email }}</a></p>
+        {% endif %}
       </details>
-      <details data-faq-item class="py-5">
-        <summary class="font-semibold text-ink cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?</summary>
-        <p data-faq-answer class="mt-3 text-ink-muted">Nein. OpenLEG funktioniert mit jedem Schweizer Netzbetreiber. Die Anmeldung erfolgt beim zuständigen Verteilnetzbetreiber.</p>
-      </details>
+      {% endfor %}
     </div>
   </section>
 </div>

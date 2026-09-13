@@ -145,7 +145,6 @@ def test_registration_request_size_contract(registration, app_module, url):
         ("profile", "Profildaten fehlen."),
         ("building_id", "Ungültige Gebäude-ID."),
         ("coordinates", "Ungültige Koordinaten."),
-        ("consents", "Bitte stimmen Sie der Datenweitergabe zu."),
     ],
 )
 def test_registration_400_contracts(registration, app_module, url, case, message):
@@ -165,8 +164,6 @@ def test_registration_400_contracts(registration, app_module, url, case, message
         app_module.security_utils.validate_building_id.return_value = (False, message)
     elif case == "coordinates":
         app_module.security_utils.validate_coordinates.return_value = (False, message)
-    else:
-        data["consents"]["share_with_utility"] = False
 
     response = client.post(url, json=data)
     assert response.status_code == 400
@@ -212,6 +209,9 @@ def test_registration_happy_path_contract(
         phone="+41791234567",
         referrer_id="referrer-1",
         city_id="zurich",
+        roles=[],
+        has_solar=None,
+        verified=False,
     )
     db.track_event.assert_called_once_with(
         "registration", "building-1", {"type": user_type, "city_id": "zurich"}
@@ -225,18 +225,11 @@ def test_registration_happy_path_contract(
             (
                 "user@example.ch",
                 db.save_token.call_args.args[0].join(
-                    ["http://localhost:5003/unsubscribe/", ""]
+                    ["http://localhost:5003/confirm/", ""]
                 ),
                 "building-1",
                 "Badenerstrasse 1",
             ),
-            True,
-            True,
-        ),
-        (app_module.run_full_ml_task, ("building-1", "zurich"), True, True),
-        (
-            app_module.email_automation.schedule_sequence_for_user,
-            ("building-1", "user@example.ch"),
             True,
             True,
         ),
@@ -250,3 +243,61 @@ def test_registration_unknown_referral_is_ignored(registration, url):
     response = client.post(url, json=valid_data(referral_code="UNKNOWN"))
     assert response.status_code == 200
     assert db.save_building.call_args.kwargs["referrer_id"] is None
+
+
+def test_registration_accepts_multiple_roles_without_utility_or_map_sharing(
+    registration,
+):
+    client, db, _ = registration
+    data = valid_data()
+    data["roles"] = ["owner", "solar_producer"]
+    data["has_solar"] = True
+    data["consents"] = {
+        "share_with_neighbors": False,
+        "updates_opt_in": False,
+    }
+
+    response = client.post("/api/register_anonymous", json=data)
+
+    assert response.status_code == 200
+    saved = db.save_building.call_args.kwargs
+    assert saved["roles"] == ["owner", "solar_producer"]
+    assert saved["has_solar"] is True
+    assert saved["consents"]["share_with_neighbors"] is False
+    assert saved["consents"]["share_with_utility"] is False
+
+
+def test_registration_stays_hidden_until_the_emailed_link_is_opened(registration):
+    client, db, threads = registration
+
+    response = client.post("/api/register_anonymous", json=valid_data())
+
+    assert response.status_code == 200
+    assert db.save_building.call_args.kwargs["verified"] is False
+    token, building_id, token_type = db.save_token.call_args.args[:3]
+    assert building_id == "building-1"
+    assert token_type == "verification"
+    email_thread = threads[0]
+    assert email_thread.args[0] == "user@example.ch"
+    assert email_thread.args[1] == f"http://localhost:5003/confirm/{token}"
+
+
+def test_registration_fails_when_profile_cannot_be_persisted(registration):
+    client, db, _ = registration
+    db.save_building.return_value = False
+
+    response = client.post("/api/register_full", json=valid_data())
+
+    assert response.status_code == 503
+    db.save_token.assert_not_called()
+
+
+def test_registration_fails_when_verification_token_cannot_be_persisted(registration):
+    client, db, threads = registration
+    db.save_building.return_value = True
+    db.save_token.return_value = False
+
+    response = client.post("/api/register_full", json=valid_data())
+
+    assert response.status_code == 503
+    assert threads == []

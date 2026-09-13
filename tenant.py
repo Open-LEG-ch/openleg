@@ -41,7 +41,9 @@ DEFAULT_TENANT = {
     "map_zoom": 12,
     "map_bounds_sw": [47.20, 8.30],
     "map_bounds_ne": [47.60, 8.80],
-    "plz_ranges": [[8000, 8999]],
+    # The public OpenLEG host serves all Swiss postcodes. White-label tenants
+    # may opt into explicit regional ranges through their JSON config.
+    "plz_ranges": None,
     "solar_kwh_per_kwp": DEFAULT_SOLAR_KWH_PER_KWP,
     "site_url": "",
     "ga4_id": "",

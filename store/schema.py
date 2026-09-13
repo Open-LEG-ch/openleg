@@ -37,8 +37,27 @@ def create_tables():
                     referral_code VARCHAR(32) UNIQUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    city_id VARCHAR(64) DEFAULT 'zurich'
+                    city_id VARCHAR(64) DEFAULT 'zurich',
+                    bfs_number INTEGER,
+                    municipality_name VARCHAR(255),
+                    canton VARCHAR(2),
+                    roles JSONB NOT NULL DEFAULT '[]',
+                    has_solar BOOLEAN
                 )
+            """)
+
+            cur.execute("""
+                ALTER TABLE buildings
+                    ADD COLUMN IF NOT EXISTS bfs_number INTEGER,
+                    ADD COLUMN IF NOT EXISTS municipality_name VARCHAR(255),
+                    ADD COLUMN IF NOT EXISTS canton VARCHAR(2),
+                    ADD COLUMN IF NOT EXISTS roles JSONB NOT NULL DEFAULT '[]',
+                    ADD COLUMN IF NOT EXISTS has_solar BOOLEAN
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_buildings_bfs_verified
+                ON buildings (bfs_number, verified)
             """)
 
             # Consents table
@@ -53,6 +72,31 @@ def create_tables():
                     consent_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(building_id)
                 )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS coverage_requests (
+                    request_id VARCHAR(64) PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    address TEXT,
+                    plz VARCHAR(4) NOT NULL,
+                    municipality_name VARCHAR(255) NOT NULL,
+                    canton VARCHAR(2),
+                    bfs_number INTEGER,
+                    roles JSONB NOT NULL DEFAULT '[]',
+                    has_solar BOOLEAN,
+                    verified BOOLEAN NOT NULL DEFAULT FALSE,
+                    verified_at TIMESTAMP,
+                    verification_token VARCHAR(128) UNIQUE,
+                    token_expires_at TIMESTAMP NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_coverage_requests_bfs_verified
+                ON coverage_requests (bfs_number, verified)
             """)
 
             # Tokens table (verification and unsubscribe)
