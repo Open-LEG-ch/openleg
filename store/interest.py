@@ -164,7 +164,7 @@ def get_operator_interest_counts():
             }
     except Exception:
         logger.exception("[DB] Error counting operator interest records")
-        return {"interest_verified": 0, "interest_unverified": 0}
+        return {"interest_verified": None, "interest_unverified": None}
 
 
 def get_interest_counts_by_bfs():

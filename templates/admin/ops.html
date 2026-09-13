@@ -40,11 +40,11 @@
     </div>
     <div class="bg-gray-900 rounded-lg p-4">
       <div class="text-sm text-gray-400">Bestätigtes LEG-Interesse</div>
-      <div class="text-3xl font-bold">{{ counts.interest_verified }}</div>
+      <div class="text-3xl font-bold">{{ counts.interest_verified if counts.interest_verified is not none else 'Nicht verfügbar' }}</div>
     </div>
     <div class="bg-gray-900 rounded-lg p-4">
       <div class="text-sm text-gray-400">Offene E-Mail-Bestätigungen</div>
-      <div class="text-3xl font-bold">{{ counts.interest_unverified }}</div>
+      <div class="text-3xl font-bold">{{ counts.interest_unverified if counts.interest_unverified is not none else 'Nicht verfügbar' }}</div>
     </div>
   </div>
 

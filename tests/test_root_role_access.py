@@ -67,13 +67,18 @@ def test_anonymous_root_renders_public_homepage_not_dashboard_access(app_module)
     assert "<footer" in html
 
 
+@pytest.mark.parametrize("partial", [False, True])
 def test_public_default_uses_nationwide_map_and_neutral_grid_operator(
-    app_module, monkeypatch
+    app_module, monkeypatch, partial
 ):
     monkeypatch.setattr(
         app_module.tenant_module,
         "get_tenant_config",
-        lambda _territory, db=None: app_module.tenant_module.DEFAULT_TENANT.copy(),
+        lambda _territory, db=None: (
+            {"territory": "zurich"}
+            if partial
+            else app_module.tenant_module.DEFAULT_TENANT.copy()
+        ),
     )
     client = app_module.web.test_client()
     home = client.get("/").get_data(as_text=True)

@@ -187,6 +187,8 @@ emails. Address-check registrations take priority over coverage requests. Within
 each source, the newest creation timestamp wins, followed by the stable record
 ID; missing timestamps sort last. Counts, recipients, and dashboard summaries in
 `store/interest.py` use this selection. Operator exports retain the source rows.
+Operator count cards cover all raw records, independently of the displayed
+500-row list. Failed counts return JSON null and render "Nicht verfügbar".
 Public pages still hide exact counts below three. Directory ordering treats one
 and two as the same bucket, then sorts by name.
 

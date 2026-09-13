@@ -30,3 +30,28 @@ def test_operator_counts_all_records_beyond_the_display_limit(
     assert len(response.json["interest_records"]) == 500
     assert response.json["counts"]["interest_verified"] == 502
     assert response.json["counts"]["interest_unverified"] == 3
+
+
+@pytest.mark.integration
+def test_operator_counts_report_database_unavailability_not_zero(
+    interest_client, monkeypatch
+):
+    client, _tasks, _cluster = interest_client
+    monkeypatch.setenv("ADMIN_TOKEN", "test-operator-token")
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("DROP TABLE coverage_requests CASCADE")
+    response = client.get(
+        "/admin/ops", headers={"X-Admin-Token": "test-operator-token"}
+    )
+    assert response.status_code == 200
+    assert response.json["counts"]["interest_verified"] is None
+    assert response.json["counts"]["interest_unverified"] is None
+    html = client.get(
+        "/admin/ops",
+        headers={
+            "X-Admin-Token": "test-operator-token",
+            "Accept": "text/html",
+        },
+    )
+    assert html.status_code == 200
+    assert html.get_data(as_text=True).count("Nicht verfügbar") == 2

@@ -90,14 +90,14 @@ def get_tenant_config(territory: str, db=None) -> dict:
         logger.warning(f"[TENANT] Cache read failed for {territory}: {e}")
         cached = None
     if cached and isinstance(cached, dict):
-        return cached
+        return {**DEFAULT_TENANT, **cached}
 
     # 2. Try in-memory fallback (for when Redis is down)
     now = time.time()
     if territory in _tenant_cache:
         mem_cached, fetched_at = _tenant_cache[territory]
         if now - fetched_at < CACHE_TTL_SECONDS:
-            return mem_cached
+            return {**DEFAULT_TENANT, **mem_cached}
 
     # 3. Try DB lookup
     if db is not None:
@@ -221,23 +221,26 @@ def init_tenant_middleware(app, db=None):
         tenant = getattr(g, "tenant", DEFAULT_TENANT)
         return {
             "tenant": tenant,
-            "city_name": tenant.get("city_name", "Zürich"),
-            "kanton": tenant.get("kanton", "Zürich"),
-            "kanton_code": tenant.get("kanton_code", "ZH"),
-            "platform_name": tenant.get("platform_name", "OpenLEG"),
-            "brand_prefix": tenant.get("brand_prefix", "OpenLEG"),
-            "utility_name": tenant.get("utility_name", "EKZ"),
-            "primary_color": tenant.get("primary_color", "#6366f1"),
-            "secondary_color": tenant.get("secondary_color", "#4338ca"),
-            "contact_email": tenant.get("contact_email", "hallo@openleg.ch"),
-            "dso_contact": tenant.get("dso_contact", "EKZ Verteilnetz AG"),
-            "legal_entity": tenant.get("legal_entity", ""),
-            "map_center_lat": tenant.get("map_center_lat", 47.3769),
-            "map_center_lon": tenant.get("map_center_lon", 8.5417),
-            "map_zoom": tenant.get("map_zoom", 12),
-            "map_bounds_sw": tenant.get("map_bounds_sw", [47.20, 8.30]),
-            "map_bounds_ne": tenant.get("map_bounds_ne", [47.60, 8.80]),
-            "solar_kwh_per_kwp": tenant.get(
-                "solar_kwh_per_kwp", DEFAULT_SOLAR_KWH_PER_KWP
-            ),
+            **{
+                key: tenant.get(key, DEFAULT_TENANT[key])
+                for key in (
+                    "city_name",
+                    "kanton",
+                    "kanton_code",
+                    "platform_name",
+                    "brand_prefix",
+                    "utility_name",
+                    "primary_color",
+                    "secondary_color",
+                    "contact_email",
+                    "dso_contact",
+                    "legal_entity",
+                    "map_center_lat",
+                    "map_center_lon",
+                    "map_zoom",
+                    "map_bounds_sw",
+                    "map_bounds_ne",
+                    "solar_kwh_per_kwp",
+                )
+            },
         }
