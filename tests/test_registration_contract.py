@@ -212,6 +212,7 @@ def test_registration_happy_path_contract(
         roles=[],
         has_solar=None,
         verified=False,
+        verification_token=db.save_building.call_args.kwargs["verification_token"],
     )
     db.track_event.assert_called_once_with(
         "registration", "building-1", {"type": user_type, "city_id": "zurich"}
@@ -224,7 +225,7 @@ def test_registration_happy_path_contract(
             app_module.send_confirmation_email,
             (
                 "user@example.ch",
-                db.save_token.call_args.args[0].join(
+                db.save_building.call_args.kwargs["verification_token"].join(
                     ["http://localhost:5003/confirm/", ""]
                 ),
                 "building-1",
@@ -274,9 +275,10 @@ def test_registration_stays_hidden_until_the_emailed_link_is_opened(registration
 
     assert response.status_code == 200
     assert db.save_building.call_args.kwargs["verified"] is False
-    token, building_id, token_type = db.save_token.call_args.args[:3]
-    assert building_id == "building-1"
-    assert token_type == "verification"
+    token = db.save_building.call_args.kwargs["verification_token"]
+    assert db.save_building.call_args.kwargs["building_id"] == "building-1"
+    assert token
+    db.save_token.assert_not_called()
     email_thread = threads[0]
     assert email_thread.args[0] == "user@example.ch"
     assert email_thread.args[1] == f"http://localhost:5003/confirm/{token}"
@@ -294,8 +296,8 @@ def test_registration_fails_when_profile_cannot_be_persisted(registration):
 
 def test_registration_fails_when_verification_token_cannot_be_persisted(registration):
     client, db, threads = registration
-    db.save_building.return_value = True
-    db.save_token.return_value = False
+    # Token persistence is part of the atomic registration write.
+    db.save_building.return_value = False
 
     response = client.post("/api/register_full", json=valid_data())
 

@@ -102,22 +102,7 @@ def test_confirmation_link_makes_interest_visible_and_notifies_existing_user(
     token = "12345678-1234-4234-8234-123456789012"
     monkeypatch.setattr(
         app_module.db,
-        "get_token",
-        MagicMock(
-            return_value={
-                "token": token,
-                "token_type": "verification",
-                "building_id": "new-building",
-            }
-        ),
-    )
-    monkeypatch.setattr(app_module.db, "use_token", MagicMock(return_value=True))
-    monkeypatch.setattr(
-        app_module.db, "update_building_verified", MagicMock(return_value=True)
-    )
-    monkeypatch.setattr(
-        app_module.db,
-        "get_building",
+        "confirm_building_interest",
         MagicMock(
             return_value={
                 "building_id": "new-building",

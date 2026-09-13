@@ -7,6 +7,7 @@ Owns building records, consent-gated building reads, and dashboard building data
 import json
 import logging
 import time
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,15 @@ def save_building(
     roles: list[str] | None = None,
     has_solar: bool | None = None,
     verified: bool = False,
+    verification_token: str | None = None,
 ) -> bool:
-    """Save or update a building record."""
+    """Save or update a building record.
+
+    When ``verification_token`` is given, the token is bound to the current
+    verification revision inside the same transaction (30-day lifetime).
+    An email change bumps the revision, so older links stop verifying.
+    """
+    token_ttl_seconds = 30 * 24 * 60 * 60
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             # Generate unique referral code
@@ -49,13 +57,26 @@ def save_building(
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s
+                        %s, %s, %s, %s
                     )
                     ON CONFLICT (building_id) DO UPDATE SET
                         email = EXCLUDED.email,
                         phone = EXCLUDED.phone,
-                        verified = EXCLUDED.verified,
-                        verified_at = EXCLUDED.verified_at,
+                        verified = CASE
+                            WHEN LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                            THEN buildings.verified
+                            ELSE FALSE
+                        END,
+                        verified_at = CASE
+                            WHEN LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                            THEN buildings.verified_at
+                            ELSE NULL
+                        END,
+                        verification_revision = CASE
+                            WHEN LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                            THEN buildings.verification_revision
+                            ELSE buildings.verification_revision + 1
+                        END,
                         user_type = EXCLUDED.user_type,
                         bfs_number = EXCLUDED.bfs_number,
                         municipality_name = EXCLUDED.municipality_name,
@@ -63,6 +84,7 @@ def save_building(
                         roles = EXCLUDED.roles,
                         has_solar = EXCLUDED.has_solar,
                         updated_at = CURRENT_TIMESTAMP
+                    RETURNING verification_revision
                 """,
                 (
                     building_id,
@@ -77,7 +99,7 @@ def save_building(
                     profile.get("potential_pv_kwp"),
                     time.time(),
                     verified,
-                    time.time() if verified else None,
+                    datetime.now(timezone.utc) if verified else None,
                     user_type,
                     referrer_id or "",
                     referral_code,
@@ -89,6 +111,24 @@ def save_building(
                     has_solar,
                 ),
             )
+
+            # A new verification link binds to the current revision; any
+            # insert failure rolls back the whole save.
+            if verification_token:
+                row = cur.fetchone()
+                revision = row["verification_revision"]
+                cur.execute(
+                    """
+                        INSERT INTO tokens (
+                            token, building_id, token_type,
+                            verification_revision, expires_at
+                        ) VALUES (
+                            %s, %s, 'verification', %s,
+                            CURRENT_TIMESTAMP + (%s * INTERVAL '1 second')
+                        )
+                    """,
+                    (verification_token, building_id, revision, token_ttl_seconds),
+                )
 
             # Save consents
             cur.execute(

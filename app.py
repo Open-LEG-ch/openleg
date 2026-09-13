@@ -556,18 +556,20 @@ def confirm_interest(token):
         token = security_utils.validate_uuid(token)
     except ValueError:
         abort(404)
-    token_info = db.get_token(token)
-    if not token_info or token_info.get("token_type") != "verification":
-        abort(404)
-    building = db.get_building(token_info.get("building_id"))
-    if not building or not db.use_token(token):
-        abort(404)
-    if not db.update_building_verified(building["building_id"]):
+    try:
+        building = db.confirm_building_interest(token)
+    except db.VerificationConflict:
         abort(409)
+    if not building:
+        abort(404)
     email_automation.schedule_sequence_for_user(
         building["building_id"], building.get("email", "")
     )
-    run_full_ml_task(building["building_id"], building.get("city_id"))
+    threading.Thread(
+        target=run_full_ml_task,
+        args=(building["building_id"], building.get("city_id")),
+        daemon=True,
+    ).start()
     bfs_number = building.get("bfs_number")
     municipality_name = building.get("municipality_name")
     if bfs_number and municipality_name:

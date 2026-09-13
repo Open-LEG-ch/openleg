@@ -120,6 +120,7 @@ def register(data, *, city_id, user_type, deps: RegistrationDeps):
         raise RegistrationError(coords_error)
 
     consents = parse_consents(data.get("consents"))
+    verification_token = str(uuid.uuid4())
     saved = db.save_building(
         building_id=building_id,
         email=email,
@@ -132,20 +133,13 @@ def register(data, *, city_id, user_type, deps: RegistrationDeps):
         roles=roles,
         has_solar=has_solar,
         verified=False,
+        verification_token=verification_token,
     )
     if not saved:
         raise RegistrationError(
             "Die Interessenmeldung konnte nicht gespeichert werden.", status=503
         )
 
-    verification_token = str(uuid.uuid4())
-    token_saved = db.save_token(
-        verification_token, building_id, "verification", ttl_seconds=2592000
-    )
-    if not token_saved:
-        raise RegistrationError(
-            "Die Bestätigungs-E-Mail konnte nicht vorbereitet werden.", status=503
-        )
     verification_url = f"{deps.app_base_url}/confirm/{verification_token}"
 
     thread = deps.thread

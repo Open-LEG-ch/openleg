@@ -42,7 +42,8 @@ def create_tables():
                     municipality_name VARCHAR(255),
                     canton VARCHAR(2),
                     roles JSONB NOT NULL DEFAULT '[]',
-                    has_solar BOOLEAN
+                    has_solar BOOLEAN,
+                    verification_revision BIGINT NOT NULL DEFAULT 0
                 )
             """)
 
@@ -52,7 +53,8 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS municipality_name VARCHAR(255),
                     ADD COLUMN IF NOT EXISTS canton VARCHAR(2),
                     ADD COLUMN IF NOT EXISTS roles JSONB NOT NULL DEFAULT '[]',
-                    ADD COLUMN IF NOT EXISTS has_solar BOOLEAN
+                    ADD COLUMN IF NOT EXISTS has_solar BOOLEAN,
+                    ADD COLUMN IF NOT EXISTS verification_revision BIGINT NOT NULL DEFAULT 0
             """)
 
             cur.execute("""
@@ -107,8 +109,26 @@ def create_tables():
                     token_type VARCHAR(20) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     used_at TIMESTAMP,
-                    expires_at TIMESTAMP
+                    expires_at TIMESTAMP,
+                    verification_revision BIGINT
                 )
+            """)
+
+            # Migration: bind verification tokens to the building revision they
+            # were issued for. Legacy rows keep NULL and fail closed at
+            # confirm time; the column is never backfilled.
+            cur.execute("""
+                ALTER TABLE tokens ADD COLUMN IF NOT EXISTS verification_revision BIGINT
+            """)
+
+            # Idempotent migration: invalidate unused legacy verification
+            # tokens that carry no revision. Never backfills a revision;
+            # unsubscribe tokens are untouched.
+            cur.execute("""
+                UPDATE tokens SET used_at = CURRENT_TIMESTAMP
+                WHERE token_type = 'verification'
+                  AND used_at IS NULL
+                  AND verification_revision IS NULL
             """)
 
             cur.execute("""

@@ -25,6 +25,8 @@ concept never travels under two labels.
 | Gemeinde | Municipality. Its public page is the Gemeindeprofil. |
 | LEA | The AI agent persona served through the OpenClaw gateway. |
 | Neighbour view | The resident-visible map and match summary: jittered coordinates, no identities, consent-gated. |
+| Verified interest | A confirmed email's interest in a LEG within one BFS municipality, counted once across the address-check and coverage-request journeys. |
+| Coverage request | An interest submission whose address could not be resolved. It can contribute to municipality demand after email confirmation. |
 
 ## Seams
 
