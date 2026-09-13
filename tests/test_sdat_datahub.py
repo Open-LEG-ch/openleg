@@ -645,6 +645,219 @@ class TestFetchLatest:
         assert list(local.glob("*")) == []
 
 
+# === Broken sessions ===
+
+
+class TestSessionRecovery:
+    """Ein abgerissener Transfer darf nur die eine Datei kosten.
+
+    Stirbt ein RETR mittendrin, bleibt die Antwort auf dem Kontrollkanal
+    ungelesen: ftplib liest danach fremde Antworten oder läuft in den halb
+    geschlossenen TLS-Socket. Ohne neue Sitzung scheitert jede weitere Datei
+    an einem Fehler, der nichts über sie aussagt.
+    """
+
+    def _outbox(self, count):
+        return {
+            f"{index:02d}.xml": (SDAT_XML, f"202608{index:02d}120000")
+            for index in range(1, count + 1)
+        }
+
+    def test_a_dead_transfer_costs_one_file_not_the_rest(self, config, monkeypatch):
+        """Nur die Datei, an der die Sitzung starb, darf als Fehler zählen."""
+        outbox = self._outbox(4)
+        sessions = []
+
+        def connect_stub(_config):
+            client = FakeFTP(outbox)
+            original = client.retrbinary
+            failed = {"done": False}
+
+            def retrbinary(command, callback, blocksize=8192):
+                # Die zweite Datei dieser Sitzung reisst den Kanal ab, danach
+                # antwortet die Sitzung auf nichts mehr.
+                if client.transfers >= 1 and not failed["done"]:
+                    failed["done"] = True
+                    client.dead = True
+                if client.dead:
+                    raise ftplib.error_temp("426 Data connection closed")
+                client.transfers += 1
+                return original(command, callback, blocksize)
+
+            client.transfers = 0
+            client.dead = False
+            client.retrbinary = retrbinary
+            sessions.append(client)
+            return client
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+
+        result = sdat_datahub.fetch_latest(config)
+
+        # Jede Sitzung liefert eine Datei, dann wird neu verbunden.
+        assert sorted(result["downloaded"]) == sorted(outbox)
+        assert result["failed"] == []
+        assert len(sessions) > 1
+
+    def test_an_unreachable_datahub_stops_the_run_and_reports_every_open_file(
+        self, config, monkeypatch, caplog
+    ):
+        """Ist der Datahub weg, wird nicht 38-mal vergeblich neu verbunden."""
+        outbox = self._outbox(4)
+        first = FakeFTP(outbox)
+
+        def dead(command, callback, blocksize=8192):
+            raise ftplib.error_temp("426 Data connection closed")
+
+        first.retrbinary = dead
+        connects = {"n": 0}
+
+        def connect_stub(_config):
+            connects["n"] += 1
+            if connects["n"] == 1:
+                return first
+            raise OSError("Network is unreachable")
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+
+        with caplog.at_level("ERROR"):
+            result = sdat_datahub.fetch_latest(config)
+
+        assert result["downloaded"] == []
+        assert sorted(result["failed"]) == sorted(outbox)
+        assert connects["n"] == 2, "nach einem toten Datahub wird nicht weiter gewählt"
+        assert "Sitzung verloren" in caplog.text
+
+    def test_a_retry_reopens_the_configured_remote_directory(self, config, monkeypatch):
+        """Remote-Pfade sind relativ: die neue Sitzung muss zurück ins Outbox."""
+        outbox = self._outbox(1)
+        sessions = []
+
+        def connect_stub(_config):
+            client = FakeFTP(outbox)
+            original = client.retrbinary
+
+            def retrbinary(command, callback, blocksize=8192):
+                if not sessions[0].dead:
+                    sessions[0].dead = True
+                    raise ftplib.error_temp("426 Data connection closed")
+                return original(command, callback, blocksize)
+
+            client.dead = False
+            client.retrbinary = retrbinary
+            sessions.append(client)
+            return client
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+
+        result = sdat_datahub.fetch_latest(config)
+
+        assert result["downloaded"] == ["01.xml"]
+        assert sessions[-1].cwd_calls == ["/outbox"]
+
+    def test_an_injected_client_is_never_replaced(self, config, monkeypatch):
+        """Eine fremde Sitzung gehört dem Aufrufer; sie wird nicht ersetzt."""
+        client = FakeFTP(self._outbox(2))
+
+        def dead(command, callback, blocksize=8192):
+            raise ftplib.error_temp("426 Data connection closed")
+
+        client.retrbinary = dead
+
+        def forbidden(_config):
+            raise AssertionError("fetch_latest darf hier nicht neu verbinden")
+
+        monkeypatch.setattr(sdat_datahub, "connect", forbidden)
+
+        result = sdat_datahub.fetch_latest(config, client=client)
+
+        assert result["downloaded"] == []
+        assert sorted(result["failed"]) == ["01.xml", "02.xml"]
+
+    def test_a_failed_cwd_never_leaks_the_fresh_session(self, config, monkeypatch):
+        """Scheitert das Zurückwechseln ins Outbox, darf die neue Sitzung nicht
+        offen liegen bleiben: erreichen kann sie danach niemand mehr, aber auf
+        dem Datahub belegt sie bis zum Server-Timeout einen Platz."""
+        opened = []
+
+        def connect_stub(_config):
+            client = FakeFTP(self._outbox(1))
+
+            def refuse_cwd(path):
+                raise ftplib.error_perm("550 Failed to change directory")
+
+            client.cwd = refuse_cwd
+            opened.append(client)
+            return client
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+        dead = FakeFTP({})
+
+        with pytest.raises(sdat_datahub.SessionLost, match="550"):
+            sdat_datahub._reconnect(dead, config)
+
+        assert len(opened) == 1
+        assert opened[0].close_called is True
+
+    def test_a_local_disk_error_never_drops_a_healthy_session(
+        self, config, monkeypatch
+    ):
+        """Eine volle Platte ist kein Grund, eine gesunde Sitzung wegzuwerfen.
+
+        Der Transfer ist durch und quittiert; nur das lokale Umbenennen
+        scheitert. Neu zu verbinden macht die Datei nicht schreibbar und würde
+        beim nächsten misslungenen Verbindungsversuch den Rest des Laufs
+        kosten -- gemeldet als Datahub-Fehler, obwohl der Datahub liefert.
+        """
+        outbox = self._outbox(2)
+        connects = {"n": 0}
+
+        def connect_stub(_config):
+            connects["n"] += 1
+            return FakeFTP(outbox)
+
+        def full_disk(src, dst):
+            raise OSError(28, "No space left on device")
+
+        monkeypatch.setattr(sdat_datahub, "connect", connect_stub)
+        monkeypatch.setattr(sdat_datahub.os, "replace", full_disk)
+
+        result = sdat_datahub.fetch_latest(config)
+
+        assert result["downloaded"] == []
+        assert sorted(result["failed"]) == ["01.xml", "02.xml"]
+        assert connects["n"] == 1, "die Sitzung war gesund und bleibt bestehen"
+
+    def test_an_unwritable_target_is_a_local_error_not_a_transfer_error(
+        self, config, tmp_path
+    ):
+        """Schlägt schon das Öffnen fehl, ist kein FTP-Kommando abgesetzt."""
+        client = FakeFTP(self._outbox(1))
+        remote = sdat_datahub.RemoteFile(name="01.xml", size=len(SDAT_XML))
+        target = tmp_path / "fehlt" / "01.xml"
+
+        with pytest.raises(sdat_datahub.LocalStorageError):
+            sdat_datahub.download_file(client, remote, target)
+
+    def test_retries_are_configurable_and_never_negative(self):
+        env = {
+            "SWISSELDEX_FTPS_USER": "leg-user",
+            "SWISSELDEX_FTPS_PASSWORD": "secret",
+            "SWISSELDEX_FTPS_RETRIES": "-3",
+        }
+        assert sdat_datahub.load_config(env).retries == 0
+        assert (
+            sdat_datahub.load_config(env | {"SWISSELDEX_FTPS_RETRIES": "5"}).retries
+            == 5
+        )
+        assert (
+            sdat_datahub.load_config(
+                {k: v for k, v in env.items() if k != "SWISSELDEX_FTPS_RETRIES"}
+            ).retries
+            == sdat_datahub.DEFAULT_RETRIES
+        )
+
+
 # === Repository contract ===
 
 
