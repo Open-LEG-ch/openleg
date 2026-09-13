@@ -22,6 +22,11 @@ def test_coverage_unsubscribe_requires_confirmation_and_removes_recipient(
     client, _tasks, _cluster = interest_client
     if with_building:
         assert test_interest_postgres.save_registration(verified=True)
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE consents SET updates_opt_in = TRUE WHERE building_id = %s",
+                ("interest-building",),
+            )
     for email in ("one@example.ch", "other@example.ch"):
         token = str(uuid.uuid4())
         assert db.save_coverage_request(

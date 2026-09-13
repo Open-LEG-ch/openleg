@@ -187,12 +187,17 @@ emails. Address-check registrations take priority over coverage requests. Within
 each source, the newest creation timestamp wins, followed by the stable record
 ID; missing timestamps sort last. Counts, recipients, and dashboard summaries in
 `store/interest.py` use this selection. Operator exports retain the source rows.
+Municipality-growth emails require the selected building record's persisted
+`updates_opt_in`. Missing or false consent excludes that address, even when an
+older building or coverage duplicate exists. Coverage-only recipients retain
+their existing notification behavior. Consent does not alter aggregate counts.
 Operator count cards cover all raw records, independently of the displayed
 500-row list. Failed counts return JSON null and render "Nicht verfügbar".
 Public pages still hide exact counts below three. Directory ordering treats one
 and two as the same bucket, then sorts by name.
 
 Registration saves the building and its verification token in one transaction.
+The generic `save_token` helper accepts unsubscribe tokens only.
 An existing verified profile rejects a different case-insensitive email with
 HTTP 409 before any writes. Same-email updates retain verification. An unverified
 profile can change email; this increments its verification revision and

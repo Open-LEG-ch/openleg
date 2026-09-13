@@ -35,7 +35,13 @@ def _get_connection():
 def save_token(
     token: str, building_id: str, token_type: str, ttl_seconds: int = 2592000
 ) -> bool:
-    """Save a verification or unsubscribe token (default TTL: 30 days)."""
+    """Save an unsubscribe token (default TTL: 30 days).
+
+    Verification tokens are created atomically by ``save_building``; never
+    through this helper.
+    """
+    if token_type != "unsubscribe":
+        return False
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(

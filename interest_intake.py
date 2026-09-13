@@ -13,6 +13,8 @@ class InterestIntakeError(Exception):
 
 
 def submit(data, *, db, security, base_url, send_email):
+    if not isinstance(data, dict):
+        raise InterestIntakeError("Bitte senden Sie ein JSON-Objekt.")
     email = (data.get("email") or "").strip()
     valid, email, error = security.validate_email_address(email)
     if not valid:

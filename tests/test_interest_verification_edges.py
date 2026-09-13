@@ -92,6 +92,14 @@ def test_returning_to_an_old_email_does_not_revive_its_link(interest_database):
 
 
 @pytest.mark.integration
+def test_generic_token_writer_rejects_unbound_verification(interest_database):
+    assert save_registration()
+    assert db.save_token("unbound", "interest-building", "verification") is False
+    assert db.get_token("unbound") is None
+    assert db.get_building("interest-building")["verified"] is False
+
+
+@pytest.mark.integration
 def test_legacy_migration_rejects_unbound_verification_but_keeps_unsubscribe(
     interest_database,
 ):
@@ -99,7 +107,11 @@ def test_legacy_migration_rejects_unbound_verification_but_keeps_unsubscribe(
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("ALTER TABLE tokens DROP COLUMN verification_revision")
         cur.execute("ALTER TABLE buildings DROP COLUMN verification_revision")
-    assert db.save_token("legacy-confirm", "interest-building", "verification")
+        cur.execute(
+            "INSERT INTO tokens (token, building_id, token_type, expires_at) "
+            "VALUES ('legacy-confirm', 'interest-building', 'verification', "
+            "CURRENT_TIMESTAMP + INTERVAL '30 days')"
+        )
     assert db.save_token("legacy-unsubscribe", "interest-building", "unsubscribe")
 
     db.create_tables()

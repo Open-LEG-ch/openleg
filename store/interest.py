@@ -215,9 +215,15 @@ def get_verified_interest_recipients(bfs_number, exclude_email=""):
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT email FROM verified_interest
-                WHERE bfs_number = %s AND email <> LOWER(%s)
-                ORDER BY email
+                SELECT v.email
+                FROM verified_interest v
+                LEFT JOIN consents c
+                    ON c.building_id = v.source_id
+                    AND v.address_problem = FALSE
+                WHERE v.bfs_number = %s
+                  AND v.email <> LOWER(%s)
+                  AND (v.address_problem = TRUE OR c.updates_opt_in IS TRUE)
+                ORDER BY v.email
                 """,
                 (bfs_number, exclude_email),
             )

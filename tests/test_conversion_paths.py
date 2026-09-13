@@ -1101,6 +1101,27 @@ def test_municipality_lookup_fails_closed_without_a_bfs_identity(monkeypatch):
     assert data_enricher.get_municipality_from_coords(47.23216, 7.56877) is None
 
 
+@pytest.mark.parametrize("current", [False, None])
+def test_municipality_lookup_rejects_historical_or_undated_identity(
+    monkeypatch, current
+):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {
+                "attributes": {
+                    "gde_nr": 2554,
+                    "gemname": "Riedholz",
+                    "kanton": "SO",
+                    "is_current_jahr": current,
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+    assert data_enricher.get_municipality_from_coords(47.23216, 7.56877) is None
+
+
 @pytest.mark.parametrize("canton", ["FL", "ZZ", "AG-invalid"])
 def test_municipality_lookup_rejects_non_swiss_canton_codes(monkeypatch, canton):
     response = MagicMock()

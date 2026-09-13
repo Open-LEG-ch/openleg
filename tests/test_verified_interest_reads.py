@@ -87,6 +87,37 @@ def test_scoped_count_and_repeated_schema_keep_municipality_identity(interest_da
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("opt_in", [True, False, None])
+def test_recipients_honor_selected_building_consent_without_changing_counts(
+    interest_database, opt_in
+):
+    _seed("building", "old", "ONE@example.ch", days=40)
+    _seed("building", "selected", "one@example.ch", days=2)
+    _seed("coverage", "duplicate", "one@example.ch")
+    _seed("coverage", "coverage-only", "two@example.ch")
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO consents (building_id, updates_opt_in) VALUES ('old', TRUE)"
+        )
+        if opt_in is not None:
+            cur.execute(
+                "INSERT INTO consents (building_id, updates_opt_in) "
+                "VALUES ('selected', %s)",
+                (opt_in,),
+            )
+    db.create_tables()
+    db.create_tables()
+    expected = ["one@example.ch", "two@example.ch"] if opt_in else ["two@example.ch"]
+    assert db.get_verified_interest_recipients(2554) == expected
+    assert db.get_verified_interest_recipients(2554, "ONE@example.ch") == [
+        "two@example.ch"
+    ]
+    assert db.get_verified_interest_recipients(999) == []
+    assert db.get_interest_count(2554) == 2
+    assert db.get_municipality_interest_summary(2554)["verified_total"] == 2
+
+
+@pytest.mark.integration
 def test_reader_failures_keep_existing_empty_fallbacks(interest_database):
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("DROP VIEW verified_interest")

@@ -239,6 +239,17 @@ def test_unavailable_coverage_confirmation_has_no_effects(interest_client, failu
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("payload", [["unexpected"], "unexpected", 42, True])
+def test_coverage_intake_rejects_non_object_json(interest_client, payload):
+    client, tasks, _cluster = interest_client
+    response = client.post("/api/register_interest", json=payload)
+    assert response.status_code == 400
+    assert response.json == {"error": "Bitte senden Sie ein JSON-Objekt."}
+    assert db.get_operator_interest_records() == []
+    assert tasks == []
+
+
+@pytest.mark.integration
 def test_coverage_intake_keeps_its_roles_validation_response(interest_client):
     client, tasks, _cluster = interest_client
     response = client.post(

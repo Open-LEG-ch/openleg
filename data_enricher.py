@@ -311,7 +311,7 @@ def get_municipality_from_coords(lat, lon):
                 for item in results
                 if item.get("attributes", {}).get("is_current_jahr") is True
             ),
-            results[0] if results else None,
+            None,
         )
         if not current:
             return None

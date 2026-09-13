@@ -106,7 +106,7 @@ def create_tables():
                 CREATE OR REPLACE VIEW verified_interest AS
                 SELECT DISTINCT ON (bfs_number, LOWER(email))
                        bfs_number, LOWER(email) AS email, roles, has_solar,
-                       created_at, address_problem
+                       created_at, address_problem, source_id
                 FROM (
                     SELECT bfs_number, email, roles, has_solar,
                            registered_at AS created_at,
