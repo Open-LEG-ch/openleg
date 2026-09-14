@@ -38,7 +38,49 @@
       <div class="text-sm text-gray-400">Unbestätigt (LEG-Verzeichnis)</div>
       <div class="text-3xl font-bold">{{ counts.registry_stale }}</div>
     </div>
+    <div class="bg-gray-900 rounded-lg p-4">
+      <div class="text-sm text-gray-400">Bestätigtes LEG-Interesse</div>
+      <div class="text-3xl font-bold">{{ counts.interest_verified if counts.interest_verified is not none else 'Nicht verfügbar' }}</div>
+    </div>
+    <div class="bg-gray-900 rounded-lg p-4">
+      <div class="text-sm text-gray-400">Offene E-Mail-Bestätigungen</div>
+      <div class="text-3xl font-bold">{{ counts.interest_unverified if counts.interest_unverified is not none else 'Nicht verfügbar' }}</div>
+    </div>
   </div>
+
+  <section class="bg-gray-900 rounded-lg overflow-hidden mb-8">
+    <div class="px-4 py-3 border-b border-gray-800">
+      <h2 class="font-semibold">LEG-Interessenmeldungen</h2>
+      <p class="text-xs text-gray-500 mt-1">Private Betreiberansicht. Diese Daten erscheinen nicht im Gemeinde-Dashboard.</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-800">
+          <tr>
+            <th class="px-4 py-3 text-left">E-Mail</th>
+            <th class="px-4 py-3 text-left">Gemeinde</th>
+            <th class="px-4 py-3 text-left">PLZ</th>
+            <th class="px-4 py-3 text-left">Quelle</th>
+            <th class="px-4 py-3 text-left">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800">
+          {% for record in interest_records %}
+          <tr>
+            <td class="px-4 py-3">{{ record.email }}</td>
+            <td class="px-4 py-3 text-gray-300">{{ record.municipality_name or '–' }}{% if record.canton %} ({{ record.canton }}){% endif %}</td>
+            <td class="px-4 py-3 text-gray-400">{{ record.plz or '–' }}</td>
+            <td class="px-4 py-3 text-gray-400">{{ 'Adressprüfung' if record.source == 'address_check' else 'Abdeckungsanfrage' }}</td>
+            <td class="px-4 py-3">{{ 'bestätigt' if record.verified else 'offen' }}</td>
+          </tr>
+          {% endfor %}
+          {% if not interest_records %}
+          <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Noch keine Interessenmeldungen</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 
   <div class="mb-8">
     <section class="bg-gray-900 rounded-lg overflow-hidden">

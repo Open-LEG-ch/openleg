@@ -226,7 +226,7 @@ def test_live_address_suggestions_read_the_plz_from_the_label_without_an_attrs_p
     ]
 
 
-def test_live_address_suggestions_default_to_the_zurich_plz_window(monkeypatch):
+def test_live_address_suggestions_default_to_all_swiss_postcodes(monkeypatch):
     request = MagicMock(
         return_value=_suggest_response(
             [
@@ -270,7 +270,7 @@ def test_live_address_suggestions_default_to_the_zurich_plz_window(monkeypatch):
 
     suggestions = data_enricher.get_address_suggestions("Zuerich")
 
-    assert [row["plz"] for row in suggestions] == [8000, 8105, 8999]
+    assert [row["plz"] for row in suggestions] == [7999, 8000, 8105, 8999, 9000]
 
 
 def test_live_address_suggestions_keep_searching_after_an_excluded_result(monkeypatch):
@@ -570,8 +570,8 @@ def test_resolve_address_suggestions_keeps_source_states_distinct(
 @pytest.mark.parametrize(
     ("route", "path", "query", "extra_query", "expected_limit", "expected_ranges"),
     (
-        ("website", "/api/suggest_addresses", "Mell", {}, 15, [[8000, 8999]]),
-        ("website", "/api/suggest_addresses", "Melli", {}, 10, [[8000, 8999]]),
+        ("website", "/api/suggest_addresses", "Mell", {}, 15, None),
+        ("website", "/api/suggest_addresses", "Melli", {}, 10, None),
         (
             "public",
             "/api/v1/address/suggest",
@@ -639,8 +639,8 @@ def test_profile_routes_consume_shared_domain_outcome(
     outcome = data_enricher.AddressProfileOutcome(
         estimates=dict(_PROFILE_SEAM_ESTIMATES),
         profiles=(),
-        source="mock",
-        live_status="upstream_failure",
+        source="live" if route == "website" else "mock",
+        live_status="success" if route == "website" else "upstream_failure",
     )
     adapter = MagicMock(return_value=outcome)
     monkeypatch.setattr(data_enricher, "resolve_address_profile", adapter)
@@ -724,6 +724,34 @@ def test_resolve_address_profile_preserves_fallback_cause(
     assert mock.call_count == int(expected_source == "mock")
     if expected_source == "mock":
         mock.assert_called_once_with(_PROFILE_SEAM_ADDRESS)
+
+
+def test_website_never_presents_a_mock_profile_as_a_real_address(
+    monkeypatch, full_app_module
+):
+    monkeypatch.setattr(
+        data_enricher,
+        "resolve_address_profile",
+        MagicMock(
+            return_value=data_enricher.AddressProfileOutcome(
+                estimates=dict(_PROFILE_SEAM_ESTIMATES),
+                profiles=(),
+                source="mock",
+                live_status="no_match",
+            )
+        ),
+    )
+
+    response = full_app_module.web.test_client().post(
+        "/api/check_potential", json={"address": _PROFILE_SEAM_ADDRESS}
+    )
+
+    assert response.status_code == 422
+    assert response.get_json() == {
+        "error": "Adresse konnte nicht eindeutig geprüft werden.",
+        "can_register_interest": True,
+        "reason": "no_match",
+    }
 
 
 # ==== Mock fallback seams (#507) ====
@@ -1038,6 +1066,81 @@ def test_coordinates_report_nothing_when_the_upstream_fails(monkeypatch, capsys)
     assert "upstream down" in operator_output
 
 
+def test_municipality_lookup_returns_the_current_bfs_identity(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {
+                "attributes": {
+                    "gde_nr": 2554,
+                    "gemname": "Riedholz",
+                    "kanton": "SO",
+                    "is_current_jahr": True,
+                }
+            }
+        ]
+    }
+    request = MagicMock(return_value=response)
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_municipality_from_coords(47.23216, 7.56877) == {
+        "bfs_number": 2554,
+        "municipality_name": "Riedholz",
+        "canton": "SO",
+    }
+    _, kwargs = request.call_args
+    assert kwargs["params"]["sr"] == 4326
+    assert data_enricher.MUNICIPALITY_LAYER in kwargs["params"]["layers"]
+
+
+def test_municipality_lookup_fails_closed_without_a_bfs_identity(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {"results": [{"attributes": {"label": "Riedholz"}}]}
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+
+    assert data_enricher.get_municipality_from_coords(47.23216, 7.56877) is None
+
+
+@pytest.mark.parametrize("current", [False, None])
+def test_municipality_lookup_rejects_historical_or_undated_identity(
+    monkeypatch, current
+):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {
+                "attributes": {
+                    "gde_nr": 2554,
+                    "gemname": "Riedholz",
+                    "kanton": "SO",
+                    "is_current_jahr": current,
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+    assert data_enricher.get_municipality_from_coords(47.23216, 7.56877) is None
+
+
+@pytest.mark.parametrize("canton", ["FL", "ZZ", "AG-invalid"])
+def test_municipality_lookup_rejects_non_swiss_canton_codes(monkeypatch, canton):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {
+                "attributes": {
+                    "gde_nr": 7001,
+                    "gemname": "Outside",
+                    "kanton": canton,
+                    "is_current_jahr": True,
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+    assert data_enricher.get_municipality_from_coords(47.1, 9.5) is None
+
+
 def test_pv_potential_queries_the_sonnendach_layer(monkeypatch):
     request = MagicMock()
     response = MagicMock()
@@ -1245,6 +1348,17 @@ def test_profile_walks_coordinates_pv_statistics_and_profiles(monkeypatch, capsy
 
     monkeypatch.setattr(data_enricher.requests, "get", fake_get)
     monkeypatch.setattr(
+        data_enricher,
+        "get_municipality_from_coords",
+        MagicMock(
+            return_value={
+                "bfs_number": 4021,
+                "municipality_name": "Baden",
+                "canton": "AG",
+            }
+        ),
+    )
+    monkeypatch.setattr(
         data_enricher.ml_models, "generate_mock_profiles", fake_profiles
     )
     monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.0))
@@ -1267,6 +1381,9 @@ def test_profile_walks_coordinates_pv_statistics_and_profiles(monkeypatch, capsy
         "building_type": "MFH",
         "annual_consumption_kwh": 24000.0,
         "potential_pv_kwp": 9.5,
+        "bfs_number": 4021,
+        "municipality_name": "Baden",
+        "canton": "AG",
     }
     assert captured_profiles["annual"] == 24000.0
     assert captured_profiles["pv"] == 9.5
@@ -1309,6 +1426,17 @@ def test_profile_walks_a_single_family_home_with_an_ev_charge(monkeypatch):
     marker = ("generated", "profiles")
     captured = {}
     monkeypatch.setattr(data_enricher.requests, "get", fake_get)
+    monkeypatch.setattr(
+        data_enricher,
+        "get_municipality_from_coords",
+        MagicMock(
+            return_value={
+                "bfs_number": 4040,
+                "municipality_name": "Mellingen",
+                "canton": "AG",
+            }
+        ),
+    )
     monkeypatch.setattr(
         data_enricher.ml_models,
         "generate_mock_profiles",

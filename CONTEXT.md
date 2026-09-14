@@ -25,6 +25,8 @@ concept never travels under two labels.
 | Gemeinde | Municipality. Its public page is the Gemeindeprofil. |
 | LEA | The AI agent persona served through the OpenClaw gateway. |
 | Neighbour view | The resident-visible map and match summary: jittered coordinates, no identities, consent-gated. |
+| Verified interest | A confirmed email's interest in a LEG within one BFS municipality, counted once across the address-check and coverage-request journeys. |
+| Coverage request | An interest submission whose address could not be resolved. It can contribute to municipality demand after email confirmation. |
 
 ## Seams
 
@@ -71,6 +73,7 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/registry` | LEG registry entries and verification |
 | `store/tenant` | White-label tenant configs |
 | `store/token` | Auth and claim tokens |
+| `store/interest` | Verified municipality-interest counts, recipients, summaries, and raw operator exports |
 | `store/analytics` | Event log and the aggregate counts the dashboards read |
 | `store/consent` | The consent record a resident gives and can revoke |
 | `store/document` | Generated LEG documents and their signing status |
@@ -95,12 +98,15 @@ Domain logic sits above storage and stays free of SQL:
 | `public_data.py` | Gemeindeprofil refresh outcomes, source-field preservation, tariff/solar merge, and value-gap assembly |
 | `municipality_profile.py` | Gemeindeprofil presentation helpers |
 | `formation_wizard.py`, `document_generator.py` | LEG formation and documents |
+| `formation_guide.py` | Public formation-guide FAQ context and matching FAQPage data |
 | `sdat_e66.py`, `sdat_datahub.py`, `meter_data.py` | Meter data parsing and retrieval |
 | `data_enricher.py` | Address-suggestion and profile outcomes; live/mock selection, normalization, and fallback cause |
 | `ml_models.py` | Clustering algorithms and generated load profiles |
 | `clustering_run.py` | Complete clustering-run orchestration and persistence outcomes |
 | `neighbor_view.py` | Neighbour read policy: anonymity radius, jittered map locations, provisional match summary |
 | `access_token.py` | Magic-link access policy: token format, hashing, expiry bounds, access URLs |
+| `interest_intake.py` | Coverage-request validation and confirmation-mail submission |
+| `interest_confirmation.py` | Building and coverage confirmation outcomes, then mail scheduling, deferred clustering, and municipality notification |
 
 ## Naming Rules
 

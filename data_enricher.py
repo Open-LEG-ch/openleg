@@ -10,6 +10,7 @@ import requests
 # Importiere Profil-Generator aus ml_models
 import ml_models
 import security_utils
+from cantons import SWISS_CANTONS
 
 # --- API-Endpunkte ---
 GEO_API_URL = "https://api3.geo.admin.ch/rest/services/api/SearchServer"
@@ -18,6 +19,7 @@ SOLAR_LAYER_ID = "ch.bfe.solarenergie-eignung-daecher"
 SOLAR_QUERY_EXTENT = "5.5,45.5,10.8,48.0"
 SOLAR_PAGE_SIZE = 200
 SOLAR_MAX_PAGES = 20
+MUNICIPALITY_LAYER = "ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill"
 
 
 def _normalize_address_suggestions(suggestions):
@@ -185,9 +187,9 @@ def mock_get_plz_stats(plz):
 
 # --- Echte API-Funktionen (Opendata) ---
 def _plz_in_ranges(plz_int, plz_ranges=None):
-    """Check if a PLZ falls within any of the given ranges. Default: Zürich (8000-8999)."""
+    """Check an optional tenant postcode restriction."""
     if plz_ranges is None:
-        plz_ranges = [[8000, 8999]]
+        return 1000 <= plz_int <= 9999
     return any(lo <= plz_int <= hi for lo, hi in plz_ranges)
 
 
@@ -281,6 +283,57 @@ def get_coordinates_from_address(address_string):
     except Exception as e:
         print(f"  [GEO FEHLER] {e}")
         return None, None, None
+
+
+def get_municipality_from_coords(lat, lon):
+    """Resolve a WGS84 point to its current political municipality."""
+    params = {
+        "geometry": f"{lon},{lat}",
+        "geometryType": "esriGeometryPoint",
+        "sr": 4326,
+        "layers": f"all:{MUNICIPALITY_LAYER}",
+        "tolerance": 1,
+        "mapExtent": f"{lon - 0.02},{lat - 0.02},{lon + 0.02},{lat + 0.02}",
+        "imageDisplay": "800,600,96",
+        "returnGeometry": "false",
+    }
+    try:
+        response = requests.get(
+            "https://api3.geo.admin.ch/rest/services/api/MapServer/identify",
+            params=params,
+            timeout=5,
+        )
+        response.raise_for_status()
+        results = response.json().get("results", [])
+        current = next(
+            (
+                item
+                for item in results
+                if item.get("attributes", {}).get("is_current_jahr") is True
+            ),
+            None,
+        )
+        if not current:
+            return None
+        attrs = current.get("attributes", {})
+        bfs_number = attrs.get("gde_nr")
+        name = attrs.get("gemname") or attrs.get("label")
+        canton = attrs.get("kanton")
+        if not bfs_number or not name or not canton:
+            return None
+        canton = str(canton).strip().upper()
+        if canton not in SWISS_CANTONS:
+            return None
+        return {
+            "bfs_number": int(bfs_number),
+            "municipality_name": security_utils.sanitize_string(
+                str(name), max_length=120
+            ),
+            "canton": canton,
+        }
+    except Exception as exc:
+        print(f"  [GEO FEHLER bei Gemeinde] {exc}")
+        return None
 
 
 def get_pv_potential_from_coords(lat, lon):
@@ -425,6 +478,11 @@ def get_energy_profile_for_address(address_string):
         print(f"  [ENRICHER] Keine Koordinaten gefunden für: {clean_address}")
         return None, None
 
+    municipality = get_municipality_from_coords(lat, lon)
+    if not municipality:
+        print(f"  [ENRICHER] Keine Gemeindezuordnung gefunden für: {clean_address}")
+        return None, None
+
     # 2. Koordinaten -> PV-Potenzial (Echte API)
     _pv_kwh_pa, pv_kwp = get_pv_potential_from_coords(lat, lon)
 
@@ -447,6 +505,7 @@ def get_energy_profile_for_address(address_string):
         "building_type": gwr_data[0],
         "annual_consumption_kwh": base_consumption_kwh_pa + ev_kwh_pa,
         "potential_pv_kwp": pv_kwp,
+        **municipality,
     }
 
     # 5. Profile generieren (aus ml_models.py importiert)

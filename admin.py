@@ -188,11 +188,13 @@ def admin_ops():
     stale_registry = db.get_registry_entries_needing_verification(
         stale_days=leg_registry.VERIFICATION_STALE_DAYS, limit=1000
     )
+    interest_records = db.get_operator_interest_records(limit=500)
     response = {
         "latest": latest,
         "snapshots": snapshots[:20],
         "reports": reports,
         "pending_registry": pending_registry,
+        "interest_records": interest_records,
         "counts": {
             "lea_inbox": sum(1 for s in snapshots if s.get("category") == "lea_inbox"),
             "github_monitor": sum(
@@ -206,6 +208,7 @@ def admin_ops():
             ),
             "registry_pending": db.get_registry_pending_count(),
             "registry_stale": len(stale_registry),
+            **db.get_operator_interest_counts(),
         },
     }
     if "text/html" in (request.headers.get("Accept") or ""):

@@ -115,6 +115,18 @@ def _dashboard_context(muni):
             )
             profile = None
     profile = profile or {}
+    interest_summary = (
+        db.get_municipality_interest_summary(int(muni["bfs_number"]))
+        if muni.get("bfs_number")
+        else {}
+    )
+    role_labels = {
+        "owner": "Eigentümer/in",
+        "tenant": "Mieter/in",
+        "solar_producer": "Solarstromproduzent/in",
+        "local_business": "Lokales Unternehmen",
+        "municipality_organisation": "Gemeinde/Organisation",
+    }
     if subdomain:
         invite_url = f"https://{subdomain}.openleg.ch"
     else:
@@ -128,6 +140,11 @@ def _dashboard_context(muni):
         "solar_score": profile.get("pv_score_pct"),
         "energy_score": profile.get("energy_transition_score"),
         "invite_url": invite_url,
+        "interest_summary": interest_summary,
+        "interest_roles": [
+            {"label": role_labels.get(role, role), "count": count}
+            for role, count in (interest_summary.get("roles") or {}).items()
+        ],
         "error": None,
     }
 
@@ -256,6 +273,16 @@ def dashboard_demo():
         solar_score=34,
         energy_score=61,
         invite_url="https://baden.openleg.ch",
+        interest_summary={
+            "verified_total": 42,
+            "last_30_days": 3,
+            "has_solar": 11,
+            "address_problems": 2,
+        },
+        interest_roles=[
+            {"label": "Eigentümer/in", "count": 27},
+            {"label": "Mieter/in", "count": 15},
+        ],
         error=None,
     )
 
@@ -286,6 +313,9 @@ def profil(bfs):
     )
     if ctx is None:
         abort(404)
+    interest_count = db.get_interest_count(bfs) or 0
+    ctx["interest_count"] = interest_count
+    ctx["interest_label"] = _public_interest_label(interest_count, confirmed=True)
     return render_template("gemeinde/profil.html", **ctx)
 
 
@@ -308,12 +338,23 @@ def _normalize_kanton_param(raw_value):
     return None, "all"
 
 
+def _public_interest_label(count, *, confirmed=False):
+    count = max(0, int(count or 0))
+    noun = "bestätigte Interessierte" if confirmed else "Interessierte"
+    if 0 < count < 3:
+        return f"< 3 {noun}"
+    return f"{count} {noun}"
+
+
 @municipality_bp.route("/verzeichnis")
 def verzeichnis():
     kanton_filter, kanton = _normalize_kanton_param(request.args.get("kanton"))
     order_by = request.args.get("sort", "energy_transition_score")
     query = request.args.get("q", "").strip()
-    profiles = db.get_all_municipality_profiles(kanton=kanton_filter, order_by=order_by)
+    profile_order = "name" if order_by == "interest" else order_by
+    profiles = db.get_all_municipality_profiles(
+        kanton=kanton_filter, order_by=profile_order
+    )
     if order_by in {
         "energy_transition_score",
         "leg_value_gap_chf",
@@ -328,11 +369,26 @@ def verzeichnis():
             if query.lower() in (profile.get("name", "") or "").lower()
         ]
     ranking_rows = {row["bfs_number"]: row for row in Ranking.load().national()}
+    interest_counts = db.get_interest_counts_by_bfs()
     for profile in profiles:
         row = ranking_rows.get(profile.get("bfs_number"), {})
         profile["pv_rank"] = row.get("rank")
         profile["display_score"] = row.get("display_score")
         profile["score_over_100"] = row.get("score_over_100")
+        interest_count = interest_counts.get(profile.get("bfs_number"), 0)
+        profile["interest_count"] = interest_count
+        profile["interest_label"] = _public_interest_label(interest_count)
+    if order_by == "interest":
+        profiles.sort(
+            key=lambda profile: (
+                -(
+                    1
+                    if 0 < profile["interest_count"] < 3
+                    else profile["interest_count"]
+                ),
+                (profile.get("name") or "").casefold(),
+            )
+        )
     return render_template(
         "gemeinde/verzeichnis.html",
         profiles=profiles,

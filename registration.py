@@ -9,6 +9,13 @@ from dataclasses import dataclass
 from typing import Any
 
 CONSENT_VERSION = "2026-01-01"
+ALLOWED_ROLES = {
+    "owner",
+    "tenant",
+    "solar_producer",
+    "local_business",
+    "municipality_organisation",
+}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -18,8 +25,6 @@ class RegistrationDeps:
     app_base_url: str
     thread: Callable[..., Any] = threading.Thread
     send_confirmation_email: Callable[..., Any]
-    run_full_ml_task: Callable[..., Any]
-    schedule_sequence_for_user: Callable[..., Any]
     find_provisional_matches: Callable[..., Any]
     collect_building_locations: Callable[..., Any]
 
@@ -31,7 +36,7 @@ class RegistrationError(Exception):
         self.status = status
 
 
-def _coerce_bool(value):
+def coerce_bool(value):
     if isinstance(value, bool):
         return value
     if value is None:
@@ -46,12 +51,27 @@ def _coerce_bool(value):
 def parse_consents(raw_consents):
     consents = raw_consents or {}
     return {
-        "share_with_neighbors": _coerce_bool(consents.get("share_with_neighbors")),
-        "share_with_utility": _coerce_bool(consents.get("share_with_utility")),
-        "updates_opt_in": _coerce_bool(consents.get("updates_opt_in")),
+        "share_with_neighbors": coerce_bool(consents.get("share_with_neighbors")),
+        "share_with_utility": False,
+        "updates_opt_in": coerce_bool(consents.get("updates_opt_in")),
         "consent_version": consents.get("consent_version") or CONSENT_VERSION,
         "consent_timestamp": time.time(),
     }
+
+
+def parse_roles(raw_roles):
+    if raw_roles is None:
+        return []
+    if not isinstance(raw_roles, list):
+        raise RegistrationError("Bitte wählen Sie gültige Rollen aus.")
+    roles = []
+    for raw_role in raw_roles:
+        role = raw_role.strip() if isinstance(raw_role, str) else ""
+        if role not in ALLOWED_ROLES:
+            raise RegistrationError("Bitte wählen Sie gültige Rollen aus.")
+        if role not in roles:
+            roles.append(role)
+    return roles
 
 
 def register(data, *, city_id, user_type, deps: RegistrationDeps):
@@ -61,6 +81,9 @@ def register(data, *, city_id, user_type, deps: RegistrationDeps):
     email = (data.get("email") or "").strip()
     profile = data.get("profile")
     referral_code = (data.get("referral_code") or "").strip()
+    roles = parse_roles(data.get("roles"))
+    raw_has_solar = data.get("has_solar")
+    has_solar = coerce_bool(raw_has_solar) if raw_has_solar is not None else None
 
     referrer_id = None
     if referral_code:
@@ -95,48 +118,48 @@ def register(data, *, city_id, user_type, deps: RegistrationDeps):
         raise RegistrationError(coords_error)
 
     consents = parse_consents(data.get("consents"))
-    if not consents.get("share_with_neighbors") or not consents.get(
-        "share_with_utility"
-    ):
-        raise RegistrationError("Bitte stimmen Sie der Datenweitergabe zu.")
+    verification_token = str(uuid.uuid4())
+    try:
+        saved = db.save_building(
+            building_id=building_id,
+            email=email,
+            profile=profile,
+            consents=consents,
+            user_type=user_type,
+            phone=phone,
+            referrer_id=referrer_id,
+            city_id=city_id,
+            roles=roles,
+            has_solar=has_solar,
+            verified=False,
+            verification_token=verification_token,
+        )
+    except db.VerifiedRegistrationConflict as error:
+        raise RegistrationError(
+            "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung "
+            "mit einer anderen E-Mail-Adresse.",
+            status=409,
+        ) from error
+    if not saved:
+        raise RegistrationError(
+            "Die Interessenmeldung konnte nicht gespeichert werden.", status=503
+        )
 
-    db.save_building(
-        building_id=building_id,
-        email=email,
-        profile=profile,
-        consents=consents,
-        user_type=user_type,
-        phone=phone,
-        referrer_id=referrer_id,
-        city_id=city_id,
-    )
-
-    unsub_token = str(uuid.uuid4())
-    db.save_token(unsub_token, building_id, "unsubscribe")
-    unsubscribe_url = f"{deps.app_base_url}/unsubscribe/{unsub_token}"
+    verification_url = f"{deps.app_base_url}/confirm/{verification_token}"
 
     thread = deps.thread
     thread(
         target=deps.send_confirmation_email,
-        args=(email, unsubscribe_url, building_id, profile.get("address", "")),
+        args=(email, verification_url, building_id, profile.get("address", "")),
         daemon=True,
     ).start()
-    thread(
-        target=deps.run_full_ml_task,
-        args=(building_id, city_id),
-        daemon=True,
-    ).start()
-    thread(
-        target=deps.schedule_sequence_for_user,
-        args=(building_id, email),
-        daemon=True,
-    ).start()
-
     db.track_event("registration", building_id, {"type": user_type, "city_id": city_id})
 
     cluster_info = deps.find_provisional_matches(profile)
     locations = deps.collect_building_locations(
-        city_id=city_id, exclude_building_id=building_id
+        city_id=city_id,
+        bfs_number=profile.get("bfs_number"),
+        exclude_building_id=building_id,
     )
     referral_link = None
     ref_code = db.get_referral_code(building_id)

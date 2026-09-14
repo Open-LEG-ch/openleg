@@ -4,10 +4,16 @@
 Owns building records, consent-gated building reads, and dashboard building data.
 """
 
+import json
 import logging
 import time
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+
+
+class VerifiedRegistrationConflict(Exception):
+    """A verified building cannot be registered under another email."""
 
 
 def _get_connection():
@@ -25,8 +31,19 @@ def save_building(
     phone: str | None = None,
     referrer_id: str | None = None,
     city_id: str | None = None,
+    roles: list[str] | None = None,
+    has_solar: bool | None = None,
+    verified: bool = False,
+    verification_token: str | None = None,
 ) -> bool:
-    """Save or update a building record."""
+    """Save or update a building record.
+
+    When ``verification_token`` is given, the token is bound to the current
+    verification revision inside the same transaction (30-day lifetime).
+    An unverified email change bumps the revision, so older links stop verifying.
+    A verified building rejects registration under a different email.
+    """
+    token_ttl_seconds = 30 * 24 * 60 * 60
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             # Generate unique referral code
@@ -40,18 +57,43 @@ def save_building(
                         building_id, email, phone, address, lat, lon, plz,
                         building_type, annual_consumption_kwh, potential_pv_kwp,
                         registered_at, verified, verified_at, user_type,
-                        referrer_id, referral_code, city_id
+                        referrer_id, referral_code, city_id, bfs_number,
+                        municipality_name, canton, roles, has_solar,
+                        verification_requested_at
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        to_timestamp(%s), %s, to_timestamp(%s), %s, %s, %s, %s
+                        to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, CURRENT_TIMESTAMP
                     )
                     ON CONFLICT (building_id) DO UPDATE SET
                         email = EXCLUDED.email,
                         phone = EXCLUDED.phone,
-                        verified = EXCLUDED.verified,
-                        verified_at = EXCLUDED.verified_at,
+                        verified = CASE
+                            WHEN LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                            THEN buildings.verified
+                            ELSE FALSE
+                        END,
+                        verified_at = CASE
+                            WHEN LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                            THEN buildings.verified_at
+                            ELSE NULL
+                        END,
+                        verification_revision = CASE
+                            WHEN LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                            THEN buildings.verification_revision
+                            ELSE buildings.verification_revision + 1
+                        END,
                         user_type = EXCLUDED.user_type,
+                        bfs_number = EXCLUDED.bfs_number,
+                        municipality_name = EXCLUDED.municipality_name,
+                        canton = EXCLUDED.canton,
+                        roles = EXCLUDED.roles,
+                        has_solar = EXCLUDED.has_solar,
+                        verification_requested_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP
+                    WHERE buildings.verified IS NOT TRUE
+                       OR LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                    RETURNING verification_revision
                 """,
                 (
                     building_id,
@@ -65,14 +107,40 @@ def save_building(
                     profile.get("annual_consumption_kwh"),
                     profile.get("potential_pv_kwp"),
                     time.time(),
-                    True,  # verified immediately for now
-                    time.time(),
+                    verified,
+                    datetime.now(timezone.utc) if verified else None,
                     user_type,
                     referrer_id or "",
                     referral_code,
                     city_id or "baden",
+                    profile.get("bfs_number"),
+                    profile.get("municipality_name"),
+                    profile.get("canton"),
+                    json.dumps(roles or []),
+                    has_solar,
                 ),
             )
+
+            row = cur.fetchone()
+            if not row:
+                raise VerifiedRegistrationConflict(building_id)
+
+            # A new verification link binds to the current revision; any
+            # insert failure rolls back the whole save.
+            if verification_token:
+                revision = row["verification_revision"]
+                cur.execute(
+                    """
+                        INSERT INTO tokens (
+                            token, building_id, token_type,
+                            verification_revision, expires_at
+                        ) VALUES (
+                            %s, %s, 'verification', %s,
+                            CURRENT_TIMESTAMP + (%s * INTERVAL '1 second')
+                        )
+                    """,
+                    (verification_token, building_id, revision, token_ttl_seconds),
+                )
 
             # Save consents
             cur.execute(
@@ -110,6 +178,8 @@ def save_building(
                 )
 
             return True
+    except VerifiedRegistrationConflict:
+        raise
     except Exception as e:
         logger.error(f"[DB] Error saving building {building_id}: {e}")
         return False
@@ -155,11 +225,24 @@ def get_building_by_email(email: str) -> list[dict]:
         return []
 
 
-def get_all_buildings(city_id: str | None = None) -> list[dict]:
-    """Get all buildings for map display, optionally scoped by city_id."""
+def get_all_buildings(
+    city_id: str | None = None, bfs_number: int | None = None
+) -> list[dict]:
+    """Get consented buildings for a map, preferably scoped by municipality."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
-            if city_id:
+            if bfs_number is not None:
+                cur.execute(
+                    """
+                        SELECT b.building_id, b.lat, b.lon, b.user_type, b.verified
+                        FROM buildings b
+                        INNER JOIN consents c ON b.building_id = c.building_id
+                        WHERE b.verified = TRUE
+                        AND c.share_with_neighbors = TRUE AND b.bfs_number = %s
+                    """,
+                    (bfs_number,),
+                )
+            elif city_id:
                 cur.execute(
                     """
                         SELECT b.building_id, b.lat, b.lon, b.user_type, b.verified
@@ -184,11 +267,28 @@ def get_all_buildings(city_id: str | None = None) -> list[dict]:
         return []
 
 
-def get_all_building_profiles(city_id: str | None = None) -> list[dict]:
+def get_all_building_profiles(
+    city_id: str | None = None, bfs_number: int | None = None
+) -> list[dict]:
     """Get all building profiles for ML clustering, optionally scoped by city_id."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
-            if city_id:
+            if bfs_number is not None:
+                cur.execute(
+                    """
+                        SELECT b.building_id, b.address, b.lat, b.lon, b.plz,
+                               b.bfs_number, b.municipality_name, b.canton,
+                               b.building_type, b.annual_consumption_kwh,
+                               b.potential_pv_kwp, b.user_type
+                        FROM buildings b
+                        INNER JOIN consents c ON b.building_id = c.building_id
+                        AND c.share_with_neighbors = TRUE
+                        WHERE b.verified = TRUE
+                          AND b.bfs_number = %s
+                    """,
+                    (bfs_number,),
+                )
+            elif city_id:
                 cur.execute(
                     """
                         SELECT b.building_id, b.address, b.lat, b.lon, b.plz, b.building_type,
