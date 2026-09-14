@@ -4,8 +4,12 @@
 import json
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
+from zoneinfo import ZoneInfo
 
 import database as db
+
+# Perioden sind halboffene Zürcher Kalendermonate, gespeichert in UTC.
+PERIOD_TIMEZONE = "Europe/Zurich"
 
 _MONTHS = (
     "Januar",
@@ -83,12 +87,19 @@ def _json_value(value, fallback):
 
 
 def _period_label(value):
-    """Return a Swiss High German month and year label."""
+    """Return a Swiss High German month and year label.
+
+    Period boundaries are stored in UTC, so an August period starts at
+    2026-07-31T22:00Z. Reading the month off that without converting back to
+    the period timezone labels the August draft "Juli 2026".
+    """
     if isinstance(value, str):
         try:
             value = datetime.fromisoformat(value)
         except ValueError:
             return value
+    if isinstance(value, datetime) and value.tzinfo is not None:
+        value = value.astimezone(ZoneInfo(PERIOD_TIMEZONE))
     if isinstance(value, (datetime, date)):
         return f"{_MONTHS[value.month - 1]} {value.year}"
     return "Periode"
