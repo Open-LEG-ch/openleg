@@ -271,3 +271,18 @@ def test_rate_uses_explicit_half_up_rounding():
     workspace = _module()
 
     assert workspace._rate(Decimal("0.15005")) == "15.01 Rp./kWh"
+
+
+def test_a_period_stored_in_utc_is_labelled_in_its_own_month():
+    """An August period starts at 2026-07-31T22:00Z and is not July."""
+    import billing_workspace as workspace
+
+    assert (
+        workspace.period_label(datetime(2026, 7, 31, 22, 0, tzinfo=ZoneInfo("UTC")))
+        == "August 2026"
+    )
+    assert workspace.period_label("2026-07-31T22:00:00+00:00") == "August 2026"
+    assert (
+        workspace.period_label(datetime(2026, 8, 1, tzinfo=ZoneInfo("Europe/Zurich")))
+        == "August 2026"
+    )

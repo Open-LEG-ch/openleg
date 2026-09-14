@@ -11,6 +11,7 @@ detail_view() dict the HTML page used, not from a second calculation.
 """
 
 import re
+from copy import deepcopy
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -1267,3 +1268,28 @@ def test_member_invoice_detail_template_uses_natural_swiss_high_german_wording()
     text = _read_template("member_invoice_detail.html")
     assert "Verbrauchskosten" in text
     assert "Verbrauchsladung" not in text
+
+
+def test_a_period_frozen_in_utc_is_dated_in_its_own_month(monkeypatch):
+    """An August invoice starts at 2026-07-31T22:00Z and is not a July one."""
+    import member_invoices
+
+    invoice = deepcopy(INVOICE_ROW)
+    invoice["provenance_snapshot"] = {
+        **invoice["provenance_snapshot"],
+        "period_start": "2026-07-31T22:00:00+00:00",
+        "period_end": "2026-08-31T22:00:00+00:00",
+    }
+    invoice["issue_date"] = "2026-09-11"
+    invoice["due_date"] = "2026-10-11"
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        lambda invoice_id, building_id: invoice,
+    )
+
+    detail = member_invoices.detail_view(42, "building-session")
+
+    assert detail["period_label"] == "August 2026"
+    assert detail["period_start"] == "2026-08-01"
+    assert detail["period_end"] == "2026-09-01"
