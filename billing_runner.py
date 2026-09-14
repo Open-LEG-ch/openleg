@@ -76,6 +76,9 @@ def run_billing_period(community_id, period_start, period_end):
             internal_price_per_kwh=policy["internal_price_chf_per_kwh"],
             network_level=policy["network_level"],
             distribution_model=policy["distribution_model"],
+            # Verrechnet wird die Aufteilung des VNB, nicht die eigene: sie
+            # steht auf der Abrechnung, die das Mitglied selbst nachprüfen kann.
+            billed_allocation=frames.vnb_reference["billed"],
         )
         reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
         participant_gaps = reconciliation["per_participant"].values()

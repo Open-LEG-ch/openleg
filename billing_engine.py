@@ -84,6 +84,29 @@ def allocate_energy(production, consumption, model="proportional"):
     return result
 
 
+def _billed_quantities(billed_allocation, key, engine_quantities):
+    """The quantities to bill: the caller's split, or the engine's own.
+
+    Fails closed on a split that does not cover exactly the participants the
+    engine allocated for: billing a participant the caller never priced, or
+    dropping one the engine allocated to, would move energy between members.
+    """
+    if billed_allocation is None:
+        return dict(engine_quantities)
+    if not isinstance(billed_allocation, dict) or key not in billed_allocation:
+        raise ValueError("Billed allocation must carry consumption and production")
+    quantities = billed_allocation[key]
+    if not isinstance(quantities, dict) or set(quantities) != set(engine_quantities):
+        raise ValueError("Billed allocation must cover exactly the participants")
+    values = {}
+    for participant, value in quantities.items():
+        number = float(value)
+        if not isfinite(number) or number < 0:
+            raise ValueError("Billed allocation must be finite and non-negative")
+        values[participant] = number
+    return values
+
+
 def compute_network_discount(allocated_kwh, grid_fee_per_kwh, network_level):
     """Compute Netznutzungsentgelt discount for LEG allocation.
 
@@ -109,8 +132,17 @@ def generate_billing_summary(
     internal_price_per_kwh,
     network_level,
     distribution_model="proportional",
+    billed_allocation=None,
 ):
     """Generate billing summary for a period.
+
+    ``billed_allocation`` carries the quantities to bill, as
+    ``{"consumption_kwh": {participant: kwh}, "production_kwh": {...}}``. The
+    VNB's own split arrives that way: it is what a member can check against
+    their own statement, so it is what the line items carry. Omit it and the
+    engine bills its own allocation, which is what the model comparisons and
+    the standalone callers do. Either way the engine's proportional result is
+    reported under ``engine_audit``.
 
     Returns:
         dict with total_production_kwh, total_allocated_kwh,
@@ -154,8 +186,29 @@ def generate_billing_summary(
         total_production_series, consumption, model=distribution_model
     )
 
+    engine_allocated = {
+        column: float(allocation[column].sum()) for column in allocation.columns
+    }
+    engine_credited = {}
+    if producer_production is not None:
+        allocated_by_interval = allocation.sum(axis=1)
+        shares = producer_production.div(
+            total_production_series.replace(0, float("nan")), axis=0
+        ).fillna(0)
+        credited = shares.mul(allocated_by_interval, axis=0).sum(axis=0)
+        engine_credited = {
+            producer_id: float(credited[producer_id]) for producer_id in credited.index
+        }
+
+    billed_consumption = _billed_quantities(
+        billed_allocation, "consumption_kwh", engine_allocated
+    )
+    billed_production = _billed_quantities(
+        billed_allocation, "production_kwh", engine_credited
+    )
+
     total_production = float(total_production_series.sum())
-    total_allocated = float(allocation.values.sum())
+    total_allocated = sum(billed_consumption.values())
     total_discount = compute_network_discount(
         total_allocated, grid_fee_per_kwh, network_level
     )
@@ -163,7 +216,7 @@ def generate_billing_summary(
     participants = []
     line_items = []
     for col in allocation.columns:
-        alloc_kwh = float(allocation[col].sum())
+        alloc_kwh = billed_consumption[col]
         priced_quantity = round(alloc_kwh, 6)
         cons_kwh = float(consumption[col].sum())
         discount = compute_network_discount(alloc_kwh, grid_fee_per_kwh, network_level)
@@ -195,16 +248,11 @@ def generate_billing_summary(
             )
 
     if producer_production is not None:
-        allocated_by_interval = allocation.sum(axis=1)
-        shares = producer_production.div(
-            total_production_series.replace(0, float("nan")), axis=0
-        ).fillna(0)
-        credited = shares.mul(allocated_by_interval, axis=0).sum(axis=0)
         charge_total = sum(_money(item["amount_chf"]) for item in line_items)
         credited_total = Decimal(0)
-        producer_ids = list(credited.index)
+        producer_ids = list(billed_production)
         for producer_id in producer_ids:
-            quantity = round(float(credited[producer_id]), 6)
+            quantity = round(billed_production[producer_id], 6)
             amount = _priced_amount(quantity, internal_price_per_kwh)
             credited_total += amount
             line_items.append(
@@ -240,4 +288,27 @@ def generate_billing_summary(
         "network_level": network_level,
         "participants": participants,
         "line_items": line_items,
+        # Was das Verteilmodell selbst zugeteilt hätte. Verrechnet wird die
+        # VNB-Aufteilung; diese Zahlen machen die Differenz sichtbar, statt sie
+        # zu verwerfen.
+        "engine_audit": {
+            "distribution_model": distribution_model,
+            "total_allocated_kwh": round(sum(engine_allocated.values()), 6),
+            "allocated_kwh": {
+                participant: round(value, 6)
+                for participant, value in engine_allocated.items()
+            },
+            "credited_kwh": {
+                participant: round(value, 6)
+                for participant, value in engine_credited.items()
+            },
+            "allocation_difference_kwh": {
+                participant: round(billed_consumption[participant] - value, 6)
+                for participant, value in engine_allocated.items()
+            },
+            "credit_difference_kwh": {
+                participant: round(billed_production[participant] - value, 6)
+                for participant, value in engine_credited.items()
+            },
+        },
     }
