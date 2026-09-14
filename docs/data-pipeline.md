@@ -115,7 +115,8 @@ Each pair of metering point and direction carries three channels:
 
 `total = grid + community` holds. The LEG channel balances across the
 community: what production points feed into the LEG, consumption points draw
-from it.
+from it. It balances to within a rounding residue, not exactly; see "Units and
+directions" for what billing does with the difference.
 
 Observations carry no timestamp of their own. It follows from the interval
 start of the block plus `(Sequence - 1) * resolution` and marks the **start**
@@ -166,9 +167,29 @@ constrained to `consumption` or `production` and is part of the readings key,
 because one physical point can be both at the same instant. The full key is
 therefore `(metering_point_id, direction, measured_at)`.
 
-The VNB split into `grid_kwh` and `community_kwh` is authoritative. The billing
-engine reallocates totals only as an audit calculation. A missing VNB split or
-any aggregate or participant-level difference blocks the draft period.
+The VNB split into `grid_kwh` and `community_kwh` is authoritative, and it is
+what the line items carry: a member's charge is the `community_kwh` their own
+VNB statement shows. The billing engine reallocates totals only as an audit
+calculation, reported under `engine_audit` and never billed. A missing VNB split
+blocks the draft period.
+
+The two VNB sides do not add up to the same number. Each side is rounded per
+interval, so a month's community production exceeds its community consumption by
+a few hundredths of a percent (0.02% to 0.05% over the first four Schwarzenburg
+months). Crediting the production side verbatim would pay producers for energy
+nobody was charged for, so the consumption side is billed unchanged and the
+credits are distributed over exactly that same energy, by each producer's share
+of the VNB's community production. Largest remainder closes the split at 6
+decimals, so charged and credited energy match exactly rather than within a
+tolerance, which is what `billing_approval` requires. The delivered figures and
+the residue stay on the draft as `vnb_delivered_production_kwh` and
+`vnb_imbalance_kwh`.
+
+Above `billing_readings.MAX_VNB_IMBALANCE_RATIO` (0.5% of community
+consumption) the difference is no longer a rounding residue but a defect in the
+delivery, and the period fails closed with a `vnb_imbalance` problem rather than
+distributing it. So does a period where the VNB allocated energy to consumers
+and none to producers.
 
 ### Timezone semantics
 
@@ -215,7 +236,8 @@ draft and applies these fail-closed rules:
 - one explicit `billing_tariffs` row must cover the complete period
 - internal and grid prices, network level, and distribution model are copied
   onto the draft; public H4 data and zero defaults are never substitutes
-- incomplete readings or a difference from the VNB allocation persist nothing
+- incomplete readings, an unbalanced VNB delivery, or billed quantities that
+  depart from the VNB reference persist nothing
 - `(community_id, period_start, period_end)` is unique
 - identical input fingerprints are retry no-ops; changed inputs require review
 - the cron counts work only after `save_billing_period` returns a committed ID
