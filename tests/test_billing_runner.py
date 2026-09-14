@@ -52,7 +52,13 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
             "resolution_minutes": 15,
             "timezone": "Europe/Zurich",
         },
-        vnb_reference={"community_kwh": 1.5},
+        vnb_reference={
+            "community_kwh": 1.5,
+            "billed": {
+                "consumption_kwh": {"CH001": 1.5},
+                "production_kwh": {"CH002": 1.5},
+            },
+        },
     )
     summary_result = {"participant_count": 2}
     reconciliation_result = {
@@ -123,6 +129,7 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
                 "internal_price_per_kwh": policy["internal_price_chf_per_kwh"],
                 "network_level": policy["network_level"],
                 "distribution_model": policy["distribution_model"],
+                "billed_allocation": frames.vnb_reference["billed"],
             },
         )
     ]
@@ -169,7 +176,13 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
     )
 
     reconciliation_result["difference_kwh"] = 0
-    frames.vnb_reference = {"community_kwh": 9.9}
+    frames.vnb_reference = {
+        "community_kwh": 9.9,
+        "billed": {
+            "consumption_kwh": {"CH001": 9.9},
+            "production_kwh": {"CH002": 9.9},
+        },
+    }
     with pytest.raises(BillingRunError) as changed:
         run_billing_period(COMMUNITY, START, END)
     assert str(changed.value) == "Billing period inputs changed after processing"
@@ -257,7 +270,13 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
             "resolution_minutes": 15,
             "timezone": "Europe/Zurich",
         },
-        vnb_reference={"vnb_total_kwh": 3.0},
+        vnb_reference={
+            "vnb_total_kwh": 3.0,
+            "billed": {
+                "consumption_kwh": {"building-a": 3.0},
+                "production_kwh": {"building-a": 3.0},
+            },
+        },
     )
     policy = {
         "community_id": COMMUNITY,
@@ -303,7 +322,13 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
         "payment_days": 30,
         "invoice_prefix": "LEG-2026",
         "delivery_method": "email",
-        "vnb_reference": {"vnb_total_kwh": 3.0},
+        "vnb_reference": {
+            "vnb_total_kwh": 3.0,
+            "billed": {
+                "consumption_kwh": {"building-a": 3.0},
+                "production_kwh": {"building-a": 3.0},
+            },
+        },
         "summary": {"z": 1, "a": 2},
         "reconciliation": {"difference_kwh": 0, "production_difference_kwh": 0},
     }
@@ -350,11 +375,17 @@ def _fingerprint_case():
             vnb_reference={
                 "community_consumption_kwh": 1.5,
                 "community_production_kwh": 1.5,
+                "imbalance_kwh": 0.0,
+                "imbalance_ratio": 0.0,
                 "per_participant": {
                     "building-a": {
                         "consumption_kwh": 1.5,
                         "production_kwh": 1.5,
                     }
+                },
+                "billed": {
+                    "consumption_kwh": {"building-a": 1.5},
+                    "production_kwh": {"building-a": 1.5},
                 },
             },
             provenance={
@@ -577,10 +608,17 @@ def test_equivalent_billing_inputs_keep_a_stable_fingerprint(monkeypatch):
 
 
 def test_public_billing_fingerprint_matches_the_contract_vector(monkeypatch):
+    """The vector moves only when the billed inputs themselves move.
+
+    It last moved when billing switched to the VNB's own split: the summary
+    now carries the engine's proportional result as an audit block and the
+    reconciliation the delivered imbalance, so the same readings fingerprint
+    differently than they did before.
+    """
     fingerprint = _fingerprint_through_runner(monkeypatch, _fingerprint_case())
 
     assert fingerprint == (
-        "4f16b38457c142869b04f600a964263827848e553f5938112d0361acf30dad96"
+        "f219d7a1ad8f20c86e65db1acdc341f5073facf1a178bc99ffc0a7dae2c53e9b"
     )
 
 
@@ -590,8 +628,9 @@ def _install_billing_fixture(
     """Wire one community whose readings the engine and the VNB both describe.
 
     ``consumption_community_kwh`` is the VNB's own claim about how much of the
-    consumption came from the community. Lower it and the VNB disagrees with
-    what allocate_energy derives from the same totals.
+    consumption came from the community, and it is what gets billed. Lower it
+    and the VNB's two sides no longer describe the same energy, which is a
+    delivery the period must refuse rather than distribute.
     """
     points = [
         {
@@ -665,13 +704,19 @@ def _install_billing_fixture(
     return saved
 
 
-def test_a_vnb_allocation_mismatch_refuses_to_persist(monkeypatch):
-    """The namesake guard: OpenLEG never bills a split the VNB does not confirm."""
+def test_a_vnb_delivery_that_does_not_balance_refuses_to_persist(monkeypatch):
+    """Billing follows the VNB split, so the split itself has to hold together.
+
+    Halving the consumption side leaves the VNB claiming twice as much energy
+    fed into the community as drawn from it. Crediting that verbatim would pay
+    producers for energy nobody was charged for, and scaling it away silently
+    would hide a broken delivery, so the period fails closed.
+    """
     from billing_runner import BillingRunError, run_billing_period
 
     saved = _install_billing_fixture(monkeypatch, consumption_community_kwh=0.25)
 
-    with pytest.raises(BillingRunError, match="does not match the VNB allocation"):
+    with pytest.raises(BillingRunError, match="vnb_imbalance"):
         run_billing_period(COMMUNITY, START, END)
 
     assert saved == [], "a period the VNB contradicts must never reach the database"
@@ -812,7 +857,13 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
             "source_document_ids": ("DOC-1",),
             "timezone": "Europe/Zurich",
         },
-        vnb_reference={"community_kwh": 1.5},
+        vnb_reference={
+            "community_kwh": 1.5,
+            "billed": {
+                "consumption_kwh": {"CH001": 1.5},
+                "production_kwh": {"CH002": 1.5},
+            },
+        },
     )
     saved = []
 

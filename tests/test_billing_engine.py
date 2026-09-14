@@ -2,6 +2,7 @@
 """TDD tests for billing_engine.py - 15-min interval energy allocation."""
 
 import pandas as pd
+import pytest
 
 
 class TestProportionalAllocation:
@@ -193,3 +194,103 @@ class TestEdgeCases:
         consumption = pd.DataFrame({"a": [7.0]})
         result = allocate_energy(production, consumption, model="proportional")
         assert abs(result["a"].iloc[0] - 7.0) < 0.01
+
+
+class TestBilledAllocation:
+    """What gets billed is the caller's split, not the engine's own."""
+
+    def _frames(self):
+        production = pd.DataFrame({"a": [0.0, 0.0], "b": [4.0, 4.0]})
+        consumption = pd.DataFrame({"a": [3.0, 3.0], "b": [1.0, 1.0]})
+        return production, consumption
+
+    def test_line_items_carry_the_billed_split(self):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        summary = generate_billing_summary(
+            production=production,
+            consumption=consumption,
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            billed_allocation={
+                "consumption_kwh": {"a": 5.0, "b": 1.0},
+                "production_kwh": {"a": 0.0, "b": 6.0},
+            },
+        )
+
+        charges = {
+            item["participant_id"]: item["quantity_kwh"]
+            for item in summary["line_items"]
+            if item["item_type"] == "consumer_charge"
+        }
+        credits = {
+            item["participant_id"]: item["quantity_kwh"]
+            for item in summary["line_items"]
+            if item["item_type"] == "producer_credit"
+        }
+        assert charges == {"a": 5.0, "b": 1.0}
+        assert credits == {"a": 0.0, "b": 6.0}
+        assert summary["total_allocated_kwh"] == 6.0
+        # The discount follows the billed energy, not the engine's allocation.
+        assert summary["total_network_discount_chf"] == 0.24
+
+    def test_the_engine_allocation_survives_as_an_audit_figure(self):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        summary = generate_billing_summary(
+            production=production,
+            consumption=consumption,
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            billed_allocation={
+                "consumption_kwh": {"a": 5.0, "b": 1.0},
+                "production_kwh": {"a": 0.0, "b": 6.0},
+            },
+        )
+
+        audit = summary["engine_audit"]
+        # Proportional allocation gives a 6 kWh and b 2 kWh of the 8 kWh fed in.
+        assert audit["allocated_kwh"] == {"a": 6.0, "b": 2.0}
+        assert audit["total_allocated_kwh"] == 8.0
+        assert audit["allocation_difference_kwh"] == {"a": -1.0, "b": -1.0}
+        assert audit["credited_kwh"] == {"a": 0.0, "b": 8.0}
+
+    def test_a_split_that_misses_a_participant_fails_closed(self):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        with pytest.raises(ValueError, match="exactly the participants"):
+            generate_billing_summary(
+                production=production,
+                consumption=consumption,
+                grid_fee_per_kwh=0.10,
+                internal_price_per_kwh=0.15,
+                network_level="same",
+                billed_allocation={
+                    "consumption_kwh": {"a": 5.0},
+                    "production_kwh": {"a": 0.0, "b": 6.0},
+                },
+            )
+
+    def test_without_a_split_the_engine_bills_its_own_allocation(self):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        summary = generate_billing_summary(
+            production=production,
+            consumption=consumption,
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+        )
+
+        charges = {
+            item["participant_id"]: item["quantity_kwh"]
+            for item in summary["line_items"]
+            if item["item_type"] == "consumer_charge"
+        }
+        assert charges == {"a": 6.0, "b": 2.0}
