@@ -258,7 +258,49 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if not invoice:
             abort(404)
-        return render_city_template("member_invoice_detail.html", invoice=invoice)
+        return render_city_template(
+            "member_invoice_detail.html",
+            invoice=invoice,
+            csrf_token=_dashboard_csrf_token(),
+        )
+
+    @bp.route("/dashboard/invoices/<int:invoice_id>/queries", methods=["POST"])
+    def dashboard_invoice_query_open(invoice_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        upload = request.files.get("attachment")
+        filename = ""
+        data = None
+        if upload and upload.filename:
+            data = upload.read(2 * 1024 * 1024 + 1)
+            if len(data) > 2 * 1024 * 1024 or upload.mimetype != "application/pdf":
+                abort(400)
+            filename = upload.filename
+        result = dashboard_module.member_open_invoice_query(
+            invoice_id,
+            building_id,
+            request.form.get("category", ""),
+            request.form.get("message", ""),
+            filename,
+            data,
+        )
+        if result["error"]:
+            abort(400)
+        return redirect(f"/dashboard/invoices/{invoice_id}#questions")
+
+    @bp.route(
+        "/dashboard/invoices/<int:invoice_id>/queries/<int:query_id>/reply",
+        methods=["POST"],
+    )
+    def dashboard_invoice_query_reply(invoice_id, query_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.member_reply_invoice_query(
+            query_id, building_id, request.form.get("message", "")
+        )
+        if result["error"]:
+            abort(400)
+        return redirect(f"/dashboard/invoices/{invoice_id}#questions")
 
     @bp.route("/dashboard/invoices/<int:invoice_id>/pdf")
     def dashboard_invoice_pdf(invoice_id):
@@ -332,6 +374,45 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 ),
                 400,
             )
+        return _leg_dashboard_redirect(community_id)
+
+    @bp.route(
+        "/leg/community/<community_id>/members/<member_building_id>/roles",
+        methods=["POST"],
+    )
+    def leg_community_member_roles(community_id, member_building_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.leg_set_member_roles(
+            community_id,
+            building_id,
+            member_building_id,
+            request.form.getlist("roles"),
+        )
+        if result["error"]:
+            return (
+                render_city_template(
+                    "leg_dashboard.html",
+                    **dashboard_module.leg_overview(community_id, building_id),
+                    viewer_has_session=True,
+                    csrf_token=_dashboard_csrf_token(),
+                    roles_error=result["error"],
+                ),
+                400,
+            )
+        return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/access-policy", methods=["POST"])
+    def leg_community_access_policy(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.leg_set_dual_control(
+            community_id,
+            building_id,
+            request.form.get("require_dual_control") == "yes",
+        )
+        if result["error"]:
+            abort(403)
         return _leg_dashboard_redirect(community_id)
 
     @bp.route("/leg/community/<community_id>/confirm", methods=["POST"])
@@ -695,6 +776,24 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 request.form.get("reason", ""),
             ),
         )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/queries/<int:query_id>",
+        methods=["POST"],
+    )
+    def leg_billing_query_update(community_id, query_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.operator_update_invoice_query(
+            community_id,
+            building_id,
+            query_id,
+            message=request.form.get("message", ""),
+            status=request.form.get("status", ""),
+        )
+        if result["error"]:
+            abort(400)
+        return redirect(dashboard_module.leg_billing_workspace_location(community_id))
 
     @bp.route("/leg/community/<community_id>/billing-policy")
     def leg_billing_policy_page(community_id):

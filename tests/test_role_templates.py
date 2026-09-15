@@ -36,3 +36,13 @@ def test_approval_only_operator_sees_the_approval_action():
     )
 
     assert "/billing/period/1/approve" in rendered
+
+
+def test_approval_only_operator_can_reach_billing_workspace():
+    source = (TEMPLATES / "leg_dashboard.html").read_text(encoding="utf-8")
+
+    assert (
+        "can_manage_members or can_prepare_billing or can_approve_billing "
+        "or can_audit_billing"
+    ) in source
+    assert "can_prepare_billing or can_approve_billing or can_audit_billing" in source

@@ -44,7 +44,6 @@ def test_question_deadline_configuration_fails_closed(monkeypatch):
     with pytest.raises(ValueError):
         invoice_queries.deadlines(datetime(2026, 9, 15, tzinfo=timezone.utc))
 
-
 def test_operator_update_validates_transition_before_appending_message(monkeypatch):
     class Cursor:
         def __init__(self):

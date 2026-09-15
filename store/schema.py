@@ -146,13 +146,15 @@ def create_tables():
                     dso_submitted_at TIMESTAMP,
                     dso_approved_at TIMESTAMP,
                     activated_at TIMESTAMP,
-                    vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover'
+                    vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover',
+                    require_dual_control BOOLEAN NOT NULL DEFAULT FALSE
                 )
             """)
 
             cur.execute("""
                 ALTER TABLE communities
-                    ADD COLUMN IF NOT EXISTS vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover'
+                    ADD COLUMN IF NOT EXISTS vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover',
+                    ADD COLUMN IF NOT EXISTS require_dual_control BOOLEAN NOT NULL DEFAULT FALSE
             """)
 
             # Community members table
@@ -162,6 +164,7 @@ def create_tables():
                     community_id VARCHAR(64) REFERENCES communities(community_id) ON DELETE CASCADE,
                     building_id VARCHAR(64) REFERENCES buildings(building_id) ON DELETE CASCADE,
                     role VARCHAR(20) DEFAULT 'member',
+                    access_roles JSONB NOT NULL DEFAULT '[]',
                     status VARCHAR(20) DEFAULT 'invited',
                     invited_by VARCHAR(64),
                     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -708,6 +711,7 @@ def create_tables():
                     source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
                     reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     billing_policy_snapshot JSONB,
+                    prepared_by VARCHAR(64),
                     status VARCHAR(32) DEFAULT 'draft',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(community_id, period_start, period_end)
@@ -740,7 +744,8 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS input_fingerprint VARCHAR(64),
                     ADD COLUMN IF NOT EXISTS source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
                     ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
-                    ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB
+                    ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB,
+                    ADD COLUMN IF NOT EXISTS prepared_by VARCHAR(64)
             """)
 
             cur.execute("""
@@ -1146,6 +1151,9 @@ def create_tables():
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_community_members_building ON community_members(building_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_community_role_events_community ON community_role_events(community_id, created_at)"
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_webhooks_type ON webhooks(webhook_type)"
