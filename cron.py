@@ -17,6 +17,7 @@ import billing_runner
 import database as db
 import email_automation
 import leg_registry
+import operator_api
 import sdat_ingestion
 from security_utils import log_security_event
 
@@ -39,6 +40,12 @@ def api_cron_process_emails():
     _require_cron_secret()
     result = email_automation.process_email_queue(app=current_app)
     return jsonify(result)
+
+
+@cron_bp.route("/api/cron/process-operator-webhooks", methods=["POST"])
+def api_cron_process_operator_webhooks():
+    _require_cron_secret()
+    return jsonify(operator_api.dispatch_pending_webhooks())
 
 
 @cron_bp.route("/api/cron/import-sdat", methods=["POST"])

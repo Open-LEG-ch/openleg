@@ -17,11 +17,13 @@ PRIVATE_RESPONSE_HEADERS = {
 # Token-bearing and member-only surfaces are private with or without a session.
 _PRIVATE_PATH_PREFIXES = (
     "/admin/vnb-calculated-values",
+    "/api/operator/",
     "/dashboard/access/",
     "/dashboard/invoices",
     "/gemeinde/access/",
     "/registry/verify/",
     "/leg/document/",
+    "/leg/community/",
 )
 
 # Resident and LEG operator surfaces turn private once a dashboard session exists.

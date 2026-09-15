@@ -1304,6 +1304,61 @@ def create_tables():
             )
 
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS operator_api_clients (
+                    id VARCHAR(64) PRIMARY KEY,
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
+                    created_by VARCHAR(64) NOT NULL,
+                    name VARCHAR(128) NOT NULL,
+                    capabilities JSONB NOT NULL,
+                    token_hash VARCHAR(64) UNIQUE NOT NULL,
+                    webhook_url TEXT,
+                    rate_limit_per_hour INTEGER NOT NULL DEFAULT 100 CHECK (rate_limit_per_hour > 0),
+                    active BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    rotated_at TIMESTAMPTZ,
+                    revoked_at TIMESTAMPTZ,
+                    last_used_at TIMESTAMPTZ
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_operator_clients_community ON operator_api_clients(community_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_operator_clients_token ON operator_api_clients(token_hash) WHERE active=TRUE")
+            cur.execute(""")
+                CREATE TABLE IF NOT EXISTS operator_api_usage (
+                    id BIGSERIAL PRIMARY KEY,
+                    client_id VARCHAR(64) NOT NULL REFERENCES operator_api_clients(id) ON DELETE CASCADE,
+                    endpoint VARCHAR(255) NOT NULL,
+                    called_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_operator_usage_limit ON operator_api_usage(client_id,called_at DESC)")
+            cur.execute(""")
+                CREATE TABLE IF NOT EXISTS operator_events (
+                    event_id VARCHAR(64) PRIMARY KEY,
+                    event_type VARCHAR(128) NOT NULL,
+                    schema_version VARCHAR(32) NOT NULL,
+                    aggregate_id VARCHAR(128) NOT NULL,
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
+                    payload JSONB NOT NULL,
+                    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(event_type,aggregate_id)
+                )
+            """)
+            cur.execute(""")
+                CREATE TABLE IF NOT EXISTS operator_webhook_deliveries (
+                    delivery_id VARCHAR(64) PRIMARY KEY,
+                    event_id VARCHAR(64) NOT NULL REFERENCES operator_events(event_id) ON DELETE CASCADE,
+                    client_id VARCHAR(64) NOT NULL REFERENCES operator_api_clients(id) ON DELETE CASCADE,
+                    status VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','retry','delivered','failed')),
+                    attempt_count INTEGER NOT NULL DEFAULT 0,
+                    response_status INTEGER,
+                    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_attempt_at TIMESTAMPTZ,
+                    UNIQUE(event_id,client_id)
+                )
+            """)
+
+            cur.execute(""")
                 CREATE TABLE IF NOT EXISTS metering_points (
                     metering_point_id VARCHAR(64) PRIMARY KEY,
                     vnb_community_id VARCHAR(64),

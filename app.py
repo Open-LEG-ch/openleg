@@ -45,6 +45,7 @@ from health import health_bp
 from leg_registry import registry_api_bp
 from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
+from operator_api import operator_api_bp
 from rangliste import rangliste_bp
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import RATE_LIMIT_RETRY_AFTER_SECONDS, limiter
@@ -808,6 +809,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         self_host_bp,
         admin_bp,
         cron_bp,
+        operator_api_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)

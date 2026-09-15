@@ -105,6 +105,7 @@ def is_db_available() -> bool:
 # is at module end to avoid a circular import (store.ranking imports database).
 # ---------------------------------------------------------------------------
 from billing_approval import BillingApprovalError  # noqa: F401
+from store import operator_api as _operator_api
 from store.access_token import (  # noqa: F401
     consume_dashboard_access_token,
     consume_municipality_access_token,
@@ -326,3 +327,17 @@ from store.utility import (  # noqa: F401
     update_utility_client_api_key,
     update_utility_client_status,
 )
+
+create_operator_api_client = _operator_api.create_client
+claim_operator_api_usage = _operator_api.claim_usage
+create_operator_event = _operator_api.create_event
+get_operator_api_client_by_token_hash = _operator_api.get_client_by_token_hash
+get_pending_webhook_deliveries = _operator_api.get_pending_deliveries
+list_operator_api_clients = _operator_api.list_clients
+list_operator_webhook_deliveries = _operator_api.list_deliveries
+record_webhook_attempt = _operator_api.record_attempt
+record_operator_api_usage = _operator_api.record_usage
+revoke_operator_api_client = _operator_api.revoke_client
+rotate_operator_api_client = _operator_api.rotate_client
+retry_operator_webhook_delivery = _operator_api.retry_delivery
+get_operator_api_usage_count = _operator_api.usage_count
