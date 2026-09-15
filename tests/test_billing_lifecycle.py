@@ -188,6 +188,8 @@ def test_admin_workspace_renders_every_lifecycle_control(
                 "invoices": invoices,
                 "billing_approved": False,
                 "approval_error": None,
+                "can_prepare_billing": True,
+                "can_approve_billing": True,
             }
         ),
     )
@@ -216,8 +218,27 @@ def test_admin_workspace_renders_every_lifecycle_control(
 def _confirmed_admin(monkeypatch, dashboard):
     monkeypatch.setattr(
         dashboard,
-        "_require_confirmed_admin",
+        "_require_capability",
         MagicMock(return_value={"building_id": "admin-building"}),
+    )
+    monkeypatch.setattr(dashboard.db, "list_invoice_queries", MagicMock(return_value=[]))
+
+
+def test_workspace_reads_invoice_queries_once_for_the_community(monkeypatch):
+    import dashboard
+
+    _confirmed_admin(monkeypatch, dashboard)
+    monkeypatch.setattr(
+        dashboard.db, "list_community_billing_periods", MagicMock(return_value=[])
+    )
+    monkeypatch.setattr(
+        dashboard.db, "list_community_invoices", MagicMock(return_value=[])
+    )
+
+    dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
+
+    dashboard.db.list_invoice_queries.assert_called_once_with(
+        None, community_id=COMMUNITY
     )
 
 

@@ -286,7 +286,7 @@ def _next_invoice_sequence(cur, community_id: str, prefix: str, year: int) -> in
 
 
 def approve_billing_period(
-    period_id: int, community_id: str, issue_date=None
+    period_id: int, community_id: str, issue_date=None, *, approver_id: str | None = None
 ) -> list[dict]:
     """Issue immutable invoices for one reconciled draft period, atomically.
 
@@ -308,7 +308,7 @@ def approve_billing_period(
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT community_id, name FROM communities
+                SELECT community_id, name, require_dual_control FROM communities
                 WHERE community_id = %s AND status = 'active'
                 FOR UPDATE
                 """,
@@ -336,6 +336,14 @@ def approve_billing_period(
             if not row:
                 raise billing_approval.BillingApprovalError("Billing period not found")
             period = dict(row)
+            if community_row.get("require_dual_control") and (
+                not period.get("prepared_by")
+                or period.get("prepared_by") == approver_id
+                or not approver_id
+            ):
+                raise billing_approval.BillingApprovalError(
+                    "Dual-control approval requires a different recorded preparer"
+                )
             status = period.get("status")
             if status == "issued":
                 invoices = _period_invoices(cur, period_id)

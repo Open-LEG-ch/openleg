@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Generate one complete, persistable LEG document bundle."""
 
+import community_access
 import database as db
 import document_generator
 import formation_wizard
@@ -9,10 +10,15 @@ import formation_wizard
 def generate(community_id: str, building_id: str) -> dict:
     """Generate and atomically persist documents for a community administrator."""
     status = formation_wizard.get_community_status(community_id)
-    if not status or not any(
-        member["building_id"] == building_id and member["role"] == "admin"
-        for member in status["members"] or []
-    ):
+    member = next(
+        (
+            member
+            for member in (status or {}).get("members") or []
+            if member["building_id"] == building_id
+        ),
+        None,
+    )
+    if not community_access.allows(member, community_access.MANAGE_DOCUMENTS):
         return {"error": "Nur die Administration kann Dokumente erstellen."}
 
     participants = []

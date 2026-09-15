@@ -10,6 +10,7 @@ from urllib.parse import quote, urlencode
 import billing_lifecycle
 import billing_policy
 import billing_workspace
+import community_access
 import community_archive
 import database as db
 import formation_documents
@@ -158,6 +159,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     if not member:
         return {"error": "Kein Zugriff.", "community": None}
 
+    capabilities = community_access.capabilities_for(member)
     return {
         "error": None,
         "community": _with_german_labels(status),
@@ -165,7 +167,13 @@ def leg_overview(community_id: str, building_id: str) -> dict:
             "min_community_size"
         ],
         "viewer_building_id": building_id,
-        "is_admin": member.get("role") == "admin",
+        "is_admin": community_access.is_administrator(member),
+        "can_manage_members": community_access.MANAGE_MEMBERS in capabilities,
+        "can_manage_documents": community_access.MANAGE_DOCUMENTS in capabilities,
+        "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
+        "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
+        "can_audit_billing": community_access.AUDIT_BILLING in capabilities,
+        "access_role_labels": community_access.ROLE_LABELS,
         "leg_documents": db.list_leg_documents(community_id),
         "correspondence": db.list_correspondence(community_id),
     }
@@ -221,6 +229,18 @@ def leg_restore_archive(
             "conflicts": [],
         }
     return community_archive.restore_community_archive(archive, dry_run=dry_run)
+
+
+def _require_capability(community_id: str, building_id: str, capability: str):
+    """Return a confirmed member when the central access policy permits it."""
+    status = formation_wizard.get_community_status(community_id)
+    if not status:
+        return None
+    member = next(
+        (m for m in status["members"] or [] if m["building_id"] == building_id),
+        None,
+    )
+    return member if community_access.allows(member, capability) else None
 
 
 def leg_billing_workspace_location(community_id: str) -> str:
@@ -305,9 +325,15 @@ def leg_billing_workspace_view(
     include_statement_entries: bool = False,
     **extra,
 ) -> dict:
-    """Admin-gated view model for the billing approval workspace."""
-    if not _require_confirmed_admin(community_id, building_id):
+    """Capability-gated view model for the billing approval workspace."""
+    if not _require_capability(
+        community_id, building_id, community_access.AUDIT_BILLING
+    ):
         return {"error": "Kein Zugriff."}
+    member = _require_capability(
+        community_id, building_id, community_access.AUDIT_BILLING
+    )
+    capabilities = community_access.capabilities_for(member)
     periods = db.list_community_billing_periods(community_id)
     flag_counts = _veracity_flag_counts(periods)
     invoices = [
@@ -320,6 +346,14 @@ def leg_billing_workspace_view(
     )
     for event in community_events:
         events_by_invoice.setdefault(event["invoice_id"], []).append(event)
+    queries_by_invoice = {}
+    try:
+        invoice_queries = db.list_invoice_queries(None, community_id=community_id)
+    except AttributeError:
+        # Unit and demo configurations can intentionally run without a DB pool.
+        invoice_queries = []
+    for query in invoice_queries:
+        queries_by_invoice.setdefault(query["invoice_id"], []).append(query)
     for invoice in invoices:
         (
             invoice["display_gross_chf"],
@@ -362,6 +396,7 @@ def leg_billing_workspace_view(
             and candidate["lifecycle_state"] == "issued"
             and not candidate.get("corrects_invoice_number")
         ]
+        invoice["queries"] = queries_by_invoice.get(invoice["id"], [])
     view = {
         "error": None,
         "community_id": community_id,
@@ -386,6 +421,8 @@ def leg_billing_workspace_view(
         ],
         "billing_approved": False,
         "approval_error": None,
+        "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
+        "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
     }
     view.update(extra)
     return view
@@ -405,7 +442,9 @@ def leg_deliver_invoice(
     community_id, building_id, invoice_id, *, send_email, invoice_url
 ):
     """Reserve and complete one idempotent portal or email delivery."""
-    if not _require_confirmed_admin(community_id, building_id):
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
         return {"error": "Kein Zugriff."}
     delivery = db.prepare_invoice_delivery(invoice_id, community_id, building_id)
     if delivery.get("already_delivered"):
@@ -435,7 +474,9 @@ def leg_deliver_invoice(
 
 def leg_confirm_invoice_delivery(community_id, building_id, invoice_id):
     """Let an admin resolve an uncertain send without repeating the email."""
-    if not _require_confirmed_admin(community_id, building_id):
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
         return {"error": "Kein Zugriff."}
     confirmed = db.confirm_invoice_delivery(invoice_id, community_id, building_id)
     return {"error": None, **confirmed}
@@ -444,7 +485,9 @@ def leg_confirm_invoice_delivery(community_id, building_id, invoice_id):
 def leg_record_invoice_payment(
     community_id, building_id, invoice_id, paid_date, reference
 ):
-    if not _require_confirmed_admin(community_id, building_id):
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
         return {"error": "Kein Zugriff."}
     try:
         parsed_date = date.fromisoformat(paid_date)
@@ -459,7 +502,9 @@ def leg_record_invoice_payment(
 
 
 def leg_cancel_invoice(community_id, building_id, invoice_id, reason):
-    if not _require_confirmed_admin(community_id, building_id):
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
         return {"error": "Kein Zugriff."}
     db.cancel_invoice(invoice_id, community_id, building_id, reason)
     return {"error": None}
@@ -468,7 +513,9 @@ def leg_cancel_invoice(community_id, building_id, invoice_id, reason):
 def leg_correct_invoice(
     community_id, building_id, invoice_id, corrected_invoice_id, reason
 ):
-    if not _require_confirmed_admin(community_id, building_id):
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
         return {"error": "Kein Zugriff."}
     try:
         corrected_id = int(corrected_invoice_id)
@@ -484,9 +531,24 @@ def leg_approve_billing_period(
     community_id: str, building_id: str, period_id: int
 ) -> dict:
     """Issue invoices for one reconciled draft; only the confirmed admin may."""
-    if not _require_confirmed_admin(community_id, building_id):
+    if not _require_capability(
+        community_id, building_id, community_access.APPROVE_BILLING
+    ):
         return {"error": "Kein Zugriff.", "invoices": []}
-    invoices = db.approve_billing_period(period_id, community_id)
+    status = formation_wizard.get_community_status(community_id) or {}
+    if status.get("require_dual_control"):
+        period = db.get_billing_period(period_id) or {}
+        if not period.get("prepared_by") or period.get("prepared_by") == building_id:
+            return {
+                "error": (
+                    "Vorbereitung und Freigabe müssen durch verschiedene "
+                    "Personen erfolgen."
+                ),
+                "invoices": [],
+            }
+    invoices = db.approve_billing_period(
+        period_id, community_id, approver_id=building_id
+    )
     return {"error": None, "invoices": invoices}
 
 
@@ -497,7 +559,9 @@ def leg_billing_policy_location(community_id: str) -> str:
 
 def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dict:
     """Admin-gated view model for the versioned billing policy page."""
-    if not _require_confirmed_admin(community_id, building_id):
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
         return {"error": "Kein Zugriff."}
     versions = db.list_billing_policies(community_id)
     view = {
@@ -523,7 +587,9 @@ def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dic
 
 def leg_save_billing_policy(community_id: str, building_id: str, form) -> dict:
     """Validate and persist one new policy version; only the admin may write."""
-    if not _require_confirmed_admin(community_id, building_id):
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
         return {"error": "Kein Zugriff.", "errors": {}}
     result = billing_policy.validate_policy_form(form)
     if result["errors"]:
@@ -552,7 +618,77 @@ def member_invoices_view(building_id: str) -> dict:
 
 def member_invoice_detail(invoice_id: int, building_id: str) -> dict | None:
     """One own issued invoice, or None for a missing or another member's id."""
-    return member_invoices.detail_view(invoice_id, building_id)
+    invoice = member_invoices.detail_view(invoice_id, building_id)
+    if invoice:
+        invoice["queries"] = db.list_invoice_queries(
+            invoice_id, participant_id=building_id
+        )
+    return invoice
+
+
+def member_open_invoice_query(
+    invoice_id: int,
+    building_id: str,
+    category: str,
+    message: str,
+    attachment_filename: str = "",
+    attachment_data: bytes | None = None,
+) -> dict:
+    """Open a question against the caller's own immutable invoice."""
+    try:
+        query_id = db.open_invoice_query(
+            invoice_id,
+            building_id,
+            category,
+            message,
+            attachment_filename,
+            attachment_data,
+        )
+    except ValueError as exc:
+        return {"error": str(exc), "query_id": None}
+    if not query_id:
+        return {"error": "Rechnung nicht gefunden.", "query_id": None}
+    return {"error": None, "query_id": query_id}
+
+
+def member_reply_invoice_query(query_id: int, building_id: str, message: str) -> dict:
+    """Append a member reply only inside that member's case scope."""
+    try:
+        changed = db.add_invoice_query_message(
+            query_id, building_id, message, participant_id=building_id
+        )
+    except ValueError as exc:
+        return {"error": str(exc)}
+    return {"error": None if changed else "Kein Zugriff."}
+
+
+def operator_update_invoice_query(
+    community_id: str,
+    building_id: str,
+    query_id: int,
+    *,
+    message: str = "",
+    status: str = "",
+) -> dict:
+    """Reply to or transition a case through billing-preparer authority."""
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
+        return {"error": "Kein Zugriff."}
+    if not (message or "").strip() and not (status or "").strip():
+        return {"error": "Antwort oder Status ist erforderlich."}
+    try:
+        if not db.update_invoice_query(
+            query_id,
+            community_id,
+            building_id,
+            message=message,
+            target_status=status,
+        ):
+            return {"error": "Kein Zugriff."}
+    except ValueError as exc:
+        return {"error": str(exc)}
+    return {"error": None}
 
 
 def member_invoice_pdf_bytes(invoice: dict) -> bytes:
@@ -578,7 +714,9 @@ def leg_create(name: str, building_id: str, distribution_model: str) -> dict:
 
 def leg_invite(community_id: str, building_id: str, invite_building_id: str) -> dict:
     """Invite a building; only the community admin may invite."""
-    if not _require_role(community_id, building_id, "admin"):
+    if not _require_capability(
+        community_id, building_id, community_access.MANAGE_MEMBERS
+    ):
         return {"error": "Nur die Administration kann einladen."}
     if not invite_building_id:
         return {"error": "Kein Profil zum Einladen angegeben."}
@@ -594,7 +732,9 @@ def leg_invite_by_email(community_id: str, building_id: str, invite_email: str) 
     A valid address always gets the same response. This prevents the operator
     dashboard from becoming an email-enumeration surface.
     """
-    if not _require_role(community_id, building_id, "admin"):
+    if not _require_capability(
+        community_id, building_id, community_access.MANAGE_MEMBERS
+    ):
         return {"error": "Nur die Administration kann einladen."}
     valid, normalized, error = security_utils.validate_email_address(invite_email)
     if not valid or not normalized:
@@ -606,6 +746,42 @@ def leg_invite_by_email(community_id: str, building_id: str, invite_email: str) 
             continue
         formation_wizard.invite_member(community_id, invite_building_id, building_id)
         break
+    return {"error": None}
+
+
+def leg_set_member_roles(
+    community_id: str, building_id: str, member_building_id: str, roles
+) -> dict:
+    """Replace one member's scoped roles through the formation repository."""
+    if not _require_capability(
+        community_id, building_id, community_access.MANAGE_MEMBERS
+    ):
+        return {"error": "Nur die Administration kann Rollen ändern."}
+    try:
+        changed = db.set_member_access_roles(
+            community_id, member_building_id, roles, building_id
+        )
+    except ValueError as exc:
+        return {"error": str(exc)}
+    if not changed:
+        return {
+            "error": (
+                "Die Rollen konnten nicht geändert werden. "
+                "Mindestens eine Administration muss bestehen bleiben."
+            )
+        }
+    return {"error": None}
+
+
+def leg_set_dual_control(community_id: str, building_id: str, enabled: bool) -> dict:
+    """Change the community billing approval policy as an administrator."""
+    member = _require_capability(
+        community_id, building_id, community_access.MANAGE_MEMBERS
+    )
+    if not community_access.is_administrator(member):
+        return {"error": "Nur die Administration kann das Vier-Augen-Prinzip ändern."}
+    if not db.set_community_dual_control(community_id, enabled, building_id):
+        return {"error": "Das Vier-Augen-Prinzip konnte nicht geändert werden."}
     return {"error": None}
 
 
@@ -640,7 +816,9 @@ def leg_confirm(community_id: str, building_id: str) -> dict:
 
 def leg_start_formation(community_id: str, building_id: str) -> dict:
     """Start formal formation; only the community admin may start."""
-    if not _require_role(community_id, building_id, "admin"):
+    if not _require_capability(
+        community_id, building_id, community_access.MANAGE_MEMBERS
+    ):
         return {"error": "Nur die Administration kann die Gründung starten."}
     ok = formation_wizard.start_formation(community_id)
     if not ok:

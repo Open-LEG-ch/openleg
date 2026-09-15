@@ -67,7 +67,7 @@ def _event(cur, query_id, actor_id, previous_status, new_status):
 
 
 def list_invoice_queries(
-    invoice_id: int,
+    invoice_id: int | None,
     *,
     participant_id: str | None = None,
     community_id: str | None = None,
@@ -81,13 +81,15 @@ def list_invoice_queries(
         else ("community_id", community_id)
     )
     with _get_connection() as conn, conn.cursor() as cur:
+        invoice_filter = "invoice_id = %s AND " if invoice_id is not None else ""
+        params = (invoice_id, value) if invoice_id is not None else (value,)
         cur.execute(
             f"""
                 SELECT * FROM invoice_queries
-                WHERE invoice_id = %s AND {field} = %s
+                WHERE {invoice_filter}{field} = %s
                 ORDER BY created_at, id
             """,
-            (invoice_id, value),
+            params,
         )
         cases = [dict(row) for row in cur.fetchall()]
         for case in cases:
@@ -158,4 +160,38 @@ def transition_invoice_query(
             (target_status, query_id),
         )
         _event(cur, query_id, actor_id, row["status"], target_status)
+        return True
+
+
+def update_invoice_query(
+    query_id: int,
+    community_id: str,
+    actor_id: str,
+    *,
+    message: str = "",
+    target_status: str = "",
+) -> bool:
+    """Apply an operator reply and status change in one transaction."""
+    validated_message = invoice_queries.validate_message(message) if message else ""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                SELECT status FROM invoice_queries
+                WHERE id = %s AND community_id = %s FOR UPDATE
+            """,
+            (query_id, community_id),
+        )
+        row = cur.fetchone()
+        if not row:
+            return False
+        if target_status:
+            invoice_queries.require_transition(row["status"], target_status)
+        if validated_message:
+            _append(cur, query_id, actor_id, validated_message)
+        if target_status:
+            cur.execute(
+                "UPDATE invoice_queries SET status = %s, updated_at = NOW() WHERE id = %s",
+                (target_status, query_id),
+            )
+            _event(cur, query_id, actor_id, row["status"], target_status)
         return True

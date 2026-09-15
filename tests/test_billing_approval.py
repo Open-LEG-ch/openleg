@@ -355,7 +355,7 @@ def test_confirmed_admin_can_approve_only_the_exact_community_period(
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/billing?approved=1")
-    approve.assert_called_once_with(42, COMMUNITY)
+    approve.assert_called_once_with(42, COMMUNITY, approver_id="building-admin")
 
 
 def test_billing_approval_fails_closed_on_storage_error(app_module, monkeypatch):  # noqa: F811

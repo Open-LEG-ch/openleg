@@ -210,6 +210,8 @@ from store.formation import (  # noqa: F401
     fetch_user_communities,
     insert_invited_member,
     mark_formation_started,
+    set_community_dual_control,
+    set_member_access_roles,
     submit_community_to_dso,
 )
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
@@ -218,6 +220,7 @@ from store.invoice_query import (  # noqa: F401
     list_invoice_queries,
     open_invoice_query,
     transition_invoice_query,
+    update_invoice_query,
 )
 from store.meter import (  # noqa: F401
     get_meter_reading_stats,

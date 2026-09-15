@@ -252,6 +252,7 @@ def test_leg_mutation_rejects_non_ascii_csrf_as_bad_request(app_module, monkeypa
     invite.assert_not_called()
 
 
+
 def test_leg_document_uses_session_identity_not_query_bid(app_module, monkeypatch):
     document_for_member = MagicMock(
         return_value={"pdf_data": b"pdf", "filename": "vertrag.pdf"}
