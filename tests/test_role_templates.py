@@ -26,7 +26,6 @@ def test_approval_only_operator_sees_the_approval_action():
     template = Environment(loader=FileSystemLoader(TEMPLATES)).get_template(
         "leg_billing.html"
     )
-
     rendered = template.render(
         community_id="c1",
         periods=[{"id": 1, "approvable": True}],
