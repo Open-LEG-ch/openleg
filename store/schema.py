@@ -1358,8 +1358,12 @@ def create_tables():
                     community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
                     payload JSONB NOT NULL,
                     occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(event_type,aggregate_id)
+                    UNIQUE(event_type,event_id)
                 )
+            """)
+            cur.execute("""
+                ALTER TABLE operator_events
+                DROP CONSTRAINT IF EXISTS operator_events_event_type_aggregate_id_key
             """)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS operator_webhook_deliveries (

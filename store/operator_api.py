@@ -31,9 +31,11 @@ def _subscription_capability(event_type):
     return None
 
 
-def enqueue_event(cur, event_type, aggregate_id, community_id, payload):
+def enqueue_event(
+    cur, event_type, aggregate_id, community_id, payload, *, event_identity=None
+):
     """Write an event and its deliveries through the caller's transaction."""
-    event_id = event_id_for(event_type, aggregate_id)
+    event_id = event_id_for(event_type, event_identity or aggregate_id)
     cur.execute(
         """INSERT INTO operator_events
                   (event_id,event_type,schema_version,aggregate_id,community_id,payload)

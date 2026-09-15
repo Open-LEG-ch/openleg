@@ -260,9 +260,10 @@ def respond_case(case_id, community_id, actor_id, message, status, key):
         event_id = enqueue_event(
             cur,
             "invoice.case.updated",
-            str(transition_id),
+            str(case_id),
             community_id,
             {"status": status},
+            event_identity=f"transition:{transition_id}",
         )
         response = {
             "id": case_id,
@@ -337,9 +338,10 @@ def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
         event_id = enqueue_event(
             cur,
             "payment.match.confirmed",
-            str(transition_id),
+            str(entry_id),
             community_id,
             {"status": "matched"},
+            event_identity=f"transition:{transition_id}",
         )
         response = {
             "id": entry_id,
