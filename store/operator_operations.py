@@ -234,13 +234,14 @@ def respond_case(case_id, community_id, actor_id, message, status, key):
             (status, case_id),
         )
         cur.execute(
-            "INSERT INTO invoice_query_events(query_id,actor_id,previous_status,new_status) VALUES (%s,%s,%s,%s)",
+            "INSERT INTO invoice_query_events(query_id,actor_id,previous_status,new_status) VALUES (%s,%s,%s,%s) RETURNING id",
             (case_id, actor_id, row["status"], status),
         )
+        transition_id = cur.fetchone()["id"]
         event_id = enqueue_event(
             cur,
             "invoice.case.updated",
-            f"{case_id}:{key}",
+            str(transition_id),
             community_id,
             {"status": status},
         )
@@ -303,7 +304,7 @@ def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
             (invoice_id, entry_id),
         )
         cur.execute(
-            """INSERT INTO invoice_lifecycle_events(invoice_id,community_id,actor_id,event_type,previous_state,new_state,reference,effective_date,idempotency_key) VALUES (%s,%s,%s,'paid','delivered','paid',%s,%s,%s)""",
+            """INSERT INTO invoice_lifecycle_events(invoice_id,community_id,actor_id,event_type,previous_state,new_state,reference,effective_date,idempotency_key) VALUES (%s,%s,%s,'paid','delivered','paid',%s,%s,%s) RETURNING id""",
             (
                 invoice_id,
                 community_id,
@@ -313,10 +314,11 @@ def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
                 f"operator:{key}",
             ),
         )
+        transition_id = cur.fetchone()["id"]
         event_id = enqueue_event(
             cur,
             "payment.match.confirmed",
-            f"{entry_id}:{key}",
+            str(transition_id),
             community_id,
             {"status": "matched"},
         )
