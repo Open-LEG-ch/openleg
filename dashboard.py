@@ -160,10 +160,16 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     if not member:
         return {"error": "Kein Zugriff.", "community": None}
 
-    try:
-        vnb_submissions = db.list_vnb_submission_cases(community_id)
-        vnb_mutations = db.list_vnb_mutations(community_id)
-    except db.VnbExchangeStoreError:
+    vnb_exchange_available = db.is_db_available()
+    if vnb_exchange_available:
+        try:
+            vnb_submissions = db.list_vnb_submission_cases(community_id)
+            vnb_mutations = db.list_vnb_mutations(community_id)
+        except db.VnbExchangeStoreError:
+            vnb_exchange_available = False
+            vnb_submissions = []
+            vnb_mutations = []
+    else:
         vnb_submissions = []
         vnb_mutations = []
     return {
@@ -178,6 +184,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "correspondence": db.list_correspondence(community_id),
         "vnb_submissions": vnb_submissions,
         "vnb_mutations": vnb_mutations,
+        "vnb_exchange_available": vnb_exchange_available,
     }
 
 

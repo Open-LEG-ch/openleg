@@ -129,6 +129,7 @@
 
     <section class="bg-white rounded-xl border p-6 mb-8" aria-labelledby="vnb-mutations-title">
       <h2 id="vnb-mutations-title" class="font-bold mb-2">Mitgliedschaft: LEG und VNB</h2>
+      {% if not vnb_exchange_available|default(true) %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">Der VNB-Austausch ist derzeit nicht verfügbar.</p>{% endif %}
       <p class="text-sm text-ink-muted mb-4">Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der Netzbetreiber verarbeitet. Eine VNB-Antwort ändert den LEG-Vertrag nicht.</p>
       {% if vnb_mutations|default([]) %}
       <div class="overflow-x-auto mb-4"><table class="w-full min-w-[48rem] text-sm">

@@ -43,6 +43,7 @@ def test_leg_overview_returns_status_for_member(monkeypatch):
     assert result["community"]["name"] == "LEG Musterweg"
     assert result["is_admin"] is True
     assert result["viewer_building_id"] == "b-admin"
+    assert result["vnb_exchange_available"] is False
 
 
 def test_leg_overview_member_is_not_admin(monkeypatch):
