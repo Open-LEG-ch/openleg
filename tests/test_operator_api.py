@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Authenticated HTTP and signed-webhook contracts for operator integrations."""
 
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import operator_api
@@ -88,17 +89,14 @@ def test_capability_revocation_and_rate_limit_apply_at_http_boundary(
 
 @patch("operator_api.db.claim_operator_api_usage", return_value=True)
 @patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
-@patch("operator_api.dashboard.leg_submit_vnb_mutation")
-def test_membership_mutation_uses_ui_domain_seam_and_stable_event(
+@patch("operator_api.vnb_exchange.submit_membership_mutation")
+def test_membership_mutation_uses_shared_domain_seam_and_stable_event(
     submit, _lookup, _usage, app
 ):
     client = _register(app)
-    submit.return_value = {
-        "error": None,
-        "state": "prepared",
-        "case_id": "case-7",
-        "event_id": "evt-7",
-    }
+    submit.return_value = SimpleNamespace(
+        state="prepared", case_id="case-7", event_id="evt-7"
+    )
     payload = {
         "mutation_id": "m-7",
         "participant_id": "p-1",
@@ -115,14 +113,32 @@ def test_membership_mutation_uses_ui_domain_seam_and_stable_event(
     )
 
     assert response.status_code == 202
-    submit.assert_called_once_with(
-        "community-a",
-        "admin-a",
-        "m-7",
-        "p-1",
-        "join",
-        "2026-10-01",
-        "agreement-1",
-        {"metering_point_id": "CH1"},
-    )
+    command = submit.call_args.args[0]
+    assert command.community_id == "community-a"
+    assert command.actor_building_id == "admin-a"
+    assert command.mutation_id == "m-7"
+    assert command.after == {"metering_point_id": "CH1"}
     assert response.get_json()["event_id"] == "evt-7"
+
+
+@patch("operator_api.db.claim_operator_api_usage", return_value=True)
+@patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
+@patch("operator_api.vnb_exchange.submit_formation")
+def test_formation_submission_uses_shared_domain_seam(
+    submit, _lookup, _usage, app
+):
+    submit.return_value = SimpleNamespace(
+        state="prepared", case_id="case-8", event_id="evt-8"
+    )
+    client = _register(app)
+
+    response = client.post(
+        "/api/operator/v1/communities/community-a/formation/submissions",
+        headers=_auth(),
+    )
+
+    assert response.status_code == 202
+    command = submit.call_args.args[0]
+    assert command.community_id == "community-a"
+    assert command.actor_building_id == "admin-a"
+    assert response.get_json()["event_id"] == "evt-8"

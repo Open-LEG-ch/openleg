@@ -163,7 +163,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     try:
         vnb_submissions = db.list_vnb_submission_cases(community_id)
         vnb_mutations = db.list_vnb_mutations(community_id)
-    except (db.VnbExchangeStoreError, AttributeError):
+    except db.VnbExchangeStoreError:
         vnb_submissions = []
         vnb_mutations = []
     return {

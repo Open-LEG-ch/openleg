@@ -18,10 +18,10 @@ from urllib.parse import urlparse
 from flask import Blueprint, g, jsonify, request, session
 
 import community_access
-import dashboard
 import database as db
 import formation_wizard
 import sdat_ingestion
+import vnb_exchange
 
 API_SCHEMA_VERSION = "operator-api/1"
 EVENT_SCHEMA_VERSION = "operator-event/1"
@@ -150,12 +150,24 @@ def formation_status(community_id):
 )
 @require_operator("formation.mutate")
 def submit_formation(community_id):
-    result = dashboard.leg_submit_vnb_formation(
-        community_id, g.operator_client["created_by"]
-    )
-    if result.get("error"):
-        return _error(result["error"], result.get("error_status", 409))
-    return jsonify(schema_version=API_SCHEMA_VERSION, **result), 202
+    try:
+        outcome = vnb_exchange.submit_formation(
+            vnb_exchange.FormationSubmission(
+                community_id, g.operator_client["created_by"]
+            )
+        )
+    except vnb_exchange.FormationSubmissionForbidden:
+        return _error("Formation submission denied", 403)
+    except (vnb_exchange.FormationSubmissionInvalid, db.VnbSubmissionConflict) as error:
+        return _error(str(error), 409)
+    except db.VnbExchangeStoreError:
+        return _error("Formation submission unavailable", 503)
+    return jsonify(
+        schema_version=API_SCHEMA_VERSION,
+        state=outcome.state,
+        case_id=outcome.case_id,
+        event_id=outcome.event_id,
+    ), 202
 
 
 @operator_api_bp.get(
@@ -177,19 +189,35 @@ def submit_membership_mutation(community_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return _error("JSON object required", 400)
-    result = dashboard.leg_submit_vnb_mutation(
-        community_id,
-        g.operator_client["created_by"],
-        str(payload.get("mutation_id", "")),
-        str(payload.get("participant_id", "")),
-        str(payload.get("mutation_type", "")),
-        str(payload.get("effective_date", "")),
-        str(payload.get("source_agreement_id", "")),
-        payload.get("after") if isinstance(payload.get("after"), dict) else {},
-    )
-    if result.get("error"):
-        return _error(result["error"], result.get("error_status", 409))
-    return jsonify(schema_version=API_SCHEMA_VERSION, **result), 202
+    try:
+        outcome = vnb_exchange.submit_membership_mutation(
+            vnb_exchange.ParticipantMutationSubmission(
+                str(payload.get("mutation_id", "")),
+                community_id,
+                str(payload.get("participant_id", "")),
+                g.operator_client["created_by"],
+                str(payload.get("mutation_type", "")),
+                str(payload.get("effective_date", "")),
+                str(payload.get("source_agreement_id", "")),
+                payload.get("after") if isinstance(payload.get("after"), dict) else {},
+            )
+        )
+    except vnb_exchange.FormationSubmissionForbidden:
+        return _error("Membership mutation denied", 403)
+    except (
+        vnb_exchange.ParticipantMutationInvalid,
+        ValueError,
+        db.VnbSubmissionConflict,
+    ) as error:
+        return _error(str(error), 409)
+    except db.VnbExchangeStoreError:
+        return _error("Membership mutation unavailable", 503)
+    return jsonify(
+        schema_version=API_SCHEMA_VERSION,
+        state=outcome.state,
+        case_id=outcome.case_id,
+        event_id=outcome.event_id,
+    ), 202
 
 
 def _page_args():
