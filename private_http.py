@@ -41,7 +41,9 @@ def is_private_response(
     path, *, dashboard_session: bool, municipality_session: bool
 ) -> bool:
     """Classify one request path; the session flags mark authenticated viewers."""
-    if path.startswith(_PRIVATE_PATH_PREFIXES):
+    if path.startswith(_PRIVATE_PATH_PREFIXES) or (
+        path.startswith("/leg/community/") and "/archive" in path
+    ):
         return True
     if dashboard_session and (
         path in _DASHBOARD_SESSION_PATHS or path.startswith(_DASHBOARD_SESSION_PREFIXES)

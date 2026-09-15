@@ -15,6 +15,13 @@ confirmation (`store/token.py::confirm_profile_deletion`, one transaction,
 implemented in code; where the horizon is a legal or policy claim, it says so
 below.
 
+The community operations archive is a portability copy, not a deletion or
+retention trigger. It carries the source domains' retention meaning with it.
+An administrator must protect exported files as personal, metering, and
+financial data. Import dry-run never stores the file. A successful restore
+recreates the source identifiers and relationships under the retention rules
+below; it does not extend or shorten them.
+
 | Domain (catalog) | Retention horizon | Deletion trigger | What deletion reaches | What it deliberately keeps |
 |---|---|---|---|---|
 | store/building | Life of the registration | Profile deletion (unsubscribe confirmation) | The `buildings` row; CASCADE removes consents, tokens, access tokens, queue rows, cluster assignments, memberships, meter CSV readings; `referrer_id` edges become `SET NULL` | Nothing - the registration is the data |

@@ -355,6 +355,45 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         dashboard_module.leg_generate_documents(community_id, building_id)
         return _leg_dashboard_redirect(community_id)
 
+    @bp.route("/leg/community/<community_id>/archive")
+    def leg_community_archive_export(community_id):
+        building_id = _require_dashboard_session()
+        payload = dashboard_module.leg_export_archive(community_id, building_id)
+        if payload is None:
+            abort(403)
+        return send_file(
+            io.BytesIO(payload),
+            mimetype="application/json",
+            as_attachment=True,
+            download_name=f"openleg-{community_id}.json",
+        )
+
+    def _restore_archive_response(community_id, *, dry_run):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        upload = request.files.get("archive")
+        if upload is None:
+            abort(400)
+        payload = upload.read(100 * 1024 * 1024 + 1)
+        if len(payload) > 100 * 1024 * 1024:
+            abort(413)
+        result = dashboard_module.leg_restore_archive(
+            community_id, building_id, payload, dry_run=dry_run
+        )
+        if result is None:
+            abort(403)
+        return result, (200 if result["valid"] else 400)
+
+    @bp.route(
+        "/leg/community/<community_id>/archive/dry-run", methods=["POST"]
+    )
+    def leg_community_archive_dry_run(community_id):
+        return _restore_archive_response(community_id, dry_run=True)
+
+    @bp.route("/leg/community/<community_id>/archive/restore", methods=["POST"])
+    def leg_community_archive_restore(community_id):
+        return _restore_archive_response(community_id, dry_run=False)
+
     @bp.route("/leg/community/<community_id>/billing")
     def leg_billing_workspace(community_id):
         building_id = _require_dashboard_session()

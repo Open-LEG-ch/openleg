@@ -79,6 +79,7 @@ also_copy = [
     "cache.py",
     "cantons.py",
     "clustering_run.py",
+    "community_archive.py",
     "conftest.py",
     "cron.py",
     "dashboard.py",

@@ -57,7 +57,28 @@ count uses conditions identical to its list.
 - **Sensitivity:** derived personal data; inherits the building domain's
   bounds.
 - **Resident-visible:** only through consent-gated profile reads that feed
-  it.
+it.
+
+## Community operations archive
+
+- **Interface:** confirmed LEG administrators use the private
+  `/leg/community/<community_id>/archive` controls to export, validate, and
+  restore `openleg-community-archive/1` JSON.
+- **Contents:** the selected community, its member profiles and consent
+  metadata, formation and signed documents, correspondence and attachments,
+  metering mappings and readings, billing policies and periods, line items,
+  immutable invoices, delivery/correction records, and lifecycle events.
+- **Scope:** every query starts from `community_id`; profiles are limited to
+  current community members. Tokens, unrelated profiles, other communities,
+  platform operations, and public reference data are excluded.
+- **Manifest:** records SHA-256 hashes per dataset, kWh/kWp/CHF units,
+  Europe/Zurich and UTC time-zone conventions, schema version, and source
+  provenance. Binary values use tagged base64 objects; dates and decimals use
+  tagged ISO/string values so a round trip does not lose their database type.
+- **Restore:** dry-run checks version, hashes, record shape, relationships, and
+  target conflicts without writes. Restore uses one database transaction,
+  preserves identifiers and audit links, and ignores identical key conflicts
+  on repeat runs.
 - **Consent gate:** inherited from its inputs (`get_all_building_profiles`
   is gated).
 

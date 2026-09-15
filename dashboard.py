@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Dashboard readiness verb."""
 
+import json
 import math
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -9,6 +10,7 @@ from urllib.parse import quote, urlencode
 import billing_lifecycle
 import billing_policy
 import billing_workspace
+import community_archive
 import database as db
 import formation_documents
 import formation_wizard
@@ -190,6 +192,35 @@ def _require_confirmed_admin(community_id: str, building_id: str):
     if not member or member.get("status") != "confirmed":
         return None
     return member
+
+
+def leg_export_archive(community_id: str, building_id: str) -> bytes | None:
+    """Export one LEG only for its confirmed administrator."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return None
+    return community_archive.export_community_archive(community_id)
+
+
+def leg_restore_archive(
+    community_id: str, building_id: str, archive: bytes, *, dry_run: bool
+) -> dict | None:
+    """Validate or restore one LEG archive under confirmed-admin control."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return None
+    try:
+        payload = json.loads(archive)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        payload = {}
+    manifest = payload.get("manifest", {}) if isinstance(payload, dict) else {}
+    if not isinstance(manifest, dict):
+        manifest = {}
+    if manifest.get("community_id") not in {None, community_id}:
+        return {
+            "valid": False,
+            "errors": ["Archive belongs to another community"],
+            "conflicts": [],
+        }
+    return community_archive.restore_community_archive(archive, dry_run=dry_run)
 
 
 def leg_billing_workspace_location(community_id: str) -> str:
