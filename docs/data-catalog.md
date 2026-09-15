@@ -365,3 +365,24 @@ it.
 - **Sensitivity:** business contact data.
 - **Resident-visible:** no.
 - **Consent gate:** none.
+
+## store/invoice_query
+
+- **Tables:** `invoice_queries`, `invoice_query_messages`, `invoice_query_events`.
+- **Holds:** invoice-scoped questions, replies, and append-only status history.
+- **Sensitivity:** private billing correspondence; operator API projections omit messages and attachments.
+- **Resident-visible:** only to the invoice owner; operator access is community-scoped.
+
+## store/operator_api
+
+- **Tables:** `operator_api_clients`, `operator_api_usage`, `operator_events`, `operator_webhook_deliveries`.
+- **Holds:** hashed credentials, capabilities, minimal signed events, and delivery state.
+- **Sensitivity:** private operational integration data; tokens are never stored recoverably.
+- **Resident-visible:** no.
+
+## store/operator_operations
+
+- **Tables:** reads operational domain tables and writes `operator_action_idempotency`.
+- **Holds:** stable idempotency responses for scoped case and payment actions.
+- **Sensitivity:** private operational data; read models redact invoice snapshots, correspondence, and source evidence.
+- **Resident-visible:** no.

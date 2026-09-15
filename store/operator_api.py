@@ -17,6 +17,20 @@ def event_id_for(event_type, aggregate_id):
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"openleg:{event_type}:{aggregate_id}"))
 
 
+def _subscription_capability(event_type):
+    if event_type.startswith("metering."):
+        return "metering.read"
+    if event_type.startswith("invoice.case."):
+        return "cases.read"
+    if event_type.startswith("payment."):
+        return "payments.read"
+    if event_type.startswith("formation."):
+        return "formation.read"
+    if event_type.startswith("membership."):
+        return "membership.read"
+    return None
+
+
 def enqueue_event(cur, event_type, aggregate_id, community_id, payload):
     """Write an event and its deliveries through the caller's transaction."""
     event_id = event_id_for(event_type, aggregate_id)
@@ -27,12 +41,14 @@ def enqueue_event(cur, event_type, aggregate_id, community_id, payload):
            ON CONFLICT (event_type,aggregate_id) DO NOTHING""",
         (event_id, event_type, aggregate_id, community_id, Json(payload)),
     )
+    capability = _subscription_capability(event_type)
     cur.execute(
         """INSERT INTO operator_webhook_deliveries (delivery_id,event_id,client_id)
            SELECT gen_random_uuid()::text,%s,id FROM operator_api_clients
            WHERE community_id=%s AND active=TRUE AND webhook_url IS NOT NULL
+             AND (%s IS NULL OR capabilities ? %s)
            ON CONFLICT (event_id,client_id) DO NOTHING""",
-        (event_id, community_id),
+        (event_id, community_id, capability, capability),
     )
     return event_id
 

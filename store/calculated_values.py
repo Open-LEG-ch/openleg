@@ -3,6 +3,8 @@
 
 import json
 
+from store.operator_api import enqueue_event
+
 
 def _get_connection():
     import database
@@ -137,7 +139,20 @@ def save_calculated_values_delivery(delivery):
                 (delivery["territory"], delivery["fingerprint"]),
             )
             row = cur.fetchone()
-        return _delivery_row(row)
+        projected = _delivery_row(row)
+        if projected.get("id") is not None:
+            enqueue_event(
+                cur,
+                "metering.calculated-delivery.received",
+                str(projected["id"]),
+                delivery["community_id"],
+                {
+                    "status": projected.get("status"),
+                    "period_start": projected.get("period_start"),
+                    "period_end": projected.get("period_end"),
+                },
+            )
+        return projected
 
 
 def get_validated_calculated_values(community_id, period_start, period_end):

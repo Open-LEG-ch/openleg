@@ -58,6 +58,7 @@ without code changes.
 | `cron_bp` | `cron.py` | none |
 | `rangliste_bp` | `rangliste.py` | `/rangliste` |
 | `self_host_bp` | `self_host.py` | `/self-host`, `/install.sh` |
+| `operator_api_bp` | `operator_api.py` | `/api/operator/v1`, `/leg/community` |
 
 ## Route map
 

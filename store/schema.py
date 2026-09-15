@@ -1321,8 +1321,12 @@ def create_tables():
                     last_used_at TIMESTAMPTZ
                 )
             """)
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_operator_clients_community ON operator_api_clients(community_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_operator_clients_token ON operator_api_clients(token_hash) WHERE active=TRUE")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_operator_clients_community ON operator_api_clients(community_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_operator_clients_token ON operator_api_clients(token_hash) WHERE active=TRUE"
+            )
             cur.execute(""")
                 CREATE TABLE IF NOT EXISTS operator_api_usage (
                     id BIGSERIAL PRIMARY KEY,
@@ -1331,7 +1335,19 @@ def create_tables():
                     called_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_operator_usage_limit ON operator_api_usage(client_id,called_at DESC)")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_operator_usage_limit ON operator_api_usage(client_id,called_at DESC)"
+            )
+            cur.execute(""")
+                CREATE TABLE IF NOT EXISTS operator_action_idempotency (
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
+                    action VARCHAR(128) NOT NULL,
+                    idempotency_key VARCHAR(128) NOT NULL,
+                    response JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (community_id, action, idempotency_key)
+                )
+            """)
             cur.execute(""")
                 CREATE TABLE IF NOT EXISTS operator_events (
                     event_id VARCHAR(64) PRIMARY KEY,

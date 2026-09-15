@@ -29,6 +29,9 @@ below; it does not extend or shorten them.
 | store/cluster | Until the cluster resolves or the profile is deleted | Profile deletion (CASCADE on `clusters`) | Provisional assignments | Formation outcomes (`communities`) survive |
 | store/metering | Life of the LEG's accounting | Not implemented; metering points detach (`ON DELETE SET NULL`) on profile deletion | The link to the deleted building; readings and ledger stay | Readings and the SDAT ledger: the VNB's validated data is the billing basis; audit trail |
 | store/calculated_values | Life of the LEG's accounting | Not implemented | - | Original VNB evidence, normalized allocations, validation outcome, and replay fingerprint |
+| store/invoice_query | Billing record retention period | Not implemented | - | Private invoice questions, attachments, and status history |
+| store/operator_api | Credential lifetime plus operational audit period | Credential revocation; audit cleanup not implemented | Active API access | Hashed credential and delivery audit records |
+| store/operator_operations | Operational replay window | Expiry cleanup not implemented | - | Minimal idempotency responses |
 | store/sdat_ingestion | Life of the tenant operation; no automated horizon yet | Not implemented | - | Schedule settings and run metadata with safe error codes and aggregate counts; no filenames, credentials, document contents, or metering point IDs |
 | store/meter | Life of the registration | Profile deletion (CASCADE on `meter_readings`) | CSV readings | Nothing |
 | store/billing | 10 years (Swiss OR accounting retention; policy, not code) | Not implemented | - | Invoices, line items, corrections, lifecycle events, delivery jobs: deliberately kept; `invoices.participant_id` has no FK, so profile deletion does NOT reach them |

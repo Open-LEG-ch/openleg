@@ -19,11 +19,24 @@ from flask import Blueprint, g, jsonify, request, session
 import community_access
 import database as db
 import formation_wizard
+import sdat_ingestion
 
 API_SCHEMA_VERSION = "operator-api/1"
 EVENT_SCHEMA_VERSION = "operator-event/1"
 CAPABILITIES = frozenset(
-    {"formation.read", "formation.mutate", "membership.read", "membership.mutate"}
+    {
+        "formation.read",
+        "formation.mutate",
+        "membership.read",
+        "membership.mutate",
+        "metering.read",
+        "metering.mutate",
+        "billing.read",
+        "cases.read",
+        "cases.mutate",
+        "payments.read",
+        "payments.mutate",
+    }
 )
 operator_api_bp = Blueprint("operator_api", __name__)
 
@@ -117,6 +130,214 @@ def private_api_headers(response):
         {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
     )
     return response
+
+
+def _page_args():
+    try:
+        limit = int(request.args.get("limit", 50))
+        cursor = request.args.get("cursor")
+        if limit < 1 or limit > 100 or (cursor is not None and int(cursor) < 0):
+            raise ValueError
+    except (TypeError, ValueError):
+        return None
+    return {
+        "status": request.args.get("status") or None,
+        "limit": limit,
+        "cursor": cursor,
+    }
+
+
+def _page(read, community_id, safe):
+    arguments = _page_args()
+    if arguments is None:
+        return _error("Invalid pagination", 400)
+    rows, next_cursor = read(community_id, **arguments)
+    return jsonify(
+        schema_version=API_SCHEMA_VERSION,
+        items=[safe(row) for row in rows],
+        next_cursor=str(next_cursor) if next_cursor is not None else None,
+    )
+
+
+def _safe_fields(*names):
+    allowed = frozenset(names)
+    return lambda row: {key: value for key, value in row.items() if key in allowed}
+
+
+_safe_job = _safe_fields(
+    "id",
+    "territory",
+    "started_at",
+    "finished_at",
+    "status",
+    "attempts",
+    "downloaded_files",
+    "imported_files",
+    "imported_readings",
+    "error_code",
+)
+_safe_delivery = _safe_fields(
+    "id",
+    "contract_version",
+    "format_version",
+    "transport",
+    "community_id",
+    "period_start",
+    "period_end",
+    "status",
+    "diagnostics",
+    "record_count",
+    "received_at",
+)
+_safe_period = _safe_fields(
+    "id",
+    "community_id",
+    "period_start",
+    "period_end",
+    "total_production_kwh",
+    "total_allocated_kwh",
+    "total_surplus_kwh",
+    "total_network_discount_chf",
+    "status",
+)
+_safe_invoice = _safe_fields(
+    "id", "invoice_number", "gross_chf", "issue_date", "due_date", "lifecycle_state"
+)
+_safe_invoice_case = _safe_fields(
+    "id", "invoice_id", "category", "status", "created_at", "updated_at"
+)
+_safe_payment = _safe_fields(
+    "id",
+    "invoice_id",
+    "entry_reference",
+    "booking_date",
+    "amount",
+    "currency",
+    "payment_reference",
+    "is_reversal",
+    "match_decision",
+)
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/metering/jobs")
+@require_operator("metering.read")
+def metering_jobs(community_id):
+    return _page(db.list_operator_metering_jobs, community_id, _safe_job)
+
+
+@operator_api_bp.get(
+    "/api/operator/v1/communities/<community_id>/metering/calculated-deliveries"
+)
+@require_operator("metering.read")
+def calculated_deliveries(community_id):
+    return _page(db.list_operator_calculated_deliveries, community_id, _safe_delivery)
+
+
+@operator_api_bp.post(
+    "/api/operator/v1/communities/<community_id>/metering/jobs/<int:job_id>/retry"
+)
+@require_operator("metering.mutate")
+def retry_metering_job(community_id, job_id):
+    if not _idempotency_key():
+        return _error("Valid Idempotency-Key required", 400)
+    schedule = db.get_operator_ingestion_retry(community_id, job_id)
+    if not schedule:
+        return _error("Resource not found or not eligible", 404)
+    return jsonify(
+        schema_version=API_SCHEMA_VERSION,
+        **sdat_ingestion.run(schedule["territory"], schedule),
+    )
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/billing/periods")
+@require_operator("billing.read")
+def billing_periods(community_id):
+    return _page(db.list_operator_billing_periods, community_id, _safe_period)
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/billing/invoices")
+@require_operator("billing.read")
+def billing_invoices(community_id):
+    return _page(db.list_operator_invoices, community_id, _safe_invoice)
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/billing/cases")
+@require_operator("cases.read")
+def invoice_cases(community_id):
+    return _page(db.list_operator_invoice_cases, community_id, _safe_invoice_case)
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/payments/matches")
+@require_operator("payments.read")
+def payment_matches(community_id):
+    return _page(db.list_operator_payment_matches, community_id, _safe_payment)
+
+
+def _idempotency_key():
+    value = request.headers.get("Idempotency-Key", "")
+    return value if 1 <= len(value) <= 128 else None
+
+
+@operator_api_bp.post(
+    "/api/operator/v1/communities/<community_id>/billing/cases/<int:case_id>/responses"
+)
+@require_operator("cases.mutate")
+def respond_invoice_case(community_id, case_id):
+    key = _idempotency_key()
+    if not key:
+        return _error("Valid Idempotency-Key required", 400)
+    payload = request.get_json(silent=True) or {}
+    try:
+        result = db.respond_operator_invoice_case(
+            case_id,
+            community_id,
+            g.operator_client["created_by"],
+            payload.get("message", ""),
+            payload.get("status", ""),
+            key,
+        )
+    except ValueError as error:
+        return _error(str(error), 409)
+    return (
+        jsonify(schema_version=API_SCHEMA_VERSION, **result)
+        if result
+        else _error("Resource not found", 404)
+    )
+
+
+@operator_api_bp.post(
+    "/api/operator/v1/communities/<community_id>/payments/matches/<int:entry_id>/confirm"
+)
+@require_operator("payments.mutate")
+def confirm_payment_match(community_id, entry_id):
+    key = _idempotency_key()
+    if not key:
+        return _error("Valid Idempotency-Key required", 400)
+    payload = request.get_json(silent=True) or {}
+    try:
+        invoice_id = int(payload.get("invoice_id"))
+        result = db.confirm_operator_payment_match(
+            entry_id, invoice_id, community_id, g.operator_client["created_by"], key
+        )
+    except (TypeError, ValueError) as error:
+        return _error(str(error) or "Invalid payment confirmation", 409)
+    return (
+        jsonify(schema_version=API_SCHEMA_VERSION, **result)
+        if result
+        else _error("Resource not found or not eligible", 404)
+    )
+
+
+def operational_event(event_type, aggregate_id, community_id, payload):
+    """Build the public event projection; sensitive source fields stay excluded."""
+    allowed = {"status", "error_code", "period_start", "period_end"}
+    return {
+        "event_type": event_type,
+        "aggregate_id": aggregate_id,
+        "community_id": community_id,
+        "schema_version": EVENT_SCHEMA_VERSION,
+        "payload": {key: value for key, value in payload.items() if key in allowed},
+    }
 
 
 def _admin_for(community_id: str, building_id: str | None) -> bool:

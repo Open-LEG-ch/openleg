@@ -4,6 +4,8 @@
 import json
 import threading
 
+from store.operator_api import enqueue_event
+
 _lock_guard = threading.Lock()
 _lock_connections = {}
 
@@ -138,6 +140,7 @@ def record_sdat_ingestion_run(territory: str, report: dict) -> None:
                  downloaded_files, imported_files, imported_readings, error_code,
                  report)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
             """,
             (
                 territory,
@@ -152,3 +155,18 @@ def record_sdat_ingestion_run(territory: str, report: dict) -> None:
                 json.dumps(report, default=str),
             ),
         )
+        run_id = cur.fetchone()["id"]
+        cur.execute(
+            """SELECT c.community_id FROM communities c
+                 JOIN buildings b ON b.building_id=c.admin_building_id
+                WHERE b.city_id=%s""",
+            (territory,),
+        )
+        for community in cur.fetchall():
+            enqueue_event(
+                cur,
+                "metering.ingestion.completed",
+                str(run_id),
+                community["community_id"],
+                {"status": report["status"], "error_code": report.get("error")},
+            )

@@ -106,6 +106,7 @@ def is_db_available() -> bool:
 # ---------------------------------------------------------------------------
 from billing_approval import BillingApprovalError  # noqa: F401
 from store import operator_api as _operator_api
+from store import operator_operations as _operator_operations
 from store.access_token import (  # noqa: F401
     consume_dashboard_access_token,
     consume_municipality_access_token,
@@ -341,3 +342,12 @@ revoke_operator_api_client = _operator_api.revoke_client
 rotate_operator_api_client = _operator_api.rotate_client
 retry_operator_webhook_delivery = _operator_api.retry_delivery
 get_operator_api_usage_count = _operator_api.usage_count
+list_operator_metering_jobs = _operator_operations.list_metering_jobs
+get_operator_ingestion_retry = _operator_operations.get_ingestion_retry
+list_operator_calculated_deliveries = _operator_operations.list_calculated_deliveries
+list_operator_billing_periods = _operator_operations.list_periods
+list_operator_invoices = _operator_operations.list_invoices
+list_operator_invoice_cases = _operator_operations.list_cases
+list_operator_payment_matches = _operator_operations.list_payments
+respond_operator_invoice_case = _operator_operations.respond_case
+confirm_operator_payment_match = _operator_operations.confirm_payment
