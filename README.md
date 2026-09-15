@@ -8,6 +8,14 @@ Open-source infrastructure for Swiss Local Electricity Communities. Offene Infra
 
 OpenLEG is the public website, product application, and API for founding and operating a Swiss Local Electricity Community, known as a LEG. The private `openleg-ops` repository owns production deployment, not the public site runtime or assets.
 
+### Operating model
+
+The LEG chooses its representative, participant agreements, internal energy price, administration, billing operator, and hosting provider. OpenLEG supplies inspectable, self-hostable infrastructure for that community-controlled work under AGPL-3.0-or-later.
+
+The distribution system operator (VNB) still verifies the statutory network-area and network-level requirements, performs its metering duties, charges network use with the statutory discount, and delivers the data assigned to it. The basic supplier supplies residual electricity where applicable. OpenLEG does not replace those duties. Formation submissions and data delivery must be configured for each VNB; end-to-end integration is not available for every VNB.
+
+The current code covers formation records, VNB handovers, participant changes, scheduled SDAT ingestion, quarter-hour allocation, tariff versions, invoice approval, immutable invoices, payment reconciliation, and operational archive export and restore.
+
 ### What this repo is
 
 - `app.py` connects the Flask routes and user journeys
@@ -34,7 +42,7 @@ The path from raw metering data to a member invoice runs as one workflow in this
 3. **Policy and approval.** The operator maintains a versioned tariff at `/leg/community/<community_id>/billing-policy` (`billing_policy.py`, `templates/leg_billing_policy.html`) and reviews the draft at `/leg/community/<community_id>/billing` (`templates/leg_billing.html`). Approval freezes one immutable invoice per participant from the persisted policy snapshot (`billing_approval.py`).
 4. **Lifecycle and delivery.** An issued invoice moves through `issued`, `delivered`, `paid`, `cancelled`, and `corrected` (`billing_lifecycle.py`). Members read their own invoices at `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>`, and `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
 
-What still needs a human or a shell: the SDAT fetch and import run as command line scripts, no cron route triggers them; approval stays a deliberate operator action; payment has no bank reconciliation, so an operator marks an invoice paid.
+Invoice approval stays a deliberate operator action. VNB-specific transport and credentials require local configuration.
 
 ### Quick start
 
@@ -111,6 +119,14 @@ Never commit credentials or personal data. Use `.env.example` locally and report
 
 OpenLEG ist die öffentliche Website, Produktanwendung und API für die Gründung und den Betrieb einer Schweizer Lokalen Elektrizitätsgemeinschaft, kurz LEG. Das private Repo `openleg-ops` verantwortet die Produktionsbereitstellung, nicht die öffentliche Website oder ihre Assets.
 
+### Betriebsmodell
+
+Die LEG wählt ihre Vertretung, Teilnehmerverträge, den internen Strompreis, die Administration, den Abrechnungsdienstleister und den Hosting-Anbieter. OpenLEG stellt für diese Aufgaben prüfbare, selbst betreibbare Infrastruktur unter AGPL-3.0-or-later bereit.
+
+Der Verteilnetzbetreiber (VNB) prüft weiterhin die gesetzlichen Anforderungen an Netzgebiet und Netzebene, erfüllt seine Messaufgaben, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und stellt die ihm zugewiesenen Daten bereit. Der Grundversorger liefert gegebenenfalls den übrigen Strom. OpenLEG ersetzt diese Aufgaben nicht. Anmeldung und Datenlieferung müssen für jeden VNB eingerichtet werden; eine durchgängige Anbindung ist noch nicht für jeden VNB verfügbar.
+
+Der aktuelle Code deckt Gründungsunterlagen, VNB-Übergaben, Teilnehmeränderungen, den zeitgesteuerten SDAT-Abruf, die Viertelstundenverteilung, Tarifversionen, Rechnungsfreigabe, unveränderliche Rechnungen, Zahlungsabgleich sowie Export und Wiederherstellung der Betriebsdaten ab.
+
 ### Was dieses Repo enthält
 
 - `app.py` verbindet Flask-Routen und Nutzerwege
@@ -137,7 +153,7 @@ Der Weg von Rohmessdaten zur Mitgliederrechnung läuft als ein Ablauf in diesem 
 3. **Policy und Freigabe.** Die Betreiberin pflegt den versionierten Tarif unter `/leg/community/<community_id>/billing-policy` (`billing_policy.py`, `templates/leg_billing_policy.html`) und prüft den Entwurf unter `/leg/community/<community_id>/billing` (`templates/leg_billing.html`). Die Freigabe friert je Teilnehmer eine unveränderliche Rechnung aus dem gespeicherten Policy-Snapshot ein (`billing_approval.py`).
 4. **Lebenszyklus und Zustellung.** Eine freigegebene Rechnung durchläuft `issued`, `delivered`, `paid`, `cancelled` und `corrected` (`billing_lifecycle.py`). Mitglieder lesen ihre Rechnungen unter `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>` und `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
 
-Das bleibt Handarbeit oder Shell: Abruf und Import der SDAT-Dateien starten über Kommandozeilenskripte, kein Cron-Endpunkt löst sie aus; die Freigabe bleibt eine bewusste Entscheidung der Betreiberin; für Zahlungen gibt es keinen Bankabgleich, eine Person setzt die Rechnung auf bezahlt.
+Die Rechnungsfreigabe bleibt eine bewusste Entscheidung der Betreiberin. VNB-spezifischer Transport und Zugangsdaten müssen lokal eingerichtet werden.
 
 ### Schnellstart
 
