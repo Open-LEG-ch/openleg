@@ -100,6 +100,21 @@ it.
   see their LEG's periods.
 - **Consent gate:** applies to neighbour-visible shapes.
 
+## store/calculated_values
+
+- **Tables:** `vnb_calculated_values_deliveries`
+- **Holds:** VNB case, source, period, content and evidence fingerprints,
+  normalized quarter-hour LEG allocations, validation diagnostics, and the
+  original evidence bytes.
+- **Purpose:** independent VNB evidence for the billing allocation check.
+- **Owner:** the LEG identified by `community_id`; access is tenant-scoped
+  through its administrator's `city_id`.
+- **Sensitivity:** citizen meter data and original VNB evidence. Raw evidence
+  stays out of logs and operator list responses.
+- **Resident-visible:** no; operators see only safe delivery metadata.
+- **Consent gate:** not neighbour-visible; admin authentication and tenant
+  scope apply.
+
 ## store/meter
 
 - **Tables:** `meter_readings`

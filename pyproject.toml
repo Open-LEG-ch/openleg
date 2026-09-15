@@ -124,5 +124,6 @@ also_copy = [
     "tenant.py",
     "tests",
     "utility_portal.py",
+    "vnb_calculated_values.py",
     "wsgi.py",
 ]

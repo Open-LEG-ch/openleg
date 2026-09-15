@@ -677,6 +677,19 @@ def test_a_vnb_allocation_mismatch_refuses_to_persist(monkeypatch):
     assert saved == [], "a period the VNB contradicts must never reach the database"
 
 
+def test_operational_billing_requires_accepted_calculated_values(monkeypatch):
+    from billing_runner import BillingRunError, run_billing_period
+
+    saved = _install_billing_fixture(monkeypatch)
+    monkeypatch.setattr(database, "is_db_available", lambda: True)
+    monkeypatch.setattr(
+        database, "get_validated_calculated_values", lambda *_args: None
+    )
+    with pytest.raises(BillingRunError, match="no validated VNB calculated-values"):
+        run_billing_period(COMMUNITY, START, END)
+    assert saved == []
+
+
 def test_an_unassigned_period_point_refuses_to_persist(monkeypatch):
     from billing_runner import BillingRunError, run_billing_period
 

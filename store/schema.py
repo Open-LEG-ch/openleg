@@ -1369,6 +1369,38 @@ def create_tables():
                 "CREATE INDEX IF NOT EXISTS idx_sdat_imports_period ON sdat_imports(period_start)"
             )
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS vnb_calculated_values_deliveries (
+                    id BIGSERIAL PRIMARY KEY,
+                    contract_version VARCHAR(64) NOT NULL,
+                    format_version VARCHAR(32) NOT NULL,
+                    transport VARCHAR(16) NOT NULL,
+                    territory VARCHAR(64) NOT NULL,
+                    community_id VARCHAR(64),
+                    period_start TIMESTAMPTZ,
+                    period_end TIMESTAMPTZ,
+                    timezone VARCHAR(64),
+                    source TEXT,
+                    vnb_case_id VARCHAR(128),
+                    content_fingerprint CHAR(64) NOT NULL,
+                    evidence_sha256 CHAR(64) NOT NULL,
+                    evidence_bytes BYTEA NOT NULL,
+                    status VARCHAR(24) NOT NULL CHECK (
+                        status IN ('accepted', 'rejected', 'partially_invalid')
+                    ),
+                    diagnostics JSONB NOT NULL DEFAULT '[]',
+                    normalized_records JSONB NOT NULL DEFAULT '[]',
+                    record_count INTEGER NOT NULL DEFAULT 0,
+                    received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (territory, content_fingerprint)
+                )
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_vnb_calculated_values_period
+                ON vnb_calculated_values_deliveries
+                    (community_id, period_start, period_end, received_at DESC)
+            """)
+
             # Veracity-Flags (#517): Markierungen zu importierten, aber
             # unplausibel erscheinenden Fenstern. Ein Flag sperrt nichts und
             # korrigiert nichts; es macht Befunde vor der Freigabe sichtbar.

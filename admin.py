@@ -22,6 +22,7 @@ import billing_workspace
 import database as db
 import leg_registry
 import sdat_ingestion
+import vnb_calculated_values
 from security_utils import log_security_event
 
 try:
@@ -72,6 +73,31 @@ _TERRITORY_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 def admin_sdat_schedules():
     require_admin()
     return jsonify({"schedules": db.list_sdat_ingestion_schedules()})
+
+
+@admin_bp.route("/admin/vnb-calculated-values/<territory>", methods=["GET", "POST"])
+def admin_vnb_calculated_values(territory):
+    """Import or inspect calculated values without exposing source payloads."""
+    require_admin()
+    if not _TERRITORY_RE.fullmatch(territory):
+        return jsonify({"error": "invalid_territory"}), 400
+    if request.method == "GET":
+        return jsonify({"deliveries": db.list_calculated_values_deliveries(territory)})
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "invalid_payload"}), 400
+    delivery = payload.get("delivery")
+    if not isinstance(delivery, dict):
+        return jsonify({"error": "invalid_delivery"}), 400
+    # The path is the authenticated tenant scope; clients cannot select another.
+    delivery["territory"] = territory
+    transport = payload.get("transport", "manual")
+    result = vnb_calculated_values.accept_delivery(
+        delivery,
+        transport=transport,
+        evidence=request.get_data(cache=True),
+    )
+    return jsonify(result), 201 if result["status"] == "accepted" else 422
 
 
 @admin_bp.route("/admin/sdat-schedules/<territory>/run", methods=["POST"])

@@ -67,6 +67,7 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/email_queue` | Outbound mail queue |
 | `store/utility` | EVU/VNB utility clients |
 | `store/metering` | Messpunkte, 15-minute E66 readings, SDAT import ledger |
+| `store/calculated_values` | Tenant-scoped VNB-calculated LEG allocations, validation outcomes, replay fingerprints, and original evidence |
 | `store/meter` | Per-building meter readings from the upload path |
 | `store/registry` | LEG registry entries and verification |
 | `store/tenant` | White-label tenant configs |

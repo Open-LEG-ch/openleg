@@ -19,7 +19,7 @@ Two deliberate choices:
 """
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 
@@ -477,3 +477,46 @@ def reconcile_with_vnb(frames, summary):
         "production_difference_kwh": round(engine_production - vnb_production, 6),
         "production_per_participant": production_per_participant,
     }
+
+
+def with_calculated_vnb_evidence(frames, delivery):
+    """Replace the E66 allocation claim with one accepted calculated delivery."""
+    if not delivery or delivery.get("status") != "accepted":
+        raise PeriodDataError(
+            [_problem("invalid_vnb_evidence", "delivery is not accepted")]
+        )
+    totals = {"consumption": {}, "production": {}}
+    for row in delivery.get("normalized_records") or []:
+        participant = row["participant_id"]
+        direction = row["direction"]
+        totals[direction][participant] = totals[direction].get(
+            participant, 0.0
+        ) + float(row["allocated_kwh"])
+    all_participants = set(frames.participants)
+    if set(totals["consumption"]) | set(totals["production"]) != all_participants:
+        raise PeriodDataError(
+            [
+                _problem(
+                    "invalid_vnb_evidence",
+                    "participant set does not match billing inputs",
+                )
+            ]
+        )
+    reference = {
+        "community_consumption_kwh": round(sum(totals["consumption"].values()), 6),
+        "community_production_kwh": round(sum(totals["production"].values()), 6),
+        "per_participant": {
+            participant: {
+                "consumption_kwh": round(
+                    totals["consumption"].get(participant, 0.0), 6
+                ),
+                "production_kwh": round(totals["production"].get(participant, 0.0), 6),
+            }
+            for participant in frames.participants
+        },
+    }
+    provenance = dict(frames.provenance)
+    provenance["calculated_values_fingerprint"] = delivery["fingerprint"]
+    provenance["vnb_case_id"] = delivery["vnb_case_id"]
+    provenance["vnb_source"] = delivery["source"]
+    return replace(frames, vnb_reference=reference, provenance=provenance)

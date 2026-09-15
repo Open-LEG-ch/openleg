@@ -16,6 +16,7 @@ PRIVATE_RESPONSE_HEADERS = {
 
 # Token-bearing and member-only surfaces are private with or without a session.
 _PRIVATE_PATH_PREFIXES = (
+    "/admin/vnb-calculated-values",
     "/dashboard/access/",
     "/dashboard/invoices",
     "/gemeinde/access/",
