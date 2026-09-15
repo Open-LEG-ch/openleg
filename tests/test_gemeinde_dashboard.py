@@ -127,7 +127,11 @@ class TestGemeindeDashboardInviteLink:
         ):
             html = client.get("/gemeinde/dashboard").get_data(as_text=True)
 
-        assert "http://from-config.example" in html
+        invite_link = re.search(
+            r'<input\b[^>]*\bid="invite-link"[^>]*\bvalue="([^"]*)"', html
+        )
+        assert invite_link
+        assert invite_link.group(1) == "http://from-config.example"
 
 
 class TestGemeindeDashboardInterest:
