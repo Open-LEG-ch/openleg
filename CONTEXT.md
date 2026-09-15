@@ -91,6 +91,7 @@ Domain logic sits above storage and stays free of SQL:
 | `billing_runner.py` | Fail-closed draft run; resolves and fingerprints the complete effective policy |
 | `billing_approval.py` | Fail-closed approval validation; immutable invoice snapshots from the stored policy/provenance seam |
 | `billing_lifecycle.py` | Allowed invoice state transitions and shared member/admin status labels |
+| `payment_reconciliation.py` | ISO 20022 camt.053/.054 parsing and deterministic invoice payment matching |
 | `pv_ranking.py`, `ranking.py` | Utilization, peer comparison, progress |
 | `public_data.py` | Gemeindeprofil refresh outcomes, source-field preservation, tariff/solar merge, and value-gap assembly |
 | `municipality_profile.py` | Gemeindeprofil presentation helpers |

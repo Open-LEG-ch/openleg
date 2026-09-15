@@ -228,6 +228,12 @@ def _patch_workspace(monkeypatch, app_module, *, members=None):  # noqa: F811
         MagicMock(return_value=[]),
         raising=False,
     )
+    monkeypatch.setattr(
+        app_module.db,
+        "list_bank_statement_entries",
+        MagicMock(return_value=[]),
+        raising=False,
+    )
     approve = MagicMock(return_value=[{"invoice_number": "MUSTER-2026-000001"}])
     monkeypatch.setattr(app_module.db, "approve_billing_period", approve, raising=False)
     return approve

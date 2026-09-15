@@ -842,6 +842,47 @@ def create_tables():
                 )
             """)
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS bank_statement_imports (
+                    id BIGSERIAL PRIMARY KEY,
+                    community_id VARCHAR(64) NOT NULL,
+                    actor_id VARCHAR(64) NOT NULL,
+                    source_name VARCHAR(255) NOT NULL,
+                    message_type VARCHAR(16) NOT NULL,
+                    statement_reference TEXT,
+                    fingerprint CHAR(64) NOT NULL,
+                    imported_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE (community_id, fingerprint),
+                    CHECK (message_type IN ('camt.053', 'camt.054'))
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS bank_statement_entries (
+                    id BIGSERIAL PRIMARY KEY,
+                    statement_import_id BIGINT NOT NULL REFERENCES bank_statement_imports(id),
+                    community_id VARCHAR(64) NOT NULL,
+                    invoice_id INTEGER REFERENCES invoices(id),
+                    entry_reference TEXT NOT NULL,
+                    booking_date DATE NOT NULL,
+                    amount DECIMAL(14, 2) NOT NULL,
+                    currency CHAR(3) NOT NULL,
+                    payment_reference TEXT,
+                    is_reversal BOOLEAN NOT NULL DEFAULT FALSE,
+                    credit_debit_indicator CHAR(4) NOT NULL,
+                    match_decision VARCHAR(32) NOT NULL,
+                    decided_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE (statement_import_id, entry_reference),
+                    CHECK (match_decision IN (
+                        'matched', 'unmatched', 'ambiguous', 'split_payment',
+                        'overpayment', 'reversal', 'mismatch'
+                    )),
+                    CHECK (credit_debit_indicator IN ('CRDT', 'DBIT'))
+                )
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS ix_bank_statement_entries_community_id
+                ON bank_statement_entries (community_id, id DESC)
+            """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS invoice_delivery_jobs (
                     invoice_id INTEGER PRIMARY KEY REFERENCES invoices(id),
                     community_id VARCHAR(64) NOT NULL,

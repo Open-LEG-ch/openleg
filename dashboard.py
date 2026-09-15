@@ -13,6 +13,7 @@ import database as db
 import formation_documents
 import formation_wizard
 import member_invoices
+import payment_reconciliation
 import security_utils
 
 _PROFILE_EXPORT_FIELDS = (
@@ -266,7 +267,13 @@ def _display_gross_chf(invoice: dict) -> tuple[str, bool]:
     return f"{amount:.2f}", False
 
 
-def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> dict:
+def leg_billing_workspace_view(
+    community_id: str,
+    building_id: str,
+    *,
+    include_statement_entries: bool = False,
+    **extra,
+) -> dict:
     """Admin-gated view model for the billing approval workspace."""
     if not _require_confirmed_admin(community_id, building_id):
         return {"error": "Kein Zugriff."}
@@ -332,11 +339,35 @@ def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> 
             for period in periods
         ],
         "invoices": invoices,
+        "statement_entries": [
+            {
+                **entry,
+                "match_decision_label": payment_reconciliation.DECISION_LABELS.get(
+                    entry.get("match_decision"),
+                    entry.get("match_decision") or "Unbekannt",
+                ),
+            }
+            for entry in (
+                db.list_bank_statement_entries(community_id)
+                if include_statement_entries
+                else []
+            )
+        ],
         "billing_approved": False,
         "approval_error": None,
     }
     view.update(extra)
     return view
+
+
+def leg_import_bank_statement(community_id, building_id, source_name, content):
+    """Import a statement only for a confirmed administrator of the LEG."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff."}
+    result = payment_reconciliation.import_statement(
+        community_id, building_id, source_name, content, db
+    )
+    return {"error": None, **result}
 
 
 def leg_deliver_invoice(

@@ -26,6 +26,7 @@ import access_token
 import billing_policy
 import dashboard as dashboard_module
 import database as db
+import payment_reconciliation
 import security_utils
 
 
@@ -361,7 +362,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             view = dashboard_module.leg_billing_workspace_view(
                 community_id,
                 building_id,
+                include_statement_entries=True,
                 billing_approved=request.args.get("approved") == "1",
+                statement_status=request.args.get("statement"),
             )
         except db.BillingStoreError:
             abort(503)
@@ -371,6 +374,33 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             "leg_billing.html",
             csrf_token=_dashboard_csrf_token(),
             **view,
+        )
+
+    @bp.route("/leg/community/<community_id>/billing/statements", methods=["POST"])
+    def leg_billing_statement_import(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        upload = request.files.get("statement")
+        if upload is None or not upload.filename:
+            abort(400)
+        content = upload.stream.read(5 * 1024 * 1024 + 1)
+        if len(content) > 5 * 1024 * 1024:
+            abort(413)
+        try:
+            result = dashboard_module.leg_import_bank_statement(
+                community_id, building_id, upload.filename, content
+            )
+        except payment_reconciliation.StatementError:
+            abort(400)
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"]:
+            abort(403)
+        suffix = (
+            "?statement=duplicate" if result["duplicate"] else "?statement=imported"
+        )
+        return redirect(
+            dashboard_module.leg_billing_workspace_location(community_id) + suffix
         )
 
     @bp.route(

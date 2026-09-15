@@ -16,6 +16,7 @@ from decimal import Decimal
 import billing_approval
 import billing_lifecycle
 import billing_policy
+import payment_reconciliation
 
 logger = logging.getLogger(__name__)
 
@@ -966,6 +967,164 @@ def record_invoice_payment(invoice_id, community_id, actor_id, paid_date, refere
     except Exception as e:
         logger.error(f"[DB] Error recording invoice payment: {e}")
         raise BillingStoreError("Could not record invoice payment") from e
+
+
+def _statement_import_result(cur, import_id, *, duplicate):
+    cur.execute(
+        """
+                SELECT entry_reference, booking_date, amount, currency,
+               payment_reference, is_reversal, credit_debit_indicator,
+               match_decision, invoice_id,
+               decided_at
+        FROM bank_statement_entries
+        WHERE statement_import_id = %s ORDER BY id
+        """,
+        (import_id,),
+    )
+    return {
+        "statement_import_id": import_id,
+        "duplicate": duplicate,
+        "entries": [dict(row) for row in cur.fetchall()],
+    }
+
+
+def reconcile_bank_statement(
+    *,
+    community_id,
+    actor_id,
+    source_name,
+    message_type,
+    statement_reference,
+    fingerprint,
+    entries,
+):
+    """Persist one statement and append paid events for exact unique matches.
+
+    The import, decisions, and lifecycle events share one transaction. Invoice
+    candidates are restricted to the supplied community and locked before any
+    decision is written.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO bank_statement_imports (
+                    community_id, actor_id, source_name, message_type,
+                    statement_reference, fingerprint
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (community_id, fingerprint) DO NOTHING
+                RETURNING id
+                """,
+                (
+                    community_id,
+                    actor_id,
+                    source_name,
+                    message_type,
+                    statement_reference,
+                    fingerprint,
+                ),
+            )
+            imported = cur.fetchone()
+            if not imported:
+                cur.execute(
+                    """
+                    SELECT id FROM bank_statement_imports
+                    WHERE community_id = %s AND fingerprint = %s
+                    """,
+                    (community_id, fingerprint),
+                )
+                return _statement_import_result(
+                    cur, cur.fetchone()["id"], duplicate=True
+                )
+            import_id = imported["id"]
+            cur.execute(
+                """
+                SELECT i.id, i.invoice_number, i.gross_chf,
+                       COALESCE((
+                           SELECT e.new_state FROM invoice_lifecycle_events e
+                           WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
+                       ), 'issued') AS lifecycle_state
+                FROM invoices i
+                WHERE i.community_id = %s AND i.status = 'issued'
+                FOR UPDATE OF i
+                """,
+                (community_id,),
+            )
+            invoices = [dict(row) for row in cur.fetchall()]
+            for entry in entries:
+                match = payment_reconciliation.match_payment(entry, invoices)
+                invoice_id = match.invoice_id
+                decision = match.decision
+                if decision == "matched":
+                    invoice = next(
+                        invoice for invoice in invoices if invoice["id"] == invoice_id
+                    )
+                    _append_invoice_event(
+                        cur,
+                        invoice_id=invoice["id"],
+                        community_id=community_id,
+                        actor_id=actor_id,
+                        event_type="paid",
+                        previous_state="delivered",
+                        new_state="paid",
+                        reference=entry["payment_reference"],
+                        effective_date=entry["booking_date"],
+                        idempotency_key=(
+                            f"bank:{import_id}:{entry['entry_reference']}"
+                        ),
+                    )
+                    invoice["lifecycle_state"] = "paid"
+                cur.execute(
+                    """
+                    INSERT INTO bank_statement_entries (
+                        statement_import_id, community_id, invoice_id,
+                        entry_reference, booking_date, amount, currency,
+                        payment_reference, is_reversal, credit_debit_indicator,
+                        match_decision
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        import_id,
+                        community_id,
+                        invoice_id,
+                        entry["entry_reference"],
+                        entry["booking_date"],
+                        entry["amount"],
+                        entry["currency"],
+                        entry["payment_reference"],
+                        entry["is_reversal"],
+                        entry["credit_debit_indicator"],
+                        decision,
+                    ),
+                )
+            return _statement_import_result(cur, import_id, duplicate=False)
+    except Exception as error:
+        logger.error("[DB] Error reconciling bank statement: %s", error)
+        raise BillingStoreError("Could not reconcile bank statement") from error
+
+
+def list_bank_statement_entries(community_id, limit=200):
+    """Return reviewable decisions and their immutable source audit fields."""
+    bounded_limit = max(1, min(int(limit), 500))
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT e.*, s.source_name, s.message_type,
+                       s.statement_reference, s.fingerprint, s.actor_id,
+                       s.imported_at
+                FROM bank_statement_entries e
+                JOIN bank_statement_imports s ON s.id = e.statement_import_id
+                WHERE e.community_id = %s AND s.community_id = %s
+                ORDER BY e.id DESC
+                LIMIT %s
+                """,
+                (community_id, community_id, bounded_limit),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as error:
+        logger.error("[DB] Error listing statement entries: %s", error)
+        raise BillingStoreError("Could not list statement entries") from error
 
 
 def cancel_invoice(invoice_id, community_id, actor_id, reason):
