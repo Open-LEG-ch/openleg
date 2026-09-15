@@ -462,7 +462,7 @@ def api_register_interest():
             send_email=send_email,
         )
     except interest_intake.InterestIntakeError as error:
-        return jsonify({"error": str(error)}), 400
+        return jsonify({"error": error.message}), 400
     return jsonify(result), 202
 
 
