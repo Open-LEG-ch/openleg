@@ -29,7 +29,6 @@ Invoice-question response and reminder dates use
 | Domain (catalog) | Retention horizon | Deletion trigger | What deletion reaches | What it deliberately keeps |
 |---|---|---|---|---|
 | store/building | Life of the registration | Profile deletion (unsubscribe confirmation) | The `buildings` row; CASCADE removes consents, tokens, access tokens, queue rows, cluster assignments, memberships, meter CSV readings; `referrer_id` edges become `SET NULL` | Nothing - the registration is the data |
-| store/interest | Unverified: `UNVERIFIED_INTEREST_RETENTION_DAYS = 30`; verified unresolved request: `VERIFIED_COVERAGE_RETENTION_MONTHS = 12` | Scheduled `cleanup_expired_interest` | Expired `coverage_requests` and unverified `buildings` | Confirmed address profiles remain until profile deletion |
 | store/consent | Life of the registration | Profile deletion (CASCADE) | Both `consents` and `data_consents` rows | Revocation alone keeps the rows (visibility change, not deletion) |
 | store/cluster | Until the cluster resolves or the profile is deleted | Profile deletion (CASCADE on `clusters`) | Provisional assignments | Formation outcomes (`communities`) survive |
 | store/metering | Life of the LEG's accounting | Not implemented; metering points detach (`ON DELETE SET NULL`) on profile deletion | The link to the deleted building; readings and ledger stay | Readings and the SDAT ledger: the VNB's validated data is the billing basis; audit trail |
@@ -39,7 +38,6 @@ Invoice-question response and reminder dates use
 | store/sdat_ingestion | Life of the tenant operation; no automated horizon yet | Not implemented | - | Schedule settings and run metadata with safe error codes and aggregate counts; no filenames, credentials, document contents, or metering point IDs |
 | store/meter | Life of the registration | Profile deletion (CASCADE on `meter_readings`) | CSV readings | Nothing |
 | store/billing | 10 years (Swiss OR accounting retention; policy, not code) | Not implemented | - | Invoices, line items, corrections, lifecycle events, delivery jobs: deliberately kept; `invoices.participant_id` has no FK, so profile deletion does NOT reach them |
-| store/invoice_query | Same horizon as the questioned invoice; policy, not code | Not implemented | - | Questions, messages, PDF evidence and status history remain with the accounting record |
 | store/profile | Life of the deployment | Not implemented | - | Public energy facts are public data |
 | store/email_queue | 90 days past terminal state | `cleanup_finished_emails` (#519) | Terminal rows (`sent`, `failed`, `cancelled`) past `EMAIL_QUEUE_RETENTION_DAYS = 90` | Pending rows in their retry window; addresses already scrubbed on send/cancel |
 | store/utility | Life of the utility account | Not implemented | - | Business contacts |
@@ -48,14 +46,13 @@ Invoice-question response and reminder dates use
 | store/formation | Life of the LEG | Not implemented | Profile deletion CASCADEs `community_members`; the `communities` row survives with a dangling `admin_building_id` (no FK action) | The LEG record and its accounting |
 | store/formation_documents | Life of the LEG | Not implemented | - | The document bundle |
 | store/correspondence | Life of the LEG | Not implemented | - | The shared journal is the LEG's memory |
-| store/vnb_exchange | Life of the LEG | Community deletion cascades; no separate deletion flow | The submission cases and private package/response evidence | Nothing after community deletion; ordinary case reads deliberately exclude private blobs |
+| store/vnb_exchange | Life of the LEG | Community deletion cascades; no separate deletion flow | Formation and membership cases, private packages and response evidence | Nothing after community deletion; ordinary reads exclude private blobs |
 | store/dashboard_profile | Follows its tables | Profile deletion | Rows via CASCADE (see store/building) | Nothing of its own |
 | store/token | Until used or expired | Profile deletion (CASCADE); expiry at use time | The token rows | Nothing |
 | store/access_token | Until used or expired | Profile deletion (CASCADE on `dashboard_access_tokens`) | The token rows | Nothing; hashes make leftovers useless |
 | store/analytics | Unlimited today (finding, filed) | Not implemented | `building_id` has no FK: profile deletion leaves orphaned event rows | - |
 | store/tenant | Life of the deployment | Not implemented | - | Configuration |
 | store/api_client | Life of the deployment | Not implemented | - | Credentials are hashed |
-| store/operator_api | Life of the LEG integration | Community deletion cascades; administrators can revoke credentials and retry failed deliveries, but no purge flow exists | Revocation immediately blocks API use; community deletion removes credentials, usage, events and deliveries | Revoked credential metadata and delivery history remain until community deletion; API tokens are hashed |
 | store/registry | Until the LEG withdraws | Withdrawal flow, not profile deletion | The registry entry | - |
 | store/ops | Unlimited today (finding, filed) | Not implemented | - | Job reports and snapshots; payloads are masked |
 | store/ranking | Follows the snapshot files | Snapshot regeneration | Replaced snapshots | - |
@@ -68,9 +65,11 @@ Invoice-question response and reminder dates use
    its cascades; issued invoices (billing accounting), analytics event rows
    and the detached metering points are deliberately or structurally kept.
    Filed: wording decision for a human.
-2. Hosting-level log retention remains outside this repository's code.
-   The former unsupported promise in `templates/datenschutz.html` was removed;
-   the hosting policy itself remains filed for operational definition.
+2. `templates/datenschutz.html` section 6 claims unconfirmed "Matches" are
+   deleted "nach angemessener Frist" - there is no matching concept and no
+   deadline deletion in code. Filed.
+3. "Server-Logs loeschen wir regelmaessig" (datenschutz.html) - hosting-level
+   reach, outside this repository's code.
 
 The wording decisions themselves are human calls; this matrix records what
 the code actually reaches so the claims can be brought in line.

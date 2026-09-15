@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 from flask import Blueprint, g, jsonify, request, session
 
 import community_access
+import dashboard
 import database as db
 import formation_wizard
 import sdat_ingestion
@@ -131,6 +132,64 @@ def private_api_headers(response):
         {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
     )
     return response
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/formation")
+@require_operator("formation.read")
+def formation_status(community_id):
+    return jsonify(
+        schema_version=API_SCHEMA_VERSION,
+        submissions=[
+            _safe_case(row) for row in db.list_vnb_submission_cases(community_id)
+        ],
+    )
+
+
+@operator_api_bp.post(
+    "/api/operator/v1/communities/<community_id>/formation/submissions"
+)
+@require_operator("formation.mutate")
+def submit_formation(community_id):
+    result = dashboard.leg_submit_vnb_formation(
+        community_id, g.operator_client["created_by"]
+    )
+    if result.get("error"):
+        return _error(result["error"], result.get("error_status", 409))
+    return jsonify(schema_version=API_SCHEMA_VERSION, **result), 202
+
+
+@operator_api_bp.get(
+    "/api/operator/v1/communities/<community_id>/membership-mutations"
+)
+@require_operator("membership.read")
+def membership_mutations(community_id):
+    return jsonify(
+        schema_version=API_SCHEMA_VERSION,
+        mutations=[_safe_case(row) for row in db.list_vnb_mutations(community_id)],
+    )
+
+
+@operator_api_bp.post(
+    "/api/operator/v1/communities/<community_id>/membership-mutations"
+)
+@require_operator("membership.mutate")
+def submit_membership_mutation(community_id):
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _error("JSON object required", 400)
+    result = dashboard.leg_submit_vnb_mutation(
+        community_id,
+        g.operator_client["created_by"],
+        str(payload.get("mutation_id", "")),
+        str(payload.get("participant_id", "")),
+        str(payload.get("mutation_type", "")),
+        str(payload.get("effective_date", "")),
+        str(payload.get("source_agreement_id", "")),
+        payload.get("after") if isinstance(payload.get("after"), dict) else {},
+    )
+    if result.get("error"):
+        return _error(result["error"], result.get("error_status", 409))
+    return jsonify(schema_version=API_SCHEMA_VERSION, **result), 202
 
 
 def _page_args():

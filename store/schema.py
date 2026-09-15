@@ -37,27 +37,8 @@ def create_tables():
                     referral_code VARCHAR(32) UNIQUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    city_id VARCHAR(64) DEFAULT 'zurich',
-                    bfs_number INTEGER,
-                    municipality_name VARCHAR(255),
-                    canton VARCHAR(2),
-                    roles JSONB NOT NULL DEFAULT '[]',
-                    has_solar BOOLEAN
+                    city_id VARCHAR(64) DEFAULT 'zurich'
                 )
-            """)
-
-            cur.execute("""
-                ALTER TABLE buildings
-                    ADD COLUMN IF NOT EXISTS bfs_number INTEGER,
-                    ADD COLUMN IF NOT EXISTS municipality_name VARCHAR(255),
-                    ADD COLUMN IF NOT EXISTS canton VARCHAR(2),
-                    ADD COLUMN IF NOT EXISTS roles JSONB NOT NULL DEFAULT '[]',
-                    ADD COLUMN IF NOT EXISTS has_solar BOOLEAN
-            """)
-
-            cur.execute("""
-                CREATE INDEX IF NOT EXISTS idx_buildings_bfs_verified
-                ON buildings (bfs_number, verified)
             """)
 
             # Consents table
@@ -72,31 +53,6 @@ def create_tables():
                     consent_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(building_id)
                 )
-            """)
-
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS coverage_requests (
-                    request_id VARCHAR(64) PRIMARY KEY,
-                    email VARCHAR(255) NOT NULL,
-                    address TEXT,
-                    plz VARCHAR(4) NOT NULL,
-                    municipality_name VARCHAR(255) NOT NULL,
-                    canton VARCHAR(2),
-                    bfs_number INTEGER,
-                    roles JSONB NOT NULL DEFAULT '[]',
-                    has_solar BOOLEAN,
-                    verified BOOLEAN NOT NULL DEFAULT FALSE,
-                    verified_at TIMESTAMP,
-                    verification_token VARCHAR(128) UNIQUE,
-                    token_expires_at TIMESTAMP NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            cur.execute("""
-                CREATE INDEX IF NOT EXISTS idx_coverage_requests_bfs_verified
-                ON coverage_requests (bfs_number, verified)
             """)
 
             # Tokens table (verification and unsubscribe)
@@ -190,14 +146,12 @@ def create_tables():
                     dso_submitted_at TIMESTAMP,
                     dso_approved_at TIMESTAMP,
                     activated_at TIMESTAMP,
-                    vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover',
-                    require_dual_control BOOLEAN NOT NULL DEFAULT FALSE
+                    vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover'
                 )
             """)
 
             cur.execute("""
                 ALTER TABLE communities
-                    ADD COLUMN IF NOT EXISTS require_dual_control BOOLEAN NOT NULL DEFAULT FALSE,
                     ADD COLUMN IF NOT EXISTS vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover'
             """)
 
@@ -208,7 +162,6 @@ def create_tables():
                     community_id VARCHAR(64) REFERENCES communities(community_id) ON DELETE CASCADE,
                     building_id VARCHAR(64) REFERENCES buildings(building_id) ON DELETE CASCADE,
                     role VARCHAR(20) DEFAULT 'member',
-                    access_roles JSONB NOT NULL DEFAULT '[]',
                     status VARCHAR(20) DEFAULT 'invited',
                     invited_by VARCHAR(64),
                     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -233,7 +186,6 @@ def create_tables():
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-
             # Community documents table
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS community_documents (
@@ -756,7 +708,6 @@ def create_tables():
                     source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
                     reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     billing_policy_snapshot JSONB,
-                    prepared_by VARCHAR(64),
                     status VARCHAR(32) DEFAULT 'draft',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(community_id, period_start, period_end)
@@ -789,8 +740,7 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS input_fingerprint VARCHAR(64),
                     ADD COLUMN IF NOT EXISTS source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
                     ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
-                    ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB,
-                    ADD COLUMN IF NOT EXISTS prepared_by VARCHAR(64)
+                    ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB
             """)
 
             cur.execute("""
@@ -944,48 +894,6 @@ def create_tables():
                     UNIQUE (invoice_id, idempotency_key),
                     CHECK (previous_state IN ('issued', 'delivered', 'paid', 'cancelled', 'corrected')),
                     CHECK (new_state IN ('issued', 'delivered', 'paid', 'cancelled', 'corrected'))
-                )
-            """)
-
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS invoice_queries (
-                    id BIGSERIAL PRIMARY KEY,
-                    invoice_id INTEGER NOT NULL REFERENCES invoices(id),
-                    community_id VARCHAR(64) NOT NULL,
-                    participant_id VARCHAR(64) NOT NULL,
-                    category VARCHAR(32) NOT NULL,
-                    status VARCHAR(32) NOT NULL DEFAULT 'open',
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS invoice_query_messages (
-                    id BIGSERIAL PRIMARY KEY,
-                    query_id BIGINT NOT NULL REFERENCES invoice_queries(id) ON DELETE CASCADE,
-                    actor_id VARCHAR(64) NOT NULL,
-                    message TEXT NOT NULL,
-                    attachment_filename TEXT,
-                    attachment_data BYTEA,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-                )
-            """)
-            cur.execute("""
-                CREATE INDEX IF NOT EXISTS idx_invoice_queries_invoice
-                ON invoice_queries(invoice_id)
-            """)
-            cur.execute("""
-                CREATE INDEX IF NOT EXISTS idx_invoice_queries_community
-                ON invoice_queries(community_id)
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS invoice_query_events (
-                    id BIGSERIAL PRIMARY KEY,
-                    query_id BIGINT NOT NULL REFERENCES invoice_queries(id) ON DELETE CASCADE,
-                    actor_id VARCHAR(64) NOT NULL,
-                    previous_status VARCHAR(32),
-                    new_status VARCHAR(32) NOT NULL,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
             """)
             cur.execute("""
@@ -1240,9 +1148,6 @@ def create_tables():
                 "CREATE INDEX IF NOT EXISTS idx_community_members_building ON community_members(building_id)"
             )
             cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_community_role_events_community ON community_role_events(community_id, created_at)"
-            )
-            cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_webhooks_type ON webhooks(webhook_type)"
             )
             cur.execute(
@@ -1358,6 +1263,75 @@ def create_tables():
                 "CREATE INDEX IF NOT EXISTS idx_leg_registry_claim_token ON leg_registry(claim_token)"
             )
 
+            # Community correspondence ledger: shared in/out mail log per LEG
+            # (email and physical post, manually logged). Phase 6 MVP, see
+            # docs/leg-registry.md.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS correspondence_log (
+                    id SERIAL PRIMARY KEY,
+                    community_id VARCHAR(64) NOT NULL,
+                    direction VARCHAR(8) NOT NULL,
+                    channel VARCHAR(16) NOT NULL,
+                    counterparty VARCHAR(255),
+                    subject VARCHAR(255),
+                    notes TEXT,
+                    logged_by VARCHAR(64),
+                    attachment_filename VARCHAR(255),
+                    attachment_mime VARCHAR(64),
+                    attachment_data BYTEA,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute(
+                "ALTER TABLE correspondence_log ADD COLUMN IF NOT EXISTS attachment_filename VARCHAR(255)"
+            )
+            cur.execute(
+                "ALTER TABLE correspondence_log ADD COLUMN IF NOT EXISTS attachment_mime VARCHAR(64)"
+            )
+            cur.execute(
+                "ALTER TABLE correspondence_log ADD COLUMN IF NOT EXISTS attachment_data BYTEA"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_correspondence_log_community ON correspondence_log(community_id)"
+            )
+
+            # LEA autonomous reports (instance ops, posted via /api/internal/*)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS lea_reports (
+                    id SERIAL PRIMARY KEY,
+                    job_name VARCHAR(128) NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    summary_text TEXT,
+                    status VARCHAR(32) DEFAULT 'ok'
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_lea_reports_job ON lea_reports(job_name)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_lea_reports_created ON lea_reports(created_at DESC)"
+            )
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS ops_snapshots (
+                    id SERIAL PRIMARY KEY,
+                    source VARCHAR(64) NOT NULL,
+                    category VARCHAR(64) NOT NULL,
+                    status VARCHAR(32) DEFAULT 'ok',
+                    summary_text TEXT,
+                    payload JSONB DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_source ON ops_snapshots(source)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_category ON ops_snapshots(category)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_created ON ops_snapshots(created_at DESC)"
+            )
+
             # Versioned, idempotent VNB formation exchange. Private package and
             # acknowledgement bytes are never selected by ordinary read models.
             cur.execute("""
@@ -1441,138 +1415,6 @@ def create_tables():
             """)
             cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_mutations_community ON vnb_mutation_cases(community_id, created_at DESC)")
 
-            # Private operator API credentials and transactional event outbox.
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS operator_api_clients (
-                    id VARCHAR(64) PRIMARY KEY,
-                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
-                    created_by VARCHAR(64) NOT NULL,
-                    name VARCHAR(128) NOT NULL,
-                    capabilities JSONB NOT NULL,
-                    token_hash VARCHAR(64) UNIQUE NOT NULL,
-                    webhook_url TEXT,
-                    rate_limit_per_hour INTEGER NOT NULL DEFAULT 100 CHECK (rate_limit_per_hour > 0),
-                    active BOOLEAN NOT NULL DEFAULT TRUE,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    rotated_at TIMESTAMPTZ,
-                    revoked_at TIMESTAMPTZ,
-                    last_used_at TIMESTAMPTZ
-                )
-            """)
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_operator_clients_community ON operator_api_clients(community_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_operator_clients_token ON operator_api_clients(token_hash) WHERE active=TRUE")
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS operator_api_usage (
-                    id BIGSERIAL PRIMARY KEY,
-                    client_id VARCHAR(64) NOT NULL REFERENCES operator_api_clients(id) ON DELETE CASCADE,
-                    endpoint VARCHAR(255) NOT NULL,
-                    called_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_operator_usage_limit ON operator_api_usage(client_id,called_at DESC)")
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS operator_events (
-                    event_id VARCHAR(64) PRIMARY KEY,
-                    event_type VARCHAR(128) NOT NULL,
-                    schema_version VARCHAR(32) NOT NULL CHECK (schema_version = 'operator-event/1'),
-                    aggregate_id VARCHAR(128) NOT NULL,
-                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
-                    payload JSONB NOT NULL,
-                    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(event_type,aggregate_id)
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS operator_webhook_deliveries (
-                    delivery_id VARCHAR(64) PRIMARY KEY,
-                    event_id VARCHAR(64) NOT NULL REFERENCES operator_events(event_id) ON DELETE CASCADE,
-                    client_id VARCHAR(64) NOT NULL REFERENCES operator_api_clients(id) ON DELETE CASCADE,
-                    status VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','processing','retry','delivered','failed')),
-                    attempt_count INTEGER NOT NULL DEFAULT 0,
-                    response_status INTEGER,
-                    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    last_attempt_at TIMESTAMPTZ,
-                    claimed_at TIMESTAMPTZ,
-                    claim_id VARCHAR(64),
-                    UNIQUE(event_id,client_id)
-                )
-            """)
-            cur.execute("ALTER TABLE operator_events DROP CONSTRAINT IF EXISTS operator_events_schema_version_check")
-            cur.execute("ALTER TABLE operator_events ADD CONSTRAINT operator_events_schema_version_check CHECK (schema_version = 'operator-event/1')")
-            cur.execute("ALTER TABLE operator_webhook_deliveries ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ")
-            cur.execute("ALTER TABLE operator_webhook_deliveries ADD COLUMN IF NOT EXISTS claim_id VARCHAR(64)")
-            cur.execute("ALTER TABLE operator_webhook_deliveries DROP CONSTRAINT IF EXISTS operator_webhook_deliveries_status_check")
-            cur.execute("ALTER TABLE operator_webhook_deliveries ADD CONSTRAINT operator_webhook_deliveries_status_check CHECK (status IN ('pending','processing','retry','delivered','failed'))")
-
-            # Community correspondence ledger: shared in/out mail log per LEG
-            # (email and physical post, manually logged). Phase 6 MVP, see
-            # docs/leg-registry.md.
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS correspondence_log (
-                    id SERIAL PRIMARY KEY,
-                    community_id VARCHAR(64) NOT NULL,
-                    direction VARCHAR(8) NOT NULL,
-                    channel VARCHAR(16) NOT NULL,
-                    counterparty VARCHAR(255),
-                    subject VARCHAR(255),
-                    notes TEXT,
-                    logged_by VARCHAR(64),
-                    attachment_filename VARCHAR(255),
-                    attachment_mime VARCHAR(64),
-                    attachment_data BYTEA,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cur.execute(
-                "ALTER TABLE correspondence_log ADD COLUMN IF NOT EXISTS attachment_filename VARCHAR(255)"
-            )
-            cur.execute(
-                "ALTER TABLE correspondence_log ADD COLUMN IF NOT EXISTS attachment_mime VARCHAR(64)"
-            )
-            cur.execute(
-                "ALTER TABLE correspondence_log ADD COLUMN IF NOT EXISTS attachment_data BYTEA"
-            )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_correspondence_log_community ON correspondence_log(community_id)"
-            )
-
-            # LEA autonomous reports (instance ops, posted via /api/internal/*)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS lea_reports (
-                    id SERIAL PRIMARY KEY,
-                    job_name VARCHAR(128) NOT NULL,
-                    created_at TIMESTAMPTZ DEFAULT NOW(),
-                    summary_text TEXT,
-                    status VARCHAR(32) DEFAULT 'ok'
-                )
-            """)
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_lea_reports_job ON lea_reports(job_name)"
-            )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_lea_reports_created ON lea_reports(created_at DESC)"
-            )
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS ops_snapshots (
-                    id SERIAL PRIMARY KEY,
-                    source VARCHAR(64) NOT NULL,
-                    category VARCHAR(64) NOT NULL,
-                    status VARCHAR(32) DEFAULT 'ok',
-                    summary_text TEXT,
-                    payload JSONB DEFAULT '{}'::jsonb,
-                    created_at TIMESTAMPTZ DEFAULT NOW()
-                )
-            """)
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_source ON ops_snapshots(source)"
-            )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_category ON ops_snapshots(category)"
-            )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_ops_snapshots_created ON ops_snapshots(created_at DESC)"
-            )
 
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS operator_api_clients (
