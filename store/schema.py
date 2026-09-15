@@ -1421,8 +1421,9 @@ def create_tables():
                     UNIQUE NULLS NOT DISTINCT (case_id, state, external_request_id, response_status)
                 )
             """)
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_vnb_mutations_community ON vnb_mutation_cases(community_id, created_at DESC)")
-
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vnb_mutations_community ON vnb_mutation_cases(community_id, created_at DESC)"
+            )
 
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS operator_api_clients (
@@ -1496,9 +1497,17 @@ def create_tables():
                     response_status INTEGER,
                     next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     last_attempt_at TIMESTAMPTZ,
+                    claimed_at TIMESTAMPTZ,
+                    claim_id VARCHAR(64),
                     UNIQUE(event_id,client_id)
                 )
             """)
+            cur.execute(
+                "ALTER TABLE operator_webhook_deliveries ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ"
+            )
+            cur.execute(
+                "ALTER TABLE operator_webhook_deliveries ADD COLUMN IF NOT EXISTS claim_id VARCHAR(64)"
+            )
 
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS metering_points (

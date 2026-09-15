@@ -10,12 +10,13 @@ import json
 import secrets
 import socket
 import ssl
+import urllib.error
 from datetime import date, datetime
 from functools import wraps
 from ipaddress import ip_address
 from urllib.parse import urlparse
 
-from flask import Blueprint, g, jsonify, request, session
+from flask import Blueprint, current_app, g, jsonify, request, session
 
 import community_access
 import database as db
@@ -25,6 +26,7 @@ import vnb_exchange
 
 API_SCHEMA_VERSION = "operator-api/1"
 EVENT_SCHEMA_VERSION = "operator-event/1"
+MAX_WEBHOOK_BATCH_SIZE = 100
 CAPABILITIES = frozenset(
     {
         "formation.read",
@@ -51,9 +53,12 @@ def _new_secret(prefix: str) -> str:
     return prefix + secrets.token_urlsafe(32)
 
 
-def _webhook_secret(token_hash: str) -> str:
-    """Derive a signing value without persisting recoverable secret material."""
-    digest = hmac.new(token_hash.encode(), b"openleg-webhook-v1", hashlib.sha256)
+def _webhook_secret(client_id: str, signing_key: str | None = None) -> str:
+    """Derive an independent stable secret from the instance key and client ID."""
+    key = signing_key or current_app.config["SECRET_KEY"]
+    digest = hmac.new(
+        key.encode(), f"openleg-webhook-v1:{client_id}".encode(), hashlib.sha256
+    )
     return "olwhsec_" + digest.hexdigest()
 
 
@@ -170,9 +175,7 @@ def submit_formation(community_id):
     ), 202
 
 
-@operator_api_bp.get(
-    "/api/operator/v1/communities/<community_id>/membership-mutations"
-)
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/membership-mutations")
 @require_operator("membership.read")
 def membership_mutations(community_id):
     return jsonify(
@@ -490,15 +493,17 @@ def create_credential(community_id):
         return _error("Forbidden", 403)
     if not _require_csrf():
         return _error("Invalid CSRF token", 400)
-    payload = request.get_json(silent=True) or request.form
-    raw_capabilities = (
-        payload.getlist("capabilities")
-        if hasattr(payload, "getlist")
-        else payload.get("capabilities", [])
-    )
-    if not isinstance(raw_capabilities, list) or not all(
-        isinstance(item, str) for item in raw_capabilities
-    ):
+    if request.is_json:
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict):
+            return _error("JSON body must be an object", 400)
+        raw_capabilities = payload.get("capabilities")
+        if not isinstance(raw_capabilities, list):
+            return _error("Capabilities must be a list", 400)
+    else:
+        payload = request.form
+        raw_capabilities = payload.getlist("capabilities")
+    if not all(isinstance(item, str) for item in raw_capabilities):
         return _error("Invalid capabilities", 400)
     capabilities = sorted(set(raw_capabilities))
     if not capabilities or not set(capabilities) <= CAPABILITIES:
@@ -515,7 +520,6 @@ def create_credential(community_id):
             return _error("Webhook host must be publicly routable", 400)
     token = _new_secret("olk_")
     token_hash = _token_hash(token)
-    webhook_secret = _webhook_secret(token_hash)
     row = db.create_operator_api_client(
         community_id,
         building_id,
@@ -525,7 +529,9 @@ def create_credential(community_id):
         webhook_url,
     )
     return jsonify(
-        credential=_safe_credential(row), token=token, webhook_secret=webhook_secret
+        credential=_safe_credential(row),
+        token=token,
+        webhook_secret=_webhook_secret(row["id"]),
     ), 201
 
 
@@ -557,7 +563,6 @@ def rotate_credential(community_id, client_id):
         jsonify(
             credential=_safe_credential(row),
             token=token,
-            webhook_secret=_webhook_secret(token_hash),
         )
         if row
         else _error("Credential not found", 404)
@@ -568,10 +573,10 @@ def rotate_credential(community_id, client_id):
     "/leg/community/<community_id>/operator-api/credentials/<client_id>/revoke"
 )
 def revoke_credential(community_id, client_id):
-    if not _admin_for(community_id, session.get("dashboard_building_id")):
-        return _error("Forbidden", 403)
     if not _require_csrf():
         return _error("Invalid CSRF token", 400)
+    if not _admin_for(community_id, session.get("dashboard_building_id")):
+        return _error("Forbidden", 403)
     row = db.revoke_operator_api_client(community_id, client_id)
     return (
         jsonify(credential=_safe_credential(row))
@@ -657,11 +662,29 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
         self.sock = self._context.wrap_socket(raw, server_hostname=self.host)
 
 
-def dispatch_pending_webhooks(*, transport=None, max_attempts=5):
+def dispatch_pending_webhooks(
+    *, transport=None, max_attempts=5, batch_size=50, signing_key=None
+):
     transport = transport or _default_transport
+    batch_size = max(1, min(int(batch_size), MAX_WEBHOOK_BATCH_SIZE))
     totals = {"attempted": 0, "delivered": 0, "failed": 0}
-    for row in db.get_pending_webhook_deliveries(max_attempts=max_attempts):
+    for row in db.get_pending_webhook_deliveries(
+        max_attempts=max_attempts, limit=batch_size
+    ):
         totals["attempted"] += 1
+        if (
+            row.get("status") != "processing"
+            or row.get("schema_version") != EVENT_SCHEMA_VERSION
+        ):
+            db.record_webhook_attempt(
+                row["delivery_id"],
+                claim_id=row["claim_id"],
+                status="failed",
+                response_status=0,
+                retryable=False,
+            )
+            totals["failed"] += 1
+            continue
         payload = {
             key: row[key]
             for key in (
@@ -680,10 +703,14 @@ def dispatch_pending_webhooks(*, transport=None, max_attempts=5):
         headers = {
             "Content-Type": "application/json",
             "OpenLEG-Delivery": row["delivery_id"],
-            "OpenLEG-Signature": sign_webhook(body, _webhook_secret(row["token_hash"])),
+            "OpenLEG-Signature": sign_webhook(
+                body, _webhook_secret(row["client_id"], signing_key)
+            ),
         }
         try:
             status = transport(row["webhook_url"], body, headers, 10)
+        except urllib.error.HTTPError as error:
+            status = error.code
         except Exception:
             status = 0
         delivered = 200 <= status < 300
@@ -691,6 +718,7 @@ def dispatch_pending_webhooks(*, transport=None, max_attempts=5):
         state = "delivered" if delivered else ("retry" if retryable else "failed")
         db.record_webhook_attempt(
             row["delivery_id"],
+            claim_id=row["claim_id"],
             status=state,
             response_status=status,
             retryable=retryable,

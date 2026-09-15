@@ -45,7 +45,9 @@ def api_cron_process_emails():
 @cron_bp.route("/api/cron/process-operator-webhooks", methods=["POST"])
 def api_cron_process_operator_webhooks():
     _require_cron_secret()
-    return jsonify(operator_api.dispatch_pending_webhooks())
+    return jsonify(
+        operator_api.dispatch_pending_webhooks(max_attempts=5, batch_size=50)
+    )
 
 
 @cron_bp.route("/api/cron/import-sdat", methods=["POST"])

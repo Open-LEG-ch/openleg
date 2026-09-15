@@ -178,6 +178,8 @@ def create_event(event_type, aggregate_id, community_id, payload):
 
 
 def get_pending_deliveries(max_attempts=5, limit=100):
+    """Atomically claim a bounded delivery batch for one worker."""
+    safe_limit = max(1, min(int(limit), 100))
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """WITH candidates AS (
@@ -185,31 +187,38 @@ def get_pending_deliveries(max_attempts=5, limit=100):
                      FROM operator_webhook_deliveries d
                      JOIN operator_events e ON e.event_id=d.event_id
                      JOIN operator_api_clients c ON c.id=d.client_id
-                    WHERE d.status IN ('pending','retry','processing')
+                    WHERE (d.status IN ('pending','retry') OR
+                           (d.status='processing' AND d.claimed_at < CURRENT_TIMESTAMP - INTERVAL '15 minutes'))
                       AND d.attempt_count<%s AND c.active=TRUE
                       AND d.next_attempt_at<=CURRENT_TIMESTAMP
+                      AND e.schema_version='operator-event/1'
                     ORDER BY e.occurred_at LIMIT %s FOR UPDATE OF d SKIP LOCKED
                ), claimed AS (
                    UPDATE operator_webhook_deliveries d
-                      SET status='processing',next_attempt_at=CURRENT_TIMESTAMP+INTERVAL '10 minutes'
+                      SET status='processing',claimed_at=CURRENT_TIMESTAMP,
+                          claim_id=gen_random_uuid()::text
                      FROM candidates x WHERE x.delivery_id=d.delivery_id
                    RETURNING d.*
                )
-               SELECT d.delivery_id,d.attempt_count,e.*,c.webhook_url,c.token_hash
+               SELECT d.delivery_id,d.client_id,d.status,d.claim_id,d.attempt_count,
+                      e.*,c.webhook_url
                  FROM claimed d JOIN operator_events e ON e.event_id=d.event_id
                  JOIN operator_api_clients c ON c.id=d.client_id
                 ORDER BY e.occurred_at""",
-            (max_attempts, limit),
+            (max_attempts, safe_limit),
         )
         return [dict(row) for row in cur.fetchall()]
 
 
-def record_attempt(delivery_id, *, status, response_status, retryable):
+def record_attempt(delivery_id, *, claim_id, status, response_status, retryable):
+    if status not in {"retry", "delivered", "failed"}:
+        raise ValueError("Invalid completed webhook delivery status")
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """UPDATE operator_webhook_deliveries SET status=%s,response_status=%s,attempt_count=attempt_count+1,last_attempt_at=CURRENT_TIMESTAMP,
-            next_attempt_at=CASE WHEN %s THEN CURRENT_TIMESTAMP + make_interval(secs => LEAST(3600, POWER(2, attempt_count)::int * 30)) ELSE next_attempt_at END WHERE delivery_id=%s""",
-            (status, response_status, retryable, delivery_id),
+            next_attempt_at=CASE WHEN %s THEN CURRENT_TIMESTAMP + make_interval(secs => LEAST(3600, POWER(2, attempt_count)::int * 30)) ELSE next_attempt_at END,
+            claim_id=NULL WHERE delivery_id=%s AND status='processing' AND claim_id=%s""",
+            (status, response_status, retryable, delivery_id, claim_id),
         )
 
 
@@ -230,7 +239,7 @@ def list_deliveries(community_id, limit=100):
 def retry_delivery(community_id, delivery_id):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """UPDATE operator_webhook_deliveries d SET status='retry',
+            """UPDATE operator_webhook_deliveries d SET status='retry', claim_id=NULL,
                       next_attempt_at=CURRENT_TIMESTAMP
                FROM operator_events e WHERE e.event_id=d.event_id
                  AND e.community_id=%s AND d.delivery_id=%s AND d.status='failed'
