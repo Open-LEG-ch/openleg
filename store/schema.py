@@ -1343,6 +1343,7 @@ def create_tables():
                     community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
                     action VARCHAR(128) NOT NULL,
                     idempotency_key VARCHAR(128) NOT NULL,
+                    request_hash VARCHAR(64) NOT NULL,
                     response JSONB,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (community_id, action, idempotency_key)

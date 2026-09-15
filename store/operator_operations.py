@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Community-scoped operational read models and atomic API actions."""
 
+import hashlib
 import json
 from datetime import date
 
@@ -53,9 +54,16 @@ def get_ingestion_retry(community_id, job_id):
         return dict(row) if row else None
 
 
+def request_hash(payload):
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
 def claim_ingestion_retry(community_id, job_id, key):
     """Reserve an eligible retry or replay its durable completed response."""
     action = f"metering.retry:{job_id}"
+    fingerprint = request_hash({"job_id": job_id})
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """DELETE FROM operator_action_idempotency
@@ -64,13 +72,13 @@ def claim_ingestion_retry(community_id, job_id, key):
             (community_id, action, key),
         )
         cur.execute(
-            """INSERT INTO operator_action_idempotency(community_id,action,idempotency_key,response)
-               VALUES (%s,%s,%s,NULL) ON CONFLICT DO NOTHING RETURNING idempotency_key""",
-            (community_id, action, key),
+            """INSERT INTO operator_action_idempotency(community_id,action,idempotency_key,request_hash,response)
+               VALUES (%s,%s,%s,%s,NULL) ON CONFLICT DO NOTHING RETURNING idempotency_key""",
+            (community_id, action, key, fingerprint),
         )
         claimed = cur.fetchone()
         if not claimed:
-            replay = _replay(cur, community_id, action, key)
+            replay = _replay(cur, community_id, action, key, fingerprint)
             return {"replay": replay} if replay else {"pending": True}
         schedule = get_ingestion_retry_in_cursor(cur, community_id, job_id)
         if not schedule:
@@ -172,35 +180,40 @@ def list_payments(community_id, *, status=None, limit=50, cursor=None):
     )
 
 
-def _replay(cur, community_id, action, key):
+def _replay(cur, community_id, action, key, fingerprint):
     cur.execute(
-        "SELECT response FROM operator_action_idempotency WHERE community_id=%s AND action=%s AND idempotency_key=%s",
+        "SELECT response,request_hash FROM operator_action_idempotency WHERE community_id=%s AND action=%s AND idempotency_key=%s",
         (community_id, action, key),
     )
     row = cur.fetchone()
     if not row:
         return None
+    if row["request_hash"] != fingerprint:
+        raise ValueError("Idempotency-Key was already used for another request")
     response = row["response"]
+    if response is None:
+        return None
     if isinstance(response, str):
         response = json.loads(response)
     return {**response, "replayed": True}
 
 
-def _remember(cur, community_id, action, key, response):
+def _remember(cur, community_id, action, key, fingerprint, response):
     cur.execute(
-        "INSERT INTO operator_action_idempotency(community_id,action,idempotency_key,response) VALUES (%s,%s,%s,%s::jsonb)",
-        (community_id, action, key, json.dumps(response, default=str)),
+        "INSERT INTO operator_action_idempotency(community_id,action,idempotency_key,request_hash,response) VALUES (%s,%s,%s,%s,%s::jsonb)",
+        (community_id, action, key, fingerprint, json.dumps(response, default=str)),
     )
 
 
 def respond_case(case_id, community_id, actor_id, message, status, key):
     action = f"case.respond:{case_id}"
+    fingerprint = request_hash({"message": message, "status": status})
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT pg_advisory_xact_lock(hashtext(%s))",
             (f"{community_id}:{action}:{key}",),
         )
-        replay = _replay(cur, community_id, action, key)
+        replay = _replay(cur, community_id, action, key, fingerprint)
         if replay:
             return replay
         cur.execute(
@@ -225,7 +238,11 @@ def respond_case(case_id, community_id, actor_id, message, status, key):
             (case_id, actor_id, row["status"], status),
         )
         event_id = enqueue_event(
-            cur, "invoice.case.updated", str(case_id), community_id, {"status": status}
+            cur,
+            "invoice.case.updated",
+            f"{case_id}:{key}",
+            community_id,
+            {"status": status},
         )
         response = {
             "id": case_id,
@@ -233,18 +250,19 @@ def respond_case(case_id, community_id, actor_id, message, status, key):
             "event_id": event_id,
             "replayed": False,
         }
-        _remember(cur, community_id, action, key, response)
+        _remember(cur, community_id, action, key, fingerprint, response)
         return response
 
 
 def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
     action = f"payment.confirm:{entry_id}"
+    fingerprint = request_hash({"invoice_id": invoice_id})
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT pg_advisory_xact_lock(hashtext(%s))",
             (f"{community_id}:{action}:{key}",),
         )
-        replay = _replay(cur, community_id, action, key)
+        replay = _replay(cur, community_id, action, key, fingerprint)
         if replay:
             return replay
         cur.execute(
@@ -298,7 +316,7 @@ def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
         event_id = enqueue_event(
             cur,
             "payment.match.confirmed",
-            str(entry_id),
+            f"{entry_id}:{key}",
             community_id,
             {"status": "matched"},
         )
@@ -308,5 +326,5 @@ def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
             "event_id": event_id,
             "replayed": False,
         }
-        _remember(cur, community_id, action, key, response)
+        _remember(cur, community_id, action, key, fingerprint, response)
         return response
