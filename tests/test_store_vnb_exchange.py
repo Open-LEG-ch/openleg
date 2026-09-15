@@ -44,6 +44,17 @@ def connection(cursor):
     return factory
 
 
+def test_mutation_handover_excludes_missing_package_bytes(monkeypatch):
+    cursor = Cursor([None])
+    monkeypatch.setattr(database, "get_connection", connection(cursor))
+
+    assert store.get_mutation_manual_package("community-1", "case-1") is None
+
+    query, params = cursor.executed[0]
+    assert "manual_package IS NOT NULL" in query
+    assert params == ("community-1", "case-1")
+
+
 def test_claim_uses_the_stable_submission_identity(monkeypatch):
     row = {
         "case_id": "case-1",

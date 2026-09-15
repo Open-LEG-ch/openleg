@@ -167,7 +167,8 @@ def get_mutation_manual_package(community_id: str, case_id: str) -> dict | None:
         cur.execute(
             """SELECT case_id, community_id, manual_package
                FROM vnb_mutation_cases
-               WHERE community_id = %s AND case_id = %s AND state = 'prepared'""",
+               WHERE community_id = %s AND case_id = %s AND state = 'prepared'
+                 AND manual_package IS NOT NULL""",
             (community_id, case_id),
         )
         row = cur.fetchone()

@@ -427,7 +427,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             community_id, case_id, building_id
         )
         if result["error"]:
-            abort(409)
+            abort(result.get("error_status", 409))
         return _leg_dashboard_redirect(community_id)
 
     @bp.route("/leg/community/<community_id>/vnb-mutations", methods=["POST"])
@@ -472,7 +472,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             community_id, case_id, building_id
         )
         if result["error"]:
-            abort(409)
+            abort(result.get("error_status", 409))
         return _leg_dashboard_redirect(community_id)
 
 

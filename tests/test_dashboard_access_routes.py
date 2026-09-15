@@ -316,6 +316,40 @@ def test_vnb_manual_delivery_confirmation_requires_csrf(app_module, monkeypatch)
     mark.assert_called_once_with("community-1", "case-1", "building-session")
 
 
+def test_vnb_manual_delivery_preserves_authorization_status(app_module, monkeypatch):
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_mark_vnb_manual_delivered",
+        MagicMock(return_value={"error": "Keine Berechtigung.", "error_status": 403}),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/vnb-submissions/case-1/delivered",
+        data={"csrf_token": "csrf-secret"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_vnb_mutation_delivery_preserves_authorization_status(app_module, monkeypatch):
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_mark_vnb_mutation_delivered",
+        MagicMock(return_value={"error": "Keine Berechtigung.", "error_status": 403}),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/vnb-mutations/case-1/delivered",
+        data={"csrf_token": "csrf-secret"},
+    )
+
+    assert response.status_code == 403
+
+
 def test_vnb_membership_mutation_uses_session_identity_and_csrf(app_module, monkeypatch):
     submit = MagicMock(return_value={"error": None, "state": "prepared"})
     monkeypatch.setattr(app_module.dashboard_module, "leg_submit_vnb_mutation", submit)

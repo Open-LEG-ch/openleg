@@ -861,7 +861,7 @@ def leg_mark_vnb_mutation_delivered(
     if not _require_capability(
         community_id, building_id, community_access.MANAGE_MEMBERS
     ):
-        return {"error": "Keine Berechtigung."}
+        return {"error": "Keine Berechtigung.", "error_status": 403}
     try:
         row = db.mark_vnb_mutation_manual_delivered(community_id, case_id, building_id)
     except db.VnbExchangeStoreError as error:
@@ -890,7 +890,14 @@ def leg_mark_vnb_manual_delivered(
         vnb_exchange.FormationSubmissionForbidden,
         db.VnbExchangeStoreError,
     ) as error:
-        return {"error": str(error) or "Manuelle Zustellung fehlgeschlagen."}
+        return {
+            "error": str(error) or "Manuelle Zustellung fehlgeschlagen.",
+            "error_status": (
+                403
+                if isinstance(error, vnb_exchange.FormationSubmissionForbidden)
+                else 409
+            ),
+        }
     return {"error": None, "state": outcome.state}
 
 

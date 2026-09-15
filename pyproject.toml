@@ -128,5 +128,6 @@ also_copy = [
     "tests",
     "utility_portal.py",
     "vnb_calculated_values.py",
+    "vnb_exchange.py",
     "wsgi.py",
 ]
