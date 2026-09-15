@@ -473,6 +473,89 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_community_archive_restore(community_id):
         return _restore_archive_response(community_id, dry_run=False)
 
+    @bp.route("/leg/community/<community_id>/vnb-submissions", methods=["POST"])
+    def leg_community_vnb_submission(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.leg_submit_vnb_formation(community_id, building_id)
+        if result["error"]:
+            abort(result.get("error_status", 409))
+        return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/vnb-submissions/<case_id>/handover")
+    def leg_community_vnb_handover(community_id, case_id):
+        building_id = _require_dashboard_session()
+        package = dashboard_module.leg_vnb_manual_package(
+            community_id, case_id, building_id
+        )
+        if not package:
+            abort(404)
+        return send_file(
+            io.BytesIO(package["manual_package"]),
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="openleg-vnb-anmeldung.zip",
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/vnb-submissions/<case_id>/delivered",
+        methods=["POST"],
+    )
+    def leg_community_vnb_delivered(community_id, case_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.leg_mark_vnb_manual_delivered(
+            community_id, case_id, building_id
+        )
+        if result["error"]:
+            abort(409)
+        return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/vnb-mutations", methods=["POST"])
+    def leg_community_vnb_mutation(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.leg_submit_vnb_mutation(
+            community_id,
+            building_id,
+            request.form.get("mutation_id", ""),
+            request.form.get("participant_id", ""),
+            request.form.get("mutation_type", ""),
+            request.form.get("effective_date", ""),
+            request.form.get("source_agreement_id", ""),
+            {},
+        )
+        if result["error"]:
+            abort(result.get("error_status", 409))
+        return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/vnb-mutations/<case_id>/handover")
+    def leg_community_vnb_mutation_handover(community_id, case_id):
+        building_id = _require_dashboard_session()
+        package = dashboard_module.leg_vnb_mutation_manual_package(
+            community_id, case_id, building_id
+        )
+        if not package:
+            abort(404)
+        return send_file(
+            io.BytesIO(package["manual_package"]), mimetype="application/zip",
+            as_attachment=True, download_name="openleg-vnb-mitgliedermutation.zip",
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/vnb-mutations/<case_id>/delivered",
+        methods=["POST"],
+    )
+    def leg_community_vnb_mutation_delivered(community_id, case_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.leg_mark_vnb_mutation_delivered(
+            community_id, case_id, building_id
+        )
+        if result["error"]:
+            abort(409)
+        return _leg_dashboard_redirect(community_id)
+
     @bp.route("/leg/community/<community_id>/billing")
     def leg_billing_workspace(community_id):
         building_id = _require_dashboard_session()

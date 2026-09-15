@@ -19,7 +19,8 @@ count uses conditions identical to its list.
 - **Tables:** `buildings`
 - **Holds:** `building_id`, `email`, `address`, `lat`, `lon`, `plz`,
   `building_type`, `annual_consumption_kwh`, `potential_pv_kwp`, `user_type`,
-  `verified`, `city_id`, `referrer_id`
+  `verified`, `city_id`, `referrer_id`, `bfs_number`, `municipality_name`,
+  `canton`, `roles`, `has_solar`
 - **Purpose:** resident registration and readiness; the map of consenting
   neighbours.
 - **Owner:** the resident (each row is one household's record).
@@ -31,6 +32,22 @@ count uses conditions identical to its list.
   (`get_building`, `get_building_for_dashboard`) are `LEFT JOIN` by design
   because a member reads their own record.
 - **Consent gate:** applies to every other-resident-visible output.
+
+## store/interest
+
+- **Tables:** `coverage_requests`; also reads verified rows from `buildings`.
+- **Holds:** `email`, optional `address`, `plz`, `municipality_name`, `canton`,
+  `bfs_number`, `roles`, `has_solar`, verification token and timestamps.
+- **Purpose:** preserve demand when an address cannot be checked, publish an
+  anonymised municipality count, notify verified participants when that count
+  grows, and provide a private operator follow-up list.
+- **Owner:** the person who submitted the interest.
+- **Sensitivity:** personal. Public and Gemeinde outputs are aggregate only;
+  names, addresses and contact details are never included.
+- **Resident-visible:** only the municipality total, shown as `0`, `< 3`, or
+  the exact count from three onward.
+- **Consent gate:** email verification is required before any count or
+  notification. Map visibility remains separately opt-in.
 
 ## store/consent
 
@@ -155,6 +172,21 @@ it.
   admin-gated. Member display fails closed on unreadable figures (#528).
 - **Consent gate:** not neighbour-visible.
 
+## store/invoice_query
+
+- **Tables:** `invoice_queries`, `invoice_query_messages`,
+  `invoice_query_events`
+- **Holds:** an invoice-scoped question category and status, private messages,
+  optional PDF evidence, and append-only status events with actor and time.
+- **Purpose:** let a member question an immutable invoice and follow the
+  operator's response without changing the invoice snapshot.
+- **Owner:** the invoiced member and the issuing LEG.
+- **Sensitivity:** financial correspondence and optional personal evidence.
+- **Resident-visible:** only to the invoice participant; operators are scoped
+  to the invoice's community.
+- **Consent gate:** invoice ownership or community capability, not neighbour
+  consent.
+
 ## store/profile
 
 - **Tables:** `municipalities`, `municipality_profiles`,
@@ -221,9 +253,10 @@ it.
 
 ## store/formation
 
-- **Tables:** `communities`, `community_members`
+- **Tables:** `communities`, `community_members`, `community_role_events`
 - **Holds:** the LEG record (`community_id`, `name`, `status`,
-  `distribution_model`) and memberships (`role`, `status`, `invited_by`).
+  `distribution_model`, dual-control policy), memberships (`role`,
+  `access_roles`, `status`, `invited_by`), and append-only role changes.
 - **Purpose:** LEG formation and membership lifecycle.
 - **Owner:** the LEG (its members).
 - **Sensitivity:** membership personal data; member aggregates shown to
@@ -252,6 +285,20 @@ it.
 - **Sensitivity:** business correspondence with personal traces.
 - **Resident-visible:** to members of the community.
 - **Consent gate:** membership-gated.
+
+## store/vnb_exchange
+
+- **Tables:** `vnb_submission_cases`
+- **Holds:** the adapter contract and capability snapshot, package fingerprint,
+  delivery state, actor, timestamps, private manual package and VNB response
+  evidence.
+- **Purpose:** idempotent, auditable formation handover to the VNB without
+  coupling the LEG record to one transport.
+- **Owner:** the LEG.
+- **Sensitivity:** legal, personal and operational; package and response bytes
+  are private blobs and excluded from ordinary case reads.
+- **Resident-visible:** only to confirmed members with document authority.
+- **Consent gate:** membership- and capability-gated.
 
 ## store/dashboard_profile
 
@@ -320,6 +367,21 @@ it.
 - **Sensitivity:** credentials (hashed at rest), usage volumes.
 - **Resident-visible:** no.
 - **Consent gate:** none.
+
+## store/operator_api
+
+- **Tables:** `operator_api_clients`, `operator_api_usage`, `operator_events`,
+  `operator_webhook_deliveries`
+- **Holds:** community-scoped hashed API tokens, explicit capabilities,
+  endpoint usage, lifecycle-event payloads and delivery outcomes.
+- **Purpose:** private operator integration with bounded, observable webhook
+  delivery.
+- **Owner:** the LEG administration that created the credential.
+- **Sensitivity:** credentials and private LEG workflow facts. API tokens are
+  hashed and never returned after creation or rotation.
+- **Resident-visible:** no; credential administration is restricted to a
+  confirmed LEG administrator.
+- **Consent gate:** none; tenant scope and explicit capabilities are mandatory.
 
 ## store/registry
 

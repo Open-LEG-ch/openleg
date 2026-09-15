@@ -55,6 +55,7 @@ Invoice-question response and reminder dates use
 | store/analytics | Unlimited today (finding, filed) | Not implemented | `building_id` has no FK: profile deletion leaves orphaned event rows | - |
 | store/tenant | Life of the deployment | Not implemented | - | Configuration |
 | store/api_client | Life of the deployment | Not implemented | - | Credentials are hashed |
+| store/operator_api | Life of the LEG integration | Community deletion cascades; administrators can revoke credentials and retry failed deliveries, but no purge flow exists | Revocation immediately blocks API use; community deletion removes credentials, usage, events and deliveries | Revoked credential metadata and delivery history remain until community deletion; API tokens are hashed |
 | store/registry | Until the LEG withdraws | Withdrawal flow, not profile deletion | The registry entry | - |
 | store/ops | Unlimited today (finding, filed) | Not implemented | - | Job reports and snapshots; payloads are masked |
 | store/ranking | Follows the snapshot files | Snapshot regeneration | Replaced snapshots | - |

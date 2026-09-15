@@ -18,6 +18,7 @@ import formation_wizard
 import member_invoices
 import payment_reconciliation
 import security_utils
+import vnb_exchange
 
 _PROFILE_EXPORT_FIELDS = (
     "building_id",
@@ -160,6 +161,13 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         return {"error": "Kein Zugriff.", "community": None}
 
     capabilities = community_access.capabilities_for(member)
+    try:
+        vnb_submissions = db.list_vnb_submission_cases(community_id)
+        vnb_mutations = db.list_vnb_mutations(community_id)
+    except (db.VnbExchangeStoreError, AttributeError):
+        # Development/unit configurations may intentionally have no DB pool.
+        vnb_submissions = []
+        vnb_mutations = []
     return {
         "error": None,
         "community": _with_german_labels(status),
@@ -176,6 +184,8 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "access_role_labels": community_access.ROLE_LABELS,
         "leg_documents": db.list_leg_documents(community_id),
         "correspondence": db.list_correspondence(community_id),
+        "vnb_submissions": vnb_submissions,
+        "vnb_mutations": vnb_mutations,
     }
 
 
@@ -827,6 +837,129 @@ def leg_start_formation(community_id: str, building_id: str) -> dict:
 def leg_generate_documents(community_id: str, building_id: str) -> dict:
     """Generate the complete document bundle through its domain seam."""
     return formation_documents.generate(community_id, building_id)
+
+
+def leg_submit_vnb_formation(community_id: str, building_id: str) -> dict:
+    """Prepare or deliver the signed formation package through the VNB seam."""
+    try:
+        outcome = vnb_exchange.submit_formation(
+            vnb_exchange.FormationSubmission(community_id, building_id),
+        )
+    except vnb_exchange.FormationSubmissionForbidden:
+        return {
+            "error": "Keine Berechtigung für die Netzbetreiber-Anmeldung.",
+            "error_status": 403,
+        }
+    except vnb_exchange.FormationSubmissionInvalid as error:
+        return {"error": str(error), "error_status": 409}
+    except db.VnbSubmissionConflict as error:
+        return {"error": str(error), "error_status": 409}
+    except db.VnbExchangeStoreError:
+        return {
+            "error": "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar.",
+            "error_status": 503,
+        }
+    return {
+        "error": None,
+        "state": outcome.state,
+        "case_id": outcome.case_id,
+        "event_id": outcome.event_id,
+    }
+
+
+def leg_submit_vnb_mutation(
+    community_id: str,
+    building_id: str,
+    mutation_id: str,
+    participant_id: str,
+    mutation_type: str,
+    effective_date: str,
+    source_agreement_id: str,
+    after: dict,
+) -> dict:
+    """Submit a participant change while leaving the LEG record untouched."""
+    try:
+        outcome = vnb_exchange.submit_membership_mutation(
+            vnb_exchange.ParticipantMutationSubmission(
+                mutation_id.strip(),
+                community_id,
+                participant_id.strip(),
+                building_id,
+                mutation_type.strip(),
+                effective_date.strip(),
+                source_agreement_id.strip(),
+                after,
+            )
+        )
+    except vnb_exchange.FormationSubmissionForbidden:
+        return {
+            "error": "Keine Berechtigung für Mitgliedermutationen.",
+            "error_status": 403,
+        }
+    except (
+        vnb_exchange.ParticipantMutationInvalid,
+        ValueError,
+        db.VnbSubmissionConflict,
+    ) as error:
+        return {"error": str(error), "error_status": 409}
+    except db.VnbExchangeStoreError:
+        return {
+            "error": "VNB-Mutation vorübergehend nicht verfügbar.",
+            "error_status": 503,
+        }
+    return {
+        "error": None,
+        "state": outcome.state,
+        "case_id": outcome.case_id,
+        "event_id": outcome.event_id,
+    }
+
+
+def leg_vnb_mutation_manual_package(community_id: str, case_id: str, building_id: str):
+    if not _require_capability(
+        community_id, building_id, community_access.MANAGE_MEMBERS
+    ):
+        return None
+    return db.get_vnb_mutation_manual_package(community_id, case_id)
+
+
+def leg_mark_vnb_mutation_delivered(
+    community_id: str, case_id: str, building_id: str
+) -> dict:
+    if not _require_capability(
+        community_id, building_id, community_access.MANAGE_MEMBERS
+    ):
+        return {"error": "Keine Berechtigung."}
+    try:
+        row = db.mark_vnb_mutation_manual_delivered(community_id, case_id, building_id)
+    except db.VnbExchangeStoreError as error:
+        return {"error": str(error)}
+    return {"error": None, "state": row["state"]}
+
+
+def leg_vnb_manual_package(community_id: str, case_id: str, building_id: str):
+    """Return a private manual handover package to an authorized operator."""
+    if not _require_capability(
+        community_id, building_id, community_access.MANAGE_DOCUMENTS
+    ):
+        return None
+    return db.get_vnb_manual_package(community_id, case_id)
+
+
+def leg_mark_vnb_manual_delivered(
+    community_id: str, case_id: str, building_id: str
+) -> dict:
+    """Confirm a manual VNB handover through the domain seam."""
+    try:
+        outcome = vnb_exchange.mark_manual_delivered(
+            vnb_exchange.ManualDeliveryConfirmation(community_id, case_id, building_id)
+        )
+    except (
+        vnb_exchange.FormationSubmissionForbidden,
+        db.VnbExchangeStoreError,
+    ) as error:
+        return {"error": str(error) or "Manuelle Zustellung fehlgeschlagen."}
+    return {"error": None, "state": outcome.state}
 
 
 def leg_document_for_member(doc_id: int, building_id: str):

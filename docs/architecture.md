@@ -76,6 +76,7 @@ Application and API routes:
   and correspondence.
 - `/meter-upload` accepts a meter file; `/api/meter-data/upload` ingests it.
 - `/api/v1/*` is the unauthenticated public JSON API, documented at `/api/v1/docs`.
+- `/api/operator/v1/*` is the credential-authenticated, community-scoped operator API.
 - `/api/cron/*` runs scheduled work behind a cron secret.
 - `/api/cron/process-billing` processes the previous complete month for every
   active community behind that cron secret.
