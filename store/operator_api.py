@@ -178,10 +178,25 @@ def create_event(event_type, aggregate_id, community_id, payload):
 def get_pending_deliveries(max_attempts=5, limit=100):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """SELECT d.delivery_id,d.attempt_count,e.*,c.webhook_url,c.token_hash
-            FROM operator_webhook_deliveries d JOIN operator_events e ON e.event_id=d.event_id JOIN operator_api_clients c ON c.id=d.client_id
-            WHERE d.status IN ('pending','retry') AND d.attempt_count<%s AND c.active=TRUE AND d.next_attempt_at<=CURRENT_TIMESTAMP
-            ORDER BY e.occurred_at LIMIT %s FOR UPDATE OF d SKIP LOCKED""",
+            """WITH candidates AS (
+                   SELECT d.delivery_id
+                     FROM operator_webhook_deliveries d
+                     JOIN operator_events e ON e.event_id=d.event_id
+                     JOIN operator_api_clients c ON c.id=d.client_id
+                    WHERE d.status IN ('pending','retry','processing')
+                      AND d.attempt_count<%s AND c.active=TRUE
+                      AND d.next_attempt_at<=CURRENT_TIMESTAMP
+                    ORDER BY e.occurred_at LIMIT %s FOR UPDATE OF d SKIP LOCKED
+               ), claimed AS (
+                   UPDATE operator_webhook_deliveries d
+                      SET status='processing',next_attempt_at=CURRENT_TIMESTAMP+INTERVAL '10 minutes'
+                     FROM candidates x WHERE x.delivery_id=d.delivery_id
+                   RETURNING d.*
+               )
+               SELECT d.delivery_id,d.attempt_count,e.*,c.webhook_url,c.token_hash
+                 FROM claimed d JOIN operator_events e ON e.event_id=d.event_id
+                 JOIN operator_api_clients c ON c.id=d.client_id
+                ORDER BY e.occurred_at""",
             (max_attempts, limit),
         )
         return [dict(row) for row in cur.fetchall()]

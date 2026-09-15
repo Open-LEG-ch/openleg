@@ -5,10 +5,11 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import http.client
 import json
 import secrets
 import socket
-import urllib.request
+import ssl
 from datetime import date, datetime
 from functools import wraps
 from ipaddress import ip_address
@@ -238,15 +239,20 @@ def calculated_deliveries(community_id):
 )
 @require_operator("metering.mutate")
 def retry_metering_job(community_id, job_id):
-    if not _idempotency_key():
+    key = _idempotency_key()
+    if not key:
         return _error("Valid Idempotency-Key required", 400)
-    schedule = db.get_operator_ingestion_retry(community_id, job_id)
-    if not schedule:
+    claim = db.claim_operator_ingestion_retry(community_id, job_id, key)
+    if not claim:
         return _error("Resource not found or not eligible", 404)
-    return jsonify(
-        schema_version=API_SCHEMA_VERSION,
-        **sdat_ingestion.run(schedule["territory"], schedule),
-    )
+    if claim.get("pending"):
+        return _error("Retry already in progress", 409)
+    if claim.get("replay"):
+        return jsonify(schema_version=API_SCHEMA_VERSION, **claim["replay"])
+    schedule = claim["schedule"]
+    result = sdat_ingestion.run(schedule["territory"], schedule)
+    db.complete_operator_ingestion_retry(community_id, job_id, key, result)
+    return jsonify(schema_version=API_SCHEMA_VERSION, **result)
 
 
 @operator_api_bp.get("/api/operator/v1/communities/<community_id>/billing/periods")
@@ -491,10 +497,10 @@ def retry_webhook_delivery(community_id, delivery_id):
     return jsonify(delivery=delivery) if delivery else _error("Delivery not found", 404)
 
 
-def _is_public_webhook_url(url):
+def _public_webhook_addresses(url):
     parsed = urlparse(url)
     if parsed.scheme != "https" or not parsed.hostname:
-        return False
+        return ()
     try:
         addresses = {
             item[4][0]
@@ -503,24 +509,50 @@ def _is_public_webhook_url(url):
             )
         }
     except socket.gaierror:
-        return False
-    return bool(addresses) and all(ip_address(value).is_global for value in addresses)
+        return ()
+    return (
+        tuple(sorted(addresses))
+        if addresses and all(ip_address(value).is_global for value in addresses)
+        else ()
+    )
 
 
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
+def _is_public_webhook_url(url):
+    return bool(_public_webhook_addresses(url))
 
 
 def _default_transport(url, body, headers, timeout):
-    if not _is_public_webhook_url(url):
+    parsed = urlparse(url)
+    addresses = _public_webhook_addresses(url)
+    if not addresses:
         raise ValueError("Webhook destination is not public")
-    request_object = urllib.request.Request(
-        url, data=body, headers=headers, method="POST"
+    connection = _PinnedHTTPSConnection(
+        parsed.hostname, addresses[0], parsed.port or 443, timeout=timeout
     )
-    opener = urllib.request.build_opener(_NoRedirect)
-    with opener.open(request_object, timeout=timeout) as response:
-        return response.status
+    try:
+        target = parsed.path or "/"
+        if parsed.query:
+            target += "?" + parsed.query
+        connection.request("POST", target, body=body, headers=headers)
+        return connection.getresponse().status
+    finally:
+        connection.close()
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """Connect to a validated address while verifying TLS for the original host."""
+
+    def __init__(self, hostname, address, port, *, timeout):
+        super().__init__(
+            hostname, port=port, timeout=timeout, context=ssl.create_default_context()
+        )
+        self._validated_address = address
+
+    def connect(self):
+        raw = socket.create_connection(
+            (self._validated_address, self.port), self.timeout, self.source_address
+        )
+        self.sock = self._context.wrap_socket(raw, server_hostname=self.host)
 
 
 def dispatch_pending_webhooks(*, transport=None, max_attempts=5):

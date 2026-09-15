@@ -140,7 +140,7 @@ def save_calculated_values_delivery(delivery):
             )
             row = cur.fetchone()
         projected = _delivery_row(row)
-        if projected.get("id") is not None:
+        if projected.get("id") is not None and delivery.get("community_id"):
             enqueue_event(
                 cur,
                 "metering.calculated-delivery.received",

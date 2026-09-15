@@ -107,16 +107,16 @@ def test_invoice_projection_never_discloses_or_accepts_snapshot_fields(
 
 
 @patch("operator_api.sdat_ingestion.run")
-@patch("operator_api.db.get_operator_ingestion_retry")
+@patch("operator_api.db.complete_operator_ingestion_retry")
+@patch("operator_api.db.claim_operator_ingestion_retry")
 @patch("operator_api.db.claim_operator_api_usage", return_value=True)
 @patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
 def test_retry_runs_only_the_tenant_scoped_eligible_schedule(
-    _lookup, _usage, eligible, run, app
+    _lookup, _usage, claim, complete, run, app
 ):
-    eligible.return_value = {
-        "territory": "tenant-a",
-        "enabled": True,
-        "max_attempts": 2,
+    schedule = {"territory": "tenant-a", "enabled": True, "max_attempts": 2}
+    claim.return_value = {
+        "schedule": schedule,
     }
     run.return_value = {"status": "success", "territory": "tenant-a"}
     response = _client(app).post(
@@ -124,8 +124,11 @@ def test_retry_runs_only_the_tenant_scoped_eligible_schedule(
         headers=_headers("retry-7"),
     )
     assert response.status_code == 200
-    eligible.assert_called_once_with("community-a", 7)
-    run.assert_called_once_with("tenant-a", eligible.return_value)
+    claim.assert_called_once_with("community-a", 7, "retry-7")
+    run.assert_called_once_with("tenant-a", schedule)
+    complete.assert_called_once_with(
+        "community-a", 7, "retry-7", {"status": "success", "territory": "tenant-a"}
+    )
 
 
 @patch("operator_api.db.claim_operator_api_usage", return_value=True)

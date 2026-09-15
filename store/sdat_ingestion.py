@@ -166,7 +166,7 @@ def record_sdat_ingestion_run(territory: str, report: dict) -> None:
             enqueue_event(
                 cur,
                 "metering.ingestion.completed",
-                str(run_id),
+                f"{community['community_id']}:{run_id}",
                 community["community_id"],
                 {"status": report["status"], "error_code": report.get("error")},
             )

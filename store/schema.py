@@ -886,7 +886,7 @@ def create_tables():
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
             """)
-            cur.execute(""")
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS invoice_query_messages (
                     id BIGSERIAL PRIMARY KEY,
                     query_id BIGINT NOT NULL REFERENCES invoice_queries(id) ON DELETE CASCADE,
@@ -897,7 +897,7 @@ def create_tables():
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
             """)
-            cur.execute(""")
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS invoice_query_events (
                     id BIGSERIAL PRIMARY KEY,
                     query_id BIGINT NOT NULL REFERENCES invoice_queries(id) ON DELETE CASCADE,
@@ -907,7 +907,7 @@ def create_tables():
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
             """)
-            cur.execute(""")
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS bank_statement_imports (
                     id BIGSERIAL PRIMARY KEY,
                     community_id VARCHAR(64) NOT NULL,
@@ -1327,7 +1327,7 @@ def create_tables():
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_operator_clients_token ON operator_api_clients(token_hash) WHERE active=TRUE"
             )
-            cur.execute(""")
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS operator_api_usage (
                     id BIGSERIAL PRIMARY KEY,
                     client_id VARCHAR(64) NOT NULL REFERENCES operator_api_clients(id) ON DELETE CASCADE,
@@ -1338,17 +1338,17 @@ def create_tables():
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_operator_usage_limit ON operator_api_usage(client_id,called_at DESC)"
             )
-            cur.execute(""")
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS operator_action_idempotency (
                     community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
                     action VARCHAR(128) NOT NULL,
                     idempotency_key VARCHAR(128) NOT NULL,
-                    response JSONB NOT NULL,
+                    response JSONB,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (community_id, action, idempotency_key)
                 )
             """)
-            cur.execute(""")
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS operator_events (
                     event_id VARCHAR(64) PRIMARY KEY,
                     event_type VARCHAR(128) NOT NULL,
@@ -1360,12 +1360,12 @@ def create_tables():
                     UNIQUE(event_type,aggregate_id)
                 )
             """)
-            cur.execute(""")
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS operator_webhook_deliveries (
                     delivery_id VARCHAR(64) PRIMARY KEY,
                     event_id VARCHAR(64) NOT NULL REFERENCES operator_events(event_id) ON DELETE CASCADE,
                     client_id VARCHAR(64) NOT NULL REFERENCES operator_api_clients(id) ON DELETE CASCADE,
-                    status VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','retry','delivered','failed')),
+                    status VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','processing','retry','delivered','failed')),
                     attempt_count INTEGER NOT NULL DEFAULT 0,
                     response_status INTEGER,
                     next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1374,7 +1374,7 @@ def create_tables():
                 )
             """)
 
-            cur.execute(""")
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS metering_points (
                     metering_point_id VARCHAR(64) PRIMARY KEY,
                     vnb_community_id VARCHAR(64),

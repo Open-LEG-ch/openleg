@@ -53,6 +53,62 @@ def get_ingestion_retry(community_id, job_id):
         return dict(row) if row else None
 
 
+def claim_ingestion_retry(community_id, job_id, key):
+    """Reserve an eligible retry or replay its durable completed response."""
+    action = f"metering.retry:{job_id}"
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """DELETE FROM operator_action_idempotency
+                WHERE community_id=%s AND action=%s AND idempotency_key=%s
+                  AND response IS NULL AND created_at<NOW()-INTERVAL '15 minutes'""",
+            (community_id, action, key),
+        )
+        cur.execute(
+            """INSERT INTO operator_action_idempotency(community_id,action,idempotency_key,response)
+               VALUES (%s,%s,%s,NULL) ON CONFLICT DO NOTHING RETURNING idempotency_key""",
+            (community_id, action, key),
+        )
+        claimed = cur.fetchone()
+        if not claimed:
+            replay = _replay(cur, community_id, action, key)
+            return {"replay": replay} if replay else {"pending": True}
+        schedule = get_ingestion_retry_in_cursor(cur, community_id, job_id)
+        if not schedule:
+            cur.execute(
+                "DELETE FROM operator_action_idempotency WHERE community_id=%s AND action=%s AND idempotency_key=%s",
+                (community_id, action, key),
+            )
+            return None
+        return {"schedule": schedule}
+
+
+def get_ingestion_retry_in_cursor(cur, community_id, job_id):
+    cur.execute(
+        """SELECT s.* FROM sdat_ingestion_runs r
+             JOIN sdat_ingestion_schedules s ON s.territory=r.territory
+             JOIN communities c ON c.community_id=%s
+             JOIN buildings b ON b.building_id=c.admin_building_id
+            WHERE r.id=%s AND r.status='failure' AND r.territory=b.city_id""",
+        (community_id, job_id),
+    )
+    row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def complete_ingestion_retry(community_id, job_id, key, response):
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE operator_action_idempotency SET response=%s::jsonb
+                WHERE community_id=%s AND action=%s AND idempotency_key=%s AND response IS NULL""",
+            (
+                json.dumps(response, default=str),
+                community_id,
+                f"metering.retry:{job_id}",
+                key,
+            ),
+        )
+
+
 def list_calculated_deliveries(community_id, *, status=None, limit=50, cursor=None):
     return _page(
         """SELECT id,contract_version,format_version,transport,community_id,
