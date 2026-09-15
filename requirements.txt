@@ -13,7 +13,7 @@ email-validator==2.1.0
 redis==8.1.0
 
 # Database
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.13
 
 # PDF generation
 weasyprint==70.0
