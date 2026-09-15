@@ -281,6 +281,13 @@ from store.registry import (  # noqa: F401
     update_registry_entry_moderation,
 )
 from store.schema import create_tables
+from store.sdat_ingestion import (  # noqa: F401
+    acquire_sdat_ingestion_lock,
+    list_sdat_ingestion_schedules,
+    record_sdat_ingestion_run,
+    release_sdat_ingestion_lock,
+    upsert_sdat_ingestion_schedule,
+)
 from store.tenant import (  # noqa: F401
     get_all_active_tenants,
     get_tenant_by_territory,

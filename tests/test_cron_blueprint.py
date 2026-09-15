@@ -21,6 +21,7 @@ CRON_RULES = {
     "/api/cron/backfill-elcom",
     "/api/cron/process-billing",
     "/api/cron/verify-registry-entries",
+    "/api/cron/import-sdat",
 }
 
 SKIP_DIRS = {

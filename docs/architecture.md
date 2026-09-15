@@ -78,6 +78,8 @@ Application and API routes:
 - `/api/cron/*` runs scheduled work behind a cron secret.
 - `/api/cron/process-billing` processes the previous complete month for every
   active community behind that cron secret.
+- `/api/cron/import-sdat` runs due per-tenant SDAT schedules. Admins configure,
+  inspect, and explicitly retry them under `/admin/sdat-schedules`.
 - `/api/billing/community/<community_id>/period/<int:period_id>` returns one
   persisted draft billing period as JSON to admins.
 - `/leg/community/<community_id>/billing` is the admin-gated approval
@@ -148,8 +150,8 @@ Application and API routes:
   with `MemberInvoiceDataError` on a malformed or non-finite snapshot rather
   than rendering an invented value, and renders the identical PDF through the
   public `document_generator.render_pdf_html` seam.
-- `sdat_datahub.py`, `sdat_e66.py`, `meter_data.py`: meter data retrieval,
-  SDAT parsing, and upload ingestion.
+- `sdat_datahub.py`, `sdat_e66.py`, `sdat_ingestion.py`, `meter_data.py`: meter
+  data retrieval, SDAT parsing, scheduled orchestration, and upload ingestion.
 - `templates/`, `static/`, `tests/`, `scripts/`.
 
 ## Data layer
@@ -165,8 +167,8 @@ Shipped stores: `store/access_token`, `store/analytics`, `store/api_client`,
 `store/correspondence`, `store/dashboard_profile`, `store/document`,
 `store/email_queue`, `store/formation_documents`, `store/meter`,
 `store/metering`, `store/municipality`, `store/ops`, `store/profile`,
-`store/ranking`, `store/referral`, `store/registry`, `store/tenant`,
-`store/token`, `store/utility`.
+`store/ranking`, `store/referral`, `store/registry`, `store/sdat_ingestion`,
+`store/tenant`, `store/token`, `store/utility`.
 
 New storage code for a cohesive domain goes into `store/`, not into
 `database.py`.
@@ -192,6 +194,8 @@ environment-variable names are documented in `docs/data-pipeline.md`.
   SDAT files from the Swisseldex Datahub;
   `scripts/import_sdat.py` parses E66 messages through `sdat_e66.py` and writes
   `metering_points`, `metering_point_readings`, and the `sdat_imports` ledger.
+  `sdat_ingestion.py` schedules that same path per tenant; its store holds
+  schedules, advisory locks, and aggregate run reports.
   The `/meter-upload` page is a separate manual path that writes
   `meter_readings` per building.
 

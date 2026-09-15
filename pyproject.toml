@@ -114,6 +114,7 @@ also_copy = [
     "registry_intake.py",
     "scripts",
     "sdat_datahub.py",
+    "sdat_ingestion.py",
     "sdat_e66.py",
     "security_extensions.py",
     "security_utils.py",

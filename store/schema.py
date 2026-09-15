@@ -208,6 +208,39 @@ def create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS sdat_ingestion_schedules (
+                    territory VARCHAR(64) PRIMARY KEY REFERENCES white_label_configs(territory) ON DELETE CASCADE,
+                    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+                    timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich',
+                    local_time TIME NOT NULL DEFAULT '02:00',
+                    local_dir VARCHAR(512),
+                    max_attempts INTEGER NOT NULL DEFAULT 3 CHECK (max_attempts BETWEEN 1 AND 5),
+                    retry_seconds INTEGER NOT NULL DEFAULT 30 CHECK (retry_seconds BETWEEN 0 AND 300),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS sdat_ingestion_runs (
+                    id BIGSERIAL PRIMARY KEY,
+                    territory VARCHAR(64) NOT NULL REFERENCES white_label_configs(territory) ON DELETE CASCADE,
+                    started_at TIMESTAMPTZ NOT NULL,
+                    finished_at TIMESTAMPTZ NOT NULL,
+                    status VARCHAR(16) NOT NULL,
+                    attempts INTEGER NOT NULL,
+                    downloaded_files INTEGER NOT NULL DEFAULT 0,
+                    imported_files INTEGER NOT NULL DEFAULT 0,
+                    imported_readings INTEGER NOT NULL DEFAULT 0,
+                    error_code VARCHAR(64),
+                    report JSONB NOT NULL DEFAULT '{}'
+                )
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_sdat_ingestion_runs_latest
+                ON sdat_ingestion_runs(territory, started_at DESC)
+            """)
+
             # Scheduled emails table
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS scheduled_emails (

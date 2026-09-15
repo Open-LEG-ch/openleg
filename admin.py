@@ -4,6 +4,8 @@ import hmac
 import io
 import json
 import os
+import re
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import (
     Blueprint,
@@ -19,6 +21,7 @@ import agentmail_event
 import billing_workspace
 import database as db
 import leg_registry
+import sdat_ingestion
 from security_utils import log_security_event
 
 try:
@@ -60,6 +63,71 @@ def _latest_snapshot_by_category(snapshots):
     for snapshot in snapshots:
         latest.setdefault(snapshot.get("category", "uncategorized"), snapshot)
     return latest
+
+
+_TERRITORY_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+
+
+@admin_bp.route("/admin/sdat-schedules")
+def admin_sdat_schedules():
+    require_admin()
+    return jsonify({"schedules": db.list_sdat_ingestion_schedules()})
+
+
+@admin_bp.route("/admin/sdat-schedules/<territory>/run", methods=["POST"])
+def admin_run_sdat_schedule(territory):
+    """Run one tenant now, including same-day recovery after a failure."""
+    require_admin()
+    schedules = db.list_sdat_ingestion_schedules()
+    schedule = next(
+        (item for item in schedules if item.get("territory") == territory), None
+    )
+    if schedule is None:
+        abort(404)
+    return jsonify(sdat_ingestion.run(territory, schedule))
+
+
+@admin_bp.route("/admin/sdat-schedules/<territory>", methods=["PUT"])
+def admin_update_sdat_schedule(territory):
+    require_admin()
+    if not _TERRITORY_RE.fullmatch(territory):
+        return jsonify({"error": "invalid_territory"}), 400
+    data = request.get_json(silent=True) or {}
+    timezone_name = data.get("timezone", "Europe/Zurich")
+    try:
+        ZoneInfo(timezone_name)
+    except (TypeError, ValueError, ZoneInfoNotFoundError):
+        return jsonify({"error": "invalid_timezone"}), 400
+    local_time = data.get("local_time", "02:00")
+    if not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", str(local_time)):
+        return jsonify({"error": "invalid_local_time"}), 400
+    try:
+        max_attempts = int(data.get("max_attempts", 3))
+        retry_seconds = int(data.get("retry_seconds", 30))
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid_retry"}), 400
+    if not 1 <= max_attempts <= 5 or not 0 <= retry_seconds <= 300:
+        return jsonify({"error": "invalid_retry"}), 400
+    local_dir = data.get("local_dir")
+    try:
+        sdat_ingestion.resolve_tenant_directory(territory, local_dir)
+    except sdat_ingestion.IngestionError:
+        return jsonify({"error": "invalid_local_dir"}), 400
+    schedule = db.upsert_sdat_ingestion_schedule(
+        territory,
+        {
+            "enabled": data.get("enabled") is True,
+            "timezone": timezone_name,
+            "local_time": local_time,
+            "local_dir": local_dir,
+            "max_attempts": max_attempts,
+            "retry_seconds": retry_seconds,
+        },
+    )
+    local_time_value = schedule.get("local_time")
+    if hasattr(local_time_value, "strftime"):
+        schedule["local_time"] = local_time_value.strftime("%H:%M")
+    return jsonify(schedule)
 
 
 def _verify_agentmail_request():
@@ -188,11 +256,13 @@ def admin_ops():
     stale_registry = db.get_registry_entries_needing_verification(
         stale_days=leg_registry.VERIFICATION_STALE_DAYS, limit=1000
     )
+    sdat_schedules = db.list_sdat_ingestion_schedules()
     response = {
         "latest": latest,
         "snapshots": snapshots[:20],
         "reports": reports,
         "pending_registry": pending_registry,
+        "sdat_schedules": sdat_schedules,
         "counts": {
             "lea_inbox": sum(1 for s in snapshots if s.get("category") == "lea_inbox"),
             "github_monitor": sum(

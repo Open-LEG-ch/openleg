@@ -112,6 +112,19 @@ it.
 - **Resident-visible:** own data only.
 - **Consent gate:** not neighbour-visible.
 
+## store/sdat_ingestion
+
+- **Tables:** `sdat_ingestion_schedules`, `sdat_ingestion_runs`
+- **Holds:** tenant schedule settings, timestamps, safe status/error codes, and
+  aggregate imported file and reading counts. It does not store file names,
+  credentials, document contents, or metering point IDs.
+- **Purpose:** scheduled SDAT operation, overlap prevention, and recovery audit.
+- **Owner:** the LEG operator for the configured tenant.
+- **Sensitivity:** operational metadata. Aggregate reading counts can disclose
+  delivery volume and remain operator-only.
+- **Resident-visible:** no.
+- **Consent gate:** not applicable; admin and cron authentication apply.
+
 ## store/billing
 
 - **Tables:** `billing_periods`, `billing_tariffs`, `invoices`,

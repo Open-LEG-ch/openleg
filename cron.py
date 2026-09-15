@@ -17,6 +17,7 @@ import billing_runner
 import database as db
 import email_automation
 import leg_registry
+import sdat_ingestion
 from security_utils import log_security_event
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,12 @@ def api_cron_process_emails():
     _require_cron_secret()
     result = email_automation.process_email_queue(app=current_app)
     return jsonify(result)
+
+
+@cron_bp.route("/api/cron/import-sdat", methods=["POST"])
+def api_cron_import_sdat():
+    _require_cron_secret()
+    return jsonify(sdat_ingestion.run_due(db.list_sdat_ingestion_schedules()))
 
 
 @cron_bp.route("/api/cron/refresh-public-data", methods=["POST"])
