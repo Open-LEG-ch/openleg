@@ -22,6 +22,10 @@ financial data. Import dry-run never stores the file. A successful restore
 recreates the source identifiers and relationships under the retention rules
 below; it does not extend or shorten them.
 
+Invoice-question response and reminder dates use
+`INVOICE_QUERY_RESPONSE_DAYS` (default 10) and
+`INVOICE_QUERY_REMINDER_DAYS` (default 2 days before the response deadline).
+
 | Domain (catalog) | Retention horizon | Deletion trigger | What deletion reaches | What it deliberately keeps |
 |---|---|---|---|---|
 | store/building | Life of the registration | Profile deletion (unsubscribe confirmation) | The `buildings` row; CASCADE removes consents, tokens, access tokens, queue rows, cluster assignments, memberships, meter CSV readings; `referrer_id` edges become `SET NULL` | Nothing - the registration is the data |

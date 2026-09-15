@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+from datetime import datetime, timezone
+
 import pytest
 
 import database
@@ -23,6 +25,24 @@ def test_status_history_only_moves_forward():
     invoice_queries.require_transition("acknowledged", "resolved")
     with pytest.raises(ValueError):
         invoice_queries.require_transition("resolved", "open")
+
+
+def test_question_deadlines_follow_operator_configuration(monkeypatch):
+    monkeypatch.setenv("INVOICE_QUERY_RESPONSE_DAYS", "8")
+    monkeypatch.setenv("INVOICE_QUERY_REMINDER_DAYS", "3")
+    opened_at = datetime(2026, 9, 15, 12, tzinfo=timezone.utc)
+
+    response_due_at, reminder_due_at = invoice_queries.deadlines(opened_at)
+
+    assert response_due_at.isoformat() == "2026-09-23T12:00:00+00:00"
+    assert reminder_due_at.isoformat() == "2026-09-20T12:00:00+00:00"
+
+
+def test_question_deadline_configuration_fails_closed(monkeypatch):
+    monkeypatch.setenv("INVOICE_QUERY_RESPONSE_DAYS", "0")
+
+    with pytest.raises(ValueError):
+        invoice_queries.deadlines(datetime(2026, 9, 15, tzinfo=timezone.utc))
 
 
 def test_operator_update_validates_transition_before_appending_message(monkeypatch):

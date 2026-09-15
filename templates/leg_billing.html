@@ -153,7 +153,7 @@
         <h4 class="font-semibold">Rechnungsfragen</h4>
         {% for query in invoice.queries %}
         <div class="mt-3 rounded-lg border border-line p-3 text-sm">
-          <p>{{ query.category }} · {{ query.status }}</p>
+          <p>{{ query.category }} · {{ query.status }} · Antwort bis {{ query.response_due_at }}</p>
           {% for message in query.messages %}<p class="mt-1"><strong>{{ message.actor_id }}:</strong> {{ message.message }}</p>{% endfor %}
           {% if can_prepare_billing and query.status != 'resolved' %}
           <form method="post" action="/leg/community/{{ community_id }}/billing/queries/{{ query.id }}" class="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto]">

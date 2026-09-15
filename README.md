@@ -153,6 +153,12 @@ Der Weg von Rohmessdaten zur Mitgliederrechnung läuft als ein Ablauf in diesem 
 3. **Policy und Freigabe.** Die Betreiberin pflegt den versionierten Tarif unter `/leg/community/<community_id>/billing-policy` (`billing_policy.py`, `templates/leg_billing_policy.html`) und prüft den Entwurf unter `/leg/community/<community_id>/billing` (`templates/leg_billing.html`). Die Freigabe friert je Teilnehmer eine unveränderliche Rechnung aus dem gespeicherten Policy-Snapshot ein (`billing_approval.py`).
 4. **Lebenszyklus und Zustellung.** Eine freigegebene Rechnung durchläuft `issued`, `delivered`, `paid`, `cancelled` und `corrected` (`billing_lifecycle.py`). Mitglieder lesen ihre Rechnungen unter `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>` und `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
 
+Im LEG-Dashboard lassen sich Mitgliederverwaltung, Dokumente, Messdaten,
+Abrechnungsvorbereitung, Freigabe und Prüfung getrennt delegieren. Optional
+erzwingt die LEG für Rechnungen verschiedene Personen für Vorbereitung und
+Freigabe. Mitglieder können zu ihrer eigenen Rechnung eine private Frage mit
+PDF-Beleg eröffnen und den Status im Rechnungsdetail verfolgen.
+
 Die Rechnungsfreigabe bleibt eine bewusste Entscheidung der Betreiberin. VNB-spezifischer Transport und Zugangsdaten müssen lokal eingerichtet werden.
 
 ### Schnellstart

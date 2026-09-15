@@ -326,13 +326,11 @@ def leg_billing_workspace_view(
     **extra,
 ) -> dict:
     """Capability-gated view model for the billing approval workspace."""
-    if not _require_capability(
-        community_id, building_id, community_access.AUDIT_BILLING
-    ):
-        return {"error": "Kein Zugriff."}
     member = _require_capability(
         community_id, building_id, community_access.AUDIT_BILLING
     )
+    if not member:
+        return {"error": "Kein Zugriff."}
     capabilities = community_access.capabilities_for(member)
     periods = db.list_community_billing_periods(community_id)
     flag_counts = _veracity_flag_counts(periods)

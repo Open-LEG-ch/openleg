@@ -20,18 +20,20 @@ def open_invoice_query(
 ) -> int | None:
     """Open a case only when the invoice belongs to the participant."""
     category, message = invoice_queries.validate_open(category, message)
+    response_due_at, reminder_due_at = invoice_queries.deadlines()
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
                 INSERT INTO invoice_queries (
-                    invoice_id, community_id, participant_id, category, status
+                    invoice_id, community_id, participant_id, category, status,
+                    response_due_at, reminder_due_at
                 )
-                SELECT id, community_id, participant_id, %s, 'open'
+                SELECT id, community_id, participant_id, %s, 'open', %s, %s
                 FROM invoices
                 WHERE id = %s AND participant_id = %s AND status = 'issued'
                 RETURNING id
             """,
-            (category, invoice_id, participant_id),
+            (category, response_due_at, reminder_due_at, invoice_id, participant_id),
         )
         row = cur.fetchone()
         if not row:

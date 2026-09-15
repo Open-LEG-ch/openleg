@@ -908,6 +908,8 @@ def create_tables():
                     participant_id VARCHAR(64) NOT NULL,
                     category VARCHAR(32) NOT NULL,
                     status VARCHAR(32) NOT NULL DEFAULT 'open',
+                    response_due_at TIMESTAMPTZ NOT NULL,
+                    reminder_due_at TIMESTAMPTZ NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
@@ -922,6 +924,11 @@ def create_tables():
                     attachment_data BYTEA,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
+            """)
+            cur.execute("""
+                ALTER TABLE invoice_queries
+                    ADD COLUMN IF NOT EXISTS response_due_at TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS reminder_due_at TIMESTAMPTZ
             """)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS invoice_query_events (
