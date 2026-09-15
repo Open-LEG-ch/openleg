@@ -875,6 +875,39 @@ def create_tables():
                 )
             """)
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoice_queries (
+                    id BIGSERIAL PRIMARY KEY,
+                    invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+                    community_id VARCHAR(64) NOT NULL,
+                    participant_id VARCHAR(64) NOT NULL,
+                    category VARCHAR(32) NOT NULL,
+                    status VARCHAR(32) NOT NULL DEFAULT 'open',
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+            cur.execute(""")
+                CREATE TABLE IF NOT EXISTS invoice_query_messages (
+                    id BIGSERIAL PRIMARY KEY,
+                    query_id BIGINT NOT NULL REFERENCES invoice_queries(id) ON DELETE CASCADE,
+                    actor_id VARCHAR(64) NOT NULL,
+                    message TEXT NOT NULL,
+                    attachment_filename TEXT,
+                    attachment_data BYTEA,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+            cur.execute(""")
+                CREATE TABLE IF NOT EXISTS invoice_query_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    query_id BIGINT NOT NULL REFERENCES invoice_queries(id) ON DELETE CASCADE,
+                    actor_id VARCHAR(64) NOT NULL,
+                    previous_status VARCHAR(32),
+                    new_status VARCHAR(32) NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+            cur.execute(""")
                 CREATE TABLE IF NOT EXISTS bank_statement_imports (
                     id BIGSERIAL PRIMARY KEY,
                     community_id VARCHAR(64) NOT NULL,

@@ -211,6 +211,12 @@ from store.formation import (  # noqa: F401
     submit_community_to_dso,
 )
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
+from store.invoice_query import (  # noqa: F401
+    add_invoice_query_message,
+    list_invoice_queries,
+    open_invoice_query,
+    transition_invoice_query,
+)
 from store.meter import (  # noqa: F401
     get_meter_reading_stats,
     get_meter_readings,
