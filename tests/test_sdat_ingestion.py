@@ -34,8 +34,10 @@ def test_run_fetches_and_imports_once_and_records_counts():
         "dietikon",
         {"local_dir": "dietikon", "max_attempts": 3},
         store=store,
-        fetcher=lambda directory: fetched.append(directory)
-        or {"downloaded": ["a.xml"], "skipped": [], "failed": []},
+        fetcher=lambda directory: (
+            fetched.append(directory)
+            or {"downloaded": ["a.xml"], "skipped": [], "failed": []}
+        ),
         importer=lambda directory: {
             "files_imported": 1,
             "files_existing": 0,
@@ -163,9 +165,12 @@ def test_nonexistent_spring_time_runs_at_first_tick_after_local_time():
         "last_started_at": datetime(2026, 3, 28, 1, 30, tzinfo=timezone.utc),
     }
 
-    assert sdat_ingestion.is_due(
-        schedule, datetime(2026, 3, 29, 1, 0, tzinfo=timezone.utc)
-    ) is True
+    assert (
+        sdat_ingestion.is_due(
+            schedule, datetime(2026, 3, 29, 1, 0, tzinfo=timezone.utc)
+        )
+        is True
+    )
 
 
 def test_established_importer_adapter_returns_machine_counts(tmp_path):

@@ -384,9 +384,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(403)
         return result, (200 if result["valid"] else 400)
 
-    @bp.route(
-        "/leg/community/<community_id>/archive/dry-run", methods=["POST"]
-    )
+    @bp.route("/leg/community/<community_id>/archive/dry-run", methods=["POST"])
     def leg_community_archive_dry_run(community_id):
         return _restore_archive_response(community_id, dry_run=True)
 

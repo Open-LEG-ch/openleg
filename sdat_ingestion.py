@@ -96,9 +96,7 @@ def _default_import(directory: str) -> dict:
     with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
         exit_code = module.main([directory, "--quiet"])
     text = output.getvalue()
-    files = re.search(
-        r"Dateien: (\d+) verarbeitet, (\d+) bereits importiert", text
-    )
+    files = re.search(r"Dateien: (\d+) verarbeitet, (\d+) bereits importiert", text)
     readings = re.search(r"Zeilen: neu (\d+), korrigiert (\d+)", text)
     if not files or not readings:
         raise IngestionError("import_report_unavailable")
@@ -166,7 +164,9 @@ def run(
                 }
                 break
             except Exception as exc:
-                code = exc.code if isinstance(exc, IngestionError) else f"{stage}_failed"
+                code = (
+                    exc.code if isinstance(exc, IngestionError) else f"{stage}_failed"
+                )
                 if isinstance(exc, IngestionError):
                     for key in imported_totals:
                         imported_totals[key] += exc.counts.get(key, 0)
@@ -184,7 +184,9 @@ def run(
                         "imported_readings": imported_totals["readings_imported"],
                         "error": code,
                     }
-                    logger.warning("SDAT ingestion failed for tenant %s: %s", territory, code)
+                    logger.warning(
+                        "SDAT ingestion failed for tenant %s: %s", territory, code
+                    )
                 else:
                     sleeper(min(retry_seconds * (2 ** (attempt - 1)), 300))
         store.record(territory, report)

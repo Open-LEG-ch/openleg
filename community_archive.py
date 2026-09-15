@@ -61,9 +61,7 @@ def export_community_archive(community_id: str, *, store=None) -> bytes:
     datasets = store.export_community(community_id)
     if not datasets:
         raise ArchiveError("LEG not found")
-    encoded = {
-        table: _json_value(datasets.get(table, [])) for table, _, _ in _DATASETS
-    }
+    encoded = {table: _json_value(datasets.get(table, [])) for table, _, _ in _DATASETS}
     hashes = {
         name: f"sha256:{hashlib.sha256(_canonical(rows)).hexdigest()}"
         for name, rows in encoded.items()
@@ -90,11 +88,19 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
     try:
         payload = json.loads(archive)
     except (json.JSONDecodeError, UnicodeDecodeError, TypeError):
-        return {"valid": False, "errors": ["Archive is not valid JSON"], "conflicts": []}
+        return {
+            "valid": False,
+            "errors": ["Archive is not valid JSON"],
+            "conflicts": [],
+        }
     manifest = payload.get("manifest") if isinstance(payload, dict) else None
     datasets = payload.get("datasets") if isinstance(payload, dict) else None
     if not isinstance(manifest, dict) or not isinstance(datasets, dict):
-        return {"valid": False, "errors": ["Manifest or datasets missing"], "conflicts": []}
+        return {
+            "valid": False,
+            "errors": ["Manifest or datasets missing"],
+            "conflicts": [],
+        }
     version = manifest.get("schema_version")
     if version != SCHEMA_VERSION:
         errors.append(f"Unsupported schema version: {version}")
@@ -115,6 +121,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
         or community_rows[0].get("community_id") != community_id
     ):
         errors.append("Community record does not match manifest")
+
     def dataset_rows(name):
         value = datasets.get(name, [])
         return value if isinstance(value, list) else []
@@ -140,9 +147,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
         if isinstance(row, dict)
     }
     invoice_ids = {
-        row.get("id")
-        for row in dataset_rows("invoices")
-        if isinstance(row, dict)
+        row.get("id") for row in dataset_rows("invoices") if isinstance(row, dict)
     }
     for name, records in datasets.items():
         if name not in {table for table, _, _ in _DATASETS}:
@@ -157,9 +162,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
                 errors.append(f"Community scope violation: {name}")
                 break
     for name in ("buildings", "consents", "data_consents", "meter_readings"):
-        if any(
-            row.get("building_id") not in member_ids for row in dataset_rows(name)
-        ):
+        if any(row.get("building_id") not in member_ids for row in dataset_rows(name)):
             errors.append(f"Member scope violation: {name}")
     if any(
         row.get("metering_point_id") not in metering_ids
@@ -207,22 +210,54 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
 # Restore order follows foreign keys. All identifiers are fixed here, never read
 # from the archive, so table and column interpolation cannot become SQL input.
 _DATASETS = (
-    ("buildings", "building_id IN (SELECT building_id FROM community_members WHERE community_id = %s)", "community_id"),
+    (
+        "buildings",
+        "building_id IN (SELECT building_id FROM community_members WHERE community_id = %s)",
+        "community_id",
+    ),
     ("communities", "community_id = %s", "community_id"),
     ("community_members", "community_id = %s", "community_id"),
-    ("consents", "building_id IN (SELECT building_id FROM community_members WHERE community_id = %s)", "community_id"),
-    ("data_consents", "building_id IN (SELECT building_id FROM community_members WHERE community_id = %s)", "community_id"),
-    ("meter_readings", "building_id IN (SELECT building_id FROM community_members WHERE community_id = %s)", "community_id"),
+    (
+        "consents",
+        "building_id IN (SELECT building_id FROM community_members WHERE community_id = %s)",
+        "community_id",
+    ),
+    (
+        "data_consents",
+        "building_id IN (SELECT building_id FROM community_members WHERE community_id = %s)",
+        "community_id",
+    ),
+    (
+        "meter_readings",
+        "building_id IN (SELECT building_id FROM community_members WHERE community_id = %s)",
+        "community_id",
+    ),
     ("community_documents", "community_id = %s", "community_id"),
     ("leg_documents", "community_id = %s", "community_id"),
     ("correspondence_log", "community_id = %s", "community_id"),
     ("metering_points", "community_id = %s", "community_id"),
-    ("sdat_imports", "document_id IN (SELECT DISTINCT r.source_document_id FROM metering_point_readings r JOIN metering_points p USING (metering_point_id) WHERE p.community_id = %s AND r.source_document_id IS NOT NULL)", "community_id"),
-    ("metering_point_readings", "metering_point_id IN (SELECT metering_point_id FROM metering_points WHERE community_id = %s)", "community_id"),
-    ("sdat_veracity_flags", "metering_point_id IN (SELECT metering_point_id FROM metering_points WHERE community_id = %s)", "community_id"),
+    (
+        "sdat_imports",
+        "document_id IN (SELECT DISTINCT r.source_document_id FROM metering_point_readings r JOIN metering_points p USING (metering_point_id) WHERE p.community_id = %s AND r.source_document_id IS NOT NULL)",
+        "community_id",
+    ),
+    (
+        "metering_point_readings",
+        "metering_point_id IN (SELECT metering_point_id FROM metering_points WHERE community_id = %s)",
+        "community_id",
+    ),
+    (
+        "sdat_veracity_flags",
+        "metering_point_id IN (SELECT metering_point_id FROM metering_points WHERE community_id = %s)",
+        "community_id",
+    ),
     ("billing_tariffs", "community_id = %s", "community_id"),
     ("billing_periods", "community_id = %s", "community_id"),
-    ("billing_line_items", "billing_period_id IN (SELECT id FROM billing_periods WHERE community_id = %s)", "community_id"),
+    (
+        "billing_line_items",
+        "billing_period_id IN (SELECT id FROM billing_periods WHERE community_id = %s)",
+        "community_id",
+    ),
     ("invoices", "community_id = %s", "community_id"),
     ("invoice_lifecycle_events", "community_id = %s", "community_id"),
     ("invoice_delivery_jobs", "community_id = %s", "community_id"),
@@ -256,9 +291,11 @@ class PostgresArchiveStore:
             if existing is None:
                 return []
             archived = _python_value(datasets["communities"])[0]
-            return [] if all(existing[key] == value for key, value in archived.items()) else [
-                f"Community already exists with different data: {community_id}"
-            ]
+            return (
+                []
+                if all(existing[key] == value for key, value in archived.items())
+                else [f"Community already exists with different data: {community_id}"]
+            )
 
     @staticmethod
     def _allowed_columns(cur):

@@ -49,9 +49,7 @@ def representative_data():
                 "pdf_data": b"contract",
             }
         ],
-        "metering_points": [
-            {"metering_point_id": "CH-1", "community_id": "leg-1"}
-        ],
+        "metering_points": [{"metering_point_id": "CH-1", "community_id": "leg-1"}],
         "metering_point_readings": [
             {
                 "id": 9,
@@ -64,9 +62,7 @@ def representative_data():
             {"id": 2, "community_id": "leg-1", "timezone": "Europe/Zurich"}
         ],
         "billing_periods": [{"id": 5, "community_id": "leg-1"}],
-        "invoices": [
-            {"id": 7, "community_id": "leg-1", "status": "issued"}
-        ],
+        "invoices": [{"id": 7, "community_id": "leg-1", "status": "issued"}],
         "invoice_lifecycle_events": [
             {"id": 11, "invoice_id": 7, "community_id": "leg-1"}
         ],
@@ -138,7 +134,9 @@ def test_unsupported_version_and_target_conflict_are_reported_without_mutation()
 
 def test_export_refuses_unknown_community():
     with pytest.raises(community_archive.ArchiveError, match="LEG not found"):
-        community_archive.export_community_archive("missing", store=MemoryArchiveStore())
+        community_archive.export_community_archive(
+            "missing", store=MemoryArchiveStore()
+        )
 
 
 def test_private_archive_routes_require_confirmed_admin(
