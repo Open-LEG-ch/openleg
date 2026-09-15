@@ -470,6 +470,8 @@ def rotate_credential(community_id, client_id):
 def revoke_credential(community_id, client_id):
     if not _admin_for(community_id, session.get("dashboard_building_id")):
         return _error("Forbidden", 403)
+    if not _require_csrf():
+        return _error("Invalid CSRF token", 400)
     row = db.revoke_operator_api_client(community_id, client_id)
     return (
         jsonify(credential=_safe_credential(row))

@@ -33,3 +33,11 @@ validation, conflict, and rate errors use 401, 403, 404, 400/409, and 429.
 Lifecycle events use `operator-event/1`. Webhook requests include
 `OpenLEG-Delivery` and an `OpenLEG-Signature: sha256=…` HMAC over the exact body.
 Event payloads contain only lifecycle status, error code, or period bounds.
+
+Dashboard-session administrators manage credentials at
+`/leg/community/{community_id}/operator-api/credentials` (create/list), with
+`/{client_id}/rotate` and `/{client_id}/revoke`; mutation requests require the
+dashboard CSRF token. They can inspect delivery attempts at
+`/leg/community/{community_id}/operator-api/deliveries` and retry a failed
+delivery at `/{delivery_id}/retry`. The cron worker dispatches pending events
+through `POST /api/cron/process-operator-webhooks`, protected by `CRON_SECRET`.

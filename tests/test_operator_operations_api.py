@@ -218,9 +218,19 @@ def test_minimal_signed_event_payload_excludes_member_and_bank_details():
     assert event["payload"] == {"status": "matched"}
 
 
-def test_event_subscription_capability_matches_the_minimal_payload_domain():
-    from store.operator_api import _subscription_capability
+def test_event_outbox_filters_subscribers_by_the_payload_domain():
+    from store.operator_api import enqueue_event
 
-    assert _subscription_capability("metering.ingestion.completed") == "metering.read"
-    assert _subscription_capability("invoice.case.updated") == "cases.read"
-    assert _subscription_capability("payment.match.confirmed") == "payments.read"
+    class Cursor:
+        def __init__(self):
+            self.calls = []
+
+        def execute(self, query, params):
+            self.calls.append((query, params))
+
+    cursor = Cursor()
+    enqueue_event(
+        cursor, "payment.match.confirmed", "12", "community-a", {"status": "matched"}
+    )
+    assert "capabilities ? %s" in cursor.calls[1][0]
+    assert cursor.calls[1][1][-2:] == ("payments.read", "payments.read")
