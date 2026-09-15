@@ -31,8 +31,11 @@ def list_metering_jobs(community_id, *, status=None, limit=50, cursor=None):
         """SELECT r.id,r.territory,r.started_at,r.finished_at,r.status,r.attempts,
                   r.downloaded_files,r.imported_files,r.imported_readings,r.error_code
              FROM sdat_ingestion_runs r JOIN communities c ON c.community_id=%s
-             JOIN buildings b ON b.building_id=c.admin_building_id
+            JOIN buildings b ON b.building_id=c.admin_building_id
             WHERE r.territory=b.city_id AND (%s IS NULL OR r.status=%s) AND r.id>%s
+              AND 1=(SELECT COUNT(*) FROM communities scoped
+                       JOIN buildings owner ON owner.building_id=scoped.admin_building_id
+                      WHERE owner.city_id=r.territory)
             ORDER BY r.id LIMIT %s""",
         (community_id, status, status),
         limit=limit,
@@ -47,7 +50,10 @@ def get_ingestion_retry(community_id, job_id):
                  JOIN sdat_ingestion_schedules s ON s.territory=r.territory
                  JOIN communities c ON c.community_id=%s
                  JOIN buildings b ON b.building_id=c.admin_building_id
-                WHERE r.id=%s AND r.status='failure' AND r.territory=b.city_id""",
+                WHERE r.id=%s AND r.status='failure' AND r.territory=b.city_id
+                  AND 1=(SELECT COUNT(*) FROM communities scoped
+                           JOIN buildings owner ON owner.building_id=scoped.admin_building_id
+                          WHERE owner.city_id=r.territory)""",
             (community_id, job_id),
         )
         row = cur.fetchone()
@@ -96,7 +102,10 @@ def get_ingestion_retry_in_cursor(cur, community_id, job_id):
              JOIN sdat_ingestion_schedules s ON s.territory=r.territory
              JOIN communities c ON c.community_id=%s
              JOIN buildings b ON b.building_id=c.admin_building_id
-            WHERE r.id=%s AND r.status='failure' AND r.territory=b.city_id""",
+            WHERE r.id=%s AND r.status='failure' AND r.territory=b.city_id
+              AND 1=(SELECT COUNT(*) FROM communities scoped
+                       JOIN buildings owner ON owner.building_id=scoped.admin_building_id
+                      WHERE owner.city_id=r.territory)""",
         (community_id, job_id),
     )
     row = cur.fetchone()
@@ -114,6 +123,16 @@ def complete_ingestion_retry(community_id, job_id, key, response):
                 f"metering.retry:{job_id}",
                 key,
             ),
+        )
+
+
+def release_ingestion_retry(community_id, job_id, key):
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """DELETE FROM operator_action_idempotency
+                WHERE community_id=%s AND action=%s AND idempotency_key=%s
+                  AND response IS NULL""",
+            (community_id, f"metering.retry:{job_id}", key),
         )
 
 

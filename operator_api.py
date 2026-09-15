@@ -250,7 +250,11 @@ def retry_metering_job(community_id, job_id):
     if claim.get("replay"):
         return jsonify(schema_version=API_SCHEMA_VERSION, **claim["replay"])
     schedule = claim["schedule"]
-    result = sdat_ingestion.run(schedule["territory"], schedule)
+    try:
+        result = sdat_ingestion.run(schedule["territory"], schedule)
+    except Exception:
+        db.release_operator_ingestion_retry(community_id, job_id, key)
+        raise
     db.complete_operator_ingestion_retry(community_id, job_id, key, result)
     return jsonify(schema_version=API_SCHEMA_VERSION, **result)
 
@@ -400,7 +404,16 @@ def create_credential(community_id):
     if not _require_csrf():
         return _error("Invalid CSRF token", 400)
     payload = request.get_json(silent=True) or request.form
-    capabilities = sorted(set(payload.get("capabilities", [])))
+    raw_capabilities = (
+        payload.getlist("capabilities")
+        if hasattr(payload, "getlist")
+        else payload.get("capabilities", [])
+    )
+    if not isinstance(raw_capabilities, list) or not all(
+        isinstance(item, str) for item in raw_capabilities
+    ):
+        return _error("Invalid capabilities", 400)
+    capabilities = sorted(set(raw_capabilities))
     if not capabilities or not set(capabilities) <= CAPABILITIES:
         return _error("Invalid capabilities", 400)
     name = str(payload.get("name", "")).strip()
