@@ -248,12 +248,20 @@ def test_duplicate_acknowledgement_enqueues_the_event_only_once(monkeypatch):
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     first = store.record_mutation_response(
-        "community-1", "mutation-case-1", "acknowledged",
-        "request-1", "accepted", b"ack",
+        "community-1",
+        "mutation-case-1",
+        "acknowledged",
+        "request-1",
+        "accepted",
+        b"ack",
     )
     second = store.record_mutation_response(
-        "community-1", "mutation-case-1", "acknowledged",
-        "request-1", "accepted", b"ack",
+        "community-1",
+        "mutation-case-1",
+        "acknowledged",
+        "request-1",
+        "accepted",
+        b"ack",
     )
 
     assert first["event_id"] == event_id_for(
@@ -261,8 +269,9 @@ def test_duplicate_acknowledgement_enqueues_the_event_only_once(monkeypatch):
     )
     assert "event_id" not in second
     assert len(cursor.executed) == 6
-    assert "ON CONFLICT (case_id, state, external_request_id, response_status)" in (
-        cursor.executed[0][0]
+    assert (
+        "ON CONFLICT (case_id, state, external_request_id, response_status)"
+        in (cursor.executed[0][0])
     )
     assert "INSERT INTO operator_events" in cursor.executed[2][0]
     assert "INSERT INTO operator_webhook_deliveries" in cursor.executed[3][0]
@@ -276,14 +285,19 @@ def test_late_response_to_finalized_case_keeps_the_stored_projection(monkeypatch
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     stored = store.record_mutation_response(
-        "community-1", "mutation-case-1", "acknowledged",
-        "request-1", "accepted", b"ack",
+        "community-1",
+        "mutation-case-1",
+        "acknowledged",
+        "request-1",
+        "accepted",
+        b"ack",
     )
 
     assert stored == row
     assert len(cursor.executed) == 3
-    assert "state NOT IN ('acknowledged', 'rejected', 'superseded')" in (
-        cursor.executed[1][0]
+    assert (
+        "state NOT IN ('acknowledged', 'rejected', 'superseded')"
+        in (cursor.executed[1][0])
     )
     assert "SELECT * FROM vnb_mutation_cases" in cursor.executed[2][0]
 
@@ -294,8 +308,12 @@ def test_response_for_unknown_case_raises(monkeypatch):
 
     with pytest.raises(store.VnbExchangeStoreError, match="was not found"):
         store.record_mutation_response(
-            "community-1", "missing-case", "acknowledged",
-            "request-1", "accepted", b"ack",
+            "community-1",
+            "missing-case",
+            "acknowledged",
+            "request-1",
+            "accepted",
+            b"ack",
         )
 
 

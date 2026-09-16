@@ -778,9 +778,7 @@ def test_vnb_membership_change_rejects_malformed_after_facts(app_module, monkeyp
             "source_agreement_id": "agreement-v3",
             "after_facts": bad,
         }
-        response = client.post(
-            "/leg/community/community-1/vnb-mutations", data=data
-        )
+        response = client.post("/leg/community/community-1/vnb-mutations", data=data)
         assert response.status_code == 400
     submit.assert_not_called()
 
