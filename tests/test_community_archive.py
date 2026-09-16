@@ -169,9 +169,8 @@ def test_unsupported_version_and_target_conflict_are_reported_without_mutation()
     )
 
     assert result["valid"] is False
-    assert result["errors"] == [
-        "Unsupported schema version: openleg-community-archive/99"
-    ]
+    # The report never echoes attacker-controlled values from the archive.
+    assert result["errors"] == ["Unsupported schema version"]
     assert target.restore_calls == 0
 
 

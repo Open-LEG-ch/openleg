@@ -103,15 +103,17 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
         }
     version = manifest.get("schema_version")
     if version != SCHEMA_VERSION:
-        errors.append(f"Unsupported schema version: {version}")
+        errors.append("Unsupported schema version")
     hashes = manifest.get("hashes", {})
     expected_datasets = {table for table, _, _ in _DATASETS}
     if set(datasets) != expected_datasets:
         errors.append("Archive dataset list does not match schema")
-    for name, rows in datasets.items():
-        actual = f"sha256:{hashlib.sha256(_canonical(rows)).hexdigest()}"
-        if hashes.get(name) != actual:
-            errors.append(f"Hash mismatch: {name}")
+    for table, _, _ in _DATASETS:
+        if table not in datasets:
+            continue
+        actual = f"sha256:{hashlib.sha256(_canonical(datasets[table])).hexdigest()}"
+        if hashes.get(table) != actual:
+            errors.append(f"Hash mismatch: {table}")
     community_rows = datasets.get("communities")
     community_id = manifest.get("community_id")
     if (
@@ -149,17 +151,16 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
     invoice_ids = {
         row.get("id") for row in dataset_rows("invoices") if isinstance(row, dict)
     }
-    for name, records in datasets.items():
-        if name not in {table for table, _, _ in _DATASETS}:
-            errors.append(f"Unsupported dataset: {name}")
+    for table, _, _ in _DATASETS:
+        records = datasets.get(table)
         if not isinstance(records, list) or any(
             not isinstance(row, dict) for row in records
         ):
-            errors.append(f"Invalid dataset: {name}")
+            errors.append(f"Invalid dataset: {table}")
             continue
         for row in records:
             if "community_id" in row and row["community_id"] != community_id:
-                errors.append(f"Community scope violation: {name}")
+                errors.append(f"Community scope violation: {table}")
                 break
     for name in ("buildings", "consents", "data_consents", "meter_readings"):
         if any(row.get("building_id") not in member_ids for row in dataset_rows(name)):
@@ -294,7 +295,7 @@ class PostgresArchiveStore:
             return (
                 []
                 if all(existing[key] == value for key, value in archived.items())
-                else [f"Community already exists with different data: {community_id}"]
+                else ["Community already exists with different data"]
             )
 
     @staticmethod
@@ -312,13 +313,14 @@ class PostgresArchiveStore:
         with self._connection() as conn, conn.cursor() as cur:
             allowed = self._allowed_columns(cur)
         errors = []
-        for table, rows in datasets.items():
+        for table, _, _ in _DATASETS:
+            rows = datasets.get(table, [])
             for row in rows if isinstance(rows, list) else []:
+                if not isinstance(row, dict):
+                    continue
                 unknown = set(row) - allowed.get(table, set())
                 if unknown:
-                    errors.append(
-                        f"Unknown columns in {table}: {', '.join(sorted(unknown))}"
-                    )
+                    errors.append(f"Unknown columns in {table}")
         return errors
 
     def restore_community(self, datasets):
@@ -343,9 +345,15 @@ class PostgresArchiveStore:
                 for row in datasets.get(table, []):
                     if not isinstance(row, dict) or not row:
                         raise ArchiveError(f"Invalid record: {table}")
-                    columns = tuple(row)
-                    if not set(columns) <= allowed_columns.get(table, set()):
+                    # Column names are always derived from the database
+                    # catalog, never from the archive; the row may only use
+                    # known names and every unknown key is rejected.
+                    catalog_columns = allowed_columns.get(table, frozenset())
+                    if not set(row) <= catalog_columns:
                         raise ArchiveError(f"Unknown column: {table}")
+                    columns = tuple(
+                        column for column in sorted(catalog_columns) if column in row
+                    )
                     placeholders = ", ".join(["%s"] * len(columns))
                     cur.execute(
                         f"INSERT INTO {table} ({', '.join(columns)}) "

@@ -63,11 +63,21 @@ def resolve_tenant_directory(territory: str, configured: str | None = None) -> s
     """Confine a tenant's delivery directory below the configured SDAT root."""
     root = Path(os.getenv("SWISSELDEX_SDAT_DIR", DEFAULT_LOCAL_DIR)).resolve()
     relative = Path(configured or territory)
-    if relative.is_absolute():
+    if (
+        relative.is_absolute()
+        or not relative.parts
+        or any(part in ("..", "") for part in relative.parts)
+    ):
+        raise IngestionError("invalid_local_dir")
+    if not all(re.fullmatch(r"[A-Za-z0-9._-]+", part) for part in relative.parts):
         raise IngestionError("invalid_local_dir")
     candidate = (root / relative).resolve()
-    if candidate == root or root not in candidate.parents:
+    if candidate == root:
         raise IngestionError("invalid_local_dir")
+    try:
+        candidate.relative_to(root)
+    except ValueError as error:
+        raise IngestionError("invalid_local_dir") from error
     return str(candidate)
 
 
