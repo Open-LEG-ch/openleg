@@ -242,9 +242,16 @@ def _acknowledged_row():
     }
 
 
+def _claimed_row():
+    row = _acknowledged_row()
+    row["state"] = "claimed"
+    row["next_action"] = "deliver"
+    return row
+
+
 def test_duplicate_acknowledgement_enqueues_the_event_only_once(monkeypatch):
     row = _acknowledged_row()
-    cursor = Cursor([{"id": 1}, row, None, row])
+    cursor = Cursor([_claimed_row(), {"id": 1}, row, row])
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     first = store.record_mutation_response(
@@ -268,20 +275,19 @@ def test_duplicate_acknowledgement_enqueues_the_event_only_once(monkeypatch):
         "membership.mutation.acknowledged", "mutation-case-1"
     )
     assert "event_id" not in second
+    assert "SELECT * FROM vnb_mutation_cases" in cursor.executed[0][0]
+    assert "INSERT INTO vnb_mutation_events" in cursor.executed[1][0]
+    assert "UPDATE vnb_mutation_cases" in cursor.executed[2][0]
+    assert "INSERT INTO operator_events" in cursor.executed[3][0]
+    assert "INSERT INTO operator_webhook_deliveries" in cursor.executed[4][0]
+    # The second call reads the acknowledged case and writes nothing.
+    assert "SELECT * FROM vnb_mutation_cases" in cursor.executed[5][0]
     assert len(cursor.executed) == 6
-    assert (
-        "ON CONFLICT (case_id, state, external_request_id, response_status)"
-        in (cursor.executed[0][0])
-    )
-    assert "INSERT INTO operator_events" in cursor.executed[2][0]
-    assert "INSERT INTO operator_webhook_deliveries" in cursor.executed[3][0]
-    assert "INSERT INTO vnb_mutation_events" in cursor.executed[4][0]
-    assert "UPDATE vnb_mutation_cases" in cursor.executed[5][0]
 
 
 def test_late_response_to_finalized_case_keeps_the_stored_projection(monkeypatch):
     row = _acknowledged_row()
-    cursor = Cursor([None, None, row])
+    cursor = Cursor([row])
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     stored = store.record_mutation_response(
@@ -294,16 +300,13 @@ def test_late_response_to_finalized_case_keeps_the_stored_projection(monkeypatch
     )
 
     assert stored == row
-    assert len(cursor.executed) == 3
-    assert (
-        "state NOT IN ('acknowledged', 'rejected', 'superseded')"
-        in (cursor.executed[1][0])
-    )
-    assert "SELECT * FROM vnb_mutation_cases" in cursor.executed[2][0]
+    # Only the locked read runs; a final case gets no event and no update.
+    assert len(cursor.executed) == 1
+    assert "FOR UPDATE" in cursor.executed[0][0]
 
 
 def test_response_for_unknown_case_raises(monkeypatch):
-    cursor = Cursor([None, None, None])
+    cursor = Cursor([None])
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     with pytest.raises(store.VnbExchangeStoreError, match="was not found"):
@@ -336,3 +339,31 @@ def test_claim_mutation_rejects_second_open_mutation_for_a_participant(monkeypat
 
     assert "bereits eine Mutation offen" in str(raised.value)
     assert "participant_id = %s" in cursor.executed[1][0]
+
+
+def test_finalized_case_gets_no_late_evidence_row(monkeypatch):
+    """A contradictory late response appends nothing for a final case."""
+    from store import vnb_exchange
+
+    finalized = {
+        "case_id": "case-9",
+        "community_id": "community-1",
+        "mutation_id": "mutation-1",
+        "participant_id": "building-2",
+        "state": "acknowledged",
+        "next_action": "none",
+        "external_request_id": "req-1",
+        "response_status": "accepted",
+    }
+    cursor = Cursor([finalized])
+    monkeypatch.setattr(database, "get_connection", connection(cursor))
+
+    result = vnb_exchange.record_mutation_response(
+        "community-1", "case-9", "rejected", "req-late", "rejected", b"late"
+    )
+
+    assert result["state"] == "acknowledged"
+    assert not any(
+        "INSERT INTO vnb_mutation_events" in query for query, _ in cursor.executed
+    )
+    assert not any("UPDATE vnb_mutation_cases" in query for query, _ in cursor.executed)

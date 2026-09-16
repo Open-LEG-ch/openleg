@@ -47,6 +47,10 @@ def _set_dashboard_session(building_id: str):
     session["dashboard_csrf_token"] = secrets.token_urlsafe(32)
 
 
+def _reject_constant(constant: str) -> float:
+    raise ValueError(f"Non-standard JSON constant: {constant}")
+
+
 def _require_dashboard_session():
     building_id = _dashboard_session_building_id()
     if not building_id:
@@ -523,8 +527,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         after_facts = {}
         if request.form.get("after_facts", "").strip():
             try:
-                after_facts = json.loads(request.form["after_facts"])
-            except json.JSONDecodeError:
+                after_facts = json.loads(
+                    request.form["after_facts"], parse_constant=_reject_constant
+                )
+            except (json.JSONDecodeError, ValueError):
                 abort(400)
             if not isinstance(after_facts, dict):
                 abort(400)

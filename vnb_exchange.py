@@ -429,7 +429,7 @@ def submit_membership_mutation(
     elif command.mutation_type == "change":
         if not command.after:
             raise ParticipantMutationInvalid("Änderungsdaten fehlen.")
-        unknown = set(command.after) - set(before)
+        unknown = set(command.after) - {"status", "role", "access_roles"}
         if unknown:
             raise ParticipantMutationInvalid(
                 "Änderungsdaten enthalten unbekannte Felder: "
