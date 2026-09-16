@@ -38,6 +38,9 @@ def test_leg_overview_returns_status_for_member(monkeypatch):
         "get_community_status",
         MagicMock(return_value=dict(STATUS)),
     )
+    # The overview seams are tested without a database; the VNB exchange
+    # availability has its own DB-backed contract.
+    monkeypatch.setattr(dashboard_module.db, "is_db_available", lambda: False)
     result = dashboard_module.leg_overview("c0ffee", "b-admin")
     assert result["error"] is None
     assert result["community"]["name"] == "LEG Musterweg"
@@ -52,6 +55,7 @@ def test_leg_overview_member_is_not_admin(monkeypatch):
         "get_community_status",
         MagicMock(return_value=dict(STATUS)),
     )
+    monkeypatch.setattr(dashboard_module.db, "is_db_available", lambda: False)
     result = dashboard_module.leg_overview("c0ffee", "b-guest")
     assert result["error"] is None
     assert result["is_admin"] is False

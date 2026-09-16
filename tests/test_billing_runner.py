@@ -837,6 +837,9 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
     )
     saved = []
 
+    # The reconciliation guards run without a database; the calculated-values
+    # gate has its own dedicated test.
+    monkeypatch.setattr(database, "is_db_available", lambda: False)
     monkeypatch.setattr(
         database,
         "get_billing_policy",
