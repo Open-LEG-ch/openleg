@@ -437,18 +437,6 @@ def confirm_payment_match(community_id, entry_id):
     )
 
 
-def operational_event(event_type, aggregate_id, community_id, payload):
-    """Build the public event projection; sensitive source fields stay excluded."""
-    allowed = {"status", "error_code", "period_start", "period_end"}
-    return {
-        "event_type": event_type,
-        "aggregate_id": aggregate_id,
-        "community_id": community_id,
-        "schema_version": EVENT_SCHEMA_VERSION,
-        "payload": {key: value for key, value in payload.items() if key in allowed},
-    }
-
-
 def _admin_for(community_id: str, building_id: str | None) -> bool:
     status = formation_wizard.get_community_status(community_id)
     member = next(

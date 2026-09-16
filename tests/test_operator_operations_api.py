@@ -270,21 +270,6 @@ def test_cross_tenant_and_insufficient_capability_fail_closed(lookup, _usage, ap
     )
 
 
-def test_minimal_signed_event_payload_excludes_member_and_bank_details():
-    event = operator_api.operational_event(
-        "payment.match.confirmed",
-        "12",
-        "community-a",
-        {
-            "status": "matched",
-            "participant_id": "p-1",
-            "iban": "CH00",
-            "message": "private",
-        },
-    )
-    assert event["payload"] == {"status": "matched"}
-
-
 def test_event_outbox_filters_subscribers_by_the_payload_domain():
     from store.operator_api import enqueue_event
 
@@ -301,3 +286,53 @@ def test_event_outbox_filters_subscribers_by_the_payload_domain():
     )
     assert "capabilities ? %s" in cursor.calls[1][0]
     assert cursor.calls[1][1][-2:] == ("payments.read", "payments.read")
+
+
+def test_subscription_capability_maps_each_event_domain():
+    from store.operator_api import _subscription_capability
+
+    assert _subscription_capability("invoice.case.updated") == "cases.read"
+    assert _subscription_capability("invoice.paid") == "billing.read"
+    assert _subscription_capability("payment.match.confirmed") == "payments.read"
+    assert _subscription_capability("metering.ingestion.completed") == "metering.read"
+
+
+@patch("operator_api.db.claim_operator_api_usage", return_value=True)
+@patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
+@patch("operator_api.db.claim_operator_ingestion_retry", return_value=None)
+def test_retry_of_a_foreign_or_ineligible_job_is_not_found(
+    _claim, _lookup, _usage, app
+):
+    response = _client(app).post(
+        "/api/operator/v1/communities/community-a/metering/jobs/99/retry",
+        headers=_headers("retry-foreign"),
+    )
+    assert response.status_code == 404
+    _claim.assert_called_once_with("community-a", 99, "retry-foreign")
+
+
+@patch("operator_api.db.claim_operator_api_usage", return_value=True)
+@patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
+@patch("operator_api.db.claim_operator_ingestion_retry", return_value={"pending": True})
+def test_retry_of_an_in_flight_job_conflicts(_claim, _lookup, _usage, app):
+    response = _client(app).post(
+        "/api/operator/v1/communities/community-a/metering/jobs/7/retry",
+        headers=_headers("retry-pending"),
+    )
+    assert response.status_code == 409
+
+
+@patch("operator_api.db.claim_operator_api_usage", return_value=True)
+@patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
+@patch("operator_api.db.list_operator_metering_jobs")
+def test_invalid_pagination_is_rejected_before_any_store_read(
+    rows, _lookup, _usage, app
+):
+    client = _client(app)
+    for query in ("limit=0", "limit=101", "cursor=-1"):
+        response = client.get(
+            f"/api/operator/v1/communities/community-a/metering/jobs?{query}",
+            headers=_headers(),
+        )
+        assert response.status_code == 400
+    rows.assert_not_called()

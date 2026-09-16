@@ -22,6 +22,8 @@ def _subscription_capability(event_type):
         return "metering.read"
     if event_type.startswith("invoice.case."):
         return "cases.read"
+    if event_type.startswith("invoice."):
+        return "billing.read"
     if event_type.startswith("payment."):
         return "payments.read"
     if event_type.startswith("formation."):
