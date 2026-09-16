@@ -59,18 +59,30 @@ def _default_fetch(directory: str) -> dict:
     return sdat_datahub.fetch_latest(config)
 
 
+_TENANT_PART = re.compile(r"[A-Za-z0-9._-]+")
+
+
+def validate_tenant_directory(territory: str, configured: str | None = None) -> None:
+    """Reject tenant delivery names that can escape the SDAT root.
+
+    Pure string validation so request values never reach a filesystem
+    operation; the caller resolves the accepted path from stored state.
+    """
+    value = configured if configured is not None else territory
+    if not value or os.path.isabs(value):
+        raise IngestionError("invalid_local_dir")
+    parts = Path(value).parts
+    if not parts or any(part in ("..", "") for part in parts):
+        raise IngestionError("invalid_local_dir")
+    if not all(_TENANT_PART.fullmatch(part) for part in parts):
+        raise IngestionError("invalid_local_dir")
+
+
 def resolve_tenant_directory(territory: str, configured: str | None = None) -> str:
     """Confine a tenant's delivery directory below the configured SDAT root."""
+    validate_tenant_directory(territory, configured)
     root = Path(os.getenv("SWISSELDEX_SDAT_DIR", DEFAULT_LOCAL_DIR)).resolve()
     relative = Path(configured or territory)
-    if (
-        relative.is_absolute()
-        or not relative.parts
-        or any(part in ("..", "") for part in relative.parts)
-    ):
-        raise IngestionError("invalid_local_dir")
-    if not all(re.fullmatch(r"[A-Za-z0-9._-]+", part) for part in relative.parts):
-        raise IngestionError("invalid_local_dir")
     candidate = (root / relative).resolve()
     if candidate == root:
         raise IngestionError("invalid_local_dir")

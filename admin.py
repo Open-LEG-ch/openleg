@@ -138,7 +138,9 @@ def admin_update_sdat_schedule(territory):
         return jsonify({"error": "invalid_retry"}), 400
     local_dir = data.get("local_dir")
     try:
-        sdat_ingestion.resolve_tenant_directory(territory, local_dir)
+        # Validate without touching the filesystem: the request values are
+        # stored first and resolved from the stored schedule at run time.
+        sdat_ingestion.validate_tenant_directory(territory, local_dir)
     except sdat_ingestion.IngestionError:
         return jsonify({"error": "invalid_local_dir"}), 400
     schedule = db.upsert_sdat_ingestion_schedule(
