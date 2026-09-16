@@ -14,7 +14,9 @@ Collections are available below
 - `GET /payments/matches`
 
 Collections accept `status`, `limit` (1–100), and an opaque `cursor`; responses
-contain `items` and `next_cursor`. Operational projections exclude source
+contain `items` and `next_cursor`. Replaying a mutation with the same
+`Idempotency-Key` and the same payload returns the stored result with
+`replayed: true`; reusing a key with a different payload is a `409` conflict. Operational projections exclude source
 evidence, invoice snapshots, participant identifiers, attachments, messages,
 and bank-account data.
 
@@ -48,11 +50,17 @@ validation, conflict, and rate errors use 401, 403, 404, 400/409, and 429.
 
 Lifecycle events use `operator-event/1`. Webhook requests include
 `OpenLEG-Delivery` and an `OpenLEG-Signature: sha256=…` HMAC over the exact body.
-Event payloads contain only lifecycle status, error code, or period bounds.
-Formation event types start with `formation.submission.`. Membership event types
-start with `membership.mutation.`. Event and aggregate identifiers remain stable
+Event payloads contain the minimum fields for the transition: lifecycle status,
+error code, period bounds, or the case/mutation identifier of the aggregate —
+never snapshot content, participant records, or bank data.
+Formation event types start with `formation.submission.`. Membership event
+types start with `membership.mutation.`. Metering event types start with
+`metering.`. Invoice lifecycle and case events start with `invoice.`. Payment
+events start with `payment.`. Event and aggregate identifiers remain stable
 for a replay of the same transition. Consumers must ignore unknown payload keys
 within version 1. Removing or changing a key requires a new schema version.
+Both the dashboard and this API drive the same store layer, so a lifecycle
+change from either surface emits the same signed event exactly once.
 
 Example membership request:
 

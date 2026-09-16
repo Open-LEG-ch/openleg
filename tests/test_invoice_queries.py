@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import uuid
 from datetime import datetime, timezone
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 import database
 import invoice_queries
 from store import invoice_query
+from store.operator_api import event_id_for
 
 
 def test_open_question_validation_is_bounded():
@@ -85,6 +87,49 @@ def test_operator_update_validates_transition_before_appending_message(monkeypat
 
     assert len(cursor.executed) == 1
     assert "FOR UPDATE" in cursor.executed[0][0]
+
+
+def test_status_transition_enqueues_the_signed_case_event(monkeypatch):
+    cursor = RecordingCursor(rows=[{"status": "open"}])
+    monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(cursor))
+
+    assert (
+        invoice_query.transition_invoice_query(7, "c1", "operator", "acknowledged")
+        is True
+    )
+
+    event_id = event_id_for("invoice.case.updated", "7")
+    assert event_id == str(
+        uuid.uuid5(uuid.NAMESPACE_URL, "openleg:invoice.case.updated:7")
+    )
+    event_query, event_params = next(
+        (q, p) for q, p in cursor.executed if "INSERT INTO operator_events" in q
+    )
+    assert "ON CONFLICT (event_id) DO NOTHING" in event_query
+    assert event_params[:4] == (event_id, "invoice.case.updated", "7", "c1")
+    assert event_params[4].adapted == {"status": "acknowledged"}
+    delivery_params = next(
+        p for q, p in cursor.executed if "INSERT INTO operator_webhook_deliveries" in q
+    )
+    assert delivery_params == (event_id, "c1", "cases.read", "cases.read")
+
+
+def test_operator_reply_with_status_change_enqueues_the_case_event(monkeypatch):
+    cursor = RecordingCursor(rows=[{"status": "open"}])
+    monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(cursor))
+
+    assert (
+        invoice_query.update_invoice_query(
+            7, "c1", "operator", message="Geprüft", target_status="acknowledged"
+        )
+        is True
+    )
+
+    event_params = next(
+        p for q, p in cursor.executed if "INSERT INTO operator_events" in q
+    )
+    assert event_params[1:4] == ("invoice.case.updated", "7", "c1")
+    assert event_params[4].adapted == {"status": "acknowledged"}
 
 
 class RecordingCursor:

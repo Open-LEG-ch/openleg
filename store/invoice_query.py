@@ -4,6 +4,7 @@
 from datetime import datetime
 
 import invoice_queries
+from store.operator_api import enqueue_event
 
 
 def _get_connection():
@@ -181,6 +182,13 @@ def transition_invoice_query(
             (target_status, query_id),
         )
         _event(cur, query_id, actor_id, row["status"], target_status)
+        enqueue_event(
+            cur,
+            "invoice.case.updated",
+            str(query_id),
+            community_id,
+            {"status": target_status},
+        )
         return True
 
 
@@ -251,4 +259,11 @@ def update_invoice_query(
                 (target_status, query_id),
             )
             _event(cur, query_id, actor_id, row["status"], target_status)
+            enqueue_event(
+                cur,
+                "invoice.case.updated",
+                str(query_id),
+                community_id,
+                {"status": target_status},
+            )
         return True

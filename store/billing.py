@@ -18,6 +18,7 @@ import billing_lifecycle
 import billing_policy
 import payment_reconciliation
 from store import invoice_query as invoice_query_store
+from store.operator_api import enqueue_event
 
 logger = logging.getLogger(__name__)
 
@@ -709,6 +710,16 @@ def _append_invoice_event(
             idempotency_key,
         ),
     )
+    if cur.rowcount > 0:
+        # One funnel for UI and API lifecycle writes: the signed operator
+        # event carries only the resulting state, never snapshot content.
+        enqueue_event(
+            cur,
+            f"invoice.{event_type}",
+            str(invoice_id),
+            community_id,
+            {"status": new_state},
+        )
 
 
 def _policy_dict(value):
