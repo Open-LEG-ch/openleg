@@ -171,9 +171,10 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label class="text-sm">Vorgangs-ID<input required name="mutation_id" class="mt-1 w-full rounded-lg border p-2" placeholder="z. B. mitglied-2026-001"></label>
         <label class="text-sm">Teilnehmer-ID<select required name="participant_id" class="mt-1 w-full rounded-lg border p-2">{% for member in community.members %}<option value="{{ member.building_id }}">{{ member.address or member.building_id }}</option>{% endfor %}</select></label>
-        <label class="text-sm">Vorgang<select name="mutation_type" class="mt-1 w-full rounded-lg border p-2"><option value="join">Beitritt</option><option value="exit">Austritt</option></select></label>
+        <label class="text-sm">Vorgang<select name="mutation_type" class="mt-1 w-full rounded-lg border p-2"><option value="join">Beitritt</option><option value="exit">Austritt</option><option value="change">Änderung</option></select></label>
         <label class="text-sm">Wirksamkeitsdatum<input required type="date" name="effective_date" class="mt-1 w-full rounded-lg border p-2"></label>
         <label class="text-sm">Quellvertrag<input required name="source_agreement_id" class="mt-1 w-full rounded-lg border p-2"></label>
+        <label class="text-sm md:col-span-2">Änderungsdaten (nur bei Änderung; JSON mit status, role oder access_roles)<textarea name="after_facts" rows="2" class="mt-1 w-full rounded-lg border p-2 font-mono text-xs" placeholder='{"status": "confirmed", "access_roles": ["documents"]}'></textarea></label>
         <div class="md:col-span-2"><button class="bg-brand text-white px-5 py-2 rounded-lg font-semibold" type="submit">Beim VNB einreichen</button></div>
       </form>
       {% endif %}
