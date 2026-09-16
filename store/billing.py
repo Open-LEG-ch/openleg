@@ -53,12 +53,13 @@ def _json_default(value):
 
 
 def save_billing_period(
-    community_id: str, period_start, period_end, summary: dict, prepared_by="system"
+    community_id: str, period_start, period_end, summary: dict, prepared_by=None
 ) -> int:
     """Save billing period and line items from billing engine output.
 
-    The preparer is recorded so a community can require a different
-    person to approve under dual control.
+    The preparer stays unset for automated runs: a community that requires
+    dual control needs a confirmed human to submit the draft through
+    ``record_billing_period_preparer`` before approval.
     """
     try:
         with _get_connection() as conn:
@@ -70,9 +71,10 @@ def save_billing_period(
                      total_surplus_kwh, total_network_discount_chf, distribution_model,
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
                      timezone, input_fingerprint, source_document_ids,
-                     reconciliation, billing_policy_snapshot, prepared_by, status)
+                     reconciliation, billing_policy_snapshot, prepared_by,
+                     calculated_values_fingerprint, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, 'draft')
+                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s, 'draft')
                     RETURNING id
                 """,
                     (
@@ -100,6 +102,7 @@ def save_billing_period(
                             else None
                         ),
                         prepared_by,
+                        summary.get("calculated_values_fingerprint"),
                     ),
                 )
                 period_id = cur.fetchone()["id"]
@@ -373,14 +376,6 @@ def approve_billing_period(
             if not row:
                 raise billing_approval.BillingApprovalError("Billing period not found")
             period = dict(row)
-            if community_row.get("require_dual_control") and (
-                not period.get("prepared_by")
-                or period.get("prepared_by") == approver_id
-                or not approver_id
-            ):
-                raise billing_approval.BillingApprovalError(
-                    "Dual-control approval requires a different recorded preparer"
-                )
             status = period.get("status")
             if status == "issued":
                 invoices = _period_invoices(cur, period_id)
@@ -392,6 +387,14 @@ def approve_billing_period(
             if status != "draft":
                 raise billing_approval.BillingApprovalError(
                     "Only a draft billing period can be approved"
+                )
+            if community_row.get("require_dual_control") and (
+                not period.get("prepared_by")
+                or period.get("prepared_by") == approver_id
+                or not approver_id
+            ):
+                raise billing_approval.BillingApprovalError(
+                    "Dual-control approval requires a different recorded preparer"
                 )
             cur.execute(
                 """

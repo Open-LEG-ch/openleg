@@ -104,7 +104,13 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
     version = manifest.get("schema_version")
     if version != SCHEMA_VERSION:
         errors.append("Unsupported schema version")
-    hashes = manifest.get("hashes", {})
+    hashes = manifest.get("hashes")
+    if not isinstance(hashes, dict):
+        return {
+            "valid": False,
+            "errors": ["Archive hashes manifest is not a mapping"],
+            "conflicts": [],
+        }
     expected_datasets = {table for table, _, _ in _DATASETS}
     if set(datasets) != expected_datasets:
         errors.append("Archive dataset list does not match schema")

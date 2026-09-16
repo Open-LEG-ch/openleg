@@ -725,6 +725,6 @@ def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch
 
     assert "Nächster Schritt: Ablehnung prüfen" in html
     assert "Nächster Schritt: Einleitung erneut möglich" in html
-    assert "Nächster Schritt: escalate" in html
+    assert "Nächster Schritt: An VNB eskalieren" in html
     assert "Nächster Schritt: download_package" not in html
     assert "Paket bereit" in html

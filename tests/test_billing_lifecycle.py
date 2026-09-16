@@ -1361,7 +1361,7 @@ def test_saved_periods_carry_a_default_system_preparer(monkeypatch):
     insert_query, insert_params = cursor.executed[insert_index]
 
     assert "prepared_by" in insert_query
-    assert insert_params[-1] == "system"
+    assert insert_params[-1] is None
 
 
 def test_store_correction_links_open_invoice_queries_to_the_correction(monkeypatch):

@@ -69,7 +69,7 @@ def validate_tenant_directory(territory: str, configured: str | None = None) -> 
     operation; the caller resolves the accepted path from stored state.
     """
     value = configured if configured is not None else territory
-    if not value or os.path.isabs(value):
+    if not isinstance(value, str) or not value or os.path.isabs(value):
         raise IngestionError("invalid_local_dir")
     parts = Path(value).parts
     if not parts or any(part in ("..", "") for part in parts):

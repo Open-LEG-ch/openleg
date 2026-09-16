@@ -805,6 +805,7 @@ def create_tables():
                     reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     billing_policy_snapshot JSONB,
                     prepared_by VARCHAR(64),
+                    calculated_values_fingerprint VARCHAR(64),
                     status VARCHAR(32) DEFAULT 'draft',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(community_id, period_start, period_end)
@@ -838,7 +839,8 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
                     ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB,
-                    ADD COLUMN IF NOT EXISTS prepared_by VARCHAR(64)
+                    ADD COLUMN IF NOT EXISTS prepared_by VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS calculated_values_fingerprint VARCHAR(64)
             """)
 
             cur.execute("""

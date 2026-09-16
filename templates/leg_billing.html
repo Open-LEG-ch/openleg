@@ -21,6 +21,7 @@
   {% if statement_status == 'imported' %}<p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">Der Kontoauszug wurde importiert und abgeglichen.</p>{% endif %}
   {% if statement_status == 'duplicate' %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht.</p>{% endif %}
 
+  {% if can_prepare_billing %}
   <section class="bg-white rounded-xl border p-6 mb-6">
     <h2 class="font-bold mb-2">Bankzahlungen abgleichen</h2>
     <p class="text-sm text-ink-muted mb-4">Laden Sie einen ISO-20022-Kontoauszug im Format camt.053 oder camt.054 hoch. Nur eine eindeutige Zahlung mit passender Referenz, CHF-Betrag und LEG wird automatisch verbucht.</p>
@@ -30,6 +31,7 @@
       <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">Kontoauszug importieren</button>
     </form>
   </section>
+  {% endif %}
 
   {% if statement_entries %}
   <section class="bg-white rounded-xl border p-6 mb-6">

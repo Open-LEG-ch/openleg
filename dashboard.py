@@ -362,9 +362,9 @@ def leg_billing_workspace_view(
     for event in community_events:
         events_by_invoice.setdefault(event["invoice_id"], []).append(event)
     queries_by_invoice = {}
-    try:
+    if db.is_db_available():
         invoice_queries = db.list_invoice_queries(None, community_id=community_id)
-    except AttributeError:
+    else:
         # Unit and demo configurations can intentionally run without a DB pool.
         invoice_queries = []
     for query in invoice_queries:

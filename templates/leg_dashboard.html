@@ -188,7 +188,7 @@
         <div class="rounded-lg border border-line p-4 text-sm">
           <p><strong>Status:</strong> {{ {"prepared": "Paket bereit", "delivered": "Zugestellt", "acknowledged": "Bestätigt", "rejected": "Abgelehnt", "failed": "Fehlgeschlagen", "claimed": "Wird vorbereitet"}.get(submission.state, submission.state) }}</p>
           {% if submission.response_status %}<p class="mt-1 text-ink-muted">Antwort: {{ submission.response_status }}</p>{% endif %}
-          {% if submission.state in ["failed", "rejected"] and submission.next_action %}<p class="mt-1 text-ink-muted">Nächster Schritt: {{ {"retry": "Einleitung erneut möglich", "review_rejection": "Ablehnung prüfen", "contact_vnb": "VNB kontaktieren"}.get(submission.next_action, submission.next_action) }}</p>{% endif %}
+          {% if submission.state in ["failed", "rejected"] and submission.next_action %}<p class="mt-1 text-ink-muted">Nächster Schritt: {{ {"retry": "Einleitung erneut möglich", "review_rejection": "Ablehnung prüfen", "contact_vnb": "VNB kontaktieren", "escalate": "An VNB eskalieren"}.get(submission.next_action, submission.next_action) }}</p>{% endif %}
           {% if submission.state == "prepared" and is_admin and viewer_has_session %}
           <div class="mt-3 flex flex-wrap gap-3">
             <a class="font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/vnb-submissions/{{ submission.case_id }}/handover">Anmeldepaket herunterladen</a>
@@ -302,7 +302,7 @@
       <h2 class="font-bold mb-2">Abrechnungs-Richtlinie</h2>
       <p class="text-sm text-ink-muted mb-4">Legen Sie Preise, Netzentgelt, Mehrwertsteuer und Zustellung versioniert fest. Die Richtlinie steuert künftige Abrechnungsentwürfe.</p>
       {% if can_prepare_billing %}<a href="/leg/community/{{ community.community_id }}/billing-policy" class="inline-flex items-center rounded-lg bg-brand text-white px-6 py-3 font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Richtlinie verwalten</a>{% endif %}
-      <a href="/leg/community/{{ community.community_id }}/billing" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Abrechnungen freigeben</a>
+      <a href="/leg/community/{{ community.community_id }}/billing" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Abrechnungen öffnen</a>
     </section>
     {% endif %}
 

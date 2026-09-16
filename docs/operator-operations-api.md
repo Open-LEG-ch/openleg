@@ -57,6 +57,7 @@ Example membership request:
 ```http
 POST /api/operator/v1/communities/leg-1/membership-mutations
 Authorization: Bearer olk_…
+Idempotency-Key: mutation-2026-10-01-building-7
 Content-Type: application/json
 
 {"mutation_id":"member-2026-1","participant_id":"building-7","mutation_type":"join","effective_date":"2026-10-01","source_agreement_id":"agreement-v3","after":{"metering_point_id":"CH123"}}

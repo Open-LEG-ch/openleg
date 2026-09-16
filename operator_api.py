@@ -414,10 +414,15 @@ def confirm_payment_match(community_id, entry_id):
     if not key:
         return _error("Valid Idempotency-Key required", 400)
     payload = request.get_json(silent=True) or {}
+    if not isinstance(payload.get("invoice_id"), int):
+        return _error("Invalid payment confirmation", 409)
     try:
-        invoice_id = int(payload.get("invoice_id"))
         result = db.confirm_operator_payment_match(
-            entry_id, invoice_id, community_id, g.operator_client["created_by"], key
+            entry_id,
+            payload["invoice_id"],
+            community_id,
+            g.operator_client["created_by"],
+            key,
         )
     except (TypeError, ValueError) as error:
         return _error(str(error) or "Invalid payment confirmation", 409)

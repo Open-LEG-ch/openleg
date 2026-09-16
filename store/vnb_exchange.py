@@ -240,12 +240,24 @@ def record_mutation_response(
                                          WHEN %s = 'failed' THEN 'retry' ELSE 'none' END,
                       external_request_id = %s, response_status = %s,
                       updated_at = CURRENT_TIMESTAMP
-               WHERE community_id = %s AND case_id = %s RETURNING *""",
+               WHERE community_id = %s AND case_id = %s
+                 AND state NOT IN ('acknowledged', 'rejected', 'superseded')
+               RETURNING *""",
             (state, state, state, request_id, response_status, community_id, case_id),
         )
         row = cur.fetchone()
         if not row:
-            raise VnbExchangeStoreError("VNB mutation case was not found")
+            # A late or repeated response for a case already in a final
+            # state keeps the acknowledged projection and writes nothing.
+            cur.execute(
+                """SELECT * FROM vnb_mutation_cases
+                   WHERE community_id = %s AND case_id = %s""",
+                (community_id, case_id),
+            )
+            row = cur.fetchone()
+            if row is None:
+                raise VnbExchangeStoreError("VNB mutation case was not found")
+            return dict(row)
         # Duplicate acknowledgements return the same projection and no new event.
         row = dict(row)
         if inserted:

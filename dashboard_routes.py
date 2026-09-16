@@ -20,6 +20,7 @@ from flask import (
     request,
     send_file,
     session,
+    url_for,
 )
 
 import access_token
@@ -286,7 +287,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if result["error"]:
             abort(400)
-        return redirect(f"/dashboard/invoices/{invoice_id}#questions")
+        return redirect(
+            url_for(".dashboard_invoice_detail", invoice_id=invoice_id) + "#questions"
+        )
 
     @bp.route(
         "/dashboard/invoices/<int:invoice_id>/queries/<int:query_id>/reply",
@@ -300,7 +303,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if result["error"]:
             abort(400)
-        return redirect(f"/dashboard/invoices/{invoice_id}#questions")
+        return redirect(
+            url_for(".dashboard_invoice_detail", invoice_id=invoice_id) + "#questions"
+        )
 
     @bp.route("/dashboard/invoices/<int:invoice_id>/pdf")
     def dashboard_invoice_pdf(invoice_id):

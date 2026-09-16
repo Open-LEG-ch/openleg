@@ -148,8 +148,8 @@ def save_calculated_values_delivery(delivery):
                 delivery["community_id"],
                 {
                     "status": projected.get("status"),
-                    "period_start": projected.get("period_start"),
-                    "period_end": projected.get("period_end"),
+                    "period_start": _iso_moment(projected.get("period_start")),
+                    "period_end": _iso_moment(projected.get("period_end")),
                 },
             )
         return projected
@@ -195,3 +195,10 @@ def _delivery_row(row):
             result[field] = json.loads(result[field])
     result.pop("evidence_bytes", None)
     return result
+
+
+def _iso_moment(value):
+    """Serialize timestamps so event payloads stay JSON-serializable."""
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value

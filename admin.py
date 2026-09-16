@@ -120,7 +120,9 @@ def admin_update_sdat_schedule(territory):
     require_admin()
     if not _TERRITORY_RE.fullmatch(territory):
         return jsonify({"error": "invalid_territory"}), 400
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "invalid_payload"}), 400
     timezone_name = data.get("timezone", "Europe/Zurich")
     try:
         ZoneInfo(timezone_name)

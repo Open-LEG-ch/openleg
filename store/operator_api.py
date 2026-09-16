@@ -40,7 +40,7 @@ def enqueue_event(
         """INSERT INTO operator_events
                   (event_id,event_type,schema_version,aggregate_id,community_id,payload)
            VALUES (%s,%s,'operator-event/1',%s,%s,%s)
-           ON CONFLICT (event_type,aggregate_id) DO NOTHING""",
+           ON CONFLICT (event_id) DO NOTHING""",
         (event_id, event_type, aggregate_id, community_id, Json(payload)),
     )
     capability = _subscription_capability(event_type)
