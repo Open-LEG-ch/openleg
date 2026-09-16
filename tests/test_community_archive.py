@@ -3,6 +3,8 @@
 
 import io
 import json
+from datetime import datetime, timezone
+from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
@@ -26,6 +28,33 @@ class MemoryArchiveStore:
     def restore_community(self, datasets):
         self.restore_calls += 1
         self.restored = datasets
+
+
+def _row_key(row):
+    for column in ("id", "metering_point_id", "community_id"):
+        if column in row:
+            return column, row[column]
+    return None
+
+
+class KeyedArchiveStore:
+    def __init__(self, datasets=None):
+        self.datasets = {name: list(rows) for name, rows in (datasets or {}).items()}
+
+    def restore_community(self, datasets):
+        for name, rows in datasets.items():
+            held = self.datasets.setdefault(name, [])
+            for row in rows:
+                key = _row_key(row)
+                for existing in held:
+                    if key is not None and _row_key(existing) == key:
+                        if existing != row:
+                            raise community_archive.ArchiveError(
+                                f"Conflicting record: {name}"
+                            )
+                        break
+                else:
+                    held.append(row)
 
 
 def representative_data():
@@ -74,6 +103,20 @@ def representative_data():
             }
         ],
     }
+
+
+def tagged_data():
+    data = representative_data()
+    data["billing_tariffs"] = [
+        {
+            "id": 2,
+            "community_id": "leg-1",
+            "timezone": "Europe/Zurich",
+            "grid_fee_rp_kwh": Decimal("123.45"),
+            "valid_from": datetime(2026, 3, 15, 12, 0, 0, tzinfo=timezone.utc),
+        }
+    ]
+    return data
 
 
 def test_representative_archive_round_trip_preserves_records_and_identifiers():
@@ -189,3 +232,55 @@ def test_restore_dry_run_and_restore_use_uploaded_archive(
     assert restore.call_args_list[0].args == ("leg-1", "admin", b"{}")
     assert restore.call_args_list[0].kwargs == {"dry_run": True}
     assert restore.call_args_list[1].kwargs == {"dry_run": False}
+
+
+def test_repeat_restore_of_same_archive_is_idempotent():
+    archive = community_archive.export_community_archive(
+        "leg-1", store=MemoryArchiveStore({"leg-1": representative_data()})
+    )
+    held = KeyedArchiveStore()
+
+    first = community_archive.restore_community_archive(archive, store=held)
+    counts = {name: len(rows) for name, rows in held.datasets.items()}
+    rows_before = {
+        name: [dict(row) for row in rows] for name, rows in held.datasets.items()
+    }
+
+    second = community_archive.restore_community_archive(archive, store=held)
+
+    assert first == {
+        "valid": True,
+        "errors": [],
+        "conflicts": [],
+        "restored": True,
+    }
+    assert second == first
+    assert {name: len(rows) for name, rows in held.datasets.items()} == counts
+    assert held.datasets == rows_before
+    for name, rows in representative_data().items():
+        assert held.datasets[name] == rows
+
+
+def test_tagged_decimal_and_datetime_values_survive_round_trip():
+    archive = community_archive.export_community_archive(
+        "leg-1", store=MemoryArchiveStore({"leg-1": tagged_data()})
+    )
+    tariff = json.loads(archive)["datasets"]["billing_tariffs"][0]
+
+    dry_run = community_archive.restore_community_archive(
+        archive, dry_run=True, store=MemoryArchiveStore()
+    )
+    target = MemoryArchiveStore()
+    restored = community_archive.restore_community_archive(archive, store=target)
+    reexported = community_archive.export_community_archive(
+        "leg-1", store=MemoryArchiveStore({"leg-1": target.restored})
+    )
+
+    assert tariff["grid_fee_rp_kwh"] == {"$decimal": "123.45"}
+    assert tariff["valid_from"] == {"$datetime": "2026-03-15T12:00:00+00:00"}
+    assert dry_run == {"valid": True, "errors": [], "conflicts": []}
+    assert restored == {"valid": True, "errors": [], "conflicts": [], "restored": True}
+    stored = target.restored["billing_tariffs"][0]
+    assert stored["grid_fee_rp_kwh"] == Decimal("123.45")
+    assert stored["valid_from"] == datetime(2026, 3, 15, 12, 0, 0, tzinfo=timezone.utc)
+    assert reexported == archive
