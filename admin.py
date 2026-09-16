@@ -110,7 +110,9 @@ def admin_run_sdat_schedule(territory):
     )
     if schedule is None:
         abort(404)
-    return jsonify(sdat_ingestion.run(territory, schedule))
+    # Use the stored territory for any filesystem work: the request value
+    # only selects the row, the row is the trusted source of the path.
+    return jsonify(sdat_ingestion.run(schedule["territory"], schedule))
 
 
 @admin_bp.route("/admin/sdat-schedules/<territory>", methods=["PUT"])
