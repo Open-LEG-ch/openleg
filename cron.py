@@ -10,6 +10,7 @@ way in #271.
 """
 
 import logging
+from datetime import datetime, timezone
 
 from flask import Blueprint, abort, current_app, jsonify, request
 
@@ -20,6 +21,7 @@ import leg_registry
 import operator_api
 import sdat_ingestion
 from security_utils import log_security_event
+from store import invoice_query
 
 logger = logging.getLogger(__name__)
 
@@ -154,3 +156,14 @@ def api_cron_verify_registry_entries():
         base_url=current_app.config["SITE_URL"]
     )
     return jsonify(result)
+
+
+@cron_bp.route("/api/cron/invoice-query-reminders", methods=["POST"])
+def api_cron_invoice_query_reminders():
+    _require_cron_secret()
+    due = invoice_query.due_invoice_query_reminders(datetime.now(timezone.utc))
+    reminded = 0
+    for case in due:
+        if invoice_query.mark_invoice_query_reminded(case["id"], "system"):
+            reminded += 1
+    return jsonify({"reminded": reminded})
