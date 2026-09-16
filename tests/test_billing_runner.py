@@ -39,6 +39,9 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
     window_calls = []
     saved = []
     existing = []
+    # The persisted-run contract runs without a database: the
+    # calculated-values gate has its own dedicated test below.
+    monkeypatch.setattr(database, "is_db_available", lambda: False)
     index = pd.date_range(START, periods=3, freq="15min")
     frames = SimpleNamespace(
         production=pd.DataFrame({"CH002": [0.5, 0.5, 0.5]}, index=index),
@@ -417,6 +420,9 @@ def _fingerprint_through_runner(monkeypatch, case):
     import billing_runner
 
     saved = []
+    # Fingerprinting runs without a database; the calculated-values gate
+    # has its own dedicated test below.
+    monkeypatch.setattr(database, "is_db_available", lambda: False)
     monkeypatch.setattr(
         database,
         "get_billing_policy",
@@ -591,8 +597,10 @@ def _install_billing_fixture(
 
     ``consumption_community_kwh`` is the VNB's own claim about how much of the
     consumption came from the community. Lower it and the VNB disagrees with
-    what allocate_energy derives from the same totals.
+    what allocate_energy derives from the same totals. Runs without a
+    database; the calculated-values gate has its own dedicated test.
     """
+    monkeypatch.setattr(database, "is_db_available", lambda: False)
     points = [
         {
             "metering_point_id": "CH001",
