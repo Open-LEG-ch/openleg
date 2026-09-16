@@ -685,9 +685,33 @@ def test_public_dashboard_response_stays_public_with_blank_session(app_module):
     assert response.headers.get("Referrer-Policy") != "no-referrer"
 
 
-def test_leg_forms_use_csrf_and_never_submit_building_id():
+def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch):
     source = Path("templates/leg_dashboard.html").read_text(encoding="utf-8")
 
     assert 'name="bid"' not in source
     assert source.count('name="csrf_token"') >= 5
     assert "?bid=" not in source
+
+    overview = _correspondence_overview()
+    overview["vnb_submissions"] = [
+        {"state": "failed", "next_action": "review_rejection"},
+        {"state": "rejected", "next_action": "retry"},
+        {"state": "failed", "next_action": "escalate"},
+        {"state": "prepared", "next_action": "download_package", "case_id": "case-1"},
+    ]
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_overview",
+        MagicMock(side_effect=lambda community_id, building_id: overview),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.get("/leg/dashboard?cid=community-1")
+    html = response.get_data(as_text=True)
+
+    assert "Nächster Schritt: Ablehnung prüfen" in html
+    assert "Nächster Schritt: Einleitung erneut möglich" in html
+    assert "Nächster Schritt: escalate" in html
+    assert "Nächster Schritt: download_package" not in html
+    assert "Paket bereit" in html
