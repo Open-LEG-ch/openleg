@@ -376,6 +376,39 @@ def test_set_member_access_roles_protects_the_last_admin(monkeypatch):
     assert len(cur.executed) == 1
 
 
+def test_set_member_access_roles_promotes_a_second_administrator(monkeypatch):
+    cur = _FakeCursor(
+        rows=[
+            {
+                "building_id": "b-admin",
+                "role": "admin",
+                "access_roles": ["admin"],
+                "status": "confirmed",
+            },
+            {
+                "building_id": "b-member",
+                "role": "member",
+                "access_roles": [],
+                "status": "confirmed",
+            },
+        ]
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert formation.set_member_access_roles("c1", "b-member", ["admin"], "b-admin")
+
+    update_sql, update_params = cur.executed[1]
+    assert "UPDATE community_members" in update_sql
+    assert update_params[0] == "admin"
+    assert update_params[1].adapted == ["admin"]
+    assert update_params[2:] == ("c1", "b-member")
+    event_sql, event_params = cur.executed[2]
+    assert "INSERT INTO community_role_events" in event_sql
+    assert event_params[:3] == ("c1", "b-member", "b-admin")
+    assert event_params[3].adapted == []
+    assert event_params[4].adapted == ["admin"]
+
+
 def test_membership_manager_cannot_promote_an_administrator(monkeypatch):
     cur = _FakeCursor(
         rows=[
