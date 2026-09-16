@@ -163,8 +163,9 @@ def submit_formation(community_id):
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return _error("Formation submission denied", 403)
-    except (vnb_exchange.FormationSubmissionInvalid, db.VnbSubmissionConflict) as error:
-        return _error(str(error), 409)
+    except (vnb_exchange.FormationSubmissionInvalid, db.VnbSubmissionConflict):
+        # Domain messages stay internal; the public error vocabulary is fixed.
+        return _error("Formation submission invalid or conflicting", 409)
     except db.VnbExchangeStoreError:
         return _error("Formation submission unavailable", 503)
     return jsonify(
@@ -211,8 +212,9 @@ def submit_membership_mutation(community_id):
         vnb_exchange.ParticipantMutationInvalid,
         ValueError,
         db.VnbSubmissionConflict,
-    ) as error:
-        return _error(str(error), 409)
+    ):
+        # Domain messages stay internal; the public error vocabulary is fixed.
+        return _error("Membership mutation invalid or conflicting", 409)
     except db.VnbExchangeStoreError:
         return _error("Membership mutation unavailable", 503)
     return jsonify(
@@ -396,8 +398,9 @@ def respond_invoice_case(community_id, case_id):
             payload.get("status", ""),
             key,
         )
-    except ValueError as error:
-        return _error(str(error), 409)
+    except ValueError:
+        # Store validation messages stay internal; the API answer is fixed.
+        return _error("Invoice case update invalid", 409)
     return (
         jsonify(schema_version=API_SCHEMA_VERSION, **result)
         if result
@@ -415,7 +418,7 @@ def confirm_payment_match(community_id, entry_id):
         return _error("Valid Idempotency-Key required", 400)
     payload = request.get_json(silent=True) or {}
     if not isinstance(payload.get("invoice_id"), int):
-        return _error("Invalid payment confirmation", 409)
+        return _error("Invalid payment confirmation", 400)
     try:
         result = db.confirm_operator_payment_match(
             entry_id,
