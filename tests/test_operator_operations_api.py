@@ -67,6 +67,73 @@ def test_metering_reads_are_scoped_filtered_paginated_and_redacted(
 
 @patch("operator_api.db.claim_operator_api_usage", return_value=True)
 @patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
+@patch("operator_api.db.list_operator_calculated_deliveries")
+def test_calculated_deliveries_are_scoped_filtered_paginated_and_redacted(
+    rows, _lookup, _usage, app
+):
+    rows.return_value = (
+        [
+            {
+                "id": 7,
+                "community_id": "community-a",
+                "contract_version": "vnb-calculated-values/1",
+                "format_version": "json/1",
+                "transport": "api",
+                "period_start": "2026-10-25T00:00:00+02:00",
+                "period_end": "2026-10-25T04:00:00+01:00",
+                "status": "accepted",
+                "diagnostics": [],
+                "record_count": 20,
+                "received_at": "2026-10-25T05:00:00+00:00",
+                "evidence_bytes": b"private raw export",
+                "normalized_records": [{"participant_id": "building-a"}],
+                "fingerprint": "a" * 64,
+                "evidence_sha256": "b" * 64,
+            }
+        ],
+        8,
+    )
+    client = _client(app)
+    response = client.get(
+        "/api/operator/v1/communities/community-a/metering/calculated-deliveries?status=accepted&limit=1",
+        headers=_headers(),
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body == {
+        "schema_version": "operator-api/1",
+        "items": [
+            {
+                "id": 7,
+                "community_id": "community-a",
+                "contract_version": "vnb-calculated-values/1",
+                "format_version": "json/1",
+                "transport": "api",
+                "period_start": "2026-10-25T00:00:00+02:00",
+                "period_end": "2026-10-25T04:00:00+01:00",
+                "status": "accepted",
+                "diagnostics": [],
+                "record_count": 20,
+                "received_at": "2026-10-25T05:00:00+00:00",
+            }
+        ],
+        "next_cursor": "8",
+    }
+    rows.assert_called_once_with("community-a", status="accepted", limit=1, cursor=None)
+    # The client is bound to community-a, so community-b is unreachable and its
+    # rows can never surface through this route.
+    assert (
+        client.get(
+            "/api/operator/v1/communities/community-b/metering/calculated-deliveries",
+            headers=_headers(),
+        ).status_code
+        == 404
+    )
+    assert rows.call_count == 1
+
+
+@patch("operator_api.db.claim_operator_api_usage", return_value=True)
+@patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
 @patch("operator_api.db.list_operator_invoices")
 def test_invoice_projection_never_discloses_or_accepts_snapshot_fields(
     rows, _lookup, _usage, app

@@ -2,6 +2,8 @@
 """Persistence contract for calculated VNB evidence."""
 
 from contextlib import contextmanager
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from store import calculated_values
 
@@ -111,3 +113,45 @@ def test_operator_projection_scopes_by_tenant_and_omits_raw_fields(monkeypatch):
     assert params == ("dietikon", 5)
     assert "evidence_bytes" not in query
     assert "normalized_records" not in query
+
+
+def test_save_billing_period_persists_the_calculated_values_fingerprint(monkeypatch):
+    from store import billing
+
+    cursor = Cursor([{"id": 42}])
+
+    @contextmanager
+    def connection():
+        yield Connection(cursor)
+
+    monkeypatch.setattr(billing, "_get_connection", connection)
+    period_id = billing.save_billing_period(
+        "leg-1",
+        datetime(2026, 10, 25, 0, 0, tzinfo=ZoneInfo("Europe/Zurich")),
+        datetime(2026, 10, 26, 0, 0, tzinfo=ZoneInfo("Europe/Zurich")),
+        {
+            "total_production_kwh": 1.5,
+            "total_allocated_kwh": 1.5,
+            "total_network_discount_chf": 0.05,
+            "input_fingerprint": "c" * 64,
+            "calculated_values_fingerprint": "a" * 64,
+            "line_items": [
+                {
+                    "participant_id": "building-a",
+                    "item_type": "consumer_charge",
+                    "quantity_kwh": 1.5,
+                    "unit_price_chf_per_kwh": 0.12,
+                    "amount_chf": 0.18,
+                }
+            ],
+        },
+    )
+
+    assert period_id == 42
+    query, params = cursor.executed[0]
+    assert "INSERT INTO billing_periods" in query
+    assert "calculated_values_fingerprint" in query
+    assert params[0] == "leg-1"
+    assert params[12] == "c" * 64
+    # The fingerprint is the last bound column before the literal 'draft'.
+    assert params[-1] == "a" * 64

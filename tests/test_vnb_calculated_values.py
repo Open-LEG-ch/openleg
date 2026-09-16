@@ -136,6 +136,25 @@ def test_wh_is_converted_and_replay_is_idempotent():
     assert len(repo.saved) == 1
 
 
+def test_a_wh_delivery_replays_onto_the_equivalent_kwh_delivery():
+    repo = Repository()
+    kwh_payload = delivery()
+    wh_payload = delivery("Wh")
+    for row in wh_payload["records"]:
+        row["value"] = 250
+    first = exchange.accept_delivery(
+        kwh_payload, transport="api", evidence=b"first", repository=repo
+    )
+    second = exchange.accept_delivery(
+        wh_payload, transport="file", evidence=b"second", repository=repo
+    )
+    assert first["status"] == "accepted"
+    assert second["normalized_records"] == first["normalized_records"]
+    assert second["fingerprint"] == first["fingerprint"]
+    assert second["replayed"] is True
+    assert len(repo.saved) == 1
+
+
 def test_record_order_does_not_change_replay_identity():
     repo = Repository()
     payload = delivery()

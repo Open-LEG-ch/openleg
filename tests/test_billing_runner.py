@@ -590,6 +590,22 @@ def test_public_billing_fingerprint_matches_the_contract_vector(monkeypatch):
     )
 
 
+def test_calculated_values_evidence_changes_the_public_run_fingerprint(monkeypatch):
+    """Runs backed by different VNB evidence sets must never share a fingerprint."""
+
+    def case_with_evidence(fingerprint):
+        case = _fingerprint_case()
+        case["frames"].provenance["calculated_values_fingerprint"] = fingerprint
+        case["frames"].provenance["vnb_case_id"] = "case-4711"
+        case["frames"].provenance["vnb_source"] = "VNB portal export"
+        return case
+
+    baseline = _fingerprint_through_runner(monkeypatch, case_with_evidence("a" * 64))
+    changed = _fingerprint_through_runner(monkeypatch, case_with_evidence("b" * 64))
+
+    assert changed != baseline
+
+
 def _install_billing_fixture(
     monkeypatch, *, policy=DEFAULT_POLICY, consumption_community_kwh=0.5
 ):
