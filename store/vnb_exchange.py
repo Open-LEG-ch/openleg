@@ -225,9 +225,21 @@ def record_mutation_response(
         raise VnbExchangeStoreError("Ungültiger VNB-Mutationsstatus.")
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
+            """SELECT * FROM vnb_mutation_cases
+               WHERE community_id = %s AND case_id = %s FOR UPDATE""",
+            (community_id, case_id),
+        )
+        existing = cur.fetchone()
+        if existing is None:
+            raise VnbExchangeStoreError("VNB mutation case was not found")
+        if existing["state"] in {"acknowledged", "rejected", "superseded"}:
+            # A late or repeated response for a case already in a final
+            # state keeps the stored projection and writes nothing.
+            return dict(existing)
+        cur.execute(
             """INSERT INTO vnb_mutation_events
                    (case_id, state, external_request_id, response_status, evidence)
-               SELECT case_id, %s, %s, %s, %s FROM vnb_mutation_cases
+               SELECT id, %s, %s, %s, %s FROM vnb_mutation_cases
                WHERE community_id = %s AND case_id = %s
                ON CONFLICT (case_id, state, external_request_id, response_status)
                DO NOTHING RETURNING id""",
@@ -241,23 +253,12 @@ def record_mutation_response(
                       external_request_id = %s, response_status = %s,
                       updated_at = CURRENT_TIMESTAMP
                WHERE community_id = %s AND case_id = %s
-                 AND state NOT IN ('acknowledged', 'rejected', 'superseded')
                RETURNING *""",
             (state, state, state, request_id, response_status, community_id, case_id),
         )
         row = cur.fetchone()
         if not row:
-            # A late or repeated response for a case already in a final
-            # state keeps the acknowledged projection and writes nothing.
-            cur.execute(
-                """SELECT * FROM vnb_mutation_cases
-                   WHERE community_id = %s AND case_id = %s""",
-                (community_id, case_id),
-            )
-            row = cur.fetchone()
-            if row is None:
-                raise VnbExchangeStoreError("VNB mutation case was not found")
-            return dict(row)
+            raise VnbExchangeStoreError("VNB mutation case was not found")
         # Duplicate acknowledgements return the same projection and no new event.
         row = dict(row)
         if inserted:
