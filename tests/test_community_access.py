@@ -52,6 +52,51 @@ def test_legacy_admin_retains_all_capabilities():
             community_access.APPROVE_BILLING,
             community_access.PREPARE_BILLING,
         ),
+        (
+            community_access.METERING,
+            community_access.VIEW_COMMUNITY,
+            community_access.MANAGE_MEMBERS,
+        ),
+        (
+            community_access.METERING,
+            community_access.MANAGE_METERING,
+            community_access.PREPARE_BILLING,
+        ),
+        (
+            community_access.METERING,
+            community_access.VIEW_COMMUNITY,
+            community_access.APPROVE_BILLING,
+        ),
+        (
+            community_access.METERING,
+            community_access.MANAGE_METERING,
+            community_access.AUDIT_BILLING,
+        ),
+        (
+            community_access.AUDITOR,
+            community_access.VIEW_COMMUNITY,
+            community_access.MANAGE_MEMBERS,
+        ),
+        (
+            community_access.AUDITOR,
+            community_access.VIEW_COMMUNITY,
+            community_access.MANAGE_DOCUMENTS,
+        ),
+        (
+            community_access.AUDITOR,
+            community_access.AUDIT_BILLING,
+            community_access.MANAGE_METERING,
+        ),
+        (
+            community_access.AUDITOR,
+            community_access.AUDIT_BILLING,
+            community_access.PREPARE_BILLING,
+        ),
+        (
+            community_access.AUDITOR,
+            community_access.AUDIT_BILLING,
+            community_access.APPROVE_BILLING,
+        ),
     ],
 )
 def test_scoped_roles_grant_only_their_capabilities(role, allowed, denied):
@@ -141,3 +186,65 @@ def test_empty_operator_query_update_is_rejected(monkeypatch):
     result = dashboard.operator_update_invoice_query("c1", "b1", 7)
 
     assert result["error"]
+
+
+def test_leg_set_member_roles_refuses_without_manage_members_and_passes_through(
+    monkeypatch,
+):
+    monkeypatch.setattr(dashboard, "_require_capability", lambda *_args: None)
+
+    refused = dashboard.leg_set_member_roles("c1", "b1", "b2", ["documents"])
+
+    assert refused == {"error": "Nur die Administration kann Rollen ändern."}
+
+    calls = []
+
+    def _fake_set_roles(community_id, target_building_id, roles, actor_building_id):
+        calls.append((community_id, target_building_id, roles, actor_building_id))
+        return True
+
+    monkeypatch.setattr(
+        dashboard,
+        "_require_capability",
+        lambda *_args: member(community_access.MEMBERSHIP),
+    )
+    monkeypatch.setattr(dashboard.db, "set_member_access_roles", _fake_set_roles)
+
+    result = dashboard.leg_set_member_roles("c1", "b1", "b2", ["documents"])
+
+    assert result == {"error": None}
+    assert calls == [("c1", "b2", ["documents"], "b1")]
+
+
+def test_leg_set_dual_control_requires_an_administrator(monkeypatch):
+    monkeypatch.setattr(
+        dashboard,
+        "_require_capability",
+        lambda *_args: member(community_access.DOCUMENTS),
+    )
+
+    refused = dashboard.leg_set_dual_control("c1", "b1", True)
+
+    assert refused == {
+        "error": "Nur die Administration kann das Vier-Augen-Prinzip ändern."
+    }
+
+    calls = []
+
+    def _fake_set_dual_control(community_id, enabled, actor_building_id):
+        calls.append((community_id, enabled, actor_building_id))
+        return True
+
+    monkeypatch.setattr(
+        dashboard,
+        "_require_capability",
+        lambda *_args: member(community_access.ADMIN),
+    )
+    monkeypatch.setattr(
+        dashboard.db, "set_community_dual_control", _fake_set_dual_control
+    )
+
+    result = dashboard.leg_set_dual_control("c1", "b1", True)
+
+    assert result == {"error": None}
+    assert calls == [("c1", True, "b1")]
