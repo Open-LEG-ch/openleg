@@ -111,11 +111,15 @@ def test_public_municipality_profile_route_is_restored(monkeypatch):
     )
     monkeypatch.setattr(municipality.db, "get_sonnendach_municipal", lambda _bfs: None)
     monkeypatch.setattr(municipality.db, "list_registry_entries", lambda **_kwargs: [])
+    monkeypatch.setattr(
+        municipality.db, "get_interest_count", lambda bfs: 2 if bfs == 261 else None
+    )
 
     response = _client().get("/gemeinde/profil/261")
 
     assert response.status_code == 200
     assert "Dietikon" in response.get_data(as_text=True)
+    assert "&lt; 3 bestätigte Interessierte" in response.get_data(as_text=True)
 
 
 def test_verzeichnis_renders_empty_state_with_canonical(monkeypatch):
@@ -200,6 +204,49 @@ def test_verzeichnis_filters_by_query_and_projects_ranking(monkeypatch):
     assert "Winterthur" not in html
     assert "Rang 7 CH" in html
     assert "42%" in html
+
+
+def test_verzeichnis_publishes_thresholded_verified_interest_and_sorts_it(
+    monkeypatch,
+):
+    profiles = [
+        {"bfs_number": 1, "name": "Nullwil", "kanton": "SO"},
+        {"bfs_number": 2, "name": "Einwil", "kanton": "SO"},
+        {"bfs_number": 3, "name": "Zweiwil", "kanton": "SO"},
+        {"bfs_number": 2554, "name": "Riedholz", "kanton": "SO"},
+    ]
+    monkeypatch.setattr(
+        municipality.db,
+        "get_all_municipality_profiles",
+        lambda **_kwargs: profiles,
+    )
+    monkeypatch.setattr(
+        municipality.db,
+        "get_interest_counts_by_bfs",
+        lambda: {2: 1, 3: 2, 2554: 3},
+    )
+
+    class _EmptyRanking:
+        @staticmethod
+        def national():
+            return []
+
+    monkeypatch.setattr(
+        municipality.Ranking,
+        "load",
+        classmethod(lambda cls, kanton=None: _EmptyRanking()),
+    )
+
+    response = _client().get("/gemeinde/verzeichnis?sort=interest")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert html.index("Riedholz") < html.index("Zweiwil") < html.index("Nullwil")
+    # Hidden counts must not be recoverable from their relative ordering.
+    assert html.index("Einwil") < html.index("Zweiwil")
+    assert "3 Interessierte" in html
+    assert html.count("&lt; 3 Interessierte") == 2
+    assert "0 Interessierte" in html
 
 
 def test_municipality_profile_states_its_assumed_consumption_from_the_calculation():

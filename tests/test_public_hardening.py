@@ -15,6 +15,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 CRON_ENDPOINTS = (
     "/api/cron/process-emails",
+    "/api/cron/cleanup-interest",
     "/api/cron/refresh-public-data",
     "/api/cron/backfill-elcom",
     "/api/cron/process-billing",

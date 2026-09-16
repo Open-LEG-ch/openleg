@@ -154,6 +154,7 @@ from store.billing import (  # noqa: F401
 )
 from store.building import (  # noqa: F401
     NEIGHBOR_BOX_HALF_WIDTH_KM,
+    VerifiedRegistrationConflict,
     delete_building,
     get_all_building_profiles,
     get_all_buildings,
@@ -222,6 +223,17 @@ from store.invoice_query import (  # noqa: F401
     open_invoice_query,
     transition_invoice_query,
     update_invoice_query,
+)
+from store.interest import (  # noqa: F401
+    cleanup_expired_interest,
+    get_interest_count,
+    get_interest_counts_by_bfs,
+    get_municipality_interest_summary,
+    get_operator_interest_counts,
+    get_operator_interest_records,
+    get_verified_interest_recipients,
+    save_coverage_request,
+    verify_coverage_request,
 )
 from store.meter import (  # noqa: F401
     get_meter_reading_stats,
@@ -314,7 +326,10 @@ from store.tenant import (  # noqa: F401
     upsert_tenant,
 )
 from store.token import (  # noqa: F401
+    VerificationConflict,
+    confirm_building_interest,
     confirm_profile_deletion,
+    create_coverage_deletion_tokens,
     delete_tokens_for_building,
     get_token,
     save_token,

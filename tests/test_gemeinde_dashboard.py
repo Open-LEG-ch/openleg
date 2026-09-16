@@ -127,4 +127,46 @@ class TestGemeindeDashboardInviteLink:
         ):
             html = client.get("/gemeinde/dashboard").get_data(as_text=True)
 
-        assert "http://from-config.example" in html
+        invite_link = re.search(
+            r'<input\b[^>]*\bid="invite-link"[^>]*\bvalue="([^"]*)"', html
+        )
+        assert invite_link
+        assert invite_link.group(1) == "http://from-config.example"
+
+
+class TestGemeindeDashboardInterest:
+    def test_dashboard_shows_exact_aggregate_demand_without_personal_rows(self):
+        client = _client()
+        with client.session_transaction() as sess:
+            sess["municipality_id"] = 1
+        municipality_row = {
+            "id": 1,
+            "name": "Riedholz",
+            "bfs_number": 2554,
+            "subdomain": "riedholz",
+            "onboarding_status": "active",
+        }
+        with (
+            patch("database.get_municipality", return_value=municipality_row),
+            patch("database.get_stats", return_value={}),
+            patch("database.get_municipality_profile", return_value={}),
+            patch(
+                "database.get_municipality_interest_summary",
+                return_value={
+                    "verified_total": 7,
+                    "last_30_days": 3,
+                    "has_solar": 2,
+                    "address_problems": 1,
+                    "roles": {"owner": 4, "tenant": 3},
+                },
+            ),
+        ):
+            html = client.get("/gemeinde/dashboard").get_data(as_text=True)
+
+        visible = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
+        assert "7 bestätigte Interessierte" in visible
+        assert "3 in den letzten 30 Tagen" in visible
+        assert "2 mit Solaranlage" in visible
+        assert "1 offene Adresszuordnung" in visible
+        assert "Eigentümer/in" in visible and "Mieter/in" in visible
+        assert "example.ch" not in visible

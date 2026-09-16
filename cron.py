@@ -56,6 +56,15 @@ def api_cron_import_sdat():
     return jsonify(sdat_ingestion.run_due(db.list_sdat_ingestion_schedules()))
 
 
+@cron_bp.route("/api/cron/cleanup-interest", methods=["POST"])
+def api_cron_cleanup_interest():
+    _require_cron_secret()
+    result = db.cleanup_expired_interest()
+    if result is None:
+        return jsonify({"error": "interest_cleanup_failed"}), 503
+    return jsonify(result)
+
+
 @cron_bp.route("/api/cron/refresh-public-data", methods=["POST"])
 def api_cron_refresh_public_data():
     _require_cron_secret()

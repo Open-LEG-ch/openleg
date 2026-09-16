@@ -47,6 +47,7 @@
                     <option value="energy_transition_score" {{ 'selected' if sort == 'energy_transition_score' }}>Energiewende-Score</option>
                     <option value="leg_value_gap_chf" {{ 'selected' if sort == 'leg_value_gap_chf' }}>LEG-Ersparnis</option>
                     <option value="population" {{ 'selected' if sort == 'population' }}>Einwohner</option>
+                    <option value="interest" {{ 'selected' if sort == 'interest' }}>Interessierte</option>
                     <option value="name" {{ 'selected' if sort == 'name' }}>Name</option>
                 </select>
             </div>
@@ -90,6 +91,7 @@
                             </span>
                         </span>
                         <span class="flex items-center gap-3 shrink-0 font-mono tabular-nums text-sm">
+                            <span class="text-ink-muted" title="Bestätigte Interessenmeldungen">{{ p.interest_label }}</span>
                             {% if p.leg_value_gap_chf %}
                             <span class="text-green-700" title="LEG-Ersparnis">CHF {{ "%.0f"|format(p.leg_value_gap_chf|float) }}</span>
                             {% endif %}

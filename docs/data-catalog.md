@@ -19,7 +19,8 @@ count uses conditions identical to its list.
 - **Tables:** `buildings`
 - **Holds:** `building_id`, `email`, `address`, `lat`, `lon`, `plz`,
   `building_type`, `annual_consumption_kwh`, `potential_pv_kwp`, `user_type`,
-  `verified`, `city_id`, `referrer_id`
+  `verified`, `city_id`, `referrer_id`, `bfs_number`, `municipality_name`,
+  `canton`, `roles`, `has_solar`
 - **Purpose:** resident registration and readiness; the map of consenting
   neighbours.
 - **Owner:** the resident (each row is one household's record).
@@ -31,6 +32,22 @@ count uses conditions identical to its list.
   (`get_building`, `get_building_for_dashboard`) are `LEFT JOIN` by design
   because a member reads their own record.
 - **Consent gate:** applies to every other-resident-visible output.
+
+## store/interest
+
+- **Tables:** `coverage_requests`; also reads verified rows from `buildings`.
+- **Holds:** `email`, optional `address`, `plz`, `municipality_name`, `canton`,
+  `bfs_number`, `roles`, `has_solar`, verification token and timestamps.
+- **Purpose:** preserve demand when an address cannot be checked, publish an
+  anonymised municipality count, notify verified participants when that count
+  grows, and provide a private operator follow-up list.
+- **Owner:** the person who submitted the interest.
+- **Sensitivity:** personal. Public and Gemeinde outputs are aggregate only;
+  names, addresses and contact details are never included.
+- **Resident-visible:** only the municipality total, shown as `0`, `< 3`, or
+  the exact count from three onward.
+- **Consent gate:** email verification is required before any count or
+  notification. Map visibility remains separately opt-in.
 
 ## store/consent
 

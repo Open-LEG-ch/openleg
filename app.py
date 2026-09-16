@@ -30,9 +30,12 @@ import dashboard as dashboard_module  # noqa: F401
 import dashboard_routes
 import data_enricher
 import database as db
-import email_automation
+import email_automation  # noqa: F401
+import formation_guide
 import formation_wizard
 import homepage_view_model
+import interest_confirmation
+import interest_intake
 import private_http
 import registration
 import security_utils
@@ -109,18 +112,20 @@ def send_activity_notification(activity_type, details):
     send_email(current_app.config["ADMIN_EMAIL"], subject, message_body)
 
 
-def send_confirmation_email(email, unsubscribe_url, building_id=None, address=None):
+def send_confirmation_email(email, verification_url, building_id=None, address=None):
     name = _tenant_name()
     try:
         city = getattr(g, "tenant", {}).get("city_name", "Zürich")
     except RuntimeError:
         city = "Zürich"
-    subject = f"{name}: Registrierung bestätigt"
+    subject = f"{name}: Interessenmeldung bestätigen"
     message_body = (
-        f"Willkommen bei {name}!\n\n"
-        f"Sie sind jetzt für eine Lokale Elektrizitätsgemeinschaft (LEG) in {city} registriert.\n\n"
-        "Wir informieren Sie per E-Mail, sobald sich neue Interessenten in Ihrer Zone anmelden.\n\n"
-        f"Abmelden:\n{unsubscribe_url}\n\n"
+        f"Bestätigen Sie Ihre Interessenmeldung für eine Lokale "
+        f"Elektrizitätsgemeinschaft (LEG) in {city}:\n\n"
+        f"{verification_url}\n\n"
+        "Erst danach wird Ihre Anmeldung anonym gezählt. Wir informieren Sie, "
+        "wenn weitere bestätigte Interessierte aus derselben Gemeinde dazukommen.\n\n"
+        "Falls Sie sich nicht angemeldet haben, ignorieren Sie diese E-Mail.\n\n"
         f"Ihr {name}-Team"
     )
     send_email(email, subject, message_body)
@@ -192,7 +197,9 @@ def open_source():
 
 @main_bp.route("/leg-gruenden")
 def leg_gruenden():
-    return render_city_template("leg_gruenden.html")
+    return render_city_template(
+        "leg_gruenden.html", **formation_guide.build_guide_context()
+    )
 
 
 @main_bp.route("/leg-kalkulator")
@@ -366,6 +373,17 @@ def api_check_potential():
 
         outcome = data_enricher.resolve_address_profile(address)
 
+        if outcome.source != "live":
+            return (
+                jsonify(
+                    {
+                        "error": "Adresse konnte nicht eindeutig geprüft werden.",
+                        "can_register_interest": True,
+                        "reason": outcome.live_status,
+                    }
+                ),
+                422,
+            )
         if not outcome.estimates:
             return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
 
@@ -406,8 +424,6 @@ def _registration_response(user_type):
         app_base_url=current_app.config["APP_BASE_URL"],
         thread=threading.Thread,
         send_confirmation_email=send_confirmation_email,
-        run_full_ml_task=run_full_ml_task,
-        schedule_sequence_for_user=email_automation.schedule_sequence_for_user,
         find_provisional_matches=find_provisional_matches,
         collect_building_locations=collect_building_locations,
     )
@@ -430,6 +446,64 @@ def api_register_anonymous():
 @limiter.limit("5 per minute")
 def api_register_full():
     return _registration_response("registered")
+
+
+@main_bp.route("/api/register_interest", methods=["POST"])
+@limiter.limit("5 per minute")
+def api_register_interest():
+    is_valid_size, size_error = security_utils.check_request_size(request)
+    if not is_valid_size:
+        return jsonify({"error": size_error}), 413
+    if not request.json:
+        return jsonify({"error": "Keine Daten empfangen."}), 400
+    try:
+        result = interest_intake.submit(
+            request.json,
+            db=db,
+            security=security_utils,
+            base_url=current_app.config["APP_BASE_URL"],
+            send_email=send_email,
+        )
+    except interest_intake.InterestIntakeError as error:
+        return jsonify({"error": error.message}), 400
+    return jsonify(result), 202
+
+
+@main_bp.route("/confirm/<token>")
+@limiter.limit("10 per minute")
+def confirm_interest(token):
+    try:
+        token = security_utils.validate_uuid(token)
+    except ValueError:
+        abort(404)
+    result = interest_confirmation.confirm_building(
+        token,
+        db=db,
+        base_url=current_app.config["APP_BASE_URL"],
+        run_clustering=run_full_ml_task,
+    )
+    if result.status == "conflict":
+        abort(409)
+    if result.status == "invalid":
+        abort(404)
+    return render_city_template(
+        "interest_confirmed.html", municipality_name=result.municipality_name
+    )
+
+
+@main_bp.route("/interest/confirm/<token>")
+@limiter.limit("10 per minute")
+def confirm_coverage_interest(token):
+    if not isinstance(token, str) or len(token) > 128:
+        abort(404)
+    result = interest_confirmation.confirm_coverage(
+        token, db=db, base_url=current_app.config["APP_BASE_URL"]
+    )
+    if result.status == "invalid":
+        abort(404)
+    return render_city_template(
+        "interest_confirmed.html", municipality_name=result.municipality_name
+    )
 
 
 # --- Meter Data Upload ---
@@ -497,28 +571,29 @@ def unsubscribe_page():
         else:
             email_value = normalized_email
             matches = db.get_building_by_email(email_value)
-            if matches:
-                for m in matches:
-                    token = security_utils.generate_uuid()
-                    saved = db.save_token(
-                        token, m["building_id"], "unsubscribe", ttl_seconds=3600
+            tokens = []
+            for match in matches or []:
+                token = security_utils.generate_uuid()
+                if db.save_token(
+                    token, match["building_id"], "unsubscribe", ttl_seconds=3600
+                ):
+                    tokens.append(token)
+            tokens.extend(db.create_coverage_deletion_tokens(email_value))
+            for token in tokens:
+                unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
+                try:
+                    send_email(
+                        email_value,
+                        "OpenLEG: Löschung bestätigen",
+                        "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
+                        f"diesen Link:\n\n{unsubscribe_url}\n\n"
+                        "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
+                        "nicht angefordert haben, ignorieren Sie diese E-Mail.",
                     )
-                    if not saved:
-                        continue
-                    unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
-                    try:
-                        send_email(
-                            email_value,
-                            "OpenLEG: Löschung bestätigen",
-                            "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
-                            f"diesen Link:\n\n{unsubscribe_url}\n\n"
-                            "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
-                            "nicht angefordert haben, ignorieren Sie diese E-Mail.",
-                        )
-                    except Exception:
-                        current_app.logger.exception(
-                            "Failed to send profile deletion confirmation"
-                        )
+                except Exception:
+                    current_app.logger.exception(
+                        "Failed to send profile deletion confirmation"
+                    )
             email_value = ""
             status = "success"
             message = (

@@ -37,8 +37,30 @@ def create_tables():
                     referral_code VARCHAR(32) UNIQUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    city_id VARCHAR(64) DEFAULT 'zurich'
+                    city_id VARCHAR(64) DEFAULT 'zurich',
+                    bfs_number INTEGER,
+                    municipality_name VARCHAR(255),
+                    canton VARCHAR(2),
+                    roles JSONB NOT NULL DEFAULT '[]',
+                    has_solar BOOLEAN,
+                    verification_revision BIGINT NOT NULL DEFAULT 0
                 )
+            """)
+
+            cur.execute("""
+                ALTER TABLE buildings
+                    ADD COLUMN IF NOT EXISTS bfs_number INTEGER,
+                    ADD COLUMN IF NOT EXISTS municipality_name VARCHAR(255),
+                    ADD COLUMN IF NOT EXISTS canton VARCHAR(2),
+                    ADD COLUMN IF NOT EXISTS roles JSONB NOT NULL DEFAULT '[]',
+                    ADD COLUMN IF NOT EXISTS has_solar BOOLEAN,
+                    ADD COLUMN IF NOT EXISTS verification_revision BIGINT NOT NULL DEFAULT 0,
+                    ADD COLUMN IF NOT EXISTS verification_requested_at TIMESTAMP
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_buildings_bfs_verified
+                ON buildings (bfs_number, verified)
             """)
 
             # Consents table
@@ -55,7 +77,54 @@ def create_tables():
                 )
             """)
 
-            # Tokens table (verification and unsubscribe)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS coverage_requests (
+                    request_id VARCHAR(64) PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    address TEXT,
+                    plz VARCHAR(4) NOT NULL,
+                    municipality_name VARCHAR(255) NOT NULL,
+                    canton VARCHAR(2),
+                    bfs_number INTEGER,
+                    roles JSONB NOT NULL DEFAULT '[]',
+                    has_solar BOOLEAN,
+                    verified BOOLEAN NOT NULL DEFAULT FALSE,
+                    verified_at TIMESTAMP,
+                    verification_token VARCHAR(128) UNIQUE,
+                    token_expires_at TIMESTAMP NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_coverage_requests_bfs_verified
+                ON coverage_requests (bfs_number, verified)
+            """)
+
+            cur.execute("""
+                CREATE OR REPLACE VIEW verified_interest AS
+                SELECT DISTINCT ON (bfs_number, LOWER(email))
+                       bfs_number, LOWER(email) AS email, roles, has_solar,
+                       created_at, address_problem, source_id
+                FROM (
+                    SELECT bfs_number, email, roles, has_solar,
+                           registered_at AS created_at,
+                           FALSE AS address_problem, 1 AS source_priority,
+                           building_id AS source_id
+                    FROM buildings
+                    WHERE verified = TRUE AND bfs_number IS NOT NULL
+                    UNION ALL
+                    SELECT bfs_number, email, roles, has_solar, created_at,
+                           TRUE AS address_problem, 2 AS source_priority,
+                           request_id AS source_id
+                    FROM coverage_requests
+                    WHERE verified = TRUE AND bfs_number IS NOT NULL
+                ) interest
+                ORDER BY bfs_number, LOWER(email), source_priority,
+                         created_at DESC NULLS LAST, source_id
+            """)
+
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS tokens (
                     token VARCHAR(128) PRIMARY KEY,
@@ -63,8 +132,32 @@ def create_tables():
                     token_type VARCHAR(20) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     used_at TIMESTAMP,
-                    expires_at TIMESTAMP
+                    expires_at TIMESTAMP,
+                    verification_revision BIGINT
                 )
+            """)
+
+            # Migration: bind verification tokens to the building revision they
+            # were issued for. Legacy rows keep NULL and fail closed at
+            # confirm time; the column is never backfilled.
+            cur.execute("""
+                ALTER TABLE tokens ADD COLUMN IF NOT EXISTS verification_revision BIGINT
+            """)
+            cur.execute("""
+                ALTER TABLE tokens ADD COLUMN IF NOT EXISTS coverage_request_id
+                    VARCHAR(64) REFERENCES coverage_requests(request_id) ON DELETE CASCADE
+                    CHECK (coverage_request_id IS NULL OR
+                           (building_id IS NULL AND token_type = 'unsubscribe'))
+            """)
+
+            # Idempotent migration: invalidate unused legacy verification
+            # tokens that carry no revision. Never backfills a revision;
+            # unsubscribe tokens are untouched.
+            cur.execute("""
+                UPDATE tokens SET used_at = CURRENT_TIMESTAMP
+                WHERE token_type = 'verification'
+                  AND used_at IS NULL
+                  AND verification_revision IS NULL
             """)
 
             cur.execute("""

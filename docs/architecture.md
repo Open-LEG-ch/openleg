@@ -183,6 +183,50 @@ and the re-export block, and nothing else. Every domain lives in `store/`.
 New storage code for a cohesive domain gets its own module there. Nothing is
 appended to `database.py`.
 
+## Verified municipality interest
+
+`store/schema.py` defines the `verified_interest` view. It selects one verified
+record per BFS municipality and `LOWER(email)`, without trimming historical
+emails. Address-check registrations take priority over coverage requests. Within
+each source, the newest creation timestamp wins, followed by the stable record
+ID; missing timestamps sort last. Counts, recipients, and dashboard summaries in
+`store/interest.py` use this selection. Operator exports retain the source rows.
+Municipality-growth emails require the selected building record's persisted
+`updates_opt_in`. Missing or false consent excludes that address, even when an
+older building or coverage duplicate exists. Coverage-only recipients retain
+their existing notification behavior. Consent does not alter aggregate counts.
+Operator count cards cover all raw records, independently of the displayed
+500-row list. Failed counts return JSON null and render "Nicht verfügbar".
+Public pages still hide exact counts below three. Directory ordering treats one
+and two as the same bucket, then sorts by name.
+
+Registration saves the building and its verification token in one transaction.
+The generic `save_token` helper accepts unsubscribe tokens only.
+An existing verified profile rejects a different case-insensitive email with
+HTTP 409 before any writes. Same-email updates retain verification. An unverified
+profile can change email; this increments its verification revision and
+invalidates older links. Confirmation locks the building before
+consuming its revision-bound token, then verifies the building in that same
+transaction. Invalid links return 404; write conflicts return 409 without
+consuming the token. `interest_confirmation.py` runs downstream effects only
+after that transaction commits. These effects remain best-effort and are not
+replayed automatically after a failure.
+
+Schema initialization invalidates unused legacy verification tokens that lack a
+revision. They cannot safely be attached to the current email. Residents with
+those links must register again for a fresh link. Unsubscribe tokens are not
+changed. The migration is idempotent and preserves existing verified records.
+
+`verification_requested_at` starts the unverified retention period on each
+registration. It does not change the original creation date used by interest
+summaries. Legacy rows without that timestamp keep their original retention age.
+
+The existing `/unsubscribe` journey also issues one-hour deletion links for
+coverage requests. Each link targets one existing record, never a future record
+with the same email. GET displays the confirmation form; POST deletes the bound
+record and its tokens in one transaction. An email with both intake sources gets
+a link for each record.
+
 ## Data pipelines
 
 Two independent paths feed the database. Public-safe commands and required

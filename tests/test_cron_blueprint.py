@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 CRON_RULES = {
     "/api/cron/process-emails",
+    "/api/cron/cleanup-interest",
     "/api/cron/refresh-public-data",
     "/api/cron/backfill-elcom",
     "/api/cron/process-billing",
