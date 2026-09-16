@@ -105,6 +105,9 @@ def is_db_available() -> bool:
 # is at module end to avoid a circular import (store.ranking imports database).
 # ---------------------------------------------------------------------------
 from billing_approval import BillingApprovalError  # noqa: F401
+from store import operator_api as _operator_api
+from store import operator_operations as _operator_operations
+from store import vnb_exchange as _vnb_exchange
 from store.access_token import (  # noqa: F401
     consume_dashboard_access_token,
     consume_municipality_access_token,
@@ -136,6 +139,7 @@ from store.billing import (  # noqa: F401
     get_community_for_building,
     get_invoice_for_participant,
     get_invoices_for_participant,
+    list_bank_statement_entries,
     list_billing_periods,
     list_billing_policies,
     list_community_billing_periods,
@@ -143,6 +147,8 @@ from store.billing import (  # noqa: F401
     list_community_invoices,
     list_invoice_events,
     prepare_invoice_delivery,
+    reconcile_bank_statement,
+    record_billing_period_preparer,
     record_invoice_payment,
     save_billing_period,
     save_billing_policy,
@@ -160,6 +166,13 @@ from store.building import (  # noqa: F401
     get_operator_building_profiles,
     save_building,
     update_building_verified,
+)
+from store.calculated_values import (  # noqa: F401
+    find_overlapping_calculated_values,
+    get_calculated_values_community,
+    get_validated_calculated_values,
+    list_calculated_values_deliveries,
+    save_calculated_values_delivery,
 )
 from store.cluster import (  # noqa: F401
     save_cluster,
@@ -200,6 +213,8 @@ from store.formation import (  # noqa: F401
     fetch_user_communities,
     insert_invited_member,
     mark_formation_started,
+    set_community_dual_control,
+    set_member_access_roles,
     submit_community_to_dso,
 )
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
@@ -213,6 +228,13 @@ from store.interest import (  # noqa: F401
     get_verified_interest_recipients,
     save_coverage_request,
     verify_coverage_request,
+)
+from store.invoice_query import (  # noqa: F401
+    add_invoice_query_message,
+    list_invoice_queries,
+    open_invoice_query,
+    transition_invoice_query,
+    update_invoice_query,
 )
 from store.meter import (  # noqa: F401
     get_meter_reading_stats,
@@ -291,6 +313,13 @@ from store.registry import (  # noqa: F401
     update_registry_entry_moderation,
 )
 from store.schema import create_tables
+from store.sdat_ingestion import (  # noqa: F401
+    acquire_sdat_ingestion_lock,
+    list_sdat_ingestion_schedules,
+    record_sdat_ingestion_run,
+    release_sdat_ingestion_lock,
+    upsert_sdat_ingestion_schedule,
+)
 from store.tenant import (  # noqa: F401
     get_all_active_tenants,
     get_tenant_by_territory,
@@ -319,3 +348,44 @@ from store.utility import (  # noqa: F401
     update_utility_client_api_key,
     update_utility_client_status,
 )
+
+create_operator_api_client = _operator_api.create_client
+claim_operator_api_usage = _operator_api.claim_usage
+create_operator_event = _operator_api.create_event
+get_operator_api_client_by_token_hash = _operator_api.get_client_by_token_hash
+get_pending_webhook_deliveries = _operator_api.get_pending_deliveries
+list_operator_api_clients = _operator_api.list_clients
+list_operator_webhook_deliveries = _operator_api.list_deliveries
+record_webhook_attempt = _operator_api.record_attempt
+record_operator_api_usage = _operator_api.record_usage
+revoke_operator_api_client = _operator_api.revoke_client
+rotate_operator_api_client = _operator_api.rotate_client
+retry_operator_webhook_delivery = _operator_api.retry_delivery
+get_operator_api_usage_count = _operator_api.usage_count
+
+VnbExchangeStoreError = _vnb_exchange.VnbExchangeStoreError
+VnbSubmissionConflict = _vnb_exchange.VnbSubmissionConflict
+claim_vnb_submission = _vnb_exchange.claim
+get_vnb_submission_case = _vnb_exchange.get_case
+get_vnb_manual_package = _vnb_exchange.get_manual_package
+list_vnb_submission_cases = _vnb_exchange.list_cases
+mark_vnb_manual_delivered = _vnb_exchange.mark_manual_delivered
+record_vnb_submission_outcome = _vnb_exchange.record_outcome
+claim_vnb_mutation = _vnb_exchange.claim_mutation
+record_vnb_mutation_outcome = _vnb_exchange.record_mutation_outcome
+list_vnb_mutations = _vnb_exchange.list_mutations
+get_vnb_mutation_manual_package = _vnb_exchange.get_mutation_manual_package
+mark_vnb_mutation_manual_delivered = _vnb_exchange.mark_mutation_manual_delivered
+record_vnb_mutation_response = _vnb_exchange.record_mutation_response
+list_operator_metering_jobs = _operator_operations.list_metering_jobs
+get_operator_ingestion_retry = _operator_operations.get_ingestion_retry
+claim_operator_ingestion_retry = _operator_operations.claim_ingestion_retry
+complete_operator_ingestion_retry = _operator_operations.complete_ingestion_retry
+release_operator_ingestion_retry = _operator_operations.release_ingestion_retry
+list_operator_calculated_deliveries = _operator_operations.list_calculated_deliveries
+list_operator_billing_periods = _operator_operations.list_periods
+list_operator_invoices = _operator_operations.list_invoices
+list_operator_invoice_cases = _operator_operations.list_cases
+list_operator_payment_matches = _operator_operations.list_payments
+respond_operator_invoice_case = _operator_operations.respond_case
+confirm_operator_payment_match = _operator_operations.confirm_payment

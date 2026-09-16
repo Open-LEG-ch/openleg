@@ -252,6 +252,138 @@ def test_leg_mutation_rejects_non_ascii_csrf_as_bad_request(app_module, monkeypa
     invite.assert_not_called()
 
 
+def test_vnb_formation_submission_uses_session_identity_and_csrf(
+    app_module, monkeypatch
+):
+    submit = MagicMock(return_value={"error": None, "state": "prepared"})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_submit_vnb_formation", submit)
+    client = app_module.web.test_client()
+
+    anonymous = client.post(
+        "/leg/community/community-1/vnb-submissions",
+        data={"csrf_token": "csrf-secret", "bid": "building-attacker"},
+    )
+    assert anonymous.status_code == 401
+
+    _set_session(client)
+    missing_csrf = client.post("/leg/community/community-1/vnb-submissions")
+    assert missing_csrf.status_code == 400
+
+    accepted = client.post(
+        "/leg/community/community-1/vnb-submissions",
+        data={"csrf_token": "csrf-secret", "bid": "building-attacker"},
+    )
+    assert accepted.status_code == 302
+    submit.assert_called_once_with("community-1", "building-session")
+    assert "bid=" not in accepted.headers["Location"]
+
+
+def test_vnb_manual_handover_is_private_and_community_scoped(app_module, monkeypatch):
+    package = MagicMock(return_value={"manual_package": b"zip"})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_vnb_manual_package", package)
+    client = app_module.web.test_client()
+
+    anonymous = client.get("/leg/community/community-1/vnb-submissions/case-1/handover")
+    assert anonymous.status_code == 401
+    package.assert_not_called()
+
+    _set_session(client)
+    response = client.get("/leg/community/community-1/vnb-submissions/case-1/handover")
+    assert response.status_code == 200
+    assert response.data == b"zip"
+    assert "attachment" in response.headers["Content-Disposition"]
+    assert "no-store" in response.headers["Cache-Control"]
+    package.assert_called_once_with("community-1", "case-1", "building-session")
+
+
+def test_vnb_manual_delivery_confirmation_requires_csrf(app_module, monkeypatch):
+    mark = MagicMock(return_value={"error": None, "state": "delivered"})
+    monkeypatch.setattr(
+        app_module.dashboard_module, "leg_mark_vnb_manual_delivered", mark
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    missing = client.post("/leg/community/community-1/vnb-submissions/case-1/delivered")
+    assert missing.status_code == 400
+    mark.assert_not_called()
+
+    accepted = client.post(
+        "/leg/community/community-1/vnb-submissions/case-1/delivered",
+        data={"csrf_token": "csrf-secret"},
+    )
+    assert accepted.status_code == 302
+    mark.assert_called_once_with("community-1", "case-1", "building-session")
+
+
+def test_vnb_manual_delivery_preserves_authorization_status(app_module, monkeypatch):
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_mark_vnb_manual_delivered",
+        MagicMock(return_value={"error": "Keine Berechtigung.", "error_status": 403}),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/vnb-submissions/case-1/delivered",
+        data={"csrf_token": "csrf-secret"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_vnb_mutation_delivery_preserves_authorization_status(app_module, monkeypatch):
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_mark_vnb_mutation_delivered",
+        MagicMock(return_value={"error": "Keine Berechtigung.", "error_status": 403}),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/vnb-mutations/case-1/delivered",
+        data={"csrf_token": "csrf-secret"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_vnb_membership_mutation_uses_session_identity_and_csrf(
+    app_module, monkeypatch
+):
+    submit = MagicMock(return_value={"error": None, "state": "prepared"})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_submit_vnb_mutation", submit)
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/vnb-mutations",
+        data={
+            "csrf_token": "csrf-secret",
+            "mutation_id": "mutation-1",
+            "participant_id": "building-2",
+            "mutation_type": "exit",
+            "effective_date": "2026-10-01",
+            "source_agreement_id": "agreement-v3",
+            "bid": "building-attacker",
+        },
+    )
+
+    assert response.status_code == 302
+    submit.assert_called_once_with(
+        "community-1",
+        "building-session",
+        "mutation-1",
+        "building-2",
+        "exit",
+        "2026-10-01",
+        "agreement-v3",
+        {},
+    )
+
+
 def test_leg_document_uses_session_identity_not_query_bid(app_module, monkeypatch):
     document_for_member = MagicMock(
         return_value={"pdf_data": b"pdf", "filename": "vertrag.pdf"}
@@ -566,9 +698,33 @@ def test_public_dashboard_response_stays_public_with_blank_session(app_module):
     assert response.headers.get("Referrer-Policy") != "no-referrer"
 
 
-def test_leg_forms_use_csrf_and_never_submit_building_id():
+def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch):
     source = Path("templates/leg_dashboard.html").read_text(encoding="utf-8")
 
     assert 'name="bid"' not in source
     assert source.count('name="csrf_token"') >= 5
     assert "?bid=" not in source
+
+    overview = _correspondence_overview()
+    overview["vnb_submissions"] = [
+        {"state": "failed", "next_action": "review_rejection"},
+        {"state": "rejected", "next_action": "retry"},
+        {"state": "failed", "next_action": "escalate"},
+        {"state": "prepared", "next_action": "download_package", "case_id": "case-1"},
+    ]
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_overview",
+        MagicMock(side_effect=lambda community_id, building_id: overview),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.get("/leg/dashboard?cid=community-1")
+    html = response.get_data(as_text=True)
+
+    assert "Nächster Schritt: Ablehnung prüfen" in html
+    assert "Nächster Schritt: Einleitung erneut möglich" in html
+    assert "Nächster Schritt: An VNB eskalieren" in html
+    assert "Nächster Schritt: download_package" not in html
+    assert "Paket bereit" in html

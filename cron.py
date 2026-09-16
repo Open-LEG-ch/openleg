@@ -10,6 +10,7 @@ way in #271.
 """
 
 import logging
+from datetime import datetime, timezone
 
 from flask import Blueprint, abort, current_app, jsonify, request
 
@@ -17,7 +18,10 @@ import billing_runner
 import database as db
 import email_automation
 import leg_registry
+import operator_api
+import sdat_ingestion
 from security_utils import log_security_event
+from store import invoice_query
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +42,20 @@ def api_cron_process_emails():
     _require_cron_secret()
     result = email_automation.process_email_queue(app=current_app)
     return jsonify(result)
+
+
+@cron_bp.route("/api/cron/process-operator-webhooks", methods=["POST"])
+def api_cron_process_operator_webhooks():
+    _require_cron_secret()
+    return jsonify(
+        operator_api.dispatch_pending_webhooks(max_attempts=5, batch_size=50)
+    )
+
+
+@cron_bp.route("/api/cron/import-sdat", methods=["POST"])
+def api_cron_import_sdat():
+    _require_cron_secret()
+    return jsonify(sdat_ingestion.run_due(db.list_sdat_ingestion_schedules()))
 
 
 @cron_bp.route("/api/cron/cleanup-interest", methods=["POST"])
@@ -138,3 +156,14 @@ def api_cron_verify_registry_entries():
         base_url=current_app.config["SITE_URL"]
     )
     return jsonify(result)
+
+
+@cron_bp.route("/api/cron/invoice-query-reminders", methods=["POST"])
+def api_cron_invoice_query_reminders():
+    _require_cron_secret()
+    due = invoice_query.due_invoice_query_reminders(datetime.now(timezone.utc))
+    reminded = 0
+    for case in due:
+        if invoice_query.mark_invoice_query_reminded(case["id"], "system"):
+            reminded += 1
+    return jsonify({"reminded": reminded})

@@ -50,6 +50,29 @@
 
   <section class="bg-gray-900 rounded-lg overflow-hidden mb-8">
     <div class="px-4 py-3 border-b border-gray-800">
+      <h2 class="font-semibold">SDAT-Import</h2>
+      <p class="text-sm text-gray-400">Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in der Betriebsdokumentation.</p>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-800"><tr>
+        <th class="px-4 py-3 text-left">Tenant</th><th class="text-left">Zeitplan</th>
+        <th class="text-left">Letzter Erfolg</th><th class="text-left">Letzter Fehler</th>
+        <th class="text-left">Dateien</th><th class="text-left">Messwerte</th>
+      </tr></thead>
+      <tbody class="divide-y divide-gray-800">
+        {% for schedule in sdat_schedules %}
+        <tr><td class="px-4 py-3">{{ schedule.territory }}</td>
+          <td>{{ schedule.local_time }} {{ schedule.timezone }}{% if not schedule.enabled %} (aus){% endif %}</td>
+          <td>{{ schedule.last_success_at or '–' }}</td>
+          <td>{{ schedule.last_failure_at or '–' }}{% if schedule.last_failure_error %}: {{ schedule.last_failure_error }}{% endif %}</td>
+          <td>{{ schedule.imported_files or 0 }}</td><td>{{ schedule.imported_readings or 0 }}</td></tr>
+        {% else %}<tr><td class="px-4 py-3 text-gray-400" colspan="6">Kein SDAT-Zeitplan konfiguriert.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="bg-gray-900 rounded-lg overflow-hidden mb-8">
+    <div class="px-4 py-3 border-b border-gray-800">
       <h2 class="font-semibold">LEG-Interessenmeldungen</h2>
       <p class="text-xs text-gray-500 mt-1">Private Betreiberansicht. Diese Daten erscheinen nicht im Gemeinde-Dashboard.</p>
     </div>

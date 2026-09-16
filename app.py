@@ -48,6 +48,7 @@ from health import health_bp
 from leg_registry import registry_api_bp
 from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
+from operator_api import operator_api_bp
 from rangliste import rangliste_bp
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import RATE_LIMIT_RETRY_AFTER_SECONDS, limiter
@@ -269,7 +270,9 @@ def llms_txt():
         "",
         f"> Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften (LEG), {current_app.config['SITE_URL']}. Code: https://github.com/Open-LEG-ch/openleg, Lizenz AGPL-3.0-or-later, Betrieb in der Schweiz.",
         "",
-        "OpenLEG prüft Solarpotenzial pro Adresse, verbindet interessierte Haushalte im Umkreis von höchstens 150 Metern und bereitet Dokumente und die Netzbetreiber-Anmeldung vor. Alle Funktionen sind kostenlos.",
+        "OpenLEG prüft Solarpotenzial pro Adresse, unterstützt die Organisation einer LEG und bereitet Dokumente und die Netzbetreiber-Anmeldung vor. Die öffentlich angebotenen Funktionen sind kostenlos.",
+        "",
+        "Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die Abrechnung. Sie wählt den Betreiber und Hosting-Anbieter. OpenLEG stellt dafür prüfbare, selbst betreibbare Software bereit. Der Netzbetreiber prüft Netzgebiet und Netzebene, misst, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten. Der Grundversorger liefert den übrigen Strom. OpenLEG ersetzt diese gesetzlichen Aufgaben nicht. Nicht jede VNB-Anbindung ist umgesetzt; Anmeldung und Datenlieferung müssen pro Netzbetreiber eingerichtet werden.",
         "",
         "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das Netznutzungsentgelt um 40% ohne und 20% mit Spannungstransformation (Art. 19h StromVV). Voraussetzungen: gleiche politische Gemeinde, gleiche Netzebene, gleiches Netzgebiet, höchstens 36 kV, intelligente Messsysteme, mindestens 5% erneuerbare Anschlussleistung.",
         "",
@@ -883,6 +886,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         self_host_bp,
         admin_bp,
         cron_bp,
+        operator_api_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)

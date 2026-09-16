@@ -117,5 +117,37 @@
       <div class="font-bold text-base"><dt>Gesamtbetrag</dt><dd class="font-mono tabular-nums">{{ invoice.display_gross_chf }} CHF</dd></div>
     </dl>
   </article>
+  <section id="questions" class="no-print mt-8 bg-white rounded-xl border border-line p-6">
+    <h2 class="text-lg font-bold mb-2">Fragen zu dieser Rechnung</h2>
+    {% for query in invoice.queries %}
+    <article class="mb-4 rounded-lg border border-line p-4">
+      <p class="text-sm font-semibold">{{ query.category }} · {{ query.status }} · Antwort bis {{ query.response_due_at }}</p>
+      {% for message in query.messages %}<p class="mt-2 text-sm"><span class="font-semibold">{{ message.actor_id }}:</span> {{ message.message }}</p>{% endfor %}
+      {% for event in query.events if event.linked_reference %}
+      <p class="mt-2 text-sm text-ink-muted">Verknüpft mit Korrektur: <span class="font-semibold">{{ event.linked_reference }}</span></p>
+      {% endfor %}
+      {% if query.status != 'resolved' %}
+      <form method="post" action="/dashboard/invoices/{{ invoice.id }}/queries/{{ query.id }}/reply" class="mt-3 flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label class="sr-only" for="reply-{{ query.id }}">Antwort</label>
+        <input id="reply-{{ query.id }}" name="message" required maxlength="4000" class="flex-1 border rounded-lg px-3 py-2">
+        <button class="border border-line rounded-lg px-4 py-2 font-semibold">Antworten</button>
+      </form>
+      {% endif %}
+    </article>
+    {% endfor %}
+    <form method="post" enctype="multipart/form-data" action="/dashboard/invoices/{{ invoice.id }}/queries" class="grid gap-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="text-sm font-semibold" for="query-category">Grund</label>
+      <select id="query-category" name="category" required class="border rounded-lg px-3 py-2">
+        <option value="amount">Betrag</option><option value="metering">Messdaten</option><option value="payment">Zahlung</option><option value="other">Anderes</option>
+      </select>
+      <label class="text-sm font-semibold" for="query-message">Nachricht</label>
+      <textarea id="query-message" name="message" required maxlength="4000" class="border rounded-lg px-3 py-2"></textarea>
+      <label class="text-sm" for="query-attachment">PDF-Beleg, optional, höchstens 2 MB</label>
+      <input id="query-attachment" type="file" name="attachment" accept="application/pdf,.pdf" class="border rounded-lg px-3 py-2">
+      <button class="bg-brand text-white rounded-lg px-4 py-2 font-semibold">Frage senden</button>
+    </form>
+  </section>
 </div>
 {% endblock %}

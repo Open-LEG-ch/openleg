@@ -11,6 +11,12 @@
 {% endblock %}
 
 {% block content %}
+  {% set can_manage_members = can_manage_members|default(is_admin) %}
+  {% set can_manage_documents = can_manage_documents|default(is_admin) %}
+  {% set can_prepare_billing = can_prepare_billing|default(is_admin) %}
+  {% set can_approve_billing = can_approve_billing|default(is_admin) %}
+  {% set can_audit_billing = can_audit_billing|default(is_admin) %}
+  {% set access_role_labels = access_role_labels|default({}) %}
   <div class="max-w-6xl mx-auto px-4 py-12 overflow-x-hidden [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-brand [&_button:focus-visible]:outline [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-brand [&_input:focus-visible]:outline [&_input:focus-visible]:outline-2 [&_input:focus-visible]:outline-offset-2 [&_input:focus-visible]:outline-brand [&_select:focus-visible]:outline [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-2 [&_select:focus-visible]:outline-brand" data-dashboard-structure="community-operations">
     {% if error %}
     <div class="bg-paper border border-slate-200 rounded-xl p-8 text-center" role="alert">
@@ -56,6 +62,7 @@
       <div class="px-5 py-3 border-b">
         <h2 class="font-bold">Mitglieder</h2>
       </div>
+      {% if roles_error %}<p class="mx-5 mt-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ roles_error }}</p>{% endif %}
       <div class="overflow-x-auto"><table class="w-full table-fixed sm:table-auto text-sm">
         <caption class="sr-only">Mitglieder dieser Stromgemeinschaft</caption>
         <thead class="bg-slate-50">
@@ -74,6 +81,19 @@
               <span class="text-xs font-semibold {{ 'text-ink' if member.status == 'confirmed' else 'text-ink-muted' }}">{{ member.status_label }}</span>
             </td>
           </tr>
+          {% if can_manage_members and viewer_has_session and member.status == 'confirmed' %}
+          <tr>
+            <td colspan="3" class="px-5 pb-4 break-words">
+              <form method="post" action="/leg/community/{{ community.community_id }}/members/{{ member.building_id }}/roles" class="flex flex-wrap items-center gap-3 text-xs">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                {% for role, label in access_role_labels.items() %}
+                <label class="inline-flex items-center gap-1"><input type="checkbox" name="roles" value="{{ role }}" {% if role in (member.access_roles or []) or (role == 'admin' and member.role == 'admin') %}checked{% endif %}> {{ label }}</label>
+                {% endfor %}
+                <button type="submit" class="rounded-lg border border-line px-3 py-1 font-semibold">Rollen speichern</button>
+              </form>
+            </td>
+          </tr>
+          {% endif %}
           {% endfor %}
         </tbody>
       </table></div>
@@ -119,11 +139,75 @@
       {% else %}
       <p class="text-sm text-ink-muted mb-4">Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf.</p>
       {% endif %}
-      {% if is_admin and viewer_has_session %}
+      {% if can_manage_documents and viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/documents">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Vertragsentwürfe erstellen</button>
       </form>
+      {% endif %}
+    </section>
+
+    <section class="bg-white rounded-xl border p-6 mb-8" aria-labelledby="vnb-mutations-title">
+      <h2 id="vnb-mutations-title" class="font-bold mb-2">Mitgliedschaft: LEG und VNB</h2>
+      {% if not vnb_exchange_available|default(true) %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">Der VNB-Austausch ist derzeit nicht verfügbar.</p>{% endif %}
+      <p class="text-sm text-ink-muted mb-4">Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der Netzbetreiber verarbeitet. Eine VNB-Antwort ändert den LEG-Vertrag nicht.</p>
+      {% if vnb_mutations|default([]) %}
+      <div class="overflow-x-auto mb-4"><table class="w-full min-w-[48rem] text-sm">
+        <caption class="sr-only">Mitgliedermutationen und deren VNB-Verarbeitungsstatus</caption>
+        <thead><tr><th scope="col" class="text-left p-2">LEG-Vorgang</th><th scope="col" class="text-left p-2">Person</th><th scope="col" class="text-left p-2">Wirksam</th><th scope="col" class="text-left p-2">VNB-Status</th><th scope="col" class="text-left p-2">Antwort</th></tr></thead>
+        <tbody class="divide-y">{% for mutation in vnb_mutations %}<tr>
+          <td class="p-2"><code>{{ mutation.mutation_id }}</code><br><span class="text-xs text-ink-muted">{{ {"join": "Beitritt", "exit": "Austritt", "change": "Änderung"}.get(mutation.mutation_type, mutation.mutation_type) }} · Vertrag {{ mutation.source_agreement_id }}</span></td>
+          <td class="p-2"><code>{{ mutation.participant_id }}</code></td><td class="p-2">{{ mutation.effective_date }}</td>
+          <td class="p-2">{{ {"prepared": "Manuelle Übergabe bereit", "delivered": "Zugestellt", "acknowledged": "Bestätigt", "rejected": "Abgelehnt", "failed": "Fehlgeschlagen", "superseded": "Ersetzt"}.get(mutation.state, mutation.state) }}</td>
+          <td class="p-2">{{ mutation.response_status or "–" }}</td>
+        </tr>{% endfor %}</tbody>
+      </table></div>
+      {% for mutation in vnb_mutations if mutation.state == "prepared" and is_admin and viewer_has_session %}
+      <div class="mb-3 flex gap-3 text-sm"><a class="font-semibold text-brand" href="/leg/community/{{ community.community_id }}/vnb-mutations/{{ mutation.case_id }}/handover">Übergabepaket herunterladen</a><form method="post" action="/leg/community/{{ community.community_id }}/vnb-mutations/{{ mutation.case_id }}/delivered"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="font-semibold text-brand" type="submit">Zustellung bestätigen</button></form></div>
+      {% endfor %}
+      {% endif %}
+      {% if is_admin and viewer_has_session %}
+      <form method="post" action="/leg/community/{{ community.community_id }}/vnb-mutations" class="grid gap-3 md:grid-cols-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label class="text-sm">Vorgangs-ID<input required name="mutation_id" class="mt-1 w-full rounded-lg border p-2" placeholder="z. B. mitglied-2026-001"></label>
+        <label class="text-sm">Teilnehmer-ID<select required name="participant_id" class="mt-1 w-full rounded-lg border p-2">{% for member in community.members %}<option value="{{ member.building_id }}">{{ member.address or member.building_id }}</option>{% endfor %}</select></label>
+        <label class="text-sm">Vorgang<select name="mutation_type" class="mt-1 w-full rounded-lg border p-2"><option value="join">Beitritt</option><option value="exit">Austritt</option></select></label>
+        <label class="text-sm">Wirksamkeitsdatum<input required type="date" name="effective_date" class="mt-1 w-full rounded-lg border p-2"></label>
+        <label class="text-sm">Quellvertrag<input required name="source_agreement_id" class="mt-1 w-full rounded-lg border p-2"></label>
+        <div class="md:col-span-2"><button class="bg-brand text-white px-5 py-2 rounded-lg font-semibold" type="submit">Beim VNB einreichen</button></div>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="bg-white rounded-xl border p-6 mb-8">
+      <h2 class="font-bold mb-2">Anmeldung beim Netzbetreiber</h2>
+      <p class="text-sm text-ink-muted mb-4">OpenLEG hält Paket, Zustellung und Antwort als eigenen Vorgang fest. Ohne konfigurierte Schnittstelle laden Sie dasselbe Paket herunter und bestätigen die Zustellung von Hand.</p>
+      {% if vnb_submissions %}
+      <div class="space-y-3 mb-4">
+        {% for submission in vnb_submissions %}
+        <div class="rounded-lg border border-line p-4 text-sm">
+          <p><strong>Status:</strong> {{ {"prepared": "Paket bereit", "delivered": "Zugestellt", "acknowledged": "Bestätigt", "rejected": "Abgelehnt", "failed": "Fehlgeschlagen", "claimed": "Wird vorbereitet"}.get(submission.state, submission.state) }}</p>
+          {% if submission.response_status %}<p class="mt-1 text-ink-muted">Antwort: {{ submission.response_status }}</p>{% endif %}
+          {% if submission.state in ["failed", "rejected"] and submission.next_action %}<p class="mt-1 text-ink-muted">Nächster Schritt: {{ {"retry": "Einleitung erneut möglich", "review_rejection": "Ablehnung prüfen", "contact_vnb": "VNB kontaktieren", "escalate": "An VNB eskalieren"}.get(submission.next_action, submission.next_action) }}</p>{% endif %}
+          {% if submission.state == "prepared" and is_admin and viewer_has_session %}
+          <div class="mt-3 flex flex-wrap gap-3">
+            <a class="font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/vnb-submissions/{{ submission.case_id }}/handover">Anmeldepaket herunterladen</a>
+            <form method="post" action="/leg/community/{{ community.community_id }}/vnb-submissions/{{ submission.case_id }}/delivered">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit" class="font-semibold text-brand hover:underline">Zustellung bestätigen</button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% elif community.status == "signatures_pending" and is_admin and viewer_has_session %}
+      <form method="post" action="/leg/community/{{ community.community_id }}/vnb-submissions">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Anmeldepaket vorbereiten</button>
+      </form>
+      {% else %}
+      <p class="text-sm text-ink-muted">Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind.</p>
       {% endif %}
     </section>
 
@@ -185,7 +269,8 @@
       {% endif %}
     </section>
 
-    {% if is_admin and viewer_has_session %}
+    {% if viewer_has_session and (can_manage_members or can_prepare_billing or can_approve_billing or can_audit_billing) %}
+    {% if can_manage_members %}
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">Mitglied einladen</h2>
       <p class="text-sm text-ink-muted mb-4">Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen nicht an, ob bereits ein Profil existiert.</p>
@@ -197,14 +282,31 @@
         <button type="submit" class="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-dark">Einladen</button>
       </form>
     </section>
+    {% if is_admin %}
+    <section class="bg-white rounded-xl border p-6 mb-8">
+      <h2 class="font-bold mb-2">Vier-Augen-Prinzip</h2>
+      <form method="post" action="/leg/community/{{ community.community_id }}/access-policy">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label class="flex items-start gap-2 text-sm">
+          <input type="checkbox" name="require_dual_control" value="yes" {% if community.require_dual_control %}checked{% endif %}>
+          <span>Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen.</span>
+        </label>
+        <button type="submit" class="mt-3 rounded-lg border border-line px-4 py-2 font-semibold">Einstellung speichern</button>
+      </form>
+    </section>
+    {% endif %}
+    {% endif %}
 
+    {% if can_prepare_billing or can_approve_billing or can_audit_billing %}
     <section class="bg-white rounded-xl border p-6">
       <h2 class="font-bold mb-2">Abrechnungs-Richtlinie</h2>
       <p class="text-sm text-ink-muted mb-4">Legen Sie Preise, Netzentgelt, Mehrwertsteuer und Zustellung versioniert fest. Die Richtlinie steuert künftige Abrechnungsentwürfe.</p>
-      <a href="/leg/community/{{ community.community_id }}/billing-policy" class="inline-flex items-center rounded-lg bg-brand text-white px-6 py-3 font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Richtlinie verwalten</a>
-      <a href="/leg/community/{{ community.community_id }}/billing" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Abrechnungen freigeben</a>
+      {% if can_prepare_billing %}<a href="/leg/community/{{ community.community_id }}/billing-policy" class="inline-flex items-center rounded-lg bg-brand text-white px-6 py-3 font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Richtlinie verwalten</a>{% endif %}
+      <a href="/leg/community/{{ community.community_id }}/billing" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Abrechnungen öffnen</a>
     </section>
+    {% endif %}
 
+    {% if can_manage_members %}
     <section class="bg-white rounded-xl border p-6">
       <h2 class="font-bold mb-2">Gründung starten</h2>
       <p class="text-sm text-ink-muted mb-4">Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.</p>
@@ -213,6 +315,7 @@
         <button type="submit" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">Gründung starten</button>
       </form>
     </section>
+    {% endif %}
     {% elif is_admin %}
     <section class="bg-white rounded-xl border p-6">
       <h2 class="font-bold mb-2">Gründung starten</h2>

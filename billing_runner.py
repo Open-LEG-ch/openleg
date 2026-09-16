@@ -51,6 +51,12 @@ def _fingerprint(frames, policy, summary, reconciliation):
         "summary": summary,
         "reconciliation": reconciliation,
     }
+    if provenance.get("calculated_values_fingerprint"):
+        payload.update(
+            calculated_values_fingerprint=provenance["calculated_values_fingerprint"],
+            vnb_case_id=provenance["vnb_case_id"],
+            vnb_source=provenance["vnb_source"],
+        )
     payload.update(billing_policy.policy_fingerprint_values(policy))
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
@@ -67,6 +73,17 @@ def run_billing_period(community_id, period_start, period_end):
         frames = billing_readings.load_period_frames(
             community_id, period_start, period_end
         )
+        if db.is_db_available():
+            calculated = db.get_validated_calculated_values(
+                community_id,
+                frames.provenance["period_start"],
+                frames.provenance["period_end"],
+            )
+            if not calculated:
+                raise BillingRunError(
+                    "Billing period has no validated VNB calculated-values evidence"
+                )
+            frames = billing_readings.with_calculated_vnb_evidence(frames, calculated)
         if not frames.provenance["source_document_ids"]:
             raise BillingRunError("Billing readings have no import provenance")
         summary = billing_engine.generate_billing_summary(
@@ -104,6 +121,9 @@ def run_billing_period(community_id, period_start, period_end):
             source_document_ids=list(frames.provenance["source_document_ids"]),
             reconciliation=reconciliation,
             timezone=frames.provenance["timezone"],
+            calculated_values_fingerprint=frames.provenance.get(
+                "calculated_values_fingerprint"
+            ),
             # Freeze the complete effective policy so approval never
             # reconstructs historic choices from mutable tariff tables.
             billing_policy_snapshot=dict(policy),
