@@ -427,8 +427,9 @@ def confirm_payment_match(community_id, entry_id):
             g.operator_client["created_by"],
             key,
         )
-    except (TypeError, ValueError) as error:
-        return _error(str(error) or "Invalid payment confirmation", 409)
+    except (TypeError, ValueError):
+        # Store validation messages stay internal; the API answer is fixed.
+        return _error("Invalid payment confirmation", 409)
     return (
         jsonify(schema_version=API_SCHEMA_VERSION, **result)
         if result
