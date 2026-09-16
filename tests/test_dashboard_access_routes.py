@@ -350,7 +350,9 @@ def test_vnb_mutation_delivery_preserves_authorization_status(app_module, monkey
     assert response.status_code == 403
 
 
-def test_vnb_membership_mutation_uses_session_identity_and_csrf(app_module, monkeypatch):
+def test_vnb_membership_mutation_uses_session_identity_and_csrf(
+    app_module, monkeypatch
+):
     submit = MagicMock(return_value={"error": None, "state": "prepared"})
     monkeypatch.setattr(app_module.dashboard_module, "leg_submit_vnb_mutation", submit)
     client = app_module.web.test_client()
@@ -359,18 +361,29 @@ def test_vnb_membership_mutation_uses_session_identity_and_csrf(app_module, monk
     response = client.post(
         "/leg/community/community-1/vnb-mutations",
         data={
-            "csrf_token": "csrf-secret", "mutation_id": "mutation-1",
-            "participant_id": "building-2", "mutation_type": "exit",
-            "effective_date": "2026-10-01", "source_agreement_id": "agreement-v3",
+            "csrf_token": "csrf-secret",
+            "mutation_id": "mutation-1",
+            "participant_id": "building-2",
+            "mutation_type": "exit",
+            "effective_date": "2026-10-01",
+            "source_agreement_id": "agreement-v3",
             "bid": "building-attacker",
         },
     )
 
     assert response.status_code == 302
     submit.assert_called_once_with(
-        "community-1", "building-session", "mutation-1", "building-2",
-        "exit", "2026-10-01", "agreement-v3", {},
+        "community-1",
+        "building-session",
+        "mutation-1",
+        "building-2",
+        "exit",
+        "2026-10-01",
+        "agreement-v3",
+        {},
     )
+
+
 def test_leg_document_uses_session_identity_not_query_bid(app_module, monkeypatch):
     document_for_member = MagicMock(
         return_value={"pdf_data": b"pdf", "filename": "vertrag.pdf"}

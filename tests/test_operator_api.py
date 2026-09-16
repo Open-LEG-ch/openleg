@@ -124,9 +124,7 @@ def test_membership_mutation_uses_shared_domain_seam_and_stable_event(
 @patch("operator_api.db.claim_operator_api_usage", return_value=True)
 @patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
 @patch("operator_api.vnb_exchange.submit_formation")
-def test_formation_submission_uses_shared_domain_seam(
-    submit, _lookup, _usage, app
-):
+def test_formation_submission_uses_shared_domain_seam(submit, _lookup, _usage, app):
     submit.return_value = SimpleNamespace(
         state="prepared", case_id="case-8", event_id="evt-8"
     )

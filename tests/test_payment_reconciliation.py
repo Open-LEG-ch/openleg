@@ -272,15 +272,15 @@ def test_duplicate_statement_replay_returns_duplicate_without_second_paid_event(
         ],
     )
     monkeypatch.setattr(database, "get_connection", _connection(cursor))
-    call = dict(
-        community_id="community-a",
-        actor_id="admin-a",
-        source_name="konto.xml",
-        message_type="camt.053",
-        statement_reference="statement-1",
-        fingerprint="f" * 64,
-        entries=entries,
-    )
+    call = {
+        "community_id": "community-a",
+        "actor_id": "admin-a",
+        "source_name": "konto.xml",
+        "message_type": "camt.053",
+        "statement_reference": "statement-1",
+        "fingerprint": "f" * 64,
+        "entries": entries,
+    }
 
     first = billing.reconcile_bank_statement(**call)
     second = billing.reconcile_bank_statement(**call)
@@ -289,8 +289,7 @@ def test_duplicate_statement_replay_returns_duplicate_without_second_paid_event(
     assert second["duplicate"] is True
     assert second["statement_import_id"] == 7
     assert any(
-        "SELECT id FROM bank_statement_imports" in query
-        and "fingerprint = %s" in query
+        "SELECT id FROM bank_statement_imports" in query and "fingerprint = %s" in query
         for query, _ in cursor.executed
     )
     assert len(_event_inserts(cursor)) == 1
@@ -322,7 +321,9 @@ def test_other_community_invoice_is_never_a_match_candidate(monkeypatch):
 
     assert result["duplicate"] is False
     invoices_sql, invoices_params = next(
-        (query, params) for query, params in cursor.executed if "FROM invoices i" in query
+        (query, params)
+        for query, params in cursor.executed
+        if "FROM invoices i" in query
     )
     assert "WHERE i.community_id = %s" in invoices_sql
     assert "FOR UPDATE OF i" in invoices_sql
