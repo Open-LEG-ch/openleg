@@ -148,6 +148,7 @@ from store.billing import (  # noqa: F401
     list_invoice_events,
     prepare_invoice_delivery,
     reconcile_bank_statement,
+    record_billing_period_preparer,
     record_invoice_payment,
     save_billing_period,
     save_billing_policy,
@@ -217,13 +218,6 @@ from store.formation import (  # noqa: F401
     submit_community_to_dso,
 )
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
-from store.invoice_query import (  # noqa: F401
-    add_invoice_query_message,
-    list_invoice_queries,
-    open_invoice_query,
-    transition_invoice_query,
-    update_invoice_query,
-)
 from store.interest import (  # noqa: F401
     cleanup_expired_interest,
     get_interest_count,
@@ -234,6 +228,13 @@ from store.interest import (  # noqa: F401
     get_verified_interest_recipients,
     save_coverage_request,
     verify_coverage_request,
+)
+from store.invoice_query import (  # noqa: F401
+    add_invoice_query_message,
+    list_invoice_queries,
+    open_invoice_query,
+    transition_invoice_query,
+    update_invoice_query,
 )
 from store.meter import (  # noqa: F401
     get_meter_reading_stats,

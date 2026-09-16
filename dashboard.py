@@ -311,6 +311,7 @@ def _billing_workspace_period(period: dict, veracity_flag_count: int = 0) -> dic
         "reconciled": flags["reconciled"],
         "source_count": flags["source_count"],
         "veracity_flag_count": veracity_flag_count,
+        "prepared_by": period.get("prepared_by"),
         "approvable": (
             status == "draft" and flags["reconciled"] and flags["source_count"] > 0
         ),
@@ -435,6 +436,12 @@ def leg_billing_workspace_view(
         ],
         "billing_approved": False,
         "approval_error": None,
+        "viewer_building_id": building_id,
+        "require_dual_control": bool(
+            (formation_wizard.get_community_status(community_id) or {}).get(
+                "require_dual_control"
+            )
+        ),
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
     }
@@ -564,6 +571,31 @@ def leg_approve_billing_period(
         period_id, community_id, approver_id=building_id
     )
     return {"error": None, "invoices": invoices}
+
+
+def leg_prepare_billing_period(
+    community_id: str, building_id: str, period_id: int
+) -> dict:
+    """Record the confirmed human who submits a draft for approval."""
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
+        return {"error": "Kein Zugriff.", "error_status": 403}
+    try:
+        recorded = db.record_billing_period_preparer(
+            period_id, community_id, building_id
+        )
+    except db.BillingStoreError:
+        return {
+            "error": "Abrechnung vorübergehend nicht verfügbar.",
+            "error_status": 503,
+        }
+    if not recorded:
+        return {
+            "error": "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf.",
+            "error_status": 409,
+        }
+    return {"error": None}
 
 
 def leg_billing_policy_location(community_id: str) -> str:
@@ -973,7 +1005,6 @@ def leg_mark_vnb_manual_delivered(
             ),
         }
     return {"error": None, "state": outcome.state}
-
 
 
 def leg_document_for_member(doc_id: int, building_id: str):

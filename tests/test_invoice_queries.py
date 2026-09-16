@@ -44,6 +44,7 @@ def test_question_deadline_configuration_fails_closed(monkeypatch):
     with pytest.raises(ValueError):
         invoice_queries.deadlines(datetime(2026, 9, 15, tzinfo=timezone.utc))
 
+
 def test_operator_update_validates_transition_before_appending_message(monkeypatch):
     class Cursor:
         def __init__(self):
@@ -147,7 +148,7 @@ def test_mark_reminded_appends_one_event_then_stays_silent(monkeypatch):
     assert len(updates) == 1
     assert "reminder_sent_at IS NULL" in updates[0]
     assert len(events) == 1
-    assert cursor.executed[-1][1] == (7, "system", "open", "open")
+    assert cursor.executed[-1][1] == (7, "system", "open", "open", None)
 
     repeat = RecordingCursor()
     monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(repeat))

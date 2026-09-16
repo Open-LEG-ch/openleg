@@ -17,6 +17,7 @@ import billing_approval
 import billing_lifecycle
 import billing_policy
 import payment_reconciliation
+from store import invoice_query as invoice_query_store
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,13 @@ def _json_default(value):
 
 
 def save_billing_period(
-    community_id: str, period_start, period_end, summary: dict
+    community_id: str, period_start, period_end, summary: dict, prepared_by="system"
 ) -> int:
-    """Save billing period and line items from billing engine output."""
+    """Save billing period and line items from billing engine output.
+
+    The preparer is recorded so a community can require a different
+    person to approve under dual control.
+    """
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
@@ -65,9 +70,9 @@ def save_billing_period(
                      total_surplus_kwh, total_network_discount_chf, distribution_model,
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
                      timezone, input_fingerprint, source_document_ids,
-                     reconciliation, billing_policy_snapshot, status)
+                     reconciliation, billing_policy_snapshot, prepared_by, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s::jsonb, %s::jsonb, %s::jsonb, 'draft')
+                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, 'draft')
                     RETURNING id
                 """,
                     (
@@ -94,6 +99,7 @@ def save_billing_period(
                             if summary.get("billing_policy_snapshot")
                             else None
                         ),
+                        prepared_by,
                     ),
                 )
                 period_id = cur.fetchone()["id"]
@@ -157,6 +163,33 @@ def save_billing_period(
     except Exception as e:
         logger.error(f"[DB] Error saving billing period: {e}")
         raise
+
+
+def record_billing_period_preparer(
+    period_id: int, community_id: str, actor_building_id: str
+) -> bool:
+    """Stamp the confirmed human who submits a draft for approval.
+
+    Only draft periods in the exact community can be stamped; the latest
+    preparer wins so a re-prepared draft always names a current actor.
+    """
+    if not actor_building_id:
+        return False
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                    UPDATE billing_periods
+                    SET prepared_by = %s
+                    WHERE id = %s AND community_id = %s AND status = 'draft'
+                    RETURNING id
+                """,
+                (actor_building_id, period_id, community_id),
+            )
+            return cur.fetchone() is not None
+    except Exception as e:
+        logger.error(f"[DB] Error recording billing preparer: {e}")
+        raise BillingStoreError("Could not record billing preparer") from e
 
 
 def get_active_communities() -> list[dict]:
@@ -286,7 +319,11 @@ def _next_invoice_sequence(cur, community_id: str, prefix: str, year: int) -> in
 
 
 def approve_billing_period(
-    period_id: int, community_id: str, issue_date=None, *, approver_id: str | None = None
+    period_id: int,
+    community_id: str,
+    issue_date=None,
+    *,
+    approver_id: str | None = None,
 ) -> list[dict]:
     """Issue immutable invoices for one reconciled draft period, atomically.
 
@@ -1238,6 +1275,12 @@ def correct_invoice(
                 reason=reason.strip(),
                 reference=original["invoice_number"],
                 idempotency_key=f"corrects:{original_invoice_id}",
+            )
+            invoice_query_store.record_invoice_query_linkage(
+                cur,
+                original_invoice_id,
+                actor_id,
+                corrected["invoice_number"],
             )
             return {"lifecycle_state": new_state, "already_corrected": False}
     except billing_lifecycle.InvoiceLifecycleError:

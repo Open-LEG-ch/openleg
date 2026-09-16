@@ -59,15 +59,32 @@ def _append(cur, query_id, actor_id, message, filename="", data=None):
     )
 
 
-def _event(cur, query_id, actor_id, previous_status, new_status):
+def _event(cur, query_id, actor_id, previous_status, new_status, linked_reference=None):
     cur.execute(
         """
             INSERT INTO invoice_query_events (
-                query_id, actor_id, previous_status, new_status
-            ) VALUES (%s, %s, %s, %s)
+                query_id, actor_id, previous_status, new_status, linked_reference
+            ) VALUES (%s, %s, %s, %s, %s)
         """,
-        (query_id, actor_id, previous_status, new_status),
+        (query_id, actor_id, previous_status, new_status, linked_reference),
     )
+
+
+def record_invoice_query_linkage(cur, invoice_id, actor_id, reference):
+    """Append one correction-linkage event to every open query on the invoice.
+
+    Runs inside the caller's invoice transaction so the case history records
+    the correction exactly when the invoice lifecycle does.
+    """
+    cur.execute(
+        """
+            SELECT id, status FROM invoice_queries
+            WHERE invoice_id = %s AND status IN ('open', 'acknowledged')
+        """,
+        (invoice_id,),
+    )
+    for row in cur.fetchall():
+        _event(cur, row["id"], actor_id, row["status"], row["status"], reference)
 
 
 def list_invoice_queries(

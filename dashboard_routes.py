@@ -538,8 +538,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         if not package:
             abort(404)
         return send_file(
-            io.BytesIO(package["manual_package"]), mimetype="application/zip",
-            as_attachment=True, download_name="openleg-vnb-mitgliedermutation.zip",
+            io.BytesIO(package["manual_package"]),
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="openleg-vnb-mitgliedermutation.zip",
         )
 
     @bp.route(
@@ -555,7 +557,6 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         if result["error"]:
             abort(result.get("error_status", 409))
         return _leg_dashboard_redirect(community_id)
-
 
     @bp.route("/leg/community/<community_id>/billing")
     def leg_billing_workspace(community_id):
@@ -603,6 +604,25 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         return redirect(
             dashboard_module.leg_billing_workspace_location(community_id) + suffix
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/period/<int:period_id>/prepare",
+        methods=["POST"],
+    )
+    def leg_billing_period_prepare(community_id, period_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        if request.form.get("confirm_prepare") != "yes":
+            abort(400)
+        result = dashboard_module.leg_prepare_billing_period(
+            community_id, building_id, period_id
+        )
+        if result["error"]:
+            abort(result["error_status"])
+        return redirect(
+            dashboard_module.leg_billing_workspace_location(community_id)
+            + "?period=prepared"
         )
 
     @bp.route(

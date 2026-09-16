@@ -1032,8 +1032,13 @@ def create_tables():
                     actor_id VARCHAR(64) NOT NULL,
                     previous_status VARCHAR(32),
                     new_status VARCHAR(32) NOT NULL,
+                    linked_reference VARCHAR(64),
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
+            """)
+            cur.execute("""
+                ALTER TABLE invoice_query_events
+                    ADD COLUMN IF NOT EXISTS linked_reference VARCHAR(64)
             """)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS bank_statement_imports (

@@ -248,3 +248,54 @@ def test_leg_set_dual_control_requires_an_administrator(monkeypatch):
 
     assert result == {"error": None}
     assert calls == [("c1", True, "b1")]
+
+
+def test_prepare_billing_period_records_the_confirmed_preparer(monkeypatch):
+    calls = []
+
+    monkeypatch.setattr(
+        dashboard,
+        "_require_capability",
+        lambda *_args: member(community_access.BILLING_PREPARER),
+    )
+    monkeypatch.setattr(
+        dashboard.db,
+        "record_billing_period_preparer",
+        lambda period_id, community_id, actor: (
+            calls.append((period_id, community_id, actor)) or True
+        ),
+    )
+
+    result = dashboard.leg_prepare_billing_period("c1", "b9", 42)
+
+    assert result == {"error": None}
+    assert calls == [(42, "c1", "b9")]
+
+
+def test_prepare_billing_period_refuses_without_prepare_capability(monkeypatch):
+    monkeypatch.setattr(
+        dashboard,
+        "_require_capability",
+        lambda *_args: None,
+    )
+
+    result = dashboard.leg_prepare_billing_period("c1", "b9", 42)
+
+    assert result["error_status"] == 403
+
+
+def test_prepare_billing_period_refuses_a_non_draft_period(monkeypatch):
+    monkeypatch.setattr(
+        dashboard,
+        "_require_capability",
+        lambda *_args: member(community_access.BILLING_PREPARER),
+    )
+    monkeypatch.setattr(
+        dashboard.db,
+        "record_billing_period_preparer",
+        lambda _period_id, _community_id, _actor: False,
+    )
+
+    result = dashboard.leg_prepare_billing_period("c1", "b9", 42)
+
+    assert result["error_status"] == 409
