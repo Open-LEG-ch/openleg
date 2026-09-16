@@ -1022,7 +1022,8 @@ def create_tables():
             cur.execute("""
                 ALTER TABLE invoice_queries
                     ADD COLUMN IF NOT EXISTS response_due_at TIMESTAMPTZ,
-                    ADD COLUMN IF NOT EXISTS reminder_due_at TIMESTAMPTZ
+                    ADD COLUMN IF NOT EXISTS reminder_due_at TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ
             """)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS invoice_query_events (

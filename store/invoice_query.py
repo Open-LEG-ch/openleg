@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Persistence for private invoice questions and their append-only history."""
 
+from datetime import datetime
+
 import invoice_queries
 
 
@@ -162,6 +164,42 @@ def transition_invoice_query(
             (target_status, query_id),
         )
         _event(cur, query_id, actor_id, row["status"], target_status)
+        return True
+
+
+def due_invoice_query_reminders(now: datetime) -> list[dict]:
+    """List open or acknowledged cases whose reminder deadline has passed."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                SELECT id, community_id, invoice_id, status, response_due_at
+                FROM invoice_queries
+                WHERE status IN ('open', 'acknowledged')
+                  AND reminder_due_at IS NOT NULL
+                  AND reminder_due_at <= %s
+                  AND reminder_sent_at IS NULL
+                ORDER BY created_at, id
+            """,
+            (now,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def mark_invoice_query_reminded(case_id: int, actor: str) -> bool:
+    """Record the overdue reminder once; repeat calls write nothing."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                UPDATE invoice_queries SET reminder_sent_at = CURRENT_TIMESTAMP
+                WHERE id = %s AND reminder_sent_at IS NULL
+                RETURNING status
+            """,
+            (case_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return False
+        _event(cur, case_id, actor, row["status"], row["status"])
         return True
 
 

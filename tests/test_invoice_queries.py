@@ -84,3 +84,76 @@ def test_operator_update_validates_transition_before_appending_message(monkeypat
 
     assert len(cursor.executed) == 1
     assert "FOR UPDATE" in cursor.executed[0][0]
+
+
+class RecordingCursor:
+    def __init__(self, rows=None):
+        self.executed = []
+        self._rows = list(rows or [])
+
+    def execute(self, query, params=None):
+        self.executed.append((query, params))
+
+    def fetchone(self):
+        return self._rows.pop(0) if self._rows else None
+
+    def fetchall(self):
+        return list(self._rows)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+
+class SingleUseConnection:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def cursor(self):
+        return self._cursor
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+
+def test_due_reminders_scan_filters_by_status_deadline_and_unsent(monkeypatch):
+    cursor = RecordingCursor(rows=[{"id": 3}, {"id": 5}])
+    monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(cursor))
+    now = datetime(2026, 9, 16, 6, tzinfo=timezone.utc)
+
+    due = invoice_query.due_invoice_query_reminders(now)
+
+    assert [case["id"] for case in due] == [3, 5]
+    query, params = cursor.executed[0]
+    assert "status IN ('open', 'acknowledged')" in query
+    assert "reminder_due_at <= %s" in query
+    assert "reminder_sent_at IS NULL" in query
+    assert params == (now,)
+
+
+def test_mark_reminded_appends_one_event_then_stays_silent(monkeypatch):
+    cursor = RecordingCursor(rows=[{"status": "open"}])
+    monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(cursor))
+
+    assert invoice_query.mark_invoice_query_reminded(7, "system") is True
+
+    updates = [q for q, _p in cursor.executed if "UPDATE invoice_queries" in q]
+    events = [q for q, _p in cursor.executed if "INSERT INTO invoice_query_events" in q]
+    assert len(updates) == 1
+    assert "reminder_sent_at IS NULL" in updates[0]
+    assert len(events) == 1
+    assert cursor.executed[-1][1] == (7, "system", "open", "open")
+
+    repeat = RecordingCursor()
+    monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(repeat))
+
+    assert invoice_query.mark_invoice_query_reminded(7, "system") is False
+
+    assert len(repeat.executed) == 1
+    assert "UPDATE invoice_queries" in repeat.executed[0][0]
+    assert "INSERT" not in repeat.executed[0][0]
