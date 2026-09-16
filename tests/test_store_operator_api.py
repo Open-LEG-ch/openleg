@@ -85,3 +85,41 @@ def test_only_the_current_worker_claim_can_complete_delivery(monkeypatch):
     sql, params = cursor.executed[0]
     assert "status='processing' AND claim_id=%s" in sql
     assert params[-2:] == ("delivery-1", "claim-current")
+
+
+def test_reenqueued_transition_suppresses_duplicate_deliveries(monkeypatch):
+    cursor = Cursor([])
+    monkeypatch.setattr(database, "get_connection", lambda: _connection(cursor))
+
+    event_id = store.enqueue_event(
+        cursor, "formation.submitted", "case-1", "community-a", {"status": "prepared"}
+    )
+    replayed_id = store.enqueue_event(
+        Cursor([]),
+        "formation.submitted",
+        "case-1",
+        "community-a",
+        {"status": "prepared"},
+    )
+
+    assert (
+        replayed_id == event_id == store.event_id_for("formation.submitted", "case-1")
+    )
+    event_sql, event_params = cursor.executed[0]
+    assert "ON CONFLICT (event_id) DO NOTHING" in event_sql
+    assert "'operator-event/1'" in event_sql
+    assert event_params[:4] == (
+        event_id,
+        "formation.submitted",
+        "case-1",
+        "community-a",
+    )
+    delivery_sql, delivery_params = cursor.executed[1]
+    assert "ON CONFLICT (event_id,client_id) DO NOTHING" in delivery_sql
+    assert "active=TRUE AND webhook_url IS NOT NULL" in delivery_sql
+    assert delivery_params == (
+        event_id,
+        "community-a",
+        "formation.read",
+        "formation.read",
+    )

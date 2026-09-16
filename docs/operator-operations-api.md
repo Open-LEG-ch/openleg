@@ -32,8 +32,10 @@ Formation and membership use the versioned VNB exchange contract:
 - `POST /formation/submissions` prepares or sends the current signed formation
   package. Its canonical payload fingerprint makes replays idempotent.
 - `POST /membership-mutations` accepts `mutation_id`, `participant_id`,
-  `mutation_type`, `effective_date`, `source_agreement_id`, and an optional
-  `after` object. The mutation ID is stable within one community.
+  `mutation_type`, `effective_date`, and `source_agreement_id`. The mutation ID
+  is stable within one community. `join` and `exit` derive their facts from the
+  LEG record; `change` additionally accepts an `after` object whose keys are
+  limited to `status`, `role`, and `access_roles`. Unknown keys are rejected.
 
 These two mutations call the same domain seam as the dashboard. Manual and
 automated delivery therefore share authorization, validation, state changes,
@@ -60,8 +62,65 @@ Authorization: Bearer olk_…
 Idempotency-Key: mutation-2026-10-01-building-7
 Content-Type: application/json
 
-{"mutation_id":"member-2026-1","participant_id":"building-7","mutation_type":"join","effective_date":"2026-10-01","source_agreement_id":"agreement-v3","after":{"metering_point_id":"CH123"}}
+{"mutation_id":"member-2026-1","participant_id":"building-7","mutation_type":"join","effective_date":"2026-10-01","source_agreement_id":"agreement-v3"}
 ```
+
+## Rate limits
+
+Every credential carries an hourly request budget (`rate_limit_per_hour`).
+The HTTP boundary rejects a request once the budget is spent with
+`429` and `Retry-After: 3600`; the window resets one hour after the first
+counted request. Revoking or rotating a credential takes effect immediately on
+the next request: revoked credentials answer `401`, rotated ones invalidate the
+previous token.
+
+## Credential handling
+
+The token and the webhook secret are returned once at creation (and rotation)
+and are never stored in plain text or repeated in list responses — only a
+SHA-256 hash is kept. Store them in the client's secret manager at creation
+time. Every API response is sent with `Cache-Control: no-store`.
+
+## Webhook payloads and signature verification
+
+A delivery posts the canonical JSON body with these headers:
+
+```http
+OpenLEG-Delivery: <delivery-id>
+OpenLEG-Signature: sha256=<hex hmac>
+Content-Type: application/json
+```
+
+The signature is an HMAC-SHA256 over the exact raw body bytes, keyed with the
+per-client webhook secret disclosed at credential creation. Verify before
+parsing:
+
+```python
+import hashlib, hmac
+
+
+def verify(body: bytes, secret: str, header_value: str) -> bool:
+    expected = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, header_value)
+```
+
+A minimal `membership.mutation.acknowledged` payload:
+
+```json
+{
+  "schema_version": "operator-event/1",
+  "event_id": "<stable event id>",
+  "event_type": "membership.mutation.acknowledged",
+  "aggregate_id": "<case id>",
+  "community_id": "leg-1",
+  "occurred_at": "<iso timestamp>",
+  "payload": {"case_id": "<case id>", "state": "acknowledged"}
+}
+```
+
+Consumers must verify the signature, treat unknown payload keys as ignorable
+within version 1, and respond to non-2xx delivery outcomes by waiting for the
+bounded retry schedule rather than re-posting events themselves.
 
 Dashboard-session administrators manage credentials at
 `/leg/community/{community_id}/operator-api/credentials` (create/list), with
