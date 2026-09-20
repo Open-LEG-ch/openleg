@@ -90,6 +90,49 @@ def test_a_malformed_public_site_url_is_refused(value, message):
 
 
 # ---------------------------------------------------------------------------
+# The cookieless Matomo site id
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    (
+        pytest.param("", "", id="empty-disables-tracking"),
+        pytest.param(None, "", id="unset-disables-tracking"),
+        pytest.param("  ", "", id="blank-is-normalized-away"),
+        pytest.param("1", "1", id="single-digit"),
+        pytest.param(" 7 ", "7", id="padded-is-stripped"),
+        pytest.param("42", "42", id="multi-digit"),
+    ),
+)
+def test_a_valid_matomo_site_id_is_normalized(value, expected):
+    assert app_config.validated_matomo_site_id(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value",
+    (
+        pytest.param("1'];alert(1)//", id="script-content"),
+        pytest.param("0", id="leading-zero"),
+        pytest.param("007", id="zero-padded"),
+        pytest.param("-1", id="negative"),
+        pytest.param("1.5", id="float"),
+        pytest.param("abc", id="letters"),
+        pytest.param("1 2", id="internal-space"),
+    ),
+)
+def test_a_malformed_matomo_site_id_is_refused(value):
+    with pytest.raises(ValueError, match="positive integer"):
+        app_config.validated_matomo_site_id(value)
+
+
+def test_the_environment_reaches_the_matomo_site_id_setting():
+    config = app_config.build_config(_env(MATOMO_SITE_ID=" 3 "))
+
+    assert config["MATOMO_SITE_ID"] == "3"
+
+
+# ---------------------------------------------------------------------------
 # Cookie security, which has three sources and a precedence between them
 # ---------------------------------------------------------------------------
 

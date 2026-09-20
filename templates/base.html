@@ -14,5 +14,17 @@
   </main>
   {% include 'partials/site_footer.html' %}
   {% block scripts %}{% endblock %}
+  {% if matomo_site_id %}
+  <script>
+    window._paq = window._paq || [];
+    window._paq.push(['disableCookies']);
+    window._paq.push(['setDoNotTrack', true]);
+    window._paq.push(['trackPageView']);
+    window._paq.push(['enableLinkTracking']);
+    window._paq.push(['setTrackerUrl', 'https://stats.openleg.ch/matomo.php']);
+    window._paq.push(['setSiteId', '{{ matomo_site_id }}']);
+  </script>
+  <script src="https://stats.openleg.ch/matomo.js" async defer></script>
+  {% endif %}
 </body>
 </html>
