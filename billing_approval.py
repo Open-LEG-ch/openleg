@@ -9,11 +9,13 @@ outside the policy value domains of ``billing_policy`` is refused with
 :class:`BillingApprovalError`.
 """
 
+import json
 import re
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
 
+import battery_asset
 import billing_policy
 
 _CENT = Decimal("0.01")
@@ -531,6 +533,41 @@ def _require_valid_policy(policy, period_start, community_id):
     )
 
 
+def _frozen_battery_block(period):
+    """Decode and verify the period's frozen battery block, or return None.
+
+    A period recorded before the battery feature existed carries none. A
+    block that is present but malformed, incomplete, or inconsistent with
+    its own shares fails closed.
+    """
+    raw = period.get("battery_snapshot")
+    if raw in (None, "", {}):
+        return None
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except ValueError as exc:
+            raise BillingApprovalError(
+                "Der Quartierakku der Periode ist unvollständig."
+            ) from exc
+    try:
+        return battery_asset.validate_frozen_block(raw, _billed_participants_of(period))
+    except battery_asset.BatteryAssetError as exc:
+        raise BillingApprovalError(str(exc)) from exc
+
+
+def _billed_participants_of(period):
+    """The distinct participant ids across the period's line items."""
+    line_items = period.get("line_items") or []
+    return sorted(
+        {
+            item.get("participant_id")
+            for item in line_items
+            if item.get("participant_id")
+        }
+    )
+
+
 def prepare_invoice_snapshots(period, issue_date=None):
     """Build one immutable invoice snapshot per billed participant.
 
@@ -558,6 +595,7 @@ def prepare_invoice_snapshots(period, issue_date=None):
     line_items, consumption_kwh, production_kwh = _require_wellformed_line_items(
         period.get("line_items"), internal_price
     )
+    battery_block = _frozen_battery_block(period)
     reconciliation = period.get("reconciliation")
     _require_canonical_reconciliation(reconciliation, consumption_kwh, production_kwh)
 
@@ -614,6 +652,11 @@ def prepare_invoice_snapshots(period, issue_date=None):
                 "issue_date": issue_date,
                 "due_date": due_date,
                 "policy_snapshot": _json_safe(policy),
+                "battery_share_snapshot": _json_safe(
+                    battery_asset.participant_share(battery_block, participant_id)
+                    if battery_block
+                    else None
+                ),
                 "provenance_snapshot": participant_provenance,
                 "input_fingerprint": period["input_fingerprint"],
                 "source_document_ids": _json_safe(list(source_document_ids)),

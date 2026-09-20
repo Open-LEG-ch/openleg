@@ -152,6 +152,6 @@ def test_save_billing_period_persists_the_calculated_values_fingerprint(monkeypa
     assert "INSERT INTO billing_periods" in query
     assert "calculated_values_fingerprint" in query
     assert params[0] == "leg-1"
-    assert params[12] == "c" * 64
+    assert params[14] == "c" * 64
     # The fingerprint is the last bound column before the literal 'draft'.
     assert params[-1] == "a" * 64

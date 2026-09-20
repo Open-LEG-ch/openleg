@@ -4,9 +4,10 @@
 import json
 import math
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from urllib.parse import quote, urlencode
 
+import battery_asset
 import billing_lifecycle
 import billing_policy
 import billing_workspace
@@ -190,6 +191,13 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "access_role_labels": community_access.ROLE_LABELS,
         "leg_documents": db.list_leg_documents(community_id),
         "correspondence": db.list_correspondence(community_id),
+        "battery": _battery_overview(community_id),
+        "battery_member_ids": (
+            confirmed_member_ids(community_id)
+            if community_access.is_administrator(member)
+            or community_access.PREPARE_BILLING in capabilities
+            else []
+        ),
         "vnb_submissions": vnb_submissions,
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,
@@ -649,6 +657,82 @@ def leg_save_billing_policy(community_id: str, building_id: str, form) -> dict:
             "errors": {
                 "effective_from": (
                     "Für dieses Gültig-ab-Datum existiert bereits eine Version."
+                )
+            },
+        }
+    return {"error": None, "errors": {}}
+
+
+def _battery_overview(community_id: str) -> dict:
+    """Display model of the community's shared storage asset, fail-soft."""
+    try:
+        asset = db.get_battery_asset(community_id)
+    except db.BillingStoreError:
+        return {"configured": False, "asset": None, "store_error": True}
+    if not asset:
+        return {"configured": False, "asset": None, "store_error": False}
+    capacity = asset["capacity_kwh"]
+    annual_cost = asset["annual_cost_chf"]
+    shares = []
+    for participant_id, share_pct in asset["shares"]:
+        amount = (share_pct * annual_cost / Decimal(100)).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        shares.append(
+            {
+                "participant_id": participant_id,
+                "share_pct_display": format(share_pct, "f"),
+                "share_amount_display": format(amount, "f"),
+            }
+        )
+    return {
+        "configured": True,
+        "asset": {
+            "name": asset["name"],
+            "capacity_kwh_display": format(capacity, "f"),
+            "annual_cost_chf_display": format(annual_cost, "f"),
+            "shares": shares,
+        },
+        "store_error": False,
+    }
+
+
+def confirmed_member_ids(community_id: str) -> list[str]:
+    """The confirmed members whose building ids key the cost-share inputs."""
+    status = formation_wizard.get_community_status(community_id)
+    if not status:
+        return []
+    return sorted(
+        member["building_id"]
+        for member in status["members"] or []
+        if member.get("status") == "confirmed"
+    )
+
+
+def leg_save_battery_asset(community_id: str, building_id: str, form) -> dict:
+    """Validate and persist the community's storage asset and cost shares.
+
+    Only billing preparation may write. The share inputs are keyed by
+    confirmed member building_id; a community without confirmed members
+    cannot configure a battery.
+    """
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
+        return {"error": "Kein Zugriff.", "errors": {}}
+    participants = confirmed_member_ids(community_id)
+    result = battery_asset.validate_battery_form(form, participants)
+    if result["errors"]:
+        return {"error": None, "errors": result["errors"]}
+    try:
+        db.save_battery_asset(community_id, result["asset"])
+    except db.BillingStoreError:
+        return {
+            "error": None,
+            "errors": {
+                "shares": (
+                    "Der Quartierakku konnte nicht gespeichert werden. "
+                    "Bitte erneut versuchen."
                 )
             },
         }

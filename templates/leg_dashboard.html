@@ -305,6 +305,76 @@
       {% if can_prepare_billing %}<a href="/leg/community/{{ community.community_id }}/billing-policy" class="inline-flex items-center rounded-lg bg-brand text-white px-6 py-3 font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Richtlinie verwalten</a>{% endif %}
       <a href="/leg/community/{{ community.community_id }}/billing" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Abrechnungen öffnen</a>
     </section>
+
+    {% if battery and battery.store_error %}
+    <section class="bg-white rounded-xl border p-6">
+      <h2 class="font-bold mb-2">Quartierakku</h2>
+      <p class="text-sm text-ink-muted">Der gemeinsame Speicher ist hinterlegt, aber derzeit nicht lesbar. Prüfen Sie die Konfiguration später erneut.</p>
+    </section>
+    {% elif can_prepare_billing and battery_member_ids %}
+    {% set battery_errors = battery_errors|default({}) %}
+    {% set battery_values = battery_values|default({}) %}
+    <section class="bg-white rounded-xl border p-6">
+      <h2 class="font-bold mb-2">Quartierakku</h2>
+      <p class="text-sm text-ink-muted mb-4">Ein gemeinsamer Speicher, dessen Jahreskosten die Teilnehmenden nach Anteil tragen. Der Anteil jedes Mitglieds muss eingetragen sein; alle Anteile zusammen müssen genau 100 Prozent ergeben.</p>
+      {% if battery and battery.configured %}
+      <div class="rounded-lg border border-line bg-slate-50 p-4 mb-4 text-sm">
+        <p class="font-semibold">{{ battery.asset.name }}</p>
+        <p class="text-ink-muted">Kapazität: {{ battery.asset.capacity_kwh_display }} kWh · Jährliche Kosten: {{ battery.asset.annual_cost_chf_display }} CHF</p>
+        <ul class="mt-2 space-y-1">
+          {% for share in battery.asset.shares %}
+          <li>{{ share.participant_id }}: {{ share.share_pct_display }} % ({{ share.share_amount_display }} CHF/Jahr)</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      <form method="post" action="/leg/community/{{ community.community_id }}/battery" class="grid sm:grid-cols-2 gap-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div>
+          <label for="battery-name" class="block text-sm font-semibold mb-1">Bezeichnung</label>
+          <input id="battery-name" type="text" name="name" required maxlength="80" value="{{ battery_values.get('name', battery.asset.name if battery and battery.configured else '') }}" placeholder="z. B. Quartierakku" class="w-full border rounded-lg px-3 py-2 text-sm">
+          {% if battery_errors.get('name') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['name'] }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="battery-capacity" class="block text-sm font-semibold mb-1">Kapazität (kWh)</label>
+          <input id="battery-capacity" type="text" inputmode="decimal" name="capacity_kwh" required value="{{ battery_values.get('capacity_kwh', battery.asset.capacity_kwh_display if battery and battery.configured else '') }}" placeholder="z. B. 45" class="w-full border rounded-lg px-3 py-2 text-sm">
+          {% if battery_errors.get('capacity_kwh') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['capacity_kwh'] }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="battery-cost" class="block text-sm font-semibold mb-1">Jährliche Kosten (CHF)</label>
+          <input id="battery-cost" type="text" inputmode="decimal" name="annual_cost_chf" required value="{{ battery_values.get('annual_cost_chf', battery.asset.annual_cost_chf_display if battery and battery.configured else '') }}" placeholder="z. B. 960" class="w-full border rounded-lg px-3 py-2 text-sm">
+          {% if battery_errors.get('annual_cost_chf') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['annual_cost_chf'] }}</p>{% endif %}
+        </div>
+        <div class="sm:col-span-2">
+          <p class="text-sm font-semibold mb-2">Anteile (% pro Mitglied)</p>
+          <div class="grid sm:grid-cols-2 gap-3">
+            {% for member_id in battery_member_ids %}
+            <div>
+              <label for="battery-share-{{ loop.index }}" class="block text-xs text-ink-muted mb-1">{{ member_id }}</label>
+              <input id="battery-share-{{ loop.index }}" type="text" inputmode="decimal" name="share_{{ member_id }}" required value="{{ battery_values.get('share_' ~ member_id, '') }}" placeholder="z. B. 12.5" class="w-full border rounded-lg px-3 py-2 text-sm">
+              {% if battery_errors.get('share_' ~ member_id) %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['share_' ~ member_id] }}</p>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% if battery_errors.get('shares') %}<p class="mt-2 text-sm text-accent" role="alert">{{ battery_errors['shares'] }}</p>{% endif %}
+        </div>
+        <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Quartierakku speichern</button>
+      </form>
+    </section>
+    {% elif battery and battery.configured %}
+    <section class="bg-white rounded-xl border p-6">
+      <h2 class="font-bold mb-2">Quartierakku</h2>
+      <div class="text-sm text-ink-muted">
+        <p class="font-semibold text-ink">{{ battery.asset.name }}</p>
+        <p>Kapazität: {{ battery.asset.capacity_kwh_display }} kWh · Jährliche Kosten: {{ battery.asset.annual_cost_chf_display }} CHF</p>
+        <ul class="mt-2 space-y-1">
+          {% for share in battery.asset.shares %}
+          <li>{{ share.participant_id }}: {{ share.share_pct_display }} % ({{ share.share_amount_display }} CHF/Jahr)</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+    {% endif %}
     {% endif %}
 
     {% if can_manage_members %}

@@ -172,6 +172,19 @@ it.
   admin-gated. Member display fails closed on unreadable figures (#528).
 - **Consent gate:** not neighbour-visible.
 
+## store/battery
+
+- **Tables:** `billing_storage_assets`, `billing_storage_shares`
+- **Holds:** one shared storage asset (Quartierakku) per community: `name`,
+  `capacity_kwh`, `annual_cost_chf`, and per-participant `share_pct`.
+- **Purpose:** the cost share of the shared battery that every billed
+  participant carries.
+- **Owner:** the LEG (billing preparation writes); members see their own
+  share.
+- **Sensitivity:** financial configuration data.
+- **Resident-visible:** the operator dashboard section is capability-gated.
+- **Consent gate:** not neighbour-visible.
+
 ## store/profile
 
 - **Tables:** `municipalities`, `municipality_profiles`,
