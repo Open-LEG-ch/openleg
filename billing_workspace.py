@@ -205,6 +205,7 @@ def _detail_model(period):
                 else "Abweichung prüfen"
             ),
         },
+        battery=_normalise(period.get("battery_snapshot")) or None,
         provenance={
             "source_document_ids": _normalise(source_ids),
             "source_count": len(source_ids),

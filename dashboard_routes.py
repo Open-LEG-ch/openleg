@@ -97,8 +97,11 @@ def _dashboard_public_context(**extra):
     return context
 
 
-def _leg_dashboard_redirect(community_id):
-    return redirect(dashboard_module.leg_dashboard_location(community_id))
+def _leg_dashboard_redirect(community_id, saved=None):
+    location = dashboard_module.leg_dashboard_location(community_id)
+    if saved:
+        location = f"{location}?saved={saved}"
+    return redirect(location)
 
 
 def _rate_limit(limiter, limit_string):
@@ -895,6 +898,33 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         return redirect(
             dashboard_module.leg_billing_policy_location(community_id) + "?saved=1"
         )
+
+    @bp.route("/leg/community/<community_id>/battery", methods=["POST"])
+    def leg_battery_save(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.leg_save_battery_asset(
+            community_id, building_id, request.form
+        )
+        if result["error"]:
+            abort(403)
+        if result["errors"]:
+            return (
+                render_city_template(
+                    "leg_dashboard.html",
+                    **dashboard_module.leg_overview(community_id, building_id),
+                    viewer_has_session=True,
+                    csrf_token=_dashboard_csrf_token(),
+                    battery_errors=result["errors"],
+                    battery_values={
+                        key: request.form.get(key, "")
+                        for key in request.form
+                        if key != "csrf_token"
+                    },
+                ),
+                400,
+            )
+        return _leg_dashboard_redirect(community_id, saved="battery")
 
     @bp.route("/leg/community/<community_id>/correspondence", methods=["POST"])
     def leg_community_correspondence(community_id):

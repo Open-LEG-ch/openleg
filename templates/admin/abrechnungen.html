@@ -86,6 +86,17 @@
           </div>
           <p class="mt-4 text-sm text-ink-muted">Bezug und Produktion werden für die Gemeinschaft und jeden Teilnehmer gegen die VNB-Werte geprüft.</p>
         </section>
+        {% if selected.battery %}
+        <section class="rounded-2xl border border-line bg-white p-5" aria-labelledby="battery-title">
+          <h3 id="battery-title" class="text-lg font-bold">Quartierakku</h3>
+          <p class="mt-1 text-sm text-ink-muted">{{ selected.battery.name }}: {{ selected.battery.capacity_kwh }} kWh, {{ selected.battery.annual_cost_chf }} CHF pro Jahr.</p>
+          <dl class="mt-3 grid grid-cols-2 gap-2 text-sm">
+            {% for participant, share_pct in selected.battery.shares_pct.items() %}
+            <div><dt class="text-ink-muted">{{ participant }}: {{ share_pct }} %</dt><dd class="font-mono font-semibold">{{ selected.battery.share_amounts_chf[participant] }} CHF</dd></div>
+            {% endfor %}
+          </dl>
+        </section>
+        {% endif %}
       </div>
 
       <section class="mt-8 rounded-2xl border border-line bg-white p-5" aria-labelledby="source-title">

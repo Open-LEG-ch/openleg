@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import battery_asset
 import billing_engine
 import billing_policy
 import billing_readings
@@ -95,6 +96,16 @@ def run_billing_period(community_id, period_start, period_end):
             distribution_model=policy["distribution_model"],
             settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
         )
+        try:
+            asset = db.get_battery_asset(community_id)
+            # The key exists only when a battery is configured, so runs
+            # without one keep the same fingerprint shape they always had.
+            if asset:
+                summary["battery"] = battery_asset.draft_block(
+                    asset, frames.participants
+                )
+        except battery_asset.BatteryAssetError as exc:
+            raise BillingRunError(str(exc)) from exc
         reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
         participant_gaps = reconciliation["per_participant"].values()
         production_gaps = reconciliation["production_per_participant"].values()

@@ -317,7 +317,7 @@ def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch)
     assert "internal_price_chf_per_kwh" in period_query
     assert "grid_fee_chf_per_kwh" in period_query
     assert "'draft'" in period_query
-    assert period_params[9:11] == (0.15, 0.10)
+    assert period_params[10:12] == (0.15, 0.10)
     item_queries = cursor.executed[1:]
     assert len(item_queries) == 3
     assert all("item_type" in query for query, _ in item_queries)
@@ -348,7 +348,7 @@ def test_legacy_summary_still_saves_without_price_snapshot(monkeypatch):
     }
 
     assert billing.save_billing_period("community-a", "start", "end", summary) == 42
-    assert cursor.executed[0][1][9:11] == (None, None)
+    assert cursor.executed[0][1][10:12] == (None, None)
     assert len(cursor.executed) == 2
     assert "consumption_kwh" in cursor.executed[1][0]
 

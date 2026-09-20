@@ -43,6 +43,7 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
     # The persisted-run contract runs without a database: the
     # calculated-values gate has its own dedicated test below.
     monkeypatch.setattr(database, "is_db_available", lambda: False)
+    monkeypatch.setattr(database, "get_battery_asset", lambda community_id: None)
     index = pd.date_range(START, periods=3, freq="15min")
     frames = SimpleNamespace(
         production=pd.DataFrame({"CH002": [0.5, 0.5, 0.5]}, index=index),
@@ -428,6 +429,13 @@ def _fingerprint_through_runner(monkeypatch, case):
     # Fingerprinting runs without a database; the calculated-values gate
     # has its own dedicated test below.
     monkeypatch.setattr(database, "is_db_available", lambda: False)
+    # Battery configuration is opt-in per case: a case without one keeps the
+    # no-battery fingerprint shape.
+    monkeypatch.setattr(
+        database,
+        "get_battery_asset",
+        lambda community_id: deepcopy(case.get("battery_asset")),
+    )
     monkeypatch.setattr(
         database,
         "get_billing_policy",
@@ -622,6 +630,8 @@ def _install_billing_fixture(
     database; the calculated-values gate has its own dedicated test.
     """
     monkeypatch.setattr(database, "is_db_available", lambda: False)
+    # The battery asset is opt-in configuration; fixtures default to none.
+    monkeypatch.setattr(database, "get_battery_asset", lambda community_id: None)
     points = [
         {
             "metering_point_id": "CH001",
@@ -797,6 +807,101 @@ def test_runner_persists_the_complete_effective_policy_snapshot(monkeypatch):
     snapshots = billing_approval.prepare_invoice_snapshots(period)
     assert snapshots
     assert any(s["participant_id"] == "building-a" for s in snapshots)
+    assert all(s["battery_share_snapshot"] is None for s in snapshots)
+
+
+def test_runner_freezes_a_configured_battery_into_the_draft(monkeypatch):
+    """The battery block rides into the summary, its fingerprint, and the snapshot."""
+    import billing_approval
+    from billing_runner import run_billing_period
+
+    policy = {**DEFAULT_POLICY, "effective_from": START}
+    saved = _install_billing_fixture(monkeypatch, policy=policy)
+    asset = {
+        "id": 3,
+        "community_id": COMMUNITY,
+        "name": "Quartierakku",
+        "capacity_kwh": 45,
+        "annual_cost_chf": 960,
+        "shares": [("building-a", 100)],
+    }
+    battery_calls = []
+    monkeypatch.setattr(
+        database,
+        "get_battery_asset",
+        lambda community_id: battery_calls.append(community_id) or asset,
+    )
+
+    run_billing_period(COMMUNITY, START, END)
+
+    assert battery_calls == [COMMUNITY]
+    community_id, period_start, period_end, summary = saved[0]
+    block = summary["battery"]
+    assert block["share_amounts_chf"] == {"building-a": "960.00"}
+
+    period = {
+        "id": 42,
+        "community_id": community_id,
+        "status": "draft",
+        "period_start": period_start,
+        "period_end": period_end,
+        "input_fingerprint": summary["input_fingerprint"],
+        "source_document_ids": summary["source_document_ids"],
+        "reconciliation": summary["reconciliation"],
+        "billing_policy_snapshot": summary["billing_policy_snapshot"],
+        "battery_snapshot": block,
+        "line_items": summary["line_items"],
+    }
+    snapshots = billing_approval.prepare_invoice_snapshots(period)
+    assert snapshots
+    assert all(
+        s["battery_share_snapshot"]["share_amount_chf"] == "960.00" for s in snapshots
+    )
+
+
+def test_an_incomplete_battery_configuration_refuses_the_run(monkeypatch):
+    """A battery whose shares miss a billed participant fails closed."""
+    from billing_runner import BillingRunError, run_billing_period
+
+    policy = {**DEFAULT_POLICY, "effective_from": START}
+    _install_billing_fixture(monkeypatch, policy=policy)
+    asset = {
+        "id": 3,
+        "community_id": COMMUNITY,
+        "name": "Quartierakku",
+        "capacity_kwh": 45,
+        "annual_cost_chf": 960,
+        "shares": [("building-b", 100)],
+    }
+    monkeypatch.setattr(database, "get_battery_asset", lambda community_id: asset)
+
+    with pytest.raises(BillingRunError, match="building-a"):
+        run_billing_period(COMMUNITY, START, END)
+
+
+def test_battery_shares_change_the_run_fingerprint(monkeypatch):
+    """Different cost shares must never share a fingerprint."""
+    from tests.test_billing_runner import _fingerprint_through_runner
+
+    asset_a = {
+        "name": "Quartierakku",
+        "capacity_kwh": 45,
+        "annual_cost_chf": 960,
+        "shares": [("building-a", 100)],
+    }
+    asset_b = {
+        "name": "Quartierakku",
+        "capacity_kwh": 45,
+        "annual_cost_chf": 1200,
+        "shares": [("building-a", 100)],
+    }
+
+    def fingerprint_with(asset):
+        case = _fingerprint_case()
+        case["battery_asset"] = asset
+        return _fingerprint_through_runner(monkeypatch, case)
+
+    assert fingerprint_with(asset_a) != fingerprint_with(asset_b)
 
 
 @pytest.mark.parametrize(
@@ -861,6 +966,7 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
     # The reconciliation guards run without a database; the calculated-values
     # gate has its own dedicated test.
     monkeypatch.setattr(database, "is_db_available", lambda: False)
+    monkeypatch.setattr(database, "get_battery_asset", lambda community_id: None)
     monkeypatch.setattr(
         database,
         "get_billing_policy",

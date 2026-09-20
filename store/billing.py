@@ -69,12 +69,13 @@ def save_billing_period(
                     """
                     INSERT INTO billing_periods
                     (community_id, period_start, period_end, total_production_kwh, total_allocated_kwh,
-                     total_surplus_kwh, total_network_discount_chf, distribution_model,
+                     total_surplus_kwh, total_network_discount_chf, total_settlement_fee_chf,
+                     distribution_model,
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
-                     timezone, input_fingerprint, source_document_ids,
+                     battery_snapshot, timezone, input_fingerprint, source_document_ids,
                      reconciliation, billing_policy_snapshot, prepared_by,
                      calculated_values_fingerprint, status)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                             %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s, 'draft')
                     RETURNING id
                 """,
@@ -86,10 +87,16 @@ def save_billing_period(
                         summary["total_allocated_kwh"],
                         summary.get("total_surplus_kwh", 0),
                         summary["total_network_discount_chf"],
+                        summary.get("total_settlement_fee_chf", 0),
                         summary.get("distribution_model", "proportional"),
                         summary.get("network_level", "same"),
                         summary.get("internal_price_chf_per_kwh"),
                         summary.get("grid_fee_chf_per_kwh"),
+                        (
+                            json.dumps(summary["battery"], default=_json_default)
+                            if summary.get("battery")
+                            else None
+                        ),
                         summary.get("timezone", "Europe/Zurich"),
                         summary.get("input_fingerprint"),
                         json.dumps(summary.get("source_document_ids", [])),
@@ -428,10 +435,12 @@ def approve_billing_period(
                         billing_period_id, community_id, participant_id,
                         invoice_number, total_chf, policy_snapshot,
                         provenance_snapshot, line_items_snapshot,
+                        battery_share_snapshot,
                         net_chf, vat_rate_pct, vat_chf, gross_chf,
                         issue_date, due_date, status, issued_at
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb,
+                        %s::jsonb,
                         %s, %s, %s, %s, %s, %s, 'issued', NOW()
                     )
                     """,
@@ -444,6 +453,11 @@ def approve_billing_period(
                         json.dumps(snapshot["policy_snapshot"]),
                         json.dumps(provenance_snapshot),
                         json.dumps(snapshot["line_items_snapshot"]),
+                        (
+                            json.dumps(snapshot["battery_share_snapshot"])
+                            if snapshot.get("battery_share_snapshot")
+                            else None
+                        ),
                         snapshot["net_chf"],
                         snapshot["vat_rate_pct"],
                         snapshot["vat_chf"],
@@ -581,7 +595,8 @@ def get_invoices_for_participant(building_id: str) -> list[dict]:
                 """
                 SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
                        policy_snapshot, provenance_snapshot,
-                       line_items_snapshot, net_chf, vat_rate_pct, vat_chf,
+                       line_items_snapshot, battery_share_snapshot,
+                       net_chf, vat_rate_pct, vat_chf,
                        gross_chf, issue_date, due_date,
                        COALESCE((
                            SELECT e.new_state FROM invoice_lifecycle_events e
