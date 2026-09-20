@@ -163,6 +163,7 @@ def _detail_model(period):
             "network_discount_chf": _normalise(
                 period.get("total_network_discount_chf", 0)
             ),
+            "settlement_fee_chf": _normalise(period.get("total_settlement_fee_chf", 0)),
         },
         metrics_display={
             "production_kwh": _decimal_text(period.get("total_production_kwh", 0), 2),
@@ -171,10 +172,14 @@ def _detail_model(period):
             "network_discount_chf": _decimal_text(
                 period.get("total_network_discount_chf", 0), 2
             ),
+            "settlement_fee_chf": _decimal_text(
+                period.get("total_settlement_fee_chf", 0), 2
+            ),
         },
         tariff={
             "internal_price": _rate(period.get("internal_price_chf_per_kwh")),
             "grid_fee": _rate(period.get("grid_fee_chf_per_kwh")),
+            "settlement_fee": _rate(period.get("settlement_fee_chf_per_kwh")),
             "distribution_model": {
                 "proportional": "Proportional",
                 "einfach": "Einfach",

@@ -25,6 +25,7 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
         "tariff_id": 7,
         "internal_price_chf_per_kwh": 0.12,
         "grid_fee_chf_per_kwh": 0.08,
+        "settlement_fee_chf_per_kwh": 0,
         "network_level": "same",
         "distribution_model": "proportional",
         "vat_mode": "none",
@@ -126,6 +127,7 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
                 "internal_price_per_kwh": policy["internal_price_chf_per_kwh"],
                 "network_level": policy["network_level"],
                 "distribution_model": policy["distribution_model"],
+                "settlement_fee_per_kwh": policy["settlement_fee_chf_per_kwh"],
             },
         )
     ]
@@ -267,6 +269,7 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
         "tariff_id": 7,
         "internal_price_chf_per_kwh": 0.12,
         "grid_fee_chf_per_kwh": 0.08,
+        "settlement_fee_chf_per_kwh": 0,
         "network_level": "same",
         "distribution_model": "proportional",
         "vat_mode": "none",
@@ -299,6 +302,7 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
         "tariff_id": 7,
         "internal_price_chf_per_kwh": "0.12",
         "grid_fee_chf_per_kwh": "0.08",
+        "settlement_fee_chf_per_kwh": "0",
         "network_level": "same",
         "distribution_model": "proportional",
         "vat_mode": "none",
@@ -329,6 +333,7 @@ DEFAULT_POLICY = {
     "tariff_id": 7,
     "internal_price_chf_per_kwh": 0.12,
     "grid_fee_chf_per_kwh": 0.08,
+    "settlement_fee_chf_per_kwh": 0,
     "network_level": "same",
     "distribution_model": "proportional",
     "vat_mode": "none",
@@ -586,7 +591,7 @@ def test_public_billing_fingerprint_matches_the_contract_vector(monkeypatch):
     fingerprint = _fingerprint_through_runner(monkeypatch, _fingerprint_case())
 
     assert fingerprint == (
-        "4f16b38457c142869b04f600a964263827848e553f5938112d0361acf30dad96"
+        "fab6d5af2679795ef528af3ef5a9bb966543f510466279822f85e64b89e17495"
     )
 
 

@@ -5,6 +5,12 @@ Domain logic only, no SQL. The admin form submits Rappen per kWh; the policy
 stores CHF per kWh (``internal_price_chf_per_kwh``), matching billing_engine
 and the ``billing_tariffs`` table. Every invalid choice is refused: OpenLEG
 never guesses money-path inputs.
+
+The VNB settlement fee (``settlement_fee_chf_per_kwh``) is the price the VNB
+charges for settling the energy allocated inside the community. Policy
+versions recorded before this field existed carried no fee, so a stored
+policy without one validates as a zero fee; every newly saved version must
+state the fee explicitly, including an explicit zero.
 """
 
 import re
@@ -38,6 +44,7 @@ PERSISTED_POLICY_FIELDS = (
     "effective_from",
     "internal_price_chf_per_kwh",
     "grid_fee_chf_per_kwh",
+    "settlement_fee_chf_per_kwh",
     "network_level",
     "distribution_model",
     "vat_mode",
@@ -52,6 +59,7 @@ EDITABLE_POLICY_FIELDS = PERSISTED_POLICY_FIELDS[2:]
 _FORM_INPUT_FOR_POLICY_FIELD = {
     "internal_price_chf_per_kwh": "internal_price_rp",
     "grid_fee_chf_per_kwh": "grid_fee_rp",
+    "settlement_fee_chf_per_kwh": "settlement_fee_rp",
 }
 
 FORM_FIELDS = tuple(
@@ -63,6 +71,7 @@ FINGERPRINT_POLICY_FIELDS = tuple(
 _DECIMAL_POLICY_FIELDS = (
     "internal_price_chf_per_kwh",
     "grid_fee_chf_per_kwh",
+    "settlement_fee_chf_per_kwh",
     "vat_rate_pct",
 )
 
@@ -121,7 +130,13 @@ def validate_persisted_policy(policy, *, period_start, community_id) -> dict:
         raise InvalidPersistedPolicy(
             "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
         )
-    missing = [field for field in PERSISTED_POLICY_FIELDS if policy.get(field) is None]
+    # A snapshot recorded before the settlement fee existed is still valid;
+    # every other field must be present.
+    missing = [
+        field
+        for field in PERSISTED_POLICY_FIELDS
+        if field != "settlement_fee_chf_per_kwh" and policy.get(field) is None
+    ]
     if missing:
         raise InvalidPersistedPolicy(
             "Die Richtlinien-Kopie ist unvollständig: " + ", ".join(missing)
@@ -138,13 +153,27 @@ def validate_persisted_policy(policy, *, period_start, community_id) -> dict:
 
     normalized = dict(policy)
     max_price_chf = MAX_PRICE_RP / Decimal(100)
-    for field in _DECIMAL_POLICY_FIELDS[:2]:
+    for field in ("internal_price_chf_per_kwh", "grid_fee_chf_per_kwh"):
         value = _persisted_decimal(policy[field])
         if not _has_precision(value, 6) or value < 0 or value > max_price_chf:
             raise InvalidPersistedPolicy(
                 "Ein Energiepreis der Richtlinie liegt ausserhalb des zulässigen Bereichs."
             )
         normalized[field] = value
+
+    # The settlement fee is optional in stored snapshots: versions recorded
+    # before the field existed charged none, so an absent fee normalizes to a
+    # documented zero instead of failing a historic period.
+    if policy.get("settlement_fee_chf_per_kwh") is None:
+        normalized["settlement_fee_chf_per_kwh"] = Decimal(0)
+    else:
+        value = _persisted_decimal(policy["settlement_fee_chf_per_kwh"])
+        if not _has_precision(value, 6) or value < 0 or value > max_price_chf:
+            raise InvalidPersistedPolicy(
+                "Die Abrechnungsgebühr des VNB liegt ausserhalb des "
+                "zulässigen Bereichs."
+            )
+        normalized["settlement_fee_chf_per_kwh"] = value
 
     effective_from = _persisted_temporal(policy["effective_from"])
     try:
@@ -237,6 +266,9 @@ def describe_version(version: dict) -> dict:
         version.get("internal_price_chf_per_kwh")
     )
     described["grid_fee_display"] = rate_rp_text(version.get("grid_fee_chf_per_kwh"))
+    described["settlement_fee_display"] = rate_rp_text(
+        version.get("settlement_fee_chf_per_kwh")
+    )
     described["network_level_label"] = NETWORK_LEVEL_LABELS.get(
         version.get("network_level"), "Nicht angegeben"
     )
@@ -341,6 +373,13 @@ def validate_policy_form(form) -> dict:
         errors["grid_fee_rp"] = (
             "Netzentgelt in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
         )
+    settlement_fee_rp = _price_rp(_field(form, "settlement_fee_rp"))
+    if settlement_fee_rp is None:
+        errors["settlement_fee_rp"] = (
+            "Abrechnungsgebühr des VNB in Rp./kWh, zwischen 0 und 1000, "
+            "höchstens 4 Nachkommastellen. Geben Sie 0 ein, wenn der VNB "
+            "keine Abrechnungsgebühr verlangt."
+        )
 
     network_level = _enum(_field(form, "network_level"), NETWORK_LEVELS)
     if network_level is None:
@@ -391,6 +430,7 @@ def validate_policy_form(form) -> dict:
         "effective_from": effective_from,
         "internal_price_chf_per_kwh": internal_price_rp / 100,
         "grid_fee_chf_per_kwh": grid_fee_rp / 100,
+        "settlement_fee_chf_per_kwh": settlement_fee_rp / 100,
         "network_level": network_level,
         "distribution_model": distribution_model,
         "vat_mode": vat_mode,

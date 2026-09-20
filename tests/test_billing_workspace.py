@@ -53,8 +53,10 @@ def test_load_defaults_to_newest_and_builds_a_display_ready_audit_model(monkeypa
         "total_allocated_kwh": Decimal("100.2500"),
         "total_surplus_kwh": Decimal("25.2500"),
         "total_network_discount_chf": Decimal("8.20"),
+        "total_settlement_fee_chf": Decimal("1.60"),
         "internal_price_chf_per_kwh": Decimal("0.15"),
         "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "settlement_fee_chf_per_kwh": Decimal("0.02"),
         "distribution_model": "proportional",
         "network_level": "same",
         "input_fingerprint": "abc123",
@@ -110,6 +112,7 @@ def test_load_defaults_to_newest_and_builds_a_display_ready_audit_model(monkeypa
     assert selected["tariff"] == {
         "internal_price": "15.00 Rp./kWh",
         "grid_fee": "8.00 Rp./kWh",
+        "settlement_fee": "2.00 Rp./kWh",
         "distribution_model": "Proportional",
         "network_level": "Gleiche Netzebene",
     }

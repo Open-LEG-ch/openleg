@@ -2,6 +2,7 @@
 """TDD tests for billing_engine.py - 15-min interval energy allocation."""
 
 import pandas as pd
+import pytest
 
 
 class TestProportionalAllocation:
@@ -164,6 +165,63 @@ class TestBillingPeriodSummary:
         assert "total_allocated_kwh" in summary
         assert "total_network_discount_chf" in summary
         assert len(summary["participants"]) == 2
+
+    def test_settlement_fee_defaults_to_zero(self):
+        from billing_engine import generate_billing_summary
+
+        production = pd.Series([10.0])
+        consumption = pd.DataFrame({"a": [4.0], "b": [6.0]})
+        summary = generate_billing_summary(
+            production=production,
+            consumption=consumption,
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+        )
+        assert summary["settlement_fee_chf_per_kwh"] == 0.0
+        assert summary["total_settlement_fee_chf"] == 0.0
+        for participant in summary["participants"]:
+            assert participant["settlement_fee_chf"] == 0.0
+
+    def test_settlement_fee_is_applied_to_allocated_energy(self):
+        from billing_engine import generate_billing_summary
+
+        production = pd.Series([10.0])
+        consumption = pd.DataFrame({"a": [4.0], "b": [6.0]})
+        summary = generate_billing_summary(
+            production=production,
+            consumption=consumption,
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            settlement_fee_per_kwh=0.02,
+        )
+        # 10 kWh allocated, so the community owes the VNB 10 * 0.02 = 0.20 CHF.
+        assert summary["total_settlement_fee_chf"] == 0.20
+        by_id = {p["id"]: p for p in summary["participants"]}
+        assert by_id["a"]["settlement_fee_chf"] == 0.08
+        assert by_id["b"]["settlement_fee_chf"] == 0.12
+        # The fee leaves internal trade untouched: charges and credits stay
+        # priced at the internal price only.
+        assert all(
+            item["unit_price_chf_per_kwh"] == 0.15 for item in summary["line_items"]
+        )
+
+    def test_negative_or_non_finite_settlement_fee_is_refused(self):
+        from billing_engine import generate_billing_summary
+
+        production = pd.Series([10.0])
+        consumption = pd.DataFrame({"a": [4.0], "b": [6.0]})
+        for fee in (-0.01, float("nan"), float("inf")):
+            with pytest.raises(ValueError, match="finite and non-negative"):
+                generate_billing_summary(
+                    production=production,
+                    consumption=consumption,
+                    grid_fee_per_kwh=0.10,
+                    internal_price_per_kwh=0.15,
+                    network_level="same",
+                    settlement_fee_per_kwh=fee,
+                )
 
 
 class TestEdgeCases:
