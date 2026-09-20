@@ -918,9 +918,7 @@ def _patch_invoice_savings(flask_app_module, monkeypatch):
     monkeypatch.setattr(
         flask_app_module.dashboard_module,
         "member_invoice_savings_view",
-        MagicMock(
-            return_value={"available": False, "period_label": "", "message": ""}
-        ),
+        MagicMock(return_value={"available": False, "period_label": "", "message": ""}),
     )
 
 

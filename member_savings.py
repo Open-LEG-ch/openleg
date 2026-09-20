@@ -267,7 +267,9 @@ def invoice_savings_view(invoice_id: int, building_id: str) -> dict | None:
     member can never see another building's metered numbers.
     """
     invoice_id = _require_positive_id(invoice_id, "Die Rechnung hat keine gültige ID.")
-    building_id = _require_text(building_id, "Die Rechnung hat keine gültige Zuordnung.")
+    building_id = _require_text(
+        building_id, "Die Rechnung hat keine gültige Zuordnung."
+    )
     invoice = db.get_invoice_for_participant(invoice_id, building_id)
     if not invoice:
         return None
