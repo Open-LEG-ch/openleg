@@ -125,6 +125,24 @@ _PERIOD_READINGS_SQL = """
     ORDER BY r.measured_at, r.metering_point_id, r.direction
 """
 
+_BUILDING_PERIOD_READINGS_SQL = """
+    SELECT r.metering_point_id,
+           r.direction,
+           r.measured_at,
+           r.resolution_minutes,
+           r.total_kwh,
+           r.grid_kwh,
+           r.community_kwh,
+           r.source_document_id
+    FROM metering_point_readings r
+    JOIN metering_points mp
+      ON mp.metering_point_id = r.metering_point_id
+    WHERE mp.building_id = %s
+      AND r.measured_at >= %s
+      AND r.measured_at < %s
+    ORDER BY r.measured_at, r.metering_point_id, r.direction
+"""
+
 _UNASSIGNED_PERIOD_POINTS_SQL = """
     SELECT DISTINCT mp.metering_point_id
     FROM metering_points mp
@@ -426,6 +444,26 @@ def get_period_readings(community_id, period_start, period_end):
     except Exception as e:
         logger.error(f"[DB] Error getting period readings: {e}")
         return []
+
+
+def get_building_period_readings(building_id, period_start, period_end):
+    """Messwerte aller Messpunkte eines Gebäudes im halboffenen Intervall.
+
+    Gebäudescope statt Communityscope: ein Teilnehmer darf nur die eigenen
+    Messpunkte lesen. Die NUMERIC-Kanäle kommen ungerändert als Decimal
+    zurück; die Geldrechnung der Anzeige rundet selbst.
+
+    Fehler werden nicht verschluckt: eine Anzeige, die einen Datenbankfehler
+    als leere Periode verkaufen würde, müsste geschlossene Ausfälle als
+    "keine Messwerte" tarnen.
+    """
+    with _get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                _BUILDING_PERIOD_READINGS_SQL,
+                (building_id, period_start, period_end),
+            )
+            return [dict(row) for row in cur.fetchall()]
 
 
 def get_billable_period_snapshot(community_id, period_start, period_end):

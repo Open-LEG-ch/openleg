@@ -16,6 +16,7 @@ import database as db
 import formation_documents
 import formation_wizard
 import member_invoices
+import member_savings
 import payment_reconciliation
 import security_utils
 import vnb_exchange
@@ -740,6 +741,19 @@ def operator_update_invoice_query(
 def member_invoice_pdf_bytes(invoice: dict) -> bytes:
     """Render the exact detail view dict as a printable PDF."""
     return member_invoices.render_pdf(invoice)
+
+
+MemberSavingsDataError = member_savings.MemberSavingsDataError
+
+
+def member_invoice_savings_view(invoice_id: int, building_id: str) -> dict | None:
+    """Realized savings behind one own invoice, from metered E66 readings.
+
+    Thin seam over member_savings. Returns None for a missing or another
+    member's invoice id; raises MemberSavingsDataError when the stored
+    billing or metering data cannot be shown honestly.
+    """
+    return member_savings.invoice_savings_view(invoice_id, building_id)
 
 
 def leg_create(name: str, building_id: str, distribution_model: str) -> dict:

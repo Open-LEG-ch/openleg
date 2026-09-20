@@ -121,6 +121,7 @@ def _capture_execute_values(monkeypatch, returned):
 def test_database_reexports_are_identical_objects():
     for name in (
         "get_billable_period_snapshot",
+        "get_building_period_readings",
         "upsert_metering_points",
         "get_metering_points",
         "get_metering_point",
@@ -772,6 +773,51 @@ def test_period_readings_convert_numerics_to_float(monkeypatch):
 
     assert isinstance(readings[0]["total_kwh"], float)
     assert not isinstance(readings[0]["total_kwh"], Decimal)
+
+
+def test_building_period_readings_are_scoped_to_the_callers_building(monkeypatch):
+    """A member reads their own building's readings only: the join filters on
+    the caller's building_id in the same query, never on a client-side filter."""
+    cur = _FakeCursor(
+        rows=[_row()],
+        required_sql=("mp.building_id = %s", "measured_at >= %s", "measured_at < %s"),
+        expected_params=(
+            "BUILDING-1",
+            MEASURED_AT,
+            MEASURED_AT + timedelta(minutes=15),
+        ),
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    readings = metering.get_building_period_readings(
+        "BUILDING-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
+    )
+
+    assert len(readings) == 1
+    assert readings[0]["metering_point_id"] == POINT
+
+
+def test_building_period_readings_keep_decimal_channels(monkeypatch):
+    """The savings display rounds its own money; the store hands Decimals on."""
+    cur = _FakeCursor(rows=[_row(total="0.500")])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    readings = metering.get_building_period_readings(
+        "BUILDING-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
+    )
+
+    assert isinstance(readings[0]["total_kwh"], Decimal)
+    assert isinstance(readings[0]["community_kwh"], Decimal)
+
+
+def test_building_period_readings_propagate_storage_failure(monkeypatch):
+    """A member display must not dress a database outage up as an empty period."""
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    with pytest.raises(RuntimeError, match="db down"):
+        metering.get_building_period_readings(
+            "BUILDING-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
+        )
 
 
 def test_reading_stats_return_the_database_aggregate(monkeypatch):
