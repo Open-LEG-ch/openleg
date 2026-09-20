@@ -41,6 +41,8 @@ ALLOWED_STEMS = {
     "value": "Value-Gap, English loanword kept in English",
     "request": "Request, English technical term",
     "zuerst": "zuerst (ue after z, not an umlaut)",
+    "virtuell": "virtueller Zusammenschluss zum Eigenverbrauch, vZEV "
+    "(ue after v, not an umlaut)",
 }
 
 
