@@ -61,6 +61,14 @@ _SECURITY_HEADERS = (
 )
 
 
+def _csp_source_hosts(csp, directive_name):
+    """The exact hosts of one CSP directive, compared without their scheme."""
+    part = next(
+        piece for piece in csp.split(";") if piece.strip().startswith(directive_name)
+    )
+    return {source.split("://", 1)[-1] for source in part.split()[1:]}
+
+
 class TestHeadersOnEverySurface:
     """One representative response per surface class carries the full set."""
 
@@ -107,18 +115,10 @@ class TestCookielessMatomoTracking:
 
     def test_csp_allows_the_tracker_subdomain_for_scripts_and_connects(self, client):
         csp = client.get("/").headers["Content-Security-Policy"]
-        script_tokens = next(
-            part.strip().split()
-            for part in csp.split(";")
-            if part.strip().startswith("script-src")
-        )
-        connect_tokens = next(
-            part.strip().split()
-            for part in csp.split(";")
-            if part.strip().startswith("connect-src")
-        )
-        assert "stats.openleg.ch" in script_tokens
-        assert "stats.openleg.ch" in connect_tokens
+        script_hosts = _csp_source_hosts(csp, "script-src")
+        connect_hosts = _csp_source_hosts(csp, "connect-src")
+        assert "stats.openleg.ch" in script_hosts
+        assert "stats.openleg.ch" in connect_hosts
 
     def test_the_tracker_is_absent_while_the_site_id_is_unset(self, client):
         rendered = client.get("/").get_data(as_text=True)
