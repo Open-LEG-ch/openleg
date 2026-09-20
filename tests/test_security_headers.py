@@ -107,14 +107,22 @@ class TestCookielessMatomoTracking:
 
     def test_csp_allows_the_tracker_subdomain_for_scripts_and_connects(self, client):
         csp = client.get("/").headers["Content-Security-Policy"]
-        script_part = next(
-            part for part in csp.split(";") if part.strip().startswith("script-src")
+        script_tokens = next(
+            part.strip().split()
+            for part in csp.split(";")
+            if part.strip().startswith("script-src")
         )
-        connect_part = next(
-            part for part in csp.split(";") if part.strip().startswith("connect-src")
+        connect_tokens = next(
+            part.strip().split()
+            for part in csp.split(";")
+            if part.strip().startswith("connect-src")
         )
-        assert "https://stats.openleg.ch" in script_part
-        assert "https://stats.openleg.ch" in connect_part
+        assert "https://stats.openleg.ch" in script_tokens
+        assert "https://stats.openleg.ch" in connect_tokens
+        assert not any(
+            token.startswith("https://stats.openleg.ch.")
+            for token in script_tokens + connect_tokens
+        )
 
     def test_the_tracker_is_absent_while_the_site_id_is_unset(self, client):
         rendered = client.get("/").get_data(as_text=True)
