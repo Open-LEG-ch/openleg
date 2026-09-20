@@ -101,6 +101,7 @@ also_copy = [
     "invoice_queries.py",
     "leg_registry.py",
     "member_invoices.py",
+    "member_savings.py",
     "meter_data.py",
     "ml_models.py",
     "municipality.py",

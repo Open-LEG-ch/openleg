@@ -912,6 +912,18 @@ def _patch_invoice_detail(flask_app_module, monkeypatch, view_by_owner):
     )
 
 
+def _patch_invoice_savings(flask_app_module, monkeypatch):
+    """The realized-savings section rides on the detail page; keep it out of
+    the invoice snapshot contracts unless a test targets it."""
+    monkeypatch.setattr(
+        flask_app_module.dashboard_module,
+        "member_invoice_savings_view",
+        MagicMock(
+            return_value={"available": False, "period_label": "", "message": ""}
+        ),
+    )
+
+
 def test_dashboard_invoices_list_requires_session(dashboard_app_module):  # noqa: F811
     client = dashboard_app_module.web.test_client()
     response = client.get("/dashboard/invoices")
@@ -965,6 +977,7 @@ def test_dashboard_invoice_detail_renders_own_invoice_privately(
     _patch_invoice_detail(
         dashboard_app_module, monkeypatch, view_by_owner={42: DETAIL_VIEW}
     )
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
     client = dashboard_app_module.web.test_client()
     _set_session(client)
 
@@ -988,6 +1001,7 @@ def test_dashboard_invoice_detail_renders_the_applied_policy_summary(
     _patch_invoice_detail(
         dashboard_app_module, monkeypatch, view_by_owner={42: DETAIL_VIEW}
     )
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
     client = dashboard_app_module.web.test_client()
     _set_session(client)
 
