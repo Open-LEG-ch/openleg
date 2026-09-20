@@ -495,7 +495,8 @@ def get_billing_policy(community_id: str, period_start, period_end) -> dict | No
             """
             WITH newest AS (
                 SELECT t.id, t.community_id, t.internal_price_chf_per_kwh,
-                       t.grid_fee_chf_per_kwh, t.network_level,
+                       t.grid_fee_chf_per_kwh, t.settlement_fee_chf_per_kwh,
+                       t.network_level,
                        t.distribution_model, t.vat_mode, t.vat_rate_pct,
                        t.payment_days, t.invoice_prefix, t.delivery_method,
                        t.effective_from, t.effective_to
@@ -509,6 +510,8 @@ def get_billing_policy(community_id: str, period_start, period_end) -> dict | No
             )
             SELECT id AS tariff_id, t.community_id,
                    internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
+                   COALESCE(settlement_fee_chf_per_kwh, 0)
+                       AS settlement_fee_chf_per_kwh,
                    network_level, distribution_model, vat_mode, vat_rate_pct,
                    payment_days, invoice_prefix, delivery_method,
                    effective_from

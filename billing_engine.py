@@ -109,22 +109,31 @@ def generate_billing_summary(
     internal_price_per_kwh,
     network_level,
     distribution_model="proportional",
+    settlement_fee_per_kwh=0.0,
 ):
     """Generate billing summary for a period.
 
+    Args:
+        settlement_fee_per_kwh: VNB settlement fee in CHF per kWh of energy
+            allocated inside the community; defaults to 0 (no fee).
+
     Returns:
         dict with total_production_kwh, total_allocated_kwh,
-        total_network_discount_chf, participants (list of per-participant summaries)
+        total_network_discount_chf, total_settlement_fee_chf,
+        participants (list of per-participant summaries)
     """
     try:
         grid_fee_per_kwh = float(grid_fee_per_kwh)
         internal_price_per_kwh = float(internal_price_per_kwh)
+        settlement_fee_per_kwh = float(settlement_fee_per_kwh)
     except (TypeError, ValueError) as exc:
         raise ValueError("Billing prices must be finite and non-negative") from exc
     if not all(
         isfinite(price) and price >= 0
         for price in (grid_fee_per_kwh, internal_price_per_kwh)
     ):
+        raise ValueError("Billing prices must be finite and non-negative")
+    if not isfinite(settlement_fee_per_kwh) or settlement_fee_per_kwh < 0:
         raise ValueError("Billing prices must be finite and non-negative")
     if network_level not in {"same", "cross"}:
         raise ValueError("network_level must be 'same' or 'cross'")
@@ -159,6 +168,7 @@ def generate_billing_summary(
     total_discount = compute_network_discount(
         total_allocated, grid_fee_per_kwh, network_level
     )
+    total_settlement_fee = _money(total_allocated * settlement_fee_per_kwh)
 
     participants = []
     line_items = []
@@ -168,6 +178,7 @@ def generate_billing_summary(
         cons_kwh = float(consumption[col].sum())
         discount = compute_network_discount(alloc_kwh, grid_fee_per_kwh, network_level)
         cost = _priced_amount(priced_quantity, internal_price_per_kwh)
+        settlement_fee = _money(alloc_kwh * settlement_fee_per_kwh)
 
         participants.append(
             {
@@ -179,6 +190,7 @@ def generate_billing_summary(
                 else 0,
                 "internal_cost_chf": _currency(cost),
                 "network_discount_chf": _currency(_money(discount)),
+                "settlement_fee_chf": _currency(settlement_fee),
             }
         )
         if producer_production is not None:
@@ -234,8 +246,10 @@ def generate_billing_summary(
         "total_allocated_kwh": round(total_allocated, 2),
         "total_surplus_kwh": round(max(0, total_production - total_allocated), 2),
         "total_network_discount_chf": _currency(_money(total_discount)),
+        "total_settlement_fee_chf": _currency(total_settlement_fee),
         "internal_price_chf_per_kwh": internal_price_per_kwh,
         "grid_fee_chf_per_kwh": grid_fee_per_kwh,
+        "settlement_fee_chf_per_kwh": settlement_fee_per_kwh,
         "distribution_model": distribution_model,
         "network_level": network_level,
         "participants": participants,

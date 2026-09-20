@@ -58,7 +58,8 @@
           ('Produktion', selected.metrics_display.production_kwh, 'kWh'),
           ('Lokal verteilt', selected.metrics_display.allocated_kwh, 'kWh'),
           ('Überschuss', selected.metrics_display.surplus_kwh, 'kWh'),
-          ('Netzentgeltvorteil', selected.metrics_display.network_discount_chf, 'CHF')
+          ('Netzentgeltvorteil', selected.metrics_display.network_discount_chf, 'CHF'),
+          ('Abrechnungsgebühr VNB', selected.metrics_display.settlement_fee_chf, 'CHF')
         ] %}
         <div class="bg-white p-4 sm:p-5">
           <dt class="text-xs text-ink-muted">{{ label }}</dt>
@@ -73,6 +74,7 @@
           <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
             <div><dt class="text-ink-muted">LEG-Preis</dt><dd class="mt-1 font-mono font-semibold">{{ selected.tariff.internal_price }}</dd></div>
             <div><dt class="text-ink-muted">Netzentgelt</dt><dd class="mt-1 font-mono font-semibold">{{ selected.tariff.grid_fee }}</dd></div>
+            <div><dt class="text-ink-muted">Abrechnungsgebühr VNB</dt><dd class="mt-1 font-mono font-semibold">{{ selected.tariff.settlement_fee }}</dd></div>
             <div><dt class="text-ink-muted">Verteilung</dt><dd class="mt-1 font-semibold">{{ selected.tariff.distribution_model }}</dd></div>
             <div><dt class="text-ink-muted">Netzebene</dt><dd class="mt-1 font-semibold">{{ selected.tariff.network_level }}</dd></div>
           </dl>

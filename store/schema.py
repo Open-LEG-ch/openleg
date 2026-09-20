@@ -653,6 +653,9 @@ def create_tables():
                     effective_to TIMESTAMPTZ,
                     internal_price_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (internal_price_chf_per_kwh >= 0),
                     grid_fee_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (grid_fee_chf_per_kwh >= 0),
+                    settlement_fee_chf_per_kwh DECIMAL(12, 6),
+                    CONSTRAINT chk_billing_tariffs_settlement_fee
+                        CHECK (settlement_fee_chf_per_kwh IS NULL OR settlement_fee_chf_per_kwh >= 0),
                     network_level VARCHAR(16) NOT NULL CHECK (network_level IN ('same', 'cross')),
                     distribution_model VARCHAR(20),
                     vat_mode VARCHAR(16),
@@ -697,7 +700,21 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS vat_rate_pct DECIMAL(5, 2),
                     ADD COLUMN IF NOT EXISTS payment_days INTEGER,
                     ADD COLUMN IF NOT EXISTS invoice_prefix VARCHAR(32),
-                    ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16);
+                    ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16),
+                    ADD COLUMN IF NOT EXISTS settlement_fee_chf_per_kwh DECIMAL(12, 6);
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_settlement_fee'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_settlement_fee
+                        CHECK (settlement_fee_chf_per_kwh IS NULL OR settlement_fee_chf_per_kwh >= 0);
+                    END IF;
+                END $$;
 
                 DO $$
                 BEGIN

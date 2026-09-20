@@ -93,6 +93,7 @@ def run_billing_period(community_id, period_start, period_end):
             internal_price_per_kwh=policy["internal_price_chf_per_kwh"],
             network_level=policy["network_level"],
             distribution_model=policy["distribution_model"],
+            settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
         )
         reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
         participant_gaps = reconciliation["per_participant"].values()

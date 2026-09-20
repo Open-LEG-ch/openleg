@@ -25,6 +25,7 @@ def _policy(**overrides):
         "effective_from": "2026-01-01T00:00:00+01:00",
         "internal_price_chf_per_kwh": "0.150000",
         "grid_fee_chf_per_kwh": "0.080000",
+        "settlement_fee_chf_per_kwh": "0.020000",
         "network_level": "same",
         "distribution_model": "proportional",
         "vat_mode": "standard",
@@ -170,10 +171,50 @@ def test_prepare_snapshots_refuses_incomplete_or_non_draft_periods(mutation):
         billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
 
 
-@pytest.mark.parametrize("missing_field", tuple(_policy()))
+@pytest.mark.parametrize(
+    "missing_field",
+    tuple(field for field in _policy() if field != "settlement_fee_chf_per_kwh"),
+)
 def test_prepare_snapshots_requires_every_policy_field(missing_field):
     draft = _draft()
     draft["billing_policy_snapshot"].pop(missing_field)
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_snapshots_freezes_the_settlement_fee_in_force():
+    draft = _draft(billing_policy_snapshot=_policy(settlement_fee_chf_per_kwh="0.02"))
+
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        draft, issue_date=date(2026, 2, 5)
+    )
+
+    assert snapshots
+    assert all(
+        row["policy_snapshot"]["settlement_fee_chf_per_kwh"] == "0.02"
+        for row in snapshots
+    )
+
+
+def test_prepare_snapshots_defaults_a_missing_settlement_fee_to_zero():
+    """A snapshot recorded before the settlement fee existed still approves."""
+    draft = _draft()
+    draft["billing_policy_snapshot"].pop("settlement_fee_chf_per_kwh")
+
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        draft, issue_date=date(2026, 2, 5)
+    )
+
+    assert snapshots
+    assert all(
+        "settlement_fee_chf_per_kwh" not in row["policy_snapshot"] for row in snapshots
+    )
+
+
+@pytest.mark.parametrize("fee", ["-0.01", "nan", "0.0000001"])
+def test_prepare_refuses_an_out_of_domain_settlement_fee(fee):
+    draft = _draft(billing_policy_snapshot=_policy(settlement_fee_chf_per_kwh=fee))
 
     with pytest.raises(billing_approval.BillingApprovalError):
         billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
