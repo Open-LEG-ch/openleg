@@ -25,6 +25,9 @@
       <div>
         <label for="policy-internal-price" class="block text-sm font-semibold mb-1">Interner Preis (Rp./kWh)</label>
         <input id="policy-internal-price" type="text" inputmode="decimal" name="internal_price_rp" required value="{{ form_values.get('internal_price_rp', '') }}" placeholder="z. B. 15.00" class="w-full border rounded-lg px-3 py-2 text-sm">
+        {% if price_band %}
+        <p class="mt-1 text-xs text-ink-muted">Üblicher Bereich: zwischen {{ price_band.floor_rp_display }} und {{ price_band.ceiling_rp_display }} Rp./kWh. Untergrenze: Einspeisevergütung. Obergrenze: der Gesamtstrompreis Ihrer Gemeinde (ElCom {{ price_band.year }}) minus Abrechnungsgebühr.</p>
+        {% endif %}
         {% if form_errors.get('internal_price_rp') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['internal_price_rp'] }}</p>{% endif %}
       </div>
       <div>
