@@ -509,6 +509,8 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
             "Die Datumsangaben der Rechnung sind inkonsistent."
         )
 
+    battery_share = _battery_share_view(invoice.get("battery_share_snapshot"))
+
     return {
         **summary,
         "issuer_name": issuer_name,
@@ -527,11 +529,86 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
         "policy_payment_days": payment_days,
         "display_net_chf": _decimal_text(net, 2),
         "display_vat_chf": _decimal_text(vat, 2),
+        "battery_share": battery_share,
+        "display_battery_share_pct": (
+            _decimal_text(battery_share["share_pct"], 2) if battery_share else None
+        ),
+        "display_battery_share_amount_chf": (
+            _decimal_text(battery_share["share_amount_chf"], 2)
+            if battery_share
+            else None
+        ),
+        "display_battery_kwh": (
+            _decimal_text(battery_share["battery_kwh"], 3)
+            if battery_share and battery_share["battery_kwh"] is not None
+            else None
+        ),
+        "display_battery_cost_chf": (
+            _decimal_text(battery_share["battery_kwh"] * policy_unit_price, 2)
+            if battery_share and battery_share["battery_kwh"] is not None
+            else None
+        ),
         "charges": [i for i in line_items if i["item_type"] == "consumer_charge"],
         "credits": [i for i in line_items if i["item_type"] == "producer_credit"],
         "rounding_adjustments": [
             i for i in line_items if i["item_type"] == "rounding_adjustment"
         ],
+    }
+
+
+def _battery_share_view(value) -> dict | None:
+    """The frozen battery share of this invoice, or None without a battery.
+
+    Approval froze the share per participant (name, capacity, annual cost,
+    the participant's percentage and amount, and with a metered battery the
+    kWh the participant sourced from it). Absent means the community runs
+    no battery. A malformed snapshot fails closed like every other frozen
+    figure: a guessed share would lie about money.
+    """
+    if value in (None, "", {}):
+        return None
+    decoded = value
+    if isinstance(decoded, str):
+        try:
+            decoded = json.loads(decoded)
+        except ValueError as exc:
+            raise MemberInvoiceDataError(
+                "Die Speicheranteil-Angabe dieser Rechnung ist ungültig."
+            ) from exc
+    if not isinstance(decoded, dict) or not decoded:
+        return None
+    share_pct = _require_finite_decimal(
+        decoded.get("share_pct"),
+        "Die Speicheranteil-Angabe dieser Rechnung ist ungültig.",
+    )
+    share_amount = _require_finite_decimal(
+        decoded.get("share_amount_chf"),
+        "Die Speicheranteil-Angabe dieser Rechnung ist ungültig.",
+    )
+    if share_pct < 0 or share_amount < 0:
+        raise MemberInvoiceDataError(
+            "Die Speicheranteil-Angabe dieser Rechnung ist ungültig."
+        )
+    battery_kwh = None
+    if decoded.get("battery_kwh") is not None:
+        battery_kwh = _require_finite_decimal(
+            decoded.get("battery_kwh"),
+            "Die Speicheranteil-Angabe dieser Rechnung ist ungültig.",
+        )
+        if battery_kwh < 0:
+            raise MemberInvoiceDataError(
+                "Die Speicheranteil-Angabe dieser Rechnung ist ungültig."
+            )
+    name = decoded.get("name")
+    if not isinstance(name, str) or not name.strip():
+        raise MemberInvoiceDataError(
+            "Die Speicheranteil-Angabe dieser Rechnung ist ungültig."
+        )
+    return {
+        "name": name,
+        "share_pct": share_pct,
+        "share_amount_chf": share_amount,
+        "battery_kwh": battery_kwh,
     }
 
 
