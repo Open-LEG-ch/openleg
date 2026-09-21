@@ -147,6 +147,77 @@ def test_member_invoice_detail_view_builds_model_from_frozen_snapshot_only(
     assert view["credits"][0]["item_type"] == "producer_credit"
 
 
+def test_member_invoice_detail_view_carries_the_frozen_battery_share(monkeypatch):
+    import member_invoices
+
+    row = {
+        **INVOICE_ROW,
+        "battery_share_snapshot": {
+            "name": "Quartierakku",
+            "participant_id": "battery-a",
+            "capacity_kwh": "45",
+            "annual_cost_chf": "960",
+            "share_pct": "12.5",
+            "share_amount_chf": "120.00",
+            "battery_kwh": "18.5",
+        },
+    }
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["battery_share"]["name"] == "Quartierakku"
+    assert view["display_battery_share_pct"] == "12.50"
+    assert view["display_battery_share_amount_chf"] == "120.00"
+    assert view["display_battery_kwh"] == "18.500"
+    # Battery-sourced energy is already inside the consumer charge; the CHF
+    # figure restates its share of the bill at the frozen internal price.
+    assert view["display_battery_cost_chf"] == "2.78"
+
+
+def test_member_invoice_detail_view_hides_the_battery_without_one(monkeypatch):
+    import member_invoices
+
+    lookup = MagicMock(return_value=dict(INVOICE_ROW))
+    monkeypatch.setattr(member_invoices.db, "get_invoice_for_participant", lookup)
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["battery_share"] is None
+    assert view["display_battery_kwh"] is None
+
+
+@pytest.mark.parametrize(
+    ("snapshot",),
+    [
+        ('{"share_pct": "abc"}',),
+        ('{"share_pct": "-1", "share_amount_chf": "10"}',),
+        ('{"share_pct": "10", "share_amount_chf": "-1"}',),
+        ('{"share_pct": "10", "share_amount_chf": "10", "battery_kwh": "-1"}',),
+        ('{"share_pct": "10", "share_amount_chf": "10", "name": "  "}',),
+        ("{not json",),
+    ],
+)
+def test_member_invoice_detail_view_fails_closed_on_a_corrupted_battery_share(
+    monkeypatch, snapshot
+):
+    import member_invoices
+
+    row = {**INVOICE_ROW, "battery_share_snapshot": snapshot}
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError):
+        member_invoices.detail_view(42, "building-session")
+
+
 def test_member_invoice_detail_uses_frozen_community_id_for_legacy_invoice(
     monkeypatch,
 ):
@@ -912,6 +983,16 @@ def _patch_invoice_detail(flask_app_module, monkeypatch, view_by_owner):
     )
 
 
+def _patch_invoice_savings(flask_app_module, monkeypatch):
+    """The realized-savings section rides on the detail page; keep it out of
+    the invoice snapshot contracts unless a test targets it."""
+    monkeypatch.setattr(
+        flask_app_module.dashboard_module,
+        "member_invoice_savings_view",
+        MagicMock(return_value={"available": False, "period_label": "", "message": ""}),
+    )
+
+
 def test_dashboard_invoices_list_requires_session(dashboard_app_module):  # noqa: F811
     client = dashboard_app_module.web.test_client()
     response = client.get("/dashboard/invoices")
@@ -965,6 +1046,7 @@ def test_dashboard_invoice_detail_renders_own_invoice_privately(
     _patch_invoice_detail(
         dashboard_app_module, monkeypatch, view_by_owner={42: DETAIL_VIEW}
     )
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
     client = dashboard_app_module.web.test_client()
     _set_session(client)
 
@@ -988,6 +1070,7 @@ def test_dashboard_invoice_detail_renders_the_applied_policy_summary(
     _patch_invoice_detail(
         dashboard_app_module, monkeypatch, view_by_owner={42: DETAIL_VIEW}
     )
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
     client = dashboard_app_module.web.test_client()
     _set_session(client)
 

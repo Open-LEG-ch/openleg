@@ -117,6 +117,32 @@
       <div class="font-bold text-base"><dt>Gesamtbetrag</dt><dd class="font-mono tabular-nums">{{ invoice.display_gross_chf }} CHF</dd></div>
     </dl>
   </article>
+  <section class="mt-8 bg-white rounded-xl border border-line p-6" aria-labelledby="savings-title">
+    <h2 id="savings-title" class="text-lg font-bold mb-2">Realisierte Ersparnis</h2>
+    {% if savings and savings.available %}
+    <p class="text-sm text-ink-muted mb-4">Gemessene Werte der Periode {{ savings.period_label }}.</p>
+    <dl class="grid gap-2 text-sm">
+      <div><dt class="font-semibold text-ink inline">Verbrauch:</dt> <dd class="inline font-mono tabular-nums">{{ savings.display_consumption_kwh }} kWh</dd></div>
+      <div><dt class="font-semibold text-ink inline">Lokal gedeckt:</dt> <dd class="inline font-mono tabular-nums">{{ savings.display_local_kwh }} kWh ({{ savings.display_local_share_pct or "-" }} %)</dd></div>
+      <div><dt class="font-semibold text-ink inline">Ersparnis durch reduziertes Netzentgelt:</dt> <dd class="inline font-mono tabular-nums font-bold">{{ savings.display_savings_chf }} CHF</dd></div>
+      <div><dt class="font-semibold text-ink inline">Netzentgelt-Tarif:</dt> <dd class="inline font-mono tabular-nums">{{ savings.display_grid_fee_rp }} Rp./kWh, {{ savings.network_level_label }}</dd></div>
+    </dl>
+    {% elif savings %}
+    <p class="text-sm text-ink-muted">{{ savings.message }}</p>
+    {% endif %}
+  </section>
+  {% if invoice.battery_share %}
+  <section class="mt-8 bg-white rounded-xl border border-line p-6" aria-labelledby="battery-title">
+    <h2 id="battery-title" class="text-lg font-bold mb-2">Quartierakku</h2>
+    <p class="text-sm text-ink-muted mb-4">Gemeinsamer Speicher: {{ invoice.battery_share.name }}.</p>
+    <dl class="grid gap-2 text-sm">
+      {% if invoice.display_battery_kwh %}
+      <div><dt class="font-semibold text-ink inline">Strom aus dem Speicher:</dt> <dd class="inline font-mono tabular-nums">{{ invoice.display_battery_kwh }} kWh (entspricht {{ invoice.display_battery_cost_chf }} CHF)</dd></div>
+      {% endif %}
+      <div><dt class="font-semibold text-ink inline">Ihr Anteil an den Speicherkosten:</dt> <dd class="inline font-mono tabular-nums">{{ invoice.display_battery_share_amount_chf }} CHF pro Jahr ({{ invoice.display_battery_share_pct }} %)</dd></div>
+    </dl>
+  </section>
+  {% endif %}
   <section id="questions" class="no-print mt-8 bg-white rounded-xl border border-line p-6">
     <h2 class="text-lg font-bold mb-2">Fragen zu dieser Rechnung</h2>
     {% for query in invoice.queries %}

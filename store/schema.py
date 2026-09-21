@@ -653,6 +653,9 @@ def create_tables():
                     effective_to TIMESTAMPTZ,
                     internal_price_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (internal_price_chf_per_kwh >= 0),
                     grid_fee_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (grid_fee_chf_per_kwh >= 0),
+                    settlement_fee_chf_per_kwh DECIMAL(12, 6),
+                    CONSTRAINT chk_billing_tariffs_settlement_fee
+                        CHECK (settlement_fee_chf_per_kwh IS NULL OR settlement_fee_chf_per_kwh >= 0),
                     network_level VARCHAR(16) NOT NULL CHECK (network_level IN ('same', 'cross')),
                     distribution_model VARCHAR(20),
                     vat_mode VARCHAR(16),
@@ -684,6 +687,38 @@ def create_tables():
                 )
             """)
 
+            # Shared storage asset (Quartierakku) per community. One asset per
+            # community for now: the cost share is split across the members,
+            # the energy allocation through the battery follows in a later
+            # change. Fail-closed money rules: capacity strictly positive,
+            # cost non-negative, no invented defaults for missing rows.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS billing_storage_assets (
+                    id SERIAL PRIMARY KEY,
+                    community_id VARCHAR(64) NOT NULL
+                        REFERENCES communities(community_id),
+                    name VARCHAR(80) NOT NULL,
+                    capacity_kwh DECIMAL(12, 6) NOT NULL
+                        CHECK (capacity_kwh > 0),
+                    annual_cost_chf DECIMAL(12, 6) NOT NULL
+                        CHECK (annual_cost_chf >= 0),
+                    participant_id VARCHAR(64) NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE(community_id)
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS billing_storage_shares (
+                    id SERIAL PRIMARY KEY,
+                    asset_id INTEGER NOT NULL
+                        REFERENCES billing_storage_assets(id) ON DELETE CASCADE,
+                    participant_id VARCHAR(64) NOT NULL,
+                    share_pct DECIMAL(5, 2) NOT NULL CHECK (share_pct >= 0),
+                    UNIQUE(asset_id, participant_id)
+                )
+            """)
+
             # Migration: versioned billing policy columns and their nullable
             # CHECK constraints. Columns stay nullable without defaults so legacy
             # rows are never assigned invented money-path values;
@@ -697,7 +732,24 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS vat_rate_pct DECIMAL(5, 2),
                     ADD COLUMN IF NOT EXISTS payment_days INTEGER,
                     ADD COLUMN IF NOT EXISTS invoice_prefix VARCHAR(32),
-                    ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16);
+                    ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16),
+                    ADD COLUMN IF NOT EXISTS settlement_fee_chf_per_kwh DECIMAL(12, 6);
+
+                ALTER TABLE billing_storage_assets
+                    ADD COLUMN IF NOT EXISTS participant_id VARCHAR(64);
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_settlement_fee'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_settlement_fee
+                        CHECK (settlement_fee_chf_per_kwh IS NULL OR settlement_fee_chf_per_kwh >= 0);
+                    END IF;
+                END $$;
 
                 DO $$
                 BEGIN
@@ -795,6 +847,7 @@ def create_tables():
                     total_allocated_kwh DECIMAL(12, 4) DEFAULT 0,
                     total_surplus_kwh DECIMAL(12, 4) DEFAULT 0,
                     total_network_discount_chf DECIMAL(10, 2) DEFAULT 0,
+                    total_settlement_fee_chf DECIMAL(10, 2) DEFAULT 0,
                     distribution_model VARCHAR(32) DEFAULT 'proportional',
                     network_level VARCHAR(16) DEFAULT 'same',
                     internal_price_chf_per_kwh DECIMAL(12, 6),
@@ -834,6 +887,8 @@ def create_tables():
                 ALTER TABLE billing_periods
                     ADD COLUMN IF NOT EXISTS internal_price_chf_per_kwh DECIMAL(12, 6),
                     ADD COLUMN IF NOT EXISTS grid_fee_chf_per_kwh DECIMAL(12, 6),
+                    ADD COLUMN IF NOT EXISTS total_settlement_fee_chf DECIMAL(10, 2) DEFAULT 0,
+                    ADD COLUMN IF NOT EXISTS battery_snapshot JSONB,
                     ADD COLUMN IF NOT EXISTS timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich',
                     ADD COLUMN IF NOT EXISTS input_fingerprint VARCHAR(64),
                     ADD COLUMN IF NOT EXISTS source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -885,6 +940,7 @@ def create_tables():
                     policy_snapshot JSONB,
                     provenance_snapshot JSONB,
                     line_items_snapshot JSONB,
+                    battery_share_snapshot JSONB,
                     net_chf DECIMAL(10, 2),
                     vat_rate_pct DECIMAL(6, 3),
                     vat_chf DECIMAL(10, 2),
@@ -907,6 +963,7 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS policy_snapshot JSONB,
                     ADD COLUMN IF NOT EXISTS provenance_snapshot JSONB,
                     ADD COLUMN IF NOT EXISTS line_items_snapshot JSONB,
+                    ADD COLUMN IF NOT EXISTS battery_share_snapshot JSONB,
                     ADD COLUMN IF NOT EXISTS net_chf DECIMAL(10, 2),
                     ADD COLUMN IF NOT EXISTS vat_rate_pct DECIMAL(6, 3),
                     ADD COLUMN IF NOT EXISTS vat_chf DECIMAL(10, 2),

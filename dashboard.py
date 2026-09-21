@@ -4,9 +4,10 @@
 import json
 import math
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from urllib.parse import quote, urlencode
 
+import battery_asset
 import billing_lifecycle
 import billing_policy
 import billing_workspace
@@ -16,6 +17,7 @@ import database as db
 import formation_documents
 import formation_wizard
 import member_invoices
+import member_savings
 import payment_reconciliation
 import security_utils
 import vnb_exchange
@@ -189,6 +191,13 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "access_role_labels": community_access.ROLE_LABELS,
         "leg_documents": db.list_leg_documents(community_id),
         "correspondence": db.list_correspondence(community_id),
+        "battery": _battery_overview(community_id),
+        "battery_member_ids": (
+            confirmed_member_ids(community_id)
+            if community_access.is_administrator(member)
+            or community_access.PREPARE_BILLING in capabilities
+            else []
+        ),
         "vnb_submissions": vnb_submissions,
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,
@@ -603,6 +612,53 @@ def leg_billing_policy_location(community_id: str) -> str:
     return "/leg/community/" + quote(community_id, safe="") + "/billing-policy"
 
 
+def _internal_price_band(community_id: str, building_id: str) -> dict | None:
+    """ElCom-based band for the internal price; None without usable data.
+
+    Advisory only: the ceiling is the utility's H4 total price minus the
+    settlement fee of the newest policy version, the floor is the feed-in
+    default the kalkulator documents. Missing data hides the suggestion
+    instead of guessing.
+    """
+    try:
+        building = db.get_building(building_id)
+        bfs = building.get("bfs_number") if building else None
+        if not isinstance(bfs, int) or bfs <= 0:
+            return None
+        tariffs = db.get_elcom_tariffs(bfs)
+        if not tariffs:
+            return None
+        year = tariffs[0].get("year")
+        h4 = next(
+            (
+                tariff
+                for tariff in tariffs
+                if tariff.get("year") == year
+                and str(tariff.get("category") or "").startswith("H4")
+                and tariff.get("total_rp_kwh") is not None
+            ),
+            None,
+        )
+        if not h4:
+            return None
+        versions = db.list_billing_policies(community_id)
+        settlement_fee_rp = (
+            Decimal(str(versions[0]["settlement_fee_chf_per_kwh"])) * 100
+            if versions and versions[0].get("settlement_fee_chf_per_kwh") is not None
+            else None
+        )
+        band = billing_policy.suggest_price_band(
+            grid_total_rp=h4.get("total_rp_kwh"),
+            settlement_fee_rp=settlement_fee_rp,
+            feed_in_floor_rp=formation_wizard.DEFAULT_GRID_SELL_PRICE_RP,
+        )
+        if band:
+            band["year"] = year
+        return band
+    except Exception:
+        return None
+
+
 def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dict:
     """Admin-gated view model for the versioned billing policy page."""
     if not _require_capability(
@@ -617,6 +673,7 @@ def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dic
             billing_policy.describe_version(version) for version in versions
         ],
         "policy_disclaimer": billing_policy.POLICY_DISCLAIMER,
+        "price_band": _internal_price_band(community_id, building_id),
         "policy_labels": {
             "network_level": billing_policy.NETWORK_LEVEL_LABELS,
             "distribution_model": billing_policy.DISTRIBUTION_MODEL_LABELS,
@@ -648,6 +705,82 @@ def leg_save_billing_policy(community_id: str, building_id: str, form) -> dict:
             "errors": {
                 "effective_from": (
                     "Für dieses Gültig-ab-Datum existiert bereits eine Version."
+                )
+            },
+        }
+    return {"error": None, "errors": {}}
+
+
+def _battery_overview(community_id: str) -> dict:
+    """Display model of the community's shared storage asset, fail-soft."""
+    try:
+        asset = db.get_battery_asset(community_id)
+    except db.BillingStoreError:
+        return {"configured": False, "asset": None, "store_error": True}
+    if not asset:
+        return {"configured": False, "asset": None, "store_error": False}
+    capacity = asset["capacity_kwh"]
+    annual_cost = asset["annual_cost_chf"]
+    shares = []
+    for participant_id, share_pct in asset["shares"]:
+        amount = (share_pct * annual_cost / Decimal(100)).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        shares.append(
+            {
+                "participant_id": participant_id,
+                "share_pct_display": format(share_pct, "f"),
+                "share_amount_display": format(amount, "f"),
+            }
+        )
+    return {
+        "configured": True,
+        "asset": {
+            "name": asset["name"],
+            "capacity_kwh_display": format(capacity, "f"),
+            "annual_cost_chf_display": format(annual_cost, "f"),
+            "shares": shares,
+        },
+        "store_error": False,
+    }
+
+
+def confirmed_member_ids(community_id: str) -> list[str]:
+    """The confirmed members whose building ids key the cost-share inputs."""
+    status = formation_wizard.get_community_status(community_id)
+    if not status:
+        return []
+    return sorted(
+        member["building_id"]
+        for member in status["members"] or []
+        if member.get("status") == "confirmed"
+    )
+
+
+def leg_save_battery_asset(community_id: str, building_id: str, form) -> dict:
+    """Validate and persist the community's storage asset and cost shares.
+
+    Only billing preparation may write. The share inputs are keyed by
+    confirmed member building_id; a community without confirmed members
+    cannot configure a battery.
+    """
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
+        return {"error": "Kein Zugriff.", "errors": {}}
+    participants = confirmed_member_ids(community_id)
+    result = battery_asset.validate_battery_form(form, participants)
+    if result["errors"]:
+        return {"error": None, "errors": result["errors"]}
+    try:
+        db.save_battery_asset(community_id, result["asset"])
+    except db.BillingStoreError:
+        return {
+            "error": None,
+            "errors": {
+                "shares": (
+                    "Der Quartierakku konnte nicht gespeichert werden. "
+                    "Bitte erneut versuchen."
                 )
             },
         }
@@ -740,6 +873,19 @@ def operator_update_invoice_query(
 def member_invoice_pdf_bytes(invoice: dict) -> bytes:
     """Render the exact detail view dict as a printable PDF."""
     return member_invoices.render_pdf(invoice)
+
+
+MemberSavingsDataError = member_savings.MemberSavingsDataError
+
+
+def member_invoice_savings_view(invoice_id: int, building_id: str) -> dict | None:
+    """Realized savings behind one own invoice, from metered E66 readings.
+
+    Thin seam over member_savings. Returns None for a missing or another
+    member's invoice id; raises MemberSavingsDataError when the stored
+    billing or metering data cannot be shown honestly.
+    """
+    return member_savings.invoice_savings_view(invoice_id, building_id)
 
 
 def leg_create(name: str, building_id: str, distribution_model: str) -> dict:
