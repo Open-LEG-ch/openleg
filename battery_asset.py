@@ -41,6 +41,13 @@ def validate_battery_form(form, participants) -> dict:
     if not name or len(name) > _MAX_NAME_LENGTH:
         errors["name"] = "Bezeichnung mit 1 bis 80 Zeichen eingeben."
 
+    participant_id = (form.get("participant_id") or "").strip()
+    if not participant_id or len(participant_id) > 64:
+        errors["participant_id"] = (
+            "Teilnehmer des Quartierakkus angeben: das Gebäude, über dessen "
+            "Messpunkt der Speicher angeschlossen ist."
+        )
+
     capacity = _decimal((form.get("capacity_kwh") or "").strip())
     if not capacity.is_finite() or capacity <= 0 or capacity > _MAX_CAPACITY_KWH:
         errors["capacity_kwh"] = (
@@ -65,15 +72,15 @@ def validate_battery_form(form, participants) -> dict:
     shares = []
     if participant_ids:
         share_total = Decimal(0)
-        for participant_id in participant_ids:
-            raw = (form.get(f"share_{participant_id}") or "").strip()
+        for member_id in participant_ids:
+            raw = (form.get(f"share_{member_id}") or "").strip()
             share = _decimal(raw)
             if not share.is_finite() or share < 0:
-                errors[f"share_{participant_id}"] = (
-                    f"Anteil für {participant_id} in Prozent, zwischen 0 und 100."
+                errors[f"share_{member_id}"] = (
+                    f"Anteil für {member_id} in Prozent, zwischen 0 und 100."
                 )
                 continue
-            shares.append((participant_id, share))
+            shares.append((member_id, share))
             share_total += share
         if not errors and share_total != _SHARE_TOTAL:
             errors["shares"] = (
@@ -86,6 +93,7 @@ def validate_battery_form(form, participants) -> dict:
     return {
         "asset": {
             "name": name,
+            "participant_id": participant_id,
             "capacity_kwh": capacity,
             "annual_cost_chf": annual_cost,
             "shares": shares,
@@ -107,9 +115,14 @@ def draft_block(asset, participants) -> dict:
             "Der Quartierakku ist konfiguriert, aber unvollständig."
         )
     name = asset.get("name")
+    participant_id = str(asset.get("participant_id") or "").strip()
     capacity = _decimal(asset.get("capacity_kwh"))
     annual_cost = _decimal(asset.get("annual_cost_chf"))
-    if not name or not capacity.is_finite() or capacity <= 0:
+    if not name or not participant_id:
+        raise BatteryAssetError(
+            "Der Quartierakku ist konfiguriert, aber unvollständig."
+        )
+    if not capacity.is_finite() or capacity <= 0:
         raise BatteryAssetError(
             "Der Quartierakku ist konfiguriert, aber unvollständig."
         )
@@ -120,15 +133,21 @@ def draft_block(asset, participants) -> dict:
 
     share_map = {}
     share_total = Decimal(0)
-    for participant_id, share_pct in dict(asset.get("shares") or {}).items():
-        participant_id = str(participant_id)
+    for member_id, share_pct in dict(asset.get("shares") or {}).items():
+        member_id = str(member_id)
         share_pct = _decimal(share_pct)
         if not share_pct.is_finite() or share_pct < 0:
             raise BatteryAssetError("Die Anteile des Quartierakkus sind ungültig.")
-        share_map[participant_id] = share_pct
+        share_map[member_id] = share_pct
         share_total += share_pct
 
-    billed = [str(participant) for participant in list(participants or [])]
+    # Cost shares belong to the human members; the battery's own participant
+    # carries no share of the asset.
+    billed = [
+        str(participant)
+        for participant in list(participants or [])
+        if str(participant) != participant_id
+    ]
     missing = sorted(set(billed) - set(share_map))
     if missing:
         raise BatteryAssetError(
@@ -140,22 +159,21 @@ def draft_block(asset, participants) -> dict:
         )
 
     participant_amounts = {
-        participant_id: (share_pct * annual_cost / Decimal(100)).quantize(
+        member_id: (share_pct * annual_cost / Decimal(100)).quantize(
             _CENT, rounding=ROUND_HALF_UP
         )
-        for participant_id, share_pct in share_map.items()
+        for member_id, share_pct in share_map.items()
     }
     return {
         "name": name,
+        "participant_id": participant_id,
         "capacity_kwh": str(capacity),
         "annual_cost_chf": str(annual_cost),
         "shares_pct": {
-            participant_id: str(share_pct)
-            for participant_id, share_pct in share_map.items()
+            member_id: str(share_pct) for member_id, share_pct in share_map.items()
         },
         "share_amounts_chf": {
-            participant_id: str(amount)
-            for participant_id, amount in participant_amounts.items()
+            member_id: str(amount) for member_id, amount in participant_amounts.items()
         },
     }
 
@@ -190,15 +208,21 @@ def validate_frozen_block(block, billed_participants) -> dict:
         raise BatteryAssetError(
             "Der Quartierakku der Periode hat keine gültigen Anteile."
         )
-    for participant_id, share_pct in items:
-        participant_id = str(participant_id)
+    for member_id, share_pct in items:
+        member_id = str(member_id)
         share_pct = _decimal(share_pct)
         if not share_pct.is_finite() or share_pct < 0:
             raise BatteryAssetError("Die Anteile des Quartierakkus sind ungültig.")
-        share_map[participant_id] = share_pct
+        share_map[member_id] = share_pct
         share_total += share_pct
-
-    billed = [str(participant) for participant in list(billed_participants or [])]
+    # Cost shares belong to the human members; the battery's own participant
+    # carries no share of the asset.
+    battery_participant = str(block.get("participant_id") or "").strip()
+    billed = [
+        str(participant)
+        for participant in list(billed_participants or [])
+        if str(participant) != battery_participant
+    ]
     missing = sorted(set(billed) - set(share_map))
     if missing:
         raise BatteryAssetError(
@@ -208,6 +232,22 @@ def validate_frozen_block(block, billed_participants) -> dict:
         raise BatteryAssetError(
             "Die Anteile des Quartierakkus der Periode ergeben nicht 100 Prozent."
         )
+
+    # A battery wired to its own Messpunkt must carry the per-participant
+    # sourcing attribution the engine computed; a cost-share-only battery
+    # has none.
+    attribution = block.get("attribution_kwh")
+    if block.get("participant_id") and attribution is not None:
+        if not isinstance(attribution, dict):
+            raise BatteryAssetError(
+                "Der Quartierakku der Periode hat keine Quellen-Aufteilung."
+            )
+        for member_id in billed:
+            kwh = _decimal(attribution.get(member_id))
+            if not kwh.is_finite() or kwh < 0:
+                raise BatteryAssetError(
+                    "Die Quellen-Aufteilung des Quartierakkus ist ungültig."
+                )
 
     amounts = block.get("share_amounts_chf")
     if not isinstance(amounts, dict):
@@ -228,8 +268,14 @@ def validate_frozen_block(block, billed_participants) -> dict:
 
 
 def participant_share(block: dict, participant_id: str) -> dict | None:
-    """One participant's frozen cost-share entry, or None without a battery."""
+    """One participant's frozen cost-share entry, or None without a battery.
+
+    The battery's own participant owns no share and gets no entry; a human
+    participant without a share is an inconsistent period and fails closed.
+    """
     if not block:
+        return None
+    if participant_id == str(block.get("participant_id") or ""):
         return None
     share_pct = block.get("shares_pct", {}).get(participant_id)
     amount = block.get("share_amounts_chf", {}).get(participant_id)
@@ -237,10 +283,14 @@ def participant_share(block: dict, participant_id: str) -> dict | None:
         raise BatteryAssetError(
             "Der Quartierakku der Periode hat keinen Anteil für diesen Teilnehmer."
         )
-    return {
+    entry = {
         "name": block.get("name"),
         "capacity_kwh": block.get("capacity_kwh"),
         "annual_cost_chf": block.get("annual_cost_chf"),
         "share_pct": share_pct,
         "share_amount_chf": amount,
     }
+    attribution = block.get("attribution_kwh") or {}
+    if attribution:
+        entry["battery_kwh"] = str(_decimal(attribution.get(participant_id, 0)))
+    return entry

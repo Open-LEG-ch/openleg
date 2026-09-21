@@ -702,6 +702,7 @@ def create_tables():
                         CHECK (capacity_kwh > 0),
                     annual_cost_chf DECIMAL(12, 6) NOT NULL
                         CHECK (annual_cost_chf >= 0),
+                    participant_id VARCHAR(64) NOT NULL,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     UNIQUE(community_id)
                 )
@@ -733,6 +734,9 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS invoice_prefix VARCHAR(32),
                     ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16),
                     ADD COLUMN IF NOT EXISTS settlement_fee_chf_per_kwh DECIMAL(12, 6);
+
+                ALTER TABLE billing_storage_assets
+                    ADD COLUMN IF NOT EXISTS participant_id VARCHAR(64);
 
                 DO $$
                 BEGIN

@@ -54,6 +54,7 @@ def _conn(cursor):
 def _asset(**overrides):
     asset = {
         "name": "Quartierakku",
+        "participant_id": "battery-a",
         "capacity_kwh": Decimal(45),
         "annual_cost_chf": Decimal(960),
         "shares": [
@@ -75,7 +76,13 @@ def test_save_battery_asset_inserts_asset_and_shares(monkeypatch):
     assert len(cursor.executed) == 4
     insert, params = cursor.executed[1]
     assert "INSERT INTO billing_storage_assets" in insert
-    assert params == ("community-a", "Quartierakku", Decimal(45), Decimal(960))
+    assert params == (
+        "community-a",
+        "Quartierakku",
+        Decimal(45),
+        Decimal(960),
+        "battery-a",
+    )
     share_insert, share_params = cursor.executed[2]
     assert "INSERT INTO billing_storage_shares" in share_insert
     assert share_params == (9, "building-a", Decimal(25))

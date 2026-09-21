@@ -14,6 +14,7 @@ PARTICIPANTS = ("building-a", "building-b")
 def _form(**overrides):
     form = {
         "name": "Quartierakku",
+        "participant_id": "battery-a",
         "capacity_kwh": "45",
         "annual_cost_chf": "960",
         "share_building-a": "25",
@@ -109,6 +110,14 @@ def test_blank_name_is_refused():
     assert "name" in result["errors"]
 
 
+def test_blank_battery_participant_is_refused():
+    result = battery_asset.validate_battery_form(
+        _form(participant_id="  "), PARTICIPANTS
+    )
+    assert result["asset"] is None
+    assert "participant_id" in result["errors"]
+
+
 def test_draft_block_splits_the_annual_cost_at_cent_precision():
     asset = battery_asset.validate_battery_form(
         _form(
@@ -122,6 +131,14 @@ def test_draft_block_splits_the_annual_cost_at_cent_precision():
 
     assert block["share_amounts_chf"]["building-a"] == "125.00"
     assert block["share_amounts_chf"]["building-b"] == "875.00"
+
+
+def test_draft_block_does_not_demand_a_share_for_the_battery_participant():
+    asset = battery_asset.validate_battery_form(_form(), PARTICIPANTS)["asset"]
+
+    block = battery_asset.draft_block(asset, (*PARTICIPANTS, "battery-a"))
+
+    assert block["participant_id"] == "battery-a"
 
 
 def test_draft_block_refuses_a_participant_without_a_share():
@@ -138,6 +155,7 @@ def test_draft_block_refuses_an_incomplete_asset():
 
 FROZEN_BLOCK = {
     "name": "Quartierakku",
+    "participant_id": "battery-a",
     "capacity_kwh": "45",
     "annual_cost_chf": "960",
     "shares_pct": {"building-a": "25", "building-b": "75"},
@@ -176,6 +194,7 @@ def test_frozen_block_refuses_shares_that_do_not_cover_the_billed_participants()
 def test_participant_share_returns_the_frozen_entry():
     block = {
         "name": "Quartierakku",
+        "participant_id": "battery-a",
         "capacity_kwh": "45",
         "annual_cost_chf": "960",
         "shares_pct": {"building-a": "25", "building-b": "75"},
@@ -199,6 +218,7 @@ def test_participant_share_is_none_without_a_battery():
 def test_participant_share_refuses_a_missing_participant():
     block = {
         "name": "Quartierakku",
+        "participant_id": "battery-a",
         "capacity_kwh": "45",
         "annual_cost_chf": "960",
         "shares_pct": {"building-a": "100"},

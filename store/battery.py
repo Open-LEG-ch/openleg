@@ -36,8 +36,9 @@ def save_battery_asset(community_id: str, asset: dict) -> int:
             cur.execute(
                 """
                 INSERT INTO billing_storage_assets
-                    (community_id, name, capacity_kwh, annual_cost_chf)
-                VALUES (%s, %s, %s, %s)
+                    (community_id, name, capacity_kwh, annual_cost_chf,
+                     participant_id)
+                VALUES (%s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -45,6 +46,7 @@ def save_battery_asset(community_id: str, asset: dict) -> int:
                     asset["name"],
                     asset["capacity_kwh"],
                     asset["annual_cost_chf"],
+                    asset["participant_id"],
                 ),
             )
             asset_id = cur.fetchone()["id"]
@@ -71,7 +73,8 @@ def get_battery_asset(community_id: str) -> dict | None:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT id, community_id, name, capacity_kwh, annual_cost_chf
+                SELECT id, community_id, name, capacity_kwh, annual_cost_chf,
+                       participant_id
                 FROM billing_storage_assets
                 WHERE community_id = %s
                 """,
