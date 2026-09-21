@@ -114,6 +114,19 @@ def validated_public_site_url(value):
     return _canonical_origin(parsed)
 
 
+def validated_matomo_site_id(value):
+    """Return the cookieless Matomo site id, or refuse a malformed one.
+
+    An empty value disables tracking entirely. A configured value must be a
+    positive integer without padding, because it is interpolated into an
+    inline script on every rendered page.
+    """
+    normalized = "" if value is None else str(value).strip()
+    if normalized and (not normalized.isdigit() or normalized.startswith("0")):
+        raise ValueError("MATOMO_SITE_ID must be a positive integer")
+    return normalized
+
+
 def build_config(env=None, overrides=None):
     """The mapping create_app hands to Flask, from the environment and overrides.
 
@@ -150,6 +163,7 @@ def build_config(env=None, overrides=None):
         "ADMIN_EMAIL": env.get("ADMIN_EMAIL", DEFAULT_ADMIN_EMAIL),
         "CRON_SECRET": env.get("CRON_SECRET", "").strip(),
         "RATELIMIT_STORAGE_URI": env.get("REDIS_URL", DEFAULT_REDIS_URL),
+        "MATOMO_SITE_ID": env.get("MATOMO_SITE_ID", "").strip(),
     }
 
     if overrides:

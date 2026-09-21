@@ -862,6 +862,9 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     public_site_base = app_config.validated_public_site_url(
         application.config["PUBLIC_SITE_URL"]
     )
+    matomo_site_id = app_config.validated_matomo_site_id(
+        application.config["MATOMO_SITE_ID"]
+    )
 
     def public_site_url(path):
         if path.startswith("//"):
@@ -873,6 +876,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         return urljoin(f"{public_site_base}/", relative_path)
 
     application.jinja_env.globals["public_site_url"] = public_site_url
+    application.jinja_env.globals["matomo_site_id"] = matomo_site_id
 
     for blueprint in (
         main_bp,
@@ -904,6 +908,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
                 "https://unpkg.com",
                 "https://cdn.jsdelivr.net",
                 "https://www.googletagmanager.com",
+                "https://stats.openleg.ch",
             ],
             "style-src": [
                 "'self'",
@@ -919,6 +924,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
                 "https://www.google-analytics.com",
                 "https://region1.google-analytics.com",
                 "https://www.googletagmanager.com",
+                "https://stats.openleg.ch",
             ],
         },
         content_security_policy_nonce_in=None,
