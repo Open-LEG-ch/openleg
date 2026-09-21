@@ -557,13 +557,18 @@ def _frozen_battery_block(period):
 
 
 def _billed_participants_of(period):
-    """The distinct participant ids across the period's line items."""
+    """The distinct participants carrying a consumer charge.
+
+    Cost shares are the consumption-side, human-member concept: a participant
+    whose only line is a producer credit (the battery point included) owes no
+    share of the asset.
+    """
     line_items = period.get("line_items") or []
     return sorted(
         {
             item.get("participant_id")
             for item in line_items
-            if item.get("participant_id")
+            if item.get("item_type") == "consumer_charge" and item.get("participant_id")
         }
     )
 

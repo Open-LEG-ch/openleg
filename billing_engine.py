@@ -102,6 +102,71 @@ def compute_network_discount(allocated_kwh, grid_fee_per_kwh, network_level):
     return allocated_kwh * grid_fee_per_kwh * rate
 
 
+def battery_source_attribution(
+    production, consumption, allocation, battery_participant_id
+):
+    """Split each participant's allocation into direct solar and battery energy.
+
+    The battery's discharge is the production column of its own Messpunkt;
+    its charging is the consumption column of the same point. Allocation
+    itself is unchanged: every production column, battery included, feeds
+    the same single-phase allocation the VNB reconciliation checks against.
+    The split below only labels each participant's allocated energy by
+    source, interval by interval, so quantities and money stay exactly as
+    the VNB reconciliation saw them.
+
+    ``allocation`` is the allocation ``generate_billing_summary`` already
+    computed over the total production series; this function never
+    re-allocates.
+
+    Returns ``(attribution, energy_audit)``: the attribution maps each
+    consumer participant to the battery-sourced kWh of their allocation;
+    the audit carries ``charged_kwh``, ``discharged_kwh``, and
+    ``losses_kwh`` for the period (a negative loss means the battery left
+    the period fuller than it started).
+    """
+    if not hasattr(production, "columns") or battery_participant_id not in getattr(
+        production, "columns", []
+    ):
+        raise ValueError(
+            "The configured battery metering point has no production "
+            "readings in this period"
+        )
+    # A battery that only discharges has no consumption column in the
+    # period; its charging reads as zero then.
+    charged_kwh = (
+        float(consumption[battery_participant_id].sum())
+        if battery_participant_id in consumption.columns
+        else 0.0
+    )
+
+    battery_production = production[battery_participant_id]
+    total_production = production.sum(axis=1)
+    battery_fraction = (
+        (battery_production / total_production)
+        .where(total_production > 0, 0.0)
+        .fillna(0.0)
+    )
+
+    attribution = {}
+    battery_kwh_total = 0.0
+    for col in allocation.columns:
+        if col == battery_participant_id:
+            continue
+        battery_kwh = float((allocation[col] * battery_fraction).sum())
+        battery_kwh_total += battery_kwh
+        attribution[col] = round(battery_kwh, 6)
+
+    discharged_kwh = float(battery_production.sum())
+    audit = {
+        "charged_kwh": round(charged_kwh, 6),
+        "discharged_kwh": round(discharged_kwh, 6),
+        "losses_kwh": round(charged_kwh - discharged_kwh, 6),
+        "sourced_battery_kwh": round(battery_kwh_total, 6),
+    }
+    return attribution, audit
+
+
 def generate_billing_summary(
     production,
     consumption,
@@ -110,17 +175,23 @@ def generate_billing_summary(
     network_level,
     distribution_model="proportional",
     settlement_fee_per_kwh=0.0,
+    battery_participant_id=None,
 ):
     """Generate billing summary for a period.
 
     Args:
         settlement_fee_per_kwh: VNB settlement fee in CHF per kWh of energy
             allocated inside the community; defaults to 0 (no fee).
+        battery_participant_id: the Messpunkt of the shared battery, whose
+            production column is its discharge and whose consumption column
+            is its charging. Attribution of direct vs battery energy is only
+            computed when the point is given.
 
     Returns:
         dict with total_production_kwh, total_allocated_kwh,
         total_network_discount_chf, total_settlement_fee_chf,
-        participants (list of per-participant summaries)
+        participants (list of per-participant summaries), and, with a
+        battery, the ``battery_energy`` audit block
     """
     try:
         grid_fee_per_kwh = float(grid_fee_per_kwh)
@@ -163,6 +234,13 @@ def generate_billing_summary(
         total_production_series, consumption, model=distribution_model
     )
 
+    battery_attribution = None
+    battery_audit = None
+    if battery_participant_id is not None:
+        battery_attribution, battery_audit = battery_source_attribution(
+            production, consumption, allocation, battery_participant_id
+        )
+
     total_production = float(total_production_series.sum())
     total_allocated = float(allocation.values.sum())
     total_discount = compute_network_discount(
@@ -191,6 +269,11 @@ def generate_billing_summary(
                 "internal_cost_chf": _currency(cost),
                 "network_discount_chf": _currency(_money(discount)),
                 "settlement_fee_chf": _currency(settlement_fee),
+                **(
+                    {"battery_kwh": battery_attribution.get(col, 0.0)}
+                    if battery_attribution is not None and col != battery_participant_id
+                    else {}
+                ),
             }
         )
         if producer_production is not None:
@@ -254,4 +337,5 @@ def generate_billing_summary(
         "network_level": network_level,
         "participants": participants,
         "line_items": line_items,
+        **({"battery_energy": battery_audit} if battery_audit is not None else {}),
     }

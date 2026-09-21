@@ -336,6 +336,12 @@
           {% if battery_errors.get('name') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['name'] }}</p>{% endif %}
         </div>
         <div>
+          <label for="battery-participant" class="block text-sm font-semibold mb-1">Teilnehmer des Speichers</label>
+          <input id="battery-participant" type="text" name="participant_id" required maxlength="64" value="{{ battery_values.get('participant_id', battery.asset.participant_id if battery and battery.configured else '') }}" placeholder="Gebäude-ID des Speichers" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <p class="mt-1 text-xs text-ink-muted">Das Gebäude, über dessen Messpunkt der Speicher angeschlossen ist. Der Speicher selbst trägt keinen Kostenanteil.</p>
+          {% if battery_errors.get('participant_id') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['participant_id'] }}</p>{% endif %}
+        </div>
+        <div>
           <label for="battery-capacity" class="block text-sm font-semibold mb-1">Kapazität (kWh)</label>
           <input id="battery-capacity" type="text" inputmode="decimal" name="capacity_kwh" required value="{{ battery_values.get('capacity_kwh', battery.asset.capacity_kwh_display if battery and battery.configured else '') }}" placeholder="z. B. 45" class="w-full border rounded-lg px-3 py-2 text-sm">
           {% if battery_errors.get('capacity_kwh') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['capacity_kwh'] }}</p>{% endif %}

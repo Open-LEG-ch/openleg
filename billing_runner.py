@@ -87,6 +87,15 @@ def run_billing_period(community_id, period_start, period_end):
             frames = billing_readings.with_calculated_vnb_evidence(frames, calculated)
         if not frames.provenance["source_document_ids"]:
             raise BillingRunError("Billing readings have no import provenance")
+        asset = db.get_battery_asset(community_id)
+        battery_block = None
+        battery_participant_id = None
+        if asset:
+            battery_participant_id = asset.get("participant_id") or None
+            try:
+                battery_block = battery_asset.draft_block(asset, frames.participants)
+            except battery_asset.BatteryAssetError as exc:
+                raise BillingRunError(str(exc)) from exc
         summary = billing_engine.generate_billing_summary(
             frames.production,
             frames.consumption,
@@ -95,17 +104,18 @@ def run_billing_period(community_id, period_start, period_end):
             network_level=policy["network_level"],
             distribution_model=policy["distribution_model"],
             settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
+            battery_participant_id=battery_participant_id,
         )
-        try:
-            asset = db.get_battery_asset(community_id)
-            # The key exists only when a battery is configured, so runs
-            # without one keep the same fingerprint shape they always had.
-            if asset:
-                summary["battery"] = battery_asset.draft_block(
-                    asset, frames.participants
-                )
-        except battery_asset.BatteryAssetError as exc:
-            raise BillingRunError(str(exc)) from exc
+        # The key exists only when a battery is configured, so runs without
+        # one keep the same fingerprint shape they always had.
+        if battery_block:
+            if battery_participant_id:
+                battery_block["attribution_kwh"] = {
+                    entry["id"]: entry["battery_kwh"]
+                    for entry in summary["participants"]
+                    if "battery_kwh" in entry
+                }
+            summary["battery"] = battery_block
         reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
         participant_gaps = reconciliation["per_participant"].values()
         production_gaps = reconciliation["production_per_participant"].values()
