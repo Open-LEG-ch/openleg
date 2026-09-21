@@ -242,6 +242,43 @@ def policy_fingerprint_values(policy: dict) -> dict:
     return projected
 
 
+def suggest_price_band(
+    *, grid_total_rp, settlement_fee_rp, feed_in_floor_rp
+) -> dict | None:
+    """Suggest a fair band for the internal price, or None when none exists.
+
+    The floor is the producer's alternative: the feed-in tariff they would
+    earn by exporting, never below the VNB settlement fee. The ceiling is
+    the utility's total grid price minus the settlement fee, the highest
+    price that still beats buying from the grid. Every input is Rp/kWh.
+    Anything missing, non-finite, or negative yields no suggestion: OpenLEG
+    does not guess money-path inputs.
+    """
+    values = {}
+    for key, value in (
+        ("grid_total_rp", grid_total_rp),
+        ("settlement_fee_rp", settlement_fee_rp),
+        ("feed_in_floor_rp", feed_in_floor_rp),
+    ):
+        if value is None:
+            return None
+        number = _persisted_decimal(value)
+        if not number.is_finite() or number < 0:
+            return None
+        values[key] = number
+
+    floor = max(values["feed_in_floor_rp"], values["settlement_fee_rp"])
+    ceiling = values["grid_total_rp"] - values["settlement_fee_rp"]
+    if floor >= ceiling:
+        return None
+    return {
+        "floor_rp": floor,
+        "ceiling_rp": ceiling,
+        "floor_rp_display": format(floor.quantize(Decimal("0.01")), "f"),
+        "ceiling_rp_display": format(ceiling.quantize(Decimal("0.01")), "f"),
+    }
+
+
 def rate_rp_text(value):
     """Format a stored CHF/kWh price as Rp./kWh for display."""
     try:

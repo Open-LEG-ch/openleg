@@ -612,6 +612,53 @@ def leg_billing_policy_location(community_id: str) -> str:
     return "/leg/community/" + quote(community_id, safe="") + "/billing-policy"
 
 
+def _internal_price_band(community_id: str, building_id: str) -> dict | None:
+    """ElCom-based band for the internal price; None without usable data.
+
+    Advisory only: the ceiling is the utility's H4 total price minus the
+    settlement fee of the newest policy version, the floor is the feed-in
+    default the kalkulator documents. Missing data hides the suggestion
+    instead of guessing.
+    """
+    try:
+        building = db.get_building(building_id)
+        bfs = building.get("bfs_number") if building else None
+        if not isinstance(bfs, int) or bfs <= 0:
+            return None
+        tariffs = db.get_elcom_tariffs(bfs)
+        if not tariffs:
+            return None
+        year = tariffs[0].get("year")
+        h4 = next(
+            (
+                tariff
+                for tariff in tariffs
+                if tariff.get("year") == year
+                and str(tariff.get("category") or "").startswith("H4")
+                and tariff.get("total_rp_kwh") is not None
+            ),
+            None,
+        )
+        if not h4:
+            return None
+        versions = db.list_billing_policies(community_id)
+        settlement_fee_rp = (
+            Decimal(str(versions[0]["settlement_fee_chf_per_kwh"])) * 100
+            if versions and versions[0].get("settlement_fee_chf_per_kwh") is not None
+            else None
+        )
+        band = billing_policy.suggest_price_band(
+            grid_total_rp=h4.get("total_rp_kwh"),
+            settlement_fee_rp=settlement_fee_rp,
+            feed_in_floor_rp=formation_wizard.DEFAULT_GRID_SELL_PRICE_RP,
+        )
+        if band:
+            band["year"] = year
+        return band
+    except Exception:
+        return None
+
+
 def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dict:
     """Admin-gated view model for the versioned billing policy page."""
     if not _require_capability(
@@ -626,6 +673,7 @@ def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dic
             billing_policy.describe_version(version) for version in versions
         ],
         "policy_disclaimer": billing_policy.POLICY_DISCLAIMER,
+        "price_band": _internal_price_band(community_id, building_id),
         "policy_labels": {
             "network_level": billing_policy.NETWORK_LEVEL_LABELS,
             "distribution_model": billing_policy.DISTRIBUTION_MODEL_LABELS,
