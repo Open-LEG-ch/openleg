@@ -483,13 +483,25 @@ def test_dashboard_shows_the_battery_with_its_shares(app_module, monkeypatch):  
 def test_dashboard_hides_the_battery_block_without_an_asset(app_module, monkeypatch):  # noqa: F811
     _patch_battery_dashboard(monkeypatch, app_module, battery=None)
     client = app_module.web.test_client()
-    _set_session(client, building_id="b-admin")
+    _set_session(client, building_id="b-member")
 
     response = client.get(DASHBOARD_URL)
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
     assert "Quartierakku" not in html
+
+
+def test_dashboard_shows_battery_form_before_an_asset_exists(app_module, monkeypatch):  # noqa: F811
+    _patch_battery_dashboard(monkeypatch, app_module, battery=None)
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.get(DASHBOARD_URL)
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Quartierakku speichern" in html
 
 
 def test_dashboard_marks_battery_storage_as_unavailable(app_module, monkeypatch):  # noqa: F811

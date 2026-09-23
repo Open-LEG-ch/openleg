@@ -1820,20 +1820,20 @@ def create_tables():
                 )
             """)
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS operator_events (
-                    event_id VARCHAR(64) PRIMARY KEY,
-                    event_type VARCHAR(128) NOT NULL,
-                    schema_version VARCHAR(32) NOT NULL,
-                    aggregate_id VARCHAR(128) NOT NULL,
-                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
-                    payload JSONB NOT NULL,
-                    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(event_type,event_id)
-                )
-            """)
-            cur.execute("""
-                ALTER TABLE operator_events
-                DROP CONSTRAINT IF EXISTS operator_events_event_type_aggregate_id_key
+                DO $$
+                BEGIN
+                    ALTER TABLE operator_events
+                        DROP CONSTRAINT IF EXISTS operator_events_event_type_event_id_key;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'operator_events'::regclass
+                          AND conname = 'operator_events_event_type_aggregate_id_key'
+                    ) THEN
+                        ALTER TABLE operator_events
+                            ADD CONSTRAINT operator_events_event_type_aggregate_id_key
+                            UNIQUE (event_type, aggregate_id);
+                    END IF;
+                END $$
             """)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS operator_webhook_deliveries (

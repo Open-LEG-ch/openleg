@@ -63,7 +63,7 @@
       <h2 id="battery-unavailable-title" class="font-bold mb-2">Quartierakku</h2>
       <p class="text-sm text-ink-muted" role="status">Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.</p>
     </section>
-    {% elif battery or battery_errors|default({}) %}
+    {% elif battery or battery_errors|default({}) or (can_prepare_billing and viewer_has_session) %}
     <section class="bg-white rounded-xl border p-6 mb-8" aria-labelledby="battery-title">
       <h2 id="battery-title" class="font-bold mb-2">Quartierakku</h2>
       <p class="text-sm text-ink-muted mb-4">Ein gemeinsamer Speicher für die ganze LEG. Jeder Anteil zeigt, wer welchen Teil der Jahreskosten trägt.</p>
