@@ -195,7 +195,9 @@ def test_admin_creates_show_once_hashed_credential_and_can_rotate_and_revoke(
     )
     assert rotated.status_code == 200
     assert rotated.get_json()["token"] != shown["token"]
-    assert "webhook_secret" not in rotated.get_json()
+    assert rotated.get_json()["webhook_secret"] == operator_api._webhook_secret(
+        "client-1", app.secret_key, 1
+    )
     assert revoked.status_code == 200
     assert revoked.get_json()["credential"]["active"] is False
 

@@ -87,7 +87,7 @@ def list_clients(community_id):
 def rotate_client(community_id, client_id, token_hash):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "UPDATE operator_api_clients SET token_hash=%s,active=TRUE,rotated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=%s AND community_id=%s RETURNING *",
+            "UPDATE operator_api_clients SET token_hash=%s,active=TRUE,webhook_secret_version=webhook_secret_version+1,rotated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=%s AND community_id=%s RETURNING *",
             (token_hash, client_id, community_id),
         )
         row = cur.fetchone()
@@ -182,7 +182,8 @@ def get_pending_deliveries(max_attempts=5, limit=100):
                    RETURNING d.*
                )
                SELECT claimed.delivery_id,claimed.client_id,claimed.status,
-                      claimed.attempt_count,e.*,c.webhook_url
+                      claimed.attempt_count,e.*,c.webhook_url,
+                      c.webhook_secret_version
                FROM claimed JOIN operator_events e ON e.event_id=claimed.event_id
                JOIN operator_api_clients c ON c.id=claimed.client_id
                ORDER BY e.occurred_at""",

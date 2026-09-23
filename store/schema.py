@@ -1402,6 +1402,7 @@ def create_tables():
                     capabilities JSONB NOT NULL,
                     token_hash VARCHAR(64) UNIQUE NOT NULL,
                     webhook_url TEXT,
+                    webhook_secret_version INTEGER NOT NULL DEFAULT 1,
                     rate_limit_per_hour INTEGER NOT NULL DEFAULT 100 CHECK (rate_limit_per_hour > 0),
                     active BOOLEAN NOT NULL DEFAULT TRUE,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1410,6 +1411,10 @@ def create_tables():
                     revoked_at TIMESTAMPTZ,
                     last_used_at TIMESTAMPTZ
                 )
+            """)
+            cur.execute("""
+                ALTER TABLE operator_api_clients
+                    ADD COLUMN IF NOT EXISTS webhook_secret_version INTEGER NOT NULL DEFAULT 1
             """)
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_operator_clients_community ON operator_api_clients(community_id)"

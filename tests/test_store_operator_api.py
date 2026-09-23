@@ -106,3 +106,14 @@ def test_manual_retry_resets_attempt_count(monkeypatch):
     assert result["attempt_count"] == 0
     sql, _params = cursor.executed[0]
     assert "attempt_count=0" in sql
+
+
+def test_credential_rotation_changes_the_webhook_secret_version(monkeypatch):
+    cursor = Cursor([{"id": "client-1", "webhook_secret_version": 2}])
+    monkeypatch.setattr(database, "get_connection", lambda: _connection(cursor))
+
+    result = store.rotate_client("community-1", "client-1", "hash")
+
+    assert result["webhook_secret_version"] == 2
+    sql, _params = cursor.executed[0]
+    assert "webhook_secret_version=webhook_secret_version+1" in sql
