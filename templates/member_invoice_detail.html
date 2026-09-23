@@ -81,6 +81,60 @@
     <p class="text-sm text-ink-muted mb-6">Keine Verbrauchskosten.</p>
     {% endif %}
 
+    {% if invoice.settlement_charges %}
+    <h2 class="text-lg font-bold mb-2">Abrechnungsentgelt</h2>
+    <div class="overflow-x-auto mb-6">
+    <table class="invoice-table text-sm">
+      <caption class="sr-only">Abrechnungsentgelt dieser Rechnung</caption>
+      <thead>
+        <tr>
+          <th scope="col">Position</th>
+          <th scope="col" class="num">Menge (kWh)</th>
+          <th scope="col" class="num">Preis (Rp./kWh)</th>
+          <th scope="col" class="num">Betrag (CHF)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in invoice.settlement_charges %}
+        <tr>
+          <td>{{ item.item_type_label }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_quantity_kwh }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_unit_price_rp }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_amount_chf }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% endif %}
+
+    {% if invoice.battery_shares %}
+    <h2 class="text-lg font-bold mb-2">Quartierakku-Anteil</h2>
+    <div class="overflow-x-auto mb-6">
+    <table class="invoice-table text-sm">
+      <caption class="sr-only">Anteil am Quartierakku dieser Rechnung</caption>
+      <thead>
+        <tr>
+          <th scope="col">Position</th>
+          <th scope="col" class="num">Menge (kWh)</th>
+          <th scope="col" class="num">Preis (Rp./kWh)</th>
+          <th scope="col" class="num">Betrag (CHF)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in invoice.battery_shares %}
+        <tr>
+          <td>{{ item.item_type_label }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_quantity_kwh or "-" }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_unit_price_rp or "-" }}</td>
+          <td class="num font-mono tabular-nums">{{ item.display_amount_chf }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% endif %}
+
     <h2 class="text-lg font-bold mb-2">Gutschriften und Ausgleich</h2>
     {% set credit_items = invoice.credits + invoice.rounding_adjustments %}
     {% if credit_items %}

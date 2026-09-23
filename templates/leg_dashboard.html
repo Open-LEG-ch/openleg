@@ -58,6 +58,83 @@
       </ol>
     </section>
 
+    {% if battery_unavailable|default(false) %}
+    <section class="bg-white rounded-xl border border-accent p-6 mb-8" aria-labelledby="battery-unavailable-title">
+      <h2 id="battery-unavailable-title" class="font-bold mb-2">Quartierakku</h2>
+      <p class="text-sm text-ink-muted" role="status">Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.</p>
+    </section>
+    {% elif battery or battery_errors|default({}) or (can_prepare_billing and viewer_has_session) %}
+    <section class="bg-white rounded-xl border p-6 mb-8" aria-labelledby="battery-title">
+      <h2 id="battery-title" class="font-bold mb-2">Quartierakku</h2>
+      <p class="text-sm text-ink-muted mb-4">Ein gemeinsamer Speicher für die ganze LEG. Jeder Anteil zeigt, wer welchen Teil der Jahreskosten trägt.</p>
+      {% if battery and battery.invalid %}
+      <p class="rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm mb-4" role="alert">Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, Jahreskosten und Anteile.</p>
+      {% endif %}
+      {% if battery and not battery.invalid %}
+      <dl class="grid gap-2 text-sm sm:grid-cols-2 mb-4">
+        <div><dt class="font-semibold text-ink inline">Speicherkapazität:</dt> <dd class="inline">{{ battery.capacity_display }}</dd></div>
+        <div><dt class="font-semibold text-ink inline">Jahreskosten:</dt> <dd class="inline">{{ battery.annual_cost_display }}</dd></div>
+      </dl>
+      {% endif %}
+      {% if battery_errors|default({}) %}
+      <div class="mb-4" role="alert">
+        {% for field, message in battery_errors.items() %}
+        <p class="text-sm text-accent">{{ message }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if battery and battery.shares %}
+      <div class="overflow-x-auto"><table class="w-full min-w-[36rem] text-sm">
+        <caption class="sr-only">Kostenanteile am Quartierakku</caption>
+        <thead class="bg-slate-50">
+          <tr>
+            <th scope="col" class="px-3 py-2 text-left">Teilnehmer</th>
+            <th scope="col" class="px-3 py-2 text-right">Anteil</th>
+            <th scope="col" class="px-3 py-2 text-right">Kostenanteil pro Jahr</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          {% for share in battery.shares %}
+          <tr>
+            <td class="px-3 py-2 break-words">{{ share.address }}{% if share.building_id == viewer_building_id %} <span class="text-xs text-brand">(Sie)</span>{% endif %}</td>
+            <td class="px-3 py-2 text-right font-mono tabular-nums">{{ share.share_display }}</td>
+            <td class="px-3 py-2 text-right font-mono tabular-nums">{{ share.cost_display }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+      {% endif %}
+      {% if can_prepare_billing and viewer_has_session %}
+      <details class="mt-4"{% if not battery or battery_errors|default({}) %} open{% endif %}>
+        <summary class="cursor-pointer font-semibold text-sm">Kapazität und Anteile erfassen</summary>
+        <form method="post" action="/leg/community/{{ community.community_id }}/battery" class="grid sm:grid-cols-2 gap-3 mt-4">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div>
+            <label for="battery-capacity" class="block text-sm font-semibold mb-1">Speicherkapazität (kWh)</label>
+            <input id="battery-capacity" type="text" inputmode="decimal" name="capacity_kwh" required value="{{ (battery_form_values|default({})).get('capacity_kwh', '') }}" placeholder="z. B. 45" class="w-full border rounded-lg px-3 py-2 text-sm">
+            {% if (battery_errors|default({})).get('capacity_kwh') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['capacity_kwh'] }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="battery-cost" class="block text-sm font-semibold mb-1">Jahreskosten (CHF)</label>
+            <input id="battery-cost" type="text" inputmode="decimal" name="annual_cost_chf" required value="{{ (battery_form_values|default({})).get('annual_cost_chf', '') }}" placeholder="z. B. 960" class="w-full border rounded-lg px-3 py-2 text-sm">
+            {% if (battery_errors|default({})).get('annual_cost_chf') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['annual_cost_chf'] }}</p>{% endif %}
+          </div>
+          <div class="sm:col-span-2 grid gap-2">
+            {% for member in community.members if member.status == 'confirmed' %}
+            <div class="flex flex-wrap items-center gap-3 text-sm">
+              <label for="battery-share-{{ loop.index }}" class="flex-1 min-w-[14rem] break-words">{{ member.address or member.building_id }}</label>
+              <input id="battery-share-{{ loop.index }}" type="text" inputmode="decimal" name="share:{{ member.building_id }}" value="{{ (battery_form_values|default({})).get('share:' + member.building_id, '') }}" placeholder="Anteil in %" class="w-28 border rounded-lg px-3 py-2 text-sm">
+            </div>
+            {% endfor %}
+            {% if (battery_errors|default({})).get('shares') %}<p class="text-sm text-accent" role="alert">{{ battery_errors['shares'] }}</p>{% endif %}
+          </div>
+          <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Quartierakku speichern</button>
+        </form>
+      </details>
+      {% endif %}
+    </section>
+    {% endif %}
+
     <section class="bg-white rounded-xl border overflow-hidden mb-8">
       <div class="px-5 py-3 border-b">
         <h2 class="font-bold">Mitglieder</h2>

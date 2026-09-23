@@ -99,6 +99,8 @@
 
       {% for title, items, tone in [
         ('Belastungen', selected.consumer_charges, 'charge'),
+        ('Abrechnungsentgelt', selected.settlement_charges, 'settlement'),
+        ('Quartierakku-Anteil', selected.battery_shares, 'battery'),
         ('Gutschriften', selected.producer_credits, 'credit'),
         ('Rundungsausgleich', selected.rounding_adjustments, 'rounding')
       ] %}

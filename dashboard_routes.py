@@ -411,6 +411,33 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             )
         return _leg_dashboard_redirect(community_id)
 
+    @bp.route("/leg/community/<community_id>/battery", methods=["POST"])
+    def leg_community_battery(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            result = dashboard_module.leg_save_battery(
+                community_id, building_id, request.form
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"]:
+            abort(403)
+        if result["errors"]:
+            view = dashboard_module.leg_overview(community_id, building_id)
+            view["battery_form_values"] = request.form
+            return (
+                render_city_template(
+                    "leg_dashboard.html",
+                    **view,
+                    viewer_has_session=True,
+                    csrf_token=_dashboard_csrf_token(),
+                    battery_errors=result["errors"],
+                ),
+                400,
+            )
+        return _leg_dashboard_redirect(community_id)
+
     @bp.route("/leg/community/<community_id>/access-policy", methods=["POST"])
     def leg_community_access_policy(community_id):
         building_id = _require_dashboard_session()

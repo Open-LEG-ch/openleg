@@ -1267,3 +1267,238 @@ def test_member_invoice_detail_template_uses_natural_swiss_high_german_wording()
     text = _read_template("member_invoice_detail.html")
     assert "Verbrauchskosten" in text
     assert "Verbrauchsladung" not in text
+
+
+# === Settlement fee (#629) ===
+
+
+def _fee_invoice_row():
+    import copy
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["policy_snapshot"]["settlement_fee_chf_per_kwh"] = "0.020000"
+    row["line_items_snapshot"].append(
+        {
+            "participant_id": "building-session",
+            "item_type": "settlement_fee",
+            "quantity_kwh": "120.500000",
+            "unit_price_chf_per_kwh": "0.020000",
+            "amount_chf": "2.410000",
+        }
+    )
+    row["net_chf"] = "14.49"
+    row["vat_chf"] = "1.12"
+    row["gross_chf"] = "15.61"
+    return row
+
+
+def test_detail_view_renders_the_settlement_fee_from_the_frozen_snapshot(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=_fee_invoice_row()),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert len(view["settlement_charges"]) == 1
+    fee_item = view["settlement_charges"][0]
+    assert fee_item["item_type_label"] == "Abrechnungsentgelt"
+    assert fee_item["display_quantity_kwh"] == "120.500"
+    assert fee_item["display_unit_price_rp"] == "2.00"
+    assert fee_item["display_amount_chf"] == "2.41"
+    assert view["display_settlement_fee_rp"] == "2.00"
+
+
+def test_detail_view_omits_the_settlement_fee_for_legacy_snapshots(monkeypatch):
+    import copy
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["settlement_charges"] == []
+    assert view["display_settlement_fee_rp"] is None
+
+
+def test_detail_view_fails_closed_on_a_settlement_fee_with_a_foreign_price(
+    monkeypatch,
+):
+
+    import member_invoices
+
+    row = _fee_invoice_row()
+    row["line_items_snapshot"][-1]["unit_price_chf_per_kwh"] = "0.030000"
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError):
+        member_invoices.detail_view(42, "building-session")
+
+
+def test_detail_view_fails_closed_on_a_fee_line_without_a_fee_policy(monkeypatch):
+    import copy
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["line_items_snapshot"].append(
+        {
+            "participant_id": "building-session",
+            "item_type": "settlement_fee",
+            "quantity_kwh": "120.500000",
+            "unit_price_chf_per_kwh": "0.000000",
+            "amount_chf": "0.000000",
+        }
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError):
+        member_invoices.detail_view(42, "building-session")
+
+
+def test_member_invoice_pdf_renders_the_settlement_fee_section(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=_fee_invoice_row()),
+    )
+
+    invoice = member_invoices.detail_view(42, "building-session")
+
+    with patch.object(
+        member_invoices.document_generator,
+        "_render_pdf",
+        return_value=b"%PDF-fake",
+    ) as render_pdf:
+        member_invoices.render_pdf(invoice)
+
+    pdf_html = render_pdf.call_args.args[0]
+
+    assert "Abrechnungsentgelt" in pdf_html
+    assert "2.41" in pdf_html
+
+
+def test_settlement_fee_section_is_hidden_for_legacy_invoices():
+    template = _read_template("member_invoice_detail.html")
+
+    assert "settlement_charges" in template
+    assert "{% if invoice.settlement_charges %}" in template
+
+
+# === Quartierakku cost share (#628) ===
+
+
+def _battery_invoice_row():
+    import copy
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["line_items_snapshot"].append(
+        {
+            "participant_id": "building-session",
+            "item_type": "battery_cost_share",
+            "quantity_kwh": None,
+            "unit_price_chf_per_kwh": None,
+            "amount_chf": "120.00",
+        }
+    )
+    row["net_chf"] = "132.08"
+    row["vat_chf"] = "10.17"
+    row["gross_chf"] = "142.25"
+    return row
+
+
+def test_detail_view_shows_the_quartierakku_share(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=_battery_invoice_row()),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert len(view["battery_shares"]) == 1
+    share = view["battery_shares"][0]
+    assert share["item_type_label"] == "Quartierakku-Anteil"
+    assert share["display_quantity_kwh"] is None
+    assert share["display_unit_price_rp"] is None
+    assert share["display_amount_chf"] == "120.00"
+
+
+def test_detail_view_omits_the_battery_block_without_battery_lines(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=INVOICE_ROW),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["battery_shares"] == []
+
+
+def test_detail_view_fails_closed_on_a_battery_share_with_a_quantity(monkeypatch):
+    import member_invoices
+
+    row = _battery_invoice_row()
+    row["line_items_snapshot"][-1]["quantity_kwh"] = "5"
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError):
+        member_invoices.detail_view(42, "building-session")
+
+
+def test_member_invoice_pdf_renders_the_battery_share_section(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=_battery_invoice_row()),
+    )
+
+    invoice = member_invoices.detail_view(42, "building-session")
+
+    with patch.object(
+        member_invoices.document_generator,
+        "_render_pdf",
+        return_value=b"%PDF-fake",
+    ) as render_pdf:
+        member_invoices.render_pdf(invoice)
+
+    pdf_html = render_pdf.call_args.args[0]
+
+    assert "Quartierakku-Anteil" in pdf_html
+    assert "120.00" in pdf_html
+
+
+def test_battery_share_section_is_hidden_for_legacy_invoices():
+    template = _read_template("member_invoice_detail.html")
+
+    assert "{% if invoice.battery_shares %}" in template

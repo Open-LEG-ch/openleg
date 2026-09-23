@@ -234,6 +234,7 @@ def test_save_billing_policy_receives_aware_zurich_midnight(monkeypatch):
             "effective_from": "2026-09-01",
             "internal_price_rp": "15.00",
             "grid_fee_rp": "8.00",
+            "settlement_fee_rp": "0.00",
             "network_level": "same",
             "distribution_model": "proportional",
             "vat_mode": "none",

@@ -172,6 +172,36 @@ it.
   admin-gated. Member display fails closed on unreadable figures (#528).
 - **Consent gate:** not neighbour-visible.
 
+## store/battery
+
+- **Tables:** `community_batteries`, `community_battery_shares`
+- **Holds:** one shared storage battery (Quartierakku) per community:
+  capacity in kWh, annual cost in CHF, and one cost share in percent per
+  participant.
+- **Purpose:** the shared asset behind the battery cost-share lines that the
+  billing draft and the invoices carry.
+- **Owner:** the LEG (operator records the asset and the shares).
+- **Sensitivity:** financial data about the community, cost shares per
+  building.
+- **Resident-visible:** the asset and its shares appear on the LEG
+  dashboard; members see the community's cost split.
+- **Consent gate:** not neighbour-visible.
+
+## store/invoice_query
+
+- **Tables:** `invoice_queries`, `invoice_query_messages`,
+  `invoice_query_events`
+- **Holds:** an invoice-scoped question category and status, private messages,
+  optional PDF evidence, and append-only status events with actor and time.
+- **Purpose:** let a member question an immutable invoice and follow the
+  operator's response without changing the invoice snapshot.
+- **Owner:** the invoiced member and the issuing LEG.
+- **Sensitivity:** financial correspondence and optional personal evidence.
+- **Resident-visible:** only to the invoice participant; operators are scoped
+  to the invoice's community.
+- **Consent gate:** invoice ownership or community capability, not neighbour
+  consent.
+
 ## store/profile
 
 - **Tables:** `municipalities`, `municipality_profiles`,
@@ -238,9 +268,10 @@ it.
 
 ## store/formation
 
-- **Tables:** `communities`, `community_members`
+- **Tables:** `communities`, `community_members`, `community_role_events`
 - **Holds:** the LEG record (`community_id`, `name`, `status`,
-  `distribution_model`) and memberships (`role`, `status`, `invited_by`).
+  `distribution_model`, dual-control policy), memberships (`role`,
+  `access_roles`, `status`, `invited_by`), and append-only role changes.
 - **Purpose:** LEG formation and membership lifecycle.
 - **Owner:** the LEG (its members).
 - **Sensitivity:** membership personal data; member aggregates shown to
@@ -352,6 +383,21 @@ it.
 - **Sensitivity:** credentials (hashed at rest), usage volumes.
 - **Resident-visible:** no.
 - **Consent gate:** none.
+
+## store/operator_api
+
+- **Tables:** `operator_api_clients`, `operator_api_usage`, `operator_events`,
+  `operator_webhook_deliveries`
+- **Holds:** community-scoped hashed API tokens, explicit capabilities,
+  endpoint usage, lifecycle-event payloads and delivery outcomes.
+- **Purpose:** private operator integration with bounded, observable webhook
+  delivery.
+- **Owner:** the LEG administration that created the credential.
+- **Sensitivity:** credentials and private LEG workflow facts. API tokens are
+  hashed and never returned after creation or rotation.
+- **Resident-visible:** no; credential administration is restricted to a
+  confirmed LEG administrator.
+- **Consent gate:** none; tenant scope and explicit capabilities are mandatory.
 
 ## store/registry
 

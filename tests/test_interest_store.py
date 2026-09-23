@@ -27,6 +27,7 @@ def test_retention_horizons_are_named_and_used():
     assert interest.VERIFIED_COVERAGE_RETENTION_MONTHS == 12
     assert "30 days" in sql
     assert "12 months" in sql
+    assert "NOT EXISTS (SELECT 1 FROM communities" in sql
     assert result == {"coverage_requests_deleted": 2, "buildings_deleted": 2}
 
 

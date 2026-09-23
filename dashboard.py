@@ -17,6 +17,7 @@ import formation_documents
 import formation_wizard
 import member_invoices
 import payment_reconciliation
+import quartierakku
 import security_utils
 import vnb_exchange
 
@@ -139,6 +140,38 @@ def _with_german_labels(community: dict) -> dict:
     return labeled
 
 
+def _battery_view(config: dict, members: list) -> dict:
+    """Display-ready battery block for the LEG dashboard."""
+    addresses = {
+        member["building_id"]: member.get("address") or member["building_id"]
+        for member in members or []
+    }
+    shares = [
+        {
+            "building_id": building_id,
+            "address": addresses.get(building_id, building_id),
+            "share_display": f"{share} %",
+            "cost_display": f"CHF {_money_display(quartierakku.cost_share_chf(config['annual_cost_chf'], share))}",
+        }
+        for building_id, share in sorted(config["shares"].items())
+    ]
+    return {
+        "capacity_display": f"{config['capacity_kwh']} kWh",
+        "annual_cost_display": f"CHF {_money_display(config['annual_cost_chf'])}",
+        "shares": shares,
+    }
+
+
+def _money_display(value) -> str:
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return "0.00"
+    if not amount.is_finite():
+        return "0.00"
+    return f"{amount:.2f}"
+
+
 def leg_overview(community_id: str, building_id: str) -> dict:
     """Operator view of one community, gated on membership.
 
@@ -173,6 +206,36 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         vnb_submissions = []
         vnb_mutations = []
     capabilities = community_access.capabilities_for(member)
+    battery_unavailable = False
+    try:
+        battery = db.get_battery(community_id)
+    except db.BillingStoreError:
+        battery = None
+        battery_unavailable = True
+    battery_view = None
+    battery_form_values = {}
+    if battery:
+        try:
+            battery = quartierakku.validate_battery_config(
+                {**battery, "community_id": community_id}
+            )
+        except quartierakku.InvalidBatteryConfig:
+            battery_view = {
+                "capacity_display": "Unvollständig",
+                "annual_cost_display": "Unvollständig",
+                "shares": [],
+                "invalid": True,
+            }
+        else:
+            battery_view = _battery_view(battery, status["members"])
+            battery_form_values = {
+                "capacity_kwh": str(battery["capacity_kwh"]),
+                "annual_cost_chf": str(battery["annual_cost_chf"]),
+                **{
+                    f"share:{building_id}": str(share)
+                    for building_id, share in battery["shares"].items()
+                },
+            }
     return {
         "error": None,
         "community": _with_german_labels(status),
@@ -192,6 +255,9 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "vnb_submissions": vnb_submissions,
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,
+        "battery": battery_view,
+        "battery_unavailable": battery_unavailable,
+        "battery_form_values": battery_form_values,
     }
 
 
@@ -629,6 +695,27 @@ def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dic
     }
     view.update(extra)
     return view
+
+
+def leg_save_battery(community_id: str, building_id: str, form) -> dict:
+    """Record or update the Quartierakku; only billing preparation may write."""
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
+        return {"error": "Kein Zugriff.", "errors": {}}
+    status = formation_wizard.get_community_status(community_id)
+    if not status:
+        return {"error": "LEG nicht gefunden.", "errors": {}}
+    member_ids = [
+        member["building_id"]
+        for member in status["members"] or []
+        if member.get("status") == "confirmed"
+    ]
+    result = quartierakku.validate_battery_form(form, member_ids)
+    if result["errors"]:
+        return {"error": None, "errors": result["errors"]}
+    db.save_battery(community_id, result["battery"])
+    return {"error": None, "errors": {}}
 
 
 def leg_save_billing_policy(community_id: str, building_id: str, form) -> dict:
@@ -1128,6 +1215,18 @@ def leg_demo_overview() -> dict:
             "min_community_size"
         ],
         "community": _with_german_labels(community),
+        "battery": {
+            "capacity_display": "45 kWh",
+            "annual_cost_display": "CHF 960.00",
+            "shares": [
+                {
+                    "building_id": "demo-building",
+                    "address": "Musterweg 1, 5400 Baden",
+                    "share_display": "12.5 %",
+                    "cost_display": "CHF 120.00",
+                }
+            ],
+        },
     }
 
 

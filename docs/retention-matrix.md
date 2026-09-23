@@ -39,6 +39,7 @@ Invoice-question response and reminder dates use
 | store/sdat_ingestion | Life of the tenant operation; no automated horizon yet | Not implemented | - | Schedule settings and run metadata with safe error codes and aggregate counts; no filenames, credentials, document contents, or metering point IDs |
 | store/meter | Life of the registration | Profile deletion (CASCADE on `meter_readings`) | CSV readings | Nothing |
 | store/billing | 10 years (Swiss OR accounting retention; policy, not code) | Not implemented | - | Invoices, line items, corrections, lifecycle events, delivery jobs: deliberately kept; `invoices.participant_id` has no FK, so profile deletion does NOT reach them |
+| store/battery | Life of the LEG's accounting | Community deletion cascades; no separate deletion flow | Battery configuration and participant cost shares | Billing-period snapshots remain with the accounting record |
 | store/invoice_query | Same horizon as the questioned invoice; policy, not code | Not implemented | - | Questions, messages, PDF evidence and status history remain with the accounting record |
 | store/profile | Life of the deployment | Not implemented | - | Public energy facts are public data |
 | store/email_queue | 90 days past terminal state | `cleanup_finished_emails` (#519) | Terminal rows (`sent`, `failed`, `cancelled`) past `EMAIL_QUEUE_RETENTION_DAYS = 90` | Pending rows in their retry window; addresses already scrubbed on send/cancel |

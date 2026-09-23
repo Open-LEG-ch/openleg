@@ -103,6 +103,7 @@ def cleanup_expired_interest():
                 WHERE verified = FALSE
                   AND COALESCE(verification_requested_at, registered_at)
                       < CURRENT_TIMESTAMP - INTERVAL '{UNVERIFIED_INTEREST_RETENTION_DAYS} days'
+                  AND NOT EXISTS (SELECT 1 FROM communities WHERE communities.admin_building_id = buildings.building_id)
                 """
             )
             return {

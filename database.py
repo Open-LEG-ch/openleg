@@ -123,6 +123,7 @@ from store.api_client import (  # noqa: F401
     save_api_client,
     track_api_usage,
 )
+from store.battery import get_battery, save_battery  # noqa: F401
 from store.billing import (  # noqa: F401
     BillingPolicyConflict,
     BillingStoreError,

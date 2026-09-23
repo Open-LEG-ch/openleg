@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Behavioral contract for the read-only admin billing workspace."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from importlib import import_module
 from zoneinfo import ZoneInfo
@@ -271,3 +271,91 @@ def test_rate_uses_explicit_half_up_rounding():
     workspace = _module()
 
     assert workspace._rate(Decimal("0.15005")) == "15.01 Rp./kWh"
+
+
+def test_workspace_groups_settlement_fee_lines_separately(monkeypatch):
+    from decimal import Decimal
+
+    import billing_workspace as workspace
+
+    start = datetime(2026, 6, 1, 0, 0, tzinfo=ZoneInfo("Europe/Zurich"))
+    periods = [
+        {
+            "id": 42,
+            "period_start": start,
+            "period_end": start + timedelta(days=30),
+            "status": "draft",
+        }
+    ]
+    detail = {
+        **periods[0],
+        "line_items": [
+            {
+                "participant_id": "consumer-a",
+                "item_type": "settlement_fee",
+                "quantity_kwh": Decimal("100.25"),
+                "unit_price_chf_per_kwh": Decimal("0.02"),
+                "amount_chf": Decimal("2.005"),
+            },
+        ],
+    }
+    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit=100: periods)
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda period_id: detail)
+
+    selected = workspace.load()["selected"]
+
+    assert [item["participant_id"] for item in selected["settlement_charges"]] == [
+        "consumer-a"
+    ]
+    fee = selected["settlement_charges"][0]
+    assert fee["display_quantity_kwh"] == "100.250"
+    assert fee["display_unit_price_rp"] == "2.00"
+    assert fee["display_amount_chf"] == "2.01"
+    assert all(
+        item["item_type"] != "settlement_fee"
+        for item in selected["consumer_charges"] + selected["producer_credits"]
+    )
+
+
+def test_workspace_groups_battery_share_lines_separately(monkeypatch):
+    from decimal import Decimal
+
+    import billing_workspace as workspace
+
+    start = datetime(2026, 6, 1, 0, 0, tzinfo=ZoneInfo("Europe/Zurich"))
+    periods = [
+        {
+            "id": 42,
+            "period_start": start,
+            "period_end": start + timedelta(days=30),
+            "status": "draft",
+        }
+    ]
+    detail = {
+        **periods[0],
+        "line_items": [
+            {
+                "participant_id": "consumer-a",
+                "item_type": "battery_cost_share",
+                "quantity_kwh": None,
+                "unit_price_chf_per_kwh": None,
+                "amount_chf": Decimal("120.00"),
+            },
+        ],
+    }
+    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit=100: periods)
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda period_id: detail)
+
+    selected = workspace.load()["selected"]
+
+    assert [item["participant_id"] for item in selected["battery_shares"]] == [
+        "consumer-a"
+    ]
+    share = selected["battery_shares"][0]
+    assert share["display_quantity_kwh"] is None
+    assert share["display_unit_price_rp"] is None
+    assert share["display_amount_chf"] == "120.00"
+    assert all(
+        item["item_type"] != "battery_cost_share"
+        for item in selected["consumer_charges"] + selected["producer_credits"]
+    )
