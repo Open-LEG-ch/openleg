@@ -984,6 +984,7 @@ def test_billing_policy_effective_date_matches_zurich_boundary():
                 "effective_from": "2026-01-01",
                 "internal_price_rp": "15.00",
                 "grid_fee_rp": "8.00",
+                "settlement_fee_rp": "0.00",
                 "network_level": "same",
                 "distribution_model": "proportional",
                 "vat_mode": "none",

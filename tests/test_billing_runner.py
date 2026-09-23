@@ -966,6 +966,7 @@ def _install_battery_fixture(monkeypatch, case, battery):
         "get_billing_policy",
         lambda _community, _start, _end: deepcopy(case["policy"]),
     )
+    monkeypatch.setattr(database, "is_db_available", lambda: False)
     monkeypatch.setattr(
         database,
         "get_battery",

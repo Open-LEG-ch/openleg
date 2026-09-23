@@ -555,7 +555,15 @@ def save_billing_policy(community_id: str, policy: dict) -> int:
         columns = ("community_id", *billing_policy.EDITABLE_POLICY_FIELDS)
         column_sql = ", ".join(columns)
         placeholders = ", ".join("%s" for _ in columns)
-        values = (community_id, *(policy[field] for field in columns[1:]))
+        values = (
+            community_id,
+            *(
+                policy.get(field, 0)
+                if field == "settlement_fee_chf_per_kwh"
+                else policy[field]
+                for field in columns[1:]
+            ),
+        )
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 f"""
