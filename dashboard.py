@@ -213,6 +213,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         battery = None
         battery_unavailable = True
     battery_view = None
+    battery_form_values = {}
     if battery:
         try:
             battery = quartierakku.validate_battery_config(
@@ -227,6 +228,14 @@ def leg_overview(community_id: str, building_id: str) -> dict:
             }
         else:
             battery_view = _battery_view(battery, status["members"])
+            battery_form_values = {
+                "capacity_kwh": str(battery["capacity_kwh"]),
+                "annual_cost_chf": str(battery["annual_cost_chf"]),
+                **{
+                    f"share:{building_id}": str(share)
+                    for building_id, share in battery["shares"].items()
+                },
+            }
     return {
         "error": None,
         "community": _with_german_labels(status),
@@ -248,6 +257,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "vnb_exchange_available": vnb_exchange_available,
         "battery": battery_view,
         "battery_unavailable": battery_unavailable,
+        "battery_form_values": battery_form_values,
     }
 
 

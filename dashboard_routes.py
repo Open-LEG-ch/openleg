@@ -424,14 +424,15 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         if result["error"]:
             abort(403)
         if result["errors"]:
+            view = dashboard_module.leg_overview(community_id, building_id)
+            view["battery_form_values"] = request.form
             return (
                 render_city_template(
                     "leg_dashboard.html",
-                    **dashboard_module.leg_overview(community_id, building_id),
+                    **view,
                     viewer_has_session=True,
                     csrf_token=_dashboard_csrf_token(),
                     battery_errors=result["errors"],
-                    battery_form_values=request.form,
                 ),
                 400,
             )

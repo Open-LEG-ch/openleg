@@ -478,6 +478,9 @@ def test_dashboard_shows_the_battery_with_its_shares(app_module, monkeypatch):  
     assert "45 kWh" in html
     assert "CHF 960.00" in html
     assert "50 %" in html
+    assert 'name="capacity_kwh" required value="45"' in html
+    assert 'name="annual_cost_chf" required value="960"' in html
+    assert 'name="share:b-admin" value="50"' in html
 
 
 def test_dashboard_hides_the_battery_block_without_an_asset(app_module, monkeypatch):  # noqa: F811
