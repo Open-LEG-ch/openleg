@@ -6,7 +6,7 @@ numpy==1.26.4
 Flask-Limiter==4.1.1
 Flask-Talisman==1.1.0
 python-dotenv==1.2.3
-tzdata==2026.3
+tzdata==2026.4
 bleach==6.4.0
 defusedxml==0.7.1
 email-validator==2.1.0
