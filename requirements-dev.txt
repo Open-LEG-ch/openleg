@@ -4,4 +4,4 @@ pyyaml>=6.0.3
 mypy>=2.3.1
 ruff==0.16.7
 coverage==7.16.0
-mutmut==3.7.0
+mutmut==3.8.0
