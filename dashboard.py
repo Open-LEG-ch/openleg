@@ -206,10 +206,12 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         vnb_submissions = []
         vnb_mutations = []
     capabilities = community_access.capabilities_for(member)
+    battery_unavailable = False
     try:
         battery = db.get_battery(community_id)
-    except (db.BillingStoreError, AttributeError):
+    except db.BillingStoreError:
         battery = None
+        battery_unavailable = True
     battery_view = None
     if battery:
         try:
@@ -245,6 +247,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,
         "battery": battery_view,
+        "battery_unavailable": battery_unavailable,
     }
 
 

@@ -492,6 +492,24 @@ def test_dashboard_hides_the_battery_block_without_an_asset(app_module, monkeypa
     assert "Quartierakku" not in html
 
 
+def test_dashboard_marks_battery_storage_as_unavailable(app_module, monkeypatch):  # noqa: F811
+    _patch_battery_dashboard(monkeypatch, app_module)
+    monkeypatch.setattr(
+        app_module.dashboard_module.db,
+        "get_battery",
+        MagicMock(side_effect=database.BillingStoreError("unavailable")),
+    )
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.get(DASHBOARD_URL)
+
+    assert response.status_code == 200
+    assert "Quartierakku-Daten sind derzeit nicht verfügbar" in response.get_data(
+        as_text=True
+    )
+
+
 def test_battery_save_requires_a_confirmed_admin(app_module, monkeypatch):  # noqa: F811
     _patch_battery_dashboard(monkeypatch, app_module)
     client = app_module.web.test_client()
@@ -533,6 +551,30 @@ def test_battery_save_persists_a_valid_form(app_module, monkeypatch):  # noqa: F
 
     assert response.status_code == 302
     save.assert_called_once()
+
+
+def test_battery_save_returns_503_when_storage_is_unavailable(app_module, monkeypatch):  # noqa: F811
+    _patch_battery_dashboard(monkeypatch, app_module)
+    monkeypatch.setattr(
+        app_module.dashboard_module.db,
+        "save_battery",
+        MagicMock(side_effect=database.BillingStoreError("unavailable")),
+    )
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.post(
+        f"/leg/community/{BATTERY_COMMUNITY}/battery",
+        data={
+            "csrf_token": "csrf-secret",
+            "capacity_kwh": "45",
+            "annual_cost_chf": "960",
+            "share:b-admin": "50",
+            "share:b-member": "50",
+        },
+    )
+
+    assert response.status_code == 503
 
 
 def test_battery_save_refuses_shares_that_do_not_sum_to_100(app_module, monkeypatch):  # noqa: F811

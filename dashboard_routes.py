@@ -415,9 +415,12 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_community_battery(community_id):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
-        result = dashboard_module.leg_save_battery(
-            community_id, building_id, request.form
-        )
+        try:
+            result = dashboard_module.leg_save_battery(
+                community_id, building_id, request.form
+            )
+        except db.BillingStoreError:
+            abort(503)
         if result["error"]:
             abort(403)
         if result["errors"]:
