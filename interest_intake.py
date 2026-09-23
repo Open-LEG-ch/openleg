@@ -9,16 +9,22 @@ import registration
 
 
 class InterestIntakeError(Exception):
-    pass
+    """Validation failure with a message intended for the public response."""
+
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
 
 
 def submit(data, *, db, security, base_url, send_email):
+    if not isinstance(data, dict):
+        raise InterestIntakeError("Bitte senden Sie ein JSON-Objekt.")
     email = (data.get("email") or "").strip()
     valid, email, error = security.validate_email_address(email)
     if not valid:
         raise InterestIntakeError(error)
 
-    plz = security.sanitize_string(str(data.get("plz") or ""), max_length=4)
+    plz = str(data.get("plz") or "").strip()
     if not re.fullmatch(r"[1-9]\d{3}", plz):
         raise InterestIntakeError("Bitte geben Sie eine gültige Schweizer PLZ an.")
     municipality_name = security.sanitize_string(
@@ -27,10 +33,13 @@ def submit(data, *, db, security, base_url, send_email):
     if len(municipality_name) < 2:
         raise InterestIntakeError("Bitte geben Sie Ihre Gemeinde an.")
     address = security.sanitize_string(data.get("address") or "", max_length=200)
-    roles = registration.parse_roles(data.get("roles"))
+    try:
+        roles = registration.parse_roles(data.get("roles"))
+    except registration.RegistrationError as error:
+        raise InterestIntakeError(error.message) from error
     raw_has_solar = data.get("has_solar")
     has_solar = (
-        registration._coerce_bool(raw_has_solar) if raw_has_solar is not None else None
+        registration.coerce_bool(raw_has_solar) if raw_has_solar is not None else None
     )
 
     matches = db.search_municipality_profiles(municipality_name, limit=10)

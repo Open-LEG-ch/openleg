@@ -58,7 +58,7 @@ without code changes.
 | `cron_bp` | `cron.py` | none |
 | `rangliste_bp` | `rangliste.py` | `/rangliste` |
 | `self_host_bp` | `self_host.py` | `/self-host`, `/install.sh` |
-| `operator_api_bp` | `operator_api.py` | `/api/operator/v1`, `/leg/community/*/operator-api` |
+| `operator_api_bp` | `operator_api.py` | `/api/operator/v1`, `/leg/community` |
 
 ## Route map
 
@@ -80,6 +80,8 @@ Application and API routes:
 - `/api/cron/*` runs scheduled work behind a cron secret.
 - `/api/cron/process-billing` processes the previous complete month for every
   active community behind that cron secret.
+- `/api/cron/import-sdat` runs due per-tenant SDAT schedules. Admins configure,
+  inspect, and explicitly retry them under `/admin/sdat-schedules`.
 - `/api/billing/community/<community_id>/period/<int:period_id>` returns one
   persisted draft billing period as JSON to admins.
 - `/leg/community/<community_id>/billing` is the admin-gated approval
@@ -150,8 +152,8 @@ Application and API routes:
   with `MemberInvoiceDataError` on a malformed or non-finite snapshot rather
   than rendering an invented value, and renders the identical PDF through the
   public `document_generator.render_pdf_html` seam.
-- `sdat_datahub.py`, `sdat_e66.py`, `meter_data.py`: meter data retrieval,
-  SDAT parsing, and upload ingestion.
+- `sdat_datahub.py`, `sdat_e66.py`, `sdat_ingestion.py`, `meter_data.py`: meter
+  data retrieval, SDAT parsing, scheduled orchestration, and upload ingestion.
 - `templates/`, `static/`, `tests/`, `scripts/`.
 
 ## Data layer
@@ -167,8 +169,8 @@ Shipped stores: `store/access_token`, `store/analytics`, `store/api_client`,
 `store/correspondence`, `store/dashboard_profile`, `store/document`,
 `store/email_queue`, `store/formation_documents`, `store/meter`,
 `store/metering`, `store/municipality`, `store/ops`, `store/profile`,
-`store/ranking`, `store/referral`, `store/registry`, `store/tenant`,
-`store/token`, `store/utility`.
+`store/ranking`, `store/referral`, `store/registry`, `store/sdat_ingestion`,
+`store/tenant`, `store/token`, `store/utility`.
 
 New storage code for a cohesive domain goes into `store/`, not into
 `database.py`.
@@ -180,6 +182,50 @@ and the re-export block, and nothing else. Every domain lives in `store/`.
 
 New storage code for a cohesive domain gets its own module there. Nothing is
 appended to `database.py`.
+
+## Verified municipality interest
+
+`store/schema.py` defines the `verified_interest` view. It selects one verified
+record per BFS municipality and `LOWER(email)`, without trimming historical
+emails. Address-check registrations take priority over coverage requests. Within
+each source, the newest creation timestamp wins, followed by the stable record
+ID; missing timestamps sort last. Counts, recipients, and dashboard summaries in
+`store/interest.py` use this selection. Operator exports retain the source rows.
+Municipality-growth emails require the selected building record's persisted
+`updates_opt_in`. Missing or false consent excludes that address, even when an
+older building or coverage duplicate exists. Coverage-only recipients retain
+their existing notification behavior. Consent does not alter aggregate counts.
+Operator count cards cover all raw records, independently of the displayed
+500-row list. Failed counts return JSON null and render "Nicht verfügbar".
+Public pages still hide exact counts below three. Directory ordering treats one
+and two as the same bucket, then sorts by name.
+
+Registration saves the building and its verification token in one transaction.
+The generic `save_token` helper accepts unsubscribe tokens only.
+An existing verified profile rejects a different case-insensitive email with
+HTTP 409 before any writes. Same-email updates retain verification. An unverified
+profile can change email; this increments its verification revision and
+invalidates older links. Confirmation locks the building before
+consuming its revision-bound token, then verifies the building in that same
+transaction. Invalid links return 404; write conflicts return 409 without
+consuming the token. `interest_confirmation.py` runs downstream effects only
+after that transaction commits. These effects remain best-effort and are not
+replayed automatically after a failure.
+
+Schema initialization invalidates unused legacy verification tokens that lack a
+revision. They cannot safely be attached to the current email. Residents with
+those links must register again for a fresh link. Unsubscribe tokens are not
+changed. The migration is idempotent and preserves existing verified records.
+
+`verification_requested_at` starts the unverified retention period on each
+registration. It does not change the original creation date used by interest
+summaries. Legacy rows without that timestamp keep their original retention age.
+
+The existing `/unsubscribe` journey also issues one-hour deletion links for
+coverage requests. Each link targets one existing record, never a future record
+with the same email. GET displays the confirmation form; POST deletes the bound
+record and its tokens in one transaction. An email with both intake sources gets
+a link for each record.
 
 ## Data pipelines
 
@@ -194,6 +240,8 @@ environment-variable names are documented in `docs/data-pipeline.md`.
   SDAT files from the Swisseldex Datahub;
   `scripts/import_sdat.py` parses E66 messages through `sdat_e66.py` and writes
   `metering_points`, `metering_point_readings`, and the `sdat_imports` ledger.
+  `sdat_ingestion.py` schedules that same path per tenant; its store holds
+  schedules, advisory locks, and aggregate run reports.
   The `/meter-upload` page is a separate manual path that writes
   `meter_readings` per building.
 

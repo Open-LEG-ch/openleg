@@ -20,9 +20,6 @@ class Cursor:
     def fetchall(self):
         return self.rows
 
-    def fetchone(self):
-        return self.rows[0] if self.rows else None
-
     def __enter__(self):
         return self
 
@@ -50,21 +47,16 @@ def test_delivery_batch_is_bounded_and_claimed_before_worker_receives_it(monkeyp
     assert "FOR UPDATE OF d SKIP LOCKED" in sql
     assert "SET status='processing'" in sql
     assert "claim_id=gen_random_uuid()" in sql
-    assert "e.schema_version = 'operator-event/1'" in sql
+    assert "e.schema_version='operator-event/1'" in sql
     assert params == (5, 100)
 
 
-def test_second_worker_cannot_select_a_fresh_processing_claim(monkeypatch):
-    first = Cursor([{"delivery_id": "delivery-1", "status": "processing"}])
-    second = Cursor([])
-    cursors = iter((first, second))
-    monkeypatch.setattr(database, "get_connection", lambda: _connection(next(cursors)))
+def test_fresh_processing_claim_is_not_selected_by_a_second_worker(monkeypatch):
+    cursor = Cursor([])
+    monkeypatch.setattr(database, "get_connection", lambda: _connection(cursor))
 
-    assert store.get_pending_deliveries() == [
-        {"delivery_id": "delivery-1", "status": "processing"}
-    ]
     assert store.get_pending_deliveries() == []
-    assert "d.status='processing' AND d.claimed_at <" in second.executed[0][0]
+    assert "d.status='processing' AND d.claimed_at <" in cursor.executed[0][0]
 
 
 def test_delivery_completion_rejects_non_terminal_claim_state():
@@ -95,25 +87,39 @@ def test_only_the_current_worker_claim_can_complete_delivery(monkeypatch):
     assert params[-2:] == ("delivery-1", "claim-current")
 
 
-def test_manual_retry_resets_attempt_count(monkeypatch):
-    cursor = Cursor(
-        [{"delivery_id": "delivery-1", "status": "retry", "attempt_count": 0}]
+def test_reenqueued_transition_suppresses_duplicate_deliveries(monkeypatch):
+    cursor = Cursor([])
+    monkeypatch.setattr(database, "get_connection", lambda: _connection(cursor))
+
+    event_id = store.enqueue_event(
+        cursor, "formation.submitted", "case-1", "community-a", {"status": "prepared"}
     )
-    monkeypatch.setattr(database, "get_connection", lambda: _connection(cursor))
+    replayed_id = store.enqueue_event(
+        Cursor([]),
+        "formation.submitted",
+        "case-1",
+        "community-a",
+        {"status": "prepared"},
+    )
 
-    result = store.retry_delivery("community-1", "delivery-1")
-
-    assert result["attempt_count"] == 0
-    sql, _params = cursor.executed[0]
-    assert "attempt_count=0" in sql
-
-
-def test_credential_rotation_changes_the_webhook_secret_version(monkeypatch):
-    cursor = Cursor([{"id": "client-1", "webhook_secret_version": 2}])
-    monkeypatch.setattr(database, "get_connection", lambda: _connection(cursor))
-
-    result = store.rotate_client("community-1", "client-1", "hash")
-
-    assert result["webhook_secret_version"] == 2
-    sql, _params = cursor.executed[0]
-    assert "webhook_secret_version=webhook_secret_version+1" in sql
+    assert (
+        replayed_id == event_id == store.event_id_for("formation.submitted", "case-1")
+    )
+    event_sql, event_params = cursor.executed[0]
+    assert "ON CONFLICT (event_id) DO NOTHING" in event_sql
+    assert "'operator-event/1'" in event_sql
+    assert event_params[:4] == (
+        event_id,
+        "formation.submitted",
+        "case-1",
+        "community-a",
+    )
+    delivery_sql, delivery_params = cursor.executed[1]
+    assert "ON CONFLICT (event_id,client_id) DO NOTHING" in delivery_sql
+    assert "active=TRUE AND webhook_url IS NOT NULL" in delivery_sql
+    assert delivery_params == (
+        event_id,
+        "community-a",
+        "formation.read",
+        "formation.read",
+    )

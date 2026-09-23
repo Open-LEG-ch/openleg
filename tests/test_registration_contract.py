@@ -3,7 +3,7 @@
 
 import importlib
 import os
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -212,8 +212,7 @@ def test_registration_happy_path_contract(
         roles=[],
         has_solar=None,
         verified=False,
-        verification_token=ANY,
-        verification_ttl_seconds=2592000,
+        verification_token=db.save_building.call_args.kwargs["verification_token"],
     )
     db.track_event.assert_called_once_with(
         "registration", "building-1", {"type": user_type, "city_id": "zurich"}
@@ -277,7 +276,8 @@ def test_registration_stays_hidden_until_the_emailed_link_is_opened(registration
     assert response.status_code == 200
     assert db.save_building.call_args.kwargs["verified"] is False
     token = db.save_building.call_args.kwargs["verification_token"]
-    assert db.save_building.call_args.kwargs["verification_ttl_seconds"] == 2592000
+    assert db.save_building.call_args.kwargs["building_id"] == "building-1"
+    assert token
     db.save_token.assert_not_called()
     email_thread = threads[0]
     assert email_thread.args[0] == "user@example.ch"
@@ -296,10 +296,10 @@ def test_registration_fails_when_profile_cannot_be_persisted(registration):
 
 def test_registration_fails_when_verification_token_cannot_be_persisted(registration):
     client, db, threads = registration
+    # Token persistence is part of the atomic registration write.
     db.save_building.return_value = False
 
     response = client.post("/api/register_full", json=valid_data())
 
     assert response.status_code == 503
-    db.save_token.assert_not_called()
     assert threads == []

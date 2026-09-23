@@ -3,6 +3,8 @@
 
 from contextlib import contextmanager
 
+import pytest
+
 import database
 import vnb_exchange
 from store import vnb_exchange as store
@@ -42,6 +44,17 @@ def connection(cursor):
         yield Connection(cursor)
 
     return factory
+
+
+def test_mutation_handover_excludes_missing_package_bytes(monkeypatch):
+    cursor = Cursor([None])
+    monkeypatch.setattr(database, "get_connection", connection(cursor))
+
+    assert store.get_mutation_manual_package("community-1", "case-1") is None
+
+    query, params = cursor.executed[0]
+    assert "manual_package IS NOT NULL" in query
+    assert params == ("community-1", "case-1")
 
 
 def test_claim_uses_the_stable_submission_identity(monkeypatch):
@@ -197,3 +210,160 @@ def test_acknowledged_outcome_advances_only_a_signatures_pending_community(
     assert "status = 'dso_submitted'" in transition_sql
     assert "status = 'signatures_pending'" in transition_sql
     assert transition_params == ("case-1",)
+
+
+def _mutation_claim(payload_fingerprint="f" * 64):
+    return vnb_exchange.MutationClaim(
+        mutation_id="mutation-1",
+        community_id="community-1",
+        participant_id="building-2",
+        actor_building_id="actor-1",
+        mutation_type="join",
+        effective_date="2026-10-01",
+        source_agreement_id="agreement-v3",
+        before={"status": "invited"},
+        after={"status": "confirmed"},
+        adapter_key="manual-handover",
+        contract_version="vnb-membership/1",
+        capability_snapshot=(),
+        payload_fingerprint=payload_fingerprint,
+    )
+
+
+def _acknowledged_row():
+    return {
+        "case_id": "mutation-case-1",
+        "mutation_id": "mutation-1",
+        "community_id": "community-1",
+        "state": "acknowledged",
+        "contract_version": "vnb-membership/1",
+        "payload_fingerprint": "f" * 64,
+        "next_action": "none",
+    }
+
+
+def _claimed_row():
+    row = _acknowledged_row()
+    row["state"] = "claimed"
+    row["next_action"] = "deliver"
+    return row
+
+
+def test_duplicate_acknowledgement_enqueues_the_event_only_once(monkeypatch):
+    row = _acknowledged_row()
+    cursor = Cursor([_claimed_row(), {"id": 1}, row, row])
+    monkeypatch.setattr(database, "get_connection", connection(cursor))
+
+    first = store.record_mutation_response(
+        "community-1",
+        "mutation-case-1",
+        "acknowledged",
+        "request-1",
+        "accepted",
+        b"ack",
+    )
+    second = store.record_mutation_response(
+        "community-1",
+        "mutation-case-1",
+        "acknowledged",
+        "request-1",
+        "accepted",
+        b"ack",
+    )
+
+    assert first["event_id"] == event_id_for(
+        "membership.mutation.acknowledged", "mutation-case-1"
+    )
+    assert "event_id" not in second
+    assert "SELECT * FROM vnb_mutation_cases" in cursor.executed[0][0]
+    assert "INSERT INTO vnb_mutation_events" in cursor.executed[1][0]
+    assert "UPDATE vnb_mutation_cases" in cursor.executed[2][0]
+    assert "INSERT INTO operator_events" in cursor.executed[3][0]
+    assert "INSERT INTO operator_webhook_deliveries" in cursor.executed[4][0]
+    # The second call reads the acknowledged case and writes nothing.
+    assert "SELECT * FROM vnb_mutation_cases" in cursor.executed[5][0]
+    assert len(cursor.executed) == 6
+
+
+def test_late_response_to_finalized_case_keeps_the_stored_projection(monkeypatch):
+    row = _acknowledged_row()
+    cursor = Cursor([row])
+    monkeypatch.setattr(database, "get_connection", connection(cursor))
+
+    stored = store.record_mutation_response(
+        "community-1",
+        "mutation-case-1",
+        "acknowledged",
+        "request-1",
+        "accepted",
+        b"ack",
+    )
+
+    assert stored == row
+    # Only the locked read runs; a final case gets no event and no update.
+    assert len(cursor.executed) == 1
+    assert "FOR UPDATE" in cursor.executed[0][0]
+
+
+def test_response_for_unknown_case_raises(monkeypatch):
+    cursor = Cursor([None])
+    monkeypatch.setattr(database, "get_connection", connection(cursor))
+
+    with pytest.raises(store.VnbExchangeStoreError, match="was not found"):
+        store.record_mutation_response(
+            "community-1",
+            "missing-case",
+            "acknowledged",
+            "request-1",
+            "accepted",
+            b"ack",
+        )
+
+
+def test_claim_mutation_rejects_reused_id_with_changed_content(monkeypatch):
+    cursor = Cursor([{"payload_fingerprint": "a" * 64}])
+    monkeypatch.setattr(database, "get_connection", connection(cursor))
+
+    with pytest.raises(store.VnbSubmissionConflict) as raised:
+        store.claim_mutation(_mutation_claim(payload_fingerprint="f" * 64))
+
+    assert "anderen Inhalt" in str(raised.value)
+
+
+def test_claim_mutation_rejects_second_open_mutation_for_a_participant(monkeypatch):
+    cursor = Cursor([None, {"mutation_id": "mutation-0"}])
+    monkeypatch.setattr(database, "get_connection", connection(cursor))
+
+    with pytest.raises(store.VnbSubmissionConflict) as raised:
+        store.claim_mutation(_mutation_claim())
+
+    assert "bereits eine Mutation offen" in str(raised.value)
+    assert "participant_id = %s" in cursor.executed[1][0]
+
+
+def test_finalized_case_gets_no_late_evidence_row(monkeypatch):
+    """A contradictory late response appends nothing for a final case."""
+    from store import vnb_exchange
+
+    finalized = {
+        "case_id": "case-9",
+        "community_id": "community-1",
+        "mutation_id": "mutation-1",
+        "participant_id": "building-2",
+        "state": "acknowledged",
+        "next_action": "none",
+        "external_request_id": "req-1",
+        "response_status": "accepted",
+    }
+    cursor = Cursor([finalized])
+    monkeypatch.setattr(database, "get_connection", connection(cursor))
+
+    result = vnb_exchange.record_mutation_response(
+        "community-1", "case-9", "rejected", "req-late", "rejected", b"late"
+    )
+
+    assert result["state"] == "acknowledged"
+    assert not any(
+        "INSERT INTO vnb_mutation_events" in query for query, _ in cursor.executed
+    )
+    assert not any("UPDATE vnb_mutation_cases" in query for query, _ in cursor.executed)

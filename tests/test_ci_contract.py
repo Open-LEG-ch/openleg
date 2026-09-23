@@ -102,8 +102,32 @@ def test_workflow_set_changes_require_contract_review():
         "deploy.yml",
         "image.yml",
         "lint.yml",
+        "announce-release.yml",
         "secret-scan.yml",
     }
+
+
+def test_release_announcement_is_manual_or_release_driven():
+    path = WORKFLOWS_DIR / "announce-release.yml"
+    text = path.read_text(encoding="utf-8")
+    data = yaml.safe_load(text)
+    on = _on_section(data)
+
+    assert on["release"]["types"] == ["published"]
+    assert "workflow_dispatch" in on
+    assert data["permissions"] == {"contents": "read", "discussions": "write"}
+    assert "https://openleg.ch/community" in text
+    assert "createDiscussion" in text
+    assert '"${DRY_RUN}" = "true"' in text
+    assert "github.event.release.node_id" in text
+    assert "<!-- openleg-release:${RELEASE_ID} -->" in text
+    assert "discussions(first: 100, after: $after, categoryId: $categoryId)" in text
+    assert "pageInfo { hasNextPage endCursor }" in text
+    assert 'pagination_args=(-f after="${after}")' in text
+    assert "pageInfo.hasNextPage" in text
+    assert "pageInfo.endCursor" in text
+    assert 'if [[ -n "${existing_url}" ]]' in text
+    assert "Announcement already exists" in text
 
 
 def test_dependabot_keeps_python_and_actions_updates():

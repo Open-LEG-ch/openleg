@@ -16,6 +16,9 @@ from decimal import Decimal
 import billing_approval
 import billing_lifecycle
 import billing_policy
+import payment_reconciliation
+from store import invoice_query as invoice_query_store
+from store.operator_api import enqueue_event
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +54,14 @@ def _json_default(value):
 
 
 def save_billing_period(
-    community_id: str, period_start, period_end, summary: dict
+    community_id: str, period_start, period_end, summary: dict, prepared_by=None
 ) -> int:
-    """Save billing period and line items from billing engine output."""
+    """Save billing period and line items from billing engine output.
+
+    The preparer stays unset for automated runs: a community that requires
+    dual control needs a confirmed human to submit the draft through
+    ``record_billing_period_preparer`` before approval.
+    """
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
@@ -63,10 +71,11 @@ def save_billing_period(
                     (community_id, period_start, period_end, total_production_kwh, total_allocated_kwh,
                      total_surplus_kwh, total_network_discount_chf, distribution_model,
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
-                     battery_snapshot, timezone, input_fingerprint, source_document_ids,
-                     reconciliation, billing_policy_snapshot, prepared_by, status)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, 'draft')
+                     timezone, input_fingerprint, source_document_ids,
+                     reconciliation, billing_policy_snapshot, prepared_by,
+                     battery_snapshot, calculated_values_fingerprint, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s::jsonb, %s, 'draft')
                     RETURNING id
                 """,
                     (
@@ -81,14 +90,6 @@ def save_billing_period(
                         summary.get("network_level", "same"),
                         summary.get("internal_price_chf_per_kwh"),
                         summary.get("grid_fee_chf_per_kwh"),
-                        (
-                            json.dumps(
-                                summary["battery_snapshot"],
-                                default=_json_default,
-                            )
-                            if summary.get("battery_snapshot")
-                            else None
-                        ),
                         summary.get("timezone", "Europe/Zurich"),
                         summary.get("input_fingerprint"),
                         json.dumps(summary.get("source_document_ids", [])),
@@ -101,7 +102,16 @@ def save_billing_period(
                             if summary.get("billing_policy_snapshot")
                             else None
                         ),
-                        summary.get("prepared_by", "system"),
+                        prepared_by,
+                        (
+                            json.dumps(
+                                summary["battery_snapshot"],
+                                default=_json_default,
+                            )
+                            if summary.get("battery_snapshot")
+                            else None
+                        ),
+                        summary.get("calculated_values_fingerprint"),
                     ),
                 )
                 period_id = cur.fetchone()["id"]
@@ -165,6 +175,33 @@ def save_billing_period(
     except Exception as e:
         logger.error(f"[DB] Error saving billing period: {e}")
         raise
+
+
+def record_billing_period_preparer(
+    period_id: int, community_id: str, actor_building_id: str
+) -> bool:
+    """Stamp the confirmed human who submits a draft for approval.
+
+    Only draft periods in the exact community can be stamped; the latest
+    preparer wins so a re-prepared draft always names a current actor.
+    """
+    if not actor_building_id:
+        return False
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                    UPDATE billing_periods
+                    SET prepared_by = %s
+                    WHERE id = %s AND community_id = %s AND status = 'draft'
+                    RETURNING id
+                """,
+                (actor_building_id, period_id, community_id),
+            )
+            return cur.fetchone() is not None
+    except Exception as e:
+        logger.error(f"[DB] Error recording billing preparer: {e}")
+        raise BillingStoreError("Could not record billing preparer") from e
 
 
 def get_active_communities() -> list[dict]:
@@ -294,7 +331,11 @@ def _next_invoice_sequence(cur, community_id: str, prefix: str, year: int) -> in
 
 
 def approve_billing_period(
-    period_id: int, community_id: str, issue_date=None
+    period_id: int,
+    community_id: str,
+    issue_date=None,
+    *,
+    approver_id: str | None = None,
 ) -> list[dict]:
     """Issue immutable invoices for one reconciled draft period, atomically.
 
@@ -316,7 +357,7 @@ def approve_billing_period(
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT community_id, name FROM communities
+                SELECT community_id, name, require_dual_control FROM communities
                 WHERE community_id = %s AND status = 'active'
                 FOR UPDATE
                 """,
@@ -355,6 +396,14 @@ def approve_billing_period(
             if status != "draft":
                 raise billing_approval.BillingApprovalError(
                     "Only a draft billing period can be approved"
+                )
+            if community_row.get("require_dual_control") and (
+                not period.get("prepared_by")
+                or period.get("prepared_by") == approver_id
+                or not approver_id
+            ):
+                raise billing_approval.BillingApprovalError(
+                    "Dual-control approval requires a different recorded preparer"
                 )
             cur.execute(
                 """
@@ -671,6 +720,16 @@ def _append_invoice_event(
             idempotency_key,
         ),
     )
+    if cur.rowcount > 0:
+        # One funnel for UI and API lifecycle writes: the signed operator
+        # event carries only the resulting state, never snapshot content.
+        enqueue_event(
+            cur,
+            f"invoice.{event_type}",
+            str(invoice_id),
+            community_id,
+            {"status": new_state},
+        )
 
 
 def _policy_dict(value):
@@ -979,6 +1038,164 @@ def record_invoice_payment(invoice_id, community_id, actor_id, paid_date, refere
         raise BillingStoreError("Could not record invoice payment") from e
 
 
+def _statement_import_result(cur, import_id, *, duplicate):
+    cur.execute(
+        """
+                SELECT entry_reference, booking_date, amount, currency,
+               payment_reference, is_reversal, credit_debit_indicator,
+               match_decision, invoice_id,
+               decided_at
+        FROM bank_statement_entries
+        WHERE statement_import_id = %s ORDER BY id
+        """,
+        (import_id,),
+    )
+    return {
+        "statement_import_id": import_id,
+        "duplicate": duplicate,
+        "entries": [dict(row) for row in cur.fetchall()],
+    }
+
+
+def reconcile_bank_statement(
+    *,
+    community_id,
+    actor_id,
+    source_name,
+    message_type,
+    statement_reference,
+    fingerprint,
+    entries,
+):
+    """Persist one statement and append paid events for exact unique matches.
+
+    The import, decisions, and lifecycle events share one transaction. Invoice
+    candidates are restricted to the supplied community and locked before any
+    decision is written.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO bank_statement_imports (
+                    community_id, actor_id, source_name, message_type,
+                    statement_reference, fingerprint
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (community_id, fingerprint) DO NOTHING
+                RETURNING id
+                """,
+                (
+                    community_id,
+                    actor_id,
+                    source_name,
+                    message_type,
+                    statement_reference,
+                    fingerprint,
+                ),
+            )
+            imported = cur.fetchone()
+            if not imported:
+                cur.execute(
+                    """
+                    SELECT id FROM bank_statement_imports
+                    WHERE community_id = %s AND fingerprint = %s
+                    """,
+                    (community_id, fingerprint),
+                )
+                return _statement_import_result(
+                    cur, cur.fetchone()["id"], duplicate=True
+                )
+            import_id = imported["id"]
+            cur.execute(
+                """
+                SELECT i.id, i.invoice_number, i.gross_chf,
+                       COALESCE((
+                           SELECT e.new_state FROM invoice_lifecycle_events e
+                           WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
+                       ), 'issued') AS lifecycle_state
+                FROM invoices i
+                WHERE i.community_id = %s AND i.status = 'issued'
+                FOR UPDATE OF i
+                """,
+                (community_id,),
+            )
+            invoices = [dict(row) for row in cur.fetchall()]
+            for entry in entries:
+                match = payment_reconciliation.match_payment(entry, invoices)
+                invoice_id = match.invoice_id
+                decision = match.decision
+                if decision == "matched":
+                    invoice = next(
+                        invoice for invoice in invoices if invoice["id"] == invoice_id
+                    )
+                    _append_invoice_event(
+                        cur,
+                        invoice_id=invoice["id"],
+                        community_id=community_id,
+                        actor_id=actor_id,
+                        event_type="paid",
+                        previous_state="delivered",
+                        new_state="paid",
+                        reference=entry["payment_reference"],
+                        effective_date=entry["booking_date"],
+                        idempotency_key=(
+                            f"bank:{import_id}:{entry['entry_reference']}"
+                        ),
+                    )
+                    invoice["lifecycle_state"] = "paid"
+                cur.execute(
+                    """
+                    INSERT INTO bank_statement_entries (
+                        statement_import_id, community_id, invoice_id,
+                        entry_reference, booking_date, amount, currency,
+                        payment_reference, is_reversal, credit_debit_indicator,
+                        match_decision
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        import_id,
+                        community_id,
+                        invoice_id,
+                        entry["entry_reference"],
+                        entry["booking_date"],
+                        entry["amount"],
+                        entry["currency"],
+                        entry["payment_reference"],
+                        entry["is_reversal"],
+                        entry["credit_debit_indicator"],
+                        decision,
+                    ),
+                )
+            return _statement_import_result(cur, import_id, duplicate=False)
+    except Exception as error:
+        logger.error("[DB] Error reconciling bank statement: %s", error)
+        raise BillingStoreError("Could not reconcile bank statement") from error
+
+
+def list_bank_statement_entries(community_id, limit=200):
+    """Return reviewable decisions and their immutable source audit fields."""
+    bounded_limit = max(1, min(int(limit), 500))
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT e.*, s.source_name, s.message_type,
+                       s.statement_reference, s.fingerprint, s.actor_id,
+                       s.imported_at
+                FROM bank_statement_entries e
+                JOIN bank_statement_imports s ON s.id = e.statement_import_id
+                WHERE e.community_id = %s AND s.community_id = %s
+                ORDER BY e.id DESC
+                LIMIT %s
+                """,
+                (community_id, community_id, bounded_limit),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as error:
+        logger.error("[DB] Error listing statement entries: %s", error)
+        raise BillingStoreError("Could not list statement entries") from error
+
+
 def cancel_invoice(invoice_id, community_id, actor_id, reason):
     try:
         return _transition_invoice(
@@ -1082,6 +1299,12 @@ def correct_invoice(
                 reason=reason.strip(),
                 reference=original["invoice_number"],
                 idempotency_key=f"corrects:{original_invoice_id}",
+            )
+            invoice_query_store.record_invoice_query_linkage(
+                cur,
+                original_invoice_id,
+                actor_id,
+                corrected["invoice_number"],
             )
             return {"lifecycle_state": new_state, "already_corrected": False}
     except billing_lifecycle.InvoiceLifecycleError:

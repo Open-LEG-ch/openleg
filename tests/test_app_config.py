@@ -119,6 +119,8 @@ def test_a_valid_matomo_site_id_is_normalized(value, expected):
         pytest.param("1.5", id="float"),
         pytest.param("abc", id="letters"),
         pytest.param("1 2", id="internal-space"),
+        pytest.param(0, id="integer-zero-is-configured-not-unset"),
+        pytest.param(False, id="false-is-configured-not-unset"),
     ),
 )
 def test_a_malformed_matomo_site_id_is_refused(value):

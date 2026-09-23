@@ -17,6 +17,15 @@ def _app_module():
                 "REDIS_URL": "memory://",
                 "CRON_SECRET": "test-cron-secret",
                 "APP_BASE_URL": "http://localhost:5003",
+                "PUBLIC_SITE_URL": "https://openleg.ch",
+                "SESSION_COOKIE_SECURE": "false",
+                "ALLOWED_HOSTS": "localhost",
+                "SECRET_KEY": "interest-test-key",
+                "ADMIN_EMAIL": "admin@example.ch",
+                "SESSION_COOKIE_SAMESITE": "Lax",
+                "PERMANENT_SESSION_LIFETIME": "3600",
+                "DASHBOARD_ACCESS_TOKEN_TTL_SECONDS": "900",
+                "DASHBOARD_EMAIL_TOKEN_TTL_SECONDS": "86400",
             },
         ),
         patch("database.is_db_available", return_value=True),
@@ -46,8 +55,8 @@ def test_verified_newcomer_notifies_each_existing_municipality_recipient_once(
     )
     monkeypatch.setattr(
         email_automation.db,
-        "get_interest_counts_by_bfs",
-        MagicMock(return_value={2554: 3}),
+        "get_interest_count",
+        MagicMock(return_value=3),
     )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(email_automation, "_send_email", send)
@@ -79,8 +88,8 @@ def test_new_interest_notification_uses_configured_unsubscribe_url(monkeypatch):
     )
     monkeypatch.setattr(
         email_automation.db,
-        "get_interest_counts_by_bfs",
-        MagicMock(return_value={2554: 2}),
+        "get_interest_count",
+        MagicMock(return_value=2),
     )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(email_automation, "_send_email", send)
@@ -102,22 +111,7 @@ def test_confirmation_link_makes_interest_visible_and_notifies_existing_user(
     token = "12345678-1234-4234-8234-123456789012"
     monkeypatch.setattr(
         app_module.db,
-        "get_token",
-        MagicMock(
-            return_value={
-                "token": token,
-                "token_type": "verification",
-                "building_id": "new-building",
-            }
-        ),
-    )
-    monkeypatch.setattr(app_module.db, "use_token", MagicMock(return_value=True))
-    monkeypatch.setattr(
-        app_module.db, "update_building_verified", MagicMock(return_value=True)
-    )
-    monkeypatch.setattr(
-        app_module.db,
-        "get_building",
+        "confirm_building_interest",
         MagicMock(
             return_value={
                 "building_id": "new-building",
@@ -135,8 +129,8 @@ def test_confirmation_link_makes_interest_visible_and_notifies_existing_user(
     )
     monkeypatch.setattr(
         app_module.db,
-        "get_interest_counts_by_bfs",
-        MagicMock(return_value={2554: 2}),
+        "get_interest_count",
+        MagicMock(return_value=2),
     )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(email_automation, "_send_email", send)
@@ -213,8 +207,8 @@ def test_coverage_confirmation_counts_and_notifies_without_exposing_address(
     )
     monkeypatch.setattr(
         app_module.db,
-        "get_interest_counts_by_bfs",
-        MagicMock(return_value={2554: 2}),
+        "get_interest_count",
+        MagicMock(return_value=2),
     )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(email_automation, "_send_email", send)

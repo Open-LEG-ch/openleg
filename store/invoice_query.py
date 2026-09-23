@@ -2,8 +2,10 @@
 """Persistence for private invoice questions and their append-only history."""
 
 from collections import defaultdict
+from datetime import datetime
 
 import invoice_queries
+from store.operator_api import enqueue_event
 
 
 def _get_connection():
@@ -22,19 +24,20 @@ def open_invoice_query(
 ) -> int | None:
     """Open a case only when the invoice belongs to the participant."""
     category, message = invoice_queries.validate_open(category, message)
+    response_due_at, reminder_due_at = invoice_queries.deadlines()
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
                 INSERT INTO invoice_queries (
-                    invoice_id, community_id, participant_id, category, status
+                    invoice_id, community_id, participant_id, category, status,
+                    response_due_at, reminder_due_at
                 )
-                SELECT id, community_id, participant_id, %s, 'open'
+                SELECT id, community_id, participant_id, %s, 'open', %s, %s
                 FROM invoices
-                WHERE id = %s AND participant_id = %s
-                  AND status IN ('issued', 'delivered', 'paid')
+                WHERE id = %s AND participant_id = %s AND status = 'issued'
                 RETURNING id
             """,
-            (category, invoice_id, participant_id),
+            (category, response_due_at, reminder_due_at, invoice_id, participant_id),
         )
         row = cur.fetchone()
         if not row:
@@ -58,15 +61,32 @@ def _append(cur, query_id, actor_id, message, filename="", data=None):
     )
 
 
-def _event(cur, query_id, actor_id, previous_status, new_status):
+def _event(cur, query_id, actor_id, previous_status, new_status, linked_reference=None):
     cur.execute(
         """
             INSERT INTO invoice_query_events (
-                query_id, actor_id, previous_status, new_status
-            ) VALUES (%s, %s, %s, %s)
+                query_id, actor_id, previous_status, new_status, linked_reference
+            ) VALUES (%s, %s, %s, %s, %s)
         """,
-        (query_id, actor_id, previous_status, new_status),
+        (query_id, actor_id, previous_status, new_status, linked_reference),
     )
+
+
+def record_invoice_query_linkage(cur, invoice_id, actor_id, reference):
+    """Append one correction-linkage event to every open query on the invoice.
+
+    Runs inside the caller's invoice transaction so the case history records
+    the correction exactly when the invoice lifecycle does.
+    """
+    cur.execute(
+        """
+            SELECT id, status FROM invoice_queries
+            WHERE invoice_id = %s AND status IN ('open', 'acknowledged')
+        """,
+        (invoice_id,),
+    )
+    for row in cur.fetchall():
+        _event(cur, row["id"], actor_id, row["status"], row["status"], reference)
 
 
 def list_invoice_queries(
@@ -178,6 +198,49 @@ def transition_invoice_query(
             (target_status, query_id),
         )
         _event(cur, query_id, actor_id, row["status"], target_status)
+        enqueue_event(
+            cur,
+            "invoice.case.updated",
+            str(query_id),
+            community_id,
+            {"status": target_status},
+        )
+        return True
+
+
+def due_invoice_query_reminders(now: datetime) -> list[dict]:
+    """List open or acknowledged cases whose reminder deadline has passed."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                SELECT id, community_id, invoice_id, status, response_due_at
+                FROM invoice_queries
+                WHERE status IN ('open', 'acknowledged')
+                  AND reminder_due_at IS NOT NULL
+                  AND reminder_due_at <= %s
+                  AND reminder_sent_at IS NULL
+                ORDER BY created_at, id
+            """,
+            (now,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def mark_invoice_query_reminded(case_id: int, actor: str) -> bool:
+    """Record the overdue reminder once; repeat calls write nothing."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                UPDATE invoice_queries SET reminder_sent_at = CURRENT_TIMESTAMP
+                WHERE id = %s AND reminder_sent_at IS NULL
+                RETURNING status
+            """,
+            (case_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return False
+        _event(cur, case_id, actor, row["status"], row["status"])
         return True
 
 
@@ -212,4 +275,11 @@ def update_invoice_query(
                 (target_status, query_id),
             )
             _event(cur, query_id, actor_id, row["status"], target_status)
+            enqueue_event(
+                cur,
+                "invoice.case.updated",
+                str(query_id),
+                community_id,
+                {"status": target_status},
+            )
         return True

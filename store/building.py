@@ -7,8 +7,13 @@ Owns building records, consent-gated building reads, and dashboard building data
 import json
 import logging
 import time
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+
+
+class VerifiedRegistrationConflict(Exception):
+    """A verified building cannot be registered under another email."""
 
 
 def _get_connection():
@@ -30,9 +35,15 @@ def save_building(
     has_solar: bool | None = None,
     verified: bool = False,
     verification_token: str | None = None,
-    verification_ttl_seconds: int = 2592000,
 ) -> bool:
-    """Save a building and its verification token in one transaction."""
+    """Save or update a building record.
+
+    When ``verification_token`` is given, the token is bound to the current
+    verification revision inside the same transaction (30-day lifetime).
+    An unverified email change bumps the revision, so older links stop verifying.
+    A verified building rejects registration under a different email.
+    """
+    token_ttl_seconds = 30 * 24 * 60 * 60
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             # Generate unique referral code
@@ -47,29 +58,42 @@ def save_building(
                         building_type, annual_consumption_kwh, potential_pv_kwp,
                         registered_at, verified, verified_at, user_type,
                         referrer_id, referral_code, city_id, bfs_number,
-                        municipality_name, canton, roles, has_solar
+                        municipality_name, canton, roles, has_solar,
+                        verification_requested_at
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        to_timestamp(%s), %s, to_timestamp(%s), %s, %s, %s,
-                        %s, %s, %s, %s, %s, %s
+                        to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, CURRENT_TIMESTAMP
                     )
                     ON CONFLICT (building_id) DO UPDATE SET
-                        email = CASE
-                            WHEN buildings.verified THEN buildings.email
-                            ELSE EXCLUDED.email
-                        END,
+                        email = EXCLUDED.email,
                         phone = EXCLUDED.phone,
-                        verified = buildings.verified OR EXCLUDED.verified,
-                        verified_at = COALESCE(
-                            buildings.verified_at, EXCLUDED.verified_at
-                        ),
+                        verified = CASE
+                            WHEN LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                            THEN buildings.verified
+                            ELSE FALSE
+                        END,
+                        verified_at = CASE
+                            WHEN LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                            THEN buildings.verified_at
+                            ELSE NULL
+                        END,
+                        verification_revision = CASE
+                            WHEN LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                            THEN buildings.verification_revision
+                            ELSE buildings.verification_revision + 1
+                        END,
                         user_type = EXCLUDED.user_type,
                         bfs_number = EXCLUDED.bfs_number,
                         municipality_name = EXCLUDED.municipality_name,
                         canton = EXCLUDED.canton,
                         roles = EXCLUDED.roles,
                         has_solar = EXCLUDED.has_solar,
+                        verification_requested_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP
+                    WHERE buildings.verified IS NOT TRUE
+                       OR LOWER(buildings.email) = LOWER(EXCLUDED.email)
+                    RETURNING verification_revision
                 """,
                 (
                     building_id,
@@ -84,7 +108,7 @@ def save_building(
                     profile.get("potential_pv_kwp"),
                     time.time(),
                     verified,
-                    time.time() if verified else None,
+                    datetime.now(timezone.utc) if verified else None,
                     user_type,
                     referrer_id or "",
                     referral_code,
@@ -96,6 +120,27 @@ def save_building(
                     has_solar,
                 ),
             )
+
+            row = cur.fetchone()
+            if not row:
+                raise VerifiedRegistrationConflict(building_id)
+
+            # A new verification link binds to the current revision; any
+            # insert failure rolls back the whole save.
+            if verification_token:
+                revision = row["verification_revision"]
+                cur.execute(
+                    """
+                        INSERT INTO tokens (
+                            token, building_id, token_type,
+                            verification_revision, expires_at
+                        ) VALUES (
+                            %s, %s, 'verification', %s,
+                            CURRENT_TIMESTAMP + (%s * INTERVAL '1 second')
+                        )
+                    """,
+                    (verification_token, building_id, revision, token_ttl_seconds),
+                )
 
             # Save consents
             cur.execute(
@@ -132,25 +177,9 @@ def save_building(
                     (referrer_id, building_id),
                 )
 
-            if verification_token:
-                cur.execute(
-                    """
-                        INSERT INTO tokens (
-                            token, building_id, token_type, expires_at
-                        ) VALUES (
-                            %s, %s, 'verification',
-                            CURRENT_TIMESTAMP + (%s * INTERVAL '1 second')
-                        )
-                        ON CONFLICT (token) DO UPDATE SET
-                            building_id = EXCLUDED.building_id,
-                            token_type = EXCLUDED.token_type,
-                            expires_at = EXCLUDED.expires_at,
-                            used_at = NULL
-                    """,
-                    (verification_token, building_id, verification_ttl_seconds),
-                )
-
             return True
+    except VerifiedRegistrationConflict:
+        raise
     except Exception as e:
         logger.error(f"[DB] Error saving building {building_id}: {e}")
         return False

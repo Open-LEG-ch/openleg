@@ -56,6 +56,8 @@ def test_municipality_summary_deduplicates_people_across_intake_paths():
 
     statements = [call.args[0] for call in cursor.execute.call_args_list]
     assert len(statements) == 2
-    assert all("DISTINCT ON (LOWER(email))" in sql for sql in statements)
+    assert all("FROM verified_interest" in sql for sql in statements)
+    assert all("bfs_number = %s" in sql for sql in statements)
+    assert all(call.args[1] == (2554,) for call in cursor.execute.call_args_list)
     assert result["verified_total"] == 1
     assert result["roles"] == {"owner": 1}

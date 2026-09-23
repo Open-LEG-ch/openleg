@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Dashboard readiness verb."""
 
+import json
 import math
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -10,10 +11,12 @@ import billing_lifecycle
 import billing_policy
 import billing_workspace
 import community_access
+import community_archive
 import database as db
 import formation_documents
 import formation_wizard
 import member_invoices
+import payment_reconciliation
 import quartierakku
 import security_utils
 import vnb_exchange
@@ -190,16 +193,19 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     if not member:
         return {"error": "Kein Zugriff.", "community": None}
 
-    capabilities = community_access.capabilities_for(member)
-    try:
-        vnb_submissions = db.list_vnb_submission_cases(community_id)
-        vnb_mutations = db.list_vnb_mutations(community_id)
-    except (db.VnbExchangeStoreError, AttributeError):
-        # Development/unit configurations may intentionally have no DB pool.
+    vnb_exchange_available = db.is_db_available()
+    if vnb_exchange_available:
+        try:
+            vnb_submissions = db.list_vnb_submission_cases(community_id)
+            vnb_mutations = db.list_vnb_mutations(community_id)
+        except db.VnbExchangeStoreError:
+            vnb_exchange_available = False
+            vnb_submissions = []
+            vnb_mutations = []
+    else:
         vnb_submissions = []
         vnb_mutations = []
-
-    battery = None
+    capabilities = community_access.capabilities_for(member)
     try:
         battery = db.get_battery(community_id)
     except (db.BillingStoreError, AttributeError):
@@ -219,7 +225,6 @@ def leg_overview(community_id: str, building_id: str) -> dict:
             }
         else:
             battery_view = _battery_view(battery, status["members"])
-
     return {
         "error": None,
         "community": _with_german_labels(status),
@@ -238,6 +243,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "correspondence": db.list_correspondence(community_id),
         "vnb_submissions": vnb_submissions,
         "vnb_mutations": vnb_mutations,
+        "vnb_exchange_available": vnb_exchange_available,
         "battery": battery_view,
     }
 
@@ -263,6 +269,35 @@ def _require_confirmed_admin(community_id: str, building_id: str):
     if not member or member.get("status") != "confirmed":
         return None
     return member
+
+
+def leg_export_archive(community_id: str, building_id: str) -> bytes | None:
+    """Export one LEG only for its confirmed administrator."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return None
+    return community_archive.export_community_archive(community_id)
+
+
+def leg_restore_archive(
+    community_id: str, building_id: str, archive: bytes, *, dry_run: bool
+) -> dict | None:
+    """Validate or restore one LEG archive under confirmed-admin control."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return None
+    try:
+        payload = json.loads(archive)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        payload = {}
+    manifest = payload.get("manifest", {}) if isinstance(payload, dict) else {}
+    if not isinstance(manifest, dict):
+        manifest = {}
+    if manifest.get("community_id") not in {None, community_id}:
+        return {
+            "valid": False,
+            "errors": ["Archive belongs to another community"],
+            "conflicts": [],
+        }
+    return community_archive.restore_community_archive(archive, dry_run=dry_run)
 
 
 def _require_capability(community_id: str, building_id: str, capability: str):
@@ -329,6 +364,7 @@ def _billing_workspace_period(period: dict, veracity_flag_count: int = 0) -> dic
         "reconciled": flags["reconciled"],
         "source_count": flags["source_count"],
         "veracity_flag_count": veracity_flag_count,
+        "prepared_by": period.get("prepared_by"),
         "approvable": (
             status == "draft" and flags["reconciled"] and flags["source_count"] > 0
         ),
@@ -352,15 +388,19 @@ def _display_gross_chf(invoice: dict) -> tuple[str, bool]:
     return f"{amount:.2f}", False
 
 
-def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> dict:
+def leg_billing_workspace_view(
+    community_id: str,
+    building_id: str,
+    *,
+    include_statement_entries: bool = False,
+    **extra,
+) -> dict:
     """Capability-gated view model for the billing approval workspace."""
-    if not _require_capability(
-        community_id, building_id, community_access.AUDIT_BILLING
-    ):
-        return {"error": "Kein Zugriff."}
     member = _require_capability(
         community_id, building_id, community_access.AUDIT_BILLING
     )
+    if not member:
+        return {"error": "Kein Zugriff."}
     capabilities = community_access.capabilities_for(member)
     periods = db.list_community_billing_periods(community_id)
     flag_counts = _veracity_flag_counts(periods)
@@ -375,7 +415,12 @@ def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> 
     for event in community_events:
         events_by_invoice.setdefault(event["invoice_id"], []).append(event)
     queries_by_invoice = {}
-    for query in db.list_invoice_queries(None, community_id=community_id):
+    if db.is_db_available():
+        invoice_queries = db.list_invoice_queries(None, community_id=community_id)
+    else:
+        # Unit and demo configurations can intentionally run without a DB pool.
+        invoice_queries = []
+    for query in invoice_queries:
         queries_by_invoice.setdefault(query["invoice_id"], []).append(query)
     for invoice in invoices:
         (
@@ -428,13 +473,43 @@ def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> 
             for period in periods
         ],
         "invoices": invoices,
+        "statement_entries": [
+            {
+                **entry,
+                "match_decision_label": payment_reconciliation.DECISION_LABELS.get(
+                    entry.get("match_decision"),
+                    entry.get("match_decision") or "Unbekannt",
+                ),
+            }
+            for entry in (
+                db.list_bank_statement_entries(community_id)
+                if include_statement_entries
+                else []
+            )
+        ],
         "billing_approved": False,
         "approval_error": None,
+        "viewer_building_id": building_id,
+        "require_dual_control": bool(
+            (formation_wizard.get_community_status(community_id) or {}).get(
+                "require_dual_control"
+            )
+        ),
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
     }
     view.update(extra)
     return view
+
+
+def leg_import_bank_statement(community_id, building_id, source_name, content):
+    """Import a statement only for a confirmed administrator of the LEG."""
+    if not _require_confirmed_admin(community_id, building_id):
+        return {"error": "Kein Zugriff."}
+    result = payment_reconciliation.import_statement(
+        community_id, building_id, source_name, content, db
+    )
+    return {"error": None, **result}
 
 
 def leg_deliver_invoice(
@@ -537,22 +612,43 @@ def leg_approve_billing_period(
     status = formation_wizard.get_community_status(community_id) or {}
     if status.get("require_dual_control"):
         period = db.get_billing_period(period_id) or {}
-        prepared_by = period.get("prepared_by")
-        if (
-            period.get("community_id") != community_id
-            or not prepared_by
-            or prepared_by == "system"
-            or prepared_by == building_id
-        ):
+        if not period.get("prepared_by") or period.get("prepared_by") == building_id:
             return {
                 "error": (
-                    "Die Abrechnung braucht eine dokumentierte Vorbereitung "
-                    "durch eine andere Person."
+                    "Vorbereitung und Freigabe müssen durch verschiedene "
+                    "Personen erfolgen."
                 ),
                 "invoices": [],
             }
-    invoices = db.approve_billing_period(period_id, community_id)
+    invoices = db.approve_billing_period(
+        period_id, community_id, approver_id=building_id
+    )
     return {"error": None, "invoices": invoices}
+
+
+def leg_prepare_billing_period(
+    community_id: str, building_id: str, period_id: int
+) -> dict:
+    """Record the confirmed human who submits a draft for approval."""
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
+        return {"error": "Kein Zugriff.", "error_status": 403}
+    try:
+        recorded = db.record_billing_period_preparer(
+            period_id, community_id, building_id
+        )
+    except db.BillingStoreError:
+        return {
+            "error": "Abrechnung vorübergehend nicht verfügbar.",
+            "error_status": 503,
+        }
+    if not recorded:
+        return {
+            "error": "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf.",
+            "error_status": 409,
+        }
+    return {"error": None}
 
 
 def leg_billing_policy_location(community_id: str) -> str:
@@ -699,8 +795,10 @@ def operator_update_invoice_query(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
         return {"error": "Kein Zugriff."}
+    if not (message or "").strip() and not (status or "").strip():
+        return {"error": "Antwort oder Status ist erforderlich."}
     try:
-        if (message or status) and not db.update_invoice_query(
+        if not db.update_invoice_query(
             query_id,
             community_id,
             building_id,
@@ -943,7 +1041,7 @@ def leg_mark_vnb_mutation_delivered(
     if not _require_capability(
         community_id, building_id, community_access.MANAGE_MEMBERS
     ):
-        return {"error": "Keine Berechtigung."}
+        return {"error": "Keine Berechtigung.", "error_status": 403}
     try:
         row = db.mark_vnb_mutation_manual_delivered(community_id, case_id, building_id)
     except db.VnbExchangeStoreError as error:
@@ -972,7 +1070,14 @@ def leg_mark_vnb_manual_delivered(
         vnb_exchange.FormationSubmissionForbidden,
         db.VnbExchangeStoreError,
     ) as error:
-        return {"error": str(error) or "Manuelle Zustellung fehlgeschlagen."}
+        return {
+            "error": str(error) or "Manuelle Zustellung fehlgeschlagen.",
+            "error_status": (
+                403
+                if isinstance(error, vnb_exchange.FormationSubmissionForbidden)
+                else 409
+            ),
+        }
     return {"error": None, "state": outcome.state}
 
 

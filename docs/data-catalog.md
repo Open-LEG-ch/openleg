@@ -74,7 +74,28 @@ count uses conditions identical to its list.
 - **Sensitivity:** derived personal data; inherits the building domain's
   bounds.
 - **Resident-visible:** only through consent-gated profile reads that feed
-  it.
+it.
+
+## Community operations archive
+
+- **Interface:** confirmed LEG administrators use the private
+  `/leg/community/<community_id>/archive` controls to export, validate, and
+  restore `openleg-community-archive/1` JSON.
+- **Contents:** the selected community, its member profiles and consent
+  metadata, formation and signed documents, correspondence and attachments,
+  metering mappings and readings, billing policies and periods, line items,
+  immutable invoices, delivery/correction records, and lifecycle events.
+- **Scope:** every query starts from `community_id`; profiles are limited to
+  current community members. Tokens, unrelated profiles, other communities,
+  platform operations, and public reference data are excluded.
+- **Manifest:** records SHA-256 hashes per dataset, kWh/kWp/CHF units,
+  Europe/Zurich and UTC time-zone conventions, schema version, and source
+  provenance. Binary values use tagged base64 objects; dates and decimals use
+  tagged ISO/string values so a round trip does not lose their database type.
+- **Restore:** dry-run checks version, hashes, record shape, relationships, and
+  target conflicts without writes. Restore uses one database transaction,
+  preserves identifiers and audit links, and ignores identical key conflicts
+  on repeat runs.
 - **Consent gate:** inherited from its inputs (`get_all_building_profiles`
   is gated).
 
@@ -96,6 +117,21 @@ count uses conditions identical to its list.
   see their LEG's periods.
 - **Consent gate:** applies to neighbour-visible shapes.
 
+## store/calculated_values
+
+- **Tables:** `vnb_calculated_values_deliveries`
+- **Holds:** VNB case, source, period, content and evidence fingerprints,
+  normalized quarter-hour LEG allocations, validation diagnostics, and the
+  original evidence bytes.
+- **Purpose:** independent VNB evidence for the billing allocation check.
+- **Owner:** the LEG identified by `community_id`; access is tenant-scoped
+  through its administrator's `city_id`.
+- **Sensitivity:** citizen meter data and original VNB evidence. Raw evidence
+  stays out of logs and operator list responses.
+- **Resident-visible:** no; operators see only safe delivery metadata.
+- **Consent gate:** not neighbour-visible; admin authentication and tenant
+  scope apply.
+
 ## store/meter
 
 - **Tables:** `meter_readings`
@@ -107,6 +143,19 @@ count uses conditions identical to its list.
 - **Sensitivity:** citizen meter data; same LEG bounds.
 - **Resident-visible:** own data only.
 - **Consent gate:** not neighbour-visible.
+
+## store/sdat_ingestion
+
+- **Tables:** `sdat_ingestion_schedules`, `sdat_ingestion_runs`
+- **Holds:** tenant schedule settings, timestamps, safe status/error codes, and
+  aggregate imported file and reading counts. It does not store file names,
+  credentials, document contents, or metering point IDs.
+- **Purpose:** scheduled SDAT operation, overlap prevention, and recovery audit.
+- **Owner:** the LEG operator for the configured tenant.
+- **Sensitivity:** operational metadata. Aggregate reading counts can disclose
+  delivery volume and remain operator-only.
+- **Resident-visible:** no.
+- **Consent gate:** not applicable; admin and cron authentication apply.
 
 ## store/billing
 
@@ -256,17 +305,16 @@ count uses conditions identical to its list.
 
 - **Tables:** `vnb_submission_cases`, `vnb_mutation_cases`,
   `vnb_mutation_events`
-- **Holds:** the adapter contract and capability snapshot, package fingerprint,
-  delivery state, actor, timestamps, participant identifiers, before and after
-  facts, private manual packages and VNB response evidence.
-- **Purpose:** idempotent, auditable formation handover to the VNB without
+- **Holds:** versioned contract and capability snapshots, immutable payload
+  fingerprints, lifecycle state, actors, timestamps, private handover packages,
+  VNB responses and append-only mutation evidence.
+- **Purpose:** idempotent, auditable formation and membership exchange without
   coupling the LEG record to one transport.
 - **Owner:** the LEG.
-- **Sensitivity:** legal, personal and operational; package and response bytes
-  are private blobs and excluded from ordinary case reads.
-- **Resident-visible:** formation packages require document authority. Mutation
-  packages require the member-management capability.
-- **Consent gate:** membership- and capability-gated.
+- **Sensitivity:** legal, personal and operational. Ordinary case reads exclude
+  private package and response bytes.
+- **Resident-visible:** only to authorized community members.
+- **Consent gate:** membership and explicit workflow capability.
 
 ## store/dashboard_profile
 
@@ -395,3 +443,24 @@ count uses conditions identical to its list.
 - **Sensitivity:** business contact data.
 - **Resident-visible:** no.
 - **Consent gate:** none.
+
+## store/invoice_query
+
+- **Tables:** `invoice_queries`, `invoice_query_messages`, `invoice_query_events`.
+- **Holds:** invoice-scoped questions, replies, and append-only status history.
+- **Sensitivity:** private billing correspondence; operator API projections omit messages and attachments.
+- **Resident-visible:** only to the invoice owner; operator access is community-scoped.
+
+## store/operator_api
+
+- **Tables:** `operator_api_clients`, `operator_api_usage`, `operator_events`, `operator_webhook_deliveries`.
+- **Holds:** hashed credentials, capabilities, minimal signed events, and delivery state.
+- **Sensitivity:** private operational integration data; tokens are never stored recoverably.
+- **Resident-visible:** no.
+
+## store/operator_operations
+
+- **Tables:** reads operational domain tables and writes `operator_action_idempotency`.
+- **Holds:** stable idempotency responses for scoped case and payment actions.
+- **Sensitivity:** private operational data; read models redact invoice snapshots, correspondence, and source evidence.
+- **Resident-visible:** no.

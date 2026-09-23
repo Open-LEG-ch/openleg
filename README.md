@@ -14,7 +14,7 @@ The LEG chooses its representative, participant agreements, internal energy pric
 
 The distribution system operator (VNB) still verifies the statutory network-area and network-level requirements, performs its metering duties, charges network use with the statutory discount, and delivers the data assigned to it. The basic supplier supplies residual electricity where applicable. OpenLEG does not replace those duties. Formation submissions and data delivery must be configured for each VNB; end-to-end integration is not available for every VNB.
 
-Current code covers formation records, documents, metering import, quarter-hour allocation, tariff versions, invoice approval, immutable invoices, and their lifecycle. Scheduled SDAT ingestion ([#600](https://github.com/Open-LEG-ch/openleg/issues/600)), ISO 20022 payment reconciliation ([#599](https://github.com/Open-LEG-ch/openleg/issues/599)), and complete operational archive export and restore ([#601](https://github.com/Open-LEG-ch/openleg/issues/601)) remain roadmap work.
+The current code covers formation records, VNB handovers, participant changes, scheduled SDAT ingestion, quarter-hour allocation, tariff versions, invoice approval, immutable invoices, payment reconciliation, and operational archive export and restore.
 
 ### What this repo is
 
@@ -42,7 +42,7 @@ The path from raw metering data to a member invoice runs as one workflow in this
 3. **Policy and approval.** The operator maintains a versioned tariff at `/leg/community/<community_id>/billing-policy` (`billing_policy.py`, `templates/leg_billing_policy.html`) and reviews the draft at `/leg/community/<community_id>/billing` (`templates/leg_billing.html`). Approval freezes one immutable invoice per participant from the persisted policy snapshot (`billing_approval.py`).
 4. **Lifecycle and delivery.** An issued invoice moves through `issued`, `delivered`, `paid`, `cancelled`, and `corrected` (`billing_lifecycle.py`). Members read their own invoices at `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>`, and `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
 
-What still needs a human or a shell: the SDAT fetch and import run as command line scripts, no cron route triggers them; approval stays a deliberate operator action; payment has no bank reconciliation, so an operator marks an invoice paid.
+Invoice approval stays a deliberate operator action. VNB-specific transport and credentials require local configuration.
 
 ### Quick start
 
@@ -125,7 +125,7 @@ Die LEG wählt ihre Vertretung, Teilnehmerverträge, den internen Strompreis, di
 
 Der Verteilnetzbetreiber (VNB) prüft weiterhin die gesetzlichen Anforderungen an Netzgebiet und Netzebene, erfüllt seine Messaufgaben, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und stellt die ihm zugewiesenen Daten bereit. Der Grundversorger liefert gegebenenfalls den übrigen Strom. OpenLEG ersetzt diese Aufgaben nicht. Anmeldung und Datenlieferung müssen für jeden VNB eingerichtet werden; eine durchgängige Anbindung ist noch nicht für jeden VNB verfügbar.
 
-Der aktuelle Code deckt Gründungsunterlagen, Messdatenimport, Viertelstundenverteilung, Tarifversionen, Rechnungsfreigabe, unveränderliche Rechnungen und deren Lebenszyklus ab. Geplanter Ausbau sind der automatische SDAT-Abruf ([#600](https://github.com/Open-LEG-ch/openleg/issues/600)), der ISO-20022-Bankabgleich ([#599](https://github.com/Open-LEG-ch/openleg/issues/599)) sowie der vollständige Export und die Wiederherstellung der LEG-Betriebsdaten ([#601](https://github.com/Open-LEG-ch/openleg/issues/601)).
+Der aktuelle Code deckt Gründungsunterlagen, VNB-Übergaben, Teilnehmeränderungen, den zeitgesteuerten SDAT-Abruf, die Viertelstundenverteilung, Tarifversionen, Rechnungsfreigabe, unveränderliche Rechnungen, Zahlungsabgleich sowie Export und Wiederherstellung der Betriebsdaten ab.
 
 ### Was dieses Repo enthält
 
@@ -153,7 +153,13 @@ Der Weg von Rohmessdaten zur Mitgliederrechnung läuft als ein Ablauf in diesem 
 3. **Policy und Freigabe.** Die Betreiberin pflegt den versionierten Tarif unter `/leg/community/<community_id>/billing-policy` (`billing_policy.py`, `templates/leg_billing_policy.html`) und prüft den Entwurf unter `/leg/community/<community_id>/billing` (`templates/leg_billing.html`). Die Freigabe friert je Teilnehmer eine unveränderliche Rechnung aus dem gespeicherten Policy-Snapshot ein (`billing_approval.py`).
 4. **Lebenszyklus und Zustellung.** Eine freigegebene Rechnung durchläuft `issued`, `delivered`, `paid`, `cancelled` und `corrected` (`billing_lifecycle.py`). Mitglieder lesen ihre Rechnungen unter `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>` und `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
 
-Das bleibt Handarbeit oder Shell: Abruf und Import der SDAT-Dateien starten über Kommandozeilenskripte, kein Cron-Endpunkt löst sie aus; die Freigabe bleibt eine bewusste Entscheidung der Betreiberin; für Zahlungen gibt es keinen Bankabgleich, eine Person setzt die Rechnung auf bezahlt.
+Im LEG-Dashboard lassen sich Mitgliederverwaltung, Dokumente, Messdaten,
+Abrechnungsvorbereitung, Freigabe und Prüfung getrennt delegieren. Optional
+erzwingt die LEG für Rechnungen verschiedene Personen für Vorbereitung und
+Freigabe. Mitglieder können zu ihrer eigenen Rechnung eine private Frage mit
+PDF-Beleg eröffnen und den Status im Rechnungsdetail verfolgen.
+
+Die Rechnungsfreigabe bleibt eine bewusste Entscheidung der Betreiberin. VNB-spezifischer Transport und Zugangsdaten müssen lokal eingerichtet werden.
 
 ### Schnellstart
 

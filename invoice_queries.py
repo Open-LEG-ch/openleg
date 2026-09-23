@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Domain rules for invoice-scoped member questions."""
 
+import os
+from datetime import datetime, timedelta, timezone
+
 CATEGORIES = frozenset({"amount", "metering", "payment", "other"})
 STATUSES = frozenset({"open", "acknowledged", "resolved"})
 TRANSITIONS = {
@@ -8,6 +11,19 @@ TRANSITIONS = {
     "acknowledged": frozenset({"resolved"}),
     "resolved": frozenset(),
 }
+
+
+def deadlines(opened_at: datetime | None = None) -> tuple[datetime, datetime]:
+    """Return response and reminder deadlines from bounded operator settings."""
+    response_days = int(os.getenv("INVOICE_QUERY_RESPONSE_DAYS", "10"))
+    reminder_days = int(os.getenv("INVOICE_QUERY_REMINDER_DAYS", "2"))
+    if response_days < 1 or reminder_days < 1 or reminder_days >= response_days:
+        raise ValueError("Ungültige Fristen für Rechnungsfragen.")
+    opened_at = opened_at or datetime.now(timezone.utc)
+    return (
+        opened_at + timedelta(days=response_days),
+        opened_at + timedelta(days=response_days - reminder_days),
+    )
 
 
 def validate_open(category: str, message: str) -> tuple[str, str]:

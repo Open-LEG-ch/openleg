@@ -10,6 +10,21 @@ from tests.test_app_organic_routes import _disable_rate_limit_hooks
 
 @pytest.fixture
 def app_module(monkeypatch):
+    for name, value in {
+        "APP_BASE_URL": "http://localhost:5003",
+        "PUBLIC_SITE_URL": "https://openleg.ch",
+        "REDIS_URL": "memory://",
+        "CRON_SECRET": "test-cron-secret",
+        "SESSION_COOKIE_SECURE": "false",
+        "ALLOWED_HOSTS": "localhost",
+        "SECRET_KEY": "root-role-access-test-key",
+        "ADMIN_EMAIL": "admin@example.ch",
+        "SESSION_COOKIE_SAMESITE": "Lax",
+        "PERMANENT_SESSION_LIFETIME": "3600",
+        "DASHBOARD_ACCESS_TOKEN_TTL_SECONDS": "900",
+        "DASHBOARD_EMAIL_TOKEN_TTL_SECONDS": "86400",
+    }.items():
+        monkeypatch.setenv(name, value)
     import app as imported_app
 
     web = imported_app.create_app(
@@ -50,6 +65,49 @@ def test_anonymous_root_renders_public_homepage_not_dashboard_access(app_module)
     assert "Dashboard-Zugang" not in html
     assert 'class="site-nav ' in html
     assert "<footer" in html
+
+
+@pytest.mark.parametrize("partial", [False, True])
+def test_public_default_uses_nationwide_map_and_neutral_grid_operator(
+    app_module, monkeypatch, partial
+):
+    monkeypatch.setattr(
+        app_module.tenant_module,
+        "get_tenant_config",
+        lambda _territory, db=None: (
+            {"territory": "zurich"}
+            if partial
+            else app_module.tenant_module.DEFAULT_TENANT.copy()
+        ),
+    )
+    client = app_module.web.test_client()
+    home = client.get("/").get_data(as_text=True)
+    assert "setView([46.8, 8.2], 7)" in home
+    dashboard = client.get("/dashboard/demo").get_data(as_text=True)
+    assert "LEG-Anmeldung mit VNB" in dashboard
+
+
+def test_explicit_regional_tenant_keeps_its_map_and_grid_operator(
+    app_module, monkeypatch
+):
+    config = {
+        **app_module.tenant_module.DEFAULT_TENANT,
+        "utility_name": "AEW",
+        "map_center_lat": 47.5,
+        "map_center_lon": 8.3,
+        "map_zoom": 12,
+    }
+    monkeypatch.setattr(
+        app_module.tenant_module,
+        "get_tenant_config",
+        lambda _territory, db=None: config,
+    )
+    client = app_module.web.test_client()
+    home = client.get("/").get_data(as_text=True)
+    assert "setView([47.5, 8.3], 12)" in home
+    assert "LEG-Anmeldung mit AEW" in client.get("/dashboard/demo").get_data(
+        as_text=True
+    )
 
 
 def test_login_offers_exactly_owner_and_municipality_access(app_module):

@@ -17,22 +17,42 @@ def event_id_for(event_type, aggregate_id):
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"openleg:{event_type}:{aggregate_id}"))
 
 
-def enqueue_event(cur, event_type, aggregate_id, community_id, payload):
+def _subscription_capability(event_type):
+    if event_type.startswith("metering."):
+        return "metering.read"
+    if event_type.startswith("invoice.case."):
+        return "cases.read"
+    if event_type.startswith("invoice."):
+        return "billing.read"
+    if event_type.startswith("payment."):
+        return "payments.read"
+    if event_type.startswith("formation."):
+        return "formation.read"
+    if event_type.startswith("membership."):
+        return "membership.read"
+    return None
+
+
+def enqueue_event(
+    cur, event_type, aggregate_id, community_id, payload, *, event_identity=None
+):
     """Write an event and its deliveries through the caller's transaction."""
-    event_id = event_id_for(event_type, aggregate_id)
+    event_id = event_id_for(event_type, event_identity or aggregate_id)
     cur.execute(
         """INSERT INTO operator_events
                   (event_id,event_type,schema_version,aggregate_id,community_id,payload)
            VALUES (%s,%s,'operator-event/1',%s,%s,%s)
-           ON CONFLICT (event_type,aggregate_id) DO NOTHING""",
+           ON CONFLICT (event_id) DO NOTHING""",
         (event_id, event_type, aggregate_id, community_id, Json(payload)),
     )
+    capability = _subscription_capability(event_type)
     cur.execute(
         """INSERT INTO operator_webhook_deliveries (delivery_id,event_id,client_id)
            SELECT gen_random_uuid()::text,%s,id FROM operator_api_clients
            WHERE community_id=%s AND active=TRUE AND webhook_url IS NOT NULL
+             AND (%s IS NULL OR capabilities ? %s)
            ON CONFLICT (event_id,client_id) DO NOTHING""",
-        (event_id, community_id),
+        (event_id, community_id, capability, capability),
     )
     return event_id
 
@@ -165,24 +185,25 @@ def get_pending_deliveries(max_attempts=5, limit=100):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """WITH candidates AS (
-                   SELECT d.delivery_id FROM operator_webhook_deliveries d
-                   JOIN operator_events e ON e.event_id=d.event_id
-                   JOIN operator_api_clients c ON c.id=d.client_id
-                   WHERE (d.status IN ('pending','retry') OR
-                          (d.status='processing' AND d.claimed_at < CURRENT_TIMESTAMP - INTERVAL '15 minutes'))
-                     AND d.attempt_count < %s AND c.active=TRUE
-                     AND d.next_attempt_at <= CURRENT_TIMESTAMP
-                     AND e.schema_version = 'operator-event/1'
-                   ORDER BY e.occurred_at LIMIT %s FOR UPDATE OF d SKIP LOCKED
+                   SELECT d.delivery_id
+                     FROM operator_webhook_deliveries d
+                     JOIN operator_events e ON e.event_id=d.event_id
+                     JOIN operator_api_clients c ON c.id=d.client_id
+                    WHERE (d.status IN ('pending','retry') OR
+                           (d.status='processing' AND d.claimed_at < CURRENT_TIMESTAMP - INTERVAL '15 minutes'))
+                      AND d.attempt_count<%s AND c.active=TRUE
+                      AND d.next_attempt_at<=CURRENT_TIMESTAMP
+                      AND e.schema_version='operator-event/1'
+                    ORDER BY e.occurred_at LIMIT %s FOR UPDATE OF d SKIP LOCKED
                ), claimed AS (
                    UPDATE operator_webhook_deliveries d
-                   SET status='processing', claimed_at=CURRENT_TIMESTAMP,
-                       claim_id=gen_random_uuid()::text
-                   FROM candidates WHERE d.delivery_id=candidates.delivery_id
+                      SET status='processing',claimed_at=CURRENT_TIMESTAMP,
+                          claim_id=gen_random_uuid()::text
+                     FROM candidates x WHERE x.delivery_id=d.delivery_id
                    RETURNING d.*
                )
                SELECT claimed.delivery_id,claimed.client_id,claimed.status,
-                      claimed.attempt_count,e.*,c.webhook_url,
+                      claimed.claim_id,claimed.attempt_count,e.*,c.webhook_url,
                       c.webhook_secret_version
                FROM claimed JOIN operator_events e ON e.event_id=claimed.event_id
                JOIN operator_api_clients c ON c.id=claimed.client_id
@@ -222,7 +243,7 @@ def retry_delivery(community_id, delivery_id):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """UPDATE operator_webhook_deliveries d SET status='retry', claim_id=NULL,
-                      attempt_count=0, next_attempt_at=CURRENT_TIMESTAMP
+                      next_attempt_at=CURRENT_TIMESTAMP
                FROM operator_events e WHERE e.event_id=d.event_id
                  AND e.community_id=%s AND d.delivery_id=%s AND d.status='failed'
                RETURNING d.delivery_id,d.status,d.attempt_count""",

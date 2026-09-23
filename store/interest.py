@@ -101,7 +101,8 @@ def cleanup_expired_interest():
                 f"""
                 DELETE FROM buildings
                 WHERE verified = FALSE
-                  AND registered_at < CURRENT_TIMESTAMP - INTERVAL '{UNVERIFIED_INTEREST_RETENTION_DAYS} days'
+                  AND COALESCE(verification_requested_at, registered_at)
+                      < CURRENT_TIMESTAMP - INTERVAL '{UNVERIFIED_INTEREST_RETENTION_DAYS} days'
                   AND NOT EXISTS (SELECT 1 FROM consents WHERE consents.building_id = buildings.building_id)
                   AND NOT EXISTS (SELECT 1 FROM referrals WHERE referrals.referrer_id = buildings.building_id OR referrals.referred_id = buildings.building_id)
                   AND NOT EXISTS (SELECT 1 FROM community_members WHERE community_members.building_id = buildings.building_id)
@@ -147,20 +148,37 @@ def get_operator_interest_records(limit=500):
         return []
 
 
+def get_operator_interest_counts():
+    """Count both raw intake sources independently of the displayed row limit."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FILTER (WHERE verified IS TRUE) AS interest_verified,
+                       COUNT(*) FILTER (WHERE verified IS NOT TRUE) AS interest_unverified
+                FROM (
+                    SELECT verified FROM buildings
+                    UNION ALL
+                    SELECT verified FROM coverage_requests
+                ) interest
+            """)
+            row = cur.fetchone()
+            return {
+                "interest_verified": int(row["interest_verified"]),
+                "interest_unverified": int(row["interest_unverified"]),
+            }
+    except Exception:
+        logger.exception("[DB] Error counting operator interest records")
+        return {"interest_verified": None, "interest_unverified": None}
+
+
 def get_interest_counts_by_bfs():
     """Return exact verified household totals keyed by BFS municipality."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT bfs_number, COUNT(DISTINCT LOWER(email)) AS interest_count
-                FROM (
-                    SELECT bfs_number, email FROM buildings
-                    WHERE verified = TRUE AND bfs_number IS NOT NULL
-                    UNION ALL
-                    SELECT bfs_number, email FROM coverage_requests
-                    WHERE verified = TRUE AND bfs_number IS NOT NULL
-                ) verified_interest
+                SELECT bfs_number, COUNT(*) AS interest_count
+                FROM verified_interest
                 GROUP BY bfs_number
                 """
             )
@@ -173,24 +191,45 @@ def get_interest_counts_by_bfs():
         return {}
 
 
+def get_interest_count(bfs_number):
+    """Return a municipality total, or None for an absent/failed lookup.
+
+    The distinction preserves the profile's zero and notification's one
+    fallbacks without querying the national aggregate.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*) AS interest_count FROM verified_interest
+                WHERE bfs_number = %s GROUP BY bfs_number
+                """,
+                (bfs_number,),
+            )
+            row = cur.fetchone()
+            return int(row["interest_count"]) if row else None
+    except Exception:
+        logger.exception("[DB] Error loading municipality interest count")
+        return None
+
+
 def get_verified_interest_recipients(bfs_number, exclude_email=""):
     """Return distinct verified recipient addresses for one municipality."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT DISTINCT LOWER(email) AS email
-                FROM (
-                    SELECT email FROM buildings
-                    WHERE verified = TRUE AND bfs_number = %s
-                    UNION ALL
-                    SELECT email FROM coverage_requests
-                    WHERE verified = TRUE AND bfs_number = %s
-                ) verified_interest
-                WHERE LOWER(email) <> LOWER(%s)
-                ORDER BY email
+                SELECT v.email
+                FROM verified_interest v
+                LEFT JOIN consents c
+                    ON c.building_id = v.source_id
+                    AND v.address_problem = FALSE
+                WHERE v.bfs_number = %s
+                  AND v.email <> LOWER(%s)
+                  AND (v.address_problem = TRUE OR c.updates_opt_in IS TRUE)
+                ORDER BY v.email
                 """,
-                (bfs_number, bfs_number, exclude_email),
+                (bfs_number, exclude_email),
             )
             return [row["email"] for row in cur.fetchall() if row.get("email")]
     except Exception:
@@ -204,55 +243,27 @@ def get_municipality_interest_summary(bfs_number):
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                WITH interest AS (
-                    SELECT email, roles, has_solar, registered_at AS created_at,
-                           FALSE AS address_problem, 1 AS source_priority
-                    FROM buildings
-                    WHERE verified = TRUE AND bfs_number = %s
-                    UNION ALL
-                    SELECT email, roles, has_solar, created_at,
-                           TRUE AS address_problem, 2 AS source_priority
-                    FROM coverage_requests
-                    WHERE verified = TRUE AND bfs_number = %s
-                ), deduped AS (
-                    SELECT DISTINCT ON (LOWER(email))
-                           email, roles, has_solar, created_at, address_problem
-                    FROM interest
-                    ORDER BY LOWER(email), source_priority
-                )
                 SELECT
-                    COUNT(DISTINCT LOWER(email)) AS verified_total,
-                    COUNT(DISTINCT LOWER(email)) FILTER (
+                    COUNT(*) AS verified_total,
+                    COUNT(*) FILTER (
                         WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'
                     ) AS last_30_days,
                     COUNT(*) FILTER (WHERE has_solar = TRUE) AS has_solar,
                     COUNT(*) FILTER (WHERE address_problem = TRUE) AS address_problems
-                FROM deduped
+                FROM verified_interest WHERE bfs_number = %s
                 """,
-                (bfs_number, bfs_number),
+                (bfs_number,),
             )
             summary = dict(cur.fetchone() or {})
             cur.execute(
                 """
-                WITH interest AS (
-                    SELECT email, roles, 1 AS source_priority
-                    FROM buildings
-                    WHERE verified = TRUE AND bfs_number = %s
-                    UNION ALL
-                    SELECT email, roles, 2 AS source_priority
-                    FROM coverage_requests
-                    WHERE verified = TRUE AND bfs_number = %s
-                ), deduped AS (
-                    SELECT DISTINCT ON (LOWER(email)) email, roles
-                    FROM interest
-                    ORDER BY LOWER(email), source_priority
-                )
                 SELECT role, COUNT(*) AS count
-                FROM deduped,
+                FROM verified_interest,
                      LATERAL jsonb_array_elements_text(roles) AS expanded(role)
+                WHERE bfs_number = %s
                 GROUP BY role ORDER BY role
                 """,
-                (bfs_number, bfs_number),
+                (bfs_number,),
             )
             summary["roles"] = {
                 row["role"]: int(row["count"]) for row in cur.fetchall()

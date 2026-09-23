@@ -74,6 +74,55 @@ Behaviour worth knowing:
 - The connector resumes the control-channel TLS session on the data channel,
   which managed FTPS endpoints usually require.
 
+### Scheduled fetch and import
+
+The application can run the same fetch and import path once a day per tenant.
+Configure it through the admin-only interface:
+
+```bash
+curl -X PUT https://example.openleg.ch/admin/sdat-schedules/dietikon \
+  -H "X-Admin-Token: $ADMIN_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"enabled":true,"timezone":"Europe/Zurich","local_time":"02:30","max_attempts":3,"retry_seconds":30}'
+curl https://example.openleg.ch/admin/sdat-schedules \
+  -H "X-Admin-Token: $ADMIN_TOKEN"
+```
+
+Call `POST /api/cron/import-sdat` regularly with `X-Cron-Secret`. The endpoint
+checks each enabled tenant against its local wall clock. A day is marked as run
+by its local calendar date, so the repeated autumn hour runs once. A time in the
+missing spring hour runs on the first cron tick after the clock jump.
+
+The job downloads into `SWISSELDEX_SDAT_DIR/<territory>` unless `local_dir` is
+set to another relative directory below `SWISSELDEX_SDAT_DIR`. Absolute paths
+and parent traversal are rejected. It
+then uses `scripts/import_sdat.py`, including the existing document ledger and
+idempotent reading writes. A PostgreSQL advisory lock prevents two application
+processes from running the same tenant concurrently. Configure the external
+cron at least as often as the precision needed for `local_time`, for example
+every five minutes.
+
+Each transient fetch or import failure retries at most `max_attempts` times.
+Backoff starts at `retry_seconds`, doubles, and never exceeds five minutes.
+The Ops dashboard and the schedule JSON show the latest counts, last success,
+last failure, and a safe error code. They never include credentials, file
+contents, metering point IDs, or exception text.
+
+Recovery by error code:
+
+| Code | Action |
+| --- | --- |
+| `fetch_failed` | Check Datahub reachability, TLS settings, and credentials, then trigger the cron endpoint again. |
+| `fetch_partial_failure` | Keep the remote files in place, check connectivity and disk space, then retry. Existing downloads are skipped. |
+| `import_failed` | Run `scripts/import_sdat.py <local_dir> --dry-run`, correct the reported document or database problem, then retry. |
+| `import_report_unavailable` | Check that the deployed importer matches this application release, then retry after deploying matching code. |
+
+Disabling a schedule stops future due runs without deleting files or history.
+After fixing a failure, invoke
+`POST /admin/sdat-schedules/<territory>/run` with the admin token. This explicit,
+tenant-scoped path permits same-day recovery; the automatic cron still runs at
+most once per local day. Ledger replay prevents duplicate documents and
+readings. Do not use `--force` for routine recovery.
+
 ## SDAT Metering Data
 
 Citizen smart meter data is a separate pipeline from the public open data

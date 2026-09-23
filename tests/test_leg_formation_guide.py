@@ -11,7 +11,23 @@ from tests.test_app_organic_routes import _disable_rate_limit_hooks
 
 
 @pytest.fixture
-def formation_client():
+def formation_client(monkeypatch):
+    for name, value in {
+        "DATABASE_URL": "postgresql://x:x@localhost/x",
+        "REDIS_URL": "memory://",
+        "CRON_SECRET": "test-cron-secret",
+        "APP_BASE_URL": "http://localhost:5003",
+        "PUBLIC_SITE_URL": "https://openleg.ch",
+        "SESSION_COOKIE_SECURE": "false",
+        "ALLOWED_HOSTS": "localhost",
+        "SECRET_KEY": "formation-guide-test-key",
+        "ADMIN_EMAIL": "admin@example.ch",
+        "SESSION_COOKIE_SAMESITE": "Lax",
+        "PERMANENT_SESSION_LIFETIME": "3600",
+        "DASHBOARD_ACCESS_TOKEN_TTL_SECONDS": "900",
+        "DASHBOARD_EMAIL_TOKEN_TTL_SECONDS": "86400",
+    }.items():
+        monkeypatch.setenv(name, value)
     import app as app_module
 
     application = app_module.create_app(

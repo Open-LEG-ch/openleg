@@ -282,16 +282,14 @@ def set_member_access_roles(
         ):
             return False
 
-        previous_roles = community_access.roles_for(target)
-        sensitive_roles = {
-            community_access.ADMIN,
-            community_access.BILLING_PREPARER,
-            community_access.BILLING_APPROVER,
-            community_access.AUDITOR,
-        }
-        if (
-            set(new_roles) ^ set(previous_roles)
-        ) & sensitive_roles and not community_access.is_administrator(actor):
+        previous_roles = sorted(community_access.roles_for(target))
+        admin_role_changes = (community_access.ADMIN in previous_roles) != (
+            community_access.ADMIN in new_roles
+        )
+        if admin_role_changes and (
+            not community_access.is_administrator(actor)
+            or actor.get("status") != "confirmed"
+        ):
             return False
 
         remaining_admins = sum(
@@ -306,7 +304,6 @@ def set_member_access_roles(
         ):
             return False
 
-        previous_roles = sorted(previous_roles)
         legacy_role = "admin" if community_access.ADMIN in new_roles else "member"
         cur.execute(
             """

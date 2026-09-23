@@ -106,6 +106,7 @@ def is_db_available() -> bool:
 # ---------------------------------------------------------------------------
 from billing_approval import BillingApprovalError  # noqa: F401
 from store import operator_api as _operator_api
+from store import operator_operations as _operator_operations
 from store import vnb_exchange as _vnb_exchange
 from store.access_token import (  # noqa: F401
     consume_dashboard_access_token,
@@ -139,6 +140,7 @@ from store.billing import (  # noqa: F401
     get_community_for_building,
     get_invoice_for_participant,
     get_invoices_for_participant,
+    list_bank_statement_entries,
     list_billing_periods,
     list_billing_policies,
     list_community_billing_periods,
@@ -146,12 +148,15 @@ from store.billing import (  # noqa: F401
     list_community_invoices,
     list_invoice_events,
     prepare_invoice_delivery,
+    reconcile_bank_statement,
+    record_billing_period_preparer,
     record_invoice_payment,
     save_billing_period,
     save_billing_policy,
 )
 from store.building import (  # noqa: F401
     NEIGHBOR_BOX_HALF_WIDTH_KM,
+    VerifiedRegistrationConflict,
     delete_building,
     get_all_building_profiles,
     get_all_buildings,
@@ -162,6 +167,13 @@ from store.building import (  # noqa: F401
     get_operator_building_profiles,
     save_building,
     update_building_verified,
+)
+from store.calculated_values import (  # noqa: F401
+    find_overlapping_calculated_values,
+    get_calculated_values_community,
+    get_validated_calculated_values,
+    list_calculated_values_deliveries,
+    save_calculated_values_delivery,
 )
 from store.cluster import (  # noqa: F401
     save_cluster,
@@ -209,8 +221,10 @@ from store.formation import (  # noqa: F401
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
 from store.interest import (  # noqa: F401
     cleanup_expired_interest,
+    get_interest_count,
     get_interest_counts_by_bfs,
     get_municipality_interest_summary,
+    get_operator_interest_counts,
     get_operator_interest_records,
     get_verified_interest_recipients,
     save_coverage_request,
@@ -300,6 +314,13 @@ from store.registry import (  # noqa: F401
     update_registry_entry_moderation,
 )
 from store.schema import create_tables
+from store.sdat_ingestion import (  # noqa: F401
+    acquire_sdat_ingestion_lock,
+    list_sdat_ingestion_schedules,
+    record_sdat_ingestion_run,
+    release_sdat_ingestion_lock,
+    upsert_sdat_ingestion_schedule,
+)
 from store.tenant import (  # noqa: F401
     get_all_active_tenants,
     get_tenant_by_territory,
@@ -307,7 +328,10 @@ from store.tenant import (  # noqa: F401
     upsert_tenant,
 )
 from store.token import (  # noqa: F401
+    VerificationConflict,
+    confirm_building_interest,
     confirm_profile_deletion,
+    create_coverage_deletion_tokens,
     delete_tokens_for_building,
     get_token,
     save_token,
@@ -354,3 +378,15 @@ list_vnb_mutations = _vnb_exchange.list_mutations
 get_vnb_mutation_manual_package = _vnb_exchange.get_mutation_manual_package
 mark_vnb_mutation_manual_delivered = _vnb_exchange.mark_mutation_manual_delivered
 record_vnb_mutation_response = _vnb_exchange.record_mutation_response
+list_operator_metering_jobs = _operator_operations.list_metering_jobs
+get_operator_ingestion_retry = _operator_operations.get_ingestion_retry
+claim_operator_ingestion_retry = _operator_operations.claim_ingestion_retry
+complete_operator_ingestion_retry = _operator_operations.complete_ingestion_retry
+release_operator_ingestion_retry = _operator_operations.release_ingestion_retry
+list_operator_calculated_deliveries = _operator_operations.list_calculated_deliveries
+list_operator_billing_periods = _operator_operations.list_periods
+list_operator_invoices = _operator_operations.list_invoices
+list_operator_invoice_cases = _operator_operations.list_cases
+list_operator_payment_matches = _operator_operations.list_payments
+respond_operator_invoice_case = _operator_operations.respond_case
+confirm_operator_payment_match = _operator_operations.confirm_payment

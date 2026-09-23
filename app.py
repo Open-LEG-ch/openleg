@@ -30,9 +30,11 @@ import dashboard as dashboard_module  # noqa: F401
 import dashboard_routes
 import data_enricher
 import database as db
-import email_automation
+import email_automation  # noqa: F401
+import formation_guide
 import formation_wizard
 import homepage_view_model
+import interest_confirmation
 import interest_intake
 import private_http
 import registration
@@ -261,22 +263,8 @@ def open_source():
 
 @main_bp.route("/leg-gruenden")
 def leg_gruenden():
-    faq_page_jsonld = {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-            {
-                "@type": "Question",
-                "name": faq["question"],
-                "acceptedAnswer": {"@type": "Answer", "text": faq["answer"]},
-            }
-            for faq in LEG_FORMATION_FAQS
-        ],
-    }
     return render_city_template(
-        "leg_gruenden.html",
-        formation_faqs=LEG_FORMATION_FAQS,
-        faq_page_jsonld=faq_page_jsonld,
+        "leg_gruenden.html", **formation_guide.build_guide_context()
     )
 
 
@@ -348,9 +336,9 @@ def llms_txt():
         "",
         f"> Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften (LEG), {current_app.config['SITE_URL']}. Code: https://github.com/Open-LEG-ch/openleg, Lizenz AGPL-3.0-or-later, Betrieb in der Schweiz.",
         "",
-        "OpenLEG prüft Solarpotenzial pro Adresse, zählt bestätigtes Interesse in einer politischen Gemeinde und bereitet Gründungsdokumente und die Netzbetreiber-Anmeldung vor. Die öffentlich angebotenen Funktionen sind kostenlos.",
+        "OpenLEG prüft Solarpotenzial pro Adresse, unterstützt die Organisation einer LEG und bereitet Dokumente und die Netzbetreiber-Anmeldung vor. Die öffentlich angebotenen Funktionen sind kostenlos.",
         "",
-        "Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die Abrechnung. Sie wählt den Betreiber und Hosting-Anbieter. OpenLEG stellt dafür prüfbare, selbst betreibbare Software bereit. Der Netzbetreiber prüft Netzgebiet und Netzebene, misst, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten. Der Grundversorger liefert den übrigen Strom. OpenLEG ersetzt diese gesetzlichen Aufgaben nicht. Nicht jede VNB-Anbindung ist umgesetzt; Anmeldung und Datenlieferung müssen pro Netzbetreiber eingerichtet werden. Ein vollständiger Export und die Wiederherstellung aller LEG-Betriebsdaten sind noch nicht verfügbar.",
+        "Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die Abrechnung. Sie wählt den Betreiber und Hosting-Anbieter. OpenLEG stellt dafür prüfbare, selbst betreibbare Software bereit. Der Netzbetreiber prüft Netzgebiet und Netzebene, misst, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten. Der Grundversorger liefert den übrigen Strom. OpenLEG ersetzt diese gesetzlichen Aufgaben nicht. Nicht jede VNB-Anbindung ist umgesetzt; Anmeldung und Datenlieferung müssen pro Netzbetreiber eingerichtet werden.",
         "",
         "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das Netznutzungsentgelt um 40% ohne und 20% mit Spannungstransformation (Art. 19h StromVV). Voraussetzungen: gleiche politische Gemeinde, gleiche Netzebene, gleiches Netzgebiet, höchstens 36 kV, intelligente Messsysteme, mindestens 5% erneuerbare Anschlussleistung.",
         "",
@@ -502,8 +490,6 @@ def _registration_response(user_type):
         app_base_url=current_app.config["APP_BASE_URL"],
         thread=threading.Thread,
         send_confirmation_email=send_confirmation_email,
-        run_full_ml_task=run_full_ml_task,
-        schedule_sequence_for_user=email_automation.schedule_sequence_for_user,
         find_provisional_matches=find_provisional_matches,
         collect_building_locations=collect_building_locations,
     )
@@ -544,11 +530,8 @@ def api_register_interest():
             base_url=current_app.config["APP_BASE_URL"],
             send_email=send_email,
         )
-    except (
-        interest_intake.InterestIntakeError,
-        registration.RegistrationError,
-    ) as error:
-        return jsonify({"error": str(error)}), 400
+    except interest_intake.InterestIntakeError as error:
+        return jsonify({"error": error.message}), 400
     return jsonify(result), 202
 
 
@@ -559,29 +542,18 @@ def confirm_interest(token):
         token = security_utils.validate_uuid(token)
     except ValueError:
         abort(404)
-    token_info = db.get_token(token)
-    if not token_info or token_info.get("token_type") != "verification":
-        abort(404)
-    building = db.get_building(token_info.get("building_id"))
-    if not building or not db.use_token(token):
-        abort(404)
-    if not db.update_building_verified(building["building_id"]):
-        abort(409)
-    email_automation.schedule_sequence_for_user(
-        building["building_id"], building.get("email", "")
+    result = interest_confirmation.confirm_building(
+        token,
+        db=db,
+        base_url=current_app.config["APP_BASE_URL"],
+        run_clustering=run_full_ml_task,
     )
-    run_full_ml_task(building["building_id"], building.get("city_id"))
-    bfs_number = building.get("bfs_number")
-    municipality_name = building.get("municipality_name")
-    if bfs_number and municipality_name:
-        email_automation.notify_new_municipality_interest(
-            bfs_number=int(bfs_number),
-            municipality_name=municipality_name,
-            newcomer_email=building.get("email", ""),
-            base_url=current_app.config["APP_BASE_URL"],
-        )
+    if result.status == "conflict":
+        abort(409)
+    if result.status == "invalid":
+        abort(404)
     return render_city_template(
-        "interest_confirmed.html", municipality_name=municipality_name
+        "interest_confirmed.html", municipality_name=result.municipality_name
     )
 
 
@@ -590,20 +562,13 @@ def confirm_interest(token):
 def confirm_coverage_interest(token):
     if not isinstance(token, str) or len(token) > 128:
         abort(404)
-    interest = db.verify_coverage_request(token)
-    if not interest:
+    result = interest_confirmation.confirm_coverage(
+        token, db=db, base_url=current_app.config["APP_BASE_URL"]
+    )
+    if result.status == "invalid":
         abort(404)
-    bfs_number = interest.get("bfs_number")
-    municipality_name = interest.get("municipality_name")
-    if bfs_number and municipality_name:
-        email_automation.notify_new_municipality_interest(
-            bfs_number=int(bfs_number),
-            municipality_name=municipality_name,
-            newcomer_email=interest.get("email", ""),
-            base_url=current_app.config["APP_BASE_URL"],
-        )
     return render_city_template(
-        "interest_confirmed.html", municipality_name=municipality_name
+        "interest_confirmed.html", municipality_name=result.municipality_name
     )
 
 
@@ -672,28 +637,29 @@ def unsubscribe_page():
         else:
             email_value = normalized_email
             matches = db.get_building_by_email(email_value)
-            if matches:
-                for m in matches:
-                    token = security_utils.generate_uuid()
-                    saved = db.save_token(
-                        token, m["building_id"], "unsubscribe", ttl_seconds=3600
+            tokens = []
+            for match in matches or []:
+                token = security_utils.generate_uuid()
+                if db.save_token(
+                    token, match["building_id"], "unsubscribe", ttl_seconds=3600
+                ):
+                    tokens.append(token)
+            tokens.extend(db.create_coverage_deletion_tokens(email_value))
+            for token in tokens:
+                unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
+                try:
+                    send_email(
+                        email_value,
+                        "OpenLEG: Löschung bestätigen",
+                        "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
+                        f"diesen Link:\n\n{unsubscribe_url}\n\n"
+                        "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
+                        "nicht angefordert haben, ignorieren Sie diese E-Mail.",
                     )
-                    if not saved:
-                        continue
-                    unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
-                    try:
-                        send_email(
-                            email_value,
-                            "OpenLEG: Löschung bestätigen",
-                            "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
-                            f"diesen Link:\n\n{unsubscribe_url}\n\n"
-                            "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
-                            "nicht angefordert haben, ignorieren Sie diese E-Mail.",
-                        )
-                    except Exception:
-                        current_app.logger.exception(
-                            "Failed to send profile deletion confirmation"
-                        )
+                except Exception:
+                    current_app.logger.exception(
+                        "Failed to send profile deletion confirmation"
+                    )
             email_value = ""
             status = "success"
             message = (

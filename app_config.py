@@ -121,7 +121,7 @@ def validated_matomo_site_id(value):
     positive integer without padding, because it is interpolated into an
     inline script on every rendered page.
     """
-    normalized = str(value or "").strip()
+    normalized = "" if value is None else str(value).strip()
     if normalized and (not normalized.isdigit() or normalized.startswith("0")):
         raise ValueError("MATOMO_SITE_ID must be a positive integer")
     return normalized

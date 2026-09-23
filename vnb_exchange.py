@@ -96,46 +96,6 @@ class DeliveryResult:
     failure_code: str | None = None
 
 
-def _validated_delivery(delivered: DeliveryResult, *, mutation=False) -> DeliveryResult:
-    """Convert malformed adapter results into a recorded terminal failure."""
-    supported = {"acknowledged", "rejected", "failed", "delivered"}
-    invalid = delivered.state not in supported
-    if mutation:
-        invalid = invalid or (
-            delivered.state in {"acknowledged", "rejected"}
-            and not all(
-                (delivered.request_id, delivered.response_status, delivered.evidence)
-            )
-        )
-    else:
-        invalid = invalid or (
-            delivered.state == "acknowledged"
-            and not all(
-                (delivered.request_id, delivered.response_status, delivered.evidence)
-            )
-        )
-        invalid = invalid or (
-            delivered.state == "rejected"
-            and not all(
-                (delivered.request_id, delivered.response_status, delivered.evidence)
-            )
-        )
-    invalid = invalid or (
-        delivered.state == "delivered"
-        and not all((delivered.request_id, delivered.response_status))
-    )
-    invalid = invalid or (delivered.state == "failed" and not delivered.failure_code)
-    if not invalid:
-        return delivered
-    return DeliveryResult(
-        state="failed",
-        request_id=delivered.request_id,
-        response_status=delivered.response_status,
-        retryable=False,
-        failure_code="invalid_adapter_response",
-    )
-
-
 @dataclass(frozen=True)
 class SubmissionClaim:
     community_id: str
@@ -379,13 +339,24 @@ def submit_participant_mutation(
             delivered = DeliveryResult(
                 state="failed", retryable=True, failure_code="transport_error"
             )
-        delivered = _validated_delivery(delivered, mutation=True)
         next_actions = {
             "acknowledged": "none",
             "rejected": "review_rejection",
             "failed": "retry" if delivered.retryable else "contact_vnb",
             "delivered": "await_acknowledgement",
         }
+        if delivered.state not in next_actions:
+            raise ValueError("Adapter returned an unsupported delivery state")
+        if delivered.state in {"acknowledged", "rejected"} and not all(
+            (delivered.request_id, delivered.response_status, delivered.evidence)
+        ):
+            raise ValueError("Adapter mutation response evidence is incomplete")
+        if delivered.state == "delivered" and not all(
+            (delivered.request_id, delivered.response_status)
+        ):
+            raise ValueError("Adapter mutation delivery evidence is incomplete")
+        if delivered.state == "failed" and not delivered.failure_code:
+            raise ValueError("Adapter failure code is missing")
         outcome = MutationOutcome(
             case_id=row["case_id"],
             mutation_id=mutation.mutation_id,
@@ -458,10 +429,11 @@ def submit_membership_mutation(
     elif command.mutation_type == "change":
         if not command.after:
             raise ParticipantMutationInvalid("Änderungsdaten fehlen.")
-        changeable = {"role", "access_roles"}
-        if not set(command.after) <= changeable:
+        unknown = set(command.after) - {"status", "role", "access_roles"}
+        if unknown:
             raise ParticipantMutationInvalid(
-                "Änderungsdaten enthalten unzulässige Felder."
+                "Änderungsdaten enthalten unbekannte Felder: "
+                + ", ".join(sorted(unknown))
             )
         after.update(command.after)
     else:
@@ -536,13 +508,28 @@ def submit_package(
             delivered = DeliveryResult(
                 state="failed", retryable=True, failure_code="transport_error"
             )
-        delivered = _validated_delivery(delivered)
         next_actions = {
             "acknowledged": "none",
             "rejected": "review_rejection",
             "failed": "retry" if delivered.retryable else "contact_vnb",
             "delivered": "await_acknowledgement",
         }
+        if delivered.state not in next_actions:
+            raise ValueError("Adapter returned an unsupported delivery state")
+        if delivered.state == "acknowledged" and not all(
+            (delivered.request_id, delivered.response_status, delivered.evidence)
+        ):
+            raise ValueError("Adapter acknowledgement evidence is incomplete")
+        if delivered.state == "delivered" and not all(
+            (delivered.request_id, delivered.response_status)
+        ):
+            raise ValueError("Adapter delivery evidence is incomplete")
+        if delivered.state == "rejected" and not all(
+            (delivered.request_id, delivered.response_status, delivered.evidence)
+        ):
+            raise ValueError("Adapter rejection evidence is incomplete")
+        if delivered.state == "failed" and not delivered.failure_code:
+            raise ValueError("Adapter failure code is missing")
         outcome = SubmissionOutcome(
             case_id=row["case_id"],
             state=delivered.state,

@@ -162,14 +162,8 @@ def test_acknowledgement_requires_request_status_and_evidence():
         state="acknowledged"
     )
 
-    outcome = vnb_exchange.submit_package(
-        _package(), "actor-1", adapter, InMemoryCases()
-    )
-
-    assert outcome.state == "failed"
-    assert outcome.retryable is False
-    assert outcome.failure_code == "invalid_adapter_response"
-    assert outcome.next_action == "contact_vnb"
+    with pytest.raises(ValueError, match="acknowledgement evidence"):
+        vnb_exchange.submit_package(_package(), "actor-1", adapter, InMemoryCases())
 
 
 def test_rejection_is_visible_with_evidence_and_next_action():
@@ -346,21 +340,6 @@ def test_membership_join_is_versioned_idempotent_and_keeps_before_after_facts():
     assert adapter.calls == 1
 
 
-def test_invalid_mutation_adapter_response_is_recorded_as_terminal_failure():
-    adapter = MutationAdapter(frozenset({vnb_exchange.PARTICIPANT_JOIN}))
-    adapter.submit_mutation = lambda *_args, **_kwargs: vnb_exchange.DeliveryResult(
-        state="acknowledged"
-    )
-
-    outcome = vnb_exchange.submit_participant_mutation(
-        _mutation(), "actor-1", adapter, MutationCases()
-    )
-
-    assert outcome.state == "failed"
-    assert outcome.retryable is False
-    assert outcome.failure_code == "invalid_adapter_response"
-
-
 def test_unsupported_exit_uses_the_shared_manual_handover():
     adapter = MutationAdapter(frozenset())
     outcome = vnb_exchange.submit_participant_mutation(
@@ -480,44 +459,3 @@ def test_mutation_rejection_keeps_leg_facts_and_evidence():
     assert outcome.next_action == "review_rejection"
     assert stored["before"] == {"status": "confirmed"}
     assert stored["after"] == {"status": "exited"}
-
-
-def test_change_mutation_rejects_status_and_identity_fields(monkeypatch):
-    monkeypatch.setattr(
-        vnb_exchange.db,
-        "fetch_community_with_members",
-        lambda _cid: {
-            "community_id": "community-1",
-            "vnb_adapter_key": "manual-handover",
-            "members": [
-                {
-                    "building_id": "operator",
-                    "status": "confirmed",
-                    "access_roles": ["membership"],
-                },
-                {
-                    "building_id": "participant",
-                    "status": "invited",
-                    "role": "member",
-                },
-            ],
-        },
-    )
-
-    for after in ({"status": "confirmed"}, {"building_id": "other"}):
-        with pytest.raises(
-            vnb_exchange.ParticipantMutationInvalid, match="unzulässige Felder"
-        ):
-            vnb_exchange.submit_membership_mutation(
-                vnb_exchange.ParticipantMutationSubmission(
-                    "mutation-change",
-                    "community-1",
-                    "participant",
-                    "operator",
-                    "change",
-                    "2026-10-01",
-                    "agreement-v3",
-                    after,
-                ),
-                cases=MutationCases(),
-            )

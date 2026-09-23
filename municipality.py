@@ -313,9 +313,9 @@ def profil(bfs):
     )
     if ctx is None:
         abort(404)
-    interest_count = db.get_interest_counts_by_bfs().get(bfs, 0)
+    interest_count = db.get_interest_count(bfs) or 0
     ctx["interest_count"] = interest_count
-    ctx["interest_label"] = _public_interest_label(interest_count)
+    ctx["interest_label"] = _public_interest_label(interest_count, confirmed=True)
     return render_template("gemeinde/profil.html", **ctx)
 
 
@@ -338,11 +338,12 @@ def _normalize_kanton_param(raw_value):
     return None, "all"
 
 
-def _public_interest_label(count):
+def _public_interest_label(count, *, confirmed=False):
     count = max(0, int(count or 0))
+    noun = "bestätigte Interessierte" if confirmed else "Interessierte"
     if 0 < count < 3:
-        return "< 3 Interessierte"
-    return f"{count} Interessierte"
+        return f"< 3 {noun}"
+    return f"{count} {noun}"
 
 
 @municipality_bp.route("/verzeichnis")
@@ -380,7 +381,11 @@ def verzeichnis():
     if order_by == "interest":
         profiles.sort(
             key=lambda profile: (
-                -profile["interest_count"],
+                -(
+                    1
+                    if 0 < profile["interest_count"] < 3
+                    else profile["interest_count"]
+                ),
                 (profile.get("name") or "").casefold(),
             )
         )

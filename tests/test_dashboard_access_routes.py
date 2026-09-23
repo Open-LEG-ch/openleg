@@ -316,6 +316,40 @@ def test_vnb_manual_delivery_confirmation_requires_csrf(app_module, monkeypatch)
     mark.assert_called_once_with("community-1", "case-1", "building-session")
 
 
+def test_vnb_manual_delivery_preserves_authorization_status(app_module, monkeypatch):
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_mark_vnb_manual_delivered",
+        MagicMock(return_value={"error": "Keine Berechtigung.", "error_status": 403}),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/vnb-submissions/case-1/delivered",
+        data={"csrf_token": "csrf-secret"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_vnb_mutation_delivery_preserves_authorization_status(app_module, monkeypatch):
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_mark_vnb_mutation_delivered",
+        MagicMock(return_value={"error": "Keine Berechtigung.", "error_status": 403}),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/vnb-mutations/case-1/delivered",
+        data={"csrf_token": "csrf-secret"},
+    )
+
+    assert response.status_code == 403
+
+
 def test_vnb_membership_mutation_uses_session_identity_and_csrf(
     app_module, monkeypatch
 ):
@@ -664,9 +698,189 @@ def test_public_dashboard_response_stays_public_with_blank_session(app_module):
     assert response.headers.get("Referrer-Policy") != "no-referrer"
 
 
-def test_leg_forms_use_csrf_and_never_submit_building_id():
+def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch):
     source = Path("templates/leg_dashboard.html").read_text(encoding="utf-8")
 
     assert 'name="bid"' not in source
     assert source.count('name="csrf_token"') >= 5
     assert "?bid=" not in source
+
+    overview = _correspondence_overview()
+    overview["vnb_submissions"] = [
+        {"state": "failed", "next_action": "review_rejection"},
+        {"state": "rejected", "next_action": "retry"},
+        {"state": "failed", "next_action": "escalate"},
+        {"state": "prepared", "next_action": "download_package", "case_id": "case-1"},
+    ]
+    monkeypatch.setattr(
+        app_module.dashboard_module,
+        "leg_overview",
+        MagicMock(side_effect=lambda community_id, building_id: overview),
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.get("/leg/dashboard?cid=community-1")
+    html = response.get_data(as_text=True)
+
+    assert "Nächster Schritt: Ablehnung prüfen" in html
+    assert "Nächster Schritt: Einleitung erneut möglich" in html
+    assert "Nächster Schritt: An VNB eskalieren" in html
+    assert "Nächster Schritt: download_package" not in html
+    assert "Paket bereit" in html
+
+
+def test_vnb_membership_change_passes_parsed_after_facts(app_module, monkeypatch):
+    submit = MagicMock(return_value={"error": None, "state": "prepared"})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_submit_vnb_mutation", submit)
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/vnb-mutations",
+        data={
+            "csrf_token": "csrf-secret",
+            "mutation_id": "mutation-2",
+            "participant_id": "building-2",
+            "mutation_type": "change",
+            "effective_date": "2026-10-01",
+            "source_agreement_id": "agreement-v3",
+            "after_facts": '{"status": "confirmed", "access_roles": ["documents"]}',
+        },
+    )
+
+    assert response.status_code == 302
+    submit.assert_called_once_with(
+        "community-1",
+        "building-session",
+        "mutation-2",
+        "building-2",
+        "change",
+        "2026-10-01",
+        "agreement-v3",
+        {"status": "confirmed", "access_roles": ["documents"]},
+    )
+
+
+def test_vnb_membership_change_rejects_malformed_after_facts(app_module, monkeypatch):
+    submit = MagicMock(return_value={"error": None, "state": "prepared"})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_submit_vnb_mutation", submit)
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    for bad in ('{"status": "confirmed"', '"not-an-object"', "[1, 2]"):
+        data = {
+            "csrf_token": "csrf-secret",
+            "mutation_id": "mutation-3",
+            "participant_id": "building-2",
+            "mutation_type": "change",
+            "effective_date": "2026-10-01",
+            "source_agreement_id": "agreement-v3",
+            "after_facts": bad,
+        }
+        response = client.post("/leg/community/community-1/vnb-mutations", data=data)
+        assert response.status_code == 400
+    submit.assert_not_called()
+
+
+def test_change_mutation_rejects_unknown_after_fields(monkeypatch):
+    import vnb_exchange
+
+    members = [
+        {
+            "building_id": "building-2",
+            "status": "confirmed",
+            "role": "member",
+            "access_roles": ["membership"],
+        }
+    ]
+    monkeypatch.setattr(
+        vnb_exchange.db,
+        "fetch_community_with_members",
+        lambda community_id: {"community_id": community_id, "members": members},
+    )
+    monkeypatch.setattr(
+        vnb_exchange.community_access,
+        "allows",
+        lambda member, capability: True,
+    )
+
+    with pytest.raises(
+        vnb_exchange.ParticipantMutationInvalid, match="unbekannte Felder"
+    ):
+        vnb_exchange.submit_membership_mutation(
+            vnb_exchange.ParticipantMutationSubmission(
+                "mutation-4",
+                "community-1",
+                "building-2",
+                "actor-1",
+                "change",
+                "2026-10-01",
+                "agreement-v3",
+                {"status": "confirmed", "newsletter": True},
+            )
+        )
+
+
+def test_vnb_membership_change_rejects_nan_and_infinity_constants(
+    app_module, monkeypatch
+):
+    submit = MagicMock(return_value={"error": None, "state": "prepared"})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_submit_vnb_mutation", submit)
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    for bad in ('{"status": NaN}', '{"status": Infinity}'):
+        response = client.post(
+            "/leg/community/community-1/vnb-mutations",
+            data={
+                "csrf_token": "csrf-secret",
+                "mutation_id": "mutation-5",
+                "participant_id": "building-2",
+                "mutation_type": "change",
+                "effective_date": "2026-10-01",
+                "source_agreement_id": "agreement-v3",
+                "after_facts": bad,
+            },
+        )
+        assert response.status_code == 400
+    submit.assert_not_called()
+
+
+def test_change_mutation_rejects_building_id_in_after_facts(monkeypatch):
+    import vnb_exchange
+
+    members = [
+        {
+            "building_id": "building-2",
+            "status": "confirmed",
+            "role": "member",
+            "access_roles": ["membership"],
+        }
+    ]
+    monkeypatch.setattr(
+        vnb_exchange.db,
+        "fetch_community_with_members",
+        lambda community_id: {"community_id": community_id, "members": members},
+    )
+    monkeypatch.setattr(
+        vnb_exchange.community_access,
+        "allows",
+        lambda member, capability: True,
+    )
+
+    with pytest.raises(
+        vnb_exchange.ParticipantMutationInvalid, match="unbekannte Felder"
+    ):
+        vnb_exchange.submit_membership_mutation(
+            vnb_exchange.ParticipantMutationSubmission(
+                "mutation-6",
+                "community-1",
+                "building-2",
+                "actor-1",
+                "change",
+                "2026-10-01",
+                "agreement-v3",
+                {"building_id": "building-3"},
+            )
+        )

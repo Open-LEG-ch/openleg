@@ -236,6 +236,7 @@ def test_workspace_reads_invoice_queries_once_for_the_community(monkeypatch):
     monkeypatch.setattr(
         dashboard.db, "list_community_invoices", MagicMock(return_value=[])
     )
+    monkeypatch.setattr(dashboard.db, "is_db_available", lambda: True)
 
     dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
 
@@ -1300,3 +1301,135 @@ def test_workspace_renders_flagged_window_notice(
     assert response.status_code == 200
     assert "Auffällige Messfenster" in html
     assert "2" in html
+
+
+def test_store_records_the_human_preparer_of_a_draft_period(monkeypatch):
+    import database
+    from store import billing
+
+    cursor = _LifecycleCursor(ones=[{"id": 42}])
+    monkeypatch.setattr(database, "get_connection", _connection(cursor))
+
+    assert billing.record_billing_period_preparer(42, COMMUNITY, "preparer-b") is True
+    query, params = cursor.executed[0]
+
+    assert "UPDATE billing_periods" in query
+    assert "status = 'draft'" in query
+    assert "community_id = %s" in query
+    assert params == ("preparer-b", 42, COMMUNITY)
+
+
+def test_store_refuses_to_stamp_a_period_that_is_no_longer_draft(monkeypatch):
+    import database
+    from store import billing
+
+    cursor = _LifecycleCursor(ones=[])
+    monkeypatch.setattr(database, "get_connection", _connection(cursor))
+
+    assert billing.record_billing_period_preparer(42, COMMUNITY, "preparer-b") is False
+    assert len(cursor.executed) == 1
+
+
+def test_store_refuses_to_stamp_without_an_actor():
+    from store import billing
+
+    assert billing.record_billing_period_preparer(42, COMMUNITY, "") is False
+
+
+def test_saved_periods_carry_a_default_system_preparer(monkeypatch):
+    import database
+    from store import billing
+
+    cursor = _LifecycleCursor(ones=[{"id": 7}])
+    monkeypatch.setattr(database, "get_connection", _connection(cursor))
+
+    summary = {
+        "total_production_kwh": 1,
+        "total_allocated_kwh": 1,
+        "total_surplus_kwh": 0,
+        "total_network_discount_chf": 0,
+        "line_items": [],
+        "participants": [],
+    }
+
+    billing.save_billing_period("c1", "2026-01-01", "2026-02-01", summary)
+
+    insert_index = next(
+        index
+        for index, (query, _params) in enumerate(cursor.executed)
+        if "INSERT INTO billing_periods" in query
+    )
+    insert_query, insert_params = cursor.executed[insert_index]
+
+    assert "prepared_by" in insert_query
+    assert insert_params[-1] is None
+
+
+def test_store_correction_links_open_invoice_queries_to_the_correction(monkeypatch):
+    import database
+    from store import billing
+
+    cursor = _LifecycleCursor(
+        rows=[
+            [
+                {
+                    "id": 42,
+                    "participant_id": "member-building",
+                    "invoice_number": "LEG-2026-000001",
+                },
+                {
+                    "id": 43,
+                    "participant_id": "member-building",
+                    "invoice_number": "LEG-2026-000002",
+                },
+            ],
+            [{"id": 901, "status": "open"}],
+        ],
+        ones=[None, {"new_state": "cancelled"}, None],
+    )
+    monkeypatch.setattr(database, "get_connection", _connection(cursor))
+
+    result = billing.correct_invoice(
+        42, 43, COMMUNITY, "admin-building", "Neuer Abrechnungslauf"
+    )
+
+    assert result == {"lifecycle_state": "corrected", "already_corrected": False}
+    linkage = [
+        params
+        for query, params in cursor.executed
+        if "INSERT INTO invoice_query_events" in query
+    ]
+    assert linkage == [(901, "admin-building", "open", "open", "LEG-2026-000002")]
+
+
+def test_store_correction_leaves_queries_without_open_cases_untouched(monkeypatch):
+    import database
+    from store import billing
+
+    cursor = _LifecycleCursor(
+        rows=[
+            [
+                {
+                    "id": 42,
+                    "participant_id": "member-building",
+                    "invoice_number": "LEG-2026-000001",
+                },
+                {
+                    "id": 43,
+                    "participant_id": "member-building",
+                    "invoice_number": "LEG-2026-000002",
+                },
+            ],
+            [],
+        ],
+        ones=[None, {"new_state": "cancelled"}, None],
+    )
+    monkeypatch.setattr(database, "get_connection", _connection(cursor))
+
+    billing.correct_invoice(
+        42, 43, COMMUNITY, "admin-building", "Neuer Abrechnungslauf"
+    )
+
+    assert not any(
+        "INSERT INTO invoice_query_events" in query for query, _ in cursor.executed
+    )

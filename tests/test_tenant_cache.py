@@ -2,6 +2,7 @@
 """TDD tests for tenant cache backed by Redis via cache.py."""
 
 import json
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -43,6 +44,9 @@ class TestTenantRedisCache:
         result = get_tenant_config("baden", db=None)
         assert result["territory"] == "baden"
         assert result["city_name"] == "Baden"
+        assert result["utility_name"] == "VNB"
+        assert result["map_center_lat"] == 46.8
+        assert result["map_zoom"] == 7
         mock_redis.get.assert_called_with("openleg:tenant:baden")
 
     def test_cache_miss_falls_back_to_db(self, mock_redis):
@@ -78,6 +82,20 @@ class TestTenantRedisCache:
             "openleg:tenant:baden", json.dumps(result), ex=300
         )
         mock_redis.setex.assert_not_called()
+
+    def test_memory_cache_fills_missing_fields_without_replacing_regional_values(
+        self, mock_redis
+    ):
+        import tenant
+
+        tenant._tenant_cache["baden"] = (
+            {"territory": "baden", "utility_name": "AEW"},
+            time.time(),
+        )
+        result = tenant.get_tenant_config("baden")
+        assert result["utility_name"] == "AEW"
+        assert result["map_center_lat"] == 46.8
+        assert result["map_zoom"] == 7
 
     def test_cache_miss_no_db_returns_default(self, mock_redis):
         from tenant import get_tenant_config

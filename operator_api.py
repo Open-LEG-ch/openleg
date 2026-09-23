@@ -19,17 +19,30 @@ from urllib.parse import urlparse
 from flask import Blueprint, current_app, g, jsonify, request, session
 
 import community_access
-import dashboard
 import database as db
 import formation_wizard
+import sdat_ingestion
+import vnb_exchange
 
 API_SCHEMA_VERSION = "operator-api/1"
 EVENT_SCHEMA_VERSION = "operator-event/1"
+MAX_WEBHOOK_BATCH_SIZE = 100
 CAPABILITIES = frozenset(
-    {"formation.read", "formation.mutate", "membership.read", "membership.mutate"}
+    {
+        "formation.read",
+        "formation.mutate",
+        "membership.read",
+        "membership.mutate",
+        "metering.read",
+        "metering.mutate",
+        "billing.read",
+        "cases.read",
+        "cases.mutate",
+        "payments.read",
+        "payments.mutate",
+    }
 )
 operator_api_bp = Blueprint("operator_api", __name__)
-MAX_WEBHOOK_BATCH_SIZE = 100
 
 
 def _token_hash(token: str) -> str:
@@ -146,12 +159,25 @@ def formation_status(community_id):
 )
 @require_operator("formation.mutate")
 def submit_formation(community_id):
-    result = dashboard.leg_submit_vnb_formation(
-        community_id, g.operator_client["created_by"]
-    )
-    if result.get("error"):
-        return _error(result["error"], result.get("error_status", 409))
-    return jsonify(schema_version=API_SCHEMA_VERSION, **result), 202
+    try:
+        outcome = vnb_exchange.submit_formation(
+            vnb_exchange.FormationSubmission(
+                community_id, g.operator_client["created_by"]
+            )
+        )
+    except vnb_exchange.FormationSubmissionForbidden:
+        return _error("Formation submission denied", 403)
+    except (vnb_exchange.FormationSubmissionInvalid, db.VnbSubmissionConflict):
+        # Domain messages stay internal; the public error vocabulary is fixed.
+        return _error("Formation submission invalid or conflicting", 409)
+    except db.VnbExchangeStoreError:
+        return _error("Formation submission unavailable", 503)
+    return jsonify(
+        schema_version=API_SCHEMA_VERSION,
+        state=outcome.state,
+        case_id=outcome.case_id,
+        event_id=outcome.event_id,
+    ), 202
 
 
 @operator_api_bp.get("/api/operator/v1/communities/<community_id>/membership-mutations")
@@ -168,35 +194,251 @@ def membership_mutations(community_id):
 )
 @require_operator("membership.mutate")
 def submit_membership_mutation(community_id):
-    payload = request.get_json(silent=True) or {}
-    required = (
-        "mutation_id",
-        "participant_id",
-        "mutation_type",
-        "effective_date",
-        "source_agreement_id",
-    )
-    if any(
-        not isinstance(payload.get(key), str) or not payload[key].strip()
-        for key in required
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _error("JSON object required", 400)
+    try:
+        outcome = vnb_exchange.submit_membership_mutation(
+            vnb_exchange.ParticipantMutationSubmission(
+                str(payload.get("mutation_id", "")),
+                community_id,
+                str(payload.get("participant_id", "")),
+                g.operator_client["created_by"],
+                str(payload.get("mutation_type", "")),
+                str(payload.get("effective_date", "")),
+                str(payload.get("source_agreement_id", "")),
+                payload.get("after") if isinstance(payload.get("after"), dict) else {},
+            )
+        )
+    except vnb_exchange.FormationSubmissionForbidden:
+        return _error("Membership mutation denied", 403)
+    except (
+        vnb_exchange.ParticipantMutationInvalid,
+        ValueError,
+        db.VnbSubmissionConflict,
     ):
-        return _error("Required mutation fields are missing", 400)
-    after = payload.get("after", {})
-    if not isinstance(after, dict):
-        return _error("after must be an object", 400)
-    result = dashboard.leg_submit_vnb_mutation(
-        community_id,
-        g.operator_client["created_by"],
-        payload["mutation_id"],
-        payload["participant_id"],
-        payload["mutation_type"],
-        payload["effective_date"],
-        payload["source_agreement_id"],
-        after,
+        # Domain messages stay internal; the public error vocabulary is fixed.
+        return _error("Membership mutation invalid or conflicting", 409)
+    except db.VnbExchangeStoreError:
+        return _error("Membership mutation unavailable", 503)
+    return jsonify(
+        schema_version=API_SCHEMA_VERSION,
+        state=outcome.state,
+        case_id=outcome.case_id,
+        event_id=outcome.event_id,
+    ), 202
+
+
+def _page_args():
+    try:
+        limit = int(request.args.get("limit", 50))
+        cursor = request.args.get("cursor")
+        if limit < 1 or limit > 100 or (cursor is not None and int(cursor) < 0):
+            raise ValueError
+    except (TypeError, ValueError):
+        return None
+    return {
+        "status": request.args.get("status") or None,
+        "limit": limit,
+        "cursor": cursor,
+    }
+
+
+def _page(read, community_id, safe):
+    arguments = _page_args()
+    if arguments is None:
+        return _error("Invalid pagination", 400)
+    rows, next_cursor = read(community_id, **arguments)
+    return jsonify(
+        schema_version=API_SCHEMA_VERSION,
+        items=[safe(row) for row in rows],
+        next_cursor=str(next_cursor) if next_cursor is not None else None,
     )
-    if result.get("error"):
-        return _error(result["error"], result.get("error_status", 409))
-    return jsonify(schema_version=API_SCHEMA_VERSION, **result), 202
+
+
+def _safe_fields(*names):
+    allowed = frozenset(names)
+    return lambda row: {key: value for key, value in row.items() if key in allowed}
+
+
+_safe_job = _safe_fields(
+    "id",
+    "territory",
+    "started_at",
+    "finished_at",
+    "status",
+    "attempts",
+    "downloaded_files",
+    "imported_files",
+    "imported_readings",
+    "error_code",
+)
+_safe_delivery = _safe_fields(
+    "id",
+    "contract_version",
+    "format_version",
+    "transport",
+    "community_id",
+    "period_start",
+    "period_end",
+    "status",
+    "diagnostics",
+    "record_count",
+    "received_at",
+)
+_safe_period = _safe_fields(
+    "id",
+    "community_id",
+    "period_start",
+    "period_end",
+    "total_production_kwh",
+    "total_allocated_kwh",
+    "total_surplus_kwh",
+    "total_network_discount_chf",
+    "status",
+)
+_safe_invoice = _safe_fields(
+    "id", "invoice_number", "gross_chf", "issue_date", "due_date", "lifecycle_state"
+)
+_safe_invoice_case = _safe_fields(
+    "id", "invoice_id", "category", "status", "created_at", "updated_at"
+)
+_safe_payment = _safe_fields(
+    "id",
+    "invoice_id",
+    "entry_reference",
+    "booking_date",
+    "amount",
+    "currency",
+    "payment_reference",
+    "is_reversal",
+    "match_decision",
+)
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/metering/jobs")
+@require_operator("metering.read")
+def metering_jobs(community_id):
+    return _page(db.list_operator_metering_jobs, community_id, _safe_job)
+
+
+@operator_api_bp.get(
+    "/api/operator/v1/communities/<community_id>/metering/calculated-deliveries"
+)
+@require_operator("metering.read")
+def calculated_deliveries(community_id):
+    return _page(db.list_operator_calculated_deliveries, community_id, _safe_delivery)
+
+
+@operator_api_bp.post(
+    "/api/operator/v1/communities/<community_id>/metering/jobs/<int:job_id>/retry"
+)
+@require_operator("metering.mutate")
+def retry_metering_job(community_id, job_id):
+    key = _idempotency_key()
+    if not key:
+        return _error("Valid Idempotency-Key required", 400)
+    claim = db.claim_operator_ingestion_retry(community_id, job_id, key)
+    if not claim:
+        return _error("Resource not found or not eligible", 404)
+    if claim.get("pending"):
+        return _error("Retry already in progress", 409)
+    if claim.get("replay"):
+        return jsonify(schema_version=API_SCHEMA_VERSION, **claim["replay"])
+    schedule = claim["schedule"]
+    try:
+        result = sdat_ingestion.run(schedule["territory"], schedule)
+    except Exception:
+        db.release_operator_ingestion_retry(community_id, job_id, key)
+        raise
+    db.complete_operator_ingestion_retry(community_id, job_id, key, result)
+    return jsonify(schema_version=API_SCHEMA_VERSION, **result)
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/billing/periods")
+@require_operator("billing.read")
+def billing_periods(community_id):
+    return _page(db.list_operator_billing_periods, community_id, _safe_period)
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/billing/invoices")
+@require_operator("billing.read")
+def billing_invoices(community_id):
+    return _page(db.list_operator_invoices, community_id, _safe_invoice)
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/billing/cases")
+@require_operator("cases.read")
+def invoice_cases(community_id):
+    return _page(db.list_operator_invoice_cases, community_id, _safe_invoice_case)
+
+
+@operator_api_bp.get("/api/operator/v1/communities/<community_id>/payments/matches")
+@require_operator("payments.read")
+def payment_matches(community_id):
+    return _page(db.list_operator_payment_matches, community_id, _safe_payment)
+
+
+def _idempotency_key():
+    value = request.headers.get("Idempotency-Key", "")
+    return value if 1 <= len(value) <= 128 else None
+
+
+@operator_api_bp.post(
+    "/api/operator/v1/communities/<community_id>/billing/cases/<int:case_id>/responses"
+)
+@require_operator("cases.mutate")
+def respond_invoice_case(community_id, case_id):
+    key = _idempotency_key()
+    if not key:
+        return _error("Valid Idempotency-Key required", 400)
+    payload = request.get_json(silent=True) or {}
+    try:
+        result = db.respond_operator_invoice_case(
+            case_id,
+            community_id,
+            g.operator_client["created_by"],
+            payload.get("message", ""),
+            payload.get("status", ""),
+            key,
+        )
+    except ValueError:
+        # Store validation messages stay internal; the API answer is fixed.
+        return _error("Invoice case update invalid", 409)
+    return (
+        jsonify(schema_version=API_SCHEMA_VERSION, **result)
+        if result
+        else _error("Resource not found", 404)
+    )
+
+
+@operator_api_bp.post(
+    "/api/operator/v1/communities/<community_id>/payments/matches/<int:entry_id>/confirm"
+)
+@require_operator("payments.mutate")
+def confirm_payment_match(community_id, entry_id):
+    key = _idempotency_key()
+    if not key:
+        return _error("Valid Idempotency-Key required", 400)
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload.get("invoice_id"), int):
+        return _error("Invalid payment confirmation", 400)
+    try:
+        result = db.confirm_operator_payment_match(
+            entry_id,
+            payload["invoice_id"],
+            community_id,
+            g.operator_client["created_by"],
+            key,
+        )
+    except (TypeError, ValueError):
+        # Store validation messages stay internal; the API answer is fixed.
+        return _error("Invalid payment confirmation", 409)
+    return (
+        jsonify(schema_version=API_SCHEMA_VERSION, **result)
+        if result
+        else _error("Resource not found or not eligible", 404)
+    )
 
 
 def _admin_for(community_id: str, building_id: str | None) -> bool:
@@ -262,7 +504,7 @@ def create_credential(community_id):
     else:
         payload = request.form
         raw_capabilities = payload.getlist("capabilities")
-    if not all(isinstance(value, str) for value in raw_capabilities):
+    if not all(isinstance(item, str) for item in raw_capabilities):
         return _error("Invalid capabilities", 400)
     capabilities = sorted(set(raw_capabilities))
     if not capabilities or not set(capabilities) <= CAPABILITIES:
@@ -291,7 +533,9 @@ def create_credential(community_id):
         row["id"], version=row.get("webhook_secret_version", 1)
     )
     return jsonify(
-        credential=_safe_credential(row), token=token, webhook_secret=webhook_secret
+        credential=_safe_credential(row),
+        token=token,
+        webhook_secret=webhook_secret,
     ), 201
 
 
@@ -367,10 +611,10 @@ def retry_webhook_delivery(community_id, delivery_id):
     return jsonify(delivery=delivery) if delivery else _error("Delivery not found", 404)
 
 
-def _is_public_webhook_url(url):
+def _public_webhook_addresses(url):
     parsed = urlparse(url)
     if parsed.scheme != "https" or not parsed.hostname:
-        return False
+        return ()
     try:
         addresses = {
             item[4][0]
@@ -379,59 +623,50 @@ def _is_public_webhook_url(url):
             )
         }
     except socket.gaierror:
-        return False
-    return bool(addresses) and all(ip_address(value).is_global for value in addresses)
+        return ()
+    return (
+        tuple(sorted(addresses))
+        if addresses and all(ip_address(value).is_global for value in addresses)
+        else ()
+    )
 
 
-def _resolve_public_webhook(url):
-    parsed = urlparse(url)
-    if parsed.scheme != "https" or not parsed.hostname:
-        raise ValueError("Webhook destination is not public")
-    port = parsed.port or 443
-    try:
-        addresses = {
-            item[4][0]
-            for item in socket.getaddrinfo(
-                parsed.hostname, port, type=socket.SOCK_STREAM
-            )
-        }
-    except socket.gaierror as exc:
-        raise ValueError("Webhook destination is not public") from exc
-    if not addresses or not all(ip_address(value).is_global for value in addresses):
-        raise ValueError("Webhook destination is not public")
-    return parsed, port, min(addresses)
-
-
-class _PinnedHTTPSConnection(http.client.HTTPSConnection):
-    def __init__(self, hostname, pinned_ip, **kwargs):
-        super().__init__(hostname, **kwargs)
-        self._pinned_ip = pinned_ip
-
-    def connect(self):
-        sock = socket.create_connection(
-            (self._pinned_ip, self.port), self.timeout, self.source_address
-        )
-        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+def _is_public_webhook_url(url):
+    return bool(_public_webhook_addresses(url))
 
 
 def _default_transport(url, body, headers, timeout):
-    parsed, port, pinned_ip = _resolve_public_webhook(url)
+    parsed = urlparse(url)
+    addresses = _public_webhook_addresses(url)
+    if not addresses:
+        raise ValueError("Webhook destination is not public")
     connection = _PinnedHTTPSConnection(
-        parsed.hostname,
-        pinned_ip,
-        port=port,
-        timeout=timeout,
-        context=ssl.create_default_context(),
+        parsed.hostname, addresses[0], parsed.port or 443, timeout=timeout
     )
-    path = parsed.path or "/"
-    if parsed.query:
-        path += "?" + parsed.query
     try:
-        connection.request("POST", path, body=body, headers=headers)
-        response = connection.getresponse()
-        return response.status
+        target = parsed.path or "/"
+        if parsed.query:
+            target += "?" + parsed.query
+        connection.request("POST", target, body=body, headers=headers)
+        return connection.getresponse().status
     finally:
         connection.close()
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """Connect to a validated address while verifying TLS for the original host."""
+
+    def __init__(self, hostname, address, port, *, timeout):
+        super().__init__(
+            hostname, port=port, timeout=timeout, context=ssl.create_default_context()
+        )
+        self._validated_address = address
+
+    def connect(self):
+        raw = socket.create_connection(
+            (self._validated_address, self.port), self.timeout, self.source_address
+        )
+        self.sock = self._context.wrap_socket(raw, server_hostname=self.host)
 
 
 def dispatch_pending_webhooks(

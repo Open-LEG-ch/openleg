@@ -13,6 +13,7 @@ from unittest.mock import patch
 import pytest
 
 import app as app_module
+from store import invoice_query
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -24,6 +25,8 @@ CRON_RULES = {
     "/api/cron/process-billing",
     "/api/cron/process-operator-webhooks",
     "/api/cron/verify-registry-entries",
+    "/api/cron/import-sdat",
+    "/api/cron/invoice-query-reminders",
 }
 
 SKIP_DIRS = {
@@ -52,7 +55,7 @@ def _product_modules():
 
 @pytest.fixture
 def application():
-    return app_module.create_app(
+    app = app_module.create_app(
         {
             "TESTING": True,
             "RATELIMIT_STORAGE_URI": "memory://",
@@ -61,6 +64,8 @@ def application():
         load_environment=False,
         check_database=False,
     )
+    app.config["CRON_SECRET"] = "test-secret"
+    return app
 
 
 def test_every_cron_route_still_answers_at_the_same_url(application):
@@ -138,3 +143,33 @@ def test_app_no_longer_defines_cron_routes():
 
     assert "/api/cron/" not in source
     assert "_require_cron_secret" not in source
+
+
+def test_invoice_query_reminders_fails_closed_without_the_secret(application):
+    response = application.test_client().post("/api/cron/invoice-query-reminders")
+
+    assert response.status_code == 403
+
+
+def test_invoice_query_reminders_marks_each_due_case(application, monkeypatch):
+    monkeypatch.setattr(
+        invoice_query,
+        "due_invoice_query_reminders",
+        lambda now: [{"id": 7}, {"id": 9}],
+    )
+    marked = []
+
+    def fake_mark(case_id, actor):
+        marked.append((case_id, actor))
+        return True
+
+    monkeypatch.setattr(invoice_query, "mark_invoice_query_reminded", fake_mark)
+
+    response = application.test_client().post(
+        "/api/cron/invoice-query-reminders",
+        headers={"X-Cron-Secret": "test-secret"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json() == {"reminded": 2}
+    assert marked == [(7, "system"), (9, "system")]

@@ -17,9 +17,9 @@ started.
 Self-host distribution is the one that also doubles as the mission. Our data policy is
 that citizen smart-meter data stays inside each LEG and is never sold or aggregated for
 third parties. The most literal expression of that promise is a LEG running OpenLEG on a
-device the LEG itself owns, so the data never leaves the building. That is a product the
-incumbent structurally cannot ship: LegHub is sold to grid operators who white-label it,
-so the data always lives on the utility's infrastructure, not the residents'.
+device the LEG itself owns, so the data remains under the community's control. This
+distinguishes the appliance from operator-hosted platforms without making assumptions
+about another provider's architecture or data handling.
 
 So the wedge is: make it trivial for one willing homeowner to stand up an OpenLEG box for
 their neighbours, and make it obvious that this is the honest, sovereign default rather

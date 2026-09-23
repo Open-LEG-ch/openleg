@@ -118,9 +118,9 @@ def test_save_token_wires_params(monkeypatch):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    assert store_token.save_token("t1", "b1", "verification", ttl_seconds=3600) is True
+    assert store_token.save_token("t1", "b1", "unsubscribe", ttl_seconds=3600) is True
     query, params = cur.executed[0]
     assert "INSERT INTO tokens" in query
     assert "(%s * INTERVAL '1 second')" in query
     assert "INTERVAL '%s seconds'" not in query
-    assert params == ("t1", "b1", "verification", 3600)
+    assert params == ("t1", "b1", "unsubscribe", 3600)

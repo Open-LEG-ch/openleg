@@ -22,6 +22,21 @@ def test_billing_actions_fail_closed_when_capabilities_are_absent():
     assert "/billing/period/1/approve" not in rendered
 
 
+def test_approval_only_operator_sees_the_approval_action():
+    template = Environment(loader=FileSystemLoader(TEMPLATES)).get_template(
+        "leg_billing.html"
+    )
+    rendered = template.render(
+        community_id="c1",
+        periods=[{"id": 1, "approvable": True}],
+        invoices=[],
+        can_prepare_billing=False,
+        can_approve_billing=True,
+    )
+
+    assert "/billing/period/1/approve" in rendered
+
+
 def test_approval_only_operator_can_reach_billing_workspace():
     source = (TEMPLATES / "leg_dashboard.html").read_text(encoding="utf-8")
 
