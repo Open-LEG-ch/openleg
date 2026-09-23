@@ -208,6 +208,12 @@ def _detail_model(period):
         consumer_charges=[
             item for item in line_items if item.get("item_type") == "consumer_charge"
         ],
+        settlement_charges=[
+            item for item in line_items if item.get("item_type") == "settlement_fee"
+        ],
+        battery_shares=[
+            item for item in line_items if item.get("item_type") == "battery_cost_share"
+        ],
         producer_credits=[
             item for item in line_items if item.get("item_type") == "producer_credit"
         ],

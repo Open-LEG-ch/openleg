@@ -228,6 +228,12 @@ def _patch_workspace(monkeypatch, app_module, *, members=None):  # noqa: F811
         MagicMock(return_value=[]),
         raising=False,
     )
+    monkeypatch.setattr(
+        app_module.db,
+        "list_invoice_queries",
+        MagicMock(return_value=[]),
+        raising=False,
+    )
     approve = MagicMock(return_value=[{"invoice_number": "MUSTER-2026-000001"}])
     monkeypatch.setattr(app_module.db, "approve_billing_period", approve, raising=False)
     return approve
@@ -2183,3 +2189,235 @@ def test_prepare_approval_preserves_policy_diagnostic():
         )
 
     assert str(exc.value) == "Die Netzebene der Richtlinie ist ungültig."
+
+
+# --- Settlement fee (#629) ----------------------------------------------------
+
+
+def _policy_with_fee(**overrides):
+    policy = _policy()
+    policy["settlement_fee_chf_per_kwh"] = "0.020000"
+    policy.update(overrides)
+    return policy
+
+
+def _fee_line(participant_id="building-a", quantity="13.366667"):
+    quantity = Decimal(quantity)
+    return {
+        "id": 9,
+        "participant_id": participant_id,
+        "item_type": "settlement_fee",
+        "quantity_kwh": quantity,
+        "unit_price_chf_per_kwh": Decimal("0.020000"),
+        "amount_chf": (quantity * Decimal("0.020000")).quantize(Decimal("0.000001")),
+    }
+
+
+def _fee_draft(policy=None, extra_line=None):
+    draft = _draft(billing_policy_snapshot=policy or _policy_with_fee())
+    if extra_line is None:
+        extra_line = _fee_line()
+    draft["line_items"].append(extra_line)
+    draft["line_items"].append(
+        _fee_line(participant_id="building-c", quantity="0.000003")
+    )
+    return draft
+
+
+def test_prepare_snapshot_contains_the_settlement_fee_in_force():
+    draft = _fee_draft()
+
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        draft, issue_date=date(2026, 2, 5)
+    )
+
+    charged = next(s for s in snapshots if s["participant_id"] == "building-a")
+    assert charged["policy_snapshot"]["settlement_fee_chf_per_kwh"] == "0.020000"
+    assert any(
+        item["item_type"] == "settlement_fee" for item in charged["line_items_snapshot"]
+    )
+    # 2.005000 internal + 0.267333 fee -> 2.27 CHF net before VAT.
+    assert charged["net_chf"] == Decimal("2.27")
+    assert charged["gross_chf"] == Decimal("2.45")
+
+
+def test_prepare_validates_fee_quantity_against_the_billed_energy():
+    draft = _fee_draft(extra_line=_fee_line(quantity="13.366666"))
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_a_settlement_fee_line_with_a_foreign_price():
+    draft = _fee_draft(
+        extra_line={
+            **_fee_line(),
+            "unit_price_chf_per_kwh": Decimal("0.020001"),
+        }
+    )
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_a_settlement_fee_line_that_breaks_the_money_math():
+    draft = _fee_draft(
+        extra_line={
+            **_fee_line(),
+            "amount_chf": Decimal("0.267334"),
+        }
+    )
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_a_settlement_fee_line_without_a_fee_policy():
+    """A pre-fee policy can never bill a settlement fee line."""
+    draft = _draft()
+    draft["line_items"].append(_fee_line())
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_a_zero_fee_policy_with_fee_lines():
+    draft = _fee_draft(policy=_policy_with_fee(settlement_fee_chf_per_kwh="0"))
+    for line in draft["line_items"]:
+        if line["item_type"] == "settlement_fee":
+            line["unit_price_chf_per_kwh"] = Decimal(0)
+            line["amount_chf"] = Decimal(0)
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_tolerates_settlement_fee_quantities_outside_the_energy_pool():
+    """Fee quantities must not enter the consumer/producer energy balance."""
+    draft = _fee_draft()
+
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        draft, issue_date=date(2026, 2, 5)
+    )
+    assert snapshots  # the energy balance still covers consumer charges only
+
+
+# --- Quartierakku cost share (#628) -------------------------------------------
+
+
+def _battery_policy_free_snapshot():
+    return _policy()
+
+
+def _battery_cost_share(participant_id="building-a", amount="120.000000"):
+    return {
+        "id": 8,
+        "participant_id": participant_id,
+        "item_type": "battery_cost_share",
+        "quantity_kwh": None,
+        "unit_price_chf_per_kwh": None,
+        "amount_chf": Decimal(amount),
+    }
+
+
+def _battery_snapshot(**overrides):
+    snapshot = {
+        "community_id": COMMUNITY,
+        "capacity_kwh": "45.00",
+        "annual_cost_chf": "960.00",
+        "period_start": "2026-01-01T00:00:00+01:00",
+        "period_end": "2026-02-01T00:00:00+01:00",
+        "period_fraction": str(Decimal(31) / Decimal(365)),
+        "shares": {
+            "building-a": "12.50",
+            "building-b": "37.50",
+            "building-c": "50.00",
+        },
+    }
+    snapshot.update(overrides)
+    return snapshot
+
+
+def _battery_draft(battery_snapshot=None):
+    draft = _draft()
+    draft["battery_snapshot"] = (
+        _battery_snapshot() if battery_snapshot is None else battery_snapshot
+    )
+    draft["line_items"].extend(
+        [
+            _battery_cost_share("building-a", "10.191781"),
+            _battery_cost_share("building-b", "30.575342"),
+            _battery_cost_share("building-c", "40.767123"),
+        ]
+    )
+    return draft
+
+
+def test_prepare_freezes_battery_cost_share_lines_into_the_snapshot():
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        _battery_draft(), issue_date=date(2026, 2, 5)
+    )
+
+    charged = next(s for s in snapshots if s["participant_id"] == "building-a")
+    shares = [
+        item
+        for item in charged["line_items_snapshot"]
+        if item["item_type"] == "battery_cost_share"
+    ]
+    assert len(shares) == 1
+    assert shares[0]["amount_chf"] == "10.191781"
+    assert charged["net_chf"] == Decimal("12.20")
+
+
+def test_prepare_refuses_a_battery_line_without_a_battery_snapshot():
+    draft = _draft()
+    draft["line_items"].append(_battery_cost_share("building-a", "120.000000"))
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_battery_share_that_disagrees_with_the_frozen_config():
+    draft = _battery_draft()
+    draft["line_items"][-3] = {**draft["line_items"][-3], "amount_chf": Decimal(99)}
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_an_incomplete_battery_snapshot():
+    draft = _battery_draft()
+    draft["battery_snapshot"] = {**_battery_snapshot(), "shares": {}}
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_a_battery_snapshot_missing_a_billed_participant():
+    draft = _battery_draft()
+    draft["battery_snapshot"]["shares"] = {
+        "building-b": "50",
+        "building-c": "50",
+    }
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_battery_lines_with_a_quantity_or_price():
+    draft = _battery_draft()
+    draft["line_items"][-3] = {
+        **draft["line_items"][-3],
+        "quantity_kwh": Decimal(1),
+    }
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_prepare_refuses_duplicate_battery_share_lines():
+    draft = _battery_draft()
+    draft["line_items"].append(_battery_cost_share("building-a", "10.191781"))
+
+    with pytest.raises(billing_approval.BillingApprovalError, match="genau einen"):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))

@@ -17,6 +17,7 @@ import billing_runner
 import database as db
 import email_automation
 import leg_registry
+import operator_api
 from security_utils import log_security_event
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,23 @@ def _require_cron_secret():
 def api_cron_process_emails():
     _require_cron_secret()
     result = email_automation.process_email_queue(app=current_app)
+    return jsonify(result)
+
+
+@cron_bp.route("/api/cron/process-operator-webhooks", methods=["POST"])
+def api_cron_process_operator_webhooks():
+    _require_cron_secret()
+    return jsonify(
+        operator_api.dispatch_pending_webhooks(max_attempts=5, batch_size=50)
+    )
+
+
+@cron_bp.route("/api/cron/cleanup-interest", methods=["POST"])
+def api_cron_cleanup_interest():
+    _require_cron_secret()
+    result = db.cleanup_expired_interest()
+    if result is None:
+        return jsonify({"error": "interest_cleanup_failed"}), 503
     return jsonify(result)
 
 

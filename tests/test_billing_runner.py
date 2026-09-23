@@ -5,6 +5,7 @@ import hashlib
 import json
 from copy import deepcopy
 from datetime import datetime, timedelta
+from decimal import Decimal
 from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
@@ -25,6 +26,7 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
         "tariff_id": 7,
         "internal_price_chf_per_kwh": 0.12,
         "grid_fee_chf_per_kwh": 0.08,
+        "settlement_fee_chf_per_kwh": 0,
         "network_level": "same",
         "distribution_model": "proportional",
         "vat_mode": "none",
@@ -77,6 +79,12 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
     )
     monkeypatch.setattr(
         database,
+        "get_battery",
+        lambda community_id: None,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        database,
         "get_billing_period_for_window",
         lambda community, period_start, period_end: (
             window_calls.append((community, period_start, period_end))
@@ -123,6 +131,7 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
                 "internal_price_per_kwh": policy["internal_price_chf_per_kwh"],
                 "network_level": policy["network_level"],
                 "distribution_model": policy["distribution_model"],
+                "settlement_fee_per_kwh": policy["settlement_fee_chf_per_kwh"],
             },
         )
     ]
@@ -264,6 +273,7 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
         "tariff_id": 7,
         "internal_price_chf_per_kwh": 0.12,
         "grid_fee_chf_per_kwh": 0.08,
+        "settlement_fee_chf_per_kwh": 0,
         "network_level": "same",
         "distribution_model": "proportional",
         "vat_mode": "none",
@@ -326,6 +336,7 @@ DEFAULT_POLICY = {
     "tariff_id": 7,
     "internal_price_chf_per_kwh": 0.12,
     "grid_fee_chf_per_kwh": 0.08,
+    "settlement_fee_chf_per_kwh": 0.0,
     "network_level": "same",
     "distribution_model": "proportional",
     "vat_mode": "none",
@@ -423,6 +434,11 @@ def _fingerprint_through_runner(monkeypatch, case):
         lambda _community, _start, _end: deepcopy(case["policy"]),
     )
     monkeypatch.setattr(
+        database,
+        "get_battery",
+        lambda _community: None,
+    )
+    monkeypatch.setattr(
         billing_runner.billing_readings,
         "load_period_frames",
         lambda _community, _start, _end: deepcopy(case["frames"]),
@@ -431,6 +447,11 @@ def _fingerprint_through_runner(monkeypatch, case):
         billing_runner.billing_engine,
         "generate_billing_summary",
         lambda *_args, **_kwargs: deepcopy(case["summary"]),
+    )
+    monkeypatch.setattr(
+        database,
+        "get_battery",
+        lambda _community: None,
     )
     monkeypatch.setattr(
         billing_runner.billing_readings,
@@ -653,6 +674,12 @@ def _install_billing_fixture(
     )
     monkeypatch.setattr(
         database,
+        "get_battery",
+        lambda _community: None,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        database,
         "get_billing_period_for_window",
         lambda _community, _start, _end: None,
         raising=False,
@@ -806,6 +833,7 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
     frames = SimpleNamespace(
         production=[{"slot": "prod"}],
         consumption=[{"slot": "cons"}],
+        participants=("CH001", "CH002"),
         provenance={
             "period_start": START,
             "period_end": END,
@@ -823,6 +851,12 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
         raising=False,
     )
     monkeypatch.setattr(
+        database,
+        "get_battery",
+        lambda *args: None,
+        raising=False,
+    )
+    monkeypatch.setattr(
         "billing_readings.load_period_frames",
         lambda community, period_start, period_end: frames,
     )
@@ -833,6 +867,12 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
     monkeypatch.setattr(
         "billing_readings.reconcile_with_vnb",
         lambda actual_frames, summary: reconciliation,
+    )
+    monkeypatch.setattr(
+        database,
+        "get_battery",
+        lambda *args: None,
+        raising=False,
     )
     monkeypatch.setattr(
         database,
@@ -851,3 +891,170 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
 
     assert str(exc.value) == expected_message
     assert saved == []
+
+
+# === Quartierakku cost share (#628) ===
+
+BATTERY_CONFIG = {
+    "community_id": COMMUNITY,
+    "capacity_kwh": 45,
+    "annual_cost_chf": 960,
+    "shares": {"building-a": 50, "building-b": 50},
+}
+
+
+def _battery_case():
+    case = _fingerprint_case()
+    case["community_id"] = COMMUNITY
+    case["frames"].participants = ("building-a",)
+    case["summary"]["line_items"] = [
+        {
+            "participant_id": "building-a",
+            "item_type": "consumer_charge",
+            "quantity_kwh": 1.5,
+            "amount_chf": 0.18,
+        }
+    ]
+    return case
+
+
+def _install_battery_fixture(monkeypatch, case, battery):
+    import billing_runner
+
+    monkeypatch.setattr(
+        database,
+        "get_billing_policy",
+        lambda _community, _start, _end: deepcopy(case["policy"]),
+    )
+    monkeypatch.setattr(
+        database,
+        "get_battery",
+        lambda _community: battery,
+    )
+    monkeypatch.setattr(
+        billing_runner.billing_readings,
+        "load_period_frames",
+        lambda _community, _start, _end: deepcopy(case["frames"]),
+    )
+    monkeypatch.setattr(
+        billing_runner.billing_engine,
+        "generate_billing_summary",
+        lambda *_args, **_kwargs: deepcopy(case["summary"]),
+    )
+    monkeypatch.setattr(
+        billing_runner.billing_readings,
+        "reconcile_with_vnb",
+        lambda _frames, _summary: deepcopy(
+            {
+                "difference_kwh": 0,
+                "production_difference_kwh": 0,
+                "per_participant": {},
+                "production_per_participant": {},
+            }
+        ),
+    )
+    monkeypatch.setattr(
+        database,
+        "get_billing_period_for_window",
+        lambda *_args: None,
+    )
+    saved = []
+    monkeypatch.setattr(
+        database,
+        "save_billing_period",
+        lambda *_args: saved.append(_args) or 42,
+    )
+    return saved
+
+
+def test_battery_cost_share_lines_enter_the_draft_and_snapshot(monkeypatch):
+    from billing_runner import run_billing_period
+
+    case = _battery_case()
+    saved = _install_battery_fixture(
+        monkeypatch, case, {k: v for k, v in BATTERY_CONFIG.items()}
+    )
+
+    run_billing_period(COMMUNITY, START, END)
+
+    summary = saved[0][3]
+    share_lines = [
+        item
+        for item in summary["line_items"]
+        if item["item_type"] == "battery_cost_share"
+    ]
+    assert len(share_lines) == 1
+    assert share_lines[0]["participant_id"] == "building-a"
+    assert share_lines[0]["quantity_kwh"] is None
+    assert share_lines[0]["unit_price_chf_per_kwh"] is None
+    assert share_lines[0]["amount_chf"] == 0.041096
+    assert float(summary["battery_snapshot"]["annual_cost_chf"]) == 960
+    assert summary["battery_snapshot"]["shares"] == {
+        "building-a": "50",
+        "building-b": "50",
+    }
+    assert summary["battery_snapshot"]["period_start"] == START.isoformat()
+    assert summary["battery_snapshot"]["period_end"] == END.isoformat()
+    assert Decimal(summary["battery_snapshot"]["period_fraction"]) > 0
+
+
+def test_battery_config_incomplete_for_a_billed_participant_fails_closed(
+    monkeypatch,
+):
+    from billing_runner import BillingRunError, run_billing_period
+
+    case = _battery_case()
+    battery = {
+        **BATTERY_CONFIG,
+        "shares": {"building-b": 100},
+    }
+    saved = _install_battery_fixture(monkeypatch, case, battery)
+
+    with pytest.raises(BillingRunError, match="building-a"):
+        run_billing_period(COMMUNITY, START, END)
+
+    assert saved == []
+
+
+def test_battery_shares_not_summing_to_100_fail_closed(monkeypatch):
+    from billing_runner import BillingRunError, run_billing_period
+
+    case = _battery_case()
+    battery = {
+        **BATTERY_CONFIG,
+        "shares": {"building-a": 50, "building-b": 49},
+    }
+    saved = _install_battery_fixture(monkeypatch, case, battery)
+
+    with pytest.raises(BillingRunError, match="100 Prozent"):
+        run_billing_period(COMMUNITY, START, END)
+
+    assert saved == []
+
+
+def test_zero_capacity_battery_fails_closed(monkeypatch):
+    from billing_runner import BillingRunError, run_billing_period
+
+    case = _battery_case()
+    battery = {**BATTERY_CONFIG, "capacity_kwh": 0}
+    saved = _install_battery_fixture(monkeypatch, case, battery)
+
+    with pytest.raises(BillingRunError, match="Speicherkapazität"):
+        run_billing_period(COMMUNITY, START, END)
+
+    assert saved == []
+
+
+def test_a_draft_without_a_battery_carries_no_battery_lines(monkeypatch):
+    from billing_runner import run_billing_period
+
+    case = _battery_case()
+    saved = _install_battery_fixture(monkeypatch, case, None)
+
+    run_billing_period(COMMUNITY, START, END)
+
+    summary = saved[0][3]
+    assert "battery_snapshot" not in summary
+    assert all(
+        item["item_type"] != "battery_cost_share" for item in summary["line_items"]
+    )

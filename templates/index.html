@@ -4,7 +4,7 @@
 {% block meta %}
 {{ page_meta(
   title="Lokale Elektrizitätsgemeinschaft gründen | OpenLEG",
-  description="Seit dem 1. Januar 2026 können Sie in der Schweiz eine Lokale Elektrizitätsgemeinschaft (LEG) bilden. OpenLEG prüft Ihre Adresse, findet Nachbarn im Umkreis von 150 m und führt durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz.",
+  description="Seit dem 1. Januar 2026 können Sie in der Schweiz eine Lokale Elektrizitätsgemeinschaft (LEG) bilden. OpenLEG prüft Ihre Adresse, zeigt das bestätigte Interesse in Ihrer Gemeinde und führt durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz.",
   path="/",
   og_title="Lokale Elektrizitätsgemeinschaft gründen | OpenLEG",
   og_description="Prüfen Sie Ihre Adresse, finden Sie Nachbarn und starten Sie eine lokale Stromgemeinschaft. Bis 40% weniger Netznutzungsentgelt. Kostenlos, Open Source, Schweizer Hosting.",
@@ -60,7 +60,7 @@
         <div class="mt-7" aria-live="polite">
           <div data-seg-panel="bewohner">
             <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] text-ink">Gründen Sie eine<br><span class="underline decoration-accent decoration-4 underline-offset-[6px] sm:decoration-[6px]">Stromgemeinschaft</span></h1>
-            <p class="mt-6 text-lg leading-8 text-ink-muted max-w-xl">Strom, den Ihre LEG selbst erzeugt und verbraucht, kostet bis zu 40% weniger Netznutzungsentgelt. OpenLEG prüft Ihre Adresse, findet Nachbarn im Umkreis von 150 Metern und führt Sie durch die Gründung. OpenLEG verkauft keine Daten.</p>
+            <p class="mt-6 text-lg leading-8 text-ink-muted max-w-xl">Strom, den Ihre LEG selbst erzeugt und verbraucht, kostet bis zu 40% weniger Netznutzungsentgelt. OpenLEG prüft Ihre Adresse, zeigt das bestätigte Interesse in Ihrer politischen Gemeinde und führt Sie durch die Gründung. OpenLEG verkauft keine Daten.</p>
             <div class="mt-7 flex flex-col sm:flex-row gap-3">
               <a href="#registrieren" class="rounded-xl bg-brand px-6 py-3.5 font-semibold text-white shadow-sm hover:bg-brand-dark text-center">Adresse prüfen</a>
               <a href="/leg-gruenden" class="rounded-xl border border-line bg-white px-6 py-3.5 font-semibold text-ink hover:border-brand hover:text-brand text-center">LEG gründen</a>
@@ -177,6 +177,16 @@
           <p class="text-sm text-ink-muted mt-1 flex-1">Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst.</p>
           <span class="mt-4 text-sm font-semibold text-brand inline-flex items-center gap-1">Codebase und Install <span aria-hidden="true" class="transition group-hover:translate-x-0.5">&rarr;</span></span>
         </a>
+      </div>
+
+      <div class="mt-8 rounded-2xl border border-slate-200 bg-paper p-6">
+        <h2 class="text-xl font-bold">Ihre LEG wählt, wie sie betrieben wird.</h2>
+        <p class="mt-2 text-ink-muted">Der Netzbetreiber prüft Netzgebiet und Netzebene, misst, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten. Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die Abrechnung. OpenLEG stellt dafür offene Software bereit, die Sie selbst oder durch einen gewählten Dienstleister betreiben können.</p>
+        <p class="mt-3 text-sm text-ink-muted">Nicht jede VNB-Anbindung ist bereits umgesetzt. Anmeldung und Datenlieferung müssen deshalb pro Netzbetreiber eingerichtet werden.</p>
+        <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold">
+          <a href="/how-it-works" class="text-brand hover:underline">Verantwortlichkeiten im Detail</a>
+          <a href="/utility/register" class="text-brand hover:underline">Für Netzbetreiber und Integrationspartner</a>
+        </div>
       </div>
     </div>
   </section>
@@ -367,8 +377,8 @@
   <section id="bewohner" class="py-16 bg-[#f6f4ef]">
     <div class="max-w-6xl mx-auto px-4">
       <div class="mb-6">
-        <h2 class="text-3xl font-bold">Erst Adresse prüfen, dann Nachbarn finden</h2>
-        <p class="text-ink-muted mt-2">Geben Sie Ihre Adresse ein. OpenLEG prüft die Umgebung, zeigt anonymisierte Interessierte und sagt, ob sich eine LEG lohnt.</p>
+        <h2 class="text-3xl font-bold">Adresse prüfen und Interessierte in Ihrer Gemeinde finden</h2>
+        <p class="text-ink-muted mt-2">Wir prüfen Adressen in der ganzen Schweiz und zählen bestätigte Interessierte pro Gemeinde. Sie erhalten eine Nachricht, sobald weitere bestätigte Interessierte aus Ihrer Gemeinde dazukommen.</p>
         {% if user_count > 0 %}
         <p class="text-ink-muted mt-2">Bereits <strong class="text-ink">{{ user_count }}</strong> Haushalte registriert</p>
         {% endif %}
@@ -401,7 +411,7 @@
               <div data-address-state="empty" class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-ink-muted">Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert.</div>
               <div data-address-state="loading" class="hidden rounded-lg border border-blue-200 bg-blue-50 p-3 text-blue-900">Wir prüfen Ihre Adresse und laden Solarpotenzial und Nachbarschaft.</div>
               <div data-address-state="found" class="hidden rounded-lg border border-green-200 bg-green-50 p-3 text-green-900">Nachbarn gefunden. Sie können sich jetzt registrieren.</div>
-              <div data-address-state="not-found" class="hidden rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-700">Noch keine Nachbarn gefunden. Sie können den Startpunkt setzen und andere einladen.</div>
+              <div data-address-state="not-found" class="hidden rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-700">Keine eindeutige Adresse gefunden. Sie können Ihr Interesse trotzdem für Ihre Gemeinde anmelden.</div>
             </div>
             <div id="profile-summary" class="text-sm text-ink-muted mt-2 hidden"></div>
             <p id="address-privacy" class="text-xs text-ink-muted mt-3">Wir nutzen Ihre Adresse nur für die Prüfung. Ihre Smart-Meter-Daten bleiben in Ihrer LEG, wir verkaufen sie nicht.</p>
@@ -413,18 +423,46 @@
             <input type="email" id="email-input" placeholder="ihre@email.ch" class="w-full border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-brand focus:outline-none">
             <label for="phone-input" class="block text-sm font-medium mb-1">Telefon (optional)</label>
             <input type="tel" id="phone-input" placeholder="+41 79 ..." class="w-full border rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-brand focus:outline-none">
+            <fieldset class="mb-3">
+              <legend class="text-sm font-medium mb-1">Was trifft auf Sie zu? Mehrfachauswahl möglich.</legend>
+              <div class="grid sm:grid-cols-2 gap-2 text-sm">
+                <label><input type="checkbox" name="interest-role" value="owner" class="mr-2">Eigentümer/in</label>
+                <label><input type="checkbox" name="interest-role" value="tenant" class="mr-2">Mieter/in</label>
+                <label><input type="checkbox" name="interest-role" value="solar_producer" class="mr-2">Solarstromproduzent/in</label>
+                <label><input type="checkbox" name="interest-role" value="local_business" class="mr-2">Lokales Unternehmen</label>
+                <label><input type="checkbox" name="interest-role" value="municipality_organisation" class="mr-2">Gemeinde/Organisation</label>
+              </div>
+            </fieldset>
+            <label for="has-solar" class="block text-sm font-medium mb-1">Eigene Solaranlage</label>
+            <select id="has-solar" class="w-full border rounded-lg px-3 py-2 mb-3"><option value="">Keine Angabe</option><option value="true">Ja</option><option value="false">Nein</option></select>
             <div class="space-y-2 mb-4 text-sm">
-              <div class="flex items-start gap-2"><input type="checkbox" id="consent-neighbors" class="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand" required><label for="consent-neighbors">Ich bin einverstanden, dass interessierte Nachbarn in meiner Nähe mich kontaktieren. (erforderlich)</label></div>
-              <div class="flex items-start gap-2"><input type="checkbox" id="consent-utility" class="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand" required><label for="consent-utility">Ich bin einverstanden, dass OpenLEG meine Daten für die LEG-Anmeldung an den Netzbetreiber übermittelt. (erforderlich)</label></div>
+              <div class="flex items-start gap-2"><input type="checkbox" id="consent-neighbors" class="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"><label for="consent-neighbors">Meine Anmeldung darf als verschobener, anonymer Punkt auf der Karte erscheinen. (optional)</label></div>
               <div class="flex items-start gap-2"><input type="checkbox" id="consent-updates" class="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"><label for="consent-updates">Ich möchte Updates per E-Mail erhalten. (optional)</label></div>
             </div>
-            <p class="text-xs text-ink-muted mb-3">Wir verkaufen Ihre Daten nicht. An den Netzbetreiber übermitteln wir sie nur für die LEG-Anmeldung und nur mit Ihrer Zustimmung. Ihre bei OpenLEG gespeicherten Daten <a href="/unsubscribe" class="underline hover:text-ink">löschen Sie jederzeit</a>.</p>
-            <button id="btn-register" class="w-full bg-brand text-white py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Registrieren</button>
+            <p class="text-xs text-ink-muted mb-3">Wir geben Ihre Daten nicht an Gemeinden oder Netzbetreiber weiter. Netzbetreiber und Netzebene müssen vor einer LEG-Gründung separat geprüft werden. Ihre Daten <a href="/unsubscribe" class="underline hover:text-ink">löschen Sie jederzeit</a>.</p>
+            <button id="btn-register" class="w-full bg-brand text-white py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Interesse anmelden</button>
+          </div>
+          <div id="interest-fallback" class="hidden">
+            <h3 class="text-lg font-semibold">Interesse für Ihre Gemeinde anmelden</h3>
+            <p class="text-sm text-ink-muted mt-1 mb-3">Auch ohne eindeutigen Adresstreffer können wir Nachfrage sammeln. Der Eintrag wird nicht als Gebäude behandelt.</p>
+            <label for="interest-email" class="block text-sm font-medium mb-1">E-Mail</label>
+            <input type="email" id="interest-email" class="w-full border rounded-lg px-3 py-2 mb-2">
+            <label for="interest-address" class="block text-sm font-medium mb-1">Adresse (optional)</label>
+            <input type="text" id="interest-address" class="w-full border rounded-lg px-3 py-2 mb-2">
+            <div class="grid grid-cols-3 gap-2">
+              <div><label for="interest-plz" class="block text-sm font-medium mb-1">PLZ</label><input id="interest-plz" inputmode="numeric" maxlength="4" class="w-full border rounded-lg px-3 py-2"></div>
+              <div class="col-span-2"><label for="interest-municipality" class="block text-sm font-medium mb-1">Gemeinde</label><input id="interest-municipality" class="w-full border rounded-lg px-3 py-2"></div>
+            </div>
+            <fieldset class="mt-3"><legend class="text-sm font-medium mb-1">Ihre Rolle</legend><div class="grid sm:grid-cols-2 gap-2 text-sm">
+              <label><input type="checkbox" name="fallback-role" value="owner" class="mr-2">Eigentümer/in</label><label><input type="checkbox" name="fallback-role" value="tenant" class="mr-2">Mieter/in</label><label><input type="checkbox" name="fallback-role" value="solar_producer" class="mr-2">Solarstromproduzent/in</label><label><input type="checkbox" name="fallback-role" value="local_business" class="mr-2">Lokales Unternehmen</label><label><input type="checkbox" name="fallback-role" value="municipality_organisation" class="mr-2">Gemeinde/Organisation</label>
+            </div></fieldset>
+            <label for="fallback-has-solar" class="block text-sm font-medium mt-3 mb-1">Eigene Solaranlage</label><select id="fallback-has-solar" class="w-full border rounded-lg px-3 py-2"><option value="">Keine Angabe</option><option value="true">Ja</option><option value="false">Nein</option></select>
+            <button id="btn-interest" class="w-full bg-brand text-white py-2 rounded-lg mt-4 font-semibold hover:bg-brand-dark">Interesse anmelden</button>
           </div>
           <div id="step-success" class="hidden text-center py-6">
             <div class="text-4xl mb-3">&#9889;</div>
-            <h3 class="text-lg font-semibold mb-2">Registrierung erfolgreich!</h3>
-            <p class="text-ink-muted mb-4">Sie erhalten eine Bestätigung per E-Mail.</p>
+            <h3 class="text-lg font-semibold mb-2">Bitte E-Mail bestätigen</h3>
+            <p class="text-ink-muted mb-4">Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt.</p>
             <div id="referral-link-box" class="bg-gray-50 p-3 rounded-lg text-sm hidden">
               <label for="referral-link" class="font-medium mb-1 block">Teilen Sie Ihren Einladungslink</label>
               <input type="text" id="referral-link" class="w-full border rounded px-2 py-1 text-xs focus:ring-2 focus:ring-brand focus:outline-none" readonly>
@@ -442,12 +480,12 @@
       <div class="grid md:grid-cols-2 gap-10 items-center">
         <div>
           <h2 class="text-3xl font-bold">Open Source. Weil Energieinfrastruktur allen gehört.</h2>
-          <p class="text-ink-muted mt-3">OpenLEG ist freie Software. Der Code liegt offen, jede Gemeinde kann die Plattform selbst betreiben, und niemand kontrolliert Ihre Energiedaten.</p>
+          <p class="text-ink-muted mt-3">OpenLEG ist freie Software unter AGPL-3.0-or-later. Sie können den Code prüfen, die Plattform selbst betreiben oder einen Dienstleister wählen.</p>
           <ul class="mt-4 space-y-2 text-ink-muted list-disc list-inside">
             <li>Gesamter Code auf GitHub, AGPL-3.0 Lizenz</li>
             <li>In einer Zeile selbst installieren, auf einem Raspberry Pi oder Mini-PC</li>
             <li>Freie API für Schweizer Energiedaten (ElCom Tarife, Sonnendach, Energie Reporter)</li>
-            <li>Keine Anbieterbindung: jederzeit selbst hosten oder migrieren</li>
+            <li>Keine Bindung an einen Hosting-Anbieter</li>
             <li>Community-Beiträge willkommen</li>
           </ul>
           <div class="mt-6 flex flex-col sm:flex-row gap-3">
@@ -507,6 +545,28 @@
   const addressStatus = document.getElementById('address-status');
   const addressStateEls = Array.from(document.querySelectorAll('[data-address-state]'));
 
+  function selectedValues(name) {
+      return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map((input) => input.value);
+  }
+
+  function optionalBoolean(id) {
+      const value = document.getElementById(id).value;
+      return value === '' ? null : value === 'true';
+  }
+
+  function showInterestFallback() {
+      document.getElementById('step-address').classList.add('hidden');
+      document.getElementById('step-register').classList.add('hidden');
+      const fallback = document.getElementById('interest-fallback');
+      fallback.classList.remove('hidden');
+      document.getElementById('interest-address').value = addressInput.value;
+      const match = addressInput.value.match(/\b(\d{4})\s+([^,]+)$/);
+      if (match) {
+          document.getElementById('interest-plz').value = match[1];
+          document.getElementById('interest-municipality').value = match[2].trim();
+      }
+  }
+
   function setAddressState(state, message) {
       addressStateEls.forEach((el) => {
           el.classList.toggle('hidden', el.dataset.addressState !== state);
@@ -553,8 +613,8 @@
                   suggestionsDiv.classList.remove('hidden');
               } else {
                   suggestionsDiv.classList.add('hidden');
-                  btnCheck.disabled = true;
-                  setAddressState('not-found', 'Keine passende Adresse gefunden. Prüfen Sie Schreibweise und PLZ.');
+                  btnCheck.disabled = false;
+                  setAddressState('not-found', 'Keine passende Adresse gefunden. Sie können die Eingabe prüfen oder Ihr Interesse für die Gemeinde anmelden.');
               }
           } catch(e) {
               btnCheck.disabled = false;
@@ -587,6 +647,10 @@
           }
           const data = await res.json();
           if (data.error) {
+              if (data.can_register_interest) {
+                  showInterestFallback();
+                  return;
+              }
               document.getElementById('form-error').textContent = data.error;
               document.getElementById('form-error').classList.remove('hidden');
               this.disabled = false;
@@ -595,10 +659,14 @@
               return;
           }
           selectedProfile = data.profile_summary;
+          if (map && selectedProfile.lat && selectedProfile.lon) {
+              map.setView([selectedProfile.lat, selectedProfile.lon], 15);
+              L.marker([selectedProfile.lat, selectedProfile.lon]).addTo(map);
+          }
           const matchInfo = document.getElementById('match-info');
           if (data.potential) {
               const ci = data.cluster_info;
-              matchInfo.innerHTML = `<strong>${ci.num_members} Nachbarn gefunden!</strong> Autarkie-Potenzial: ${ci.autarky_percent.toFixed(0)}%`;
+              matchInfo.innerHTML = `<strong>${ci.num_members} Interessierte in derselben Gemeinde.</strong> Geschätztes Autarkie-Potenzial: ${ci.autarky_percent.toFixed(0)}%. Netzbetreiber und Netzebene müssen noch geprüft werden.`;
               setAddressState('found', 'Nachbarn gefunden. Sie können sich jetzt registrieren.');
           } else {
               matchInfo.innerHTML = '<strong>Noch keine Nachbarn gefunden.</strong> Sie können trotzdem registrieren.';
@@ -620,22 +688,18 @@
       const email = document.getElementById('email-input').value;
       const phone = document.getElementById('phone-input').value;
       const cn = document.getElementById('consent-neighbors').checked;
-      const cu = document.getElementById('consent-utility').checked;
       const co = document.getElementById('consent-updates').checked;
       if (!email) {
           document.getElementById('form-error').textContent = 'Bitte E-Mail angeben.';
           document.getElementById('form-error').classList.remove('hidden');
           return;
       }
-      if (!cn || !cu) {
-          document.getElementById('form-error').textContent = 'Bitte stimmen Sie den beiden erforderlichen Punkten zu.';
-          document.getElementById('form-error').classList.remove('hidden');
-          return;
-      }
       try {
           const payload = {
               email, phone, profile: selectedProfile,
-              consents: {share_with_neighbors: cn, share_with_utility: cu, updates_opt_in: co}
+              roles: selectedValues('interest-role'),
+              has_solar: optionalBoolean('has-solar'),
+              consents: {share_with_neighbors: cn, updates_opt_in: co}
           };
           if (referralCode) payload.referral_code = referralCode;
           const res = await fetch('/api/register_anonymous', {
@@ -665,6 +729,30 @@
           }
       } catch(e) {
           document.getElementById('form-error').textContent = 'Netzwerkfehler.';
+          document.getElementById('form-error').classList.remove('hidden');
+      }
+  });
+
+  document.getElementById('btn-interest').addEventListener('click', async function() {
+      const payload = {
+          email: document.getElementById('interest-email').value,
+          address: document.getElementById('interest-address').value,
+          plz: document.getElementById('interest-plz').value,
+          municipality_name: document.getElementById('interest-municipality').value,
+          roles: selectedValues('fallback-role'),
+          has_solar: optionalBoolean('fallback-has-solar')
+      };
+      try {
+          const res = await fetch('/api/register_interest', {
+              method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Interessenmeldung fehlgeschlagen.');
+          document.getElementById('interest-fallback').classList.add('hidden');
+          document.getElementById('step-success').classList.remove('hidden');
+          document.getElementById('form-error').classList.add('hidden');
+      } catch (error) {
+          document.getElementById('form-error').textContent = error.message;
           document.getElementById('form-error').classList.remove('hidden');
       }
   });

@@ -109,8 +109,20 @@ def generate_billing_summary(
     internal_price_per_kwh,
     network_level,
     distribution_model="proportional",
+    settlement_fee_per_kwh=0.0,
 ):
     """Generate billing summary for a period.
+
+    Args:
+        production: pd.DataFrame with one column per producer (kWh)
+        consumption: pd.DataFrame with one column per consumer (kWh)
+        grid_fee_per_kwh: Grid usage fee per kWh (CHF)
+        internal_price_per_kwh: Internal price per kWh (CHF)
+        network_level: "same" (40% discount) or "cross" (20% discount)
+        distribution_model: "proportional" or "einfach"
+        settlement_fee_per_kwh: VNB settlement fee per settled kWh (CHF).
+            Zero leaves the draft in the exact pre-fee shape so periods
+            billed without the fee stay reproducible.
 
     Returns:
         dict with total_production_kwh, total_allocated_kwh,
@@ -119,11 +131,12 @@ def generate_billing_summary(
     try:
         grid_fee_per_kwh = float(grid_fee_per_kwh)
         internal_price_per_kwh = float(internal_price_per_kwh)
+        settlement_fee_per_kwh = float(settlement_fee_per_kwh)
     except (TypeError, ValueError) as exc:
         raise ValueError("Billing prices must be finite and non-negative") from exc
     if not all(
         isfinite(price) and price >= 0
-        for price in (grid_fee_per_kwh, internal_price_per_kwh)
+        for price in (grid_fee_per_kwh, internal_price_per_kwh, settlement_fee_per_kwh)
     ):
         raise ValueError("Billing prices must be finite and non-negative")
     if network_level not in {"same", "cross"}:
@@ -162,25 +175,22 @@ def generate_billing_summary(
 
     participants = []
     line_items = []
+    charge_fee_total = Decimal(0)
     for col in allocation.columns:
         alloc_kwh = float(allocation[col].sum())
         priced_quantity = round(alloc_kwh, 6)
         cons_kwh = float(consumption[col].sum())
         discount = compute_network_discount(alloc_kwh, grid_fee_per_kwh, network_level)
         cost = _priced_amount(priced_quantity, internal_price_per_kwh)
-
-        participants.append(
-            {
-                "id": col,
-                "consumption_kwh": round(cons_kwh, 2),
-                "allocated_kwh": round(alloc_kwh, 2),
-                "self_supply_ratio": round(alloc_kwh / cons_kwh, 4)
-                if cons_kwh > 0
-                else 0,
-                "internal_cost_chf": _currency(cost),
-                "network_discount_chf": _currency(_money(discount)),
-            }
-        )
+        participant = {
+            "id": col,
+            "consumption_kwh": round(cons_kwh, 2),
+            "allocated_kwh": round(alloc_kwh, 2),
+            "self_supply_ratio": round(alloc_kwh / cons_kwh, 4) if cons_kwh > 0 else 0,
+            "internal_cost_chf": _currency(cost),
+            "network_discount_chf": _currency(_money(discount)),
+        }
+        participants.append(participant)
         if producer_production is not None:
             line_items.append(
                 {
@@ -193,6 +203,19 @@ def generate_billing_summary(
                     ),
                 }
             )
+            if settlement_fee_per_kwh > 0:
+                fee_amount = _priced_amount(priced_quantity, settlement_fee_per_kwh)
+                charge_fee_total += fee_amount
+                participant["settlement_fee_chf"] = _currency(fee_amount)
+                line_items.append(
+                    {
+                        "participant_id": col,
+                        "item_type": "settlement_fee",
+                        "quantity_kwh": priced_quantity,
+                        "unit_price_chf_per_kwh": settlement_fee_per_kwh,
+                        "amount_chf": float(fee_amount),
+                    }
+                )
 
     if producer_production is not None:
         allocated_by_interval = allocation.sum(axis=1)
@@ -200,7 +223,11 @@ def generate_billing_summary(
             total_production_series.replace(0, float("nan")), axis=0
         ).fillna(0)
         credited = shares.mul(allocated_by_interval, axis=0).sum(axis=0)
-        charge_total = sum(_money(item["amount_chf"]) for item in line_items)
+        charge_total = sum(
+            _money(item["amount_chf"])
+            for item in line_items
+            if item["item_type"] == "consumer_charge"
+        )
         credited_total = Decimal(0)
         producer_ids = list(credited.index)
         for producer_id in producer_ids:
@@ -229,7 +256,7 @@ def generate_billing_summary(
                 }
             )
 
-    return {
+    summary = {
         "total_production_kwh": round(total_production, 2),
         "total_allocated_kwh": round(total_allocated, 2),
         "total_surplus_kwh": round(max(0, total_production - total_allocated), 2),
@@ -241,3 +268,7 @@ def generate_billing_summary(
         "participants": participants,
         "line_items": line_items,
     }
+    if settlement_fee_per_kwh > 0:
+        summary["settlement_fee_chf_per_kwh"] = settlement_fee_per_kwh
+        summary["total_settlement_fee_chf"] = _currency(charge_fee_total)
+    return summary

@@ -38,9 +38,9 @@ def jitter_coordinates(lat, lon, radius_meters=ANONYMITY_RADIUS_METERS, seed=Non
     return jittered_lat, jittered_lon
 
 
-def collect_building_locations(city_id=None, exclude_building_id=None):
+def collect_building_locations(city_id=None, bfs_number=None, exclude_building_id=None):
     """Get all verified building locations with jittered coordinates."""
-    buildings = db.get_all_buildings(city_id=city_id)
+    buildings = db.get_all_buildings(city_id=city_id, bfs_number=bfs_number)
     locations = []
     for b in buildings:
         if exclude_building_id and b.get("building_id") == exclude_building_id:
@@ -71,25 +71,21 @@ def _coordinates(profile):
 
 
 def find_provisional_matches(new_profile):
-    """Fast provisional match search (distance only, no DBSCAN)."""
-    profiles = db.get_all_building_profiles()
+    """Find consented candidates in the same political municipality."""
+    bfs_number = new_profile.get("bfs_number")
+    if not bfs_number:
+        return None
+    profiles = db.get_all_building_profiles(bfs_number=int(bfs_number))
     if not profiles:
         return None
-
-    new_coords = _coordinates(new_profile)
-    if new_coords is None:
-        return None
     provisional = [new_profile]
-
+    new_building_id = new_profile.get("building_id")
     for p in profiles:
-        coords = _coordinates(p)
-        if coords is None:
+        if p.get("bfs_number") != int(bfs_number):
             continue
-        dist = ml_models.calculate_distance(
-            new_coords[0], new_coords[1], coords[0], coords[1]
-        )
-        if dist <= 150:
-            provisional.append(p)
+        if new_building_id and p.get("building_id") == new_building_id:
+            continue
+        provisional.append(p)
 
     if len(provisional) < 2:
         return None

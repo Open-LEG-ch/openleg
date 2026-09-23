@@ -33,6 +33,7 @@ import database as db
 import email_automation
 import formation_wizard
 import homepage_view_model
+import interest_intake
 import private_http
 import registration
 import security_utils
@@ -45,6 +46,7 @@ from health import health_bp
 from leg_registry import registry_api_bp
 from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
+from operator_api import operator_api_bp
 from rangliste import rangliste_bp
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import RATE_LIMIT_RETRY_AFTER_SECONDS, limiter
@@ -56,6 +58,72 @@ logger = logging.getLogger(__name__)
 
 # --- App routes ---
 main_bp = Blueprint("main", __name__)
+
+LEG_FORMATION_FAQS = (
+    {
+        "question": "Brauchen die Teilnehmenden eigene Smart Meter?",
+        "answer": (
+            "Nein. Vorhandene gesetzeskonforme Smart Meter des "
+            "Verteilnetzbetreibers werden weiterverwendet. Fehlende erforderliche "
+            "Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
+            "Regulierte Messtarife können weiterhin anfallen."
+        ),
+    },
+    {
+        "question": "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?",
+        "answer": (
+            "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im "
+            "Netzgebiet eines Verteilnetzbetreibers. Für mehrere Gemeinden oder "
+            "VNB-Gebiete braucht es separate lokale LEGs."
+        ),
+    },
+    {
+        "question": "Wer ist für die Abrechnung zuständig?",
+        "answer": (
+            "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei "
+            "Teilnehmenden in der Grundversorgung auch den übrigen Strombezug. Die "
+            "LEG oder ihr Dienstleister rechnet den innerhalb der Gemeinschaft "
+            "ausgetauschten Strom ab."
+        ),
+    },
+    {
+        "question": "Darf ich OpenLEG installieren, anpassen oder forken?",
+        "answer": (
+            "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG "
+            "installieren, nutzen und anpassen. Auch ein Fork ist erlaubt. "
+            "Wenn Sie eine veränderte Version über ein Netzwerk anbieten, müssen "
+            "Sie den Nutzenden den entsprechenden Quellcode zugänglich machen. "
+            "Das ist eine praktische Zusammenfassung und keine Rechtsberatung."
+        ),
+        "links": (
+            {
+                "label": "Lizenz lesen",
+                "href": "https://github.com/Open-LEG-ch/openleg/blob/main/LICENSE",
+            },
+            {
+                "label": "Repository öffnen",
+                "href": "https://github.com/Open-LEG-ch/openleg",
+            },
+            {"label": "Anleitung zum eigenen Betrieb", "href": "/self-host"},
+        ),
+    },
+    {
+        "question": "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?",
+        "answer": (
+            "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. "
+            "Noch ist nicht jede VNB-Anbindung fertig umgesetzt. Anmeldung und "
+            "Datenlieferung müssen pro VNB konfiguriert werden."
+        ),
+    },
+    {
+        "question": "Kann OpenLEG unsere Gruppe persönlich unterstützen?",
+        "answer": (
+            "Vorträge, Workshops und Projektunterstützung bieten wir nach "
+            "vorgängiger Vereinbarung gegen Honorar an."
+        ),
+        "contact_label": "Unterstützung anfragen",
+    },
+)
 
 
 @main_bp.app_errorhandler(429)
@@ -108,18 +176,20 @@ def send_activity_notification(activity_type, details):
     send_email(current_app.config["ADMIN_EMAIL"], subject, message_body)
 
 
-def send_confirmation_email(email, unsubscribe_url, building_id=None, address=None):
+def send_confirmation_email(email, verification_url, building_id=None, address=None):
     name = _tenant_name()
     try:
         city = getattr(g, "tenant", {}).get("city_name", "Zürich")
     except RuntimeError:
         city = "Zürich"
-    subject = f"{name}: Registrierung bestätigt"
+    subject = f"{name}: Interessenmeldung bestätigen"
     message_body = (
-        f"Willkommen bei {name}!\n\n"
-        f"Sie sind jetzt für eine Lokale Elektrizitätsgemeinschaft (LEG) in {city} registriert.\n\n"
-        "Wir informieren Sie per E-Mail, sobald sich neue Interessenten in Ihrer Zone anmelden.\n\n"
-        f"Abmelden:\n{unsubscribe_url}\n\n"
+        f"Bestätigen Sie Ihre Interessenmeldung für eine Lokale "
+        f"Elektrizitätsgemeinschaft (LEG) in {city}:\n\n"
+        f"{verification_url}\n\n"
+        "Erst danach wird Ihre Anmeldung anonym gezählt. Wir informieren Sie, "
+        "wenn weitere bestätigte Interessierte aus derselben Gemeinde dazukommen.\n\n"
+        "Falls Sie sich nicht angemeldet haben, ignorieren Sie diese E-Mail.\n\n"
         f"Ihr {name}-Team"
     )
     send_email(email, subject, message_body)
@@ -191,7 +261,23 @@ def open_source():
 
 @main_bp.route("/leg-gruenden")
 def leg_gruenden():
-    return render_city_template("leg_gruenden.html")
+    faq_page_jsonld = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": faq["question"],
+                "acceptedAnswer": {"@type": "Answer", "text": faq["answer"]},
+            }
+            for faq in LEG_FORMATION_FAQS
+        ],
+    }
+    return render_city_template(
+        "leg_gruenden.html",
+        formation_faqs=LEG_FORMATION_FAQS,
+        faq_page_jsonld=faq_page_jsonld,
+    )
 
 
 @main_bp.route("/leg-kalkulator")
@@ -262,7 +348,9 @@ def llms_txt():
         "",
         f"> Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften (LEG), {current_app.config['SITE_URL']}. Code: https://github.com/Open-LEG-ch/openleg, Lizenz AGPL-3.0-or-later, Betrieb in der Schweiz.",
         "",
-        "OpenLEG prüft Solarpotenzial pro Adresse, verbindet interessierte Haushalte im Umkreis von höchstens 150 Metern und bereitet Dokumente und die Netzbetreiber-Anmeldung vor. Alle Funktionen sind kostenlos.",
+        "OpenLEG prüft Solarpotenzial pro Adresse, zählt bestätigtes Interesse in einer politischen Gemeinde und bereitet Gründungsdokumente und die Netzbetreiber-Anmeldung vor. Die öffentlich angebotenen Funktionen sind kostenlos.",
+        "",
+        "Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die Abrechnung. Sie wählt den Betreiber und Hosting-Anbieter. OpenLEG stellt dafür prüfbare, selbst betreibbare Software bereit. Der Netzbetreiber prüft Netzgebiet und Netzebene, misst, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten. Der Grundversorger liefert den übrigen Strom. OpenLEG ersetzt diese gesetzlichen Aufgaben nicht. Nicht jede VNB-Anbindung ist umgesetzt; Anmeldung und Datenlieferung müssen pro Netzbetreiber eingerichtet werden. Ein vollständiger Export und die Wiederherstellung aller LEG-Betriebsdaten sind noch nicht verfügbar.",
         "",
         "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das Netznutzungsentgelt um 40% ohne und 20% mit Spannungstransformation (Art. 19h StromVV). Voraussetzungen: gleiche politische Gemeinde, gleiche Netzebene, gleiches Netzgebiet, höchstens 36 kV, intelligente Messsysteme, mindestens 5% erneuerbare Anschlussleistung.",
         "",
@@ -363,6 +451,17 @@ def api_check_potential():
 
         outcome = data_enricher.resolve_address_profile(address)
 
+        if outcome.source != "live":
+            return (
+                jsonify(
+                    {
+                        "error": "Adresse konnte nicht eindeutig geprüft werden.",
+                        "can_register_interest": True,
+                        "reason": outcome.live_status,
+                    }
+                ),
+                422,
+            )
         if not outcome.estimates:
             return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
 
@@ -427,6 +526,85 @@ def api_register_anonymous():
 @limiter.limit("5 per minute")
 def api_register_full():
     return _registration_response("registered")
+
+
+@main_bp.route("/api/register_interest", methods=["POST"])
+@limiter.limit("5 per minute")
+def api_register_interest():
+    is_valid_size, size_error = security_utils.check_request_size(request)
+    if not is_valid_size:
+        return jsonify({"error": size_error}), 413
+    if not request.json:
+        return jsonify({"error": "Keine Daten empfangen."}), 400
+    try:
+        result = interest_intake.submit(
+            request.json,
+            db=db,
+            security=security_utils,
+            base_url=current_app.config["APP_BASE_URL"],
+            send_email=send_email,
+        )
+    except (
+        interest_intake.InterestIntakeError,
+        registration.RegistrationError,
+    ) as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify(result), 202
+
+
+@main_bp.route("/confirm/<token>")
+@limiter.limit("10 per minute")
+def confirm_interest(token):
+    try:
+        token = security_utils.validate_uuid(token)
+    except ValueError:
+        abort(404)
+    token_info = db.get_token(token)
+    if not token_info or token_info.get("token_type") != "verification":
+        abort(404)
+    building = db.get_building(token_info.get("building_id"))
+    if not building or not db.use_token(token):
+        abort(404)
+    if not db.update_building_verified(building["building_id"]):
+        abort(409)
+    email_automation.schedule_sequence_for_user(
+        building["building_id"], building.get("email", "")
+    )
+    run_full_ml_task(building["building_id"], building.get("city_id"))
+    bfs_number = building.get("bfs_number")
+    municipality_name = building.get("municipality_name")
+    if bfs_number and municipality_name:
+        email_automation.notify_new_municipality_interest(
+            bfs_number=int(bfs_number),
+            municipality_name=municipality_name,
+            newcomer_email=building.get("email", ""),
+            base_url=current_app.config["APP_BASE_URL"],
+        )
+    return render_city_template(
+        "interest_confirmed.html", municipality_name=municipality_name
+    )
+
+
+@main_bp.route("/interest/confirm/<token>")
+@limiter.limit("10 per minute")
+def confirm_coverage_interest(token):
+    if not isinstance(token, str) or len(token) > 128:
+        abort(404)
+    interest = db.verify_coverage_request(token)
+    if not interest:
+        abort(404)
+    bfs_number = interest.get("bfs_number")
+    municipality_name = interest.get("municipality_name")
+    if bfs_number and municipality_name:
+        email_automation.notify_new_municipality_interest(
+            bfs_number=int(bfs_number),
+            municipality_name=municipality_name,
+            newcomer_email=interest.get("email", ""),
+            base_url=current_app.config["APP_BASE_URL"],
+        )
+    return render_city_template(
+        "interest_confirmed.html", municipality_name=municipality_name
+    )
 
 
 # --- Meter Data Upload ---
@@ -784,6 +962,9 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     public_site_base = app_config.validated_public_site_url(
         application.config["PUBLIC_SITE_URL"]
     )
+    matomo_site_id = app_config.validated_matomo_site_id(
+        application.config["MATOMO_SITE_ID"]
+    )
 
     def public_site_url(path):
         if path.startswith("//"):
@@ -795,6 +976,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         return urljoin(f"{public_site_base}/", relative_path)
 
     application.jinja_env.globals["public_site_url"] = public_site_url
+    application.jinja_env.globals["matomo_site_id"] = matomo_site_id
 
     for blueprint in (
         main_bp,
@@ -808,6 +990,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         self_host_bp,
         admin_bp,
         cron_bp,
+        operator_api_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)
@@ -825,6 +1008,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
                 "https://unpkg.com",
                 "https://cdn.jsdelivr.net",
                 "https://www.googletagmanager.com",
+                "https://stats.openleg.ch",
             ],
             "style-src": [
                 "'self'",
@@ -840,6 +1024,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
                 "https://www.google-analytics.com",
                 "https://region1.google-analytics.com",
                 "https://www.googletagmanager.com",
+                "https://stats.openleg.ch",
             ],
         },
         content_security_policy_nonce_in=None,

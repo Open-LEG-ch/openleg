@@ -33,6 +33,11 @@
         {% if form_errors.get('grid_fee_rp') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['grid_fee_rp'] }}</p>{% endif %}
       </div>
       <div>
+        <label for="policy-settlement-fee" class="block text-sm font-semibold mb-1">Abrechnungsentgelt (Rp./kWh)</label>
+        <input id="policy-settlement-fee" type="text" inputmode="decimal" name="settlement_fee_rp" required value="{{ form_values.get('settlement_fee_rp', '') }}" placeholder="z. B. 2.00" class="w-full border rounded-lg px-3 py-2 text-sm">
+        {% if form_errors.get('settlement_fee_rp') %}<p class="mt-1 text-sm text-accent" role="alert">{{ form_errors['settlement_fee_rp'] }}</p>{% endif %}
+      </div>
+      <div>
         <label for="policy-network-level" class="block text-sm font-semibold mb-1">Netzebene</label>
         <select id="policy-network-level" name="network_level" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
           {% for value, label in policy_labels.network_level.items() %}
@@ -93,15 +98,16 @@
     <div class="overflow-x-auto"><table class="w-full min-w-[42rem] text-sm">
       <thead class="bg-slate-50">
         <tr>
-          <th class="px-3 py-2 text-left">Gültig ab</th>
-          <th class="px-3 py-2 text-left">Interner Preis</th>
-          <th class="px-3 py-2 text-left">Netzentgelt</th>
-          <th class="px-3 py-2 text-left">Netzebene</th>
-          <th class="px-3 py-2 text-left">Verteilmodell</th>
-          <th class="px-3 py-2 text-left">MwSt</th>
-          <th class="px-3 py-2 text-right">Zahlungsfrist</th>
-          <th class="px-3 py-2 text-left">Präfix</th>
-          <th class="px-3 py-2 text-left">Zustellung</th>
+          <th scope="col" class="px-3 py-2 text-left">Gültig ab</th>
+          <th scope="col" class="px-3 py-2 text-left">Interner Preis</th>
+          <th scope="col" class="px-3 py-2 text-left">Netzentgelt</th>
+          <th scope="col" class="px-3 py-2 text-left">Abrechnungsentgelt</th>
+          <th scope="col" class="px-3 py-2 text-left">Netzebene</th>
+          <th scope="col" class="px-3 py-2 text-left">Verteilmodell</th>
+          <th scope="col" class="px-3 py-2 text-left">MwSt</th>
+          <th scope="col" class="px-3 py-2 text-right">Zahlungsfrist</th>
+          <th scope="col" class="px-3 py-2 text-left">Präfix</th>
+          <th scope="col" class="px-3 py-2 text-left">Zustellung</th>
         </tr>
       </thead>
       <tbody class="divide-y">
@@ -110,6 +116,7 @@
           <td class="px-3 py-2">{{ version.effective_from_display }}</td>
           <td class="px-3 py-2">{{ version.internal_price_display }}</td>
           <td class="px-3 py-2">{{ version.grid_fee_display }}</td>
+          <td class="px-3 py-2">{{ version.settlement_fee_display }}</td>
           <td class="px-3 py-2">{{ version.network_level_label }}</td>
           <td class="px-3 py-2">{{ version.distribution_model_label }}</td>
           <td class="px-3 py-2">{{ version.vat_label }}{% if version.vat_mode == 'standard' %} ({{ version.vat_rate_pct }} %){% endif %}</td>

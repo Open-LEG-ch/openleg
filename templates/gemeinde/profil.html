@@ -27,6 +27,17 @@
     {% if pilot_slug %}<p class="text-sm mt-3"><a href="/pilotgemeinde/{{ pilot_slug }}" class="text-brand hover:underline">Fallstudie für {{ profile.name }} ansehen</a></p>{% endif %}
   </header>
 
+  <section class="mb-10 rounded-xl border border-brand/20 bg-brand/5 p-6" aria-labelledby="interest-title">
+    <p class="text-xs uppercase tracking-wide text-ink-muted">OpenLEG Interessenmeldungen</p>
+    <h2 id="interest-title" class="text-2xl font-bold mt-1">{{ interest_label|replace('Interessierte', 'bestätigte Interessierte') }} in {{ profile.name }}</h2>
+    <p class="text-sm text-ink-muted mt-2">
+      Gezählt werden nur bestätigte E-Mail-Adressen. Bei weniger als drei Anmeldungen zeigen wir keine exakte Zahl.
+      Wer sich anmeldet, erhält eine Nachricht, sobald weitere bestätigte Interessierte aus {{ profile.name }} dazukommen.
+    </p>
+    <p class="text-xs text-ink-muted mt-2">Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden.</p>
+    <a href="/#registrieren" class="mt-4 inline-block bg-brand text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-brand-dark">Interesse für {{ profile.name }} anmelden</a>
+  </section>
+
   <section data-evidence-tier="measured" aria-labelledby="measured-title" class="mb-10">
     <p class="text-xs uppercase tracking-wide text-ink-muted">Gemessene und amtlich ausgewiesene Werte</p>
     <h2 id="measured-title" class="text-xl font-semibold mt-1 mb-5">Messwerte</h2>

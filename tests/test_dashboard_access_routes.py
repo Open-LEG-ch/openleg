@@ -252,6 +252,104 @@ def test_leg_mutation_rejects_non_ascii_csrf_as_bad_request(app_module, monkeypa
     invite.assert_not_called()
 
 
+def test_vnb_formation_submission_uses_session_identity_and_csrf(
+    app_module, monkeypatch
+):
+    submit = MagicMock(return_value={"error": None, "state": "prepared"})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_submit_vnb_formation", submit)
+    client = app_module.web.test_client()
+
+    anonymous = client.post(
+        "/leg/community/community-1/vnb-submissions",
+        data={"csrf_token": "csrf-secret", "bid": "building-attacker"},
+    )
+    assert anonymous.status_code == 401
+
+    _set_session(client)
+    missing_csrf = client.post("/leg/community/community-1/vnb-submissions")
+    assert missing_csrf.status_code == 400
+
+    accepted = client.post(
+        "/leg/community/community-1/vnb-submissions",
+        data={"csrf_token": "csrf-secret", "bid": "building-attacker"},
+    )
+    assert accepted.status_code == 302
+    submit.assert_called_once_with("community-1", "building-session")
+    assert "bid=" not in accepted.headers["Location"]
+
+
+def test_vnb_manual_handover_is_private_and_community_scoped(app_module, monkeypatch):
+    package = MagicMock(return_value={"manual_package": b"zip"})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_vnb_manual_package", package)
+    client = app_module.web.test_client()
+
+    anonymous = client.get("/leg/community/community-1/vnb-submissions/case-1/handover")
+    assert anonymous.status_code == 401
+    package.assert_not_called()
+
+    _set_session(client)
+    response = client.get("/leg/community/community-1/vnb-submissions/case-1/handover")
+    assert response.status_code == 200
+    assert response.data == b"zip"
+    assert "attachment" in response.headers["Content-Disposition"]
+    assert "no-store" in response.headers["Cache-Control"]
+    package.assert_called_once_with("community-1", "case-1", "building-session")
+
+
+def test_vnb_manual_delivery_confirmation_requires_csrf(app_module, monkeypatch):
+    mark = MagicMock(return_value={"error": None, "state": "delivered"})
+    monkeypatch.setattr(
+        app_module.dashboard_module, "leg_mark_vnb_manual_delivered", mark
+    )
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    missing = client.post("/leg/community/community-1/vnb-submissions/case-1/delivered")
+    assert missing.status_code == 400
+    mark.assert_not_called()
+
+    accepted = client.post(
+        "/leg/community/community-1/vnb-submissions/case-1/delivered",
+        data={"csrf_token": "csrf-secret"},
+    )
+    assert accepted.status_code == 302
+    mark.assert_called_once_with("community-1", "case-1", "building-session")
+
+
+def test_vnb_membership_mutation_uses_session_identity_and_csrf(
+    app_module, monkeypatch
+):
+    submit = MagicMock(return_value={"error": None, "state": "prepared"})
+    monkeypatch.setattr(app_module.dashboard_module, "leg_submit_vnb_mutation", submit)
+    client = app_module.web.test_client()
+    _set_session(client)
+
+    response = client.post(
+        "/leg/community/community-1/vnb-mutations",
+        data={
+            "csrf_token": "csrf-secret",
+            "mutation_id": "mutation-1",
+            "participant_id": "building-2",
+            "mutation_type": "exit",
+            "effective_date": "2026-10-01",
+            "source_agreement_id": "agreement-v3",
+            "bid": "building-attacker",
+        },
+    )
+
+    assert response.status_code == 302
+    submit.assert_called_once_with(
+        "community-1",
+        "building-session",
+        "mutation-1",
+        "building-2",
+        "exit",
+        "2026-10-01",
+        "agreement-v3",
+        {},
+    )
+
+
 def test_leg_document_uses_session_identity_not_query_bid(app_module, monkeypatch):
     document_for_member = MagicMock(
         return_value={"pdf_data": b"pdf", "filename": "vertrag.pdf"}

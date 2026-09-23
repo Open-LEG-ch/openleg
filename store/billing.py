@@ -63,10 +63,10 @@ def save_billing_period(
                     (community_id, period_start, period_end, total_production_kwh, total_allocated_kwh,
                      total_surplus_kwh, total_network_discount_chf, distribution_model,
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
-                     timezone, input_fingerprint, source_document_ids,
-                     reconciliation, billing_policy_snapshot, status)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s::jsonb, %s::jsonb, %s::jsonb, 'draft')
+                     battery_snapshot, timezone, input_fingerprint, source_document_ids,
+                     reconciliation, billing_policy_snapshot, prepared_by, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, 'draft')
                     RETURNING id
                 """,
                     (
@@ -81,6 +81,14 @@ def save_billing_period(
                         summary.get("network_level", "same"),
                         summary.get("internal_price_chf_per_kwh"),
                         summary.get("grid_fee_chf_per_kwh"),
+                        (
+                            json.dumps(
+                                summary["battery_snapshot"],
+                                default=_json_default,
+                            )
+                            if summary.get("battery_snapshot")
+                            else None
+                        ),
                         summary.get("timezone", "Europe/Zurich"),
                         summary.get("input_fingerprint"),
                         json.dumps(summary.get("source_document_ids", [])),
@@ -93,6 +101,7 @@ def save_billing_period(
                             if summary.get("billing_policy_snapshot")
                             else None
                         ),
+                        summary.get("prepared_by", "system"),
                     ),
                 )
                 period_id = cur.fetchone()["id"]
@@ -445,7 +454,8 @@ def get_billing_policy(community_id: str, period_start, period_end) -> dict | No
             """
             WITH newest AS (
                 SELECT t.id, t.community_id, t.internal_price_chf_per_kwh,
-                       t.grid_fee_chf_per_kwh, t.network_level,
+                       t.grid_fee_chf_per_kwh, t.settlement_fee_chf_per_kwh,
+                       t.network_level,
                        t.distribution_model, t.vat_mode, t.vat_rate_pct,
                        t.payment_days, t.invoice_prefix, t.delivery_method,
                        t.effective_from, t.effective_to
@@ -459,6 +469,7 @@ def get_billing_policy(community_id: str, period_start, period_end) -> dict | No
             )
             SELECT id AS tariff_id, t.community_id,
                    internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
+                   settlement_fee_chf_per_kwh,
                    network_level, distribution_model, vat_mode, vat_rate_pct,
                    payment_days, invoice_prefix, delivery_method,
                    effective_from

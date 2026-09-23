@@ -1,5 +1,7 @@
 {% extends "product_base.html" %}
 {% block content %}
+{% set can_prepare_billing = can_prepare_billing|default(false) %}
+{% set can_approve_billing = can_approve_billing|default(false) %}
 <div class="max-w-3xl mx-auto px-4 py-8">
   <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="text-brand hover:underline font-semibold">Zurück zum LEG-Dashboard</a></p>
   <h1 class="text-2xl font-bold mb-2">Abrechnungen</h1>
@@ -30,7 +32,7 @@
           <span class="font-semibold text-accent-dark">Auffällige Messfenster: {{ period.veracity_flag_count }}</span> (Plausibilität, kein Fehler; Import und Freigabe bleiben möglich.)
         {% endif %}
       </p>
-      {% if period.approvable %}
+      {% if period.approvable and can_approve_billing %}
       <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/approve">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label for="confirm-approval-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">
@@ -61,13 +63,13 @@
         <span class="text-sm font-semibold text-brand">{{ invoice.status_label }}</span>
       </div>
       <p class="text-sm text-ink-muted mb-4">Teilnehmer: {{ invoice.participant_id }} · {% if invoice.gross_unreadable %}<span class="text-accent font-semibold">Gesamtbetrag unlesbar</span>{% else %}{{ invoice.display_gross_chf }} CHF{% endif %} · Interner Preis: {{ invoice.display_unit_price_rp }} · Zustellart: {{ invoice.delivery_method_label }}</p>
-      {% if invoice.lifecycle_state == 'issued' and not invoice.delivery_job_status %}
+      {% if can_prepare_billing and invoice.lifecycle_state == 'issued' and not invoice.delivery_job_status %}
       <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/deliver" class="mb-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">Zustellen</button>
       </form>
       {% endif %}
-      {% if invoice.lifecycle_state == 'issued' and invoice.delivery_job_status in ('pending', 'failed') %}
+      {% if can_prepare_billing and invoice.lifecycle_state == 'issued' and invoice.delivery_job_status in ('pending', 'failed') %}
       <div class="mb-3 rounded-lg border border-accent bg-accent/10 p-4 text-sm">
         <p class="mb-3">Der letzte Zustellversuch ist unklar. OpenLEG sendet nicht automatisch erneut, damit das Mitglied keine doppelte E-Mail erhält. Prüfen Sie den Versand und bestätigen Sie die Zustellung anschliessend.</p>
         <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/delivery-confirmed">
@@ -76,7 +78,7 @@
         </form>
       </div>
       {% endif %}
-      {% if invoice.lifecycle_state == 'delivered' %}
+      {% if can_prepare_billing and invoice.lifecycle_state == 'delivered' %}
       <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/paid" class="grid sm:grid-cols-3 gap-2 mb-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="date" name="paid_date" required class="border rounded-lg px-3 py-2">
@@ -84,14 +86,14 @@
         <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">Zahlung erfassen</button>
       </form>
       {% endif %}
-      {% if invoice.lifecycle_state in ('issued', 'delivered') %}
+      {% if can_prepare_billing and invoice.lifecycle_state in ('issued', 'delivered') %}
       <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/cancel" class="grid sm:grid-cols-[1fr_auto] gap-2 mb-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="text" name="reason" required placeholder="Stornierungsgrund" class="border rounded-lg px-3 py-2">
         <button type="submit" class="border border-accent px-4 py-2 rounded-lg font-semibold">Stornieren</button>
       </form>
       {% endif %}
-      {% if invoice.lifecycle_state == 'cancelled' and invoice.correction_candidates %}
+      {% if can_prepare_billing and invoice.lifecycle_state == 'cancelled' and invoice.correction_candidates %}
       <form method="post" action="/leg/community/{{ community_id }}/billing/invoice/{{ invoice.id }}/correct" class="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <select name="corrected_invoice_id" required class="border rounded-lg px-3 py-2">
@@ -120,6 +122,25 @@
         <p class="mt-3 text-sm text-ink-muted">Noch keine Statusänderung protokolliert.</p>
         {% endif %}
       </details>
+      {% if invoice.queries %}
+      <div class="mt-4 border-t pt-4">
+        <h4 class="font-semibold">Rechnungsfragen</h4>
+        {% for query in invoice.queries %}
+        <div class="mt-3 rounded-lg border border-line p-3 text-sm">
+          <p>{{ query.category }} · {{ query.status }}</p>
+          {% for message in query.messages %}<p class="mt-1"><strong>{{ message.actor_id }}:</strong> {{ message.message }}</p>{% endfor %}
+          {% if can_prepare_billing and query.status != 'resolved' %}
+          <form method="post" action="/leg/community/{{ community_id }}/billing/queries/{{ query.id }}" class="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input name="message" maxlength="4000" placeholder="Antwort" class="border rounded-lg px-3 py-2">
+            <select name="status" class="border rounded-lg px-3 py-2"><option value="">Status behalten</option><option value="acknowledged">Bestätigen</option><option value="resolved">Erledigen</option></select>
+            <button class="border border-line rounded-lg px-3 py-2 font-semibold">Speichern</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
     </section>
     {% endfor %}
   </div>

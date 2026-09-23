@@ -91,6 +91,49 @@ class TestAdminOpsRoutes:
             assert "counts" in data
             assert data["counts"]["lea_inbox"] == 1
 
+    def test_admin_ops_exposes_interest_intake_to_operator(self):
+        interest = [
+            {
+                "email": "riedholz@example.ch",
+                "municipality_name": "Riedholz",
+                "bfs_number": 2554,
+                "verified": True,
+                "source": "coverage_request",
+            }
+        ]
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "DATABASE_URL": "postgresql://x:x@localhost/x",
+                    "ADMIN_TOKEN": "test123",
+                    "INTERNAL_TOKEN": "secret-internal",
+                },
+            ),
+            patch("database.init_db", return_value=True),
+            patch("database._connection_pool", MagicMock()),
+            patch("database.is_db_available", return_value=True),
+            patch("database.get_ops_snapshots", return_value=[]),
+            patch("database.get_lea_reports", return_value=[]),
+            patch("database.list_registry_entries", return_value=[]),
+            patch("database.get_registry_pending_count", return_value=0),
+            patch(
+                "database.get_registry_entries_needing_verification", return_value=[]
+            ),
+            patch("database.get_operator_interest_records", return_value=interest),
+        ):
+            from app import create_app
+
+            app = create_app(load_environment=False)
+            response = app.test_client().get(
+                "/admin/ops", headers={"X-Admin-Token": "test123"}
+            )
+
+        data = response.get_json()
+        assert data["interest_records"] == interest
+        assert data["counts"]["interest_verified"] == 1
+        assert data["counts"]["interest_unverified"] == 0
+
     def test_internal_ops_snapshot_accepts_valid_token(self):
         with (
             patch.dict(

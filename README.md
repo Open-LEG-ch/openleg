@@ -8,6 +8,14 @@ Open-source infrastructure for Swiss Local Electricity Communities. Offene Infra
 
 OpenLEG is the public website, product application, and API for founding and operating a Swiss Local Electricity Community, known as a LEG. The private `openleg-ops` repository owns production deployment, not the public site runtime or assets.
 
+### Operating model
+
+The LEG chooses its representative, participant agreements, internal energy price, administration, billing operator, and hosting provider. OpenLEG supplies inspectable, self-hostable infrastructure for that community-controlled work under AGPL-3.0-or-later.
+
+The distribution system operator (VNB) still verifies the statutory network-area and network-level requirements, performs its metering duties, charges network use with the statutory discount, and delivers the data assigned to it. The basic supplier supplies residual electricity where applicable. OpenLEG does not replace those duties. Formation submissions and data delivery must be configured for each VNB; end-to-end integration is not available for every VNB.
+
+Current code covers formation records, documents, metering import, quarter-hour allocation, tariff versions, invoice approval, immutable invoices, and their lifecycle. Scheduled SDAT ingestion ([#600](https://github.com/Open-LEG-ch/openleg/issues/600)), ISO 20022 payment reconciliation ([#599](https://github.com/Open-LEG-ch/openleg/issues/599)), and complete operational archive export and restore ([#601](https://github.com/Open-LEG-ch/openleg/issues/601)) remain roadmap work.
+
 ### What this repo is
 
 - `app.py` connects the Flask routes and user journeys
@@ -110,6 +118,14 @@ Never commit credentials or personal data. Use `.env.example` locally and report
 ## Deutsch
 
 OpenLEG ist die öffentliche Website, Produktanwendung und API für die Gründung und den Betrieb einer Schweizer Lokalen Elektrizitätsgemeinschaft, kurz LEG. Das private Repo `openleg-ops` verantwortet die Produktionsbereitstellung, nicht die öffentliche Website oder ihre Assets.
+
+### Betriebsmodell
+
+Die LEG wählt ihre Vertretung, Teilnehmerverträge, den internen Strompreis, die Administration, den Abrechnungsdienstleister und den Hosting-Anbieter. OpenLEG stellt für diese Aufgaben prüfbare, selbst betreibbare Infrastruktur unter AGPL-3.0-or-later bereit.
+
+Der Verteilnetzbetreiber (VNB) prüft weiterhin die gesetzlichen Anforderungen an Netzgebiet und Netzebene, erfüllt seine Messaufgaben, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und stellt die ihm zugewiesenen Daten bereit. Der Grundversorger liefert gegebenenfalls den übrigen Strom. OpenLEG ersetzt diese Aufgaben nicht. Anmeldung und Datenlieferung müssen für jeden VNB eingerichtet werden; eine durchgängige Anbindung ist noch nicht für jeden VNB verfügbar.
+
+Der aktuelle Code deckt Gründungsunterlagen, Messdatenimport, Viertelstundenverteilung, Tarifversionen, Rechnungsfreigabe, unveränderliche Rechnungen und deren Lebenszyklus ab. Geplanter Ausbau sind der automatische SDAT-Abruf ([#600](https://github.com/Open-LEG-ch/openleg/issues/600)), der ISO-20022-Bankabgleich ([#599](https://github.com/Open-LEG-ch/openleg/issues/599)) sowie der vollständige Export und die Wiederherstellung der LEG-Betriebsdaten ([#601](https://github.com/Open-LEG-ch/openleg/issues/601)).
 
 ### Was dieses Repo enthält
 

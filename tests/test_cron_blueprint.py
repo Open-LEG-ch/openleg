@@ -8,6 +8,7 @@ route, and the operator surface was split off the same way in #271.
 
 import ast
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -17,9 +18,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 CRON_RULES = {
     "/api/cron/process-emails",
+    "/api/cron/cleanup-interest",
     "/api/cron/refresh-public-data",
     "/api/cron/backfill-elcom",
     "/api/cron/process-billing",
+    "/api/cron/process-operator-webhooks",
     "/api/cron/verify-registry-entries",
 }
 
@@ -64,6 +67,18 @@ def test_every_cron_route_still_answers_at_the_same_url(application):
     registered = {str(rule) for rule in application.url_map.iter_rules()}
 
     assert CRON_RULES <= registered
+
+
+def test_operator_webhook_cron_uses_an_explicit_bounded_batch(application):
+    with patch("cron.operator_api.dispatch_pending_webhooks") as dispatch:
+        dispatch.return_value = {"attempted": 0, "delivered": 0, "failed": 0}
+        response = application.test_client().post(
+            "/api/cron/process-operator-webhooks",
+            headers={"X-Cron-Secret": application.config["CRON_SECRET"]},
+        )
+
+    assert response.status_code == 200
+    dispatch.assert_called_once_with(max_attempts=5, batch_size=50)
 
 
 def test_every_cron_route_is_served_by_the_cron_blueprint(application):

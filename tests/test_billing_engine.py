@@ -2,6 +2,7 @@
 """TDD tests for billing_engine.py - 15-min interval energy allocation."""
 
 import pandas as pd
+import pytest
 
 
 class TestProportionalAllocation:
@@ -193,3 +194,131 @@ class TestEdgeCases:
         consumption = pd.DataFrame({"a": [7.0]})
         result = allocate_energy(production, consumption, model="proportional")
         assert abs(result["a"].iloc[0] - 7.0) < 0.01
+
+
+class TestSettlementFee:
+    """The VNB settlement fee applies to the energy settled through the VNB."""
+
+    _UNSET = object()
+
+    def _summary(self, settlement_fee_per_kwh=_UNSET, **overrides):
+        from billing_engine import generate_billing_summary
+
+        production = overrides.pop("production", pd.DataFrame({"producer": [10.0]}))
+        consumption = overrides.pop(
+            "consumption", pd.DataFrame({"consumer_a": [6.0], "consumer_b": [4.0]})
+        )
+        kwargs = {
+            "grid_fee_per_kwh": 0.08,
+            "internal_price_per_kwh": 0.15,
+            "network_level": "same",
+            "distribution_model": "proportional",
+        }
+        kwargs.update(overrides)
+        if settlement_fee_per_kwh is not self._UNSET:
+            kwargs["settlement_fee_per_kwh"] = settlement_fee_per_kwh
+        return generate_billing_summary(production, consumption, **kwargs)
+
+    def test_fee_applies_to_allocated_energy_per_participant(self):
+        summary = self._summary(settlement_fee_per_kwh=0.02)
+
+        assert summary["settlement_fee_chf_per_kwh"] == 0.02
+        assert summary["total_settlement_fee_chf"] == 0.20
+        participants = {p["id"]: p for p in summary["participants"]}
+        assert participants["consumer_a"]["settlement_fee_chf"] == 0.12
+        assert participants["consumer_b"]["settlement_fee_chf"] == 0.08
+        fee_items = [
+            item
+            for item in summary["line_items"]
+            if item["item_type"] == "settlement_fee"
+        ]
+        assert {(i["participant_id"], i["quantity_kwh"]) for i in fee_items} == {
+            ("consumer_a", 6.0),
+            ("consumer_b", 4.0),
+        }
+        assert all(i["unit_price_chf_per_kwh"] == 0.02 for i in fee_items)
+        assert {i["participant_id"]: i["amount_chf"] for i in fee_items} == {
+            "consumer_a": 0.12,
+            "consumer_b": 0.08,
+        }
+
+    def test_fee_quantity_matches_the_consumer_charge_quantity(self):
+        summary = self._summary(settlement_fee_per_kwh=0.02)
+
+        charges = {
+            i["participant_id"]: i["quantity_kwh"]
+            for i in summary["line_items"]
+            if i["item_type"] == "consumer_charge"
+        }
+        fees = {
+            i["participant_id"]: i["quantity_kwh"]
+            for i in summary["line_items"]
+            if i["item_type"] == "settlement_fee"
+        }
+        assert fees == charges
+
+    def test_rounding_adjustment_closes_the_internal_pool_only(self):
+        summary = self._summary(
+            settlement_fee_per_kwh=0.02,
+            production=pd.DataFrame({"producer": [0.268197]}),
+            consumption=pd.DataFrame({"a": [0.532064], "b": [0.085621]}),
+        )
+        fee_total = sum(
+            i["amount_chf"]
+            for i in summary["line_items"]
+            if i["item_type"] == "settlement_fee"
+        )
+        rounding = [
+            i["amount_chf"]
+            for i in summary["line_items"]
+            if i["item_type"] == "rounding_adjustment"
+        ]
+        charges = sum(
+            i["amount_chf"]
+            for i in summary["line_items"]
+            if i["item_type"] == "consumer_charge"
+        )
+        credits = sum(
+            i["amount_chf"]
+            for i in summary["line_items"]
+            if i["item_type"] == "producer_credit"
+        )
+        assert rounding[0] == round(-(charges + credits), 6)
+        assert fee_total > 0
+
+    def test_without_the_fee_the_draft_stays_in_the_legacy_shape(self):
+        summary = self._summary()
+
+        assert "settlement_fee_chf_per_kwh" not in summary
+        assert "total_settlement_fee_chf" not in summary
+        for participant in summary["participants"]:
+            assert "settlement_fee_chf" not in participant
+        assert all(
+            item["item_type"] != "settlement_fee" for item in summary["line_items"]
+        )
+
+    def test_zero_fee_behaves_like_no_fee(self):
+        from decimal import Decimal
+
+        baseline = self._summary(settlement_fee_per_kwh=0.0)
+        assert "settlement_fee_chf_per_kwh" not in baseline
+        assert all(
+            item["item_type"] != "settlement_fee" for item in baseline["line_items"]
+        )
+        assert baseline["total_allocated_kwh"] == self._summary()["total_allocated_kwh"]
+        assert Decimal(str(baseline["total_network_discount_chf"])) == Decimal(
+            str(self._summary()["total_network_discount_chf"])
+        )
+
+    @pytest.mark.parametrize(
+        "fee", [-0.01, float("nan"), float("inf"), float("-inf"), "abc", None]
+    )
+    def test_invalid_fee_fails_closed(self, fee):
+        with pytest.raises(ValueError):
+            self._summary(settlement_fee_per_kwh=fee)
+
+    def test_decimal_fee_is_accepted(self):
+        from decimal import Decimal
+
+        summary = self._summary(settlement_fee_per_kwh=Decimal("0.02"))
+        assert summary["settlement_fee_chf_per_kwh"] == 0.02
