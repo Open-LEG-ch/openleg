@@ -3,5 +3,5 @@ pytest>=9.1.1
 pyyaml>=6.0.3
 mypy>=2.3.1
 ruff==0.16.7
-coverage==7.16.0
+coverage==7.16.1
 mutmut==3.7.0
