@@ -37,6 +37,8 @@ Owners and viewers must remain verified, confirmed members of the same
 community. Community administrators and neighbour consent have no implicit
 access. A share permits samples, aggregates and exports; it never permits
 management or ingestion. Revocation is checked on every subsequent request.
+Removing a viewer's membership or changing its status away from confirmed
+deletes their grants. Rejoining requires the owner to share again.
 Previously downloaded copies cannot be recalled. Enrollment is capped at 20
 installations per owner.
 
@@ -148,6 +150,11 @@ observation timestamp. It does not replace it with local or receipt time.
 Queue limits are 10,000 samples, 8 KiB per sample, 24 hours of queued age and
 32 MiB of SQLite pages. A full queue rejects new samples; expired entries are
 removed on enqueue/flush. It sends at most 100 samples/64 KiB per flush, with
+source observations limited conservatively to the server's minimum one-day
+retention, regardless of `source.raw_retention_days`. Before forwarding it also
+drops observations approaching that limit, with a 30-second transit margin.
+Changing server retention therefore cannot strand newer samples behind an
+older buffered observation. It sends each batch with
 a 10-second HTTP timeout. Retry state survives restart: 2-second exponential
 backoff capped at 300 seconds, at most eight attempts. Authentication,
 redirect, scope and validation failures block further automatic forwarding.

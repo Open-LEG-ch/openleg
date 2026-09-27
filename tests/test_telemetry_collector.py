@@ -3,6 +3,7 @@
 
 import json
 import os
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Event, Thread
 
@@ -267,5 +268,32 @@ def test_slow_forwarding_allows_enqueue_but_serializes_other_flushers(tmp_path):
     collector = Collector(config(tmp_path))
     try:
         assert collector.db.execute("SELECT sequence FROM samples").fetchall() == [(2,)]
+    finally:
+        collector.close()
+
+
+def test_observation_age_cannot_block_newer_samples(tmp_path):
+    now = [200000.0]
+    sent = []
+
+    def send(endpoint, token, body):
+        sent.extend(json.loads(body)["samples"])
+        return 201, b'{"schema_version":"telemetry/1","accepted":1,"duplicates":0}'
+
+    collector = Collector(config(tmp_path), send=send, clock=lambda: now[0])
+
+    def observed(age):
+        return observation(
+            observed_at=datetime.fromtimestamp(now[0] - age, timezone.utc).isoformat()
+        )
+
+    try:
+        with pytest.raises(ValueError, match="observation_outside_window"):
+            collector.enqueue(observed(3 * 86400))
+        collector.enqueue(observed(86400 - 60))
+        now[0] += 45
+        collector.enqueue(observed(1))
+        assert collector.flush_once()["state"] == "sent"
+        assert len(sent) == 1 and sent[0]["sequence"] == 2
     finally:
         collector.close()

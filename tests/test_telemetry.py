@@ -588,3 +588,42 @@ def test_profile_deletion_cascades_operational_data(telemetry_client):
         ):
             cur.execute(f"SELECT COUNT(*) AS n FROM {table}")
             assert cur.fetchone()["n"] == 0
+
+
+@pytest.mark.parametrize("remove", ["delete", "status"])
+def test_rejoining_needs_a_new_owner_share(telemetry_client, remove):
+    client = telemetry_client
+    installation, _ = enroll(client)
+    assert (
+        change(
+            client, installation, "share", {"viewer_building_id": "viewer"}
+        ).status_code
+        == 200
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        if remove == "delete":
+            cur.execute("DELETE FROM community_members WHERE building_id='viewer'")
+            cur.execute(
+                "INSERT INTO community_members (community_id,building_id,status) VALUES ('community-a','viewer','confirmed')"
+            )
+        else:
+            cur.execute(
+                "UPDATE community_members SET status='invited' WHERE building_id='viewer'"
+            )
+            cur.execute(
+                "UPDATE community_members SET status='confirmed' WHERE building_id='viewer'"
+            )
+        cur.execute("SELECT COUNT(*) AS n FROM telemetry_shares")
+        assert cur.fetchone()["n"] == 0
+    test_dashboard_access_routes._set_session(client, "viewer")
+    for suffix in ("samples", "aggregates", "export"):
+        assert client.get(f"{BASE}/{installation}/{suffix}").status_code == 403
+    test_dashboard_access_routes._set_session(client, "owner")
+    assert (
+        change(
+            client, installation, "share", {"viewer_building_id": "viewer"}
+        ).status_code
+        == 200
+    )
+    test_dashboard_access_routes._set_session(client, "viewer")
+    assert client.get(f"{BASE}/{installation}/samples").status_code == 200

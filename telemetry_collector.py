@@ -190,9 +190,22 @@ class Collector:
         self.db.close()
 
     def _expire(self):
-        return self.db.execute(
+        removed = self.db.execute(
             "DELETE FROM samples WHERE queued_at<?", (self.clock() - MAX_AGE,)
         ).rowcount
+        # The server permits owners to shorten retention to one day. Drop old
+        # observations before batching, with a margin for the HTTP timeout.
+        cutoff = self.clock() - MAX_AGE + 30
+        stale = []
+        for sequence, body in self.db.execute("SELECT sequence,body FROM samples"):
+            observed = json.loads(body)["observed_at"]
+            if (
+                observed is not None
+                and telemetry.timestamp(observed).timestamp() < cutoff
+            ):
+                stale.append((sequence,))
+        self.db.executemany("DELETE FROM samples WHERE sequence=?", stale)
+        return removed + len(stale)
 
     def enqueue(self, sample):
         """Return assigned sequence. Preserve explicit null observation timestamps."""
@@ -222,7 +235,7 @@ class Collector:
             }
             row = telemetry.observation(
                 row,
-                self.config["source"],
+                {**self.config["source"], "raw_retention_days": 1},
                 datetime.fromtimestamp(self.clock(), timezone.utc),
             )
             row.pop("fingerprint")

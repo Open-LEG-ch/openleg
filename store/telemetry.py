@@ -73,19 +73,35 @@ def create_tables(cur):
         );
         CREATE TABLE IF NOT EXISTS telemetry_shares (
             installation_id UUID NOT NULL REFERENCES telemetry_installations ON DELETE CASCADE,
-            viewer_building_id VARCHAR(64) NOT NULL REFERENCES buildings ON DELETE CASCADE,
-            PRIMARY KEY (installation_id, viewer_building_id)
+            community_id VARCHAR(64) NOT NULL,
+            viewer_building_id VARCHAR(64) NOT NULL,
+            PRIMARY KEY (installation_id, viewer_building_id),
+            FOREIGN KEY (community_id, viewer_building_id)
+                REFERENCES community_members (community_id, building_id) ON DELETE CASCADE
         );
+        CREATE OR REPLACE FUNCTION revoke_inactive_telemetry_shares() RETURNS trigger AS $$
+        BEGIN
+            IF NEW.status IS DISTINCT FROM 'confirmed' THEN
+                DELETE FROM telemetry_shares
+                    WHERE community_id=NEW.community_id AND viewer_building_id=NEW.building_id;
+            END IF;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+        DROP TRIGGER IF EXISTS telemetry_membership_revoked ON community_members;
+        CREATE TRIGGER telemetry_membership_revoked AFTER UPDATE OF status ON community_members
+            FOR EACH ROW EXECUTE FUNCTION revoke_inactive_telemetry_shares();
     """)
 
 
-def _member(cur, community, actor):
+def _member(cur, community, actor, *, lock=False):
     cur.execute(
         """
         SELECT 1 FROM community_members m JOIN buildings b USING (building_id)
         WHERE m.community_id=%s AND m.building_id=%s
             AND m.status='confirmed' AND b.verified=TRUE
-    """,
+    """
+        + (" FOR SHARE OF m" if lock else ""),
         (community, actor),
     )
     if cur.fetchone() is None:
@@ -389,10 +405,10 @@ def change(community, installation, actor, action, payload=None):
                 raise TelemetryError()
             viewer = contract.identifier(payload["viewer_building_id"])
             if action == "share":
-                _member(cur, community, viewer)
+                _member(cur, community, viewer, lock=True)
                 cur.execute(
-                    "INSERT INTO telemetry_shares VALUES (%s,%s) ON CONFLICT DO NOTHING",
-                    (installation, viewer),
+                    "INSERT INTO telemetry_shares (installation_id,community_id,viewer_building_id) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING",
+                    (installation, community, viewer),
                 )
             else:
                 cur.execute(
