@@ -31,6 +31,7 @@ Invoice-question response and reminder dates use
 | store/building | Life of the registration | Profile deletion (unsubscribe confirmation) | The `buildings` row; CASCADE removes consents, tokens, access tokens, queue rows, cluster assignments, memberships, meter CSV readings; `referrer_id` edges become `SET NULL` | Nothing - the registration is the data |
 | store/interest | Unverified: `UNVERIFIED_INTEREST_RETENTION_DAYS = 30` from the latest registration (legacy buildings fall back to original creation); verified unresolved request: `VERIFIED_COVERAGE_RETENTION_MONTHS = 12` | Scheduled `cleanup_expired_interest`; email-confirmed unsubscribe | Expired `coverage_requests` and unverified `buildings`; unsubscribe deletes its bound building or coverage record and its tokens | Other registrations, including later submissions with the same email, need their own deletion confirmation |
 | store/consent | Life of the registration | Profile deletion (CASCADE) | Both `consents` and `data_consents` rows | Revocation alone keeps the rows (visibility change, not deletion) |
+| store/contact_request | Pending requests expire after 30 days; accepted grants last until revoked or invalidated. Terminal history remains until either profile is deleted. | Either participant revokes; a read or transition detects expiry or changed eligibility; either profile is deleted | Terminal transitions erase both contact snapshots. Profile deletion cascades requests and their events. | Consent timestamps, actor references, selected field names and profile fingerprints remain after revocation, but not after profile deletion. Expiry is enforced at access time; snapshot cleanup is lazy, with no scheduled cleanup yet. |
 | store/cluster | Until the cluster resolves or the profile is deleted | Profile deletion (CASCADE on `clusters`) | Provisional assignments | Formation outcomes (`communities`) survive |
 | store/metering | Life of the LEG's accounting | Not implemented; metering points detach (`ON DELETE SET NULL`) on profile deletion | The link to the deleted building; readings and ledger stay | Readings and the SDAT ledger: the VNB's validated data is the billing basis; audit trail |
 | store/calculated_values | Life of the LEG's accounting | Not implemented | - | Original VNB evidence, normalized allocations, validation outcome, and replay fingerprint |
@@ -60,6 +61,33 @@ Invoice-question response and reminder dates use
 | store/ops | Unlimited today (finding, filed) | Not implemented | - | Job reports and snapshots; payloads are masked |
 | store/ranking | Follows the snapshot files | Snapshot regeneration | Replaced snapshots | - |
 | store/municipality | Life of the Gemeinde account | Not implemented | - | Onboarding state |
+
+## Contact request audit and limits (#567)
+
+Request, acceptance, decline, revocation and detected expiry append events in
+the same transaction as the state change. Acceptance records the recipient's
+field selection; the original request records the sender's selection. An
+expired request cannot be accepted. Either participant can withdraw a pending
+request or revoke an accepted grant. Changes to verification, municipality,
+contact values or the discovery-consent timestamp invalidate the grant on
+the next private read or transition.
+
+One request per unordered household pair prevents repeated requests after a
+decline, expiry or revocation. This release has no reopening flow. At most
+50 eligible candidates appear per view. Household labels are temporary list
+positions, not names or addresses. Municipality matching does not establish
+regulated LEG eligibility.
+
+Email delivery is best effort after commit. Failure leaves the request intact
+and is reported to the actor; both participants can read its state in their
+dashboard. Emails contain no contact values and delivery errors do not log
+recipient addresses. No email retry queue is added for this feature.
+
+Revocation stops future disclosure and erases stored contact snapshots. It
+cannot remove contact data someone already read or copied. Deleting either
+profile deletes the pair's request and events through foreign-key cascades;
+no separate matching history survives in this database. Backups and outbound
+email-provider retention remain governed by the deployment's policies.
 
 ## Overstated promises (filed, not silently shipped)
 

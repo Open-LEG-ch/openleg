@@ -3,6 +3,8 @@
 
 import logging
 
+from store import contact_request
+
 logger = logging.getLogger(__name__)
 
 
@@ -76,6 +78,8 @@ def create_tables():
                     UNIQUE(building_id)
                 )
             """)
+
+            contact_request.create_tables(cur)
 
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS coverage_requests (

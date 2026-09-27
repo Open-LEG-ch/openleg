@@ -20,6 +20,7 @@ _PRIVATE_PATH_PREFIXES = (
     "/api/operator/",
     "/dashboard/access/",
     "/dashboard/invoices",
+    "/dashboard/contacts",
     "/gemeinde/access/",
     "/registry/verify/",
     "/leg/document/",

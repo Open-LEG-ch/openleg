@@ -29,6 +29,7 @@ import dashboard as dashboard_module
 import database as db
 import payment_reconciliation
 import security_utils
+from store import contact_request
 
 
 def _dashboard_session_building_id():
@@ -110,6 +111,74 @@ def _rate_limit(limiter, limit_string):
 
 def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     """Register all resident and LEG dashboard routes on *bp*."""
+
+    def contact_response(operation):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        fields = [
+            name
+            for name in ("email", "phone")
+            if request.form.get(f"share_{name}") == "yes"
+        ]
+        try:
+            recipients = operation(building_id, fields)
+        except contact_request.ContactDenied:
+            abort(403)
+        except contact_request.ContactStoreError:
+            abort(503)
+        failed = False
+        for recipient in recipients:
+            try:
+                result = send_email(
+                    recipient,
+                    "Ihre Kontaktanfragen bei OpenLEG",
+                    "Der Stand Ihrer Kontaktanfragen hat sich geändert. "
+                    "Öffnen Sie Ihr Dashboard, um die Anfrage zu prüfen.\n\n"
+                    f"{current_app.config['APP_BASE_URL'].rstrip('/')}/dashboard/contacts",
+                    private=True,
+                )
+                failed = failed or result is False
+            except Exception:
+                # Provider exceptions can contain recipients. Do not log them.
+                current_app.logger.warning("Contact notification delivery failed")
+                failed = True
+        return redirect(
+            "/dashboard/contacts?notice=" + ("mail-failed" if failed else "saved")
+        )
+
+    @bp.route("/dashboard/contacts")
+    def dashboard_contacts():
+        actor = _require_dashboard_session()
+        try:
+            view = contact_request.view(actor, current_app.secret_key)
+        except contact_request.ContactDenied:
+            abort(403)
+        except contact_request.ContactStoreError:
+            abort(503)
+        return render_city_template(
+            "contact_requests.html",
+            **view,
+            csrf_token=_dashboard_csrf_token(),
+            notice=request.args.get("notice", ""),
+        )
+
+    @bp.route("/dashboard/contacts", methods=["POST"])
+    @_rate_limit(limiter, "10 per hour")
+    def dashboard_contact_request():
+        return contact_response(
+            lambda actor, fields: contact_request.create(
+                actor, request.form.get("candidate", ""), fields, current_app.secret_key
+            )
+        )
+
+    @bp.route("/dashboard/contacts/<request_id>/<action>", methods=["POST"])
+    @_rate_limit(limiter, "30 per hour")
+    def dashboard_contact_transition(request_id, action):
+        return contact_response(
+            lambda actor, fields: contact_request.transition(
+                actor, request_id, action, fields
+            )
+        )
 
     @bp.route("/dashboard")
     def dashboard():
