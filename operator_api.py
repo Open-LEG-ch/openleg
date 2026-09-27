@@ -58,9 +58,14 @@ def _webhook_secret(
 ) -> str:
     """Derive an independent stable secret from the instance key and client ID."""
     key = signing_key or current_app.config["SECRET_KEY"]
+    # Version 1 was issued before secret rotation existed. Preserve its exact
+    # derivation so an upgrade does not invalidate installed webhook receivers.
+    identity = f"openleg-webhook-v1:{client_id}"
+    if int(version) != 1:
+        identity += f":{int(version)}"
     digest = hmac.new(
         key.encode(),
-        f"openleg-webhook-v1:{client_id}:{int(version)}".encode(),
+        identity.encode(),
         hashlib.sha256,
     )
     return "olwhsec_" + digest.hexdigest()

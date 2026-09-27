@@ -3,6 +3,8 @@
 
 import logging
 
+from store import contact_request
+
 logger = logging.getLogger(__name__)
 
 
@@ -76,6 +78,8 @@ def create_tables():
                     UNIQUE(building_id)
                 )
             """)
+
+            contact_request.create_tables(cur)
 
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS coverage_requests (
@@ -1582,7 +1586,7 @@ def create_tables():
                     community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
                     payload JSONB NOT NULL,
                     occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(event_type,aggregate_id)
+                    UNIQUE(event_type,event_id)
                 )
             """)
             cur.execute("""
@@ -1819,21 +1823,11 @@ def create_tables():
                     PRIMARY KEY (community_id, action, idempotency_key)
                 )
             """)
+            # A case can emit multiple updates. Stable event IDs deduplicate a
+            # replay; aggregate IDs must not collapse distinct transitions.
             cur.execute("""
-                DO $$
-                BEGIN
-                    ALTER TABLE operator_events
-                        DROP CONSTRAINT IF EXISTS operator_events_event_type_event_id_key;
-                    IF NOT EXISTS (
-                        SELECT 1 FROM pg_constraint
-                        WHERE conrelid = 'operator_events'::regclass
-                          AND conname = 'operator_events_event_type_aggregate_id_key'
-                    ) THEN
-                        ALTER TABLE operator_events
-                            ADD CONSTRAINT operator_events_event_type_aggregate_id_key
-                            UNIQUE (event_type, aggregate_id);
-                    END IF;
-                END $$
+                ALTER TABLE operator_events
+                DROP CONSTRAINT IF EXISTS operator_events_event_type_aggregate_id_key
             """)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS operator_webhook_deliveries (

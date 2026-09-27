@@ -1,11 +1,24 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Authenticated HTTP and signed-webhook contracts for operator integrations."""
 
+import hashlib
+import hmac
 import json
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import operator_api
+
+
+def test_existing_webhook_secret_survives_upgrade_until_rotation():
+    existing = (
+        "olwhsec_"
+        + hmac.new(
+            b"test-key", b"openleg-webhook-v1:client-existing", hashlib.sha256
+        ).hexdigest()
+    )
+    assert operator_api._webhook_secret("client-existing", "test-key", 1) == existing
+    assert operator_api._webhook_secret("client-existing", "test-key", 2) != existing
 
 
 def _register(app):

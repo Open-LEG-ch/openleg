@@ -39,6 +39,52 @@ import psycopg2.pool
 import pytest
 
 import billing_policy
+from tests import test_interest_postgres
+
+interest_database = test_interest_postgres.interest_database
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("legacy_constraint", [False, True])
+def test_event_migration_preserves_repeated_transitions(
+    interest_database, legacy_constraint
+):
+    """The old release allows multiple updates for one invoice case."""
+    import database as db
+
+    with db.get_connection() as conn, conn.cursor() as cur:
+        if legacy_constraint:
+            cur.execute("""
+                ALTER TABLE operator_events
+                ADD CONSTRAINT operator_events_event_type_aggregate_id_key
+                UNIQUE (event_type, aggregate_id)
+            """)
+        cur.execute(
+            "INSERT INTO communities (community_id, name) VALUES ('event-upgrade', 'Synthetic community')"
+        )
+        cur.execute("""
+            INSERT INTO operator_events
+                (event_id, event_type, schema_version, aggregate_id, community_id, payload)
+            VALUES ('first', 'invoice.case.updated', 'operator-event/1', 'case-a', 'event-upgrade', '{}')
+        """)
+        if not legacy_constraint:
+            cur.execute("""
+                INSERT INTO operator_events
+                    (event_id, event_type, schema_version, aggregate_id, community_id, payload)
+                VALUES ('second', 'invoice.case.updated', 'operator-event/1', 'case-a', 'event-upgrade', '{}')
+            """)
+    db.create_tables()
+    db.create_tables()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        if legacy_constraint:
+            cur.execute("""
+                INSERT INTO operator_events
+                    (event_id, event_type, schema_version, aggregate_id, community_id, payload)
+                VALUES ('second', 'invoice.case.updated', 'operator-event/1', 'case-a', 'event-upgrade', '{}')
+            """)
+        cur.execute("SELECT event_id FROM operator_events ORDER BY event_id")
+        assert [r["event_id"] for r in cur.fetchall()] == ["first", "second"]
+
 
 PRE_MIGRATION_BILLING_PERIODS = """
     CREATE TABLE billing_periods (

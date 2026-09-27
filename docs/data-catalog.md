@@ -63,6 +63,30 @@ count uses conditions identical to its list.
 - **Resident-visible:** no direct output; it governs other outputs.
 - **Consent gate:** this IS the gate.
 
+## store/contact_request
+
+- **Tables:** `contact_requests`, `contact_request_events` (schema in
+  `store/contact_request.py`, called by `store/schema.py`).
+- **Holds:** participant references, status, consent and expiry timestamps,
+  profile fingerprints, explicitly approved email/phone snapshots, and events
+  recording actor, action, field names and time. Events contain no contact values.
+- **Purpose:** private contact requests between verified registered households
+  in the same BFS municipality. Coverage-only interest records have no resident
+  dashboard and are not candidates.
+- **Owner:** the two participating residents, independently of LEG membership.
+- **Sensitivity:** personal contact and consent data. These records are excluded
+  from the community operations archive because a LEG administrator does not own
+  either resident's private matching history.
+- **Resident-visible:** each person sees only their requests. Before mutual
+  acceptance, candidates have opaque, viewer-bound handles and no identifying
+  details. After acceptance, only the other person's selected fields appear.
+- **Consent gate:** both profiles must remain verified, have the same nonempty
+  BFS number, different email identities, and allow neighbour discovery. Request
+  and acceptance each require explicit field selection. Changed profile or
+  discovery-consent fingerprints invalidate old grants. Private HTTP responses
+  carry `no-store` and `no-referrer`. Notifications go separately to each person
+  and contain no other participant's identity or contact details.
+
 ## store/cluster
 
 - **Tables:** `clusters`, `cluster_info`

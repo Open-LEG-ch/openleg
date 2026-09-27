@@ -18,9 +18,10 @@ EMAIL_ENABLED = bool(SMTP_USER and SMTP_PASSWORD)
 SMTP_TIMEOUT_SECONDS = 10
 
 
-def send_email(to_email, subject, body, html=False, from_email=None):
+def send_email(to_email, subject, body, html=False, from_email=None, *, private=False):
+    recipient_label = "[private recipient]" if private else to_email
     if not EMAIL_ENABLED:
-        logger.info(f"[EMAIL] (dev) Would send to {to_email}: {subject}")
+        logger.info(f"[EMAIL] (dev) Would send to {recipient_label}: {subject}")
         return True
     try:
         sender = from_email or FROM_EMAIL
@@ -33,8 +34,9 @@ def send_email(to_email, subject, body, html=False, from_email=None):
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
-        logger.info(f"[EMAIL] Sent to {to_email}: {subject}")
+        logger.info(f"[EMAIL] Sent to {recipient_label}: {subject}")
         return True
     except Exception as e:
-        logger.error(f"[EMAIL] Failed to send to {to_email}: {e}")
+        error = type(e).__name__ if private else str(e)
+        logger.error(f"[EMAIL] Failed to send to {recipient_label}: {error}")
         return False

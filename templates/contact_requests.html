@@ -1,0 +1,80 @@
+{% extends "product_base.html" %}
+{% block meta %}
+  <title>Kontaktanfragen | {{ platform_name }}</title>
+  <meta name="robots" content="noindex, nofollow">
+{% endblock %}
+{% macro field_choices() %}
+<fieldset class="my-4 space-y-2">
+  <legend class="font-semibold">Diese Kontaktdaten gebe ich nach beidseitiger Zustimmung frei:</legend>
+  <label class="flex gap-2 items-start"><input type="checkbox" name="share_email" value="yes" class="mt-1"> Meine E-Mail-Adresse</label>
+  {% if has_phone %}
+  <label class="flex gap-2 items-start"><input type="checkbox" name="share_phone" value="yes" class="mt-1"> Meine Telefonnummer</label>
+  {% endif %}
+  <p class="text-sm text-ink-muted">Wählen Sie mindestens eine Angabe. Die Auswahl gilt nur für diese Anfrage.</p>
+</fieldset>
+{% endmacro %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8 space-y-6">
+  <a href="/dashboard" class="text-brand underline">Zurück zum Dashboard</a>
+  <h1 class="text-2xl font-bold">Kontaktanfragen</h1>
+  <p>Hier können bestätigte Haushalte derselben Gemeinde Kontakt aufnehmen. Die Gemeindezugehörigkeit bestätigt noch keine gemeinsame LEG. Kontaktdaten erscheinen erst, wenn beide Personen zustimmen.</p>
+  <p>Offene Anfragen laufen nach 30 Tagen ab. Beide Personen können ihre Freigabe widerrufen. Bereits gelesene oder kopierte Angaben lassen sich dadurch nicht zurückholen. Änderungen am Profil oder an der Einwilligung können eine Freigabe beenden.</p>
+  {% if notice == 'mail-failed' %}
+  <p role="status">Gespeichert. Mindestens eine E-Mail konnte nicht gesendet werden. Der Stand ist hier sichtbar.</p>
+  {% elif notice == 'saved' %}
+  <p role="status">Gespeichert. Beide Personen wurden benachrichtigt.</p>
+  {% endif %}
+  {% if not eligible %}
+  <p>Für neue Kontakte müssen Sie Ihr Profil bestätigen und die Anzeige Ihres Interesses in der Nachbarschaft erlauben. Prüfen Sie Ihre <a href="/dashboard#einwilligungen" class="underline">Einwilligungen</a>.</p>
+  {% endif %}
+  <section aria-labelledby="requests-title" class="space-y-4">
+    <h2 id="requests-title" class="text-xl font-semibold">Ihre Anfragen</h2>
+    {% set labels = {'pending': 'Offen', 'accepted': 'Angenommen', 'declined': 'Abgelehnt', 'revoked': 'Widerrufen', 'expired': 'Abgelaufen'} %}
+    {% for item in requests %}
+    <article class="border border-line rounded-xl p-4 space-y-3">
+      <h3 class="font-semibold">{{ 'Eingehende' if item.incoming else 'Gesendete' }} Anfrage vom {{ item.requested_at.strftime('%d.%m.%Y %H:%M') }} UTC</h3>
+      <p>{{ labels[item.status] }}</p>
+      {% if item.status == 'pending' %}<p>Gültig bis {{ item.expires_at.strftime('%d.%m.%Y %H:%M') }} UTC</p>{% endif %}
+      {% if item.contact %}
+      <dl class="break-words">
+        {% if item.contact.email %}<dt>E-Mail-Adresse</dt><dd>{{ item.contact.email }}</dd>{% endif %}
+        {% if item.contact.phone %}<dt>Telefonnummer</dt><dd>{{ item.contact.phone }}</dd>{% endif %}
+      </dl>
+      {% endif %}
+      {% if item.status == 'pending' and item.incoming and eligible %}
+      <form method="post" action="/dashboard/contacts/{{ item.id }}/accept">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {{ field_choices() }}
+        <button class="rounded-lg bg-brand text-white px-4 py-2">Annehmen und ausgewählte Angaben freigeben</button>
+      </form>
+      <form method="post" action="/dashboard/contacts/{{ item.id }}/decline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="rounded-lg border border-line px-4 py-2">Ablehnen</button>
+      </form>
+      {% endif %}
+      {% if item.status in ['pending', 'accepted'] %}
+      <form method="post" action="/dashboard/contacts/{{ item.id }}/revoke">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="rounded-lg border border-line px-4 py-2">{{ 'Anfrage zurückziehen' if item.status == 'pending' else 'Freigabe widerrufen' }}</button>
+      </form>
+      {% endif %}
+    </article>
+    {% else %}<p>Sie haben noch keine Kontaktanfragen.</p>{% endfor %}
+  </section>
+  {% if eligible %}
+  <section aria-labelledby="candidates-title" class="space-y-4">
+    <h2 id="candidates-title" class="text-xl font-semibold">Haushalte in Ihrer Gemeinde</h2>
+    <p>Die Liste zeigt bis zu 50 bestätigte Haushalte mit Einwilligung zur Anzeige. Beendete Anfragen können nicht erneut gesendet werden.</p>
+    {% for candidate in candidates %}
+    <form method="post" action="/dashboard/contacts" class="border border-line rounded-xl p-4">
+      <h3 class="font-semibold">Haushalt {{ loop.index }}</h3>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="candidate" value="{{ candidate }}">
+      {{ field_choices() }}
+      <button class="rounded-lg bg-brand text-white px-4 py-2">Kontakt anfragen</button>
+    </form>
+    {% else %}<p>Zurzeit sind keine weiteren Haushalte für eine Anfrage verfügbar.</p>{% endfor %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
