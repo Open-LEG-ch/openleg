@@ -10,9 +10,33 @@ whether a consent gate applies. Field names are cited from
 
 Citizen meter data (smart-meter readings, 15-minute series, per-building
 consumption) stays within each LEG. It is never sold and never aggregated for
-third parties. Resident-visible output always carries the neighbour consent
+third parties. Neighbour discovery output always carries the neighbour consent
 gate: an inner join on `consents.share_with_neighbors`, fail closed, and a
 count uses conditions identical to its list.
+
+Operational household telemetry has its own explicit sharing grants; neighbour
+consent and community administrator roles do not grant telemetry access.
+
+## store/telemetry
+
+- Tables: `telemetry_installations`, `telemetry_samples`,
+  `telemetry_aggregates`, `telemetry_shares` (DDL in `store/telemetry.py`).
+- Holds: installation/community/owner identity, hashed ingestion credential,
+  device/source identity, sample sequence and deduplication fingerprint,
+  metric, unit, value, direction, location, quality, cadence, source observation
+  and server receipt times. Hourly descriptive statistics retain those dimensions.
+- Purpose: private operational observations. No meter import, allocation,
+  billing input, device credentials or control commands.
+- Owner: the verified, confirmed community member who enrolled the installation.
+- Sensitivity: household energy data; never sold or aggregated for third parties.
+- Access: owner dashboard session, or an explicit `telemetry_shares` grant to a
+  verified confirmed member of the same community. All reads, exports and
+  aggregates check current access. Neighbour consent grants no access.
+- Retention: product defaults of 7 days raw and 90 days aggregates; shorter
+  whole-day settings and owner deletion supported. Read-time expiry and the
+  cleanup cron enforce separate operational horizons. See `docs/telemetry.md`.
+- Credentials: ingestion-only, installation/community-bound, hashed at rest;
+  rotation preserves the sequence watermark. Deletion cascades all four tables.
 
 ## store/building
 

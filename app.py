@@ -54,6 +54,7 @@ from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import RATE_LIMIT_RETRY_AFTER_SECONDS, limiter
 from security_utils import log_security_event
 from self_host import self_host_bp
+from telemetry_routes import telemetry_bp
 from utility_portal import utility_bp
 
 logger = logging.getLogger(__name__)
@@ -957,6 +958,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         admin_bp,
         cron_bp,
         operator_api_bp,
+        telemetry_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)

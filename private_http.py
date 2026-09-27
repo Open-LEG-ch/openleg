@@ -18,6 +18,7 @@ PRIVATE_RESPONSE_HEADERS = {
 _PRIVATE_PATH_PREFIXES = (
     "/admin/vnb-calculated-values",
     "/api/operator/",
+    "/api/telemetry/",
     "/dashboard/access/",
     "/dashboard/invoices",
     "/dashboard/contacts",
