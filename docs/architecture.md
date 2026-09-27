@@ -59,6 +59,7 @@ without code changes.
 | `rangliste_bp` | `rangliste.py` | `/rangliste` |
 | `self_host_bp` | `self_host.py` | `/self-host`, `/install.sh` |
 | `operator_api_bp` | `operator_api.py` | `/api/operator/v1`, `/leg/community` |
+| `telemetry_bp` | `telemetry_routes.py` | `/api/telemetry/v1/communities/{community}/installations` |
 
 ## Route map
 

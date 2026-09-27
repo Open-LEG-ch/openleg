@@ -3,7 +3,7 @@
 
 import logging
 
-from store import contact_request
+from store import contact_request, telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -287,6 +287,7 @@ def create_tables():
                 )
             """)
             # Community documents table
+            telemetry.create_tables(cur)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS community_documents (
                     community_id VARCHAR(64) PRIMARY KEY REFERENCES communities(community_id) ON DELETE CASCADE,

@@ -21,7 +21,8 @@ import leg_registry
 import operator_api
 import sdat_ingestion
 from security_utils import log_security_event
-from store import invoice_query
+from store import invoice_query, telemetry
+from telemetry import TelemetryError
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,15 @@ def api_cron_cleanup_interest():
     if result is None:
         return jsonify({"error": "interest_cleanup_failed"}), 503
     return jsonify(result)
+
+
+@cron_bp.post("/api/cron/cleanup-telemetry")
+def api_cron_cleanup_telemetry():
+    _require_cron_secret()
+    try:
+        return jsonify(telemetry.cleanup())
+    except TelemetryError:
+        return jsonify({"error": "telemetry_cleanup_failed"}), 503
 
 
 @cron_bp.route("/api/cron/refresh-public-data", methods=["POST"])
