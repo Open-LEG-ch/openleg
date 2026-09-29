@@ -83,9 +83,8 @@ def _reading(offset_minutes, total="0.500", community="0.250", direction="consum
     return {
         "metering_point_id": POINT,
         "direction": direction,
-        "measured_at": datetime(
-            2026, 6, 30, 22, 0, tzinfo=timezone.utc
-        ) + timedelta(minutes=offset_minutes),
+        "measured_at": datetime(2026, 6, 30, 22, 0, tzinfo=timezone.utc)
+        + timedelta(minutes=offset_minutes),
         "resolution_minutes": 15,
         "total_kwh": Decimal(total),
         "grid_kwh": Decimal(total) - Decimal(community),
@@ -138,7 +137,9 @@ def test_realized_savings_uses_cross_level_discount_from_the_policy():
 def test_realized_savings_reports_zero_consumption_without_a_share():
     import member_savings
 
-    readings = [_reading(15 * index, total="0.000", community="0.000") for index in range(4)]
+    readings = [
+        _reading(15 * index, total="0.000", community="0.000") for index in range(4)
+    ]
 
     view = member_savings.realized_savings(
         readings, PROVENANCE_SNAPSHOT, POLICY_SNAPSHOT
@@ -172,9 +173,7 @@ def test_realized_savings_ignores_production_rows():
 def test_realized_savings_renders_empty_state_without_readings():
     import member_savings
 
-    view = member_savings.realized_savings(
-        [], PROVENANCE_SNAPSHOT, POLICY_SNAPSHOT
-    )
+    view = member_savings.realized_savings([], PROVENANCE_SNAPSHOT, POLICY_SNAPSHOT)
 
     assert view["available"] is False
     assert view["message"] == member_savings.EMPTY_STATE_MESSAGE
@@ -207,6 +206,31 @@ def test_realized_savings_renders_empty_state_for_duplicated_intervals():
     assert view["available"] is False
 
 
+@pytest.mark.parametrize(
+    "readings",
+    [
+        [_reading(1 + 15 * index) for index in range(4)],
+        [
+            {
+                **_reading(15 * index),
+                "metering_point_id": "point-b" if index == 3 else POINT,
+            }
+            for index in range(4)
+        ],
+        [{**_reading(15 * index), "resolution_minutes": 30} for index in range(4)],
+    ],
+)
+def test_realized_savings_rejects_misaligned_or_mixed_series(readings):
+    import member_savings
+
+    view = member_savings.realized_savings(
+        readings, PROVENANCE_SNAPSHOT, POLICY_SNAPSHOT
+    )
+
+    assert view["available"] is False
+    assert view["message"] == member_savings.EMPTY_STATE_MESSAGE
+
+
 # === Fail-closed on corrupted billing or metering data ===
 
 
@@ -234,9 +258,7 @@ def test_realized_savings_fails_closed_on_negative_readings():
     readings = [_reading(15 * index, total="-0.500") for index in range(4)]
 
     with pytest.raises(member_savings.MemberSavingsDataError):
-        member_savings.realized_savings(
-            readings, PROVENANCE_SNAPSHOT, POLICY_SNAPSHOT
-        )
+        member_savings.realized_savings(readings, PROVENANCE_SNAPSHOT, POLICY_SNAPSHOT)
 
 
 def test_realized_savings_fails_closed_when_community_exceeds_total():
@@ -245,9 +267,18 @@ def test_realized_savings_fails_closed_when_community_exceeds_total():
     readings = [_reading(15 * index, community="0.900") for index in range(4)]
 
     with pytest.raises(member_savings.MemberSavingsDataError):
-        member_savings.realized_savings(
-            readings, PROVENANCE_SNAPSHOT, POLICY_SNAPSHOT
-        )
+        member_savings.realized_savings(readings, PROVENANCE_SNAPSHOT, POLICY_SNAPSHOT)
+
+
+def test_realized_savings_fails_closed_when_channels_do_not_balance():
+    import member_savings
+
+    readings = [
+        {**_reading(15 * index), "grid_kwh": Decimal("0.100")} for index in range(4)
+    ]
+
+    with pytest.raises(member_savings.MemberSavingsDataError):
+        member_savings.realized_savings(readings, PROVENANCE_SNAPSHOT, POLICY_SNAPSHOT)
 
 
 def test_realized_savings_fails_closed_on_missing_period_bounds():
@@ -267,9 +298,7 @@ def test_invoice_savings_view_agrees_with_the_invoice_totals(monkeypatch):
 
     lookup = MagicMock(return_value=dict(INVOICE_ROW))
     fetch_readings = MagicMock(return_value=_complete_readings())
-    monkeypatch.setattr(
-        member_savings.db, "get_invoice_for_participant", lookup
-    )
+    monkeypatch.setattr(member_savings.db, "get_invoice_for_participant", lookup)
     monkeypatch.setattr(
         member_savings.db, "get_building_period_readings", fetch_readings
     )
@@ -304,9 +333,7 @@ def test_invoice_savings_view_returns_none_for_missing_or_foreign_invoice(
 
     lookup = MagicMock(return_value=None)
     fetch_readings = MagicMock()
-    monkeypatch.setattr(
-        member_savings.db, "get_invoice_for_participant", lookup
-    )
+    monkeypatch.setattr(member_savings.db, "get_invoice_for_participant", lookup)
     monkeypatch.setattr(
         member_savings.db, "get_building_period_readings", fetch_readings
     )
@@ -343,9 +370,7 @@ def test_invoice_savings_view_rejects_a_row_of_another_participant(monkeypatch):
         "get_invoice_for_participant",
         MagicMock(return_value=row),
     )
-    monkeypatch.setattr(
-        member_savings.db, "get_building_period_readings", MagicMock()
-    )
+    monkeypatch.setattr(member_savings.db, "get_building_period_readings", MagicMock())
 
     with pytest.raises(member_savings.MemberSavingsDataError):
         member_savings.invoice_savings_view(42, "building-session")
@@ -465,6 +490,29 @@ def test_dashboard_invoice_detail_corrupted_savings_data_is_503(
         dashboard_app_module.dashboard_module,
         "member_invoice_savings_view",
         MagicMock(side_effect=member_savings.MemberSavingsDataError("bad data")),
+    )
+    client = dashboard_app_module.web.test_client()
+    _set_session(client)
+
+    response = client.get("/dashboard/invoices/42")
+
+    assert response.status_code == 503
+    assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_dashboard_invoice_detail_savings_store_failure_is_503(
+    dashboard_app_module,  # noqa: F811
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        dashboard_app_module.dashboard_module,
+        "member_invoice_detail",
+        MagicMock(return_value=_detail_view()),
+    )
+    monkeypatch.setattr(
+        dashboard_app_module.dashboard_module,
+        "member_invoice_savings_view",
+        MagicMock(side_effect=dashboard_app_module.db.BillingStoreError("db down")),
     )
     client = dashboard_app_module.web.test_client()
     _set_session(client)

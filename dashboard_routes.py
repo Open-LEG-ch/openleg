@@ -336,7 +336,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             savings = dashboard_module.member_invoice_savings_view(
                 invoice_id, building_id
             )
-        except dashboard_module.MemberSavingsDataError:
+        except (db.BillingStoreError, dashboard_module.MemberSavingsDataError):
             abort(503)
         return render_city_template(
             "member_invoice_detail.html",

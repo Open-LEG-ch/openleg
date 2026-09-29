@@ -37,6 +37,7 @@ import billing_engine
 import billing_policy
 import billing_workspace
 import database as db
+import sdat_e66
 
 _INTERVAL = timedelta(minutes=15)
 
@@ -164,7 +165,14 @@ def _require_complete_series(rows, start: datetime, end: datetime) -> None:
     if interval_count <= 0 or len(rows) != interval_count:
         raise MemberSavingsDataError(EMPTY_STATE_MESSAGE)
     seen = {_as_utc(row["measured_at"]) for row in rows}
-    if len(seen) != interval_count:
+    expected = {start + index * _INTERVAL for index in range(interval_count)}
+    point_ids = {row.get("metering_point_id") for row in rows}
+    if (
+        seen != expected
+        or len(point_ids) != 1
+        or None in point_ids
+        or any(row.get("resolution_minutes") != 15 for row in rows)
+    ):
         raise MemberSavingsDataError(EMPTY_STATE_MESSAGE)
 
 
@@ -219,8 +227,14 @@ def realized_savings(readings, provenance: dict, policy: dict) -> dict:
     local_kwh = Decimal(0)
     for row in rows:
         total = _require_channel(row, "total_kwh", None)
+        grid = _require_channel(row, "grid_kwh", total)
+        community = _require_channel(row, "community_kwh", total)
+        if abs(total - (grid + community)) > Decimal(
+            str(sdat_e66.E66_BALANCE_TOLERANCE_KWH)
+        ):
+            raise MemberSavingsDataError("Ein Messwert dieser Periode ist ungültig.")
         consumption_kwh += total
-        local_kwh += _require_channel(row, "community_kwh", total)
+        local_kwh += community
 
     share_pct = (
         (local_kwh / consumption_kwh * Decimal(100)).quantize(
@@ -267,7 +281,9 @@ def invoice_savings_view(invoice_id: int, building_id: str) -> dict | None:
     member can never see another building's metered numbers.
     """
     invoice_id = _require_positive_id(invoice_id, "Die Rechnung hat keine gültige ID.")
-    building_id = _require_text(building_id, "Die Rechnung hat keine gültige Zuordnung.")
+    building_id = _require_text(
+        building_id, "Die Rechnung hat keine gültige Zuordnung."
+    )
     invoice = db.get_invoice_for_participant(invoice_id, building_id)
     if not invoice:
         return None
