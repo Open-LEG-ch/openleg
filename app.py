@@ -274,6 +274,39 @@ def leg_kalkulator():
     return render_city_template("leg_kalkulator.html")
 
 
+@main_bp.get("/leg-check")
+def leg_check():
+    """Show public municipality data without claiming network eligibility."""
+    q = request.args.get("q", "").strip()[:200]
+    matches = db.search_municipality_profiles(q) if q else []
+    exact = [p for p in matches if p["name"].casefold() == q.casefold()]
+    profile = exact[0] if len(exact) == 1 else None
+    if "bfs" in request.args:
+        bfs = request.args.get("bfs", type=int)
+        profile = next((p for p in matches if p.get("bfs_number") == bfs), None)
+        if bfs is None or profile is None:
+            abort(400)
+    if profile is None and len(matches) == 1:
+        profile = matches[0]
+    operators = []
+    entries = []
+    if profile:
+        tariffs = db.get_elcom_tariffs(profile["bfs_number"])
+        operators = sorted(
+            {t["operator_name"] for t in tariffs if t.get("operator_name")}
+        )
+        entries = db.list_registry_entries(bfs_number=profile["bfs_number"])
+    return render_city_template(
+        "leg_verzeichnis/leg_check.html",
+        canonical_path="/leg-check",
+        q=q,
+        profile=profile,
+        matches=matches,
+        operators=operators,
+        entries=entries,
+    )
+
+
 @main_bp.route("/pricing")
 def pricing():
     return render_city_template("pricing.html")

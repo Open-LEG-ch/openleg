@@ -120,6 +120,7 @@ def list_registry_entries(
     q: str | None = None,
     moderation_status: str = "published",
     limit: int = 250,
+    bfs_number: int | None = None,
 ) -> list[dict]:
     """List registry entries, defaulting to published-only.
 
@@ -131,6 +132,9 @@ def list_registry_entries(
         with _get_connection() as conn, conn.cursor() as cur:
             clauses = ["moderation_status = %s"]
             params: list = [moderation_status]
+            if bfs_number is not None:
+                clauses.append("bfs_number = %s")
+                params.append(bfs_number)
             if kanton:
                 clauses.append("kanton = %s")
                 params.append(kanton)

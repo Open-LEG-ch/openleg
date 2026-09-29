@@ -11,8 +11,13 @@ import subprocess
 import sys
 from contextlib import contextmanager
 
+import pytest
+
 import database
 from store import registry
+from tests import test_interest_postgres
+
+interest_database = test_interest_postgres.interest_database
 
 _REEXPORTED = (
     "save_registry_entry",
@@ -192,3 +197,20 @@ def test_get_registry_entries_needing_verification_defaults_published_only(
     query = cur.executed[0][0]
     assert "leg_registry" in query
     assert "moderation_status = 'published'" in query
+
+
+@pytest.mark.integration
+def test_bfs_lookup_filters_before_limit_without_name_match(interest_database):
+    valid = registry.save_registry_entry(
+        "local", "Solargruppe", "local@example.ch", bfs_number=4021, ort="Dättwil"
+    )
+    assert registry.update_registry_entry_moderation(valid["id"], "published")
+    other = registry.save_registry_entry(
+        "other", "Other town", "other@example.ch", bfs_number=9999
+    )
+    assert registry.update_registry_entry_moderation(other["id"], "published")
+    assert registry.save_registry_entry(
+        "pending", "Pending", "pending@example.ch", bfs_number=4021
+    )
+    rows = registry.list_registry_entries(bfs_number=4021, limit=1)
+    assert [row["id"] for row in rows] == [valid["id"]]
