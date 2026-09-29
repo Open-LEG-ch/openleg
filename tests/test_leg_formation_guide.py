@@ -308,10 +308,11 @@ def test_leg_check_exact_match_and_published_registry_scope(
     monkeypatch.setattr(db, "get_elcom_tariffs", lambda bfs: [])
 
     def registry(**kwargs):
-        assert kwargs == {"q": "Baden"}  # Store defaults to published entries only.
+        assert kwargs == {
+            "bfs_number": 4021
+        }  # Store defaults to published entries only.
         return [
             {"name": "Solargruppe", "bfs_number": 4021},
-            {"name": "Other town", "bfs_number": 9999},
         ]
 
     monkeypatch.setattr(db, "list_registry_entries", registry)

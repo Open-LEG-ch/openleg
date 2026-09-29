@@ -295,11 +295,7 @@ def leg_check():
         operators = sorted(
             {t["operator_name"] for t in tariffs if t.get("operator_name")}
         )
-        entries = [
-            entry
-            for entry in db.list_registry_entries(q=profile["name"])
-            if entry.get("bfs_number") == profile["bfs_number"]
-        ]
+        entries = db.list_registry_entries(bfs_number=profile["bfs_number"])
     return render_city_template(
         "leg_verzeichnis/leg_check.html",
         canonical_path="/leg-check",
