@@ -564,7 +564,7 @@ def _require_wellformed_line_items(line_items, internal_price, settlement_fee):
 
 
 def _require_battery_energy_snapshot(
-    battery_snapshot, battery, consumption_kwh, production_kwh
+    battery_snapshot, battery, consumption_kwh, production_kwh, internal_price
 ):
     """Reconcile the frozen source attribution with approved energy lines."""
     participant_id = battery["participant_id"]
@@ -611,6 +611,14 @@ def _require_battery_energy_snapshot(
             )
         direct = quantity(values, "direct_solar_kwh")
         battery_kwh = quantity(values, "battery_kwh")
+        value_chf = quantity(values, "value_chf")
+        expected_value = (battery_kwh * internal_price).quantize(
+            _CENT, rounding=ROUND_HALF_UP
+        )
+        if value_chf != expected_value:
+            raise BillingApprovalError(
+                "Der Wert der Quartierakku-Energie stimmt nicht mit dem Entwurf überein."
+            )
         if direct + battery_kwh != consumption_kwh[consumer_id]:
             raise BillingApprovalError(
                 "Die Energiequellen des Quartierakkus stimmen für einen "
@@ -711,7 +719,11 @@ def _require_battery_cost_shares(
                 "Kostenaufteilung."
             )
     _require_battery_energy_snapshot(
-        battery_snapshot, battery, consumption_kwh, production_kwh
+        battery_snapshot,
+        battery,
+        consumption_kwh,
+        production_kwh,
+        _as_decimal(period["billing_policy_snapshot"]["internal_price_chf_per_kwh"]),
     )
 
 
@@ -805,6 +817,16 @@ def prepare_invoice_snapshots(period, issue_date=None):
             if participant_rounding
             else None
         )
+        battery_snapshot = period.get("battery_snapshot")
+        battery_source = None
+        if battery_snapshot is not None:
+            attribution = battery_snapshot["attribution"].get(participant_id)
+            if attribution is not None:
+                battery_source = {
+                    "battery_kwh": attribution["battery_kwh"],
+                    "value_chf": attribution["value_chf"],
+                }
+        participant_provenance["battery_source"] = _json_safe(battery_source)
         net = sum((_as_decimal(item.get("amount_chf")) for item in items), Decimal(0))
         if not net.is_finite():
             raise BillingApprovalError(

@@ -185,6 +185,16 @@
     <p class="text-sm text-ink-muted">{{ savings.message }}</p>
     {% endif %}
   </section>
+  {% if invoice.battery_source %}
+  <section class="mt-8 bg-white rounded-xl border border-line p-6" aria-labelledby="battery-source-title">
+    <h2 id="battery-source-title" class="text-lg font-bold mb-2">Strom aus dem Quartierakku</h2>
+    <p class="text-sm text-ink-muted mb-4">In dieser Abrechnungsperiode deckte der gemeinsame Speicher einen Teil Ihres lokalen Verbrauchs.</p>
+    <dl class="grid gap-2 text-sm sm:grid-cols-2">
+      <div><dt class="font-semibold text-ink">Aus dem Speicher</dt><dd class="font-mono tabular-nums">{{ invoice.display_battery_kwh }} kWh</dd></div>
+      <div><dt class="font-semibold text-ink">Wert zum internen Preis</dt><dd class="font-mono tabular-nums">{{ invoice.display_battery_value_chf }} CHF</dd></div>
+    </dl>
+  </section>
+  {% endif %}
   <section id="questions" class="no-print mt-8 bg-white rounded-xl border border-line p-6">
     <h2 class="text-lg font-bold mb-2">Fragen zu dieser Rechnung</h2>
     {% for query in invoice.queries %}

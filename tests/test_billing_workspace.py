@@ -381,8 +381,16 @@ def test_workspace_exposes_the_frozen_battery_source_audit(monkeypatch):
                 "unallocated_discharge_kwh": "0.25",
             },
             "attribution": {
-                "home-a": {"direct_solar_kwh": "3.25", "battery_kwh": "2.5"},
-                "home-b": {"direct_solar_kwh": "1", "battery_kwh": "4.25"},
+                "home-a": {
+                    "direct_solar_kwh": "3.25",
+                    "battery_kwh": "2.5",
+                    "value_chf": "0.38",
+                },
+                "home-b": {
+                    "direct_solar_kwh": "1",
+                    "battery_kwh": "4.25",
+                    "value_chf": "0.64",
+                },
             },
         },
         "line_items": [],
@@ -403,10 +411,12 @@ def test_workspace_exposes_the_frozen_battery_source_audit(monkeypatch):
             "participant_id": "home-a",
             "direct_solar_kwh": "3.250",
             "battery_kwh": "2.500",
+            "value_chf": "0.38",
         },
         {
             "participant_id": "home-b",
             "direct_solar_kwh": "1.000",
             "battery_kwh": "4.250",
+            "value_chf": "0.64",
         },
     ]
