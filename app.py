@@ -281,6 +281,11 @@ def leg_check():
     matches = db.search_municipality_profiles(q) if q else []
     exact = [p for p in matches if p["name"].casefold() == q.casefold()]
     profile = exact[0] if len(exact) == 1 else None
+    if "bfs" in request.args:
+        bfs = request.args.get("bfs", type=int)
+        profile = next((p for p in matches if p.get("bfs_number") == bfs), None)
+        if bfs is None or profile is None:
+            abort(400)
     if profile is None and len(matches) == 1:
         profile = matches[0]
     operators = []

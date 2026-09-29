@@ -321,3 +321,28 @@ def test_leg_check_exact_match_and_published_registry_scope(
     assert "Solargruppe" in html and "Other town" not in html
     assert "Keine ElCom-Daten hinterlegt" in html
     assert 'href="/leg-verzeichnis/' not in html
+
+
+@pytest.mark.parametrize(
+    "bfs, expected", [("1", 200), ("2", 200), ("3", 400), ("bad", 400)]
+)
+def test_leg_check_same_name_selection(formation_client, monkeypatch, bfs, expected):
+    import database as db
+
+    profiles = [
+        {"bfs_number": 1, "name": "Buchs", "kanton": "AG", "pv_score_pct": None},
+        {"bfs_number": 2, "name": "Buchs", "kanton": "SG", "pv_score_pct": None},
+    ]
+    monkeypatch.setattr(db, "search_municipality_profiles", lambda q: profiles)
+    monkeypatch.setattr(
+        db,
+        "get_elcom_tariffs",
+        lambda selected: [{"operator_name": f"Operator {selected}"}],
+    )
+    monkeypatch.setattr(db, "list_registry_entries", lambda **kwargs: [])
+    choices = formation_client.get("/leg-check?q=Buchs").get_data(as_text=True)
+    assert "bfs=1" in choices and "bfs=2" in choices
+    response = formation_client.get(f"/leg-check?q=Buchs&bfs={bfs}")
+    assert response.status_code == expected
+    if expected == 200:
+        assert f"Operator {bfs}" in response.get_data(as_text=True)
