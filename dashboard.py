@@ -2,6 +2,7 @@
 """Dashboard readiness verb."""
 
 import json
+import logging
 import math
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -20,6 +21,8 @@ import payment_reconciliation
 import quartierakku
 import security_utils
 import vnb_exchange
+
+logger = logging.getLogger(__name__)
 
 _PROFILE_EXPORT_FIELDS = (
     "building_id",
@@ -712,7 +715,10 @@ def _internal_price_band(community_id: str, building_id: str) -> dict | None:
         if band:
             band["year"] = year
         return band
+    except db.BillingStoreError:
+        raise
     except Exception:
+        logger.exception("Internal price band suggestion failed")
         return None
 
 

@@ -1833,3 +1833,49 @@ def test_policy_page_hides_the_band_without_municipality_data(app_module, monkey
 
     assert response.status_code == 200
     assert "Üblicher Bereich" not in response.get_data(as_text=True)
+
+
+def test_policy_page_reports_price_band_storage_failure(app_module, monkeypatch):  # noqa: F811
+    _patch_admin(monkeypatch, app_module)
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(return_value={"building_id": "b-admin", "bfs_number": 4063}),
+    )
+    monkeypatch.setattr(
+        app_module.db,
+        "get_elcom_tariffs",
+        MagicMock(
+            return_value=[
+                {
+                    "year": 2026,
+                    "category": "H4",
+                    "total_rp_kwh": Decimal("25.00"),
+                }
+            ]
+        ),
+    )
+    app_module.db.list_billing_policies.side_effect = [
+        [],
+        app_module.db.BillingStoreError("down"),
+    ]
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.get(POLICY_URL)
+
+    assert response.status_code == 503
+
+
+def test_price_band_logs_unexpected_lookup_failure(app_module, monkeypatch, caplog):  # noqa: F811
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(side_effect=ValueError("broken building")),
+    )
+
+    with caplog.at_level("ERROR", logger="dashboard"):
+        band = app_module.dashboard_module._internal_price_band(COMMUNITY, "b-admin")
+
+    assert band is None
+    assert "Internal price band suggestion failed" in caplog.text
