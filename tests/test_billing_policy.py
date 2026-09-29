@@ -1727,3 +1727,155 @@ def test_policy_template_uses_display_values_for_payment_days_and_prefix():
     assert "version.invoice_prefix_display" in source
     assert "{{ version.payment_days }} Tage" not in source
     assert "{{ version.invoice_prefix }}" not in source
+
+
+# --- Issue #632: the suggested internal price band ---------------------------
+
+
+def test_suggest_price_band_spans_feed_in_to_grid_total_minus_fees():
+    band = billing_policy.suggest_price_band(
+        grid_total_rp=Decimal("25.00"),
+        settlement_fee_rp=Decimal("2.00"),
+        feed_in_floor_rp=6.0,
+    )
+    assert band["floor_rp"] == Decimal("6.00")
+    assert band["ceiling_rp"] == Decimal("23.00")
+    assert band["floor_rp_display"] == "6.00"
+    assert band["ceiling_rp_display"] == "23.00"
+
+
+def test_suggest_price_band_floor_is_the_feed_in_alternative():
+    band = billing_policy.suggest_price_band(
+        grid_total_rp=Decimal("25.00"),
+        settlement_fee_rp=Decimal("8.00"),
+        feed_in_floor_rp=6.0,
+    )
+    assert band["floor_rp"] == Decimal("6.00")
+    assert band["ceiling_rp"] == Decimal("17.00")
+
+
+def test_suggest_price_band_yields_none_when_no_fair_band_remains():
+    assert (
+        billing_policy.suggest_price_band(
+            grid_total_rp=Decimal("7.00"),
+            settlement_fee_rp=Decimal("4.00"),
+            feed_in_floor_rp=6.0,
+        )
+        is None
+    )
+    assert (
+        billing_policy.suggest_price_band(
+            grid_total_rp=Decimal("8.00"),
+            settlement_fee_rp=Decimal("4.00"),
+            feed_in_floor_rp=4.0,
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize(
+    ("values"),
+    [
+        {"grid_total_rp": None, "settlement_fee_rp": 2, "feed_in_floor_rp": 6},
+        {"grid_total_rp": 25, "settlement_fee_rp": None, "feed_in_floor_rp": 6},
+        {"grid_total_rp": "nan", "settlement_fee_rp": 2, "feed_in_floor_rp": 6},
+        {"grid_total_rp": -25, "settlement_fee_rp": 2, "feed_in_floor_rp": 6},
+    ],
+)
+def test_suggest_price_band_hides_itself_without_usable_inputs(values):
+    assert billing_policy.suggest_price_band(**values) is None
+
+
+def test_policy_page_shows_the_band_when_elcom_data_exists(app_module, monkeypatch):  # noqa: F811
+    _patch_admin(monkeypatch, app_module)
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(return_value={"building_id": "b-admin", "bfs_number": 4063}),
+    )
+    monkeypatch.setattr(
+        app_module.db,
+        "get_elcom_tariffs",
+        MagicMock(
+            return_value=[
+                {
+                    "year": 2026,
+                    "category": "H4",
+                    "total_rp_kwh": Decimal("25.00"),
+                }
+            ]
+        ),
+    )
+    app_module.db.list_billing_policies.return_value = [
+        {"settlement_fee_chf_per_kwh": Decimal("0.02")}
+    ]
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.get(POLICY_URL)
+
+    html = response.get_data(as_text=True)
+    assert "6.00" in html
+    assert "23.00" in html
+
+
+def test_policy_page_hides_the_band_without_municipality_data(app_module, monkeypatch):  # noqa: F811
+    _patch_admin(monkeypatch, app_module)
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(return_value={"building_id": "b-admin", "bfs_number": None}),
+    )
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.get(POLICY_URL)
+
+    assert response.status_code == 200
+    assert "Üblicher Bereich" not in response.get_data(as_text=True)
+
+
+def test_policy_page_reports_price_band_storage_failure(app_module, monkeypatch):  # noqa: F811
+    _patch_admin(monkeypatch, app_module)
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(return_value={"building_id": "b-admin", "bfs_number": 4063}),
+    )
+    monkeypatch.setattr(
+        app_module.db,
+        "get_elcom_tariffs",
+        MagicMock(
+            return_value=[
+                {
+                    "year": 2026,
+                    "category": "H4",
+                    "total_rp_kwh": Decimal("25.00"),
+                }
+            ]
+        ),
+    )
+    app_module.db.list_billing_policies.side_effect = [
+        [],
+        app_module.db.BillingStoreError("down"),
+    ]
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.get(POLICY_URL)
+
+    assert response.status_code == 503
+
+
+def test_price_band_logs_unexpected_lookup_failure(app_module, monkeypatch, caplog):  # noqa: F811
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(side_effect=ValueError("broken building")),
+    )
+
+    with caplog.at_level("ERROR", logger="dashboard"):
+        band = app_module.dashboard_module._internal_price_band(COMMUNITY, "b-admin")
+
+    assert band is None
+    assert "Internal price band suggestion failed" in caplog.text
