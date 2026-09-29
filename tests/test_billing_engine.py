@@ -420,9 +420,7 @@ class TestQuartierakkuAllocation:
         homes = tuple(f"home-{number}" for number in range(8))
         summary = generate_billing_summary(
             pd.DataFrame({"battery": [0.0000048]}),
-            pd.DataFrame(
-                {**{home: [0.000001] for home in homes}, "battery": [0.0]}
-            ),
+            pd.DataFrame({**{home: [0.000001] for home in homes}, "battery": [0.0]}),
             grid_fee_per_kwh=0.08,
             internal_price_per_kwh=0.15,
             network_level="same",

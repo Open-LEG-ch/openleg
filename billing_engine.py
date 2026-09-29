@@ -112,7 +112,10 @@ def _battery_source_attribution(
         raise ValueError("Battery capacity must be finite and positive") from exc
     if not isfinite(capacity_kwh) or capacity_kwh <= 0:
         raise ValueError("Battery capacity must be finite and positive")
-    if participant_id not in production.columns or participant_id not in consumption.columns:
+    if (
+        participant_id not in production.columns
+        or participant_id not in consumption.columns
+    ):
         raise ValueError("The configured battery has incomplete metering readings")
 
     discharge = production[participant_id]
@@ -183,9 +186,7 @@ def _battery_source_attribution(
     audit = {
         "charged_kwh": charged_kwh,
         "discharged_kwh": discharged_kwh,
-        "charge_discharge_difference_kwh": round(
-            charged_kwh - discharged_kwh, 6
-        ),
+        "charge_discharge_difference_kwh": round(charged_kwh - discharged_kwh, 6),
         "allocated_battery_kwh": battery_target,
     }
     audit["unallocated_discharge_kwh"] = round(

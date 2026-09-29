@@ -589,9 +589,7 @@ def _require_battery_energy_snapshot(
 
     charged = quantity(energy, "charged_kwh")
     discharged = quantity(energy, "discharged_kwh")
-    difference = quantity(
-        energy, "charge_discharge_difference_kwh", signed=True
-    )
+    difference = quantity(energy, "charge_discharge_difference_kwh", signed=True)
     allocated = quantity(energy, "allocated_battery_kwh")
     unallocated = quantity(energy, "unallocated_discharge_kwh")
     if difference != charged - discharged or unallocated != discharged - allocated:

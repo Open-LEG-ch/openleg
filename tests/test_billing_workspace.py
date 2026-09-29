@@ -387,16 +387,16 @@ def test_workspace_exposes_the_frozen_battery_source_audit(monkeypatch):
         },
         "line_items": [],
     }
-    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit=100: [period])
+    monkeypatch.setattr(
+        workspace.db, "list_billing_periods", lambda limit=100: [period]
+    )
     monkeypatch.setattr(workspace.db, "get_billing_period", lambda _period_id: detail)
 
     selected = workspace.load()["selected"]
 
     assert selected["battery_energy"]["charged_kwh"] == "7.500"
     assert selected["battery_energy"]["discharged_kwh"] == "7.000"
-    assert (
-        selected["battery_energy"]["charge_discharge_difference_kwh"] == "0.500"
-    )
+    assert selected["battery_energy"]["charge_discharge_difference_kwh"] == "0.500"
     assert selected["battery_energy"]["unallocated_discharge_kwh"] == "0.250"
     assert selected["battery_attribution"] == [
         {

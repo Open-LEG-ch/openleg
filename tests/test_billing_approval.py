@@ -2194,9 +2194,7 @@ def test_prepare_accepts_a_reconciled_frozen_battery_energy_audit():
     "mutation",
     [
         lambda snapshot: snapshot["attribution"]["home"].update(battery_kwh=1.9),
-        lambda snapshot: snapshot["energy"].update(
-            charge_discharge_difference_kwh=0
-        ),
+        lambda snapshot: snapshot["energy"].update(charge_discharge_difference_kwh=0),
         lambda snapshot: snapshot["energy"].update(unallocated_discharge_kwh=0.1),
         lambda snapshot: snapshot.pop("attribution"),
     ],
