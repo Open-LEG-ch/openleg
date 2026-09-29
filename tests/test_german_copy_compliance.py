@@ -36,6 +36,7 @@ ALLOWED_STEMS = {
     "neuenburg": "Neuenburg, the Canton (proper noun)",
     "steuer": "Mehrwertsteuer, steuert (eu diphthong)",
     "individuell": "individuellen (double l)",
+    "virtuell": "virtueller ZEV (ue is not an umlaut)",
     "vertrau": "Vertrauen (au diphthong)",
     "unbequem": "unbequeme (ue after q, not an umlaut)",
     "value": "Value-Gap, English loanword kept in English",
