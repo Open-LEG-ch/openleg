@@ -236,3 +236,88 @@ def test_formation_faq_offers_paid_support_at_the_tenant_contact_address(
     assert "nach vorgängiger Vereinbarung gegen Honorar" in faq
     assert 'href="mailto:beratung@example.ch"' in faq
     assert ">beratung@example.ch</a>" in faq
+
+
+def test_leg_check_restores_result_and_comparison_link(formation_client, monkeypatch):
+    import database as db
+
+    profile = {
+        "bfs_number": 4021,
+        "name": "Baden",
+        "kanton": "AG",
+        "pv_score_pct": None,
+    }
+    monkeypatch.setattr(db, "search_municipality_profiles", lambda q: [profile])
+    monkeypatch.setattr(
+        db, "get_elcom_tariffs", lambda bfs: [{"operator_name": "Regionalwerk"}]
+    )
+    monkeypatch.setattr(db, "list_registry_entries", lambda **kwargs: [])
+    response = formation_client.get("/leg-check?q=Baden")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Regionalwerk" in html
+    assert 'href="/leg-gruenden#vzev-oder-leg"' in html
+    assert 'id="vzev-oder-leg"' in _formation_page(formation_client)
+
+
+@pytest.mark.parametrize("query", ["", "?q=", "?q=%20%20"])
+def test_leg_check_empty_search_needs_no_data(formation_client, monkeypatch, query):
+    import database as db
+
+    def unexpected_lookup(*args, **kwargs):
+        pytest.fail("Empty search must not access municipality data")
+
+    monkeypatch.setattr(db, "search_municipality_profiles", unexpected_lookup)
+    response = formation_client.get("/leg-check" + query)
+    assert response.status_code == 200
+    assert 'name="q"' in response.get_data(as_text=True)
+
+
+@pytest.mark.parametrize(
+    ("matches", "expected"),
+    [
+        ([], "Keine Gemeinde"),
+        ([{"name": "Baden"}, {"name": "Badenweiler"}], "Mehrere Gemeinden"),
+    ],
+)
+def test_leg_check_missing_and_ambiguous_results(
+    formation_client, monkeypatch, matches, expected
+):
+    import database as db
+
+    monkeypatch.setattr(db, "search_municipality_profiles", lambda q: matches)
+    response = formation_client.get("/leg-check?q=Bad")
+    assert response.status_code == 200
+    assert expected in response.get_data(as_text=True)
+
+
+def test_leg_check_exact_match_and_published_registry_scope(
+    formation_client, monkeypatch
+):
+    import database as db
+
+    profile = {
+        "bfs_number": 4021,
+        "name": "Baden",
+        "kanton": "AG",
+        "pv_score_pct": None,
+    }
+    monkeypatch.setattr(
+        db, "search_municipality_profiles", lambda q: [profile, {"name": "Badenweiler"}]
+    )
+    monkeypatch.setattr(db, "get_elcom_tariffs", lambda bfs: [])
+
+    def registry(**kwargs):
+        assert kwargs == {"q": "Baden"}  # Store defaults to published entries only.
+        return [
+            {"name": "Solargruppe", "bfs_number": 4021},
+            {"name": "Other town", "bfs_number": 9999},
+        ]
+
+    monkeypatch.setattr(db, "list_registry_entries", registry)
+    html = formation_client.get(
+        "/leg-check?q=baden&moderation_status=pending"
+    ).get_data(as_text=True)
+    assert "Solargruppe" in html and "Other town" not in html
+    assert "Keine ElCom-Daten hinterlegt" in html
+    assert 'href="/leg-verzeichnis/' not in html
