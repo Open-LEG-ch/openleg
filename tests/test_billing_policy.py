@@ -1744,13 +1744,13 @@ def test_suggest_price_band_spans_feed_in_to_grid_total_minus_fees():
     assert band["ceiling_rp_display"] == "23.00"
 
 
-def test_suggest_price_band_floor_never_sits_below_the_settlement_fee():
+def test_suggest_price_band_floor_is_the_feed_in_alternative():
     band = billing_policy.suggest_price_band(
         grid_total_rp=Decimal("25.00"),
         settlement_fee_rp=Decimal("8.00"),
         feed_in_floor_rp=6.0,
     )
-    assert band["floor_rp"] == Decimal("8.00")
+    assert band["floor_rp"] == Decimal("6.00")
     assert band["ceiling_rp"] == Decimal("17.00")
 
 

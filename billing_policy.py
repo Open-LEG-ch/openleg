@@ -256,7 +256,7 @@ def suggest_price_band(
     """Suggest a fair band for the internal price, or None when none exists.
 
     The floor is the producer's alternative: the feed-in tariff they would
-    earn by exporting, never below the VNB settlement fee. The ceiling is
+    earn by exporting. The ceiling is
     the utility's total grid price minus the settlement fee, the highest
     price that still beats buying from the grid. Every input is Rp/kWh.
     Anything missing, non-finite, or negative yields no suggestion: OpenLEG
@@ -275,7 +275,7 @@ def suggest_price_band(
             return None
         values[key] = number
 
-    floor = max(values["feed_in_floor_rp"], values["settlement_fee_rp"])
+    floor = values["feed_in_floor_rp"]
     ceiling = values["grid_total_rp"] - values["settlement_fee_rp"]
     if floor >= ceiling:
         return None
