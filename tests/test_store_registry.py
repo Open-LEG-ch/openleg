@@ -14,8 +14,10 @@ from contextlib import contextmanager
 import pytest
 
 import database
-from tests.test_interest_postgres import interest_database  # noqa: F401
 from store import registry
+from tests import test_interest_postgres
+
+interest_database = test_interest_postgres.interest_database
 
 _REEXPORTED = (
     "save_registry_entry",
