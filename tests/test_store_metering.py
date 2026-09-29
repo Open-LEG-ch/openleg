@@ -781,7 +781,11 @@ def test_building_period_readings_are_scoped_to_the_callers_building(monkeypatch
     cur = _FakeCursor(
         rows=[_row()],
         required_sql=("mp.building_id = %s", "measured_at >= %s", "measured_at < %s"),
-        expected_params=("BUILDING-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)),
+        expected_params=(
+            "BUILDING-1",
+            MEASURED_AT,
+            MEASURED_AT + timedelta(minutes=15),
+        ),
     )
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
