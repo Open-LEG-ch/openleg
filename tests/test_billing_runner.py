@@ -937,6 +937,7 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
 
 BATTERY_CONFIG = {
     "community_id": COMMUNITY,
+    "participant_id": "battery-a",
     "capacity_kwh": 45,
     "annual_cost_chf": 960,
     "shares": {"building-a": 50, "building-b": 50},
@@ -955,6 +956,20 @@ def _battery_case():
             "amount_chf": 0.18,
         }
     ]
+    case["summary"]["participants"] = [
+        {
+            "id": "building-a",
+            "direct_solar_kwh": 1.0,
+            "battery_kwh": 0.5,
+        }
+    ]
+    case["summary"]["battery_energy"] = {
+        "charged_kwh": 0.5,
+        "discharged_kwh": 0.5,
+        "charge_discharge_difference_kwh": 0.0,
+        "allocated_battery_kwh": 0.5,
+        "unallocated_discharge_kwh": 0.0,
+    }
     return case
 
 
@@ -1099,3 +1114,137 @@ def test_a_draft_without_a_battery_carries_no_battery_lines(monkeypatch):
     assert all(
         item["item_type"] != "battery_cost_share" for item in summary["line_items"]
     )
+
+
+def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch):
+    """The public runner freezes source attribution and bills the battery point."""
+    import billing_runner
+
+    homes = tuple(f"home-{number}" for number in range(1, 9))
+    index = pd.date_range(START, periods=2, freq="15min")
+    frames = SimpleNamespace(
+        production=pd.DataFrame(
+            {"home-1": [8.0, 0.0], "battery-a": [0.0, 8.0]}, index=index
+        ),
+        consumption=pd.DataFrame(
+            {**{home: [1.0, 1.0] for home in homes}, "battery-a": [0.0, 0.0]},
+            index=index,
+        ),
+        participants=(*homes, "battery-a"),
+        provenance={
+            "period_start": START,
+            "period_end": END,
+            "source_document_ids": ("E66-CONSUMPTION", "E66-PRODUCTION"),
+            "interval_count": 2,
+            "resolution_minutes": 15,
+            "timezone": "Europe/Zurich",
+        },
+        vnb_reference={"community_kwh": 16.0},
+    )
+    battery = {
+        "community_id": COMMUNITY,
+        "participant_id": "battery-a",
+        "capacity_kwh": 8,
+        "annual_cost_chf": 960,
+        "shares": {home: Decimal("12.5") for home in homes},
+    }
+    saved = []
+    monkeypatch.setattr(database, "is_db_available", lambda: False)
+    monkeypatch.setattr(database, "get_billing_policy", lambda *_args: DEFAULT_POLICY)
+    monkeypatch.setattr(database, "get_battery", lambda _community: battery)
+    monkeypatch.setattr(
+        billing_runner.billing_readings,
+        "load_period_frames",
+        lambda *_args: frames,
+    )
+    monkeypatch.setattr(
+        billing_runner.billing_readings,
+        "reconcile_with_vnb",
+        lambda *_args: {
+            "difference_kwh": 0,
+            "production_difference_kwh": 0,
+            "per_participant": {},
+            "production_per_participant": {},
+        },
+    )
+    monkeypatch.setattr(database, "get_billing_period_for_window", lambda *_args: None)
+    monkeypatch.setattr(
+        database,
+        "save_billing_period",
+        lambda *_args: saved.append(_args) or 42,
+    )
+
+    result = billing_runner.run_billing_period(COMMUNITY, START, END)
+
+    assert result == {"status": "created", "period_id": 42}
+    summary = saved[0][3]
+    snapshot = summary["battery_snapshot"]
+    assert snapshot["energy"] == {
+        "charged_kwh": 0.0,
+        "discharged_kwh": 8.0,
+        "charge_discharge_difference_kwh": -8.0,
+        "allocated_battery_kwh": 8.0,
+        "unallocated_discharge_kwh": 0.0,
+    }
+    assert snapshot["attribution"] == {
+        home: {"direct_solar_kwh": 1.0, "battery_kwh": 1.0} for home in homes
+    }
+    battery_line_types = {
+        item["item_type"]
+        for item in summary["line_items"]
+        if item["participant_id"] == "battery-a"
+    }
+    assert battery_line_types == {"consumer_charge", "producer_credit"}
+
+
+def test_configured_battery_without_its_meter_series_blocks_the_public_run(
+    monkeypatch,
+):
+    import billing_runner
+
+    case = _fingerprint_case()
+    battery = {
+        "community_id": COMMUNITY,
+        "participant_id": "battery-a",
+        "capacity_kwh": 8,
+        "annual_cost_chf": 960,
+        "shares": {"building-a": 100},
+    }
+    monkeypatch.setattr(database, "is_db_available", lambda: False)
+    monkeypatch.setattr(database, "get_billing_policy", lambda *_args: DEFAULT_POLICY)
+    monkeypatch.setattr(database, "get_battery", lambda _community: battery)
+    monkeypatch.setattr(
+        billing_runner.billing_readings,
+        "load_period_frames",
+        lambda *_args: case["frames"],
+    )
+    saved = []
+    monkeypatch.setattr(
+        database,
+        "save_billing_period",
+        lambda *_args: saved.append(_args) or 42,
+    )
+
+    with pytest.raises(
+        billing_runner.BillingRunError, match="incomplete metering readings"
+    ):
+        billing_runner.run_billing_period(COMMUNITY, START, END)
+
+    assert saved == []
+
+
+def test_battery_meter_participant_cannot_carry_a_cost_share(monkeypatch):
+    import billing_runner
+
+    case = _battery_case()
+    battery = {
+        **BATTERY_CONFIG,
+        "participant_id": "building-a",
+        "shares": {"building-a": 100},
+    }
+    saved = _install_battery_fixture(monkeypatch, case, battery)
+
+    with pytest.raises(billing_runner.BillingRunError, match="Kostenanteil"):
+        billing_runner.run_billing_period(COMMUNITY, START, END)
+
+    assert saved == []

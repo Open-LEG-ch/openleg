@@ -2090,6 +2090,125 @@ def test_prepare_accepts_real_billing_engine_output_with_multiple_participants()
     }
 
 
+def _battery_draft_for_approval():
+    """One engine-produced draft with a frozen, internally balanced battery audit."""
+    import pandas as pd
+
+    import billing_engine
+    import quartierakku
+
+    index = pd.date_range("2026-01-01", periods=2, freq="15min", tz="Europe/Zurich")
+    summary = billing_engine.generate_billing_summary(
+        pd.DataFrame({"home": [2.0, 0.0], "battery": [0.0, 2.0]}, index=index),
+        pd.DataFrame({"home": [1.0, 2.0], "battery": [1.0, 0.0]}, index=index),
+        grid_fee_per_kwh=0.08,
+        internal_price_per_kwh=0.15,
+        network_level="same",
+        battery_participant_id="battery",
+        battery_capacity_kwh=2,
+    )
+    start = "2026-01-01T00:00:00+01:00"
+    end = "2026-01-01T00:30:00+01:00"
+    share_amount = quartierakku.period_cost_share_chf(960, 100, start, end)
+    summary["line_items"].append(
+        {
+            "participant_id": "home",
+            "item_type": "battery_cost_share",
+            "quantity_kwh": None,
+            "unit_price_chf_per_kwh": None,
+            "amount_chf": share_amount,
+        }
+    )
+    snapshot = {
+        "community_id": COMMUNITY,
+        "participant_id": "battery",
+        "capacity_kwh": "2",
+        "annual_cost_chf": "960",
+        "period_start": start,
+        "period_end": end,
+        "period_fraction": str(quartierakku.period_fraction(start, end)),
+        "shares": {"home": "100"},
+        "attribution": {
+            participant["id"]: {
+                "direct_solar_kwh": participant["direct_solar_kwh"],
+                "battery_kwh": participant["battery_kwh"],
+            }
+            for participant in summary["participants"]
+            if participant["id"] != "battery"
+        },
+        "energy": summary["battery_energy"],
+    }
+    consumption = {
+        item["participant_id"]: item["quantity_kwh"]
+        for item in summary["line_items"]
+        if item["item_type"] == "consumer_charge"
+    }
+    production = {
+        item["participant_id"]: item["quantity_kwh"]
+        for item in summary["line_items"]
+        if item["item_type"] == "producer_credit"
+    }
+    reconciliation = {
+        "vnb_allocated_kwh": sum(consumption.values()),
+        "engine_allocated_kwh": sum(consumption.values()),
+        "difference_kwh": 0,
+        "per_participant": {
+            key: {"vnb_kwh": value, "engine_kwh": value, "difference_kwh": 0}
+            for key, value in consumption.items()
+        },
+        "vnb_production_kwh": sum(production.values()),
+        "engine_production_kwh": sum(production.values()),
+        "production_difference_kwh": 0,
+        "production_per_participant": {
+            key: {"vnb_kwh": value, "engine_kwh": value, "difference_kwh": 0}
+            for key, value in production.items()
+        },
+    }
+    return {
+        "id": 42,
+        "community_id": COMMUNITY,
+        "status": "draft",
+        "period_start": start,
+        "period_end": end,
+        "input_fingerprint": "a" * 64,
+        "source_document_ids": ["E66-CONSUMPTION", "E66-PRODUCTION"],
+        "reconciliation": reconciliation,
+        "billing_policy_snapshot": _policy(effective_from=start),
+        "battery_snapshot": snapshot,
+        "line_items": summary["line_items"],
+    }
+
+
+def test_prepare_accepts_a_reconciled_frozen_battery_energy_audit():
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        _battery_draft_for_approval(), issue_date=date(2026, 2, 5)
+    )
+
+    assert {snapshot["participant_id"] for snapshot in snapshots} == {
+        "battery",
+        "home",
+    }
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda snapshot: snapshot["attribution"]["home"].update(battery_kwh=1.9),
+        lambda snapshot: snapshot["energy"].update(
+            charge_discharge_difference_kwh=0
+        ),
+        lambda snapshot: snapshot["energy"].update(unallocated_discharge_kwh=0.1),
+        lambda snapshot: snapshot.pop("attribution"),
+    ],
+)
+def test_prepare_refuses_tampered_battery_energy_audits(mutation):
+    draft = _battery_draft_for_approval()
+    mutation(draft["battery_snapshot"])
+
+    with pytest.raises(billing_approval.BillingApprovalError, match="Quartierakku"):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
 def test_prepare_refuses_positive_consumer_energy_without_production():
     """Positive allocated consumption requires credited production to balance."""
     draft = _consumer_only_draft()

@@ -109,6 +109,12 @@
         <summary class="cursor-pointer font-semibold text-sm">Kapazität und Anteile erfassen</summary>
         <form method="post" action="/leg/community/{{ community.community_id }}/battery" class="grid sm:grid-cols-2 gap-3 mt-4">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div class="sm:col-span-2">
+            <label for="battery-participant" class="block text-sm font-semibold mb-1">Messpunkt-Teilnehmer des Speichers</label>
+            <input id="battery-participant" type="text" name="participant_id" required maxlength="64" value="{{ (battery_form_values|default({})).get('participant_id', '') }}" placeholder="z. B. batterie-1" class="w-full border rounded-lg px-3 py-2 text-sm">
+            <p class="mt-1 text-xs text-ink-muted">Dieser Teilnehmer führt Ladung und Entladung des Speichers über seinen eigenen Messpunkt.</p>
+            {% if (battery_errors|default({})).get('participant_id') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['participant_id'] }}</p>{% endif %}
+          </div>
           <div>
             <label for="battery-capacity" class="block text-sm font-semibold mb-1">Speicherkapazität (kWh)</label>
             <input id="battery-capacity" type="text" inputmode="decimal" name="capacity_kwh" required value="{{ (battery_form_values|default({})).get('capacity_kwh', '') }}" placeholder="z. B. 45" class="w-full border rounded-lg px-3 py-2 text-sm">

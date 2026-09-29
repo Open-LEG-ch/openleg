@@ -359,3 +359,54 @@ def test_workspace_groups_battery_share_lines_separately(monkeypatch):
         item["item_type"] != "battery_cost_share"
         for item in selected["consumer_charges"] + selected["producer_credits"]
     )
+
+
+def test_workspace_exposes_the_frozen_battery_source_audit(monkeypatch):
+    workspace = _module()
+    period = {
+        "id": 42,
+        "community_id": "community-a",
+        "period_start": "2026-07-01",
+        "status": "draft",
+    }
+    detail = {
+        **period,
+        "battery_snapshot": {
+            "participant_id": "battery-a",
+            "energy": {
+                "charged_kwh": "7.5",
+                "discharged_kwh": "7.0",
+                "charge_discharge_difference_kwh": "0.5",
+                "allocated_battery_kwh": "6.75",
+                "unallocated_discharge_kwh": "0.25",
+            },
+            "attribution": {
+                "home-a": {"direct_solar_kwh": "3.25", "battery_kwh": "2.5"},
+                "home-b": {"direct_solar_kwh": "1", "battery_kwh": "4.25"},
+            },
+        },
+        "line_items": [],
+    }
+    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit=100: [period])
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda _period_id: detail)
+
+    selected = workspace.load()["selected"]
+
+    assert selected["battery_energy"]["charged_kwh"] == "7.500"
+    assert selected["battery_energy"]["discharged_kwh"] == "7.000"
+    assert (
+        selected["battery_energy"]["charge_discharge_difference_kwh"] == "0.500"
+    )
+    assert selected["battery_energy"]["unallocated_discharge_kwh"] == "0.250"
+    assert selected["battery_attribution"] == [
+        {
+            "participant_id": "home-a",
+            "direct_solar_kwh": "3.250",
+            "battery_kwh": "2.500",
+        },
+        {
+            "participant_id": "home-b",
+            "direct_solar_kwh": "1.000",
+            "battery_kwh": "4.250",
+        },
+    ]

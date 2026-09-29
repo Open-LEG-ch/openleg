@@ -322,3 +322,179 @@ class TestSettlementFee:
 
         summary = self._summary(settlement_fee_per_kwh=Decimal("0.02"))
         assert summary["settlement_fee_chf_per_kwh"] == 0.02
+
+
+class TestQuartierakkuAllocation:
+    """A metered Quartierakku is a billable participant and energy source."""
+
+    def test_overnight_discharge_is_attributed_separately_from_direct_solar(self):
+        from billing_engine import generate_billing_summary
+
+        production = pd.DataFrame(
+            {
+                "solar": [4.0, 0.0, 0.0],
+                "battery": [0.0, 3.0, 1.0],
+            }
+        )
+        consumption = pd.DataFrame(
+            {
+                "home-a": [2.0, 2.0, 1.0],
+                "home-b": [2.0, 1.0, 0.0],
+                "battery": [0.0, 0.0, 0.0],
+            }
+        )
+
+        summary = generate_billing_summary(
+            production,
+            consumption,
+            grid_fee_per_kwh=0.08,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            battery_participant_id="battery",
+            battery_capacity_kwh=4,
+        )
+
+        participants = {item["id"]: item for item in summary["participants"]}
+        assert participants["home-a"]["direct_solar_kwh"] == 2.0
+        assert participants["home-a"]["battery_kwh"] == 3.0
+        assert participants["home-b"]["direct_solar_kwh"] == 2.0
+        assert participants["home-b"]["battery_kwh"] == 1.0
+        assert summary["battery_energy"] == {
+            "charged_kwh": 0.0,
+            "discharged_kwh": 4.0,
+            "charge_discharge_difference_kwh": -4.0,
+            "allocated_battery_kwh": 4.0,
+            "unallocated_discharge_kwh": 0.0,
+        }
+        battery_items = [
+            item
+            for item in summary["line_items"]
+            if item["participant_id"] == "battery"
+        ]
+        assert any(item["item_type"] == "producer_credit" for item in battery_items)
+
+    def test_charge_and_discharge_at_empty_and_full_edges_reconcile(self):
+        from billing_engine import generate_billing_summary
+
+        summary = generate_billing_summary(
+            pd.DataFrame({"solar": [4.0, 0.0], "battery": [0.0, 4.0]}),
+            pd.DataFrame({"home": [0.0, 4.0], "battery": [4.0, 0.0]}),
+            grid_fee_per_kwh=0.08,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            battery_participant_id="battery",
+            battery_capacity_kwh=4,
+        )
+
+        assert summary["battery_energy"] == {
+            "charged_kwh": 4.0,
+            "discharged_kwh": 4.0,
+            "charge_discharge_difference_kwh": 0.0,
+            "allocated_battery_kwh": 4.0,
+            "unallocated_discharge_kwh": 0.0,
+        }
+
+    def test_single_battery_producer_attributes_every_allocated_kwh_to_storage(self):
+        from billing_engine import generate_billing_summary
+
+        summary = generate_billing_summary(
+            pd.DataFrame({"battery": [0.2, 0.8]}),
+            pd.DataFrame({"home": [0.2, 0.8], "battery": [0.0, 0.0]}),
+            grid_fee_per_kwh=0.08,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            battery_participant_id="battery",
+            battery_capacity_kwh=1,
+        )
+
+        home = next(item for item in summary["participants"] if item["id"] == "home")
+        assert home["direct_solar_kwh"] == 0.0
+        assert home["battery_kwh"] == 1.0
+        assert home["direct_solar_kwh"] + home["battery_kwh"] == 1.0
+
+    def test_source_rounding_reconciles_to_consumer_and_producer_lines(self):
+        from decimal import Decimal
+
+        from billing_engine import generate_billing_summary
+
+        homes = tuple(f"home-{number}" for number in range(8))
+        summary = generate_billing_summary(
+            pd.DataFrame({"battery": [0.0000048]}),
+            pd.DataFrame(
+                {**{home: [0.000001] for home in homes}, "battery": [0.0]}
+            ),
+            grid_fee_per_kwh=0.08,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            battery_participant_id="battery",
+            battery_capacity_kwh=1,
+        )
+
+        consumers = {
+            item["participant_id"]: item["quantity_kwh"]
+            for item in summary["line_items"]
+            if item["item_type"] == "consumer_charge"
+            and item["participant_id"] != "battery"
+        }
+        sources = {
+            item["id"]: item
+            for item in summary["participants"]
+            if item["id"] != "battery"
+        }
+        battery_credit = next(
+            item["quantity_kwh"]
+            for item in summary["line_items"]
+            if item["item_type"] == "producer_credit"
+            and item["participant_id"] == "battery"
+        )
+        assert all(
+            sources[home]["direct_solar_kwh"] + sources[home]["battery_kwh"]
+            == consumers[home]
+            for home in homes
+        )
+        assert sum(
+            (Decimal(str(source["battery_kwh"])) for source in sources.values()),
+            Decimal(0),
+        ) == Decimal(str(battery_credit))
+        assert summary["battery_energy"]["unallocated_discharge_kwh"] == 0.0
+
+    @pytest.mark.parametrize(
+        ("production", "consumption", "message"),
+        [
+            (
+                pd.DataFrame({"solar": [1.0]}),
+                pd.DataFrame({"home": [1.0], "battery": [0.0]}),
+                "incomplete metering",
+            ),
+            (
+                pd.DataFrame({"battery": [1.0]}),
+                pd.DataFrame({"home": [1.0]}),
+                "incomplete metering",
+            ),
+            (
+                pd.DataFrame({"battery": [0.0, 0.0]}),
+                pd.DataFrame({"home": [0.0, 0.0], "battery": [5.0, 0.0]}),
+                "exceed its capacity",
+            ),
+            (
+                pd.DataFrame({"battery": [1.0]}),
+                pd.DataFrame({"home": [0.0], "battery": [1.0]}),
+                "simultaneously",
+            ),
+        ],
+    )
+    def test_incomplete_or_inconsistent_battery_readings_fail_closed(
+        self, production, consumption, message
+    ):
+        from billing_engine import generate_billing_summary
+
+        with pytest.raises(ValueError, match=message):
+            generate_billing_summary(
+                production,
+                consumption,
+                grid_fee_per_kwh=0.08,
+                internal_price_per_kwh=0.15,
+                network_level="same",
+                battery_participant_id="battery",
+                battery_capacity_kwh=4,
+            )

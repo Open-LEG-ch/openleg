@@ -4,9 +4,9 @@
 Winterthur case: one 45 kWh battery for eight households, roughly CHF 120
 per year and household, one person buys it and the rest pay their share.
 Design for one battery per community until a second case shows up. The
-asset carries capacity in kWh, an annual cost in CHF, and one cost share
-per participant. Energy allocation through the battery arrives separately;
-this module owns the asset and its cost split only.
+asset carries capacity in kWh, an annual cost in CHF, one cost share per
+participant, and the participant ID of its own metering point. Interval
+allocation remains in the billing engine; this module owns the configuration.
 
 Every invalid choice is refused with a German diagnostic: OpenLEG never
 guesses money-path inputs.
@@ -38,6 +38,12 @@ _SHARE_ERROR = (
 _SHARE_SUM_ERROR = "Die Anteile müssen zusammen 100 Prozent ergeben."
 _SHARE_UNKNOWN_ERROR = "Die Anteile enthalten unbekannte Teilnehmer."
 _SHARE_MISSING_ERROR = "Jeder Teilnehmer braucht einen Anteil am Quartierakku."
+_PARTICIPANT_ERROR = (
+    "Messpunkt-Teilnehmer des Quartierakkus mit 1 bis 64 Zeichen angeben."
+)
+_PARTICIPANT_SHARE_ERROR = (
+    "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil tragen."
+)
 
 _PLAIN_DECIMAL_PATTERN = re.compile(r"^\d+(\.\d+)?$")
 _KWH_QUANTUM = Decimal("0.000001")
@@ -70,6 +76,14 @@ def validate_battery_config(config) -> dict:
     """Validate and normalize one stored battery config, failing closed."""
     if not isinstance(config, dict):
         raise InvalidBatteryConfig("Der Quartierakku hat keine gültigen Angaben.")
+    participant_id = config.get("participant_id")
+    if (
+        not isinstance(participant_id, str)
+        or not participant_id.strip()
+        or len(participant_id.strip()) > 64
+    ):
+        raise InvalidBatteryConfig(_PARTICIPANT_ERROR)
+    participant_id = participant_id.strip()
     capacity = _stored_money(config.get("capacity_kwh"), _CAPACITY_ERROR)
     if capacity <= 0 or capacity > MAX_CAPACITY_KWH:
         raise InvalidBatteryConfig(_CAPACITY_ERROR)
@@ -98,8 +112,11 @@ def validate_battery_config(config) -> dict:
     total = sum(normalized_shares.values(), Decimal(0))
     if total != SHARE_MAX_PCT:
         raise InvalidBatteryConfig(_SHARE_SUM_ERROR)
+    if participant_id in normalized_shares:
+        raise InvalidBatteryConfig(_PARTICIPANT_SHARE_ERROR)
     return {
         "community_id": config.get("community_id"),
+        "participant_id": participant_id,
         "capacity_kwh": capacity,
         "annual_cost_chf": annual_cost,
         "shares": normalized_shares,
@@ -121,6 +138,10 @@ def validate_battery_form(form, member_ids) -> dict:
     member without an input pays no share.
     """
     errors = {}
+
+    participant_id = _form_value(form, "participant_id")
+    if not participant_id or len(participant_id) > 64:
+        errors["participant_id"] = _PARTICIPANT_ERROR
 
     capacity_text = _form_value(form, "capacity_kwh")
     capacity = None
@@ -170,11 +191,14 @@ def validate_battery_form(form, member_ids) -> dict:
         total = sum(shares.values(), Decimal(0))
         if total != SHARE_MAX_PCT:
             errors["shares"] = _SHARE_SUM_ERROR
+        elif participant_id in shares:
+            errors["participant_id"] = _PARTICIPANT_SHARE_ERROR
 
     if errors:
         return {"battery": None, "errors": errors}
     return {
         "battery": {
+            "participant_id": participant_id,
             "capacity_kwh": capacity,
             "annual_cost_chf": annual_cost,
             "shares": shares,

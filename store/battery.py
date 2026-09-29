@@ -36,17 +36,20 @@ def save_battery(community_id: str, config: dict) -> None:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO community_batteries (community_id, capacity_kwh, annual_cost_chf)
-                VALUES (%s, %s, %s)
+                INSERT INTO community_batteries
+                    (community_id, capacity_kwh, annual_cost_chf, participant_id)
+                VALUES (%s, %s, %s, %s)
                 ON CONFLICT (community_id) DO UPDATE
                 SET capacity_kwh = EXCLUDED.capacity_kwh,
                     annual_cost_chf = EXCLUDED.annual_cost_chf,
+                    participant_id = EXCLUDED.participant_id,
                     updated_at = CURRENT_TIMESTAMP
                 """,
                 (
                     community_id,
                     normalized["capacity_kwh"],
                     normalized["annual_cost_chf"],
+                    normalized["participant_id"],
                 ),
             )
             cur.execute(
@@ -74,7 +77,7 @@ def get_battery(community_id: str) -> dict | None:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT community_id, capacity_kwh, annual_cost_chf
+                SELECT community_id, capacity_kwh, annual_cost_chf, participant_id
                 FROM community_batteries
                 WHERE community_id = %s
                 """,

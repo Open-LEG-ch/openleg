@@ -224,8 +224,9 @@ it.
 
 - **Tables:** `community_batteries`, `community_battery_shares`
 - **Holds:** one shared storage battery (Quartierakku) per community:
-  capacity in kWh, annual cost in CHF, and one cost share in percent per
-  participant.
+  capacity in kWh, annual cost in CHF, its billing participant ID, and one
+  cost share in percent per participant. The billing-period snapshot freezes
+  charged, discharged, directly sourced and battery-sourced energy.
 - **Purpose:** the shared asset behind the battery cost-share lines that the
   billing draft and the invoices carry.
 - **Owner:** the LEG (operator records the asset and the shares).
