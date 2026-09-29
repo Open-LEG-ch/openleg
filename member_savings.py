@@ -82,6 +82,18 @@ def _require_json_dict(value, message: str) -> dict:
     return decoded
 
 
+def _require_json_list(value, message: str) -> list:
+    decoded = value
+    if isinstance(decoded, str):
+        try:
+            decoded = json.loads(decoded)
+        except (TypeError, ValueError):
+            raise MemberSavingsDataError(message) from None
+    if not isinstance(decoded, list):
+        raise MemberSavingsDataError(message)
+    return decoded
+
+
 def _require_positive_id(value, message: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise MemberSavingsDataError(message)
@@ -191,6 +203,24 @@ def _empty_state(period_label: str) -> dict:
         "period_label": period_label,
         "message": EMPTY_STATE_MESSAGE,
     }
+
+
+def _invoice_local_kwh(invoice: dict, participant_id: str) -> Decimal:
+    message = "Die Rechnung hat keine gültige lokale Energiemenge."
+    items = _require_json_list(invoice.get("line_items_snapshot"), message)
+    charges = [
+        item
+        for item in items
+        if isinstance(item, dict)
+        and item.get("participant_id") == participant_id
+        and item.get("item_type") == "consumer_charge"
+    ]
+    if len(charges) != 1:
+        raise MemberSavingsDataError(message)
+    quantity = _require_finite_decimal(charges[0].get("quantity_kwh"), message)
+    if quantity < 0:
+        raise MemberSavingsDataError(message)
+    return quantity
 
 
 def realized_savings(readings, provenance: dict, policy: dict) -> dict:
@@ -303,4 +333,11 @@ def invoice_savings_view(invoice_id: int, building_id: str) -> dict | None:
         raise MemberSavingsDataError(
             "Die Messwerte dieser Periode sind unvollständig."
         ) from exc
-    return realized_savings(readings, provenance, invoice.get("policy_snapshot"))
+    view = realized_savings(readings, provenance, invoice.get("policy_snapshot"))
+    if view["available"] and abs(
+        view["local_kwh"] - _invoice_local_kwh(invoice, participant_id)
+    ) > Decimal("0.000001"):
+        raise MemberSavingsDataError(
+            "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein."
+        )
+    return view

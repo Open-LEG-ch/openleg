@@ -324,6 +324,29 @@ def test_invoice_savings_view_agrees_with_the_invoice_totals(monkeypatch):
     )
 
 
+def test_invoice_savings_view_fails_when_readings_disagree_with_invoice(monkeypatch):
+    import member_savings
+
+    monkeypatch.setattr(
+        member_savings.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=dict(INVOICE_ROW)),
+    )
+    monkeypatch.setattr(
+        member_savings.db,
+        "get_building_period_readings",
+        MagicMock(
+            return_value=[
+                _reading(15 * index, total="0.500", community="0.200")
+                for index in range(4)
+            ]
+        ),
+    )
+
+    with pytest.raises(member_savings.MemberSavingsDataError, match="Rechnung"):
+        member_savings.invoice_savings_view(42, "building-session")
+
+
 def test_invoice_savings_view_returns_none_for_missing_or_foreign_invoice(
     monkeypatch,
 ):
