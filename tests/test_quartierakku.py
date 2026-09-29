@@ -18,6 +18,7 @@ from store import battery as battery_store
 
 VALID_CONFIG = {
     "community_id": "community-a",
+    "participant_id": "battery-a",
     "capacity_kwh": Decimal(45),
     "annual_cost_chf": Decimal(960),
     "shares": {
@@ -77,6 +78,7 @@ def test_validate_battery_config_normalizes_one_complete_config():
     normalized = quartierakku.validate_battery_config(VALID_CONFIG)
 
     assert normalized["community_id"] == "community-a"
+    assert normalized["participant_id"] == "battery-a"
     assert normalized["capacity_kwh"] == Decimal(45)
     assert normalized["annual_cost_chf"] == Decimal(960)
     assert normalized["shares"] == {
@@ -208,6 +210,7 @@ def test_cost_error_message_names_the_bound_in_german():
 
 def _form(**overrides):
     form = {
+        "participant_id": "battery-a",
         "capacity_kwh": "45",
         "annual_cost_chf": "960",
         "share:building-a": "12.50",
@@ -227,6 +230,7 @@ def test_battery_form_parses_capacity_cost_and_shares():
     assert result["errors"] == {}
     battery = result["battery"]
     assert battery["capacity_kwh"] == Decimal(45)
+    assert battery["participant_id"] == "battery-a"
     assert battery["annual_cost_chf"] == Decimal(960)
     assert battery["shares"] == {
         "building-a": Decimal("12.5"),
@@ -251,6 +255,30 @@ def test_battery_form_treats_a_missing_member_input_as_zero_share():
 
     assert result["errors"] == {}
     assert result["battery"]["shares"]["building-d"] == Decimal(0)
+
+
+def test_battery_form_refuses_a_missing_metering_participant():
+    result = quartierakku.validate_battery_form(
+        _form(participant_id=""),
+        ("building-a", "building-b", "building-c", "building-d"),
+    )
+
+    assert result["battery"] is None
+    assert "participant_id" in result["errors"]
+
+
+def test_battery_participant_cannot_also_carry_a_human_cost_share():
+    with pytest.raises(quartierakku.InvalidBatteryConfig, match="Kostenanteil"):
+        quartierakku.validate_battery_config(
+            {**VALID_CONFIG, "participant_id": "building-a"}
+        )
+
+    result = quartierakku.validate_battery_form(
+        _form(participant_id="building-a"),
+        ("building-a", "building-b", "building-c", "building-d"),
+    )
+    assert result["battery"] is None
+    assert "Kostenanteil" in result["errors"]["participant_id"]
 
 
 def test_battery_form_rejects_shares_that_do_not_sum_to_100():
@@ -315,6 +343,7 @@ def test_save_battery_inserts_the_asset_and_shares(monkeypatch):
     assert battery_params[0] == "community-a"
     assert battery_params[1] == Decimal(45)
     assert battery_params[2] == Decimal(960)
+    assert battery_params[3] == "battery-a"
     shares_query, shares_params = cursor.executed[1]
     assert "DELETE FROM community_battery_shares" in shares_query
     assert shares_params[0] == "community-a"
@@ -348,6 +377,7 @@ def test_get_battery_reads_asset_and_shares(monkeypatch):
     cursor = _Cursor(
         one={
             "community_id": "community-a",
+            "participant_id": "battery-a",
             "capacity_kwh": Decimal(45),
             "annual_cost_chf": Decimal(960),
         },
@@ -362,6 +392,7 @@ def test_get_battery_reads_asset_and_shares(monkeypatch):
 
     assert config == {
         "community_id": "community-a",
+        "participant_id": "battery-a",
         "capacity_kwh": Decimal(45),
         "annual_cost_chf": Decimal(960),
         "shares": {"building-a": Decimal(50), "building-b": Decimal(50)},
@@ -462,6 +493,7 @@ def test_dashboard_shows_the_battery_with_its_shares(app_module, monkeypatch):  
         app_module,
         battery={
             "community_id": BATTERY_COMMUNITY,
+            "participant_id": "battery-a",
             "capacity_kwh": Decimal(45),
             "annual_cost_chf": Decimal(960),
             "shares": {"b-admin": Decimal(50), "b-member": Decimal(50)},
@@ -480,6 +512,8 @@ def test_dashboard_shows_the_battery_with_its_shares(app_module, monkeypatch):  
     assert "50 %" in html
     assert 'name="capacity_kwh" required value="45"' in html
     assert 'name="annual_cost_chf" required value="960"' in html
+    assert 'name="participant_id"' in html
+    assert 'value="battery-a"' in html
     assert 'name="share:b-admin" value="50"' in html
 
 
@@ -534,6 +568,7 @@ def test_battery_save_requires_a_confirmed_admin(app_module, monkeypatch):  # no
         f"/leg/community/{BATTERY_COMMUNITY}/battery",
         data={
             "csrf_token": "csrf-secret",
+            "participant_id": "battery-a",
             "capacity_kwh": "45",
             "annual_cost_chf": "960",
             "share:b-admin": "50",
@@ -557,6 +592,7 @@ def test_battery_save_persists_a_valid_form(app_module, monkeypatch):  # noqa: F
         f"/leg/community/{BATTERY_COMMUNITY}/battery",
         data={
             "csrf_token": "csrf-secret",
+            "participant_id": "battery-a",
             "capacity_kwh": "45",
             "annual_cost_chf": "960",
             "share:b-admin": "50",
@@ -582,6 +618,7 @@ def test_battery_save_returns_503_when_storage_is_unavailable(app_module, monkey
         f"/leg/community/{BATTERY_COMMUNITY}/battery",
         data={
             "csrf_token": "csrf-secret",
+            "participant_id": "battery-a",
             "capacity_kwh": "45",
             "annual_cost_chf": "960",
             "share:b-admin": "50",
@@ -605,6 +642,7 @@ def test_battery_save_refuses_shares_that_do_not_sum_to_100(app_module, monkeypa
         f"/leg/community/{BATTERY_COMMUNITY}/battery",
         data={
             "csrf_token": "csrf-secret",
+            "participant_id": "battery-a",
             "capacity_kwh": "45",
             "annual_cost_chf": "960",
             "share:b-admin": "50",
@@ -627,6 +665,7 @@ def test_battery_save_refuses_a_negative_share(app_module, monkeypatch):  # noqa
         f"/leg/community/{BATTERY_COMMUNITY}/battery",
         data={
             "csrf_token": "csrf-secret",
+            "participant_id": "battery-a",
             "capacity_kwh": "45",
             "annual_cost_chf": "960",
             "share:b-admin": "-1",

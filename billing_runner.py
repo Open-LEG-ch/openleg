@@ -26,7 +26,7 @@ def _battery_lines(community_id, participants, period_start, period_end):
     """
     battery = db.get_battery(community_id)
     if not battery:
-        return None, []
+        return None, None, []
     try:
         battery = quartierakku.validate_battery_config(
             {**battery, "community_id": community_id}
@@ -34,7 +34,10 @@ def _battery_lines(community_id, participants, period_start, period_end):
     except quartierakku.InvalidBatteryConfig as exc:
         raise BillingRunError(str(exc)) from exc
     lines = []
+    battery_participant_id = battery["participant_id"]
     for participant_id in participants:
+        if participant_id == battery_participant_id:
+            continue
         share = battery["shares"].get(participant_id)
         if share is None:
             raise BillingRunError(
@@ -61,6 +64,7 @@ def _battery_lines(community_id, participants, period_start, period_end):
     # exact strings so a re-run hashes identically.
     snapshot = {
         "community_id": community_id,
+        "participant_id": battery_participant_id,
         "capacity_kwh": str(battery["capacity_kwh"]),
         "annual_cost_chf": str(battery["annual_cost_chf"]),
         "period_start": period_start.isoformat(),
@@ -70,7 +74,7 @@ def _battery_lines(community_id, participants, period_start, period_end):
             participant: str(share) for participant, share in battery["shares"].items()
         },
     }
-    return snapshot, lines
+    return battery, snapshot, lines
 
 
 def previous_complete_month(now=None):
@@ -145,6 +149,15 @@ def run_billing_period(
             frames = billing_readings.with_calculated_vnb_evidence(frames, calculated)
         if not frames.provenance["source_document_ids"]:
             raise BillingRunError("Billing readings have no import provenance")
+        battery, battery_snapshot, battery_lines = _battery_lines(
+            community_id, list(frames.participants), period_start, period_end
+        )
+        battery_kwargs = {}
+        if battery:
+            battery_kwargs = {
+                "battery_participant_id": battery["participant_id"],
+                "battery_capacity_kwh": battery["capacity_kwh"],
+            }
         summary = billing_engine.generate_billing_summary(
             frames.production,
             frames.consumption,
@@ -153,12 +166,20 @@ def run_billing_period(
             network_level=policy["network_level"],
             distribution_model=policy["distribution_model"],
             settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
-        )
-        battery_snapshot, battery_lines = _battery_lines(
-            community_id, list(frames.participants), period_start, period_end
+            **battery_kwargs,
         )
         if battery_lines:
             summary["line_items"].extend(battery_lines)
+        if battery_snapshot:
+            battery_snapshot["attribution"] = {
+                participant["id"]: {
+                    "direct_solar_kwh": participant["direct_solar_kwh"],
+                    "battery_kwh": participant["battery_kwh"],
+                }
+                for participant in summary["participants"]
+                if participant["id"] != battery["participant_id"]
+            }
+            battery_snapshot["energy"] = dict(summary["battery_energy"])
             summary["battery_snapshot"] = battery_snapshot
         reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
         participant_gaps = reconciliation["per_participant"].values()

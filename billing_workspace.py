@@ -149,6 +149,32 @@ def _detail_model(period):
     """Build the complete read-only audit model for one billing period."""
     raw_reconciliation = _json_value(period.get("reconciliation"), {})
     source_ids = _json_value(period.get("source_document_ids"), [])
+    battery_snapshot = _json_value(period.get("battery_snapshot"), {})
+    raw_battery_energy = _json_value(battery_snapshot.get("energy"), {})
+    raw_attribution = _json_value(battery_snapshot.get("attribution"), {})
+    battery_energy = (
+        {
+            key: _decimal_text(raw_battery_energy.get(key), 3)
+            for key in (
+                "charged_kwh",
+                "discharged_kwh",
+                "charge_discharge_difference_kwh",
+                "allocated_battery_kwh",
+                "unallocated_discharge_kwh",
+            )
+        }
+        if raw_battery_energy
+        else None
+    )
+    battery_attribution = [
+        {
+            "participant_id": participant_id,
+            "direct_solar_kwh": _decimal_text(values.get("direct_solar_kwh"), 3),
+            "battery_kwh": _decimal_text(values.get("battery_kwh"), 3),
+        }
+        for participant_id, values in sorted(raw_attribution.items())
+        if isinstance(participant_id, str) and isinstance(values, dict)
+    ]
     line_items = [_display_line_item(item) for item in period.get("line_items", [])]
     result = _period_summary(period)
     result.update(
@@ -214,6 +240,8 @@ def _detail_model(period):
         battery_shares=[
             item for item in line_items if item.get("item_type") == "battery_cost_share"
         ],
+        battery_energy=battery_energy,
+        battery_attribution=battery_attribution,
         producer_credits=[
             item for item in line_items if item.get("item_type") == "producer_credit"
         ],

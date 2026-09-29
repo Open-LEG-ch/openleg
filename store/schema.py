@@ -1061,8 +1061,13 @@ def create_tables():
                     community_id VARCHAR(64) PRIMARY KEY REFERENCES communities(community_id) ON DELETE CASCADE,
                     capacity_kwh DECIMAL(10, 2) NOT NULL CHECK (capacity_kwh > 0),
                     annual_cost_chf DECIMAL(12, 2) NOT NULL CHECK (annual_cost_chf >= 0),
+                    participant_id VARCHAR(64),
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+            cur.execute("""
+                ALTER TABLE community_batteries
+                ADD COLUMN IF NOT EXISTS participant_id VARCHAR(64)
             """)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS community_battery_shares (

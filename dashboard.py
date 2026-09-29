@@ -233,6 +233,7 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         else:
             battery_view = _battery_view(battery, status["members"])
             battery_form_values = {
+                "participant_id": battery["participant_id"],
                 "capacity_kwh": str(battery["capacity_kwh"]),
                 "annual_cost_chf": str(battery["annual_cost_chf"]),
                 **{

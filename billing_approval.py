@@ -563,7 +563,75 @@ def _require_wellformed_line_items(line_items, internal_price, settlement_fee):
     return line_items, consumption_kwh, production_kwh
 
 
-def _require_battery_cost_shares(period, community_id, line_items):
+def _require_battery_energy_snapshot(
+    battery_snapshot, battery, consumption_kwh, production_kwh
+):
+    """Reconcile the frozen source attribution with approved energy lines."""
+    participant_id = battery["participant_id"]
+    energy = battery_snapshot.get("energy")
+    attribution = battery_snapshot.get("attribution")
+    if not isinstance(energy, dict) or not isinstance(attribution, dict):
+        raise BillingApprovalError(
+            "Die Energieaufteilung des Quartierakkus ist unvollständig."
+        )
+
+    def quantity(container, key, *, signed=False):
+        value = _as_decimal(container.get(key))
+        if (
+            not value.is_finite()
+            or _exceeds_precision(value, 6)
+            or (not signed and value < 0)
+        ):
+            raise BillingApprovalError(
+                "Die Energieaufteilung des Quartierakkus ist ungültig."
+            )
+        return value
+
+    charged = quantity(energy, "charged_kwh")
+    discharged = quantity(energy, "discharged_kwh")
+    difference = quantity(energy, "charge_discharge_difference_kwh", signed=True)
+    allocated = quantity(energy, "allocated_battery_kwh")
+    unallocated = quantity(energy, "unallocated_discharge_kwh")
+    if difference != charged - discharged or unallocated != discharged - allocated:
+        raise BillingApprovalError(
+            "Die Energiebilanz des Quartierakkus ist nicht ausgeglichen."
+        )
+
+    expected_consumers = set(consumption_kwh) - {participant_id}
+    if set(attribution) != expected_consumers:
+        raise BillingApprovalError(
+            "Die Energieaufteilung des Quartierakkus deckt die Teilnehmer nicht ab."
+        )
+    attributed_battery = Decimal(0)
+    for consumer_id in sorted(expected_consumers):
+        values = attribution.get(consumer_id)
+        if not isinstance(values, dict):
+            raise BillingApprovalError(
+                "Die Energieaufteilung des Quartierakkus ist ungültig."
+            )
+        direct = quantity(values, "direct_solar_kwh")
+        battery_kwh = quantity(values, "battery_kwh")
+        if direct + battery_kwh != consumption_kwh[consumer_id]:
+            raise BillingApprovalError(
+                "Die Energiequellen des Quartierakkus stimmen für einen "
+                "Teilnehmer nicht mit dem Entwurf überein."
+            )
+        attributed_battery += battery_kwh
+
+    if (
+        attributed_battery != allocated
+        or production_kwh.get(participant_id) != allocated
+        or participant_id not in consumption_kwh
+        or consumption_kwh[participant_id] > charged
+    ):
+        raise BillingApprovalError(
+            "Die Energieaufteilung des Quartierakkus stimmt nicht mit dem Entwurf überein."
+        )
+
+
+def _require_battery_cost_shares(
+    period, community_id, line_items, consumption_kwh, production_kwh
+):
     """Require the battery cost shares the frozen asset config implies.
 
     A draft without a battery snapshot may carry no battery lines. With one,
@@ -605,7 +673,12 @@ def _require_battery_cost_shares(period, community_id, line_items):
         raise BillingApprovalError(
             "Die Abrechnungsperiode des Quartierakkus stimmt nicht mit dem Entwurf überein."
         )
-    billed = {item["participant_id"] for item in line_items}
+    battery_participant_id = battery.get("participant_id")
+    billed = {
+        item["participant_id"]
+        for item in line_items
+        if item["participant_id"] != battery_participant_id
+    }
     share_lines = [
         item for item in line_items if item.get("item_type") == "battery_cost_share"
     ]
@@ -637,6 +710,9 @@ def _require_battery_cost_shares(period, community_id, line_items):
                 "Der Quartierakku-Anteil entspricht nicht der gespeicherten "
                 "Kostenaufteilung."
             )
+    _require_battery_energy_snapshot(
+        battery_snapshot, battery, consumption_kwh, production_kwh
+    )
 
 
 def _exceeds_precision(value, places):
@@ -697,7 +773,9 @@ def prepare_invoice_snapshots(period, issue_date=None):
     )
     reconciliation = period.get("reconciliation")
     _require_canonical_reconciliation(reconciliation, consumption_kwh, production_kwh)
-    _require_battery_cost_shares(period, community_id, line_items)
+    _require_battery_cost_shares(
+        period, community_id, line_items, consumption_kwh, production_kwh
+    )
 
     policy = period["billing_policy_snapshot"]
     due_date = issue_date + timedelta(days=payment_days)

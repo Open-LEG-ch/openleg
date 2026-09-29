@@ -97,6 +97,25 @@
         <p class="mt-4 break-all font-mono text-xs text-ink-muted">Fingerabdruck: {{ selected.provenance.input_fingerprint }}</p>
       </section>
 
+      {% if selected.battery_energy %}
+      <section class="mt-8 rounded-2xl border border-line bg-white p-5" aria-labelledby="battery-energy-title">
+        <h3 id="battery-energy-title" class="text-lg font-bold">Energie aus dem Quartierakku</h3>
+        <dl class="mt-4 grid grid-cols-2 gap-4 text-sm lg:grid-cols-5">
+          <div><dt class="text-ink-muted">Geladen</dt><dd class="mt-1 font-mono font-semibold">{{ selected.battery_energy.charged_kwh }} kWh</dd></div>
+          <div><dt class="text-ink-muted">Entladen</dt><dd class="mt-1 font-mono font-semibold">{{ selected.battery_energy.discharged_kwh }} kWh</dd></div>
+          <div><dt class="text-ink-muted">Differenz</dt><dd class="mt-1 font-mono font-semibold">{{ selected.battery_energy.charge_discharge_difference_kwh }} kWh</dd><p class="mt-1 text-xs text-ink-muted">Enthält die Änderung des Speicherstands und Speicherverluste.</p></div>
+          <div><dt class="text-ink-muted">Lokal zugeteilt</dt><dd class="mt-1 font-mono font-semibold">{{ selected.battery_energy.allocated_battery_kwh }} kWh</dd></div>
+          <div><dt class="text-ink-muted">Nicht zugeteilt</dt><dd class="mt-1 font-mono font-semibold">{{ selected.battery_energy.unallocated_discharge_kwh }} kWh</dd></div>
+        </dl>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-paper-deep text-left text-xs text-ink-muted"><tr><th class="px-4 py-3">Teilnehmer</th><th class="px-4 py-3 text-right">Direkte Solarenergie</th><th class="px-4 py-3 text-right">Batterieenergie</th></tr></thead>
+            <tbody class="divide-y divide-line">{% for item in selected.battery_attribution %}<tr><td class="px-4 py-3 font-mono">{{ item.participant_id }}</td><td class="px-4 py-3 text-right font-mono">{{ item.direct_solar_kwh }} kWh</td><td class="px-4 py-3 text-right font-mono">{{ item.battery_kwh }} kWh</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+      </section>
+      {% endif %}
+
       {% for title, items, tone in [
         ('Belastungen', selected.consumer_charges, 'charge'),
         ('Abrechnungsentgelt', selected.settlement_charges, 'settlement'),

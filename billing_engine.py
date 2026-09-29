@@ -8,7 +8,7 @@ Implements Art. 17d/17e StromVG allocation models:
 """
 
 from decimal import ROUND_HALF_UP, Decimal
-from math import isfinite
+from math import floor, isfinite
 
 import numpy as np
 import pandas as pd
@@ -102,6 +102,99 @@ def compute_network_discount(allocated_kwh, grid_fee_per_kwh, network_level):
     return allocated_kwh * grid_fee_per_kwh * rate
 
 
+def _battery_source_attribution(
+    production, consumption, allocation, participant_id, capacity_kwh
+):
+    """Attribute already-allocated energy to one metered battery source."""
+    try:
+        capacity_kwh = float(capacity_kwh)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Battery capacity must be finite and positive") from exc
+    if not isfinite(capacity_kwh) or capacity_kwh <= 0:
+        raise ValueError("Battery capacity must be finite and positive")
+    if (
+        participant_id not in production.columns
+        or participant_id not in consumption.columns
+    ):
+        raise ValueError("The configured battery has incomplete metering readings")
+
+    discharge = production[participant_id]
+    charge = consumption[participant_id]
+    if ((charge > 0) & (discharge > 0)).any():
+        raise ValueError("The configured battery charges and discharges simultaneously")
+
+    # An unknown opening state is valid when some opening state in [0, capacity]
+    # can explain the whole measured series. The cumulative range proves that.
+    state_delta = (charge - discharge).cumsum()
+    state_path = np.concatenate(([0.0], state_delta.to_numpy(dtype=float)))
+    state_span = float(state_path.max() - state_path.min())
+    if state_span > capacity_kwh + 1e-9:
+        raise ValueError("The configured battery readings exceed its capacity")
+
+    total_production = production.sum(axis=1)
+    battery_fraction = (
+        discharge.div(total_production.where(total_production > 0))
+        .fillna(0.0)
+        .clip(lower=0.0, upper=1.0)
+    )
+    allocated_by_consumer = {}
+    raw_battery_by_consumer = {}
+    for consumer_id in allocation.columns:
+        if consumer_id == participant_id:
+            continue
+        allocated = round(float(allocation[consumer_id].sum()), 6)
+        battery_kwh = float((allocation[consumer_id] * battery_fraction).sum())
+        allocated_by_consumer[consumer_id] = allocated
+        raw_battery_by_consumer[consumer_id] = min(battery_kwh, allocated)
+
+    # Persisted line quantities use six decimals. Floor each source share and
+    # distribute the remaining micro-kWh deterministically so the participant
+    # attribution sums exactly to the battery producer credit.
+    battery_by_consumer = {
+        consumer_id: floor(value * 1_000_000) / 1_000_000
+        for consumer_id, value in raw_battery_by_consumer.items()
+    }
+    battery_target = round(sum(raw_battery_by_consumer.values()), 6)
+    remaining_units = round(
+        (battery_target - sum(battery_by_consumer.values())) * 1_000_000
+    )
+    remainder_order = sorted(
+        raw_battery_by_consumer,
+        key=lambda consumer_id: (
+            -(
+                raw_battery_by_consumer[consumer_id] * 1_000_000
+                - floor(raw_battery_by_consumer[consumer_id] * 1_000_000)
+            ),
+            str(consumer_id),
+        ),
+    )
+    for consumer_id in remainder_order[:remaining_units]:
+        battery_by_consumer[consumer_id] = round(
+            battery_by_consumer[consumer_id] + 0.000001, 6
+        )
+
+    attribution = {}
+    for consumer_id, allocated in allocated_by_consumer.items():
+        battery_kwh = battery_by_consumer[consumer_id]
+        attribution[consumer_id] = {
+            "direct_solar_kwh": round(allocated - battery_kwh, 6),
+            "battery_kwh": battery_kwh,
+        }
+
+    charged_kwh = round(float(charge.sum()), 6)
+    discharged_kwh = round(float(discharge.sum()), 6)
+    audit = {
+        "charged_kwh": charged_kwh,
+        "discharged_kwh": discharged_kwh,
+        "charge_discharge_difference_kwh": round(charged_kwh - discharged_kwh, 6),
+        "allocated_battery_kwh": battery_target,
+    }
+    audit["unallocated_discharge_kwh"] = round(
+        discharged_kwh - audit["allocated_battery_kwh"], 6
+    )
+    return attribution, audit
+
+
 def generate_billing_summary(
     production,
     consumption,
@@ -110,6 +203,8 @@ def generate_billing_summary(
     network_level,
     distribution_model="proportional",
     settlement_fee_per_kwh=0.0,
+    battery_participant_id=None,
+    battery_capacity_kwh=None,
 ):
     """Generate billing summary for a period.
 
@@ -123,6 +218,10 @@ def generate_billing_summary(
         settlement_fee_per_kwh: VNB settlement fee per settled kWh (CHF).
             Zero leaves the draft in the exact pre-fee shape so periods
             billed without the fee stay reproducible.
+        battery_participant_id: participant whose production is battery
+            discharge and whose consumption is battery charging.
+        battery_capacity_kwh: configured usable capacity. The measured state
+            swing must fit inside it.
 
     Returns:
         dict with total_production_kwh, total_allocated_kwh,
@@ -167,6 +266,19 @@ def generate_billing_summary(
         total_production_series, consumption, model=distribution_model
     )
 
+    battery_attribution = None
+    battery_audit = None
+    if battery_participant_id is not None:
+        if producer_production is None:
+            raise ValueError("Battery allocation requires participant production")
+        battery_attribution, battery_audit = _battery_source_attribution(
+            producer_production,
+            consumption,
+            allocation,
+            battery_participant_id,
+            battery_capacity_kwh,
+        )
+
     total_production = float(total_production_series.sum())
     total_allocated = float(allocation.values.sum())
     total_discount = compute_network_discount(
@@ -190,6 +302,8 @@ def generate_billing_summary(
             "internal_cost_chf": _currency(cost),
             "network_discount_chf": _currency(_money(discount)),
         }
+        if battery_attribution is not None and col != battery_participant_id:
+            participant.update(battery_attribution[col])
         participants.append(participant)
         if producer_production is not None:
             line_items.append(
@@ -271,4 +385,6 @@ def generate_billing_summary(
     if settlement_fee_per_kwh > 0:
         summary["settlement_fee_chf_per_kwh"] = settlement_fee_per_kwh
         summary["total_settlement_fee_chf"] = _currency(charge_fee_total)
+    if battery_audit is not None:
+        summary["battery_energy"] = battery_audit
     return summary
