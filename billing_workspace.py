@@ -171,6 +171,7 @@ def _detail_model(period):
             "participant_id": participant_id,
             "direct_solar_kwh": _decimal_text(values.get("direct_solar_kwh"), 3),
             "battery_kwh": _decimal_text(values.get("battery_kwh"), 3),
+            "value_chf": _decimal_text(values.get("value_chf"), 2),
         }
         for participant_id, values in sorted(raw_attribution.items())
         if isinstance(participant_id, str) and isinstance(values, dict)

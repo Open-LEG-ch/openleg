@@ -147,6 +147,73 @@ def test_member_invoice_detail_view_builds_model_from_frozen_snapshot_only(
     assert view["credits"][0]["item_type"] == "producer_credit"
 
 
+def test_member_invoice_detail_uses_the_frozen_battery_source(monkeypatch):
+    import copy
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["provenance_snapshot"]["battery_source"] = {
+        "battery_kwh": "18.500000",
+        "value_chf": "2.78",
+    }
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["battery_source"] == {
+        "battery_kwh": member_invoices.Decimal("18.500000"),
+        "value_chf": member_invoices.Decimal("2.78"),
+    }
+    assert view["display_battery_kwh"] == "18.500"
+    assert view["display_battery_value_chf"] == "2.78"
+
+
+def test_member_invoice_detail_hides_battery_source_without_a_frozen_allocation(
+    monkeypatch,
+):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=INVOICE_ROW),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["battery_source"] is None
+    assert view["display_battery_kwh"] is None
+    assert view["display_battery_value_chf"] is None
+
+
+@pytest.mark.parametrize(
+    "source",
+    ["not a mapping", {}, {"battery_kwh": "-1", "value_chf": "1"}],
+)
+def test_member_invoice_detail_fails_closed_on_invalid_battery_source(
+    monkeypatch, source
+):
+    import copy
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["provenance_snapshot"]["battery_source"] = source
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError, match="Quartierakku"):
+        member_invoices.detail_view(42, "building-session")
+
+
 def test_member_invoice_detail_uses_frozen_community_id_for_legacy_invoice(
     monkeypatch,
 ):
@@ -1012,6 +1079,44 @@ def test_dashboard_invoice_detail_renders_the_applied_policy_summary(
     assert "8.00 Rp./kWh" in body
     assert "Zahlungsfrist" in body
     assert "30 Tage" in body
+
+
+def test_dashboard_invoice_detail_renders_the_frozen_battery_source(
+    dashboard_app_module,  # noqa: F811
+    monkeypatch,
+):
+    view = {
+        **DETAIL_VIEW,
+        "battery_source": {"battery_kwh": "18.5", "value_chf": "2.78"},
+        "display_battery_kwh": "18.500",
+        "display_battery_value_chf": "2.78",
+    }
+    _patch_invoice_detail(dashboard_app_module, monkeypatch, view_by_owner={42: view})
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
+    client = dashboard_app_module.web.test_client()
+    _set_session(client)
+
+    body = client.get("/dashboard/invoices/42").get_data(as_text=True)
+
+    assert "Strom aus dem Quartierakku" in body
+    assert "18.500 kWh" in body
+    assert "2.78 CHF" in body
+
+
+def test_dashboard_invoice_detail_has_no_battery_placeholder_without_allocation(
+    dashboard_app_module,  # noqa: F811
+    monkeypatch,
+):
+    _patch_invoice_detail(
+        dashboard_app_module, monkeypatch, view_by_owner={42: DETAIL_VIEW}
+    )
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
+    client = dashboard_app_module.web.test_client()
+    _set_session(client)
+
+    body = client.get("/dashboard/invoices/42").get_data(as_text=True)
+
+    assert "Strom aus dem Quartierakku" not in body
 
 
 def test_dashboard_invoice_pdf_requires_session(dashboard_app_module):  # noqa: F811

@@ -109,8 +109,8 @@
         </dl>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-paper-deep text-left text-xs text-ink-muted"><tr><th class="px-4 py-3">Teilnehmer</th><th class="px-4 py-3 text-right">Direkte Solarenergie</th><th class="px-4 py-3 text-right">Batterieenergie</th></tr></thead>
-            <tbody class="divide-y divide-line">{% for item in selected.battery_attribution %}<tr><td class="px-4 py-3 font-mono">{{ item.participant_id }}</td><td class="px-4 py-3 text-right font-mono">{{ item.direct_solar_kwh }} kWh</td><td class="px-4 py-3 text-right font-mono">{{ item.battery_kwh }} kWh</td></tr>{% endfor %}</tbody>
+            <thead class="bg-paper-deep text-left text-xs text-ink-muted"><tr><th class="px-4 py-3">Teilnehmer</th><th class="px-4 py-3 text-right">Direkte Solarenergie</th><th class="px-4 py-3 text-right">Batterieenergie</th><th class="px-4 py-3 text-right">Wert</th></tr></thead>
+            <tbody class="divide-y divide-line">{% for item in selected.battery_attribution %}<tr><td class="px-4 py-3 font-mono">{{ item.participant_id }}</td><td class="px-4 py-3 text-right font-mono">{{ item.direct_solar_kwh }} kWh</td><td class="px-4 py-3 text-right font-mono">{{ item.battery_kwh }} kWh</td><td class="px-4 py-3 text-right font-mono">{{ item.value_chf }} CHF</td></tr>{% endfor %}</tbody>
           </table>
         </div>
       </section>

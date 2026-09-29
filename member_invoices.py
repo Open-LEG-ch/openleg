@@ -425,6 +425,30 @@ def _issuer_name(invoice: dict, provenance: dict) -> str:
     )
 
 
+def _battery_source_view(provenance: dict) -> dict | None:
+    """Read the immutable battery attribution frozen when the invoice was issued."""
+    source = provenance.get("battery_source")
+    if source is None:
+        return None
+    if not isinstance(source, dict):
+        raise MemberInvoiceDataError(
+            "Die Quartierakku-Angabe dieser Rechnung ist ungültig."
+        )
+    battery_kwh = _require_finite_decimal(
+        source.get("battery_kwh"),
+        "Die Quartierakku-Angabe dieser Rechnung ist ungültig.",
+    )
+    value_chf = _require_finite_decimal(
+        source.get("value_chf"),
+        "Die Quartierakku-Angabe dieser Rechnung ist ungültig.",
+    )
+    if battery_kwh < 0 or value_chf < 0:
+        raise MemberInvoiceDataError(
+            "Die Quartierakku-Angabe dieser Rechnung ist ungültig."
+        )
+    return {"battery_kwh": battery_kwh, "value_chf": value_chf}
+
+
 def _require_invoice_totals(
     invoice: dict,
     vat_mode: str,
@@ -530,6 +554,7 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
     )
 
     issuer_name = _issuer_name(invoice, provenance)
+    battery_source = _battery_source_view(provenance)
 
     vat_rate, net, vat = _require_invoice_totals(
         invoice, vat_mode, policy_vat_rate, rendered_items
@@ -566,6 +591,17 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
         "policy_payment_days": payment_days,
         "display_net_chf": _decimal_text(net, 2),
         "display_vat_chf": _decimal_text(vat, 2),
+        "battery_source": battery_source,
+        "display_battery_kwh": (
+            _decimal_text(battery_source["battery_kwh"], 3)
+            if battery_source is not None
+            else None
+        ),
+        "display_battery_value_chf": (
+            _decimal_text(battery_source["value_chf"], 2)
+            if battery_source is not None
+            else None
+        ),
         "charges": [i for i in line_items if i["item_type"] == "consumer_charge"],
         "settlement_charges": [
             i for i in line_items if i["item_type"] == "settlement_fee"

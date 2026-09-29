@@ -357,8 +357,10 @@ class TestQuartierakkuAllocation:
         participants = {item["id"]: item for item in summary["participants"]}
         assert participants["home-a"]["direct_solar_kwh"] == 2.0
         assert participants["home-a"]["battery_kwh"] == 3.0
+        assert participants["home-a"]["battery_value_chf"] == 0.45
         assert participants["home-b"]["direct_solar_kwh"] == 2.0
         assert participants["home-b"]["battery_kwh"] == 1.0
+        assert participants["home-b"]["battery_value_chf"] == 0.15
         assert summary["battery_energy"] == {
             "charged_kwh": 0.0,
             "discharged_kwh": 4.0,

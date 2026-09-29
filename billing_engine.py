@@ -304,6 +304,9 @@ def generate_billing_summary(
         }
         if battery_attribution is not None and col != battery_participant_id:
             participant.update(battery_attribution[col])
+            participant["battery_value_chf"] = _currency(
+                _priced_amount(participant["battery_kwh"], internal_price_per_kwh)
+            )
         participants.append(participant)
         if producer_production is not None:
             line_items.append(

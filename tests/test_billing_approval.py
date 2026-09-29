@@ -2132,6 +2132,7 @@ def _battery_draft_for_approval():
             participant["id"]: {
                 "direct_solar_kwh": participant["direct_solar_kwh"],
                 "battery_kwh": participant["battery_kwh"],
+                "value_chf": participant["battery_value_chf"],
             }
             for participant in summary["participants"]
             if participant["id"] != "battery"
@@ -2188,12 +2189,24 @@ def test_prepare_accepts_a_reconciled_frozen_battery_energy_audit():
         "battery",
         "home",
     }
+    home = next(
+        snapshot for snapshot in snapshots if snapshot["participant_id"] == "home"
+    )
+    assert home["provenance_snapshot"]["battery_source"] == {
+        "battery_kwh": 2.0,
+        "value_chf": 0.3,
+    }
+    battery = next(
+        snapshot for snapshot in snapshots if snapshot["participant_id"] == "battery"
+    )
+    assert battery["provenance_snapshot"]["battery_source"] is None
 
 
 @pytest.mark.parametrize(
     "mutation",
     [
         lambda snapshot: snapshot["attribution"]["home"].update(battery_kwh=1.9),
+        lambda snapshot: snapshot["attribution"]["home"].update(value_chf=99),
         lambda snapshot: snapshot["energy"].update(charge_discharge_difference_kwh=0),
         lambda snapshot: snapshot["energy"].update(unallocated_discharge_kwh=0.1),
         lambda snapshot: snapshot.pop("attribution"),

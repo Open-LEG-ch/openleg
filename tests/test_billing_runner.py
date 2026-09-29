@@ -961,6 +961,7 @@ def _battery_case():
             "id": "building-a",
             "direct_solar_kwh": 1.0,
             "battery_kwh": 0.5,
+            "battery_value_chf": 0.06,
         }
     ]
     case["summary"]["battery_energy"] = {
@@ -1187,7 +1188,12 @@ def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch
         "unallocated_discharge_kwh": 0.0,
     }
     assert snapshot["attribution"] == {
-        home: {"direct_solar_kwh": 1.0, "battery_kwh": 1.0} for home in homes
+        home: {
+            "direct_solar_kwh": 1.0,
+            "battery_kwh": 1.0,
+            "value_chf": 0.12,
+        }
+        for home in homes
     }
     battery_line_types = {
         item["item_type"]

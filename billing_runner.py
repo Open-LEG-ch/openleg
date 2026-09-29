@@ -175,6 +175,7 @@ def run_billing_period(
                 participant["id"]: {
                     "direct_solar_kwh": participant["direct_solar_kwh"],
                     "battery_kwh": participant["battery_kwh"],
+                    "value_chf": participant["battery_value_chf"],
                 }
                 for participant in summary["participants"]
                 if participant["id"] != battery["participant_id"]
