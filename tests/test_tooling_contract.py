@@ -14,5 +14,5 @@ def test_ruff_016_is_pinned_with_reviewed_exceptions():
     runtime_requirements = (PROJECT_ROOT / "requirements.txt").read_text().splitlines()
 
     assert "ruff==0.16.8" in requirements
-    assert "tzdata==2026.3" in runtime_requirements
+    assert "tzdata==2026.4" in runtime_requirements
     assert config["tool"]["ruff"]["lint"]["ignore"] == ["BLE001", "SIM117"]
