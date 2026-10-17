@@ -595,9 +595,9 @@ def get_invoices_for_participant(building_id: str) -> list[dict]:
             cur.execute(
                 """
                 SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
-                       policy_snapshot, provenance_snapshot,
-                       line_items_snapshot, net_chf, vat_rate_pct, vat_chf,
-                       gross_chf, issue_date, due_date,
+                       i.policy_snapshot, i.provenance_snapshot,
+                       i.line_items_snapshot, i.net_chf, i.vat_rate_pct, i.vat_chf,
+                       i.gross_chf, i.issue_date, i.due_date,
                        COALESCE((
                            SELECT e.new_state FROM invoice_lifecycle_events e
                            WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
