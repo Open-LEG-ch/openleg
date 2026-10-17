@@ -4,6 +4,7 @@
 import json
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
+from zoneinfo import ZoneInfo
 
 import database as db
 
@@ -82,6 +83,9 @@ def _json_value(value, fallback):
     return value if isinstance(value, type(fallback)) else fallback
 
 
+_LOCAL_TZ = ZoneInfo("Europe/Zurich")
+
+
 def _period_label(value):
     """Return a Swiss High German month and year label."""
     if isinstance(value, str):
@@ -89,6 +93,10 @@ def _period_label(value):
             value = datetime.fromisoformat(value)
         except ValueError:
             return value
+    if isinstance(value, datetime) and value.tzinfo is not None:
+        # Periods are Europe/Zurich calendar months stored as UTC instants:
+        # September starts at 2026-08-31T22:00Z and must not read as August.
+        value = value.astimezone(_LOCAL_TZ)
     if isinstance(value, (datetime, date)):
         return f"{_MONTHS[value.month - 1]} {value.year}"
     return "Periode"
