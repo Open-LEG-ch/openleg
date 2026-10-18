@@ -267,6 +267,23 @@ def test_non_finite_numeric_values_are_never_displayed(monkeypatch, non_finite):
     assert selected["tariff"]["internal_price"] == "Nicht angegeben"
 
 
+@pytest.mark.parametrize(
+    ("period_start", "expected"),
+    [
+        # PostgreSQL returns TIMESTAMPTZ in the session zone, typically UTC.
+        # September 2026 starts at 2026-08-31T22:00Z (CEST), January 2026 at
+        # 2025-12-31T23:00Z (CET); the label must name the Swiss month.
+        (datetime(2026, 8, 31, 22, 0, tzinfo=ZoneInfo("UTC")), "September 2026"),
+        ("2026-08-31T22:00:00+00:00", "September 2026"),
+        (datetime(2025, 12, 31, 23, 0, tzinfo=ZoneInfo("UTC")), "Januar 2026"),
+        (datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")), "September 2026"),
+        ("2026-07-01", "Juli 2026"),
+    ],
+)
+def test_period_label_names_the_swiss_calendar_month(period_start, expected):
+    assert _module().period_label(period_start) == expected
+
+
 def test_rate_uses_explicit_half_up_rounding():
     workspace = _module()
 

@@ -633,6 +633,39 @@ def test_detail_view_rejects_zero_vat_rate_in_standard_mode(monkeypatch):
     )
 
 
+def test_member_views_name_the_swiss_month_of_a_utc_period_start(monkeypatch):
+    """The billing runner persists the period start as a UTC instant: August
+    2026 begins at 2026-07-31T22:00Z. List, detail and PDF must still read
+    "August 2026", not the UTC calendar date's month."""
+    import member_invoices
+
+    row = _corrupt_invoice_row(
+        provenance_snapshot={
+            **INVOICE_ROW["provenance_snapshot"],
+            "period_start": "2026-07-31T22:00:00+00:00",
+            "period_end": "2026-08-31T22:00:00+00:00",
+        },
+        issue_date="2026-09-05",
+        due_date="2026-10-05",
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoices_for_participant",
+        MagicMock(return_value=[row]),
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    listed = member_invoices.list_view("building-session")
+    detail = member_invoices.detail_view(42, "building-session")
+
+    assert [item["period_label"] for item in listed["invoices"]] == ["August 2026"]
+    assert detail["period_label"] == "August 2026"
+
+
 def test_list_view_fails_closed_on_corrupted_snapshot(monkeypatch):
     import member_invoices
 
