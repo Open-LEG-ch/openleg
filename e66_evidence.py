@@ -3,7 +3,7 @@
 
 import hashlib
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 
 import sdat_e66
 import vnb_calculated_values
@@ -81,9 +81,10 @@ def parse_source(evidence):
                 # Coded quality needs a separately reviewed source profile.
                 if observation["condition"] is not None:
                     raise E66EvidenceError("unsupported_e66_quality")
-                value = Decimal(observation["value"])
-                if not value.is_finite() or value < 0 or value * 1000 % 1:
-                    raise E66EvidenceError("invalid_e66_precision")
+                try:
+                    sdat_e66.exact_e66_kwh(observation["value"])
+                except ValueError as error:
+                    raise E66EvidenceError(str(error)) from None
         if (
             not series
             or external_communities == {None}
@@ -96,15 +97,17 @@ def parse_source(evidence):
         ):
             raise E66EvidenceError("incomplete_e66_channels")
         for row in document["rows"]:
-            if abs(row["total_kwh"] - row["grid_kwh"] - row["community_kwh"]) > Decimal(
-                "0.001"
-            ):
+            if abs(
+                sdat_e66.exact_e66_kwh(row["total_kwh"])
+                - sdat_e66.exact_e66_kwh(row["grid_kwh"])
+                - sdat_e66.exact_e66_kwh(row["community_kwh"])
+            ) > Fraction(1, 1000):
                 raise E66EvidenceError("unbalanced_e66_channels")
         document["evidence_sha256"] = hashlib.sha256(evidence).hexdigest()
         return document
     except E66EvidenceError:
         raise
-    except (KeyError, TypeError, ValueError, OverflowError, InvalidOperation):
+    except (KeyError, TypeError, ValueError, ArithmeticError):
         raise E66EvidenceError("invalid_e66") from None
 
 

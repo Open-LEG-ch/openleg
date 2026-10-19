@@ -22,6 +22,7 @@ import re
 import xml.etree.ElementTree as ET
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 
 from defusedxml.common import DefusedXmlException
 from defusedxml.ElementTree import fromstring as _safe_xml_fromstring
@@ -234,6 +235,29 @@ def _observations(block):
             raise _DuplicateSequence(sequence)
         values[sequence] = (Decimal(volume), _text(observation, "Condition"))
     return values
+
+
+def exact_e66_kwh(value):
+    """Validate the 0.001 kWh grid without ambient Decimal rounding.
+
+    The NUMERIC(12,4) reading columns permit eight integer digits. Bound
+    magnitude before building a Fraction, including scientific notation.
+    """
+    number = Decimal(str(value))
+    if not number.is_finite() or number < 0:
+        raise ValueError("invalid_e66_precision")
+    if number >= Decimal(100000000):
+        raise ValueError("e66_value_out_of_range")
+    if number.is_zero():
+        return Fraction(0)
+    sign, digits, exponent = number.as_tuple()
+    last = len(digits)
+    while last and digits[last - 1] == 0:
+        last -= 1
+    exponent += len(digits) - last
+    if exponent < -3:
+        raise ValueError("invalid_e66_precision")
+    return Fraction(Decimal((sign, digits[:last], exponent)))
 
 
 def _unique_paths(element, paths):
