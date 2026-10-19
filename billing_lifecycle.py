@@ -3,6 +3,8 @@
 
 from datetime import date
 
+from translation_markers import gettext_noop as _N
+
 
 class InvoiceLifecycleError(ValueError):
     """A requested invoice state transition is invalid or incomplete."""
@@ -10,11 +12,11 @@ class InvoiceLifecycleError(ValueError):
 
 STATES = ("issued", "delivered", "paid", "cancelled", "corrected")
 STATE_LABELS = {
-    "issued": "Freigegeben",
-    "delivered": "Zugestellt",
-    "paid": "Bezahlt",
-    "cancelled": "Storniert",
-    "corrected": "Korrigiert",
+    "issued": _N("Freigegeben"),
+    "delivered": _N("Zugestellt"),
+    "paid": _N("Bezahlt"),
+    "cancelled": _N("Storniert"),
+    "corrected": _N("Korrigiert"),
 }
 
 _TRANSITIONS = {
@@ -38,13 +40,15 @@ def next_state(
     """Validate one state change and return its resulting canonical state."""
     new_state = _TRANSITIONS.get((current_state, event))
     if new_state is None:
-        raise InvoiceLifecycleError("Dieser Statuswechsel ist nicht zulässig.")
+        raise InvoiceLifecycleError(_N("Dieser Statuswechsel ist nicht zulässig."))
     if event in {"cancel", "correct"}:
-        _required_text(reason, "Ein Grund ist erforderlich.")
+        _required_text(reason, _N("Ein Grund ist erforderlich."))
     if event == "pay":
-        _required_text(reference, "Eine Zahlungsreferenz ist erforderlich.")
+        _required_text(reference, _N("Eine Zahlungsreferenz ist erforderlich."))
         if not isinstance(effective_date, date):
-            raise InvoiceLifecycleError("Ein gültiges Zahlungsdatum ist erforderlich.")
+            raise InvoiceLifecycleError(
+                _N("Ein gültiges Zahlungsdatum ist erforderlich.")
+            )
     return new_state
 
 
@@ -53,7 +57,7 @@ def describe_invoice(invoice):
     described = dict(invoice)
     state = invoice.get("lifecycle_state") or "issued"
     if state not in STATES:
-        raise InvoiceLifecycleError("Die Rechnung hat einen ungültigen Status.")
+        raise InvoiceLifecycleError(_N("Die Rechnung hat einen ungültigen Status."))
     described["lifecycle_state"] = state
     described["status_label"] = STATE_LABELS[state]
     return described

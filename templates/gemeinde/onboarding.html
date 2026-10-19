@@ -3,50 +3,50 @@
 
 {% block meta %}
 {{ page_meta(
-  title="Gemeinde anmelden | OpenLEG",
-  description="Melden Sie Ihre Gemeinde an und schaffen Sie einen einfachen Einstieg für lokale Stromgemeinschaften. Kostenlos, ohne eigenes IT-Projekt.",
+  title=_("Gemeinde anmelden | OpenLEG"),
+  description=_("Melden Sie Ihre Gemeinde an und schaffen Sie einen einfachen Einstieg für lokale Stromgemeinschaften. Kostenlos, ohne eigenes IT-Projekt."),
   path=canonical_path,
   og_type="website",
   site_url=site_url,
 ) }}
 {% endblock %}
 
-{% block body_class %}bg-[#f6f4ef] min-h-screen text-ink{% endblock %}
+{% block body_class %}{{ "bg-[#f6f4ef] min-h-screen text-ink" }}{% endblock %}
 
 {% block content %}
 <div class="max-w-xl mx-auto px-4 py-12">
-    <p class="text-sm font-semibold text-brand mb-2">Gemeinde-Anmeldung</p>
-    <h1 class="text-3xl font-bold mb-2">Gemeinde anmelden</h1>
-    <p class="text-ink-muted mb-8">Melden Sie Ihre Gemeinde an und schaffen Sie einen einfachen Einstieg für lokale Stromgemeinschaften. Kostenlos, ohne eigenes IT-Projekt.</p>
+    <p class="text-sm font-semibold text-brand mb-2">{{ _("Gemeinde-Anmeldung") }}</p>
+    <h1 class="text-3xl font-bold mb-2">{{ _("Gemeinde anmelden") }}</h1>
+    <p class="text-ink-muted mb-8">{{ _("Melden Sie Ihre Gemeinde an und schaffen Sie einen einfachen Einstieg für lokale Stromgemeinschaften. Kostenlos, ohne eigenes IT-Projekt.") }}</p>
 
     <form id="onboarding-form" class="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
         <div>
-            <label for="municipality-search" class="block text-sm font-medium mb-1">Gemeinde suchen</label>
-            <input type="text" id="municipality-search" placeholder="z. B. Dietikon" autocomplete="off" aria-describedby="selected-municipality" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand">
+            <label for="municipality-search" class="block text-sm font-medium mb-1">{{ _("Gemeinde suchen") }}</label>
+            <input type="text" id="municipality-search" placeholder="{{ _('z. B. Dietikon') }}" autocomplete="off" aria-describedby="selected-municipality" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand">
             <div id="search-results" class="mt-2 border border-slate-200 rounded-lg bg-white hidden max-h-56 overflow-y-auto"></div>
             <input type="hidden" id="selected-bfs">
             <input type="hidden" id="selected-name">
             <p id="selected-municipality" role="status" aria-live="polite" class="text-xs text-ink-muted mt-2 hidden"></p>
         </div>
         <div>
-            <label for="admin-email" class="block text-sm font-medium mb-1">Kontakt-E-Mail der Gemeindeverwaltung</label>
+            <label for="admin-email" class="block text-sm font-medium mb-1">{{ _("Kontakt-E-Mail der Gemeindeverwaltung") }}</label>
             <input type="email" id="admin-email" placeholder="gemeinde@example.ch" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand" required>
         </div>
         <div>
-            <label for="contact-name" class="block text-sm font-medium mb-1">Ansprechperson</label>
-            <input type="text" id="contact-name" placeholder="Vor- und Nachname" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand">
+            <label for="contact-name" class="block text-sm font-medium mb-1">{{ _("Ansprechperson") }}</label>
+            <input type="text" id="contact-name" placeholder="{{ _('Vor- und Nachname') }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand">
         </div>
         <div class="border-y border-slate-200 py-4 text-sm">
-            <h2 class="font-medium mb-1">Was Ihre Gemeinde kostenlos erhält</h2>
+            <h2 class="font-medium mb-1">{{ _("Was Ihre Gemeinde kostenlos erhält") }}</h2>
             <ul class="text-ink-muted space-y-1">
-                <li>&#10003; Eigene Instanz unter <span id="subdomain-preview" class="font-mono text-gray-900">gemeinde.openleg.ch</span></li>
-                <li>&#10003; Registrierung und Matching für Bewohner</li>
-                <li>&#10003; Übersicht über Anmeldungen und Formationsfortschritt</li>
-                <li>&#10003; Alle Dokumente inklusive (Vereinbarung, Verträge, DSO-Anmeldung)</li>
-                <li>&#10003; Keine versteckten Kosten, kein Abo, keine Anbieterbindung</li>
+                <li>{{ _("✓ Eigene Instanz unter") }} <span id="subdomain-preview" class="font-mono text-gray-900">gemeinde.openleg.ch</span></li>
+                <li>{{ _("✓ Registrierung und Matching für Bewohner") }}</li>
+                <li>{{ _("✓ Übersicht über Anmeldungen und Formationsfortschritt") }}</li>
+                <li>{{ _("✓ Alle Dokumente inklusive (Vereinbarung, Verträge, DSO-Anmeldung)") }}</li>
+                <li>{{ _("✓ Keine versteckten Kosten, kein Abo, keine Anbieterbindung") }}</li>
             </ul>
         </div>
-        <button type="submit" class="w-full bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Gemeinde anmelden</button>
+        <button type="submit" class="w-full bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _("Gemeinde anmelden") }}</button>
         <div id="form-error" role="alert" aria-live="assertive" class="text-red-600 text-sm hidden"></div>
         <div id="form-success" role="status" aria-live="polite" class="text-green-700 text-sm hidden"></div>
     </form>
@@ -81,7 +81,7 @@ function resetSelection() {
 function pickMunicipality(item) {
     selectedBfs.value = String(item.bfs_number);
     selectedName.value = item.name || '';
-    selectedMunicipality.textContent = `Ausgewählt: ${item.name} (BFS ${item.bfs_number})`;
+    selectedMunicipality.textContent = {{ _("Ausgewählt: %(name)s (BFS %(bfs)s)")|tojson }}.replace("%(name)s", item.name).replace("%(bfs)s", item.bfs_number);
     selectedMunicipality.classList.remove('hidden');
     document.getElementById('subdomain-preview').textContent = `${subdomainFromName(item.name)}.openleg.ch`;
     searchInput.value = item.name || '';
@@ -100,7 +100,7 @@ async function queryMunicipalities(q) {
         const data = await res.json();
         const items = data.results || [];
         if (!items.length) {
-            searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">Keine Gemeinde gefunden.</div>';
+            searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">' + {{ _("Keine Gemeinde gefunden.")|tojson }} + '</div>';
             searchResults.classList.remove('hidden');
             return;
         }
@@ -109,7 +109,7 @@ async function queryMunicipalities(q) {
             .join('');
         searchResults.classList.remove('hidden');
     } catch (e) {
-        searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-red-600">Suche aktuell nicht verfügbar.</div>';
+        searchResults.innerHTML = '<div class="px-3 py-2 text-sm text-red-600">' + {{ _("Suche aktuell nicht verfügbar.")|tojson }} + '</div>';
         searchResults.classList.remove('hidden');
     }
 }
@@ -141,12 +141,12 @@ document.getElementById('onboarding-form').addEventListener('submit', async func
     const bfs = selectedBfs.value;
     const email = document.getElementById('admin-email').value;
     if (!bfs) {
-        document.getElementById('form-error').textContent = 'Bitte wählen Sie zuerst eine Gemeinde aus der Suche.';
+        document.getElementById('form-error').textContent = {{ _("Bitte wählen Sie zuerst eine Gemeinde aus der Suche.")|tojson }};
         document.getElementById('form-error').classList.remove('hidden');
         return;
     }
     if (!email) {
-        document.getElementById('form-error').textContent = 'Bitte geben Sie eine E-Mail an.';
+        document.getElementById('form-error').textContent = {{ _("Bitte geben Sie eine E-Mail an.")|tojson }};
         document.getElementById('form-error').classList.remove('hidden');
         return;
     }
@@ -157,15 +157,15 @@ document.getElementById('onboarding-form').addEventListener('submit', async func
         });
         const data = await res.json();
         if (data.success) {
-            document.getElementById('form-success').textContent = `Registrierung erfolgreich! Ihre Instanz: ${data.subdomain}.openleg.ch`;
+            document.getElementById('form-success').textContent = {{ _("Registrierung erfolgreich! Ihre Instanz: %(subdomain)s.openleg.ch")|tojson }}.replace("%(subdomain)s", data.subdomain);
             document.getElementById('form-success').classList.remove('hidden');
             document.getElementById('form-error').classList.add('hidden');
         } else {
-            document.getElementById('form-error').textContent = data.error || 'Fehler bei der Registrierung.';
+            document.getElementById('form-error').textContent = data.error || {{ _("Fehler bei der Registrierung.")|tojson }};
             document.getElementById('form-error').classList.remove('hidden');
         }
     } catch(e) {
-        document.getElementById('form-error').textContent = 'Netzwerkfehler.';
+        document.getElementById('form-error').textContent = {{ _("Netzwerkfehler.")|tojson }};
         document.getElementById('form-error').classList.remove('hidden');
     }
 });

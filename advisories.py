@@ -8,6 +8,7 @@ import unicodedata
 from datetime import UTC, date, datetime, timedelta
 
 from equipment import EquipmentError, validate_public_source_url
+from translation_markers import gettext_noop as _N
 
 MAX_BYTES = 32_768
 MAX_CATALOG = 200
@@ -15,36 +16,46 @@ MAX_REVISIONS = 50
 MAX_POLICY_REVISIONS = 1000
 MAX_SOURCE_REVIEWS = 10_000
 CLASSIFICATIONS = {
-    "affected": "Im betroffenen Firmwarebereich",
-    "possible": "Möglicherweise betroffen / unbekannt",
-    "not_within": "Ausserhalb dieses Firmwarebereichs",
-    "no_identity_match": "Keine genaue Gerätezuordnung",
+    "affected": _N("Im betroffenen Firmwarebereich"),
+    "possible": _N("Möglicherweise betroffen / unbekannt"),
+    "not_within": _N("Ausserhalb dieses Firmwarebereichs"),
+    "no_identity_match": _N("Keine genaue Gerätezuordnung"),
 }
 REASONS = {
-    "firmware_within_range": "Die erfasste Firmware liegt im veröffentlichten Bereich.",
-    "firmware_outside_range": "Die erfasste Firmware liegt ausserhalb des Bereichs dieser Meldung.",
-    "missing_identity": "Hersteller oder Modell fehlen. Die Zuordnung bleibt offen.",
-    "identity_unresolved": "Hersteller oder Modell stimmen mit keiner geprüften Bezeichnung oder Alias überein.",
-    "missing_firmware": "Die Firmware fehlt. Die Betroffenheit bleibt offen.",
-    "unsupported_version": "Diese Versionsangabe lässt sich mit dem geprüften Versionsschema nicht vergleichen.",
+    "firmware_within_range": _N(
+        "Die erfasste Firmware liegt im veröffentlichten Bereich."
+    ),
+    "firmware_outside_range": _N(
+        "Die erfasste Firmware liegt ausserhalb des Bereichs dieser Meldung."
+    ),
+    "missing_identity": _N(
+        "Hersteller oder Modell fehlen. Die Zuordnung bleibt offen."
+    ),
+    "identity_unresolved": _N(
+        "Hersteller oder Modell stimmen mit keiner geprüften Bezeichnung oder Alias überein."
+    ),
+    "missing_firmware": _N("Die Firmware fehlt. Die Betroffenheit bleibt offen."),
+    "unsupported_version": _N(
+        "Diese Versionsangabe lässt sich mit dem geprüften Versionsschema nicht vergleichen."
+    ),
 }
 REMEDY_STATUSES = {
-    "unknown": "Unbekannt",
-    "planned": "Abklärung geplant",
-    "reported_done": "Als erledigt angegeben",
+    "unknown": _N("Unbekannt"),
+    "planned": _N("Abklärung geplant"),
+    "reported_done": _N("Als erledigt angegeben"),
 }
 SOURCE_KINDS = {
-    "unknown": "Unbekannt",
-    "owner_report": "Eigene Angabe",
-    "device_observation": "Am Gerät abgelesen",
-    "installer_evidence": "Hinterlegter Installateurnachweis",
+    "unknown": _N("Unbekannt"),
+    "owner_report": _N("Eigene Angabe"),
+    "device_observation": _N("Am Gerät abgelesen"),
+    "installer_evidence": _N("Hinterlegter Installateurnachweis"),
 }
 CATALOG_STATES = {
-    "disabled": "Hinweise ausgeschaltet",
-    "unreviewed": "Quellenprüfung ausstehend",
-    "failed": "Letzte Quellenprüfung fehlgeschlagen",
-    "stale": "Quellenprüfung überfällig",
-    "current": "Quellenprüfung aktuell",
+    "disabled": _N("Hinweise ausgeschaltet"),
+    "unreviewed": _N("Quellenprüfung ausstehend"),
+    "failed": _N("Letzte Quellenprüfung fehlgeschlagen"),
+    "stale": _N("Quellenprüfung überfällig"),
+    "current": _N("Quellenprüfung aktuell"),
 }
 
 

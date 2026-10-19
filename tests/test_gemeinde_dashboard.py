@@ -131,7 +131,7 @@ class TestGemeindeDashboardInviteLink:
             r'<input\b[^>]*\bid="invite-link"[^>]*\bvalue="([^"]*)"', html
         )
         assert invite_link
-        assert invite_link.group(1) == "http://from-config.example"
+        assert invite_link.group(1) == "http://from-config.example?lang=de-CH"
 
 
 class TestGemeindeDashboardInterest:

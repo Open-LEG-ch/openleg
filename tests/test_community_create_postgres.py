@@ -113,6 +113,18 @@ def test_create_form_requires_a_session_and_post_requires_csrf(founder):
     assert db.fetch_user_communities("founder") == []
 
 
+def test_founder_create_form_follows_selected_french_language(founder):
+    client, _ = founder
+    _set_session(client, "founder")
+    response = client.get("/leg/community/create?lang=fr-CH")
+    assert response.status_code == 200
+    assert response.headers["Content-Language"] == "fr-CH"
+    assert "Créer une CEL" in response.text
+    assert "Nom de la communauté" in response.text
+    assert "Créer la communauté" in response.text
+    assert "Name der Gemeinschaft" not in response.text
+
+
 def test_private_founder_view_keeps_other_households_behind_current_consent(founder):
     client, db = founder
     _set_session(client, "founder")

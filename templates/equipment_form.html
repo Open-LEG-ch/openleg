@@ -1,67 +1,67 @@
 {% extends "product_base.html" %}
-{% block meta %}<title>Solargerät und Checkliste | {{ platform_name }}</title>{% endblock %}
+{% block meta %}<title>{{ _('Solargerät und Checkliste |') }} {{ platform_name }}</title>{% endblock %}
 {% macro input(name, label, value, kind='text', limit=120) %}
 <div>
-  <label class="block text-sm font-semibold mb-1" for="{{ name }}">{{ label }}</label>
+  <label class="block text-sm font-semibold mb-1" for="{{ name }}">{{ _(label) }}</label>
   <input class="w-full border border-line rounded-lg px-3 py-2" id="{{ name }}" name="{{ name }}" type="{{ kind }}" value="{{ value or '' }}" {% if kind == 'date' %}max="{{ today }}"{% elif kind == 'number' %}min="0.001" max="100000" step="0.001"{% else %}maxlength="{{ limit }}"{% endif %}>
 </div>
 {% endmacro %}
 {% macro select(name, label, value, options) %}
 <div>
-  <label class="block text-sm font-semibold mb-1" for="{{ name }}">{{ label }}</label>
+  <label class="block text-sm font-semibold mb-1" for="{{ name }}">{{ _(label) }}</label>
   <select class="w-full border border-line rounded-lg px-3 py-2 bg-white" id="{{ name }}" name="{{ name }}">
-    {% for key, text in options.items() %}<option value="{{ key }}" {% if value == key %}selected{% endif %}>{{ text }}</option>{% endfor %}
+    {% for key, text in options.items() %}<option value="{{ key }}" {% if value == key %}selected{% endif %}>{{ _(text) }}</option>{% endfor %}
   </select>
 </div>
 {% endmacro %}
 {% macro evidence(prefix, value, installer_only=false) %}
 <div class="grid sm:grid-cols-2 gap-4 mt-4">
-  {{ select(prefix ~ '.kind', 'Quelle der Angabe', value.kind, {'unknown': 'Unbekannt', 'installer_evidence': 'Hinterlegter Installateurnachweis'} if installer_only else equipment.SOURCES) }}
-  {{ input(prefix ~ '.reviewed_on', 'Prüfdatum der Quelle', value.reviewed_on, 'date') }}
-  <div class="sm:col-span-2">{{ input(prefix ~ '.source_url', 'Öffentlicher Quellenlink (optional)', value.source_url, 'url', 500) }}</div>
+  {{ select(prefix ~ '.kind', _('Quelle der Angabe'), value.kind, {'unknown': _('Unbekannt'), 'installer_evidence': _('Hinterlegter Installateurnachweis')} if installer_only else equipment.SOURCES) }}
+  {{ input(prefix ~ '.reviewed_on', _('Prüfdatum der Quelle'), value.reviewed_on, 'date') }}
+  <div class="sm:col-span-2">{{ input(prefix ~ '.source_url', _('Öffentlicher Quellenlink (optional)'), value.source_url, 'url', 500) }}</div>
 </div>
 {% endmacro %}
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-8">
-  <a href="/dashboard/equipment" class="text-sm font-semibold text-brand hover:underline">Zurück zu meinen Solargeräten</a>
-  <h1 class="text-3xl font-bold mt-6">{{ 'Solargerät bearbeiten' if record_id else 'Solargerät erfassen' }}</h1>
+  <a href="/dashboard/equipment" class="text-sm font-semibold text-brand hover:underline">{{ _('Zurück zu meinen Solargeräten') }}</a>
+  <h1 class="text-3xl font-bold mt-6">{{ _('Solargerät bearbeiten') if record_id else _('Solargerät erfassen') }}</h1>
   {% if record_id %}
-  <a class="inline-block mt-4 text-brand font-semibold hover:underline" href="{{ url_for('advisories.owner_page', equipment_id=record_id) }}">Veröffentlichte Sicherheitshinweise für dieses Gerät prüfen</a>
+  <a class="inline-block mt-4 text-brand font-semibold hover:underline" href="{{ url_for('advisories.owner_page', equipment_id=record_id) }}">{{ _('Veröffentlichte Sicherheitshinweise für dieses Gerät prüfen') }}</a>
   {% endif %}
-  <p class="text-ink-muted mt-2">Unbekannte Werte bleiben leer oder auf «Unbekannt». Quellen mit einer bekannten Herkunft brauchen ein Prüfdatum, das nicht in der Zukunft liegt.</p>
-  <p class="text-sm text-ink-muted mt-3">OpenLEG prüft diese Angaben nicht. «Installateurnachweis» bezeichnet einen von Ihnen hinterlegten Nachweis.</p>
+  <p class="text-ink-muted mt-2">{{ _('Unbekannte Werte bleiben leer oder auf «Unbekannt». Quellen mit einer bekannten Herkunft brauchen ein Prüfdatum, das nicht in der Zukunft liegt.') }}</p>
+  <p class="text-sm text-ink-muted mt-3">{{ _('OpenLEG prüft diese Angaben nicht. «Installateurnachweis» bezeichnet einen von Ihnen hinterlegten Nachweis.') }}</p>
   {% if invalid_field %}
-  <div class="mt-4 p-4 border border-line rounded-lg bg-white" role="alert">Bitte prüfen Sie Ihre Angaben. Erledigte Aufgaben brauchen eine anwendbare Modellfunktion und eine datierte Quelle. Quellenlinks müssen öffentliche HTTPS-Adressen ohne Zugangsdaten, Suchparameter oder Fragmente sein.</div>
+  <div class="mt-4 p-4 border border-line rounded-lg bg-white" role="alert">{{ _('Bitte prüfen Sie Ihre Angaben. Erledigte Aufgaben brauchen eine anwendbare Modellfunktion und eine datierte Quelle. Quellenlinks müssen öffentliche HTTPS-Adressen ohne Zugangsdaten, Suchparameter oder Fragmente sein.') }}</div>
   {% endif %}
   <form method="post" class="grid gap-6 mt-6">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <section class="bg-white border border-line rounded-xl p-6" aria-labelledby="device-title">
-      <h2 class="text-xl font-bold" id="device-title">Gerät und Leistung</h2>
+      <h2 class="text-xl font-bold" id="device-title">{{ _('Gerät und Leistung') }}</h2>
       <div class="grid sm:grid-cols-2 gap-4 mt-4">
-        {{ input('manufacturer', 'Hersteller', record.manufacturer) }}
-        {{ input('model', 'Genaues Modell', record.model) }}
-        {{ input('firmware', 'Firmwareversion', record.firmware) }}
-        {{ input('logger', 'Logger / Gateway', record.logger) }}
-        {{ input('rated_ac_kw', 'AC-Nennleistung (kW)', record.rated_ac_kw, 'number') }}
-        {{ input('pv_dc_kwp', 'PV-DC-Leistung (kWp, optional)', record.pv_dc_kwp, 'number') }}
-        {{ select('cloud_dependency', 'Abhängigkeit von der Hersteller-Cloud', record.cloud_dependency, equipment.CLOUD_DEPENDENCY) }}
-        {{ select('installer_access', 'Installateurzugang', record.installer_access, equipment.INSTALLER_ACCESS) }}
+        {{ input('manufacturer', _('Hersteller'), record.manufacturer) }}
+        {{ input('model', _('Genaues Modell'), record.model) }}
+        {{ input('firmware', _('Firmwareversion'), record.firmware) }}
+        {{ input('logger', _('Logger / Gateway'), record.logger) }}
+        {{ input('rated_ac_kw', _('AC-Nennleistung (kW)'), record.rated_ac_kw, 'number') }}
+        {{ input('pv_dc_kwp', _('PV-DC-Leistung (kWp, optional)'), record.pv_dc_kwp, 'number') }}
+        {{ select('cloud_dependency', _('Abhängigkeit von der Hersteller-Cloud'), record.cloud_dependency, equipment.CLOUD_DEPENDENCY) }}
+        {{ select('installer_access', _('Installateurzugang'), record.installer_access, equipment.INSTALLER_ACCESS) }}
       </div>
       {{ evidence('evidence', record.evidence) }}
     </section>
     <section class="bg-white border border-line rounded-xl p-6" aria-labelledby="checklist-title">
-      <h2 class="text-xl font-bold" id="checklist-title">Checkliste für dieses Modell</h2>
-      <p class="text-sm text-ink-muted mt-2">Hersteller: {{ record.manufacturer or 'Unbekannt' }} · Modell: {{ record.model or 'Unbekannt' }} · Firmware: {{ record.firmware or 'Unbekannt' }}</p>
-      <p class="text-sm text-ink-muted mt-2">Prüfen Sie die Anleitung für das erfasste Modell. Ohne Hersteller und Modell bleibt die Anwendbarkeit unbekannt. Änderungen am erfassten Hersteller, Modell oder Firmwarestand setzen Checkliste, Cloud-Prüfung und Ersatzstromangaben auf «Unbekannt». Prüfen und speichern Sie diese danach erneut. Es gibt keinen zusammengefassten Sicherheitswert.</p>
+      <h2 class="text-xl font-bold" id="checklist-title">{{ _('Checkliste für dieses Modell') }}</h2>
+      <p class="text-sm text-ink-muted mt-2">{{ _('Hersteller:') }} {{ record.manufacturer or _('Unbekannt') }} {{ _('· Modell:') }} {{ record.model or _('Unbekannt') }} {{ _('· Firmware:') }} {{ record.firmware or _('Unbekannt') }}</p>
+      <p class="text-sm text-ink-muted mt-2">{{ _('Prüfen Sie die Anleitung für das erfasste Modell. Ohne Hersteller und Modell bleibt die Anwendbarkeit unbekannt. Änderungen am erfassten Hersteller, Modell oder Firmwarestand setzen Checkliste, Cloud-Prüfung und Ersatzstromangaben auf «Unbekannt». Prüfen und speichern Sie diese danach erneut. Es gibt keinen zusammengefassten Sicherheitswert.') }}</p>
       <div class="grid gap-4 mt-4">
         {% for key, detail in equipment.CHECKS.items() %}
         {% set task = record.checklist[key] %}
         <fieldset class="border border-line rounded-lg p-4">
-          <legend class="px-2 font-semibold">{{ detail[0] }}</legend>
-          <p class="text-sm text-ink-muted">{{ detail[1] }}</p>
+          <legend class="px-2 font-semibold">{{ _(detail[0]) }}</legend>
+          <p class="text-sm text-ink-muted">{{ _(detail[1]) }}</p>
           <div class="grid sm:grid-cols-2 gap-4 mt-4">
-            {{ select('checklist.' ~ key ~ '.applicability', 'Anwendbarkeit für dieses Modell', task.applicability, equipment.APPLICABILITY) }}
-            {{ select('checklist.' ~ key ~ '.status', 'Aufgabenstatus', task.status, equipment.STATUSES) }}
+            {{ select('checklist.' ~ key ~ '.applicability', _('Anwendbarkeit für dieses Modell'), task.applicability, equipment.APPLICABILITY) }}
+            {{ select('checklist.' ~ key ~ '.status', _('Aufgabenstatus'), task.status, equipment.STATUSES) }}
           </div>
           {{ evidence('checklist.' ~ key ~ '.evidence', task.evidence) }}
         </fieldset>
@@ -69,57 +69,57 @@
       </div>
     </section>
     <section class="bg-white border border-line rounded-xl p-6" aria-labelledby="cloud-title">
-      <h2 class="text-xl font-bold" id="cloud-title">Hersteller-Cloud manuell prüfen</h2>
-      <p class="text-sm text-ink-muted mt-2">Lokale Messwerte deaktivieren keinen Fernzugriff. Diese Prüfung ist unabhängig von der lokalen Telemetrie. Klären Sie mit dem Installateur, wer weiter über die Hersteller-Cloud auf die Anlage zugreifen kann.</p>
+      <h2 class="text-xl font-bold" id="cloud-title">{{ _('Hersteller-Cloud manuell prüfen') }}</h2>
+      <p class="text-sm text-ink-muted mt-2">{{ _('Lokale Messwerte deaktivieren keinen Fernzugriff. Diese Prüfung ist unabhängig von der lokalen Telemetrie. Klären Sie mit dem Installateur, wer weiter über die Hersteller-Cloud auf die Anlage zugreifen kann.') }}</p>
       <div class="grid sm:grid-cols-2 gap-4 mt-4">
-        {{ select('vendor_cloud_review.status', 'Stand der manuellen Prüfung', record.vendor_cloud_review.status, equipment.CLOUD_REVIEW) }}
-        {{ select('vendor_cloud_review.remote_access', 'Ergebnis zum Fernzugriff', record.vendor_cloud_review.remote_access, equipment.REMOTE_ACCESS) }}
+        {{ select('vendor_cloud_review.status', _('Stand der manuellen Prüfung'), record.vendor_cloud_review.status, equipment.CLOUD_REVIEW) }}
+        {{ select('vendor_cloud_review.remote_access', _('Ergebnis zum Fernzugriff'), record.vendor_cloud_review.remote_access, equipment.REMOTE_ACCESS) }}
       </div>
       {{ evidence('vendor_cloud_review.evidence', record.vendor_cloud_review.evidence) }}
     </section>
     <section class="bg-white border border-line rounded-xl p-6" aria-labelledby="backup-title">
-      <h2 class="text-xl font-bold" id="backup-title">Ersatzstrom getrennt erfassen</h2>
-      <p class="text-sm text-ink-muted mt-2">PV-Module oder eine Batterie belegen keine Ersatzstromfähigkeit. Lassen Sie Umschaltung, versorgte Stromkreise und Betriebsgrenzen durch den Installateur klären. Ihre Angabe und der hinterlegte Nachweis bleiben getrennt.</p>
-      <div class="mt-4">{{ select('backup.capability', 'Ihre Angabe zur Ersatzstromfähigkeit', record.backup.capability, equipment.BACKUP) }}</div>
+      <h2 class="text-xl font-bold" id="backup-title">{{ _('Ersatzstrom getrennt erfassen') }}</h2>
+      <p class="text-sm text-ink-muted mt-2">{{ _('PV-Module oder eine Batterie belegen keine Ersatzstromfähigkeit. Lassen Sie Umschaltung, versorgte Stromkreise und Betriebsgrenzen durch den Installateur klären. Ihre Angabe und der hinterlegte Nachweis bleiben getrennt.') }}</p>
+      <div class="mt-4">{{ select('backup.capability', _('Ihre Angabe zur Ersatzstromfähigkeit'), record.backup.capability, equipment.BACKUP) }}</div>
       {{ evidence('backup.installer_evidence', record.backup.installer_evidence, true) }}
     </section>
     <details class="bg-white border border-line rounded-xl p-6">
-      <summary class="text-lg font-semibold cursor-pointer">Private Details ohne Weitergabe</summary>
-      <p class="text-sm text-ink-muted mt-3">Diese Felder fehlen im Installateur-Download. Keine Passwörter oder Zugangsschlüssel speichern.</p>
+      <summary class="text-lg font-semibold cursor-pointer">{{ _('Private Details ohne Weitergabe') }}</summary>
+      <p class="text-sm text-ink-muted mt-3">{{ _('Diese Felder fehlen im Installateur-Download. Keine Passwörter oder Zugangsschlüssel speichern.') }}</p>
       <div class="grid gap-4 mt-4">
-        {{ input('serial_number', 'Seriennummer (optional)', record.serial_number) }}
-        {% for field, label, limit in [('installer_users', 'Benannte Fernzugänge / Installateurkonten', 1000), ('network_details', 'Private Netzwerkdetails', 2000), ('private_notes', 'Private Notizen', 2000)] %}
+        {{ input('serial_number', _('Seriennummer (optional)'), record.serial_number) }}
+        {% for field, label, limit in [('installer_users', _('Benannte Fernzugänge / Installateurkonten'), 1000), ('network_details', _('Private Netzwerkdetails'), 2000), ('private_notes', _('Private Notizen'), 2000)] %}
         <div>
-          <label class="block text-sm font-semibold mb-1" for="{{ field }}">{{ label }}</label>
+          <label class="block text-sm font-semibold mb-1" for="{{ field }}">{{ _(label) }}</label>
           <textarea class="w-full border border-line rounded-lg px-3 py-2" id="{{ field }}" name="{{ field }}" rows="3" maxlength="{{ limit }}">{{ record[field] or '' }}</textarea>
         </div>
         {% endfor %}
       </div>
     </details>
-    <p class="text-sm text-ink-muted">Firmware, Cloud-Verbindung, Netzwerkregeln und elektrische Einstellungen sind Aufträge an zuständige Installateure oder Betreiber. OpenLEG führt keine Scans und keine Änderungen an Geräten durch.</p>
-    <button class="bg-brand text-white px-5 py-3 rounded-lg font-semibold" type="submit">Eintrag und Checkliste speichern</button>
+    <p class="text-sm text-ink-muted">{{ _('Firmware, Cloud-Verbindung, Netzwerkregeln und elektrische Einstellungen sind Aufträge an zuständige Installateure oder Betreiber. OpenLEG führt keine Scans und keine Änderungen an Geräten durch.') }}</p>
+    <button class="bg-brand text-white px-5 py-3 rounded-lg font-semibold" type="submit">{{ _('Eintrag und Checkliste speichern') }}</button>
   </form>
   {% if record_id %}
   <section class="mt-6 bg-white border border-line rounded-xl p-6" aria-labelledby="handoff-title">
-    <h2 class="text-xl font-bold" id="handoff-title">Übergabe an Ihren Installateur</h2>
-    <p class="text-sm text-ink-muted mt-2">Laden Sie die gespeicherten Geräteangaben, Aufgaben, Quellenlinks und Prüfstände als JSON herunter. Seriennummer, Netzwerkdetails, Kontonamen und private Notizen fehlen. Prüfen Sie vor einer Weitergabe die Gerätefelder und öffentlichen Quellenlinks. OpenLEG versendet den Download nicht.</p>
+    <h2 class="text-xl font-bold" id="handoff-title">{{ _('Übergabe an Ihren Installateur') }}</h2>
+    <p class="text-sm text-ink-muted mt-2">{{ _('Laden Sie die gespeicherten Geräteangaben, Aufgaben, Quellenlinks und Prüfstände als JSON herunter. Seriennummer, Netzwerkdetails, Kontonamen und private Notizen fehlen. Prüfen Sie vor einer Weitergabe die Gerätefelder und öffentlichen Quellenlinks. OpenLEG versendet den Download nicht.') }}</p>
     <form method="post" action="{{ url_for('equipment.handoff', record_id=record_id) }}" class="mt-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button class="border border-line px-4 py-3 rounded-lg font-semibold text-brand" type="submit">Gespeicherte Übergabe herunterladen</button>
+      <button class="border border-line px-4 py-3 rounded-lg font-semibold text-brand" type="submit">{{ _('Gespeicherte Übergabe herunterladen') }}</button>
     </form>
   </section>
   <details class="mt-6 border border-line rounded-xl p-6">
-    <summary class="font-semibold cursor-pointer">Geräteeintrag löschen</summary>
-    <p class="text-sm text-ink-muted mt-3">Löscht das Gerät samt privater Checkliste und Nachweisen. Bereits heruntergeladene Kopien bleiben bei Ihnen.</p>
+    <summary class="font-semibold cursor-pointer">{{ _('Geräteeintrag löschen') }}</summary>
+    <p class="text-sm text-ink-muted mt-3">{{ _('Löscht das Gerät samt privater Checkliste und Nachweisen. Bereits heruntergeladene Kopien bleiben bei Ihnen.') }}</p>
     <form method="post" action="{{ url_for('equipment.remove', record_id=record_id) }}" class="mt-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button class="border border-line px-4 py-3 rounded-lg font-semibold" type="submit">Gerät und Nachweise löschen</button>
+      <button class="border border-line px-4 py-3 rounded-lg font-semibold" type="submit">{{ _('Gerät und Nachweise löschen') }}</button>
     </form>
   </details>
   {% endif %}
   <aside class="mt-6 text-sm text-ink-muted">
-    <p>Grundlagen zur Prüfung:</p>
-    <ul class="mt-2 grid gap-2">{% for label, url in sources %}<li><a class="text-brand hover:underline" href="{{ url }}" rel="noreferrer">{{ label }}</a></li>{% endfor %}</ul>
+    <p>{{ _('Grundlagen zur Prüfung:') }}</p>
+    <ul class="mt-2 grid gap-2">{% for label, url in sources %}<li><a class="text-brand hover:underline" href="{{ url }}" rel="noreferrer">{{ _(label) }}</a></li>{% endfor %}</ul>
   </aside>
 </div>
 {% endblock %}

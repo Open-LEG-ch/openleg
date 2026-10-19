@@ -7,6 +7,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
 
 import database as db
+from translation_markers import gettext_noop as _N
 
 _MONTHS = (
     "Januar",
@@ -99,7 +100,7 @@ def _period_label(value):
         value = value.astimezone(_LOCAL_TZ)
     if isinstance(value, (datetime, date)):
         return f"{_MONTHS[value.month - 1]} {value.year}"
-    return "Periode"
+    return _N("Periode")
 
 
 def period_label(value):
@@ -126,7 +127,9 @@ def _period_summary(period):
     result = _normalise(period)
     result["period_label"] = _period_label(period.get("period_start"))
     result["status_label"] = (
-        "Entwurf" if period.get("status") == "draft" else str(period.get("status", ""))
+        _N("Entwurf")
+        if period.get("status") == "draft"
+        else str(period.get("status", ""))
     )
     return result
 
@@ -187,7 +190,7 @@ def _detail_model(period):
     line_items = [_display_line_item(item) for item in period.get("line_items", [])]
     result = _period_summary(period)
     result.update(
-        draft_notice=(
+        draft_notice=_N(
             "Dieser Abrechnungsentwurf ist keine definitive Rechnung. "
             "Prüfen Sie Tarif, Abgleich und Quelldokumente."
         ),
@@ -211,28 +214,28 @@ def _detail_model(period):
             "internal_price": _rate(period.get("internal_price_chf_per_kwh")),
             "grid_fee": _rate(period.get("grid_fee_chf_per_kwh")),
             "distribution_model": {
-                "proportional": "Proportional",
-                "einfach": "Einfach",
-                "simple": "Einfach",
+                "proportional": _N("Proportional"),
+                "einfach": _N("Einfach"),
+                "simple": _N("Einfach"),
             }.get(
                 period.get("distribution_model"),
-                str(period.get("distribution_model") or "Nicht angegeben"),
+                str(period.get("distribution_model") or _N("Nicht angegeben")),
             ),
             "network_level": {
-                "same": "Gleiche Netzebene",
-                "different": "Unterschiedliche Netzebenen",
+                "same": _N("Gleiche Netzebene"),
+                "different": _N("Unterschiedliche Netzebenen"),
             }.get(
                 period.get("network_level"),
-                str(period.get("network_level") or "Nicht angegeben"),
+                str(period.get("network_level") or _N("Nicht angegeben")),
             ),
         },
         reconciliation={
             **_normalise(raw_reconciliation),
             "balanced": _is_balanced(raw_reconciliation),
             "label": (
-                "Vollständig abgeglichen"
+                _N("Vollständig abgeglichen")
                 if _is_balanced(raw_reconciliation)
-                else "Abweichung prüfen"
+                else _N("Abweichung prüfen")
             ),
         },
         provenance={
@@ -266,15 +269,15 @@ def _detail_model(period):
 def _rate(value):
     """Format a CHF/kWh decimal as Rp./kWh for display."""
     if value is None:
-        return "Nicht angegeben"
+        return _N("Nicht angegeben")
     try:
         rate_rp = Decimal(str(value)) * 100
         if not rate_rp.is_finite():
-            return "Nicht angegeben"
+            return _N("Nicht angegeben")
         rounded = rate_rp.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         return f"{rounded:.2f} Rp./kWh"
     except (ArithmeticError, TypeError, ValueError):
-        return "Nicht angegeben"
+        return _N("Nicht angegeben")
 
 
 def load(period_id=None):

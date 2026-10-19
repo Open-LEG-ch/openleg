@@ -1,14 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Language selection through the real application and safe gettext output."""
 
+import gettext
 import os
 from contextlib import contextmanager
+from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from flask import Flask, render_template_string
-from flask_babel import force_locale
+from flask_babel import force_locale, ngettext
 from flask_babel import gettext as _
 
 # Pin import-time dependency settings as well as build_config/request settings.
@@ -145,6 +147,22 @@ def test_locale_is_scoped_to_the_app_and_request(web):
     with web.app_context(), force_locale("fr_CH"):
         assert _("Sprache") == "Langue"
     assert _("Sprache") == "Sprache"
+
+
+def test_real_catalog_compiles_with_french_plural_rules(web):
+    root = Path(__file__).resolve().parents[1]
+    with (root / "translations/fr_CH/LC_MESSAGES/messages.mo").open("rb") as handle:
+        catalog = gettext.GNUTranslations(handle)
+    assert catalog.gettext("Sprache") == "Langue"
+    with web.test_request_context("/?lang=fr"):
+        assert (
+            ngettext("%(num)s Interessierte", "%(num)s Interessierte", 1)
+            == "1 personne intéressée"
+        )
+        assert (
+            ngettext("%(num)s Interessierte", "%(num)s Interessierte", 2)
+            == "2 personnes intéressées"
+        )
 
 
 def test_i18n_initialization_does_not_require_an_application_factory():

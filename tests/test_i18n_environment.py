@@ -63,7 +63,11 @@ def test_locale_suite_is_independent_of_host_environment(tmp_path, outside):
             sys.executable,
             "-m",
             "pytest",
-            "tests/test_i18n.py",
+            *sorted(
+                str(path.relative_to(Path(__file__).resolve().parents[1]))
+                for path in Path(__file__).parent.glob("test_i18n*.py")
+                if path.name != Path(__file__).name
+            ),
             "-q",
             "-o",
             "addopts=",

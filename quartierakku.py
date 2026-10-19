@@ -17,6 +17,9 @@ from calendar import isleap
 from datetime import date, datetime, time
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
+from i18n import gettext as _
+from translation_markers import gettext_noop as _N
+
 MAX_CAPACITY_KWH = Decimal(10000)
 MAX_ANNUAL_COST_CHF = Decimal(100000)
 SHARE_MIN_PCT = Decimal(0)
@@ -24,24 +27,24 @@ SHARE_MAX_PCT = Decimal(100)
 
 _CAPTACITY_PREFIX = "share:"
 
-_CAPACITY_ERROR = (
+_CAPACITY_ERROR = _N(
     "Speicherkapazität in kWh, grösser 0 und höchstens 10000, höchstens "
     "2 Nachkommastellen."
 )
-_COST_ERROR = (
+_COST_ERROR = _N(
     "Jahreskosten in CHF, zwischen 0 und 100000, höchstens 2 Nachkommastellen."
 )
-_SHARE_ERROR = (
-    "Anteil für {participant} in Prozent, zwischen 0 und 100, höchstens "
+_SHARE_ERROR = _N(
+    "Anteil für %(participant)s in Prozent, zwischen 0 und 100, höchstens "
     "2 Nachkommastellen."
 )
-_SHARE_SUM_ERROR = "Die Anteile müssen zusammen 100 Prozent ergeben."
-_SHARE_UNKNOWN_ERROR = "Die Anteile enthalten unbekannte Teilnehmer."
-_SHARE_MISSING_ERROR = "Jeder Teilnehmer braucht einen Anteil am Quartierakku."
-_PARTICIPANT_ERROR = (
+_SHARE_SUM_ERROR = _N("Die Anteile müssen zusammen 100 Prozent ergeben.")
+_SHARE_UNKNOWN_ERROR = _N("Die Anteile enthalten unbekannte Teilnehmer.")
+_SHARE_MISSING_ERROR = _N("Jeder Teilnehmer braucht einen Anteil am Quartierakku.")
+_PARTICIPANT_ERROR = _N(
     "Messpunkt-Teilnehmer des Quartierakkus mit 1 bis 64 Zeichen angeben."
 )
-_PARTICIPANT_SHARE_ERROR = (
+_PARTICIPANT_SHARE_ERROR = _N(
     "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil tragen."
 )
 
@@ -75,7 +78,7 @@ def _within_places(value, places=2):
 def validate_battery_config(config) -> dict:
     """Validate and normalize one stored battery config, failing closed."""
     if not isinstance(config, dict):
-        raise InvalidBatteryConfig("Der Quartierakku hat keine gültigen Angaben.")
+        raise InvalidBatteryConfig(_N("Der Quartierakku hat keine gültigen Angaben."))
     participant_id = config.get("participant_id")
     if (
         not isinstance(participant_id, str)
@@ -98,7 +101,7 @@ def validate_battery_config(config) -> dict:
     for participant, share in shares.items():
         if not isinstance(participant, str) or not participant.strip():
             raise InvalidBatteryConfig(
-                "Jeder Anteil braucht eine gültige Teilnehmer-ID."
+                _N("Jeder Anteil braucht eine gültige Teilnehmer-ID.")
             )
         share_value = _decimal(share)
         if (
@@ -107,7 +110,7 @@ def validate_battery_config(config) -> dict:
             or share_value < SHARE_MIN_PCT
             or share_value > SHARE_MAX_PCT
         ):
-            raise InvalidBatteryConfig(_SHARE_ERROR.format(participant=participant))
+            raise InvalidBatteryConfig(_SHARE_ERROR % {"participant": participant})
         normalized_shares[participant] = share_value
     total = sum(normalized_shares.values(), Decimal(0))
     if total != SHARE_MAX_PCT:
@@ -183,7 +186,7 @@ def validate_battery_form(form, member_ids) -> dict:
         else:
             share = Decimal(0)
         if share is None:
-            errors[name] = _SHARE_ERROR.format(participant=participant)
+            errors[name] = _SHARE_ERROR % {"participant": participant}
             continue
         shares[participant] = share
 
@@ -207,6 +210,20 @@ def validate_battery_form(form, member_ids) -> dict:
     }
 
 
+def localize_form_errors(errors: dict) -> dict:
+    """Translate a display copy; participant keys and validation stay unchanged."""
+    result = {}
+    for field, message in errors.items():
+        participant = field.removeprefix(_CAPTACITY_PREFIX)
+        if field.startswith(_CAPTACITY_PREFIX) and message == _SHARE_ERROR % {
+            "participant": participant
+        }:
+            result[field] = _(_SHARE_ERROR, participant=participant)
+        else:
+            result[field] = _(message)
+    return result
+
+
 def cost_share_chf(annual_cost_chf, share_pct) -> Decimal:
     """One participant's cost-share amount in CHF at persisted precision."""
     return (_decimal(annual_cost_chf) * _decimal(share_pct) / Decimal(100)).quantize(
@@ -223,18 +240,18 @@ def period_fraction(period_start, period_end) -> Decimal:
                 value = datetime.fromisoformat(value)
             except ValueError as exc:
                 raise InvalidBatteryConfig(
-                    "Die Abrechnungsperiode ist ungültig."
+                    _N("Die Abrechnungsperiode ist ungültig.")
                 ) from exc
         if isinstance(value, datetime):
             return value
         if isinstance(value, date):
             return datetime.combine(value, time.min)
-        raise InvalidBatteryConfig("Die Abrechnungsperiode ist ungültig.")
+        raise InvalidBatteryConfig(_N("Die Abrechnungsperiode ist ungültig."))
 
     start = as_datetime(period_start)
     end = as_datetime(period_end)
     if end <= start:
-        raise InvalidBatteryConfig("Die Abrechnungsperiode ist ungültig.")
+        raise InvalidBatteryConfig(_N("Die Abrechnungsperiode ist ungültig."))
     fraction = Decimal(0)
     cursor = start
     while cursor < end:

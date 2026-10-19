@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 
 import database as db
 import security_utils
+from translation_markers import gettext_noop
 
 VALID_LEG_STATUSES = {"planung", "gruendung", "aktiv", "pausiert"}
 _UMLAUT_MAP = str.maketrans(
@@ -47,7 +48,10 @@ def submit(payload, source: str) -> dict:
     name = (payload.get("name") or "").strip()
     contact_email = (payload.get("contact_email") or "").strip()
     if not name or not contact_email:
-        return {"error": "Name und Kontakt-E-Mail sind erforderlich.", "status": 400}
+        return {
+            "error": gettext_noop("Name und Kontakt-E-Mail sind erforderlich."),
+            "status": 400,
+        }
 
     valid, normalized_email, email_error = security_utils.validate_email_address(
         contact_email
@@ -69,7 +73,9 @@ def submit(payload, source: str) -> dict:
     website_url = normalize_website_url(raw_website_url)
     if raw_website_url and not website_url:
         return {
-            "error": "Website-URL muss mit http:// oder https:// beginnen.",
+            "error": gettext_noop(
+                "Website-URL muss mit http:// oder https:// beginnen."
+            ),
             "status": 400,
         }
     slug = _unique_slug(name)
@@ -89,7 +95,10 @@ def submit(payload, source: str) -> dict:
         source=source,
     )
     if not saved:
-        return {"error": "Der Eintrag konnte nicht gespeichert werden.", "status": 500}
+        return {
+            "error": gettext_noop("Der Eintrag konnte nicht gespeichert werden."),
+            "status": 500,
+        }
 
     db.track_event(
         "registry_entry_submitted",

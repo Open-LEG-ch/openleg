@@ -1,15 +1,15 @@
 {% extends "product_base.html" %}
-{% block meta %}<title>Gerätezugang | {{ platform_name }}</title>{% endblock %}
+{% block meta %}<title>{{ _('Gerätezugang |') }} {{ platform_name }}</title>{% endblock %}
 {% block content %}
 <section class="max-w-xl mx-auto px-4 py-16" role="alert">
-  <h1 class="text-2xl font-bold">Geräteeintrag nicht verfügbar</h1>
+  <h1 class="text-2xl font-bold">{{ _('Geräteeintrag nicht verfügbar') }}</h1>
   {% if error_code == 'record_limit_reached' %}
-  <p class="mt-3 text-ink-muted">Sie können höchstens 100 Geräte speichern. Löschen Sie einen nicht mehr benötigten Eintrag, bevor Sie ein weiteres Gerät erfassen.</p>
+  <p class="mt-3 text-ink-muted">{{ _('Sie können höchstens 100 Geräte speichern. Löschen Sie einen nicht mehr benötigten Eintrag, bevor Sie ein weiteres Gerät erfassen.') }}</p>
   {% elif error_code == 'payload_too_large' %}
-  <p class="mt-3 text-ink-muted">Das Formular ist zu gross. Kürzen Sie die privaten Notizen und Netzwerkdetails.</p>
+  <p class="mt-3 text-ink-muted">{{ _('Das Formular ist zu gross. Kürzen Sie die privaten Notizen und Netzwerkdetails.') }}</p>
   {% else %}
-  <p class="mt-3 text-ink-muted">Öffnen Sie den Eintrag mit Ihrem bestätigten Eigentümerzugang. Prüfen Sie bei Änderungen den Zugangslink und laden Sie das Formular erneut.</p>
+  <p class="mt-3 text-ink-muted">{{ _('Öffnen Sie den Eintrag mit Ihrem bestätigten Eigentümerzugang. Prüfen Sie bei Änderungen den Zugangslink und laden Sie das Formular erneut.') }}</p>
   {% endif %}
-  <a href="/dashboard" class="inline-block mt-6 text-brand font-semibold hover:underline">Zum Dashboard</a>
+  <a href="/dashboard" class="inline-block mt-6 text-brand font-semibold hover:underline">{{ _('Zum Dashboard') }}</a>
 </section>
 {% endblock %}

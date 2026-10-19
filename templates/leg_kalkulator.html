@@ -4,13 +4,13 @@
 
 {% block meta %}
 {{ page_meta(
-  title="LEG-Kalkulator: Sparpotenzial berechnen | OpenLEG",
-  description="Schätzen Sie, wie viel Sie mit einer Lokalen Elektrizitätsgemeinschaft (LEG) sparen. Rechner mit Schweizer Tarifdaten.",
+  title=_("LEG-Kalkulator: Sparpotenzial berechnen | OpenLEG"),
+  description=_("Schätzen Sie, wie viel Sie mit einer Lokalen Elektrizitätsgemeinschaft (LEG) sparen. Rechner mit Schweizer Tarifdaten."),
   path="/leg-kalkulator",
-  og_title="LEG-Kalkulator: Sparpotenzial berechnen | OpenLEG",
-  og_description="Schätzen Sie Ihr Sparpotenzial mit einer Lokalen Elektrizitätsgemeinschaft anhand von Schweizer Tarifdaten.",
+  og_title=_("LEG-Kalkulator: Sparpotenzial berechnen | OpenLEG"),
+  og_description=_("Schätzen Sie Ihr Sparpotenzial mit einer Lokalen Elektrizitätsgemeinschaft anhand von Schweizer Tarifdaten."),
   og_type="website",
-  keywords="LEG Rechner, Stromgemeinschaft Kalkulator, LEG Sparpotenzial, Netzkosten Rechner, Stromkosten Schweiz",
+  keywords=_("LEG Rechner, Stromgemeinschaft Kalkulator, LEG Sparpotenzial, Netzkosten Rechner, Stromkosten Schweiz"),
   site_url=site_url
 ) }}
 {% endblock %}
@@ -21,8 +21,8 @@
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     "itemListElement": [
-      {"@type": "ListItem", "position": 1, "name": "OpenLEG", "item": "{{ site_url }}/"},
-      {"@type": "ListItem", "position": 2, "name": "LEG-Kalkulator", "item": "{{ site_url }}/leg-kalkulator"}
+      {"@type": "ListItem", "position": 1, "name": {{ _("OpenLEG")|tojson }}, "item": "{{ site_url }}/"},
+      {"@type": "ListItem", "position": 2, "name": {{ _("LEG-Kalkulator")|tojson }}, "item": "{{ site_url }}/leg-kalkulator"}
     ]
   }
 </script>
@@ -58,85 +58,85 @@
 {% block content %}
   <div class="max-w-5xl mx-auto px-4 py-12">
     <header class="text-center mb-12">
-      <h1 class="text-5xl font-bold mb-4">LEG-Kalkulator</h1>
+      <h1 class="text-5xl font-bold mb-4">{{ _("LEG-Kalkulator") }}</h1>
       <p class="text-xl text-ink-muted max-w-3xl mx-auto">
-        Schätzen Sie in 2 Minuten, wie viel eine Lokale Elektrizitätsgemeinschaft (LEG) bei Ihren Netzkosten bringen kann.
+        {{ _("Schätzen Sie in 2 Minuten, wie viel eine Lokale Elektrizitätsgemeinschaft (LEG) bei Ihren Netzkosten bringen kann.") }}
       </p>
     </header>
 
     <!-- Calculator Card -->
     <div class="bg-white border-y border-slate-200 py-8 md:py-12">
-      
+
       <!-- Municipality Selection -->
       <section class="mb-10">
-        <h2 class="text-2xl font-bold mb-6">Ihre Gemeinde</h2>
+        <h2 class="text-2xl font-bold mb-6">{{ _("Ihre Gemeinde") }}</h2>
         <div>
-          <label for="municipality" class="block text-sm font-semibold mb-2">Gemeinde auswählen</label>
-          <input 
-            type="text" 
-            id="municipality" 
-            placeholder="z.B. Baden, Zürich, Bern" 
+          <label for="municipality" class="block text-sm font-semibold mb-2">{{ _("Gemeinde auswählen") }}</label>
+          <input
+            type="text"
+            id="municipality"
+            placeholder="{{ _("z.B. Baden, Zürich, Bern") }}"
             class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand focus:outline-hidden"
             autocomplete="off"
           />
           <div id="municipality-results" class="hidden mt-2 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
             <!-- Search results populated via JavaScript -->
           </div>
-          <p class="text-sm text-ink-muted mt-2">Geben Sie den Namen Ihrer Gemeinde ein.</p>
+          <p class="text-sm text-ink-muted mt-2">{{ _("Geben Sie den Namen Ihrer Gemeinde ein.") }}</p>
         </div>
         <div id="selected-municipality" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
           <div class="flex items-center justify-between">
             <div>
-              <span class="font-bold text-ink">Ausgewählt:</span>
+              <span class="font-bold text-ink">{{ _("Ausgewählt:") }}</span>
               <span id="selected-name" class="ml-2 text-ink-muted"></span>
             </div>
-            <button onclick="clearMunicipality()" class="text-red-600 hover:text-red-800 text-sm font-semibold">Ändern</button>
+            <button onclick="clearMunicipality()" class="text-red-600 hover:text-red-800 text-sm font-semibold">{{ _("Ändern") }}</button>
           </div>
         </div>
       </section>
 
       <!-- Consumption -->
       <section class="mb-10">
-        <h2 class="text-2xl font-bold mb-6">Ihr Stromverbrauch</h2>
+        <h2 class="text-2xl font-bold mb-6">{{ _("Ihr Stromverbrauch") }}</h2>
         <div>
           <label for="consumption" class="block text-sm font-semibold mb-2">
-            Jährlicher Verbrauch: <span id="consumption-value" class="text-brand">4500</span> kWh
+            {{ _("Jährlicher Verbrauch:") }} <span id="consumption-value" class="text-brand">{{ 4500|numberlabel }}</span> kWh
           </label>
-          <input 
-            type="range" 
-            id="consumption" 
-            min="1000" 
-            max="15000" 
-            step="100" 
-            value="4500" 
+          <input
+            type="range"
+            id="consumption"
+            min="1000"
+            max="15000"
+            step="100"
+            value="4500"
             class="range-slider focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
             oninput="updateConsumption(this.value)"
           />
           <div class="flex justify-between text-xs text-ink-muted mt-1">
-            <span>1'000 kWh</span>
-            <span>15'000 kWh</span>
+            <span>{{ _("1'000 kWh") }}</span>
+            <span>{{ _("15'000 kWh") }}</span>
           </div>
           <p class="text-sm text-ink-muted mt-2">
-            Richtwerte Schweiz: 1 Person ca. 1'500 kWh, 2 Personen ca. 2'500 kWh, 4 Personen ca. 4'500 kWh.
-            <a href="#data-provenance" class="font-mono text-xs hover:text-brand">Quelle und Annahmen</a>
+            {{ _("Richtwerte Schweiz: 1 Person ca. 1'500 kWh, 2 Personen ca. 2'500 kWh, 4 Personen ca. 4'500 kWh.") }}
+            <a href="#data-provenance" class="font-mono text-xs hover:text-brand">{{ _("Quelle und Annahmen") }}</a>
           </p>
         </div>
       </section>
 
       <!-- Local Production -->
       <section class="mb-10">
-        <h2 class="text-2xl font-bold mb-6">Lokale Solarproduktion</h2>
+        <h2 class="text-2xl font-bold mb-6">{{ _("Lokale Solarproduktion") }}</h2>
         <div>
           <label for="production" class="block text-sm font-semibold mb-2">
-            Anteil lokal verbrauchbar: <span id="production-value" class="text-brand">60</span>%
+            {{ _("Anteil lokal verbrauchbar:") }} <span id="production-value" class="text-brand">60</span>%
           </label>
-          <input 
-            type="range" 
-            id="production" 
-            min="0" 
-            max="100" 
-            step="5" 
-            value="60" 
+          <input
+            type="range"
+            id="production"
+            min="0"
+            max="100"
+            step="5"
+            value="60"
             class="range-slider focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
             oninput="updateProduction(this.value)"
           />
@@ -145,33 +145,32 @@
             <span>100%</span>
           </div>
           <p class="text-sm text-ink-muted mt-2">
-            Das hängt davon ab, wann die Solaranlage produziert und wann Sie Strom brauchen. Typisch sind 40 bis 80%.
+            {{ _("Das hängt davon ab, wann die Solaranlage produziert und wann Sie Strom brauchen. Typisch sind 40 bis 80%.") }}
           </p>
         </div>
         <div class="mt-6">
           <label for="grid-reduction" class="block text-sm font-semibold mb-2">
-            Netznutzungsrabatt
+            {{ _("Netznutzungsrabatt") }}
           </label>
           <select id="grid-reduction" class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-hidden">
-            <option value="40" selected>Ohne Spannungstransformation</option>
-            <option value="20">Mit Spannungstransformation</option>
+            <option value="40" selected>{{ _("Ohne Spannungstransformation") }}</option>
+            <option value="20">{{ _("Mit Spannungstransformation") }}</option>
           </select>
           <p class="text-sm text-ink-muted mt-2">
-            Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen Rabatt von 40%
-            auf das Netznutzungsentgelt ohne Spannungstransformation, 20% mit Spannungstransformation.
+            {{ _("Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen Rabatt von 40%\n            auf das Netznutzungsentgelt ohne Spannungstransformation, 20% mit Spannungstransformation.") }}
           </p>
         </div>
       </section>
 
       <!-- Calculate Button -->
       <div class="text-center mb-10">
-        <button 
+        <button
           id="calculate-btn"
-          onclick="calculateSavings()" 
+          onclick="calculateSavings()"
           class="bg-brand text-white px-12 py-4 rounded-lg text-lg font-bold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:bg-slate-200 disabled:text-slate-600 disabled:cursor-not-allowed"
           disabled
         >
-          Sparpotenzial berechnen
+          {{ _("Sparpotenzial berechnen") }}
         </button>
         <p id="calculator-error" role="alert" aria-live="assertive" class="text-red-600 text-sm mt-3 hidden"></p>
       </div>
@@ -179,57 +178,57 @@
       <!-- Results -->
       <div id="results" class="hidden">
         <div class="border-t-4 border-brand pt-8">
-          <h2 class="text-3xl font-bold mb-6 text-center">Ihr Sparpotenzial</h2>
-          
+          <h2 class="text-3xl font-bold mb-6 text-center">{{ _("Ihr Sparpotenzial") }}</h2>
+
           <!-- Savings Overview -->
           <div class="grid md:grid-cols-3 gap-6 mb-8">
             <div class="bg-green-50 rounded-lg p-6 text-center border border-green-200">
               <div class="font-mono tabular-nums text-4xl font-bold text-green-700 mb-2">CHF <span id="annual-savings">0</span></div>
-              <div class="text-sm text-green-800">Jährliche Einsparung</div>
+              <div class="text-sm text-green-800">{{ _("Jährliche Einsparung") }}</div>
             </div>
             <div class="bg-blue-50 rounded-lg p-6 text-center border border-blue-200">
               <div class="font-mono tabular-nums text-4xl font-bold text-ink mb-2"><span id="savings-percent">0</span>%</div>
-              <div class="text-sm text-blue-800">Reduktion der Netzkosten</div>
+              <div class="text-sm text-blue-800">{{ _("Reduktion der Netzkosten") }}</div>
             </div>
             <div class="bg-brand/5 rounded-lg p-6 text-center border border-brand/20">
               <div class="font-mono tabular-nums text-4xl font-bold text-brand-dark mb-2">CHF <span id="ten-year-savings">0</span></div>
-              <div class="text-sm text-ink-muted">10-Jahres-Einsparung</div>
+              <div class="text-sm text-ink-muted">{{ _("10-Jahres-Einsparung") }}</div>
             </div>
           </div>
 
           <!-- Breakdown -->
           <div class="bg-slate-50 rounded-lg p-6 mb-8">
-            <h3 class="font-bold text-lg mb-4">Kostenvergleich (pro Jahr)</h3>
+            <h3 class="font-bold text-lg mb-4">{{ _("Kostenvergleich (pro Jahr)") }}</h3>
             <table class="w-full text-left">
               <thead class="border-b-2 border-slate-300">
                 <tr>
-                  <th class="pb-2 font-semibold">Position</th>
-                  <th class="pb-2 font-semibold text-right">Ohne LEG</th>
-                  <th class="pb-2 font-semibold text-right">Mit LEG</th>
-                  <th class="pb-2 font-semibold text-right">Differenz</th>
+                  <th class="pb-2 font-semibold">{{ _("Position") }}</th>
+                  <th class="pb-2 font-semibold text-right">{{ _("Ohne LEG") }}</th>
+                  <th class="pb-2 font-semibold text-right">{{ _("Mit LEG") }}</th>
+                  <th class="pb-2 font-semibold text-right">{{ _("Differenz") }}</th>
                 </tr>
               </thead>
               <tbody class="text-ink-muted">
                 <tr class="border-b border-slate-200">
-                  <td class="py-2">Energiekosten</td>
+                  <td class="py-2">{{ _("Energiekosten") }}</td>
                   <td class="py-2 text-right">CHF <span id="energy-without">0</span></td>
                   <td class="py-2 text-right">CHF <span id="energy-with">0</span></td>
                   <td class="py-2 text-right">CHF <span id="energy-diff">0</span></td>
                 </tr>
                 <tr class="border-b border-slate-200">
-                  <td class="py-2">Netznutzung</td>
+                  <td class="py-2">{{ _("Netznutzung") }}</td>
                   <td class="py-2 text-right">CHF <span id="grid-without">0</span></td>
                   <td class="py-2 text-right">CHF <span id="grid-with">0</span></td>
                   <td class="py-2 text-right font-bold text-green-700">CHF <span id="grid-diff">0</span></td>
                 </tr>
                 <tr class="border-b border-slate-200">
-                  <td class="py-2">Abgaben & Gebühren</td>
+                  <td class="py-2">{{ _("Abgaben & Gebühren") }}</td>
                   <td class="py-2 text-right">CHF <span id="fees-without">0</span></td>
                   <td class="py-2 text-right">CHF <span id="fees-with">0</span></td>
                   <td class="py-2 text-right">CHF <span id="fees-diff">0</span></td>
                 </tr>
                 <tr class="font-bold text-ink">
-                  <td class="pt-3">Total</td>
+                  <td class="pt-3">{{ _("Total") }}</td>
                   <td class="pt-3 text-right">CHF <span id="total-without">0</span></td>
                   <td class="pt-3 text-right">CHF <span id="total-with">0</span></td>
                   <td class="pt-3 text-right text-green-700">CHF -<span id="total-diff">0</span></td>
@@ -246,7 +245,7 @@
           <!-- CTA -->
           <div class="text-center">
             <a href="/leg-gruenden" class="inline-block bg-brand text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-dark">
-              LEG gründen &rarr;
+              {{ _("LEG gründen →") }}
             </a>
           </div>
         </div>
@@ -256,63 +255,55 @@
 
     <!-- How it works -->
     <section class="mt-12 border-y border-slate-200 py-8">
-      <h2 class="text-3xl font-bold mb-6">So funktioniert der Rechner</h2>
+      <h2 class="text-3xl font-bold mb-6">{{ _("So funktioniert der Rechner") }}</h2>
       <div class="space-y-4 text-ink-muted">
         <p>
-          Dieser Rechner schätzt Ihre mögliche Einsparung durch eine Lokale Elektrizitätsgemeinschaft (LEG).
+          {{ _("Dieser Rechner schätzt Ihre mögliche Einsparung durch eine Lokale Elektrizitätsgemeinschaft (LEG).") }}
         </p>
         <p>
-          <strong>Grundlage:</strong> Wir nutzen offizielle Tarifdaten von ElCom (Eidgenössische Elektrizitätskommission)
-          für Ihre Gemeinde. Die Berechnung berücksichtigt Energiekosten, Netznutzungsgebühren und Abgaben.
+          <strong>{{ _("Grundlage:") }}</strong> {{ _("Wir nutzen offizielle Tarifdaten von ElCom (Eidgenössische Elektrizitätskommission)\n          für Ihre Gemeinde. Die Berechnung berücksichtigt Energiekosten, Netznutzungsgebühren und Abgaben.") }}
         </p>
         <p>
-          <strong>LEG-Rabatt:</strong> Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom
-          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne Spannungstransformation, 20% mit Spannungstransformation.
+          <strong>{{ _("LEG-Rabatt:") }}</strong> {{ _("Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne Spannungstransformation, 20% mit Spannungstransformation.") }}
         </p>
         <p>
-          <strong>Annahmen:</strong> Der Rechner geht davon aus, dass der lokale Solarstrom zum gleichen Preis wie EVU-Strom verrechnet wird. 
-          Gebühren und Abgaben (KEV, Gemeindeabgaben) sind mit 2.5 Rp./kWh angesetzt.
-          In der Praxis kann der LEG-Preis auch günstiger sein.
+          <strong>{{ _("Annahmen:") }}</strong> {{ _("Der Rechner geht davon aus, dass der lokale Solarstrom zum gleichen Preis wie EVU-Strom verrechnet wird. \n          Gebühren und Abgaben (KEV, Gemeindeabgaben) sind mit 2.5 Rp./kWh angesetzt.\n          In der Praxis kann der LEG-Preis auch günstiger sein.") }}
         </p>
         <p class="text-sm">
-          <strong>Hinweis:</strong> Dies ist eine Schätzung. Die tatsächlichen Einsparungen hängen von vielen Faktoren ab 
-          (Verbrauchsprofil, Produktionsprofil, LEG-Grösse, Verteilschlüssel).
+          <strong>{{ _("Hinweis:") }}</strong> {{ _("Dies ist eine Schätzung. Die tatsächlichen Einsparungen hängen von vielen Faktoren ab \n          (Verbrauchsprofil, Produktionsprofil, LEG-Grösse, Verteilschlüssel).") }}
         </p>
       </div>
-      <a href="#data-provenance" data-source-marker="calculator" class="inline-block mt-4 font-mono text-xs text-ink-muted hover:text-brand">Quelle: ElCom und StromVV</a>
+      <a href="#data-provenance" data-source-marker="calculator" class="inline-block mt-4 font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: ElCom und StromVV") }}</a>
     </section>
 
-    <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance("Datenstand", "aktuelle API-Daten", ["ElCom / LINDAS", "Art. 19h StromVV", "OpenLEG Berechnung"]) }}</div>
+    <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance(_("Datenstand"), _("aktuelle API-Daten"), [_("ElCom / LINDAS"), _("Art. 19h StromVV"), _("OpenLEG Berechnung")]) }}</div>
 
     <!-- FAQ -->
     <section class="mt-8">
-      <h2 class="text-3xl font-bold mb-6">Häufige Fragen</h2>
+      <h2 class="text-3xl font-bold mb-6">{{ _("Häufige Fragen") }}</h2>
       <div class="space-y-4">
         <details class="bg-white rounded-lg shadow-md p-6">
-          <summary class="font-bold text-ink cursor-pointer">Warum spare ich mit einer LEG Geld?</summary>
+          <summary class="font-bold text-ink cursor-pointer">{{ _("Warum spare ich mit einer LEG Geld?") }}</summary>
           <p class="mt-3 text-ink-muted">
-            Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen gesetzlichen Rabatt
-            auf das Netznutzungsentgelt: 40% ohne Spannungstransformation, 20% mit Spannungstransformation.
+            {{ _("Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen gesetzlichen Rabatt\n            auf das Netznutzungsentgelt: 40% ohne Spannungstransformation, 20% mit Spannungstransformation.") }}
           </p>
         </details>
         <details class="bg-white rounded-lg shadow-md p-6">
-          <summary class="font-bold text-ink cursor-pointer">Ist die Berechnung genau?</summary>
+          <summary class="font-bold text-ink cursor-pointer">{{ _("Ist die Berechnung genau?") }}</summary>
           <p class="mt-3 text-ink-muted">
-            Der Rechner nutzt offizielle ElCom-Tarifdaten und nachvollziehbare Annahmen. Die tatsächliche Einsparung kann abweichen,
-            da sie von Ihrem individuellen Verbrauchsprofil und der LEG-Struktur abhängt. Betrachten Sie das Ergebnis als Richtwert.
+            {{ _("Der Rechner nutzt offizielle ElCom-Tarifdaten und nachvollziehbare Annahmen. Die tatsächliche Einsparung kann abweichen,\n            da sie von Ihrem individuellen Verbrauchsprofil und der LEG-Struktur abhängt. Betrachten Sie das Ergebnis als Richtwert.") }}
           </p>
         </details>
         <details class="bg-white rounded-lg shadow-md p-6">
-          <summary class="font-bold text-ink cursor-pointer">Was bedeutet "lokal verbrauchbar"?</summary>
+          <summary class="font-bold text-ink cursor-pointer">{{ _("Was bedeutet \"lokal verbrauchbar\"?") }}</summary>
           <p class="mt-3 text-ink-muted">
-            Das ist der Anteil der Solarproduktion, den Ihre LEG direkt verbraucht, statt ihn ins Netz einzuspeisen.
-            Wenn die Sonne mittags scheint, aber fast niemand zuhause ist, bleibt der Anteil tief. Mit Batterien oder mehr Teilnehmern steigt er.
+            {{ _("Das ist der Anteil der Solarproduktion, den Ihre LEG direkt verbraucht, statt ihn ins Netz einzuspeisen.\n            Wenn die Sonne mittags scheint, aber fast niemand zuhause ist, bleibt der Anteil tief. Mit Batterien oder mehr Teilnehmern steigt er.") }}
           </p>
         </details>
         <details class="bg-white rounded-lg shadow-md p-6">
-          <summary class="font-bold text-ink cursor-pointer">Berücksichtigt der Rechner Investitionskosten?</summary>
+          <summary class="font-bold text-ink cursor-pointer">{{ _("Berücksichtigt der Rechner Investitionskosten?") }}</summary>
           <p class="mt-3 text-ink-muted">
-            Der Rechner zeigt nur mögliche laufende Einsparungen. Einmalige und laufende Kosten unterscheiden sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet.
+            {{ _("Der Rechner zeigt nur mögliche laufende Einsparungen. Einmalige und laufende Kosten unterscheiden sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet.") }}
           </p>
         </details>
       </div>
@@ -328,7 +319,7 @@
 
     // Update display values
     function updateConsumption(value) {
-      document.getElementById('consumption-value').textContent = Number(value).toLocaleString('de-CH');
+      document.getElementById('consumption-value').textContent = Number(value).toLocaleString({{ current_locale|tojson }});
       checkCalculateButton();
     }
 
@@ -350,7 +341,7 @@
     municipalityInput.addEventListener('input', function() {
       clearTimeout(searchTimeout);
       const query = this.value.trim();
-      
+
       if (query.length < 2) {
         resultsDiv.classList.add('hidden');
         return;
@@ -371,7 +362,7 @@
                 nameDiv.textContent = m.name;
                 const metaDiv = document.createElement('div');
                 metaDiv.className = 'text-xs text-ink-muted';
-                metaDiv.textContent = 'BFS: ' + m.bfs_number + (m.canton ? ' | ' + m.canton : '');
+                metaDiv.textContent = {{ _("BFS: ")|tojson }} + m.bfs_number + (m.canton ? ' | ' + m.canton : '');
                 item.appendChild(nameDiv);
                 item.appendChild(metaDiv);
                 item.addEventListener('click', function() {
@@ -383,7 +374,7 @@
             } else {
               const empty = document.createElement('div');
               empty.className = 'px-4 py-3 text-ink-muted';
-              empty.textContent = 'Keine Gemeinde gefunden';
+              empty.textContent = {{ _("Keine Gemeinde gefunden")|tojson }};
               resultsDiv.appendChild(empty);
               resultsDiv.classList.remove('hidden');
             }
@@ -431,7 +422,7 @@
         .then(data => {
           const tariffs = data.tariffs || [];
           if (!tariffs || tariffs.length === 0) {
-            errorEl.textContent = 'Keine Tarifdaten für diese Gemeinde verfügbar.';
+            errorEl.textContent = {{ _("Keine Tarifdaten für diese Gemeinde verfügbar.")|tojson }};
             errorEl.classList.remove('hidden');
             return;
           }
@@ -466,47 +457,54 @@
           const savingsPercent = ((gridWithout - gridWith) / gridWithout * 100).toFixed(0);
 
           // Update UI
-          document.getElementById('annual-savings').textContent = Math.round(annualSavings);
+          document.getElementById('annual-savings').textContent = Math.round(annualSavings).toLocaleString({{ current_locale|tojson }});
           document.getElementById('savings-percent').textContent = savingsPercent;
-          document.getElementById('ten-year-savings').textContent = Math.round(tenYearSavings).toLocaleString('de-CH');
+          document.getElementById('ten-year-savings').textContent = Math.round(tenYearSavings).toLocaleString({{ current_locale|tojson }}).toLocaleString({{ current_locale|tojson }});
 
-          document.getElementById('energy-without').textContent = Math.round(energyWithout);
-          document.getElementById('energy-with').textContent = Math.round(energyWith);
-          document.getElementById('energy-diff').textContent = Math.round(energyWithout - energyWith);
+          document.getElementById('energy-without').textContent = Math.round(energyWithout).toLocaleString({{ current_locale|tojson }});
+          document.getElementById('energy-with').textContent = Math.round(energyWith).toLocaleString({{ current_locale|tojson }});
+          document.getElementById('energy-diff').textContent = Math.round(energyWithout - energyWith).toLocaleString({{ current_locale|tojson }});
 
-          document.getElementById('grid-without').textContent = Math.round(gridWithout);
-          document.getElementById('grid-with').textContent = Math.round(gridWith);
-          document.getElementById('grid-diff').textContent = '-' + Math.round(gridWithout - gridWith);
+          document.getElementById('grid-without').textContent = Math.round(gridWithout).toLocaleString({{ current_locale|tojson }});
+          document.getElementById('grid-with').textContent = Math.round(gridWith).toLocaleString({{ current_locale|tojson }});
+          document.getElementById('grid-diff').textContent = '-' + Math.round(gridWithout - gridWith).toLocaleString({{ current_locale|tojson }});
 
-          document.getElementById('fees-without').textContent = Math.round(feesWithout);
-          document.getElementById('fees-with').textContent = Math.round(feesWith);
-          document.getElementById('fees-diff').textContent = Math.round(feesWithout - feesWith);
+          document.getElementById('fees-without').textContent = Math.round(feesWithout).toLocaleString({{ current_locale|tojson }});
+          document.getElementById('fees-with').textContent = Math.round(feesWith).toLocaleString({{ current_locale|tojson }});
+          document.getElementById('fees-diff').textContent = Math.round(feesWithout - feesWith).toLocaleString({{ current_locale|tojson }});
 
-          document.getElementById('total-without').textContent = Math.round(totalWithout);
-          document.getElementById('total-with').textContent = Math.round(totalWith);
-          document.getElementById('total-diff').textContent = Math.round(annualSavings);
+          document.getElementById('total-without').textContent = Math.round(totalWithout).toLocaleString({{ current_locale|tojson }});
+          document.getElementById('total-with').textContent = Math.round(totalWith).toLocaleString({{ current_locale|tojson }});
+          document.getElementById('total-diff').textContent = Math.round(annualSavings).toLocaleString({{ current_locale|tojson }});
 
           // Savings summary (no founding-cost or profitability verdict: those depend on your VNB and Rechtsform)
           const recDiv = document.getElementById('recommendation');
           recDiv.className = 'p-6 rounded-lg mb-6 bg-brand/5 border border-brand/20';
-          recDiv.innerHTML = `
-            <h3 class="font-bold text-lg mb-2 text-ink">Ihre laufende Einsparung</h3>
-            <p class="text-ink-muted">
-              Mit CHF ${Math.round(annualSavings)} pro Jahr auf den Netzkosten sparen Sie über 10 Jahre CHF ${Math.round(tenYearSavings).toLocaleString('de-CH')}.
-              Gründungs- und Smart-Meter-Kosten sind hier nicht eingerechnet.
-            </p>
-            <p class="text-ink-muted mt-2">
-              Ein fairer interner Preis liegt zwischen der Einspeisevergütung und Ihrem Gesamtstrompreis. Vom Gesamtstrompreis bleibt die Abrechnungsgebühr des Netzbetreibers abzuziehen. Diese Gebühr verlangt der Netzbetreiber für die Abrechnung des geteilten Stroms.
-              <a href="/how-it-works#interner-strompreis" class="text-brand underline">Mehr zur Abrechnungsrichtlinie</a>
-            </p>
-          `;
+          recDiv.replaceChildren();
+          const summaryTitle = document.createElement('h3');
+          summaryTitle.className = 'font-bold text-lg mb-2 text-ink';
+          summaryTitle.textContent = {{ _("Ihre laufende Einsparung")|tojson }};
+          const summary = document.createElement('p');
+          summary.className = 'text-ink-muted';
+          summary.textContent = {{ _("Mit CHF %(annual)s pro Jahr auf den Netzkosten sparen Sie über 10 Jahre CHF %(total)s. Gründungs- und Smart-Meter-Kosten sind hier nicht eingerechnet.")|tojson }}
+              .replace('%(annual)s', Math.round(annualSavings).toLocaleString({{ current_locale|tojson }}))
+              .replace('%(total)s', Math.round(tenYearSavings).toLocaleString({{ current_locale|tojson }}));
+          const pricingNote = document.createElement('p');
+          pricingNote.className = 'text-ink-muted mt-2';
+          pricingNote.textContent = {{ _("Ein fairer interner Preis liegt zwischen der Einspeisevergütung und Ihrem Gesamtstrompreis. Vom Gesamtstrompreis bleibt die Abrechnungsgebühr des Netzbetreibers abzuziehen. Diese Gebühr verlangt der Netzbetreiber für die Abrechnung des geteilten Stroms.")|tojson }} + ' ';
+          const pricingLink = document.createElement('a');
+          pricingLink.href = '/how-it-works#interner-strompreis';
+          pricingLink.className = 'text-brand underline';
+          pricingLink.textContent = {{ _("Mehr zur Abrechnungsrichtlinie")|tojson }};
+          pricingNote.appendChild(pricingLink);
+          recDiv.append(summaryTitle, summary, pricingNote);
 
           document.getElementById('results').classList.remove('hidden');
           document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
         })
         .catch(err => {
           console.error('Calculation error:', err);
-          errorEl.textContent = 'Fehler bei der Berechnung. Bitte versuchen Sie es erneut.';
+          errorEl.textContent = {{ _("Fehler bei der Berechnung. Bitte versuchen Sie es erneut.")|tojson }};
           errorEl.classList.remove('hidden');
         });
     }

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Infrastructure open source pour les communautés électriques locales suisses.">
+  <rect width="1200" height="630" fill="#f6f4ef"/>
+  <rect x="60" y="60" width="1080" height="510" rx="36" fill="white" stroke="#dce3ef"/>
+  <rect x="945" y="90" width="110" height="110" rx="28" fill="#0f172a"/>
+  <rect x="986" y="118" width="28" height="55" rx="4" fill="#4f46e5"/>
+  <text x="164" y="360" font-family="'Courier New',Courier,monospace" font-size="112" textLength="540" lengthAdjust="spacingAndGlyphs" font-weight="400" fill="#0f172a">open<tspan fill="#4f46e5" font-weight="700">LEG</tspan></text>
+  <rect x="732" y="256" width="34" height="107" rx="5" fill="#4f46e5"/>
+  <text x="166" y="429" font-family="'Courier New',Courier,monospace" font-size="28" fill="#64748b">Une infrastructure open source pour les CEL suisses</text>
+</svg>

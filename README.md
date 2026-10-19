@@ -122,9 +122,11 @@ Public data fetchers live in `public_data.py`. Database persistence uses `databa
 
 ### Contributing
 
-The gettext language framework supports German and Swiss French selection.
-See the [internationalization guide](docs/internationalization.md) for the
-current rollout scope and catalog workflow.
+German and Swiss French are available through the language selector. To default
+a self-hosted instance to French, set `BABEL_DEFAULT_LOCALE=fr_CH`. See the
+[internationalization guide](docs/internationalization.md) for translation coverage,
+catalog maintenance and adding further languages. Recipient communications are
+introduced in a separate contribution.
 
 New to the codebase? Follow the [contributor onboarding guide](docs/contributor-onboarding.md).
 

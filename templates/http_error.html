@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ status }} · {{ title }} | OpenLEG</title>
+  <link rel="stylesheet" href="/static/css/openleg.css">
+</head>
+<body class="bg-paper text-ink">
+  <nav class="max-w-2xl mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-4" aria-label="{{ _('Sprache') }}">
+    <a class="font-bold" href="{{ '/'|localized_url }}">OpenLEG</a>
+    <div class="flex gap-4">
+      {% for locale, label in supported_locales.items() %}<a href="{{ '/'|localized_url(locale) }}" lang="{{ locale.replace('_', '-') }}" hreflang="{{ locale.replace('_', '-') }}">{{ label }}</a>{% endfor %}
+    </div>
+  </nav>
+  <main class="max-w-2xl mx-auto px-4 py-16" aria-labelledby="error-title">
+    <p class="font-mono text-sm text-ink-muted">{{ status }}</p>
+    <h1 id="error-title" class="mt-3 text-3xl font-bold">{{ title }}</h1>
+    <p class="mt-5 text-ink-muted">{{ _("Diese Anfrage konnte nicht ausgeführt werden. Prüfen Sie Ihre Angaben und Ihren Zugang oder versuchen Sie es später erneut.") }}</p>
+    <a class="mt-8 inline-block text-brand underline" href="{{ '/'|localized_url }}">{{ _("Zur Startseite") }}</a>
+  </main>
+</body>
+</html>

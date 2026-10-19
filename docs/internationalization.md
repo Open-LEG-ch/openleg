@@ -39,3 +39,13 @@ constraints and media variants. No separate application is necessary.
 Run scripts/tdd_cycle.sh gate before proposing changes. The framework tests cover
 normalization, fallback, session isolation, links and escaping. French interface
 coverage is deliberately introduced in the next contribution.
+
+## Interface coverage
+
+Public pages, navigation, forms, member/admin/municipality/utility dashboards,
+visible validation errors, accessibility text, JavaScript and demonstration media
+are translated. Raw API schemas and machine identifiers remain unchanged. The
+API playground adds localized human explanations beside the original response.
+
+Documents/PDF and recipient email preferences are separate subsequent changes.
+No persistent language preference schema is introduced by this interface layer.
