@@ -321,3 +321,32 @@ def test_audit_timestamps_use_utc_with_a_non_utc_database_session(submitted):
     proof = db.fetch_community_with_members(cid, "founder")["vnb_start_confirmation"]
     assert proof["recorded_at"].endswith("+00:00")
     assert proof["activated_at"].endswith("+00:00")
+
+
+def test_start_confirmation_and_original_attachment_survive_archive_restore(submitted):
+    import community_archive
+
+    client, db, cid, fields = submitted
+    assert (
+        client.post(
+            f"/leg/community/{cid}/vnb-start-confirmation", data=fields
+        ).status_code
+        == 302
+    )
+    assert client.post(f"/leg/community/{cid}/activate", data=fields).status_code == 302
+    before = db.fetch_community_with_members(cid, "founder")
+    payload = community_archive.export_community_archive(cid)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("TRUNCATE communities, buildings, correspondence_log CASCADE")
+    assert db.fetch_user_communities("founder") == []
+
+    restored = community_archive.restore_community_archive(payload)
+
+    assert restored["valid"], restored
+    after = db.fetch_community_with_members(cid, "founder")
+    assert after["status"] == "active"
+    assert after["vnb_start_confirmation"] == before["vnb_start_confirmation"]
+    assert after["dso_approved_at"] == before["dso_approved_at"]
+    assert after["activated_at"] == before["activated_at"]
+    assert client.post(f"/leg/community/{cid}/activate", data=fields).status_code == 302
+    assert "SYNTHETIC-START-1" in client.get(f"/leg/dashboard?cid={cid}").text
