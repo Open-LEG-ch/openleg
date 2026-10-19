@@ -314,6 +314,8 @@ def post_e66(client, source, *, territory="dietikon", token="synthetic-admin"):
         "wrong_unit",
         "non_quarter_hour",
         "bad_precision",
+        "context_rounded_precision",
+        "excess_magnitude",
         "negative",
         "non_finite",
         "mixed_communities",
@@ -349,9 +351,17 @@ def test_unsafe_raw_e66_leaves_no_evidence_or_physical_rows(configured_e66, prob
         blocks[-1].find("Product/MeasureUnit").text = "WH"
     elif problem == "non_quarter_hour":
         blocks[-1].find("Resolution/Resolution").text = "30"
-    elif problem in {"bad_precision", "negative", "non_finite"}:
+    elif problem in {
+        "bad_precision",
+        "context_rounded_precision",
+        "excess_magnitude",
+        "negative",
+        "non_finite",
+    }:
         blocks[-1].find("Observation/Volume").text = {
             "bad_precision": "0.7501",
+            "context_rounded_precision": "0.75000000000000000000000000001",
+            "excess_magnitude": "1E+999999999",
             "negative": "-0.750",
             "non_finite": "NaN",
         }[problem]

@@ -79,7 +79,9 @@ Every point/direction needs all three quarter-hour kWh products throughout the
 reported window: total `8716867000030`, exchanged LEG energy `2404050010123`,
 and residual `2404050010124`. Only the delivered LEG channel supplies calculated
 allocations. Totals alone are insufficient. Values must be finite, nonnegative
-and exact multiples of 0.001 kWh. Per interval, total minus residual minus local
+and exact multiples of 0.001 kWh below 100,000,000 kWh, the metering store's
+range. Precision validation is independent of Decimal context and rejects
+oversized exponents before expanding a rational value. Per interval, total minus residual minus local
 may differ by at most 0.001 kWh, accounting for independently rounded channels.
 This source-balance check does not define allocation-model or monthly tolerance.
 The adapter currently accepts observations without a `Condition` code; coded
