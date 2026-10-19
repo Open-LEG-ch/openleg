@@ -9,7 +9,7 @@ import formation_wizard
 
 def generate(community_id: str, building_id: str) -> dict:
     """Generate and atomically persist documents for a community administrator."""
-    status = formation_wizard.get_community_status(community_id)
+    status = formation_wizard.get_community_status(community_id, building_id)
     member = next(
         (
             member
@@ -22,7 +22,10 @@ def generate(community_id: str, building_id: str) -> dict:
         return {"error": "Nur die Administration kann Dokumente erstellen."}
 
     participants = []
-    for member in status["members"] or []:
+    # Authorization includes the actor's private self row. Shared documents may
+    # contain only participants visible through current discovery consent.
+    shared_status = formation_wizard.get_community_status(community_id) or {}
+    for member in shared_status.get("members") or []:
         if member["status"] != "confirmed":
             continue
         building = db.get_building_for_dashboard(member["building_id"]) or {}

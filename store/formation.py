@@ -216,12 +216,60 @@ def submit_community_to_dso(community_id: str) -> bool:
         return False
 
 
-def fetch_community_with_members(community_id: str) -> dict | None:
-    """Read one community row with its aggregated members."""
+def fetch_community_with_members(
+    community_id: str, viewer_building_id: str | None = None
+) -> dict | None:
+    """Read consent-visible members, including a private viewer's own row.
+
+    A supplied viewer must belong to the community. Without a viewer, only
+    members with current neighbour-discovery consent appear.
+    """
+    prefix = ""
+    members_table = "community_members"
+    consent_join = """
+        INNER JOIN consents cns ON b.building_id = cns.building_id
+            AND cns.share_with_neighbors = TRUE
+    """
+    viewer_join = ""
+    params = (community_id,)
+    if viewer_building_id:
+        # Private views include the viewer's own membership. Every other
+        # household still requires current discovery consent.
+        prefix = """
+            WITH visible_members AS (
+                SELECT cm.* FROM community_members cm
+                INNER JOIN consents cns ON cm.building_id = cns.building_id
+                    AND cns.share_with_neighbors = TRUE
+                WHERE cm.community_id = %s
+                UNION ALL
+                SELECT cm.* FROM community_members cm
+                WHERE cm.community_id = %s AND cm.building_id = %s
+                    AND NOT EXISTS (
+                        SELECT 1 FROM consents cns
+                        WHERE cns.building_id = cm.building_id
+                            AND cns.share_with_neighbors = TRUE
+                    )
+            )
+        """
+        members_table = "visible_members"
+        consent_join = ""
+        viewer_join = """
+            INNER JOIN community_members viewer
+                ON viewer.community_id = c.community_id
+                AND viewer.building_id = %s
+        """
+        params = (
+            community_id,
+            community_id,
+            viewer_building_id,
+            viewer_building_id,
+            community_id,
+        )
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
-                """
+                f"""
+                    {prefix}
                     SELECT
                         c.*,
                         array_agg(
@@ -236,14 +284,14 @@ def fetch_community_with_members(community_id: str) -> dict | None:
                             ) ORDER BY cm.joined_at
                         ) FILTER (WHERE cm.building_id IS NOT NULL) as members
                     FROM communities c
-                    LEFT JOIN community_members cm ON c.community_id = cm.community_id
+                    LEFT JOIN {members_table} cm ON c.community_id = cm.community_id
                     LEFT JOIN buildings b ON cm.building_id = b.building_id
-                    INNER JOIN consents cns ON b.building_id = cns.building_id
-                        AND cns.share_with_neighbors = TRUE
+                    {consent_join}
+                    {viewer_join}
                     WHERE c.community_id = %s
                     GROUP BY c.community_id
                 """,
-                (community_id,),
+                params,
             )
             return cur.fetchone()
     except Exception:

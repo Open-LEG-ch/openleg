@@ -447,7 +447,7 @@ def confirm_payment_match(community_id, entry_id):
 
 
 def _admin_for(community_id: str, building_id: str | None) -> bool:
-    status = formation_wizard.get_community_status(community_id)
+    status = formation_wizard.get_community_status(community_id, building_id)
     member = next(
         (
             row

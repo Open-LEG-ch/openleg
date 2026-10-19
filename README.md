@@ -108,7 +108,7 @@ Read the [engineering contract](docs/engineering-contract.md), [architecture](do
 
 - `/` public website for anonymous visitors
 - `/login` role chooser for owners and municipalities
-- `/dashboard` owner dashboard and secure access request
+- `/dashboard` owner dashboard and secure access request; signed-in founders can create a LEG at `/leg/community/create`
 - `/leg/dashboard` LEG operator dashboard
 - `/gemeinde/dashboard` municipality dashboard and secure access request
 - `/utility/login` grid-operator login
@@ -255,7 +255,7 @@ Lesen Sie den [Entwicklungsvertrag](docs/engineering-contract.md), die [Architek
 
 - `/` öffentliche Website für nicht angemeldete Personen
 - `/login` Rollenwahl für Eigentümer und Gemeinden
-- `/dashboard` Eigentümer-Dashboard mit sicherer Zugangsanfrage
+- `/dashboard` Eigentümer-Dashboard mit sicherer Zugangsanfrage; angemeldete Gründer legen unter `/leg/community/create` eine LEG an
 - `/leg/dashboard` Dashboard für LEG-Betreiber
 - `/gemeinde/dashboard` Gemeinde-Dashboard mit sicherer Zugangsanfrage
 - `/utility/login` Login für Netzbetreiber
