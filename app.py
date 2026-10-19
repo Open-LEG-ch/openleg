@@ -688,8 +688,10 @@ def unsubscribe_page():
                     send_email(
                         email_value,
                         "OpenLEG: Löschung bestätigen",
-                        "Bestätigen Sie die Löschung Ihrer Registrierung bei OpenLEG über "
+                        "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen "
+                        "Gebietsanfrage bei OpenLEG über "
                         f"diesen Link:\n\n{unsubscribe_url}\n\n"
+                        "Jeder Link bezieht sich auf einen einzelnen Eintrag. "
                         "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
                         "nicht angefordert haben, ignorieren Sie diese E-Mail.",
                     )
@@ -736,7 +738,8 @@ def unsubscribe_token(token):
                 "unsubscribe.html",
                 status="error",
                 message=(
-                    "Ihre Registrierung wurde nicht gelöscht. Der Link ist möglicherweise "
+                    "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene "
+                    "Gebietsanfrage) besteht weiterhin. Der Link ist möglicherweise "
                     "abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
                 ),
                 email="",
@@ -746,7 +749,10 @@ def unsubscribe_token(token):
     return render_template(
         "unsubscribe.html",
         status="success",
-        message="Die mit diesem Link verknüpfte Registrierung wurde erfolgreich gelöscht.",
+        message=(
+            "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene "
+            "Gebietsanfrage) ist jetzt erfolgreich gelöscht."
+        ),
         email="",
     )
 
