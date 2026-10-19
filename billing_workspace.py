@@ -126,7 +126,11 @@ def _period_summary(period):
     result = _normalise(period)
     result["period_label"] = _period_label(period.get("period_start"))
     result["status_label"] = (
-        "Entwurf" if period.get("status") == "draft" else str(period.get("status", ""))
+        "Entwurf"
+        if period.get("status") == "draft"
+        else "Entwurf ungültig"
+        if period.get("status") == "invalidated"
+        else str(period.get("status", ""))
     )
     return result
 

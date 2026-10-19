@@ -889,8 +889,14 @@ def create_tables():
             """)
 
             cur.execute("""
-                CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_period_community_window
+                ALTER TABLE billing_periods DROP CONSTRAINT IF EXISTS
+                    billing_periods_community_id_period_start_period_end_key
+            """)
+            cur.execute("DROP INDEX IF EXISTS uq_billing_period_community_window")
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_period_live_window
                 ON billing_periods (community_id, period_start, period_end)
+                WHERE status IS DISTINCT FROM 'invalidated'
             """)
 
             cur.execute("""

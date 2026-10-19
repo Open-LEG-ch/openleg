@@ -397,6 +397,28 @@ def approve_billing_period(
                 raise billing_approval.BillingApprovalError(
                     "Only a draft billing period can be approved"
                 )
+            if period.get("calculated_values_fingerprint"):
+                cur.execute(
+                    """SELECT 1 FROM vnb_calculated_values_deliveries d
+                       WHERE d.community_id = %s AND d.content_fingerprint = %s
+                         AND d.period_start = %s AND d.period_end = %s
+                         AND d.status = 'accepted'
+                         AND NOT EXISTS (
+                             SELECT 1 FROM vnb_calculated_values_events e
+                             WHERE e.delivery_id = d.id
+                         )""",
+                    (
+                        community_id,
+                        period["calculated_values_fingerprint"],
+                        period["period_start"],
+                        period["period_end"],
+                    ),
+                )
+                if not cur.fetchone():
+                    raise billing_approval.BillingApprovalError(
+                        "Der VNB-Beleg dieses Entwurfs ist nicht mehr aktuell. "
+                        "Erstellen Sie den Entwurf neu."
+                    )
             if community_row.get("require_dual_control") and (
                 not period.get("prepared_by")
                 or period.get("prepared_by") == approver_id
@@ -483,6 +505,7 @@ def get_billing_period_for_window(
             """
             SELECT id, input_fingerprint FROM billing_periods
             WHERE community_id = %s AND period_start = %s AND period_end = %s
+              AND status IS DISTINCT FROM 'invalidated'
             """,
             (community_id, period_start, period_end),
         )

@@ -251,6 +251,14 @@ def withdraw_calculated_values_delivery(
             (delivery["community_id"],),
         )
         cur.execute(
+            """SELECT 1 FROM communities c JOIN buildings b
+               ON b.building_id = c.admin_building_id
+               WHERE c.community_id = %s AND b.city_id = %s FOR SHARE OF b""",
+            (delivery["community_id"], territory),
+        )
+        if not cur.fetchone():
+            raise CalculatedValuesLifecycleMissing()
+        cur.execute(
             "SELECT pg_advisory_xact_lock(hashtext(%s))",
             (f"calculated-lifecycle:{territory}:{idempotency_key}",),
         )
