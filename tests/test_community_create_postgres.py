@@ -160,6 +160,8 @@ def test_private_founder_view_keeps_other_households_behind_current_consent(foun
 def test_founder_without_discovery_consent_can_generate_documents_and_manage_api(
     founder,
 ):
+    import weasyprint
+
     client, db = founder
     _set_session(client, "founder")
     assert (
@@ -184,9 +186,26 @@ def test_founder_without_discovery_consent_can_generate_documents_and_manage_api
     )
     assert db.insert_invited_member(cid, "partner", "founder")
     assert db.confirm_invited_member(cid, "partner")
-    response = client.post(
-        f"/leg/community/{cid}/documents", data={"csrf_token": "csrf-secret"}
+    assert db.save_building(
+        "partner-two",
+        "partner-two@example.invalid",
+        {"address": "Synthetic second partner", "lat": 47.2, "lon": 8.2},
+        {"share_with_neighbors": True},
+        verified=True,
     )
+    assert db.insert_invited_member(cid, "partner-two", "founder")
+    assert db.confirm_invited_member(cid, "partner-two")
+    rendered = []
+    original_html = weasyprint.HTML
+
+    def capture_html(*args, **kwargs):
+        rendered.append(kwargs["string"])
+        return original_html(*args, **kwargs)
+
+    with patch("weasyprint.HTML", side_effect=capture_html):
+        response = client.post(
+            f"/leg/community/{cid}/documents", data={"csrf_token": "csrf-secret"}
+        )
     assert response.status_code == 302
     documents = db.list_leg_documents(cid)
     assert {doc["doc_type"] for doc in documents} == {
@@ -194,10 +213,17 @@ def test_founder_without_discovery_consent_can_generate_documents_and_manage_api
         "teilnehmervertrag",
     }
     assert len(documents) == 3
+    assert not any(
+        "founder@example.invalid" in document["filename"] for document in documents
+    )
     assert all(
         bytes(db.get_leg_document(doc["id"])["pdf_data"]).startswith(b"%PDF")
         for doc in documents
     )
+    assert "founder@example.invalid" not in "\n".join(rendered)
+    assert "Synthetic 1" not in "\n".join(rendered)
+    assert "partner@example.invalid" in "\n".join(rendered)
+    assert "partner-two@example.invalid" in "\n".join(rendered)
     response = client.post(
         f"/leg/community/{cid}/operator-api/credentials",
         data={
@@ -207,3 +233,8 @@ def test_founder_without_discovery_consent_can_generate_documents_and_manage_api
         },
     )
     assert response.status_code == 201
+    _set_session(client, "partner")
+    for document in documents:
+        download = client.get(f"/leg/document/{document['id']}")
+        assert download.status_code == 200
+        assert download.data == bytes(db.get_leg_document(document["id"])["pdf_data"])
