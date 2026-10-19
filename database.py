@@ -256,6 +256,7 @@ from store.interest import (  # noqa: F401
     get_municipality_interest_summary,
     get_operator_interest_counts,
     get_operator_interest_records,
+    get_verified_interest_recipient_preferences,
     get_verified_interest_recipients,
     save_coverage_request,
     verify_coverage_request,

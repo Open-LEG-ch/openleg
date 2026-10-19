@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenLEG VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 23:08+0000\n"
+"POT-Creation-Date: 2026-10-19 23:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_CH\n"
@@ -616,8 +616,8 @@ msgstr "Ablehnung prüfen"
 
 #: templates/dashboard.html:37 templates/emails/day_0_welcome.html:63
 #: templates/emails/day_14_formation.html:86 templates/emails/day_3_smartmeter.html:45
-#: templates/emails/day_7_consumption.html:60 templates/gemeinde/dashboard.html:29
-#: templates/utility/dashboard.html:28
+#: templates/emails/day_7_consumption.html:60 templates/emails/municipality_interest.html:7
+#: templates/gemeinde/dashboard.html:29 templates/utility/dashboard.html:28
 msgid "Abmelden"
 msgstr "Abmelden"
 
@@ -1573,6 +1573,23 @@ msgstr "Bestimmt eine Ansprechperson."
 msgid "Bestätigen"
 msgstr "Bestätigen"
 
+#: interest_intake.py:102
+#, python-format
+msgid ""
+"Bestätigen Sie Ihre Interessenmeldung:\n"
+"\n"
+"%(verification_url)s\n"
+"\n"
+"Erst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht angemeldet haben, ignorieren"
+" Sie diese E-Mail."
+msgstr ""
+"Bestätigen Sie Ihre Interessenmeldung:\n"
+"\n"
+"%(verification_url)s\n"
+"\n"
+"Erst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht angemeldet haben, ignorieren"
+" Sie diese E-Mail."
+
 #: templates/leg_verzeichnis/beanspruchen.html:7
 msgid "Bestätigen Sie per E-Mail, dass Sie diesen LEG-Eintrag im offenen Verzeichnis betreiben."
 msgstr "Bestätigen Sie per E-Mail, dass Sie diesen LEG-Eintrag im offenen Verzeichnis betreiben."
@@ -1727,7 +1744,7 @@ msgstr "Bitte E-Mail angeben."
 msgid "Bitte E-Mail bestätigen"
 msgstr "Bitte E-Mail bestätigen"
 
-#: interest_intake.py:103
+#: interest_intake.py:109
 msgid "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 msgstr "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 
@@ -1735,7 +1752,7 @@ msgstr "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 msgid "Bitte füllen Sie dieses Feld aus."
 msgstr "Bitte füllen Sie dieses Feld aus."
 
-#: interest_intake.py:46
+#: interest_intake.py:48
 msgid "Bitte geben Sie Ihre Gemeinde an."
 msgstr "Bitte geben Sie Ihre Gemeinde an."
 
@@ -1759,7 +1776,7 @@ msgstr "Bitte geben Sie eine E-Mail an."
 msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgstr "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 
-#: interest_intake.py:40
+#: interest_intake.py:42
 msgid "Bitte geben Sie eine gültige Schweizer PLZ an."
 msgstr "Bitte geben Sie eine gültige Schweizer PLZ an."
 
@@ -1823,7 +1840,7 @@ msgstr ""
 msgid "Bitte registrieren Sie zuerst Ihre Gemeinde."
 msgstr "Bitte registrieren Sie zuerst Ihre Gemeinde."
 
-#: interest_intake.py:23
+#: interest_intake.py:25
 msgid "Bitte senden Sie ein JSON-Objekt."
 msgstr "Bitte senden Sie ein JSON-Objekt."
 
@@ -1840,7 +1857,7 @@ msgstr "Bitte verwenden Sie das verlangte Format."
 msgid "Bitte wählen"
 msgstr "Bitte wählen"
 
-#: interest_intake.py:30 registration.py:91
+#: interest_intake.py:32 registration.py:91
 msgid "Bitte wählen Sie eine gültige Sprache."
 msgstr "Bitte wählen Sie eine gültige Sprache."
 
@@ -2672,7 +2689,7 @@ msgstr ""
 "Die Inhalte auf dieser Website unterliegen dem Urheberrecht. Jede Verwertung\n"
 "      bedarf der vorherigen Zustimmung der Rechteinhaber, soweit nicht gesetzlich zulässig."
 
-#: interest_intake.py:89 registration.py:165
+#: interest_intake.py:91 registration.py:165
 msgid "Die Interessenmeldung konnte nicht gespeichert werden."
 msgstr "Die Interessenmeldung konnte nicht gespeichert werden."
 
@@ -5255,6 +5272,15 @@ msgstr ""
 msgid "Impressum | %(platform)s"
 msgstr "Impressum | %(platform)s"
 
+#: templates/emails/municipality_interest.html:5
+#, python-format
+msgid ""
+"In %(municipality_name)s gibt es jetzt %(total)s bestätigte Interessierte für eine Lokale "
+"Elektrizitätsgemeinschaft."
+msgstr ""
+"In %(municipality_name)s gibt es jetzt %(total)s bestätigte Interessierte für eine Lokale "
+"Elektrizitätsgemeinschaft."
+
 #: templates/gemeinde/pilotgemeinde.html:14
 msgid ""
 "In Baden zeigt sich: Eine LEG kann lokale Produktion und Verbrauch verbinden und die Netzkosten "
@@ -7190,6 +7216,11 @@ msgstr "Netzwerkfehler."
 msgid "Netzwerkfehler. Bitte erneut versuchen."
 msgstr "Netzwerkfehler. Bitte erneut versuchen."
 
+#: email_automation.py:99
+#, python-format
+msgid "Neue LEG-Interessenmeldung in %(municipality_name)s"
+msgstr "Neue LEG-Interessenmeldung in %(municipality_name)s"
+
 #: templates/documents/community_agreement.html:30
 msgid ""
 "Neue Teilnehmer können mit Zustimmung der bestehenden Mitglieder beitreten.\n"
@@ -7921,6 +7952,10 @@ msgstr "OpenLEG-Netzwerk"
 #: templates/self_host.html:58
 msgid "OpenLEG. Kein eigener technischer Betrieb."
 msgstr "OpenLEG. Kein eigener technischer Betrieb."
+
+#: interest_intake.py:100
+msgid "OpenLEG: Interessenmeldung bestätigen"
+msgstr "OpenLEG: Interessenmeldung bestätigen"
 
 #: templates/leg_gruenden.html:205
 msgid "OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos."
@@ -10561,6 +10596,14 @@ msgstr ""
 "nach beidseitiger Bestätigung).\n"
 "      Gemeinden und Netzbetreiber erhalten von uns keine Namen, Adressen oder Kontaktdaten. Das "
 "Gemeinde-Dashboard zeigt nur zusammengefasste Zahlen."
+
+#: templates/emails/municipality_interest.html:6
+msgid ""
+"Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine passende Gruppe entsteht, "
+"erhalten Sie die nächsten Schritte."
+msgstr ""
+"Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine passende Gruppe entsteht, "
+"erhalten Sie die nächsten Schritte."
 
 #: app.py:752
 msgid ""

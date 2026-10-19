@@ -232,6 +232,7 @@ def test_legacy_profile_migration_backfills_german_and_keeps_constraint(
     db = interest_database
     assert save_profile(db)
     with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("DROP VIEW verified_interest")
         cur.execute("ALTER TABLE buildings DROP COLUMN preferred_locale")
         cur.execute("ALTER TABLE coverage_requests DROP COLUMN preferred_locale")
     db.create_tables()

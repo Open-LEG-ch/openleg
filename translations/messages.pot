@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 23:08+0000\n"
+"POT-Creation-Date: 2026-10-19 23:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -600,8 +600,8 @@ msgstr ""
 
 #: templates/dashboard.html:37 templates/emails/day_0_welcome.html:63
 #: templates/emails/day_14_formation.html:86 templates/emails/day_3_smartmeter.html:45
-#: templates/emails/day_7_consumption.html:60 templates/gemeinde/dashboard.html:29
-#: templates/utility/dashboard.html:28
+#: templates/emails/day_7_consumption.html:60 templates/emails/municipality_interest.html:7
+#: templates/gemeinde/dashboard.html:29 templates/utility/dashboard.html:28
 msgid "Abmelden"
 msgstr ""
 
@@ -1509,6 +1509,17 @@ msgstr ""
 msgid "Bestätigen"
 msgstr ""
 
+#: interest_intake.py:102
+#, python-format
+msgid ""
+"Bestätigen Sie Ihre Interessenmeldung:\n"
+"\n"
+"%(verification_url)s\n"
+"\n"
+"Erst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht angemeldet haben, ignorieren"
+" Sie diese E-Mail."
+msgstr ""
+
 #: templates/leg_verzeichnis/beanspruchen.html:7
 msgid "Bestätigen Sie per E-Mail, dass Sie diesen LEG-Eintrag im offenen Verzeichnis betreiben."
 msgstr ""
@@ -1661,7 +1672,7 @@ msgstr ""
 msgid "Bitte E-Mail bestätigen"
 msgstr ""
 
-#: interest_intake.py:103
+#: interest_intake.py:109
 msgid "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 msgstr ""
 
@@ -1669,7 +1680,7 @@ msgstr ""
 msgid "Bitte füllen Sie dieses Feld aus."
 msgstr ""
 
-#: interest_intake.py:46
+#: interest_intake.py:48
 msgid "Bitte geben Sie Ihre Gemeinde an."
 msgstr ""
 
@@ -1693,7 +1704,7 @@ msgstr ""
 msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgstr ""
 
-#: interest_intake.py:40
+#: interest_intake.py:42
 msgid "Bitte geben Sie eine gültige Schweizer PLZ an."
 msgstr ""
 
@@ -1752,7 +1763,7 @@ msgstr ""
 msgid "Bitte registrieren Sie zuerst Ihre Gemeinde."
 msgstr ""
 
-#: interest_intake.py:23
+#: interest_intake.py:25
 msgid "Bitte senden Sie ein JSON-Objekt."
 msgstr ""
 
@@ -1769,7 +1780,7 @@ msgstr ""
 msgid "Bitte wählen"
 msgstr ""
 
-#: interest_intake.py:30 registration.py:91
+#: interest_intake.py:32 registration.py:91
 msgid "Bitte wählen Sie eine gültige Sprache."
 msgstr ""
 
@@ -2507,7 +2518,7 @@ msgid ""
 "      bedarf der vorherigen Zustimmung der Rechteinhaber, soweit nicht gesetzlich zulässig."
 msgstr ""
 
-#: interest_intake.py:89 registration.py:165
+#: interest_intake.py:91 registration.py:165
 msgid "Die Interessenmeldung konnte nicht gespeichert werden."
 msgstr ""
 
@@ -4896,6 +4907,13 @@ msgstr ""
 msgid "Impressum | %(platform)s"
 msgstr ""
 
+#: templates/emails/municipality_interest.html:5
+#, python-format
+msgid ""
+"In %(municipality_name)s gibt es jetzt %(total)s bestätigte Interessierte für eine Lokale "
+"Elektrizitätsgemeinschaft."
+msgstr ""
+
 #: templates/gemeinde/pilotgemeinde.html:14
 msgid ""
 "In Baden zeigt sich: Eine LEG kann lokale Produktion und Verbrauch verbinden und die Netzkosten "
@@ -6750,6 +6768,11 @@ msgstr ""
 msgid "Netzwerkfehler. Bitte erneut versuchen."
 msgstr ""
 
+#: email_automation.py:99
+#, python-format
+msgid "Neue LEG-Interessenmeldung in %(municipality_name)s"
+msgstr ""
+
 #: templates/documents/community_agreement.html:30
 msgid ""
 "Neue Teilnehmer können mit Zustimmung der bestehenden Mitglieder beitreten.\n"
@@ -7390,6 +7413,10 @@ msgstr ""
 
 #: templates/self_host.html:58
 msgid "OpenLEG. Kein eigener technischer Betrieb."
+msgstr ""
+
+#: interest_intake.py:100
+msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr ""
 
 #: templates/leg_gruenden.html:205
@@ -9891,6 +9918,12 @@ msgid ""
 "nach beidseitiger Bestätigung).\n"
 "      Gemeinden und Netzbetreiber erhalten von uns keine Namen, Adressen oder Kontaktdaten. Das "
 "Gemeinde-Dashboard zeigt nur zusammengefasste Zahlen."
+msgstr ""
+
+#: templates/emails/municipality_interest.html:6
+msgid ""
+"Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine passende Gruppe entsteht, "
+"erhalten Sie die nächsten Schritte."
 msgstr ""
 
 #: app.py:752

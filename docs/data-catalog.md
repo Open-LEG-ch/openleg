@@ -103,6 +103,8 @@ The equipment advisory workflow is documented under `store/advisories` below.
   the exact count from three onward.
 - **Consent gate:** email verification is required before any count or
   notification. Map visibility remains separately opt-in.
+- Notification language follows the same canonical verified record and consent
+  selection as the recipient. The email-only legacy reader retains its return shape.
 
 ## store/consent
 

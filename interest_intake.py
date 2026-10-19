@@ -6,6 +6,8 @@ import secrets
 import uuid
 
 import registration
+from email_localization import gettext as _
+from i18n import localized_url
 from locale_policy import require_recipient_locale
 from translation_markers import gettext_noop
 
@@ -89,14 +91,18 @@ def submit(data, *, db, security, base_url, send_email):
             gettext_noop("Die Interessenmeldung konnte nicht gespeichert werden.")
         )
 
-    verification_url = f"{base_url.rstrip('/')}/interest/confirm/{verification_token}"
+    verification_url = localized_url(
+        f"{base_url.rstrip('/')}/interest/confirm/{verification_token}",
+        preferred_locale,
+    )
     send_email(
         email,
-        "OpenLEG: Interessenmeldung bestätigen",
-        "Bestätigen Sie Ihre Interessenmeldung:\n\n"
-        f"{verification_url}\n\n"
-        "Erst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht "
-        "angemeldet haben, ignorieren Sie diese E-Mail.",
+        _("OpenLEG: Interessenmeldung bestätigen", locale=preferred_locale),
+        _(
+            "Bestätigen Sie Ihre Interessenmeldung:\n\n%(verification_url)s\n\nErst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht angemeldet haben, ignorieren Sie diese E-Mail.",
+            verification_url=verification_url,
+            locale=preferred_locale,
+        ),
     )
     return {
         "accepted": True,

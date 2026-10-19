@@ -3,7 +3,7 @@
 OpenLEG uses Flask-Babel/gettext for German (Switzerland, de_CH) and Swiss French
 (fr_CH). German remains the installation default. The framework, interface and
 printable documents support both locales. The four scheduled onboarding emails
-use a persisted recipient preference.
+and municipality interest notices use a persisted recipient preference.
 
 ## Language selection
 
@@ -85,8 +85,17 @@ Queue retry, address scrubbing and deletion rules continue to apply. The prefere
 shares its registration's retention and deletion rules.
 
 This stage adapts the four email templates and translations from the same
-contributor commit. Immediate signup confirmations, municipality notifications,
-access links, contact updates, invitations and invoice correspondence still need
-the separate recipient delivery changes. Recording a coverage preference does
-not yet localize those messages. This implementation records no human language
-or legal approval.
+contributor commit. Municipality notices use the language of the canonical
+verified record for each recipient. The existing building-before-coverage
+priority, case-insensitive deduplication, newcomer exclusion and update consent
+continue to apply. An unverified or duplicate coverage submission cannot change
+a verified building's language. Municipality names are escaped in HTML; no
+recipient identity or newcomer contact details appear in the message.
+
+Unresolved-address signup confirmations use the explicit validated choice from
+that submission, including its verification link, without requiring a Flask
+request or worker context. Missing choices retain German.
+
+Building signup confirmations, access links, contact updates, invitations and
+invoice correspondence still need the separate recipient delivery changes.
+This implementation records no human language or legal approval.

@@ -125,18 +125,18 @@ def create_tables():
                 CREATE OR REPLACE VIEW verified_interest AS
                 SELECT DISTINCT ON (bfs_number, LOWER(email))
                        bfs_number, LOWER(email) AS email, roles, has_solar,
-                       created_at, address_problem, source_id
+                       created_at, address_problem, source_id, preferred_locale
                 FROM (
                     SELECT bfs_number, email, roles, has_solar,
                            registered_at AS created_at,
                            FALSE AS address_problem, 1 AS source_priority,
-                           building_id AS source_id
+                           building_id AS source_id, preferred_locale
                     FROM buildings
                     WHERE verified = TRUE AND bfs_number IS NOT NULL
                     UNION ALL
                     SELECT bfs_number, email, roles, has_solar, created_at,
                            TRUE AS address_problem, 2 AS source_priority,
-                           request_id AS source_id
+                           request_id AS source_id, preferred_locale
                     FROM coverage_requests
                     WHERE verified = TRUE AND bfs_number IS NOT NULL
                 ) interest

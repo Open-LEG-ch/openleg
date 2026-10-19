@@ -80,28 +80,33 @@ def notify_new_municipality_interest(
     base_url: str = "https://openleg.ch",
 ):
     """Tell existing verified participants that local demand has grown."""
-    recipients = db.get_verified_interest_recipients(
+    recipients = db.get_verified_interest_recipient_preferences(
         bfs_number, exclude_email=newcomer_email
     )
     total = db.get_interest_count(int(bfs_number))
     if total is None:
         total = 1
-    subject = f"Neue LEG-Interessenmeldung in {municipality_name}"
-    body = (
-        f"In {municipality_name} gibt es jetzt {total} bestätigte Interessierte "
-        "für eine Lokale Elektrizitätsgemeinschaft.\n\n"
-        "Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine "
-        "passende Gruppe entsteht, erhalten Sie die nächsten Schritte.\n\n"
-        f"Abmelden: {base_url.rstrip('/')}/unsubscribe"
-    )
     sent = 0
     failed = 0
     seen = set()
-    for raw_email in recipients:
-        email = (raw_email or "").strip().lower()
+    for recipient in recipients:
+        email = (recipient.get("email") or "").strip().lower()
         if not email or email == newcomer_email.strip().lower() or email in seen:
             continue
         seen.add(email)
+        locale = recipient.get("preferred_locale", "de_CH")
+        subject = _(
+            "Neue LEG-Interessenmeldung in %(municipality_name)s",
+            municipality_name=municipality_name,
+            locale=locale,
+        )
+        body = render_template(
+            "emails/municipality_interest.html",
+            locale=locale,
+            municipality_name=municipality_name,
+            total=total,
+            unsubscribe_url=base_url.rstrip("/") + "/unsubscribe",
+        )
         if _send_email(email, subject, body):
             sent += 1
         else:

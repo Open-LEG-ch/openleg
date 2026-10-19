@@ -225,11 +225,21 @@ def get_interest_count(bfs_number, *, strict=False):
 
 def get_verified_interest_recipients(bfs_number, exclude_email=""):
     """Return distinct verified recipient addresses for one municipality."""
+    return [
+        row["email"]
+        for row in get_verified_interest_recipient_preferences(
+            bfs_number, exclude_email
+        )
+    ]
+
+
+def get_verified_interest_recipient_preferences(bfs_number, exclude_email=""):
+    """Read each canonical, consented recipient and its saved language together."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT v.email
+                SELECT v.email, v.preferred_locale
                 FROM verified_interest v
                 LEFT JOIN consents c
                     ON c.building_id = v.source_id
@@ -241,7 +251,7 @@ def get_verified_interest_recipients(bfs_number, exclude_email=""):
                 """,
                 (bfs_number, exclude_email),
             )
-            return [row["email"] for row in cur.fetchall() if row.get("email")]
+            return [dict(row) for row in cur.fetchall() if row.get("email")]
     except Exception:
         logger.exception("[DB] Error loading verified interest recipients")
         return []
