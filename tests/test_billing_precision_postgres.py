@@ -165,10 +165,16 @@ def test_rounded_e66_quantities_reach_approved_invoice_without_a_second_document
             item["building_id"]
             for item in provenance["source_evidence"]["metadata"]["mappings"]
         } == {own}
-    client.post(
-        f"/admin/vnb-calculated-values/dietikon/{accepted['id']}/withdrawals",
-        headers={"X-Admin-Token": "synthetic-admin", "Idempotency-Key": "issued-retry"},
-        json={"reason": "Synthetic withdrawal after issue"},
+    assert (
+        client.post(
+            f"/admin/vnb-calculated-values/dietikon/{accepted['id']}/withdrawals",
+            headers={
+                "X-Admin-Token": "synthetic-admin",
+                "Idempotency-Key": "issued-retry",
+            },
+            json={"reason": "Synthetic withdrawal after issue"},
+        ).status_code
+        == 201
     )
     assert (
         db.approve_billing_period(
@@ -317,3 +323,74 @@ def test_unsafe_or_unpriced_source_never_creates_a_draft(rounded_delivery, probl
 
     assert error.value.code == "vnb_allocation_mismatch"
     assert db.get_billing_period_for_window(payload["community_id"], start, end) is None
+
+
+def test_consumer_limited_source_uses_rounded_producer_credits(rounded_delivery):
+    client, db, payload, source = rounded_delivery
+    point = "SYNTHETIC-CONSUMER-B"
+    assert (
+        db.upsert_metering_points(
+            [{"metering_point_id": point, "expected_directions": ["production"]}]
+        )
+        == 1
+    )
+    assert (
+        client.post(
+            f"/admin/vnb-calculated-values/dietikon/mappings/{point}",
+            headers={"X-Admin-Token": "synthetic-admin"},
+            json={
+                "confirmed_membership": True,
+                "source_reference": "SYNTHETIC-PRODUCER-STATEMENT",
+                "effective_from": "2026-09-01T00:00:00Z",
+            },
+        ).status_code
+        == 201
+    )
+    root = ET.fromstring(source)
+    channels = {
+        "SYNTHETIC-METER-1": ("1.000", "1.000", "0.000"),
+        point: ("1.000", "0.333", "0.667"),
+        "SYNTHETIC-PRODUCER": ("2.000", "0.667", "1.333"),
+    }
+    for block in root.findall("MeteringData"):
+        identity = block.find("ConsumptionMeteringPoint")
+        if identity is None:
+            identity = block.find("ProductionMeteringPoint")
+        identity_point = identity.find("VSENationalID").text
+        if identity_point == point:
+            identity.tag = "ProductionMeteringPoint"
+        code = block.find("Product/ID/VSENationalCode").text
+        position = ("8716867000030", "2404050010123", "2404050010124").index(code)
+        block.find("Observation/Volume").text = channels[identity_point][position]
+    assert e66.post_e66(client, ET.tostring(root)).status_code == 201
+    start, end = (
+        datetime.fromisoformat(payload[key]).astimezone(ZoneInfo("Europe/Zurich"))
+        for key in ("period_start", "period_end")
+    )
+
+    result = billing_runner.run_billing_period(
+        payload["community_id"], start, end, prepared_by="member"
+    )
+    invoices = db.approve_billing_period(
+        result["period_id"], payload["community_id"], approver_id="producer"
+    )
+
+    credits = {
+        item["participant_id"]: float(item["quantity_kwh"])
+        for invoice in invoices
+        for item in invoice["line_items_snapshot"]
+        if item["item_type"] == "producer_credit"
+    }
+    assert credits["consumer-b"] == 0.333
+    assert credits["producer"] == 0.667
+    period = db.get_billing_period(result["period_id"], payload["community_id"])
+    assert (
+        period["reconciliation"]["production_per_participant"]["consumer-b"][
+            "difference_kwh"
+        ]
+        != 0
+    )
+    assert (
+        period["reconciliation"]["precision_policy"]["intervals"][0]["limiting_side"]
+        == "consumption"
+    )
