@@ -70,6 +70,10 @@ Invoice approval stays a deliberate operator action. VNB-specific transport and 
 Formation documents and invoice PDFs support German and Swiss French labels;
 stored invoice figures and existing formation files remain unchanged. See
 [document language behavior](docs/internationalization.md#printable-documents).
+Residents can save German or Swiss French for the four scheduled onboarding
+emails in their private dashboard. Existing registrations default to German;
+changing the page language alone does not change a saved preference. See
+[recipient language](docs/internationalization.md#recipient-language).
 
 ### Quick start
 
@@ -223,6 +227,10 @@ Gründungsdokumente und Rechnungs-PDFs unterstützen deutsche und französische
 Beschriftungen. Gespeicherte Rechnungsbeträge und vorhandene Gründungsdateien
 bleiben erhalten. Die [Sprachdokumentation](docs/internationalization.md#printable-documents)
 beschreibt das Verhalten.
+Bewohnerinnen und Bewohner können im privaten Dashboard Deutsch oder Französisch
+für die vier zeitversetzten Einstiegs-E-Mails speichern. Bestehende Anmeldungen
+behalten Deutsch. Ein Sprachwechsel auf der Seite ändert diese Einstellung nicht.
+Siehe [E-Mail-Sprache](docs/internationalization.md#recipient-language).
 
 ### Schnellstart
 

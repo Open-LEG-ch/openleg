@@ -65,6 +65,7 @@ _PROFILE_EXPORT_FIELDS = (
     "share_with_utility",
     "updates_opt_in",
     "consent_version",
+    "preferred_locale",
 )
 
 

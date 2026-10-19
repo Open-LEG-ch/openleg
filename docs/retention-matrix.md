@@ -26,6 +26,10 @@ Invoice-question response and reminder dates use
 `INVOICE_QUERY_RESPONSE_DAYS` (default 10) and
 `INVOICE_QUERY_REMINDER_DAYS` (default 2 days before the response deadline).
 
+The German/French recipient preference in building and coverage records follows
+the same retention and deletion rules as its registration. It has no separate
+history or retention period. Scheduled email delivery reads the current choice.
+
 | Domain (catalog) | Retention horizon | Deletion trigger | What deletion reaches | What it deliberately keeps |
 |---|---|---|---|---|
 | store/building | Life of the registration | Profile deletion (unsubscribe confirmation) | The `buildings` row; CASCADE removes consents, tokens, access tokens, queue rows, cluster assignments, memberships, meter CSV readings; `referrer_id` edges become `SET NULL` | Nothing - the registration is the data |

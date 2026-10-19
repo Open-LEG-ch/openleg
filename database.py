@@ -215,7 +215,10 @@ from store.correspondence import (  # noqa: F401
     list_correspondence,
     log_correspondence,
 )
-from store.dashboard_profile import update_dashboard_profile  # noqa: F401
+from store.dashboard_profile import (  # noqa: F401
+    update_dashboard_profile,
+    update_recipient_locale,
+)
 from store.document import (  # noqa: F401
     get_leg_document,
     list_leg_documents,

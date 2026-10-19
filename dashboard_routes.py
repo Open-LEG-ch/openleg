@@ -221,6 +221,23 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             "telemetry_dashboard.html", installations=installations
         )
 
+    @bp.post("/dashboard/language")
+    def dashboard_language_update():
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        selected = normalize_locale(request.form.get("preferred_locale"))
+        if selected is None:
+            abort(400)
+        try:
+            updated = db.update_recipient_locale(building_id, selected)
+        except Exception:
+            current_app.logger.warning("Recipient language update failed")
+            abort(503)
+        if not updated:
+            abort(403)
+        session["locale"] = selected
+        return redirect("/dashboard?lang=" + selected.replace("_", "-"))
+
     @bp.route("/dashboard/profile", methods=["POST"])
     def dashboard_profile_update():
         building_id = _require_dashboard_session()

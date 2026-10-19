@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenLEG \n"
 "Report-Msgid-Bugs-To: https://github.com/Open-LEG-ch/openleg/issues\n"
-"POT-Creation-Date: 2026-10-19 22:45+0000\n"
+"POT-Creation-Date: 2026-10-19 23:08+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr_CH\n"
@@ -103,6 +103,11 @@ msgstr "%(name)s | Profil énergétique | OpenLEG"
 msgid "%(name)s | LEG-Verzeichnis | OpenLEG"
 msgstr "%(name)s | Répertoire des CEL | OpenLEG"
 
+#: templates/emails/day_0_welcome.html:38
+#, python-format
+msgid "%(neighbor_count)s weitere Haushalte in Ihrer Nähe haben sich bereits registriert."
+msgstr "%(neighbor_count)s autres ménages de votre voisinage se sont déjà inscrits."
+
 #: templates/gemeinde/verzeichnis.html:72
 #, python-format
 msgid "%(num)s Gemeinde gefunden."
@@ -174,6 +179,12 @@ msgstr[0] ""
 msgstr[1] ""
 "%(num)s avis publiés dans le catalogue limité. La sélection ne couvre pas tous les fabricants, "
 "appareils ou vulnérabilités."
+
+#: templates/emails/day_0_welcome.html:62 templates/emails/day_14_formation.html:85
+#: templates/emails/day_3_smartmeter.html:44 templates/emails/day_7_consumption.html:59
+#, python-format
+msgid "%(platform_name)s · LEG für %(city_name)s"
+msgstr "%(platform_name)s · CEL pour %(city_name)s"
 
 #: templates/gemeinde/rangliste_fortschritte.html:92
 #, python-format
@@ -613,7 +624,10 @@ msgstr "Refuser"
 msgid "Ablehnung prüfen"
 msgstr "Examiner le refus"
 
-#: templates/dashboard.html:37 templates/gemeinde/dashboard.html:29 templates/utility/dashboard.html:28
+#: templates/dashboard.html:37 templates/emails/day_0_welcome.html:63
+#: templates/emails/day_14_formation.html:86 templates/emails/day_3_smartmeter.html:45
+#: templates/emails/day_7_consumption.html:60 templates/gemeinde/dashboard.html:29
+#: templates/utility/dashboard.html:28
 msgid "Abmelden"
 msgstr "Se déconnecter"
 
@@ -633,7 +647,7 @@ msgstr "La facturation aujourd’hui"
 msgid "Abrechnung vorbereiten"
 msgstr "Préparer la facturation"
 
-#: dashboard.py:687
+#: dashboard.py:688
 msgid "Abrechnung vorübergehend nicht verfügbar."
 msgstr "Facturation temporairement indisponible."
 
@@ -674,7 +688,7 @@ msgstr "Frais de facturation en ct./kWh, entre 0 et 1000, maximum 4 décimales."
 msgid "Abrechnungsentwurf"
 msgstr "Brouillon de facturation"
 
-#: dashboard.py:693
+#: dashboard.py:694
 msgid "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
 msgstr "Période de facturation introuvable ou plus en brouillon."
 
@@ -835,6 +849,15 @@ msgstr "Fraîcheur des données inconnue"
 msgid "Aktuell"
 msgstr "À jour"
 
+#: templates/emails/day_7_consumption.html:55
+#, python-format
+msgid ""
+"Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die "
+"Angaben sind, desto besser lässt sich die Gruppe planen."
+msgstr ""
+"Actuellement, %(neighbor_count)s ménages se sont inscrits dans votre voisinage. Plus les "
+"informations sont complètes, mieux le groupe peut être préparé."
+
 #: templates/advisories.html:30
 msgid ""
 "Aktuelle Hinweise und neue Bestätigungen sind pausiert. Dokumentierte Zuordnungen sind keine "
@@ -903,6 +926,10 @@ msgstr ""
 "Tous les participants appartiennent à la même commune politique, sont raccordés au même niveau de"
 " réseau et dans la même zone de desserte, utilisent au maximum 36 kV, disposent d’un système de "
 "mesure intelligent et atteignent ensemble au moins 5% de puissance de raccordement renouvelable."
+
+#: templates/emails/day_14_formation.html:51
+msgid "Alle Teilnehmer unterzeichnen den Gemeinschaftsvertrag digital."
+msgstr "Tous les participants signent le contrat communautaire par voie numérique."
 
 #: templates/leg_gruenden.html:74
 msgid "Alle drei Modelle vergleichen"
@@ -998,7 +1025,7 @@ msgstr "Les informations ne correspondent pas"
 msgid "Angenommen"
 msgstr "Accepté"
 
-#: dashboard.py:1234
+#: dashboard.py:1235
 msgid "Anhänge müssen PDF-Dateien sein."
 msgstr "Les pièces jointes doivent être des fichiers PDF."
 
@@ -1026,7 +1053,7 @@ msgstr "Préparer le dossier d'inscription"
 msgid "Anmeldung Lokale Elektrizitätsgemeinschaft"
 msgstr "Annonce d’une communauté électrique locale"
 
-#: templates/leg_dashboard.html:267
+#: templates/emails/day_14_formation.html:57 templates/leg_dashboard.html:267
 msgid "Anmeldung beim Netzbetreiber"
 msgstr "Annonce au gestionnaire de réseau"
 
@@ -1106,7 +1133,7 @@ msgstr "Part consommable localement :"
 msgid "Antwort"
 msgstr "Réponse"
 
-#: dashboard.py:896
+#: dashboard.py:897
 msgid "Antwort oder Status ist erforderlich."
 msgstr "Une réponse ou un statut est requis."
 
@@ -1490,7 +1517,7 @@ msgstr "Accès distants nominatifs / comptes installateur"
 msgid "Benannte Fernzugänge und frühere Installateurkonten prüfen."
 msgstr "Vérifier les accès distants nominatifs et les anciens comptes installateur."
 
-#: templates/dashboard.html:295
+#: templates/dashboard.html:306
 msgid "Berechne..."
 msgstr "Calcul en cours…"
 
@@ -1725,7 +1752,7 @@ msgstr "Veuillez indiquer votre e-mail."
 msgid "Bitte E-Mail bestätigen"
 msgstr "Veuillez confirmer votre e-mail"
 
-#: interest_intake.py:91
+#: interest_intake.py:103
 msgid "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 msgstr "Veuillez confirmer votre adresse e-mail."
 
@@ -1733,7 +1760,7 @@ msgstr "Veuillez confirmer votre adresse e-mail."
 msgid "Bitte füllen Sie dieses Feld aus."
 msgstr "Veuillez remplir ce champ."
 
-#: interest_intake.py:37
+#: interest_intake.py:46
 msgid "Bitte geben Sie Ihre Gemeinde an."
 msgstr "Veuillez indiquer votre commune."
 
@@ -1753,15 +1780,15 @@ msgstr "Veuillez indiquer une adresse."
 msgid "Bitte geben Sie eine E-Mail an."
 msgstr "Veuillez indiquer une adresse e-mail."
 
-#: dashboard.py:972 templates/partials/form_validation.html:3
+#: dashboard.py:973 templates/partials/form_validation.html:3
 msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgstr "Veuillez saisir une adresse e-mail valide."
 
-#: interest_intake.py:31
+#: interest_intake.py:40
 msgid "Bitte geben Sie eine gültige Schweizer PLZ an."
 msgstr "Veuillez saisir un NPA suisse valide."
 
-#: dashboard.py:1395 dashboard.py:1398
+#: dashboard.py:1396 dashboard.py:1399
 msgid "Bitte geben Sie eine gültige Solarleistung ein."
 msgstr "Veuillez saisir une puissance solaire valable."
 
@@ -1777,7 +1804,7 @@ msgstr "Veuillez saisir un nombre valide."
 msgid "Bitte geben Sie einen Wert im zulässigen Schrittintervall ein."
 msgstr "Veuillez saisir une valeur respectant le pas autorisé."
 
-#: dashboard.py:1382 dashboard.py:1390
+#: dashboard.py:1383 dashboard.py:1391
 msgid "Bitte geben Sie einen gültigen Jahresverbrauch ein."
 msgstr "Veuillez saisir une consommation annuelle valide."
 
@@ -1821,7 +1848,7 @@ msgstr ""
 msgid "Bitte registrieren Sie zuerst Ihre Gemeinde."
 msgstr "Veuillez d’abord inscrire votre commune."
 
-#: interest_intake.py:22
+#: interest_intake.py:23
 msgid "Bitte senden Sie ein JSON-Objekt."
 msgstr "Veuillez envoyer un objet JSON."
 
@@ -1838,7 +1865,11 @@ msgstr "Veuillez respecter le format demandé."
 msgid "Bitte wählen"
 msgstr "Veuillez choisir"
 
-#: registration.py:68 registration.py:74
+#: interest_intake.py:30 registration.py:91
+msgid "Bitte wählen Sie eine gültige Sprache."
+msgstr "Veuillez choisir une langue valide."
+
+#: registration.py:69 registration.py:75
 msgid "Bitte wählen Sie gültige Rollen aus."
 msgstr "Veuillez choisir des rôles valides."
 
@@ -1888,6 +1919,10 @@ msgstr "CHF %(value_0f_format_value_gap_annual_savings_chf)s/an"
 #, python-format
 msgid "CHF %(value_gap_annual_savings_chf_round_0_int)s"
 msgstr "CHF %(value_gap_annual_savings_chf_round_0_int)s"
+
+#: templates/emails/day_7_consumption.html:35
+msgid "CHF 500 bis 800"
+msgstr "CHF 500 à 800"
 
 #: meter_data.py:233
 msgid "CKW Parse-Fehler: Ungültiges Dateiformat."
@@ -2005,7 +2040,7 @@ msgstr "Le dossier d’inscription peut être préparé une fois que toutes les 
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr "le tableau de bord indique ce qui manque encore pour l’activation."
 
-#: dashboard.py:1410
+#: dashboard.py:1411
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
 msgstr "Le profil énergétique n'a pas pu être enregistré. Veuillez réessayer."
 
@@ -2053,7 +2088,7 @@ msgstr "Le préfixe de facture de la règle de facturation n'est pas valide."
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr "Le modèle de distribution de la règle de facturation n'est pas valide."
 
-#: dashboard.py:1020
+#: dashboard.py:1021
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr "La double validation n’a pas pu être modifiée."
 
@@ -2088,7 +2123,7 @@ msgstr "Tableau de bord"
 msgid "Dashboard | OpenLEG Utility Portal"
 msgstr "Tableau de bord | Portail OpenLEG des gestionnaires de réseau"
 
-#: templates/dashboard.html:243
+#: templates/dashboard.html:254
 msgid "Dashboard öffnen"
 msgstr "Ouvrir le tableau de bord"
 
@@ -2165,7 +2200,9 @@ msgstr "Chaîne de données"
 msgid "Datenqualität"
 msgstr "Qualité des données"
 
-#: templates/datenschutz.html:21 templates/partials/site_footer.html:10
+#: templates/datenschutz.html:21 templates/emails/day_0_welcome.html:63
+#: templates/emails/day_14_formation.html:86 templates/emails/day_3_smartmeter.html:45
+#: templates/emails/day_7_consumption.html:60 templates/partials/site_footer.html:10
 msgid "Datenschutz"
 msgstr "Protection des données"
 
@@ -2248,7 +2285,7 @@ msgstr "Les étapes, de l’adresse à une communauté électrique locale en act
 msgid "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
 msgstr "Le projet de facturation ne contient pas de copie de politique."
 
-#: dashboard.py:1236
+#: dashboard.py:1237
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr "La pièce jointe n'est pas un fichier PDF valide."
 
@@ -2338,7 +2375,7 @@ msgstr ""
 "interne de l’électricité, son administration et sa facturation. OpenLEG fournit à cet effet un "
 "logiciel libre, que vous pouvez exploiter vous-même ou confier au prestataire de votre choix."
 
-#: dashboard.py:1238
+#: dashboard.py:1239
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr "La taille de la pièce jointe PDF ne doit pas dépasser 2 Mo."
 
@@ -2527,7 +2564,7 @@ msgstr "La période de décompte n’est pas valide."
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr "L’adresse n’a pas pu être analysée."
 
-#: dashboard_routes.py:850
+#: dashboard_routes.py:867
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr "Cette action n’est pas autorisée pour le statut actuel de la facture."
 
@@ -2577,7 +2614,7 @@ msgstr ""
 "FMB fournit des données brutes au format ebIX. CEL peut gérer elle-même la facturation interne ou"
 " faire appel à un prestataire de services externe."
 
-#: templates/dashboard.html:314
+#: templates/dashboard.html:325
 msgid "Die Berechnung ist gerade nicht möglich. Bitte versuchen Sie es in einer Minute erneut."
 msgstr "Le calcul n'est actuellement pas possible. Veuillez réessayer dans une minute."
 
@@ -2661,7 +2698,7 @@ msgstr ""
 "Les contenus de ce site sont protégés par le droit d’auteur. Toute utilisation nécessite l’accord"
 " préalable des ayants droit, sauf si la loi l’autorise."
 
-#: interest_intake.py:77 registration.py:151
+#: interest_intake.py:89 registration.py:165
 msgid "Die Interessenmeldung konnte nicht gespeichert werden."
 msgstr "Votre manifestation d’intérêt n’a pas pu être enregistrée."
 
@@ -2899,7 +2936,7 @@ msgstr "La copie de règle de facturation comporte une niveau de réseau non val
 msgid "Die Richtlinien-Kopie ist unvollständig: "
 msgstr "La copie de la politique est incomplète :"
 
-#: dashboard.py:1002
+#: dashboard.py:1003
 msgid "Die Rollen konnten nicht geändert werden. Mindestens eine Administration muss bestehen bleiben."
 msgstr "Les rôles ne pouvaient pas être modifiés. Au moins une administration doit rester en place."
 
@@ -3101,7 +3138,7 @@ msgstr ""
 "Ce projet de décompte n’est pas une facture définitive. Vérifiez le tarif, le rapprochement et "
 "les documents sources."
 
-#: dashboard_routes.py:815
+#: dashboard_routes.py:832
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -3204,7 +3241,7 @@ msgstr "Imprimer"
 msgid "E-Mail"
 msgstr "E-mail"
 
-#: dashboard.py:98 dashboard.py:100 dashboard.py:1350
+#: dashboard.py:99 dashboard.py:101 dashboard.py:1351
 msgid "E-Mail bestätigt"
 msgstr "Adresse e-mail confirmée"
 
@@ -3213,7 +3250,7 @@ msgid "E-Mail unterwegs"
 msgstr "E-mail envoyé"
 
 #: templates/contact_requests.html:40 templates/dashboard.html:20 templates/dashboard.html:60
-#: templates/dashboard.html:246 templates/gemeinde/dashboard.html:151 templates/leg_dashboard.html:364
+#: templates/dashboard.html:257 templates/gemeinde/dashboard.html:151 templates/leg_dashboard.html:364
 #: templates/unsubscribe.html:48
 msgid "E-Mail-Adresse"
 msgstr "Adresse e-mail"
@@ -3270,7 +3307,7 @@ msgstr "Connexion des fournisseurs d’énergie"
 msgid "EVU Registrierung"
 msgstr "Inscription d’une entreprise d’approvisionnement en énergie"
 
-#: dashboard.py:108 dashboard.py:110 dashboard.py:1352
+#: dashboard.py:109 dashboard.py:111 dashboard.py:1353
 msgid "EVU-Einwilligung erteilt"
 msgstr "Consentement au fournisseur d’énergie accordé"
 
@@ -3365,7 +3402,7 @@ msgstr "Tableau de bord du propriétaire"
 msgid "Eigentümer/in"
 msgstr "Propriétaire"
 
-#: templates/dashboard.html:207
+#: templates/dashboard.html:218
 msgid "Eigenverbrauchsanteil"
 msgstr "Part de consommation propre"
 
@@ -3451,7 +3488,7 @@ msgstr ""
 "Un stockage partagé par toute la CEL. Chaque part indique la répartition des coûts annuels entre "
 "les participants."
 
-#: billing_lifecycle.py:50 dashboard.py:612
+#: billing_lifecycle.py:50 dashboard.py:613
 msgid "Ein gültiges Zahlungsdatum ist erforderlich."
 msgstr "Une date de paiement valide est requise."
 
@@ -3516,7 +3553,7 @@ msgstr "Une référence de paiement est requise."
 msgid "Eine abgestimmte Teilnehmenden- und Anlagenliste."
 msgstr "Une liste coordonnée des participants et des installations."
 
-#: dashboard.py:640
+#: dashboard.py:641
 msgid "Eine gültige Ersatzrechnung ist erforderlich."
 msgstr "Une facture de remplacement valide est requise."
 
@@ -3556,7 +3593,7 @@ msgid_plural "Einladungen"
 msgstr[0] "Invitation"
 msgstr[1] "Invitations"
 
-#: dashboard.py:955
+#: dashboard.py:956
 msgid "Einladung nicht möglich (bereits Mitglied?)."
 msgstr "Invitation impossible (déjà membre ?)."
 
@@ -3568,7 +3605,7 @@ msgstr "Invitations"
 msgid "Einladungslink"
 msgstr "Lien d’invitation"
 
-#: templates/dashboard.html:281 templates/gemeinde/dashboard.html:181
+#: templates/dashboard.html:292 templates/gemeinde/dashboard.html:181
 msgid "Einladungslink kopiert"
 msgstr "Lien d’invitation copié"
 
@@ -3584,7 +3621,7 @@ msgstr "Se connecter"
 msgid "Einordnung"
 msgstr "Mise en perspective"
 
-#: templates/dashboard.html:203
+#: templates/dashboard.html:214
 msgid "Einspeisevergütung"
 msgstr "tarif de rachat"
 
@@ -3636,7 +3673,7 @@ msgstr "Enregistrer l'entrée et la liste de contrôle"
 msgid "Eintrag und Checkliste öffnen"
 msgstr "Ouvrir la fiche et la liste de contrôle"
 
-#: dashboard.py:1253
+#: dashboard.py:1254
 msgid "Eintrag ungültig (Richtung oder Kanal unbekannt)."
 msgstr "Entrée invalide (direction ou canal inconnu)."
 
@@ -3777,13 +3814,17 @@ msgstr "Brouillon prêt"
 msgid "Entwurf prüfen"
 msgstr "Vérifier le brouillon"
 
-#: billing_workspace.py:132 dashboard.py:361
+#: billing_workspace.py:132 dashboard.py:362
 msgid "Entwurf ungültig"
 msgstr "Brouillon invalide"
 
 #: templates/equipment_form.html:76
 msgid "Ergebnis zum Fernzugriff"
 msgstr "Résultat de l'accès à distance"
+
+#: templates/emails/day_7_consumption.html:31
+msgid "Ergänzen Sie Ihren Stromverbrauch"
+msgstr "Complétez votre consommation électrique"
 
 #: templates/leg_billing.html:183
 msgid "Erledigen"
@@ -3821,7 +3862,7 @@ msgstr "Remplacé"
 msgid "Ersetzte Katalogversionen"
 msgstr "Versions de catalogue remplacées"
 
-#: templates/dashboard.html:193 templates/dashboard.html:318 templates/fuer_bewohner.html:117
+#: templates/dashboard.html:193 templates/dashboard.html:329 templates/fuer_bewohner.html:117
 #: templates/gemeinde/profil.html:134
 msgid "Ersparnis berechnen"
 msgstr "Calculer les économies"
@@ -3830,7 +3871,7 @@ msgstr "Calculer les économies"
 msgid "Ersparnis durch reduziertes Netzentgelt:"
 msgstr "Économies grâce à des frais de réseau réduits :"
 
-#: templates/dashboard.html:220
+#: templates/dashboard.html:231
 msgid "Ersparnis im Detail berechnen"
 msgstr "Calculez les économies en détail"
 
@@ -3910,11 +3951,11 @@ msgstr "Si votre lien n’est plus valable, nous vous envoyons un nouveau lien d
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr "Si une inscription existe, vous recevrez un lien de confirmation par e-mail."
 
-#: templates/dashboard.html:244
+#: templates/dashboard.html:255
 msgid "Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink."
 msgstr "Si un profil existe pour votre adresse e-mail, vous recevrez un nouveau lien d'accès."
 
-#: dashboard_routes.py:280
+#: dashboard_routes.py:297
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr "Si un profil correspond à cette adresse e-mail, nous avons envoyé un nouveau lien d’accès."
 
@@ -4086,6 +4127,10 @@ msgstr "Questions sur cette facture"
 #: templates/fuer_gemeinden.html:114
 msgid "Fragen zum Betrieb?"
 msgstr "Des questions sur l’exploitation ?"
+
+#: templates/emails/day_14_formation.html:82
+msgid "Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns:"
+msgstr "Des questions ? Répondez directement à cet e-mail ou écrivez-nous :"
 
 #: templates/utility/register.html:57
 msgid "Freiburg"
@@ -4263,11 +4308,11 @@ msgstr ""
 msgid "Für diesen Messkanal fehlen neue Daten. Prüfen Sie die Messquelle."
 msgstr "Ce canal ne reçoit plus de données récentes. Vérifiez la source de mesure."
 
-#: registration.py:144
+#: registration.py:158
 msgid "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung mit einer anderen E-Mail-Adresse."
 msgstr "Une inscription confirmée avec une autre adresse e-mail existe déjà pour ce bâtiment."
 
-#: dashboard.py:821
+#: dashboard.py:822
 msgid "Für dieses Gültig-ab-Datum existiert bereits eine Version."
 msgstr "Une version existe déjà pour cette date de début de validité."
 
@@ -4292,6 +4337,17 @@ msgid ""
 msgstr ""
 "Un potentiel minimum est exigé pour qualifier une commune d’exemplaire, afin d’éviter que de très"
 " petits villages ne faussent le haut du classement."
+
+#: templates/emails/day_3_smartmeter.html:29
+#, python-format
+msgid ""
+"Für eine lokale Stromgemeinschaft (LEG) brauchen Sie einen Smart Meter, also einen digitalen "
+"Stromzähler. Ihr Netzbetreiber (%(utility_name)s) muss ihn innert 3 Monaten einbauen, das ist Ihr"
+" Recht nach Art. 17e StromVG."
+msgstr ""
+"Une communauté électrique locale (CEL) nécessite un compteur intelligent, c’est-à-dire un "
+"compteur électrique numérique. Votre gestionnaire de réseau (%(utility_name)s) doit l’installer "
+"dans les 3 mois : c’est votre droit selon l’art. 17e LApEl."
 
 #: templates/partials/install_console.html:39
 msgid "Für einen festen Checkout, den Sie vor Installation und Updates selbst prüfen."
@@ -4528,6 +4584,12 @@ msgstr "Répertoire des communes"
 msgid "Gemeindeverzeichnis | Energieprofile Schweizer Gemeinden | OpenLEG"
 msgstr "Répertoire des communes | Profils énergétiques des communes suisses | OpenLEG"
 
+#: templates/emails/day_0_welcome.html:46
+msgid "Gemeinsam gründen Sie Ihre LEG und sparen je nach Situation mehrere hundert Franken pro Jahr."
+msgstr ""
+"Ensemble, vous créez votre CEL et pouvez économiser plusieurs centaines de francs par an selon "
+"votre situation."
+
 #: templates/leg_dashboard.html:300
 msgid ""
 "Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem "
@@ -4544,6 +4606,10 @@ msgstr "Communauté"
 #: templates/leg_community_create.html:26
 msgid "Gemeinschaft anlegen"
 msgstr "Créer la communauté"
+
+#: templates/emails/day_14_formation.html:43
+msgid "Gemeinschaft bilden"
+msgstr "Former la communauté"
 
 #: templates/documents/community_agreement.html:12
 msgid "Gemeinschaftsvereinbarung"
@@ -4662,7 +4728,7 @@ msgstr "E-mail professionnel *"
 msgid "Geschätzt"
 msgstr "Estimé"
 
-#: templates/dashboard.html:197
+#: templates/dashboard.html:208
 msgid "Geschätzte jährliche Ersparnis"
 msgstr "Économies annuelles estimées"
 
@@ -4803,6 +4869,10 @@ msgstr "Le groupe, la représentation, la date de début souhaitée et les docum
 msgid "Grösse"
 msgstr "Taille"
 
+#: templates/emails/day_14_formation.html:77
+msgid "Grössere Gemeinschaften sparen mehr. Teilen Sie den Link:"
+msgstr "Les grandes communautés économisent davantage. Partagez le lien :"
+
 #: templates/index.html:355
 msgid "Grösste Chancen"
 msgstr "Les plus grandes opportunités"
@@ -4832,11 +4902,12 @@ msgstr "Les étapes de création"
 msgid "Gründung gestartet"
 msgstr "Création démarrée"
 
-#: dashboard.py:1062
+#: dashboard.py:1063
 msgid "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
 msgstr "Fondation pas encore possible (assez de membres confirmés ?)."
 
-#: templates/leg_dashboard.html:395 templates/leg_dashboard.html:399 templates/leg_dashboard.html:405
+#: templates/emails/day_14_formation.html:71 templates/leg_dashboard.html:395
+#: templates/leg_dashboard.html:399 templates/leg_dashboard.html:405
 msgid "Gründung starten"
 msgstr "Commencer la création"
 
@@ -4900,6 +4971,10 @@ msgstr "Tarif électrique H4"
 msgid "Haben Sie eine Solaranlage?"
 msgstr "Avez-vous un système solaire ?"
 
+#: templates/emails/day_3_smartmeter.html:28
+msgid "Haben Sie einen Smart Meter?"
+msgstr "Avez-vous un compteur intelligent ?"
+
 #: templates/impressum.html:39
 msgid "Haftungsausschluss"
 msgstr "Exclusion de responsabilité"
@@ -4915,7 +4990,7 @@ msgstr[1] "ménages"
 msgid "Haushalte in Ihrer Gemeinde"
 msgstr "Ménages dans votre commune"
 
-#: templates/dashboard.html:205
+#: templates/dashboard.html:216
 msgid "Haushalte in der LEG"
 msgstr "Ménages de la CEL"
 
@@ -5111,7 +5186,7 @@ msgstr "Votre tâche"
 msgid "Ihre Building ID"
 msgstr "L'identifiant de votre bâtiment"
 
-#: templates/dashboard.html:227
+#: templates/dashboard.html:238
 msgid "Ihre Daten"
 msgstr "Vos données"
 
@@ -5135,9 +5210,17 @@ msgstr "Votre commune"
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
 msgstr "Votre commune voit les prochaines étapes"
 
+#: templates/emails/day_14_formation.html:6
+msgid "Ihre LEG kann starten"
+msgstr "Votre CEL peut démarrer"
+
 #: templates/index.html:185
 msgid "Ihre LEG wählt, wie sie betrieben wird."
 msgstr "Votre CEL choisit son mode d’exploitation."
+
+#: email_automation.py:45
+msgid "Ihre LEG-Gemeinschaft kann starten"
+msgstr "Votre communauté électrique locale peut démarrer"
 
 #: templates/self_host.html:73
 msgid ""
@@ -5148,6 +5231,10 @@ msgstr ""
 "Vos membres accèdent au boîtier depuis chez eux par un réseau privé, sans ports ouverts sur le "
 "routeur. Il repose sur WireGuard et un serveur Headscale auto-hébergé. Les voisins le rejoignent "
 "avec un code à usage unique."
+
+#: templates/emails/day_14_formation.html:44
+msgid "Ihre Nachbarn bestätigen die Teilnahme. Wir koordinieren die Kontaktaufnahme."
+msgstr "Vos voisins confirment leur participation. Nous coordonnons la prise de contact."
 
 #: templates/index.html:458
 msgid "Ihre Rolle"
@@ -5166,9 +5253,26 @@ msgstr ""
 msgid "Ihre Stromgemeinschaft ist zu %(score)s%% bereit."
 msgstr "Votre communauté électrique est prête à %(score)s%%."
 
+#: templates/emails/day_14_formation.html:35
+msgid "Ihre Stromgemeinschaft kann starten"
+msgstr "Votre communauté électrique locale peut démarrer"
+
 #: templates/leg_kalkulator.html:486
 msgid "Ihre laufende Einsparung"
 msgstr "Vos économies courantes"
+
+#: templates/emails/day_7_consumption.html:51
+#, python-format
+msgid "Ihre letzte Stromrechnung von %(utility_name)s enthält die nötigen Angaben."
+msgstr "Votre dernière facture d’électricité de %(utility_name)s contient les informations nécessaires."
+
+#: templates/emails/day_7_consumption.html:43
+msgid "Ihre übliche Verbrauchszeit, tagsüber oder abends"
+msgstr "Vos habitudes de consommation, en journée ou en soirée"
+
+#: templates/emails/day_7_consumption.html:41
+msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
+msgstr "Votre consommation annuelle approximative en kWh (indiquée sur la facture d’électricité)"
 
 #: templates/leg_dashboard.html:350
 msgid "Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern."
@@ -5318,7 +5422,7 @@ msgstr "Manifester mon intérêt pour %(profile_name)s"
 msgid "Interesse für Ihre Gemeinde anmelden"
 msgstr "Manifester mon intérêt pour ma commune"
 
-#: templates/index.html:759
+#: templates/index.html:761
 msgid "Interessenmeldung fehlgeschlagen."
 msgstr "L’enregistrement de votre intérêt a échoué."
 
@@ -5417,6 +5521,10 @@ msgid ""
 msgstr ""
 "Plus il y aura de ménages participants, plus votre CEL démarrera rapidement. Partagez le lien "
 "dans le quartier."
+
+#: templates/emails/day_0_welcome.html:56
+msgid "Je mehr Nachbarn mitmachen, desto schneller kann die Gründung starten:"
+msgstr "Plus les voisins participent, plus vite la création peut commencer :"
 
 #: templates/gemeinde/methodik.html:49
 msgid "Jede Anlage wird deterministisch einer Gemeinde zugeordnet. Das Matching erreicht"
@@ -5580,11 +5688,11 @@ msgstr "Aucun tarif H4 trouvé."
 msgid "Kein H4-Tarif gefunden. Aktualisieren Sie zuerst die Daten."
 msgstr "Aucun tarif H4 trouvé. Actualisez d’abord les données."
 
-#: dashboard.py:88
+#: dashboard.py:89
 msgid "Kein Profil angegeben."
 msgstr "Aucun profil spécifié."
 
-#: dashboard.py:952
+#: dashboard.py:953
 msgid "Kein Profil zum Einladen angegeben."
 msgstr "Aucun profil spécifié pour inviter."
 
@@ -5600,10 +5708,10 @@ msgstr "Aucun profil solaire enregistré."
 msgid "Kein Zugang angegeben"
 msgstr "Aucun accès spécifié"
 
-#: dashboard.py:207 dashboard.py:218 dashboard.py:445 dashboard.py:550 dashboard.py:596
-#: dashboard.py:607 dashboard.py:624 dashboard.py:635 dashboard.py:653 dashboard.py:680
-#: dashboard.py:760 dashboard.py:789 dashboard.py:810 dashboard.py:879 dashboard.py:894
-#: dashboard.py:905 dashboard.py:1046 dashboard.py:1230
+#: dashboard.py:208 dashboard.py:219 dashboard.py:446 dashboard.py:551 dashboard.py:597
+#: dashboard.py:608 dashboard.py:625 dashboard.py:636 dashboard.py:654 dashboard.py:681
+#: dashboard.py:761 dashboard.py:790 dashboard.py:811 dashboard.py:880 dashboard.py:895
+#: dashboard.py:906 dashboard.py:1047 dashboard.py:1231
 msgid "Kein Zugriff."
 msgstr "Aucun accès."
 
@@ -5641,15 +5749,15 @@ msgstr "Aucun projet de décompte disponible"
 msgid "Keine Angabe"
 msgstr "Sans indication"
 
-#: dashboard.py:1126
+#: dashboard.py:1127
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr "Aucune autorisation pour les mutations de membres."
 
-#: dashboard.py:1080
+#: dashboard.py:1081
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr "Aucune autorisation pour l'enregistrement de l'opérateur de réseau."
 
-#: dashboard.py:1162
+#: dashboard.py:1163
 msgid "Keine Berechtigung."
 msgstr "Aucune autorisation."
 
@@ -5782,7 +5890,7 @@ msgstr "Aucune mesure valide trouvée."
 msgid "Keine neue Kollektor-Lieferung"
 msgstr "Aucune nouvelle transmission du collecteur"
 
-#: dashboard.py:1049
+#: dashboard.py:1050
 msgid "Keine offene Einladung gefunden."
 msgstr "Aucune invitation ouverte trouvée."
 
@@ -5838,7 +5946,7 @@ msgstr "Mesures concrètes"
 msgid "Konsument"
 msgstr "Consommateur"
 
-#: templates/admin/ops.html:119 templates/dashboard.html:221
+#: templates/admin/ops.html:119 templates/dashboard.html:232
 #: templates/documents/dso_registration.html:31 templates/impressum.html:34
 #: templates/partials/site_footer.html:9
 msgid "Kontakt"
@@ -5861,7 +5969,7 @@ msgstr "E-mail de contact *"
 msgid "Kontakt-E-Mail der Gemeindeverwaltung"
 msgstr "E-mail de contact de l’administration communale"
 
-#: templates/contact_requests.html:19 templates/dashboard.html:216
+#: templates/contact_requests.html:19 templates/dashboard.html:227
 msgid "Kontaktanfragen"
 msgstr "Demandes de contact"
 
@@ -5881,12 +5989,12 @@ msgstr "Importer un relevé bancaire"
 msgid "Kontoinformationen"
 msgstr "Informations du compte"
 
-#: templates/dashboard.html:136 templates/dashboard.html:282 templates/gemeinde/dashboard.html:130
+#: templates/dashboard.html:136 templates/dashboard.html:293 templates/gemeinde/dashboard.html:130
 #: templates/gemeinde/dashboard.html:182
 msgid "Kopieren"
 msgstr "Copier"
 
-#: templates/dashboard.html:280 templates/gemeinde/dashboard.html:180
+#: templates/dashboard.html:291 templates/gemeinde/dashboard.html:180
 msgid "Kopiert"
 msgstr "Copié"
 
@@ -6080,11 +6188,11 @@ msgstr "Fondation de la CEL : la prochaine étape est claire | OpenLEG"
 msgid "LEG gründen: so geht es"
 msgstr "Créer une CEL : comment procéder"
 
-#: dashboard.py:939
+#: dashboard.py:940
 msgid "LEG konnte nicht erstellt werden."
 msgstr "La CEL n’a pas pu être créée."
 
-#: dashboard.py:211 dashboard.py:792
+#: dashboard.py:212 dashboard.py:793
 msgid "LEG nicht gefunden."
 msgstr "CEL introuvable."
 
@@ -6120,7 +6228,7 @@ msgstr "Vérification CEL"
 msgid "LEG-Check: Was ist in Ihrer Gemeinde möglich? | OpenLEG"
 msgstr "Vérification CEL : qu’est-il possible de faire dans votre commune ? | OpenLEG"
 
-#: templates/dashboard.html:33 templates/dashboard.html:239 templates/leg_dashboard.html:28
+#: templates/dashboard.html:33 templates/dashboard.html:250 templates/leg_dashboard.html:28
 msgid "LEG-Dashboard"
 msgstr "Tableau de bord de la CEL"
 
@@ -6161,7 +6269,7 @@ msgstr "Calculateur CEL : estimer les économies | OpenLEG"
 msgid "LEG-Potenzial für %(profile_name)s"
 msgstr "Potentiel CEL de %(profile_name)s"
 
-#: templates/admin/abrechnungen.html:74 templates/dashboard.html:204
+#: templates/admin/abrechnungen.html:74 templates/dashboard.html:215
 msgid "LEG-Preis"
 msgstr "Prix CEL"
 
@@ -6198,7 +6306,11 @@ msgstr "licence"
 msgid "Lade hoch..."
 msgstr "Importation en cours…"
 
-#: templates/dashboard.html:228
+#: templates/emails/day_0_welcome.html:55
+msgid "Laden Sie Ihre Nachbarn ein"
+msgstr "Invitez vos voisins"
+
+#: templates/dashboard.html:239
 msgid "Laden Sie Ihre Profildaten herunter oder fordern Sie eine bestätigte Löschung an."
 msgstr "Téléchargez vos données de profil ou demandez une suppression confirmée."
 
@@ -6341,7 +6453,7 @@ msgstr "Filtrer le groupe"
 msgid "Ligen und Fortschritt"
 msgstr "Groupes de comparaison et progression"
 
-#: templates/dashboard.html:248
+#: templates/dashboard.html:259
 msgid "Link anfordern"
 msgstr "Demander un lien"
 
@@ -6510,7 +6622,7 @@ msgstr "Confirmer la suppression"
 msgid "Manuell geprüft"
 msgstr "Vérifié manuellement"
 
-#: dashboard.py:1192
+#: dashboard.py:1193
 msgid "Manuelle Zustellung fehlgeschlagen."
 msgstr "La livraison manuelle a échoué."
 
@@ -6563,6 +6675,10 @@ msgstr "Taux de TVA uniquement avec le mode TVA."
 msgid "Mein Dashboard |"
 msgstr "Mon tableau de bord |"
 
+#: templates/emails/day_0_welcome.html:50
+msgid "Mein Dashboard öffnen"
+msgstr "Ouvrir mon tableau de bord"
+
 #: templates/dashboard.html:180
 #, python-format
 msgid "Mein Energieprofil darf für die LEG-Abklärung an %(utility)s weitergegeben werden."
@@ -6594,7 +6710,7 @@ msgstr "Mes mesures"
 msgid "Meine Messwerte und ihre Aktualität"
 msgstr "Mes mesures et leur âge"
 
-#: templates/dashboard.html:218 templates/member_invoices.html:11
+#: templates/dashboard.html:229 templates/member_invoices.html:11
 msgid "Meine Rechnungen"
 msgstr "Mes factures"
 
@@ -6752,6 +6868,14 @@ msgstr "Avec CEL"
 msgid "Mit Spannungstransformation"
 msgstr "Avec transformation de tension"
 
+#: templates/emails/day_7_consumption.html:32
+msgid ""
+"Mit ein paar Angaben zu Ihrem Stromverbrauch kann OpenLEG besser einschätzen, welche Nachbarn gut"
+" zu Ihrer LEG passen."
+msgstr ""
+"Quelques informations sur votre consommation permettent à OpenLEG de mieux déterminer quels "
+"voisins conviennent à votre CEL."
+
 #: templates/fuer_gemeinden.html:106
 msgid "Mit einem prüfbaren Schritt beginnen"
 msgstr "Commencer par une étape vérifiable"
@@ -6886,6 +7010,10 @@ msgstr "Accéder au canton"
 msgid "Nach Verbrauch und Erzeugung"
 msgstr "Selon la consommation et la production"
 
+#: templates/emails/day_14_formation.html:65
+msgid "Nach der Genehmigung teilen Sie den lokalen Strom innerhalb der LEG."
+msgstr "Après autorisation, vous partagez l’électricité locale au sein de la CEL."
+
 #: templates/leg_gruenden.html:109
 msgid ""
 "Nach einer gültigen Anmeldung ersetzt die EBL fehlende Smart Meter. Für die interne Verrechnung "
@@ -6894,7 +7022,7 @@ msgstr ""
 "Après un enregistrement valide, l'EBL remplace les compteurs intelligents manquants. Pour la "
 "facturation interne, il fournit des données de mesure au format CSV ou S-DAT."
 
-#: dashboard.py:113 dashboard.py:115 dashboard.py:1353
+#: dashboard.py:114 dashboard.py:116 dashboard.py:1354
 msgid "Nachbar-Einwilligung erteilt"
 msgstr "Consentement à l’affichage aux voisins accordé"
 
@@ -6961,7 +7089,7 @@ msgstr "Nom ou localité"
 msgid "Name und Kontakt-E-Mail sind erforderlich."
 msgstr "Le nom et l’adresse e-mail de contact sont obligatoires."
 
-#: dashboard.py:933
+#: dashboard.py:934
 msgid "Name und Profil sind erforderlich."
 msgstr "Le nom et le profil sont requis."
 
@@ -7037,7 +7165,7 @@ msgstr "Gestionnaire de réseau pas encore renseigné"
 msgid "Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden."
 msgstr "Le gestionnaire de réseau et le niveau de réseau doivent encore être vérifiés avant la création."
 
-#: dashboard.py:1089
+#: dashboard.py:1090
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 msgstr "L’inscription auprès du GRD est temporairement indisponible."
 
@@ -7062,7 +7190,7 @@ msgstr "Gestionnaire de réseau : %(municipality_dso_name)s"
 msgid "Netzbezug"
 msgstr "Prélèvement sur le réseau"
 
-#: templates/dashboard.html:202
+#: templates/dashboard.html:213
 msgid "Netzbezugspreis"
 msgstr "Prix d'achat du réseau"
 
@@ -7127,7 +7255,7 @@ msgstr "Réduction sur l’utilisation du réseau"
 msgid "Netztrennung"
 msgstr "Séparation du réseau"
 
-#: templates/gemeinde/onboarding.html:168 templates/index.html:740 templates/utility/dashboard.html:168
+#: templates/gemeinde/onboarding.html:168 templates/index.html:741 templates/utility/dashboard.html:168
 #: templates/utility/login.html:76
 msgid "Netzwerkfehler."
 msgstr "Erreur réseau."
@@ -7170,7 +7298,7 @@ msgid "Neuenburg"
 msgstr "Neuchâtel"
 
 #: billing_workspace.py:224 billing_workspace.py:231 billing_workspace.py:274 billing_workspace.py:278
-#: billing_workspace.py:282 dashboard.py:479 templates/utility/dashboard.html:59
+#: billing_workspace.py:282 dashboard.py:480 templates/utility/dashboard.html:59
 #: templates/utility/dashboard.html:123 templates/utility/dashboard.html:131
 msgid "Nicht angegeben"
 msgstr "Non renseigné"
@@ -7308,6 +7436,18 @@ msgstr ""
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr "Aucune facture publiée pour l'instant."
 
+#: templates/emails/day_3_smartmeter.html:41
+msgid ""
+"Noch keinen Smart Meter? Kein Problem. Sobald Ihre Stromgemeinschaft bereit ist, stellen wir die "
+"Anfrage an den Netzbetreiber. Er muss den Smart Meter innert 3 Monaten installieren."
+msgstr ""
+"Pas encore de compteur intelligent ? Aucun problème. Dès que votre communauté sera prête, nous "
+"adresserons la demande au gestionnaire de réseau. Il doit installer le compteur dans les 3 mois."
+
+#: templates/emails/day_14_formation.html:76
+msgid "Noch mehr Nachbarn einladen?"
+msgstr "Inviter encore plus de voisins ?"
+
 #: equipment.py:74
 msgid "Noch nicht geprüft"
 msgstr "Pas encore vérifié"
@@ -7353,19 +7493,19 @@ msgstr ""
 "Uniquement les manifestations d’intérêt confirmées de %(municipality_name)s. Aucun nom, aucune "
 "coordonnée ni adresse ne vous est communiqué."
 
-#: dashboard.py:991
+#: dashboard.py:992
 msgid "Nur die Administration kann Rollen ändern."
 msgstr "Seule l’administration peut modifier les rôles."
 
-#: dashboard.py:1017
+#: dashboard.py:1018
 msgid "Nur die Administration kann das Vier-Augen-Prinzip ändern."
 msgstr "Seule l’administration peut modifier la double validation."
 
-#: dashboard.py:1058
+#: dashboard.py:1059
 msgid "Nur die Administration kann die Gründung starten."
 msgstr "Seule l’administration peut démarrer la création."
 
-#: dashboard.py:950 dashboard.py:968
+#: dashboard.py:951 dashboard.py:969
 msgid "Nur die Administration kann einladen."
 msgstr "Seule l'administration peut inviter."
 
@@ -7403,9 +7543,13 @@ msgstr "Prochaine étape pour %(profile_name)s"
 msgid "Nächster Schritt:"
 msgstr "Prochaine étape :"
 
-#: templates/dashboard.html:213
+#: templates/dashboard.html:224
 msgid "Nützliche Links"
 msgstr "Liens utiles"
+
+#: templates/emails/day_7_consumption.html:42
+msgid "Ob Sie eine Solaranlage haben (oder planen)"
+msgstr "Si vous possédez ou prévoyez une installation solaire"
 
 #: templates/interest_confirmed.html:11
 msgid "Ob eine LEG technisch möglich ist, bestätigt später der zuständige Netzbetreiber."
@@ -7873,6 +8017,10 @@ msgstr "Le logiciel d'OpenLEG pour la facturation, les documents et la gestion d
 msgid "Ops Dashboard"
 msgstr "Tableau de bord des opérations"
 
+#: email_automation.py:40
+msgid "Optimieren Sie Ihr LEG-Matching"
+msgstr "Améliorez votre mise en relation pour la CEL"
+
 #: templates/pricing.html:105
 msgid "Optionale Einnahmen"
 msgstr "Revenus facultatifs"
@@ -7918,7 +8066,7 @@ msgstr "Installation photovoltaïque :"
 msgid "PV-DC-Leistung (kWp, optional)"
 msgstr "Puissance PV DC (kWc, en option)"
 
-#: templates/dashboard.html:206
+#: templates/dashboard.html:217
 msgid "PV-Ertrag pro kWp"
 msgstr "Rendement photovoltaïque par kWc"
 
@@ -8113,11 +8261,11 @@ msgstr "Professionnel"
 msgid "Profil ansehen"
 msgstr "Consulter le profil"
 
-#: templates/dashboard.html:231
+#: templates/dashboard.html:242
 msgid "Profil löschen"
 msgstr "Supprimer le profil"
 
-#: dashboard.py:92
+#: dashboard.py:93
 msgid "Profil nicht gefunden."
 msgstr "Profil introuvable."
 
@@ -8125,11 +8273,11 @@ msgstr "Profil introuvable."
 msgid "Profil speichern"
 msgstr "Enregistrer le profil"
 
-#: registration.py:112
+#: registration.py:121
 msgid "Profildaten fehlen."
 msgstr "Les données du profil sont manquantes."
 
-#: templates/dashboard.html:230
+#: templates/dashboard.html:241
 msgid "Profildaten herunterladen"
 msgstr "Télécharger les données de profil"
 
@@ -8466,7 +8614,7 @@ msgstr "Instantanés récents des opérations"
 msgid "Rechnung"
 msgstr "Facture"
 
-#: dashboard.py:867
+#: dashboard.py:868
 msgid "Rechnung nicht gefunden."
 msgstr "Facture introuvable."
 
@@ -8593,7 +8741,7 @@ msgstr "Inscription réussie. Consultez votre e-mail pour obtenir le lien de con
 msgid "Registrierung fehlgeschlagen."
 msgstr "Échec de l’inscription."
 
-#: templates/index.html:736
+#: templates/index.html:737
 msgid "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
 msgstr "L’inscription a échoué. Veuillez réessayer."
 
@@ -8613,7 +8761,7 @@ msgstr "Gérer la politique"
 msgid "Richtung"
 msgstr "Direction"
 
-#: templates/dashboard.html:200
+#: templates/dashboard.html:211
 msgid "Richtwert aus Verbrauchsprofil und LEG-Annahmen."
 msgstr "Valeur guide issue du profil de consommation et des hypothèses de la CEL."
 
@@ -8627,7 +8775,7 @@ msgstr ""
 msgid "Rolle"
 msgstr "Rôle"
 
-#: dashboard.py:157
+#: dashboard.py:158
 msgid "Rolle wird geprüft"
 msgstr "Le rôle est vérifié"
 
@@ -8669,7 +8817,7 @@ msgstr ""
 "ct./kWh. Limite inférieure : valeur indicative du tarif de rachat issue du calculateur CEL. "
 "Plafond: le prix total de l'électricité de votre commune (ElCom"
 
-#: templates/dashboard.html:202 templates/dashboard.html:203 templates/dashboard.html:204
+#: templates/dashboard.html:213 templates/dashboard.html:214 templates/dashboard.html:215
 #: templates/gemeinde/pilotgemeinde.html:21 templates/gemeinde/pilotgemeinde.html:22
 #: templates/gemeinde/profil.html:47
 msgid "Rp/kWh"
@@ -8713,9 +8861,21 @@ msgstr "Recueillez les signatures de tous les membres."
 msgid "Schaffhausen"
 msgstr "Schaffhouse"
 
+#: templates/emails/day_3_smartmeter.html:32
+msgid ""
+"Schauen Sie auf Ihren Stromzähler im Keller oder Hausanschlussraum. Ein Smart Meter hat ein "
+"digitales Display (keine Drehscheibe)."
+msgstr ""
+"Regardez votre compteur électrique à la cave ou dans le local de raccordement. Un compteur "
+"intelligent possède un affichage numérique, sans disque tournant."
+
 #: templates/api_docs.html:231
 msgid "Schema"
 msgstr "Schéma"
+
+#: email_automation.py:35
+msgid "Schnelle Frage: Haben Sie einen Smart Meter?"
+msgstr "Petite question : avez-vous un compteur intelligent ?"
 
 #: templates/fuer_gemeinden.html:98
 msgid "Schnellstart öffnen"
@@ -8737,7 +8897,7 @@ msgstr "Suisse"
 msgid "Schweizer Dorf mit lokaler Gemeinschaft"
 msgstr "Village suisse avec une communauté locale"
 
-#: templates/dashboard.html:199
+#: templates/dashboard.html:210
 msgid "Schweizer Franken pro Jahr"
 msgstr "Francs suisses par an"
 
@@ -8830,6 +8990,17 @@ msgstr "Très grandes communes"
 #: templates/index.html:109
 msgid "Seit 1. Januar 2026"
 msgstr "Depuis le 1er janvier 2026"
+
+#: templates/emails/day_0_welcome.html:34
+#, python-format
+msgid ""
+"Seit dem 1. Januar 2026 können Haushalte in %(city_name)s eine lokale Stromgemeinschaft (LEG) "
+"gründen und gemeinsam Solarstrom teilen. OpenLEG ist kostenlos und Open Source. Ihre Daten "
+"bleiben bei Ihnen."
+msgstr ""
+"Depuis le 1er janvier 2026, les ménages de %(city_name)s peuvent créer une communauté électrique "
+"locale (CEL) et partager leur électricité solaire. OpenLEG est gratuit et open source. Vos "
+"données restent chez vous."
 
 #: templates/index.html:7
 msgid ""
@@ -8944,6 +9115,10 @@ msgstr "Vous êtes désormais enregistré comme gestionnaire de « %(entry_name)
 msgid "Smart Meter"
 msgstr "Compteur intelligent"
 
+#: templates/emails/day_3_smartmeter.html:6
+msgid "Smart Meter Frage"
+msgstr "Question sur le compteur intelligent"
+
 #: templates/open_source.html:64 templates/pricing.html:40 templates/self_host.html:67
 msgid ""
 "Smart-Meter-Daten bleiben innerhalb jeder LEG. Sie werden nicht verkauft und nicht für Dritte "
@@ -8980,7 +9155,7 @@ msgstr "Comment OpenLEG se finance"
 msgid "So funktioniert der Rechner"
 msgstr "Comment fonctionne le calculateur"
 
-#: templates/dashboard.html:219
+#: templates/dashboard.html:230
 msgid "So funktioniert eine LEG"
 msgstr "Comment fonctionne une CEL"
 
@@ -9013,10 +9188,18 @@ msgstr "Comment ça marche"
 msgid "So funktioniert's | OpenLEG"
 msgstr "Comment ça marche | OpenLEG"
 
+#: templates/emails/day_14_formation.html:38
+msgid "So läuft die Gründung ab:"
+msgstr "Les étapes de création :"
+
 #: templates/gemeinde/profil.html:10
 #, python-format
 msgid "So nutzt %(name)s sein Solardach-Potenzial. Vergleichen Sie Ihre Gemeinde."
 msgstr "Découvrez comment %(name)s exploite le potentiel solaire de ses toitures. Comparez votre commune."
+
+#: templates/emails/day_3_smartmeter.html:32
+msgid "So prüfen Sie es:"
+msgstr "Comment vérifier :"
 
 #: templates/gemeinde/dashboard.html:137
 msgid "So sehen Bewohner Ihre Gemeinde: Stromtarife, Solarnutzung und Sparpotenzial aus offenen Daten."
@@ -9049,6 +9232,10 @@ msgid ""
 msgstr ""
 "Dès que les points en suspens sont réglés, nous préparons l’inscription de la CEL avec "
 "%(utility)s. Chacun des quatre points ci-dessous compte pour un quart."
+
+#: templates/emails/day_0_welcome.html:45
+msgid "Sobald es genug Leute sind, stellen wir den Kontakt her."
+msgstr "Dès qu’ils sont assez nombreux, nous les mettons en contact."
 
 #: templates/leg_dashboard.html:396
 msgid "Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess."
@@ -9198,6 +9385,14 @@ msgstr "Enregistrer"
 msgid "Sprache"
 msgstr "Langue"
 
+#: templates/dashboard.html:198
+msgid "Sprache für E-Mails"
+msgstr "Langue des e-mails"
+
+#: templates/dashboard.html:203
+msgid "Sprache speichern"
+msgstr "Enregistrer la langue"
+
 #: templates/utility/register.html:47
 msgid "St. Gallen"
 msgstr "Saint-Gall"
@@ -9258,7 +9453,11 @@ msgstr "Statut"
 msgid "Status behalten"
 msgstr "Maintenir le statut"
 
-#: dashboard.py:145 dashboard.py:160 templates/leg_dashboard.html:214
+#: templates/emails/day_3_smartmeter.html:38
+msgid "Status im Dashboard angeben"
+msgstr "Renseigner le statut dans le tableau de bord"
+
+#: dashboard.py:146 dashboard.py:161 templates/leg_dashboard.html:214
 msgid "Status wird geprüft"
 msgstr "Le statut est vérifié"
 
@@ -9303,6 +9502,10 @@ msgstr "Rue, NPA, localité"
 #: templates/member_invoice_detail.html:192
 msgid "Strom aus dem Quartierakku"
 msgstr "Alimentation par la batterie de quartier"
+
+#: templates/emails/day_14_formation.html:64
+msgid "Strom teilen und sparen"
+msgstr "Partager l’électricité et économiser"
 
 #: templates/index.html:65
 msgid ""
@@ -9540,6 +9743,10 @@ msgstr "Thurgovie"
 msgid "Tier"
 msgstr "Niveau"
 
+#: templates/emails/day_7_consumption.html:51
+msgid "Tipp:"
+msgstr "Conseil :"
+
 #: security_utils.py:212
 msgid "Token ist erforderlich"
 msgstr "Le jeton est obligatoire"
@@ -9725,7 +9932,7 @@ msgstr "Demander un accompagnement"
 msgid "Unterzeichnet"
 msgstr "Signé"
 
-#: dashboard.py:248 dashboard.py:249
+#: dashboard.py:249 dashboard.py:250
 msgid "Unvollständig"
 msgstr "Incomplet"
 
@@ -9769,7 +9976,7 @@ msgstr "Contacter GRD"
 msgid "VNB-Abgleich"
 msgstr "Rapprochement GRD"
 
-#: dashboard.py:1137
+#: dashboard.py:1138
 msgid "VNB-Mutation vorübergehend nicht verfügbar."
 msgstr "Mutation GRD temporairement indisponible."
 
@@ -9809,11 +10016,19 @@ msgstr "Les responsabilités en détail"
 msgid "Verantwortung wählen"
 msgstr "Choisir les responsabilités"
 
+#: templates/emails/day_7_consumption.html:6
+msgid "Verbrauch ergänzen"
+msgstr "Compléter la consommation"
+
 #: templates/member_invoice_detail.html:181
 msgid "Verbrauch:"
 msgstr "Consommation:"
 
-#: dashboard.py:103 dashboard.py:105 dashboard.py:1351
+#: templates/emails/day_7_consumption.html:47
+msgid "Verbrauchsdaten ergänzen"
+msgstr "Compléter les données de consommation"
+
+#: dashboard.py:104 dashboard.py:106 dashboard.py:1352
 msgid "Verbrauchsdaten hinterlegt"
 msgstr "Données de consommation enregistrées"
 
@@ -9916,7 +10131,7 @@ msgstr "Population desservie"
 msgid "Verteilmodell"
 msgstr "Modèle de distribution"
 
-#: dashboard.py:150
+#: dashboard.py:151
 msgid "Verteilmodell wird geprüft"
 msgstr "Le modèle de distribution est vérifié"
 
@@ -9932,6 +10147,10 @@ msgstr "Gestionnaire de réseau de distribution"
 #: templates/admin/abrechnungen.html:76
 msgid "Verteilung"
 msgstr "distribution"
+
+#: templates/emails/day_14_formation.html:50
+msgid "Vertrag unterzeichnen"
+msgstr "Signer le contrat"
 
 #: templates/leg_dashboard.html:228
 msgid "Vertragsentwürfe erstellen"
@@ -10058,7 +10277,7 @@ msgstr "Prérequis"
 msgid "Vorbereitet durch:"
 msgstr "Préparé par:"
 
-#: dashboard.py:661
+#: dashboard.py:662
 msgid "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr "La préparation et l'approbation doivent être effectuées par différentes personnes."
 
@@ -10207,6 +10426,10 @@ msgstr "Combien coûte la création avec OpenLEG ?"
 msgid "Was macht OpenLEG, was der Netzbetreiber?"
 msgstr "Que fait OpenLEG et que fait le gestionnaire de réseau ?"
 
+#: templates/emails/day_0_welcome.html:42
+msgid "Was passiert als Nächstes?"
+msgstr "Que se passe-t-il ensuite ?"
+
 #: templates/gemeinde/pilotgemeinde.html:40
 msgid "Was passiert bei einem Austritt?"
 msgstr "Que se passe-t-il en cas de départ ?"
@@ -10218,6 +10441,10 @@ msgstr "Quelle est votre situation ? Plusieurs réponses possibles."
 #: templates/self_host.html:30
 msgid "Was vorhanden sein muss"
 msgstr "Ce dont vous avez besoin"
+
+#: templates/emails/day_7_consumption.html:39
+msgid "Was wir benötigen:"
+msgstr "Les informations nécessaires :"
 
 #: templates/how-it-works.html:78
 msgid "Was zuerst passiert, wer was entscheidet und wann der Netzbetreiber ins Spiel kommt."
@@ -10277,6 +10504,12 @@ msgstr "À qui appartiennent les données ?"
 #: templates/fuer_bewohner.html:98
 msgid "Weniger Netznutzungsentgelt für lokalen Strom"
 msgstr "Une utilisation du réseau moins chère pour l’électricité locale"
+
+#: templates/emails/day_3_smartmeter.html:35
+msgid ""
+"Wenn wir wissen, ob Sie schon einen Smart Meter haben, können wir den nächsten Schritt besser "
+"planen."
+msgstr "Savoir si vous disposez déjà d’un compteur intelligent nous permet de mieux préparer la suite."
 
 #: templates/open_source.html:65 templates/pricing.html:39
 msgid ""
@@ -10384,6 +10617,16 @@ msgstr ""
 msgid "Wie wir diesen Wert herleiten"
 msgstr "Comment cette valeur est calculée"
 
+#: templates/emails/day_0_welcome.html:6 templates/emails/day_0_welcome.html:33
+#, python-format
+msgid "Willkommen bei %(platform_name)s"
+msgstr "Bienvenue sur %(platform_name)s"
+
+#: email_automation.py:27
+#, python-format
+msgid "Willkommen bei %(platform_name)s! Ihre Nachbarn warten"
+msgstr "Bienvenue sur %(platform_name)s ! Vos voisins vous attendent"
+
 #: templates/impressum.html:41
 msgid ""
 "Wir erstellen die Inhalte sorgfältig. Für Richtigkeit, Vollständigkeit und\n"
@@ -10393,6 +10636,11 @@ msgstr ""
 "Nous préparons les contenus avec soin. Nous ne garantissons toutefois ni leur exactitude, ni leur"
 " exhaustivité, ni leur actualité. Les contenus externes accessibles par lien relèvent de la "
 "responsabilité de leurs fournisseurs respectifs."
+
+#: templates/emails/day_14_formation.html:58
+#, python-format
+msgid "Wir erstellen die Unterlagen für %(utility_name)s. Sie müssen nur unterschreiben."
+msgstr "Nous préparons les documents pour %(utility_name)s. Vous n’avez plus qu’à les signer."
 
 #: templates/index.html:444
 msgid ""
@@ -10430,6 +10678,10 @@ msgid ""
 msgstr ""
 "Nous avons envoyé un lien de confirmation à l’adresse enregistrée pour cette fiche. Le lien est "
 "valable 24 heures."
+
+#: templates/emails/day_14_formation.html:36
+msgid "Wir haben genug Interessierte in Ihrer Nähe gefunden. Jetzt geht es an die Gründung."
+msgstr "Nous avons trouvé suffisamment de personnes intéressées près de chez vous. Place à la création."
 
 #: templates/index.html:661
 msgid "Wir konnten die Adresse nicht prüfen."
@@ -10476,6 +10728,10 @@ msgstr "Nous vérifions votre adresse. Veuillez patienter."
 #: templates/leg_verzeichnis/eintragen.html:25
 msgid "Wir prüfen ihn manuell und schalten ihn danach frei."
 msgstr "Nous la vérifions manuellement avant publication."
+
+#: templates/emails/day_0_welcome.html:44
+msgid "Wir prüfen, ob genug Nachbarn in Ihrer Nähe interessiert sind."
+msgstr "Nous vérifions si suffisamment de voisins sont intéressés dans votre secteur."
 
 #: templates/datenschutz.html:66
 msgid ""
@@ -10680,7 +10936,7 @@ msgstr "À mes appareils solaires"
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
 msgstr "Trop de demandes. Patientez une minute, puis réessayez."
 
-#: templates/index.html:644 templates/index.html:735
+#: templates/index.html:644 templates/index.html:736
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute."
 msgstr "Trop de demandes. Veuillez patienter une minute."
 
@@ -10696,7 +10952,7 @@ msgstr "Accès supprimé"
 msgid "Zugang vorhanden"
 msgstr "Accès disponible"
 
-#: templates/dashboard.html:17 templates/dashboard.html:56 templates/dashboard.html:240
+#: templates/dashboard.html:17 templates/dashboard.html:56 templates/dashboard.html:251
 #: templates/gemeinde/dashboard.html:153
 msgid "Zugangslink anfordern"
 msgstr "Demander un lien d’accès"
@@ -10997,7 +11253,7 @@ msgstr "kWh ("
 msgid "kWh ·"
 msgstr "kWh ·"
 
-#: templates/dashboard.html:206
+#: templates/dashboard.html:217
 msgid "kWh/Jahr"
 msgstr "kWh/an"
 
@@ -11048,6 +11304,10 @@ msgstr "avec transformation de tension."
 #: templates/gemeinde/pilotgemeinde.html:24 templates/gemeinde/profil.html:54
 msgid "m²"
 msgstr "m²"
+
+#: templates/emails/day_7_consumption.html:36
+msgid "mögliche jährliche Ersparnis pro Haushalt"
+msgstr "Économies annuelles possibles par ménage"
 
 #: pv_badge.py:19
 msgid "n/a"
@@ -11292,6 +11552,11 @@ msgstr "."
 msgid "| OpenLEG"
 msgstr "| OpenLEG"
 
+#: templates/emails/day_0_welcome.html:63 templates/emails/day_14_formation.html:86
+#: templates/emails/day_3_smartmeter.html:45 templates/emails/day_7_consumption.html:60
+msgid "·"
+msgstr "·"
+
 #: templates/leg_verzeichnis/detail.html:21
 #, python-format
 msgid "· %(entry_plz)s"
@@ -11414,7 +11679,7 @@ msgstr "Dépôt public de l’application"
 msgid "Öffentliches Energieprofil"
 msgstr "Profil énergétique public"
 
-#: templates/dashboard.html:241
+#: templates/dashboard.html:252
 msgid "Öffnen Sie Ihr Dashboard mit einem sicheren Link per E-Mail."
 msgstr "Ouvrez votre tableau de bord avec un lien sécurisé par e-mail."
 

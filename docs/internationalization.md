@@ -2,8 +2,8 @@
 
 OpenLEG uses Flask-Babel/gettext for German (Switzerland, de_CH) and Swiss French
 (fr_CH). German remains the installation default. The framework, interface and
-printable documents support both locales. Persistent recipient preferences and
-background email delivery are separate subsequent changes.
+printable documents support both locales. The four scheduled onboarding emails
+use a persisted recipient preference.
 
 ## Language selection
 
@@ -63,4 +63,30 @@ records no legal approval of the document text or its translation.
 
 This stage adapts the document work from the contributor's
 `i18n-fr-ch` commit `b4bc68f`, preserving the current authorization and
-consent-filtering code. No persistent recipient language schema is introduced.
+consent-filtering code.
+
+## Recipient language
+
+New registration forms store the selected German or Swiss French language as
+`preferred_locale`. Building and unresolved coverage records accept only these
+two normalized values. Existing records default to German. Public re-registration
+cannot change a verified building's preference.
+
+A verified resident can change their own preference in the private dashboard.
+The update requires the dashboard session and CSRF token; a submitted building
+identifier cannot select someone else's record. Page language selection alone
+does not write this preference. The resident's profile export includes it.
+
+The four scheduled onboarding emails read the current building preference at
+delivery. Subjects, escaped HTML and destination links use that explicit locale,
+independent of the cron request, tenant default or another recipient. The renderer
+also works outside Flask and keeps personal values out of shared template globals.
+Queue retry, address scrubbing and deletion rules continue to apply. The preference
+shares its registration's retention and deletion rules.
+
+This stage adapts the four email templates and translations from the same
+contributor commit. Immediate signup confirmations, municipality notifications,
+access links, contact updates, invitations and invoice correspondence still need
+the separate recipient delivery changes. Recording a coverage preference does
+not yet localize those messages. This implementation records no human language
+or legal approval.

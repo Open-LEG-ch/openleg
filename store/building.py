@@ -9,6 +9,8 @@ import logging
 import time
 from datetime import UTC, datetime
 
+from locale_policy import require_recipient_locale
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,6 +37,7 @@ def save_building(
     has_solar: bool | None = None,
     verified: bool = False,
     verification_token: str | None = None,
+    preferred_locale: str = "de_CH",
 ) -> bool:
     """Save or update a building record.
 
@@ -43,6 +46,7 @@ def save_building(
     An unverified email change bumps the revision, so older links stop verifying.
     A verified building rejects registration under a different email.
     """
+    canonical_locale = require_recipient_locale(preferred_locale)
     token_ttl_seconds = 30 * 24 * 60 * 60
     try:
         with _get_connection() as conn, conn.cursor() as cur:
@@ -59,11 +63,11 @@ def save_building(
                         registered_at, verified, verified_at, user_type,
                         referrer_id, referral_code, city_id, bfs_number,
                         municipality_name, canton, roles, has_solar,
-                        verification_requested_at
+                        verification_requested_at, preferred_locale
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, CURRENT_TIMESTAMP
+                        %s, %s, %s, %s, CURRENT_TIMESTAMP, %s
                     )
                     ON CONFLICT (building_id) DO UPDATE SET
                         email = EXCLUDED.email,
@@ -89,6 +93,9 @@ def save_building(
                         canton = EXCLUDED.canton,
                         roles = EXCLUDED.roles,
                         has_solar = EXCLUDED.has_solar,
+                        preferred_locale = CASE WHEN buildings.verified IS TRUE
+                            THEN buildings.preferred_locale
+                            ELSE EXCLUDED.preferred_locale END,
                         verification_requested_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE buildings.verified IS NOT TRUE
@@ -118,6 +125,7 @@ def save_building(
                     profile.get("canton"),
                     json.dumps(roles or []),
                     has_solar,
+                    canonical_locale,
                 ),
             )
 

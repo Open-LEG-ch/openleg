@@ -108,6 +108,19 @@ def create_tables():
                 ON coverage_requests (bfs_number, verified)
             """)
 
+            # ADD COLUMN also backfills existing rows; the inline constraint
+            # is created once, alongside the column, on either schema path.
+            cur.execute("""
+                ALTER TABLE buildings ADD COLUMN IF NOT EXISTS preferred_locale
+                    TEXT NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+            cur.execute("""
+                ALTER TABLE coverage_requests ADD COLUMN IF NOT EXISTS preferred_locale
+                    TEXT NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+
             cur.execute("""
                 CREATE OR REPLACE VIEW verified_interest AS
                 SELECT DISTINCT ON (bfs_number, LOWER(email))

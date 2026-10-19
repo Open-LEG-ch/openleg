@@ -7,36 +7,42 @@ Handles scheduled email sequences for user nurturing.
 import logging
 import time
 
-from flask import current_app, has_app_context, render_template
+from flask import current_app, has_app_context
 
 import access_token
 import database as db
+from email_localization import gettext as _
+from email_localization import render_template
 from email_utils import send_email
 
 logger = logging.getLogger(__name__)
 
 
-def get_email_sequence(platform_name="OpenLEG"):
+def get_email_sequence(platform_name="OpenLEG", *, locale="de_CH"):
     """Return email sequence with dynamic platform name in subjects."""
     return {
         "day_0_welcome": {
             "delay_days": 0,
-            "subject": f"Willkommen bei {platform_name}! Ihre Nachbarn warten",
+            "subject": _(
+                "Willkommen bei %(platform_name)s! Ihre Nachbarn warten",
+                platform_name=platform_name,
+                locale=locale,
+            ),
             "template": "emails/day_0_welcome.html",
         },
         "day_3_smartmeter": {
             "delay_days": 3,
-            "subject": "Schnelle Frage: Haben Sie einen Smart Meter?",
+            "subject": _("Schnelle Frage: Haben Sie einen Smart Meter?", locale=locale),
             "template": "emails/day_3_smartmeter.html",
         },
         "day_7_consumption": {
             "delay_days": 7,
-            "subject": "Optimieren Sie Ihr LEG-Matching",
+            "subject": _("Optimieren Sie Ihr LEG-Matching", locale=locale),
             "template": "emails/day_7_consumption.html",
         },
         "day_14_formation": {
             "delay_days": 14,
-            "subject": "Ihre LEG-Gemeinschaft kann starten",
+            "subject": _("Ihre LEG-Gemeinschaft kann starten", locale=locale),
             "template": "emails/day_14_formation.html",
         },
     }
@@ -133,7 +139,10 @@ def process_email_queue(app=None):
 
         # Resolve tenant for this building
         tenant = _get_tenant_for_building(item["building_id"])
-        sequence = get_email_sequence(tenant.get("platform_name", "OpenLEG"))
+        sequence = get_email_sequence(
+            tenant.get("platform_name", "OpenLEG"),
+            locale=item.get("preferred_locale", "de_CH"),
+        )
         config = sequence.get(template_key)
         if not config:
             db.mark_email_failed(email_id, f"Unknown template: {template_key}")
@@ -173,6 +182,7 @@ def process_email_queue(app=None):
             with app.app_context():
                 html_body = render_template(
                     config["template"],
+                    locale=item.get("preferred_locale", "de_CH"),
                     email=item["email"],
                     address=item.get("address", ""),
                     neighbor_count=neighbor_count,

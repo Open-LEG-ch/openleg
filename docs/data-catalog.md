@@ -75,7 +75,7 @@ The equipment advisory workflow is documented under `store/advisories` below.
 - **Holds:** `building_id`, `email`, `address`, `lat`, `lon`, `plz`,
   `building_type`, `annual_consumption_kwh`, `potential_pv_kwp`, `user_type`,
   `verified`, `city_id`, `referrer_id`, `bfs_number`, `municipality_name`,
-  `canton`, `roles`, `has_solar`
+  `canton`, `roles`, `has_solar`, `preferred_locale` (German or Swiss French)
 - **Purpose:** resident registration and readiness; the map of consenting
   neighbours.
 - **Owner:** the resident (each row is one household's record).
@@ -92,7 +92,7 @@ The equipment advisory workflow is documented under `store/advisories` below.
 
 - **Tables:** `coverage_requests`; also reads verified rows from `buildings`.
 - **Holds:** `email`, optional `address`, `plz`, `municipality_name`, `canton`,
-  `bfs_number`, `roles`, `has_solar`, verification token and timestamps.
+  `bfs_number`, `roles`, `has_solar`, `preferred_locale`, verification token and timestamps.
 - **Purpose:** preserve demand when an address cannot be checked, publish an
   anonymised municipality count, notify verified participants when that count
   grows, and provide a private operator follow-up list.
@@ -403,7 +403,7 @@ it.
 - **Tables:** none of its own; it is the seam for the resident's
   self-service writes to `buildings` and `consents`.
 - **Holds:** updates `annual_consumption_kwh`, `potential_pv_kwp`,
-  `share_with_utility`, `share_with_neighbors`.
+  `share_with_utility`, `share_with_neighbors`, `preferred_locale`.
 - **Purpose:** the resident's own profile and consent changes.
 - **Owner:** the resident.
 - **Sensitivity:** personal + energy.

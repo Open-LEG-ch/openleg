@@ -98,6 +98,7 @@ also_copy = [
     "deepsign_integration.py",
     "document_generator.py",
     "email_automation.py",
+    "email_localization.py",
     "email_utils.py",
     "equipment.py",
     "equipment_routes.py",
