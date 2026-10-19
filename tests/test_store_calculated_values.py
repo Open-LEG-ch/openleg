@@ -76,11 +76,13 @@ def test_replay_returns_existing_delivery_without_rewriting_evidence(monkeypatch
     assert "evidence_bytes" not in result
     assert (
         "ON CONFLICT (territory, content_fingerprint) DO NOTHING"
-        in cursor.executed[2][0]
+        in cursor.executed[3][0]
     )
-    assert "pg_advisory_xact_lock" in cursor.executed[0][0]
-    assert "content_fingerprint <> %s" in cursor.executed[1][0]
-    assert cursor.executed[3][1] == ("dietikon", "a" * 64)
+    assert "FROM communities" in cursor.executed[0][0]
+    assert "FOR UPDATE" in cursor.executed[0][0]
+    assert "pg_advisory_xact_lock" in cursor.executed[1][0]
+    assert "content_fingerprint <> %s" in cursor.executed[2][0]
+    assert cursor.executed[4][1] == ("dietikon", "a" * 64)
 
 
 def test_operator_projection_scopes_by_tenant_and_omits_raw_fields(monkeypatch):
@@ -118,7 +120,7 @@ def test_operator_projection_scopes_by_tenant_and_omits_raw_fields(monkeypatch):
 def test_save_billing_period_persists_the_calculated_values_fingerprint(monkeypatch):
     from store import billing
 
-    cursor = Cursor([{"id": 42}])
+    cursor = Cursor([{"evidence_current": True}, {"id": 42}])
 
     @contextmanager
     def connection():
@@ -148,10 +150,13 @@ def test_save_billing_period_persists_the_calculated_values_fingerprint(monkeypa
     )
 
     assert period_id == 42
-    query, params = cursor.executed[0]
+    assert "FROM communities" in cursor.executed[0][0]
+    assert "FOR UPDATE" in cursor.executed[0][0]
+    assert "evidence_current" in cursor.executed[1][0]
+    query, params = cursor.executed[2]
     assert "INSERT INTO billing_periods" in query
     assert "calculated_values_fingerprint" in query
     assert params[0] == "leg-1"
     assert params[12] == "c" * 64
-    # The fingerprint is the last bound column before the literal 'draft'.
-    assert params[-1] == "a" * 64
+    assert params[-2] == "a" * 64
+    assert params[-1] == "draft"
