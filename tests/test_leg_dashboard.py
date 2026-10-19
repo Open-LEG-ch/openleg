@@ -2,6 +2,7 @@
 """Tests for the session-gated LEG operator dashboard (/leg/dashboard)."""
 
 import os
+from html.parser import HTMLParser
 from unittest.mock import MagicMock
 
 import pytest
@@ -119,17 +120,87 @@ def test_leg_dashboard_template_contract():
     assert "next_steps" in html
 
 
-def test_member_table_fits_mobile():
-    path = os.path.join(PROJECT_ROOT, "templates", "leg_dashboard.html")
-    with open(path, encoding="utf-8") as handle:
-        html = handle.read()
-    start = html.index("Mitglieder</h2>")
-    members_table = html[start : html.index("</section>", start)]
-    assert "min-w-[32rem]" not in members_table
-    assert "table-fixed" in members_table
-    assert "sm:table-auto" in members_table
-    for segment in members_table.split("<td")[1:]:
-        assert "wrap-break-word" in segment.split(">", 1)[0]
+class _RenderedTables(HTMLParser):
+    """Collect actual table classes, captions and cells from rendered HTML."""
+
+    def __init__(self):
+        super().__init__()
+        self.tables = []
+        self.stack = []
+        self.current = None
+        self.in_caption = False
+
+    def handle_starttag(self, tag, attributes):
+        attributes = dict(attributes)
+        if tag == "table":
+            ancestor_classes = []
+            for parent, attrs in reversed(self.stack):
+                ancestor_classes.extend(attrs.get("class", "").split())
+                if parent == "section":
+                    break
+            self.current = {
+                "classes": attributes.get("class", "").split(),
+                "ancestor_classes": ancestor_classes,
+                "caption": "",
+                "cells": [],
+            }
+            self.tables.append(self.current)
+        elif self.current is not None and tag == "caption":
+            self.in_caption = True
+        elif self.current is not None and tag == "td":
+            self.current["cells"].append(attributes.get("class", "").split())
+        if tag not in {
+            "area",
+            "base",
+            "br",
+            "col",
+            "embed",
+            "hr",
+            "img",
+            "input",
+            "link",
+            "meta",
+            "param",
+            "source",
+            "track",
+            "wbr",
+        }:
+            self.stack.append((tag, attributes))
+
+    def handle_endtag(self, tag):
+        if tag == "caption":
+            self.in_caption = False
+        elif tag == "table":
+            self.current = None
+        if self.stack and self.stack[-1][0] == tag:
+            self.stack.pop()
+
+    def handle_data(self, data):
+        if self.current is not None and self.in_caption:
+            self.current["caption"] += data
+
+
+def test_member_table_fits_mobile(app_module):  # noqa: F811
+    response = app_module.web.test_client().get("/leg/dashboard/demo")
+    assert response.status_code == 200
+    parser = _RenderedTables()
+    parser.feed(response.get_data(as_text=True))
+    members = [
+        table
+        for table in parser.tables
+        if table["caption"].strip() == "Mitglieder dieser Stromgemeinschaft"
+    ]
+    assert len(members) == 1
+    members_table = members[0]
+    assert (
+        "min-w-[32rem]"
+        not in members_table["classes"] + members_table["ancestor_classes"]
+    )
+    assert "table-fixed" in members_table["classes"]
+    assert "sm:table-auto" in members_table["classes"]
+    assert members_table["cells"], "the member table must contain rendered rows"
+    for classes in members_table["cells"]:
+        assert "wrap-break-word" in classes
 
 
 # --- Formation actions (Slice 3) ---

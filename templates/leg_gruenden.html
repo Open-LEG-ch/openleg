@@ -4,13 +4,13 @@
 
 {% block meta %}
 {{ page_meta(
-  title="LEG gründen: Anleitung für die Schweiz | OpenLEG",
-  description="Eine Lokale Elektrizitätsgemeinschaft gründen: Voraussetzungen prüfen, Beteiligte erfassen, Dokumente vorbereiten und die LEG anmelden.",
+  title=_("LEG gründen: Anleitung für die Schweiz | OpenLEG"),
+  description=_("Eine Lokale Elektrizitätsgemeinschaft gründen: Voraussetzungen prüfen, Beteiligte erfassen, Dokumente vorbereiten und die LEG anmelden."),
   path="/leg-gruenden",
-  og_title="LEG gründen: der nächste Schritt ist klar | OpenLEG",
-  og_description="Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb.",
+  og_title=_("LEG gründen: der nächste Schritt ist klar | OpenLEG"),
+  og_description=_("Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."),
   og_type="article",
-  keywords="LEG gründen Schweiz, Stromgemeinschaft gründen, LEG Anforderungen, LEG Dokumente",
+  keywords=_("LEG gründen Schweiz, Stromgemeinschaft gründen, LEG Anforderungen, LEG Dokumente"),
   site_url=site_url
 ) }}
 {% endblock %}
@@ -21,20 +21,20 @@
   "@type": "BreadcrumbList",
   "itemListElement": [
     {"@type": "ListItem", "position": 1, "name": "OpenLEG", "item": "{{ site_url }}/"},
-    {"@type": "ListItem", "position": 2, "name": "LEG gründen", "item": "{{ site_url }}/leg-gruenden"}
+    {"@type": "ListItem", "position": 2, "name": {{ _("LEG gründen")|tojson }}, "item": "{{ site_url }}/leg-gruenden"}
   ]
 }</script>
 <script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "HowTo",
-  "name": "Eine Lokale Elektrizitätsgemeinschaft gründen",
+  "name": {{ _("Eine Lokale Elektrizitätsgemeinschaft gründen")|tojson }},
   "step": [
-    {"@type": "HowToStep", "position": 1, "name": "Gebiet und Voraussetzungen prüfen", "url": "{{ site_url }}/leg-gruenden#schritt-1"},
-    {"@type": "HowToStep", "position": 2, "name": "Teilnehmende und Anlagen erfassen", "url": "{{ site_url }}/leg-gruenden#schritt-2"},
-    {"@type": "HowToStep", "position": 3, "name": "Vertretung und Vereinbarung festlegen", "url": "{{ site_url }}/leg-gruenden#schritt-3"},
-    {"@type": "HowToStep", "position": 4, "name": "Gründung vorbereiten", "url": "{{ site_url }}/leg-gruenden#schritt-4"},
-    {"@type": "HowToStep", "position": 5, "name": "LEG beim Netzbetreiber anmelden", "url": "{{ site_url }}/leg-gruenden#schritt-5"},
-    {"@type": "HowToStep", "position": 6, "name": "Messung klären und Betrieb aufnehmen", "url": "{{ site_url }}/leg-gruenden#schritt-6"}
+    {"@type": "HowToStep", "position": 1, "name": {{ _("Gebiet und Voraussetzungen prüfen")|tojson }}, "url": "{{ site_url }}/leg-gruenden#schritt-1"},
+    {"@type": "HowToStep", "position": 2, "name": {{ _("Teilnehmende und Anlagen erfassen")|tojson }}, "url": "{{ site_url }}/leg-gruenden#schritt-2"},
+    {"@type": "HowToStep", "position": 3, "name": {{ _("Vertretung und Vereinbarung festlegen")|tojson }}, "url": "{{ site_url }}/leg-gruenden#schritt-3"},
+    {"@type": "HowToStep", "position": 4, "name": {{ _("Gründung vorbereiten")|tojson }}, "url": "{{ site_url }}/leg-gruenden#schritt-4"},
+    {"@type": "HowToStep", "position": 5, "name": {{ _("LEG beim Netzbetreiber anmelden")|tojson }}, "url": "{{ site_url }}/leg-gruenden#schritt-5"},
+    {"@type": "HowToStep", "position": 6, "name": {{ _("Messung klären und Betrieb aufnehmen")|tojson }}, "url": "{{ site_url }}/leg-gruenden#schritt-6"}
   ]
 }</script>
 <script type="application/ld+json">{{ faq_page_jsonld | tojson }}</script>
@@ -43,80 +43,80 @@
 {% block content %}
 <div class="max-w-6xl mx-auto px-4 py-12">
   <header class="max-w-3xl mb-10 border-b border-slate-200 pb-8">
-    <p class="text-sm font-semibold text-brand mb-2">Für LEG-Gründerinnen und LEG-Gründer</p>
-    <h1 class="text-4xl font-bold mb-3">Von der Adresse zur betriebsbereiten LEG</h1>
-    <p class="text-lg text-ink-muted">Jeder Schritt nennt die Voraussetzung, Ihre Aufgabe, den Nachweis und die nächste Aktion. Beginnen Sie dort, wo Ihre Gruppe heute steht.</p>
+    <p class="text-sm font-semibold text-brand mb-2">{{ _('Für LEG-Gründerinnen und LEG-Gründer') }}</p>
+    <h1 class="text-4xl font-bold mb-3">{{ _('Von der Adresse zur betriebsbereiten LEG') }}</h1>
+    <p class="text-lg text-ink-muted">{{ _('Jeder Schritt nennt die Voraussetzung, Ihre Aufgabe, den Nachweis und die nächste Aktion. Beginnen Sie dort, wo Ihre Gruppe heute steht.') }}</p>
   </header>
 
   <section aria-labelledby="gruendungsassistent-title" class="mb-12 grid lg:grid-cols-[2fr_1fr] gap-8 items-center">
     <div class="overflow-hidden rounded-2xl border border-line bg-white shadow-lg">
       <picture>
-        <source srcset="/static/images/product/leg-formation-static.webp" media="(prefers-reduced-motion: reduce)">
-        <img src="/static/images/product/leg-formation.gif" alt="Echter LEG-Gründungsassistent mit Mitgliedern, Dokumenten und nächsten Schritten" width="960" height="540" loading="lazy" class="w-full h-auto">
+        <source srcset="{{ '/static/images/product/leg-formation-static.webp'|localized_asset }}" media="(prefers-reduced-motion: reduce)">
+        <img src="{{ '/static/images/product/leg-formation.gif'|localized_asset }}" alt="{{ _('Echter LEG-Gründungsassistent mit Mitgliedern, Dokumenten und nächsten Schritten') }}" width="960" height="540" loading="lazy" class="w-full h-auto">
       </picture>
     </div>
     <div>
-      <h2 id="gruendungsassistent-title" class="text-2xl font-bold">Den Ablauf zuerst selbst prüfen</h2>
-      <p class="mt-3 text-ink-muted">Die Demo zeigt den echten Arbeitsstand für Mitglieder, Vereinbarung, Dokumente und Anmeldung. Verwenden Sie ausschliesslich Beispieldaten.</p>
+      <h2 id="gruendungsassistent-title" class="text-2xl font-bold">{{ _('Den Ablauf zuerst selbst prüfen') }}</h2>
+      <p class="mt-3 text-ink-muted">{{ _('Die Demo zeigt den echten Arbeitsstand für Mitglieder, Vereinbarung, Dokumente und Anmeldung. Verwenden Sie ausschliesslich Beispieldaten.') }}</p>
       <div class="mt-5 flex flex-col gap-3">
-        <a href="/leg/dashboard/demo" class="rounded-lg bg-brand px-6 py-3 text-center font-semibold text-white hover:bg-brand-dark">Gründungsassistent öffnen</a>
-        <a href="/#registrieren" class="rounded-lg border border-line bg-white px-6 py-3 text-center font-semibold text-ink hover:bg-slate-50">Eigenes Profil starten</a>
+        <a href="/leg/dashboard/demo" class="rounded-lg bg-brand px-6 py-3 text-center font-semibold text-white hover:bg-brand-dark">{{ _('Gründungsassistent öffnen') }}</a>
+        <a href="/#registrieren" class="rounded-lg border border-line bg-white px-6 py-3 text-center font-semibold text-ink hover:bg-slate-50">{{ _('Eigenes Profil starten') }}</a>
       </div>
     </div>
   </section>
 
   <section id="vzev-oder-leg" aria-labelledby="vzev-title" class="max-w-3xl mb-12 scroll-mt-20">
-    <h2 id="vzev-title" class="text-2xl font-bold">Erst ein vZEV oder gleich eine LEG?</h2>
-    <p class="mt-3 text-ink-muted">Für wenige benachbarte Häuser kann ein virtueller Zusammenschluss zum Eigenverbrauch (vZEV) der einfachere Einstieg sein. Seit 2025 lassen sich dafür bestehende Anschlussleitungen und Smart Meter des Verteilnetzbetreibers (VNB) nutzen. Der VNB muss bestätigen, dass die Anschlüsse dafür geeignet sind. Auf den intern geteilten Strom fällt keine Netznutzungsgebühr an. Messkosten und Kosten für den übrigen Netzbezug bleiben bestehen.</p>
-    <p class="mt-3 text-ink-muted">Der VNB liefert die Messdaten und rechnet den Netzbezug gegenüber dem vZEV ab. Die interne Abrechnung organisiert der vZEV selbst oder beauftragt einen Dienstleister. Halten Sie Vertretung, Zustimmung der Teilnehmenden, internen Strompreis und Abrechnung schriftlich fest und melden Sie den vZEV beim VNB an.</p>
-    <p class="mt-3 text-ink-muted">OpenLEG unterstützt die Gründung und den Betrieb von LEGs. Für vZEV bietet OpenLEG diese Orientierung, aber keinen eigenen Gründungsassistenten und keine vZEV-Abrechnung. Eine kleine Gruppe kann mit weniger Verwaltungsaufwand starten, wenn die Voraussetzungen für einen vZEV erfüllt sind.</p>
-    <p class="mt-3 text-ink-muted">Sollen später weitere Gebäude über das öffentliche Verteilnetz dazukommen, kann die Gruppe eine LEG prüfen. Das ist seit 2026 auch über Parzellengrenzen hinweg möglich. Ein Wechsel erfolgt nicht automatisch: Die LEG muss ihre Voraussetzungen erfüllen und beim VNB angemeldet werden.</p>
-    <p class="mt-3 text-sm text-ink-muted">Quellen: <a href="https://www.ekz.ch/de/blue/wissen/2025/zev-leg.html" class="text-brand underline">EKZ: ZEV, vZEV und LEG</a>, <a href="https://www.ekz.ch/de/angebote/strom/produzenten-und-gemeinschaften/zev/zev-vzev-gruenden.html" class="text-brand underline">EKZ: Voraussetzungen und Gründung</a>. <a href="/how-it-works#faq-title" class="text-brand underline">Alle drei Modelle vergleichen</a></p>
+    <h2 id="vzev-title" class="text-2xl font-bold">{{ _('Erst ein vZEV oder gleich eine LEG?') }}</h2>
+    <p class="mt-3 text-ink-muted">{{ _('Für wenige benachbarte Häuser kann ein virtueller Zusammenschluss zum Eigenverbrauch (vZEV) der einfachere Einstieg sein. Seit 2025 lassen sich dafür bestehende Anschlussleitungen und Smart Meter des Verteilnetzbetreibers (VNB) nutzen. Der VNB muss bestätigen, dass die Anschlüsse dafür geeignet sind. Auf den intern geteilten Strom fällt keine Netznutzungsgebühr an. Messkosten und Kosten für den übrigen Netzbezug bleiben bestehen.') }}</p>
+    <p class="mt-3 text-ink-muted">{{ _('Der VNB liefert die Messdaten und rechnet den Netzbezug gegenüber dem vZEV ab. Die interne Abrechnung organisiert der vZEV selbst oder beauftragt einen Dienstleister. Halten Sie Vertretung, Zustimmung der Teilnehmenden, internen Strompreis und Abrechnung schriftlich fest und melden Sie den vZEV beim VNB an.') }}</p>
+    <p class="mt-3 text-ink-muted">{{ _('OpenLEG unterstützt die Gründung und den Betrieb von LEGs. Für vZEV bietet OpenLEG diese Orientierung, aber keinen eigenen Gründungsassistenten und keine vZEV-Abrechnung. Eine kleine Gruppe kann mit weniger Verwaltungsaufwand starten, wenn die Voraussetzungen für einen vZEV erfüllt sind.') }}</p>
+    <p class="mt-3 text-ink-muted">{{ _('Sollen später weitere Gebäude über das öffentliche Verteilnetz dazukommen, kann die Gruppe eine LEG prüfen. Das ist seit 2026 auch über Parzellengrenzen hinweg möglich. Ein Wechsel erfolgt nicht automatisch: Die LEG muss ihre Voraussetzungen erfüllen und beim VNB angemeldet werden.') }}</p>
+    <p class="mt-3 text-sm text-ink-muted">{{ _('Quellen:') }} <a href="https://www.ekz.ch/de/blue/wissen/2025/zev-leg.html" class="text-brand underline">{{ _('EKZ: ZEV, vZEV und LEG') }}</a>, <a href="https://www.ekz.ch/de/angebote/strom/produzenten-und-gemeinschaften/zev/zev-vzev-gruenden.html" class="text-brand underline">{{ _('EKZ: Voraussetzungen und Gründung') }}</a>. <a href="/how-it-works#faq-title" class="text-brand underline">{{ _('Alle drei Modelle vergleichen') }}</a></p>
   </section>
 
   <section aria-labelledby="common-requirements-title" class="max-w-3xl mb-12">
-    <h2 id="common-requirements-title" class="text-2xl font-bold">Was für jede LEG gilt</h2>
-    <p class="mt-3 text-ink-muted">Unabhängig vom Verteilnetzbetreiber gelten die Vorgaben des Bundes: Die Anschlüsse liegen in der gleichen Gemeinde und im gleichen Netzgebiet. Die LEG nutzt nur die zulässigen Netzebenen. Die eingebrachten Anlagen für erneuerbare Energie müssen zusammen mindestens 5 Prozent der Anschlussleistung aller teilnehmenden Endverbraucher erreichen. Ob die nötige Netztopologie vorliegt, bestätigt der zuständige Verteilnetzbetreiber.</p>
+    <h2 id="common-requirements-title" class="text-2xl font-bold">{{ _('Was für jede LEG gilt') }}</h2>
+    <p class="mt-3 text-ink-muted">{{ _('Unabhängig vom Verteilnetzbetreiber gelten die Vorgaben des Bundes: Die Anschlüsse liegen in der gleichen Gemeinde und im gleichen Netzgebiet. Die LEG nutzt nur die zulässigen Netzebenen. Die eingebrachten Anlagen für erneuerbare Energie müssen zusammen mindestens 5 Prozent der Anschlussleistung aller teilnehmenden Endverbraucher erreichen. Ob die nötige Netztopologie vorliegt, bestätigt der zuständige Verteilnetzbetreiber.') }}</p>
   </section>
 
   <section aria-labelledby="vnb-processes-title" class="mb-12">
     <div class="max-w-3xl">
-      <h2 id="vnb-processes-title" class="text-2xl font-bold">So unterscheiden sich die Netzbetreiber</h2>
-      <p class="mt-2 text-sm text-ink-muted">Stand: 11. September 2026</p>
-      <p class="mt-3 text-ink-muted">Die Abläufe der Netzbetreiber können sich ändern. Prüfen Sie deshalb vor der Anmeldung die verlinkten Angaben des zuständigen VNB.</p>
-      <p class="mt-3 text-ink-muted">OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. Noch ist nicht jede VNB-Anbindung fertig umgesetzt. Anmeldung und Datenlieferung müssen pro VNB konfiguriert werden.</p>
+      <h2 id="vnb-processes-title" class="text-2xl font-bold">{{ _('So unterscheiden sich die Netzbetreiber') }}</h2>
+      <p class="mt-2 text-sm text-ink-muted">{{ _('Stand: 11. September 2026') }}</p>
+      <p class="mt-3 text-ink-muted">{{ _('Die Abläufe der Netzbetreiber können sich ändern. Prüfen Sie deshalb vor der Anmeldung die verlinkten Angaben des zuständigen VNB.') }}</p>
+      <p class="mt-3 text-ink-muted">{{ _('OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. Noch ist nicht jede VNB-Anbindung fertig umgesetzt. Anmeldung und Datenlieferung müssen pro VNB konfiguriert werden.') }}</p>
     </div>
     <div class="mt-6 grid gap-5 lg:grid-cols-3">
       <article class="rounded-xl border border-line bg-white p-5">
-        <h3 class="text-xl font-bold">BKW</h3>
-        <p class="mt-3 text-sm text-ink-muted">Die LEG-Karte dient als erste Orientierung. Verbindlich ist die Prüfung der Messpunktnummern nach der Anmeldung im LEG-Portal.</p>
-        <p class="mt-3 text-sm text-ink-muted">Für alle Teilnehmenden sind Smart Meter der BKW nötig. Fehlende Geräte baut die BKW im Rahmen der Anmeldung ein.</p>
-        <p class="mt-3 text-sm text-ink-muted">Die BKW liefert Rohdaten im ebIX-Format. Die LEG kann die interne Abrechnung selbst führen oder einen externen Dienstleister beauftragen.</p>
-        <a href="https://www.bkw.ch/de/strom-in-der-grundversorgung/eigenen-strom-teilen-und-verkaufen/strom-mit-nachbarn-teilen/lokale-elektrizitaetsgemeinschaft" class="mt-4 inline-block font-semibold text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">LEG-Angaben der BKW</a>
+        <h3 class="text-xl font-bold">{{ _('BKW') }}</h3>
+        <p class="mt-3 text-sm text-ink-muted">{{ _('Die LEG-Karte dient als erste Orientierung. Verbindlich ist die Prüfung der Messpunktnummern nach der Anmeldung im LEG-Portal.') }}</p>
+        <p class="mt-3 text-sm text-ink-muted">{{ _('Für alle Teilnehmenden sind Smart Meter der BKW nötig. Fehlende Geräte baut die BKW im Rahmen der Anmeldung ein.') }}</p>
+        <p class="mt-3 text-sm text-ink-muted">{{ _('Die BKW liefert Rohdaten im ebIX-Format. Die LEG kann die interne Abrechnung selbst führen oder einen externen Dienstleister beauftragen.') }}</p>
+        <a href="https://www.bkw.ch/de/strom-in-der-grundversorgung/eigenen-strom-teilen-und-verkaufen/strom-mit-nachbarn-teilen/lokale-elektrizitaetsgemeinschaft" class="mt-4 inline-block font-semibold text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('LEG-Angaben der BKW') }}</a>
       </article>
 
       <article class="rounded-xl border border-line bg-white p-5">
-        <h3 class="text-xl font-bold">Primeo Energie</h3>
-        <p class="mt-3 text-sm text-ink-muted">Die LEG-Karte ist unverbindlich. Eine verbindliche Topologieauskunft muss bei Primeo Energie angefragt werden.</p>
-        <p class="mt-3 text-sm text-ink-muted">Die Anmeldung läuft über das myPrimeo-Kundenportal. Fehlende Smart Meter baut Primeo Energie während der technischen Vorbereitung ein.</p>
-        <p class="mt-3 text-sm text-ink-muted">Die LEG-Vertretung rechnet den intern ausgetauschten Strom ab. Primeo Energie stellt ihr dafür die Messdaten bereit.</p>
-        <a href="https://www.primeo-energie.ch/geschaeftskunden/photovoltaik/energiegemeinschaften/leg.html" class="mt-4 inline-block font-semibold text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">LEG-Angaben von Primeo Energie</a>
+        <h3 class="text-xl font-bold">{{ _('Primeo Energie') }}</h3>
+        <p class="mt-3 text-sm text-ink-muted">{{ _('Die LEG-Karte ist unverbindlich. Eine verbindliche Topologieauskunft muss bei Primeo Energie angefragt werden.') }}</p>
+        <p class="mt-3 text-sm text-ink-muted">{{ _('Die Anmeldung läuft über das myPrimeo-Kundenportal. Fehlende Smart Meter baut Primeo Energie während der technischen Vorbereitung ein.') }}</p>
+        <p class="mt-3 text-sm text-ink-muted">{{ _('Die LEG-Vertretung rechnet den intern ausgetauschten Strom ab. Primeo Energie stellt ihr dafür die Messdaten bereit.') }}</p>
+        <a href="https://www.primeo-energie.ch/geschaeftskunden/photovoltaik/energiegemeinschaften/leg.html" class="mt-4 inline-block font-semibold text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('LEG-Angaben von Primeo Energie') }}</a>
       </article>
 
       <article class="rounded-xl border border-line bg-white p-5">
-        <h3 class="text-xl font-bold">EBL</h3>
-        <p class="mt-3 text-sm text-ink-muted">Die Matching-Plattform zeigt nach der Adresseingabe mögliche Teilnehmende. Nach der technischen Prüfung erhalten Organisierende Zugang zur Verwaltung und können Ein- und Austritte online erfassen.</p>
-        <p class="mt-3 text-sm text-ink-muted">Nach einer gültigen Anmeldung ersetzt die EBL fehlende Smart Meter. Für die interne Verrechnung liefert sie Messdaten als CSV oder S-DAT.</p>
-        <p class="mt-3 text-sm text-ink-muted">Die EBL übernimmt keine interne Abrechnung. Dafür ist die LEG-Vertretung oder ein beauftragter Dienstleister zuständig.</p>
-        <a href="https://www.ebl.ch/de/strom/eigenverbrauch-lokale-elektrizitaetsgemeinschaft" class="mt-4 inline-block font-semibold text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">LEG-Angaben der EBL</a>
+        <h3 class="text-xl font-bold">{{ _('EBL') }}</h3>
+        <p class="mt-3 text-sm text-ink-muted">{{ _('Die Matching-Plattform zeigt nach der Adresseingabe mögliche Teilnehmende. Nach der technischen Prüfung erhalten Organisierende Zugang zur Verwaltung und können Ein- und Austritte online erfassen.') }}</p>
+        <p class="mt-3 text-sm text-ink-muted">{{ _('Nach einer gültigen Anmeldung ersetzt die EBL fehlende Smart Meter. Für die interne Verrechnung liefert sie Messdaten als CSV oder S-DAT.') }}</p>
+        <p class="mt-3 text-sm text-ink-muted">{{ _('Die EBL übernimmt keine interne Abrechnung. Dafür ist die LEG-Vertretung oder ein beauftragter Dienstleister zuständig.') }}</p>
+        <a href="https://www.ebl.ch/de/strom/eigenverbrauch-lokale-elektrizitaetsgemeinschaft" class="mt-4 inline-block font-semibold text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('LEG-Angaben der EBL') }}</a>
       </article>
     </div>
   </section>
 
   <section aria-labelledby="timeline-title">
     <div class="max-w-3xl mb-6">
-      <h2 id="timeline-title" class="text-3xl font-bold">Gründung als Arbeitsfolge</h2>
-      <p class="text-ink-muted mt-2">Die Schritte bauen aufeinander auf. Die Anmeldung beim Verteilnetzbetreiber erfolgt drei Monate im Voraus auf ein Monatsende. <a href="#data-provenance" data-source-marker="legal" class="font-mono text-xs text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV</a></p>
+      <h2 id="timeline-title" class="text-3xl font-bold">{{ _('Gründung als Arbeitsfolge') }}</h2>
+      <p class="text-ink-muted mt-2">{{ _('Die Schritte bauen aufeinander auf. Die Anmeldung beim Verteilnetzbetreiber erfolgt drei Monate im Voraus auf ein Monatsende.') }} <a href="#data-provenance" data-source-marker="legal" class="font-mono text-xs text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV') }}</a></p>
     </div>
 
     {% include "partials/leg_facts.html" %}
@@ -125,28 +125,28 @@
       <li id="schritt-1" data-formation-stage="1" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
         <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">01</p>
         <article>
-          <h3 class="text-xl font-bold mb-4">Gebiet und Voraussetzungen prüfen</h3>
+          <h3 class="text-xl font-bold mb-4">{{ _('Gebiet und Voraussetzungen prüfen') }}</h3>
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Sie die Adressen der interessierten Anschlüsse kennen.</dd></div>
-            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Lassen Sie den Verteilnetzbetreiber Gemeinde, Netzgebiet, Netzebene und Netztopologie der Kandidatenadressen prüfen.</dd></div>
-            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Eine Liste der passenden Anschlüsse und Anlagen.</dd></div>
-            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg-check" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Adresse im LEG-Check prüfen</a></dd></div>
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">{{ _('Start, wenn') }}</dt><dd class="text-ink-muted mt-1">{{ _('Sie die Adressen der interessierten Anschlüsse kennen.') }}</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">{{ _('Ihre Aufgabe') }}</dt><dd class="text-ink-muted mt-1">{{ _('Lassen Sie den Verteilnetzbetreiber Gemeinde, Netzgebiet, Netzebene und Netztopologie der Kandidatenadressen prüfen.') }}</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">{{ _('Nachweis') }}</dt><dd class="text-ink-muted mt-1">{{ _('Eine Liste der passenden Anschlüsse und Anlagen.') }}</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">{{ _('Nächste Aktion') }}</dt><dd class="mt-1"><a href="/leg-check" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Adresse im LEG-Check prüfen') }}</a></dd></div>
           </dl>
-          <p class="text-sm text-ink-muted mt-4">Eine LEG bleibt innerhalb derselben politischen Gemeinde und im Netzgebiet desselben Verteilnetzbetreibers. Sie darf nur die gesetzlich zulässigen Netzebenen nutzen. Für ein Vorhaben über mehrere Gemeinden oder VNB-Gebiete braucht es separate lokale LEGs.</p>
-          <p class="text-sm text-ink-muted mt-4">Der Verteilnetzbetreiber prüft anhand seiner Netztopologie, welche Anschlüsse die Vorgaben erfüllen. Der Topologieentscheid des Verteilnetzbetreibers ist verbindlich. Die eingebrachten Anlagen für erneuerbare Energie müssen zusammen mindestens 5 Prozent der Anschlussleistung aller teilnehmenden Endverbraucher erreichen.</p>
-          <p class="text-sm text-ink-muted mt-4">Für Gemeinden ist der Plattformstart kostenlos. <a href="/pricing" data-source-marker="pricing-municipalities" class="font-mono text-xs text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Quelle: Preisübersicht</a></p>
+          <p class="text-sm text-ink-muted mt-4">{{ _('Eine LEG bleibt innerhalb derselben politischen Gemeinde und im Netzgebiet desselben Verteilnetzbetreibers. Sie darf nur die gesetzlich zulässigen Netzebenen nutzen. Für ein Vorhaben über mehrere Gemeinden oder VNB-Gebiete braucht es separate lokale LEGs.') }}</p>
+          <p class="text-sm text-ink-muted mt-4">{{ _('Der Verteilnetzbetreiber prüft anhand seiner Netztopologie, welche Anschlüsse die Vorgaben erfüllen. Der Topologieentscheid des Verteilnetzbetreibers ist verbindlich. Die eingebrachten Anlagen für erneuerbare Energie müssen zusammen mindestens 5 Prozent der Anschlussleistung aller teilnehmenden Endverbraucher erreichen.') }}</p>
+          <p class="text-sm text-ink-muted mt-4">{{ _('Für Gemeinden ist der Plattformstart kostenlos.') }} <a href="/pricing" data-source-marker="pricing-municipalities" class="font-mono text-xs text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Quelle: Preisübersicht') }}</a></p>
         </article>
       </li>
 
       <li id="schritt-2" data-formation-stage="2" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
         <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">02</p>
         <article>
-          <h3 class="text-xl font-bold mb-4">Teilnehmende und Anlagen erfassen</h3>
+          <h3 class="text-xl font-bold mb-4">{{ _('Teilnehmende und Anlagen erfassen') }}</h3>
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Das mögliche Gebiet feststeht.</dd></div>
-            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten Anlagen.</dd></div>
-            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Eine abgestimmte Teilnehmenden- und Anlagenliste.</dd></div>
-            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg-verzeichnis" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Bestehende LEGs im Verzeichnis prüfen</a></dd></div>
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">{{ _('Start, wenn') }}</dt><dd class="text-ink-muted mt-1">{{ _('Das mögliche Gebiet feststeht.') }}</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">{{ _('Ihre Aufgabe') }}</dt><dd class="text-ink-muted mt-1">{{ _('Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten Anlagen.') }}</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">{{ _('Nachweis') }}</dt><dd class="text-ink-muted mt-1">{{ _('Eine abgestimmte Teilnehmenden- und Anlagenliste.') }}</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">{{ _('Nächste Aktion') }}</dt><dd class="mt-1"><a href="/leg-verzeichnis" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Bestehende LEGs im Verzeichnis prüfen') }}</a></dd></div>
           </dl>
         </article>
       </li>
@@ -154,12 +154,12 @@
       <li id="schritt-3" data-formation-stage="3" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
         <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">03</p>
         <article>
-          <h3 class="text-xl font-bold mb-4">Vertretung und Vereinbarung festlegen</h3>
+          <h3 class="text-xl font-bold mb-4">{{ _('Vertretung und Vereinbarung festlegen') }}</h3>
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Die künftigen Teilnehmenden bekannt sind.</dd></div>
-            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Bestimmen Sie die Vertretung und regeln Sie Teilnahme, Preis und Verteilung des LEG-Stroms, Abrechnung sowie Ein- und Austritt schriftlich.</dd></div>
-            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Ein von der Gruppe geprüfter Vereinbarungsentwurf.</dd></div>
-            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Gründungsassistent und Vorlagen ansehen</a></dd></div>
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">{{ _('Start, wenn') }}</dt><dd class="text-ink-muted mt-1">{{ _('Die künftigen Teilnehmenden bekannt sind.') }}</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">{{ _('Ihre Aufgabe') }}</dt><dd class="text-ink-muted mt-1">{{ _('Bestimmen Sie die Vertretung und regeln Sie Teilnahme, Preis und Verteilung des LEG-Stroms, Abrechnung sowie Ein- und Austritt schriftlich.') }}</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">{{ _('Nachweis') }}</dt><dd class="text-ink-muted mt-1">{{ _('Ein von der Gruppe geprüfter Vereinbarungsentwurf.') }}</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">{{ _('Nächste Aktion') }}</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Gründungsassistent und Vorlagen ansehen') }}</a></dd></div>
           </dl>
         </article>
       </li>
@@ -167,12 +167,12 @@
       <li id="schritt-4" data-formation-stage="4" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
         <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">04</p>
         <article>
-          <h3 class="text-xl font-bold mb-4">Gründung vorbereiten</h3>
+          <h3 class="text-xl font-bold mb-4">{{ _('Gründung vorbereiten') }}</h3>
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Vertretung und Vereinbarungsinhalt feststehen.</dd></div>
-            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Vervollständigen Sie im Assistenten Gemeinschaftsvereinbarung und Teilnehmerverträge.</dd></div>
-            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Geprüfte und unterzeichnete Gründungsdokumente.</dd></div>
-            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Dokumentablauf im Assistenten öffnen</a></dd></div>
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">{{ _('Start, wenn') }}</dt><dd class="text-ink-muted mt-1">{{ _('Vertretung und Vereinbarungsinhalt feststehen.') }}</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">{{ _('Ihre Aufgabe') }}</dt><dd class="text-ink-muted mt-1">{{ _('Vervollständigen Sie im Assistenten Gemeinschaftsvereinbarung und Teilnehmerverträge.') }}</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">{{ _('Nachweis') }}</dt><dd class="text-ink-muted mt-1">{{ _('Geprüfte und unterzeichnete Gründungsdokumente.') }}</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">{{ _('Nächste Aktion') }}</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Dokumentablauf im Assistenten öffnen') }}</a></dd></div>
           </dl>
         </article>
       </li>
@@ -180,12 +180,12 @@
       <li id="schritt-5" data-formation-stage="5" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
         <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">05</p>
         <article>
-          <h3 class="text-xl font-bold mb-4">LEG beim Netzbetreiber anmelden</h3>
+          <h3 class="text-xl font-bold mb-4">{{ _('LEG beim Netzbetreiber anmelden') }}</h3>
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Gruppe, Vertretung, gewünschter Beginn und Dokumente feststehen.</dd></div>
-            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Melden Sie die Bildung der LEG dem zuständigen Verteilnetzbetreiber drei Monate im Voraus auf ein Monatsende.</dd></div>
-            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Die eingereichte Anmeldung und die Korrespondenz mit dem Netzbetreiber.</dd></div>
-            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Anmeldung im Assistenten nachvollziehen</a></dd></div>
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">{{ _('Start, wenn') }}</dt><dd class="text-ink-muted mt-1">{{ _('Gruppe, Vertretung, gewünschter Beginn und Dokumente feststehen.') }}</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">{{ _('Ihre Aufgabe') }}</dt><dd class="text-ink-muted mt-1">{{ _('Melden Sie die Bildung der LEG dem zuständigen Verteilnetzbetreiber drei Monate im Voraus auf ein Monatsende.') }}</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">{{ _('Nachweis') }}</dt><dd class="text-ink-muted mt-1">{{ _('Die eingereichte Anmeldung und die Korrespondenz mit dem Netzbetreiber.') }}</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">{{ _('Nächste Aktion') }}</dt><dd class="mt-1"><a href="/leg/dashboard/demo" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Anmeldung im Assistenten nachvollziehen') }}</a></dd></div>
           </dl>
         </article>
       </li>
@@ -193,50 +193,50 @@
       <li id="schritt-6" data-formation-stage="6" class="grid md:grid-cols-[4rem_1fr] border-b border-slate-200 py-7 scroll-mt-20">
         <p class="font-mono tabular-nums text-2xl font-bold text-brand" aria-hidden="true">06</p>
         <article>
-          <h3 class="text-xl font-bold mb-4">Messung klären und Betrieb aufnehmen</h3>
+          <h3 class="text-xl font-bold mb-4">{{ _('Messung klären und Betrieb aufnehmen') }}</h3>
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <div data-stage-slot="start"><dt class="font-semibold text-ink">Start, wenn</dt><dd class="text-ink-muted mt-1">Der Netzbetreiber die Anmeldung bearbeitet und der Messbedarf geklärt ist.</dd></div>
-            <div data-stage-slot="action"><dt class="font-semibold text-ink">Ihre Aufgabe</dt><dd class="text-ink-muted mt-1">Beantragen Sie fehlende intelligente Messsysteme und legen Sie den Bezug der Messdaten sowie die interne Abrechnung fest.</dd></div>
-            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">Nachweis</dt><dd class="text-ink-muted mt-1">Verfügbare Messdaten und ein dokumentierter Abrechnungsablauf.</dd></div>
-            <div data-stage-slot="next"><dt class="font-semibold text-ink">Nächste Aktion</dt><dd class="mt-1"><a href="/pricing" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Betriebsangebote vergleichen</a></dd></div>
+            <div data-stage-slot="start"><dt class="font-semibold text-ink">{{ _('Start, wenn') }}</dt><dd class="text-ink-muted mt-1">{{ _('Der Netzbetreiber die Anmeldung bearbeitet und der Messbedarf geklärt ist.') }}</dd></div>
+            <div data-stage-slot="action"><dt class="font-semibold text-ink">{{ _('Ihre Aufgabe') }}</dt><dd class="text-ink-muted mt-1">{{ _('Beantragen Sie fehlende intelligente Messsysteme und legen Sie den Bezug der Messdaten sowie die interne Abrechnung fest.') }}</dd></div>
+            <div data-stage-slot="evidence"><dt class="font-semibold text-ink">{{ _('Nachweis') }}</dt><dd class="text-ink-muted mt-1">{{ _('Verfügbare Messdaten und ein dokumentierter Abrechnungsablauf.') }}</dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">{{ _('Nächste Aktion') }}</dt><dd class="mt-1"><a href="/pricing" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Betriebsangebote vergleichen') }}</a></dd></div>
           </dl>
-          <p class="text-sm text-ink-muted mt-4">Für die LEG werden vorhandene gesetzeskonforme Smart Meter des Verteilnetzbetreibers verwendet. Die Teilnehmenden müssen keinen separaten LEG-Zähler kaufen. Nach einem gültigen Antrag installiert der Verteilnetzbetreiber fehlende erforderliche Smart Meter. Die regulierten Messtarife können weiterhin anfallen.</p>
-          <p class="text-sm text-ink-muted mt-4">Der Verteilnetzbetreiber misst die einzelnen Anschlüsse und ermittelt die Anteile von LEG-Strom und Netzstrom. Er stellt Netznutzung und Messung in Rechnung. Bei Teilnehmenden in der Grundversorgung rechnet er auch den übrigen Strombezug ab. Die LEG rechnet den innerhalb der Gemeinschaft ausgetauschten Strom ab oder beauftragt dafür einen Dienstleister.</p>
-          <p class="text-sm text-ink-muted mt-4">OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos. <a href="/pricing" data-source-marker="pricing-software" class="font-mono text-xs text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Quelle: Preisübersicht</a></p>
-          <p class="text-sm text-ink-muted mt-4">Beantragt die LEG ein intelligentes Messsystem, installiert der Verteilnetzbetreiber es innert drei Monaten. <a href="#data-provenance" data-source-marker="legal" class="font-mono text-xs text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">Art. 8a decies Abs. 6 StromVV</a></p>
+          <p class="text-sm text-ink-muted mt-4">{{ _('Für die LEG werden vorhandene gesetzeskonforme Smart Meter des Verteilnetzbetreibers verwendet. Die Teilnehmenden müssen keinen separaten LEG-Zähler kaufen. Nach einem gültigen Antrag installiert der Verteilnetzbetreiber fehlende erforderliche Smart Meter. Die regulierten Messtarife können weiterhin anfallen.') }}</p>
+          <p class="text-sm text-ink-muted mt-4">{{ _('Der Verteilnetzbetreiber misst die einzelnen Anschlüsse und ermittelt die Anteile von LEG-Strom und Netzstrom. Er stellt Netznutzung und Messung in Rechnung. Bei Teilnehmenden in der Grundversorgung rechnet er auch den übrigen Strombezug ab. Die LEG rechnet den innerhalb der Gemeinschaft ausgetauschten Strom ab oder beauftragt dafür einen Dienstleister.') }}</p>
+          <p class="text-sm text-ink-muted mt-4">{{ _('OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos.') }} <a href="/pricing" data-source-marker="pricing-software" class="font-mono text-xs text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Quelle: Preisübersicht') }}</a></p>
+          <p class="text-sm text-ink-muted mt-4">{{ _('Beantragt die LEG ein intelligentes Messsystem, installiert der Verteilnetzbetreiber es innert drei Monaten.') }} <a href="#data-provenance" data-source-marker="legal" class="font-mono text-xs text-brand underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Art. 8a decies Abs. 6 StromVV') }}</a></p>
         </article>
       </li>
     </ol>
   </section>
 
-  <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance("Rechtsstand", "2026", ["Art. 17d und 17e StromVG", "Art. 19e bis 19h StromVV", "Art. 8a decies Abs. 6 StromVV"]) }}</div>
+  <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance(_("Rechtsstand"), "2026", [_("Art. 17d und 17e StromVG"), _("Art. 19e bis 19h StromVV"), _("Art. 8a decies Abs. 6 StromVV")]) }}</div>
 
   <section id="rechtsquellen" aria-labelledby="sources-title" class="max-w-3xl mt-8 scroll-mt-20">
-    <h2 id="sources-title" class="text-xl font-bold">Rechtsquellen und Einordnung</h2>
-    <p class="text-sm text-ink-muted mt-2">Prüfen Sie die Vorgaben für Ihren Fall bei den zuständigen Stellen:</p>
+    <h2 id="sources-title" class="text-xl font-bold">{{ _('Rechtsquellen und Einordnung') }}</h2>
+    <p class="text-sm text-ink-muted mt-2">{{ _('Prüfen Sie die Vorgaben für Ihren Fall bei den zuständigen Stellen:') }}</p>
     <ul class="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-sm">
-      <li><a href="https://www.elcom.admin.ch/dam/de/sd-web/weRgj22ICsTE/053-00004_20260616_AN_FAQ%20ES2050%20ab%20Mantelerlass_DE.pdf" class="text-brand underline">ElCom</a></li>
-      <li><a href="https://www.energieschweiz.ch/stories/stromverbuende/" class="text-brand underline">EnergieSchweiz</a></li>
-      <li><a href="https://www.lokalerstrom.ch/betriebsmodelle/leg" class="text-brand underline">lokalerstrom.ch</a></li>
-      <li><a href="https://www.fedlex.admin.ch/eli/cc/2007/418/de" class="text-brand underline">StromVG</a></li>
-      <li><a href="https://www.fedlex.admin.ch/eli/cc/2008/226/de" class="text-brand underline">StromVV</a></li>
-      <li><a href="https://www.edoeb.admin.ch/de/das-neue-datenschutzgesetz-aus-sicht-des-edob" class="text-brand underline">EDÖB zum DSG</a></li>
-      <li><a href="https://www.edoeb.admin.ch/de/wesentlichen-anderungen-fuer-das-offentlichkeitsgesetz" class="text-brand underline">EDÖB zu Gesetzesänderungen</a></li>
+      <li><a href="https://www.elcom.admin.ch/dam/de/sd-web/weRgj22ICsTE/053-00004_20260616_AN_FAQ%20ES2050%20ab%20Mantelerlass_DE.pdf" class="text-brand underline">{{ _('ElCom') }}</a></li>
+      <li><a href="https://www.energieschweiz.ch/stories/stromverbuende/" class="text-brand underline">{{ _('EnergieSchweiz') }}</a></li>
+      <li><a href="https://www.lokalerstrom.ch/betriebsmodelle/leg" class="text-brand underline">{{ _('lokalerstrom.ch') }}</a></li>
+      <li><a href="https://www.fedlex.admin.ch/eli/cc/2007/418/de" class="text-brand underline">{{ _('StromVG') }}</a></li>
+      <li><a href="https://www.fedlex.admin.ch/eli/cc/2008/226/de" class="text-brand underline">{{ _('StromVV') }}</a></li>
+      <li><a href="https://www.edoeb.admin.ch/de/das-neue-datenschutzgesetz-aus-sicht-des-edob" class="text-brand underline">{{ _('EDÖB zum DSG') }}</a></li>
+      <li><a href="https://www.edoeb.admin.ch/de/wesentlichen-anderungen-fuer-das-offentlichkeitsgesetz" class="text-brand underline">{{ _('EDÖB zu Gesetzesänderungen') }}</a></li>
     </ul>
   </section>
 
   <section aria-labelledby="options-title" class="border-y border-slate-200 py-8 mt-10">
-    <h2 id="options-title" class="text-2xl font-bold">Werkzeuge und Betrieb</h2>
+    <h2 id="options-title" class="text-2xl font-bold">{{ _('Werkzeuge und Betrieb') }}</h2>
     <div class="flex flex-wrap gap-x-6 gap-y-3 mt-4 text-sm">
-      <a href="/leg-kalkulator" class="text-brand font-semibold underline">LEG-Kalkulator öffnen</a>
-      <a href="/pricing" class="text-brand font-semibold underline">Preisübersicht ansehen</a>
-      <a href="/self-host" class="text-brand font-semibold underline">OpenLEG selbst installieren</a>
-      <a href="/gemeinde/onboarding" class="text-brand font-semibold underline">Gemeinde anmelden</a>
+      <a href="/leg-kalkulator" class="text-brand font-semibold underline">{{ _('LEG-Kalkulator öffnen') }}</a>
+      <a href="/pricing" class="text-brand font-semibold underline">{{ _('Preisübersicht ansehen') }}</a>
+      <a href="/self-host" class="text-brand font-semibold underline">{{ _('OpenLEG selbst installieren') }}</a>
+      <a href="/gemeinde/onboarding" class="text-brand font-semibold underline">{{ _('Gemeinde anmelden') }}</a>
     </div>
   </section>
 
   <section aria-labelledby="faq-title" class="max-w-3xl mt-10">
-    <h2 id="faq-title" class="text-2xl font-bold">Fragen ausserhalb der Gründungsschritte</h2>
+    <h2 id="faq-title" class="text-2xl font-bold">{{ _('Fragen ausserhalb der Gründungsschritte') }}</h2>
     <div class="divide-y divide-slate-200 border-y border-slate-200 mt-4">
       {% for faq in formation_faqs %}
       <details data-faq-item class="py-5">

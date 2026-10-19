@@ -3,8 +3,8 @@
 
 {% block meta %}
 {{ page_meta(
-  title="Smart-Meter-Daten hochladen | OpenLEG",
-  description="Laden Sie Ihren EKZ-CSV-Export hoch. OpenLEG speichert die Daten verschlüsselt und nutzt sie nur gemäss Ihrer Einwilligung.",
+  title=_("Smart-Meter-Daten hochladen | OpenLEG"),
+  description=_("Laden Sie Ihren EKZ-CSV-Export hoch. OpenLEG speichert die Daten verschlüsselt und nutzt sie nur gemäss Ihrer Einwilligung."),
   path="/meter-upload",
   og_type="website",
   site_url=site_url,
@@ -15,45 +15,45 @@
 
 {% block content %}
 <div class="max-w-xl mx-auto px-4 py-12">
-    <h1 class="text-3xl font-bold mb-2">Smart-Meter-Daten hochladen</h1>
-    <p class="text-gray-600 mb-6">Laden Sie Ihren EKZ-CSV-Export hoch. OpenLEG speichert die Daten verschlüsselt und nutzt sie nur gemäss Ihrer Einwilligung.</p>
+    <h1 class="text-3xl font-bold mb-2">{{ _('Smart-Meter-Daten hochladen') }}</h1>
+    <p class="text-gray-600 mb-6">{{ _('Laden Sie Ihren EKZ-CSV-Export hoch. OpenLEG speichert die Daten verschlüsselt und nutzt sie nur gemäss Ihrer Einwilligung.') }}</p>
 
     <div class="bg-white rounded-lg shadow-md p-6">
         <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Building ID</label>
-            <input type="text" id="building-id" placeholder="Ihre Building ID" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand focus:outline-hidden">
+            <label class="block text-sm font-medium mb-1">{{ _('Building ID') }}</label>
+            <input type="text" id="building-id" placeholder="{{ _('Ihre Building ID') }}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand focus:outline-hidden">
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">CSV-Datei</label>
+            <label class="block text-sm font-medium mb-2">{{ _('CSV-Datei') }}</label>
             <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-brand-light transition-colors cursor-pointer" id="drop-zone">
                 <input type="file" id="csv-file" accept=".csv" class="hidden">
-                <p class="text-gray-500">Datei hierher ziehen oder <button type="button" id="choose-file" class="text-brand underline">auswählen</button></p>
-                <p class="text-xs text-gray-400 mt-1">EKZ CSV-Export, max. 10 MB</p>
+                <p class="text-gray-500">{{ _('Datei hierher ziehen oder') }} <button type="button" id="choose-file" class="text-brand underline">{{ _('auswählen') }}</button></p>
+                <p class="text-xs text-gray-400 mt-1">{{ _('EKZ CSV-Export, max. 10 MB') }}</p>
             </div>
             <p id="file-name" class="text-sm text-gray-600 mt-2 hidden"></p>
         </div>
 
         <div class="bg-brand/5 p-4 rounded-lg text-sm mb-4">
-            <h4 class="font-medium mb-1">Datenschutzstufen:</h4>
+            <h4 class="font-medium mb-1">{{ _('Datenschutzstufen:') }}</h4>
             <div class="space-y-2">
-                <label class="flex items-start gap-2"><input type="radio" name="tier" value="1" checked class="mt-1"> <div><strong>Stufe 1:</strong> Nur LEG-Teilnahme, Daten mit Nachbarn und Gemeinde teilen</div></label>
-                <label class="flex items-start gap-2"><input type="radio" name="tier" value="2" class="mt-1"> <div><strong>Stufe 2:</strong> Anonymisiert für Forschung freigeben</div></label>
-                <label class="flex items-start gap-2"><input type="radio" name="tier" value="3" class="mt-1"> <div><strong>Stufe 3:</strong> Aggregierte Auswertung für Energieversorger freigeben</div></label>
+                <label class="flex items-start gap-2"><input type="radio" name="tier" value="1" checked class="mt-1"> <div><strong>{{ _('Stufe 1:') }}</strong> {{ _('Nur LEG-Teilnahme, Daten mit Nachbarn und Gemeinde teilen') }}</div></label>
+                <label class="flex items-start gap-2"><input type="radio" name="tier" value="2" class="mt-1"> <div><strong>{{ _('Stufe 2:') }}</strong> {{ _('Anonymisiert für Forschung freigeben') }}</div></label>
+                <label class="flex items-start gap-2"><input type="radio" name="tier" value="3" class="mt-1"> <div><strong>{{ _('Stufe 3:') }}</strong> {{ _('Aggregierte Auswertung für Energieversorger freigeben') }}</div></label>
             </div>
         </div>
 
-        <button id="btn-upload" class="w-full bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark disabled:opacity-50" disabled>Daten hochladen</button>
+        <button id="btn-upload" class="w-full bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark disabled:opacity-50" disabled>{{ _('Daten hochladen') }}</button>
         <div id="upload-result" class="mt-4 hidden"></div>
     </div>
 
     <div class="mt-6 bg-white rounded-lg shadow-md p-6">
-        <h3 class="font-semibold mb-2">So exportieren Sie Ihre EKZ-Daten:</h3>
+        <h3 class="font-semibold mb-2">{{ _('So exportieren Sie Ihre EKZ-Daten:') }}</h3>
         <ol class="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-            <li>Melden Sie sich im EKZ-Kundenportal an</li>
-            <li>Gehen Sie zu "Mein Verbrauch" oder "Messdaten"</li>
-            <li>Wählen Sie den gewünschten Zeitraum</li>
-            <li>Klicken Sie auf "CSV exportieren"</li>
-            <li>Laden Sie die Datei hier hoch</li>
+            <li>{{ _('Melden Sie sich im EKZ-Kundenportal an') }}</li>
+            <li>{{ _('Gehen Sie zu "Mein Verbrauch" oder "Messdaten"') }}</li>
+            <li>{{ _('Wählen Sie den gewünschten Zeitraum') }}</li>
+            <li>{{ _('Klicken Sie auf "CSV exportieren"') }}</li>
+            <li>{{ _('Laden Sie die Datei hier hoch') }}</li>
         </ol>
     </div>
 </div>
@@ -85,10 +85,10 @@ btnUpload.addEventListener('click', async function() {
     const bid = document.getElementById('building-id').value.trim();
     const file = fileInput.files[0];
     const tier = document.querySelector('input[name="tier"]:checked').value;
-    if (!bid) { alert('Bitte Building ID eingeben.'); return; }
+    if (!bid) { alert({{ _('Bitte Building ID eingeben.')|tojson }}); return; }
     if (!file) return;
     this.disabled = true;
-    this.textContent = 'Lade hoch...';
+    this.textContent = {{ _('Lade hoch...')|tojson }};
     const text = await file.text();
     try {
         const res = await fetch('/api/meter-data/upload', {
@@ -98,17 +98,24 @@ btnUpload.addEventListener('click', async function() {
         const data = await res.json();
         const resultDiv = document.getElementById('upload-result');
         resultDiv.classList.remove('hidden');
+        const message = document.createElement('div');
         if (data.success) {
-            resultDiv.innerHTML = `<div class="bg-green-50 text-green-700 p-3 rounded-lg"><strong>${data.readings_count} Messwerte</strong> erfolgreich importiert.</div>`;
+            message.className = 'bg-green-50 text-green-700 p-3 rounded-lg';
+            const countTemplate = new Intl.PluralRules({{ current_locale|tojson }}).select(data.readings_count) === 'one'
+                ? {{ _("%(count)s Messwert erfolgreich importiert.")|tojson }}
+                : {{ _("%(count)s Messwerte erfolgreich importiert.")|tojson }};
+            message.textContent = countTemplate.replace('%(count)s', data.readings_count);
         } else {
-            resultDiv.innerHTML = `<div class="bg-red-50 text-red-700 p-3 rounded-lg">Fehler: ${(data.errors || []).join(', ')}</div>`;
+            message.className = 'bg-red-50 text-red-700 p-3 rounded-lg';
+            message.textContent = {{ _("Fehler:")|tojson }} + ' ' + (data.errors || []).join(', ');
         }
+        resultDiv.replaceChildren(message);
     } catch(e) {
-        document.getElementById('upload-result').innerHTML = '<div class="bg-red-50 text-red-700 p-3 rounded-lg">Upload fehlgeschlagen.</div>';
+        document.getElementById('upload-result').innerHTML = '<div class="bg-red-50 text-red-700 p-3 rounded-lg">' + {{ _("Upload fehlgeschlagen.")|tojson }} + '</div>';
         document.getElementById('upload-result').classList.remove('hidden');
     }
     this.disabled = false;
-    this.textContent = 'Daten hochladen';
+    this.textContent = {{ _('Daten hochladen')|tojson }};
 });
 </script>
 {% endblock %}

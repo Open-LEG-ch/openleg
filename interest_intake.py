@@ -6,6 +6,7 @@ import secrets
 import uuid
 
 import registration
+from translation_markers import gettext_noop
 
 
 class InterestIntakeError(Exception):
@@ -18,7 +19,7 @@ class InterestIntakeError(Exception):
 
 def submit(data, *, db, security, base_url, send_email):
     if not isinstance(data, dict):
-        raise InterestIntakeError("Bitte senden Sie ein JSON-Objekt.")
+        raise InterestIntakeError(gettext_noop("Bitte senden Sie ein JSON-Objekt."))
     email = (data.get("email") or "").strip()
     valid, email, error = security.validate_email_address(email)
     if not valid:
@@ -26,12 +27,14 @@ def submit(data, *, db, security, base_url, send_email):
 
     plz = str(data.get("plz") or "").strip()
     if not re.fullmatch(r"[1-9]\d{3}", plz):
-        raise InterestIntakeError("Bitte geben Sie eine gültige Schweizer PLZ an.")
+        raise InterestIntakeError(
+            gettext_noop("Bitte geben Sie eine gültige Schweizer PLZ an.")
+        )
     municipality_name = security.sanitize_string(
         data.get("municipality_name") or "", max_length=120
     )
     if len(municipality_name) < 2:
-        raise InterestIntakeError("Bitte geben Sie Ihre Gemeinde an.")
+        raise InterestIntakeError(gettext_noop("Bitte geben Sie Ihre Gemeinde an."))
     address = security.sanitize_string(data.get("address") or "", max_length=200)
     try:
         roles = registration.parse_roles(data.get("roles"))
@@ -71,7 +74,7 @@ def submit(data, *, db, security, base_url, send_email):
     )
     if not saved:
         raise InterestIntakeError(
-            "Die Interessenmeldung konnte nicht gespeichert werden."
+            gettext_noop("Die Interessenmeldung konnte nicht gespeichert werden.")
         )
 
     verification_url = f"{base_url.rstrip('/')}/interest/confirm/{verification_token}"
@@ -85,5 +88,5 @@ def submit(data, *, db, security, base_url, send_email):
     )
     return {
         "accepted": True,
-        "message": "Bitte bestätigen Sie Ihre E-Mail-Adresse.",
+        "message": gettext_noop("Bitte bestätigen Sie Ihre E-Mail-Adresse."),
     }

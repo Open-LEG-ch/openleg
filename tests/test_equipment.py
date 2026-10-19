@@ -239,6 +239,35 @@ def test_only_current_verified_owner_can_read_or_change_equipment(equipment_clie
     assert client.get(path).status_code == 403
 
 
+def test_french_handoff_translates_labels_and_keeps_private_fields_out(
+    equipment_client,
+):
+    client = equipment_client
+    record = client.post(
+        BASE,
+        json={
+            "manufacturer": "Synthetic",
+            "model": "Unit",
+            "serial_number": "PRIVATE-FRENCH-SERIAL",
+            "network_details": "PRIVATE-FRENCH-NETWORK",
+            "private_notes": "PRIVATE-FRENCH-NOTE",
+        },
+        headers=HEADERS,
+    ).json["record"]
+    response = client.post(f"{BASE}/{record['id']}/handoff?lang=fr-CH", headers=HEADERS)
+    assert response.status_code == 200
+    assert response.json["schema_version"] == "equipment-handoff/1"
+    assert "OpenLEG ne vérifie pas" in response.json["notice"]
+    assert "Mises à jour et assistance" in [
+        item["label"] for item in response.json["findings"]
+    ]
+    assert all("PRIVATE-FRENCH" not in str(value) for value in response.json.values())
+    assert "no-store" in response.headers["Cache-Control"]
+    assert {item["check"] for item in response.json["findings"]} == set(
+        record["checklist"]
+    )
+
+
 def test_handoff_is_explicit_owner_download_and_redacts_private_fields(
     equipment_client,
 ):

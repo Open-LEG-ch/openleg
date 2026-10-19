@@ -16,10 +16,12 @@ FLOWS = {
 }
 
 
+@pytest.mark.parametrize("locale", ["de_CH", "fr_CH"])
 @pytest.mark.parametrize("name", FLOWS)
-def test_product_flow_has_real_animated_gif_and_static_fallback(name):
-    gif_path = ASSET_DIR / f"{name}.gif"
-    fallback_path = ASSET_DIR / f"{name}-static.webp"
+def test_product_flow_has_real_animated_gif_and_static_fallback(name, locale):
+    directory = ASSET_DIR if locale == "de_CH" else ASSET_DIR / "fr-CH"
+    gif_path = directory / f"{name}.gif"
+    fallback_path = directory / f"{name}-static.webp"
 
     assert gif_path.is_file()
     assert fallback_path.is_file()

@@ -2,29 +2,29 @@
 {% from "partials/page_meta.html" import page_meta with context %}
 
 {% block meta %}
-{{ page_meta(title="LEG anlegen | OpenLEG", description="Legen Sie Ihre Gemeinschaft an und laden Sie Mitglieder ein.", path="/leg/community/create", robots="noindex, nofollow", site_url=site_url|default("")) }}
+{{ page_meta(title=_("LEG anlegen | OpenLEG"), description=_("Legen Sie Ihre Gemeinschaft an und laden Sie Mitglieder ein."), path="/leg/community/create", robots="noindex, nofollow", site_url=site_url|default("")) }}
 {% endblock %}
 
 {% block content %}
 <div class="max-w-xl mx-auto px-4 py-12">
-  <h1 class="text-3xl font-bold">LEG anlegen</h1>
-  <p class="text-ink-muted mt-3 mb-6">Legen Sie Ihre Gemeinschaft an und laden Sie danach Mitglieder ein. Die Anmeldung beim Netzbetreiber folgt im Gründungsprozess.</p>
-  {% if error %}<p role="alert" class="border border-accent rounded-lg p-4 mb-6">{{ error }}</p>{% endif %}
+  <h1 class="text-3xl font-bold">{{ _('LEG anlegen') }}</h1>
+  <p class="text-ink-muted mt-3 mb-6">{{ _('Legen Sie Ihre Gemeinschaft an und laden Sie danach Mitglieder ein. Die Anmeldung beim Netzbetreiber folgt im Gründungsprozess.') }}</p>
+  {% if error %}<p role="alert" class="border border-accent rounded-lg p-4 mb-6">{{ _(error) }}</p>{% endif %}
   <form method="post" action="/leg/community/create" class="space-y-6">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div>
-      <label for="community-name" class="block font-semibold mb-2">Name der Gemeinschaft</label>
+      <label for="community-name" class="block font-semibold mb-2">{{ _('Name der Gemeinschaft') }}</label>
       <input id="community-name" name="name" type="text" required maxlength="255" value="{{ name }}" autocomplete="organization" class="w-full border rounded-lg px-3 py-2 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
     </div>
     <div>
-      <label for="distribution-model" class="block font-semibold mb-2">Verteilmodell</label>
+      <label for="distribution-model" class="block font-semibold mb-2">{{ _('Verteilmodell') }}</label>
       <select id="distribution-model" name="distribution_model" class="w-full border rounded-lg px-3 py-2 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-        <option value="simple"{% if distribution_model == "simple" %} selected{% endif %}>Einfach</option>
-        <option value="proportional"{% if distribution_model == "proportional" %} selected{% endif %}>Proportional</option>
+        <option value="simple"{% if distribution_model == "simple" %} selected{% endif %}>{{ _('Einfach') }}</option>
+        <option value="proportional"{% if distribution_model == "proportional" %} selected{% endif %}>{{ _('Proportional') }}</option>
       </select>
     </div>
-    <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Gemeinschaft anlegen</button>
-    <a href="/dashboard" class="inline-block ml-3 text-brand underline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Abbrechen</a>
+    <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Gemeinschaft anlegen') }}</button>
+    <a href="/dashboard" class="inline-block ml-3 text-brand underline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Abbrechen') }}</a>
   </form>
 </div>
 {% endblock %}

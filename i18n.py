@@ -13,6 +13,7 @@ from flask import (
     g,
     has_app_context,
     has_request_context,
+    render_template,
     request,
     session,
 )
@@ -20,8 +21,10 @@ from flask_babel import Babel, get_locale
 from flask_babel import gettext as babel_gettext
 from flask_babel import ngettext as babel_ngettext
 from jinja2 import pass_context
+from werkzeug.exceptions import HTTPException
 
 from locale_policy import normalize_locale, resolve_locale
+from translation_markers import gettext_noop
 
 SUPPORTED_LOCALES = {"de_CH": "Deutsch", "fr_CH": "Français"}
 
@@ -56,6 +59,27 @@ def localized_asset(path):
         return path
     directory, filename = path.rsplit("/", 1)
     return directory + "/" + selected.replace("_", "-") + "/" + filename
+
+
+HTTP_ERROR_TITLES = {
+    400: gettext_noop("Ungültige Anfrage"),
+    401: gettext_noop("Anmeldung erforderlich"),
+    403: gettext_noop("Zugriff verweigert"),
+    404: gettext_noop("Seite nicht gefunden"),
+    405: gettext_noop("Methode nicht erlaubt"),
+    406: gettext_noop("Format nicht verfügbar"),
+    408: gettext_noop("Zeitüberschreitung der Anfrage"),
+    409: gettext_noop("Aktion derzeit nicht möglich"),
+    410: gettext_noop("Inhalt nicht mehr verfügbar"),
+    413: gettext_noop("Anfrage zu gross"),
+    415: gettext_noop("Dateiformat nicht unterstützt"),
+    422: gettext_noop("Angaben können nicht verarbeitet werden"),
+    500: gettext_noop("Interner Fehler"),
+    501: gettext_noop("Funktion nicht verfügbar"),
+    502: gettext_noop("Fehler beim vorgelagerten Dienst"),
+    503: gettext_noop("Dienst vorübergehend nicht verfügbar"),
+    504: gettext_noop("Zeitüberschreitung beim vorgelagerten Dienst"),
+}
 
 
 def format_period_label(value):
@@ -230,6 +254,22 @@ def init_app(app):
         "localized_asset": localized_asset,
     }.items():
         app.jinja_env.filters[name] = _request_local_filter(formatter)
+
+    @app.errorhandler(HTTPException)
+    def localized_http_error(error):
+        # Preserve status and protocol headers (Allow, Retry-After, etc.).
+        # Never expose exception descriptions, which can contain private data.
+        response = error.get_response()
+        if response.mimetype == "text/html":
+            title = HTTP_ERROR_TITLES.get(
+                error.code, gettext_noop("Anfrage nicht möglich")
+            )
+            response.set_data(
+                render_template(
+                    "http_error.html", status=error.code, title=gettext(title)
+                )
+            )
+        return response
 
     @app.before_request
     def remember_language():

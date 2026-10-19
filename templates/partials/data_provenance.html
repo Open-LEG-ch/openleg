@@ -5,12 +5,12 @@
     <span class="font-mono tabular-nums font-medium text-ink ml-1">{{ vintage_value }}</span>
   </p>
   <p>
-    <span class="uppercase tracking-wide">Quellen</span>
+    <span class="uppercase tracking-wide">{{ _("Quellen") }}</span>
     <span class="ml-1">{% for s in sources %}{{ s }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
   </p>
   {% if plant_match_rate is not none %}
   <p>
-    <span class="uppercase tracking-wide">Anlagen-Matching</span>
+    <span class="uppercase tracking-wide">{{ _("Anlagen-Matching") }}</span>
     <span class="font-mono tabular-nums font-medium text-ink ml-1">{{ "%.1f"|format(plant_match_rate|float) }}%</span>
   </p>
   {% endif %}

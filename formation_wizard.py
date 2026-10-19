@@ -10,7 +10,10 @@ lives in store/formation and is reached through the database re-exports.
 import logging
 from enum import Enum
 
+from flask_babel import gettext as _
+
 import database as db
+from translation_markers import gettext_noop as _l
 
 logger = logging.getLogger(__name__)
 
@@ -42,33 +45,33 @@ class DistributionModel(Enum):
 # Machine values stay ASCII; these maps are the single source of truth for
 # user-facing Schweizer Hochdeutsch text.
 FORMATION_STATUS_LABELS = {
-    FormationStatus.INTERESTED.value: "Interessiert",
-    FormationStatus.INVITED.value: "Eingeladen",
-    FormationStatus.CONFIRMED.value: "Bestätigt",
-    FormationStatus.FORMATION_STARTED.value: "Gründung gestartet",
-    FormationStatus.DOCUMENTS_GENERATED.value: "Dokumente erstellt",
-    FormationStatus.SIGNATURES_PENDING.value: "Unterschriften ausstehend",
-    FormationStatus.DSO_SUBMITTED.value: "Netzbetreiber informiert",
-    FormationStatus.DSO_APPROVED.value: "Netzbetreiber hat bewilligt",
-    FormationStatus.ACTIVE.value: "Aktiv",
-    FormationStatus.REJECTED.value: "Abgelehnt",
+    FormationStatus.INTERESTED.value: _l("Interessiert"),
+    FormationStatus.INVITED.value: _l("Eingeladen"),
+    FormationStatus.CONFIRMED.value: _l("Bestätigt"),
+    FormationStatus.FORMATION_STARTED.value: _l("Gründung gestartet"),
+    FormationStatus.DOCUMENTS_GENERATED.value: _l("Dokumente erstellt"),
+    FormationStatus.SIGNATURES_PENDING.value: _l("Unterschriften ausstehend"),
+    FormationStatus.DSO_SUBMITTED.value: _l("Netzbetreiber informiert"),
+    FormationStatus.DSO_APPROVED.value: _l("Netzbetreiber hat bewilligt"),
+    FormationStatus.ACTIVE.value: _l("Aktiv"),
+    FormationStatus.REJECTED.value: _l("Abgelehnt"),
 }
 
 DISTRIBUTION_MODEL_LABELS = {
-    DistributionModel.SIMPLE.value: "Gleichverteilt",
-    DistributionModel.PROPORTIONAL.value: "Nach Verbrauch und Erzeugung",
-    DistributionModel.CUSTOM.value: "Individuelle Regeln",
+    DistributionModel.SIMPLE.value: _l("Gleichverteilt"),
+    DistributionModel.PROPORTIONAL.value: _l("Nach Verbrauch und Erzeugung"),
+    DistributionModel.CUSTOM.value: _l("Individuelle Regeln"),
 }
 
 MEMBER_ROLE_LABELS = {
-    "admin": "Verwaltung",
-    "member": "Mitglied",
+    "admin": _l("Verwaltung"),
+    "member": _l("Mitglied"),
 }
 
 MEMBER_STATUS_LABELS = {
-    "invited": "Eingeladen",
-    "confirmed": "Bestätigt",
-    "rejected": "Abgelehnt",
+    "invited": _l("Eingeladen"),
+    "confirmed": _l("Bestätigt"),
+    "rejected": _l("Abgelehnt"),
 }
 
 
@@ -108,7 +111,7 @@ def get_contract_templates(
     """Return contract templates parameterized by jurisdiction and DSO."""
     return {
         "community_agreement": {
-            "title": "Lokale Elektrizitätsgemeinschaft - Gemeinschaftsvereinbarung",
+            "title": _l("Lokale Elektrizitätsgemeinschaft - Gemeinschaftsvereinbarung"),
             "jurisdiction": jurisdiction,
             "language": "de",
             "sections": [
@@ -125,7 +128,7 @@ def get_contract_templates(
             ],
         },
         "participant_contract": {
-            "title": "Teilnehmervertrag LEG",
+            "title": _l("Teilnehmervertrag LEG"),
             "jurisdiction": jurisdiction,
             "language": "de",
             "sections": [
@@ -137,7 +140,7 @@ def get_contract_templates(
             ],
         },
         "dso_notification": {
-            "title": "Anmeldung Lokale Elektrizitätsgemeinschaft",
+            "title": _l("Anmeldung Lokale Elektrizitätsgemeinschaft"),
             "recipient": dso_contact,
             "form_id": "LEG-DSO-001",
             "sections": [
@@ -337,30 +340,35 @@ def _get_next_steps(status: str, confirmed_count: int) -> list[str]:
     if status == FormationStatus.INTERESTED.value:
         if confirmed_count < FORMATION_CONFIG["min_community_size"]:
             steps.append(
-                f"Laden Sie mindestens {FORMATION_CONFIG['min_community_size'] - confirmed_count} weitere Nachbarn ein."
+                _(
+                    "Laden Sie mindestens %(count)s weitere Nachbarn ein.",
+                    count=FORMATION_CONFIG["min_community_size"] - confirmed_count,
+                )
             )
         else:
-            steps.append("Starten Sie den Gründungsprozess.")
+            steps.append(_("Starten Sie den Gründungsprozess."))
 
     elif status == FormationStatus.FORMATION_STARTED.value:
-        steps.append("Erstellen Sie die rechtlichen Dokumente.")
-        steps.append("Prüfen Sie die Gemeinschaftsvereinbarung.")
+        steps.append(_("Erstellen Sie die rechtlichen Dokumente."))
+        steps.append(_("Prüfen Sie die Gemeinschaftsvereinbarung."))
 
     elif status == FormationStatus.DOCUMENTS_GENERATED.value:
-        steps.append("Sammeln Sie die Unterschriften aller Mitglieder.")
-        steps.append("Prüfen Sie die Teilnehmerverträge.")
+        steps.append(_("Sammeln Sie die Unterschriften aller Mitglieder."))
+        steps.append(_("Prüfen Sie die Teilnehmerverträge."))
 
     elif status == FormationStatus.SIGNATURES_PENDING.value:
-        steps.append("Melden Sie die LEG beim Netzbetreiber an.")
+        steps.append(_("Melden Sie die LEG beim Netzbetreiber an."))
 
     elif status == FormationStatus.DSO_SUBMITTED.value:
         steps.append(
-            "Warten Sie auf die Bewilligung durch den Netzbetreiber (bis zu 30 Tage)."
+            _(
+                "Warten Sie auf die Bewilligung durch den Netzbetreiber (bis zu 30 Tage)."
+            )
         )
 
     elif status == FormationStatus.DSO_APPROVED.value:
-        steps.append("Legen Sie das Aktivierungsdatum fest.")
-        steps.append("Richten Sie die Abrechnung ein.")
+        steps.append(_("Legen Sie das Aktivierungsdatum fest."))
+        steps.append(_("Richten Sie die Abrechnung ein."))
 
     return steps
 

@@ -7,81 +7,85 @@ from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit
 
+from translation_markers import gettext_noop as _N
+
 MAX_BYTES = 24_576
 MAX_RECORDS = 100
 SOURCES = {
-    "unknown": "Unbekannt",
-    "owner_report": "Eigene Angabe",
-    "device_observation": "Am Gerät abgelesen",
-    "installer_evidence": "Hinterlegter Installateurnachweis",
+    "unknown": _N("Unbekannt"),
+    "owner_report": _N("Eigene Angabe"),
+    "device_observation": _N("Am Gerät abgelesen"),
+    "installer_evidence": _N("Hinterlegter Installateurnachweis"),
 }
 CHECKS = {
     "default_passwords": (
-        "Standardpasswörter",
-        "Gerät und Logger anhand der Anleitung prüfen.",
+        _N("Standardpasswörter"),
+        _N("Gerät und Logger anhand der Anleitung prüfen."),
     ),
     "account_mfa": (
-        "Mehrfaktor-Anmeldung",
-        "Für dieses Modell und das zugehörige Cloud-Konto klären, ob MFA unterstützt wird.",
+        _N("Mehrfaktor-Anmeldung"),
+        _N(
+            "Für dieses Modell und das zugehörige Cloud-Konto klären, ob MFA unterstützt wird."
+        ),
     ),
     "obsolete_access": (
-        "Nicht mehr benötigte Zugänge",
-        "Benannte Fernzugänge und frühere Installateurkonten prüfen.",
+        _N("Nicht mehr benötigte Zugänge"),
+        _N("Benannte Fernzugänge und frühere Installateurkonten prüfen."),
     ),
     "update_support": (
-        "Updates und Support",
-        "Firmwarestand und Supportende anhand der Herstellerangaben prüfen.",
+        _N("Updates und Support"),
+        _N("Firmwarestand und Supportende anhand der Herstellerangaben prüfen."),
     ),
     "exposed_services": (
-        "Internet-Erreichbarkeit",
-        "Öffentliche Dienste und Fernzugriff mit dem Betreiber klären.",
+        _N("Internet-Erreichbarkeit"),
+        _N("Öffentliche Dienste und Fernzugriff mit dem Betreiber klären."),
     ),
     "network_separation": (
-        "Netztrennung",
-        "Trennung vom privaten Netz mit dem Betreiber prüfen.",
+        _N("Netztrennung"),
+        _N("Trennung vom privaten Netz mit dem Betreiber prüfen."),
     ),
 }
 APPLICABILITY = {
-    "unknown": "Unbekannt",
-    "applicable": "Für dieses Modell anwendbar",
-    "not_supported": "Vom Modell nicht unterstützt",
-    "not_applicable": "Nicht anwendbar",
+    "unknown": _N("Unbekannt"),
+    "applicable": _N("Für dieses Modell anwendbar"),
+    "not_supported": _N("Vom Modell nicht unterstützt"),
+    "not_applicable": _N("Nicht anwendbar"),
 }
 STATUSES = {
-    "unknown": "Unbekannt",
-    "open": "Offen",
-    "done": "Erledigt",
-    "needs_installer": "Installateur beauftragen",
+    "unknown": _N("Unbekannt"),
+    "open": _N("Offen"),
+    "done": _N("Erledigt"),
+    "needs_installer": _N("Installateur beauftragen"),
 }
 CLOUD_DEPENDENCY = {
-    "unknown": "Unbekannt",
-    "required": "Cloud erforderlich",
-    "optional": "Cloud optional",
-    "none": "Keine Cloud-Abhängigkeit angegeben",
+    "unknown": _N("Unbekannt"),
+    "required": _N("Cloud erforderlich"),
+    "optional": _N("Cloud optional"),
+    "none": _N("Keine Cloud-Abhängigkeit angegeben"),
 }
 INSTALLER_ACCESS = {
-    "unknown": "Unbekannt",
-    "active": "Zugang vorhanden",
-    "removed": "Zugang entfernt",
-    "none": "Kein Zugang angegeben",
+    "unknown": _N("Unbekannt"),
+    "active": _N("Zugang vorhanden"),
+    "removed": _N("Zugang entfernt"),
+    "none": _N("Kein Zugang angegeben"),
 }
 CLOUD_REVIEW = {
-    "unknown": "Unbekannt",
-    "not_reviewed": "Noch nicht geprüft",
-    "reviewed": "Manuell geprüft",
+    "unknown": _N("Unbekannt"),
+    "not_reviewed": _N("Noch nicht geprüft"),
+    "reviewed": _N("Manuell geprüft"),
 }
 REMOTE_ACCESS = {
-    "unknown": "Unbekannt",
-    "possible": "Fernzugriff möglich",
-    "disabled": "Als deaktiviert angegeben",
-    "none": "Kein Fernzugriff angegeben",
+    "unknown": _N("Unbekannt"),
+    "possible": _N("Fernzugriff möglich"),
+    "disabled": _N("Als deaktiviert angegeben"),
+    "none": _N("Kein Fernzugriff angegeben"),
 }
 BACKUP = {
-    "unknown": "Unbekannt",
-    "none": "Kein Ersatzstrom",
-    "partial": "Ersatzstrom für einzelne Stromkreise angegeben",
-    "available": "Ersatzstrom angegeben",
-    "requires_modification": "Umbau erforderlich",
+    "unknown": _N("Unbekannt"),
+    "none": _N("Kein Ersatzstrom"),
+    "partial": _N("Ersatzstrom für einzelne Stromkreise angegeben"),
+    "available": _N("Ersatzstrom angegeben"),
+    "requires_modification": _N("Umbau erforderlich"),
 }
 TEXT_FIELDS = {
     "manufacturer": 120,
@@ -94,9 +98,9 @@ TEXT_FIELDS = {
     "installer_users": 1000,
 }
 SOURCE_LINKS = (
-    ("BACS: Gerätesicherheit", "https://www.bacs.admin.ch/en/device-security"),
+    (_N("BACS: Gerätesicherheit"), "https://www.bacs.admin.ch/en/device-security"),
     (
-        "Swissolar: Solarstrom bei Netzausfall",
+        _N("Swissolar: Solarstrom bei Netzausfall"),
         "https://www.swissolar.ch/de/wissen/anlagenbetrieb/solarstrom-bei-netzausfall",
     ),
 )
@@ -358,7 +362,9 @@ def installer_handoff(record):
     """Allowlist the download; private annotations never travel to an installer."""
     return {
         "schema_version": "equipment-handoff/1",
-        "notice": "Eigene Angaben, Gerätebeobachtungen und hinterlegte Installateurnachweise. OpenLEG prüft diese Angaben nicht. Änderungen nur durch zuständige Fachpersonen beauftragen.",
+        "notice": _N(
+            "Eigene Angaben, Gerätebeobachtungen und hinterlegte Installateurnachweise. OpenLEG prüft diese Angaben nicht. Änderungen nur durch zuständige Fachpersonen beauftragen."
+        ),
         "equipment": {
             key: record[key]
             for key in (

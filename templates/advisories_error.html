@@ -1,9 +1,9 @@
 {% extends "product_base.html" %}
-{% block meta %}<title>Sicherheitshinweise | {{ platform_name }}</title>{% endblock %}
+{% block meta %}<title>{{ _('Sicherheitshinweise |') }} {{ platform_name }}</title>{% endblock %}
 {% block content %}
 <section class="max-w-xl mx-auto px-4 py-16" role="alert">
-  <h1 class="text-2xl font-bold">Hinweis nicht verfügbar</h1>
-  <p class="mt-3 text-ink-muted">Öffnen Sie das Gerät mit Ihrem bestätigten Eigentümerzugang. Laden Sie die Hinweise erneut, wenn sich Gerät, Meldung oder Quellenprüfung geändert haben.</p>
-  <a class="inline-block mt-6 text-brand font-semibold hover:underline" href="/dashboard/equipment">Zu meinen Solargeräten</a>
+  <h1 class="text-2xl font-bold">{{ _('Hinweis nicht verfügbar') }}</h1>
+  <p class="mt-3 text-ink-muted">{{ _('Öffnen Sie das Gerät mit Ihrem bestätigten Eigentümerzugang. Laden Sie die Hinweise erneut, wenn sich Gerät, Meldung oder Quellenprüfung geändert haben.') }}</p>
+  <a class="inline-block mt-6 text-brand font-semibold hover:underline" href="/dashboard/equipment">{{ _('Zu meinen Solargeräten') }}</a>
 </section>
 {% endblock %}

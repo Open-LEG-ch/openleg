@@ -10,6 +10,7 @@ from flask import Blueprint, jsonify, redirect, request, session, url_for
 import database as db
 import equipment
 from equipment import MAX_BYTES, EquipmentError, installer_handoff
+from i18n import gettext as _
 
 equipment_bp = Blueprint("equipment", __name__)
 
@@ -99,7 +100,14 @@ def record(record_id):
 @equipment_bp.post("/dashboard/equipment/<uuid:record_id>/handoff")
 def handoff(record_id):
     record = db.get_equipment(_actor(mutation=True), str(record_id))
-    response = jsonify(installer_handoff(record))
+    export = installer_handoff(record)
+    notice = export["notice"]
+    export["notice"] = _(notice)
+    for collection in (export["findings"], export["sources"]):
+        for item in collection:
+            label = item["label"]
+            item["label"] = _(label)
+    response = jsonify(export)
     response.headers["Content-Disposition"] = (
         "attachment; filename=equipment-handoff.json"
     )

@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify, request
 import database as db
 import email_utils
 import registry_intake
+from i18n import gettext as _
 
 VERIFICATION_TOKEN_TTL_SECONDS = 14 * 24 * 60 * 60
 VERIFICATION_STALE_DAYS = 90
@@ -18,10 +19,12 @@ registry_api_bp = Blueprint("registry_api", __name__)
 def api_registry_publish():
     """Accept self-hosted registry submissions for moderator review."""
     result = registry_intake.submit(
-        request.get_json(silent=True) or {}, source="self_hosted"
+        request.get_json(silent=True) or {},
+        source="self_hosted",
     )
     if result["error"]:
-        return jsonify({"error": result["error"]}), result["status"]
+        message = result["error"]
+        return jsonify({"error": _(message)}), result["status"]
     return jsonify({"slug": result["slug"], "moderation_status": "pending"}), 201
 
 

@@ -25,10 +25,14 @@ from flask import (
 
 import access_token
 import billing_policy
+import community_access
 import dashboard as dashboard_module
 import database as db
 import payment_reconciliation
+import quartierakku
 import security_utils
+from i18n import gettext as _
+from i18n import normalize_locale
 from store import contact_request
 from telemetry import TelemetryError
 
@@ -42,8 +46,16 @@ def _dashboard_csrf_token():
     return token if isinstance(token, str) else ""
 
 
-def _set_dashboard_session(building_id: str):
+def _clear_dashboard_session():
+    """Discard authentication state while retaining a validated UI language."""
+    locale = normalize_locale(session.get("locale"))
     session.clear()
+    if locale:
+        session["locale"] = locale
+
+
+def _set_dashboard_session(building_id: str):
+    _clear_dashboard_session()
     session.permanent = True
     session["dashboard_building_id"] = building_id
     session["dashboard_csrf_token"] = secrets.token_urlsafe(32)
@@ -264,7 +276,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @_rate_limit(limiter, "5 per minute")
     def dashboard_access_request():
         email = (request.form.get("email") or "").strip().lower()
-        generic_message = (
+        generic_message = _(
             "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen "
             "neuen Zugangslink gesendet."
         )
@@ -321,7 +333,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
         db.revoke_dashboard_access_tokens(building_id)
-        session.clear()
+        _clear_dashboard_session()
         return redirect("/dashboard")
 
     @bp.route("/dashboard/demo")
@@ -509,7 +521,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                     **dashboard_module.leg_overview(community_id, building_id),
                     viewer_has_session=True,
                     csrf_token=_dashboard_csrf_token(),
-                    roles_error=result["error"],
+                    roles_error=community_access.localize_role_error(result["error"]),
                 ),
                 400,
             )
@@ -536,7 +548,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                     **view,
                     viewer_has_session=True,
                     csrf_token=_dashboard_csrf_token(),
-                    battery_errors=result["errors"],
+                    battery_errors=quartierakku.localize_form_errors(result["errors"]),
                 ),
                 400,
             )
@@ -799,7 +811,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 abort(503)
             if view["error"]:
                 abort(403)
-            view["approval_error"] = (
+            view["approval_error"] = _(
                 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. "
                 "Er ist unvollständig, nicht vollständig abgeglichen oder wurde "
                 "zwischenzeitlich verändert. Prüfen Sie die Periode und versuchen "
@@ -834,7 +846,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 )
             except db.BillingStoreError:
                 abort(503)
-            view["lifecycle_error"] = (
+            view["lifecycle_error"] = _(
                 "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
             )
             return (
@@ -1003,7 +1015,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 )
             except db.BillingStoreError:
                 abort(503)
-            view["form_errors"] = result["errors"]
+            view["form_errors"] = billing_policy.localize_form_errors(result["errors"])
             view["form_values"] = {
                 field: request.form.get(field, "")
                 for field in billing_policy.FORM_FIELDS

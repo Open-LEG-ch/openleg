@@ -26,7 +26,7 @@
   <meta property="og:title" content="{{ og_title or title }}">
   <meta property="og:description" content="{{ og_description or description }}">
   {%- if og_image %}
-  <meta property="og:image" content="{{ site_url }}{{ og_image }}">
+  <meta property="og:image" content="{{ site_url }}{{ og_image|localized_asset }}">
   {%- endif %}
   <meta property="og:url" content="{{ site_url }}{{ path }}">
   <meta name="twitter:card" content="{{ twitter_card }}">
