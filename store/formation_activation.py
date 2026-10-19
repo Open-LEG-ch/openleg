@@ -65,7 +65,7 @@ def _evidence_hash(cur, community_id, entry_id):
     return hashlib.sha256(bytes(entry["attachment_data"])).hexdigest()
 
 
-def record_start_confirmation(
+def record_vnb_start_confirmation(
     community_id: str,
     actor_building_id: str,
     correspondence_id: str,
@@ -118,7 +118,7 @@ def record_start_confirmation(
         )
 
 
-def activate(community_id: str, actor_building_id: str) -> None:
+def activate_community(community_id: str, actor_building_id: str) -> None:
     """Activate explicitly on or after the VNB-confirmed local start date."""
     with _get_connection() as conn, conn.cursor() as cur:
         community = _locked_community(cur, community_id, actor_building_id)

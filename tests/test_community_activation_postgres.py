@@ -215,8 +215,8 @@ def test_both_transitions_require_the_current_confirmed_admin(submitted, role, s
             f"/leg/community/{cid}/{suffix}", data={**fields, "building_id": "founder"}
         )
         assert response.status_code == 403
-        assert response.headers["Cache-Control"] == "no-store"
-        assert response.headers["Referrer-Policy"] == "no-referrer"
+        assert response.headers.get("Cache-Control") == "no-store"
+        assert response.headers.get("Referrer-Policy") == "no-referrer"
     assert db.fetch_community_with_members(cid, "founder")["status"] == "dso_approved"
 
 

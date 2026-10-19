@@ -244,6 +244,8 @@ from store.formation import (  # noqa: F401
 from store.formation_activation import (  # noqa: F401
     ActivationConflict,
     ActivationDenied,
+    activate_community,
+    record_vnb_start_confirmation,
 )
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
 from store.interest import (  # noqa: F401
