@@ -850,16 +850,6 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
         if vnb_basis:
             participant_provenance["reconciliation"] = {
                 **provenance["reconciliation"],
-                "per_participant": {
-                    participant_id: provenance["reconciliation"]["per_participant"][
-                        participant_id
-                    ]
-                },
-                "production_per_participant": {
-                    participant_id: provenance["reconciliation"][
-                        "production_per_participant"
-                    ][participant_id]
-                },
                 "precision_policy": {
                     key: value
                     for key, value in reconciliation["precision_policy"].items()
@@ -871,10 +861,37 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
             metadata = source["metadata"]
             participant_provenance["reconciliation"] = {
                 **participant_provenance["reconciliation"],
+                "per_participant": {
+                    key: value
+                    for key, value in reconciliation["per_participant"].items()
+                    if key == participant_id
+                },
+                "production_per_participant": {
+                    key: value
+                    for key, value in reconciliation[
+                        "production_per_participant"
+                    ].items()
+                    if key == participant_id
+                },
                 "source_evidence": {
                     **source,
                     "metadata": {
-                        **metadata,
+                        **{
+                            key: metadata[key]
+                            for key in (
+                                "document_status",
+                                "evidence_sha256",
+                                "sender_id",
+                                "receiver_id",
+                                "document_created_at",
+                                "vnb_community_id",
+                                "precision",
+                                "quality_policy",
+                                "channel_balance_policy",
+                                "products",
+                            )
+                            if key in metadata
+                        },
                         "mappings": [
                             mapping
                             for mapping in metadata["mappings"]
