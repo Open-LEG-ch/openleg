@@ -43,6 +43,25 @@ def test_owner_can_read_night_production_with_source_and_time(telemetry_client):
     assert token not in html
 
 
+def test_owner_readings_follow_the_selected_language(telemetry_client):
+    client = telemetry_client
+    installation, token = api.enroll(client)
+    assert (
+        api.ingest(client, installation, token, [api.sample(value="0")]).status_code
+        == 201
+    )
+    response = client.get("/dashboard/telemetry?lang=fr-CH")
+    assert response.headers["Content-Language"] == "fr-CH"
+    assert "Mes mesures" in response.text
+    assert "Production photovoltaïque" in response.text
+    assert "À jour" in response.text
+    assert "0 W" in response.text
+    assert "local-reader" in response.text
+    response = client.get("/dashboard/telemetry?lang=de-CH")
+    assert "Meine Messwerte" in response.text
+    assert "Aktuell" in response.text
+
+
 def test_channels_stay_separate_and_unknown_time_is_not_a_current_zero(
     telemetry_client,
 ):
