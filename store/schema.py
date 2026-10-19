@@ -2015,6 +2015,24 @@ def create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION reject_calculated_values_event_mutation()
+                RETURNS trigger AS $$
+                BEGIN
+                    RAISE EXCEPTION 'Calculated-values lifecycle events are append-only';
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+            cur.execute(
+                "DROP TRIGGER IF EXISTS calculated_values_events_append_only "
+                "ON vnb_calculated_values_events"
+            )
+            cur.execute("""
+                CREATE TRIGGER calculated_values_events_append_only
+                BEFORE UPDATE OR DELETE OR TRUNCATE ON vnb_calculated_values_events
+                FOR EACH STATEMENT EXECUTE FUNCTION reject_calculated_values_event_mutation()
+            """)
+
             # Veracity-Flags (#517): Markierungen zu importierten, aber
             # unplausibel erscheinenden Fenstern. Ein Flag sperrt nichts und
             # korrigiert nichts; es macht Befunde vor der Freigabe sichtbar.
