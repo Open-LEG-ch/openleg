@@ -16,6 +16,8 @@ The distribution system operator (VNB) still verifies the statutory network-area
 
 The current code covers formation records, VNB handovers, participant changes, scheduled SDAT ingestion, quarter-hour allocation, tariff versions, invoice approval, immutable invoices, payment reconciliation, and operational archive export and restore.
 
+The [community archive guide](docs/community-archive.md) explains its dataset scope, destination checks and restore requirements.
+
 The admin API can withdraw a VNB calculated-values delivery while preserving its source and audit record. Dependent drafts become invalid; issued invoices remain unchanged. The [data pipeline guide](docs/data-pipeline.md#withdrawal-of-calculated-vnb-evidence) documents correction and retry handling.
 
 ### What this repo is
@@ -159,6 +161,8 @@ Die LEG wählt ihre Vertretung, Teilnehmerverträge, den internen Strompreis, di
 Der Verteilnetzbetreiber (VNB) prüft weiterhin die gesetzlichen Anforderungen an Netzgebiet und Netzebene, erfüllt seine Messaufgaben, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und stellt die ihm zugewiesenen Daten bereit. Der Grundversorger liefert gegebenenfalls den übrigen Strom. OpenLEG ersetzt diese Aufgaben nicht. Anmeldung und Datenlieferung müssen für jeden VNB eingerichtet werden; eine durchgängige Anbindung ist noch nicht für jeden VNB verfügbar.
 
 Der aktuelle Code deckt Gründungsunterlagen, VNB-Übergaben, Teilnehmeränderungen, den zeitgesteuerten SDAT-Abruf, die Viertelstundenverteilung, Tarifversionen, Rechnungsfreigabe, unveränderliche Rechnungen, Zahlungsabgleich sowie Export und Wiederherstellung der Betriebsdaten ab.
+
+Die [Archivanleitung](docs/community-archive.md) beschreibt die enthaltenen Datensätze, die Prüfung des Zielsystems und die Voraussetzungen für die Wiederherstellung.
 
 Über die Admin-API können Betreiber berechnete VNB-Werte zurückziehen. Quelle und Prüfverlauf bleiben erhalten. Abhängige Entwürfe verlieren ihre Gültigkeit; ausgestellte Rechnungen bleiben unverändert. Die [Datenpipeline](docs/data-pipeline.md#withdrawal-of-calculated-vnb-evidence) dokumentiert Korrekturen und Wiederholungen.
 
