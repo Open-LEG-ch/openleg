@@ -6,6 +6,8 @@ import json
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from psycopg2 import Error as DatabaseError
+
 import billing_engine
 import billing_policy
 import billing_readings
@@ -14,7 +16,25 @@ import quartierakku
 
 
 class BillingRunError(ValueError):
-    """Billing inputs are complete but not safe to persist."""
+    """A billing run cannot safely persist a draft."""
+
+    _PUBLIC_CODES = frozenset(
+        {
+            "billing_run_failed",
+            "billing_tariff_missing",
+            "vnb_evidence_missing",
+            "metering_readings_invalid",
+            "vnb_allocation_mismatch",
+            "billing_inputs_changed",
+            "battery_configuration_invalid",
+            "billing_store_unavailable",
+            "billing_provenance_missing",
+        }
+    )
+
+    def __init__(self, message, *, code="billing_run_failed"):
+        super().__init__(message)
+        self.code = code if code in self._PUBLIC_CODES else "billing_run_failed"
 
 
 def _battery_lines(community_id, participants, period_start, period_end):
@@ -32,7 +52,7 @@ def _battery_lines(community_id, participants, period_start, period_end):
             {**battery, "community_id": community_id}
         )
     except quartierakku.InvalidBatteryConfig as exc:
-        raise BillingRunError(str(exc)) from exc
+        raise BillingRunError(str(exc), code="battery_configuration_invalid") from exc
     lines = []
     battery_participant_id = battery["participant_id"]
     for participant_id in participants:
@@ -42,7 +62,8 @@ def _battery_lines(community_id, participants, period_start, period_end):
         if share is None:
             raise BillingRunError(
                 "Der Quartierakku ist unvollständig konfiguriert: Teilnehmer "
-                f"{participant_id} hat keinen Anteil."
+                f"{participant_id} hat keinen Anteil.",
+                code="battery_configuration_invalid",
             )
         lines.append(
             {
@@ -130,7 +151,9 @@ def run_billing_period(
     try:
         policy = db.get_billing_policy(community_id, period_start, period_end)
         if not policy:
-            raise BillingRunError("No effective billing tariff configured")
+            raise BillingRunError(
+                "No effective billing tariff configured", code="billing_tariff_missing"
+            )
         policy = {**policy, "community_id": community_id}
 
         frames = billing_readings.load_period_frames(
@@ -144,11 +167,15 @@ def run_billing_period(
             )
             if not calculated:
                 raise BillingRunError(
-                    "Billing period has no validated VNB calculated-values evidence"
+                    "Billing period has no validated VNB calculated-values evidence",
+                    code="vnb_evidence_missing",
                 )
             frames = billing_readings.with_calculated_vnb_evidence(frames, calculated)
         if not frames.provenance["source_document_ids"]:
-            raise BillingRunError("Billing readings have no import provenance")
+            raise BillingRunError(
+                "Billing readings have no import provenance",
+                code="billing_provenance_missing",
+            )
         battery, battery_snapshot, battery_lines = _battery_lines(
             community_id, list(frames.participants), period_start, period_end
         )
@@ -192,7 +219,8 @@ def run_billing_period(
             or any(item["difference_kwh"] != 0 for item in production_gaps)
         ):
             raise BillingRunError(
-                "OpenLEG allocation does not match the VNB allocation"
+                "OpenLEG allocation does not match the VNB allocation",
+                code="vnb_allocation_mismatch",
             )
 
         fingerprint = _fingerprint(frames, policy, summary, reconciliation)
@@ -201,7 +229,10 @@ def run_billing_period(
         )
         if existing:
             if existing["input_fingerprint"] != fingerprint:
-                raise BillingRunError("Billing period inputs changed after processing")
+                raise BillingRunError(
+                    "Billing period inputs changed after processing",
+                    code="billing_inputs_changed",
+                )
             return {"status": "already_processed", "period_id": existing["id"]}
 
         summary.update(
@@ -223,5 +254,9 @@ def run_billing_period(
         return {"status": "created", "period_id": period_id}
     except BillingRunError:
         raise
+    except billing_readings.PeriodDataError as exc:
+        raise BillingRunError(str(exc), code="metering_readings_invalid") from exc
+    except (db.BillingStoreError, DatabaseError) as exc:
+        raise BillingRunError(str(exc), code="billing_store_unavailable") from exc
     except (KeyError, ValueError) as exc:
         raise BillingRunError(str(exc)) from exc

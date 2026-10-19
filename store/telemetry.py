@@ -61,6 +61,16 @@ def create_tables(cur):
             UNIQUE (installation_id, sequence)
         );
         CREATE INDEX IF NOT EXISTS telemetry_observed ON telemetry_samples (installation_id, observed_at);
+        CREATE INDEX IF NOT EXISTS telemetry_channel_observed ON telemetry_samples (
+            installation_id, (observation->>'metric'),
+            (observation->>'measurement_location'), (observation->>'direction'),
+            (COALESCE(observed_at, received_at)) DESC, sequence DESC
+        );
+        CREATE INDEX IF NOT EXISTS telemetry_channel_received ON telemetry_samples (
+            installation_id, (observation->>'metric'),
+            (observation->>'measurement_location'), (observation->>'direction'),
+            received_at DESC
+        ) INCLUDE (observed_at);
         CREATE TABLE IF NOT EXISTS telemetry_aggregates (
             installation_id UUID NOT NULL REFERENCES telemetry_installations ON DELETE CASCADE,
             hour TIMESTAMPTZ NOT NULL,
@@ -191,6 +201,115 @@ def list_installations(community, actor):
             (community, actor),
         )
         return [_public(row) for row in cur.fetchall()]
+
+
+def owner_overview(actor):
+    """Seek the latest retained value on each supported channel for this owner."""
+    channels = [
+        {"metric": metric, "location": location, "direction": direction}
+        for metric in contract.UNITS
+        for location, directions in contract.LOCATIONS.items()
+        for direction in sorted(directions)
+        if (metric == "state_of_charge") == (direction == "stored")
+    ]
+    now = datetime.now(UTC)
+    with _cursor() as cur:
+        # Bound the page query even under contention or pathological buffering.
+        cur.execute("""
+            SELECT set_config('statement_timeout',
+                LEAST(2000, COALESCE(NULLIF(setting,'0')::int,2000))::text, TRUE)
+            FROM pg_settings WHERE name='statement_timeout'
+        """)
+        cur.execute(
+            """
+            WITH request_time AS (SELECT %s::timestamptz AS now)
+            SELECT i.*, latest.observation, latest.received_at, latest.recently_received
+            FROM telemetry_installations i
+            JOIN community_members m ON m.community_id=i.community_id
+                AND m.building_id=i.owner_building_id AND m.status='confirmed'
+            JOIN buildings b ON b.building_id=i.owner_building_id AND b.verified=TRUE
+            CROSS JOIN request_time
+            LEFT JOIN LATERAL (
+                SELECT observed.observation, observed.received_at,
+                    COALESCE((
+                        SELECT TRUE FROM telemetry_samples recent
+                        WHERE recent.installation_id=i.id
+                            AND recent.observation->>'metric'=channel.metric
+                            AND recent.observation->>'measurement_location'=channel.location
+                            AND recent.observation->>'direction'=channel.direction
+                            AND COALESCE(recent.observed_at,recent.received_at)
+                                >= request_time.now-i.raw_retention_days*INTERVAL '1 day'
+                            AND recent.received_at >= GREATEST(
+                                request_time.now-i.raw_retention_days*INTERVAL '1 day',
+                                request_time.now-GREATEST(%s,i.cadence_seconds*%s)*INTERVAL '1 second'
+                            )
+                        ORDER BY recent.received_at DESC
+                        LIMIT 1
+                    ), FALSE) AS recently_received
+                FROM jsonb_to_recordset(%s::jsonb)
+                    AS channel(metric TEXT, location TEXT, direction TEXT)
+                JOIN LATERAL (
+                    SELECT s.observation, s.received_at
+                    FROM telemetry_samples s
+                    WHERE s.installation_id=i.id
+                        AND s.observation->>'metric'=channel.metric
+                        AND s.observation->>'measurement_location'=channel.location
+                        AND s.observation->>'direction'=channel.direction
+                        AND COALESCE(s.observed_at,s.received_at)
+                            >= request_time.now-i.raw_retention_days*INTERVAL '1 day'
+                        AND s.received_at >= request_time.now-i.raw_retention_days*INTERVAL '1 day'
+                    ORDER BY COALESCE(s.observed_at,s.received_at) DESC, s.sequence DESC
+                    LIMIT 1
+                ) observed ON TRUE
+            ) latest ON TRUE
+            WHERE i.owner_building_id=%s
+            ORDER BY i.created_at, i.id, latest.observation->>'metric',
+                latest.observation->>'measurement_location', latest.observation->>'direction'
+            """,
+            (
+                now,
+                contract.FRESHNESS_MIN_SECONDS,
+                contract.FRESHNESS_CADENCES,
+                Json(channels),
+                actor,
+            ),
+        )
+        installations = {}
+        for row in cur.fetchall():
+            installation = installations.setdefault(
+                str(row["id"]),
+                {
+                    "id": str(row["id"]),
+                    "name": row["name"],
+                    "source_id": row["source_id"],
+                    "device_id": row["device_id"],
+                    "cadence_seconds": row["cadence_seconds"],
+                    "delivery_status": "missing",
+                    "samples": [],
+                },
+            )
+            if row["observation"] is not None:
+                delivery_status = "recent" if row["recently_received"] else "late"
+                if installation["delivery_status"] != "recent":
+                    installation["delivery_status"] = delivery_status
+                observed = row["observation"]["observed_at"]
+                age = (
+                    (now - contract.timestamp(observed)).total_seconds()
+                    if observed
+                    else None
+                )
+                installation["samples"].append(
+                    {
+                        **row["observation"],
+                        "received_at": row["received_at"].isoformat(),
+                        "freshness": contract.freshness(row["observation"], now),
+                        "delivery_status": delivery_status,
+                        "age_seconds": int(age)
+                        if age is not None and age >= 0
+                        else None,
+                    }
+                )
+        return list(installations.values())
 
 
 def _authenticate(row, token):

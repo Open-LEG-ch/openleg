@@ -28,6 +28,20 @@ Private dashboard and document responses send `Cache-Control: no-store` and a
 `no-referrer` policy. Document downloads verify community membership before
 returning content.
 
+## Create a community
+
+Signed-in founders open `/leg/community/create` from their resident dashboard.
+The form asks for the community name and distribution model. A successful POST
+creates the founder's administrator membership and redirects to the LEG dashboard.
+Validation errors keep the form available for correction. Creating a record does
+not constitute VNB approval or activate billing.
+
+A private community view includes the signed-in member's own membership even
+when that person has not opted into neighbour discovery. Every other household
+still requires current discovery consent. The displayed member list and counts
+use the same visible rows; revocation removes the other household on the next
+read. A person outside the community cannot use its identifier to open the view.
+
 ## Local verification
 
 Open `/dashboard/demo` for the resident flow and `/leg/dashboard/demo` for the

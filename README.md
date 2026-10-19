@@ -41,6 +41,11 @@ Cloud-access reviews and backup evidence remain separate. Owners can download a
 redacted installer handoff. OpenLEG does not verify the entered claims or change
 devices.
 
+Owners with enrolled telemetry installations can open `/dashboard/telemetry`
+to see source readings, quality, observation time and data age. This first
+dashboard view remains private to the owner. Device faults, community summaries
+and hardware-pilot validation remain tracked in [#617](https://github.com/Open-LEG-ch/openleg/issues/617).
+
 Equipment pages also show private matches against an explicitly reviewed
 advisory catalog. The catalog starts empty with notices disabled. A named source
 reviewer, review cadence and successful source review are required before
@@ -103,7 +108,7 @@ Read the [engineering contract](docs/engineering-contract.md), [architecture](do
 
 - `/` public website for anonymous visitors
 - `/login` role chooser for owners and municipalities
-- `/dashboard` owner dashboard and secure access request
+- `/dashboard` owner dashboard and secure access request; signed-in founders can create a LEG at `/leg/community/create`
 - `/leg/dashboard` LEG operator dashboard
 - `/gemeinde/dashboard` municipality dashboard and secure access request
 - `/utility/login` grid-operator login
@@ -175,6 +180,12 @@ Cloud-Zugriffe und Ersatzstromnachweise bleiben getrennt. Eigentümer können ei
 bereinigte Übergabe für den Installateur herunterladen. OpenLEG prüft die Angaben
 nicht und verändert keine Geräte.
 
+Eigentümer mit angemeldeten Telemetrie-Anlagen sehen unter
+`/dashboard/telemetry` ihre Messwerte mit Quelle, Qualität, Messzeit und Alter.
+Diese erste Ansicht bleibt privat für den Eigentümer. Gerätestörungen,
+Gemeinschaftsübersichten und die Prüfung im Hardware-Pilot bleiben in
+[#617](https://github.com/Open-LEG-ch/openleg/issues/617) offen.
+
 Die Geräteseiten zeigen auch private Zuordnungen zu einem ausdrücklich geprüften
 Hinweiskatalog. Er beginnt leer und mit ausgeschalteten Hinweisen. Vor dem
 Einschalten braucht es eine benannte Quellenverantwortung, einen Prüfturnus und
@@ -244,7 +255,7 @@ Lesen Sie den [Entwicklungsvertrag](docs/engineering-contract.md), die [Architek
 
 - `/` öffentliche Website für nicht angemeldete Personen
 - `/login` Rollenwahl für Eigentümer und Gemeinden
-- `/dashboard` Eigentümer-Dashboard mit sicherer Zugangsanfrage
+- `/dashboard` Eigentümer-Dashboard mit sicherer Zugangsanfrage; angemeldete Gründer legen unter `/leg/community/create` eine LEG an
 - `/leg/dashboard` Dashboard für LEG-Betreiber
 - `/gemeinde/dashboard` Gemeinde-Dashboard mit sicherer Zugangsanfrage
 - `/utility/login` Login für Netzbetreiber

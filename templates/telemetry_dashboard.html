@@ -1,0 +1,72 @@
+{% extends "product_base.html" %}
+
+{% block meta %}
+  <title>{{ _("Meine Messwerte") }} | {{ platform_name }}</title>
+  <meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
+{% block content %}
+{% set channel_labels = {
+  "pv_inverter": {"generation": _("PV-Erzeugung")},
+  "grid_connection": {"import": _("Netzbezug"), "export": _("Netzeinspeisung")},
+  "battery": {"stored": _("Batteriestand"), "charge": _("Batterieladung"), "discharge": _("Batterieentladung")},
+  "site": {"consumption": _("Standortverbrauch"), "generation": _("Standorterzeugung")}
+} %}
+{% set metric_labels = {"power": _("Leistung"), "energy_counter": _("Zählerstand"), "interval_energy": _("Intervallenergie"), "state_of_charge": _("Ladezustand")} %}
+{% set quality_labels = {"measured": _("Gemessen"), "estimated": _("Geschätzt"), "unknown": _("Qualität unbekannt")} %}
+{% set freshness_labels = {"fresh": _("Aktuell"), "stale": _("Veraltet"), "unknown": _("Aktualität unbekannt"), "clock_skew": _("Zeitangabe prüfen")} %}
+<div class="max-w-6xl mx-auto px-4 pt-8 pb-16">
+  <a href="/dashboard" class="text-brand hover:underline">{{ _("Zurück zum Dashboard") }}</a>
+  <h1 class="text-3xl font-bold mt-4">{{ _("Meine Messwerte") }}</h1>
+  <p class="text-ink-muted mt-2">{{ _("Betriebsdaten Ihrer angemeldeten Anlagen. Für die Abrechnung gelten die validierten VNB-Messdaten.") }}</p>
+  <p class="text-sm text-ink-muted mt-2">{{ _("Alle Angaben gelten beim Laden dieser Seite. Jede Quelle wird einzeln angezeigt.") }}</p>
+  <a href="/dashboard/telemetry" class="inline-block mt-4 font-semibold text-brand hover:underline">{{ _("Messwerte aktualisieren") }}</a>
+  {% if unavailable %}
+    <section class="mt-6 bg-white rounded-xl border border-line p-6" role="alert">
+      <h2 class="text-lg font-bold">{{ _("Messwerte derzeit nicht verfügbar") }}</h2>
+      <p class="text-ink-muted mt-2">{{ _("Bitte laden Sie die Seite später erneut.") }}</p>
+    </section>
+  {% else %}
+    {% for installation in installations %}
+      <section class="mt-6 bg-white rounded-xl border border-line p-6" aria-labelledby="installation-{{ installation.id }}">
+        <h2 id="installation-{{ installation.id }}" class="text-xl font-bold wrap-break-word">{{ installation.name }}</h2>
+        <p class="text-sm text-ink-muted mt-2 wrap-break-word">{{ _("Quelle") }}: {{ installation.source_id }} · {{ _("Gerät") }}: {{ installation.device_id }}</p>
+        <p class="text-sm text-ink-muted">{{ _("Erwarteter Messtakt") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", installation.cadence_seconds, count=installation.cadence_seconds) }}</p>
+        {% if installation.delivery_status == "late" %}
+          <p class="mt-4 font-semibold">{{ _("Keine neue Kollektor-Lieferung") }}</p>
+          <p class="text-ink-muted">{{ _("Prüfen Sie den Kollektor und seine Verbindung.") }}</p>
+        {% endif %}
+        {% for sample in installation.samples %}
+          <div class="mt-4 border-t border-line pt-4">
+            <h3 class="font-semibold">{{ channel_labels[sample.measurement_location][sample.direction] }}</h3>
+            <p class="text-sm text-ink-muted">{{ metric_labels[sample.metric] }}</p>
+            {% if sample.freshness in ("fresh", "stale") %}
+              <p class="font-mono text-2xl">{{ sample.value }} {{ sample.unit }}</p>
+            {% else %}
+              <p class="text-lg">{{ _("Kein aktueller Wert") }}</p>
+            {% endif %}
+            <p>{{ quality_labels[sample.quality] }} · {{ freshness_labels[sample.freshness] }}</p>
+            {% if sample.freshness == "stale" and sample.delivery_status == "recent" %}
+              <p class="text-ink-muted">{{ _("Messquelle liefert ältere Werte. Prüfen Sie Messquelle und Gerätezeit.") }}</p>
+            {% elif sample.freshness == "stale" and installation.delivery_status == "recent" %}
+              <p class="text-ink-muted">{{ _("Für diesen Messkanal fehlen neue Daten. Prüfen Sie die Messquelle.") }}</p>
+            {% endif %}
+            {% if sample.observed_at %}
+              <p class="text-sm text-ink-muted">{{ _("Messzeit") }}: <time datetime="{{ sample.observed_at }}">{{ sample.observed_label }}</time></p>
+            {% else %}
+              <p class="text-sm text-ink-muted">{{ _("Messzeit unbekannt") }}</p>
+            {% endif %}
+            {% if sample.age_seconds is not none %}
+              <p class="text-sm text-ink-muted">{{ _("Alter beim Laden") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", sample.age_seconds, count=sample.age_seconds) }}</p>
+            {% endif %}
+          </div>
+        {% else %}
+          <p class="mt-4">{{ _("Keine Messwerte im Aufbewahrungszeitraum verfügbar.") }}</p>
+        {% endfor %}
+      </section>
+    {% else %}
+      <p class="mt-6">{{ _("Sie haben keine angemeldeten Anlagen in einer bestätigten LEG-Mitgliedschaft.") }}</p>
+    {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

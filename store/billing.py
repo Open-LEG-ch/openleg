@@ -172,8 +172,8 @@ def save_billing_period(
                         )
 
                 return period_id
-    except Exception as e:
-        logger.error(f"[DB] Error saving billing period: {e}")
+    except Exception:
+        logger.error("[DB] Error saving billing period")
         raise
 
 
@@ -211,7 +211,7 @@ def get_active_communities() -> list[dict]:
             cur.execute("SELECT * FROM communities WHERE status = 'active'")
             return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting active communities: {e}")
+        logger.error("[DB] Error getting active communities")
         raise BillingStoreError("Could not load active communities") from e
 
 
