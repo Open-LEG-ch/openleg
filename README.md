@@ -17,6 +17,9 @@ The distribution system operator (VNB) still verifies the statutory network-area
 The current code covers formation records, VNB handovers, participant changes, scheduled SDAT ingestion, quarter-hour allocation, tariff versions, invoice approval, immutable invoices, payment reconciliation, and operational archive export and restore.
 
 The [community archive guide](docs/community-archive.md) explains its dataset scope, destination checks and restore requirements.
+Community activation requires recorded VNB start evidence and an explicit
+administrator action on or after the confirmed date. See the
+[operating-start workflow](docs/vnb-exchange.md#confirmed-operating-start).
 
 The admin API can withdraw a VNB calculated-values delivery while preserving its source and audit record. Dependent drafts become invalid; issued invoices remain unchanged. The [data pipeline guide](docs/data-pipeline.md#withdrawal-of-calculated-vnb-evidence) documents correction and retry handling.
 
@@ -161,6 +164,9 @@ Der Verteilnetzbetreiber (VNB) prüft weiterhin die gesetzlichen Anforderungen a
 Der aktuelle Code deckt Gründungsunterlagen, VNB-Übergaben, Teilnehmeränderungen, den zeitgesteuerten SDAT-Abruf, die Viertelstundenverteilung, Tarifversionen, Rechnungsfreigabe, unveränderliche Rechnungen, Zahlungsabgleich sowie Export und Wiederherstellung der Betriebsdaten ab.
 
 Die [Archivanleitung](docs/community-archive.md) beschreibt die enthaltenen Datensätze, die Prüfung des Zielsystems und die Voraussetzungen für die Wiederherstellung.
+Die Aktivierung einer Gemeinschaft verlangt einen erfassten VNB-Startbeleg
+und eine ausdrückliche Handlung der Administration ab dem bestätigten Datum.
+Der [Startablauf](docs/vnb-exchange.md#confirmed-operating-start) beschreibt die Schritte.
 
 Über die Admin-API können Betreiber berechnete VNB-Werte zurückziehen. Quelle und Prüfverlauf bleiben erhalten. Abhängige Entwürfe verlieren ihre Gültigkeit; ausgestellte Rechnungen bleiben unverändert. Die [Datenpipeline](docs/data-pipeline.md#withdrawal-of-calculated-vnb-evidence) dokumentiert Korrekturen und Wiederholungen.
 
