@@ -125,6 +125,11 @@ Run `scripts/contribute glossary` without a term to list every term.
 
 ## The change loop
 
+Small reproducible fixes can go straight to a focused PR with a regression
+test. Discuss changes to allocation, reconciliation or rounding, VNB formats,
+billing lifecycle, and schema or API contracts in an issue before implementation.
+Report vulnerabilities through the [private security reporting process](../CONTRIBUTING.md#security-vulnerabilities).
+
 1. Write one failing behavior test before implementation.
 2. Run exactly that pytest node. `scripts/contribute test` defaults to the red phase.
 
@@ -136,7 +141,7 @@ Run `scripts/contribute glossary` without a term to list every term.
    ```
 
 3. Implement the smallest change that makes the behavior pass.
-4. Run the local gate.
+4. Run the local gate. For database behavior, also execute the PostgreSQL tests below.
 
    ```console
    $ scripts/contribute gate
@@ -178,7 +183,98 @@ scripts/contribute: error: unrecognized arguments: -k
 
 ## CI runs more than the local gate
 
-The CI lint job also runs `npm ci`, `npm run build:css`, `git diff --exit-code -- static/css/openleg.css`, and `mypy`. `doctor` reports `node`, `npm`, and `mypy` for this reason. Missing CI-only tools produce warnings, not a failing doctor result, so install them before relying on local CI parity.
+`scripts/test.sh gate` and `scripts/tdd_cycle.sh gate` run the full pytest
+suite, ruff lint and ruff formatting checks. Without `DATABASE_URL`, the suite
+skips PostgreSQL tests; a green local gate does not prove those queries work.
+
+The `ci/test` job in `.github/workflows/deploy.yml` supplies PostgreSQL 16 and
+`DATABASE_URL`, so those tests execute in CI. The `ci/lint` job also runs:
+
+```bash
+npm ci
+npm run build:css
+git diff --exit-code -- static/css/openleg.css
+mypy --ignore-missing-imports --follow-imports=skip app.py database.py api_public.py formation_wizard.py
+```
+
+`doctor` reports `node`, `npm`, and `mypy` for this reason. Missing CI-only
+tools produce warnings, not a failing doctor result. The separate `ci/security`
+job runs gitleaks over Git history and checks the forbidden-path policy in
+`.github/forbidden-paths.txt`. Neither local gate runs those security checks.
+Use the current workflows as the source of truth.
+
+## PostgreSQL validation
+
+Use PostgreSQL 16 client and server tools installed locally. The example starts
+a fresh cluster as your ordinary OS user, bound to loopback on port 55432 with
+no production credentials or data. Choose an unused port if 55432 is occupied,
+and change both port occurrences and the URL below. Never point tests at a
+production or shared database, even if you expect a test to be read-only.
+
+Activate `.venv` first. Run this block in Bash from the repository root. Set
+`OPENLEG_PG_BIN` and `OPENLEG_PG_SHARE` beforehand if the tools are installed
+outside the paths returned by PostgreSQL 16's `pg_config`.
+
+```bash
+(
+    set -e
+    OPENLEG_PG_BIN="${OPENLEG_PG_BIN:-$(pg_config --bindir)}"
+    OPENLEG_PG_SHARE="${OPENLEG_PG_SHARE:-$(pg_config --sharedir)}"
+    OPENLEG_PG_VERSION="$("$OPENLEG_PG_BIN/postgres" --version)"
+    printf '%s\n' "$OPENLEG_PG_VERSION"
+    case "$OPENLEG_PG_VERSION" in
+        *"PostgreSQL) 16."*) ;;
+        *) echo 'PostgreSQL 16 is required' >&2; exit 1 ;;
+    esac
+    OPENLEG_PG_ROOT="$(mktemp -d /tmp/openleg-pg.XXXXXX)"
+    openleg_pg_cleanup() {
+        if [ -f "$OPENLEG_PG_ROOT/data/postmaster.pid" ]; then
+            "$OPENLEG_PG_BIN/pg_ctl" -D "$OPENLEG_PG_ROOT/data" -m fast -w stop || return
+        fi
+        rm -rf -- "$OPENLEG_PG_ROOT"
+    }
+    trap openleg_pg_cleanup EXIT
+    printf '%s\n' 'openleg-test-only' > "$OPENLEG_PG_ROOT/password"
+    "$OPENLEG_PG_BIN/initdb" -L "$OPENLEG_PG_SHARE" \
+        -D "$OPENLEG_PG_ROOT/data" --username=openleg_test \
+        --auth-local=trust --auth-host=scram-sha-256 \
+        --pwfile="$OPENLEG_PG_ROOT/password"
+    "$OPENLEG_PG_BIN/pg_ctl" -D "$OPENLEG_PG_ROOT/data" \
+        -l "$OPENLEG_PG_ROOT/server.log" \
+        -o "-h 127.0.0.1 -p 55432 -k $OPENLEG_PG_ROOT" -w start
+    "$OPENLEG_PG_BIN/createdb" -h "$OPENLEG_PG_ROOT" -p 55432 \
+        -U openleg_test openleg_test
+    export DATABASE_URL='postgresql://openleg_test:openleg-test-only@127.0.0.1:55432/openleg_test'
+
+    python -m pytest -v -ra \
+        tests/test_interest_postgres.py \
+        tests/test_store_billing_postgres.py \
+        tests/test_store_metering_postgres.py \
+        tests/test_store_ops_postgres.py
+    scripts/tdd_cycle.sh gate
+)
+```
+
+Check the selected tests' individual results for `PASSED` and the summary for
+zero skips. `SKIPPED` means the database behavior was not validated; `-ra`
+prints the skip reason. A connection or privilege error must fail the run.
+Add any other PostgreSQL test files relevant to your change.
+
+The test login must connect to both the configured database and the maintenance
+database `postgres`, create temporary databases (`CREATEDB`), create schema
+objects, and drop its temporary databases. Cleanup may terminate connections to
+those databases. The example creates a superuser inside this disposable cluster
+only; do not grant these privileges on a production server.
+
+The fixtures create randomly named databases and drop them in `finally` blocks.
+The subshell's exit trap stops the server and removes the disposable cluster,
+including databases left by an interrupted test, when stopping succeeds. If
+`pg_ctl ... stop` fails, the directory is retained. Stop the server before
+removing that directory. `DATABASE_URL` and the helper variables stay inside
+the subshell. If the shell is killed before
+the trap runs, stop that cluster with `pg_ctl -D <temporary-directory>/data -m fast -w stop`
+before removing its temporary directory. Do not reuse a failed cluster as a
+fresh validation result.
 
 ## Troubleshooting
 
