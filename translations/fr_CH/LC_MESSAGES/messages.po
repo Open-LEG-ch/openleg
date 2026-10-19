@@ -19,6 +19,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
+#: templates/telemetry_dashboard.html:34 templates/telemetry_dashboard.html:60
+#, python-format
+msgid "%(count)s Sekunde"
+msgid_plural "%(count)s Sekunden"
+msgstr[0] "%(count)s seconde"
+msgstr[1] "%(count)s secondes"
+
 #: templates/telemetry_dashboard.html:17
 msgid "Aktualität unbekannt"
 msgstr "Fraîcheur des données inconnue"
@@ -156,10 +163,6 @@ msgstr "Source"
 #: i18n.py:99
 msgid "Rp./kWh"
 msgstr "ct./kWh"
-
-#: templates/telemetry_dashboard.html:34 templates/telemetry_dashboard.html:60
-msgid "Sekunden"
-msgstr "secondes"
 
 #: templates/telemetry_dashboard.html:68
 msgid "Sie haben keine angemeldeten Anlagen in einer bestätigten LEG-Mitgliedschaft."

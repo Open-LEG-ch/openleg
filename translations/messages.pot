@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 19:36+0000\n"
+"POT-Creation-Date: 2026-10-19 19:40+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,13 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#: templates/telemetry_dashboard.html:34 templates/telemetry_dashboard.html:60
+#, python-format
+msgid "%(count)s Sekunde"
+msgid_plural "%(count)s Sekunden"
+msgstr[0] ""
+msgstr[1] ""
 
 #: templates/telemetry_dashboard.html:17
 msgid "Aktualität unbekannt"
@@ -151,10 +158,6 @@ msgstr ""
 
 #: i18n.py:99
 msgid "Rp./kWh"
-msgstr ""
-
-#: templates/telemetry_dashboard.html:34 templates/telemetry_dashboard.html:60
-msgid "Sekunden"
 msgstr ""
 
 #: templates/telemetry_dashboard.html:68

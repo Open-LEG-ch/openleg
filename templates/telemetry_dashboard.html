@@ -31,7 +31,7 @@
       <section class="mt-6 bg-white rounded-xl border border-line p-6" aria-labelledby="installation-{{ installation.id }}">
         <h2 id="installation-{{ installation.id }}" class="text-xl font-bold wrap-break-word">{{ installation.name }}</h2>
         <p class="text-sm text-ink-muted mt-2 wrap-break-word">{{ _("Quelle") }}: {{ installation.source_id }} · {{ _("Gerät") }}: {{ installation.device_id }}</p>
-        <p class="text-sm text-ink-muted">{{ _("Erwarteter Messtakt") }}: {{ installation.cadence_seconds }} {{ _("Sekunden") }}</p>
+        <p class="text-sm text-ink-muted">{{ _("Erwarteter Messtakt") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", installation.cadence_seconds, count=installation.cadence_seconds) }}</p>
         {% if installation.delivery_status == "late" %}
           <p class="mt-4 font-semibold">{{ _("Keine neue Kollektor-Lieferung") }}</p>
           <p class="text-ink-muted">{{ _("Prüfen Sie den Kollektor und seine Verbindung.") }}</p>
@@ -57,7 +57,7 @@
               <p class="text-sm text-ink-muted">{{ _("Messzeit unbekannt") }}</p>
             {% endif %}
             {% if sample.age_seconds is not none %}
-              <p class="text-sm text-ink-muted">{{ _("Alter beim Laden") }}: {{ sample.age_seconds }} {{ _("Sekunden") }}</p>
+              <p class="text-sm text-ink-muted">{{ _("Alter beim Laden") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", sample.age_seconds, count=sample.age_seconds) }}</p>
             {% endif %}
           </div>
         {% else %}

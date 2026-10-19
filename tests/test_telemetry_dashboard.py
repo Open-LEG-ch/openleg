@@ -62,6 +62,17 @@ def test_owner_readings_follow_the_selected_language(telemetry_client):
     assert "Aktuell" in response.text
 
 
+def test_one_second_cadence_uses_the_selected_singular_form(telemetry_client):
+    client = telemetry_client
+    api.enroll(client, cadence_seconds=1)
+    french = client.get("/dashboard/telemetry?lang=fr-CH").text
+    assert "1 seconde" in french
+    assert "1 secondes" not in french
+    html = client.get("/dashboard/telemetry?lang=de-CH").text
+    assert "1 Sekunde" in html
+    assert "1 Sekunden" not in html
+
+
 def test_channels_stay_separate_and_unknown_time_is_not_a_current_zero(
     telemetry_client,
 ):
