@@ -9,7 +9,7 @@ import formation_wizard
 
 def generate(community_id: str, building_id: str) -> dict:
     """Generate and atomically persist documents for a community administrator."""
-    status = formation_wizard.get_community_status(community_id)
+    status = formation_wizard.get_community_status(community_id, building_id)
     member = next(
         (
             member

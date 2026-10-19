@@ -155,3 +155,55 @@ def test_private_founder_view_keeps_other_households_behind_current_consent(foun
     assert "visible@example.invalid" not in page.text
     _set_session(client, "outsider")
     assert "LEG Synthetic" not in client.get(response.location).text
+
+
+def test_founder_without_discovery_consent_can_generate_documents_and_manage_api(
+    founder,
+):
+    client, db = founder
+    _set_session(client, "founder")
+    assert (
+        client.post(
+            "/leg/community/create",
+            data={"csrf_token": "csrf-secret", "name": "Synthetic founder LEG"},
+        ).status_code
+        == 302
+    )
+    cid = db.fetch_user_communities("founder")[0]["community_id"]
+    assert db.save_building(
+        "partner",
+        "partner@example.invalid",
+        {
+            "address": "Synthetic partner",
+            "lat": 47.2,
+            "lon": 8.2,
+            "potential_pv_kwp": 10,
+        },
+        {"share_with_neighbors": True},
+        verified=True,
+    )
+    assert db.insert_invited_member(cid, "partner", "founder")
+    assert db.confirm_invited_member(cid, "partner")
+    response = client.post(
+        f"/leg/community/{cid}/documents", data={"csrf_token": "csrf-secret"}
+    )
+    assert response.status_code == 302
+    documents = db.list_leg_documents(cid)
+    assert {doc["doc_type"] for doc in documents} == {
+        "gemeinschaftsvereinbarung",
+        "teilnehmervertrag",
+    }
+    assert len(documents) == 3
+    assert all(
+        bytes(db.get_leg_document(doc["id"])["pdf_data"]).startswith(b"%PDF")
+        for doc in documents
+    )
+    response = client.post(
+        f"/leg/community/{cid}/operator-api/credentials",
+        data={
+            "csrf_token": "csrf-secret",
+            "name": "Synthetic client",
+            "capabilities": "formation.read",
+        },
+    )
+    assert response.status_code == 201
