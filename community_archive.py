@@ -8,9 +8,10 @@ import hashlib
 import json
 from datetime import date, datetime
 from decimal import Decimal
+from itertools import groupby, islice
 
 from psycopg2 import sql
-from psycopg2.extras import Json
+from psycopg2.extras import Json, execute_values
 
 SCHEMA_VERSION = "openleg-community-archive/1"
 SOURCE_PROVENANCE = "OpenLEG PostgreSQL operational store"
@@ -379,7 +380,18 @@ class PostgresArchiveStore:
                     )
                 )
             for table, _, _ in _DATASETS:
-                for row in datasets.get(table, []):
+                rows = datasets.get(table, [])
+                if (
+                    table in {"meter_readings", "metering_point_readings"}
+                    and primary_keys.get(table) == ["id"]
+                    and rows
+                    and all(isinstance(row, dict) and "id" in row for row in rows)
+                ):
+                    self._restore_readings(
+                        cur, table, rows, allowed_columns[table], json_columns
+                    )
+                    continue
+                for row in rows:
                     if not isinstance(row, dict) or not row:
                         raise ArchiveError(f"Invalid record: {table}")
                     # Column names are always derived from the database
@@ -413,17 +425,61 @@ class PostgresArchiveStore:
                             tuple(row[key] for key in keys),
                         )
                         existing = cur.fetchone()
-                        if existing is None or any(
-                            (
-                                bytes(existing[column])
-                                if isinstance(existing[column], memoryview)
-                                else existing[column]
-                            )
-                            != row[column]
-                            for column in columns
-                        ):
+                        if not self._same_record(existing, row, columns):
                             raise ArchiveError(f"Conflicting record: {table}")
             self._advance_sequences(cur, sequences)
+
+    @staticmethod
+    def _same_record(existing, row, columns):
+        return existing is not None and all(
+            (
+                bytes(existing[column])
+                if isinstance(existing[column], memoryview)
+                else existing[column]
+            )
+            == row[column]
+            for column in columns
+        )
+
+    def _restore_readings(self, cur, table, rows, catalog_columns, json_columns):
+        """Bound database round trips while retaining every row conflict check."""
+        for row in rows:
+            if not set(row) <= catalog_columns:
+                raise ArchiveError(f"Unknown column: {table}")
+        for columns, group in groupby(
+            rows,
+            key=lambda row: tuple(
+                column for column in sorted(catalog_columns) if column in row
+            ),
+        ):
+            while batch := list(islice(group, 500)):
+                inserted = execute_values(
+                    cur,
+                    f"INSERT INTO {table} ({', '.join(columns)}) VALUES %s "
+                    "ON CONFLICT DO NOTHING RETURNING *",
+                    [
+                        tuple(
+                            Json(row[column])
+                            if (table, column) in json_columns
+                            and row[column] is not None
+                            else row[column]
+                            for column in columns
+                        )
+                        for row in batch
+                    ],
+                    page_size=500,
+                    fetch=True,
+                )
+                stored = {row["id"]: row for row in inserted}
+                missing = [row["id"] for row in batch if row["id"] not in stored]
+                if missing:
+                    cur.execute(f"SELECT * FROM {table} WHERE id = ANY(%s)", (missing,))
+                    stored.update((row["id"], row) for row in cur.fetchall())
+                if any(
+                    not self._same_record(stored.get(row["id"]), row, columns)
+                    for row in batch
+                ):
+                    raise ArchiveError(f"Conflicting record: {table}")
 
     @staticmethod
     def _serial_sequences(cur, tables):

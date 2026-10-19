@@ -14,7 +14,9 @@ Run a dry-run against the destination before restoring. The destination must
 recognize every archived column. Restore preserves imported identifiers and
 advances their sequence counters so new records can follow. It preserves a
 counter already ahead of the imported records. Counter changes share the restore
-transaction and briefly block other writers using the same sequences.
+transaction. Writers that need the same sequences, including other communities,
+can wait until the full restore commits. Reading rows are inserted in batches
+to reduce database round trips; this does not remove the transaction-wide lock.
 
 The supported destination uses ascending sequences with `CACHE 1`, as created
 by OpenLEG's schema. Dry-run rejects a destination with incompatible sequence

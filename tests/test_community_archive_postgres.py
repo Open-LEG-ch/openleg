@@ -57,6 +57,8 @@ class _PauseAtCommunityInsert:
         "conflicting_record",
         "concurrent_writer",
         "writer_during_restore",
+        "bulk_readings",
+        "bulk_readings_conflict",
     ],
 )
 def test_real_archive_preserves_binary_json_and_next_generated_id(
@@ -86,6 +88,37 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
         attachment_data=attachment,
     )
     assert entry == 1
+    if target_mode.startswith("bulk_readings"):
+        assert (
+            db.upsert_metering_points(
+                [
+                    {
+                        "metering_point_id": "SYNTHETIC-ARCHIVE-METER",
+                        "building_id": "archive-founder",
+                        "community_id": cid,
+                        "expected_directions": ["consumption"],
+                    }
+                ]
+            )
+            == 1
+        )
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO meter_readings
+                    (building_id, timestamp, consumption_kwh, source)
+                SELECT 'archive-founder', '2026-01-01'::timestamp
+                       + value * interval '15 minutes', 0.1234, 'synthetic'
+                FROM generate_series(0, 4999) value
+            """)
+            cur.execute("""
+                INSERT INTO metering_point_readings
+                    (metering_point_id, direction, measured_at, total_kwh,
+                     grid_kwh, community_kwh, condition_code)
+                SELECT 'SYNTHETIC-ARCHIVE-METER', 'consumption',
+                       '2026-01-01T00:00:00+01:00'::timestamptz
+                       + value * interval '15 minutes', 0.1234, 0.1234, 0, 'E01'
+                FROM generate_series(0, 4999) value
+            """)
     payload = community_archive.export_community_archive(cid)
     parsed = urlsplit(os.environ["DATABASE_URL"])
     target = f"openleg_archive_{secrets.token_hex(6)}"
@@ -115,6 +148,7 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
             "conflicting_record",
             "concurrent_writer",
             "writer_during_restore",
+            "bulk_readings_conflict",
         }:
             with db.get_connection() as conn, conn.cursor() as cur:
                 cur.execute("SELECT setval('community_members_id_seq', 100, true)")
@@ -136,6 +170,13 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
                     )
                     == entry
                 )
+            elif target_mode == "bulk_readings_conflict":
+                with db.get_connection() as conn, conn.cursor() as cur:
+                    cur.execute("""
+                        INSERT INTO meter_readings
+                            (id, building_id, timestamp, consumption_kwh)
+                        VALUES (5000, 'unrelated', '2026-01-01', 0.4321)
+                    """)
         assert db.fetch_user_communities("archive-founder") == []
         dry_run = community_archive.restore_community_archive(payload, dry_run=True)
         if target_mode == "cached_sequence":
@@ -151,7 +192,7 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
             assert db.get_building("archive-founder") is None
             assert db.list_correspondence(cid) == []
             return
-        if target_mode == "conflicting_record":
+        if target_mode in {"conflicting_record", "bulk_readings_conflict"}:
             with pytest.raises(
                 community_archive.ArchiveError, match="Conflicting record"
             ):
@@ -159,7 +200,21 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
             assert db.fetch_user_communities("archive-founder") == []
             assert db.get_building("archive-founder") is None
             assert db.list_correspondence(cid) == []
-            assert db.list_correspondence(other)[0]["subject"] == "Unrelated evidence"
+            if target_mode == "conflicting_record":
+                assert (
+                    db.list_correspondence(other)[0]["subject"] == "Unrelated evidence"
+                )
+            else:
+                with db.get_connection() as conn, conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT building_id, consumption_kwh FROM meter_readings"
+                    )
+                    retained = cur.fetchall()
+                    assert len(retained) == 1
+                    assert retained[0]["building_id"] == "unrelated"
+                    assert str(retained[0]["consumption_kwh"]) == "0.4321"
+                    cur.execute("SELECT COUNT(*) AS count FROM metering_point_readings")
+                    assert cur.fetchone()["count"] == 0
             return
 
         if target_mode in {"concurrent_writer", "writer_during_restore"}:
@@ -208,6 +263,66 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
                     concurrent_id = race.finish(writer)
                     assert concurrent_id is not None and concurrent_id > entry
             result = {"valid": True}
+        elif target_mode == "bulk_readings":
+            original_connection = db.get_connection
+            statements = {"meter_readings": [], "metering_point_readings": []}
+
+            @contextmanager
+            def counted_connection():
+                with original_connection() as connection:
+
+                    class Connection:
+                        @contextmanager
+                        def cursor(self):
+                            with connection.cursor() as cursor:
+
+                                class Cursor:
+                                    def __getattr__(self, name):
+                                        return getattr(cursor, name)
+
+                                    def execute(self, query, params=None):
+                                        text = (
+                                            query.decode()
+                                            if isinstance(query, bytes)
+                                            else query
+                                        )
+                                        if isinstance(text, str):
+                                            for table, queries in statements.items():
+                                                if text.startswith(
+                                                    f"INSERT INTO {table} "
+                                                ) or (
+                                                    text.startswith("SELECT ")
+                                                    and f"FROM {table} " in text
+                                                ):
+                                                    queries.append(text)
+                                        return cursor.execute(query, params)
+
+                                yield Cursor()
+
+                    yield Connection()
+
+            with monkeypatch.context() as patch:
+                patch.setattr(db, "get_connection", counted_connection)
+                result = community_archive.restore_community_archive(payload)
+                assert result["valid"]
+                assert all(
+                    1 <= len(queries) <= 40 for queries in statements.values()
+                ), "bulk readings must not require one database round trip per row"
+                for queries in statements.values():
+                    queries.clear()
+                assert community_archive.restore_community_archive(payload)["valid"]
+                assert all(
+                    1 <= len(queries) <= 40 for queries in statements.values()
+                ), "replay must also batch its conflict comparisons"
+            with db.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    "SELECT COUNT(*) AS count FROM meter_readings WHERE building_id = 'archive-founder'"
+                )
+                assert cur.fetchone()["count"] == 5000
+                cur.execute(
+                    "SELECT COUNT(*) AS count FROM metering_point_readings WHERE metering_point_id = 'SYNTHETIC-ARCHIVE-METER'"
+                )
+                assert cur.fetchone()["count"] == 5000
         else:
             result = community_archive.restore_community_archive(payload)
 
