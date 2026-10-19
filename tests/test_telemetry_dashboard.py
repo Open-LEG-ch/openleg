@@ -2,6 +2,7 @@
 """Owner readings through the dashboard route and real telemetry storage."""
 
 from datetime import UTC, datetime, timedelta
+from threading import Timer
 
 import pytest
 
@@ -75,10 +76,19 @@ def test_one_second_cadence_uses_the_selected_singular_form(telemetry_client):
 
 def test_channels_stay_separate_and_unknown_time_is_not_a_current_zero(
     telemetry_client,
+    monkeypatch,
 ):
     client = telemetry_client
     installation, token = api.enroll(client)
-    observed = datetime.now(UTC) - timedelta(seconds=10)
+    now = datetime.now(UTC)
+
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now.astimezone(tz)
+
+    monkeypatch.setattr(store, "datetime", Clock)
+    observed = now - timedelta(seconds=10)
     channels = [
         api.sample(value="800", observed_at=observed.isoformat()),
         api.sample(
@@ -123,7 +133,7 @@ def test_channels_stay_separate_and_unknown_time_is_not_a_current_zero(
     assert len(view) == 1
     samples = view[0]["samples"]
     assert len(samples) == 5
-    assert all(10 <= row["age_seconds"] < 30 for row in samples if row["observed_at"])
+    assert all(row["age_seconds"] == 10 for row in samples if row["observed_at"])
     html = client.get("/dashboard/telemetry").text
     for label in (
         "PV-Erzeugung",
@@ -359,6 +369,52 @@ def test_buffered_old_delivery_updates_channel_status_without_replacing_value(
     assert row["delivery_status"] == "recent"
 
 
+def test_expired_buffered_delivery_cannot_make_a_channel_look_recent(
+    telemetry_client, monkeypatch
+):
+    client = telemetry_client
+    installation, token = api.enroll(client, raw_retention_days=1)
+    now = datetime.now(UTC)
+    assert (
+        api.ingest(
+            client,
+            installation,
+            token,
+            [
+                api.sample(
+                    value="321", observed_at=(now - timedelta(minutes=10)).isoformat()
+                ),
+                api.sample(
+                    sample_id="almost-expired",
+                    sequence=2,
+                    value="111",
+                    observed_at=(
+                        now - timedelta(days=1) + timedelta(seconds=10)
+                    ).isoformat(),
+                ),
+            ],
+        ).status_code
+        == 201
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE telemetry_samples SET received_at=%s WHERE installation_id=%s AND sequence=1",
+            (now - timedelta(minutes=10), installation),
+        )
+
+    class Later(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return (now + timedelta(seconds=20)).astimezone(tz)
+
+    monkeypatch.setattr(store, "datetime", Later)
+    view = store.owner_overview("owner")[0]
+    assert view["delivery_status"] == "late"
+    assert len(view["samples"]) == 1
+    assert view["samples"][0]["value"] == "321"
+    assert view["samples"][0]["delivery_status"] == "late"
+
+
 def test_buffered_older_values_do_not_replace_the_latest_observation(telemetry_client):
     client = telemetry_client
     installation, token = api.enroll(client)
@@ -464,3 +520,21 @@ def test_unavailable_storage_does_not_render_zero_or_private_errors(
     assert response.headers["Cache-Control"] == "no-store"
     assert "0 W" not in response.text
     assert "private-connection-material" not in response.text + caplog.text
+
+
+def test_blocked_storage_returns_unavailable_and_recovers(telemetry_client):
+    client = telemetry_client
+    api.enroll(client)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("LOCK TABLE telemetry_samples IN ACCESS EXCLUSIVE MODE")
+        # Release even if the request loses its query budget, so regressions fail.
+        release = Timer(5, conn.rollback)
+        release.start()
+        try:
+            response = client.get("/dashboard/telemetry")
+        finally:
+            release.cancel()
+    assert response.status_code == 503
+    assert response.headers["Cache-Control"] == "no-store"
+    assert "0 W" not in response.text
+    assert client.get("/dashboard/telemetry").status_code == 200

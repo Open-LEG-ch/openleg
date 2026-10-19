@@ -22,6 +22,11 @@ or attack. Duplicate deliveries preserve the original receipt time. Buffered
 older observations do not replace a newer source observation. Expired samples
 are excluded before cleanup runs.
 
+The page uses indexed lookups for each channel's latest observation and recent
+receipt, without sorting the retained history. The query has a two-second
+transaction-local limit and preserves any stricter database limit. A timeout
+returns the private unavailable page; refreshing can retry once storage recovers.
+
 This is the owner-readings slice of #617. Device fault ingestion, persistent
 notice acknowledgement/cooldown/recovery, community summaries with sharing and
 coverage controls, and an authorized hardware/user pilot remain open. #615 and

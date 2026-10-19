@@ -11,6 +11,8 @@ VERSION = "telemetry/1"
 MAX_BYTES = 65536
 MAX_BATCH = 100
 RATE_PER_MINUTE = 60
+FRESHNESS_MIN_SECONDS = 60
+FRESHNESS_CADENCES = 2
 IDENTIFIER = re.compile(r"[A-Za-z0-9_.:-]{1,128}\Z")
 UNITS = {
     "power": "W",
@@ -198,14 +200,7 @@ def observation(sample, installation, now):
 
 
 def freshness_window(cadence_seconds):
-    return max(60, cadence_seconds * 2)
-
-
-def delivery_status(received_at, cadence_seconds, now):
-    if received_at is None:
-        return "missing"
-    age = (now - received_at).total_seconds()
-    return "late" if age > freshness_window(cadence_seconds) else "recent"
+    return max(FRESHNESS_MIN_SECONDS, cadence_seconds * FRESHNESS_CADENCES)
 
 
 def freshness(row, now):
