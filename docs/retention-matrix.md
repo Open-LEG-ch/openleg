@@ -92,19 +92,20 @@ profile deletes the pair's request and events through foreign-key cascades;
 no separate matching history survives in this database. Backups and outbound
 email-provider retention remain governed by the deployment's policies.
 
-## Overstated promises (filed, not silently shipped)
+## Overstated promises and review status
 
-1. `templates/unsubscribe.html` success copy says "Ihre Daten wurden
-   erfolgreich geloescht." The code's reach is the registration profile and
-   its cascades; issued invoices (billing accounting), analytics event rows
-   and the detached metering points are deliberately or structurally kept.
-   Filed: wording decision for a human.
+1. `templates/unsubscribe.html` and the unsubscribe route/email in `app.py`
+   scope deletion to the registration bound to the confirmation link: an address
+   profile or an unresolved coverage request. Before confirmation, the page
+   states that issued invoices, billing-relevant metering data and usage events
+   remain. The deletion code and retention horizons are unchanged. The complete
+   privacy notice still requires the named legal or DPO review in #558.
 2. Hosting-level log retention remains outside this repository's code.
    The former unsupported promise in `templates/datenschutz.html` was removed;
    the hosting policy itself remains filed for operational definition.
 
-The wording decisions themselves are human calls; this matrix records what
-the code actually reaches so the claims can be brought in line.
+This matrix records code behaviour. It does not record legal approval of the
+privacy notice or ratify a hosting retention policy.
 
 ## Reviewed advisories (#619)
 
