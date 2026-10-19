@@ -6,13 +6,15 @@ from pathlib import Path
 from flask import Flask
 
 import municipality
+from i18n import init_app as init_i18n
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def _client():
     app = Flask(__name__, template_folder=ROOT / "templates")
-    app.config["TESTING"] = True
+    app.config.update(TESTING=True, SECRET_KEY="municipality-test-session")
+    init_i18n(app)
     app.jinja_env.globals["public_site_url"] = lambda path: f"https://openleg.ch{path}"
     app.register_blueprint(municipality.municipality_bp)
     return app.test_client()

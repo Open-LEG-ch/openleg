@@ -114,6 +114,10 @@ Public data fetchers live in `public_data.py`. Database persistence uses `databa
 
 ### Contributing
 
+The gettext language framework supports German and Swiss French selection.
+See the [internationalization guide](docs/internationalization.md) for the
+current rollout scope and catalog workflow.
+
 New to the codebase? Follow the [contributor onboarding guide](docs/contributor-onboarding.md).
 
 Open an issue before a larger change. Keep the pull request small, start with a failing test, and run:

@@ -190,6 +190,7 @@ def _merge_tenant_row(row: dict) -> dict:
             "dso_name",
             "grid_level",
             "tariff_group",
+            "locale",
         ):
             if key in jsonb:
                 config[key] = jsonb[key]

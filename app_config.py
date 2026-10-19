@@ -132,6 +132,10 @@ def build_config(env=None, overrides=None):
 
     Cookie security has three sources, in order: an explicit override wins, then
     SESSION_COOKIE_SECURE from the environment, then an https APP_BASE_URL.
+
+    Display-language strings are trimmed after applying overrides. Empty strings
+    retain the German installation default; unsupported values are still refused
+    by i18n initialization rather than silently changed to a supported language.
     """
     env = os.environ if env is None else env
     app_base_url = env.get("APP_BASE_URL", DEFAULT_APP_BASE_URL)
@@ -164,6 +168,7 @@ def build_config(env=None, overrides=None):
         "CRON_SECRET": env.get("CRON_SECRET", "").strip(),
         "RATELIMIT_STORAGE_URI": env.get("REDIS_URL", DEFAULT_REDIS_URL),
         "MATOMO_SITE_ID": env.get("MATOMO_SITE_ID", "").strip(),
+        "BABEL_DEFAULT_LOCALE": env.get("BABEL_DEFAULT_LOCALE", "de_CH"),
     }
 
     if overrides:
@@ -176,5 +181,9 @@ def build_config(env=None, overrides=None):
             and config["APP_BASE_URL"].startswith("https://")
         ):
             config["SESSION_COOKIE_SECURE"] = True
+
+    locale = config["BABEL_DEFAULT_LOCALE"]
+    if isinstance(locale, str):
+        config["BABEL_DEFAULT_LOCALE"] = locale.strip() or "de_CH"
 
     return config

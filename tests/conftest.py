@@ -122,6 +122,7 @@ def app(mock_db):
 
         from api_public import public_api_bp
         from health import health_bp
+        from i18n import init_app as init_i18n
 
         test_app = Flask(
             __name__,
@@ -129,7 +130,8 @@ def app(mock_db):
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates"
             ),
         )
-        test_app.config["TESTING"] = True
+        test_app.config.update(TESTING=True, SECRET_KEY="i18n-test-session")
+        init_i18n(test_app)
         test_app.register_blueprint(public_api_bp)
         test_app.register_blueprint(health_bp)
         yield test_app
