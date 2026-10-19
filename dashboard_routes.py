@@ -31,8 +31,9 @@ import database as db
 import payment_reconciliation
 import quartierakku
 import security_utils
+from email_localization import gettext, recipient_locale
 from i18n import gettext as _
-from i18n import normalize_locale
+from i18n import localized_url, normalize_locale
 from store import contact_request
 from telemetry import TelemetryError
 
@@ -323,17 +324,25 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             )
             if not token:
                 continue
-            url = access_token.access_url(
-                access_token.DASHBOARD, current_app.config["APP_BASE_URL"], token
+            locale = recipient_locale(db.get_building(building_id), normalized_email)
+            url = localized_url(
+                access_token.access_url(
+                    access_token.DASHBOARD, current_app.config["APP_BASE_URL"], token
+                ),
+                locale,
             )
             try:
                 send_email(
                     normalized_email,
-                    "Ihr Dashboard-Zugangslink",
-                    "Öffnen Sie Ihr Dashboard über diesen Link:\n\n"
-                    f"{url}\n\n"
-                    "Falls Sie diesen Link nicht angefordert haben, können Sie diese "
-                    "E-Mail ignorieren.",
+                    gettext("Ihr Dashboard-Zugangslink", locale=locale),
+                    gettext(
+                        "Öffnen Sie Ihr Dashboard über diesen Link:\n\n"
+                        "%(url)s\n\n"
+                        "Falls Sie diesen Link nicht angefordert haben, können Sie diese "
+                        "E-Mail ignorieren.",
+                        url=url,
+                        locale=locale,
+                    ),
                 )
             except Exception:
                 current_app.logger.exception("Failed to send dashboard access email")

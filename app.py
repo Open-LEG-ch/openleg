@@ -45,10 +45,12 @@ from admin import admin_bp, require_admin
 from advisory_routes import advisory_bp
 from api_public import public_api_bp
 from cron import cron_bp
+from email_localization import gettext, recipient_locale
 from email_utils import send_email
 from equipment_routes import equipment_bp
 from health import health_bp
 from i18n import gettext as _
+from i18n import localized_url
 from leg_registry import registry_api_bp
 from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
@@ -208,20 +210,31 @@ def send_activity_notification(activity_type, details):
 
 
 def send_confirmation_email(email, verification_url, building_id=None, address=None):
+    profile = db.get_building(building_id) if building_id else None
+    locale = recipient_locale(profile, email)
+    verification_url = localized_url(verification_url, locale)
     name = _tenant_name()
     try:
         city = getattr(g, "tenant", {}).get("city_name", "Zürich")
     except RuntimeError:
         city = "Zürich"
-    subject = f"{name}: Interessenmeldung bestätigen"
-    message_body = (
-        f"Bestätigen Sie Ihre Interessenmeldung für eine Lokale "
-        f"Elektrizitätsgemeinschaft (LEG) in {city}:\n\n"
-        f"{verification_url}\n\n"
+    subject = gettext(
+        "%(platform_name)s: Interessenmeldung bestätigen",
+        platform_name=name,
+        locale=locale,
+    )
+    message_body = gettext(
+        "Bestätigen Sie Ihre Interessenmeldung für eine Lokale "
+        "Elektrizitätsgemeinschaft (LEG) in %(city_name)s:\n\n"
+        "%(verification_url)s\n\n"
         "Erst danach wird Ihre Anmeldung anonym gezählt. Wir informieren Sie, "
         "wenn weitere bestätigte Interessierte aus derselben Gemeinde dazukommen.\n\n"
         "Falls Sie sich nicht angemeldet haben, ignorieren Sie diese E-Mail.\n\n"
-        f"Ihr {name}-Team"
+        "Ihr %(platform_name)s-Team",
+        city_name=city,
+        verification_url=verification_url,
+        platform_name=name,
+        locale=locale,
     )
     send_email(email, subject, message_body)
 

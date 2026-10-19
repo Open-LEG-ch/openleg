@@ -96,6 +96,14 @@ Unresolved-address signup confirmations use the explicit validated choice from
 that submission, including its verification link, without requiring a Flask
 request or worker context. Missing choices retain German.
 
-Building signup confirmations, access links, contact updates, invitations and
-invoice correspondence still need the separate recipient delivery changes.
+Building signup confirmations and resident dashboard access links use the
+addressed profile's saved language. The profile email must match the addressee;
+unknown or mismatched records use German. A requester cannot choose another
+resident's email language through the access form or page language. Verification
+and login links carry the recipient's locale through the existing token exchange.
+Background confirmation mail works without a Flask context. These messages do
+not write a language preference or change token, authorization or delivery rules.
+
+Contact updates, deletion confirmations, invoice correspondence and
+municipality/utility/registry mail still need recipient delivery coverage.
 This implementation records no human language or legal approval.

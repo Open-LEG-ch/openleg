@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 23:22+0000\n"
+"POT-Creation-Date: 2026-10-19 23:38+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -172,6 +172,11 @@ msgstr[1] ""
 #: templates/emails/day_3_smartmeter.html:44 templates/emails/day_7_consumption.html:59
 #, python-format
 msgid "%(platform_name)s · LEG für %(city_name)s"
+msgstr ""
+
+#: app.py:222
+#, python-format
+msgid "%(platform_name)s: Interessenmeldung bestätigen"
 msgstr ""
 
 #: templates/gemeinde/rangliste_fortschritte.html:92
@@ -751,11 +756,11 @@ msgstr ""
 msgid "Adresse ist zu kurz"
 msgstr ""
 
-#: app.py:497
+#: app.py:510
 msgid "Adresse konnte nicht analysiert werden."
 msgstr ""
 
-#: app.py:489
+#: app.py:502
 msgid "Adresse konnte nicht eindeutig geprüft werden."
 msgstr ""
 
@@ -991,7 +996,7 @@ msgstr ""
 msgid "Anlagen-Matching"
 msgstr ""
 
-#: app.py:128 formation_guide.py:65
+#: app.py:130 formation_guide.py:65
 msgid "Anleitung zum eigenen Betrieb"
 msgstr ""
 
@@ -1513,6 +1518,22 @@ msgstr ""
 msgid "Bestätigen"
 msgstr ""
 
+#: app.py:227
+#, python-format
+msgid ""
+"Bestätigen Sie Ihre Interessenmeldung für eine Lokale Elektrizitätsgemeinschaft (LEG) in "
+"%(city_name)s:\n"
+"\n"
+"%(verification_url)s\n"
+"\n"
+"Erst danach wird Ihre Anmeldung anonym gezählt. Wir informieren Sie, wenn weitere bestätigte "
+"Interessierte aus derselben Gemeinde dazukommen.\n"
+"\n"
+"Falls Sie sich nicht angemeldet haben, ignorieren Sie diese E-Mail.\n"
+"\n"
+"Ihr %(platform_name)s-Team"
+msgstr ""
+
 #: interest_intake.py:102
 #, python-format
 msgid ""
@@ -1800,7 +1821,7 @@ msgstr ""
 msgid "Bitte zwei Gemeinden mit verfügbaren Daten wählen."
 msgstr ""
 
-#: app.py:72 formation_guide.py:9
+#: app.py:74 formation_guide.py:9
 msgid "Brauchen die Teilnehmenden eigene Smart Meter?"
 msgstr ""
 
@@ -1941,7 +1962,7 @@ msgstr ""
 msgid "Danke für die Bestätigung"
 msgstr ""
 
-#: app.py:107 formation_guide.py:44
+#: app.py:109 formation_guide.py:44
 msgid "Darf ich OpenLEG installieren, anpassen oder forken?"
 msgstr ""
 
@@ -2314,7 +2335,7 @@ msgid ""
 "teilnehmenden Endverbraucher erreichen."
 msgstr ""
 
-#: app.py:98 formation_guide.py:35
+#: app.py:100 formation_guide.py:35
 msgid ""
 "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei Teilnehmenden in der "
 "Grundversorgung auch den übrigen Strombezug. Die LEG oder ihr Dienstleister rechnet den innerhalb"
@@ -2377,7 +2398,7 @@ msgid ""
 "anschliessend."
 msgstr ""
 
-#: app.py:764
+#: app.py:777
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -2409,7 +2430,7 @@ msgstr ""
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr ""
 
-#: dashboard_routes.py:867
+#: dashboard_routes.py:876
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr ""
 
@@ -2881,7 +2902,7 @@ msgid ""
 "Quelldokumente."
 msgstr ""
 
-#: dashboard_routes.py:832
+#: dashboard_routes.py:841
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -3634,7 +3655,7 @@ msgstr ""
 msgid "Falls Sie keinen gültigen Link mehr haben, senden wir Ihnen einen neuen Zugang per E-Mail."
 msgstr ""
 
-#: app.py:716
+#: app.py:729
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr ""
 
@@ -3642,7 +3663,7 @@ msgstr ""
 msgid "Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink."
 msgstr ""
 
-#: dashboard_routes.py:297
+#: dashboard_routes.py:298
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr ""
 
@@ -4061,7 +4082,7 @@ msgstr ""
 msgid "Gebiet und Voraussetzungen prüfen"
 msgstr ""
 
-#: app.py:645
+#: app.py:658
 msgid "Gebäude nicht gefunden."
 msgstr ""
 
@@ -4746,6 +4767,10 @@ msgstr ""
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgstr ""
 
+#: dashboard_routes.py:337
+msgid "Ihr Dashboard-Zugangslink"
+msgstr ""
+
 #: templates/leg_verzeichnis/bestaetigt.html:7
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
 msgstr ""
@@ -5073,7 +5098,7 @@ msgstr ""
 msgid "Intervallenergie"
 msgstr ""
 
-#: app.py:135 formation_guide.py:72
+#: app.py:137 formation_guide.py:72
 msgid "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
 msgstr ""
 
@@ -5085,7 +5110,7 @@ msgstr ""
 msgid "Ja"
 msgstr ""
 
-#: app.py:111 formation_guide.py:48
+#: app.py:113 formation_guide.py:48
 msgid ""
 "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG installieren, nutzen und anpassen. Auch"
 " ein Fork ist erlaubt. Wenn Sie eine veränderte Version über ein Netzwerk anbieten, müssen Sie "
@@ -5196,11 +5221,11 @@ msgstr ""
 msgid "Kanal"
 msgstr ""
 
-#: app.py:146 formation_guide.py:83
+#: app.py:148 formation_guide.py:83
 msgid "Kann OpenLEG unsere Gruppe persönlich unterstützen?"
 msgstr ""
 
-#: app.py:84 formation_guide.py:21
+#: app.py:86 formation_guide.py:21
 msgid "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 msgstr ""
 
@@ -5360,7 +5385,7 @@ msgstr ""
 msgid "Keine Datei ausgewählt"
 msgstr ""
 
-#: app.py:474 app.py:526 app.py:569
+#: app.py:487 app.py:539 app.py:582
 msgid "Keine Daten empfangen."
 msgstr ""
 
@@ -5445,7 +5470,7 @@ msgstr ""
 msgid "Keine ausstehenden Einträge"
 msgstr ""
 
-#: app.py:504
+#: app.py:517
 msgid "Keine direkten Partner gefunden."
 msgstr ""
 
@@ -6025,7 +6050,7 @@ msgstr ""
 msgid "Lizenz"
 msgstr ""
 
-#: app.py:120 formation_guide.py:57
+#: app.py:122 formation_guide.py:57
 msgid "Lizenz lesen"
 msgstr ""
 
@@ -6623,13 +6648,13 @@ msgstr ""
 msgid "Nein"
 msgstr ""
 
-#: app.py:88 formation_guide.py:25
+#: app.py:90 formation_guide.py:25
 msgid ""
 "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im Netzgebiet eines "
 "Verteilnetzbetreibers. Für mehrere Gemeinden oder VNB-Gebiete braucht es separate lokale LEGs."
 msgstr ""
 
-#: app.py:75 formation_guide.py:12
+#: app.py:77 formation_guide.py:12
 msgid ""
 "Nein. Vorhandene gesetzeskonforme Smart Meter des Verteilnetzbetreibers werden weiterverwendet. "
 "Fehlende erforderliche Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
@@ -7297,7 +7322,7 @@ msgid ""
 " Gemeinden und Entwickler, ohne Lizenzkosten oder Datenverkauf."
 msgstr ""
 
-#: app.py:139 formation_guide.py:76 templates/leg_gruenden.html:87
+#: app.py:141 formation_guide.py:76 templates/leg_gruenden.html:87
 msgid ""
 "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. Noch ist nicht jede VNB-Anbindung "
 "fertig umgesetzt. Anmeldung und Datenlieferung müssen pro VNB konfiguriert werden."
@@ -7512,11 +7537,11 @@ msgstr ""
 msgid "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgstr ""
 
-#: app.py:511
+#: app.py:524
 msgid "Partner gefunden!"
 msgstr ""
 
-#: app.py:951
+#: app.py:964
 msgid "Period not found"
 msgstr ""
 
@@ -8121,7 +8146,7 @@ msgstr ""
 msgid "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
 msgstr ""
 
-#: app.py:124 formation_guide.py:61
+#: app.py:126 formation_guide.py:61
 msgid "Repository öffnen"
 msgstr ""
 
@@ -8387,11 +8412,11 @@ msgstr ""
 msgid "Seriennummer (optional)"
 msgstr ""
 
-#: app.py:660
+#: app.py:673
 msgid "Server-Fehler beim Verarbeiten der Messdaten."
 msgstr ""
 
-#: app.py:519
+#: app.py:532
 msgid "Server-Fehler. Bitte später erneut versuchen."
 msgstr ""
 
@@ -9226,7 +9251,7 @@ msgstr ""
 msgid "Unterstützt werden nur camt.053 und camt.054."
 msgstr ""
 
-#: app.py:153 formation_guide.py:90
+#: app.py:155 formation_guide.py:90
 msgid "Unterstützung anfragen"
 msgstr ""
 
@@ -9610,7 +9635,7 @@ msgstr ""
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr ""
 
-#: app.py:149 formation_guide.py:86
+#: app.py:151 formation_guide.py:86
 msgid ""
 "Vorträge, Workshops und Projektunterstützung bieten wir nach vorgängiger Vereinbarung gegen "
 "Honorar an."
@@ -9802,7 +9827,7 @@ msgstr ""
 msgid "Wer einen Fehler verfolgt oder einen Pull Request plant, findet hier den passenden Einstieg."
 msgstr ""
 
-#: app.py:95 formation_guide.py:32
+#: app.py:97 formation_guide.py:32
 msgid "Wer ist für die Abrechnung zuständig?"
 msgstr ""
 
@@ -9930,7 +9955,7 @@ msgid ""
 "erhalten Sie die nächsten Schritte."
 msgstr ""
 
-#: app.py:752
+#: app.py:765
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -10175,7 +10200,7 @@ msgstr ""
 msgid "Zu meinen Solargeräten"
 msgstr ""
 
-#: app.py:165 templates/index.html:648
+#: app.py:167 templates/index.html:648
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
 msgstr ""
 
@@ -10388,11 +10413,11 @@ msgstr ""
 msgid "bis 40"
 msgstr ""
 
-#: app.py:898
+#: app.py:911
 msgid "building_id required"
 msgstr ""
 
-#: app.py:639
+#: app.py:652
 msgid "building_id und csv_content erforderlich."
 msgstr ""
 
@@ -10651,7 +10676,7 @@ msgid ""
 "einen Abrechnungslauf und definitive Rechnungsdokumente sind noch kein durchgängiger Ablauf."
 msgstr ""
 
-#: app.py:636
+#: app.py:649
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr ""
 
@@ -10916,6 +10941,16 @@ msgstr ""
 
 #: templates/dashboard.html:14
 msgid "Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail."
+msgstr ""
+
+#: dashboard_routes.py:339
+#, python-format
+msgid ""
+"Öffnen Sie Ihr Dashboard über diesen Link:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 msgstr ""
 
 #: templates/advisories_error.html:6

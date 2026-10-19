@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Render outbound mail in the recipient's language, including outside Flask."""
 
+from collections.abc import Mapping
 from functools import lru_cache
 from pathlib import Path
 
@@ -31,6 +32,19 @@ def gettext(message, *, locale="de_CH", **variables):
     """Translate a complete message without reading request or tenant language."""
     message = _catalog(resolve_locale(locale)).gettext(message)
     return message % variables if variables else message
+
+
+def recipient_locale(profile, email):
+    """Use a profile choice only for the email address bound to that profile."""
+    if not isinstance(profile, Mapping) or not isinstance(email, str):
+        return "de_CH"
+    stored_email = profile.get("email")
+    if (
+        not isinstance(stored_email, str)
+        or stored_email.strip().casefold() != email.strip().casefold()
+    ):
+        return "de_CH"
+    return resolve_locale(profile.get("preferred_locale"))
 
 
 @lru_cache(maxsize=2)

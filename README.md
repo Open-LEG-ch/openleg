@@ -72,7 +72,8 @@ stored invoice figures and existing formation files remain unchanged. See
 [document language behavior](docs/internationalization.md#printable-documents).
 Residents can save German or Swiss French for the four scheduled onboarding
 emails and municipality interest notices in their private dashboard. Unresolved
-address confirmations use the language chosen at signup. Existing registrations default to German;
+address confirmations use the language chosen at signup. Resident confirmation
+and login links use the profile's saved choice. Existing registrations default to German;
 changing the page language alone does not change a saved preference. See
 [recipient language](docs/internationalization.md#recipient-language).
 
@@ -231,7 +232,8 @@ beschreibt das Verhalten.
 Bewohnerinnen und Bewohner können im privaten Dashboard Deutsch oder Französisch
 für die vier zeitversetzten Einstiegs-E-Mails und Gemeinde-Interessenmeldungen
 speichern. Bestätigungen bei ungeklärten Adressen verwenden die Sprache der
-Anmeldung. Bestehende Anmeldungen
+Anmeldung. Bestätigungsmails und Zugangslinks zum Bewohnerdashboard verwenden
+die gespeicherte Sprache. Bestehende Anmeldungen
 behalten Deutsch. Ein Sprachwechsel auf der Seite ändert diese Einstellung nicht.
 Siehe [E-Mail-Sprache](docs/internationalization.md#recipient-language).
 
