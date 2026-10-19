@@ -12,7 +12,7 @@ way in #271.
 import logging
 from datetime import UTC, datetime
 
-from flask import Blueprint, abort, current_app, jsonify, request
+from flask import Blueprint, abort, current_app, g, jsonify, request
 
 import billing_runner
 import database as db
@@ -20,6 +20,7 @@ import email_automation
 import leg_registry
 import operator_api
 import sdat_ingestion
+from cantons import SWISS_CANTONS
 from security_utils import log_security_event
 from store import invoice_query, telemetry
 from telemetry import TelemetryError
@@ -82,7 +83,10 @@ def api_cron_refresh_public_data():
     _require_cron_secret()
     import public_data
 
-    result = public_data.refresh_canton("ZH")
+    kanton = request.args.get("canton", g.tenant["kanton_code"]).strip().upper()
+    if kanton not in SWISS_CANTONS:
+        return jsonify({"error": "invalid_canton"}), 400
+    result = public_data.refresh_canton(kanton)
     return jsonify(result)
 
 

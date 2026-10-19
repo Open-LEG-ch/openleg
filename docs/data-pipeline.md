@@ -14,6 +14,34 @@ against an empty development database.
 - ElCom: electricity tariff data used by public API and calculator flows.
 - Energie Reporter: municipality energy transition indicators.
 
+## Refresh public municipality data
+
+`POST /api/cron/refresh-public-data` requires `X-Cron-Secret`. It refreshes the
+tenant's `kanton_code` by default. Pass a Swiss canton code explicitly to refresh
+another canton, for example `?canton=OW`. Unknown codes return HTTP 400 before
+fetching or saving data.
+
+The fetchers discover resources through the municipal datasets on
+opendata.swiss. If the metadata request fails, they use the publisher's fixed
+delivery URL. A failed delivery or incompatible schema reports `fetch_failed`;
+it does not replace existing data with an empty delivery.
+
+- [Energie Reporter resource](https://opendata.swiss/de/dataset/energie-reporter/resource/6a07d309-6a8e-41c0-842e-66dff203edd3):
+  read `energyreporter_municipality_latest.csv` from the current ZIP, excluding
+  canton, national, and historical series. Convert the published solar, electric
+  car, and renewable heating fractions to percentages. Keep installed PV capacity
+  in kWp and annual energy in MWh. Downloads stop above 5 MiB; archives allow at
+  most 100 members, 20 MiB expanded in total, and a 10 MiB municipal CSV.
+  Data attribution: [Energie Reporter](https://www.energiereporter.ch/), geoimpact,
+  and EnergieSchweiz.
+- [BFE municipal solar potential](https://opendata.swiss/de/dataset/solarenergiepotenziale-der-schweizer-gemeinden):
+  use scenario 1, roofs only, and convert annual GWh to kWh. This dataset supplies
+  generation potential. It supplies no installed capacity, roof area, or
+  utilization percentage; those fields remain unknown in the parsed result.
+
+Legacy semicolon CSV deliveries remain supported. Upstream requests have timeouts
+and failures use safe log messages without response bodies or exception text.
+
 ## Main Paths
 
 - `public_data.py` fetches ElCom, Energie Reporter, and Sonnendach data.
