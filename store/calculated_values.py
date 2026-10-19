@@ -53,6 +53,65 @@ def get_calculated_values_community(community_id):
         return dict(row) if row else None
 
 
+def record_calculated_meter_assignment(
+    territory, metering_point_id, start, end, reference
+):
+    """Bind a dated statement to the current, tenant-owned meter assignment."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s))",
+            (f"metering-point-binding:{metering_point_id}",),
+        )
+        cur.execute(
+            """SELECT c.community_id FROM metering_points mp
+               JOIN communities c ON c.community_id = mp.community_id
+               JOIN buildings b ON b.building_id = c.admin_building_id
+               WHERE mp.metering_point_id = %s AND mp.active = TRUE AND b.city_id = %s
+                 AND NULLIF(btrim(mp.vnb_community_id), '') IS NOT NULL
+                 AND mp.expected_directions IS NOT NULL""",
+            (metering_point_id, territory),
+        )
+        mapped = cur.fetchone()
+        if not mapped:
+            raise CalculatedValuesLifecycleMissing()
+        cur.execute(
+            "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+            (mapped["community_id"],),
+        )
+        cur.execute(
+            """SELECT mp.assignment_effective_from, mp.assignment_effective_until,
+                      mp.assignment_reference FROM metering_points mp
+               JOIN communities c ON c.community_id = mp.community_id
+               JOIN buildings b ON b.building_id = c.admin_building_id
+               JOIN community_members cm ON cm.community_id = c.community_id
+                    AND cm.building_id = mp.building_id
+               WHERE mp.metering_point_id = %s AND mp.active = TRUE
+                 AND c.community_id = %s AND b.city_id = %s
+                 AND cm.status = 'confirmed'
+                 AND NULLIF(btrim(mp.vnb_community_id), '') IS NOT NULL
+                 AND mp.expected_directions IS NOT NULL
+               FOR SHARE OF b, cm""",
+            (metering_point_id, mapped["community_id"], territory),
+        )
+        statement = cur.fetchone()
+        if not statement:
+            raise CalculatedValuesLifecycleMissing()
+        if (
+            statement["assignment_effective_from"],
+            statement["assignment_effective_until"],
+            statement["assignment_reference"],
+        ) == (start, end, reference):
+            return {"metering_point_id": metering_point_id}
+        cur.execute(
+            """UPDATE metering_points SET assignment_effective_from = %s,
+                   assignment_effective_until = %s, assignment_reference = %s,
+                   assignment_actor = 'admin-token', assignment_recorded_at = CURRENT_TIMESTAMP
+               WHERE metering_point_id = %s RETURNING metering_point_id""",
+            (start, end, reference, metering_point_id),
+        )
+        return dict(cur.fetchone())
+
+
 def find_overlapping_calculated_values(
     territory, community_id, period_start, period_end
 ):

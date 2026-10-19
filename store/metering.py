@@ -298,6 +298,44 @@ def upsert_metering_points(points):
 
         with _get_connection() as conn:
             with conn.cursor() as cur:
+                # Match evidence/configuration writers: point locks precede
+                # community/FK locks, with a stable order for multi-point calls.
+                for point_id in sorted({str(p["metering_point_id"]) for p in points}):
+                    cur.execute(
+                        "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                        (f"metering-point-binding:{point_id}",),
+                    )
+                for point in points:
+                    external = point.get("vnb_community_id") or None
+                    community = point.get("community_id") or None
+                    building = point.get("building_id") or None
+                    directions = _canonical_directions(point.get("expected_directions"))
+                    cur.execute(
+                        """UPDATE metering_points SET
+                               assignment_effective_from = NULL,
+                               assignment_effective_until = NULL,
+                               assignment_reference = NULL,
+                               assignment_actor = NULL,
+                               assignment_recorded_at = NULL
+                           WHERE metering_point_id = %s AND (
+                               (%s IS NOT NULL AND vnb_community_id IS DISTINCT FROM %s)
+                               OR (%s IS NOT NULL AND community_id IS DISTINCT FROM %s)
+                               OR (%s IS NOT NULL AND building_id IS DISTINCT FROM %s)
+                               OR (%s::VARCHAR[] IS NOT NULL
+                                   AND expected_directions IS DISTINCT FROM %s::VARCHAR[])
+                           )""",
+                        (
+                            point["metering_point_id"],
+                            external,
+                            external,
+                            community,
+                            community,
+                            building,
+                            building,
+                            directions,
+                            directions,
+                        ),
+                    )
                 values = [
                     (
                         point["metering_point_id"],

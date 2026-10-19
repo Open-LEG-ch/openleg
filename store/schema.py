@@ -1887,6 +1887,41 @@ def create_tables():
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 )
             """)
+            cur.execute("""
+                ALTER TABLE metering_points
+                    ADD COLUMN IF NOT EXISTS assignment_effective_from TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS assignment_effective_until TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS assignment_reference VARCHAR(128),
+                    ADD COLUMN IF NOT EXISTS assignment_actor VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS assignment_recorded_at TIMESTAMPTZ
+            """)
+            cur.execute("""
+                DO $$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'chk_metering_assignment_validity'
+                          AND conrelid = 'metering_points'::regclass
+                    ) THEN
+                        ALTER TABLE metering_points ADD CONSTRAINT
+                            chk_metering_assignment_validity CHECK (
+                                (assignment_effective_from IS NULL
+                                 AND assignment_effective_until IS NULL
+                                 AND assignment_reference IS NULL
+                                 AND assignment_actor IS NULL
+                                 AND assignment_recorded_at IS NULL)
+                                OR
+                                (assignment_effective_from IS NOT NULL
+                                 AND assignment_reference IS NOT NULL
+                                 AND btrim(assignment_reference) <> ''
+                                 AND assignment_actor IS NOT NULL
+                                 AND assignment_actor = 'admin-token'
+                                 AND assignment_recorded_at IS NOT NULL
+                                 AND (assignment_effective_until IS NULL
+                                      OR assignment_effective_until > assignment_effective_from))
+                            );
+                    END IF;
+                END $$
+            """)
             # Migration: add expected_directions to existing metering_points
             # tables. Legacy rows stay NULL: the migration must not invent a
             # direction for existing citizen data.

@@ -34,6 +34,34 @@ def exchange_capabilities():
     }
 
 
+def record_meter_assignment(territory, metering_point_id, payload, *, repository=None):
+    """Record an operator's explicitly dated membership statement."""
+    if repository is None:
+        import database as repository
+
+    if payload.get("confirmed_membership") is not True:
+        raise ValueError("membership_attestation_required")
+    reference = payload.get("source_reference")
+    if not isinstance(reference, str) or not reference.strip() or len(reference) > 128:
+        raise ValueError("invalid_source_reference")
+    diagnostics = []
+    start = _parse_moment(
+        payload.get("effective_from"), "invalid_assignment_period", diagnostics
+    )
+    end = (
+        _parse_moment(
+            payload["effective_until"], "invalid_assignment_period", diagnostics
+        )
+        if payload.get("effective_until") is not None
+        else None
+    )
+    if diagnostics or (end is not None and end <= start):
+        raise ValueError("invalid_assignment_period")
+    return repository.record_calculated_meter_assignment(
+        territory, metering_point_id, start, end, reference.strip()
+    )
+
+
 def _parse_moment(value, code, diagnostics):
     try:
         moment = datetime.fromisoformat(value)

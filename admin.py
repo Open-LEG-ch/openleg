@@ -130,6 +130,30 @@ def admin_withdraw_calculated_values(territory, delivery_id):
     return jsonify(result), 200 if result["replayed"] else 201
 
 
+@admin_bp.route(
+    "/admin/vnb-calculated-values/<territory>/mappings/<metering_point_id>",
+    methods=["POST"],
+)
+def admin_calculated_meter_assignment(territory, metering_point_id):
+    require_admin()
+    if not _TERRITORY_RE.fullmatch(territory):
+        return jsonify(error="invalid_territory"), 400
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error="invalid_payload"), 400
+    try:
+        result = vnb_calculated_values.record_meter_assignment(
+            territory, metering_point_id, payload
+        )
+    except db.CalculatedValuesLifecycleMissing:
+        return jsonify(error="meter_mapping_not_found"), 404
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+    except psycopg2.Error:
+        return jsonify(error="calculated_values_unavailable"), 503
+    return jsonify(result), 201
+
+
 @admin_bp.route("/admin/sdat-schedules/<territory>/run", methods=["POST"])
 def admin_run_sdat_schedule(territory):
     """Run one tenant now, including same-day recovery after a failure."""
