@@ -143,12 +143,14 @@ def _require_finite_decimal(value, message):
     return number
 
 
-def _validated_difference(node, vnb_key, engine_key, difference_key):
-    """Require finite vnb/engine evidence and a documented true zero gap.
+def _validated_difference(
+    node, vnb_key, engine_key, difference_key, *, vnb_basis=False
+):
+    """Require the documented model gap at six-decimal persisted precision.
 
-    The difference must equal engine minus vnb at the 6-decimal persisted
-    precision and must be exactly zero. Returns the engine value for the
-    cross-check against billed quantities.
+    Legacy billing requires a zero gap and prices the engine quantity. An
+    independently verified E66 certificate permits a truthful model gap and
+    prices the VNB quantity.
     """
     for key in (vnb_key, engine_key, difference_key):
         if key not in node:
@@ -161,12 +163,18 @@ def _validated_difference(node, vnb_key, engine_key, difference_key):
     )
     difference = _as_decimal(node[difference_key])
     expected = (engine - vnb).quantize(_KWH_QUANTUM, rounding=ROUND_HALF_UP)
-    if not difference.is_finite() or difference != expected or difference != 0:
+    if (
+        not difference.is_finite()
+        or difference != expected
+        or (not vnb_basis and difference != 0)
+    ):
         raise BillingApprovalError("Der Abgleich zwischen OpenLEG und VNB weicht ab.")
-    return engine
+    return vnb if vnb_basis else engine
 
 
-def _require_canonical_reconciliation(reconciliation, consumption_kwh, production_kwh):
+def _require_canonical_reconciliation(
+    reconciliation, consumption_kwh, production_kwh, *, vnb_basis=False
+):
     """Require the complete reconcile_with_vnb evidence, cross-checked.
 
     Canonical contract: top-level vnb/engine totals for allocation and
@@ -187,12 +195,14 @@ def _require_canonical_reconciliation(reconciliation, consumption_kwh, productio
             "vnb_allocated_kwh",
             "engine_allocated_kwh",
             "difference_kwh",
+            vnb_basis=vnb_basis,
         )
         engine_production = _validated_difference(
             reconciliation,
             "vnb_production_kwh",
             "engine_production_kwh",
             "production_difference_kwh",
+            vnb_basis=vnb_basis,
         )
     except ArithmeticError:
         raise BillingApprovalError(
@@ -219,7 +229,11 @@ def _require_canonical_reconciliation(reconciliation, consumption_kwh, productio
                 )
             try:
                 engine_kwh = _validated_difference(
-                    entry, "vnb_kwh", "engine_kwh", "difference_kwh"
+                    entry,
+                    "vnb_kwh",
+                    "engine_kwh",
+                    "difference_kwh",
+                    vnb_basis=vnb_basis,
                 )
             except ArithmeticError:
                 raise BillingApprovalError(
@@ -756,7 +770,7 @@ def _require_valid_policy(policy, period_start, community_id):
     )
 
 
-def prepare_invoice_snapshots(period, issue_date=None):
+def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None):
     """Build one immutable invoice snapshot per billed participant.
 
     Fails closed with :class:`BillingApprovalError` unless the period is a
@@ -784,7 +798,23 @@ def prepare_invoice_snapshots(period, issue_date=None):
         period.get("line_items"), internal_price, settlement_fee
     )
     reconciliation = period.get("reconciliation")
-    _require_canonical_reconciliation(reconciliation, consumption_kwh, production_kwh)
+    vnb_basis = (
+        isinstance(reconciliation, dict) and "precision_policy" in reconciliation
+    )
+    if vnb_basis:
+        import billing_reconciliation
+
+        try:
+            billing_reconciliation.validate_billed_source(
+                period, calculated_values, consumption_kwh, production_kwh
+            )
+        except billing_reconciliation.ReconciliationError:
+            raise BillingApprovalError(
+                "Der VNB-Beleg bestätigt diese Mengen nicht."
+            ) from None
+    _require_canonical_reconciliation(
+        reconciliation, consumption_kwh, production_kwh, vnb_basis=vnb_basis
+    )
     _require_battery_cost_shares(
         period, community_id, line_items, consumption_kwh, production_kwh
     )
@@ -809,11 +839,30 @@ def prepare_invoice_snapshots(period, issue_date=None):
             None,
         )
         participant_provenance = dict(provenance)
+        if vnb_basis:
+            participant_provenance["reconciliation"] = {
+                **provenance["reconciliation"],
+                "per_participant": {
+                    participant_id: provenance["reconciliation"]["per_participant"][
+                        participant_id
+                    ]
+                },
+                "production_per_participant": {
+                    participant_id: provenance["reconciliation"][
+                        "production_per_participant"
+                    ][participant_id]
+                },
+                "precision_policy": {
+                    key: value
+                    for key, value in reconciliation["precision_policy"].items()
+                    if key != "intervals"
+                },
+            }
         if reconciliation.get("source_evidence"):
             source = reconciliation["source_evidence"]
             metadata = source["metadata"]
             participant_provenance["reconciliation"] = {
-                **provenance["reconciliation"],
+                **participant_provenance["reconciliation"],
                 "source_evidence": {
                     **source,
                     "metadata": {

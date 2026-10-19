@@ -105,10 +105,12 @@ silently cancel anything: an operator must use the withdrawal flow. Reusing an
 imported document ID for changed bytes is refused. Source, physical readings
 and import ledger either commit together or all roll back on storage failure.
 
-Billing still applies its existing reconciliation and approval gates; the
-precision-aware allocation policy is tracked separately in #684. The supported
-profile is covered by synthetic PostgreSQL tests. Representative privacy-safe
-EWO samples are still needed before claiming EWO interoperability.
+Billing applies its reconciliation and approval gates. The supported
+[precision policy](data-pipeline.md#rounded-e66-allocation-evidence) prices VNB
+quantities after an exact interval audit for proportional billing without a
+battery; consumer and producer totals must balance exactly. The source profile
+is covered by synthetic PostgreSQL tests. Representative privacy-safe EWO
+samples are still needed before claiming EWO interoperability.
 
 Source: [VSE SDAT 2025 §1.12, printed pp. 51–53](https://www.strom.ch/de/media/13628/download)
 for the three products; [VSE Metering Code 2025 §6.1, printed p. 33](https://www.strom.ch/de/media/13608/download)

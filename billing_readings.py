@@ -21,6 +21,7 @@ Two deliberate choices:
 import logging
 from dataclasses import dataclass, replace
 from datetime import timedelta
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -532,3 +533,51 @@ def with_calculated_vnb_evidence(frames, delivery):
             "metadata": delivery["source_metadata"],
         }
     return replace(frames, vnb_reference=reference, provenance=provenance)
+
+
+def calculated_quantity_frames(frames, delivery):
+    """Project audited source channels into the billing participant intervals."""
+    quantities = {
+        direction: pd.DataFrame(
+            Decimal(0),
+            index=frames.consumption.index,
+            columns=frames.participants,
+            dtype=object,
+        )
+        for direction in ("consumption", "production")
+    }
+    for row in delivery["normalized_records"]:
+        moment = pd.Timestamp(row["measured_at"])
+        participant = row["participant_id"]
+        frame = quantities[row["direction"]]
+        if moment not in frame.index or participant not in frame.columns:
+            raise PeriodDataError(
+                [_problem("invalid_vnb_evidence", "source shape changed")]
+            )
+        frame.at[moment, participant] += Decimal(
+            row["source_quantities"]["community_kwh"]
+        )
+    return quantities["consumption"], quantities["production"]
+
+
+def frames_from_calculated_source(delivery):
+    """Rebuild independent audit inputs from an already audited E66 source."""
+    rows = delivery["normalized_records"]
+    index = pd.DatetimeIndex(sorted({pd.Timestamp(row["measured_at"]) for row in rows}))
+    participants = tuple(sorted({row["participant_id"] for row in rows}))
+    physical = {
+        direction: pd.DataFrame(0.0, index=index, columns=participants)
+        for direction in ("consumption", "production")
+    }
+    for row in rows:
+        physical[row["direction"]].at[
+            pd.Timestamp(row["measured_at"]), row["participant_id"]
+        ] += float(row["source_quantities"]["total_kwh"])
+    frames = PeriodFrames(
+        consumption=physical["consumption"],
+        production=physical["production"],
+        participants=participants,
+        vnb_reference={},
+        provenance={},
+    )
+    return with_calculated_vnb_evidence(frames, delivery)
