@@ -228,14 +228,21 @@ def test_membership_and_verification_are_checked_on_every_use(telemetry_client):
         {"measurement_location": "unknown"},
         {"quality": "validated"},
         {"observed_at": "2026-01-01T00:00:00"},
-        {"observed_at": (datetime.now(UTC) + timedelta(minutes=10)).isoformat()},
-        {"observed_at": (datetime.now(UTC) - timedelta(days=8)).isoformat()},
+        {
+            "observed_at": lambda: (
+                datetime.now(UTC) + timedelta(minutes=10)
+            ).isoformat()
+        },
+        {"observed_at": lambda: (datetime.now(UTC) - timedelta(days=8)).isoformat()},
         {"sequence": True},
         {"url": "http://device.local/command"},
         {"interval_start": "2026-01-01T00:00:00Z"},
     ],
 )
 def test_invalid_samples_are_rejected_atomically(telemetry_client, override):
+    override = {
+        key: value() if callable(value) else value for key, value in override.items()
+    }
     client = telemetry_client
     installation, token = enroll(client)
     response = ingest(
