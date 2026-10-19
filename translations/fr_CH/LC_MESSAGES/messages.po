@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenLEG \n"
 "Report-Msgid-Bugs-To: https://github.com/Open-LEG-ch/openleg/issues\n"
-"POT-Creation-Date: 2026-10-19 20:43+0000\n"
+"POT-Creation-Date: 2026-10-19 21:24+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr_CH\n"
@@ -605,7 +605,7 @@ msgstr "La facturation aujourd’hui"
 msgid "Abrechnung vorbereiten"
 msgstr "Préparer la facturation"
 
-#: dashboard.py:683
+#: dashboard.py:687
 msgid "Abrechnung vorübergehend nicht verfügbar."
 msgstr "Facturation temporairement indisponible."
 
@@ -646,7 +646,7 @@ msgstr "Frais de facturation en ct./kWh, entre 0 et 1000, maximum 4 décimales."
 msgid "Abrechnungsentwurf"
 msgstr "Brouillon de facturation"
 
-#: dashboard.py:689
+#: dashboard.py:693
 msgid "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
 msgstr "Période de facturation introuvable ou plus en brouillon."
 
@@ -660,7 +660,7 @@ msgstr ""
 "La préparation et l'approbation de la facturation doivent être effectuées par des personnes "
 "différentes."
 
-#: billing_workspace.py:238
+#: billing_workspace.py:240
 msgid "Abweichung prüfen"
 msgstr "Vérifier l’écart"
 
@@ -960,7 +960,7 @@ msgstr "Les informations ne correspondent pas"
 msgid "Angenommen"
 msgstr "Accepté"
 
-#: dashboard.py:1230
+#: dashboard.py:1234
 msgid "Anhänge müssen PDF-Dateien sein."
 msgstr "Les pièces jointes doivent être des fichiers PDF."
 
@@ -1068,7 +1068,7 @@ msgstr "Part consommable localement :"
 msgid "Antwort"
 msgstr "Réponse"
 
-#: dashboard.py:892
+#: dashboard.py:896
 msgid "Antwort oder Status ist erforderlich."
 msgstr "Une réponse ou un statut est requis."
 
@@ -1695,7 +1695,7 @@ msgstr "Veuillez indiquer une adresse."
 msgid "Bitte geben Sie eine E-Mail an."
 msgstr "Veuillez indiquer une adresse e-mail."
 
-#: dashboard.py:968 templates/partials/form_validation.html:3
+#: dashboard.py:972 templates/partials/form_validation.html:3
 msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgstr "Veuillez saisir une adresse e-mail valide."
 
@@ -1703,7 +1703,7 @@ msgstr "Veuillez saisir une adresse e-mail valide."
 msgid "Bitte geben Sie eine gültige Schweizer PLZ an."
 msgstr "Veuillez saisir un NPA suisse valide."
 
-#: dashboard.py:1391 dashboard.py:1394
+#: dashboard.py:1395 dashboard.py:1398
 msgid "Bitte geben Sie eine gültige Solarleistung ein."
 msgstr "Veuillez saisir une puissance solaire valable."
 
@@ -1719,7 +1719,7 @@ msgstr "Veuillez saisir un nombre valide."
 msgid "Bitte geben Sie einen Wert im zulässigen Schrittintervall ein."
 msgstr "Veuillez saisir une valeur respectant le pas autorisé."
 
-#: dashboard.py:1378 dashboard.py:1386
+#: dashboard.py:1382 dashboard.py:1390
 msgid "Bitte geben Sie einen gültigen Jahresverbrauch ein."
 msgstr "Veuillez saisir une consommation annuelle valide."
 
@@ -1947,7 +1947,7 @@ msgstr "Le dossier d’inscription peut être préparé une fois que toutes les 
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr "le tableau de bord indique ce qui manque encore pour l’activation."
 
-#: dashboard.py:1406
+#: dashboard.py:1410
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
 msgstr "Le profil énergétique n'a pas pu être enregistré. Veuillez réessayer."
 
@@ -1995,7 +1995,7 @@ msgstr "Le préfixe de facture de la règle de facturation n'est pas valide."
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr "Le modèle de distribution de la règle de facturation n'est pas valide."
 
-#: dashboard.py:1016
+#: dashboard.py:1020
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr "La double validation n’a pas pu être modifiée."
 
@@ -2188,7 +2188,7 @@ msgstr "Les étapes, de l’adresse à une communauté électrique locale en act
 msgid "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
 msgstr "Le projet de facturation ne contient pas de copie de politique."
 
-#: dashboard.py:1232
+#: dashboard.py:1236
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr "La pièce jointe n'est pas un fichier PDF valide."
 
@@ -2277,7 +2277,7 @@ msgstr ""
 "interne de l’électricité, son administration et sa facturation. OpenLEG fournit à cet effet un "
 "logiciel libre, que vous pouvez exploiter vous-même ou confier au prestataire de votre choix."
 
-#: dashboard.py:1234
+#: dashboard.py:1238
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr "La taille de la pièce jointe PDF ne doit pas dépasser 2 Mo."
 
@@ -2822,7 +2822,7 @@ msgstr "La copie de règle de facturation comporte une niveau de réseau non val
 msgid "Die Richtlinien-Kopie ist unvollständig: "
 msgstr "La copie de la politique est incomplète :"
 
-#: dashboard.py:998
+#: dashboard.py:1002
 msgid "Die Rollen konnten nicht geändert werden. Mindestens eine Administration muss bestehen bleiben."
 msgstr "Les rôles ne pouvaient pas être modifiés. Au moins une administration doit rester en place."
 
@@ -2998,7 +2998,7 @@ msgstr ""
 "Ces modèles sont des brouillons générés automatiquement et ne constituent pas des conseils "
 "juridiques. Faites vérifier légalement les documents avant de signer."
 
-#: billing_workspace.py:194
+#: billing_workspace.py:196
 msgid ""
 "Dieser Abrechnungsentwurf ist keine definitive Rechnung. Prüfen Sie Tarif, Abgleich und "
 "Quelldokumente."
@@ -3109,7 +3109,7 @@ msgstr "Imprimer"
 msgid "E-Mail"
 msgstr "E-mail"
 
-#: dashboard.py:98 dashboard.py:100 dashboard.py:1346
+#: dashboard.py:98 dashboard.py:100 dashboard.py:1350
 msgid "E-Mail bestätigt"
 msgstr "Adresse e-mail confirmée"
 
@@ -3175,7 +3175,7 @@ msgstr "Connexion des fournisseurs d’énergie"
 msgid "EVU Registrierung"
 msgstr "Inscription d’une entreprise d’approvisionnement en énergie"
 
-#: dashboard.py:108 dashboard.py:110 dashboard.py:1348
+#: dashboard.py:108 dashboard.py:110 dashboard.py:1352
 msgid "EVU-Einwilligung erteilt"
 msgstr "Consentement au fournisseur d’énergie accordé"
 
@@ -3356,7 +3356,7 @@ msgstr ""
 "Un stockage partagé par toute la CEL. Chaque part indique la répartition des coûts annuels entre "
 "les participants."
 
-#: billing_lifecycle.py:50 dashboard.py:608
+#: billing_lifecycle.py:50 dashboard.py:612
 msgid "Ein gültiges Zahlungsdatum ist erforderlich."
 msgstr "Une date de paiement valide est requise."
 
@@ -3421,7 +3421,7 @@ msgstr "Une référence de paiement est requise."
 msgid "Eine abgestimmte Teilnehmenden- und Anlagenliste."
 msgstr "Une liste coordonnée des participants et des installations."
 
-#: dashboard.py:636
+#: dashboard.py:640
 msgid "Eine gültige Ersatzrechnung ist erforderlich."
 msgstr "Une facture de remplacement valide est requise."
 
@@ -3429,7 +3429,7 @@ msgstr "Une facture de remplacement valide est requise."
 msgid "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 msgstr "Un aperçu orienté vers l'action, de la vérification de l'adresse à l'exploitation."
 
-#: billing_policy.py:89 billing_workspace.py:218 billing_workspace.py:219
+#: billing_policy.py:89 billing_workspace.py:220 billing_workspace.py:221
 #: templates/leg_community_create.html:22
 msgid "Einfach"
 msgstr "Simple"
@@ -3457,7 +3457,7 @@ msgid_plural "Einladungen"
 msgstr[0] "Invitation"
 msgstr[1] "Invitations"
 
-#: dashboard.py:951
+#: dashboard.py:955
 msgid "Einladung nicht möglich (bereits Mitglied?)."
 msgstr "Invitation impossible (déjà membre ?)."
 
@@ -3537,7 +3537,7 @@ msgstr "Enregistrer l'entrée et la liste de contrôle"
 msgid "Eintrag und Checkliste öffnen"
 msgstr "Ouvrir la fiche et la liste de contrôle"
 
-#: dashboard.py:1249
+#: dashboard.py:1253
 msgid "Eintrag ungültig (Richtung oder Kanal unbekannt)."
 msgstr "Entrée invalide (direction ou canal inconnu)."
 
@@ -3677,6 +3677,10 @@ msgstr "Brouillon prêt"
 #: templates/leg_dashboard.html:216
 msgid "Entwurf prüfen"
 msgstr "Vérifier le brouillon"
+
+#: billing_workspace.py:132 dashboard.py:361
+msgid "Entwurf ungültig"
+msgstr "Brouillon invalide"
 
 #: templates/equipment_form.html:76
 msgid "Ergebnis zum Fernzugriff"
@@ -4159,7 +4163,7 @@ msgstr "Ce canal ne reçoit plus de données récentes. Vérifiez la source de m
 msgid "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung mit einer anderen E-Mail-Adresse."
 msgstr "Une inscription confirmée avec une autre adresse e-mail existe déjà pour ce bâtiment."
 
-#: dashboard.py:817
+#: dashboard.py:821
 msgid "Für dieses Gültig-ab-Datum existiert bereits eine Version."
 msgstr "Une version existe déjà pour cette date de début de validité."
 
@@ -4606,7 +4610,7 @@ msgstr "Ouvrir GitHub"
 msgid "Glarus"
 msgstr "Glaris"
 
-#: billing_policy.py:84 billing_workspace.py:225
+#: billing_policy.py:84 billing_workspace.py:227
 msgid "Gleiche Netzebene"
 msgstr "Même niveau de réseau"
 
@@ -4695,7 +4699,7 @@ msgstr "Les étapes de création"
 msgid "Gründung gestartet"
 msgstr "Création démarrée"
 
-#: dashboard.py:1058
+#: dashboard.py:1062
 msgid "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
 msgstr "Fondation pas encore possible (assez de membres confirmés ?)."
 
@@ -5435,7 +5439,7 @@ msgstr "Aucun tarif H4 trouvé. Actualisez d’abord les données."
 msgid "Kein Profil angegeben."
 msgstr "Aucun profil spécifié."
 
-#: dashboard.py:948
+#: dashboard.py:952
 msgid "Kein Profil zum Einladen angegeben."
 msgstr "Aucun profil spécifié pour inviter."
 
@@ -5451,10 +5455,10 @@ msgstr "Aucun profil solaire enregistré."
 msgid "Kein Zugang angegeben"
 msgstr "Aucun accès spécifié"
 
-#: dashboard.py:207 dashboard.py:218 dashboard.py:441 dashboard.py:546 dashboard.py:592
-#: dashboard.py:603 dashboard.py:620 dashboard.py:631 dashboard.py:649 dashboard.py:676
-#: dashboard.py:756 dashboard.py:785 dashboard.py:806 dashboard.py:875 dashboard.py:890
-#: dashboard.py:901 dashboard.py:1042 dashboard.py:1226
+#: dashboard.py:207 dashboard.py:218 dashboard.py:445 dashboard.py:550 dashboard.py:596
+#: dashboard.py:607 dashboard.py:624 dashboard.py:635 dashboard.py:653 dashboard.py:680
+#: dashboard.py:760 dashboard.py:789 dashboard.py:810 dashboard.py:879 dashboard.py:894
+#: dashboard.py:905 dashboard.py:1046 dashboard.py:1230
 msgid "Kein Zugriff."
 msgstr "Aucun accès."
 
@@ -5492,15 +5496,15 @@ msgstr "Aucun projet de décompte disponible"
 msgid "Keine Angabe"
 msgstr "Sans indication"
 
-#: dashboard.py:1122
+#: dashboard.py:1126
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr "Aucune autorisation pour les mutations de membres."
 
-#: dashboard.py:1076
+#: dashboard.py:1080
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr "Aucune autorisation pour l'enregistrement de l'opérateur de réseau."
 
-#: dashboard.py:1158
+#: dashboard.py:1162
 msgid "Keine Berechtigung."
 msgstr "Aucune autorisation."
 
@@ -5625,7 +5629,7 @@ msgstr "Aucune mesure valide trouvée."
 msgid "Keine neue Kollektor-Lieferung"
 msgstr "Aucune nouvelle transmission du collecteur"
 
-#: dashboard.py:1045
+#: dashboard.py:1049
 msgid "Keine offene Einladung gefunden."
 msgstr "Aucune invitation ouverte trouvée."
 
@@ -5914,11 +5918,11 @@ msgstr "Fondation de la CEL : la prochaine étape est claire | OpenLEG"
 msgid "LEG gründen: so geht es"
 msgstr "Créer une CEL : comment procéder"
 
-#: dashboard.py:935
+#: dashboard.py:939
 msgid "LEG konnte nicht erstellt werden."
 msgstr "La CEL n’a pas pu être créée."
 
-#: dashboard.py:211 dashboard.py:788
+#: dashboard.py:211 dashboard.py:792
 msgid "LEG nicht gefunden."
 msgstr "CEL introuvable."
 
@@ -6336,7 +6340,7 @@ msgstr "Confirmer la suppression"
 msgid "Manuell geprüft"
 msgstr "Vérifié manuellement"
 
-#: dashboard.py:1188
+#: dashboard.py:1192
 msgid "Manuelle Zustellung fehlgeschlagen."
 msgstr "La livraison manuelle a échoué."
 
@@ -6713,7 +6717,7 @@ msgstr ""
 "Après un enregistrement valide, l'EBL remplace les compteurs intelligents manquants. Pour la "
 "facturation interne, il fournit des données de mesure au format CSV ou S-DAT."
 
-#: dashboard.py:113 dashboard.py:115 dashboard.py:1349
+#: dashboard.py:113 dashboard.py:115 dashboard.py:1353
 msgid "Nachbar-Einwilligung erteilt"
 msgstr "Consentement à l’affichage aux voisins accordé"
 
@@ -6774,7 +6778,7 @@ msgstr "Nom ou localité"
 msgid "Name und Kontakt-E-Mail sind erforderlich."
 msgstr "Le nom et l’adresse e-mail de contact sont obligatoires."
 
-#: dashboard.py:929
+#: dashboard.py:933
 msgid "Name und Profil sind erforderlich."
 msgstr "Le nom et le profil sont requis."
 
@@ -6846,7 +6850,7 @@ msgstr "Gestionnaire de réseau pas encore renseigné"
 msgid "Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden."
 msgstr "Le gestionnaire de réseau et le niveau de réseau doivent encore être vérifiés avant la création."
 
-#: dashboard.py:1085
+#: dashboard.py:1089
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 msgstr "L’inscription auprès du GRD est temporairement indisponible."
 
@@ -6966,8 +6970,8 @@ msgstr "Créer une nouvelle clé"
 msgid "Neuenburg"
 msgstr "Neuchâtel"
 
-#: billing_workspace.py:222 billing_workspace.py:229 billing_workspace.py:272 billing_workspace.py:276
-#: billing_workspace.py:280 dashboard.py:475 templates/utility/dashboard.html:59
+#: billing_workspace.py:224 billing_workspace.py:231 billing_workspace.py:274 billing_workspace.py:278
+#: billing_workspace.py:282 dashboard.py:479 templates/utility/dashboard.html:59
 #: templates/utility/dashboard.html:123 templates/utility/dashboard.html:131
 msgid "Nicht angegeben"
 msgstr "Non renseigné"
@@ -7150,19 +7154,19 @@ msgstr ""
 "Uniquement les manifestations d’intérêt confirmées de %(municipality_name)s. Aucun nom, aucune "
 "coordonnée ni adresse ne vous est communiqué."
 
-#: dashboard.py:987
+#: dashboard.py:991
 msgid "Nur die Administration kann Rollen ändern."
 msgstr "Seule l’administration peut modifier les rôles."
 
-#: dashboard.py:1013
+#: dashboard.py:1017
 msgid "Nur die Administration kann das Vier-Augen-Prinzip ändern."
 msgstr "Seule l’administration peut modifier la double validation."
 
-#: dashboard.py:1054
+#: dashboard.py:1058
 msgid "Nur die Administration kann die Gründung starten."
 msgstr "Seule l’administration peut démarrer la création."
 
-#: dashboard.py:946 dashboard.py:964
+#: dashboard.py:950 dashboard.py:968
 msgid "Nur die Administration kann einladen."
 msgstr "Seule l'administration peut inviter."
 
@@ -7918,7 +7922,7 @@ msgstr "Demander un accompagnement de projet"
 msgid "Projektverpflichtungen"
 msgstr "Engagements du projet"
 
-#: billing_policy.py:88 billing_workspace.py:217 templates/leg_community_create.html:23
+#: billing_policy.py:88 billing_workspace.py:219 templates/leg_community_create.html:23
 msgid "Proportional"
 msgstr "Proportionnel"
 
@@ -8237,7 +8241,7 @@ msgstr "Instantanés récents des opérations"
 msgid "Rechnung"
 msgstr "Facture"
 
-#: dashboard.py:863
+#: dashboard.py:867
 msgid "Rechnung nicht gefunden."
 msgstr "Facture introuvable."
 
@@ -9440,7 +9444,7 @@ msgstr "Jeton non valide"
 msgid "Ungültiges Token-Format"
 msgstr "Format du jeton non valide"
 
-#: billing_policy.py:85 billing_workspace.py:226
+#: billing_policy.py:85 billing_workspace.py:228
 msgid "Unterschiedliche Netzebenen"
 msgstr "Niveaux de réseau différents"
 
@@ -9512,7 +9516,7 @@ msgstr "Contacter GRD"
 msgid "VNB-Abgleich"
 msgstr "Rapprochement GRD"
 
-#: dashboard.py:1133
+#: dashboard.py:1137
 msgid "VNB-Mutation vorübergehend nicht verfügbar."
 msgstr "Mutation GRD temporairement indisponible."
 
@@ -9556,7 +9560,7 @@ msgstr "Choisir les responsabilités"
 msgid "Verbrauch:"
 msgstr "Consommation:"
 
-#: dashboard.py:103 dashboard.py:105 dashboard.py:1347
+#: dashboard.py:103 dashboard.py:105 dashboard.py:1351
 msgid "Verbrauchsdaten hinterlegt"
 msgstr "Données de consommation enregistrées"
 
@@ -9719,7 +9723,7 @@ msgstr "Quatre points déterminent si l'inscription peut commencer."
 msgid "Vier-Augen-Prinzip"
 msgstr "Double validation"
 
-#: billing_workspace.py:236
+#: billing_workspace.py:238
 msgid "Vollständig abgeglichen"
 msgstr "Entièrement rapproché"
 
@@ -9792,7 +9796,7 @@ msgstr "Prérequis"
 msgid "Vorbereitet durch:"
 msgstr "Préparé par:"
 
-#: dashboard.py:657
+#: dashboard.py:661
 msgid "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr "La préparation et l'approbation doivent être effectuées par différentes personnes."
 

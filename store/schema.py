@@ -867,7 +867,8 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB,
                     ADD COLUMN IF NOT EXISTS prepared_by VARCHAR(64),
-                    ADD COLUMN IF NOT EXISTS calculated_values_fingerprint VARCHAR(64)
+                    ADD COLUMN IF NOT EXISTS calculated_values_fingerprint VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS status VARCHAR(32) DEFAULT 'draft'
             """)
 
             cur.execute("""
@@ -889,8 +890,14 @@ def create_tables():
             """)
 
             cur.execute("""
-                CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_period_community_window
+                ALTER TABLE billing_periods DROP CONSTRAINT IF EXISTS
+                    billing_periods_community_id_period_start_period_end_key
+            """)
+            cur.execute("DROP INDEX IF EXISTS uq_billing_period_community_window")
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_period_live_window
                 ON billing_periods (community_id, period_start, period_end)
+                WHERE status IS DISTINCT FROM 'invalidated'
             """)
 
             cur.execute("""
@@ -1988,6 +1995,42 @@ def create_tables():
                 CREATE INDEX IF NOT EXISTS idx_vnb_calculated_values_period
                 ON vnb_calculated_values_deliveries
                     (community_id, period_start, period_end, received_at DESC)
+            """)
+
+            # Withdrawals preserve the original VNB delivery and its evidence.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS vnb_calculated_values_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    territory VARCHAR(64) NOT NULL,
+                    community_id VARCHAR(64) NOT NULL,
+                    delivery_id BIGINT NOT NULL REFERENCES vnb_calculated_values_deliveries(id),
+                    action VARCHAR(16) NOT NULL CHECK (action = 'withdrawn'),
+                    idempotency_key VARCHAR(128) NOT NULL,
+                    request_fingerprint CHAR(64) NOT NULL,
+                    authenticated_actor VARCHAR(64) NOT NULL,
+                    reason TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (territory, idempotency_key),
+                    UNIQUE (delivery_id)
+                )
+            """)
+
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION reject_calculated_values_event_mutation()
+                RETURNS trigger AS $$
+                BEGIN
+                    RAISE EXCEPTION 'Calculated-values lifecycle events are append-only';
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+            cur.execute(
+                "DROP TRIGGER IF EXISTS calculated_values_events_append_only "
+                "ON vnb_calculated_values_events"
+            )
+            cur.execute("""
+                CREATE TRIGGER calculated_values_events_append_only
+                BEFORE UPDATE OR DELETE OR TRUNCATE ON vnb_calculated_values_events
+                FOR EACH STATEMENT EXECUTE FUNCTION reject_calculated_values_event_mutation()
             """)
 
             # Veracity-Flags (#517): Markierungen zu importierten, aber

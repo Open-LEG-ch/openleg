@@ -1,0 +1,2 @@
+# Synthetic Idempotency-Key in the original PostgreSQL lifecycle fixture.
+2e2cea078eb66f47465a7791fc0e1c6052dc321d:tests/test_calculated_values_lifecycle_postgres.py:generic-api-key:102
