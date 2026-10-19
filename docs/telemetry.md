@@ -1,4 +1,37 @@
-# Private operational telemetry (#614)
+# Private operational telemetry (#614, #617)
+
+## Owner readings
+
+Signed-in owners open `/dashboard/telemetry` from their dashboard. The page
+shows their enrolled installations while their membership is confirmed and
+their profile is verified. Explicit sample sharing remains available through
+the API; this page shows the owner's installations only.
+
+Each power, energy-counter, interval-energy and battery-state channel stays
+separate. Sources are not added together and site consumption is not inferred.
+The page shows the source and device, quality, observation time in Europe/Zurich
+with its UTC offset, and age when the page was loaded. Use **Messwerte
+aktualisieren** to reload. A measured night value of zero remains zero. Unknown
+quality, missing timestamps and future clocks hide the numeric value.
+
+Freshness uses the existing ingestion rule: at most twice the declared cadence,
+with a 60-second minimum. Older values are labelled stale. A recent delivery of
+an old reading prompts a source/time check; an overdue delivery prompts a
+collector/connection check. Neither state establishes a device fault, blackout
+or attack. Duplicate deliveries preserve the original receipt time. Buffered
+older observations do not replace a newer source observation. Expired samples
+are excluded before cleanup runs.
+
+The page uses indexed lookups for each channel's latest observation and recent
+receipt, without sorting the retained history. The query has a two-second
+transaction-local limit and preserves any stricter database limit. A timeout
+returns the private unavailable page; refreshing can retry once storage recovers.
+
+This is the owner-readings slice of #617. Device fault ingestion, persistent
+notice acknowledgement/cooldown/recovery, community summaries with sharing and
+coverage controls, and an authorized hardware/user pilot remain open. #615 and
+#621 still gate claims of hardware support. Telemetry remains separate from
+validated VNB billing evidence.
 
 This API accepts owner-authorized installation observations. It does not read
 home devices, accept their credentials, or feed billing. Validated VNB ingestion

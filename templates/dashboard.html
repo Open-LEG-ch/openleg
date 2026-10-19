@@ -41,6 +41,7 @@
     <p class="text-ink-muted mt-2">{{ user.address }}</p>
     {% if not read_only %}
       <a href="/dashboard/equipment" class="inline-block mt-4 text-sm font-semibold text-brand hover:underline">Meine Solargeräte und private Sicherheitscheckliste</a>
+      <a href="/dashboard/telemetry" class="block mt-4 text-sm font-semibold text-brand hover:underline">{{ _("Meine Messwerte und ihre Aktualität") }}</a>
     {% endif %}
     {% if read_only %}
       <section class="mt-4 rounded-xl border border-accent-light bg-accent/10 px-4 py-3" role="alert">
