@@ -272,7 +272,7 @@ def parse_e66_xml(xml_content, *, include_evidence_metadata=False):
             root, include_evidence_metadata=include_evidence_metadata
         )
     except _PARSE_ERRORS + (InvalidOperation,):
-        logger.exception("[SDAT] E66 konnte nicht gelesen werden")
+        logger.warning("[SDAT] E66 konnte nicht gelesen werden")
         return {}, ["SDAT E66: Ungültiges Dateiformat."]
 
 

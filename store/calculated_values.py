@@ -135,6 +135,14 @@ def ingest_e66_calculated_values(territory, document, evidence):
             and not metadata["previously_withdrawn_deliveries"]
         ):
             raise e66_evidence.E66EvidenceError("e66_replacement_requires_withdrawal")
+        if metadata["document_status"] == "5" and find_overlapping_calculated_values(
+            territory,
+            community_id,
+            document["period_start"],
+            document["period_end"],
+            connection=conn,
+        ):
+            raise e66_evidence.E66EvidenceError("e66_replacement_requires_withdrawal")
         repository = SimpleNamespace(
             **{
                 name: partial(globals()[name], connection=conn)

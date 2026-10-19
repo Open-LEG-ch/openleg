@@ -859,3 +859,67 @@ def test_e66_requires_a_current_explicit_assignment_for_the_whole_period(
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT count(*) AS count FROM metering_point_readings")
         assert cur.fetchone()["count"] == 0
+
+
+def test_later_e66_replacement_can_retry_after_its_current_source_is_withdrawn(
+    configured_e66,
+):
+    client, db, _, source = configured_e66
+    original = post_e66(client, source).get_json()
+
+    def withdraw(delivery, key):
+        response = client.post(
+            f"/admin/vnb-calculated-values/dietikon/{delivery['id']}/withdrawals",
+            headers={"X-Admin-Token": "synthetic-admin", "Idempotency-Key": key},
+            json={"reason": "Synthetic correction"},
+        )
+        assert response.status_code == 201
+
+    withdraw(original, "first")
+    second_source = synthetic_e66(status="5", local="0.300", residual="0.700").replace(
+        b"SYNTHETIC-E66-1", b"SYNTHETIC-E66-2"
+    )
+    second_response = post_e66(client, second_source)
+    assert second_response.status_code == 201
+    second = second_response.get_json()
+    third_source = synthetic_e66(status="5", local="0.350", residual="0.650").replace(
+        b"SYNTHETIC-E66-1", b"SYNTHETIC-E66-3"
+    )
+    assert post_e66(client, third_source).status_code == 422
+    withdraw(second, "second")
+
+    retry = post_e66(client, third_source)
+
+    assert retry.status_code == 201
+    accepted = retry.get_json()
+    assert accepted["status"] == "accepted"
+    assert {
+        item["id"]
+        for item in accepted["source_metadata"]["previously_withdrawn_deliveries"]
+    } == {original["id"], second["id"]}
+    assert (
+        post_e66(client, third_source).get_json()["fingerprint"]
+        == accepted["fingerprint"]
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT status FROM vnb_calculated_values_deliveries")
+        assert [row["status"] for row in cur.fetchall()] == ["accepted"] * 3
+
+
+@pytest.mark.parametrize(
+    "field", ["Observation/Position/Sequence", "Resolution/Resolution"]
+)
+def test_malformed_e66_scalars_do_not_leak_source_values_to_logs(
+    configured_e66, caplog, field
+):
+    client, _, _, source = configured_e66
+    root = ET.fromstring(source)
+    marker = "PRIVATE-SYNTHETIC-METER-IDENTIFIER"
+    root.find("MeteringData/" + field).text = marker
+    caplog.clear()
+
+    response = post_e66(client, ET.tostring(root))
+
+    assert response.status_code == 422
+    assert response.get_json() == {"error": "invalid_e66"}
+    assert marker not in caplog.text + response.text

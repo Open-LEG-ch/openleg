@@ -97,6 +97,7 @@ also_copy = [
     "database.py",
     "deepsign_integration.py",
     "document_generator.py",
+    "e66_evidence.py",
     "email_automation.py",
     "email_utils.py",
     "equipment.py",
