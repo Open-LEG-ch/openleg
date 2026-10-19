@@ -193,6 +193,78 @@ def list_installations(community, actor):
         return [_public(row) for row in cur.fetchall()]
 
 
+def owner_overview(actor):
+    """Latest retained observations, restricted to the verified active owner."""
+    with _cursor() as cur:
+        cur.execute(
+            """
+            SELECT i.*, latest.observation, latest.received_at, latest.last_received_at,
+                latest.last_channel_received_at
+            FROM telemetry_installations i
+            JOIN community_members m ON m.community_id=i.community_id
+                AND m.building_id=i.owner_building_id AND m.status='confirmed'
+            JOIN buildings b ON b.building_id=i.owner_building_id AND b.verified=TRUE
+            LEFT JOIN LATERAL (
+                SELECT DISTINCT ON (
+                    observation->>'metric', observation->>'measurement_location',
+                    observation->>'direction'
+                ) observation, received_at, MAX(received_at) OVER () AS last_received_at,
+                    MAX(received_at) OVER (PARTITION BY observation->>'metric',
+                        observation->>'measurement_location', observation->>'direction')
+                        AS last_channel_received_at
+                FROM telemetry_samples
+                WHERE installation_id=i.id
+                    AND received_at >= CURRENT_TIMESTAMP-i.raw_retention_days*INTERVAL '1 day'
+                    AND (observed_at IS NULL OR observed_at >= CURRENT_TIMESTAMP-i.raw_retention_days*INTERVAL '1 day')
+                ORDER BY observation->>'metric', observation->>'measurement_location',
+                    observation->>'direction', COALESCE(observed_at,received_at) DESC,
+                    sequence DESC
+            ) latest ON TRUE
+            WHERE i.owner_building_id=%s
+            ORDER BY i.created_at, i.id
+            """,
+            (actor,),
+        )
+        now = datetime.now(UTC)
+        installations = {}
+        for row in cur.fetchall():
+            installation = installations.setdefault(
+                str(row["id"]),
+                {
+                    "id": str(row["id"]),
+                    "name": row["name"],
+                    "source_id": row["source_id"],
+                    "device_id": row["device_id"],
+                    "cadence_seconds": row["cadence_seconds"],
+                    "delivery_status": contract.delivery_status(
+                        row["last_received_at"], row["cadence_seconds"], now
+                    ),
+                    "samples": [],
+                },
+            )
+            if row["observation"] is not None:
+                observed = row["observation"]["observed_at"]
+                age = (
+                    (now - contract.timestamp(observed)).total_seconds()
+                    if observed
+                    else None
+                )
+                installation["samples"].append(
+                    {
+                        **row["observation"],
+                        "received_at": row["received_at"].isoformat(),
+                        "freshness": contract.freshness(row["observation"], now),
+                        "delivery_status": contract.delivery_status(
+                            row["last_channel_received_at"], row["cadence_seconds"], now
+                        ),
+                        "age_seconds": int(age)
+                        if age is not None and age >= 0
+                        else None,
+                    }
+                )
+        return list(installations.values())
+
+
 def _authenticate(row, token):
     if (
         not isinstance(token, str)

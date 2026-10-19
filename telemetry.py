@@ -197,6 +197,17 @@ def observation(sample, installation, now):
     return row
 
 
+def freshness_window(cadence_seconds):
+    return max(60, cadence_seconds * 2)
+
+
+def delivery_status(received_at, cadence_seconds, now):
+    if received_at is None:
+        return "missing"
+    age = (now - received_at).total_seconds()
+    return "late" if age > freshness_window(cadence_seconds) else "recent"
+
+
 def freshness(row, now):
     observed = row["observed_at"]
     if observed is None or row["quality"] == "unknown":
@@ -204,4 +215,4 @@ def freshness(row, now):
     age = (now - timestamp(observed)).total_seconds()
     if age < 0:
         return "clock_skew"
-    return "fresh" if age <= max(60, row["cadence_seconds"] * 2) else "stale"
+    return "fresh" if age <= freshness_window(row["cadence_seconds"]) else "stale"
