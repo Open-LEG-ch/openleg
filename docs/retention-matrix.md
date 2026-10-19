@@ -52,6 +52,7 @@ Invoice-question response and reminder dates use
 | store/document | Life of the LEG | Not implemented | - | Signed and signing documents |
 | store/formation | Life of the LEG | Not implemented | Profile deletion CASCADEs `community_members`; the `communities` row survives with a dangling `admin_building_id` (no FK action) | The LEG record and its accounting |
 | store/formation_documents | Life of the LEG | Not implemented | - | The document bundle |
+| store/formation_activation | Follows the community and correspondence records | Not implemented | No deletion through activation or consent revocation | Start-confirmation projection, source reference and actor/time audit fields; original evidence stays in `correspondence_log` |
 | store/correspondence | Life of the LEG | Not implemented | - | The shared journal is the LEG's memory |
 | store/vnb_exchange | Life of the LEG | Community deletion cascades; no separate deletion flow | Formation and membership cases, private packages and response evidence | Nothing after community deletion; ordinary reads exclude private blobs |
 | store/dashboard_profile | Follows its tables | Profile deletion | Rows via CASCADE (see store/building) | Nothing of its own |

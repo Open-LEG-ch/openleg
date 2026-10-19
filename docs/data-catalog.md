@@ -360,6 +360,22 @@ it.
 - **Resident-visible:** to members of the community.
 - **Consent gate:** applies to member-visible aggregates.
 
+## store/formation_activation
+
+- **Tables:** `communities`; reads source attachments from `correspondence_log`.
+- **Holds:** `vnb_start_confirmation` with the incoming correspondence ID,
+  SHA-256, VNB reference, confirmed start date, recording and activating actors,
+  and UTC audit times; also sets `dso_approved_at` and `activated_at`.
+- **Purpose:** two explicit transitions from submitted formation to confirmed
+  start and active operation. A transport receipt never activates the LEG.
+- **Owner:** the LEG.
+- **Sensitivity:** community references, actor identifiers and linked evidence.
+- **Resident-visible:** private community views; only a current confirmed
+  administrator can record the evidence or activate. Other members' visibility
+  still follows `share_with_neighbors`.
+- **Retention:** the existing community record and correspondence attachment
+  have no automated expiry. These operations add no cleanup or retention period.
+
 ## store/formation_documents
 
 - **Tables:** none of its own (writes `community_documents` atomically).

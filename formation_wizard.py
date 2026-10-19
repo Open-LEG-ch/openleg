@@ -309,7 +309,7 @@ def get_community_status(
         members = row["members"] or []
         counts = _member_counts(members)
 
-        return {
+        result = {
             "community_id": row["community_id"],
             "name": row["name"],
             "status": row["status"],
@@ -319,13 +319,15 @@ def get_community_status(
             "created_at": _iso(row["created_at"]),
             "formation_started_at": _iso(row["formation_started_at"]),
             "dso_submitted_at": _iso(row["dso_submitted_at"]),
-            "vnb_start_confirmation": row.get("vnb_start_confirmation"),
             "member_count": counts,
             "readiness_score": _readiness_score(row["status"], counts["confirmed"]),
             "members": members,
             "documents": None,
             "next_steps": _get_next_steps(row["status"], counts["confirmed"]),
         }
+        if viewer_building_id:
+            result["vnb_start_confirmation"] = row.get("vnb_start_confirmation")
+        return result
     except Exception:
         logger.exception("[FORMATION] Error assembling community status")
         return None
