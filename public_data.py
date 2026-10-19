@@ -552,7 +552,7 @@ def refresh_municipality(
         profile["energy_transition_score"] = compute_energy_transition_score(profile)
     if er_row and er_row.get("solar_installed_kwp") is not None:
         profile["solar_installed_kwp"] = er_row["solar_installed_kwp"]
-    elif sd_row:
+    elif sd_row and sd_row.get("potential_kwp") is not None:
         profile["solar_installed_kwp"] = sd_row.get("potential_kwp")
     db.save_municipality_profile(profile)
     # Ein erfolgreicher Refresh ist die Invalidierung des Profil-Caches

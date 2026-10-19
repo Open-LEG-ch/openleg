@@ -176,3 +176,56 @@ def test_refresh_cron_persists_installed_capacity_from_the_reporter_archive(
     assert profile["solar_potential_pct"] == 25
     assert profile["ev_share_pct"] == 12.5
     assert profile["electricity_consumption_mwh"] == 400
+
+
+def test_refresh_preserves_installed_capacity_during_reporter_outage(
+    refresh_web, interest_database, monkeypatch
+):
+    import public_data
+
+    assert interest_database.save_municipality_profile(
+        {
+            "bfs_number": 99971,
+            "name": "Synthetic OW",
+            "kanton": "OW",
+            "solar_installed_kwp": 1200,
+        }
+    )
+
+    def get(url, **kwargs):
+        if url in (
+            public_data.ENERGIE_REPORTER_URL,
+            public_data.ENERGIE_REPORTER_ARCHIVE_URL,
+        ):
+            response = _response("unavailable reporter")
+            response.status_code = 503
+            return response
+        if url == public_data.SONNENDACH_URL:
+            return _response(
+                {
+                    "result": {
+                        "resources": [
+                            {
+                                "format": "CSV",
+                                "url": "https://data.example.invalid/solar.csv",
+                            }
+                        ]
+                    }
+                },
+                json_body=True,
+            )
+        assert url == "https://data.example.invalid/solar.csv"
+        return _response(
+            "MunicipalityNumber,Scenario1_RoofsOnly_PotentialSolarElectricity_GWh\n"
+            "99971,1.25\n"
+        )
+
+    monkeypatch.setattr(requests, "get", get)
+
+    result = public_data.refresh_municipality(99971)
+
+    assert result["sources"]["energie_reporter"] == "fetch_failed"
+    assert result["sources"]["sonnendach"] == "ok"
+    assert (
+        interest_database.get_municipality_profile(99971)["solar_installed_kwp"] == 1200
+    )
