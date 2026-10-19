@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenLEG \n"
 "Report-Msgid-Bugs-To: https://github.com/Open-LEG-ch/openleg/issues\n"
-"POT-Creation-Date: 2026-10-19 20:43+0000\n"
+"POT-Creation-Date: 2026-10-19 21:51+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr_CH\n"
@@ -617,11 +617,11 @@ msgstr "Décomptes"
 msgid "Abrechnungen prüfen | OpenLEG"
 msgstr "Vérifier les décomptes | OpenLEG"
 
-#: templates/leg_dashboard.html:389
+#: templates/leg_dashboard.html:416
 msgid "Abrechnungen öffnen"
 msgstr "Ouvrir les décomptes"
 
-#: templates/leg_billing_policy.html:5 templates/leg_dashboard.html:386
+#: templates/leg_billing_policy.html:5 templates/leg_dashboard.html:413
 msgid "Abrechnungs-Richtlinie"
 msgstr "Politique de facturation"
 
@@ -654,7 +654,7 @@ msgstr "Période de facturation introuvable ou plus en brouillon."
 msgid "Abrechnungsperioden"
 msgstr "Périodes de facturation"
 
-#: templates/leg_dashboard.html:376
+#: templates/leg_dashboard.html:403
 msgid "Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr ""
 "La préparation et l'approbation de la facturation doivent être effectuées par des personnes "
@@ -793,6 +793,14 @@ msgstr "Action impossible dans l’état actuel"
 #: formation_wizard.py:56 municipality.py:101 municipality.py:283
 msgid "Aktiv"
 msgstr "Actif"
+
+#: templates/leg_dashboard.html:309
+msgid ""
+"Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie "
+"weiterhin vollständige Tarife, Messwerte und VNB-Zuteilungen."
+msgstr ""
+"Activez la LEG au plus tôt à la date de mise en service confirmée. La facturation exige toujours "
+"des tarifs, des relevés et des allocations du gestionnaire de réseau complets."
 
 #: templates/telemetry_dashboard.html:17
 msgid "Aktualität unbekannt"
@@ -1233,7 +1241,7 @@ msgstr ""
 msgid "Ausblick: zentrales LEG-Register"
 msgstr "À venir : registre central des CEL"
 
-#: templates/leg_dashboard.html:316 templates/leg_dashboard.html:335
+#: templates/leg_dashboard.html:343 templates/leg_dashboard.html:362
 msgid "Ausgang"
 msgstr "Sortant"
 
@@ -1430,6 +1438,14 @@ msgstr "Adhésion"
 msgid "Belastungen"
 msgstr "Débits"
 
+#: templates/leg_dashboard.html:316
+msgid "Beleg"
+msgstr "Justificatif"
+
+#: templates/leg_dashboard.html:316
+msgid "Beleg auswählen"
+msgstr "Sélectionner un justificatif"
+
 #: templates/equipment_form.html:91
 msgid "Benannte Fernzugänge / Installateurkonten"
 msgstr "Accès distants nominatifs / comptes installateur"
@@ -1530,9 +1546,18 @@ msgstr "Manifestations d’intérêt confirmées"
 msgid "Bestätigte Mitglieder"
 msgstr "Membres confirmés"
 
+#: templates/leg_dashboard.html:303
+#, python-format
+msgid "Bestätigter Start: %(date)s. Referenz: %(reference)s."
+msgstr "Mise en service confirmée : %(date)s. Référence : %(reference)s."
+
 #: templates/admin/ops.html:43
 msgid "Bestätigtes LEG-Interesse"
 msgstr "Intérêt confirmé de la CEL"
+
+#: templates/leg_dashboard.html:317
+msgid "Bestätigtes Startdatum"
+msgstr "Date de mise en service confirmée"
 
 #: templates/datenschutz.html:44
 msgid "Bestätigung per E-Mail und Benachrichtigung bei neuen bestätigten Interessenmeldungen"
@@ -1563,7 +1588,7 @@ msgstr "Montant"
 msgid "Betrag (CHF)"
 msgstr "Montant (CHF)"
 
-#: templates/leg_dashboard.html:309 templates/leg_dashboard.html:343
+#: templates/leg_dashboard.html:336 templates/leg_dashboard.html:370
 msgid "Betreff"
 msgstr "Objet"
 
@@ -1601,6 +1626,10 @@ msgstr "Comparer les modes d’exploitation"
 #: templates/self_host.html:51
 msgid "Betriebsmodelle"
 msgstr "Modes d’exploitation"
+
+#: templates/leg_dashboard.html:299
+msgid "Betriebsstart"
+msgstr "Mise en service"
 
 #: templates/index.html:58
 msgid "Bewohner"
@@ -1800,7 +1829,7 @@ msgstr "Les participants doivent-ils posséder leur propre compteur intelligent 
 msgid "Breitengrad ausserhalb des gültigen Bereichs"
 msgstr "La latitude est hors de la plage autorisée"
 
-#: templates/leg_dashboard.html:317 templates/leg_dashboard.html:340
+#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:367
 msgid "Brief"
 msgstr "Courrier postal"
 
@@ -1967,7 +1996,7 @@ msgstr ""
 msgid "Das Inkrafttretungsdatum der Richtlinie ist ungültig."
 msgstr "La date d’entrée en vigueur de la règle de facturation n’est pas valable."
 
-#: templates/leg_dashboard.html:331
+#: templates/leg_dashboard.html:358
 msgid ""
 "Das Journal bleibt nachvollziehbar: Korrekturen bleiben als neue Einträge sichtbar. Bestehende "
 "Einträge werden nicht überschrieben oder gelöscht."
@@ -1998,6 +2027,10 @@ msgstr "Le modèle de distribution de la règle de facturation n'est pas valide.
 #: dashboard.py:1016
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr "La double validation n’a pas pu être modifiée."
+
+#: store/formation_activation.py:155
+msgid "Das bestätigte Startdatum liegt noch in der Zukunft."
+msgstr "La date de mise en service confirmée est encore à venir."
 
 #: templates/leg_kalkulator.html:148
 msgid ""
@@ -2152,7 +2185,7 @@ msgstr "Signer le contrat de traitement des données"
 msgid "Datenzugriff"
 msgstr "Accès aux données"
 
-#: templates/leg_dashboard.html:310
+#: templates/leg_dashboard.html:337
 msgid "Datum"
 msgstr "Date"
 
@@ -2176,6 +2209,10 @@ msgstr "Ouvrir le tableau de bord de démonstration"
 msgid "Den Ablauf zuerst selbst prüfen"
 msgstr "Vérifiez d'abord le processus vous-même"
 
+#: templates/leg_dashboard.html:304
+msgid "Den Originalbeleg finden Sie im Korrespondenzjournal."
+msgstr "Le justificatif original se trouve dans le journal de correspondance."
+
 #: templates/open_source.html:88
 msgid "Deployment-Runbooks und Hostnamen"
 msgstr "Procédures de déploiement et noms d’hôtes"
@@ -2191,6 +2228,10 @@ msgstr "Le projet de facturation ne contient pas de copie de politique."
 #: dashboard.py:1232
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr "La pièce jointe n'est pas un fichier PDF valide."
+
+#: store/formation_activation.py:148
+msgid "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
+msgstr "Le justificatif ne correspond plus à la confirmation de mise en service."
 
 #: registry_intake.py:99
 msgid "Der Eintrag konnte nicht gespeichert werden."
@@ -2249,6 +2290,14 @@ msgstr ""
 #: templates/leg_gruenden.html:198
 msgid "Der Netzbetreiber die Anmeldung bearbeitet und der Messbedarf geklärt ist."
 msgstr "Le gestionnaire de réseau procède à l'enregistrement et les exigences de mesure sont clarifiées."
+
+#: templates/leg_dashboard.html:300
+msgid ""
+"Der Netzbetreiber muss den Start der LEG bestätigen. Eine Empfangsbestätigung für die Anmeldung "
+"reicht dafür nicht aus."
+msgstr ""
+"Le gestionnaire de réseau doit confirmer la mise en service de la LEG. Un accusé de réception de "
+"la demande ne suffit pas."
 
 #: templates/how-it-works.html:133
 msgid ""
@@ -2458,7 +2507,7 @@ msgstr "La période de décompte n’est pas valide."
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr "L’adresse n’a pas pu être analysée."
 
-#: dashboard_routes.py:850
+#: dashboard_routes.py:891
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr "Cette action n’est pas autorisée pour le statut actuel de la facture."
 
@@ -3006,7 +3055,7 @@ msgstr ""
 "Ce projet de décompte n’est pas une facture définitive. Vérifiez le tarif, le rapprochement et "
 "les documents sources."
 
-#: dashboard_routes.py:815
+#: dashboard_routes.py:856
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -3104,7 +3153,7 @@ msgid "Drucken"
 msgstr "Imprimer"
 
 #: billing_policy.py:96 templates/admin/ops.html:84 templates/index.html:424 templates/index.html:450
-#: templates/leg_dashboard.html:317 templates/leg_dashboard.html:339
+#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:366
 #: templates/utility/dashboard.html:126
 msgid "E-Mail"
 msgstr "E-mail"
@@ -3118,7 +3167,7 @@ msgid "E-Mail unterwegs"
 msgstr "E-mail envoyé"
 
 #: templates/contact_requests.html:40 templates/dashboard.html:20 templates/dashboard.html:60
-#: templates/dashboard.html:246 templates/gemeinde/dashboard.html:151 templates/leg_dashboard.html:364
+#: templates/dashboard.html:246 templates/gemeinde/dashboard.html:151 templates/leg_dashboard.html:391
 #: templates/unsubscribe.html:48
 msgid "E-Mail-Adresse"
 msgstr "Adresse e-mail"
@@ -3421,6 +3470,10 @@ msgstr "Une référence de paiement est requise."
 msgid "Eine abgestimmte Teilnehmenden- und Anlagenliste."
 msgstr "Une liste coordonnée des participants et des installations."
 
+#: store/formation_activation.py:105
+msgid "Eine andere Startbestätigung liegt bereits vor."
+msgstr "Une autre confirmation de mise en service existe déjà."
+
 #: dashboard.py:636
 msgid "Eine gültige Ersatzrechnung ist erforderlich."
 msgstr "Une facture de remplacement valide est requise."
@@ -3434,7 +3487,7 @@ msgstr "Un aperçu orienté vers l'action, de la vérification de l'adresse à l
 msgid "Einfach"
 msgstr "Simple"
 
-#: templates/leg_dashboard.html:316 templates/leg_dashboard.html:336
+#: templates/leg_dashboard.html:343 templates/leg_dashboard.html:363
 msgid "Eingang"
 msgstr "Entrant"
 
@@ -3447,7 +3500,7 @@ msgstr "Demande reçue le %(date)s UTC"
 msgid "Eingeladen"
 msgstr "Invité"
 
-#: templates/leg_dashboard.html:366
+#: templates/leg_dashboard.html:393
 msgid "Einladen"
 msgstr "Inviter"
 
@@ -3489,7 +3542,7 @@ msgstr "Mise en perspective"
 msgid "Einspeisevergütung"
 msgstr "tarif de rachat"
 
-#: templates/leg_dashboard.html:378
+#: templates/leg_dashboard.html:405
 msgid "Einstellung speichern"
 msgstr "Enregistrer le paramètre"
 
@@ -3521,7 +3574,7 @@ msgstr "Fiche confirmée"
 msgid "Eintrag bestätigt: "
 msgstr "Fiche confirmée : "
 
-#: templates/leg_dashboard.html:346
+#: templates/leg_dashboard.html:373
 msgid "Eintrag hinzufügen"
 msgstr "Ajouter une entrée"
 
@@ -3678,6 +3731,18 @@ msgstr "Brouillon prêt"
 msgid "Entwurf prüfen"
 msgstr "Vérifier le brouillon"
 
+#: store/formation_activation.py:144
+msgid "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
+msgstr "Enregistrez d’abord la confirmation de mise en service du gestionnaire de réseau."
+
+#: templates/leg_dashboard.html:313
+msgid ""
+"Erfassen Sie zuerst die tatsächliche Startbestätigung als Eingang mit Anhang im "
+"Korrespondenzjournal. Wählen Sie danach diesen Beleg aus."
+msgstr ""
+"Enregistrez d’abord la confirmation de mise en service comme courrier entrant avec pièce jointe "
+"dans le journal de correspondance. Sélectionnez ensuite ce justificatif."
+
 #: templates/equipment_form.html:76
 msgid "Ergebnis zum Fernzugriff"
 msgstr "Résultat de l'accès à distance"
@@ -3743,7 +3808,7 @@ msgstr "Créer la première CEL"
 msgid "Erste LEG-Gründung starten"
 msgstr "Créer la première CEL"
 
-#: formation_wizard.py:352
+#: formation_wizard.py:355
 msgid "Erstellen Sie die rechtlichen Dokumente."
 msgstr "Préparez les documents juridiques."
 
@@ -3807,7 +3872,7 @@ msgstr "Si une inscription existe, vous recevrez un lien de confirmation par e-m
 msgid "Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink."
 msgstr "Si un profil existe pour votre adresse e-mail, vous recevrez un nouveau lien d'accès."
 
-#: dashboard_routes.py:280
+#: dashboard_routes.py:281
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr "Si un profil correspond à cette adresse e-mail, nous avons envoyé un nouveau lien d’accès."
 
@@ -4240,13 +4305,21 @@ msgstr ""
 msgid "Geben Sie den Namen Ihrer Gemeinde ein."
 msgstr "Saisissez le nom de votre commune."
 
-#: templates/leg_dashboard.html:360
+#: templates/leg_dashboard.html:387
 msgid ""
 "Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen"
 " nicht an, ob bereits ein Profil existiert."
 msgstr ""
 "Saisissez l'adresse e-mail utilisée par la personne pour s'inscrire sur OpenLEG. Nous n'indiquons"
 " pas si un profil existe déjà."
+
+#: store/formation_activation.py:88
+msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
+msgstr "Saisissez une référence de 255 caractères au maximum."
+
+#: store/formation_activation.py:84
+msgid "Geben Sie einen gültigen Beleg und ein Startdatum an."
+msgstr "Indiquez un justificatif et une date de mise en service valides."
 
 #: templates/partials/leg_facts.html:5
 msgid "Gebiet und Messung:"
@@ -4276,7 +4349,7 @@ msgstr "L’identifiant du bâtiment est trop long"
 msgid "Geeignete Dachfläche"
 msgstr "Surface de toiture adaptée"
 
-#: templates/leg_dashboard.html:308 templates/leg_dashboard.html:342
+#: templates/leg_dashboard.html:335 templates/leg_dashboard.html:369
 msgid "Gegenstelle"
 msgstr "Correspondant"
 
@@ -4416,7 +4489,7 @@ msgstr "Répertoire des communes"
 msgid "Gemeindeverzeichnis | Energieprofile Schweizer Gemeinden | OpenLEG"
 msgstr "Répertoire des communes | Profils énergétiques des communes suisses | OpenLEG"
 
-#: templates/leg_dashboard.html:300
+#: templates/leg_dashboard.html:327
 msgid ""
 "Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem "
 "Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist."
@@ -4699,7 +4772,7 @@ msgstr "Création démarrée"
 msgid "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
 msgstr "Fondation pas encore possible (assez de membres confirmés ?)."
 
-#: templates/leg_dashboard.html:395 templates/leg_dashboard.html:399 templates/leg_dashboard.html:405
+#: templates/leg_dashboard.html:422 templates/leg_dashboard.html:426 templates/leg_dashboard.html:432
 msgid "Gründung starten"
 msgstr "Commencer la création"
 
@@ -4833,7 +4906,7 @@ msgstr ""
 msgid "Heute registriert"
 msgstr "Inscriptions du jour"
 
-#: templates/leg_dashboard.html:327
+#: templates/leg_dashboard.html:354
 msgid "Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu."
 msgstr "Les lettres et courriels de votre CEL apparaissent ici. Ajoutez la première entrée."
 
@@ -4920,6 +4993,10 @@ msgstr ""
 #: templates/advisories.html:57
 msgid "Ich habe diese Version des Hinweises gelesen."
 msgstr "J'ai lu cette version de l'avis."
+
+#: templates/leg_dashboard.html:319
+msgid "Ich habe geprüft, dass der Netzbetreiber den Start der LEG zu diesem Datum bestätigt."
+msgstr "J’ai vérifié que le gestionnaire de réseau confirme la mise en service de la LEG à cette date."
 
 #: templates/index.html:442
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
@@ -5033,11 +5110,11 @@ msgstr "Votre communauté électrique est prête à %(score)s%%."
 msgid "Ihre laufende Einsparung"
 msgstr "Vos économies courantes"
 
-#: templates/leg_dashboard.html:350
+#: templates/leg_dashboard.html:377
 msgid "Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern."
 msgstr "En accès lecture seule, vous pouvez voir le journal mais vous ne pouvez rien modifier."
 
-#: templates/leg_dashboard.html:406
+#: templates/leg_dashboard.html:433
 msgid "Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen."
 msgstr ""
 "En accès en lecture seule, vous pouvez voir l'état de la CEL, mais ne démarrez aucune "
@@ -5353,7 +5430,7 @@ msgstr "Consommation électrique annuelle en kWh"
 msgid "Jährlicher Verbrauch:"
 msgstr "Consommation annuelle :"
 
-#: templates/leg_dashboard.html:307 templates/leg_dashboard.html:338
+#: templates/leg_dashboard.html:334 templates/leg_dashboard.html:365
 msgid "Kanal"
 msgstr "Canal"
 
@@ -5740,11 +5817,11 @@ msgstr "Correction à :"
 msgid "Korrekturgrund"
 msgstr "Raison de la correction"
 
-#: templates/leg_dashboard.html:299
+#: templates/leg_dashboard.html:326
 msgid "Korrespondenz"
 msgstr "Correspondance"
 
-#: templates/leg_dashboard.html:303
+#: templates/leg_dashboard.html:330
 msgid "Korrespondenzjournal dieser Stromgemeinschaft"
 msgstr "Journal de correspondance de cette communauté électrique"
 
@@ -5839,6 +5916,10 @@ msgstr ""
 #: templates/api_docs.html:184 templates/api_docs.html:205
 msgid "LEG Toolkit"
 msgstr "Outils CEL"
+
+#: templates/leg_dashboard.html:308
+msgid "LEG aktivieren"
+msgstr "Activer la LEG"
 
 #: templates/dashboard.html:45 templates/leg_community_create.html:10
 msgid "LEG anlegen"
@@ -6069,7 +6150,7 @@ msgstr ""
 "identifiés sans ambiguïté, dont la référence, le montant en CHF et la CEL correspondent, sont "
 "comptabilisés automatiquement."
 
-#: formation_wizard.py:344
+#: formation_wizard.py:347
 #, python-format
 msgid "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 msgstr "Invitez au moins %(count)s voisins supplémentaires."
@@ -6119,7 +6200,7 @@ msgstr ""
 "Créez votre communauté, puis invitez des membres. L’inscription auprès du gestionnaire de réseau "
 "intervient au cours de la création."
 
-#: templates/leg_dashboard.html:387
+#: templates/leg_dashboard.html:414
 msgid ""
 "Legen Sie Preise, Netzentgelt, Mehrwertsteuer und Zustellung versioniert fest. Die Richtlinie "
 "steuert künftige Abrechnungsentwürfe."
@@ -6127,7 +6208,7 @@ msgstr ""
 "Définissez les prix, les frais de réseau, la TVA et le mode d’envoi dans des versions "
 "successives. Ces règles s’appliquent aux futurs projets de décompte."
 
-#: formation_wizard.py:370
+#: formation_wizard.py:373
 msgid "Legen Sie das Aktivierungsdatum fest."
 msgstr "Définissez la date d'activation."
 
@@ -6459,9 +6540,13 @@ msgstr ""
 "Signaler la constitution de la CEL au gestionnaire du réseau de distribution responsable trois "
 "mois à l'avance, à la fin du mois."
 
-#: formation_wizard.py:360
+#: formation_wizard.py:363
 msgid "Melden Sie die LEG beim Netzbetreiber an."
 msgstr "Inscrivez la CEL auprès du GRD."
+
+#: store/formation_activation.py:107
+msgid "Melden Sie die LEG zuerst beim Netzbetreiber an."
+msgstr "Annoncez d’abord la LEG au gestionnaire de réseau."
 
 #: templates/meter_upload.html:52
 msgid "Melden Sie sich im EKZ-Kundenportal an"
@@ -6582,7 +6667,7 @@ msgid_plural "Mitglieder"
 msgstr[0] "Membre"
 msgstr[1] "Membres"
 
-#: templates/leg_dashboard.html:359
+#: templates/leg_dashboard.html:386
 msgid "Mitglied einladen"
 msgstr "Inviter un membre"
 
@@ -7121,7 +7206,7 @@ msgstr "Jamais reconfirmé."
 msgid "Not found"
 msgstr "Introuvable"
 
-#: templates/leg_dashboard.html:344
+#: templates/leg_dashboard.html:371
 msgid "Notiz"
 msgstr "Note"
 
@@ -7686,7 +7771,7 @@ msgstr "Localité"
 msgid "PDF öffnen"
 msgstr "Ouvrir le PDF"
 
-#: templates/leg_dashboard.html:345
+#: templates/leg_dashboard.html:372
 msgid "PDF-Anhang"
 msgstr "PDF en pièce jointe"
 
@@ -7993,7 +8078,7 @@ msgstr ""
 "l'alimentation de secours sur « Inconnu ». Ensuite, vérifiez et enregistrez-le à nouveau. Il n’y "
 "a pas de valeur de sécurité globale."
 
-#: formation_wizard.py:353
+#: formation_wizard.py:356
 msgid "Prüfen Sie die Gemeinschaftsvereinbarung."
 msgstr "Vérifiez l'accord communautaire."
 
@@ -8001,7 +8086,7 @@ msgstr "Vérifiez l'accord communautaire."
 msgid "Prüfen Sie die Schreibweise oder durchsuchen Sie das"
 msgstr "Vérifiez l’orthographe ou consultez le"
 
-#: formation_wizard.py:357
+#: formation_wizard.py:360
 msgid "Prüfen Sie die Teilnehmerverträge."
 msgstr "Vérifiez les contrats des participants."
 
@@ -8308,6 +8393,10 @@ msgstr "Statut juridique"
 msgid "Reduktion der Netzkosten"
 msgstr "Réduction des frais de réseau"
 
+#: templates/leg_dashboard.html:318
+msgid "Referenz des Netzbetreibers"
+msgstr "Référence du gestionnaire de réseau"
+
 #: templates/leg_billing.html:160
 msgid "Referenz:"
 msgstr "Référence:"
@@ -8371,15 +8460,15 @@ msgstr "L’inscription a échoué. Veuillez réessayer."
 msgid "Repository öffnen"
 msgstr "Ouvrir le dépôt"
 
-#: formation_wizard.py:371
+#: formation_wizard.py:374
 msgid "Richten Sie die Abrechnung ein."
 msgstr "Mettez en place la facturation."
 
-#: templates/leg_dashboard.html:388
+#: templates/leg_dashboard.html:415
 msgid "Richtlinie verwalten"
 msgstr "Gérer la politique"
 
-#: templates/leg_dashboard.html:306 templates/leg_dashboard.html:334
+#: templates/leg_dashboard.html:333 templates/leg_dashboard.html:361
 msgid "Richtung"
 msgstr "Direction"
 
@@ -8470,7 +8559,7 @@ msgstr ""
 "Recueillez les engagements, les adresses de raccordement et les informations sur les "
 "installations apportées."
 
-#: formation_wizard.py:356
+#: formation_wizard.py:359
 msgid "Sammeln Sie die Unterschriften aller Mitglieder."
 msgstr "Recueillez les signatures de tous les membres."
 
@@ -8815,7 +8904,7 @@ msgstr ""
 "Dès que les points en suspens sont réglés, nous préparons l’inscription de la CEL avec "
 "%(utility)s. Chacun des quatre points ci-dessous compte pour un quart."
 
-#: templates/leg_dashboard.html:396
+#: templates/leg_dashboard.html:423
 msgid "Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess."
 msgstr ""
 "Une fois qu’un nombre suffisant de membres ont confirmé, démarrez le processus de fondation "
@@ -9000,7 +9089,11 @@ msgstr "Consommation du site"
 msgid "Start, wenn"
 msgstr "Commencer lorsque"
 
-#: formation_wizard.py:349
+#: templates/leg_dashboard.html:320
+msgid "Startbestätigung erfassen"
+msgstr "Enregistrer la confirmation de mise en service"
+
+#: formation_wizard.py:352
 msgid "Starten Sie den Gründungsprozess."
 msgstr "Démarrez la procédure de création."
 
@@ -9715,7 +9808,7 @@ msgstr "Consultez les instructions de sécurité publiées pour cet appareil"
 msgid "Vier Punkte entscheiden, ob die Anmeldung starten kann."
 msgstr "Quatre points déterminent si l'inscription peut commencer."
 
-#: templates/leg_dashboard.html:371
+#: templates/leg_dashboard.html:398
 msgid "Vier-Augen-Prinzip"
 msgstr "Double validation"
 
@@ -9723,7 +9816,7 @@ msgstr "Double validation"
 msgid "Vollständig abgeglichen"
 msgstr "Entièrement rapproché"
 
-#: templates/leg_dashboard.html:351 templates/leg_dashboard.html:407
+#: templates/leg_dashboard.html:378 templates/leg_dashboard.html:434
 msgid "Vollzugriff im persönlichen Dashboard anfordern"
 msgstr "Demandez un accès complet dans votre tableau de bord personnel"
 
@@ -9857,7 +9950,7 @@ msgstr "Valais"
 msgid "Wann ein vZEV der einfachere Einstieg ist"
 msgstr "Quand le RCP virtuel constitue le point de départ le plus simple"
 
-#: formation_wizard.py:365
+#: formation_wizard.py:368
 msgid "Warten Sie auf die Bewilligung durch den Netzbetreiber (bis zu 30 Tage)."
 msgstr "Attendez l’approbation de l’opérateur du réseau (jusqu’à 30 jours)."
 
@@ -10308,6 +10401,10 @@ msgstr "Sélectionnez la période souhaitée"
 msgid "Wählen Sie den passenden Zugang. Danach melden Sie sich sicher per E-Mail-Link an."
 msgstr "Choisissez l'accès approprié. Connectez-vous ensuite en toute sécurité via un lien e-mail."
 
+#: store/formation_activation.py:64
+msgid "Wählen Sie einen eingehenden Beleg mit Anhang aus dem Korrespondenzjournal."
+msgstr "Sélectionnez un courrier entrant avec pièce jointe dans le journal de correspondance."
+
 #: templates/contact_requests.html:13
 msgid "Wählen Sie mindestens eine Angabe. Die Auswahl gilt nur für diese Anfrage."
 msgstr "Sélectionnez au moins une entrée. La sélection s'applique uniquement à cette demande."
@@ -10680,7 +10777,7 @@ msgstr "pour les requêtes API B2B."
 msgid "geschätztes Dachpotenzial minus installierte Leistung."
 msgstr "potentiel estimé des toitures moins puissance installée."
 
-#: templates/leg_dashboard.html:322
+#: templates/leg_dashboard.html:349
 msgid "herunterladen"
 msgstr "télécharger"
 
@@ -10783,7 +10880,7 @@ msgstr "m²"
 msgid "n/a"
 msgstr "n/d"
 
-#: templates/leg_dashboard.html:365
+#: templates/leg_dashboard.html:392
 msgid "name@beispiel.ch"
 msgstr "nom@exemple.ch"
 
@@ -10833,11 +10930,11 @@ msgstr "sans exploitation technique à votre charge."
 msgid "open"
 msgstr "En attente"
 
-#: templates/leg_dashboard.html:344
+#: templates/leg_dashboard.html:371
 msgid "optional"
 msgstr "facultatif"
 
-#: templates/leg_dashboard.html:345
+#: templates/leg_dashboard.html:372
 msgid "optional, höchstens 2 MB"
 msgstr "en option, maximum 2 Mo"
 
@@ -10974,7 +11071,7 @@ msgstr "p. ex. Dietikon"
 msgid "z. B. LEG-2026"
 msgstr "p. ex. LEG-2026"
 
-#: templates/leg_dashboard.html:342
+#: templates/leg_dashboard.html:369
 msgid "z. B. Netzbetreiber"
 msgstr "p. ex. Netzbetreiber"
 

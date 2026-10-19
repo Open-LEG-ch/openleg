@@ -46,6 +46,34 @@ def submitted(founder):
     return client, db, cid, fields
 
 
+def test_french_activation_labels_errors_and_confirmation_remain_localized(
+    submitted, monkeypatch
+):
+    client, db, cid, fields = submitted
+    # This fixture already initialized its isolated PostgreSQL schema.
+    monkeypatch.setattr(db, "_db_initialized", True)
+    page = client.get(f"/leg/dashboard?cid={cid}&lang=fr-CH")
+    assert page.status_code == 200
+    assert "Mise en service" in page.text
+    assert "Référence du gestionnaire de réseau" in page.text
+    assert "Betriebsstart" not in page.text
+
+    invalid = client.post(
+        f"/leg/community/{cid}/vnb-start-confirmation",
+        data={**fields, "reference": ""},
+    )
+    assert invalid.status_code == 400
+    assert "Saisissez une référence de 255 caractères au maximum." in invalid.text
+    assert "Geben Sie eine Referenz" not in invalid.text
+    confirmed = client.post(f"/leg/community/{cid}/vnb-start-confirmation", data=fields)
+    assert confirmed.status_code == 302
+    after = client.get(confirmed.location)
+    assert after.status_code == 200
+    assert "Mise en service confirmée" in after.text
+    assert "Activer la LEG" in after.text
+    assert fields["reference"] in after.text
+
+
 def test_record_start_confirmation_then_explicitly_activate(founder):
     client, db = founder
     _set_session(client, "founder")

@@ -12,6 +12,7 @@ from datetime import UTC, date
 from psycopg2.extras import Json
 
 import community_access
+from translation_markers import gettext_noop as _N
 
 
 class ActivationDenied(Exception):
@@ -60,7 +61,9 @@ def _evidence_hash(cur, community_id, entry_id):
     entry = cur.fetchone()
     if not entry or not entry["attachment_data"]:
         raise ActivationConflict(
-            "Wählen Sie einen eingehenden Beleg mit Anhang aus dem Korrespondenzjournal."
+            _N(
+                "Wählen Sie einen eingehenden Beleg mit Anhang aus dem Korrespondenzjournal."
+            )
         )
     return hashlib.sha256(bytes(entry["attachment_data"])).hexdigest()
 
@@ -80,11 +83,11 @@ def record_vnb_start_confirmation(
             raise ValueError()
     except (TypeError, ValueError):
         raise ValueError(
-            "Geben Sie einen gültigen Beleg und ein Startdatum an."
+            _N("Geben Sie einen gültigen Beleg und ein Startdatum an.")
         ) from None
     reference = reference.strip()
     if not reference or len(reference) > 255 or any(ord(c) < 32 for c in reference):
-        raise ValueError("Geben Sie eine Referenz mit höchstens 255 Zeichen an.")
+        raise ValueError(_N("Geben Sie eine Referenz mit höchstens 255 Zeichen an."))
     with _get_connection() as conn, conn.cursor() as cur:
         community = _locked_community(cur, community_id, actor_building_id)
         digest = _evidence_hash(cur, community_id, entry_id)
@@ -101,9 +104,13 @@ def record_vnb_start_confirmation(
                 previous.get(key) == value for key, value in source.items()
             ):
                 return
-            raise ActivationConflict("Eine andere Startbestätigung liegt bereits vor.")
+            raise ActivationConflict(
+                _N("Eine andere Startbestätigung liegt bereits vor.")
+            )
         if community["status"] != "dso_submitted":
-            raise ActivationConflict("Melden Sie die LEG zuerst beim Netzbetreiber an.")
+            raise ActivationConflict(
+                _N("Melden Sie die LEG zuerst beim Netzbetreiber an.")
+            )
         cur.execute("SELECT CURRENT_TIMESTAMP AS now")
         source.update(
             recorded_by=actor_building_id,
@@ -140,18 +147,18 @@ def activate_community(community_id: str, actor_building_id: str) -> None:
             valid = False
         if not valid or community["status"] not in {"dso_approved", "active"}:
             raise ActivationConflict(
-                "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
+                _N("Erfassen Sie zuerst die Startbestätigung des Netzbetreibers.")
             )
         if _evidence_hash(cur, community_id, entry_id) != proof["evidence_sha256"]:
             raise ActivationConflict(
-                "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
+                _N("Der Beleg stimmt nicht mehr mit der Startbestätigung überein.")
             )
         cur.execute(
             "SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Zurich')::date AS today"
         )
         if start > cur.fetchone()["today"]:
             raise ActivationConflict(
-                "Das bestätigte Startdatum liegt noch in der Zukunft."
+                _N("Das bestätigte Startdatum liegt noch in der Zukunft.")
             )
         if community["status"] == "active":
             return
