@@ -72,6 +72,12 @@ def find_overlapping_calculated_values(
 def save_calculated_values_delivery(delivery):
     """Persist evidence and normalized records atomically; replay is a no-op."""
     with _get_connection() as conn, conn.cursor() as cur:
+        if delivery.get("community_id"):
+            # Match withdrawal/approval lock order before advisory or FK locks.
+            cur.execute(
+                "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+                (delivery["community_id"],),
+            )
         if delivery["status"] == "accepted":
             lock_key = (
                 f"calculated-values:{delivery['territory']}:{delivery['community_id']}"

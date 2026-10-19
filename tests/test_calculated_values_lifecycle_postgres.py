@@ -3,6 +3,7 @@
 
 import os
 from datetime import datetime
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import psycopg2
@@ -215,7 +216,11 @@ def test_withdrawn_draft_keeps_its_inputs_and_allows_a_new_version(calculated_cl
             payload["community_id"],
             start,
             end,
-            {**summary, "input_fingerprint": "c" * 64},
+            {
+                **summary,
+                "input_fingerprint": "c" * 64,
+                "calculated_values_fingerprint": replacement.get_json()["fingerprint"],
+            },
         )
     db.create_tables()
     assert (
@@ -288,7 +293,10 @@ def _invoice_evidence(calculated_client):
     return payload, delivery, summary
 
 
-def test_a_late_draft_cannot_approve_with_withdrawn_evidence(calculated_client):
+@pytest.mark.parametrize("legacy_live", [False, True])
+def test_a_late_draft_cannot_approve_with_withdrawn_evidence(
+    calculated_client, legacy_live
+):
     client, db, _ = calculated_client
     payload, delivery, summary = _invoice_evidence(calculated_client)
     response = client.post(
@@ -304,6 +312,14 @@ def test_a_late_draft_cannot_approve_with_withdrawn_evidence(calculated_client):
         datetime.fromisoformat(payload[key]) for key in ("period_start", "period_end")
     )
     period_id = db.save_billing_period(payload["community_id"], start, end, summary)
+    assert db.get_billing_period(period_id)["status"] == "invalidated"
+    if legacy_live:
+        # An older writer could have persisted a live draft before this guard.
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE billing_periods SET status = 'draft' WHERE id = %s",
+                (period_id,),
+            )
 
     with pytest.raises(billing_approval.BillingApprovalError, match="VNB"):
         db.approve_billing_period(
@@ -311,6 +327,127 @@ def test_a_late_draft_cannot_approve_with_withdrawn_evidence(calculated_client):
         )
 
     assert db.list_community_invoices(payload["community_id"]) == []
+
+
+def test_late_draft_preserves_history_and_leaves_room_for_correction(calculated_client):
+    client, db, payload = calculated_client
+    endpoint = "/admin/vnb-calculated-values/dietikon"
+    headers = {"X-Admin-Token": "synthetic-admin"}
+    original = client.post(
+        endpoint, headers=headers, json={"delivery": payload}
+    ).get_json()
+    start, end = (
+        datetime.fromisoformat(payload[key]) for key in ("period_start", "period_end")
+    )
+    summary = {
+        "total_production_kwh": 0.25,
+        "total_allocated_kwh": 0.25,
+        "total_network_discount_chf": 0,
+        "calculated_values_fingerprint": original["fingerprint"],
+    }
+    assert (
+        client.post(
+            f"{endpoint}/{original['id']}/withdrawals",
+            headers={**headers, "Idempotency-Key": "withdraw-before-late-draft"},
+            json={"reason": "Synthetic upstream withdrawal"},
+        ).status_code
+        == 201
+    )
+    stale_id = db.save_billing_period(payload["community_id"], start, end, summary)
+    assert db.get_billing_period(stale_id)["status"] == "invalidated"
+    assert db.get_billing_period_for_window(payload["community_id"], start, end) is None
+    corrected = {
+        **payload,
+        "vnb_case_id": "SYNTHETIC-CORRECTED",
+        "records": [{**payload["records"][0], "value": "0.30"}],
+    }
+    accepted = client.post(endpoint, headers=headers, json={"delivery": corrected})
+    assert accepted.status_code == 201
+    current_id = db.save_billing_period(
+        payload["community_id"],
+        start,
+        end,
+        {
+            **summary,
+            "calculated_values_fingerprint": accepted.get_json()["fingerprint"],
+            "total_production_kwh": 0.30,
+            "total_allocated_kwh": 0.30,
+        },
+    )
+    assert current_id != stale_id
+    assert (
+        db.get_billing_period_for_window(payload["community_id"], start, end)["id"]
+        == current_id
+    )
+    assert (
+        db.get_billing_period(stale_id)["calculated_values_fingerprint"]
+        == original["fingerprint"]
+    )
+
+
+def test_independent_import_and_withdrawal_commit_without_a_deadlock(
+    calculated_client, monkeypatch
+):
+    client, db, payload = calculated_client
+    endpoint = "/admin/vnb-calculated-values/dietikon"
+    headers = {"X-Admin-Token": "synthetic-admin"}
+    original = client.post(
+        endpoint, headers=headers, json={"delivery": payload}
+    ).get_json()
+    next_delivery = {
+        **payload,
+        "vnb_case_id": "SYNTHETIC-NEXT-WINDOW",
+        "period_start": "2026-10-01T00:15:00+02:00",
+        "period_end": "2026-10-01T00:30:00+02:00",
+        "records": [
+            {**payload["records"][0], "measured_at": "2026-10-01T00:15:00+02:00"}
+        ],
+    }
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("""CREATE FUNCTION test_pause_next_delivery() RETURNS trigger
+            LANGUAGE plpgsql AS $$ BEGIN
+                IF NEW.vnb_case_id = 'SYNTHETIC-NEXT-WINDOW' THEN
+                    PERFORM pg_advisory_xact_lock(218786915);
+                END IF;
+                RETURN NEW;
+            END; $$;
+            CREATE TRIGGER test_pause_next_delivery BEFORE INSERT
+            ON vnb_calculated_values_deliveries FOR EACH ROW
+            EXECUTE FUNCTION test_pause_next_delivery();""")
+    with db.get_connection() as control, control.cursor() as cursor:
+        cursor.execute("SELECT pg_advisory_lock(218786915), pg_backend_pid() AS pid")
+        blocker = SimpleNamespace(pid=cursor.fetchone()["pid"])
+        with test_interest_postgres.transaction_race(monkeypatch) as race:
+            importing = race.start(
+                lambda: client.post(
+                    endpoint, headers=headers, json={"delivery": next_delivery}
+                )
+            )
+            try:
+                race.wait_until_blocked_by(importing, blocker)
+                withdrawal = race.start(
+                    lambda: db.withdraw_calculated_values_delivery(
+                        "dietikon",
+                        original["id"],
+                        "withdraw-alongside-import",
+                        "Synthetic upstream withdrawal",
+                    )
+                )
+                race.wait_until_blocked_by(withdrawal, importing)
+            finally:
+                cursor.execute("SELECT pg_advisory_unlock(218786915)")
+            assert race.finish(importing).status_code == 201
+            assert race.finish(withdrawal)["action"] == "withdrawn"
+    next_start, next_end = (
+        datetime.fromisoformat(next_delivery[key])
+        for key in ("period_start", "period_end")
+    )
+    assert (
+        db.get_validated_calculated_values(
+            payload["community_id"], next_start, next_end
+        )["vnb_case_id"]
+        == "SYNTHETIC-NEXT-WINDOW"
+    )
 
 
 @pytest.mark.parametrize(
@@ -564,8 +701,9 @@ def test_withdrawal_rejects_historical_tenant_after_owner_moves(
         assert cur.fetchone()["count"] == 0
 
 
+@pytest.mark.parametrize("save_first", [False, True])
 def test_a_draft_saved_during_withdrawal_cannot_approve_before_it_commits(
-    calculated_client, monkeypatch
+    calculated_client, monkeypatch, save_first
 ):
     _, db, _ = calculated_client
     payload, delivery, summary = _invoice_evidence(calculated_client)
@@ -575,27 +713,36 @@ def test_a_draft_saved_during_withdrawal_cannot_approve_before_it_commits(
         for field in ("period_start", "period_end")
     )
     with test_interest_postgres.transaction_race(monkeypatch) as race:
-        withdrawal = race.start(
-            lambda: db.withdraw_calculated_values_delivery(
+
+        def withdraw():
+            return db.withdraw_calculated_values_delivery(
                 "dietikon",
                 delivery["id"],
                 "withdraw-before-save-commit",
                 "Synthetic concurrent withdrawal",
-            ),
-            pause_before_commit=True,
-        )
-        race.wait_until_staged(withdrawal)
-        period_id = db.save_billing_period(cid, start, end, summary)
-        approval = race.start(
-            lambda: db.approve_billing_period(period_id, cid, approver_id="member")
-        )
+            )
+
+        def save():
+            return db.save_billing_period(cid, start, end, summary)
+
+        first = race.start(save if save_first else withdraw, pause_before_commit=True)
+        race.wait_until_staged(first)
+        second = race.start(withdraw if save_first else save)
         try:
-            race.wait_until_blocked_by(approval, withdrawal)
+            race.wait_until_blocked_by(second, first)
         finally:
-            withdrawal.release.set()
-        assert race.finish(withdrawal)["action"] == "withdrawn"
+            first.release.set()
+        first_result, second_result = race.finish(first), race.finish(second)
+        period_id, withdrawal = (
+            (first_result, second_result)
+            if save_first
+            else (second_result, first_result)
+        )
+        assert withdrawal["action"] == "withdrawn"
+        assert db.get_billing_period(period_id)["status"] == "invalidated"
+        assert db.get_billing_period_for_window(cid, start, end) is None
         with pytest.raises(billing_approval.BillingApprovalError, match="VNB"):
-            race.finish(approval)
+            db.approve_billing_period(period_id, cid, approver_id="member")
     assert db.list_community_invoices(cid) == []
 
 
@@ -620,8 +767,22 @@ def test_withdrawal_preserves_issued_invoice_snapshots(calculated_client):
     )
     assert response.status_code == 201
     assert db.get_billing_period(period_id)["status"] == "issued"
+    corrected = client.post(
+        "/admin/vnb-calculated-values/dietikon",
+        headers={"X-Admin-Token": "synthetic-admin"},
+        json={"delivery": {**payload, "vnb_case_id": "SYNTHETIC-CORRECTED-ISSUED"}},
+    )
+    assert corrected.status_code == 201
     with pytest.raises(psycopg2.errors.UniqueViolation):
-        db.save_billing_period(payload["community_id"], start, end, summary)
+        db.save_billing_period(
+            payload["community_id"],
+            start,
+            end,
+            {
+                **summary,
+                "calculated_values_fingerprint": corrected.get_json()["fingerprint"],
+            },
+        )
     assert (
         db.approve_billing_period(
             period_id, payload["community_id"], approver_id="member"
@@ -629,5 +790,6 @@ def test_withdrawal_preserves_issued_invoice_snapshots(calculated_client):
         == issued
     )
     assert (
-        db.get_validated_calculated_values(payload["community_id"], start, end) is None
+        db.get_validated_calculated_values(payload["community_id"], start, end)["id"]
+        == corrected.get_json()["id"]
     )

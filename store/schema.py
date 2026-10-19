@@ -867,7 +867,8 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB,
                     ADD COLUMN IF NOT EXISTS prepared_by VARCHAR(64),
-                    ADD COLUMN IF NOT EXISTS calculated_values_fingerprint VARCHAR(64)
+                    ADD COLUMN IF NOT EXISTS calculated_values_fingerprint VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS status VARCHAR(32) DEFAULT 'draft'
             """)
 
             cur.execute("""
