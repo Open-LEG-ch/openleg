@@ -23,6 +23,7 @@ flag loosens. Intentional exceptions carry their reason here:
 from unittest import mock
 
 import pytest
+from flask import render_template
 
 
 def _make_app(**overrides):
@@ -139,9 +140,9 @@ class TestCookielessMatomoTracking:
     def test_the_dashboard_shell_carries_the_tracker_too(self):
         application = _make_app(MATOMO_SITE_ID="1")
 
-        assert "matomo.js" in application.jinja_env.get_template(
-            "product_base.html"
-        ).render(matomo_site_id="1")
+        with application.test_request_context("/dashboard"):
+            rendered = render_template("product_base.html", matomo_site_id="1")
+        assert "matomo.js" in rendered
 
     def test_a_malformed_site_id_refuses_to_build_the_app(self):
         with pytest.raises(ValueError, match="positive integer"):

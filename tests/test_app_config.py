@@ -19,6 +19,40 @@ def _env(**overrides):
     return base
 
 
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        (None, "de_CH"),
+        ("", "de_CH"),
+        ("  ", "de_CH"),
+        ("fr_CH ", "fr_CH"),
+        ("de_CH", "de_CH"),
+    ],
+)
+def test_display_locale_environment_trims_whitespace_and_defaults_empty(raw, expected):
+    environment = _env()
+    if raw is not None:
+        environment["BABEL_DEFAULT_LOCALE"] = raw
+    assert app_config.build_config(environment)["BABEL_DEFAULT_LOCALE"] == expected
+
+
+@pytest.mark.parametrize(
+    "override,expected",
+    [
+        ("", "de_CH"),
+        (" ", "de_CH"),
+        (" de_CH ", "de_CH"),
+        ("fr_CH ", "fr_CH"),
+        ("fr-CH", "fr-CH"),
+    ],
+)
+def test_display_locale_explicit_override_wins_and_is_normalized(override, expected):
+    config = app_config.build_config(
+        _env(BABEL_DEFAULT_LOCALE="fr_CH"), {"BABEL_DEFAULT_LOCALE": override}
+    )
+    assert config["BABEL_DEFAULT_LOCALE"] == expected
+
+
 # ---------------------------------------------------------------------------
 # The dashboard token TTLs
 # ---------------------------------------------------------------------------

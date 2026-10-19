@@ -1,0 +1,5 @@
+<nav aria-label="{{ _('Sprache') }}" class="inline-flex items-center gap-2 text-sm">
+  {% for locale, label in supported_locales.items() %}
+  <a href="{{ language_switch_url(locale) }}" lang="{{ locale|replace('_', '-') }}" hreflang="{{ locale|replace('_', '-') }}" class="rounded px-2 py-1 hover:underline"{% if current_locale == locale|replace('_', '-') %} aria-current="true"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>

@@ -316,3 +316,8 @@ test, or a killed mutant, says anything about the query.
   Those live in the private ops repository; see `docs/repo-boundary.md`.
 - Prefer focused tests before implementation.
 - Run `pytest tests/ -q`, `ruff check .`, and `ruff format --check .`.
+
+## Internationalization
+
+Flask-Babel/gettext provides request-local presentation languages. See
+[internationalization](internationalization.md) for fallback and catalog rules.

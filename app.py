@@ -34,6 +34,7 @@ import email_automation  # noqa: F401
 import formation_guide
 import formation_wizard
 import homepage_view_model
+import i18n
 import interest_confirmation
 import interest_intake
 import private_http
@@ -960,6 +961,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
 
     application = Flask(__name__)
     application.config.from_mapping(app_config.build_config(os.environ, config))
+    i18n.init_app(application)
 
     public_site_base = app_config.validated_public_site_url(
         application.config["PUBLIC_SITE_URL"]
@@ -975,7 +977,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         parsed_path = urlparse(relative_path)
         if parsed_path.scheme or parsed_path.netloc:
             raise ValueError("public site link must be a relative path")
-        return urljoin(f"{public_site_base}/", relative_path)
+        return i18n.localized_url(urljoin(f"{public_site_base}/", relative_path))
 
     application.jinja_env.globals["public_site_url"] = public_site_url
     application.jinja_env.globals["matomo_site_id"] = matomo_site_id

@@ -135,6 +135,16 @@ def test_get_energy_profile_for_address_tag_removal_is_linear(monkeypatch):
 
 def test_check_potential_does_not_expose_exception_text(full_app_module, monkeypatch):
     app_module = full_app_module
+    # Reach the exception boundary deterministically without a live geocoder.
+    monkeypatch.setattr(
+        app_module.data_enricher,
+        "resolve_address_profile",
+        MagicMock(
+            return_value=MagicMock(
+                source="live", estimates={"building_id": "synthetic"}
+            )
+        ),
+    )
     monkeypatch.setattr(
         app_module,
         "find_provisional_matches",
