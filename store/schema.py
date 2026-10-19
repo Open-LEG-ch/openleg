@@ -1990,6 +1990,24 @@ def create_tables():
                     (community_id, period_start, period_end, received_at DESC)
             """)
 
+            # Withdrawals preserve the original VNB delivery and its evidence.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS vnb_calculated_values_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    territory VARCHAR(64) NOT NULL,
+                    community_id VARCHAR(64) NOT NULL,
+                    delivery_id BIGINT NOT NULL REFERENCES vnb_calculated_values_deliveries(id),
+                    action VARCHAR(16) NOT NULL CHECK (action = 'withdrawn'),
+                    idempotency_key VARCHAR(128) NOT NULL,
+                    request_fingerprint CHAR(64) NOT NULL,
+                    authenticated_actor VARCHAR(64) NOT NULL,
+                    reason TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (territory, idempotency_key),
+                    UNIQUE (delivery_id)
+                )
+            """)
+
             # Veracity-Flags (#517): Markierungen zu importierten, aber
             # unplausibel erscheinenden Fenstern. Ein Flag sperrt nichts und
             # korrigiert nichts; es macht Befunde vor der Freigabe sichtbar.

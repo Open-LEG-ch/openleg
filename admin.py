@@ -7,6 +7,7 @@ import os
 import re
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import psycopg2
 from flask import (
     Blueprint,
     Response,
@@ -98,6 +99,35 @@ def admin_vnb_calculated_values(territory):
         evidence=request.get_data(cache=True),
     )
     return jsonify(result), 201 if result["status"] == "accepted" else 422
+
+
+@admin_bp.route(
+    "/admin/vnb-calculated-values/<territory>/<int:delivery_id>/withdrawals",
+    methods=["POST"],
+)
+def admin_withdraw_calculated_values(territory, delivery_id):
+    require_admin()
+    if not _TERRITORY_RE.fullmatch(territory):
+        return jsonify(error="invalid_territory"), 400
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error="invalid_payload"), 400
+    try:
+        result = db.withdraw_calculated_values_delivery(
+            territory,
+            delivery_id,
+            request.headers.get("Idempotency-Key"),
+            payload.get("reason"),
+        )
+    except db.CalculatedValuesLifecycleMissing:
+        return jsonify(error="delivery_not_found"), 404
+    except db.CalculatedValuesLifecycleConflict as error:
+        return jsonify(error=str(error)), 409
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+    except psycopg2.Error:
+        return jsonify(error="calculated_values_unavailable"), 503
+    return jsonify(result), 200 if result["replayed"] else 201
 
 
 @admin_bp.route("/admin/sdat-schedules/<territory>/run", methods=["POST"])
