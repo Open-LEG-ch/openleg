@@ -283,18 +283,26 @@ def _iso(value) -> str | None:
     return value.isoformat() if value else None
 
 
-def get_community_status(community_id: str) -> dict | None:
+def get_community_status(
+    community_id: str, viewer_building_id: str | None = None
+) -> dict | None:
     """
     Get full status of a community formation.
 
     Args:
         community_id: Community ID
+        viewer_building_id: Include this member's own record in a private view,
+            even without discovery consent. Other members still require consent.
 
     Returns:
         Community status dict or None
     """
     try:
-        row = db.fetch_community_with_members(community_id)
+        row = (
+            db.fetch_community_with_members(community_id, viewer_building_id)
+            if viewer_building_id
+            else db.fetch_community_with_members(community_id)
+        )
         if not row:
             return None
 
