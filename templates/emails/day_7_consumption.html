@@ -57,7 +57,7 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
   </div>
   <div class="footer">
     <p>{{ _("%(platform_name)s · LEG für %(city_name)s", platform_name=platform_name, city_name=city_name) }}</p>
-    <p><a href="{{ unsubscribe_url|localized_url }}">{{ _("Abmelden") }}</a> {{ _("·") }} <a href="{{ (site_url + "/datenschutz")|localized_url }}">{{ _("Datenschutz") }}</a></p>
+    <p><a href="{{ unsubscribe_url|localized_url }}">{{ pgettext("email-unsubscribe", "Abmelden") }}</a> {{ _("·") }} <a href="{{ (site_url + "/datenschutz")|localized_url }}">{{ _("Datenschutz") }}</a></p>
   </div>
 </div>
 </body>

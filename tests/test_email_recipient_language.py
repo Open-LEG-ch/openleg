@@ -56,6 +56,9 @@ def test_every_scheduled_template_renders_outside_flask(
     _marker, body = render(1, locale, template)
     phrase = french if locale == "fr_CH" else german
     assert phrase in body
+    if locale == "fr_CH":
+        assert ">Se désinscrire</a>" in body
+        assert ">Se déconnecter</a>" not in body
     assert f'lang="{locale}"' in body
     assert "<script>" not in body
     assert "&lt;script&gt;private&lt;/script&gt;" in body

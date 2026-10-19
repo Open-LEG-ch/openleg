@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenLEG VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 23:08+0000\n"
+"POT-Creation-Date: 2026-10-19 23:46+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_CH\n"
@@ -614,10 +614,13 @@ msgstr "Ablehnen"
 msgid "Ablehnung prüfen"
 msgstr "Ablehnung prüfen"
 
-#: templates/dashboard.html:37 templates/emails/day_0_welcome.html:63
-#: templates/emails/day_14_formation.html:86 templates/emails/day_3_smartmeter.html:45
-#: templates/emails/day_7_consumption.html:60 templates/gemeinde/dashboard.html:29
-#: templates/utility/dashboard.html:28
+#: templates/dashboard.html:37 templates/gemeinde/dashboard.html:29 templates/utility/dashboard.html:28
+msgid "Abmelden"
+msgstr "Abmelden"
+
+#: templates/emails/day_0_welcome.html:63 templates/emails/day_14_formation.html:86
+#: templates/emails/day_3_smartmeter.html:45 templates/emails/day_7_consumption.html:60
+msgctxt "email-unsubscribe"
 msgid "Abmelden"
 msgstr "Abmelden"
 
