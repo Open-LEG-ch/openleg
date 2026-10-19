@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenLEG \n"
 "Report-Msgid-Bugs-To: https://github.com/Open-LEG-ch/openleg/issues\n"
-"POT-Creation-Date: 2026-10-19 21:24+0000\n"
+"POT-Creation-Date: 2026-10-19 22:45+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr_CH\n"
@@ -399,6 +399,10 @@ msgstr "1. Vérifier l’adresse"
 msgid "1. Rang prüfen"
 msgstr "1. Consulter le classement"
 
+#: templates/documents/community_agreement.html:16
+msgid "1. Teilnehmer"
+msgstr "1. Participants"
+
 #: templates/datenschutz.html:27
 msgid "1. Verantwortliche Stelle"
 msgstr "1. Responsable du traitement"
@@ -423,6 +427,10 @@ msgstr "2. Trouver des voisins"
 msgid "2. Verarbeitete Daten"
 msgstr "2. Données traitées"
 
+#: templates/documents/community_agreement.html:19
+msgid "2. Verteilmodell"
+msgstr "2. Modèle de répartition"
+
 #: templates/index.html:293
 msgid "2. Ziel sehen"
 msgstr "2. Visualiser l’objectif"
@@ -435,13 +443,25 @@ msgstr "3. Inscrire la commune"
 msgid "3. LEG starten"
 msgstr "3. Lancer une CEL"
 
+#: templates/documents/community_agreement.html:23
+msgid "3. Rechtsgrundlage"
+msgstr "3. Base légale"
+
 #: templates/datenschutz.html:41
 msgid "3. Zweck der Verarbeitung"
 msgstr "3. Finalité du traitement"
 
+#: templates/documents/community_agreement.html:26
+msgid "4. Interne Preisgestaltung"
+msgstr "4. Tarification interne"
+
 #: templates/datenschutz.html:49
 msgid "4. Rechtsgrundlagen"
 msgstr "4. Bases juridiques"
+
+#: templates/documents/community_agreement.html:29
+msgid "5. Ein- und Austritt"
+msgstr "5. Adhésion et sortie"
 
 #: templates/datenschutz.html:54
 msgid "5. Weitergabe"
@@ -451,9 +471,17 @@ msgstr "5. Transmission"
 msgid "6. Speicherdauer"
 msgstr "6. Durée de conservation"
 
+#: templates/documents/community_agreement.html:32
+msgid "6. Vertretung"
+msgstr "6. Représentation"
+
 #: templates/datenschutz.html:64
 msgid "7. Sicherheit"
 msgstr "7. Sécurité"
+
+#: templates/documents/community_agreement.html:35
+msgid "7. Unterschriften"
+msgstr "7. Signatures"
 
 #: templates/datenschutz.html:69
 msgid "8. Ihre Rechte"
@@ -625,8 +653,8 @@ msgstr "Ouvrir les décomptes"
 msgid "Abrechnungs-Richtlinie"
 msgstr "Politique de facturation"
 
-#: templates/admin/abrechnungen.html:121 templates/leg_billing_policy.html:107
-#: templates/member_invoice_detail.html:87
+#: member_invoices.py:38 member_invoices.py:672 templates/admin/abrechnungen.html:121
+#: templates/leg_billing_policy.html:107 templates/member_invoice_detail.html:87
 msgid "Abrechnungsentgelt"
 msgstr "Frais de décompte"
 
@@ -696,6 +724,7 @@ msgstr "Suggestions d’adresses"
 msgid "Administration"
 msgstr "Administration"
 
+#: templates/documents/community_agreement.html:17 templates/documents/dso_registration.html:22
 #: templates/leg_dashboard.html:153
 msgid "Adresse"
 msgstr "Adresse"
@@ -769,6 +798,10 @@ msgid ""
 msgstr ""
 "Vérifier son adresse, trouver des voisins, lancer une CEL : jusqu’à 40% de réduction sur "
 "l’utilisation du réseau pour l’électricité solaire locale."
+
+#: templates/documents/participant_contract.html:15
+msgid "Adresse:"
+msgstr "Adresse :"
 
 #: templates/admin/ops.html:97
 msgid "Adressprüfung"
@@ -861,6 +894,7 @@ msgstr ""
 " réseau et dans la même zone de desserte, utilisent au maximum"
 
 #: templates/how-it-works.html:52
+#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -907,6 +941,10 @@ msgstr ""
 #: templates/leg_dashboard.html:275
 msgid "An VNB eskalieren"
 msgstr "Transmettre au niveau supérieur du GRD"
+
+#: templates/documents/dso_registration.html:13
+msgid "An:"
+msgstr "À :"
 
 #: templates/member_invoice_detail.html:223
 msgid "Anderes"
@@ -984,7 +1022,7 @@ msgstr "Télécharger le dossier d'inscription"
 msgid "Anmeldepaket vorbereiten"
 msgstr "Préparer le dossier d'inscription"
 
-#: formation_wizard.py:143
+#: formation_wizard.py:143 templates/documents/dso_registration.html:12
 msgid "Anmeldung Lokale Elektrizitätsgemeinschaft"
 msgstr "Annonce d’une communauté électrique locale"
 
@@ -1123,6 +1161,7 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h OApEl"
 
 #: templates/leg_kalkulator.html:267
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1144,6 +1183,7 @@ msgstr ""
 "tension."
 
 #: templates/leg_kalkulator.html:288
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -1262,13 +1302,21 @@ msgstr "Hors de cette plage de micrologiciel"
 msgid "Ausstehende LEG-Einträge"
 msgstr "Entrées CEL en attente"
 
-#: templates/member_invoice_detail.html:44
+#: templates/documents/member_invoice.html:13 templates/member_invoice_detail.html:44
 msgid "Aussteller:"
 msgstr "Émetteur :"
 
 #: templates/leg_dashboard.html:242 templates/leg_dashboard.html:257
 msgid "Austritt"
 msgstr "Départ"
+
+#: templates/documents/participant_contract.html:28
+msgid ""
+"Austritt mit 3 Monaten Frist auf Quartalsende. Alle offenen Abrechnungen\n"
+"werden vor Austritt abgeschlossen."
+msgstr ""
+"Sortie pour la fin d’un trimestre, moyennant un préavis de 3 mois. Tous les décomptes en suspens\n"
+"sont réglés avant la sortie."
 
 #: payment_reconciliation.py:19
 msgid "Automatisch verbucht"
@@ -1418,6 +1466,10 @@ msgstr ""
 "Les deux modèles utilisent le même logiciel open source. Choisissez selon les responsabilités, "
 "l’hébergement des données et le travail en interne."
 
+#: templates/documents/dso_registration.html:24
+msgid "Beilagen"
+msgstr "Pièces jointes"
+
 #: templates/leg_dashboard.html:261
 msgid "Beim VNB einreichen"
 msgstr "Soumettre au GRD"
@@ -1472,6 +1524,10 @@ msgstr "Préparation"
 #: templates/index.html:251
 msgid "Bereitschaft, Checkliste und Ersparnis."
 msgstr "Préparation, étapes et économies."
+
+#: templates/documents/participant_contract.html:23
+msgid "Bereitstellung der 15-Minuten-Messdaten an die Gemeinschaft"
+msgstr "Mise à disposition de la communauté des données de mesure par intervalles de 15 minutes"
 
 #: templates/utility/register.html:44
 msgid "Bern"
@@ -1558,8 +1614,10 @@ msgstr "Envoyer le lien de confirmation"
 msgid "Betrag"
 msgstr "Montant"
 
-#: templates/member_invoice_detail.html:67 templates/member_invoice_detail.html:96
-#: templates/member_invoice_detail.html:123 templates/member_invoice_detail.html:151
+#: member_invoices.py:673 member_invoices.py:682 templates/documents/member_invoice.html:21
+#: templates/documents/member_invoice.html:30 templates/member_invoice_detail.html:67
+#: templates/member_invoice_detail.html:96 templates/member_invoice_detail.html:123
+#: templates/member_invoice_detail.html:151
 msgid "Betrag (CHF)"
 msgstr "Montant (CHF)"
 
@@ -2152,11 +2210,13 @@ msgstr "Signer le contrat de traitement des données"
 msgid "Datenzugriff"
 msgstr "Accès aux données"
 
-#: templates/leg_dashboard.html:310
+#: templates/documents/community_agreement.html:36 templates/leg_dashboard.html:310
 msgid "Datum"
 msgstr "Date"
 
-#: templates/leg_billing.html:161
+#: templates/documents/community_agreement.html:14 templates/documents/dso_registration.html:14
+#: templates/documents/participant_contract.html:11 templates/documents/participant_contract.html:33
+#: templates/documents/participant_contract.html:35 templates/leg_billing.html:161
 msgid "Datum:"
 msgstr "Date :"
 
@@ -2239,6 +2299,7 @@ msgstr ""
 "une part des coûts."
 
 #: templates/gemeinde/methodik.html:95
+#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -2414,6 +2475,14 @@ msgstr "L'entrée de paiement ne contient pas de montant valide."
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr "Le lien d’accès est invalide ou a déjà été utilisé."
 
+#: templates/documents/community_agreement.html:27
+msgid ""
+"Der interne Strompreis wird durch die Gemeinschaft festgelegt und darf den lokalen\n"
+"Standardtarif des Verteilnetzbetreibers nicht übersteigen."
+msgstr ""
+"Le prix interne de l’électricité est fixé par la communauté et ne doit pas dépasser\n"
+"le tarif standard local du gestionnaire de réseau de distribution."
+
 #: templates/leg_billing.html:118
 msgid ""
 "Der letzte Zustellversuch ist unklar. OpenLEG sendet nicht automatisch erneut, damit das Mitglied"
@@ -2571,6 +2640,14 @@ msgstr "Les communes sont triées par nom."
 #: templates/gemeinde/pilotgemeinde.html:38
 msgid "Die Gemeinschaft beim Verteilnetzbetreiber anmelden."
 msgstr "Annoncer la communauté au gestionnaire de réseau de distribution."
+
+#: templates/documents/community_agreement.html:33
+msgid ""
+"Die Gemeinschaft wird gegenüber dem Verteilnetzbetreiber durch den Vertreter vertreten,\n"
+"der gemäss separater Vollmacht bestimmt wird."
+msgstr ""
+"La communauté est représentée auprès du gestionnaire de réseau de distribution\n"
+"par la personne désignée dans une procuration distincte."
 
 #: templates/api_docs.html:250
 msgid "Die Gruppenbildung ist fehlgeschlagen."
@@ -2878,6 +2955,15 @@ msgstr "La quantité d’énergie locale mesurée ne correspond pas à celle de 
 msgid "Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, Jahreskosten und Anteile."
 msgstr "Les informations stockées sont incomplètes. Vérifiez la capacité, les coûts annuels et les parts."
 
+#: templates/documents/community_agreement.html:21
+msgid ""
+"Die intern produzierte Energie wird gemäss dem gewählten Modell auf alle Teilnehmer verteilt.\n"
+"Die Abrechnung erfolgt auf Basis von 15-Minuten-Messintervallen."
+msgstr ""
+"L’énergie produite au sein de la communauté est répartie entre tous les participants selon le "
+"modèle choisi.\n"
+"Le décompte repose sur des intervalles de mesure de 15 minutes."
+
 #: templates/leg_gruenden.html:159
 msgid "Die künftigen Teilnehmenden bekannt sind."
 msgstr "Les futurs participants sont connus."
@@ -2985,6 +3071,15 @@ msgid ""
 msgstr ""
 "Cette source n'est pas incluse dans la portée actuelle de l'audit. Les notifications et "
 "confirmations actuelles restent désactivées pour ce message."
+
+#: templates/documents/community_agreement.html:24
+msgid ""
+"Diese Vereinbarung stützt sich auf Art. 17d und 17e des Stromversorgungsgesetzes (StromVG)\n"
+"sowie Art. 19e bis 19h der Stromversorgungsverordnung (StromVV)."
+msgstr ""
+"Cette convention repose sur les art. 17d et 17e de la loi sur l’approvisionnement en électricité "
+"(LApEl)\n"
+"ainsi que sur les art. 19e à 19h de l’ordonnance sur l’approvisionnement en électricité (OApEl)."
 
 #: advisories.py:39
 msgid "Diese Versionsangabe lässt sich mit dem geprüften Versionsschema nicht vergleichen."
@@ -3447,6 +3542,10 @@ msgstr "Demande reçue le %(date)s UTC"
 msgid "Eingeladen"
 msgstr "Invité"
 
+#: templates/documents/participant_contract.html:24
+msgid "Einhaltung der Gemeinschaftsvereinbarung"
+msgstr "Respect de la convention de communauté"
+
 #: templates/leg_dashboard.html:366
 msgid "Einladen"
 msgstr "Inviter"
@@ -3751,6 +3850,10 @@ msgstr "Créer la première CEL"
 msgid "Erstellen Sie die rechtlichen Dokumente."
 msgstr "Préparez les documents juridiques."
 
+#: templates/documents/member_invoice.html:44
+msgid "Erstellt mit OpenLEG"
+msgstr "Établi avec OpenLEG"
+
 #: templates/utility/dashboard.html:139
 msgid "Erster Login"
 msgstr "Première connexion"
@@ -4048,7 +4151,7 @@ msgstr "Fonction non disponible"
 msgid "Fällig am"
 msgstr "Échéance le"
 
-#: templates/member_invoice_detail.html:47
+#: templates/documents/member_invoice.html:16 templates/member_invoice_detail.html:47
 msgid "Fällig am:"
 msgstr "Échéance :"
 
@@ -4115,6 +4218,7 @@ msgstr ""
 "du réseau diminue de"
 
 #: templates/how-it-works.html:42
+#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -4391,6 +4495,10 @@ msgstr "Ouvrir le tableau de bord communal"
 msgid "Gemeinde/Organisation"
 msgstr "Commune/organisation"
 
+#: templates/documents/community_agreement.html:14
+msgid "Gemeinde:"
+msgstr "Commune :"
+
 #: templates/open_source.html:105
 msgid "Gemeindedaten, PV-Anlagen, Tarife, Registrierungen und Audit-Daten."
 msgstr "Données communales, installations photovoltaïques, tarifs, inscriptions et données d’audit."
@@ -4429,9 +4537,21 @@ msgstr ""
 "l'opérateur du réseau. De cette façon, l’ensemble de la CEL peut voir ce qui a été envoyé et ce "
 "qui a reçu une réponse."
 
+#: templates/documents/dso_registration.html:16
+msgid "Gemeinschaft"
+msgstr "Communauté"
+
 #: templates/leg_community_create.html:26
 msgid "Gemeinschaft anlegen"
 msgstr "Créer la communauté"
+
+#: templates/documents/community_agreement.html:12
+msgid "Gemeinschaftsvereinbarung"
+msgstr "Convention de communauté"
+
+#: templates/documents/dso_registration.html:26
+msgid "Gemeinschaftsvereinbarung (unterzeichnet)"
+msgstr "Convention de communauté (signée)"
 
 #: templates/partials/registry_trust.html:16
 msgid "Gemeldete Angaben bestätigt am"
@@ -4452,6 +4572,11 @@ msgstr "Valeurs mesurées et publiées par les autorités"
 #: templates/equipment_form.html:42
 msgid "Genaues Modell"
 msgstr "Modèle précis"
+
+#: templates/documents/community_agreement.html:40 templates/documents/dso_registration.html:35
+#: templates/documents/participant_contract.html:38
+msgid "Generiert durch OpenLEG Platform, openleg.ch"
+msgstr "Généré par la plateforme OpenLEG, openleg.ch"
 
 #: templates/utility/register.html:55
 msgid "Genf"
@@ -4509,13 +4634,17 @@ msgstr "Fiche de l’appareil indisponible"
 msgid "Gerätezugang |"
 msgstr "Accès aux appareils |"
 
-#: templates/member_invoice_detail.html:173
+#: templates/documents/member_invoice.html:41 templates/member_invoice_detail.html:173
 msgid "Gesamtbetrag"
 msgstr "Montant total"
 
 #: templates/leg_billing.html:109
 msgid "Gesamtbetrag unlesbar"
 msgstr "Montant total illisible"
+
+#: templates/documents/dso_registration.html:19
+msgid "Gesamte PV-Leistung:"
+msgstr "Puissance photovoltaïque totale :"
 
 #: templates/index.html:487
 msgid "Gesamter Code auf GitHub, AGPL-3.0-or-later"
@@ -4613,6 +4742,10 @@ msgstr "Glaris"
 #: billing_policy.py:84 billing_workspace.py:227
 msgid "Gleiche Netzebene"
 msgstr "Même niveau de réseau"
+
+#: document_generator.py:19
+msgid "Gleichmässige Verteilung"
+msgstr "Répartition uniforme"
 
 #: formation_wizard.py:61
 msgid "Gleichverteilt"
@@ -4735,7 +4868,7 @@ msgstr "Ouvrir l’assistant de création"
 msgid "Gutschriften"
 msgstr "Crédits"
 
-#: templates/member_invoice_detail.html:140
+#: templates/documents/member_invoice.html:29 templates/member_invoice_detail.html:140
 msgid "Gutschriften und Ausgleich"
 msgstr "Avoirs et ajustements"
 
@@ -5118,6 +5251,10 @@ msgstr "Notes d’incident et planification interne"
 msgid "Individuelle Regeln"
 msgstr "Règles individuelles"
 
+#: document_generator.py:21
+msgid "Individuelle Vereinbarung gemäss Anhang"
+msgstr "Accord individuel selon l’annexe"
+
 #: templates/fuer_gemeinden.html:58
 msgid "Informiert lokale Beteiligte und begleitet die Anmeldung."
 msgstr "Informe les acteurs locaux et accompagne l’inscription."
@@ -5133,6 +5270,10 @@ msgstr "Mandater un installateur"
 #: templates/equipment_form.html:48
 msgid "Installateurzugang"
 msgstr "Accès installateur"
+
+#: templates/documents/participant_contract.html:22
+msgid "Installation eines kommunikativen Smart Meters (Frist: 3 Monate nach Beitritt)"
+msgstr "Installation d’un compteur intelligent communicant (délai : 3 mois après l’adhésion)"
 
 #: templates/partials/install_console.html:7
 msgid "Installationsart"
@@ -5217,7 +5358,7 @@ msgstr "Prix interne (ct./kWh)"
 msgid "Interner Preis in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
 msgstr "Prix interne en ct./kWh, entre 0 et 1000, maximum 4 décimales."
 
-#: templates/member_invoice_detail.html:49
+#: templates/documents/member_invoice.html:17 templates/member_invoice_detail.html:49
 msgid "Interner Preis:"
 msgstr "Prix interne :"
 
@@ -5264,6 +5405,10 @@ msgstr "Coût annuel en CHF, entre 0 et 100000, avec au plus 2 décimales."
 #: templates/leg_dashboard.html:76
 msgid "Jahreskosten:"
 msgstr "Coûts annuels :"
+
+#: templates/documents/participant_contract.html:17
+msgid "Jahresverbrauch:"
+msgstr "Consommation annuelle :"
 
 #: templates/dashboard.html:132
 msgid ""
@@ -5557,6 +5702,10 @@ msgstr "Aucune commune trouvée."
 msgid "Keine Gemeinden gefunden"
 msgstr "Aucune commune trouvée"
 
+#: member_invoices.py:733
+msgid "Keine Gutschriften"
+msgstr "Aucun avoir"
+
 #: templates/member_invoice_detail.html:167
 msgid "Keine Gutschriften."
 msgstr "Aucun crédit."
@@ -5598,6 +5747,10 @@ msgstr "Aucune donnée solaire trouvée."
 #: templates/leg_kalkulator.html:425
 msgid "Keine Tarifdaten für diese Gemeinde verfügbar."
 msgstr "Aucun tarif disponible pour cette commune."
+
+#: member_invoices.py:725
+msgid "Keine Verbrauchskosten"
+msgstr "Aucuns coûts de consommation"
 
 #: templates/member_invoice_detail.html:83
 msgid "Keine Verbrauchskosten."
@@ -5681,7 +5834,12 @@ msgstr "Clarifiez les membres, les contrats, le gestionnaire de réseau et la fa
 msgid "Konkrete Massnahmen"
 msgstr "Mesures concrètes"
 
-#: templates/admin/ops.html:119 templates/dashboard.html:221 templates/impressum.html:34
+#: document_generator.py:107 document_generator.py:152
+msgid "Konsument"
+msgstr "Consommateur"
+
+#: templates/admin/ops.html:119 templates/dashboard.html:221
+#: templates/documents/dso_registration.html:31 templates/impressum.html:34
 #: templates/partials/site_footer.html:9
 msgid "Kontakt"
 msgstr "Contact"
@@ -5822,6 +5980,10 @@ msgstr "En bref"
 #: templates/leg_verzeichnis/eintragen.html:89
 msgid "Kurzbeschreibung (optional)"
 msgstr "Brève description (facultative)"
+
+#: templates/documents/participant_contract.html:27
+msgid "Kündigung"
+msgstr "Résiliation"
 
 #: templates/admin/ops.html:19 templates/admin/ops.html:161
 msgid "LEA Inbox"
@@ -6023,6 +6185,10 @@ msgstr "Répertoire des CEL : communautés électriques locales en Suisse | Open
 #: templates/leg_dashboard.html:240
 msgid "LEG-Vorgang"
 msgstr "Opération CEL"
+
+#: templates/documents/participant_contract.html:10
+msgid "LEG:"
+msgstr "CEL :"
 
 #: templates/pricing.html:39
 msgid "LICENSE"
@@ -6252,6 +6418,10 @@ msgstr "Communauté électrique locale - Convention de communauté"
 msgid "Lokale Elektrizitätsgemeinschaft gründen | OpenLEG"
 msgstr "Créer une communauté électrique locale | OpenLEG"
 
+#: templates/documents/community_agreement.html:13
+msgid "Lokale Elektrizitätsgemeinschaft:"
+msgstr "Communauté électrique locale :"
+
 #: templates/partials/leg_facts.html:4
 msgid ""
 "Lokale Elektrizitätsgemeinschaften (LEG) sind seit dem 1. Januar 2026 in der ganzen Schweiz "
@@ -6368,6 +6538,7 @@ msgstr "Plusieurs factures possibles"
 msgid "Mehrfaktor-Anmeldung"
 msgstr "Authentification multifacteur"
 
+#: templates/documents/member_invoice.html:34 templates/documents/member_invoice.html:40
 #: templates/leg_billing_policy.html:62 templates/member_invoice_detail.html:172
 msgid "Mehrwertsteuer"
 msgstr "TVA"
@@ -6475,8 +6646,10 @@ msgstr "Connectez-vous au portail client EKZ"
 msgid "Menge"
 msgstr "Quantité"
 
-#: templates/member_invoice_detail.html:65 templates/member_invoice_detail.html:94
-#: templates/member_invoice_detail.html:121 templates/member_invoice_detail.html:149
+#: member_invoices.py:673 member_invoices.py:682 templates/documents/member_invoice.html:21
+#: templates/documents/member_invoice.html:30 templates/member_invoice_detail.html:65
+#: templates/member_invoice_detail.html:94 templates/member_invoice_detail.html:121
+#: templates/member_invoice_detail.html:149
 msgid "Menge (kWh)"
 msgstr "Quantité (kWh)"
 
@@ -6491,6 +6664,10 @@ msgstr "Habitants et transports publics dans une ville suisse"
 #: community_access.py:63 templates/member_invoice_detail.html:223
 msgid "Messdaten"
 msgstr "Données de mesure"
+
+#: templates/documents/dso_registration.html:22
+msgid "Messpunkt-ID"
+msgstr "Identifiant du point de mesure"
 
 #: quartierakku.py:45
 msgid "Messpunkt-Teilnehmer des Quartierakkus mit 1 bis 64 Zeichen angeben."
@@ -6754,7 +6931,13 @@ msgstr "Des données vérifiables"
 msgid "Nachweis"
 msgstr "Preuve"
 
-#: templates/admin/ops.html:117 templates/gemeinde/verzeichnis.html:51
+#: templates/documents/dso_registration.html:28
+msgid "Nachweis PV-Anlage(n)"
+msgstr "Justificatif de l’installation ou des installations photovoltaïques"
+
+#: templates/admin/ops.html:117 templates/documents/community_agreement.html:17
+#: templates/documents/community_agreement.html:36 templates/documents/dso_registration.html:22
+#: templates/gemeinde/verzeichnis.html:51
 msgid "Name"
 msgstr "Nom"
 
@@ -6781,6 +6964,10 @@ msgstr "Le nom et l’adresse e-mail de contact sont obligatoires."
 #: dashboard.py:933
 msgid "Name und Profil sind erforderlich."
 msgstr "Le nom et le profil sont requis."
+
+#: templates/documents/dso_registration.html:17 templates/documents/participant_contract.html:14
+msgid "Name:"
+msgstr "Nom :"
 
 #: templates/gemeinde/vergleich.html:89
 msgid "Nationaler Rang"
@@ -6814,7 +7001,7 @@ msgstr ""
 " après réception d’une demande valable. Des tarifs de mesure réglementés peuvent continuer à "
 "s’appliquer."
 
-#: templates/member_invoice_detail.html:171
+#: templates/documents/member_invoice.html:39 templates/member_invoice_detail.html:171
 msgid "Nettobetrag"
 msgstr "Montant net"
 
@@ -6884,6 +7071,10 @@ msgstr "Prix d'achat du réseau"
 msgid "Netzebene"
 msgstr "Niveau réseau"
 
+#: templates/documents/dso_registration.html:18
+msgid "Netzebene:"
+msgstr "Niveau de réseau :"
+
 #: templates/telemetry_dashboard.html:11
 msgid "Netzeinspeisung"
 msgstr "Injection dans le réseau"
@@ -6904,7 +7095,7 @@ msgstr "Frais de réseau en centimes/kWh, entre 0 et 1000, maximum 4 décimales.
 msgid "Netzentgelt-Tarif:"
 msgstr "Tarif des frais de réseau :"
 
-#: templates/member_invoice_detail.html:50
+#: member_invoices.py:707 templates/member_invoice_detail.html:50
 msgid "Netzentgelt:"
 msgstr "Frais de réseau :"
 
@@ -6945,6 +7136,14 @@ msgstr "Erreur réseau."
 #: templates/utility/register.html:153
 msgid "Netzwerkfehler. Bitte erneut versuchen."
 msgstr "Erreur réseau. Veuillez réessayer."
+
+#: templates/documents/community_agreement.html:30
+msgid ""
+"Neue Teilnehmer können mit Zustimmung der bestehenden Mitglieder beitreten.\n"
+"Der Austritt ist mit einer Frist von 3 Monaten auf Quartalsende möglich."
+msgstr ""
+"De nouveaux participants peuvent adhérer avec l’accord des membres existants.\n"
+"La sortie est possible pour la fin d’un trimestre, moyennant un préavis de 3 mois."
 
 #: templates/leg_billing_policy.html:17
 msgid "Neue Version erfassen"
@@ -7711,6 +7910,10 @@ msgstr "NPA"
 msgid "PLZ range e.g. 8000-8999"
 msgstr "Plage de NPA, p. ex. 8000-8999"
 
+#: document_generator.py:157
+msgid "PV-Anlage:"
+msgstr "Installation photovoltaïque :"
+
 #: templates/equipment_form.html:46
 msgid "PV-DC-Leistung (kWp, optional)"
 msgstr "Puissance PV DC (kWc, en option)"
@@ -7762,7 +7965,7 @@ msgstr "Période introuvable"
 msgid "Periode"
 msgstr "Période"
 
-#: templates/member_invoice_detail.html:45
+#: templates/documents/member_invoice.html:14 templates/member_invoice_detail.html:45
 msgid "Periode:"
 msgstr "Période :"
 
@@ -7774,6 +7977,10 @@ msgstr "Périodes"
 msgid "Person"
 msgstr "personne"
 
+#: templates/documents/participant_contract.html:20
+msgid "Pflichten"
+msgstr "Obligations"
+
 #: templates/gemeinde/pilotgemeinde.html:12
 msgid "Pilotgemeinde"
 msgstr "Commune pilote"
@@ -7782,9 +7989,11 @@ msgstr "Commune pilote"
 msgid "Plattform"
 msgstr "Plateforme"
 
-#: templates/admin/abrechnungen.html:129 templates/leg_kalkulator.html:205
-#: templates/member_invoice_detail.html:64 templates/member_invoice_detail.html:93
-#: templates/member_invoice_detail.html:120 templates/member_invoice_detail.html:148
+#: member_invoices.py:673 member_invoices.py:682 templates/admin/abrechnungen.html:129
+#: templates/documents/member_invoice.html:21 templates/documents/member_invoice.html:30
+#: templates/leg_kalkulator.html:205 templates/member_invoice_detail.html:64
+#: templates/member_invoice_detail.html:93 templates/member_invoice_detail.html:120
+#: templates/member_invoice_detail.html:148
 msgid "Position"
 msgstr "Poste"
 
@@ -7804,8 +8013,10 @@ msgstr "Évaluer le potentiel"
 msgid "Preis"
 msgstr "Prix"
 
-#: templates/member_invoice_detail.html:66 templates/member_invoice_detail.html:95
-#: templates/member_invoice_detail.html:122 templates/member_invoice_detail.html:150
+#: member_invoices.py:673 member_invoices.py:682 templates/documents/member_invoice.html:21
+#: templates/documents/member_invoice.html:30 templates/member_invoice_detail.html:66
+#: templates/member_invoice_detail.html:95 templates/member_invoice_detail.html:122
+#: templates/member_invoice_detail.html:150
 msgid "Preis (Rp./kWh)"
 msgstr "Prix (ct./kWh)"
 
@@ -7886,6 +8097,14 @@ msgstr ""
 "stratégie interne restent privés. Le code de l’application demeure ainsi ouvert sans exposer "
 "l’infrastructure de production."
 
+#: document_generator.py:107 document_generator.py:152
+msgid "Produzent"
+msgstr "Producteur"
+
+#: member_invoices.py:36
+msgid "Produzentengutschrift"
+msgstr "Avoir du producteur"
+
 #: templates/utility/dashboard.html:17
 msgid "Professionell"
 msgstr "Professionnel"
@@ -7925,6 +8144,10 @@ msgstr "Engagements du projet"
 #: billing_policy.py:88 billing_workspace.py:219 templates/leg_community_create.html:23
 msgid "Proportional"
 msgstr "Proportionnel"
+
+#: document_generator.py:20
+msgid "Proportionale Verteilung nach Verbrauchsanteil"
+msgstr "Répartition proportionnelle à la consommation"
 
 #: templates/leg_billing_policy.html:112
 msgid "Präfix"
@@ -8063,7 +8286,8 @@ msgstr "Batterie de quartier"
 msgid "Quartierakku speichern"
 msgstr "Enregistrer la batterie de quartier"
 
-#: templates/admin/abrechnungen.html:122 templates/member_invoice_detail.html:114
+#: member_invoices.py:39 member_invoices.py:681 templates/admin/abrechnungen.html:122
+#: templates/member_invoice_detail.html:114
 msgid "Quartierakku-Anteil"
 msgstr "Part de la batterie de quartier"
 
@@ -8237,7 +8461,8 @@ msgstr "Rapports récents de la LEA"
 msgid "Recent Ops Snapshots"
 msgstr "Instantanés récents des opérations"
 
-#: templates/member_invoice_detail.html:4 templates/member_invoice_detail.html:42
+#: templates/documents/member_invoice.html:12 templates/member_invoice_detail.html:4
+#: templates/member_invoice_detail.html:42
 msgid "Rechnung"
 msgstr "Facture"
 
@@ -8249,7 +8474,7 @@ msgstr "Facture introuvable."
 msgid "Rechnungen freigeben"
 msgstr "Valider les factures"
 
-#: templates/member_invoice_detail.html:46
+#: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:46
 msgid "Rechnungsdatum:"
 msgstr "Date de facture :"
 
@@ -8270,6 +8495,7 @@ msgstr ""
 "d'union, commençant par une lettre ou un chiffre."
 
 #: templates/llms.txt:9
+#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -8397,13 +8623,17 @@ msgstr ""
 "Valeurs indicatives suisses : environ 1’500 kWh pour 1 personne, 2’500 kWh pour 2 personnes, "
 "4’500 kWh pour 4 personnes."
 
-#: templates/leg_dashboard.html:154
+#: templates/documents/community_agreement.html:17 templates/leg_dashboard.html:154
 msgid "Rolle"
 msgstr "Rôle"
 
 #: dashboard.py:157
 msgid "Rolle wird geprüft"
 msgstr "Le rôle est vérifié"
+
+#: templates/documents/participant_contract.html:16
+msgid "Rolle:"
+msgstr "Rôle :"
 
 #: templates/gemeinde/dashboard.html:77
 msgid "Rollen der Interessierten"
@@ -8421,7 +8651,8 @@ msgstr "Enregistrer les rôles"
 msgid "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 msgstr "Routes, formulaires, profils communaux, classement et API JSON."
 
-#: i18n.py:123 templates/admin/abrechnungen.html:135 templates/admin/abrechnungen.html:138
+#: i18n.py:123 member_invoices.py:707 templates/admin/abrechnungen.html:135
+#: templates/admin/abrechnungen.html:138 templates/documents/member_invoice.html:17
 #: templates/member_invoice_detail.html:49 templates/member_invoice_detail.html:50
 msgid "Rp./kWh"
 msgstr "ct./kWh"
@@ -8444,7 +8675,7 @@ msgstr ""
 msgid "Rp/kWh"
 msgstr "ct./kWh"
 
-#: templates/admin/abrechnungen.html:124
+#: member_invoices.py:37 templates/admin/abrechnungen.html:124
 msgid "Rundungsausgleich"
 msgstr "Ajustement d’arrondi"
 
@@ -8868,6 +9099,7 @@ msgstr ""
 "par la commune."
 
 #: templates/gemeinde/rangliste.html:127
+#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
@@ -9183,6 +9415,10 @@ msgstr "Données système (journaux du serveur, horodatages des confirmations)"
 msgid "TLS, Domains und Reverse Proxy vor der Flask-App."
 msgstr "TLS, domaines et proxy inverse devant l’application Flask."
 
+#: templates/documents/member_invoice.html:18
+msgid "Tage"
+msgstr "jours"
+
 #: templates/admin/abrechnungen.html:72
 msgid "Tarifbasis"
 msgstr "Base tarifaire"
@@ -9232,9 +9468,13 @@ msgid "Teilnehmende und Anlagen erfassen"
 msgstr "Recenser les participants et les installations"
 
 #: templates/admin/abrechnungen.html:112 templates/admin/abrechnungen.html:134
-#: templates/leg_dashboard.html:91
+#: templates/documents/participant_contract.html:13 templates/leg_dashboard.html:91
 msgid "Teilnehmer"
 msgstr "Participants"
+
+#: templates/documents/dso_registration.html:21
+msgid "Teilnehmer und Messpunkte"
+msgstr "Participants et points de mesure"
 
 #: templates/leg_dashboard.html:256
 msgid "Teilnehmer-ID"
@@ -9244,9 +9484,17 @@ msgstr "Identifiant du participant"
 msgid "Teilnehmer:"
 msgstr "Participant:"
 
+#: templates/documents/participant_contract.html:9
+msgid "Teilnehmervertrag"
+msgstr "Contrat de participation"
+
 #: formation_wizard.py:131
 msgid "Teilnehmervertrag LEG"
 msgstr "Contrat de participation à la CEL"
+
+#: templates/documents/dso_registration.html:27
+msgid "Teilnehmerverträge (unterzeichnet)"
+msgstr "Contrats de participation (signés)"
 
 #: payment_reconciliation.py:22
 msgid "Teilzahlung"
@@ -9296,7 +9544,8 @@ msgstr "Niveau"
 msgid "Token ist erforderlich"
 msgstr "Le jeton est obligatoire"
 
-#: templates/gemeinde/profil.html:75 templates/leg_kalkulator.html:231
+#: templates/documents/member_invoice.html:37 templates/gemeinde/profil.html:75
+#: templates/leg_kalkulator.html:231
 msgid "Total"
 msgstr "Total"
 
@@ -9448,6 +9697,10 @@ msgstr "Format du jeton non valide"
 msgid "Unterschiedliche Netzebenen"
 msgstr "Niveaux de réseau différents"
 
+#: templates/documents/community_agreement.html:36 templates/documents/participant_contract.html:30
+msgid "Unterschrift"
+msgstr "Signature"
+
 #: templates/leg_dashboard.html:205
 msgid "Unterschrift abgelehnt"
 msgstr "Signature rejetée"
@@ -9564,6 +9817,7 @@ msgstr "Consommation:"
 msgid "Verbrauchsdaten hinterlegt"
 msgstr "Données de consommation enregistrées"
 
+#: member_invoices.py:35 templates/documents/member_invoice.html:20
 #: templates/member_invoice_detail.html:57
 msgid "Verbrauchskosten"
 msgstr "Coûts de consommation"
@@ -9682,6 +9936,14 @@ msgstr "distribution"
 #: templates/leg_dashboard.html:228
 msgid "Vertragsentwürfe erstellen"
 msgstr "Créer des projets de contrats"
+
+#: templates/documents/participant_contract.html:35
+msgid "Vertreter"
+msgstr "Représentant"
+
+#: templates/documents/dso_registration.html:32
+msgid "Vertreter der Gemeinschaft:"
+msgstr "Représentant de la communauté :"
 
 #: templates/leg_gruenden.html:34 templates/leg_gruenden.html:157
 msgid "Vertretung und Vereinbarung festlegen"
@@ -10357,7 +10619,7 @@ msgstr "Délai de paiement (jours)"
 msgid "Zahlungsfrist in ganzen Tagen, zwischen %(minimum)s und %(maximum)s."
 msgstr "Délai de paiement en jours entiers, entre %(minimum)s et %(maximum)s."
 
-#: templates/member_invoice_detail.html:51
+#: templates/documents/member_invoice.html:18 templates/member_invoice_detail.html:51
 msgid "Zahlungsfrist:"
 msgstr "Délai de paiement :"
 
@@ -10564,6 +10826,10 @@ msgstr "Index du compteur"
 #: templates/utility/register.html:43
 msgid "Zürich"
 msgstr "Zurich"
+
+#: templates/documents/dso_registration.html:33
+msgid "[Name, Adresse, Telefon, E-Mail]"
+msgstr "[Nom, adresse, téléphone, e-mail]"
 
 #: templates/leg_dashboard.html:218
 msgid "abhängig von Ihrer Prüfung"

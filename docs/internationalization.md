@@ -1,9 +1,9 @@
 # Internationalization
 
 OpenLEG uses Flask-Babel/gettext for German (Switzerland, de_CH) and Swiss French
-(fr_CH). German remains the installation default. This first contribution ships
-the generic framework and language selection; interface, documents and recipient
-communications are added in subsequent contributions.
+(fr_CH). German remains the installation default. The framework, interface and
+printable documents support both locales. Persistent recipient preferences and
+background email delivery are separate subsequent changes.
 
 ## Language selection
 
@@ -47,5 +47,20 @@ visible validation errors, accessibility text, JavaScript and demonstration medi
 are translated. Raw API schemas and machine identifiers remain unchanged. The
 API playground adds localized human explanations beside the original response.
 
-Documents/PDF and recipient email preferences are separate subsequent changes.
-No persistent language preference schema is introduced by this interface layer.
+## Printable documents
+
+Community agreements, participant contracts, VNB registration forms and member
+invoices render their labels in the selected application locale. Rendering
+outside a configured application keeps the German default. Trusted document
+templates use escaped source values; names, meter identifiers, dates and frozen
+invoice amounts keep their original values. Rendering a translated invoice
+does not mutate its stored snapshot. Previously stored formation PDFs are
+served as stored; language selection does not rewrite their bytes.
+
+The raw contract-template API still describes its German sections as German.
+PDF presentation does not relabel those source sections. This implementation
+records no legal approval of the document text or its translation.
+
+This stage adapts the document work from the contributor's
+`i18n-fr-ch` commit `b4bc68f`, preserving the current authorization and
+consent-filtering code. No persistent recipient language schema is introduced.

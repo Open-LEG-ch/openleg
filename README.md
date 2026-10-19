@@ -67,6 +67,9 @@ The path from raw metering data to a member invoice runs as one workflow in this
 4. **Lifecycle and delivery.** An issued invoice moves through `issued`, `delivered`, `paid`, `cancelled`, and `corrected` (`billing_lifecycle.py`). Members read their own invoices at `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>`, and `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
 
 Invoice approval stays a deliberate operator action. VNB-specific transport and credentials require local configuration.
+Formation documents and invoice PDFs support German and Swiss French labels;
+stored invoice figures and existing formation files remain unchanged. See
+[document language behavior](docs/internationalization.md#printable-documents).
 
 ### Quick start
 
@@ -216,6 +219,10 @@ Freigabe. Mitglieder können zu ihrer eigenen Rechnung eine private Frage mit
 PDF-Beleg eröffnen und den Status im Rechnungsdetail verfolgen.
 
 Die Rechnungsfreigabe bleibt eine bewusste Entscheidung der Betreiberin. VNB-spezifischer Transport und Zugangsdaten müssen lokal eingerichtet werden.
+Gründungsdokumente und Rechnungs-PDFs unterstützen deutsche und französische
+Beschriftungen. Gespeicherte Rechnungsbeträge und vorhandene Gründungsdateien
+bleiben erhalten. Die [Sprachdokumentation](docs/internationalization.md#printable-documents)
+beschreibt das Verhalten.
 
 ### Schnellstart
 
