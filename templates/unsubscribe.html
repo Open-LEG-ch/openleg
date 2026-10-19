@@ -4,7 +4,7 @@
 {% block meta %}
 {{ page_meta(
   title="Abmeldung | " ~ platform_name,
-  description="Fordern Sie einen sicheren Bestätigungslink an, um Ihr Profil bei " ~ platform_name ~ " zu löschen.",
+  description="Fordern Sie Bestätigungslinks an, um Ihr Adressprofil oder Ihre offenen Gebietsanfragen bei " ~ platform_name ~ " zu löschen.",
   path="/unsubscribe",
   og_title="Abmeldung | " ~ platform_name,
   og_description="Hier können Sie sich vom " ~ platform_name ~ "-Service für Lokale Elektrizitätsgemeinschaften abmelden.",
@@ -21,8 +21,14 @@
     <div class="w-full max-w-lg bg-white shadow-lg rounded-lg p-6">
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Vom Service abmelden</h1>
         <p class="text-sm text-gray-600 mb-6">
-            Tragen Sie Ihre E-Mail-Adresse ein. Falls ein Profil existiert, senden wir Ihnen einen
-            sicheren Bestätigungslink. Erst dieser Link löscht Ihre Daten.
+            Tragen Sie Ihre E-Mail-Adresse ein. Für jedes hinterlegte Adressprofil und jede offene
+            Gebietsanfrage senden wir Ihnen einen eigenen Bestätigungslink. Erst mit Ihrer Bestätigung
+            löschen wir den mit dem jeweiligen Link verknüpften Eintrag.
+        </p>
+        <p class="text-sm text-gray-600 mb-6">
+            Die Bestätigung löscht das verknüpfte Adressprofil samt Einwilligungen oder die verknüpfte offene Gebietsanfrage.
+            Bereits ausgestellte Rechnungen, abrechnungsrelevante Messdaten und Nutzungsereignisse
+            bleiben erhalten.
         </p>
 
         {% if message %}
@@ -33,7 +39,7 @@
 
         {% if confirm_deletion %}
         <form method="post" class="space-y-4">
-            <p class="text-sm text-gray-600">Dieser Schritt löscht Ihr Profil und Ihre zugehörigen Daten endgültig.</p>
+            <p class="text-sm text-gray-600">Dieser Schritt löscht den mit dem Link verknüpften Eintrag endgültig: ein Adressprofil oder eine offene Gebietsanfrage.</p>
             <button
                 type="submit"
                 class="w-full bg-red-700 text-white font-semibold py-2.5 rounded-md hover:bg-red-800 transition-colors"
