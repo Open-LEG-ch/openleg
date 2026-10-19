@@ -718,7 +718,7 @@ def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | Non
 def _locked_invoice(cur, invoice_id, community_id):
     cur.execute(
         """
-        SELECT i.*, b.email AS recipient_email
+        SELECT i.*, b.email AS recipient_email, b.preferred_locale AS recipient_locale
         FROM invoices i
         LEFT JOIN buildings b ON b.building_id = i.participant_id
         WHERE i.id = %s AND i.community_id = %s AND i.status = 'issued'
@@ -888,6 +888,7 @@ def prepare_invoice_delivery(invoice_id, community_id, actor_id):
                 "already_delivered": False,
                 "delivery_method": method,
                 "recipient_email": invoice.get("recipient_email"),
+                "recipient_locale": invoice.get("recipient_locale"),
                 "invoice_number": invoice["invoice_number"],
             }
     except billing_lifecycle.InvoiceLifecycleError:

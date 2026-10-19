@@ -104,6 +104,12 @@ and login links carry the recipient's locale through the existing token exchange
 Background confirmation mail works without a Flask context. These messages do
 not write a language preference or change token, authorization or delivery rules.
 
-Contact updates, deletion confirmations, invoice correspondence and
+Issued invoice delivery notices use the invoiced member's saved language and a
+localized dashboard link. The delivery reservation reads the address and language
+from that member together. Missing language defaults to German. The notice works
+outside Flask; existing delivery retry rules and stored invoice amounts remain
+unchanged.
+
+Contact updates, deletion confirmations, other invoice correspondence and
 municipality/utility/registry mail still need recipient delivery coverage.
 This implementation records no human language or legal approval.
