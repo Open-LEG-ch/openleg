@@ -16,6 +16,27 @@ An adapter returns one of `delivered`, `acknowledged`, `rejected` or `failed`. I
 
 An authorized document operator downloads the package, sends it through the VNB's accepted channel and confirms delivery. Confirmation and the transition from `signatures_pending` to `dso_submitted` occur in one database transaction. Merely preparing or downloading a package never marks it as sent.
 
+## Confirmed operating start
+
+A transport acknowledgement confirms receipt, not the VNB's permission to start.
+After submission, a confirmed community administrator records the actual start
+confirmation as incoming correspondence with an attachment. The dashboard then
+asks for that entry, the VNB's reference and its confirmed start date, plus an
+explicit statement that the administrator has checked the evidence.
+
+`POST /leg/community/{community_id}/vnb-start-confirmation` binds the original
+attachment's SHA-256, correspondence ID, reference, start date, recording actor
+and time to the community under `vnb-start/1`. It sets `dso_approved`, without
+activating billing. Identical retries preserve the original record; changed
+confirmations require a separate review and cannot overwrite it here.
+
+`POST /leg/community/{community_id}/activate` requires a current confirmed
+administrator and intact evidence. It permits explicit activation on or after
+the confirmed date in Europe/Zurich, and records the activating actor and time.
+Both operations require a dashboard session and CSRF protection. Neither route
+contacts a VNB, decides eligibility or verifies the contents of its statement.
+An active LEG still needs the existing billing prerequisites before invoicing.
+
 ## Adding an adapter
 
 1. Implement the `VnbAdapter` interface in `vnb_exchange.py`.

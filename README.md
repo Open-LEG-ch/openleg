@@ -103,6 +103,7 @@ Read the [engineering contract](docs/engineering-contract.md), [architecture](do
 - `/login` role chooser for owners and municipalities
 - `/dashboard` owner dashboard and secure access request; signed-in founders can create a LEG at `/leg/community/create`
 - `/leg/dashboard` LEG operator dashboard
+- After VNB submission, a confirmed LEG administrator can record the actual VNB start confirmation from the correspondence journal and explicitly activate the LEG on or after its confirmed start date. See [VNB exchange](docs/vnb-exchange.md).
 - `/gemeinde/dashboard` municipality dashboard and secure access request
 - `/utility/login` grid-operator login
 - `/api/v1/docs` public API documentation
@@ -242,6 +243,7 @@ Lesen Sie den [Entwicklungsvertrag](docs/engineering-contract.md), die [Architek
 - `/login` Rollenwahl für Eigentümer und Gemeinden
 - `/dashboard` Eigentümer-Dashboard mit sicherer Zugangsanfrage; angemeldete Gründer legen unter `/leg/community/create` eine LEG an
 - `/leg/dashboard` Dashboard für LEG-Betreiber
+- Nach der VNB-Anmeldung erfasst eine bestätigte LEG-Administration die tatsächliche Startbestätigung aus dem Korrespondenzjournal und aktiviert die LEG frühestens am bestätigten Startdatum. Siehe [VNB-Austausch](docs/vnb-exchange.md).
 - `/gemeinde/dashboard` Gemeinde-Dashboard mit sicherer Zugangsanfrage
 - `/utility/login` Login für Netzbetreiber
 - `/api/v1/docs` öffentliche API-Dokumentation

@@ -319,6 +319,7 @@ def get_community_status(
             "created_at": _iso(row["created_at"]),
             "formation_started_at": _iso(row["formation_started_at"]),
             "dso_submitted_at": _iso(row["dso_submitted_at"]),
+            "vnb_start_confirmation": row.get("vnb_start_confirmation"),
             "member_count": counts,
             "readiness_score": _readiness_score(row["status"], counts["confirmed"]),
             "members": members,

@@ -245,6 +245,7 @@ def create_tables():
                     dso_submitted_at TIMESTAMP,
                     dso_approved_at TIMESTAMP,
                     activated_at TIMESTAMP,
+                    vnb_start_confirmation JSONB,
                     vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover',
                     require_dual_control BOOLEAN NOT NULL DEFAULT FALSE
                 )
@@ -252,6 +253,7 @@ def create_tables():
 
             cur.execute("""
                 ALTER TABLE communities
+                    ADD COLUMN IF NOT EXISTS vnb_start_confirmation JSONB,
                     ADD COLUMN IF NOT EXISTS vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover',
                     ADD COLUMN IF NOT EXISTS require_dual_control BOOLEAN NOT NULL DEFAULT FALSE
             """)
