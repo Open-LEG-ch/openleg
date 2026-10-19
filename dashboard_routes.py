@@ -30,7 +30,7 @@ import dashboard as dashboard_module
 import database as db
 import payment_reconciliation
 import security_utils
-from store import contact_request, formation_activation
+from store import contact_request
 
 
 def _dashboard_session_building_id():
@@ -603,9 +603,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         _require_dashboard_csrf()
         try:
             operation(community_id, building_id, *args)
-        except formation_activation.ActivationDenied:
+        except db.ActivationDenied:
             abort(403)
-        except (formation_activation.ActivationConflict, ValueError) as error:
+        except (db.ActivationConflict, ValueError) as error:
             context = dashboard_module.leg_overview(community_id, building_id)
             if context.get("error"):
                 abort(403)
@@ -628,7 +628,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(400)
         return activation_response(
             community_id,
-            formation_activation.record_start_confirmation,
+            db.record_vnb_start_confirmation,
             request.form.get("correspondence_id", ""),
             request.form.get("effective_date", ""),
             request.form.get("reference", ""),
@@ -636,7 +636,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
 
     @bp.route("/leg/community/<community_id>/activate", methods=["POST"])
     def leg_community_activate(community_id):
-        return activation_response(community_id, formation_activation.activate)
+        return activation_response(community_id, db.activate_community)
 
     @bp.route("/leg/community/<community_id>/vnb-submissions", methods=["POST"])
     def leg_community_vnb_submission(community_id):

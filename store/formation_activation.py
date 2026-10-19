@@ -7,7 +7,7 @@ transitions. Transport acknowledgements never enter this path automatically.
 """
 
 import hashlib
-from datetime import date
+from datetime import UTC, date
 
 from psycopg2.extras import Json
 
@@ -107,7 +107,7 @@ def record_start_confirmation(
         cur.execute("SELECT CURRENT_TIMESTAMP AS now")
         source.update(
             recorded_by=actor_building_id,
-            recorded_at=cur.fetchone()["now"].isoformat(),
+            recorded_at=cur.fetchone()["now"].astimezone(UTC).isoformat(),
         )
         cur.execute(
             """UPDATE communities SET status = 'dso_approved',
@@ -158,7 +158,7 @@ def activate(community_id: str, actor_building_id: str) -> None:
         cur.execute("SELECT CURRENT_TIMESTAMP AS now")
         proof.update(
             activated_by=actor_building_id,
-            activated_at=cur.fetchone()["now"].isoformat(),
+            activated_at=cur.fetchone()["now"].astimezone(UTC).isoformat(),
         )
         cur.execute(
             """UPDATE communities SET status = 'active',

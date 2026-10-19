@@ -305,3 +305,19 @@ def test_changed_confirmation_attachment_blocks_activation(submitted):
         )
     assert client.post(f"/leg/community/{cid}/activate", data=fields).status_code == 409
     assert db.fetch_community_with_members(cid, "founder")["activated_at"] is None
+
+
+def test_audit_timestamps_use_utc_with_a_non_utc_database_session(submitted):
+    client, db, cid, fields = submitted
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SET TIME ZONE 'Pacific/Auckland'")
+    assert (
+        client.post(
+            f"/leg/community/{cid}/vnb-start-confirmation", data=fields
+        ).status_code
+        == 302
+    )
+    assert client.post(f"/leg/community/{cid}/activate", data=fields).status_code == 302
+    proof = db.fetch_community_with_members(cid, "founder")["vnb_start_confirmation"]
+    assert proof["recorded_at"].endswith("+00:00")
+    assert proof["activated_at"].endswith("+00:00")
