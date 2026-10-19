@@ -9,6 +9,9 @@ import json
 from datetime import date, datetime
 from decimal import Decimal
 
+from psycopg2 import sql
+from psycopg2.extras import Json
+
 SCHEMA_VERSION = "openleg-community-archive/1"
 SOURCE_PROVENANCE = "OpenLEG PostgreSQL operational store"
 
@@ -18,7 +21,7 @@ class ArchiveError(ValueError):
 
 
 def _json_value(value):
-    if isinstance(value, bytes):
+    if isinstance(value, (bytes, bytearray, memoryview)):
         return {"$binary": base64.b64encode(value).decode("ascii")}
     if isinstance(value, datetime):
         return {"$datetime": value.isoformat()}
@@ -318,7 +321,12 @@ class PostgresArchiveStore:
     def validate_records(self, datasets):
         with self._connection() as conn, conn.cursor() as cur:
             allowed = self._allowed_columns(cur)
+            sequences = self._serial_sequences(
+                cur, [table for table, _, _ in _DATASETS if datasets.get(table)]
+            )
         errors = []
+        if any(row["seqincrement"] < 1 or row["seqcache"] != 1 for row in sequences):
+            errors.append("Restore requires ascending sequences with CACHE 1")
         for table, _, _ in _DATASETS:
             rows = datasets.get(table, [])
             for row in rows if isinstance(rows, list) else []:
@@ -333,6 +341,13 @@ class PostgresArchiveStore:
         with self._connection() as conn, conn.cursor() as cur:
             allowed_columns = self._allowed_columns(cur)
             cur.execute(
+                "SELECT table_name, column_name FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND data_type IN ('json', 'jsonb')"
+            )
+            json_columns = {
+                (row["table_name"], row["column_name"]) for row in cur.fetchall()
+            }
+            cur.execute(
                 "SELECT tc.table_name, kcu.column_name "
                 "FROM information_schema.table_constraints tc "
                 "JOIN information_schema.key_column_usage kcu "
@@ -346,6 +361,22 @@ class PostgresArchiveStore:
             for record in cur.fetchall():
                 primary_keys.setdefault(record["table_name"], []).append(
                     record["column_name"]
+                )
+            sequences = self._serial_sequences(
+                cur, [table for table, _, _ in _DATASETS if datasets.get(table)]
+            )
+            # Lock before inserting explicit IDs. Otherwise a writer can reserve
+            # the same ID and wait on our row while we wait on its sequence lock.
+            for sequence in sequences:
+                if sequence["seqincrement"] < 1 or sequence["seqcache"] != 1:
+                    raise ArchiveError(
+                        "Restore requires ascending sequences with CACHE 1"
+                    )
+                cur.execute(
+                    sql.SQL("ALTER SEQUENCE {} INCREMENT BY {}").format(
+                        sql.Identifier(sequence["nspname"], sequence["relname"]),
+                        sql.Literal(sequence["seqincrement"]),
+                    )
                 )
             for table, _, _ in _DATASETS:
                 for row in datasets.get(table, []):
@@ -364,7 +395,13 @@ class PostgresArchiveStore:
                     cur.execute(
                         f"INSERT INTO {table} ({', '.join(columns)}) "
                         f"VALUES ({placeholders}) ON CONFLICT DO NOTHING",
-                        tuple(row[column] for column in columns),
+                        tuple(
+                            Json(row[column])
+                            if (table, column) in json_columns
+                            and row[column] is not None
+                            else row[column]
+                            for column in columns
+                        ),
                     )
                     if cur.rowcount == 0:
                         keys = primary_keys.get(table, [])
@@ -377,6 +414,60 @@ class PostgresArchiveStore:
                         )
                         existing = cur.fetchone()
                         if existing is None or any(
-                            existing[column] != row[column] for column in columns
+                            (
+                                bytes(existing[column])
+                                if isinstance(existing[column], memoryview)
+                                else existing[column]
+                            )
+                            != row[column]
+                            for column in columns
                         ):
                             raise ArchiveError(f"Conflicting record: {table}")
+            self._advance_sequences(cur, sequences)
+
+    @staticmethod
+    def _serial_sequences(cur, tables):
+        cur.execute(
+            "SELECT t.relname AS table_name, a.attname AS column_name, "
+            "n.nspname, c.relname, s.seqincrement, s.seqcache "
+            "FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "JOIN pg_sequence s ON s.seqrelid = c.oid "
+            "JOIN pg_depend d ON d.classid = 'pg_class'::regclass "
+            "AND d.objid = c.oid AND d.deptype IN ('a', 'i') "
+            "JOIN pg_class t ON t.oid = d.refobjid "
+            "JOIN pg_namespace tn ON tn.oid = t.relnamespace "
+            "JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid "
+            "WHERE tn.nspname = 'public' AND t.relname = ANY(%s) "
+            "ORDER BY t.relname, a.attname",
+            (tables,),
+        )
+        return cur.fetchall()
+
+    @staticmethod
+    def _advance_sequences(cur, sequences):
+        """Keep restored serial IDs and future writes compatible, transactionally."""
+        for sequence in sequences:
+            table, column = sequence["table_name"], sequence["column_name"]
+            increment = sequence["seqincrement"]
+            identifier = sql.Identifier(sequence["nspname"], sequence["relname"])
+            cur.execute(
+                sql.SQL("SELECT last_value, is_called FROM {}").format(identifier)
+            )
+            position = cur.fetchone()
+            cur.execute(
+                sql.SQL("SELECT MAX({}) AS maximum FROM {}").format(
+                    sql.Identifier(column), sql.Identifier(table)
+                )
+            )
+            maximum = cur.fetchone()["maximum"]
+            next_value = max(
+                position["last_value"] + (increment if position["is_called"] else 0),
+                (maximum + increment)
+                if maximum is not None
+                else position["last_value"],
+            )
+            cur.execute(
+                sql.SQL("ALTER SEQUENCE {} RESTART WITH {}").format(
+                    identifier, sql.Literal(next_value)
+                )
+            )
