@@ -364,7 +364,10 @@ the cash rounding line cannot absorb it. Battery and equal-model rounding
 remain subject to the existing exact reconciliation gate. Legacy JSON evidence
 and drafts keep their existing approval rules.
 
-Approval reloads the current accepted source under the community lock. It
+Approval reloads the current accepted source under the community lock. Even
+older E66 drafts without a precision certificate must match its quantities
+and independent model audit while retaining the legacy zero-gap rule. Removing
+the marker cannot downgrade source verification. For the precision policy it
 recomputes the certificate and independent model audit, checks the billed
 quantities against the source, and retains tariff and dual-control checks.
 Each invoice keeps its own participant differences and meter mapping, plus the

@@ -801,12 +801,20 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
     vnb_basis = (
         isinstance(reconciliation, dict) and "precision_policy" in reconciliation
     )
-    if vnb_basis:
+    e66_source = (
+        isinstance(calculated_values, dict)
+        and calculated_values.get("format_version") == "e66/1"
+    )
+    if vnb_basis or e66_source:
         import billing_reconciliation
 
         try:
             billing_reconciliation.validate_billed_source(
-                period, calculated_values, consumption_kwh, production_kwh
+                period,
+                calculated_values,
+                consumption_kwh,
+                production_kwh,
+                require_certificate=vnb_basis,
             )
         except billing_reconciliation.ReconciliationError:
             raise BillingApprovalError(

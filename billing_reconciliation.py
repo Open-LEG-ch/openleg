@@ -264,7 +264,9 @@ def audit_e66(delivery, *, model):
         raise ReconciliationError("incomplete_vnb_source") from None
 
 
-def validate_billed_source(period, delivery, consumption_kwh, production_kwh):
+def validate_billed_source(
+    period, delivery, consumption_kwh, production_kwh, *, require_certificate=True
+):
     """Recheck source quantities, model evidence and certificate at approval."""
     import billing_engine
     import billing_readings
@@ -281,11 +283,12 @@ def validate_billed_source(period, delivery, consumption_kwh, production_kwh):
             raise ReconciliationError("source_identity_mismatch")
         policy = period["billing_policy_snapshot"]
         reconciliation = period["reconciliation"]
-        certificate = audit_e66(delivery, model=policy["distribution_model"])
-        if reconciliation["precision_policy"] != certificate or period.get(
-            "battery_snapshot"
-        ):
-            raise ReconciliationError("source_certificate_mismatch")
+        if require_certificate:
+            certificate = audit_e66(delivery, model=policy["distribution_model"])
+            if reconciliation["precision_policy"] != certificate or period.get(
+                "battery_snapshot"
+            ):
+                raise ReconciliationError("source_certificate_mismatch")
         source_frames = billing_readings.frames_from_calculated_source(delivery)
         source_consumption, source_production = (
             billing_readings.calculated_quantity_frames(source_frames, delivery)
