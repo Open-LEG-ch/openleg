@@ -2,6 +2,7 @@
 """Check whether rounded source channels can share one proportional model."""
 
 from datetime import UTC, datetime, timedelta
+from decimal import localcontext
 
 import pytest
 
@@ -204,3 +205,23 @@ def test_source_record_order_does_not_change_the_certificate():
     source["normalized_records"].reverse()
     source["source_metadata"]["mappings"].reverse()
     assert audit_e66(source, model="proportional") == first
+
+
+@pytest.mark.parametrize("precision", [2, 28, 50])
+def test_excess_source_digits_cannot_disappear_in_the_decimal_context(precision):
+    from billing_reconciliation import ReconciliationError, audit_e66
+
+    source = evidence(
+        [
+            (
+                "c",
+                "consumption",
+                [("1.00000000000000000000000000001", "0.500", "0.500")],
+            ),
+            ("p", "production", [("0.500", "0.500", "0.000")]),
+        ]
+    )
+    with localcontext() as context:
+        context.prec = precision
+        with pytest.raises(ReconciliationError):
+            audit_e66(source, model="proportional")

@@ -12,6 +12,8 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 
+from sdat_e66 import exact_e66_kwh
+
 VERSION = "vnb-proportional-e66-rounding/1"
 _HALF_QUANTUM = Fraction(1, 2000)
 _INTERVAL = timedelta(minutes=15)
@@ -36,10 +38,10 @@ class _Channels:
 
 
 def _cell(value):
-    number = Decimal(str(value))
-    if not number.is_finite() or number < 0 or number * 1000 % 1:
-        raise ReconciliationError("invalid_vnb_precision")
-    exact = Fraction(number)
+    try:
+        exact = exact_e66_kwh(value)
+    except (ValueError, ArithmeticError):
+        raise ReconciliationError("invalid_vnb_precision") from None
     return _Cell(max(Fraction(0), exact - _HALF_QUANTUM), exact + _HALF_QUANTUM)
 
 
