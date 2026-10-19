@@ -39,6 +39,7 @@ def interest_database(monkeypatch):
         )
         monkeypatch.setattr(db, "_connection_pool", pool)
         db.create_tables()
+        monkeypatch.setattr(db, "_db_initialized", True)
         yield db
     finally:
         if pool:
@@ -62,6 +63,26 @@ def save_registration(email="one@example.ch", **kwargs):
         consents={},
         **kwargs,
     )
+
+
+@pytest.mark.integration
+def test_native_fixture_keeps_its_pool_when_checking_availability(
+    interest_database, monkeypatch
+):
+    def forbidden_reinitialization():
+        pytest.fail("the native fixture attempted to reopen the base database")
+
+    monkeypatch.setattr(db, "init_db", forbidden_reinitialization)
+    original_pool = db._connection_pool
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT current_database() AS name")
+        database_name = cur.fetchone()["name"]
+    assert database_name.startswith("openleg_interest_")
+    assert db.is_db_available() is True
+    assert db._connection_pool is original_pool
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT current_database() AS name")
+        assert cur.fetchone()["name"] == database_name
 
 
 @pytest.mark.integration
