@@ -4,6 +4,7 @@
 import json
 import os
 import secrets
+from contextlib import contextmanager
 from urllib.parse import urlsplit, urlunsplit
 
 import psycopg2
@@ -18,6 +19,35 @@ interest_database = test_interest_postgres.interest_database
 pytestmark = pytest.mark.integration
 
 
+class _PauseAtCommunityInsert:
+    """Pause real SQL inside the public connection seam, before later inserts."""
+
+    def __init__(self, connection, worker):
+        self.connection = connection
+        self.worker = worker
+
+    @contextmanager
+    def cursor(self):
+        with self.connection.cursor() as cur:
+            worker = self.worker
+
+            class Cursor:
+                def __getattr__(self, name):
+                    return getattr(cur, name)
+
+                def execute(self, query, params=None):
+                    result = cur.execute(query, params)
+                    if isinstance(query, str) and query.startswith(
+                        "INSERT INTO communities "
+                    ):
+                        worker.staged.set()
+                        if not worker.release.wait(timeout=10):
+                            raise TimeoutError("restore insert was not released")
+                    return result
+
+            yield Cursor()
+
+
 @pytest.mark.parametrize(
     "target_mode",
     [
@@ -26,6 +56,7 @@ pytestmark = pytest.mark.integration
         "cached_sequence",
         "conflicting_record",
         "concurrent_writer",
+        "writer_during_restore",
     ],
 )
 def test_real_archive_preserves_binary_json_and_next_generated_id(
@@ -80,7 +111,11 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
         elif target_mode == "cached_sequence":
             with db.get_connection() as conn, conn.cursor() as cur:
                 cur.execute("ALTER SEQUENCE correspondence_log_id_seq CACHE 5")
-        elif target_mode in {"conflicting_record", "concurrent_writer"}:
+        elif target_mode in {
+            "conflicting_record",
+            "concurrent_writer",
+            "writer_during_restore",
+        }:
             with db.get_connection() as conn, conn.cursor() as cur:
                 cur.execute("SELECT setval('community_members_id_seq', 100, true)")
                 cur.execute("SELECT setval('consents_id_seq', 100, true)")
@@ -127,26 +162,51 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
             assert db.list_correspondence(other)[0]["subject"] == "Unrelated evidence"
             return
 
-        if target_mode == "concurrent_writer":
+        if target_mode in {"concurrent_writer", "writer_during_restore"}:
             decoded = community_archive._python_value(json.loads(payload)["datasets"])
             with test_interest_postgres.transaction_race(monkeypatch) as race:
-                restore = race.start(
-                    lambda: community_archive.PostgresArchiveStore().restore_community(
+
+                def restore_operation():
+                    return community_archive.PostgresArchiveStore().restore_community(
                         decoded
-                    ),
-                    pause_before_commit=True,
-                )
-                race.wait_until_staged(restore)
-                writer = race.start(
-                    lambda: db.log_correspondence(
-                        other, "out", "email", "Unrelated VNB", "Concurrent evidence"
                     )
-                )
-                race.wait_until_blocked_by(writer, restore)
-                restore.release.set()
-                race.finish(restore)
-                concurrent_id = race.finish(writer)
-                assert concurrent_id is not None and concurrent_id > entry
+
+                @contextmanager
+                def pausing_connection():
+                    with race.connection() as connection:
+                        worker = getattr(race.local, "worker", None)
+                        if (
+                            worker
+                            and worker.operation is restore_operation
+                            and target_mode == "writer_during_restore"
+                        ):
+                            yield _PauseAtCommunityInsert(connection, worker)
+                        else:
+                            yield connection
+
+                with monkeypatch.context() as patch:
+                    patch.setattr(db, "get_connection", pausing_connection)
+                    restore = race.start(
+                        restore_operation,
+                        pause_before_commit=target_mode == "concurrent_writer",
+                    )
+                    race.wait_until_staged(restore)
+                    writer = race.start(
+                        lambda: db.log_correspondence(
+                            other,
+                            "out",
+                            "email",
+                            "Unrelated VNB",
+                            "Concurrent evidence",
+                        )
+                    )
+                    try:
+                        race.wait_until_blocked_by(writer, restore)
+                    finally:
+                        restore.release.set()
+                    race.finish(restore)
+                    concurrent_id = race.finish(writer)
+                    assert concurrent_id is not None and concurrent_id > entry
             result = {"valid": True}
         else:
             result = community_archive.restore_community_archive(payload)

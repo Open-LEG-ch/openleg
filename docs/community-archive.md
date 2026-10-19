@@ -1,7 +1,7 @@
 # Community archive
 
 The LEG dashboard exports and restores `openleg-community-archive/1` JSON.
-Export requires a confirmed administrator session and explicit confirmation.
+Export requires a confirmed administrator session.
 Dry-run and restore require the same authority and CSRF protection. Protect the
 file as private personal, metering and financial data.
 

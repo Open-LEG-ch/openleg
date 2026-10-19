@@ -362,6 +362,22 @@ class PostgresArchiveStore:
                 primary_keys.setdefault(record["table_name"], []).append(
                     record["column_name"]
                 )
+            sequences = self._serial_sequences(
+                cur, [table for table, _, _ in _DATASETS if datasets.get(table)]
+            )
+            # Lock before inserting explicit IDs. Otherwise a writer can reserve
+            # the same ID and wait on our row while we wait on its sequence lock.
+            for sequence in sequences:
+                if sequence["seqincrement"] < 1 or sequence["seqcache"] != 1:
+                    raise ArchiveError(
+                        "Restore requires ascending sequences with CACHE 1"
+                    )
+                cur.execute(
+                    sql.SQL("ALTER SEQUENCE {} INCREMENT BY {}").format(
+                        sql.Identifier(sequence["nspname"], sequence["relname"]),
+                        sql.Literal(sequence["seqincrement"]),
+                    )
+                )
             for table, _, _ in _DATASETS:
                 for row in datasets.get(table, []):
                     if not isinstance(row, dict) or not row:
@@ -407,9 +423,7 @@ class PostgresArchiveStore:
                             for column in columns
                         ):
                             raise ArchiveError(f"Conflicting record: {table}")
-            self._advance_sequences(
-                cur, [table for table, _, _ in _DATASETS if datasets.get(table)]
-            )
+            self._advance_sequences(cur, sequences)
 
     @staticmethod
     def _serial_sequences(cur, tables):
@@ -430,21 +444,12 @@ class PostgresArchiveStore:
         return cur.fetchall()
 
     @staticmethod
-    def _advance_sequences(cur, tables):
+    def _advance_sequences(cur, sequences):
         """Keep restored serial IDs and future writes compatible, transactionally."""
-        for sequence in PostgresArchiveStore._serial_sequences(cur, tables):
+        for sequence in sequences:
             table, column = sequence["table_name"], sequence["column_name"]
             increment = sequence["seqincrement"]
-            if increment < 1 or sequence["seqcache"] != 1:
-                raise ArchiveError("Restore requires ascending sequences with CACHE 1")
             identifier = sql.Identifier(sequence["nspname"], sequence["relname"])
-            # Preserve the increment while acquiring the sequence DDL lock.
-            # Read its position only after concurrent nextval calls finish.
-            cur.execute(
-                sql.SQL("ALTER SEQUENCE {} INCREMENT BY {}").format(
-                    identifier, sql.Literal(increment)
-                )
-            )
             cur.execute(
                 sql.SQL("SELECT last_value, is_called FROM {}").format(identifier)
             )
