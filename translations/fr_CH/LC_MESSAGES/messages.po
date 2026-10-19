@@ -799,7 +799,7 @@ msgid ""
 "Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie "
 "weiterhin vollständige Tarife, Messwerte und VNB-Zuteilungen."
 msgstr ""
-"Activez la LEG au plus tôt à la date de mise en service confirmée. La facturation exige toujours "
+"Activez la CEL au plus tôt à la date de mise en service confirmée. La facturation exige toujours "
 "des tarifs, des relevés et des allocations du gestionnaire de réseau complets."
 
 #: templates/telemetry_dashboard.html:17
@@ -2296,7 +2296,7 @@ msgid ""
 "Der Netzbetreiber muss den Start der LEG bestätigen. Eine Empfangsbestätigung für die Anmeldung "
 "reicht dafür nicht aus."
 msgstr ""
-"Le gestionnaire de réseau doit confirmer la mise en service de la LEG. Un accusé de réception de "
+"Le gestionnaire de réseau doit confirmer la mise en service de la CEL. Un accusé de réception de "
 "la demande ne suffit pas."
 
 #: templates/how-it-works.html:133
@@ -5923,7 +5923,7 @@ msgstr "Outils CEL"
 
 #: templates/leg_dashboard.html:308
 msgid "LEG aktivieren"
-msgstr "Activer la LEG"
+msgstr "Activer la CEL"
 
 #: templates/dashboard.html:45 templates/leg_community_create.html:10
 msgid "LEG anlegen"
@@ -6550,7 +6550,7 @@ msgstr "Inscrivez la CEL auprès du GRD."
 
 #: store/formation_activation.py:112
 msgid "Melden Sie die LEG zuerst beim Netzbetreiber an."
-msgstr "Annoncez d’abord la LEG au gestionnaire de réseau."
+msgstr "Annoncez d’abord la CEL au gestionnaire de réseau."
 
 #: templates/meter_upload.html:52
 msgid "Melden Sie sich im EKZ-Kundenportal an"

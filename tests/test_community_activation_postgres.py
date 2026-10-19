@@ -70,7 +70,7 @@ def test_french_activation_labels_errors_and_confirmation_remain_localized(
     after = client.get(confirmed.location)
     assert after.status_code == 200
     assert "Mise en service confirmée" in after.text
-    assert "Activer la LEG" in after.text
+    assert "Activer la CEL" in after.text
     assert fields["reference"] in after.text
 
 
