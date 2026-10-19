@@ -6,66 +6,65 @@
 {{ page_meta(
   title=seo_title, description=seo_description,
   path="/gemeinde/profil/" ~ profile.bfs_number,
-  og_title=("Solarnutzung " ~ profile.name ~ " | OpenLEG") if profile.get('pv_score_pct') is not none and share_base else profile.name ~ " | Energieprofil | OpenLEG",
-  og_description=("So nutzt " ~ profile.name ~ " sein Solardach-Potenzial. Vergleichen Sie Ihre Gemeinde.") if profile.get('pv_score_pct') is not none and share_base else "Energieprofil und LEG-Potenzial für " ~ profile.name ~ ": Stromtarife, Solarnutzung, Energiewende-Score.",
-  og_image=("/rangliste/og/" ~ profile.bfs_number ~ ".svg") if profile.get('pv_score_pct') is not none and share_base else None,
+  og_title=_("Solarnutzung %(name)s | OpenLEG", name=profile.name) if profile.get('pv_score_pct') is not none and share_base else _("%(name)s | Energieprofil | OpenLEG", name=profile.name),
+  og_description=_("So nutzt %(name)s sein Solardach-Potenzial. Vergleichen Sie Ihre Gemeinde.", name=profile.name) if profile.get('pv_score_pct') is not none and share_base else _("Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score.", name=profile.name),
+  og_image=(("/rangliste/og/" ~ profile.bfs_number ~ ".svg")|localized_url(current_locale)) if profile.get('pv_score_pct') is not none and share_base else None,
   site_url=site_url
 ) }}
 {% endblock %}
 
 {% block head_extra %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+{% if true %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>{% endif %}
 <script type="application/ld+json">{{ jsonld|tojson }}</script>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto px-4 py-8" data-page-structure="reference-sheet">
   <header class="mb-8 border-b border-slate-200 pb-6">
-    <p class="text-sm text-ink-muted mb-1"><a href="/gemeinde/verzeichnis" class="hover:text-brand">Gemeindeverzeichnis</a> / {{ profile.kanton }}</p>
-    <h1 class="text-3xl font-bold">Stromtarif und Energieprofil {{ profile.name }}</h1>
-    <p class="text-ink-muted mt-1">Kanton {{ profile.kanton }}{% if profile.population %} · <span class="font-mono tabular-nums">{{ "{:,}".format(profile.population|int).replace(",", "'") }}</span> Einwohner{% endif %}</p>
-    {% if pilot_slug %}<p class="text-sm mt-3"><a href="/pilotgemeinde/{{ pilot_slug }}" class="text-brand hover:underline">Fallstudie für {{ profile.name }} ansehen</a></p>{% endif %}
+    <p class="text-sm text-ink-muted mb-1"><a href="/gemeinde/verzeichnis" class="hover:text-brand">{{ _("Gemeindeverzeichnis") }}</a> / {{ profile.kanton }}</p>
+    <h1 class="text-3xl font-bold">{{ _("Stromtarif und Energieprofil %(profile_name)s", profile_name=profile.name) }}</h1>
+    <p class="text-ink-muted mt-1">{{ _("Kanton %(profile_kanton)s", profile_kanton=profile.kanton) }}{% if profile.population %} · <span class="font-mono tabular-nums">{{ profile.population|int|numberlabel }}</span> {{ _("Einwohner") }}{% endif %}</p>
+    {% if pilot_slug %}<p class="text-sm mt-3"><a href="/pilotgemeinde/{{ pilot_slug }}" class="text-brand hover:underline">{{ _("Fallstudie für %(profile_name)s ansehen", profile_name=profile.name) }}</a></p>{% endif %}
   </header>
 
   <section class="mb-10 rounded-xl border border-brand/20 bg-brand/5 p-6" aria-labelledby="interest-title">
-    <p class="text-xs uppercase tracking-wide text-ink-muted">OpenLEG Interessenmeldungen</p>
-    <h2 id="interest-title" class="text-2xl font-bold mt-1">{% if interest_count is none %}Interessenmeldungen derzeit nicht verfügbar{% else %}{{ interest_label }} in {{ profile.name }}{% endif %}</h2>
+    <p class="text-xs uppercase tracking-wide text-ink-muted">{{ _("OpenLEG Interessenmeldungen") }}</p>
+    <h2 id="interest-title" class="text-2xl font-bold mt-1">{% if interest_count is none %}{{ _("Interessenmeldungen derzeit nicht verfügbar") }}{% else %}{{ _("%(interest_label)s in %(profile_name)s", interest_label=interest_label, profile_name=profile.name) }}{% endif %}</h2>
     <p class="text-sm text-ink-muted mt-2">
-      Gezählt werden nur bestätigte E-Mail-Adressen. Bei weniger als drei Anmeldungen zeigen wir keine exakte Zahl.
-      Wer sich anmeldet, erhält eine Nachricht, sobald weitere bestätigte Interessierte aus {{ profile.name }} dazukommen.
+      {{ _("Gezählt werden nur bestätigte E-Mail-Adressen. Bei weniger als drei Anmeldungen zeigen wir keine exakte Zahl.\n      Wer sich anmeldet, erhält eine Nachricht, sobald weitere bestätigte Interessierte aus %(profile_name)s dazukommen.", profile_name=profile.name) }}
     </p>
-    <p class="text-xs text-ink-muted mt-2">Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden.</p>
-    <a href="/#registrieren" class="mt-4 inline-block bg-brand text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-brand-dark">Interesse für {{ profile.name }} anmelden</a>
+    <p class="text-xs text-ink-muted mt-2">{{ _("Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden.") }}</p>
+    <a href="/#registrieren" class="mt-4 inline-block bg-brand text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-brand-dark">{{ _("Interesse für %(profile_name)s anmelden", profile_name=profile.name) }}</a>
   </section>
 
   <section data-evidence-tier="measured" aria-labelledby="measured-title" class="mb-10">
-    <p class="text-xs uppercase tracking-wide text-ink-muted">Gemessene und amtlich ausgewiesene Werte</p>
-    <h2 id="measured-title" class="text-xl font-semibold mt-1 mb-5">Messwerte</h2>
+    <p class="text-xs uppercase tracking-wide text-ink-muted">{{ _("Gemessene und amtlich ausgewiesene Werte") }}</p>
+    <h2 id="measured-title" class="text-xl font-semibold mt-1 mb-5">{{ _("Messwerte") }}</h2>
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-200">
       {% if h4_tariff %}
       <div class="py-4 sm:pr-5 border-b border-slate-200">
-        <p class="text-xs text-ink-muted uppercase tracking-wide">H4 Stromtarif</p>
-        <p class="font-mono tabular-nums text-2xl font-bold mt-1">{{ "%.1f"|format(h4_tariff.total_rp_kwh|float) }} <span class="text-sm font-normal">Rp/kWh</span></p>
-        <a href="#data-provenance" data-source-marker="elcom" class="font-mono text-xs text-ink-muted hover:text-brand">Quelle: ElCom {{ h4_tariff.year }}</a>
+        <p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("H4 Stromtarif") }}</p>
+        <p class="font-mono tabular-nums text-2xl font-bold mt-1">{{ "%.1f"|format(h4_tariff.total_rp_kwh|float) }} <span class="text-sm font-normal">{{ _("Rp/kWh") }}</span></p>
+        <a href="#data-provenance" data-source-marker="elcom" class="font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: ElCom %(h4_tariff_year)s", h4_tariff_year=h4_tariff.year) }}</a>
       </div>
       {% endif %}
       {% if solar %}
       <div class="py-4 sm:pr-5 border-b border-slate-200">
-        <p class="text-xs text-ink-muted uppercase tracking-wide">Geeignete Dachfläche</p>
-        <p class="font-mono tabular-nums text-2xl font-bold mt-1">{{ "{:,.0f}".format(solar.suitable_roof_area_m2|float).replace(",", "'") }} <span class="text-sm font-normal">m²</span></p>
-        <a href="#data-provenance" data-source-marker="sonnendach-area" class="font-mono text-xs text-ink-muted hover:text-brand">Quelle: BFE Sonnendach</a>
+        <p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("Geeignete Dachfläche") }}</p>
+        <p class="font-mono tabular-nums text-2xl font-bold mt-1">{{ solar.suitable_roof_area_m2|float|round(0)|numberlabel }} <span class="text-sm font-normal">{{ _("m²") }}</span></p>
+        <a href="#data-provenance" data-source-marker="sonnendach-area" class="font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: BFE Sonnendach") }}</a>
       </div>
       <div class="py-4 sm:pr-5 border-b border-slate-200">
-        <p class="text-xs text-ink-muted uppercase tracking-wide">Dachpotenzial</p>
-        <p class="font-mono tabular-nums text-2xl font-bold mt-1">{% if solar.potential_kwp is defined and solar.potential_kwp is not none %}{{ "{:,.0f}".format(solar.potential_kwp|float).replace(",", "'") }} <span class="text-sm font-normal">kWp</span>{% else %}k. A.{% endif %}</p>
-        <a href="#data-provenance" data-source-marker="sonnendach-potential" class="font-mono text-xs text-ink-muted hover:text-brand">Quelle: BFE Sonnendach</a>
+        <p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("Dachpotenzial") }}</p>
+        <p class="font-mono tabular-nums text-2xl font-bold mt-1">{% if solar.potential_kwp is defined and solar.potential_kwp is not none %}{{ solar.potential_kwp|float|round(0)|numberlabel }} <span class="text-sm font-normal">{{ _("kWp") }}</span>{% else %}{{ _("k. A.") }}{% endif %}</p>
+        <a href="#data-provenance" data-source-marker="sonnendach-potential" class="font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: BFE Sonnendach") }}</a>
       </div>
       {% endif %}
       {% if profile.get('pv_installed_kw') is not none %}
       <div class="py-4 border-b border-slate-200">
-        <p class="text-xs text-ink-muted uppercase tracking-wide">Installierte PV-Leistung</p>
-        <p class="font-mono tabular-nums text-2xl font-bold mt-1">{{ "{:,.0f}".format(profile.pv_installed_kw|float).replace(",", "'") }} <span class="text-sm font-normal">kW</span></p>
-        <a href="#data-provenance" data-source-marker="bfe-plants" class="font-mono text-xs text-ink-muted hover:text-brand">Quelle: BFE Anlagenregister</a>
+        <p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("Installierte PV-Leistung") }}</p>
+        <p class="font-mono tabular-nums text-2xl font-bold mt-1">{{ profile.pv_installed_kw|float|round(0)|numberlabel }} <span class="text-sm font-normal">{{ _("kW") }}</span></p>
+        <a href="#data-provenance" data-source-marker="bfe-plants" class="font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: BFE Anlagenregister") }}</a>
       </div>
       {% endif %}
     </div>
@@ -73,69 +72,74 @@
     {% if tariffs %}
     <div class="overflow-x-auto mt-6 border-t border-slate-200">
       <table class="w-full text-sm">
-        <thead><tr class="border-b text-left text-ink-muted"><th class="py-2">Kategorie</th><th class="py-2 text-right">Total</th><th class="py-2 text-right">Energie</th><th class="py-2 text-right">Netz</th><th class="py-2 text-right">Abgaben</th></tr></thead>
+        <thead><tr class="border-b text-left text-ink-muted"><th class="py-2">{{ _("Kategorie") }}</th><th class="py-2 text-right">{{ _("Total") }}</th><th class="py-2 text-right">{{ _("Energie") }}</th><th class="py-2 text-right">{{ _("Netz") }}</th><th class="py-2 text-right">{{ _("Abgaben") }}</th></tr></thead>
         <tbody>{% for t in tariffs %}<tr class="border-b hover:bg-slate-50/60"><td class="py-2">{{ t.category }}</td><td class="py-2 text-right font-mono tabular-nums">{{ "%.1f"|format(t.total_rp_kwh|float) }}</td><td class="py-2 text-right font-mono tabular-nums">{{ "%.1f"|format(t.energy_rp_kwh|default(0)|float) }}</td><td class="py-2 text-right font-mono tabular-nums">{{ "%.1f"|format(t.grid_rp_kwh|default(0)|float) }}</td><td class="py-2 text-right font-mono tabular-nums">{{ "%.1f"|format((t.municipality_fee_rp_kwh|default(0)|float) + (t.kev_rp_kwh|default(0)|float)) }}</td></tr>{% endfor %}</tbody>
       </table>
-      <a href="#data-provenance" data-source-marker="elcom-table" class="inline-block mt-2 font-mono text-xs text-ink-muted hover:text-brand">Quelle: ElCom / LINDAS, Angaben in Rp/kWh</a>
+      <a href="#data-provenance" data-source-marker="elcom-table" class="inline-block mt-2 font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: ElCom / LINDAS, Angaben in Rp/kWh") }}</a>
     </div>
     {% endif %}
 
-    {% if solar %}<div class="mt-8 max-w-xl"><h3 class="font-semibold mb-3">Solarpotenzial</h3><canvas id="solarChart" height="200"></canvas><a href="#data-provenance" data-source-marker="sonnendach-chart" class="inline-block mt-2 font-mono text-xs text-ink-muted hover:text-brand">Quelle: BFE Sonnendach</a></div>{% endif %}
+    {% if solar %}<div class="mt-8 max-w-xl"><h3 class="font-semibold mb-3">{{ _("Solarpotenzial") }}</h3><canvas id="solarChart" height="200"></canvas><a href="#data-provenance" data-source-marker="sonnendach-chart" class="inline-block mt-2 font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: BFE Sonnendach") }}</a></div>{% endif %}
   </section>
 
   <section data-evidence-tier="derived" aria-labelledby="derived-title" class="mb-10 border-t border-slate-200 pt-6">
-    <p class="text-xs uppercase tracking-wide text-ink-muted">Aus Messwerten berechnet</p>
-    <h2 id="derived-title" class="text-xl font-semibold mt-1 mb-5">Einordnung</h2>
+    <p class="text-xs uppercase tracking-wide text-ink-muted">{{ _("Aus Messwerten berechnet") }}</p>
+    <h2 id="derived-title" class="text-xl font-semibold mt-1 mb-5">{{ _("Einordnung") }}</h2>
     <div class="grid sm:grid-cols-2 gap-6">
       {% if solar_score is not none %}
       {% set fill_pct = [solar_score|float, 100]|min %}
       <div class="border-b border-slate-200 pb-5">
-        <p class="text-xs text-ink-muted uppercase tracking-wide">Solarnutzung</p>
+        <p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("Solarnutzung") }}</p>
         <div class="flex items-center gap-3 mt-1"><span class="font-mono tabular-nums text-3xl font-bold">{{ "%.0f"|format(solar_score|float) }}%</span><span class="ol-fillbar-track w-16 shrink-0" aria-hidden="true"><span class="ol-fillbar" style="width: {{ '%.1f'|format(fill_pct) }}%" data-score-over-100="{{ 'true' if solar_over_100 else 'false' }}"></span></span></div>
-        {% if solar_over_100 %}<p class="text-[10px] text-ink-muted mt-1">Schätzung übertroffen</p>{% endif %}
-        <a href="#data-provenance" data-source-marker="solar-score" class="font-mono text-xs text-ink-muted hover:text-brand">Berechnet aus BFE Anlagenregister und Sonnendach</a>
+        {% if solar_over_100 %}<p class="text-[10px] text-ink-muted mt-1">{{ _("Schätzung übertroffen") }}</p>{% endif %}
+        <a href="#data-provenance" data-source-marker="solar-score" class="font-mono text-xs text-ink-muted hover:text-brand">{{ _("Berechnet aus BFE Anlagenregister und Sonnendach") }}</a>
       </div>
       {% endif %}
-      <div class="border-b border-slate-200 pb-5"><p class="text-xs text-ink-muted uppercase tracking-wide">Energiewende-Score</p><p class="font-mono tabular-nums text-3xl font-bold mt-1">{{ "%.0f"|format(profile.energy_transition_score|default(0)|float) }} <span class="text-sm font-normal">/100</span></p><a href="#data-provenance" data-source-marker="energy-score" class="font-mono text-xs text-ink-muted hover:text-brand">Quelle: OpenLEG Berechnung</a></div>
+      <div class="border-b border-slate-200 pb-5"><p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("Energiewende-Score") }}</p><p class="font-mono tabular-nums text-3xl font-bold mt-1">{{ "%.0f"|format(profile.energy_transition_score|default(0)|float) }} <span class="text-sm font-normal">/100</span></p><a href="#data-provenance" data-source-marker="energy-score" class="font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: OpenLEG Berechnung") }}</a></div>
     </div>
-    {% if league_chips %}<div class="mt-6"><h3 class="font-semibold">So steht {{ profile.name }} im Vergleich</h3><div class="flex flex-wrap gap-3 mt-3">{% for chip in league_chips %}<span class="text-sm border-b border-slate-200 pb-1">{{ chip.label }}: <span class="font-mono tabular-nums">Rang {{ chip.rank }} von {{ chip.total }}</span></span>{% endfor %}</div><a href="#data-provenance" data-source-marker="ranking" class="font-mono text-xs text-ink-muted hover:text-brand">Berechnet aus der OpenLEG Rangliste</a></div>{% endif %}
+    {% if league_chips %}<div class="mt-6"><h3 class="font-semibold">{{ _("So steht %(profile_name)s im Vergleich", profile_name=profile.name) }}</h3><div class="flex flex-wrap gap-3 mt-3">{% for chip in league_chips %}<span class="text-sm border-b border-slate-200 pb-1">{{ _(chip.label) }}: <span class="font-mono tabular-nums">{{ _("Rang %(chip_rank)s von %(chip_total)s", chip_rank=chip.rank, chip_total=chip.total) }}</span></span>{% endfor %}</div><a href="#data-provenance" data-source-marker="ranking" class="font-mono text-xs text-ink-muted hover:text-brand">{{ _("Berechnet aus der OpenLEG Rangliste") }}</a></div>{% endif %}
   </section>
 
   {% if value_gap %}
   <section data-evidence-tier="modelled" aria-labelledby="modelled-title" class="mb-10 border-y border-slate-200 py-6 text-ink-muted">
-    <p class="text-xs uppercase tracking-wide">Modellierte Projektion</p>
-    <h2 id="modelled-title" class="text-xl font-semibold text-ink mt-1">LEG-Potenzial für {{ profile.name }}</h2>
+    <p class="text-xs uppercase tracking-wide">{{ _("Modellierte Projektion") }}</p>
+    <h2 id="modelled-title" class="text-xl font-semibold text-ink mt-1">{{ _("LEG-Potenzial für %(profile_name)s", profile_name=profile.name) }}</h2>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mt-5">
-      <div><p class="text-sm">Netzgebühr aktuell</p><p class="font-mono tabular-nums text-lg text-ink">{{ "%.1f"|format(value_gap.grid_fee_rp_kwh) }} Rp/kWh</p><a href="#data-provenance" data-source-marker="leg-grid" class="font-mono text-xs hover:text-brand">Quelle: ElCom</a></div>
-      <div><p class="text-sm">Modellierte Reduktion</p><p class="font-mono tabular-nums text-lg text-ink">{{ "%.1f"|format(value_gap.savings_rp_kwh) }} Rp/kWh</p><a href="#data-provenance" data-source-marker="leg-reduction" class="font-mono text-xs hover:text-brand">OpenLEG Annahme</a></div>
-      <div><p class="text-sm">Modellierter Richtwert pro Haushalt</p><p class="font-mono tabular-nums text-lg text-ink">CHF {{ "%.0f"|format(value_gap.annual_savings_chf) }}/Jahr</p><a href="#data-provenance" data-source-marker="leg-savings" class="font-mono text-xs hover:text-brand">H4 Modellrechnung</a></div>
-      <div><p class="text-sm">Modellierter Sparanteil</p><p class="font-mono tabular-nums text-lg text-ink">{{ "%.0f"|format(value_gap.savings_pct) }}%</p><a href="#data-provenance" data-source-marker="leg-share" class="font-mono text-xs hover:text-brand">H4 Modellrechnung</a></div>
+      <div><p class="text-sm">{{ _("Netzgebühr aktuell") }}</p><p class="font-mono tabular-nums text-lg text-ink">{{ _("%(value_1f_format_value_gap_grid_fee_rp_kwh)s Rp/kWh", value_1f_format_value_gap_grid_fee_rp_kwh="%.1f"|format(value_gap.grid_fee_rp_kwh)) }}</p><a href="#data-provenance" data-source-marker="leg-grid" class="font-mono text-xs hover:text-brand">{{ _("Quelle: ElCom") }}</a></div>
+      <div><p class="text-sm">{{ _("Modellierte Reduktion") }}</p><p class="font-mono tabular-nums text-lg text-ink">{{ _("%(value_1f_format_value_gap_savings_rp_kwh)s Rp/kWh", value_1f_format_value_gap_savings_rp_kwh="%.1f"|format(value_gap.savings_rp_kwh)) }}</p><a href="#data-provenance" data-source-marker="leg-reduction" class="font-mono text-xs hover:text-brand">{{ _("OpenLEG Annahme") }}</a></div>
+      <div><p class="text-sm">{{ _("Modellierter Richtwert pro Haushalt") }}</p><p class="font-mono tabular-nums text-lg text-ink">{{ _("CHF %(value_0f_format_value_gap_annual_savings_chf)s/Jahr", value_0f_format_value_gap_annual_savings_chf="%.0f"|format(value_gap.annual_savings_chf)) }}</p><a href="#data-provenance" data-source-marker="leg-savings" class="font-mono text-xs hover:text-brand">{{ _("H4 Modellrechnung") }}</a></div>
+      <div><p class="text-sm">{{ _("Modellierter Sparanteil") }}</p><p class="font-mono tabular-nums text-lg text-ink">{{ "%.0f"|format(value_gap.savings_pct) }}%</p><a href="#data-provenance" data-source-marker="leg-share" class="font-mono text-xs hover:text-brand">{{ _("H4 Modellrechnung") }}</a></div>
     </div>
-    <p class="text-xs mt-4">Annahme: {{ "{:,.0f}".format(value_gap.assumed_consumption_kwh)|replace(",", "'") }} kWh Jahresverbrauch und {{ "%.0f"|format(value_gap.grid_reduction_pct) }}% tiefere Netzgebühren auf NE7.</p>
+    <p class="text-xs mt-4">{{ _("Annahme: %(value_0f_format_value_gap_assumed_consumption_kwh_replace)s kWh Jahresverbrauch und %(value_0f_format_value_gap_grid_reduction_pct)s%% tiefere Netzgebühren auf NE7.", value_0f_format_value_gap_assumed_consumption_kwh_replace="{:,.0f}".format(value_gap.assumed_consumption_kwh)|replace(",", "'"), value_0f_format_value_gap_grid_reduction_pct="%.0f"|format(value_gap.grid_reduction_pct)) }}</p>
   </section>
   {% endif %}
 
   {% if profile.get('pv_score_pct') is not none %}
-  <section class="mb-8"><h2 class="text-lg font-semibold">Datenqualität</h2><p class="text-sm text-ink-muted mt-2">Die Solarnutzung beruht auf {% if profile.get('pv_plant_match_rate') is not none %}{{ "%.0f"|format(profile.pv_plant_match_rate|float) }} % deterministisch zugeordneten PV-Anlagen{% else %}öffentlich gemeldeten PV-Anlagen{% endif %}{% if profile.get('pv_snapshot_year') %}, Stand {{ profile.pv_snapshot_year }}{% endif %}. Das Dachpotenzial ist geschätzt, deshalb sind Werte über 100 % möglich.</p><a href="mailto:hallo@openleg.ch?subject=Datenkorrektur%20{{ profile.name|urlencode }}%20(BFS%20{{ profile.bfs_number }})" class="text-brand text-sm hover:underline">Daten melden oder korrigieren</a></section>
+  <section class="mb-8"><h2 class="text-lg font-semibold">{{ _("Datenqualität") }}</h2><p class="text-sm text-ink-muted mt-2">{{ _("Die Solarnutzung beruht auf") }} {% if profile.get('pv_plant_match_rate') is not none %}{{ _("%(value_0f_format_profile_pv_plant_match_rate_float)s %% deterministisch zugeordneten PV-Anlagen", value_0f_format_profile_pv_plant_match_rate_float="%.0f"|format(profile.pv_plant_match_rate|float)) }}{% else %}{{ _("öffentlich gemeldeten PV-Anlagen") }}{% endif %}{% if profile.get('pv_snapshot_year') %}{{ _(", Stand %(profile_pv_snapshot_year)s", profile_pv_snapshot_year=profile.pv_snapshot_year) }}{% endif %}{{ _(". Das Dachpotenzial ist geschätzt, deshalb sind Werte über 100 % möglich.") }}</p><a href="mailto:hallo@openleg.ch?subject={{ _('Datenkorrektur %(name)s (BFS %(bfs)s)', name=profile.name, bfs=profile.bfs_number)|urlencode }}" class="text-brand text-sm hover:underline">{{ _("Daten melden oder korrigieren") }}</a></section>
   {% endif %}
 
   {% if profile.get('pv_score_pct') is not none %}
-  <section class="mb-8 border-t border-slate-200 pt-6"><h2 class="text-lg font-semibold">Nächster Schritt für {{ profile.name }}</h2>{% if improvement and improvement.needed_kw > 0 %}<p class="text-ink-muted mt-2">Ziel: <strong>+{{ "{:,}".format(improvement.needed_kw|int).replace(",", "'") }} kW</strong> (rund {{ improvement.roofs }} weitere Dächer), um bei vergleichbar grossen Gemeinden ins obere Viertel zu kommen.</p>{% else %}<p class="text-ink-muted mt-2">Jede zusätzliche Dachanlage hebt die Solarnutzung von {{ profile.name }}. Starten Sie mit den eigenen Liegenschaften.</p>{% endif %}<h3 class="font-semibold mt-5 text-sm uppercase tracking-wide text-ink-muted">Konkrete Massnahmen</h3><p class="text-sm text-ink-muted mt-2">Eigene Dächer mit PV ausstatten, Solarpflicht prüfen und eine LEG gründen.</p>{% if leaders %}<h3 class="font-semibold mt-5 text-sm uppercase tracking-wide text-ink-muted">Vorbilder in {{ profile.kanton }}</h3><div class="flex flex-wrap gap-3 mt-2">{% for leader in leaders %}<a href="/gemeinde/profil/{{ leader.bfs_number }}" class="text-sm border-b border-slate-200 hover:text-brand">{{ leader.name }} · {{ "%.0f"|format(leader.display_score|float) }}%</a>{% endfor %}</div>{% endif %}</section>
+  <section class="mb-8 border-t border-slate-200 pt-6"><h2 class="text-lg font-semibold">{{ _("Nächster Schritt für %(profile_name)s", profile_name=profile.name) }}</h2>{% if improvement and improvement.needed_kw > 0 %}<p class="text-ink-muted mt-2">{{ _("Ziel:") }} <strong>{{ _("+%(format_improvement_needed_kw_int_replace)s kW", format_improvement_needed_kw_int_replace=improvement.needed_kw|int|numberlabel) }}</strong> {{ ngettext('(rund %(num)s weiteres Dach), um bei vergleichbar grossen Gemeinden ins obere Viertel zu kommen.', '(rund %(num)s weitere Dächer), um bei vergleichbar grossen Gemeinden ins obere Viertel zu kommen.', improvement.roofs) }}</p>{% else %}<p class="text-ink-muted mt-2">{{ _("Jede zusätzliche Dachanlage hebt die Solarnutzung von %(profile_name)s. Starten Sie mit den eigenen Liegenschaften.", profile_name=profile.name) }}</p>{% endif %}<h3 class="font-semibold mt-5 text-sm uppercase tracking-wide text-ink-muted">{{ _("Konkrete Massnahmen") }}</h3><p class="text-sm text-ink-muted mt-2">{{ _("Eigene Dächer mit PV ausstatten, Solarpflicht prüfen und eine LEG gründen.") }}</p>{% if leaders %}<h3 class="font-semibold mt-5 text-sm uppercase tracking-wide text-ink-muted">{{ _("Vorbilder in %(profile_kanton)s", profile_kanton=profile.kanton) }}</h3><div class="flex flex-wrap gap-3 mt-2">{% for leader in leaders %}<a href="/gemeinde/profil/{{ leader.bfs_number }}" class="text-sm border-b border-slate-200 hover:text-brand">{{ leader.name }} · {{ "%.0f"|format(leader.display_score|float) }}%</a>{% endfor %}</div>{% endif %}</section>
   {% endif %}
 
-  {% if profile.get('pv_score_pct') is not none and share_base %}<section class="mb-8 border-t border-slate-200 pt-6"><h2 class="text-lg font-semibold mb-3">Badge einbetten</h2><img src="{{ share_base }}/rangliste/badge/{{ profile.bfs_number }}.svg" alt="Solarnutzung {{ profile.name }}" width="320" height="84"><code class="block text-xs border border-slate-200 rounded-lg p-3 mt-3 overflow-x-auto">&lt;a href="{{ canonical_url }}"&gt;&lt;img src="{{ share_base }}/rangliste/badge/{{ profile.bfs_number }}.svg" alt="Solarnutzung {{ profile.name }}"&gt;&lt;/a&gt;</code></section>{% endif %}
+  {% if profile.get('pv_score_pct') is not none and share_base %}
+  {% set badge_url = (share_base ~ '/rangliste/badge/' ~ profile.bfs_number ~ '.svg')|localized_url(current_locale) %}
+  {% set badge_alt = _("Solarnutzung %(name)s", name=profile.name) %}
+  {% set embed_code %}<a href="{{ canonical_url|localized_url(current_locale) }}"><img src="{{ badge_url }}" alt="{{ badge_alt }}"></a>{% endset %}
+  <section class="mb-8 border-t border-slate-200 pt-6"><h2 class="text-lg font-semibold mb-3">{{ _("Badge einbetten") }}</h2><img src="{{ badge_url }}" alt="{{ badge_alt }}" width="320" height="84"><code class="block text-xs border border-slate-200 rounded-lg p-3 mt-3 overflow-x-auto">{{ embed_code|forceescape }}</code></section>
+  {% endif %}
 
-  <section class="border-t border-slate-200 pt-6"><h2 class="text-xl font-semibold">Lokale Elektrizitätsgemeinschaften in {{ profile.name }}</h2>{% if leg_entries %}<ul class="mt-3">{% for entry in leg_entries %}<li><a href="/leg-verzeichnis/{{ entry.slug }}" class="text-brand hover:underline">{{ entry.name }}</a></li>{% endfor %}</ul>{% else %}<p class="text-sm text-ink-muted mt-2">Im offenen Verzeichnis ist noch keine LEG aus {{ profile.name }} eingetragen.</p>{% endif %}<div class="flex flex-col sm:flex-row gap-2 mt-4"><a href="/leg-check?q={{ profile.name }}" class="text-center bg-brand text-white px-5 py-2 rounded-lg font-semibold hover:bg-brand-dark">Zum LEG-Check</a><a href="/leg-verzeichnis/eintragen" class="text-center border border-slate-200 px-5 py-2 rounded-lg font-semibold hover:border-slate-300">Bestehende LEG eintragen</a></div></section>
+  <section class="border-t border-slate-200 pt-6"><h2 class="text-xl font-semibold">{{ _("Lokale Elektrizitätsgemeinschaften in %(profile_name)s", profile_name=profile.name) }}</h2>{% if leg_entries %}<ul class="mt-3">{% for entry in leg_entries %}<li><a href="/leg-verzeichnis/{{ entry.slug }}" class="text-brand hover:underline">{{ entry.name }}</a></li>{% endfor %}</ul>{% else %}<p class="text-sm text-ink-muted mt-2">{{ _("Im offenen Verzeichnis ist noch keine LEG aus %(profile_name)s eingetragen.", profile_name=profile.name) }}</p>{% endif %}<div class="flex flex-col sm:flex-row gap-2 mt-4"><a href="/leg-check?q={{ profile.name }}" class="text-center bg-brand text-white px-5 py-2 rounded-lg font-semibold hover:bg-brand-dark">{{ _("Zum LEG-Check") }}</a><a href="/leg-verzeichnis/eintragen" class="text-center border border-slate-200 px-5 py-2 rounded-lg font-semibold hover:border-slate-300">{{ _("Bestehende LEG eintragen") }}</a></div></section>
 
-  <section class="mt-8 bg-brand rounded-xl p-6 text-white md:flex md:items-center md:justify-between gap-6"><div><h2 class="text-xl font-semibold">Wohnen Sie in {{ profile.name }}?</h2><p class="text-sm text-white/80 mt-1">Prüfen Sie das Potenzial für eine lokale Stromgemeinschaft.</p></div><div class="mt-4 md:mt-0 flex flex-col sm:flex-row gap-2"><a href="/fuer-bewohner" class="text-center bg-white text-brand px-5 py-2 rounded-lg font-semibold hover:bg-slate-100">Stromgemeinschaft gründen</a><a href="/leg-kalkulator" class="text-center border border-white/40 px-5 py-2 rounded-lg font-semibold hover:bg-white/10">Ersparnis berechnen</a></div></section>
+  <section class="mt-8 bg-brand rounded-xl p-6 text-white md:flex md:items-center md:justify-between gap-6"><div><h2 class="text-xl font-semibold">{{ _("Wohnen Sie in %(profile_name)s?", profile_name=profile.name) }}</h2><p class="text-sm text-white/80 mt-1">{{ _("Prüfen Sie das Potenzial für eine lokale Stromgemeinschaft.") }}</p></div><div class="mt-4 md:mt-0 flex flex-col sm:flex-row gap-2"><a href="/fuer-bewohner" class="text-center bg-white text-brand px-5 py-2 rounded-lg font-semibold hover:bg-slate-100">{{ _("Stromgemeinschaft gründen") }}</a><a href="/leg-kalkulator" class="text-center border border-white/40 px-5 py-2 rounded-lg font-semibold hover:bg-white/10">{{ _("Ersparnis berechnen") }}</a></div></section>
 
-  <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance("Datenstand", profile.get('pv_snapshot_year') or (h4_tariff.year if h4_tariff else "k. A."), ["ElCom / LINDAS", "BFE Sonnendach", "BFE Anlagenregister", "OpenLEG Berechnungen"], profile.get('pv_plant_match_rate')) }}</div>
+  <div id="data-provenance" class="scroll-mt-20 mt-8">{{ data_provenance(_("Datenstand"), profile.get('pv_snapshot_year') or (h4_tariff.year if h4_tariff else _("k. A.")), ["ElCom / LINDAS", _("BFE Sonnendach"), _("BFE Anlagenregister"), _("OpenLEG Berechnungen")], profile.get('pv_plant_match_rate')) }}</div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 {% if solar %}<script>
 const ctx = document.getElementById('solarChart').getContext('2d');
-new Chart(ctx, {type: 'doughnut', data: {labels: ['Genutzt', 'Ungenutzt (geeignet)', 'Nicht geeignet'], datasets: [{data: [{{ solar.utilization_pct|default(0)|float }}, {{ ((solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100) - solar.utilization_pct|default(0)|float)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }}, {{ (100 - solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }}], backgroundColor: ['#4f46e5', '#a5b4fc', '#e2e8f0']}]}, options: {responsive: true, plugins: {legend: {position: 'bottom', labels: {font: {size: 12}}}}}});
+new Chart(ctx, {type: 'doughnut', data: {labels: [{{ _("Genutzt")|tojson }}, {{ _("Ungenutzt (geeignet)")|tojson }}, {{ _("Nicht geeignet")|tojson }}], datasets: [{data: [{{ solar.utilization_pct|default(0)|float }}, {{ ((solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100) - solar.utilization_pct|default(0)|float)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }}, {{ (100 - solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }}], backgroundColor: ['#4f46e5', '#a5b4fc', '#e2e8f0']}]}, options: {responsive: true, plugins: {legend: {position: 'bottom', labels: {font: {size: 12}}}}}});
 </script>{% endif %}
 {% endblock %}

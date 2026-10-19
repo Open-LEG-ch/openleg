@@ -1,52 +1,52 @@
 {% extends "product_base.html" %}
-{% block meta %}<title>Sicherheitshinweise zu meinem Gerät | {{ platform_name }}</title>{% endblock %}
+{% block meta %}<title>{{ _('Sicherheitshinweise zu meinem Gerät |') }} {{ platform_name }}</title>{% endblock %}
 {% macro evidence(item) %}
 <details class="mt-4 rounded-lg border border-line p-4">
-  <summary class="font-semibold cursor-pointer">Veröffentlichte Quelle und Versionsbereich</summary>
+  <summary class="font-semibold cursor-pointer">{{ _('Veröffentlichte Quelle und Versionsbereich') }}</summary>
   <dl class="grid gap-2 text-sm mt-3">
-    <div><dt class="font-semibold">Herausgeber</dt><dd>{{ item.entry.publisher }}</dd></div>
-    <div><dt class="font-semibold">Veröffentlicht am</dt><dd>{{ item.entry.publication_date }}</dd></div>
-    <div><dt class="font-semibold">Quellenversion</dt><dd>{{ item.entry.source_revision }}</dd></div>
-    <div><dt class="font-semibold">Katalogprüfung am</dt><dd>{{ item.reviewed_on }}</dd></div>
-    <div><dt class="font-semibold">Grund der Zuordnung</dt><dd>{{ advisory.REASONS[item.match.reason] }}</dd></div>
-    {% if item.match.matched_model %}<div><dt class="font-semibold">Geprüfte Modellbezeichnung</dt><dd>{{ item.entry.vendor }} {{ item.match.matched_model }}</dd></div>{% endif %}
-    {% if item.match.firmware_rule %}<div><dt class="font-semibold">Bereich laut Quelle</dt><dd>{{ item.match.firmware_rule.range_text }}</dd></div>{% endif %}
-    <div><dt class="font-semibold">Änderung dieser Katalogversion</dt><dd>{{ item.entry.change_note }}</dd></div>
+    <div><dt class="font-semibold">{{ _('Herausgeber') }}</dt><dd>{{ item.entry.publisher }}</dd></div>
+    <div><dt class="font-semibold">{{ _('Veröffentlicht am') }}</dt><dd>{{ item.entry.publication_date }}</dd></div>
+    <div><dt class="font-semibold">{{ _('Quellenversion') }}</dt><dd>{{ item.entry.source_revision }}</dd></div>
+    <div><dt class="font-semibold">{{ _('Katalogprüfung am') }}</dt><dd>{{ item.reviewed_on }}</dd></div>
+    <div><dt class="font-semibold">{{ _('Grund der Zuordnung') }}</dt><dd>{{ _(advisory.REASONS[item.match.reason]) }}</dd></div>
+    {% if item.match.matched_model %}<div><dt class="font-semibold">{{ _('Geprüfte Modellbezeichnung') }}</dt><dd>{{ item.entry.vendor }} {{ item.match.matched_model }}</dd></div>{% endif %}
+    {% if item.match.firmware_rule %}<div><dt class="font-semibold">{{ _('Bereich laut Quelle') }}</dt><dd>{{ item.match.firmware_rule.range_text }}</dd></div>{% endif %}
+    <div><dt class="font-semibold">{{ _('Änderung dieser Katalogversion') }}</dt><dd>{{ item.entry.change_note }}</dd></div>
   </dl>
-  <p class="text-sm mt-3"><a class="text-brand hover:underline" href="{{ item.entry.source_url }}" rel="noreferrer">Originalveröffentlichung öffnen</a></p>
+  <p class="text-sm mt-3"><a class="text-brand hover:underline" href="{{ item.entry.source_url }}" rel="noreferrer">{{ _('Originalveröffentlichung öffnen') }}</a></p>
 </details>
 {% endmacro %}
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-8">
-  <a class="text-sm text-brand font-semibold hover:underline" href="{{ url_for('equipment.edit', record_id=equipment.id) }}">Zurück zum Gerät</a>
-  <h1 class="text-3xl font-bold mt-6">Sicherheitshinweise zu Ihrem Gerät</h1>
-  <p class="mt-2 text-ink-muted">{{ equipment.manufacturer or 'Hersteller unbekannt' }} {{ equipment.model or 'Modell unbekannt' }} · Firmware: {{ equipment.firmware or 'Unbekannt' }}</p>
-  <p class="mt-4">Kein passender Hinweis bedeutet nicht, dass Ihre Anlage sicher ist. «Ausserhalb dieses Firmwarebereichs» bezieht sich nur auf die jeweilige Meldung. Fehlende oder mehrdeutige Firmware bleibt ungeklärt.</p>
+  <a class="text-sm text-brand font-semibold hover:underline" href="{{ url_for('equipment.edit', record_id=equipment.id) }}">{{ _('Zurück zum Gerät') }}</a>
+  <h1 class="text-3xl font-bold mt-6">{{ _('Sicherheitshinweise zu Ihrem Gerät') }}</h1>
+  <p class="mt-2 text-ink-muted">{{ equipment.manufacturer or _('Hersteller unbekannt') }} {{ equipment.model or _('Modell unbekannt') }} {{ _('· Firmware:') }} {{ equipment.firmware or _('Unbekannt') }}</p>
+  <p class="mt-4">{{ _('Kein passender Hinweis bedeutet nicht, dass Ihre Anlage sicher ist. «Ausserhalb dieses Firmwarebereichs» bezieht sich nur auf die jeweilige Meldung. Fehlende oder mehrdeutige Firmware bleibt ungeklärt.') }}</p>
   <section class="mt-6 bg-white rounded-xl border border-line p-6" aria-labelledby="coverage-title">
-    <h2 class="text-xl font-bold" id="coverage-title">{{ advisory.CATALOG_STATES[catalog.status] }}</h2>
-    <p class="text-sm text-ink-muted mt-2">{{ catalog.coverage or 'Es ist noch kein Prüfumfang festgelegt. Der Katalog beginnt ohne freigegebene Meldungen.' }}</p>
-    <p class="text-sm text-ink-muted mt-2">Letzte erfolgreiche manuelle Quellenprüfung: {{ catalog.last_successful_review or 'Keine' }}. Nächste Prüfung fällig: {{ catalog.next_review_due or 'Nicht festgelegt' }}.</p>
-    {% if catalog.last_attempt and catalog.last_attempt.outcome == 'failure' %}<p class="text-sm mt-2">Die letzte Quellenprüfung ist fehlgeschlagen. Frühere Quellen bleiben unten dokumentiert.</p>{% endif %}
-    {% if catalog.status != 'current' %}<p class="text-sm mt-2">Aktuelle Hinweise und neue Bestätigungen sind pausiert. Dokumentierte Zuordnungen sind keine aktuelle Quellenprüfung.</p>{% endif %}
-    <p class="text-sm text-ink-muted mt-2">{{ catalog.published_count }} freigegebene Meldungen im begrenzten Katalog. Die Auswahl deckt nicht alle Hersteller, Geräte oder Sicherheitslücken ab.</p>
-    {% if catalog.source_urls %}<details class="mt-3"><summary class="text-sm font-semibold cursor-pointer">Quellen im Prüfumfang</summary><ul class="mt-2 grid gap-2 text-sm">{% for url in catalog.source_urls %}<li><a class="text-brand hover:underline" href="{{ url }}" rel="noreferrer">{{ url }}</a></li>{% endfor %}</ul></details>{% endif %}
+    <h2 class="text-xl font-bold" id="coverage-title">{{ _(advisory.CATALOG_STATES[catalog.status]) }}</h2>
+    <p class="text-sm text-ink-muted mt-2">{{ catalog.coverage or _('Es ist noch kein Prüfumfang festgelegt. Der Katalog beginnt ohne freigegebene Meldungen.') }}</p>
+    <p class="text-sm text-ink-muted mt-2">{{ _('Letzte erfolgreiche manuelle Quellenprüfung:') }} {{ catalog.last_successful_review or _('Keine') }}{{ _('. Nächste Prüfung fällig:') }} {{ catalog.next_review_due or _('Nicht festgelegt') }}.</p>
+    {% if catalog.last_attempt and catalog.last_attempt.outcome == 'failure' %}<p class="text-sm mt-2">{{ _('Die letzte Quellenprüfung ist fehlgeschlagen. Frühere Quellen bleiben unten dokumentiert.') }}</p>{% endif %}
+    {% if catalog.status != 'current' %}<p class="text-sm mt-2">{{ _('Aktuelle Hinweise und neue Bestätigungen sind pausiert. Dokumentierte Zuordnungen sind keine aktuelle Quellenprüfung.') }}</p>{% endif %}
+    <p class="text-sm text-ink-muted mt-2">{{ ngettext('%(num)s freigegebene Meldung im begrenzten Katalog. Die Auswahl deckt nicht alle Hersteller, Geräte oder Sicherheitslücken ab.', '%(num)s freigegebene Meldungen im begrenzten Katalog. Die Auswahl deckt nicht alle Hersteller, Geräte oder Sicherheitslücken ab.', catalog.published_count) }}</p>
+    {% if catalog.source_urls %}<details class="mt-3"><summary class="text-sm font-semibold cursor-pointer">{{ _('Quellen im Prüfumfang') }}</summary><ul class="mt-2 grid gap-2 text-sm">{% for url in catalog.source_urls %}<li><a class="text-brand hover:underline" href="{{ url }}" rel="noreferrer">{{ url }}</a></li>{% endfor %}</ul></details>{% endif %}
   </section>
-  {% if invalid_action %}<p class="mt-6 p-4 border border-line rounded-lg bg-white" role="alert">Bitte prüfen Sie die Angaben. Für «Als erledigt angegeben» brauchen Sie eine datierte Quelle. Das Datum darf nicht in der Zukunft liegen.</p>{% endif %}
+  {% if invalid_action %}<p class="mt-6 p-4 border border-line rounded-lg bg-white" role="alert">{{ _('Bitte prüfen Sie die Angaben. Für «Als erledigt angegeben» brauchen Sie eine datierte Quelle. Das Datum darf nicht in der Zukunft liegen.') }}</p>{% endif %}
   <div class="grid gap-6 mt-6">
     {% for item in assessments %}
     <article class="bg-white rounded-xl border border-line p-6">
-      <p class="text-sm font-semibold text-brand">{{ item.entry.reference }} · Katalogversion {{ item.revision }}{% if item.state == 'withdrawn' %} · Zurückgezogen{% endif %}</p>
+      <p class="text-sm font-semibold text-brand">{{ item.entry.reference }} {{ _('· Katalogversion') }} {{ item.revision }}{% if item.state == 'withdrawn' %} {{ _('· Zurückgezogen') }}{% endif %}</p>
       <h2 class="text-xl font-bold mt-2">{{ item.entry.title }}</h2>
-      <p class="mt-2 font-semibold">{{ advisory.CLASSIFICATIONS[item.match.classification] }}</p>
-      <p class="text-sm text-ink-muted mt-2">{{ advisory.REASONS[item.match.reason] }}</p>
+      <p class="mt-2 font-semibold">{{ _(advisory.CLASSIFICATIONS[item.match.classification]) }}</p>
+      <p class="text-sm text-ink-muted mt-2">{{ _(advisory.REASONS[item.match.reason]) }}</p>
       <p class="mt-3">{{ item.entry.summary }}</p>
-      {% if not item.source_covered %}<p class="text-sm mt-3">Diese Quelle ist nicht im aktuellen Prüfumfang enthalten. Aktuelle Hinweise und Bestätigungen bleiben für diese Meldung ausgeschaltet.</p>{% endif %}
-      {% if item.state == 'withdrawn' %}<p class="text-sm mt-3">Diese Meldung wurde im geprüften Katalog zurückgezogen. Frühere Versionen bleiben unten erhalten.</p>{% endif %}
+      {% if not item.source_covered %}<p class="text-sm mt-3">{{ _('Diese Quelle ist nicht im aktuellen Prüfumfang enthalten. Aktuelle Hinweise und Bestätigungen bleiben für diese Meldung ausgeschaltet.') }}</p>{% endif %}
+      {% if item.state == 'withdrawn' %}<p class="text-sm mt-3">{{ _('Diese Meldung wurde im geprüften Katalog zurückgezogen. Frühere Versionen bleiben unten erhalten.') }}</p>{% endif %}
       {{ evidence(item) }}
       <div class="mt-4">
-        <h3 class="font-semibold">Abhilfe laut Quelle</h3>
+        <h3 class="font-semibold">{{ _('Abhilfe laut Quelle') }}</h3>
         <p class="text-sm text-ink-muted mt-2">{{ item.entry.remedy.text }}</p>
-        {% if item.entry.remedy.url %}<a class="inline-block text-sm text-brand hover:underline mt-2" href="{{ item.entry.remedy.url }}" rel="noreferrer">Hinweise des Anbieters zur Abhilfe</a>{% endif %}
+        {% if item.entry.remedy.url %}<a class="inline-block text-sm text-brand hover:underline mt-2" href="{{ item.entry.remedy.url }}" rel="noreferrer">{{ _('Hinweise des Anbieters zur Abhilfe') }}</a>{% endif %}
       </div>
       {% if item.action_allowed %}
       {% set action = submitted_action if submitted_action is defined and submitted_id == item.advisory_id and submitted_revision == item.revision else item.action %}
@@ -54,37 +54,37 @@
       <form method="post" action="{{ url_for('advisories.owner_form_action', equipment_id=equipment.id, advisory_id=item.advisory_id, revision=item.revision) }}" class="grid gap-4 mt-6 border-t border-line pt-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="context_digest" value="{{ context_digest }}">
-        <label class="flex gap-3 items-center"><input type="checkbox" name="acknowledged" value="yes" {% if action.acknowledged %}checked{% endif %}>Ich habe diese Version des Hinweises gelesen.</label>
-        <label class="text-sm font-semibold">Stand Ihrer Abklärung
-          <select name="remedy_status" class="block w-full border border-line rounded-lg px-3 py-2 mt-1 bg-white">{% for key,label in advisory.REMEDY_STATUSES.items() %}<option value="{{ key }}" {% if action.remedy_status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <label class="flex gap-3 items-center"><input type="checkbox" name="acknowledged" value="yes" {% if action.acknowledged %}checked{% endif %}>{{ _('Ich habe diese Version des Hinweises gelesen.') }}</label>
+        <label class="text-sm font-semibold">{{ _('Stand Ihrer Abklärung') }}
+          <select name="remedy_status" class="block w-full border border-line rounded-lg px-3 py-2 mt-1 bg-white">{% for key,label in advisory.REMEDY_STATUSES.items() %}<option value="{{ key }}" {% if action.remedy_status == key %}selected{% endif %}>{{ _(label) }}</option>{% endfor %}</select>
         </label>
-        <label class="text-sm font-semibold">Quelle Ihrer Angabe
-          <select name="evidence.kind" class="block w-full border border-line rounded-lg px-3 py-2 mt-1 bg-white">{% for key,label in advisory.SOURCE_KINDS.items() %}<option value="{{ key }}" {% if action.evidence.kind == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <label class="text-sm font-semibold">{{ _('Quelle Ihrer Angabe') }}
+          <select name="evidence.kind" class="block w-full border border-line rounded-lg px-3 py-2 mt-1 bg-white">{% for key,label in advisory.SOURCE_KINDS.items() %}<option value="{{ key }}" {% if action.evidence.kind == key %}selected{% endif %}>{{ _(label) }}</option>{% endfor %}</select>
         </label>
-        <label class="text-sm font-semibold">Prüfdatum Ihrer Quelle<input class="block w-full border border-line rounded-lg px-3 py-2 mt-1" type="date" name="evidence.reviewed_on" max="{{ today }}" value="{{ action.evidence.reviewed_on or '' }}"></label>
-        <label class="text-sm font-semibold">Öffentlicher Quellenlink (optional)<input class="block w-full border border-line rounded-lg px-3 py-2 mt-1" type="url" name="evidence.source_url" maxlength="500" value="{{ action.evidence.source_url or '' }}"></label>
-        <label class="text-sm font-semibold">Private Notiz<textarea class="block w-full border border-line rounded-lg px-3 py-2 mt-1" name="private_note" maxlength="1000" rows="3">{{ action.private_note or '' }}</textarea></label>
-        <p class="text-sm text-ink-muted">Diese Angaben bleiben bei Ihrem Eigentümerzugang. OpenLEG prüft den Nachweis nicht. Eine Bestätigung ändert weder die Firmwarezuordnung noch den Quellenstatus.</p>
-        <button class="bg-brand text-white px-4 py-3 rounded-lg font-semibold" type="submit">Bestätigung und Abklärung speichern</button>
+        <label class="text-sm font-semibold">{{ _('Prüfdatum Ihrer Quelle') }}<input class="block w-full border border-line rounded-lg px-3 py-2 mt-1" type="date" name="evidence.reviewed_on" max="{{ today }}" value="{{ action.evidence.reviewed_on or '' }}"></label>
+        <label class="text-sm font-semibold">{{ _('Öffentlicher Quellenlink (optional)') }}<input class="block w-full border border-line rounded-lg px-3 py-2 mt-1" type="url" name="evidence.source_url" maxlength="500" value="{{ action.evidence.source_url or '' }}"></label>
+        <label class="text-sm font-semibold">{{ _('Private Notiz') }}<textarea class="block w-full border border-line rounded-lg px-3 py-2 mt-1" name="private_note" maxlength="1000" rows="3">{{ action.private_note or '' }}</textarea></label>
+        <p class="text-sm text-ink-muted">{{ _('Diese Angaben bleiben bei Ihrem Eigentümerzugang. OpenLEG prüft den Nachweis nicht. Eine Bestätigung ändert weder die Firmwarezuordnung noch den Quellenstatus.') }}</p>
+        <button class="bg-brand text-white px-4 py-3 rounded-lg font-semibold" type="submit">{{ _('Bestätigung und Abklärung speichern') }}</button>
       </form>
-      {% elif item.action %}<p class="mt-4 text-sm">Gespeicherter Stand: {{ advisory.REMEDY_STATUSES[item.action.remedy_status] }}. {{ item.action.private_note or '' }}</p>{% endif %}
+      {% elif item.action %}<p class="mt-4 text-sm">{{ _('Gespeicherter Stand:') }} {{ _(advisory.REMEDY_STATUSES[item.action.remedy_status]) }}. {{ item.action.private_note or '' }}</p>{% endif %}
     </article>
-    {% else %}<p class="bg-white border border-line rounded-xl p-6">Keine passende freigegebene Gerätezuordnung im begrenzten Katalog. Prüfen Sie Hersteller, Modell und Firmware Ihres Geräts.</p>{% endfor %}
+    {% else %}<p class="bg-white border border-line rounded-xl p-6">{{ _('Keine passende freigegebene Gerätezuordnung im begrenzten Katalog. Prüfen Sie Hersteller, Modell und Firmware Ihres Geräts.') }}</p>{% endfor %}
   </div>
   {% if history %}
   <details class="mt-6 border border-line rounded-xl p-6">
-    <summary class="font-semibold cursor-pointer">Ersetzte Katalogversionen</summary>
-    {% for item in history %}<article class="mt-4 border-t border-line pt-4"><h2 class="font-bold">{{ item.entry.reference }} · Katalogversion {{ item.revision }} · Ersetzt</h2><p class="text-sm mt-2">{{ item.entry.title }}</p>{{ evidence(item) }}</article>{% endfor %}
-    {% if history_truncated %}<p class="text-sm mt-3">Die Ansicht zeigt die letzten 50 ersetzten Veröffentlichungen. Weitere Quellenversionen bleiben im Katalog erhalten.</p>{% endif %}
+    <summary class="font-semibold cursor-pointer">{{ _('Ersetzte Katalogversionen') }}</summary>
+    {% for item in history %}<article class="mt-4 border-t border-line pt-4"><h2 class="font-bold">{{ item.entry.reference }} {{ _('· Katalogversion') }} {{ item.revision }} {{ _('· Ersetzt') }}</h2><p class="text-sm mt-2">{{ item.entry.title }}</p>{{ evidence(item) }}</article>{% endfor %}
+    {% if history_truncated %}<p class="text-sm mt-3">{{ _('Die Ansicht zeigt die letzten 50 ersetzten Veröffentlichungen. Weitere Quellenversionen bleiben im Katalog erhalten.') }}</p>{% endif %}
   </details>
   {% endif %}
   {% if past_actions %}
   <details class="mt-6 border border-line rounded-xl p-6">
-    <summary class="font-semibold cursor-pointer">Frühere Bestätigungen und Geräteangaben</summary>
-    {% for past in past_actions %}<article class="mt-4 border-t border-line pt-4"><h2 class="font-semibold">{{ past.reference }} · Katalogversion {{ past.revision }}</h2><p class="text-sm mt-2">{{ past.device_context.manufacturer or 'Unbekannt' }} {{ past.device_context.model or 'Unbekannt' }} · Firmware {{ past.device_context.firmware or 'Unbekannt' }}</p><p class="text-sm mt-2">{{ advisory.REMEDY_STATUSES[past.action.remedy_status] }} · Quelle: {{ advisory.SOURCE_KINDS[past.action.evidence.kind] }} · Datum: {{ past.action.evidence.reviewed_on or 'Unbekannt' }}</p><p class="text-sm mt-2">{{ past.action.private_note or '' }}</p><a class="inline-block mt-2 text-sm text-brand hover:underline" href="{{ past.source_url }}" rel="noreferrer">Originalveröffentlichung öffnen</a></article>{% endfor %}
-    <p class="text-sm text-ink-muted mt-3">Die Ansicht zeigt höchstens die letzten 100 gespeicherten Abklärungen.</p>
+    <summary class="font-semibold cursor-pointer">{{ _('Frühere Bestätigungen und Geräteangaben') }}</summary>
+    {% for past in past_actions %}<article class="mt-4 border-t border-line pt-4"><h2 class="font-semibold">{{ past.reference }} {{ _('· Katalogversion') }} {{ past.revision }}</h2><p class="text-sm mt-2">{{ past.device_context.manufacturer or _('Unbekannt') }} {{ past.device_context.model or _('Unbekannt') }} {{ _('· Firmware') }} {{ past.device_context.firmware or _('Unbekannt') }}</p><p class="text-sm mt-2">{{ _(advisory.REMEDY_STATUSES[past.action.remedy_status]) }} {{ _('· Quelle:') }} {{ _(advisory.SOURCE_KINDS[past.action.evidence.kind]) }} {{ _('· Datum:') }} {{ past.action.evidence.reviewed_on or _('Unbekannt') }}</p><p class="text-sm mt-2">{{ past.action.private_note or '' }}</p><a class="inline-block mt-2 text-sm text-brand hover:underline" href="{{ past.source_url }}" rel="noreferrer">{{ _('Originalveröffentlichung öffnen') }}</a></article>{% endfor %}
+    <p class="text-sm text-ink-muted mt-3">{{ _('Die Ansicht zeigt höchstens die letzten 100 gespeicherten Abklärungen.') }}</p>
   </details>
   {% endif %}
-  <p class="text-sm text-ink-muted mt-6">OpenLEG sendet diese Hinweise nicht automatisch an Dritte und ändert keine Geräteeinstellungen. Beauftragen Sie Firmware- oder Anlagenänderungen bei der zuständigen Fachperson. Ein Hinweis erkennt keinen laufenden Angriff.</p>
+  <p class="text-sm text-ink-muted mt-6">{{ _('OpenLEG sendet diese Hinweise nicht automatisch an Dritte und ändert keine Geräteeinstellungen. Beauftragen Sie Firmware- oder Anlagenänderungen bei der zuständigen Fachperson. Ein Hinweis erkennt keinen laufenden Angriff.') }}</p>
 </div>
 {% endblock %}

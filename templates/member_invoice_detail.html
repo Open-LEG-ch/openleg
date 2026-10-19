@@ -1,7 +1,7 @@
 {% extends "product_base.html" %}
 
 {% block meta %}
-  <title>Rechnung {{ invoice.invoice_number }} | {{ platform_name }}</title>
+  <title>{{ _('Rechnung') }} {{ invoice.invoice_number }} | {{ platform_name }}</title>
   <meta name="robots" content="noindex, nofollow">
 {% endblock %}
 
@@ -27,48 +27,50 @@
 {% endblock %}
 
 {% block content %}
+{% set query_categories = {'amount': _('amount'), 'metering': _('metering'), 'payment': _('payment'), 'other': _('other')} %}
+{% set query_states = {'open': _('open'), 'acknowledged': _('acknowledged'), 'resolved': _('resolved')} %}
 <div class="max-w-3xl mx-auto px-4 py-8">
   <div class="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
-    <a href="/dashboard/invoices" class="text-brand hover:underline font-semibold focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Zurück zu meinen Rechnungen</a>
+    <a href="/dashboard/invoices" class="text-brand hover:underline font-semibold focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Zurück zu meinen Rechnungen') }}</a>
     <div class="flex gap-2">
-      <a href="/dashboard/invoices/{{ invoice.id }}/pdf" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Als PDF herunterladen</a>
-      <button type="button" onclick="window.print()" class="border border-line px-4 py-2 rounded-lg font-semibold hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Drucken</button>
+      <a href="/dashboard/invoices/{{ invoice.id }}/pdf" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Als PDF herunterladen') }}</a>
+      <button type="button" onclick="window.print()" class="border border-line px-4 py-2 rounded-lg font-semibold hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Drucken') }}</button>
     </div>
   </div>
 
   <article class="bg-white rounded-xl border border-line p-6" aria-labelledby="invoice-title">
-    <h1 id="invoice-title" class="text-2xl font-bold mb-4">Rechnung {{ invoice.invoice_number }}</h1>
+    <h1 id="invoice-title" class="text-2xl font-bold mb-4">{{ _('Rechnung') }} {{ invoice.invoice_number }}</h1>
     <dl class="grid gap-2 text-sm mb-6">
-      <div><dt class="font-semibold text-ink inline">Aussteller:</dt> <dd class="inline">{{ invoice.issuer_name }}</dd></div>
-      <div><dt class="font-semibold text-ink inline">Periode:</dt> <dd class="inline">{{ invoice.period_label }}</dd></div>
-      <div><dt class="font-semibold text-ink inline">Rechnungsdatum:</dt> <dd class="inline">{{ invoice.issue_date }}</dd></div>
-      <div><dt class="font-semibold text-ink inline">Fällig am:</dt> <dd class="inline">{{ invoice.due_date }}</dd></div>
-      <div><dt class="font-semibold text-ink inline">Mehrwertsteuer:</dt> <dd class="inline">{{ invoice.vat_mode_label }} ({{ invoice.display_vat_rate_pct }}%)</dd></div>
-      <div><dt class="font-semibold text-ink inline">Interner Preis:</dt> <dd class="inline">{{ invoice.display_policy_unit_price_rp }} Rp./kWh</dd></div>
-      {% if invoice.display_grid_fee_rp %}<div><dt class="font-semibold text-ink inline">Netzentgelt:</dt> <dd class="inline">{{ invoice.display_grid_fee_rp }} Rp./kWh</dd></div>{% endif %}
-      <div><dt class="font-semibold text-ink inline">Zahlungsfrist:</dt> <dd class="inline">{{ invoice.policy_payment_days }} Tage</dd></div>
-      <div><dt class="font-semibold text-ink inline">Status:</dt> <dd class="inline">{{ invoice.status_label }}</dd></div>
-      {% if invoice.corrects_invoice_number %}<div><dt class="font-semibold text-ink inline">Korrektur zu:</dt> <dd class="inline">{{ invoice.corrects_invoice_number }}</dd></div>{% endif %}
-      {% if invoice.corrected_by_invoice_number %}<div><dt class="font-semibold text-ink inline">Korrigiert durch:</dt> <dd class="inline">{{ invoice.corrected_by_invoice_number }}</dd></div>{% endif %}
+      <div><dt class="font-semibold text-ink inline">{{ _('Aussteller:') }}</dt> <dd class="inline">{{ invoice.issuer_name }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Periode:') }}</dt> <dd class="inline">{{ invoice.period_label|periodlabel }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Rechnungsdatum:') }}</dt> <dd class="inline">{{ invoice.issue_date }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Fällig am:') }}</dt> <dd class="inline">{{ invoice.due_date }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Mehrwertsteuer:') }}</dt> <dd class="inline">{{ _(invoice.vat_mode_label) }} ({{ invoice.display_vat_rate_pct }}%)</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Interner Preis:') }}</dt> <dd class="inline">{{ invoice.display_policy_unit_price_rp }} {{ _('Rp./kWh') }}</dd></div>
+      {% if invoice.display_grid_fee_rp %}<div><dt class="font-semibold text-ink inline">{{ _('Netzentgelt:') }}</dt> <dd class="inline">{{ invoice.display_grid_fee_rp }} {{ _('Rp./kWh') }}</dd></div>{% endif %}
+      <div><dt class="font-semibold text-ink inline">{{ _('Zahlungsfrist:') }}</dt> <dd class="inline">{{ ngettext('%(num)s Tag', '%(num)s Tage', invoice.policy_payment_days|int) }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Status:') }}</dt> <dd class="inline">{{ _(invoice.status_label) }}</dd></div>
+      {% if invoice.corrects_invoice_number %}<div><dt class="font-semibold text-ink inline">{{ _('Korrektur zu:') }}</dt> <dd class="inline">{{ invoice.corrects_invoice_number }}</dd></div>{% endif %}
+      {% if invoice.corrected_by_invoice_number %}<div><dt class="font-semibold text-ink inline">{{ _('Korrigiert durch:') }}</dt> <dd class="inline">{{ invoice.corrected_by_invoice_number }}</dd></div>{% endif %}
     </dl>
 
-    <h2 class="text-lg font-bold mb-2">Verbrauchskosten</h2>
+    <h2 class="text-lg font-bold mb-2">{{ _('Verbrauchskosten') }}</h2>
     {% if invoice.charges %}
     <div class="overflow-x-auto">
     <table class="invoice-table text-sm">
-      <caption class="sr-only">Verbrauchskosten dieser Rechnung</caption>
+      <caption class="sr-only">{{ _('Verbrauchskosten dieser Rechnung') }}</caption>
       <thead>
         <tr>
-          <th scope="col">Position</th>
-          <th scope="col" class="num">Menge (kWh)</th>
-          <th scope="col" class="num">Preis (Rp./kWh)</th>
-          <th scope="col" class="num">Betrag (CHF)</th>
+          <th scope="col">{{ _('Position') }}</th>
+          <th scope="col" class="num">{{ _('Menge (kWh)') }}</th>
+          <th scope="col" class="num">{{ _('Preis (Rp./kWh)') }}</th>
+          <th scope="col" class="num">{{ _('Betrag (CHF)') }}</th>
         </tr>
       </thead>
       <tbody>
         {% for item in invoice.charges %}
         <tr>
-          <td>{{ item.item_type_label }}</td>
+          <td>{{ _(item.item_type_label) }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_quantity_kwh }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_unit_price_rp }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_amount_chf }}</td>
@@ -78,26 +80,26 @@
     </table>
     </div>
     {% else %}
-    <p class="text-sm text-ink-muted mb-6">Keine Verbrauchskosten.</p>
+    <p class="text-sm text-ink-muted mb-6">{{ _('Keine Verbrauchskosten.') }}</p>
     {% endif %}
 
     {% if invoice.settlement_charges %}
-    <h2 class="text-lg font-bold mb-2">Abrechnungsentgelt</h2>
+    <h2 class="text-lg font-bold mb-2">{{ _('Abrechnungsentgelt') }}</h2>
     <div class="overflow-x-auto mb-6">
     <table class="invoice-table text-sm">
-      <caption class="sr-only">Abrechnungsentgelt dieser Rechnung</caption>
+      <caption class="sr-only">{{ _('Abrechnungsentgelt dieser Rechnung') }}</caption>
       <thead>
         <tr>
-          <th scope="col">Position</th>
-          <th scope="col" class="num">Menge (kWh)</th>
-          <th scope="col" class="num">Preis (Rp./kWh)</th>
-          <th scope="col" class="num">Betrag (CHF)</th>
+          <th scope="col">{{ _('Position') }}</th>
+          <th scope="col" class="num">{{ _('Menge (kWh)') }}</th>
+          <th scope="col" class="num">{{ _('Preis (Rp./kWh)') }}</th>
+          <th scope="col" class="num">{{ _('Betrag (CHF)') }}</th>
         </tr>
       </thead>
       <tbody>
         {% for item in invoice.settlement_charges %}
         <tr>
-          <td>{{ item.item_type_label }}</td>
+          <td>{{ _(item.item_type_label) }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_quantity_kwh }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_unit_price_rp }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_amount_chf }}</td>
@@ -109,22 +111,22 @@
     {% endif %}
 
     {% if invoice.battery_shares %}
-    <h2 class="text-lg font-bold mb-2">Quartierakku-Anteil</h2>
+    <h2 class="text-lg font-bold mb-2">{{ _('Quartierakku-Anteil') }}</h2>
     <div class="overflow-x-auto mb-6">
     <table class="invoice-table text-sm">
-      <caption class="sr-only">Anteil am Quartierakku dieser Rechnung</caption>
+      <caption class="sr-only">{{ _('Anteil am Quartierakku dieser Rechnung') }}</caption>
       <thead>
         <tr>
-          <th scope="col">Position</th>
-          <th scope="col" class="num">Menge (kWh)</th>
-          <th scope="col" class="num">Preis (Rp./kWh)</th>
-          <th scope="col" class="num">Betrag (CHF)</th>
+          <th scope="col">{{ _('Position') }}</th>
+          <th scope="col" class="num">{{ _('Menge (kWh)') }}</th>
+          <th scope="col" class="num">{{ _('Preis (Rp./kWh)') }}</th>
+          <th scope="col" class="num">{{ _('Betrag (CHF)') }}</th>
         </tr>
       </thead>
       <tbody>
         {% for item in invoice.battery_shares %}
         <tr>
-          <td>{{ item.item_type_label }}</td>
+          <td>{{ _(item.item_type_label) }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_quantity_kwh or "-" }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_unit_price_rp or "-" }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_amount_chf }}</td>
@@ -135,24 +137,24 @@
     </div>
     {% endif %}
 
-    <h2 class="text-lg font-bold mb-2">Gutschriften und Ausgleich</h2>
+    <h2 class="text-lg font-bold mb-2">{{ _('Gutschriften und Ausgleich') }}</h2>
     {% set credit_items = invoice.credits + invoice.rounding_adjustments %}
     {% if credit_items %}
     <div class="overflow-x-auto">
     <table class="invoice-table text-sm">
-      <caption class="sr-only">Gutschriften und Rundungsausgleich dieser Rechnung</caption>
+      <caption class="sr-only">{{ _('Gutschriften und Rundungsausgleich dieser Rechnung') }}</caption>
       <thead>
         <tr>
-          <th scope="col">Position</th>
-          <th scope="col" class="num">Menge (kWh)</th>
-          <th scope="col" class="num">Preis (Rp./kWh)</th>
-          <th scope="col" class="num">Betrag (CHF)</th>
+          <th scope="col">{{ _('Position') }}</th>
+          <th scope="col" class="num">{{ _('Menge (kWh)') }}</th>
+          <th scope="col" class="num">{{ _('Preis (Rp./kWh)') }}</th>
+          <th scope="col" class="num">{{ _('Betrag (CHF)') }}</th>
         </tr>
       </thead>
       <tbody>
         {% for item in credit_items %}
         <tr>
-          <td>{{ item.item_type_label }}</td>
+          <td>{{ _(item.item_type_label) }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_quantity_kwh or "-" }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_unit_price_rp or "-" }}</td>
           <td class="num font-mono tabular-nums">{{ item.display_amount_chf }}</td>
@@ -162,69 +164,69 @@
     </table>
     </div>
     {% else %}
-    <p class="text-sm text-ink-muted mb-6">Keine Gutschriften.</p>
+    <p class="text-sm text-ink-muted mb-6">{{ _('Keine Gutschriften.') }}</p>
     {% endif %}
 
     <dl class="invoice-totals text-sm">
-      <div><dt>Nettobetrag</dt><dd class="font-mono tabular-nums">{{ invoice.display_net_chf }} CHF</dd></div>
-      <div><dt>Mehrwertsteuer</dt><dd class="font-mono tabular-nums">{{ invoice.display_vat_chf }} CHF</dd></div>
-      <div class="font-bold text-base"><dt>Gesamtbetrag</dt><dd class="font-mono tabular-nums">{{ invoice.display_gross_chf }} CHF</dd></div>
+      <div><dt>{{ _('Nettobetrag') }}</dt><dd class="font-mono tabular-nums">{{ invoice.display_net_chf }} CHF</dd></div>
+      <div><dt>{{ _('Mehrwertsteuer') }}</dt><dd class="font-mono tabular-nums">{{ invoice.display_vat_chf }} CHF</dd></div>
+      <div class="font-bold text-base"><dt>{{ _('Gesamtbetrag') }}</dt><dd class="font-mono tabular-nums">{{ invoice.display_gross_chf }} CHF</dd></div>
     </dl>
   </article>
   <section class="mt-8 bg-white rounded-xl border border-line p-6" aria-labelledby="savings-title">
-    <h2 id="savings-title" class="text-lg font-bold mb-2">Realisierte Ersparnis</h2>
+    <h2 id="savings-title" class="text-lg font-bold mb-2">{{ _('Realisierte Ersparnis') }}</h2>
     {% if savings and savings.available %}
-    <p class="text-sm text-ink-muted mb-4">Gemessene Werte der Periode {{ savings.period_label }}.</p>
+    <p class="text-sm text-ink-muted mb-4">{{ _('Gemessene Werte der Periode') }} {{ savings.period_label|periodlabel }}.</p>
     <dl class="grid gap-2 text-sm">
-      <div><dt class="font-semibold text-ink inline">Verbrauch:</dt> <dd class="inline font-mono tabular-nums">{{ savings.display_consumption_kwh }} kWh</dd></div>
-      <div><dt class="font-semibold text-ink inline">Lokal gedeckt:</dt> <dd class="inline font-mono tabular-nums">{{ savings.display_local_kwh }} kWh ({{ savings.display_local_share_pct or "-" }} %)</dd></div>
-      <div><dt class="font-semibold text-ink inline">Ersparnis durch reduziertes Netzentgelt:</dt> <dd class="inline font-mono tabular-nums font-bold">{{ savings.display_savings_chf }} CHF</dd></div>
-      <div><dt class="font-semibold text-ink inline">Netzentgelt-Tarif:</dt> <dd class="inline font-mono tabular-nums">{{ savings.display_grid_fee_rp }} Rp./kWh, {{ savings.network_level_label }}</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Verbrauch:') }}</dt> <dd class="inline font-mono tabular-nums">{{ savings.display_consumption_kwh }} kWh</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Lokal gedeckt:') }}</dt> <dd class="inline font-mono tabular-nums">{{ savings.display_local_kwh }} {{ _('kWh (') }}{{ savings.display_local_share_pct or "-" }} %)</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Ersparnis durch reduziertes Netzentgelt:') }}</dt> <dd class="inline font-mono tabular-nums font-bold">{{ savings.display_savings_chf }} CHF</dd></div>
+      <div><dt class="font-semibold text-ink inline">{{ _('Netzentgelt-Tarif:') }}</dt> <dd class="inline font-mono tabular-nums">{{ savings.display_grid_fee_rp }} {{ _('Rp./kWh,') }} {{ _(savings.network_level_label) }}</dd></div>
     </dl>
     {% elif savings %}
-    <p class="text-sm text-ink-muted">{{ savings.message }}</p>
+    <p class="text-sm text-ink-muted">{{ _(savings.message) }}</p>
     {% endif %}
   </section>
   {% if invoice.battery_source %}
   <section class="mt-8 bg-white rounded-xl border border-line p-6" aria-labelledby="battery-source-title">
-    <h2 id="battery-source-title" class="text-lg font-bold mb-2">Strom aus dem Quartierakku</h2>
-    <p class="text-sm text-ink-muted mb-4">In dieser Abrechnungsperiode deckte der gemeinsame Speicher einen Teil Ihres lokalen Verbrauchs.</p>
+    <h2 id="battery-source-title" class="text-lg font-bold mb-2">{{ _('Strom aus dem Quartierakku') }}</h2>
+    <p class="text-sm text-ink-muted mb-4">{{ _('In dieser Abrechnungsperiode deckte der gemeinsame Speicher einen Teil Ihres lokalen Verbrauchs.') }}</p>
     <dl class="grid gap-2 text-sm sm:grid-cols-2">
-      <div><dt class="font-semibold text-ink">Aus dem Speicher</dt><dd class="font-mono tabular-nums">{{ invoice.display_battery_kwh }} kWh</dd></div>
-      <div><dt class="font-semibold text-ink">Wert zum internen Preis</dt><dd class="font-mono tabular-nums">{{ invoice.display_battery_value_chf }} CHF</dd></div>
+      <div><dt class="font-semibold text-ink">{{ _('Aus dem Speicher') }}</dt><dd class="font-mono tabular-nums">{{ invoice.display_battery_kwh }} kWh</dd></div>
+      <div><dt class="font-semibold text-ink">{{ _('Wert zum internen Preis') }}</dt><dd class="font-mono tabular-nums">{{ invoice.display_battery_value_chf }} CHF</dd></div>
     </dl>
   </section>
   {% endif %}
   <section id="questions" class="no-print mt-8 bg-white rounded-xl border border-line p-6">
-    <h2 class="text-lg font-bold mb-2">Fragen zu dieser Rechnung</h2>
+    <h2 class="text-lg font-bold mb-2">{{ _('Fragen zu dieser Rechnung') }}</h2>
     {% for query in invoice.queries %}
     <article class="mb-4 rounded-lg border border-line p-4">
-      <p class="text-sm font-semibold">{{ query.category }} · {{ query.status }} · Antwort bis {{ query.response_due_at }}</p>
+      <p class="text-sm font-semibold">{{ query_categories.get(query.category, query.category) }} · {{ query_states.get(query.status, query.status) }} {{ _('· Antwort bis') }} {{ query.response_due_at }}</p>
       {% for message in query.messages %}<p class="mt-2 text-sm"><span class="font-semibold">{{ message.actor_id }}:</span> {{ message.message }}</p>{% endfor %}
       {% for event in query.events if event.linked_reference %}
-      <p class="mt-2 text-sm text-ink-muted">Verknüpft mit Korrektur: <span class="font-semibold">{{ event.linked_reference }}</span></p>
+      <p class="mt-2 text-sm text-ink-muted">{{ _('Verknüpft mit Korrektur:') }} <span class="font-semibold">{{ event.linked_reference }}</span></p>
       {% endfor %}
       {% if query.status != 'resolved' %}
       <form method="post" action="/dashboard/invoices/{{ invoice.id }}/queries/{{ query.id }}/reply" class="mt-3 flex gap-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label class="sr-only" for="reply-{{ query.id }}">Antwort</label>
+        <label class="sr-only" for="reply-{{ query.id }}">{{ _('Antwort') }}</label>
         <input id="reply-{{ query.id }}" name="message" required maxlength="4000" class="flex-1 border rounded-lg px-3 py-2">
-        <button class="border border-line rounded-lg px-4 py-2 font-semibold">Antworten</button>
+        <button class="border border-line rounded-lg px-4 py-2 font-semibold">{{ _('Antworten') }}</button>
       </form>
       {% endif %}
     </article>
     {% endfor %}
     <form method="post" enctype="multipart/form-data" action="/dashboard/invoices/{{ invoice.id }}/queries" class="grid gap-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <label class="text-sm font-semibold" for="query-category">Grund</label>
+      <label class="text-sm font-semibold" for="query-category">{{ _('Grund') }}</label>
       <select id="query-category" name="category" required class="border rounded-lg px-3 py-2">
-        <option value="amount">Betrag</option><option value="metering">Messdaten</option><option value="payment">Zahlung</option><option value="other">Anderes</option>
+        <option value="amount">{{ _('Betrag') }}</option><option value="metering">{{ _('Messdaten') }}</option><option value="payment">{{ _('Zahlung') }}</option><option value="other">{{ _('Anderes') }}</option>
       </select>
-      <label class="text-sm font-semibold" for="query-message">Nachricht</label>
+      <label class="text-sm font-semibold" for="query-message">{{ _('Nachricht') }}</label>
       <textarea id="query-message" name="message" required maxlength="4000" class="border rounded-lg px-3 py-2"></textarea>
-      <label class="text-sm" for="query-attachment">PDF-Beleg, optional, höchstens 2 MB</label>
+      <label class="text-sm" for="query-attachment">{{ _('PDF-Beleg, optional, höchstens 2 MB') }}</label>
       <input id="query-attachment" type="file" name="attachment" accept="application/pdf,.pdf" class="border rounded-lg px-3 py-2">
-      <button class="bg-brand text-white rounded-lg px-4 py-2 font-semibold">Frage senden</button>
+      <button class="bg-brand text-white rounded-lg px-4 py-2 font-semibold">{{ _('Frage senden') }}</button>
     </form>
   </section>
 </div>

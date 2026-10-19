@@ -1,90 +1,91 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ current_locale|default('de') }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OpenLEG Admin: Ops</title>
+<title>{{ _('OpenLEG Admin: Ops') }}</title>
 <link rel="stylesheet" href="/static/css/openleg.css">
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
 <div class="max-w-7xl mx-auto px-4 py-8">
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Ops Dashboard</h1>
-    <span class="text-xs text-gray-500">Private operator view</span>
+    <h1 class="text-2xl font-bold">{{ _('Ops Dashboard') }}</h1>
+    {% include 'partials/language_switcher.html' %}
+    <span class="text-xs text-gray-500">{{ _('Private operator view') }}</span>
   </div>
 
   <div class="grid md:grid-cols-4 gap-4 mb-8">
     <div class="bg-gray-900 rounded-lg p-4">
-      <div class="text-sm text-gray-400">LEA Inbox</div>
+      <div class="text-sm text-gray-400">{{ _('LEA Inbox') }}</div>
       <div class="text-3xl font-bold">{{ counts.lea_inbox }}</div>
     </div>
     <div class="bg-gray-900 rounded-lg p-4">
-      <div class="text-sm text-gray-400">GitHub Monitor</div>
+      <div class="text-sm text-gray-400">{{ _('GitHub Monitor') }}</div>
       <div class="text-3xl font-bold">{{ counts.github_monitor }}</div>
     </div>
     <div class="bg-gray-900 rounded-lg p-4">
-      <div class="text-sm text-gray-400">VNB Monitor</div>
+      <div class="text-sm text-gray-400">{{ _('VNB Monitor') }}</div>
       <div class="text-3xl font-bold">{{ counts.vnb_monitor }}</div>
     </div>
     <div class="bg-gray-900 rounded-lg p-4">
-      <div class="text-sm text-gray-400">Stuck Formations</div>
+      <div class="text-sm text-gray-400">{{ _('Stuck Formations') }}</div>
       <div class="text-3xl font-bold">{{ counts.stuck_formations }}</div>
     </div>
     <div class="bg-gray-900 rounded-lg p-4">
-      <div class="text-sm text-gray-400">LEG-Verzeichnis</div>
+      <div class="text-sm text-gray-400">{{ _('LEG-Verzeichnis') }}</div>
       <div class="text-3xl font-bold">{{ counts.registry_pending }}</div>
     </div>
     <div class="bg-gray-900 rounded-lg p-4">
-      <div class="text-sm text-gray-400">Unbestätigt (LEG-Verzeichnis)</div>
+      <div class="text-sm text-gray-400">{{ _('Unbestätigt (LEG-Verzeichnis)') }}</div>
       <div class="text-3xl font-bold">{{ counts.registry_stale }}</div>
     </div>
     <div class="bg-gray-900 rounded-lg p-4">
-      <div class="text-sm text-gray-400">Bestätigtes LEG-Interesse</div>
-      <div class="text-3xl font-bold">{{ counts.interest_verified if counts.interest_verified is not none else 'Nicht verfügbar' }}</div>
+      <div class="text-sm text-gray-400">{{ _('Bestätigtes LEG-Interesse') }}</div>
+      <div class="text-3xl font-bold">{{ counts.interest_verified if counts.interest_verified is not none else _('Nicht verfügbar') }}</div>
     </div>
     <div class="bg-gray-900 rounded-lg p-4">
-      <div class="text-sm text-gray-400">Offene E-Mail-Bestätigungen</div>
-      <div class="text-3xl font-bold">{{ counts.interest_unverified if counts.interest_unverified is not none else 'Nicht verfügbar' }}</div>
+      <div class="text-sm text-gray-400">{{ _('Offene E-Mail-Bestätigungen') }}</div>
+      <div class="text-3xl font-bold">{{ counts.interest_unverified if counts.interest_unverified is not none else _('Nicht verfügbar') }}</div>
     </div>
   </div>
 
   <section class="bg-gray-900 rounded-lg overflow-hidden mb-8">
     <div class="px-4 py-3 border-b border-gray-800">
-      <h2 class="font-semibold">SDAT-Import</h2>
-      <p class="text-sm text-gray-400">Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in der Betriebsdokumentation.</p>
+      <h2 class="font-semibold">{{ _('SDAT-Import') }}</h2>
+      <p class="text-sm text-gray-400">{{ _('Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in der Betriebsdokumentation.') }}</p>
     </div>
     <table class="w-full text-sm">
       <thead class="bg-gray-800"><tr>
-        <th class="px-4 py-3 text-left">Tenant</th><th class="text-left">Zeitplan</th>
-        <th class="text-left">Letzter Erfolg</th><th class="text-left">Letzter Fehler</th>
-        <th class="text-left">Dateien</th><th class="text-left">Messwerte</th>
+        <th class="px-4 py-3 text-left">{{ _('Tenant') }}</th><th class="text-left">{{ _('Zeitplan') }}</th>
+        <th class="text-left">{{ _('Letzter Erfolg') }}</th><th class="text-left">{{ _('Letzter Fehler') }}</th>
+        <th class="text-left">{{ _('Dateien') }}</th><th class="text-left">{{ _('Messwerte') }}</th>
       </tr></thead>
       <tbody class="divide-y divide-gray-800">
         {% for schedule in sdat_schedules %}
         <tr><td class="px-4 py-3">{{ schedule.territory }}</td>
-          <td>{{ schedule.local_time }} {{ schedule.timezone }}{% if not schedule.enabled %} (aus){% endif %}</td>
+          <td>{{ schedule.local_time }} {{ schedule.timezone }}{% if not schedule.enabled %} {{ _('(aus)') }}{% endif %}</td>
           <td>{{ schedule.last_success_at or '–' }}</td>
           <td>{{ schedule.last_failure_at or '–' }}{% if schedule.last_failure_error %}: {{ schedule.last_failure_error }}{% endif %}</td>
           <td>{{ schedule.imported_files or 0 }}</td><td>{{ schedule.imported_readings or 0 }}</td></tr>
-        {% else %}<tr><td class="px-4 py-3 text-gray-400" colspan="6">Kein SDAT-Zeitplan konfiguriert.</td></tr>{% endfor %}
+        {% else %}<tr><td class="px-4 py-3 text-gray-400" colspan="6">{{ _('Kein SDAT-Zeitplan konfiguriert.') }}</td></tr>{% endfor %}
       </tbody>
     </table>
   </section>
 
   <section class="bg-gray-900 rounded-lg overflow-hidden mb-8">
     <div class="px-4 py-3 border-b border-gray-800">
-      <h2 class="font-semibold">LEG-Interessenmeldungen</h2>
-      <p class="text-xs text-gray-500 mt-1">Private Betreiberansicht. Diese Daten erscheinen nicht im Gemeinde-Dashboard.</p>
+      <h2 class="font-semibold">{{ _('LEG-Interessenmeldungen') }}</h2>
+      <p class="text-xs text-gray-500 mt-1">{{ _('Private Betreiberansicht. Diese Daten erscheinen nicht im Gemeinde-Dashboard.') }}</p>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-800">
           <tr>
-            <th class="px-4 py-3 text-left">E-Mail</th>
-            <th class="px-4 py-3 text-left">Gemeinde</th>
-            <th class="px-4 py-3 text-left">PLZ</th>
-            <th class="px-4 py-3 text-left">Quelle</th>
-            <th class="px-4 py-3 text-left">Status</th>
+            <th class="px-4 py-3 text-left">{{ _('E-Mail') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('Gemeinde') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('PLZ') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('Quelle') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('Status') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-800">
@@ -93,12 +94,12 @@
             <td class="px-4 py-3">{{ record.email }}</td>
             <td class="px-4 py-3 text-gray-300">{{ record.municipality_name or '–' }}{% if record.canton %} ({{ record.canton }}){% endif %}</td>
             <td class="px-4 py-3 text-gray-400">{{ record.plz or '–' }}</td>
-            <td class="px-4 py-3 text-gray-400">{{ 'Adressprüfung' if record.source == 'address_check' else 'Abdeckungsanfrage' }}</td>
-            <td class="px-4 py-3">{{ 'bestätigt' if record.verified else 'offen' }}</td>
+            <td class="px-4 py-3 text-gray-400">{{ _('Adressprüfung') if record.source == 'address_check' else _('Abdeckungsanfrage') }}</td>
+            <td class="px-4 py-3">{{ _('bestätigt') if record.verified else _('offen') }}</td>
           </tr>
           {% endfor %}
           {% if not interest_records %}
-          <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Noch keine Interessenmeldungen</td></tr>
+          <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">{{ _('Noch keine Interessenmeldungen') }}</td></tr>
           {% endif %}
         </tbody>
       </table>
@@ -108,16 +109,16 @@
   <div class="mb-8">
     <section class="bg-gray-900 rounded-lg overflow-hidden">
       <div class="px-4 py-3 border-b border-gray-800">
-        <h2 class="font-semibold">Ausstehende LEG-Einträge</h2>
+        <h2 class="font-semibold">{{ _('Ausstehende LEG-Einträge') }}</h2>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-gray-800">
           <tr>
-            <th class="px-4 py-3 text-left">Name</th>
-            <th class="px-4 py-3 text-left">Ort</th>
-            <th class="px-4 py-3 text-left">Kontakt</th>
-            <th class="px-4 py-3 text-left">VNB-Plausibilität</th>
-            <th class="px-4 py-3 text-right">Aktion</th>
+            <th class="px-4 py-3 text-left">{{ _('Name') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('Ort') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('Kontakt') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('VNB-Plausibilität') }}</th>
+            <th class="px-4 py-3 text-right">{{ _('Aktion') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-800">
@@ -128,26 +129,26 @@
             <td class="px-4 py-3 text-gray-400">{{ entry.contact_email }}</td>
             <td class="px-4 py-3">
               {% if entry.vnb_plausible is none %}
-              <span class="text-xs text-gray-500">ungeprüft</span>
+              <span class="text-xs text-gray-500">{{ _('ungeprüft') }}</span>
               {% elif entry.vnb_plausible %}
-              <span class="text-xs text-green-400">plausibel</span>
+              <span class="text-xs text-green-400">{{ _('plausibel') }}</span>
               {% else %}
-              <span class="text-xs text-yellow-400">Abweichung von ElCom</span>
+              <span class="text-xs text-yellow-400">{{ _('Abweichung von ElCom') }}</span>
               {% endif %}
             </td>
             <td class="px-4 py-3 text-right">
               <form method="post" action="/admin/registry/{{ entry.id }}/approve?token={{ request.args.get('token', '') }}" class="inline">
-                <button type="submit" class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-sm">Freischalten</button>
+                <button type="submit" class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Freischalten') }}</button>
               </form>
               <form method="post" action="/admin/registry/{{ entry.id }}/reject?token={{ request.args.get('token', '') }}" class="inline ml-2">
                 <input type="hidden" name="reason" value="">
-                <button type="submit" class="bg-red-800 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-sm">Ablehnen</button>
+                <button type="submit" class="bg-red-800 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Ablehnen') }}</button>
               </form>
             </td>
           </tr>
           {% endfor %}
           {% if not pending_registry %}
-          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Keine ausstehenden Einträge</td></tr>
+          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ _('Keine ausstehenden Einträge') }}</td></tr>
           {% endif %}
         </tbody>
       </table>
@@ -156,28 +157,28 @@
 
   <div class="grid lg:grid-cols-2 gap-6 mb-8">
     {% for category, label in [
-      ('agent_health', 'Agent Health'),
-      ('lea_inbox', 'LEA Inbox'),
-      ('github_monitor', 'GitHub Monitor'),
-      ('vnb_monitor', 'VNB Monitor'),
-      ('stuck_formations', 'Stuck Formations')
+      ('agent_health', _('Agent Health')),
+      ('lea_inbox', _('LEA Inbox')),
+      ('github_monitor', _('GitHub Monitor')),
+      ('vnb_monitor', _('VNB Monitor')),
+      ('stuck_formations', _('Stuck Formations'))
     ] %}
     {% set snapshot = latest.get(category) %}
     <section class="bg-gray-900 rounded-lg p-4 border border-gray-800">
       <div class="flex items-center justify-between mb-2">
-        <h2 class="font-semibold">{{ label }}</h2>
+        <h2 class="font-semibold">{{ _(label) }}</h2>
         {% if snapshot %}
         <span class="text-xs px-2 py-1 rounded-sm bg-gray-800 text-gray-300 uppercase">{{ snapshot.status }}</span>
         {% else %}
-        <span class="text-xs text-gray-600">No data</span>
+        <span class="text-xs text-gray-600">{{ _('No data') }}</span>
         {% endif %}
       </div>
       {% if snapshot %}
-      <p class="text-sm text-gray-300 mb-2">{{ snapshot.summary_text or 'No summary' }}</p>
+      <p class="text-sm text-gray-300 mb-2">{{ snapshot.summary_text or _('No summary') }}</p>
       <p class="text-xs text-gray-500 mb-3">{{ snapshot.created_at if snapshot.created_at else '' }}</p>
       <pre class="text-xs text-gray-400 bg-gray-950 rounded-sm p-3 overflow-x-auto">{{ snapshot.payload | tojson(indent=2) }}</pre>
       {% else %}
-      <p class="text-sm text-gray-500">No snapshot recorded yet.</p>
+      <p class="text-sm text-gray-500">{{ _('No snapshot recorded yet.') }}</p>
       {% endif %}
     </section>
     {% endfor %}
@@ -186,15 +187,15 @@
   <div class="grid lg:grid-cols-2 gap-6">
     <section class="bg-gray-900 rounded-lg overflow-hidden">
       <div class="px-4 py-3 border-b border-gray-800">
-        <h2 class="font-semibold">Recent Ops Snapshots</h2>
+        <h2 class="font-semibold">{{ _('Recent Ops Snapshots') }}</h2>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-gray-800">
           <tr>
-            <th class="px-4 py-3 text-left">Source</th>
-            <th class="px-4 py-3 text-left">Category</th>
-            <th class="px-4 py-3 text-left">Summary</th>
-            <th class="px-4 py-3 text-right">Created</th>
+            <th class="px-4 py-3 text-left">{{ _('Source') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('Category') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('Summary') }}</th>
+            <th class="px-4 py-3 text-right">{{ _('Created') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-800">
@@ -207,7 +208,7 @@
           </tr>
           {% endfor %}
           {% if not snapshots %}
-          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Keine Snapshots</td></tr>
+          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ _('Keine Snapshots') }}</td></tr>
           {% endif %}
         </tbody>
       </table>
@@ -215,15 +216,15 @@
 
     <section class="bg-gray-900 rounded-lg overflow-hidden">
       <div class="px-4 py-3 border-b border-gray-800">
-        <h2 class="font-semibold">Recent LEA Reports</h2>
+        <h2 class="font-semibold">{{ _('Recent LEA Reports') }}</h2>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-gray-800">
           <tr>
-            <th class="px-4 py-3 text-left">Job</th>
-            <th class="px-4 py-3 text-left">Status</th>
-            <th class="px-4 py-3 text-left">Summary</th>
-            <th class="px-4 py-3 text-right">Created</th>
+            <th class="px-4 py-3 text-left">{{ _('Job') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('Status') }}</th>
+            <th class="px-4 py-3 text-left">{{ _('Summary') }}</th>
+            <th class="px-4 py-3 text-right">{{ _('Created') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-800">
@@ -236,12 +237,13 @@
           </tr>
           {% endfor %}
           {% if not reports %}
-          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Keine Berichte</td></tr>
+          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ _('Keine Berichte') }}</td></tr>
           {% endif %}
         </tbody>
       </table>
     </section>
   </div>
 </div>
+{% include 'partials/form_validation.html' %}
 </body>
 </html>

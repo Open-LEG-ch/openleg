@@ -27,6 +27,7 @@ from flask import (
 import database as db
 import security_utils
 from email_utils import send_email
+from i18n import gettext as _
 
 logger = logging.getLogger(__name__)
 
@@ -83,18 +84,18 @@ def register():
     kanton = (data.get("kanton") or "").strip().upper()[:2]
 
     if not company_name or not contact_email:
-        return jsonify({"error": "Firmenname und E-Mail sind erforderlich."}), 400
+        return jsonify({"error": _("Firmenname und E-Mail sind erforderlich.")}), 400
 
     is_valid, normalized, error = security_utils.validate_email_address(contact_email)
     if not is_valid:
-        return jsonify({"error": error}), 400
+        return jsonify({"error": _(error)}), 400
     contact_email = normalized
 
     # Check if already registered
     existing = db.get_utility_client_by_email(contact_email)
     if existing:
         return jsonify(
-            {"error": "Diese E-Mail ist bereits registriert. Bitte einloggen."}
+            {"error": _("Diese E-Mail ist bereits registriert. Bitte einloggen.")}
         ), 409
 
     if contact_phone:
@@ -127,8 +128,10 @@ def register():
     if not saved:
         return jsonify(
             {
-                "error": "Wir konnten die Registrierung nicht speichern. "
-                "Bitte versuchen Sie es später erneut."
+                "error": _(
+                    "Wir konnten die Registrierung nicht speichern. "
+                    "Bitte versuchen Sie es später erneut."
+                )
             }
         ), 503
 
@@ -145,7 +148,9 @@ def register():
         return jsonify(
             {
                 "success": True,
-                "message": "Registrierung erfolgreich. Login-Link per E-Mail gesendet.",
+                "message": _(
+                    "Registrierung erfolgreich. Login-Link per E-Mail gesendet."
+                ),
             }
         )
     return redirect(url_for("utility.login_page", registered=1))
@@ -171,7 +176,7 @@ def login_page():
             return redirect(url_for("utility.dashboard"))
         return render_template(
             "utility/login.html",
-            error="Ungültiger oder abgelaufener Login-Link.",
+            error=_("Ungültiger oder abgelaufener Login-Link."),
             site_url=_site_url(),
             tenant=getattr(g, "tenant", {}),
         )
@@ -191,7 +196,7 @@ def login_submit():
 
     is_valid, normalized, error = security_utils.validate_email_address(email)
     if not is_valid:
-        return jsonify({"error": error}), 400
+        return jsonify({"error": _(error)}), 400
 
     client = db.get_utility_client_by_email(normalized)
     if not client:
@@ -199,12 +204,14 @@ def login_submit():
         return jsonify(
             {
                 "success": True,
-                "message": "Falls registriert, erhalten Sie einen Login-Link per E-Mail.",
+                "message": _(
+                    "Falls registriert, erhalten Sie einen Login-Link per E-Mail."
+                ),
             }
         )
 
     _send_magic_link(client["client_id"], normalized)
-    return jsonify({"success": True, "message": "Login-Link per E-Mail gesendet."})
+    return jsonify({"success": True, "message": _("Login-Link per E-Mail gesendet.")})
 
 
 @utility_bp.route("/logout")
@@ -248,12 +255,17 @@ def generate_api_key():
         {
             "success": True,
             "api_key": raw_key,
-            "message": "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt.",
+            "message": _(
+                "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
+            ),
         }
     )
 
 
 # --- Settings ---
+
+
+# --- Admin: list all utility clients ---
 
 
 @utility_bp.route("/settings", methods=["GET"])
@@ -266,9 +278,6 @@ def settings_page():
         site_url=_site_url(),
         tenant=getattr(g, "tenant", {}),
     )
-
-
-# --- Admin: list all utility clients ---
 
 
 @utility_bp.route("/admin/clients")

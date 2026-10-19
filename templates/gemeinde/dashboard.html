@@ -1,7 +1,7 @@
 {% extends "product_base.html" %}
 
 {% block meta %}
-  <title>Gemeinde-Dashboard{% if municipality %} {{ municipality.name }}{% endif %} | OpenLEG</title>
+  <title>{{ _("Gemeinde-Dashboard") }}{% if municipality %} {{ municipality.name }}{% endif %} {{ _("| OpenLEG") }}</title>
   <meta name="robots" content="noindex, nofollow">
 {% endblock %}
 
@@ -10,72 +10,72 @@
   {% if municipality %}
     <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
       <div>
-        <p class="text-sm font-semibold text-brand mb-1">Gemeinde-Dashboard</p>
+        <p class="text-sm font-semibold text-brand mb-1">{{ _("Gemeinde-Dashboard") }}</p>
         <h1 class="text-3xl font-bold tracking-tight">{{ municipality.name }}</h1>
         <p class="text-ink-muted mt-2">
           {% if municipality.dso_name %}
-            Netzbetreiber: {{ municipality.dso_name }}
+            {{ _("Netzbetreiber: %(municipality_dso_name)s", municipality_dso_name=municipality.dso_name) }}
           {% else %}
-            Netzbetreiber noch nicht hinterlegt
+            {{ _("Netzbetreiber noch nicht hinterlegt") }}
           {% endif %}
         </p>
       </div>
       <span class="inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-1.5 text-sm font-semibold text-ink">
         <span class="h-2 w-2 rounded-full bg-brand" aria-hidden="true"></span>
-        {{ status_label }}
+        {{ _(status_label) }}
       </span>
       <form action="/gemeinde/logout" method="post">
         <input type="hidden" name="csrf_token" value="{{ session.municipality_csrf_token }}">
-        <button type="submit" class="text-sm font-semibold text-ink-muted underline hover:text-ink">Abmelden</button>
+        <button type="submit" class="text-sm font-semibold text-ink-muted underline hover:text-ink">{{ _("Abmelden") }}</button>
       </form>
     </div>
 
-    <section class="grid grid-cols-2 md:grid-cols-4 border-t border-line mb-8" aria-label="Gemeindestatistik">
+    <section class="grid grid-cols-2 md:grid-cols-4 border-t border-line mb-8" aria-label="{{ _('Gemeindestatistik') }}">
       <div class="py-4 pr-4 border-b border-line">
-        <p class="text-xs text-ink-muted uppercase tracking-wide">Registrierte Haushalte</p>
-        <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ stats.total_buildings or 0 }} <span data-statistic-unit class="text-xs font-normal text-ink-muted">Haushalte</span></p>
+        <p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("Registrierte Haushalte") }}</p>
+        <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ stats.total_buildings or 0 }} <span data-statistic-unit class="text-xs font-normal text-ink-muted">{{ ngettext("Haushalt", "Haushalte", stats.total_buildings or 0) }}</span></p>
       </div>
       <div class="py-4 pr-4 border-b border-line">
-        <p class="text-xs text-ink-muted uppercase tracking-wide">Heute registriert</p>
-        <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ stats.registrations_today or 0 }} <span data-statistic-unit class="text-xs font-normal text-ink-muted">Haushalte</span></p>
+        <p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("Heute registriert") }}</p>
+        <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ stats.registrations_today or 0 }} <span data-statistic-unit class="text-xs font-normal text-ink-muted">{{ ngettext("Haushalt", "Haushalte", stats.registrations_today or 0) }}</span></p>
       </div>
       <div class="py-4 pr-4 border-b border-line">
-        <p class="text-xs text-ink-muted uppercase tracking-wide">Solarnutzung</p>
+        <p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("Solarnutzung") }}</p>
         {% if solar_score is not none %}
           <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ "%.0f"|format(solar_score|float) }}<span data-statistic-unit class="text-sm font-normal text-ink-muted">%</span></p>
-          <a href="{{ public_site_url('/rangliste/methodik') }}" class="text-xs text-brand underline">Formel und Datengrenzen ansehen</a>
+          <a href="{{ public_site_url('/rangliste/methodik') }}" class="text-xs text-brand underline">{{ _("Formel und Datengrenzen ansehen") }}</a>
         {% else %}
-          <p class="text-sm text-ink-muted mt-2">Noch keine Daten</p>
+          <p class="text-sm text-ink-muted mt-2">{{ _("Noch keine Daten") }}</p>
         {% endif %}
       </div>
       <div class="py-4 border-b border-line">
-        <p class="text-xs text-ink-muted uppercase tracking-wide">Energiewende-Score</p>
+        <p class="text-xs text-ink-muted uppercase tracking-wide">{{ _("Energiewende-Score") }}</p>
         {% if energy_score is not none %}
           <p data-statistic class="font-mono tabular-nums text-2xl font-bold text-ink mt-1">{{ "%.0f"|format(energy_score|float) }} <span data-statistic-unit class="text-sm font-normal text-ink-muted">/100</span></p>
-          <p class="text-xs text-ink-muted mt-2">Gewichtung: Solar 30 Prozent, Elektroautos 20 Prozent, erneuerbare Heizungen 25 Prozent, erneuerbare Produktion 25 Prozent.</p>
-          <a href="{{ public_site_url('/rangliste/methodik') }}" class="text-xs text-brand underline">Methodik ansehen</a>
+          <p class="text-xs text-ink-muted mt-2">{{ _("Gewichtung: Solar 30 Prozent, Elektroautos 20 Prozent, erneuerbare Heizungen 25 Prozent, erneuerbare Produktion 25 Prozent.") }}</p>
+          <a href="{{ public_site_url('/rangliste/methodik') }}" class="text-xs text-brand underline">{{ _("Methodik ansehen") }}</a>
         {% else %}
-          <p class="text-sm text-ink-muted mt-2">Noch keine Daten</p>
+          <p class="text-sm text-ink-muted mt-2">{{ _("Noch keine Daten") }}</p>
         {% endif %}
       </div>
     </section>
 
     <section class="bg-white rounded-xl p-6 border border-line mb-8" aria-labelledby="interest-summary-title">
       {% set interest = interest_summary if interest_summary is defined else {} %}
-      <h2 id="interest-summary-title" class="text-lg font-semibold">Interesse an einer LEG</h2>
-      <p class="text-sm text-ink-muted mt-1">Nur bestätigte Meldungen aus {{ municipality.name }}. Sie sehen keine Namen, Kontaktdaten oder Adressen.</p>
+      <h2 id="interest-summary-title" class="text-lg font-semibold">{{ _("Interesse an einer LEG") }}</h2>
+      <p class="text-sm text-ink-muted mt-1">{{ _("Nur bestätigte Meldungen aus %(municipality_name)s. Sie sehen keine Namen, Kontaktdaten oder Adressen.", municipality_name=municipality.name) }}</p>
       {% if interest is none %}
-      <p class="text-sm text-ink-muted mt-5" role="status">Interessenmeldungen sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.</p>
+      <p class="text-sm text-ink-muted mt-5" role="status">{{ _("Interessenmeldungen sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.") }}</p>
       {% else %}
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
-        <div><p class="font-mono text-2xl font-bold">{{ interest.verified_total|default(0, true) }}</p><p class="text-sm text-ink-muted">bestätigte Interessierte</p></div>
-        <div><p class="font-mono text-2xl font-bold">{{ interest.last_30_days|default(0, true) }}</p><p class="text-sm text-ink-muted">in den letzten 30 Tagen</p></div>
-        <div><p class="font-mono text-2xl font-bold">{{ interest.has_solar|default(0, true) }}</p><p class="text-sm text-ink-muted">mit Solaranlage</p></div>
-        <div><p class="font-mono text-2xl font-bold">{{ interest.address_problems|default(0, true) }}</p><p class="text-sm text-ink-muted">offene Adresszuordnung</p></div>
+        <div><p class="font-mono text-2xl font-bold">{{ interest.verified_total|default(0, true) }}</p><p class="text-sm text-ink-muted">{{ ngettext("bestätigte interessierte Person", "bestätigte Interessierte", interest.verified_total|default(0, true)) }}</p></div>
+        <div><p class="font-mono text-2xl font-bold">{{ interest.last_30_days|default(0, true) }}</p><p class="text-sm text-ink-muted">{{ _("in den letzten 30 Tagen") }}</p></div>
+        <div><p class="font-mono text-2xl font-bold">{{ interest.has_solar|default(0, true) }}</p><p class="text-sm text-ink-muted">{{ _("mit Solaranlage") }}</p></div>
+        <div><p class="font-mono text-2xl font-bold">{{ interest.address_problems|default(0, true) }}</p><p class="text-sm text-ink-muted">{{ ngettext("offene Adresszuordnung", "offene Adresszuordnungen", interest.address_problems|default(0, true)) }}</p></div>
       </div>
       {% if interest_roles %}
-      <div class="mt-5 flex flex-wrap gap-2" aria-label="Rollen der Interessierten">
-        {% for role in interest_roles %}<span class="rounded-full bg-paper px-3 py-1 text-sm">{{ role.label }}: <span class="font-mono">{{ role.count }}</span></span>{% endfor %}
+      <div class="mt-5 flex flex-wrap gap-2" aria-label="{{ _('Rollen der Interessierten') }}">
+        {% for role in interest_roles %}<span class="rounded-full bg-paper px-3 py-1 text-sm">{{ _(role.label) }}: <span class="font-mono">{{ role.count }}</span></span>{% endfor %}
       </div>
       {% endif %}
       {% endif %}
@@ -83,38 +83,38 @@
 
     <div class="grid md:grid-cols-2 gap-6">
       <section class="bg-white rounded-xl p-6 border border-line" aria-labelledby="steps-title">
-        <h2 id="steps-title" class="text-lg font-semibold mb-1">Nächste Schritte</h2>
-        <p class="text-sm text-ink-muted mb-4">Drei Schritte bringen Ihre Gemeinde zur ersten LEG.</p>
+        <h2 id="steps-title" class="text-lg font-semibold mb-1">{{ _("Nächste Schritte") }}</h2>
+        <p class="text-sm text-ink-muted mb-4">{{ _("Drei Schritte bringen Ihre Gemeinde zur ersten LEG.") }}</p>
         <ul class="space-y-3 text-sm">
           <li class="flex items-center gap-3 rounded-lg border border-line bg-paper/60 px-4 py-3">
             <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sage-dark text-white text-sm font-bold" aria-hidden="true">&#10003;</span>
-            <span><strong>Gemeinde registriert</strong><br><span class="text-ink-muted">Erledigt</span></span>
+            <span><strong>{{ _("Gemeinde registriert") }}</strong><br><span class="text-ink-muted">{{ _("Erledigt") }}</span></span>
           </li>
           <li>
-            <a href="mailto:hallo@openleg.ch?subject=Datenverarbeitungsvertrag%20{{ municipality.name|urlencode }}" class="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
+            <a href="mailto:hallo@openleg.ch?subject={{ _('Datenverarbeitungsvertrag %(name)s', name=municipality.name)|urlencode }}" class="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
               <span class="flex items-center gap-3">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-brand text-sm font-bold" aria-hidden="true">2</span>
-                <span><strong>Datenverarbeitungsvertrag unterzeichnen</strong><br><span class="text-ink-muted">Wir senden Ihnen die Vorlage per E-Mail</span></span>
+                <span><strong>{{ _("Datenverarbeitungsvertrag unterzeichnen") }}</strong><br><span class="text-ink-muted">{{ _("Wir senden Ihnen die Vorlage per E-Mail") }}</span></span>
               </span>
-              <span aria-hidden="true" class="text-brand">&rarr;</span>
+              <span aria-hidden="true" class="text-brand">{{ _("→") }}</span>
             </a>
           </li>
           <li>
             <a href="#einladen" class="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
               <span class="flex items-center gap-3">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-brand text-sm font-bold" aria-hidden="true">3</span>
-                <span><strong>Bewohner zur Registrierung einladen</strong><br><span class="text-ink-muted">Link teilen, Interessierte sammeln</span></span>
+                <span><strong>{{ _("Bewohner zur Registrierung einladen") }}</strong><br><span class="text-ink-muted">{{ _("Link teilen, Interessierte sammeln") }}</span></span>
               </span>
-              <span aria-hidden="true" class="text-brand">&darr;</span>
+              <span aria-hidden="true" class="text-brand">{{ _("↓") }}</span>
             </a>
           </li>
           <li>
             <a href="{{ public_site_url('/leg-gruenden') }}" class="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 hover:border-brand hover:bg-brand/5 transition">
               <span class="flex items-center gap-3">
                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-brand text-sm font-bold" aria-hidden="true">4</span>
-                <span><strong>Erste LEG gründen</strong><br><span class="text-ink-muted">Schritt für Schritt zur Stromgemeinschaft</span></span>
+                <span><strong>{{ _("Erste LEG gründen") }}</strong><br><span class="text-ink-muted">{{ _("Schritt für Schritt zur Stromgemeinschaft") }}</span></span>
               </span>
-              <span aria-hidden="true" class="text-brand">&rarr;</span>
+              <span aria-hidden="true" class="text-brand">{{ _("→") }}</span>
             </a>
           </li>
         </ul>
@@ -122,43 +122,43 @@
 
       <div class="space-y-6">
         <section id="einladen" class="bg-white rounded-xl p-6 border border-line" aria-labelledby="invite-title">
-          <h2 id="invite-title" class="text-lg font-semibold mb-1">Bewohner einladen</h2>
-          <p class="text-sm text-ink-muted mb-3">Teilen Sie diesen Link auf Ihrer Website, im Mitteilungsblatt oder per E-Mail. Interessierte Haushalte melden sich direkt an.</p>
+          <h2 id="invite-title" class="text-lg font-semibold mb-1">{{ _("Bewohner einladen") }}</h2>
+          <p class="text-sm text-ink-muted mb-3">{{ _("Teilen Sie diesen Link auf Ihrer Website, im Mitteilungsblatt oder per E-Mail. Interessierte Haushalte melden sich direkt an.") }}</p>
           <div class="flex gap-2">
-            <label for="invite-link" class="sr-only">Einladungslink</label>
+            <label for="invite-link" class="sr-only">{{ _("Einladungslink") }}</label>
             <input type="text" id="invite-link" value="{{ invite_url }}" class="w-full min-w-0 border border-line rounded-lg px-3 py-2 text-sm bg-paper" readonly onclick="this.select()">
-            <button type="button" id="copy-invite" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand shrink-0">Kopieren</button>
+            <button type="button" id="copy-invite" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand shrink-0">{{ _("Kopieren") }}</button>
             <span id="copy-invite-status" role="status" class="sr-only"></span>
           </div>
         </section>
 
         <section class="bg-brand/5 rounded-xl p-6 border border-brand/20" aria-labelledby="profile-title">
-          <h2 id="profile-title" class="text-lg font-semibold mb-1">Öffentliches Energieprofil</h2>
-          <p class="text-sm text-ink-muted mb-3">So sehen Bewohner Ihre Gemeinde: Stromtarife, Solarnutzung und Sparpotenzial aus offenen Daten.</p>
+          <h2 id="profile-title" class="text-lg font-semibold mb-1">{{ _("Öffentliches Energieprofil") }}</h2>
+          <p class="text-sm text-ink-muted mb-3">{{ _("So sehen Bewohner Ihre Gemeinde: Stromtarife, Solarnutzung und Sparpotenzial aus offenen Daten.") }}</p>
           {% if municipality.bfs_number %}
-          <a href="{{ public_site_url('/gemeinde/profil/' ~ municipality.bfs_number) }}" class="inline-block bg-brand text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark">Profil ansehen</a>
+          <a href="{{ public_site_url('/gemeinde/profil/' ~ municipality.bfs_number) }}" class="inline-block bg-brand text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark">{{ _("Profil ansehen") }}</a>
           {% endif %}
         </section>
       </div>
     </div>
   {% elif access_required %}
     <div class="max-w-xl mx-auto py-16">
-      <h1 class="text-2xl font-bold mb-3">Gemeinde-Dashboard öffnen</h1>
-      <p class="text-ink-muted mb-6">Wir senden den Zugangslink an die hinterlegte E-Mail-Adresse Ihrer Gemeinde.</p>
+      <h1 class="text-2xl font-bold mb-3">{{ _("Gemeinde-Dashboard öffnen") }}</h1>
+      <p class="text-ink-muted mb-6">{{ _("Wir senden den Zugangslink an die hinterlegte E-Mail-Adresse Ihrer Gemeinde.") }}</p>
       {% if error %}<p class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">{{ error }}</p>{% endif %}
       {% if access_request_message %}<p class="mb-4 rounded-lg border border-line bg-white p-3 text-sm" role="status">{{ access_request_message }}</p>{% endif %}
       <form action="/gemeinde/access/request" method="post" class="space-y-4">
-        <label for="municipality-email" class="block text-sm font-semibold">E-Mail-Adresse</label>
+        <label for="municipality-email" class="block text-sm font-semibold">{{ _("E-Mail-Adresse") }}</label>
         <input id="municipality-email" name="email" type="email" required autocomplete="email" class="w-full rounded-lg border border-line px-4 py-3">
-        <button type="submit" class="w-full rounded-lg bg-brand px-5 py-3 font-semibold text-white hover:bg-brand-dark">Zugangslink anfordern</button>
+        <button type="submit" class="w-full rounded-lg bg-brand px-5 py-3 font-semibold text-white hover:bg-brand-dark">{{ _("Zugangslink anfordern") }}</button>
       </form>
     </div>
   {% else %}
     <div class="max-w-xl mx-auto text-center py-16" role="alert">
-      <h1 class="text-2xl font-bold mb-3">Kein Dashboard verfügbar</h1>
-      <p class="text-ink-muted mb-2">{{ error or "Bitte registrieren Sie zuerst Ihre Gemeinde." }}</p>
-      <p class="text-ink-muted mb-6">Hier sehen Sie künftig Registrierungen, Solarnutzung und den Stand Ihrer Gemeinde.</p>
-      <a href="/gemeinde/onboarding" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Gemeinde registrieren</a>
+      <h1 class="text-2xl font-bold mb-3">{{ _("Kein Dashboard verfügbar") }}</h1>
+      <p class="text-ink-muted mb-2">{{ error or _("Bitte registrieren Sie zuerst Ihre Gemeinde.") }}</p>
+      <p class="text-ink-muted mb-6">{{ _("Hier sehen Sie künftig Registrierungen, Solarnutzung und den Stand Ihrer Gemeinde.") }}</p>
+      <a href="/gemeinde/onboarding" class="inline-block bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ _("Gemeinde registrieren") }}</a>
     </div>
   {% endif %}
 </div>
@@ -177,9 +177,9 @@
         inviteLink.select();
         document.execCommand('copy');
       }
-      copyInvite.textContent = 'Kopiert';
-      if (copyInviteStatus) copyInviteStatus.textContent = 'Einladungslink kopiert';
-      setTimeout(() => { copyInvite.textContent = 'Kopieren'; if (copyInviteStatus) copyInviteStatus.textContent = ''; }, 2000);
+      copyInvite.textContent = {{ _("Kopiert")|tojson }};
+      if (copyInviteStatus) copyInviteStatus.textContent = {{ _("Einladungslink kopiert")|tojson }};
+      setTimeout(() => { copyInvite.textContent = {{ _("Kopieren")|tojson }}; if (copyInviteStatus) copyInviteStatus.textContent = ''; }, 2000);
     });
   }
 </script>

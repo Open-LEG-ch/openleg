@@ -38,10 +38,11 @@ import billing_policy
 import billing_workspace
 import database as db
 import sdat_e66
+from translation_markers import gettext_noop as _N
 
 _INTERVAL = timedelta(minutes=15)
 
-EMPTY_STATE_MESSAGE = (
+EMPTY_STATE_MESSAGE = _N(
     "Für diese Periode liegen keine vollständigen Messwerte vor. "
     "Die realisierte Ersparnis kann erst gezeigt werden, wenn die "
     "VNB-Messdaten vollständig übermittelt wurden."
@@ -114,7 +115,7 @@ def _as_utc(moment: datetime) -> datetime:
 
 def _period_bounds(provenance: dict) -> tuple[datetime, datetime]:
     """Parse the frozen half-open window; naive bounds are read as UTC."""
-    message = "Die Rechnung hat keine gültige Periodenangabe."
+    message = _N("Die Rechnung hat keine gültige Periodenangabe.")
     bounds = []
     for key in ("period_start", "period_end"):
         moment = provenance.get(key)
@@ -138,16 +139,16 @@ def _policy_view(policy: dict) -> tuple[Decimal, str]:
     """Validate the frozen grid fee and network level of the policy snapshot."""
     grid_fee = _require_finite_decimal(
         policy.get("grid_fee_chf_per_kwh"),
-        "Die Richtlinien-Kopie hat ein ungültiges Netzentgelt.",
+        _N("Die Richtlinien-Kopie hat ein ungültiges Netzentgelt."),
     )
     if grid_fee < 0:
         raise MemberSavingsDataError(
-            "Die Richtlinien-Kopie hat ein ungültiges Netzentgelt."
+            _N("Die Richtlinien-Kopie hat ein ungültiges Netzentgelt.")
         )
     network_level = policy.get("network_level")
     if network_level not in billing_policy.NETWORK_LEVELS:
         raise MemberSavingsDataError(
-            "Die Richtlinien-Kopie hat eine ungültige Netzebene."
+            _N("Die Richtlinien-Kopie hat eine ungültige Netzebene.")
         )
     return grid_fee, network_level
 
@@ -171,7 +172,7 @@ def _require_complete_series(rows, start: datetime, end: datetime) -> None:
     elapsed = end - start
     if elapsed.total_seconds() % _INTERVAL.total_seconds() != 0:
         raise MemberSavingsDataError(
-            "Die Periode passt nicht auf das 15-Minuten-Messraster."
+            _N("Die Periode passt nicht auf das 15-Minuten-Messraster.")
         )
     interval_count = int(elapsed / _INTERVAL)
     if interval_count <= 0 or len(rows) != interval_count:
@@ -190,10 +191,10 @@ def _require_complete_series(rows, start: datetime, end: datetime) -> None:
 
 def _require_channel(row: dict, key: str, total: Decimal | None) -> Decimal:
     value = _require_finite_decimal(
-        row.get(key), "Ein Messwert dieser Periode ist ungültig."
+        row.get(key), _N("Ein Messwert dieser Periode ist ungültig.")
     )
     if value < 0 or (total is not None and value > total):
-        raise MemberSavingsDataError("Ein Messwert dieser Periode ist ungültig.")
+        raise MemberSavingsDataError(_N("Ein Messwert dieser Periode ist ungültig."))
     return value
 
 
@@ -206,7 +207,7 @@ def _empty_state(period_label: str) -> dict:
 
 
 def _invoice_local_kwh(invoice: dict, participant_id: str) -> Decimal:
-    message = "Die Rechnung hat keine gültige lokale Energiemenge."
+    message = _N("Die Rechnung hat keine gültige lokale Energiemenge.")
     items = _require_json_list(invoice.get("line_items_snapshot"), message)
     charges = [
         item
@@ -237,11 +238,11 @@ def realized_savings(readings, provenance: dict, policy: dict) -> dict:
     """
     if not isinstance(policy, dict) or not policy:
         raise MemberSavingsDataError(
-            "Die Rechnung hat keine gültige Richtlinien-Kopie."
+            _N("Die Rechnung hat keine gültige Richtlinien-Kopie.")
         )
     grid_fee, network_level = _policy_view(policy)
     provenance = _require_json_dict(
-        provenance, "Die Rechnung hat keine gültige Periodenangabe."
+        provenance, _N("Die Rechnung hat keine gültige Periodenangabe.")
     )
     start, end = _period_bounds(provenance)
     rows = _consumption_rows(readings, start, end)
@@ -262,7 +263,9 @@ def realized_savings(readings, provenance: dict, policy: dict) -> dict:
         if abs(total - (grid + community)) > Decimal(
             str(sdat_e66.E66_BALANCE_TOLERANCE_KWH)
         ):
-            raise MemberSavingsDataError("Ein Messwert dieser Periode ist ungültig.")
+            raise MemberSavingsDataError(
+                _N("Ein Messwert dieser Periode ist ungültig.")
+            )
         consumption_kwh += total
         local_kwh += community
 
@@ -278,11 +281,11 @@ def realized_savings(readings, provenance: dict, policy: dict) -> dict:
             billing_engine.compute_network_discount(
                 float(local_kwh), float(grid_fee), network_level
             ),
-            "Die Ersparnis dieser Periode ist nicht berechenbar.",
+            _N("Die Ersparnis dieser Periode ist nicht berechenbar."),
         )
     except (ArithmeticError, TypeError, ValueError) as exc:
         raise MemberSavingsDataError(
-            "Die Ersparnis dieser Periode ist nicht berechenbar."
+            _N("Die Ersparnis dieser Periode ist nicht berechenbar.")
         ) from exc
     return {
         "available": True,
@@ -310,34 +313,39 @@ def invoice_savings_view(invoice_id: int, building_id: str) -> dict | None:
     view. Readings are fetched for the caller's building_id only, so a
     member can never see another building's metered numbers.
     """
-    invoice_id = _require_positive_id(invoice_id, "Die Rechnung hat keine gültige ID.")
+    invoice_id = _require_positive_id(
+        invoice_id, _N("Die Rechnung hat keine gültige ID.")
+    )
     building_id = _require_text(
-        building_id, "Die Rechnung hat keine gültige Zuordnung."
+        building_id, _N("Die Rechnung hat keine gültige Zuordnung.")
     )
     invoice = db.get_invoice_for_participant(invoice_id, building_id)
     if not invoice:
         return None
     participant_id = _require_text(
-        invoice.get("participant_id"), "Die Rechnung hat keine gültige Teilnehmer-ID."
+        invoice.get("participant_id"),
+        _N("Die Rechnung hat keine gültige Teilnehmer-ID."),
     )
     if participant_id != building_id:
-        raise MemberSavingsDataError("Die Rechnung hat eine ungültige Zuordnung.")
+        raise MemberSavingsDataError(_N("Die Rechnung hat eine ungültige Zuordnung."))
     provenance = _require_json_dict(
         invoice.get("provenance_snapshot"),
-        "Die Rechnung hat keine gültige Periodenangabe.",
+        _N("Die Rechnung hat keine gültige Periodenangabe."),
     )
     start, end = _period_bounds(provenance)
     try:
         readings = db.get_building_period_readings(building_id, start, end)
     except Exception as exc:
         raise MemberSavingsDataError(
-            "Die Messwerte dieser Periode sind unvollständig."
+            _N("Die Messwerte dieser Periode sind unvollständig.")
         ) from exc
     view = realized_savings(readings, provenance, invoice.get("policy_snapshot"))
     if view["available"] and abs(
         view["local_kwh"] - _invoice_local_kwh(invoice, participant_id)
     ) > Decimal("0.000001"):
         raise MemberSavingsDataError(
-            "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein."
+            _N(
+                "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein."
+            )
         )
     return view

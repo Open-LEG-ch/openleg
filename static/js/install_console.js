@@ -47,7 +47,7 @@ document.querySelectorAll("[data-install-console]").forEach((consoleElement) => 
     button.addEventListener("click", async () => {
       const command = button.parentElement.querySelector("code").textContent.trim();
       await navigator.clipboard.writeText(command);
-      status.textContent = "Befehl kopiert.";
+      status.textContent = consoleElement.dataset.copySuccess;
     });
   });
 });

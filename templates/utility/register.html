@@ -1,112 +1,113 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ current_locale }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netzbetreiber-Zugang | OpenLEG</title>
+    <title>{{ _("Netzbetreiber-Zugang | OpenLEG") }}</title>
     <link rel="stylesheet" href="/static/css/openleg.css">
     {% include 'partials/brand_head.html' %}
 </head>
 <body class="bg-gray-50 min-h-screen">
     <nav class="bg-white shadow-xs">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
             {% include 'partials/brand_wordmark.html' %}
+            {% include 'partials/language_switcher.html' %}
             <div class="flex space-x-4 text-sm">
-                <span class="text-gray-500">Netzbetreiber-Portal</span>
-                <a href="/utility/login" class="text-gray-700 hover:underline">Login</a>
+                <span class="text-gray-500">{{ _("Netzbetreiber-Portal") }}</span>
+                <a href="/utility/login" class="text-gray-700 hover:underline">{{ _("Login") }}</a>
             </div>
         </div>
     </nav>
 
     <div class="max-w-xl mx-auto px-4 py-12">
         <div class="overflow-hidden rounded-xl border border-gray-200 shadow-md mb-8">
-            <img src="/static/images/brand/flow-how-it-works.svg" alt="EVU Registrierung" class="w-full aspect-3/1" loading="lazy">
+            <img src="{{ '/static/images/brand/flow-how-it-works.svg'|localized_asset }}" alt="{{ _('EVU Registrierung') }}" class="w-full aspect-3/1" loading="lazy">
         </div>
-        <h1 class="text-3xl font-bold mb-2">Netzbetreiber-Zugang</h1>
-        <p class="text-gray-600 mb-8">Registrieren Sie sich, damit OpenLEG LEG-Anmeldungen aus Ihrem Versorgungsgebiet an Sie weiterleiten kann. Kostenlos.</p>
+        <h1 class="text-3xl font-bold mb-2">{{ _("Netzbetreiber-Zugang") }}</h1>
+        <p class="text-gray-600 mb-8">{{ _("Registrieren Sie sich, damit OpenLEG LEG-Anmeldungen aus Ihrem Versorgungsgebiet an Sie weiterleiten kann. Kostenlos.") }}</p>
 
         <form id="register-form" class="bg-white rounded-lg shadow-md p-6 space-y-4">
             <div>
-                <label for="company_name" class="block text-sm font-medium mb-1">Firmenname *</label>
-                <input type="text" id="company_name" placeholder="z.B. Regionalwerke AG Baden" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden" required>
+                <label for="company_name" class="block text-sm font-medium mb-1">{{ _("Firmenname *") }}</label>
+                <input type="text" id="company_name" placeholder="{{ _('z.B. Regionalwerke AG Baden') }}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden" required>
             </div>
             <div>
-                <label for="vnb_name" class="block text-sm font-medium mb-1">Name des Netzbetreibers</label>
-                <input type="text" id="vnb_name" placeholder="z.B. Regionalwerke AG Baden Verteilnetz" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden">
+                <label for="vnb_name" class="block text-sm font-medium mb-1">{{ _("Name des Netzbetreibers") }}</label>
+                <input type="text" id="vnb_name" placeholder="{{ _('z.B. Regionalwerke AG Baden Verteilnetz') }}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label for="kanton" class="block text-sm font-medium mb-1">Kanton</label>
+                    <label for="kanton" class="block text-sm font-medium mb-1">{{ _("Kanton") }}</label>
                     <select id="kanton" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden">
-                        <option value="">Wählen...</option>
-                        <option value="ZH">Zürich</option>
-                        <option value="BE">Bern</option>
-                        <option value="AG">Aargau</option>
-                        <option value="LU">Luzern</option>
-                        <option value="SG">St. Gallen</option>
-                        <option value="BS">Basel-Stadt</option>
-                        <option value="BL">Basel-Landschaft</option>
-                        <option value="SO">Solothurn</option>
-                        <option value="TG">Thurgau</option>
-                        <option value="GR">Graubünden</option>
-                        <option value="VS">Wallis</option>
-                        <option value="VD">Waadt</option>
-                        <option value="GE">Genf</option>
-                        <option value="TI">Tessin</option>
-                        <option value="FR">Freiburg</option>
-                        <option value="NE">Neuenburg</option>
-                        <option value="JU">Jura</option>
-                        <option value="SH">Schaffhausen</option>
-                        <option value="AR">Appenzell A.Rh.</option>
-                        <option value="AI">Appenzell I.Rh.</option>
-                        <option value="GL">Glarus</option>
-                        <option value="ZG">Zug</option>
-                        <option value="SZ">Schwyz</option>
-                        <option value="NW">Nidwalden</option>
-                        <option value="OW">Obwalden</option>
-                        <option value="UR">Uri</option>
+                        <option value="">{{ _("Wählen...") }}</option>
+                        <option value="ZH">{{ _("Zürich") }}</option>
+                        <option value="BE">{{ _("Bern") }}</option>
+                        <option value="AG">{{ _("Aargau") }}</option>
+                        <option value="LU">{{ _("Luzern") }}</option>
+                        <option value="SG">{{ _("St. Gallen") }}</option>
+                        <option value="BS">{{ _("Basel-Stadt") }}</option>
+                        <option value="BL">{{ _("Basel-Landschaft") }}</option>
+                        <option value="SO">{{ _("Solothurn") }}</option>
+                        <option value="TG">{{ _("Thurgau") }}</option>
+                        <option value="GR">{{ _("Graubünden") }}</option>
+                        <option value="VS">{{ _("Wallis") }}</option>
+                        <option value="VD">{{ _("Waadt") }}</option>
+                        <option value="GE">{{ _("Genf") }}</option>
+                        <option value="TI">{{ _("Tessin") }}</option>
+                        <option value="FR">{{ _("Freiburg") }}</option>
+                        <option value="NE">{{ _("Neuenburg") }}</option>
+                        <option value="JU">{{ _("Jura") }}</option>
+                        <option value="SH">{{ _("Schaffhausen") }}</option>
+                        <option value="AR">{{ _("Appenzell A.Rh.") }}</option>
+                        <option value="AI">{{ _("Appenzell I.Rh.") }}</option>
+                        <option value="GL">{{ _("Glarus") }}</option>
+                        <option value="ZG">{{ _("Zug") }}</option>
+                        <option value="SZ">{{ _("Schwyz") }}</option>
+                        <option value="NW">{{ _("Nidwalden") }}</option>
+                        <option value="OW">{{ _("Obwalden") }}</option>
+                        <option value="UR">{{ _("Uri") }}</option>
                     </select>
                 </div>
                 <div>
-                    <label for="population" class="block text-sm font-medium mb-1">Versorgte Einwohner</label>
-                    <input type="number" id="population" placeholder="z.B. 50000" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden">
+                    <label for="population" class="block text-sm font-medium mb-1">{{ _("Versorgte Einwohner") }}</label>
+                    <input type="number" id="population" placeholder="{{ _('z.B. 50000') }}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden">
                 </div>
             </div>
             <hr class="my-2">
             <div>
-                <label for="contact_name" class="block text-sm font-medium mb-1">Ansprechperson</label>
-                <input type="text" id="contact_name" placeholder="Vor- und Nachname" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden">
+                <label for="contact_name" class="block text-sm font-medium mb-1">{{ _("Ansprechperson") }}</label>
+                <input type="text" id="contact_name" placeholder="{{ _('Vor- und Nachname') }}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden">
             </div>
             <div>
-                <label for="contact_email" class="block text-sm font-medium mb-1">Geschäftliche E-Mail *</label>
+                <label for="contact_email" class="block text-sm font-medium mb-1">{{ _("Geschäftliche E-Mail *") }}</label>
                 <input type="email" id="contact_email" placeholder="kontakt@evu.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden" required>
             </div>
             <div>
-                <label for="contact_phone" class="block text-sm font-medium mb-1">Telefon</label>
+                <label for="contact_phone" class="block text-sm font-medium mb-1">{{ _("Telefon") }}</label>
                 <input type="tel" id="contact_phone" placeholder="+41 56 200 00 00" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-hidden">
             </div>
 
             <div class="bg-gray-50 p-4 rounded-lg text-sm">
-                <h4 class="font-medium mb-2">Als Netzbetreiber erhalten Sie:</h4>
+                <h4 class="font-medium mb-2">{{ _("Als Netzbetreiber erhalten Sie:") }}</h4>
                 <ul class="text-gray-700 space-y-1">
-                    <li>&#10003; LEG-Anmeldungen aus Ihrem Gebiet empfangen</li>
-                    <li>&#10003; Formationsstatus verfolgen</li>
-                    <li>&#10003; Dokumente für Gemeinschaftsvereinbarung, Teilnehmervertrag und DSO-Anmeldung</li>
-                    <li>&#10003; API-Zugang für Ihre bestehenden Systeme</li>
+                    <li>{{ _("✓ LEG-Anmeldungen aus Ihrem Gebiet empfangen") }}</li>
+                    <li>{{ _("✓ Formationsstatus verfolgen") }}</li>
+                    <li>{{ _("✓ Dokumente für Gemeinschaftsvereinbarung, Teilnehmervertrag und DSO-Anmeldung") }}</li>
+                    <li>{{ _("✓ API-Zugang für Ihre bestehenden Systeme") }}</li>
                 </ul>
             </div>
 
             <div class="bg-green-50 p-4 rounded-lg text-sm">
-                <h4 class="font-medium mb-1">Kostenlos</h4>
-                <p class="text-gray-600">OpenLEG ist Open Source und kostenlos. Kein Abo, keine versteckten Kosten.</p>
+                <h4 class="font-medium mb-1">{{ _("Kostenlos") }}</h4>
+                <p class="text-gray-600">{{ _("OpenLEG ist Open Source und kostenlos. Kein Abo, keine versteckten Kosten.") }}</p>
             </div>
 
-            <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Registrieren</button>
+            <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _("Registrieren") }}</button>
             <div id="form-error" class="text-red-600 text-sm hidden"></div>
             <div id="form-success" class="text-green-600 text-sm hidden"></div>
         </form>
 
-        <p class="text-center text-sm text-gray-500 mt-6">Bereits registriert? <a href="/utility/login" class="text-gray-700 hover:underline">Einloggen</a></p>
+        <p class="text-center text-sm text-gray-500 mt-6">{{ _("Bereits registriert?") }} <a href="/utility/login" class="text-gray-700 hover:underline">{{ _("Einloggen") }}</a></p>
     </div>
 
     <script>
@@ -128,7 +129,7 @@
         };
 
         if (!body.company_name || !body.contact_email) {
-            errEl.textContent = 'Firmenname und E-Mail sind Pflichtfelder.';
+            errEl.textContent = {{ _("Firmenname und E-Mail sind Pflichtfelder.")|tojson }};
             errEl.classList.remove('hidden');
             return;
         }
@@ -145,14 +146,15 @@
                 sucEl.classList.remove('hidden');
                 this.reset();
             } else {
-                errEl.textContent = data.error || 'Registrierung fehlgeschlagen.';
+                errEl.textContent = data.error || {{ _("Registrierung fehlgeschlagen.")|tojson }};
                 errEl.classList.remove('hidden');
             }
         } catch(e) {
-            errEl.textContent = 'Netzwerkfehler. Bitte erneut versuchen.';
+            errEl.textContent = {{ _("Netzwerkfehler. Bitte erneut versuchen.")|tojson }};
             errEl.classList.remove('hidden');
         }
     });
     </script>
+{% include 'partials/form_validation.html' %}
 </body>
 </html>

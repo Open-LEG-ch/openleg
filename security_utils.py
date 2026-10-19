@@ -12,6 +12,8 @@ import bleach
 from email_validator import EmailNotValidError, validate_email
 from flask import request
 
+from translation_markers import gettext_noop
+
 logger = logging.getLogger(__name__)
 
 # Allowed HTML tags for sanitization (none for our use case)
@@ -70,11 +72,11 @@ def validate_email_address(email):
         tuple: (is_valid, normalized_email, error_message)
     """
     if not email:
-        return False, None, "E-Mail-Adresse ist erforderlich"
+        return False, None, gettext_noop("E-Mail-Adresse ist erforderlich")
 
     # Basic length check
     if len(email) > 320:  # RFC 5321
-        return False, None, "E-Mail-Adresse ist zu lang"
+        return False, None, gettext_noop("E-Mail-Adresse ist zu lang")
 
     try:
         # Validate and normalize
@@ -82,7 +84,7 @@ def validate_email_address(email):
         normalized_email = valid.normalized
         return True, normalized_email, None
     except EmailNotValidError:
-        return False, None, "Ungültige E-Mail-Adresse."
+        return False, None, gettext_noop("Ungültige E-Mail-Adresse.")
 
 
 def validate_address(address):
@@ -96,19 +98,19 @@ def validate_address(address):
         tuple: (is_valid, sanitized_address, error_message)
     """
     if not address:
-        return False, None, "Adresse ist erforderlich"
+        return False, None, gettext_noop("Adresse ist erforderlich")
 
     raw_address = address.strip()
 
     if len(raw_address) < 5:
-        return False, None, "Adresse ist zu kurz"
+        return False, None, gettext_noop("Adresse ist zu kurz")
 
     # Check for basic address patterns (alphanumeric, spaces, commas, hyphens)
     if "--" in raw_address or not re.match(
         r"^[a-zA-ZäöüÄÖÜßéèêàâôîûçëïòùÉÈÊÀÂÔÎÛÇËÏÒÙ0-9\s,.\-'’&]+$",
         raw_address,
     ):
-        return False, None, "Adresse enthält ungültige Zeichen"
+        return False, None, gettext_noop("Adresse enthält ungültige Zeichen")
 
     # Sanitize
     sanitized = sanitize_string(address, max_length=200)
@@ -134,7 +136,7 @@ def validate_phone(phone):
 
     # Swiss phone numbers: +41... or 0...
     if not re.match(r"^(\+41|0041|0)\d{9}$", normalized):
-        return False, None, "Ungültige Schweizer Telefonnummer"
+        return False, None, gettext_noop("Ungültige Schweizer Telefonnummer")
 
     # Normalize to +41 format
     if normalized.startswith("0041"):
@@ -160,15 +162,15 @@ def validate_coordinates(lat, lon):
         lat = float(lat)
         lon = float(lon)
     except (ValueError, TypeError):
-        return False, "Ungültige Koordinaten"
+        return False, gettext_noop("Ungültige Koordinaten")
 
     # Check reasonable bounds for Switzerland
     # Switzerland roughly: 45.8-47.8°N, 5.9-10.5°E
     if not (45.0 <= lat <= 48.0):
-        return False, "Breitengrad ausserhalb des gültigen Bereichs"
+        return False, gettext_noop("Breitengrad ausserhalb des gültigen Bereichs")
 
     if not (5.0 <= lon <= 11.0):
-        return False, "Längengrad ausserhalb des gültigen Bereichs"
+        return False, gettext_noop("Längengrad ausserhalb des gültigen Bereichs")
 
     return True, None
 
@@ -184,14 +186,14 @@ def validate_building_id(building_id):
         tuple: (is_valid, error_message)
     """
     if not building_id:
-        return False, "Gebäude-ID ist erforderlich"
+        return False, gettext_noop("Gebäude-ID ist erforderlich")
 
     # Should be alphanumeric with underscores/hyphens
     if not re.match(r"^[a-zA-Z0-9_-]+$", str(building_id)):
-        return False, "Ungültige Gebäude-ID"
+        return False, gettext_noop("Ungültige Gebäude-ID")
 
     if len(str(building_id)) > 100:
-        return False, "Gebäude-ID ist zu lang"
+        return False, gettext_noop("Gebäude-ID ist zu lang")
 
     return True, None
 
@@ -207,14 +209,14 @@ def validate_token(token):
         tuple: (is_valid, error_message)
     """
     if not token:
-        return False, "Token ist erforderlich"
+        return False, gettext_noop("Token ist erforderlich")
 
     # UUID format: 8-4-4-4-12 hex characters
     if not re.match(
         r"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$",
         str(token).lower(),
     ):
-        return False, "Ungültiges Token-Format"
+        return False, gettext_noop("Ungültiges Token-Format")
 
     return True, None
 
@@ -228,7 +230,7 @@ def validate_uuid(token: str) -> str:
     """Validate UUID format and return normalized token, or raise ValueError."""
     is_valid, error = validate_token(token)
     if not is_valid:
-        raise ValueError(error or "Ungültiges Token")
+        raise ValueError(error or gettext_noop("Ungültiges Token"))
     return token.lower()
 
 
@@ -249,7 +251,7 @@ def check_request_size(request, max_content_length=1024 * 1024):
         return True, None
 
     if content_length > max_content_length:
-        return False, "Anfrage ist zu gross"
+        return False, gettext_noop("Anfrage ist zu gross")
 
     return True, None
 

@@ -1,28 +1,29 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ current_locale }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | OpenLEG Utility Portal</title>
+    <title>{{ _("Login | OpenLEG Utility Portal") }}</title>
     <link rel="stylesheet" href="/static/css/openleg.css">
     {% include 'partials/brand_head.html' %}
 </head>
 <body class="bg-gray-50 min-h-screen">
     <nav class="bg-white shadow-xs">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
             {% include 'partials/brand_wordmark.html' %}
-            <span class="text-sm text-gray-500">Utility Portal</span>
+            {% include 'partials/language_switcher.html' %}
+            <span class="text-sm text-gray-500">{{ _("Utility Portal") }}</span>
         </div>
     </nav>
 
     <div class="max-w-md mx-auto px-4 py-16">
         <div class="bg-white rounded-lg shadow-md p-8">
-            <h1 class="text-2xl font-bold mb-2 text-center">Login</h1>
-            <p class="text-gray-600 text-sm text-center mb-6">Wir senden Ihnen einen sicheren Login-Link per E-Mail.</p>
+            <h1 class="text-2xl font-bold mb-2 text-center">{{ _("Login") }}</h1>
+            <p class="text-gray-600 text-sm text-center mb-6">{{ _("Wir senden Ihnen einen sicheren Login-Link per E-Mail.") }}</p>
 
             {% if registered %}
             <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 text-sm text-green-800">
-                Registrierung erfolgreich. Prüfen Sie Ihre E-Mail für den Login-Link.
+                {{ _("Registrierung erfolgreich. Prüfen Sie Ihre E-Mail für den Login-Link.") }}
             </div>
             {% endif %}
 
@@ -34,15 +35,15 @@
 
             <form id="login-form" class="space-y-4">
                 <div>
-                    <label for="email" class="block text-sm font-medium mb-1">Geschäftliche E-Mail</label>
+                    <label for="email" class="block text-sm font-medium mb-1">{{ _("Geschäftliche E-Mail") }}</label>
                     <input type="email" id="email" placeholder="kontakt@evu.ch" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand focus:outline-hidden" required autofocus>
                 </div>
-                <button type="submit" class="w-full bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Login-Link senden</button>
+                <button type="submit" class="w-full bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _("Login-Link senden") }}</button>
                 <div id="form-error" role="alert" class="text-red-600 text-sm hidden"></div>
                 <div id="form-success" role="status" class="text-green-600 text-sm hidden"></div>
             </form>
 
-            <p class="text-center text-sm text-gray-500 mt-6">Noch kein Konto? <a href="/utility/register" class="text-brand hover:underline">Registrieren</a></p>
+            <p class="text-center text-sm text-gray-500 mt-6">{{ _("Noch kein Konto?") }} <a href="/utility/register" class="text-brand hover:underline">{{ _("Registrieren") }}</a></p>
         </div>
     </div>
 
@@ -68,14 +69,15 @@
                 sucEl.textContent = data.message;
                 sucEl.classList.remove('hidden');
             } else {
-                errEl.textContent = data.error || 'Fehler beim Login.';
+                errEl.textContent = data.error || {{ _("Fehler beim Login.")|tojson }};
                 errEl.classList.remove('hidden');
             }
         } catch(e) {
-            errEl.textContent = 'Netzwerkfehler.';
+            errEl.textContent = {{ _("Netzwerkfehler.")|tojson }};
             errEl.classList.remove('hidden');
         }
     });
     </script>
+{% include 'partials/form_validation.html' %}
 </body>
 </html>
