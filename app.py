@@ -48,6 +48,7 @@ from cron import cron_bp
 from email_utils import send_email
 from equipment_routes import equipment_bp
 from health import health_bp
+from i18n import gettext as _
 from leg_registry import registry_api_bp
 from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
@@ -58,6 +59,7 @@ from security_extensions import RATE_LIMIT_RETRY_AFTER_SECONDS, limiter
 from security_utils import log_security_event
 from self_host import self_host_bp
 from telemetry_routes import telemetry_bp
+from translation_markers import gettext_noop
 from utility_portal import utility_bp
 
 logger = logging.getLogger(__name__)
@@ -67,67 +69,88 @@ main_bp = Blueprint("main", __name__)
 
 LEG_FORMATION_FAQS = (
     {
-        "question": "Brauchen die Teilnehmenden eigene Smart Meter?",
+        "question": gettext_noop("Brauchen die Teilnehmenden eigene Smart Meter?"),
         "answer": (
-            "Nein. Vorhandene gesetzeskonforme Smart Meter des "
-            "Verteilnetzbetreibers werden weiterverwendet. Fehlende erforderliche "
-            "Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
-            "Regulierte Messtarife können weiterhin anfallen."
+            gettext_noop(
+                "Nein. Vorhandene gesetzeskonforme Smart Meter des "
+                "Verteilnetzbetreibers werden weiterverwendet. Fehlende erforderliche "
+                "Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
+                "Regulierte Messtarife können weiterhin anfallen."
+            )
         ),
     },
     {
-        "question": "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?",
+        "question": gettext_noop(
+            "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
+        ),
         "answer": (
-            "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im "
-            "Netzgebiet eines Verteilnetzbetreibers. Für mehrere Gemeinden oder "
-            "VNB-Gebiete braucht es separate lokale LEGs."
+            gettext_noop(
+                "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im "
+                "Netzgebiet eines Verteilnetzbetreibers. Für mehrere Gemeinden oder "
+                "VNB-Gebiete braucht es separate lokale LEGs."
+            )
         ),
     },
     {
-        "question": "Wer ist für die Abrechnung zuständig?",
+        "question": gettext_noop("Wer ist für die Abrechnung zuständig?"),
         "answer": (
-            "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei "
-            "Teilnehmenden in der Grundversorgung auch den übrigen Strombezug. Die "
-            "LEG oder ihr Dienstleister rechnet den innerhalb der Gemeinschaft "
-            "ausgetauschten Strom ab."
+            gettext_noop(
+                "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei "
+                "Teilnehmenden in der Grundversorgung auch den übrigen Strombezug. Die "
+                "LEG oder ihr Dienstleister rechnet den innerhalb der Gemeinschaft "
+                "ausgetauschten Strom ab."
+            )
         ),
     },
     {
-        "question": "Darf ich OpenLEG installieren, anpassen oder forken?",
+        "question": gettext_noop(
+            "Darf ich OpenLEG installieren, anpassen oder forken?"
+        ),
         "answer": (
-            "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG "
-            "installieren, nutzen und anpassen. Auch ein Fork ist erlaubt. "
-            "Wenn Sie eine veränderte Version über ein Netzwerk anbieten, müssen "
-            "Sie den Nutzenden den entsprechenden Quellcode zugänglich machen. "
-            "Das ist eine praktische Zusammenfassung und keine Rechtsberatung."
+            gettext_noop(
+                "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG "
+                "installieren, nutzen und anpassen. Auch ein Fork ist erlaubt. "
+                "Wenn Sie eine veränderte Version über ein Netzwerk anbieten, müssen "
+                "Sie den Nutzenden den entsprechenden Quellcode zugänglich machen. "
+                "Das ist eine praktische Zusammenfassung und keine Rechtsberatung."
+            )
         ),
         "links": (
             {
-                "label": "Lizenz lesen",
+                "label": gettext_noop("Lizenz lesen"),
                 "href": "https://github.com/Open-LEG-ch/openleg/blob/main/LICENSE",
             },
             {
-                "label": "Repository öffnen",
+                "label": gettext_noop("Repository öffnen"),
                 "href": "https://github.com/Open-LEG-ch/openleg",
             },
-            {"label": "Anleitung zum eigenen Betrieb", "href": "/self-host"},
+            {
+                "label": gettext_noop("Anleitung zum eigenen Betrieb"),
+                "href": "/self-host",
+            },
         ),
     },
     {
-        "question": "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?",
+        "question": gettext_noop(
+            "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
+        ),
         "answer": (
-            "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. "
-            "Noch ist nicht jede VNB-Anbindung fertig umgesetzt. Anmeldung und "
-            "Datenlieferung müssen pro VNB konfiguriert werden."
+            gettext_noop(
+                "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. "
+                "Noch ist nicht jede VNB-Anbindung fertig umgesetzt. Anmeldung und "
+                "Datenlieferung müssen pro VNB konfiguriert werden."
+            )
         ),
     },
     {
-        "question": "Kann OpenLEG unsere Gruppe persönlich unterstützen?",
+        "question": gettext_noop("Kann OpenLEG unsere Gruppe persönlich unterstützen?"),
         "answer": (
-            "Vorträge, Workshops und Projektunterstützung bieten wir nach "
-            "vorgängiger Vereinbarung gegen Honorar an."
+            gettext_noop(
+                "Vorträge, Workshops und Projektunterstützung bieten wir nach "
+                "vorgängiger Vereinbarung gegen Honorar an."
+            )
         ),
-        "contact_label": "Unterstützung anfragen",
+        "contact_label": gettext_noop("Unterstützung anfragen"),
     },
 )
 
@@ -138,8 +161,10 @@ def handle_rate_limit(_error):
         jsonify(
             {
                 "error": (
-                    "Zu viele Anfragen. Bitte warten Sie eine Minute und "
-                    "versuchen Sie es erneut."
+                    _(
+                        "Zu viele Anfragen. Bitte warten Sie eine Minute und "
+                        "versuchen Sie es erneut."
+                    )
                 ),
                 "retry_after_seconds": RATE_LIMIT_RETRY_AFTER_SECONDS,
             }
@@ -367,36 +392,17 @@ def robots_txt():
 @main_bp.route("/llms.txt")
 def llms_txt():
     tenant = getattr(g, "tenant", tenant_module.DEFAULT_TENANT)
-    contact_email = tenant.get("contact_email", "hallo@openleg.ch")
-    lines = [
-        "# OpenLEG",
-        "",
-        f"> Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften (LEG), {current_app.config['SITE_URL']}. Code: https://github.com/Open-LEG-ch/openleg, Lizenz AGPL-3.0-or-later, Betrieb in der Schweiz.",
-        "",
-        "OpenLEG prüft Solarpotenzial pro Adresse, unterstützt die Organisation einer LEG und bereitet Dokumente und die Netzbetreiber-Anmeldung vor. Die öffentlich angebotenen Funktionen sind kostenlos.",
-        "",
-        "Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die Abrechnung. Sie wählt den Betreiber und Hosting-Anbieter. OpenLEG stellt dafür prüfbare, selbst betreibbare Software bereit. Der Netzbetreiber prüft Netzgebiet und Netzebene, misst, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten. Der Grundversorger liefert den übrigen Strom. OpenLEG ersetzt diese gesetzlichen Aufgaben nicht. Nicht jede VNB-Anbindung ist umgesetzt; Anmeldung und Datenlieferung müssen pro Netzbetreiber eingerichtet werden.",
-        "",
-        "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das Netznutzungsentgelt um 40% ohne und 20% mit Spannungstransformation (Art. 19h StromVV). Voraussetzungen: gleiche politische Gemeinde, gleiche Netzebene, gleiches Netzgebiet, höchstens 36 kV, intelligente Messsysteme, mindestens 5% erneuerbare Anschlussleistung.",
-        "",
-        "## Seiten",
-        f"- [Homepage]({current_app.config['SITE_URL']}/): LEG-Definition, Kennzahlen, Einstiege",
-        f"- [So funktioniert eine Stromgemeinschaft]({current_app.config['SITE_URL']}/how-it-works): Ablauf in drei Schritten und häufige Fragen",
-        f"- [Für Bewohner und Gründer]({current_app.config['SITE_URL']}/fuer-bewohner): Adresse prüfen, Nachbarn finden, gründen",
-        f"- [Für Gemeinden]({current_app.config['SITE_URL']}/fuer-gemeinden): Dashboard, Verantwortlichkeiten, Betriebsmodelle",
-        f"- [Solarnutzungs-Rangliste]({current_app.config['SITE_URL']}/rangliste): alle Schweizer Gemeinden mit prüfbarer Solarnutzung",
-        f"- [LEG-Verzeichnis]({current_app.config['SITE_URL']}/leg-verzeichnis): bestehende Lokale Elektrizitätsgemeinschaften",
-        f"- [Gemeinde-Verzeichnis]({current_app.config['SITE_URL']}/gemeinde/verzeichnis): Profile aller Schweizer Gemeinden",
-        f"- [Ersparnis-Kalkulator]({current_app.config['SITE_URL']}/leg-kalkulator): Ersparnis für eine LEG berechnen",
-        f"- [Fallstudie Baden]({current_app.config['SITE_URL']}/pilotgemeinde/baden): Tarife, Solardaten und Potenzial für Baden AG",
-        f"- [Open Source]({current_app.config['SITE_URL']}/open-source): Architektur, Repos und Datenpipeline",
-        f"- [Selbst betreiben]({current_app.config['SITE_URL']}/self-host): Installation auf eigener Hardware",
-        f"- [Kosten]({current_app.config['SITE_URL']}/pricing): Kostenlos, ohne Datenverkauf; Finanzierung",
-        f"- [Öffentliche API]({current_app.config['SITE_URL']}/api/v1/docs): Tarife, Solardaten, Rangliste, ohne API-Key",
-        f"- [Kontakt](mailto:{contact_email}): E-Mail",
-        "",
-    ]
-    return Response("\n".join(lines) + "\n", mimetype="text/plain")
+    response = Response(
+        render_template(
+            "llms.txt",
+            site_url=current_app.config["SITE_URL"],
+            contact_email=tenant.get("contact_email", "hallo@openleg.ch"),
+        ),
+        mimetype="text/plain",
+    )
+    response.headers["Content-Language"] = i18n.select_locale().replace("_", "-")
+    response.vary.add("Cookie")
+    return response
 
 
 @main_bp.route("/sitemap.xml")
@@ -463,15 +469,15 @@ def api_check_potential():
     try:
         is_valid_size, size_error = security_utils.check_request_size(request)
         if not is_valid_size:
-            return jsonify({"error": size_error}), 413
+            return jsonify({"error": _(size_error)}), 413
         if not request.json:
-            return jsonify({"error": "Keine Daten empfangen."}), 400
+            return jsonify({"error": _("Keine Daten empfangen.")}), 400
         address = request.json.get("address", "").strip()
         is_valid, sanitized_address, error_msg = security_utils.validate_address(
             address
         )
         if not is_valid:
-            return jsonify({"error": error_msg}), 400
+            return jsonify({"error": _(error_msg)}), 400
         address = sanitized_address
 
         outcome = data_enricher.resolve_address_profile(address)
@@ -480,7 +486,7 @@ def api_check_potential():
             return (
                 jsonify(
                     {
-                        "error": "Adresse konnte nicht eindeutig geprüft werden.",
+                        "error": _("Adresse konnte nicht eindeutig geprüft werden."),
                         "can_register_interest": True,
                         "reason": outcome.live_status,
                     }
@@ -488,37 +494,39 @@ def api_check_potential():
                 422,
             )
         if not outcome.estimates:
-            return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
+            return jsonify({"error": _("Adresse konnte nicht analysiert werden.")}), 404
 
         cluster_info = find_provisional_matches(outcome.estimates)
         if not cluster_info:
             return jsonify(
                 {
                     "potential": False,
-                    "message": "Keine direkten Partner gefunden.",
+                    "message": _("Keine direkten Partner gefunden."),
                     "profile_summary": outcome.estimates,
                 }
             )
         return jsonify(
             {
                 "potential": True,
-                "message": "Partner gefunden!",
+                "message": _("Partner gefunden!"),
                 "cluster_info": cluster_info,
                 "profile_summary": outcome.estimates,
             }
         )
     except Exception:
         current_app.logger.exception("Unhandled error in /api/check_potential")
-        return jsonify({"error": "Server-Fehler. Bitte später erneut versuchen."}), 500
+        return jsonify(
+            {"error": _("Server-Fehler. Bitte später erneut versuchen.")}
+        ), 500
 
 
 # --- Registration ---
 def _registration_response(user_type):
     if not request.json:
-        return jsonify({"error": "Keine Daten empfangen."}), 400
+        return jsonify({"error": _("Keine Daten empfangen.")}), 400
     is_valid_size, size_error = security_utils.check_request_size(request)
     if not is_valid_size:
-        return jsonify({"error": size_error}), 413
+        return jsonify({"error": _(size_error)}), 413
 
     city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
     deps = registration.RegistrationDeps(
@@ -535,7 +543,7 @@ def _registration_response(user_type):
             request.json, city_id=city_id, user_type=user_type, deps=deps
         )
     except registration.RegistrationError as error:
-        return jsonify({"error": error.message}), error.status
+        return jsonify({"error": _(error.message)}), error.status
     return jsonify(payload)
 
 
@@ -556,9 +564,9 @@ def api_register_full():
 def api_register_interest():
     is_valid_size, size_error = security_utils.check_request_size(request)
     if not is_valid_size:
-        return jsonify({"error": size_error}), 413
+        return jsonify({"error": _(size_error)}), 413
     if not request.json:
-        return jsonify({"error": "Keine Daten empfangen."}), 400
+        return jsonify({"error": _("Keine Daten empfangen.")}), 400
     try:
         result = interest_intake.submit(
             request.json,
@@ -568,8 +576,9 @@ def api_register_interest():
             send_email=send_email,
         )
     except interest_intake.InterestIntakeError as error:
-        return jsonify({"error": error.message}), 400
-    return jsonify(result), 202
+        return jsonify({"error": _(error.message)}), 400
+    message = result["message"]
+    return jsonify({**result, "message": _(message)}), 202
 
 
 @main_bp.route("/confirm/<token>")
@@ -624,16 +633,16 @@ def api_meter_data_upload():
         if tier not in (1, 2, 3):
             raise ValueError
     except (TypeError, ValueError):
-        return jsonify({"error": "tier muss 1, 2 oder 3 sein."}), 400
+        return jsonify({"error": _("tier muss 1, 2 oder 3 sein.")}), 400
 
     if not building_id or not csv_content:
-        return jsonify({"error": "building_id und csv_content erforderlich."}), 400
+        return jsonify({"error": _("building_id und csv_content erforderlich.")}), 400
 
     try:
         # Verify building exists
         building = db.get_building(building_id)
         if not building:
-            return jsonify({"error": "Gebäude nicht gefunden."}), 404
+            return jsonify({"error": _("Gebäude nicht gefunden.")}), 404
 
         # Save consent tier
         db.save_data_consent(
@@ -647,7 +656,9 @@ def api_meter_data_upload():
         return jsonify(meter_data.ingest_file(building_id, csv_content))
     except Exception:
         current_app.logger.exception("Unhandled error in /api/meter-data/upload")
-        return jsonify({"error": "Server-Fehler beim Verarbeiten der Messdaten."}), 500
+        return jsonify(
+            {"error": _("Server-Fehler beim Verarbeiten der Messdaten.")}
+        ), 500
 
 
 @main_bp.route("/meter-upload")
@@ -670,7 +681,7 @@ def unsubscribe_page():
         )
         if not is_valid_email:
             status = "error"
-            message = email_error
+            message = _(email_error)
         else:
             email_value = normalized_email
             matches = db.get_building_by_email(email_value)
@@ -701,7 +712,7 @@ def unsubscribe_page():
                     )
             email_value = ""
             status = "success"
-            message = (
+            message = _(
                 "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink "
                 "per E-Mail."
             )
@@ -737,7 +748,7 @@ def unsubscribe_token(token):
             render_template(
                 "unsubscribe.html",
                 status="error",
-                message=(
+                message=_(
                     "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene "
                     "Gebietsanfrage) nicht gelöscht. Der Link ist möglicherweise "
                     "abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -749,7 +760,7 @@ def unsubscribe_token(token):
     return render_template(
         "unsubscribe.html",
         status="success",
-        message=(
+        message=_(
             "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene "
             "Gebietsanfrage) ist jetzt erfolgreich gelöscht."
         ),
@@ -810,7 +821,9 @@ def api_referral_stats(building_id):
         {
             "referral_code": referral_code,
             "referral_link": (
-                f"{current_app.config['APP_BASE_URL']}/?ref={referral_code}"
+                i18n.localized_url(
+                    f"{current_app.config['APP_BASE_URL']}/?ref={referral_code}"
+                )
             )
             if referral_code
             else None,
@@ -882,7 +895,7 @@ def api_formation_optimize():
     data = request.json or {}
     building_id = data.get("building_id", "").strip()
     if not building_id:
-        return jsonify({"error": "building_id required"}), 400
+        return jsonify({"error": _("building_id required")}), 400
 
     clusters = formation_wizard.get_formable_clusters(building_id)
     return jsonify({"clusters": clusters})
@@ -935,7 +948,7 @@ def api_billing_period(community_id, period_id):
     except db.BillingStoreError:
         abort(503)
     if not period:
-        return jsonify({"error": "Period not found"}), 404
+        return jsonify({"error": _("Period not found")}), 404
     return jsonify(period)
 
 

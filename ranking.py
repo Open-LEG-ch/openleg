@@ -143,4 +143,5 @@ class Ranking:
             profile.get("kanton"),
             display_score,
             self._rank_for_bfs(bfs),
+            profile.get("pv_untapped_kw"),
         )

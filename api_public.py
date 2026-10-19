@@ -503,6 +503,7 @@ def leg_financial_model():
 def leg_templates():
     """Available LEG contract templates."""
     import formation_wizard
+    from i18n import gettext as _
 
     templates = formation_wizard.get_contract_templates()
     return jsonify(
@@ -510,7 +511,7 @@ def leg_templates():
             "contracts": [
                 {
                     "name": key,
-                    "description": val.get("title", ""),
+                    "description": _(val.get("title", "")),
                     "language": val.get("language", "de"),
                     "sections": val.get("sections", []),
                 }

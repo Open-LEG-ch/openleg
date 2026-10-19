@@ -12,6 +12,7 @@ import pytest
 import billing_approval
 from tests import test_interest_postgres
 from tests.test_billing_approval import _draft
+from tests.test_dashboard_access_routes import _set_session
 
 interest_database = test_interest_postgres.interest_database
 pytestmark = pytest.mark.integration
@@ -793,3 +794,32 @@ def test_withdrawal_preserves_issued_invoice_snapshots(calculated_client):
         db.get_validated_calculated_values(payload["community_id"], start, end)["id"]
         == corrected.get_json()["id"]
     )
+
+
+def test_french_workspace_identifies_a_withdrawn_draft_as_invalidated(
+    calculated_client,
+):
+    client, db, _ = calculated_client
+    payload, delivery, summary = _invoice_evidence(calculated_client)
+    start, end = (
+        datetime.fromisoformat(payload[key]) for key in ("period_start", "period_end")
+    )
+    period_id = db.save_billing_period(payload["community_id"], start, end, summary)
+    assert (
+        client.post(
+            f"/admin/vnb-calculated-values/dietikon/{delivery['id']}/withdrawals",
+            headers={
+                "X-Admin-Token": "synthetic-admin",
+                "Idempotency-Key": "withdraw-french-view",
+            },
+            json={"reason": "Synthetic upstream withdrawal"},
+        ).status_code
+        == 201
+    )
+    assert db.get_billing_period(period_id)["status"] == "invalidated"
+    _set_session(client, "member")
+    page = client.get(f"/leg/community/{payload['community_id']}/billing?lang=fr-CH")
+    assert page.status_code == 200
+    assert page.headers["Content-Language"] == "fr-CH"
+    assert "Brouillon invalidé" in page.text
+    assert "Entwurf ungültig" not in page.text

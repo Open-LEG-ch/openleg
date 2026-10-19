@@ -14,6 +14,7 @@ from defusedxml.common import DefusedXmlException
 from defusedxml.ElementTree import fromstring as _safe_xml_fromstring
 
 import database as db
+from i18n import gettext as _
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,11 @@ def parse_ekz_csv(file_content: str) -> tuple[list[tuple], list[str]]:
                     ts = _parse_timestamp(row[col_map["timestamp"]].strip())
                     if not ts:
                         errors.append(
-                            f"Zeile {i}: Ungültiger Zeitstempel '{row[col_map['timestamp']]}'"
+                            _(
+                                "Zeile %(line)s: Ungültiger Zeitstempel '%(timestamp)s'",
+                                line=i,
+                                timestamp=row[col_map["timestamp"]],
+                            )
                         )
                         continue
 
@@ -86,16 +91,18 @@ def parse_ekz_csv(file_content: str) -> tuple[list[tuple], list[str]]:
 
                     readings.append((ts, consumption, production, feed_in))
                 except (IndexError, ValueError):
-                    errors.append(f"Zeile {i}: Ungültiger Wert.")
+                    errors.append(_("Zeile %(line)s: Ungültiger Wert.", line=i))
 
             if readings:
                 break  # Found working delimiter
         except Exception:
-            errors.append(f"Parse-Fehler mit Delimiter '{delimiter}'.")
+            errors.append(
+                _("Parse-Fehler mit Delimiter '%(delimiter)s'.", delimiter=delimiter)
+            )
 
     if not readings and not errors:
         errors.append(
-            "Keine Messdaten in der Datei gefunden. Bitte EKZ-CSV-Export verwenden."
+            _("Keine Messdaten in der Datei gefunden. Bitte EKZ-CSV-Export verwenden.")
         )
 
     return readings, errors
@@ -187,7 +194,7 @@ def _parse_ckw_csv(file_content: str) -> tuple[list[tuple], list[str]]:
         reader = csv.reader(io.StringIO(file_content), delimiter=";")
         header = next(reader, None)
         if not header:
-            return [], ["Leere Datei"]
+            return [], [_("Leere Datei")]
 
         header_clean = [h.strip().lower() for h in header]
         date_col = next((i for i, h in enumerate(header_clean) if "datum" in h), None)
@@ -203,7 +210,7 @@ def _parse_ckw_csv(file_content: str) -> tuple[list[tuple], list[str]]:
         )
 
         if date_col is None or bezug_col is None:
-            return [], ["CKW-Format: Datum oder Bezug Spalte fehlt"]
+            return [], [_("CKW-Format: Datum oder Bezug Spalte fehlt")]
 
         for i, row in enumerate(reader, start=2):
             if not row or all(c.strip() == "" for c in row):
@@ -213,7 +220,7 @@ def _parse_ckw_csv(file_content: str) -> tuple[list[tuple], list[str]]:
                 time_str = row[time_col].strip() if time_col is not None else "00:00"
                 ts = _parse_timestamp(f"{date_str} {time_str}")
                 if not ts:
-                    errors.append(f"Zeile {i}: Ungültiger Zeitstempel")
+                    errors.append(_("Zeile %(line)s: Ungültiger Zeitstempel", line=i))
                     continue
                 consumption = _parse_decimal(row[bezug_col])
                 feed_in = (
@@ -221,9 +228,9 @@ def _parse_ckw_csv(file_content: str) -> tuple[list[tuple], list[str]]:
                 )
                 readings.append((ts, consumption, 0.0, feed_in))
             except (IndexError, ValueError):
-                errors.append(f"Zeile {i}: Ungültiger Wert.")
+                errors.append(_("Zeile %(line)s: Ungültiger Wert.", line=i))
     except Exception:
-        errors.append("CKW Parse-Fehler: Ungültiges Dateiformat.")
+        errors.append(_("CKW Parse-Fehler: Ungültiges Dateiformat."))
 
     return readings, errors
 
@@ -234,7 +241,7 @@ def parse_meter_csv(file_content: str) -> tuple[list[tuple], list[str]]:
     Returns: (readings, errors)
     """
     if not file_content or not file_content.strip():
-        return [], ["Leere Datei"]
+        return [], [_("Leere Datei")]
 
     fmt = detect_format(file_content)
 
@@ -248,7 +255,7 @@ def parse_meter_csv(file_content: str) -> tuple[list[tuple], list[str]]:
 def parse_sdat_xml(xml_content: str) -> tuple[list[tuple], list[str]]:
     """Parse a Swiss SDAT ValidatedMeteredData interval document."""
     if not xml_content or not xml_content.strip():
-        return [], ["Leere SDAT-Datei"]
+        return [], [_("Leere SDAT-Datei")]
 
     def local_name(tag: str) -> str:
         return tag.rsplit("}", 1)[-1]
@@ -266,7 +273,7 @@ def parse_sdat_xml(xml_content: str) -> tuple[list[tuple], list[str]]:
             None,
         )
         if start_element is None or not start_element.text:
-            return [], ["SDAT-Startzeit fehlt"]
+            return [], [_("SDAT-Startzeit fehlt")]
         start = datetime.fromisoformat(
             start_element.text.strip().removesuffix("Z") + "+00:00"
             if start_element.text.strip().endswith("Z")
@@ -302,7 +309,7 @@ def parse_sdat_xml(xml_content: str) -> tuple[list[tuple], list[str]]:
         ]
         return readings, []
     except (ET.ParseError, DefusedXmlException, KeyError, TypeError, ValueError):
-        return [], ["SDAT Parse-Fehler: Ungültiges Dateiformat."]
+        return [], [_("SDAT Parse-Fehler: Ungültiges Dateiformat.")]
 
 
 def ingest_file(building_id: str, file_content: str) -> dict:
@@ -319,7 +326,7 @@ def ingest_file(building_id: str, file_content: str) -> dict:
         return {
             "success": False,
             "readings_count": 0,
-            "errors": errors or ["Keine gültigen Messdaten gefunden."],
+            "errors": errors or [_("Keine gültigen Messdaten gefunden.")],
         }
 
     stored = db.save_meter_readings(building_id, readings, source=source)

@@ -3,8 +3,8 @@
 
 {% block meta %}
 {{ page_meta(
-  title="LEG-Dashboard | OpenLEG",
-  description="Gründung und Betrieb Ihrer Lokalen Elektrizitätsgemeinschaft: Status, Mitglieder und nächste Schritte auf einen Blick.",
+  title=_("LEG-Dashboard | OpenLEG"),
+  description=_("Gründung und Betrieb Ihrer Lokalen Elektrizitätsgemeinschaft: Status, Mitglieder und nächste Schritte auf einen Blick."),
   path="/leg/dashboard",
   site_url=site_url|default(""),
 ) }}
@@ -20,83 +20,83 @@
   <div class="max-w-6xl mx-auto px-4 py-12 overflow-x-hidden [&_a:focus-visible]:outline-solid [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-brand [&_button:focus-visible]:outline-solid [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-brand [&_input:focus-visible]:outline-solid [&_input:focus-visible]:outline-2 [&_input:focus-visible]:outline-offset-2 [&_input:focus-visible]:outline-brand [&_select:focus-visible]:outline-solid [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-2 [&_select:focus-visible]:outline-brand" data-dashboard-structure="community-operations">
     {% if error %}
     <div class="bg-paper border border-slate-200 rounded-xl p-8 text-center" role="alert">
-      <p class="font-semibold text-ink mb-1">{{ error }}</p>
-      <p class="text-sm text-ink-muted">Prüfen Sie Ihren Zugangslink oder öffnen Sie die <a href="/leg/dashboard/demo" class="text-brand underline">Demo-Ansicht</a>.</p>
+      <p class="font-semibold text-ink mb-1">{{ _(error) }}</p>
+      <p class="text-sm text-ink-muted">{{ _('Prüfen Sie Ihren Zugangslink oder öffnen Sie die') }} <a href="/leg/dashboard/demo" class="text-brand underline">{{ _('Demo-Ansicht') }}</a>.</p>
     </div>
     {% else %}
     <header class="mb-8">
-      <p class="text-sm font-semibold text-brand mb-2">LEG-Dashboard</p>
+      <p class="text-sm font-semibold text-brand mb-2">{{ _('LEG-Dashboard') }}</p>
       <h1 class="text-3xl font-bold tracking-tight mb-1">{{ community.name }}</h1>
-      <p class="text-ink-muted">Status: <span class="font-semibold">{{ community.status_label }}</span> &middot; Verteilmodell: {{ community.distribution_model_label }}</p>
+      <p class="text-ink-muted">{{ _('Status:') }} <span class="font-semibold">{{ _(community.status_label) }}</span> &middot; {{ _('Verteilmodell:') }} {{ _(community.distribution_model_label) }}</p>
     </header>
 
     <section class="grid sm:grid-cols-3 gap-4 mb-8">
       <div class="bg-white rounded-xl border p-5">
-        <p class="text-sm text-ink-muted mb-1">Bereitschaft</p>
+        <p class="text-sm text-ink-muted mb-1">{{ _('Bereitschaft') }}</p>
         <p data-statistic class="font-mono tabular-nums text-3xl font-bold text-brand">{{ community.readiness_score }}<span data-statistic-unit class="text-base font-normal text-ink-muted">%</span></p>
-        <p class="text-xs text-ink-muted mt-2">Der Wert setzt sich aus vier Schritten zusammen: Mindestens {{ minimum_community_size }} Mitglieder bestätigen ihre Teilnahme (30 Prozentpunkte). Die LEG erstellt Dokumente oder sammelt Unterschriften (30 Prozentpunkte). Die LEG reicht die Anmeldung beim Netzbetreiber ein (20 Prozentpunkte). Der Netzbetreiber genehmigt sie (20 Prozentpunkte).</p>
+        <p class="text-xs text-ink-muted mt-2">{{ _('Der Wert setzt sich aus vier Schritten zusammen: Mindestens %(count)s Mitglieder bestätigen ihre Teilnahme (30 Prozentpunkte). Die LEG erstellt Dokumente oder sammelt Unterschriften (30 Prozentpunkte). Die LEG reicht die Anmeldung beim Netzbetreiber ein (20 Prozentpunkte). Der Netzbetreiber genehmigt sie (20 Prozentpunkte).', count=minimum_community_size) }}</p>
       </div>
       <div class="bg-white rounded-xl border p-5">
-        <p class="text-sm text-ink-muted mb-1">Bestätigte Mitglieder</p>
-        <p data-statistic class="font-mono tabular-nums text-3xl font-bold">{{ community.member_count.confirmed }}<span data-statistic-unit class="text-base font-normal text-ink-muted">/{{ community.member_count.total }} Mitglieder</span></p>
+        <p class="text-sm text-ink-muted mb-1">{{ _('Bestätigte Mitglieder') }}</p>
+        <p data-statistic class="font-mono tabular-nums text-3xl font-bold">{{ community.member_count.confirmed }}<span data-statistic-unit class="text-base font-normal text-ink-muted">/{{ community.member_count.total }} {{ ngettext('Mitglied', 'Mitglieder', community.member_count.total) }}</span></p>
       </div>
       <div class="bg-white rounded-xl border p-5">
-        <p class="text-sm text-ink-muted mb-1">Eingeladen</p>
-        <p data-statistic class="font-mono tabular-nums text-3xl font-bold">{{ community.member_count.invited }} <span data-statistic-unit class="text-base font-normal text-ink-muted">Mitglieder</span></p>
+        <p class="text-sm text-ink-muted mb-1">{{ _('Eingeladen') }}</p>
+        <p data-statistic class="font-mono tabular-nums text-3xl font-bold">{{ community.member_count.invited }} <span data-statistic-unit class="text-base font-normal text-ink-muted">{{ ngettext('Mitglied', 'Mitglieder', community.member_count.invited) }}</span></p>
       </div>
     </section>
 
     <section class="bg-brand/5 border border-brand/20 rounded-xl p-6 mb-8">
-      <h2 class="font-bold mb-3">Nächste Schritte</h2>
+      <h2 class="font-bold mb-3">{{ _('Nächste Schritte') }}</h2>
       <ol class="space-y-2 text-sm text-ink-muted list-decimal list-inside">
         {% for step in community.next_steps %}
-        <li>{{ step }}</li>
+        <li>{{ _(step) }}</li>
         {% endfor %}
         {% if not community.next_steps %}
-        <li>Keine offenen Schritte.</li>
+        <li>{{ _('Keine offenen Schritte.') }}</li>
         {% endif %}
       </ol>
     </section>
 
     {% if battery_unavailable|default(false) %}
     <section class="bg-white rounded-xl border border-accent p-6 mb-8" aria-labelledby="battery-unavailable-title">
-      <h2 id="battery-unavailable-title" class="font-bold mb-2">Quartierakku</h2>
-      <p class="text-sm text-ink-muted" role="status">Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.</p>
+      <h2 id="battery-unavailable-title" class="font-bold mb-2">{{ _('Quartierakku') }}</h2>
+      <p class="text-sm text-ink-muted" role="status">{{ _('Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.') }}</p>
     </section>
     {% elif battery or battery_errors|default({}) or (can_prepare_billing and viewer_has_session) %}
     <section class="bg-white rounded-xl border p-6 mb-8" aria-labelledby="battery-title">
-      <h2 id="battery-title" class="font-bold mb-2">Quartierakku</h2>
-      <p class="text-sm text-ink-muted mb-4">Ein gemeinsamer Speicher für die ganze LEG. Jeder Anteil zeigt, wer welchen Teil der Jahreskosten trägt.</p>
+      <h2 id="battery-title" class="font-bold mb-2">{{ _('Quartierakku') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Ein gemeinsamer Speicher für die ganze LEG. Jeder Anteil zeigt, wer welchen Teil der Jahreskosten trägt.') }}</p>
       {% if battery and battery.invalid %}
-      <p class="rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm mb-4" role="alert">Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, Jahreskosten und Anteile.</p>
+      <p class="rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm mb-4" role="alert">{{ _('Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, Jahreskosten und Anteile.') }}</p>
       {% endif %}
       {% if battery and not battery.invalid %}
       <dl class="grid gap-2 text-sm sm:grid-cols-2 mb-4">
-        <div><dt class="font-semibold text-ink inline">Speicherkapazität:</dt> <dd class="inline">{{ battery.capacity_display }}</dd></div>
-        <div><dt class="font-semibold text-ink inline">Jahreskosten:</dt> <dd class="inline">{{ battery.annual_cost_display }}</dd></div>
+        <div><dt class="font-semibold text-ink inline">{{ _('Speicherkapazität:') }}</dt> <dd class="inline">{{ battery.capacity_display }}</dd></div>
+        <div><dt class="font-semibold text-ink inline">{{ _('Jahreskosten:') }}</dt> <dd class="inline">{{ battery.annual_cost_display }}</dd></div>
       </dl>
       {% endif %}
       {% if battery_errors|default({}) %}
       <div class="mb-4" role="alert">
         {% for field, message in battery_errors.items() %}
-        <p class="text-sm text-accent">{{ message }}</p>
+        <p class="text-sm text-accent">{{ _(message) }}</p>
         {% endfor %}
       </div>
       {% endif %}
       {% if battery and battery.shares %}
       <div class="overflow-x-auto"><table class="w-full min-w-xl text-sm">
-        <caption class="sr-only">Kostenanteile am Quartierakku</caption>
+        <caption class="sr-only">{{ _('Kostenanteile am Quartierakku') }}</caption>
         <thead class="bg-slate-50">
           <tr>
-            <th scope="col" class="px-3 py-2 text-left">Teilnehmer</th>
-            <th scope="col" class="px-3 py-2 text-right">Anteil</th>
-            <th scope="col" class="px-3 py-2 text-right">Kostenanteil pro Jahr</th>
+            <th scope="col" class="px-3 py-2 text-left">{{ _('Teilnehmer') }}</th>
+            <th scope="col" class="px-3 py-2 text-right">{{ _('Anteil') }}</th>
+            <th scope="col" class="px-3 py-2 text-right">{{ _('Kostenanteil pro Jahr') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y">
           {% for share in battery.shares %}
           <tr>
-            <td class="px-3 py-2 wrap-break-word">{{ share.address }}{% if share.building_id == viewer_building_id %} <span class="text-xs text-brand">(Sie)</span>{% endif %}</td>
+            <td class="px-3 py-2 wrap-break-word">{{ share.address }}{% if share.building_id == viewer_building_id %} <span class="text-xs text-brand">{{ _('(Sie)') }}</span>{% endif %}</td>
             <td class="px-3 py-2 text-right font-mono tabular-nums">{{ share.share_display }}</td>
             <td class="px-3 py-2 text-right font-mono tabular-nums">{{ share.cost_display }}</td>
           </tr>
@@ -106,35 +106,35 @@
       {% endif %}
       {% if can_prepare_billing and viewer_has_session %}
       <details class="mt-4"{% if not battery or battery_errors|default({}) %} open{% endif %}>
-        <summary class="cursor-pointer font-semibold text-sm">Kapazität und Anteile erfassen</summary>
+        <summary class="cursor-pointer font-semibold text-sm">{{ _('Kapazität und Anteile erfassen') }}</summary>
         <form method="post" action="/leg/community/{{ community.community_id }}/battery" class="grid sm:grid-cols-2 gap-3 mt-4">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <div class="sm:col-span-2">
-            <label for="battery-participant" class="block text-sm font-semibold mb-1">Messpunkt-Teilnehmer des Speichers</label>
-            <input id="battery-participant" type="text" name="participant_id" required maxlength="64" value="{{ (battery_form_values|default({})).get('participant_id', '') }}" placeholder="z. B. batterie-1" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <p class="mt-1 text-xs text-ink-muted">Dieser Teilnehmer führt Ladung und Entladung des Speichers über seinen eigenen Messpunkt.</p>
-            {% if (battery_errors|default({})).get('participant_id') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['participant_id'] }}</p>{% endif %}
+            <label for="battery-participant" class="block text-sm font-semibold mb-1">{{ _('Messpunkt-Teilnehmer des Speichers') }}</label>
+            <input id="battery-participant" type="text" name="participant_id" required maxlength="64" value="{{ (battery_form_values|default({})).get('participant_id', '') }}" placeholder="{{ _('z. B. batterie-1') }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+            <p class="mt-1 text-xs text-ink-muted">{{ _('Dieser Teilnehmer führt Ladung und Entladung des Speichers über seinen eigenen Messpunkt.') }}</p>
+            {% if (battery_errors|default({})).get('participant_id') %}<p class="mt-1 text-sm text-accent" role="alert">{{ _(battery_errors['participant_id']) }}</p>{% endif %}
           </div>
           <div>
-            <label for="battery-capacity" class="block text-sm font-semibold mb-1">Speicherkapazität (kWh)</label>
-            <input id="battery-capacity" type="text" inputmode="decimal" name="capacity_kwh" required value="{{ (battery_form_values|default({})).get('capacity_kwh', '') }}" placeholder="z. B. 45" class="w-full border rounded-lg px-3 py-2 text-sm">
-            {% if (battery_errors|default({})).get('capacity_kwh') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['capacity_kwh'] }}</p>{% endif %}
+            <label for="battery-capacity" class="block text-sm font-semibold mb-1">{{ _('Speicherkapazität (kWh)') }}</label>
+            <input id="battery-capacity" type="text" inputmode="decimal" name="capacity_kwh" required value="{{ (battery_form_values|default({})).get('capacity_kwh', '') }}" placeholder="{{ _('z. B. 45') }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+            {% if (battery_errors|default({})).get('capacity_kwh') %}<p class="mt-1 text-sm text-accent" role="alert">{{ _(battery_errors['capacity_kwh']) }}</p>{% endif %}
           </div>
           <div>
-            <label for="battery-cost" class="block text-sm font-semibold mb-1">Jahreskosten (CHF)</label>
-            <input id="battery-cost" type="text" inputmode="decimal" name="annual_cost_chf" required value="{{ (battery_form_values|default({})).get('annual_cost_chf', '') }}" placeholder="z. B. 960" class="w-full border rounded-lg px-3 py-2 text-sm">
-            {% if (battery_errors|default({})).get('annual_cost_chf') %}<p class="mt-1 text-sm text-accent" role="alert">{{ battery_errors['annual_cost_chf'] }}</p>{% endif %}
+            <label for="battery-cost" class="block text-sm font-semibold mb-1">{{ _('Jahreskosten (CHF)') }}</label>
+            <input id="battery-cost" type="text" inputmode="decimal" name="annual_cost_chf" required value="{{ (battery_form_values|default({})).get('annual_cost_chf', '') }}" placeholder="{{ _('z. B. 960') }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+            {% if (battery_errors|default({})).get('annual_cost_chf') %}<p class="mt-1 text-sm text-accent" role="alert">{{ _(battery_errors['annual_cost_chf']) }}</p>{% endif %}
           </div>
           <div class="sm:col-span-2 grid gap-2">
             {% for member in community.members if member.status == 'confirmed' %}
             <div class="flex flex-wrap items-center gap-3 text-sm">
               <label for="battery-share-{{ loop.index }}" class="flex-1 min-w-56 wrap-break-word">{{ member.address or member.building_id }}</label>
-              <input id="battery-share-{{ loop.index }}" type="text" inputmode="decimal" name="share:{{ member.building_id }}" value="{{ (battery_form_values|default({})).get('share:' + member.building_id, '') }}" placeholder="Anteil in %" class="w-28 border rounded-lg px-3 py-2 text-sm">
+              <input id="battery-share-{{ loop.index }}" type="text" inputmode="decimal" name="share:{{ member.building_id }}" value="{{ (battery_form_values|default({})).get('share:' + member.building_id, '') }}" placeholder="{{ _('Anteil in %') }}" class="w-28 border rounded-lg px-3 py-2 text-sm">
             </div>
             {% endfor %}
-            {% if (battery_errors|default({})).get('shares') %}<p class="text-sm text-accent" role="alert">{{ battery_errors['shares'] }}</p>{% endif %}
+            {% if (battery_errors|default({})).get('shares') %}<p class="text-sm text-accent" role="alert">{{ _(battery_errors['shares']) }}</p>{% endif %}
           </div>
-          <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Quartierakku speichern</button>
+          <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Quartierakku speichern') }}</button>
         </form>
       </details>
       {% endif %}
@@ -143,25 +143,25 @@
 
     <section class="bg-white rounded-xl border overflow-hidden mb-8">
       <div class="px-5 py-3 border-b">
-        <h2 class="font-bold">Mitglieder</h2>
+        <h2 class="font-bold">{{ _('Mitglieder') }}</h2>
       </div>
-      {% if roles_error %}<p class="mx-5 mt-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ roles_error }}</p>{% endif %}
+      {% if roles_error %}<p class="mx-5 mt-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ _(roles_error) }}</p>{% endif %}
       <div class="overflow-x-auto"><table class="w-full table-fixed sm:table-auto text-sm">
-        <caption class="sr-only">Mitglieder dieser Stromgemeinschaft</caption>
+        <caption class="sr-only">{{ _('Mitglieder dieser Stromgemeinschaft') }}</caption>
         <thead class="bg-slate-50">
           <tr>
-            <th scope="col" class="px-5 py-3 text-left">Adresse</th>
-            <th scope="col" class="px-5 py-3 text-left">Rolle</th>
-            <th scope="col" class="px-5 py-3 text-left">Status</th>
+            <th scope="col" class="px-5 py-3 text-left">{{ _('Adresse') }}</th>
+            <th scope="col" class="px-5 py-3 text-left">{{ _('Rolle') }}</th>
+            <th scope="col" class="px-5 py-3 text-left">{{ _('Status') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y">
           {% for member in community.members %}
           <tr>
-            <td class="px-5 py-3 wrap-break-word">{{ member.address or member.building_id }}{% if member.building_id == viewer_building_id %} <span class="text-xs text-brand">(Sie)</span>{% endif %}</td>
-            <td class="px-5 py-3 wrap-break-word text-ink-muted">{{ member.role_label }}</td>
+            <td class="px-5 py-3 wrap-break-word">{{ member.address or member.building_id }}{% if member.building_id == viewer_building_id %} <span class="text-xs text-brand">{{ _('(Sie)') }}</span>{% endif %}</td>
+            <td class="px-5 py-3 wrap-break-word text-ink-muted">{{ _(member.role_label) }}</td>
             <td class="px-5 py-3 wrap-break-word">
-              <span class="text-xs font-semibold {{ 'text-ink' if member.status == 'confirmed' else 'text-ink-muted' }}">{{ member.status_label }}</span>
+              <span class="text-xs font-semibold {{ 'text-ink' if member.status == 'confirmed' else 'text-ink-muted' }}">{{ _(member.status_label) }}</span>
             </td>
           </tr>
           {% if can_manage_members and viewer_has_session and member.status == 'confirmed' %}
@@ -170,9 +170,9 @@
               <form method="post" action="/leg/community/{{ community.community_id }}/members/{{ member.building_id }}/roles" class="flex flex-wrap items-center gap-3 text-xs">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 {% for role, label in access_role_labels.items() %}
-                <label class="inline-flex items-center gap-1"><input type="checkbox" name="roles" value="{{ role }}" {% if role in (member.access_roles or []) or (role == 'admin' and member.role == 'admin') %}checked{% endif %}> {{ label }}</label>
+                <label class="inline-flex items-center gap-1"><input type="checkbox" name="roles" value="{{ role }}" {% if role in (member.access_roles or []) or (role == 'admin' and member.role == 'admin') %}checked{% endif %}> {{ _(label) }}</label>
                 {% endfor %}
-                <button type="submit" class="rounded-lg border border-line px-3 py-1 font-semibold">Rollen speichern</button>
+                <button type="submit" class="rounded-lg border border-line px-3 py-1 font-semibold">{{ _('Rollen speichern') }}</button>
               </form>
             </td>
           </tr>
@@ -185,100 +185,100 @@
     {% set viewer = (community.members | selectattr("building_id", "equalto", viewer_building_id) | list | first) if community.members else none %}
     {% if viewer and viewer.status == 'invited' %}
     <section class="bg-white rounded-xl border p-6 mb-8">
-      <h2 class="font-bold mb-2">Ihre Einladung</h2>
-      <p class="text-sm text-ink-muted mb-4">Sie sind eingeladen, bei "{{ community.name }}" mitzumachen.</p>
+      <h2 class="font-bold mb-2">{{ _('Ihre Einladung') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Sie sind eingeladen, bei "%(community)s" mitzumachen.', community=community.name) }}</p>
       {% if viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/confirm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Teilnahme bestätigen</button>
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ _('Teilnahme bestätigen') }}</button>
       </form>
       {% endif %}
     </section>
     {% endif %}
 
     <section class="bg-white rounded-xl border p-6 mb-8">
-      <h2 class="font-bold mb-2">Dokumente</h2>
-      <p class="text-sm text-ink-muted mb-4">Diese Vorlagen sind automatisch erstellte Entwürfe und keine Rechtsberatung. Lassen Sie die Dokumente vor der Unterzeichnung juristisch prüfen.</p>
+      <h2 class="font-bold mb-2">{{ _('Dokumente') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Diese Vorlagen sind automatisch erstellte Entwürfe und keine Rechtsberatung. Lassen Sie die Dokumente vor der Unterzeichnung juristisch prüfen.') }}</p>
       {% if leg_documents %}
       <ul class="space-y-2 mb-4">
         {% for doc in leg_documents %}
-        {% set status_labels = {"unsigned": "Entwurf bereit", "draft": "Entwurf bereit", "sent": "Zur Unterschrift versendet", "viewed": "Von Unterzeichnenden geöffnet", "signed": "Unterzeichnet", "completed": "Unterzeichnet", "declined": "Unterschrift abgelehnt"} %}
+        {% set status_labels = {"unsigned": _("Entwurf bereit"), "draft": _("Entwurf bereit"), "sent": _("Zur Unterschrift versendet"), "viewed": _("Von Unterzeichnenden geöffnet"), "signed": _("Unterzeichnet"), "completed": _("Unterzeichnet"), "declined": _("Unterschrift abgelehnt")} %}
         <li class="rounded-lg border border-line p-4 text-sm">
           <div class="flex items-center justify-between gap-3">
           <span class="font-semibold">{{ doc.filename }}</span>
           {% if viewer_has_session %}
-          <a href="/leg/document/{{ doc.id }}" class="text-brand hover:underline font-semibold">PDF öffnen</a>
+          <a href="/leg/document/{{ doc.id }}" class="text-brand hover:underline font-semibold">{{ _('PDF öffnen') }}</a>
           {% endif %}
           </div>
           <dl class="mt-3 grid gap-2 text-xs text-ink-muted sm:grid-cols-3">
-            <div><dt class="font-semibold text-ink">Status</dt><dd>{{ status_labels.get(doc.signing_status, "Status wird geprüft") }}</dd></div>
-            <div><dt class="font-semibold text-ink">Verantwortlich</dt><dd>{{ "Alle Mitglieder" if doc.signing_status in ["sent", "viewed"] else "LEG-Administration" }}</dd></div>
-            <div><dt class="font-semibold text-ink">Nächster Schritt</dt><dd>{{ "Unterschriften abschliessen" if doc.signing_status in ["sent", "viewed"] else "Entwurf prüfen" if doc.signing_status in ["unsigned", "draft"] else "Kein offener Schritt" if doc.signing_status in ["signed", "completed"] else "Vorgehen klären" }}</dd></div>
+            <div><dt class="font-semibold text-ink">{{ _('Status') }}</dt><dd>{{ status_labels.get(doc.signing_status, _("Status wird geprüft")) }}</dd></div>
+            <div><dt class="font-semibold text-ink">{{ _('Verantwortlich') }}</dt><dd>{{ _("Alle Mitglieder") if doc.signing_status in ["sent", "viewed"] else _("LEG-Administration") }}</dd></div>
+            <div><dt class="font-semibold text-ink">{{ _('Nächster Schritt') }}</dt><dd>{{ _("Unterschriften abschliessen") if doc.signing_status in ["sent", "viewed"] else _("Entwurf prüfen") if doc.signing_status in ["unsigned", "draft"] else _("Kein offener Schritt") if doc.signing_status in ["signed", "completed"] else _("Vorgehen klären") }}</dd></div>
           </dl>
-          <p class="mt-2 text-xs text-ink-muted"><strong class="text-ink">Erwartete Dauer:</strong> {{ "bis 14 Tage" if doc.signing_status in ["sent", "viewed"] else "abhängig von Ihrer Prüfung" }}</p>
+          <p class="mt-2 text-xs text-ink-muted"><strong class="text-ink">{{ _('Erwartete Dauer:') }}</strong> {{ _("bis 14 Tage") if doc.signing_status in ["sent", "viewed"] else _("abhängig von Ihrer Prüfung") }}</p>
         </li>
         {% endfor %}
       </ul>
       {% else %}
-      <p class="text-sm text-ink-muted mb-4">Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf.</p>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf.') }}</p>
       {% endif %}
       {% if can_manage_documents and viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/documents">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Vertragsentwürfe erstellen</button>
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ _('Vertragsentwürfe erstellen') }}</button>
       </form>
       {% endif %}
     </section>
 
     <section class="bg-white rounded-xl border p-6 mb-8" aria-labelledby="vnb-mutations-title">
-      <h2 id="vnb-mutations-title" class="font-bold mb-2">Mitgliedschaft: LEG und VNB</h2>
-      {% if not vnb_exchange_available|default(true) %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">Der VNB-Austausch ist derzeit nicht verfügbar.</p>{% endif %}
-      <p class="text-sm text-ink-muted mb-4">Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der Netzbetreiber verarbeitet. Eine VNB-Antwort ändert den LEG-Vertrag nicht.</p>
+      <h2 id="vnb-mutations-title" class="font-bold mb-2">{{ _('Mitgliedschaft: LEG und VNB') }}</h2>
+      {% if not vnb_exchange_available|default(true) %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Der VNB-Austausch ist derzeit nicht verfügbar.') }}</p>{% endif %}
+      <p class="text-sm text-ink-muted mb-4">{{ _('Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der Netzbetreiber verarbeitet. Eine VNB-Antwort ändert den LEG-Vertrag nicht.') }}</p>
       {% if vnb_mutations|default([]) %}
       <div class="overflow-x-auto mb-4"><table class="w-full min-w-3xl text-sm">
-        <caption class="sr-only">Mitgliedermutationen und deren VNB-Verarbeitungsstatus</caption>
-        <thead><tr><th scope="col" class="text-left p-2">LEG-Vorgang</th><th scope="col" class="text-left p-2">Person</th><th scope="col" class="text-left p-2">Wirksam</th><th scope="col" class="text-left p-2">VNB-Status</th><th scope="col" class="text-left p-2">Antwort</th></tr></thead>
+        <caption class="sr-only">{{ _('Mitgliedermutationen und deren VNB-Verarbeitungsstatus') }}</caption>
+        <thead><tr><th scope="col" class="text-left p-2">{{ _('LEG-Vorgang') }}</th><th scope="col" class="text-left p-2">{{ _('Person') }}</th><th scope="col" class="text-left p-2">{{ _('Wirksam') }}</th><th scope="col" class="text-left p-2">{{ _('VNB-Status') }}</th><th scope="col" class="text-left p-2">{{ _('Antwort') }}</th></tr></thead>
         <tbody class="divide-y">{% for mutation in vnb_mutations %}<tr>
-          <td class="p-2"><code>{{ mutation.mutation_id }}</code><br><span class="text-xs text-ink-muted">{{ {"join": "Beitritt", "exit": "Austritt", "change": "Änderung"}.get(mutation.mutation_type, mutation.mutation_type) }} · Vertrag {{ mutation.source_agreement_id }}</span></td>
+          <td class="p-2"><code>{{ mutation.mutation_id }}</code><br><span class="text-xs text-ink-muted">{{ {"join": _("Beitritt"), "exit": _("Austritt"), "change": _("Änderung")}.get(mutation.mutation_type, mutation.mutation_type) }} {{ _('· Vertrag') }} {{ mutation.source_agreement_id }}</span></td>
           <td class="p-2"><code>{{ mutation.participant_id }}</code></td><td class="p-2">{{ mutation.effective_date }}</td>
-          <td class="p-2">{{ {"prepared": "Manuelle Übergabe bereit", "delivered": "Zugestellt", "acknowledged": "Bestätigt", "rejected": "Abgelehnt", "failed": "Fehlgeschlagen", "superseded": "Ersetzt"}.get(mutation.state, mutation.state) }}</td>
+          <td class="p-2">{{ {"prepared": _("Manuelle Übergabe bereit"), "delivered": _("Zugestellt"), "acknowledged": _("Bestätigt"), "rejected": _("Abgelehnt"), "failed": _("Fehlgeschlagen"), "superseded": _("Ersetzt")}.get(mutation.state, mutation.state) }}</td>
           <td class="p-2">{{ mutation.response_status or "–" }}</td>
         </tr>{% endfor %}</tbody>
       </table></div>
       {% for mutation in vnb_mutations if mutation.state == "prepared" and is_admin and viewer_has_session %}
-      <div class="mb-3 flex gap-3 text-sm"><a class="font-semibold text-brand" href="/leg/community/{{ community.community_id }}/vnb-mutations/{{ mutation.case_id }}/handover">Übergabepaket herunterladen</a><form method="post" action="/leg/community/{{ community.community_id }}/vnb-mutations/{{ mutation.case_id }}/delivered"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="font-semibold text-brand" type="submit">Zustellung bestätigen</button></form></div>
+      <div class="mb-3 flex gap-3 text-sm"><a class="font-semibold text-brand" href="/leg/community/{{ community.community_id }}/vnb-mutations/{{ mutation.case_id }}/handover">{{ _('Übergabepaket herunterladen') }}</a><form method="post" action="/leg/community/{{ community.community_id }}/vnb-mutations/{{ mutation.case_id }}/delivered"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="font-semibold text-brand" type="submit">{{ _('Zustellung bestätigen') }}</button></form></div>
       {% endfor %}
       {% endif %}
       {% if is_admin and viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/vnb-mutations" class="grid gap-3 md:grid-cols-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label class="text-sm">Vorgangs-ID<input required name="mutation_id" class="mt-1 w-full rounded-lg border p-2" placeholder="z. B. mitglied-2026-001"></label>
-        <label class="text-sm">Teilnehmer-ID<select required name="participant_id" class="mt-1 w-full rounded-lg border p-2">{% for member in community.members %}<option value="{{ member.building_id }}">{{ member.address or member.building_id }}</option>{% endfor %}</select></label>
-        <label class="text-sm">Vorgang<select name="mutation_type" class="mt-1 w-full rounded-lg border p-2"><option value="join">Beitritt</option><option value="exit">Austritt</option><option value="change">Änderung</option></select></label>
-        <label class="text-sm">Wirksamkeitsdatum<input required type="date" name="effective_date" class="mt-1 w-full rounded-lg border p-2"></label>
-        <label class="text-sm">Quellvertrag<input required name="source_agreement_id" class="mt-1 w-full rounded-lg border p-2"></label>
-        <label class="text-sm md:col-span-2">Änderungsdaten (nur bei Änderung; JSON mit status, role oder access_roles)<textarea name="after_facts" rows="2" class="mt-1 w-full rounded-lg border p-2 font-mono text-xs" placeholder='{"status": "confirmed", "access_roles": ["documents"]}'></textarea></label>
-        <div class="md:col-span-2"><button class="bg-brand text-white px-5 py-2 rounded-lg font-semibold" type="submit">Beim VNB einreichen</button></div>
+        <label class="text-sm">{{ _('Vorgangs-ID') }}<input required name="mutation_id" class="mt-1 w-full rounded-lg border p-2" placeholder="{{ _('z. B. mitglied-2026-001') }}"></label>
+        <label class="text-sm">{{ _('Teilnehmer-ID') }}<select required name="participant_id" class="mt-1 w-full rounded-lg border p-2">{% for member in community.members %}<option value="{{ member.building_id }}">{{ member.address or member.building_id }}</option>{% endfor %}</select></label>
+        <label class="text-sm">{{ _('Vorgang') }}<select name="mutation_type" class="mt-1 w-full rounded-lg border p-2"><option value="join">{{ _('Beitritt') }}</option><option value="exit">{{ _('Austritt') }}</option><option value="change">{{ _('Änderung') }}</option></select></label>
+        <label class="text-sm">{{ _('Wirksamkeitsdatum') }}<input required type="date" name="effective_date" class="mt-1 w-full rounded-lg border p-2"></label>
+        <label class="text-sm">{{ _('Quellvertrag') }}<input required name="source_agreement_id" class="mt-1 w-full rounded-lg border p-2"></label>
+        <label class="text-sm md:col-span-2">{{ _('Änderungsdaten (nur bei Änderung; JSON mit status, role oder access_roles)') }}<textarea name="after_facts" rows="2" class="mt-1 w-full rounded-lg border p-2 font-mono text-xs" placeholder='{"status": "confirmed", "access_roles": ["documents"]}'></textarea></label>
+        <div class="md:col-span-2"><button class="bg-brand text-white px-5 py-2 rounded-lg font-semibold" type="submit">{{ _('Beim VNB einreichen') }}</button></div>
       </form>
       {% endif %}
     </section>
 
     <section class="bg-white rounded-xl border p-6 mb-8">
-      <h2 class="font-bold mb-2">Anmeldung beim Netzbetreiber</h2>
-      <p class="text-sm text-ink-muted mb-4">OpenLEG hält Paket, Zustellung und Antwort als eigenen Vorgang fest. Ohne konfigurierte Schnittstelle laden Sie dasselbe Paket herunter und bestätigen die Zustellung von Hand.</p>
+      <h2 class="font-bold mb-2">{{ _('Anmeldung beim Netzbetreiber') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('OpenLEG hält Paket, Zustellung und Antwort als eigenen Vorgang fest. Ohne konfigurierte Schnittstelle laden Sie dasselbe Paket herunter und bestätigen die Zustellung von Hand.') }}</p>
       {% if vnb_submissions %}
       <div class="space-y-3 mb-4">
         {% for submission in vnb_submissions %}
         <div class="rounded-lg border border-line p-4 text-sm">
-          <p><strong>Status:</strong> {{ {"prepared": "Paket bereit", "delivered": "Zugestellt", "acknowledged": "Bestätigt", "rejected": "Abgelehnt", "failed": "Fehlgeschlagen", "claimed": "Wird vorbereitet"}.get(submission.state, submission.state) }}</p>
-          {% if submission.response_status %}<p class="mt-1 text-ink-muted">Antwort: {{ submission.response_status }}</p>{% endif %}
-          {% if submission.state in ["failed", "rejected"] and submission.next_action %}<p class="mt-1 text-ink-muted">Nächster Schritt: {{ {"retry": "Einleitung erneut möglich", "review_rejection": "Ablehnung prüfen", "contact_vnb": "VNB kontaktieren", "escalate": "An VNB eskalieren"}.get(submission.next_action, submission.next_action) }}</p>{% endif %}
+          <p><strong>{{ _('Status:') }}</strong> {{ {"prepared": _("Paket bereit"), "delivered": _("Zugestellt"), "acknowledged": _("Bestätigt"), "rejected": _("Abgelehnt"), "failed": _("Fehlgeschlagen"), "claimed": _("Wird vorbereitet")}.get(submission.state, submission.state) }}</p>
+          {% if submission.response_status %}<p class="mt-1 text-ink-muted">{{ _('Antwort:') }} {{ submission.response_status }}</p>{% endif %}
+          {% if submission.state in ["failed", "rejected"] and submission.next_action %}<p class="mt-1 text-ink-muted">{{ _('Nächster Schritt:') }} {{ {"retry": _("Einleitung erneut möglich"), "review_rejection": _("Ablehnung prüfen"), "contact_vnb": _("VNB kontaktieren"), "escalate": _("An VNB eskalieren")}.get(submission.next_action, submission.next_action) }}</p>{% endif %}
           {% if submission.state == "prepared" and is_admin and viewer_has_session %}
           <div class="mt-3 flex flex-wrap gap-3">
-            <a class="font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/vnb-submissions/{{ submission.case_id }}/handover">Anmeldepaket herunterladen</a>
+            <a class="font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/vnb-submissions/{{ submission.case_id }}/handover">{{ _('Anmeldepaket herunterladen') }}</a>
             <form method="post" action="/leg/community/{{ community.community_id }}/vnb-submissions/{{ submission.case_id }}/delivered">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-              <button type="submit" class="font-semibold text-brand hover:underline">Zustellung bestätigen</button>
+              <button type="submit" class="font-semibold text-brand hover:underline">{{ _('Zustellung bestätigen') }}</button>
             </form>
           </div>
           {% endif %}
@@ -288,67 +288,67 @@
       {% elif community.status == "signatures_pending" and is_admin and viewer_has_session %}
       <form method="post" action="/leg/community/{{ community.community_id }}/vnb-submissions">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">Anmeldepaket vorbereiten</button>
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ _('Anmeldepaket vorbereiten') }}</button>
       </form>
       {% else %}
-      <p class="text-sm text-ink-muted">Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind.</p>
+      <p class="text-sm text-ink-muted">{{ _('Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind.') }}</p>
       {% endif %}
     </section>
 
     <section class="bg-white rounded-xl border p-6 mb-8">
-      <h2 class="font-bold mb-2">Korrespondenz</h2>
-      <p class="text-sm text-ink-muted mb-4">Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist.</p>
+      <h2 class="font-bold mb-2">{{ _('Korrespondenz') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist.') }}</p>
       {% if correspondence %}
       <div class="overflow-x-auto mb-4"><table class="w-full min-w-2xl text-sm">
-        <caption class="sr-only">Korrespondenzjournal dieser Stromgemeinschaft</caption>
+        <caption class="sr-only">{{ _('Korrespondenzjournal dieser Stromgemeinschaft') }}</caption>
         <thead class="bg-slate-50">
           <tr>
-            <th scope="col" class="px-3 py-2 text-left">Richtung</th>
-            <th scope="col" class="px-3 py-2 text-left">Kanal</th>
-            <th scope="col" class="px-3 py-2 text-left">Gegenstelle</th>
-            <th scope="col" class="px-3 py-2 text-left">Betreff</th>
-            <th scope="col" class="px-3 py-2 text-right">Datum</th>
+            <th scope="col" class="px-3 py-2 text-left">{{ _('Richtung') }}</th>
+            <th scope="col" class="px-3 py-2 text-left">{{ _('Kanal') }}</th>
+            <th scope="col" class="px-3 py-2 text-left">{{ _('Gegenstelle') }}</th>
+            <th scope="col" class="px-3 py-2 text-left">{{ _('Betreff') }}</th>
+            <th scope="col" class="px-3 py-2 text-right">{{ _('Datum') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y">
           {% for entry in correspondence %}
           <tr>
-            <td class="px-3 py-2">{{ "Eingang" if entry.direction == "in" else "Ausgang" }}</td>
-            <td class="px-3 py-2 text-ink-muted">{{ "Brief" if entry.channel == "post" else "E-Mail" }}</td>
+            <td class="px-3 py-2">{{ _("Eingang") if entry.direction == "in" else _("Ausgang") }}</td>
+            <td class="px-3 py-2 text-ink-muted">{{ _("Brief") if entry.channel == "post" else _("E-Mail") }}</td>
             <td class="px-3 py-2">{{ entry.counterparty }}</td>
             <td class="px-3 py-2">{{ entry.subject }}</td>
             <td class="px-3 py-2 text-right text-xs text-ink-muted">{{ entry.created_at }}</td>
           </tr>
-          {% if entry.attachment_filename %}<tr><td colspan="5" class="px-3 pb-3 text-right"><a class="text-sm font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/correspondence/{{ entry.id }}/attachment">{{ entry.attachment_filename }} herunterladen</a></td></tr>{% endif %}
+          {% if entry.attachment_filename %}<tr><td colspan="5" class="px-3 pb-3 text-right"><a class="text-sm font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/correspondence/{{ entry.id }}/attachment">{{ entry.attachment_filename }} {{ _('herunterladen') }}</a></td></tr>{% endif %}
           {% endfor %}
         </tbody>
       </table></div>
       {% else %}
-      <p class="text-sm text-ink-muted mb-4">Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu.</p>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu.') }}</p>
       {% endif %}
       {% if viewer_has_session %}
-      {% if correspondence_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ correspondence_error }}</p>{% endif %}
-      <p class="mb-4 text-xs text-ink-muted">Das Journal bleibt nachvollziehbar: Korrekturen bleiben als neue Einträge sichtbar. Bestehende Einträge werden nicht überschrieben oder gelöscht.</p>
+      {% if correspondence_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ _(correspondence_error) }}</p>{% endif %}
+      <p class="mb-4 text-xs text-ink-muted">{{ _('Das Journal bleibt nachvollziehbar: Korrekturen bleiben als neue Einträge sichtbar. Bestehende Einträge werden nicht überschrieben oder gelöscht.') }}</p>
       <form method="post" enctype="multipart/form-data" action="/leg/community/{{ community.community_id }}/correspondence" class="grid sm:grid-cols-2 gap-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <div><label for="correspondence-direction" class="block text-sm font-semibold mb-1">Richtung</label><select id="correspondence-direction" name="direction" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
-          <option value="out">Ausgang</option>
-          <option value="in">Eingang</option>
+        <div><label for="correspondence-direction" class="block text-sm font-semibold mb-1">{{ _('Richtung') }}</label><select id="correspondence-direction" name="direction" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+          <option value="out">{{ _('Ausgang') }}</option>
+          <option value="in">{{ _('Eingang') }}</option>
         </select></div>
-        <div><label for="correspondence-channel" class="block text-sm font-semibold mb-1">Kanal</label><select id="correspondence-channel" name="channel" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
-          <option value="email">E-Mail</option>
-          <option value="post">Brief</option>
+        <div><label for="correspondence-channel" class="block text-sm font-semibold mb-1">{{ _('Kanal') }}</label><select id="correspondence-channel" name="channel" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+          <option value="email">{{ _('E-Mail') }}</option>
+          <option value="post">{{ _('Brief') }}</option>
         </select></div>
-        <div><label for="correspondence-counterparty" class="block text-sm font-semibold mb-1">Gegenstelle</label><input id="correspondence-counterparty" type="text" name="counterparty" placeholder="z. B. Netzbetreiber" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-        <div><label for="correspondence-subject" class="block text-sm font-semibold mb-1">Betreff</label><input id="correspondence-subject" type="text" name="subject" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-        <div class="sm:col-span-2"><label for="correspondence-notes" class="block text-sm font-semibold mb-1">Notiz <span class="font-normal text-ink-muted">optional</span></label><input id="correspondence-notes" type="text" name="notes" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-        <div class="sm:col-span-2"><label for="correspondence-attachment" class="block text-sm font-semibold mb-1">PDF-Anhang <span class="font-normal text-ink-muted">optional, höchstens 2 MB</span></label><input id="correspondence-attachment" type="file" name="attachment" accept="application/pdf,.pdf" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-        <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Eintrag hinzufügen</button>
+        <div><label for="correspondence-counterparty" class="block text-sm font-semibold mb-1">{{ _('Gegenstelle') }}</label><input id="correspondence-counterparty" type="text" name="counterparty" placeholder="{{ _('z. B. Netzbetreiber') }}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <div><label for="correspondence-subject" class="block text-sm font-semibold mb-1">{{ _('Betreff') }}</label><input id="correspondence-subject" type="text" name="subject" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <div class="sm:col-span-2"><label for="correspondence-notes" class="block text-sm font-semibold mb-1">{{ _('Notiz') }} <span class="font-normal text-ink-muted">{{ _('optional') }}</span></label><input id="correspondence-notes" type="text" name="notes" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <div class="sm:col-span-2"><label for="correspondence-attachment" class="block text-sm font-semibold mb-1">{{ _('PDF-Anhang') }} <span class="font-normal text-ink-muted">{{ _('optional, höchstens 2 MB') }}</span></label><input id="correspondence-attachment" type="file" name="attachment" accept="application/pdf,.pdf" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Eintrag hinzufügen') }}</button>
       </form>
       {% else %}
       <div class="rounded-lg border border-dashed border-line px-4 py-4 text-sm text-ink-muted">
-        <p class="mb-3">Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern.</p>
-        <a href="/dashboard" class="inline-flex items-center rounded-lg border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Vollzugriff im persönlichen Dashboard anfordern</a>
+        <p class="mb-3">{{ _('Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern.') }}</p>
+        <a href="/dashboard" class="inline-flex items-center rounded-lg border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Vollzugriff im persönlichen Dashboard anfordern') }}</a>
       </div>
       {% endif %}
     </section>
@@ -356,26 +356,26 @@
     {% if viewer_has_session and (can_manage_members or can_prepare_billing or can_approve_billing or can_audit_billing) %}
     {% if can_manage_members %}
     <section class="bg-white rounded-xl border p-6 mb-8">
-      <h2 class="font-bold mb-2">Mitglied einladen</h2>
-      <p class="text-sm text-ink-muted mb-4">Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen nicht an, ob bereits ein Profil existiert.</p>
-      {% if invite_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ invite_error }}</p>{% endif %}
+      <h2 class="font-bold mb-2">{{ _('Mitglied einladen') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen nicht an, ob bereits ein Profil existiert.') }}</p>
+      {% if invite_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ _(invite_error) }}</p>{% endif %}
       <form method="post" action="/leg/community/{{ community.community_id }}/invite" class="flex flex-col sm:flex-row gap-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label for="invite-email" class="sr-only">E-Mail-Adresse</label>
-        <input id="invite-email" type="email" name="invite_email" autocomplete="email" required placeholder="name@beispiel.ch" class="flex-1 border rounded-lg px-4 py-2 text-sm">
-        <button type="submit" class="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-dark">Einladen</button>
+        <label for="invite-email" class="sr-only">{{ _('E-Mail-Adresse') }}</label>
+        <input id="invite-email" type="email" name="invite_email" autocomplete="email" required placeholder="{{ _('name@beispiel.ch') }}" class="flex-1 border rounded-lg px-4 py-2 text-sm">
+        <button type="submit" class="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-dark">{{ _('Einladen') }}</button>
       </form>
     </section>
     {% if is_admin %}
     <section class="bg-white rounded-xl border p-6 mb-8">
-      <h2 class="font-bold mb-2">Vier-Augen-Prinzip</h2>
+      <h2 class="font-bold mb-2">{{ _('Vier-Augen-Prinzip') }}</h2>
       <form method="post" action="/leg/community/{{ community.community_id }}/access-policy">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label class="flex items-start gap-2 text-sm">
           <input type="checkbox" name="require_dual_control" value="yes" {% if community.require_dual_control %}checked{% endif %}>
-          <span>Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen.</span>
+          <span>{{ _('Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen.') }}</span>
         </label>
-        <button type="submit" class="mt-3 rounded-lg border border-line px-4 py-2 font-semibold">Einstellung speichern</button>
+        <button type="submit" class="mt-3 rounded-lg border border-line px-4 py-2 font-semibold">{{ _('Einstellung speichern') }}</button>
       </form>
     </section>
     {% endif %}
@@ -383,28 +383,28 @@
 
     {% if can_prepare_billing or can_approve_billing or can_audit_billing %}
     <section class="bg-white rounded-xl border p-6">
-      <h2 class="font-bold mb-2">Abrechnungs-Richtlinie</h2>
-      <p class="text-sm text-ink-muted mb-4">Legen Sie Preise, Netzentgelt, Mehrwertsteuer und Zustellung versioniert fest. Die Richtlinie steuert künftige Abrechnungsentwürfe.</p>
-      {% if can_prepare_billing %}<a href="/leg/community/{{ community.community_id }}/billing-policy" class="inline-flex items-center rounded-lg bg-brand text-white px-6 py-3 font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Richtlinie verwalten</a>{% endif %}
-      <a href="/leg/community/{{ community.community_id }}/billing" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Abrechnungen öffnen</a>
+      <h2 class="font-bold mb-2">{{ _('Abrechnungs-Richtlinie') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Legen Sie Preise, Netzentgelt, Mehrwertsteuer und Zustellung versioniert fest. Die Richtlinie steuert künftige Abrechnungsentwürfe.') }}</p>
+      {% if can_prepare_billing %}<a href="/leg/community/{{ community.community_id }}/billing-policy" class="inline-flex items-center rounded-lg bg-brand text-white px-6 py-3 font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Richtlinie verwalten') }}</a>{% endif %}
+      <a href="/leg/community/{{ community.community_id }}/billing" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Abrechnungen öffnen') }}</a>
     </section>
     {% endif %}
 
     {% if can_manage_members %}
     <section class="bg-white rounded-xl border p-6">
-      <h2 class="font-bold mb-2">Gründung starten</h2>
-      <p class="text-sm text-ink-muted mb-4">Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.</p>
+      <h2 class="font-bold mb-2">{{ _('Gründung starten') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.') }}</p>
       <form method="post" action="/leg/community/{{ community.community_id }}/start-formation">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">Gründung starten</button>
+        <button type="submit" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">{{ _('Gründung starten') }}</button>
       </form>
     </section>
     {% endif %}
     {% elif is_admin %}
     <section class="bg-white rounded-xl border p-6">
-      <h2 class="font-bold mb-2">Gründung starten</h2>
-      <p class="text-sm text-ink-muted mb-4">Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen.</p>
-      <a href="/dashboard" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Vollzugriff im persönlichen Dashboard anfordern</a>
+      <h2 class="font-bold mb-2">{{ _('Gründung starten') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen.') }}</p>
+      <a href="/dashboard" class="inline-flex items-center rounded-lg border border-ink/20 px-6 py-3 font-semibold text-ink hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Vollzugriff im persönlichen Dashboard anfordern') }}</a>
     </section>
     {% endif %}
     {% endif %}

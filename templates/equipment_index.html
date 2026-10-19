@@ -1,24 +1,24 @@
 {% extends "product_base.html" %}
-{% block meta %}<title>Meine Solargeräte | {{ platform_name }}</title>{% endblock %}
+{% block meta %}<title>{{ _('Meine Solargeräte |') }} {{ platform_name }}</title>{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-8">
-  <a href="/dashboard" class="text-sm font-semibold text-brand hover:underline">Zurück zum Dashboard</a>
-  <h1 class="text-3xl font-bold mt-6">Meine Solargeräte</h1>
-  <p class="text-ink-muted mt-2">Private Geräteangaben und offene Aufgaben für Ihren Installateur. Auch ohne LEG-Mitgliedschaft oder lokale Messdaten nutzbar.</p>
-  <p class="text-sm text-ink-muted mt-3">Nur Ihr Eigentümerzugang kann diese Einträge lesen. Nachbarfreigaben, Telemetrie-Freigaben und LEG-Administratoren erhalten keinen Zugriff.</p>
-  <a href="/dashboard/equipment/new" class="inline-block mt-6 bg-brand text-white px-5 py-3 rounded-lg font-semibold">Gerät erfassen</a>
+  <a href="/dashboard" class="text-sm font-semibold text-brand hover:underline">{{ _('Zurück zum Dashboard') }}</a>
+  <h1 class="text-3xl font-bold mt-6">{{ _('Meine Solargeräte') }}</h1>
+  <p class="text-ink-muted mt-2">{{ _('Private Geräteangaben und offene Aufgaben für Ihren Installateur. Auch ohne LEG-Mitgliedschaft oder lokale Messdaten nutzbar.') }}</p>
+  <p class="text-sm text-ink-muted mt-3">{{ _('Nur Ihr Eigentümerzugang kann diese Einträge lesen. Nachbarfreigaben, Telemetrie-Freigaben und LEG-Administratoren erhalten keinen Zugriff.') }}</p>
+  <a href="/dashboard/equipment/new" class="inline-block mt-6 bg-brand text-white px-5 py-3 rounded-lg font-semibold">{{ _('Gerät erfassen') }}</a>
   <div class="grid gap-4 mt-6">
     {% for record in records %}
     <article class="bg-white border border-line rounded-xl p-6">
-      <h2 class="text-xl font-bold">{{ record.manufacturer or 'Hersteller unbekannt' }} {{ record.model or 'Modell unbekannt' }}</h2>
-      <p class="text-sm text-ink-muted mt-2">Firmware: {{ record.firmware or 'Unbekannt' }} · Quelle: {{ equipment.SOURCES[record.evidence.kind] }} · Prüfung: {{ record.evidence.reviewed_on or 'Unbekannt' }}</p>
-      <a class="inline-block mt-4 font-semibold text-brand hover:underline" href="{{ url_for('equipment.edit', record_id=record.id) }}">Eintrag und Checkliste öffnen</a>
-      <a class="block mt-3 text-sm font-semibold text-brand hover:underline" href="{{ url_for('advisories.owner_page', equipment_id=record.id) }}">Sicherheitshinweise prüfen</a>
+      <h2 class="text-xl font-bold">{{ record.manufacturer or _('Hersteller unbekannt') }} {{ record.model or _('Modell unbekannt') }}</h2>
+      <p class="text-sm text-ink-muted mt-2">{{ _('Firmware:') }} {{ record.firmware or _('Unbekannt') }} {{ _('· Quelle:') }} {{ _(equipment.SOURCES[record.evidence.kind]) }} {{ _('· Prüfung:') }} {{ record.evidence.reviewed_on or _('Unbekannt') }}</p>
+      <a class="inline-block mt-4 font-semibold text-brand hover:underline" href="{{ url_for('equipment.edit', record_id=record.id) }}">{{ _('Eintrag und Checkliste öffnen') }}</a>
+      <a class="block mt-3 text-sm font-semibold text-brand hover:underline" href="{{ url_for('advisories.owner_page', equipment_id=record.id) }}">{{ _('Sicherheitshinweise prüfen') }}</a>
     </article>
     {% else %}
-    <p class="rounded-xl border border-line bg-white p-6">Sie haben noch kein Gerät erfasst. Fehlende Angaben können unbekannt bleiben.</p>
+    <p class="rounded-xl border border-line bg-white p-6">{{ _('Sie haben noch kein Gerät erfasst. Fehlende Angaben können unbekannt bleiben.') }}</p>
     {% endfor %}
   </div>
-  <p class="text-sm text-ink-muted mt-6">OpenLEG prüft diese Angaben nicht. Die Checkliste bewertet weder die Sicherheit der Anlage noch die Ersatzstrombereitschaft.</p>
+  <p class="text-sm text-ink-muted mt-6">{{ _('OpenLEG prüft diese Angaben nicht. Die Checkliste bewertet weder die Sicherheit der Anlage noch die Ersatzstrombereitschaft.') }}</p>
 </div>
 {% endblock %}

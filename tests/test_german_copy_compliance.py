@@ -17,6 +17,8 @@ spelled umlaut and fails the sweep.
 import re
 from pathlib import Path
 
+from jinja2 import Environment, nodes
+
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 
 # Stems whose literal "ae/oe/ue" is correct German or an accepted loanword,
@@ -42,6 +44,7 @@ ALLOWED_STEMS = {
     "value": "Value-Gap, English loanword kept in English",
     "request": "Request, English technical term",
     "zuerst": "zuerst (ue after z, not an umlaut)",
+    "genau": "genaues Modell (au diphthong followed by the adjective ending)",
 }
 
 
@@ -53,10 +56,27 @@ def _visible_text(template: str) -> str:
         r"<style\b.*?</style[^>]*>", " ", text, flags=re.DOTALL | re.IGNORECASE
     )
     text = re.sub(r"<!--.*?-->", " ", text, flags=re.DOTALL)
+    # Gettext source strings are now the German text users see. Keep scanning
+    # them instead of erasing all copy along with the Jinja expressions.
+    tree = Environment(extensions=["jinja2.ext.i18n"]).parse(text)
+    translated_copy = []
+    for call in tree.find_all(nodes.Call):
+        if isinstance(call.node, nodes.Name) and call.node.name in {
+            "_",
+            "gettext",
+            "ngettext",
+        }:
+            translated_copy.extend(
+                arg.value
+                for arg in call.args[:2]
+                if isinstance(arg, nodes.Const) and isinstance(arg.value, str)
+            )
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"\{\{.*?\}\}", " ", text, flags=re.DOTALL)
     text = re.sub(r"\{%.*?%\}", " ", text, flags=re.DOTALL)
-    return text
+    copy = re.sub(r"<[^>]+>", " ", " ".join(translated_copy))
+    copy = re.sub(r"%\([^)]+\)[a-z]", " ", copy)
+    return text + " " + copy
 
 
 def _violations(text: str) -> list[str]:
