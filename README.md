@@ -16,6 +16,8 @@ The distribution system operator (VNB) still verifies the statutory network-area
 
 The current code covers formation records, VNB handovers, participant changes, scheduled SDAT ingestion, quarter-hour allocation, tariff versions, invoice approval, immutable invoices, payment reconciliation, and operational archive export and restore.
 
+The [community archive guide](docs/community-archive.md) explains its dataset scope, destination checks and restore requirements.
+
 ### What this repo is
 
 - `app.py` connects the Flask routes and user journeys
@@ -147,6 +149,8 @@ Die LEG wählt ihre Vertretung, Teilnehmerverträge, den internen Strompreis, di
 Der Verteilnetzbetreiber (VNB) prüft weiterhin die gesetzlichen Anforderungen an Netzgebiet und Netzebene, erfüllt seine Messaufgaben, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und stellt die ihm zugewiesenen Daten bereit. Der Grundversorger liefert gegebenenfalls den übrigen Strom. OpenLEG ersetzt diese Aufgaben nicht. Anmeldung und Datenlieferung müssen für jeden VNB eingerichtet werden; eine durchgängige Anbindung ist noch nicht für jeden VNB verfügbar.
 
 Der aktuelle Code deckt Gründungsunterlagen, VNB-Übergaben, Teilnehmeränderungen, den zeitgesteuerten SDAT-Abruf, die Viertelstundenverteilung, Tarifversionen, Rechnungsfreigabe, unveränderliche Rechnungen, Zahlungsabgleich sowie Export und Wiederherstellung der Betriebsdaten ab.
+
+Die [Archivanleitung](docs/community-archive.md) beschreibt die enthaltenen Datensätze, die Prüfung des Zielsystems und die Voraussetzungen für die Wiederherstellung.
 
 ### Was dieses Repo enthält
 
