@@ -291,7 +291,8 @@ shows whether accepted evidence is `current` or `withdrawn`. Reimporting the
 original file is a replay and cannot reactivate withdrawn evidence.
 
 Withdrawal invalidates dependent drafts, preserving their input snapshots and
-line items. Once corrected evidence passes the normal import and billing gates,
+line items. A preparation saved after withdrawal is retained as an invalidated
+version and does not reserve the live window. Once corrected evidence passes the normal import and billing gates,
 the runner may create a new draft for the same window. Only one non-invalidated
 period can occupy that window. Approval rechecks the current evidence fingerprint
 under the community lock, including when an older preparation finishes late.
