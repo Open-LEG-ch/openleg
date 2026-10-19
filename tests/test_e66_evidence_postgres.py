@@ -774,6 +774,42 @@ def test_e66_document_identity_must_fit_the_physical_import_ledger(configured_e6
     assert db.list_calculated_values_deliveries("dietikon") == []
 
 
+def test_refused_e66_can_retry_after_a_different_overlapping_window_is_withdrawn(
+    configured_e66,
+):
+    client, db, _, source = configured_e66
+    original = post_e66(client, source).get_json()
+    root = ET.fromstring(source)
+    root.find(".//InstanceDocument/DocumentID").text = "SYNTHETIC-E66-WIDER"
+    end = "2026-09-30T22:30:00Z"
+    root.find(".//ReportPeriod/EndDateTime").text = end
+    for block in root.findall("MeteringData"):
+        block.find("Interval/EndDateTime").text = end
+        second = ET.fromstring(ET.tostring(block.find("Observation")))
+        second.find("Position/Sequence").text = "2"
+        block.append(second)
+    wider = ET.tostring(root)
+    refused = post_e66(client, wider)
+    assert refused.status_code == 422
+    assert (
+        client.post(
+            f"/admin/vnb-calculated-values/dietikon/{original['id']}/withdrawals",
+            headers={
+                "X-Admin-Token": "synthetic-admin",
+                "Idempotency-Key": "retry-wider",
+            },
+            json={"reason": "Synthetic overlapping source withdrawn"},
+        ).status_code
+        == 201
+    )
+
+    retried = post_e66(client, wider)
+
+    assert retried.status_code == 201
+    assert retried.get_json()["fingerprint"] != refused.get_json()["fingerprint"]
+    assert len(db.list_calculated_values_deliveries("dietikon")) == 3
+
+
 @pytest.mark.parametrize(
     "local_start,intervals", [("2026-03-29T00:00:00", 92), ("2026-10-25T00:00:00", 100)]
 )

@@ -145,6 +145,16 @@ def ingest_e66_calculated_values(territory, document, evidence):
             connection=conn,
         ):
             raise e66_evidence.E66EvidenceError("e66_replacement_requires_withdrawal")
+        overlaps = find_overlapping_calculated_values(
+            territory,
+            community_id,
+            document["period_start"],
+            document["period_end"],
+            connection=conn,
+        )
+        metadata["live_overlaps_sha256"] = hashlib.sha256(
+            json.dumps(sorted(row["fingerprint"] for row in overlaps)).encode()
+        ).hexdigest()
         repository = SimpleNamespace(
             **{
                 name: partial(globals()[name], connection=conn)
