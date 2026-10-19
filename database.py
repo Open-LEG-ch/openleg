@@ -33,7 +33,7 @@ _connection_pool = None
 _pool_pid = None
 # Pools inherited across fork(), kept referenced so they are never closed or
 # garbage collected here: that would end sessions the parent still owns.
-_inherited_pools = []
+_inherited_pools: list[object] = []
 _pool_lock = threading.Lock()
 
 
