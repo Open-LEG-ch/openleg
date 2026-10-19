@@ -39,6 +39,11 @@ Cloud-access reviews and backup evidence remain separate. Owners can download a
 redacted installer handoff. OpenLEG does not verify the entered claims or change
 devices.
 
+Owners with enrolled telemetry installations can open `/dashboard/telemetry`
+to see source readings, quality, observation time and data age. This first
+dashboard view remains private to the owner. Device faults, community summaries
+and hardware-pilot validation remain tracked in [#617](https://github.com/Open-LEG-ch/openleg/issues/617).
+
 Equipment pages also show private matches against an explicitly reviewed
 advisory catalog. The catalog starts empty with notices disabled. A named source
 reviewer, review cadence and successful source review are required before
@@ -170,6 +175,12 @@ und eine Checkliste für ihr Modell, auch ohne LEG-Mitgliedschaft oder Telemetri
 Cloud-Zugriffe und Ersatzstromnachweise bleiben getrennt. Eigentümer können eine
 bereinigte Übergabe für den Installateur herunterladen. OpenLEG prüft die Angaben
 nicht und verändert keine Geräte.
+
+Eigentümer mit angemeldeten Telemetrie-Anlagen sehen unter
+`/dashboard/telemetry` ihre Messwerte mit Quelle, Qualität, Messzeit und Alter.
+Diese erste Ansicht bleibt privat für den Eigentümer. Gerätestörungen,
+Gemeinschaftsübersichten und die Prüfung im Hardware-Pilot bleiben in
+[#617](https://github.com/Open-LEG-ch/openleg/issues/617) offen.
 
 Die Geräteseiten zeigen auch private Zuordnungen zu einem ausdrücklich geprüften
 Hinweiskatalog. Er beginnt leer und mit ausgeschalteten Hinweisen. Vor dem

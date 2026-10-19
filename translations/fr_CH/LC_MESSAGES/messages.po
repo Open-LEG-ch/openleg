@@ -19,10 +19,179 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
+#: templates/telemetry_dashboard.html:34 templates/telemetry_dashboard.html:60
+#, python-format
+msgid "%(count)s Sekunde"
+msgid_plural "%(count)s Sekunden"
+msgstr[0] "%(count)s seconde"
+msgstr[1] "%(count)s secondes"
+
+#: templates/telemetry_dashboard.html:17
+msgid "Aktualität unbekannt"
+msgstr "Fraîcheur des données inconnue"
+
+#: templates/telemetry_dashboard.html:17
+msgid "Aktuell"
+msgstr "À jour"
+
+#: templates/telemetry_dashboard.html:22
+msgid "Alle Angaben gelten beim Laden dieser Seite. Jede Quelle wird einzeln angezeigt."
+msgstr "Les données correspondent au chargement de cette page. Chaque source est affichée séparément."
+
+#: templates/telemetry_dashboard.html:60
+msgid "Alter beim Laden"
+msgstr "Âge au chargement"
+
+#: templates/telemetry_dashboard.html:12
+msgid "Batterieentladung"
+msgstr "Décharge de la batterie"
+
+#: templates/telemetry_dashboard.html:12
+msgid "Batterieladung"
+msgstr "Charge de la batterie"
+
+#: templates/telemetry_dashboard.html:12
+msgid "Batteriestand"
+msgstr "Charge de la batterie"
+
+#: templates/telemetry_dashboard.html:21
+msgid "Betriebsdaten Ihrer angemeldeten Anlagen. Für die Abrechnung gelten die validierten VNB-Messdaten."
+msgstr ""
+"Données de fonctionnement de vos installations enregistrées. La facturation repose sur les "
+"mesures validées du gestionnaire de réseau."
+
+#: templates/telemetry_dashboard.html:27
+msgid "Bitte laden Sie die Seite später erneut."
+msgstr "Veuillez recharger la page plus tard."
+
+#: templates/telemetry_dashboard.html:34
+msgid "Erwarteter Messtakt"
+msgstr "Intervalle de mesure attendu"
+
+#: templates/telemetry_dashboard.html:52
+msgid "Für diesen Messkanal fehlen neue Daten. Prüfen Sie die Messquelle."
+msgstr "Ce canal ne reçoit plus de données récentes. Vérifiez la source de mesure."
+
+#: templates/telemetry_dashboard.html:16
+msgid "Gemessen"
+msgstr "Mesuré"
+
+#: templates/telemetry_dashboard.html:33
+msgid "Gerät"
+msgstr "Appareil"
+
+#: templates/telemetry_dashboard.html:16
+msgid "Geschätzt"
+msgstr "Estimé"
+
+#: templates/telemetry_dashboard.html:15
+msgid "Intervallenergie"
+msgstr "Énergie sur l'intervalle"
+
+#: templates/telemetry_dashboard.html:46
+msgid "Kein aktueller Wert"
+msgstr "Aucune valeur actuelle"
+
+#: templates/telemetry_dashboard.html:64
+msgid "Keine Messwerte im Aufbewahrungszeitraum verfügbar."
+msgstr "Aucune mesure disponible dans la période de conservation."
+
+#: templates/telemetry_dashboard.html:36
+msgid "Keine neue Kollektor-Lieferung"
+msgstr "Aucune nouvelle transmission du collecteur"
+
+#: templates/telemetry_dashboard.html:15
+msgid "Ladezustand"
+msgstr "État de charge"
+
+#: templates/telemetry_dashboard.html:15
+msgid "Leistung"
+msgstr "Puissance"
+
+#: templates/telemetry_dashboard.html:4 templates/telemetry_dashboard.html:20
+msgid "Meine Messwerte"
+msgstr "Mes mesures"
+
+#: templates/dashboard.html:44
+msgid "Meine Messwerte und ihre Aktualität"
+msgstr "Mes mesures et leur âge"
+
+#: templates/telemetry_dashboard.html:50
+msgid "Messquelle liefert ältere Werte. Prüfen Sie Messquelle und Gerätezeit."
+msgstr "La source transmet des valeurs anciennes. Vérifiez la source et l'heure de l'appareil."
+
+#: templates/telemetry_dashboard.html:23
+msgid "Messwerte aktualisieren"
+msgstr "Actualiser les mesures"
+
+#: templates/telemetry_dashboard.html:26
+msgid "Messwerte derzeit nicht verfügbar"
+msgstr "Mesures actuellement indisponibles"
+
+#: templates/telemetry_dashboard.html:55
+msgid "Messzeit"
+msgstr "Heure de mesure"
+
+#: templates/telemetry_dashboard.html:57
+msgid "Messzeit unbekannt"
+msgstr "Heure de mesure inconnue"
+
+#: templates/telemetry_dashboard.html:11
+msgid "Netzbezug"
+msgstr "Prélèvement sur le réseau"
+
+#: templates/telemetry_dashboard.html:11
+msgid "Netzeinspeisung"
+msgstr "Injection dans le réseau"
+
+#: templates/telemetry_dashboard.html:10
+msgid "PV-Erzeugung"
+msgstr "Production photovoltaïque"
+
+#: templates/telemetry_dashboard.html:37
+msgid "Prüfen Sie den Kollektor und seine Verbindung."
+msgstr "Vérifiez le collecteur et sa connexion."
+
+#: templates/telemetry_dashboard.html:16
+msgid "Qualität unbekannt"
+msgstr "Qualité inconnue"
+
+#: templates/telemetry_dashboard.html:33
+msgid "Quelle"
+msgstr "Source"
+
 #: i18n.py:99
 msgid "Rp./kWh"
 msgstr "ct./kWh"
 
+#: templates/telemetry_dashboard.html:68
+msgid "Sie haben keine angemeldeten Anlagen in einer bestätigten LEG-Mitgliedschaft."
+msgstr "Vous n'avez pas d'installation enregistrée dans une LEG avec une adhésion confirmée."
+
 #: templates/partials/language_switcher.html:1
 msgid "Sprache"
 msgstr "Langue"
+
+#: templates/telemetry_dashboard.html:13
+msgid "Standorterzeugung"
+msgstr "Production du site"
+
+#: templates/telemetry_dashboard.html:13
+msgid "Standortverbrauch"
+msgstr "Consommation du site"
+
+#: templates/telemetry_dashboard.html:17
+msgid "Veraltet"
+msgstr "Données anciennes"
+
+#: templates/telemetry_dashboard.html:17
+msgid "Zeitangabe prüfen"
+msgstr "Vérifier l'horodatage"
+
+#: templates/telemetry_dashboard.html:19
+msgid "Zurück zum Dashboard"
+msgstr "Retour au tableau de bord"
+
+#: templates/telemetry_dashboard.html:15
+msgid "Zählerstand"
+msgstr "Index du compteur"
