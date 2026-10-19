@@ -8,6 +8,7 @@ All functions are pure: fetch, parse, return dict. DB persistence handled by cal
 import csv
 import io
 import logging
+import zipfile
 from datetime import UTC, datetime
 
 import requests
@@ -16,13 +17,21 @@ logger = logging.getLogger(__name__)
 _BFS_COLUMNS = ("BFS_NR", "bfs_nr", "gemeinde_bfs")
 _ENERGIE_REPORTER_REQUIRED_COLUMNS = (
     _BFS_COLUMNS,
-    ("GEMEINDENAME", "gemeindename", "name"),
-    ("KANTON", "kanton"),
-    ("anteil_dachflaechen_solar", "solar_potential_pct"),
-    ("anteil_ev", "ev_share_pct"),
-    ("anteil_erneuerbar_heizen", "renewable_heating_pct"),
-    ("stromverbrauch_mwh", "electricity_consumption_mwh"),
-    ("erneuerbare_produktion_mwh", "renewable_production_mwh"),
+    ("GEMEINDENAME", "gemeindename", "name", "municipality"),
+    ("KANTON", "kanton", "canton"),
+    ("anteil_dachflaechen_solar", "solar_potential_pct", "solar_potential_usage"),
+    ("anteil_ev", "ev_share_pct", "electric_car_share"),
+    ("anteil_erneuerbar_heizen", "renewable_heating_pct", "renewable_heating_share"),
+    (
+        "stromverbrauch_mwh",
+        "electricity_consumption_mwh",
+        "elec_consumption_mwh_per_year",
+    ),
+    (
+        "erneuerbare_produktion_mwh",
+        "renewable_production_mwh",
+        "renelec_production_mwh_per_year",
+    ),
 )
 _SONNENDACH_REQUIRED_COLUMNS = (
     _BFS_COLUMNS,
@@ -123,32 +132,91 @@ def _parse_decimal(binding_value):
 # === Energie Reporter ===
 
 ENERGIE_REPORTER_URL = (
-    "https://opendata.swiss/api/3/action/package_show?id=energie-reporter"
+    "https://ckan.opendata.swiss/api/3/action/package_show?id=energie-reporter"
 )
+ENERGIE_REPORTER_ARCHIVE_URL = (
+    "https://opendata.geoimpact.ch/energiereporter/energyreporter_latest.zip"
+)
+
+
+def _reporter_archive_csv(url):
+    compressed = bytearray()
+    with requests.get(url, timeout=30, stream=True) as response:
+        response.raise_for_status()
+        for chunk in response.iter_content(64 * 1024):
+            compressed.extend(chunk)
+            if len(compressed) > 5 * 1024 * 1024:
+                raise ValueError("Energie Reporter archive is too large")
+    with zipfile.ZipFile(io.BytesIO(compressed)) as archive:
+        members = archive.infolist()
+        if (
+            len(members) > 100
+            or sum(item.file_size for item in members) > 20 * 1024 * 1024
+        ):
+            raise ValueError("Energie Reporter archive contents are too large")
+        municipal = [
+            item
+            for item in members
+            if item.filename.rsplit("/", 1)[-1]
+            == "energyreporter_municipality_latest.csv"
+        ]
+        if len(municipal) != 1 or municipal[0].file_size > 10 * 1024 * 1024:
+            raise ValueError(
+                "Energie Reporter municipality CSV is missing or ambiguous"
+            )
+        return archive.read(municipal[0]).decode("utf-8-sig")
+
+
+def _reporter_percentage(row, legacy, canonical, fraction):
+    percentage = _safe_float(row.get(legacy) or row.get(canonical))
+    if percentage is not None:
+        return percentage
+    ratio = _safe_float(row.get(fraction))
+    return ratio * 100 if ratio is not None else None
 
 
 def fetch_energie_reporter() -> list[dict] | None:
     """Download Energie Reporter data from opendata.swiss and parse into per-municipality dicts."""
     try:
-        # Get dataset metadata to find CSV resource
-        resp = requests.get(ENERGIE_REPORTER_URL, timeout=15)
-        resp.raise_for_status()
-        pkg = resp.json().get("result", {})
+        try:
+            resp = requests.get(ENERGIE_REPORTER_URL, timeout=15)
+            resp.raise_for_status()
+            pkg = resp.json().get("result", {})
+        except requests.RequestException:
+            # The publisher documents this stable latest archive independently
+            # of CKAN. Metadata outages must not hide an available delivery.
+            pkg = {
+                "resources": [{"format": "ZIP", "url": ENERGIE_REPORTER_ARCHIVE_URL}]
+            }
         csv_url = None
         for resource in pkg.get("resources", []):
             if resource.get("format", "").upper() == "CSV":
                 csv_url = resource.get("url")
                 break
 
-        if not csv_url:
-            logger.warning("[PUBLIC_DATA] Energie Reporter: no CSV resource found")
-            return None
+        if csv_url:
+            csv_resp = requests.get(csv_url, timeout=30)
+            csv_resp.raise_for_status()
+            csv_resp.encoding = csv_resp.apparent_encoding or "utf-8"
+            contents, delimiter = csv_resp.text, ";"
+        else:
+            archive_url = next(
+                (
+                    resource.get("url", "")
+                    for resource in pkg.get("resources", [])
+                    if resource.get("format", "").upper() == "ZIP"
+                    and resource.get("url", "").endswith("/energyreporter_latest.zip")
+                ),
+                None,
+            )
+            if not archive_url:
+                logger.warning(
+                    "[PUBLIC_DATA] Energie Reporter: no supported resource found"
+                )
+                return None
+            contents, delimiter = _reporter_archive_csv(archive_url), ","
 
-        csv_resp = requests.get(csv_url, timeout=30)
-        csv_resp.raise_for_status()
-        csv_resp.encoding = csv_resp.apparent_encoding or "utf-8"
-
-        reader = csv.DictReader(io.StringIO(csv_resp.text), delimiter=";")
+        reader = csv.DictReader(io.StringIO(contents), delimiter=delimiter)
         if not _has_required_columns(reader, _ENERGIE_REPORTER_REQUIRED_COLUMNS):
             logger.error("[PUBLIC_DATA] Energie Reporter CSV schema is incompatible")
             return None
@@ -164,26 +232,38 @@ def fetch_energie_reporter() -> list[dict] | None:
                     "bfs_number": bfs,
                     "name": row.get("GEMEINDENAME")
                     or row.get("gemeindename")
-                    or row.get("name", ""),
-                    "kanton": row.get("KANTON") or row.get("kanton", ""),
-                    "solar_potential_pct": _safe_float(
-                        row.get("anteil_dachflaechen_solar")
-                        or row.get("solar_potential_pct")
+                    or row.get("name")
+                    or row.get("municipality", ""),
+                    "kanton": row.get("KANTON")
+                    or row.get("kanton")
+                    or row.get("canton", ""),
+                    "solar_potential_pct": _reporter_percentage(
+                        row,
+                        "anteil_dachflaechen_solar",
+                        "solar_potential_pct",
+                        "solar_potential_usage",
                     ),
-                    "ev_share_pct": _safe_float(
-                        row.get("anteil_ev") or row.get("ev_share_pct")
+                    "solar_installed_kwp": _safe_float(
+                        row.get("solar_power_installed_kwp")
                     ),
-                    "renewable_heating_pct": _safe_float(
-                        row.get("anteil_erneuerbar_heizen")
-                        or row.get("renewable_heating_pct")
+                    "ev_share_pct": _reporter_percentage(
+                        row, "anteil_ev", "ev_share_pct", "electric_car_share"
+                    ),
+                    "renewable_heating_pct": _reporter_percentage(
+                        row,
+                        "anteil_erneuerbar_heizen",
+                        "renewable_heating_pct",
+                        "renewable_heating_share",
                     ),
                     "electricity_consumption_mwh": _safe_float(
                         row.get("stromverbrauch_mwh")
                         or row.get("electricity_consumption_mwh")
+                        or row.get("elec_consumption_mwh_per_year")
                     ),
                     "renewable_production_mwh": _safe_float(
                         row.get("erneuerbare_produktion_mwh")
                         or row.get("renewable_production_mwh")
+                        or row.get("renelec_production_mwh_per_year")
                     ),
                 }
             )
@@ -198,19 +278,32 @@ def fetch_energie_reporter() -> list[dict] | None:
 
 # === Sonnendach ===
 
-SONNENDACH_URL = "https://opendata.swiss/api/3/action/package_show?id=sonnendach-ch"
+SONNENDACH_URL = (
+    "https://ckan.opendata.swiss/api/3/action/package_show"
+    "?id=solarenergiepotenziale-der-schweizer-gemeinden"
+)
+SONNENDACH_CSV_URL = (
+    "https://www.uvek-gis.admin.ch/BFE/ogd/52/"
+    "Solarenergiepotenziale_Gemeinden_Daecher_und_Fassaden.csv"
+)
 
 
 def fetch_sonnendach_municipal() -> list[dict] | None:
     """Download municipal-level solar potential from opendata.swiss."""
     try:
-        resp = requests.get(SONNENDACH_URL, timeout=15)
-        resp.raise_for_status()
-        pkg = resp.json().get("result", {})
+        try:
+            resp = requests.get(SONNENDACH_URL, timeout=15)
+            resp.raise_for_status()
+            pkg = resp.json().get("result", {})
+        except requests.RequestException:
+            pkg = {"resources": [{"format": "CSV", "url": SONNENDACH_CSV_URL}]}
         csv_url = None
         for resource in pkg.get("resources", []):
             fmt = resource.get("format", "").upper()
-            name = (resource.get("name") or "").lower()
+            name = resource.get("name") or ""
+            if isinstance(name, dict):
+                name = " ".join(name.values())
+            name = name.lower()
             if fmt == "CSV" and (
                 "gemeinde" in name or "municipal" in name or "kommun" in name
             ):
@@ -231,17 +324,35 @@ def fetch_sonnendach_municipal() -> list[dict] | None:
         csv_resp.raise_for_status()
         csv_resp.encoding = csv_resp.apparent_encoding or "utf-8"
 
-        reader = csv.DictReader(io.StringIO(csv_resp.text), delimiter=";")
-        if not _has_required_columns(reader, _SONNENDACH_REQUIRED_COLUMNS):
+        contents = csv_resp.text.lstrip("\ufeff")
+        bfe_schema = contents.startswith("MunicipalityNumber,")
+        reader = csv.DictReader(
+            io.StringIO(contents), delimiter="," if bfe_schema else ";"
+        )
+        required_columns = (
+            (
+                ("MunicipalityNumber",),
+                ("Scenario1_RoofsOnly_PotentialSolarElectricity_GWh",),
+            )
+            if bfe_schema
+            else _SONNENDACH_REQUIRED_COLUMNS
+        )
+        if not _has_required_columns(reader, required_columns):
             logger.error("[PUBLIC_DATA] Sonnendach CSV schema is incompatible")
             return None
         results = []
         for row in reader:
             bfs = _safe_int(
-                row.get("BFS_NR") or row.get("bfs_nr") or row.get("gemeinde_bfs")
+                row.get("BFS_NR")
+                or row.get("bfs_nr")
+                or row.get("gemeinde_bfs")
+                or row.get("MunicipalityNumber")
             )
             if not bfs:
                 continue
+            potential_gwh = _safe_float(
+                row.get("Scenario1_RoofsOnly_PotentialSolarElectricity_GWh")
+            )
             results.append(
                 {
                     "bfs_number": bfs,
@@ -252,7 +363,9 @@ def fetch_sonnendach_municipal() -> list[dict] | None:
                         row.get("dachflaeche_geeignet_m2")
                         or row.get("suitable_roof_area_m2")
                     ),
-                    "potential_kwh_year": _safe_float(
+                    "potential_kwh_year": potential_gwh * 1_000_000
+                    if potential_gwh is not None
+                    else _safe_float(
                         row.get("potenzial_kwh_jahr") or row.get("potential_kwh_year")
                     ),
                     "potential_kwp": _safe_float(
@@ -437,7 +550,9 @@ def refresh_municipality(
             }
         )
         profile["energy_transition_score"] = compute_energy_transition_score(profile)
-    if sd_row:
+    if er_row and er_row.get("solar_installed_kwp") is not None:
+        profile["solar_installed_kwp"] = er_row["solar_installed_kwp"]
+    elif sd_row and sd_row.get("potential_kwp") is not None:
         profile["solar_installed_kwp"] = sd_row.get("potential_kwp")
     db.save_municipality_profile(profile)
     # Ein erfolgreicher Refresh ist die Invalidierung des Profil-Caches
