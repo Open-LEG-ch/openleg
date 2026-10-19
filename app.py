@@ -738,8 +738,8 @@ def unsubscribe_token(token):
                 "unsubscribe.html",
                 status="error",
                 message=(
-                    "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene "
-                    "Gebietsanfrage) besteht weiterhin. Der Link ist möglicherweise "
+                    "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene "
+                    "Gebietsanfrage) nicht gelöscht. Der Link ist möglicherweise "
                     "abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
                 ),
                 email="",
