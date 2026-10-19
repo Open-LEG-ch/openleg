@@ -821,5 +821,54 @@ def test_french_workspace_identifies_a_withdrawn_draft_as_invalidated(
     page = client.get(f"/leg/community/{payload['community_id']}/billing?lang=fr-CH")
     assert page.status_code == 200
     assert page.headers["Content-Language"] == "fr-CH"
-    assert "Brouillon invalidé" in page.text
+    assert "Brouillon invalide" in page.text
     assert "Entwurf ungültig" not in page.text
+
+
+@pytest.mark.parametrize("mutation", ["update", "delete", "truncate"])
+def test_withdrawal_history_cannot_be_mutated_in_postgresql(
+    calculated_client, mutation
+):
+    client, db, payload = calculated_client
+    response = client.post(
+        "/admin/vnb-calculated-values/dietikon",
+        headers={"X-Admin-Token": "synthetic-admin"},
+        json={"delivery": payload},
+    )
+    assert response.status_code == 201
+    delivery = response.get_json()
+    assert (
+        client.post(
+            f"/admin/vnb-calculated-values/dietikon/{delivery['id']}/withdrawals",
+            headers={
+                "X-Admin-Token": "synthetic-admin",
+                "Idempotency-Key": "immutable",
+            },
+            json={"reason": "Synthetic withdrawal retained for audit"},
+        ).status_code
+        == 201
+    )
+    # Re-running the additive schema must preserve both event and its guard.
+    db.create_tables()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM vnb_calculated_values_events")
+        original = dict(cur.fetchone())
+    command = {
+        "update": "UPDATE vnb_calculated_values_events SET reason = 'rewritten'",
+        "delete": "DELETE FROM vnb_calculated_values_events",
+        "truncate": "TRUNCATE vnb_calculated_values_events",
+    }[mutation]
+
+    with pytest.raises(psycopg2.Error, match="append-only"):
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(command)
+
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM vnb_calculated_values_events")
+        assert [dict(row) for row in cur.fetchall()] == [original]
+    start, end = (
+        datetime.fromisoformat(payload[key]) for key in ("period_start", "period_end")
+    )
+    assert (
+        db.get_validated_calculated_values(payload["community_id"], start, end) is None
+    )
