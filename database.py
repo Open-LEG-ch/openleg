@@ -6,6 +6,7 @@ Replaces JSON file persistence with proper database storage.
 
 import logging
 import os
+import threading
 from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
@@ -27,11 +28,18 @@ DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", "10"))
 
 # Connection pool
 _connection_pool = None
+# Process that created _connection_pool. With gunicorn --preload that is the
+# master, and every worker inherits its sockets; get_connection reopens there.
+_pool_pid = None
+# Pools inherited across fork(), kept referenced so they are never closed or
+# garbage collected here: that would end sessions the parent still owns.
+_inherited_pools: list[object] = []
+_pool_lock = threading.Lock()
 
 
 def init_db():
     """Initialize database connection pool and create tables if needed."""
-    global _connection_pool
+    global _connection_pool, _pool_pid
 
     if not HAS_POSTGRES:
         logger.warning("[DB] PostgreSQL not available, using fallback JSON storage")
@@ -45,6 +53,7 @@ def init_db():
         _connection_pool = pool.ThreadedConnectionPool(
             DB_POOL_MIN, DB_POOL_MAX, DATABASE_URL, cursor_factory=RealDictCursor
         )
+        _pool_pid = os.getpid()
         logger.info(
             f"[DB] Connection pool created (min={DB_POOL_MIN}, max={DB_POOL_MAX})"
         )
@@ -60,9 +69,23 @@ def init_db():
 @contextmanager
 def get_connection():
     """Get a database connection from the pool."""
+    global _connection_pool, _pool_pid
+    if _pool_pid is not None and _pool_pid != os.getpid():
+        with _pool_lock:
+            if _pool_pid != os.getpid():
+                _inherited_pools.append(_connection_pool)
+                _connection_pool = pool.ThreadedConnectionPool(
+                    DB_POOL_MIN,
+                    DB_POOL_MAX,
+                    DATABASE_URL,
+                    cursor_factory=RealDictCursor,
+                )
+                _pool_pid = os.getpid()
+                logger.info(f"[DB] Connection pool reopened in process {_pool_pid}")
     conn = None
+    connection_pool = _connection_pool
     try:
-        conn = _connection_pool.getconn()
+        conn = connection_pool.getconn()
         yield conn
         conn.commit()
     except Exception:
@@ -71,7 +94,7 @@ def get_connection():
         raise
     finally:
         if conn:
-            _connection_pool.putconn(conn)
+            connection_pool.putconn(conn)
 
 
 def _create_tables():
