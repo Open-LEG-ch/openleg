@@ -38,7 +38,7 @@ def parse_source(evidence):
                 isinstance(document[key], str) and document[key].strip()
                 for key in ("document_id", "sender_id", "receiver_id")
             )
-            or len(document["document_id"]) > 128
+            or len(document["document_id"]) > 64
         ):
             raise E66EvidenceError("missing_e66_provenance")
         _moment(metadata["created_at"])

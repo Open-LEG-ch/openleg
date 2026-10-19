@@ -681,6 +681,135 @@ def test_overlapping_e66_does_not_replace_physical_data(configured_e66):
     assert physical["source_document_id"] == "SYNTHETIC-E66-1"
 
 
+def test_rejected_e66_replay_still_has_an_error_status(configured_e66):
+    client, _, _, source = configured_e66
+    assert post_e66(client, source).status_code == 201
+    conflict = source.replace(b"SYNTHETIC-E66-1", b"SYNTHETIC-E66-OTHER")
+    first = post_e66(client, conflict)
+    assert first.status_code == 422
+
+    replay = post_e66(client, conflict)
+
+    assert replay.status_code == 422
+    assert replay.get_json()["fingerprint"] == first.get_json()["fingerprint"]
+
+
+def test_refused_original_can_retry_after_overlap_is_withdrawn(configured_e66):
+    client, db, _, source = configured_e66
+    original = post_e66(client, source).get_json()
+    conflict = source.replace(b"SYNTHETIC-E66-1", b"SYNTHETIC-E66-OTHER")
+    refused = post_e66(client, conflict)
+    assert refused.status_code == 422
+    assert (
+        client.post(
+            f"/admin/vnb-calculated-values/dietikon/{original['id']}/withdrawals",
+            headers={
+                "X-Admin-Token": "synthetic-admin",
+                "Idempotency-Key": "retry-source",
+            },
+            json={"reason": "Synthetic original withdrawn"},
+        ).status_code
+        == 201
+    )
+
+    retried = post_e66(client, conflict)
+
+    assert retried.status_code == 201
+    assert retried.get_json()["fingerprint"] != refused.get_json()["fingerprint"]
+    history = db.list_calculated_values_deliveries("dietikon")
+    assert len(history) == 3
+    assert (
+        next(row for row in history if row["id"] == refused.get_json()["id"])["status"]
+        == "rejected"
+    )
+
+
+def test_refused_e66_can_retry_after_registry_coverage_is_repaired(configured_e66):
+    client, db, payload, source = configured_e66
+    assert (
+        db.upsert_metering_points(
+            [
+                {
+                    "metering_point_id": "SYNTHETIC-STALE-METER",
+                    "community_id": payload["community_id"],
+                    "building_id": "member",
+                    "expected_directions": ["production"],
+                }
+            ]
+        )
+        == 1
+    )
+    refused = post_e66(client, source)
+    assert refused.status_code == 422
+    assert {row["code"] for row in refused.get_json()["diagnostics"]} == {
+        "incomplete_period"
+    }
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE metering_points SET active = FALSE WHERE metering_point_id = %s",
+            ("SYNTHETIC-STALE-METER",),
+        )
+
+    retried = post_e66(client, source)
+
+    assert retried.status_code == 201
+    assert retried.get_json()["fingerprint"] != refused.get_json()["fingerprint"]
+    assert post_e66(client, source).get_json()["id"] == retried.get_json()["id"]
+    history = db.list_calculated_values_deliveries("dietikon")
+    assert len(history) == 2
+    assert (
+        next(row for row in history if row["id"] == refused.get_json()["id"])["status"]
+        == "partially_invalid"
+    )
+
+
+def test_e66_document_identity_must_fit_the_physical_import_ledger(configured_e66):
+    client, db, _, source = configured_e66
+    source = source.replace(b"SYNTHETIC-E66-1", b"S" * 65)
+
+    response = post_e66(client, source)
+
+    assert response.status_code == 422
+    assert response.get_json() == {"error": "missing_e66_provenance"}
+    assert db.list_calculated_values_deliveries("dietikon") == []
+
+
+def test_refused_e66_can_retry_after_a_different_overlapping_window_is_withdrawn(
+    configured_e66,
+):
+    client, db, _, source = configured_e66
+    original = post_e66(client, source).get_json()
+    root = ET.fromstring(source)
+    root.find(".//InstanceDocument/DocumentID").text = "SYNTHETIC-E66-WIDER"
+    end = "2026-09-30T22:30:00Z"
+    root.find(".//ReportPeriod/EndDateTime").text = end
+    for block in root.findall("MeteringData"):
+        block.find("Interval/EndDateTime").text = end
+        second = ET.fromstring(ET.tostring(block.find("Observation")))
+        second.find("Position/Sequence").text = "2"
+        block.append(second)
+    wider = ET.tostring(root)
+    refused = post_e66(client, wider)
+    assert refused.status_code == 422
+    assert (
+        client.post(
+            f"/admin/vnb-calculated-values/dietikon/{original['id']}/withdrawals",
+            headers={
+                "X-Admin-Token": "synthetic-admin",
+                "Idempotency-Key": "retry-wider",
+            },
+            json={"reason": "Synthetic overlapping source withdrawn"},
+        ).status_code
+        == 201
+    )
+
+    retried = post_e66(client, wider)
+
+    assert retried.status_code == 201
+    assert retried.get_json()["fingerprint"] != refused.get_json()["fingerprint"]
+    assert len(db.list_calculated_values_deliveries("dietikon")) == 3
+
+
 @pytest.mark.parametrize(
     "local_start,intervals", [("2026-03-29T00:00:00", 92), ("2026-10-25T00:00:00", 100)]
 )
