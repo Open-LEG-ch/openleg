@@ -588,7 +588,16 @@ def test_raw_e66_reaches_draft_and_immutable_invoice_provenance(
     )
     assert len(invoices) == 2
     for invoice in invoices:
-        own_source = invoice["provenance_snapshot"]["reconciliation"]["source_evidence"]
+        own_reconciliation = invoice["provenance_snapshot"]["reconciliation"]
+        own_source = own_reconciliation["source_evidence"]
+        assert (
+            not {"registry_series_sha256", "live_overlaps_sha256"}
+            & own_source["metadata"].keys()
+        )
+        assert set(own_reconciliation["per_participant"]) == {invoice["participant_id"]}
+        assert set(own_reconciliation["production_per_participant"]) == {
+            invoice["participant_id"]
+        }
         assert own_source["fingerprint"] == frozen_source["fingerprint"]
         assert own_source["evidence_sha256"] == frozen_source["evidence_sha256"]
         assert {
