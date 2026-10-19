@@ -30,6 +30,7 @@ import database as db
 import payment_reconciliation
 import security_utils
 from store import contact_request
+from telemetry import TelemetryError
 
 
 def _dashboard_session_building_id():
@@ -192,6 +193,21 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 ),
             )
         return render_city_template("dashboard.html", **_dashboard_public_context())
+
+    @bp.get("/dashboard/telemetry")
+    def dashboard_telemetry():
+        actor = _require_dashboard_session()
+        try:
+            installations = dashboard_module.telemetry_view(
+                db.get_owner_telemetry_overview(actor)
+            )
+        except TelemetryError:
+            return render_city_template(
+                "telemetry_dashboard.html", unavailable=True
+            ), 503
+        return render_city_template(
+            "telemetry_dashboard.html", installations=installations
+        )
 
     @bp.route("/dashboard/profile", methods=["POST"])
     def dashboard_profile_update():
