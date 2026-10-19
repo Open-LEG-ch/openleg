@@ -305,6 +305,30 @@ removing any of those inputs is observable before an immutable draft is reused.
 Invoice issuance remains disabled until the LEG and its VNB approve tax, HKN,
 tariff-class, rounding-tolerance, and operational cutoff rules.
 
+### Billing cron diagnostics
+
+The authenticated `POST /api/cron/process-billing` returns one safe `error` code
+per failed community. Failed runs do not count as processed, and other
+communities continue. The cron handler returns fixed codes and logs a failed
+community's identifier without exception messages, metering identifiers or source
+contents. Discovery and draft-persistence storage failures also use safe messages.
+
+| Code | Operator action |
+| --- | --- |
+| `billing_tariff_missing` | Configure an explicit tariff covering the complete billing window. |
+| `vnb_evidence_missing` | Import and validate the VNB calculated-values delivery for that window. |
+| `metering_readings_invalid` | Check meter ownership, expected channels, interval coverage and reading quality. |
+| `vnb_allocation_mismatch` | Compare the VNB allocation with the independent calculation before retrying. |
+| `billing_provenance_missing` | Restore the source-document evidence for the readings. |
+| `battery_configuration_invalid` | Check the battery participant, capacity and participant cost shares. |
+| `billing_inputs_changed` | Review changed inputs against the existing immutable draft. |
+| `billing_store_unavailable` | Restore database access before retrying. |
+| `billing_run_failed` | Investigate the unclassified failure in a controlled environment. |
+
+Unknown error codes use `billing_run_failed`. The existing direct Python runner
+retains its detailed exception for local diagnosis; do not publish that exception
+or customer data when filing an issue.
+
 ### Running the import
 
 ```bash
