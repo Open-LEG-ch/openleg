@@ -97,6 +97,12 @@ member's immutable invoice retains its own mapping and the source fingerprint.
 Other participants' meter mappings stay private. Original-source replay uses
 the frozen mapping and never reactivates withdrawn evidence.
 
+Only accepted sources take that frozen replay path. Refused attempts return
+HTTP 422 on repetition. Their registry-series hash and withdrawal lineage
+distinguish a fresh attempt after the registry or overlapping evidence is
+corrected; earlier refusals stay in history. Document IDs must fit the physical
+import ledger's 64-character limit.
+
 Document status `9` is an original. Status `5` requires a recorded withdrawal of
 accepted evidence for the same window; use the existing withdrawal endpoint
 before importing a replacement with a new document ID. Live overlapping

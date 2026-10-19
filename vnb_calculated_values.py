@@ -223,6 +223,21 @@ def accept_delivery(
             diagnostics.append({"code": "incomplete_period"})
             record_problem = True
 
+    if source_metadata is not None:
+        # A refused attempt stays immutable. A changed registry creates a new
+        # validation attempt, while accepted E66 sources replay before this seam.
+        registry_series = sorted(
+            {
+                (item["participant_id"], item["direction"])
+                for item in (community or {}).get("expected_series", [])
+            }
+        )
+        source_metadata = {
+            **source_metadata,
+            "registry_series_sha256": hashlib.sha256(
+                json.dumps(registry_series, separators=(",", ":")).encode()
+            ).hexdigest(),
+        }
     # A stable fallback still makes malformed retries idempotent.
     fingerprint = _fingerprint(payload, normalized, source_metadata)
     if (

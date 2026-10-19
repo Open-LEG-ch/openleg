@@ -117,9 +117,9 @@ def admin_e66_calculated_values(territory):
         return jsonify(error=str(error)), 422
     except psycopg2.Error:
         return jsonify(error="calculated_values_unavailable"), 503
-    return jsonify(result), 200 if result.get("replayed") else 201 if result[
-        "status"
-    ] == "accepted" else 422
+    if result["status"] != "accepted":
+        return jsonify(result), 422
+    return jsonify(result), 200 if result.get("replayed") else 201
 
 
 @admin_bp.route(
