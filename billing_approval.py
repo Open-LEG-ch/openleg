@@ -809,6 +809,23 @@ def prepare_invoice_snapshots(period, issue_date=None):
             None,
         )
         participant_provenance = dict(provenance)
+        if reconciliation.get("source_evidence"):
+            source = reconciliation["source_evidence"]
+            metadata = source["metadata"]
+            participant_provenance["reconciliation"] = {
+                **provenance["reconciliation"],
+                "source_evidence": {
+                    **source,
+                    "metadata": {
+                        **metadata,
+                        "mappings": [
+                            mapping
+                            for mapping in metadata["mappings"]
+                            if mapping["building_id"] == participant_id
+                        ],
+                    },
+                },
+            }
         participant_provenance["rounding_adjustment"] = (
             {
                 "participant_id": participant_id,

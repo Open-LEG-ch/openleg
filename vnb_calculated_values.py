@@ -13,7 +13,7 @@ from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 CONTRACT_VERSION = "vnb-calculated-values/1"
-FORMAT_VERSIONS = ("json/1",)
+FORMAT_VERSIONS = ("json/1", "e66/1")
 TRANSPORTS = ("api", "file", "manual")
 UNITS = ("kWh", "Wh")
 RESOLUTION = timedelta(minutes=15)
@@ -73,7 +73,7 @@ def _parse_moment(value, code, diagnostics):
         return None
 
 
-def _fingerprint(payload, normalized_records):
+def _fingerprint(payload, normalized_records, source_metadata=None):
     identity = {
         key: payload.get(key)
         for key in (
@@ -92,6 +92,8 @@ def _fingerprint(payload, normalized_records):
         normalized_records,
         key=lambda row: json.dumps(row, sort_keys=True, separators=(",", ":")),
     )
+    if source_metadata is not None:
+        identity["source_metadata"] = source_metadata
     encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
 
@@ -100,7 +102,9 @@ def _safe_result(saved):
     return {key: value for key, value in saved.items() if key != "evidence_bytes"}
 
 
-def accept_delivery(payload, *, transport, evidence, repository=None):
+def accept_delivery(
+    payload, *, transport, evidence, repository=None, source_metadata=None
+):
     """Validate and persist a delivery, returning no raw source material."""
     if repository is None:
         import database as repository
@@ -110,7 +114,9 @@ def accept_delivery(payload, *, transport, evidence, repository=None):
         diagnostics.append({"code": "unsupported_transport"})
     if payload.get("contract_version") != CONTRACT_VERSION:
         diagnostics.append({"code": "unsupported_contract"})
-    if payload.get("format_version") not in FORMAT_VERSIONS:
+    if payload.get("format_version") not in FORMAT_VERSIONS or (
+        payload.get("format_version") == "e66/1" and source_metadata is None
+    ):
         diagnostics.append({"code": "unsupported_format"})
     if not payload.get("source") or not payload.get("vnb_case_id"):
         diagnostics.append({"code": "missing_provenance"})
@@ -188,6 +194,11 @@ def accept_delivery(payload, *, transport, evidence, repository=None):
                 "allocated_kwh": float(kwh),
             }
         )
+        if source_metadata is not None:
+            normalized[-1].update(
+                source_metering_point_id=record["source_metering_point_id"],
+                source_quantities=record["source_quantities"],
+            )
 
     if start and end and local_zone and not record_problem:
         expected_count = int((end.astimezone(UTC) - start.astimezone(UTC)) / RESOLUTION)
@@ -213,7 +224,7 @@ def accept_delivery(payload, *, transport, evidence, repository=None):
             record_problem = True
 
     # A stable fallback still makes malformed retries idempotent.
-    fingerprint = _fingerprint(payload, normalized)
+    fingerprint = _fingerprint(payload, normalized, source_metadata)
     if (
         start
         and end
@@ -255,6 +266,8 @@ def accept_delivery(payload, *, transport, evidence, repository=None):
         "normalized_records": normalized,
         "record_count": len(normalized),
     }
+    if source_metadata is not None:
+        persisted["source_metadata"] = source_metadata
     return _safe_result(repository.save_calculated_values_delivery(persisted))
 
 

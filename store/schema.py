@@ -2031,6 +2031,15 @@ def create_tables():
                 ON vnb_calculated_values_deliveries
                     (community_id, period_start, period_end, received_at DESC)
             """)
+            cur.execute("""
+                ALTER TABLE vnb_calculated_values_deliveries
+                ADD COLUMN IF NOT EXISTS source_metadata JSONB
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_vnb_e66_evidence_hash
+                ON vnb_calculated_values_deliveries (territory, evidence_sha256)
+                WHERE format_version = 'e66/1'
+            """)
 
             # Withdrawals preserve the original VNB delivery and its evidence.
             cur.execute("""

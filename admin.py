@@ -21,6 +21,7 @@ from flask import (
 import agentmail_event
 import billing_workspace
 import database as db
+import e66_evidence
 import leg_registry
 import sdat_ingestion
 import vnb_calculated_values
@@ -99,6 +100,26 @@ def admin_vnb_calculated_values(territory):
         evidence=request.get_data(cache=True),
     )
     return jsonify(result), 201 if result["status"] == "accepted" else 422
+
+
+@admin_bp.route("/admin/vnb-calculated-values/<territory>/e66", methods=["POST"])
+def admin_e66_calculated_values(territory):
+    require_admin()
+    if not _TERRITORY_RE.fullmatch(territory):
+        return jsonify(error="invalid_territory"), 400
+    if request.mimetype not in {"application/xml", "text/xml"}:
+        return jsonify(error="e66_xml_required"), 415
+    evidence = request.get_data(cache=True)
+    try:
+        document = e66_evidence.parse_source(evidence)
+        result = db.ingest_e66_calculated_values(territory, document, evidence)
+    except e66_evidence.E66EvidenceError as error:
+        return jsonify(error=str(error)), 422
+    except psycopg2.Error:
+        return jsonify(error="calculated_values_unavailable"), 503
+    return jsonify(result), 200 if result.get("replayed") else 201 if result[
+        "status"
+    ] == "accepted" else 422
 
 
 @admin_bp.route(

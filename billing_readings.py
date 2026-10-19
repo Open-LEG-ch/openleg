@@ -464,7 +464,7 @@ def reconcile_with_vnb(frames, summary):
             "engine_kwh": round(engine_kwh, 6),
             "difference_kwh": round(engine_kwh - vnb_kwh, 6),
         }
-    return {
+    result = {
         "vnb_allocated_kwh": round(vnb_allocated, 6),
         "engine_allocated_kwh": round(engine_allocated, 6),
         "difference_kwh": round(difference, 6),
@@ -477,6 +477,9 @@ def reconcile_with_vnb(frames, summary):
         "production_difference_kwh": round(engine_production - vnb_production, 6),
         "production_per_participant": production_per_participant,
     }
+    if getattr(frames, "provenance", {}).get("vnb_evidence"):
+        result["source_evidence"] = frames.provenance["vnb_evidence"]
+    return result
 
 
 def with_calculated_vnb_evidence(frames, delivery):
@@ -519,4 +522,13 @@ def with_calculated_vnb_evidence(frames, delivery):
     provenance["calculated_values_fingerprint"] = delivery["fingerprint"]
     provenance["vnb_case_id"] = delivery["vnb_case_id"]
     provenance["vnb_source"] = delivery["source"]
+    if delivery.get("source_metadata") is not None:
+        provenance["vnb_evidence"] = {
+            "fingerprint": delivery["fingerprint"],
+            "evidence_sha256": delivery["evidence_sha256"],
+            "format_version": delivery["format_version"],
+            "source": delivery["source"],
+            "vnb_case_id": delivery["vnb_case_id"],
+            "metadata": delivery["source_metadata"],
+        }
     return replace(frames, vnb_reference=reference, provenance=provenance)

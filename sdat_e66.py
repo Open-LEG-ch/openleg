@@ -236,7 +236,19 @@ def _observations(block):
     return values
 
 
-def parse_e66_xml(xml_content):
+def _unique_paths(element, paths):
+    """The evidence profile cannot choose between repeated identity fields."""
+    for path in paths:
+        node = element
+        for name in path:
+            children = [child for child in node if _local_name(child.tag) == name]
+            if len(children) != 1:
+                return False
+            node = children[0]
+    return True
+
+
+def parse_e66_xml(xml_content, *, include_evidence_metadata=False):
     """E66 Dokument einlesen.
 
     Returns:
@@ -256,13 +268,15 @@ def parse_e66_xml(xml_content):
         return {}, ["SDAT E66: Ungültiges Dateiformat."]
 
     try:
-        return _parse_document(root)
+        return _parse_document(
+            root, include_evidence_metadata=include_evidence_metadata
+        )
     except _PARSE_ERRORS + (InvalidOperation,):
         logger.exception("[SDAT] E66 konnte nicht gelesen werden")
         return {}, ["SDAT E66: Ungültiges Dateiformat."]
 
 
-def _parse_document(root):
+def _parse_document(root, *, include_evidence_metadata=False):
     header = None
     for child in root:
         if _local_name(child.tag).endswith("HeaderInformation"):
@@ -289,6 +303,31 @@ def _parse_document(root):
         "warnings": [],
         "veracity_flags": [],
     }
+    if include_evidence_metadata:
+        document["evidence_metadata"] = {
+            "unambiguous_header": sum(
+                _local_name(child.tag).endswith("HeaderInformation") for child in root
+            )
+            == 1
+            and _unique_paths(
+                header,
+                (
+                    ("InstanceDocument", "DocumentID"),
+                    ("InstanceDocument", "DocumentType", "ebIXCode"),
+                    ("InstanceDocument", "Status"),
+                    ("InstanceDocument", "Creation"),
+                    ("Sender", "ID", "EICID"),
+                    ("Receiver", "ID", "EICID"),
+                    ("BusinessScopeProcess", "ReportPeriod", "StartDateTime"),
+                    ("BusinessScopeProcess", "ReportPeriod", "EndDateTime"),
+                ),
+            ),
+            "document_status": _text(header, "InstanceDocument", "Status"),
+            "created_at": _text(header, "InstanceDocument", "Creation"),
+            "period_start": _text(period, "StartDateTime"),
+            "period_end": _text(period, "EndDateTime"),
+            "blocks": [],
+        }
 
     groups, warnings, hard_error = _collect_groups(root, document)
     if hard_error:
@@ -317,6 +356,68 @@ def _collect_groups(root, document):
         document["block_count"] += 1
 
         direction, point_id = _block_identity(block)
+        if "evidence_metadata" in document:
+            product = _path(block, "Product", "ID")
+            document["evidence_metadata"]["blocks"].append(
+                {
+                    "metering_point_id": point_id,
+                    "unambiguous_block": sum(
+                        _local_name(child.tag)
+                        in {"ConsumptionMeteringPoint", "ProductionMeteringPoint"}
+                        for child in block
+                    )
+                    == 1
+                    and _unique_paths(
+                        block,
+                        (
+                            ("Community", "CommunityID"),
+                            (
+                                "ConsumptionMeteringPoint"
+                                if direction == DIRECTION_CONSUMPTION
+                                else "ProductionMeteringPoint",
+                                "VSENationalID",
+                            ),
+                            ("Product", "ID"),
+                            ("Product", "MeasureUnit"),
+                            ("Interval", "StartDateTime"),
+                            ("Interval", "EndDateTime"),
+                            ("Resolution", "Resolution"),
+                            ("Resolution", "Unit"),
+                        ),
+                    )
+                    and product is not None
+                    and sum(
+                        _local_name(child.tag) in {"ebIXCode", "VSENationalCode"}
+                        for child in product
+                    )
+                    == 1,
+                    "direction": direction,
+                    "community_id": _text(block, "Community", "CommunityID"),
+                    "unit": _text(block, "Product", "MeasureUnit"),
+                    "product_code": _text(product, "ebIXCode")
+                    or _text(product, "VSENationalCode"),
+                    "channel": _channel(block),
+                    "start": _text(block, "Interval", "StartDateTime"),
+                    "end": _text(block, "Interval", "EndDateTime"),
+                    "resolution": _resolution_minutes(block),
+                    "observations": [
+                        {
+                            "sequence": _text(obs, "Position", "Sequence"),
+                            "value": _text(obs, "Volume"),
+                            "condition": _text(obs, "Condition"),
+                            "unambiguous": _unique_paths(
+                                obs, (("Position", "Sequence"), ("Volume",))
+                            )
+                            and sum(
+                                _local_name(child.tag) == "Condition" for child in obs
+                            )
+                            <= 1,
+                        }
+                        for obs in block
+                        if _local_name(obs.tag) == "Observation"
+                    ],
+                }
+            )
         if not point_id:
             warnings.append("Block ohne Messpunkt übersprungen.")
             continue
