@@ -59,6 +59,7 @@ class _PauseAtCommunityInsert:
         "writer_during_restore",
         "bulk_readings",
         "bulk_readings_conflict",
+        "reserved_json",
     ],
 )
 def test_real_archive_preserves_binary_json_and_next_generated_id(
@@ -88,6 +89,25 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
         attachment_data=attachment,
     )
     assert entry == 1
+    if target_mode == "reserved_json":
+        literal_tags = {
+            "nested": [
+                {"$decimal": "1.2"},
+                {"$date": "2026-01-01"},
+                {"$binary": "c3ludGhldGlj"},
+                {"$datetime": "2026-01-01T00:00:00Z"},
+                {"$date": "this is literal JSON, not a typed date"},
+            ],
+        }
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO billing_periods (community_id, period_start, period_end, reconciliation, billing_policy_snapshot) VALUES (%s, '2026-01-01', '2026-02-01', %s, %s)",
+                (
+                    cid,
+                    psycopg2.extras.Json(literal_tags),
+                    psycopg2.extras.Json({"$decimal": "a literal JSON object"}),
+                ),
+            )
     if target_mode.startswith("bulk_readings"):
         assert (
             db.upsert_metering_points(

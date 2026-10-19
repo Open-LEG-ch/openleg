@@ -8,6 +8,8 @@ file as private personal, metering and financial data.
 The manifest declares the datasets and their SHA-256 hashes. The archive covers
 those datasets; it does not include every private operations ledger. Binary
 attachments, JSON fields and typed dates and quantities retain their values.
+PostgreSQL column types determine scalar-tag decoding. Objects inside JSON or
+JSONB fields remain literal JSON, even when a key resembles an archive type tag.
 Restore rejects conflicting records and leaves unrelated records intact.
 
 Run a dry-run against the destination before restoring. The destination must

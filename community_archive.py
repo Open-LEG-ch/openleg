@@ -202,10 +202,15 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
         errors.append("Invoice scope violation: invoice_lifecycle_events")
     if not errors and hasattr(store, "validate_records"):
         errors.extend(store.validate_records(datasets))
-    try:
-        decoded = _python_value(datasets)
-    except (ValueError, TypeError):
-        errors.append("Invalid tagged value")
+    if not errors:
+        try:
+            decoded = (
+                store.decode_records(datasets)
+                if hasattr(store, "decode_records")
+                else _python_value(datasets)
+            )
+        except (ValueError, TypeError):
+            errors.append("Invalid tagged value")
     conflicts = (
         store.find_conflicts(community_id, datasets)
         if not errors and hasattr(store, "find_conflicts")
@@ -294,6 +299,9 @@ class PostgresArchiveStore:
         return result if result["communities"] else None
 
     def find_conflicts(self, community_id, datasets):
+        archived = self.decode_records({"communities": datasets["communities"]})[
+            "communities"
+        ][0]
         with self._connection() as conn, conn.cursor() as cur:
             cur.execute(
                 "SELECT * FROM communities WHERE community_id = %s", (community_id,)
@@ -301,7 +309,6 @@ class PostgresArchiveStore:
             existing = cur.fetchone()
             if existing is None:
                 return []
-            archived = _python_value(datasets["communities"])[0]
             return (
                 []
                 if all(existing[key] == value for key, value in archived.items())
@@ -318,6 +325,29 @@ class PostgresArchiveStore:
         for record in cur.fetchall():
             allowed.setdefault(record["table_name"], set()).add(record["column_name"])
         return allowed
+
+    def decode_records(self, datasets):
+        """Decode archive scalar tags without interpreting literal JSON objects."""
+        with self._connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT table_name, column_name FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND data_type IN ('json', 'jsonb')"
+            )
+            json_columns = {
+                (row["table_name"], row["column_name"]) for row in cur.fetchall()
+            }
+        return {
+            table: [
+                {
+                    column: value
+                    if (table, column) in json_columns
+                    else _python_value(value)
+                    for column, value in row.items()
+                }
+                for row in rows
+            ]
+            for table, rows in datasets.items()
+        }
 
     def validate_records(self, datasets):
         with self._connection() as conn, conn.cursor() as cur:
