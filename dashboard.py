@@ -7,6 +7,7 @@ import math
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from urllib.parse import quote, urlencode
+from zoneinfo import ZoneInfo
 
 import billing_lifecycle
 import billing_policy
@@ -21,9 +22,26 @@ import member_savings
 import payment_reconciliation
 import quartierakku
 import security_utils
+import telemetry
 import vnb_exchange
 
 logger = logging.getLogger(__name__)
+
+
+def telemetry_view(installations):
+    """Present source timestamps in Swiss local time, preserving their UTC value."""
+    for installation in installations:
+        for sample in installation["samples"]:
+            observed = sample["observed_at"]
+            sample["observed_label"] = (
+                telemetry.timestamp(observed)
+                .astimezone(ZoneInfo("Europe/Zurich"))
+                .strftime("%d.%m.%Y %H:%M:%S %Z (%z)")
+                if observed
+                else None
+            )
+    return installations
+
 
 _PROFILE_EXPORT_FIELDS = (
     "building_id",

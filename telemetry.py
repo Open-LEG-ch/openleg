@@ -11,6 +11,8 @@ VERSION = "telemetry/1"
 MAX_BYTES = 65536
 MAX_BATCH = 100
 RATE_PER_MINUTE = 60
+FRESHNESS_MIN_SECONDS = 60
+FRESHNESS_CADENCES = 2
 IDENTIFIER = re.compile(r"[A-Za-z0-9_.:-]{1,128}\Z")
 UNITS = {
     "power": "W",
@@ -197,6 +199,10 @@ def observation(sample, installation, now):
     return row
 
 
+def freshness_window(cadence_seconds):
+    return max(FRESHNESS_MIN_SECONDS, cadence_seconds * FRESHNESS_CADENCES)
+
+
 def freshness(row, now):
     observed = row["observed_at"]
     if observed is None or row["quality"] == "unknown":
@@ -204,4 +210,4 @@ def freshness(row, now):
     age = (now - timestamp(observed)).total_seconds()
     if age < 0:
         return "clock_skew"
-    return "fresh" if age <= max(60, row["cadence_seconds"] * 2) else "stale"
+    return "fresh" if age <= freshness_window(row["cadence_seconds"]) else "stale"
