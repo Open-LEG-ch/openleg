@@ -1,9 +1,19 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Persistence adapter for VNB-calculated LEG values and source evidence."""
 
+import hashlib
 import json
+import re
 
 from store.operator_api import enqueue_event
+
+
+class CalculatedValuesLifecycleMissing(ValueError):
+    """The authenticated tenant has no such accepted delivery."""
+
+
+class CalculatedValuesLifecycleConflict(ValueError):
+    """The command conflicts with an existing immutable event."""
 
 
 def _get_connection():
@@ -49,9 +59,10 @@ def find_overlapping_calculated_values(
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT content_fingerprint FROM vnb_calculated_values_deliveries
+            SELECT content_fingerprint FROM vnb_calculated_values_deliveries d
             WHERE territory = %s AND community_id = %s AND status = 'accepted'
               AND period_start < %s AND period_end > %s
+              AND NOT EXISTS (SELECT 1 FROM vnb_calculated_values_events e WHERE e.delivery_id = d.id)
             """,
             (territory, community_id, period_end, period_start),
         )
@@ -61,6 +72,12 @@ def find_overlapping_calculated_values(
 def save_calculated_values_delivery(delivery):
     """Persist evidence and normalized records atomically; replay is a no-op."""
     with _get_connection() as conn, conn.cursor() as cur:
+        if delivery.get("community_id"):
+            # Match withdrawal/approval lock order before advisory or FK locks.
+            cur.execute(
+                "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+                (delivery["community_id"],),
+            )
         if delivery["status"] == "accepted":
             lock_key = (
                 f"calculated-values:{delivery['territory']}:{delivery['community_id']}"
@@ -72,10 +89,11 @@ def save_calculated_values_delivery(delivery):
             cur.execute(
                 """
                 SELECT content_fingerprint
-                FROM vnb_calculated_values_deliveries
+                FROM vnb_calculated_values_deliveries d
                 WHERE territory = %s AND community_id = %s
                   AND status = 'accepted' AND period_start < %s AND period_end > %s
                   AND content_fingerprint <> %s
+                  AND NOT EXISTS (SELECT 1 FROM vnb_calculated_values_events e WHERE e.delivery_id = d.id)
                 LIMIT 1
                 """,
                 (
@@ -132,8 +150,10 @@ def save_calculated_values_delivery(delivery):
         if row is None:
             cur.execute(
                 """
-                SELECT *, TRUE AS replayed
-                FROM vnb_calculated_values_deliveries
+                SELECT d.*, TRUE AS replayed,
+                    COALESCE((SELECT e.action FROM vnb_calculated_values_events e
+                              WHERE e.delivery_id = d.id), 'current') AS lifecycle_state
+                FROM vnb_calculated_values_deliveries d
                 WHERE territory = %s AND content_fingerprint = %s
                 """,
                 (delivery["territory"], delivery["fingerprint"]),
@@ -159,9 +179,10 @@ def get_validated_calculated_values(community_id, period_start, period_end):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT * FROM vnb_calculated_values_deliveries
+            SELECT * FROM vnb_calculated_values_deliveries d
             WHERE community_id = %s AND period_start = %s AND period_end = %s
               AND status = 'accepted'
+              AND NOT EXISTS (SELECT 1 FROM vnb_calculated_values_events e WHERE e.delivery_id = d.id)
             ORDER BY received_at DESC LIMIT 1
             """,
             (community_id, period_start, period_end),
@@ -178,8 +199,12 @@ def list_calculated_values_deliveries(territory, limit=100):
             SELECT id, contract_version, format_version, transport, territory,
                    community_id, period_start, period_end, timezone, source,
                    vnb_case_id, content_fingerprint, evidence_sha256, status,
-                   diagnostics, record_count, received_at
-            FROM vnb_calculated_values_deliveries
+                   diagnostics, record_count, received_at,
+                   CASE WHEN status = 'accepted' THEN
+                       COALESCE((SELECT e.action FROM vnb_calculated_values_events e
+                                 WHERE e.delivery_id = d.id), 'current')
+                       ELSE status END AS lifecycle_state
+            FROM vnb_calculated_values_deliveries d
             WHERE territory = %s ORDER BY received_at DESC LIMIT %s
             """,
             (territory, limit),
@@ -194,7 +219,113 @@ def _delivery_row(row):
         if isinstance(result.get(field), str):
             result[field] = json.loads(result[field])
     result.pop("evidence_bytes", None)
+    if result.get("status") == "accepted":
+        result.setdefault("lifecycle_state", "current")
     return result
+
+
+def withdraw_calculated_values_delivery(
+    territory, delivery_id, idempotency_key, reason
+):
+    """Append an administrator's withdrawal statement; never erase its source."""
+    if not isinstance(idempotency_key, str) or not re.fullmatch(
+        r"[A-Za-z0-9._-]{1,128}", idempotency_key
+    ):
+        raise ValueError("invalid_idempotency_key")
+    if not isinstance(reason, str) or not reason.strip() or len(reason) > 1000:
+        raise ValueError("invalid_reason")
+    reason = reason.strip()
+    fingerprint = hashlib.sha256(
+        json.dumps(
+            {"delivery_id": delivery_id, "territory": territory, "reason": reason},
+            sort_keys=True,
+        ).encode()
+    ).hexdigest()
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT d.* FROM vnb_calculated_values_deliveries d
+               JOIN communities c ON c.community_id = d.community_id
+               JOIN buildings b ON b.building_id = c.admin_building_id
+               WHERE d.id = %s AND d.territory = %s AND b.city_id = %s""",
+            (delivery_id, territory, territory),
+        )
+        delivery = cur.fetchone()
+        if not delivery or delivery["status"] != "accepted":
+            raise CalculatedValuesLifecycleMissing()
+        cur.execute(
+            "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+            (delivery["community_id"],),
+        )
+        cur.execute(
+            """SELECT 1 FROM communities c JOIN buildings b
+               ON b.building_id = c.admin_building_id
+               WHERE c.community_id = %s AND b.city_id = %s FOR SHARE OF b""",
+            (delivery["community_id"], territory),
+        )
+        if not cur.fetchone():
+            raise CalculatedValuesLifecycleMissing()
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s))",
+            (f"calculated-lifecycle:{territory}:{idempotency_key}",),
+        )
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s))",
+            (f"calculated-values:{territory}:{delivery['community_id']}",),
+        )
+        cur.execute(
+            """SELECT * FROM vnb_calculated_values_events
+               WHERE territory = %s AND idempotency_key = %s""",
+            (territory, idempotency_key),
+        )
+        previous = cur.fetchone()
+        if previous:
+            if previous["request_fingerprint"] != fingerprint:
+                raise CalculatedValuesLifecycleConflict("idempotency_conflict")
+            return {
+                "id": previous["id"],
+                "action": previous["action"],
+                "delivery_id": previous["delivery_id"],
+                "replayed": True,
+            }
+        cur.execute(
+            "SELECT id FROM vnb_calculated_values_events WHERE delivery_id = %s",
+            (delivery_id,),
+        )
+        if cur.fetchone():
+            raise CalculatedValuesLifecycleConflict("delivery_already_retired")
+        cur.execute(
+            """INSERT INTO vnb_calculated_values_events
+               (territory, community_id, delivery_id, action, idempotency_key,
+                request_fingerprint, authenticated_actor, reason)
+               VALUES (%s, %s, %s, 'withdrawn', %s, %s, 'admin-token', %s)
+               RETURNING id, action, delivery_id""",
+            (
+                territory,
+                delivery["community_id"],
+                delivery_id,
+                idempotency_key,
+                fingerprint,
+                reason,
+            ),
+        )
+        event = dict(cur.fetchone())
+        cur.execute(
+            """UPDATE billing_periods SET status = 'invalidated'
+               WHERE community_id = %s AND calculated_values_fingerprint = %s
+               AND status = 'draft'""",
+            (delivery["community_id"], delivery["content_fingerprint"]),
+        )
+        enqueue_event(
+            cur,
+            "metering.calculated-delivery.withdrawn",
+            str(event["id"]),
+            delivery["community_id"],
+            {
+                "delivery_id": delivery_id,
+                "fingerprint": delivery["content_fingerprint"],
+            },
+        )
+        return {**event, "replayed": False}
 
 
 def _iso_moment(value):

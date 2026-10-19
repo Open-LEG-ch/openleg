@@ -2,7 +2,7 @@
 """Owner readings through the dashboard route and real telemetry storage."""
 
 from datetime import UTC, datetime, timedelta
-from threading import Timer
+from types import SimpleNamespace
 
 import pytest
 
@@ -10,6 +10,7 @@ import dashboard
 import database as db
 from store import telemetry as store
 from tests import test_dashboard_access_routes as sessions
+from tests import test_interest_postgres
 from tests import test_telemetry as api
 
 app_module = api.app_module
@@ -375,6 +376,13 @@ def test_expired_buffered_delivery_cannot_make_a_channel_look_recent(
     client = telemetry_client
     installation, token = api.enroll(client, raw_retention_days=1)
     now = datetime.now(UTC)
+
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now.astimezone(tz)
+
+    monkeypatch.setattr(store, "datetime", Clock)
     assert (
         api.ingest(
             client,
@@ -522,18 +530,19 @@ def test_unavailable_storage_does_not_render_zero_or_private_errors(
     assert "private-connection-material" not in response.text + caplog.text
 
 
-def test_blocked_storage_returns_unavailable_and_recovers(telemetry_client):
+def test_blocked_storage_returns_unavailable_and_recovers(
+    telemetry_client, monkeypatch
+):
     client = telemetry_client
     api.enroll(client)
     with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT pg_backend_pid() AS pid")
+        blocker = SimpleNamespace(pid=cur.fetchone()["pid"])
         cur.execute("LOCK TABLE telemetry_samples IN ACCESS EXCLUSIVE MODE")
-        # Release even if the request loses its query budget, so regressions fail.
-        release = Timer(5, conn.rollback)
-        release.start()
-        try:
-            response = client.get("/dashboard/telemetry")
-        finally:
-            release.cancel()
+        with test_interest_postgres.transaction_race(monkeypatch) as race:
+            request = race.start(lambda: client.get("/dashboard/telemetry"))
+            race.wait_until_blocked_by(request, blocker)
+            response = race.finish(request)
     assert response.status_code == 503
     assert response.headers["Cache-Control"] == "no-store"
     assert "0 W" not in response.text

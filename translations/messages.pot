@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 21:51+0000\n"
+"POT-Creation-Date: 2026-10-19 21:53+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -579,7 +579,7 @@ msgstr ""
 msgid "Abrechnung vorbereiten"
 msgstr ""
 
-#: dashboard.py:683
+#: dashboard.py:687
 msgid "Abrechnung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -620,7 +620,7 @@ msgstr ""
 msgid "Abrechnungsentwurf"
 msgstr ""
 
-#: dashboard.py:689
+#: dashboard.py:693
 msgid "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
 msgstr ""
 
@@ -632,7 +632,7 @@ msgstr ""
 msgid "Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr ""
 
-#: billing_workspace.py:238
+#: billing_workspace.py:240
 msgid "Abweichung prüfen"
 msgstr ""
 
@@ -923,7 +923,7 @@ msgstr ""
 msgid "Angenommen"
 msgstr ""
 
-#: dashboard.py:1230
+#: dashboard.py:1234
 msgid "Anhänge müssen PDF-Dateien sein."
 msgstr ""
 
@@ -1028,7 +1028,7 @@ msgstr ""
 msgid "Antwort"
 msgstr ""
 
-#: dashboard.py:892
+#: dashboard.py:896
 msgid "Antwort oder Status ist erforderlich."
 msgstr ""
 
@@ -1638,7 +1638,7 @@ msgstr ""
 msgid "Bitte geben Sie eine E-Mail an."
 msgstr ""
 
-#: dashboard.py:968 templates/partials/form_validation.html:3
+#: dashboard.py:972 templates/partials/form_validation.html:3
 msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgstr ""
 
@@ -1646,7 +1646,7 @@ msgstr ""
 msgid "Bitte geben Sie eine gültige Schweizer PLZ an."
 msgstr ""
 
-#: dashboard.py:1391 dashboard.py:1394
+#: dashboard.py:1395 dashboard.py:1398
 msgid "Bitte geben Sie eine gültige Solarleistung ein."
 msgstr ""
 
@@ -1662,7 +1662,7 @@ msgstr ""
 msgid "Bitte geben Sie einen Wert im zulässigen Schrittintervall ein."
 msgstr ""
 
-#: dashboard.py:1378 dashboard.py:1386
+#: dashboard.py:1382 dashboard.py:1390
 msgid "Bitte geben Sie einen gültigen Jahresverbrauch ein."
 msgstr ""
 
@@ -1883,7 +1883,7 @@ msgstr ""
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr ""
 
-#: dashboard.py:1406
+#: dashboard.py:1410
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
 msgstr ""
 
@@ -1923,11 +1923,11 @@ msgstr ""
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr ""
 
-#: dashboard.py:1016
+#: dashboard.py:1020
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr ""
 
-#: store/formation_activation.py:155
+#: store/formation_activation.py:161
 msgid "Das bestätigte Startdatum liegt noch in der Zukunft."
 msgstr ""
 
@@ -2115,11 +2115,11 @@ msgstr ""
 msgid "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
 msgstr ""
 
-#: dashboard.py:1232
+#: dashboard.py:1236
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr ""
 
-#: store/formation_activation.py:148
+#: store/formation_activation.py:154
 msgid "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
 msgstr ""
 
@@ -2196,7 +2196,7 @@ msgid ""
 "gewählten Dienstleister betreiben können."
 msgstr ""
 
-#: dashboard.py:1234
+#: dashboard.py:1238
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr ""
 
@@ -2640,7 +2640,7 @@ msgstr ""
 msgid "Die Richtlinien-Kopie ist unvollständig: "
 msgstr ""
 
-#: dashboard.py:998
+#: dashboard.py:1002
 msgid "Die Rollen konnten nicht geändert werden. Mindestens eine Administration muss bestehen bleiben."
 msgstr ""
 
@@ -2791,7 +2791,7 @@ msgid ""
 "Dokumente vor der Unterzeichnung juristisch prüfen."
 msgstr ""
 
-#: billing_workspace.py:194
+#: billing_workspace.py:196
 msgid ""
 "Dieser Abrechnungsentwurf ist keine definitive Rechnung. Prüfen Sie Tarif, Abgleich und "
 "Quelldokumente."
@@ -2892,7 +2892,7 @@ msgstr ""
 msgid "E-Mail"
 msgstr ""
 
-#: dashboard.py:98 dashboard.py:100 dashboard.py:1346
+#: dashboard.py:98 dashboard.py:100 dashboard.py:1350
 msgid "E-Mail bestätigt"
 msgstr ""
 
@@ -2958,7 +2958,7 @@ msgstr ""
 msgid "EVU Registrierung"
 msgstr ""
 
-#: dashboard.py:108 dashboard.py:110 dashboard.py:1348
+#: dashboard.py:108 dashboard.py:110 dashboard.py:1352
 msgid "EVU-Einwilligung erteilt"
 msgstr ""
 
@@ -3110,7 +3110,7 @@ msgid ""
 " trägt."
 msgstr ""
 
-#: billing_lifecycle.py:50 dashboard.py:608
+#: billing_lifecycle.py:50 dashboard.py:612
 msgid "Ein gültiges Zahlungsdatum ist erforderlich."
 msgstr ""
 
@@ -3162,11 +3162,11 @@ msgstr ""
 msgid "Eine abgestimmte Teilnehmenden- und Anlagenliste."
 msgstr ""
 
-#: store/formation_activation.py:105
+#: store/formation_activation.py:108
 msgid "Eine andere Startbestätigung liegt bereits vor."
 msgstr ""
 
-#: dashboard.py:636
+#: dashboard.py:640
 msgid "Eine gültige Ersatzrechnung ist erforderlich."
 msgstr ""
 
@@ -3174,7 +3174,7 @@ msgstr ""
 msgid "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 msgstr ""
 
-#: billing_policy.py:89 billing_workspace.py:218 billing_workspace.py:219
+#: billing_policy.py:89 billing_workspace.py:220 billing_workspace.py:221
 #: templates/leg_community_create.html:22
 msgid "Einfach"
 msgstr ""
@@ -3202,7 +3202,7 @@ msgid_plural "Einladungen"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dashboard.py:951
+#: dashboard.py:955
 msgid "Einladung nicht möglich (bereits Mitglied?)."
 msgstr ""
 
@@ -3282,7 +3282,7 @@ msgstr ""
 msgid "Eintrag und Checkliste öffnen"
 msgstr ""
 
-#: dashboard.py:1249
+#: dashboard.py:1253
 msgid "Eintrag ungültig (Richtung oder Kanal unbekannt)."
 msgstr ""
 
@@ -3417,7 +3417,11 @@ msgstr ""
 msgid "Entwurf prüfen"
 msgstr ""
 
-#: store/formation_activation.py:144
+#: billing_workspace.py:132 dashboard.py:361
+msgid "Entwurf ungültig"
+msgstr ""
+
+#: store/formation_activation.py:150
 msgid "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
 msgstr ""
 
@@ -3882,7 +3886,7 @@ msgstr ""
 msgid "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung mit einer anderen E-Mail-Adresse."
 msgstr ""
 
-#: dashboard.py:817
+#: dashboard.py:821
 msgid "Für dieses Gültig-ab-Datum existiert bereits eine Version."
 msgstr ""
 
@@ -3955,11 +3959,11 @@ msgid ""
 " nicht an, ob bereits ein Profil existiert."
 msgstr ""
 
-#: store/formation_activation.py:88
+#: store/formation_activation.py:90
 msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
 msgstr ""
 
-#: store/formation_activation.py:84
+#: store/formation_activation.py:86
 msgid "Geben Sie einen gültigen Beleg und ein Startdatum an."
 msgstr ""
 
@@ -4311,7 +4315,7 @@ msgstr ""
 msgid "Glarus"
 msgstr ""
 
-#: billing_policy.py:84 billing_workspace.py:225
+#: billing_policy.py:84 billing_workspace.py:227
 msgid "Gleiche Netzebene"
 msgstr ""
 
@@ -4400,7 +4404,7 @@ msgstr ""
 msgid "Gründung gestartet"
 msgstr ""
 
-#: dashboard.py:1058
+#: dashboard.py:1062
 msgid "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
 msgstr ""
 
@@ -5090,7 +5094,7 @@ msgstr ""
 msgid "Kein Profil angegeben."
 msgstr ""
 
-#: dashboard.py:948
+#: dashboard.py:952
 msgid "Kein Profil zum Einladen angegeben."
 msgstr ""
 
@@ -5106,10 +5110,10 @@ msgstr ""
 msgid "Kein Zugang angegeben"
 msgstr ""
 
-#: dashboard.py:207 dashboard.py:218 dashboard.py:441 dashboard.py:546 dashboard.py:592
-#: dashboard.py:603 dashboard.py:620 dashboard.py:631 dashboard.py:649 dashboard.py:676
-#: dashboard.py:756 dashboard.py:785 dashboard.py:806 dashboard.py:875 dashboard.py:890
-#: dashboard.py:901 dashboard.py:1042 dashboard.py:1226
+#: dashboard.py:207 dashboard.py:218 dashboard.py:445 dashboard.py:550 dashboard.py:596
+#: dashboard.py:607 dashboard.py:624 dashboard.py:635 dashboard.py:653 dashboard.py:680
+#: dashboard.py:760 dashboard.py:789 dashboard.py:810 dashboard.py:879 dashboard.py:894
+#: dashboard.py:905 dashboard.py:1046 dashboard.py:1230
 msgid "Kein Zugriff."
 msgstr ""
 
@@ -5144,15 +5148,15 @@ msgstr ""
 msgid "Keine Angabe"
 msgstr ""
 
-#: dashboard.py:1122
+#: dashboard.py:1126
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1076
+#: dashboard.py:1080
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
-#: dashboard.py:1158
+#: dashboard.py:1162
 msgid "Keine Berechtigung."
 msgstr ""
 
@@ -5273,7 +5277,7 @@ msgstr ""
 msgid "Keine neue Kollektor-Lieferung"
 msgstr ""
 
-#: dashboard.py:1045
+#: dashboard.py:1049
 msgid "Keine offene Einladung gefunden."
 msgstr ""
 
@@ -5552,11 +5556,11 @@ msgstr ""
 msgid "LEG gründen: so geht es"
 msgstr ""
 
-#: dashboard.py:935
+#: dashboard.py:939
 msgid "LEG konnte nicht erstellt werden."
 msgstr ""
 
-#: dashboard.py:211 dashboard.py:788
+#: dashboard.py:211 dashboard.py:792
 msgid "LEG nicht gefunden."
 msgstr ""
 
@@ -5943,7 +5947,7 @@ msgstr ""
 msgid "Manuell geprüft"
 msgstr ""
 
-#: dashboard.py:1188
+#: dashboard.py:1192
 msgid "Manuelle Zustellung fehlgeschlagen."
 msgstr ""
 
@@ -6062,7 +6066,7 @@ msgstr ""
 msgid "Melden Sie die LEG beim Netzbetreiber an."
 msgstr ""
 
-#: store/formation_activation.py:107
+#: store/formation_activation.py:112
 msgid "Melden Sie die LEG zuerst beim Netzbetreiber an."
 msgstr ""
 
@@ -6310,7 +6314,7 @@ msgid ""
 "liefert sie Messdaten als CSV oder S-DAT."
 msgstr ""
 
-#: dashboard.py:113 dashboard.py:115 dashboard.py:1349
+#: dashboard.py:113 dashboard.py:115 dashboard.py:1353
 msgid "Nachbar-Einwilligung erteilt"
 msgstr ""
 
@@ -6371,7 +6375,7 @@ msgstr ""
 msgid "Name und Kontakt-E-Mail sind erforderlich."
 msgstr ""
 
-#: dashboard.py:929
+#: dashboard.py:933
 msgid "Name und Profil sind erforderlich."
 msgstr ""
 
@@ -6436,7 +6440,7 @@ msgstr ""
 msgid "Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden."
 msgstr ""
 
-#: dashboard.py:1085
+#: dashboard.py:1089
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -6556,8 +6560,8 @@ msgstr ""
 msgid "Neuenburg"
 msgstr ""
 
-#: billing_workspace.py:222 billing_workspace.py:229 billing_workspace.py:272 billing_workspace.py:276
-#: billing_workspace.py:280 dashboard.py:475 templates/utility/dashboard.html:59
+#: billing_workspace.py:224 billing_workspace.py:231 billing_workspace.py:274 billing_workspace.py:278
+#: billing_workspace.py:282 dashboard.py:479 templates/utility/dashboard.html:59
 #: templates/utility/dashboard.html:123 templates/utility/dashboard.html:131
 msgid "Nicht angegeben"
 msgstr ""
@@ -6722,19 +6726,19 @@ msgid ""
 "Adressen."
 msgstr ""
 
-#: dashboard.py:987
+#: dashboard.py:991
 msgid "Nur die Administration kann Rollen ändern."
 msgstr ""
 
-#: dashboard.py:1013
+#: dashboard.py:1017
 msgid "Nur die Administration kann das Vier-Augen-Prinzip ändern."
 msgstr ""
 
-#: dashboard.py:1054
+#: dashboard.py:1058
 msgid "Nur die Administration kann die Gründung starten."
 msgstr ""
 
-#: dashboard.py:946 dashboard.py:964
+#: dashboard.py:950 dashboard.py:968
 msgid "Nur die Administration kann einladen."
 msgstr ""
 
@@ -7402,7 +7406,7 @@ msgstr ""
 msgid "Projektverpflichtungen"
 msgstr ""
 
-#: billing_policy.py:88 billing_workspace.py:217 templates/leg_community_create.html:23
+#: billing_policy.py:88 billing_workspace.py:219 templates/leg_community_create.html:23
 msgid "Proportional"
 msgstr ""
 
@@ -7707,7 +7711,7 @@ msgstr ""
 msgid "Rechnung"
 msgstr ""
 
-#: dashboard.py:863
+#: dashboard.py:867
 msgid "Rechnung nicht gefunden."
 msgstr ""
 
@@ -8835,7 +8839,7 @@ msgstr ""
 msgid "Ungültiges Token-Format"
 msgstr ""
 
-#: billing_policy.py:85 billing_workspace.py:226
+#: billing_policy.py:85 billing_workspace.py:228
 msgid "Unterschiedliche Netzebenen"
 msgstr ""
 
@@ -8907,7 +8911,7 @@ msgstr ""
 msgid "VNB-Abgleich"
 msgstr ""
 
-#: dashboard.py:1133
+#: dashboard.py:1137
 msgid "VNB-Mutation vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -8951,7 +8955,7 @@ msgstr ""
 msgid "Verbrauch:"
 msgstr ""
 
-#: dashboard.py:103 dashboard.py:105 dashboard.py:1347
+#: dashboard.py:103 dashboard.py:105 dashboard.py:1351
 msgid "Verbrauchsdaten hinterlegt"
 msgstr ""
 
@@ -9105,7 +9109,7 @@ msgstr ""
 msgid "Vier-Augen-Prinzip"
 msgstr ""
 
-#: billing_workspace.py:236
+#: billing_workspace.py:238
 msgid "Vollständig abgeglichen"
 msgstr ""
 
@@ -9175,7 +9179,7 @@ msgstr ""
 msgid "Vorbereitet durch:"
 msgstr ""
 
-#: dashboard.py:657
+#: dashboard.py:661
 msgid "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr ""
 
@@ -9640,7 +9644,7 @@ msgstr ""
 msgid "Wählen Sie den passenden Zugang. Danach melden Sie sich sicher per E-Mail-Link an."
 msgstr ""
 
-#: store/formation_activation.py:64
+#: store/formation_activation.py:65
 msgid "Wählen Sie einen eingehenden Beleg mit Anhang aus dem Korrespondenzjournal."
 msgstr ""
 

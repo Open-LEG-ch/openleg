@@ -65,6 +65,34 @@ def save_billing_period(
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
+                status = "draft"
+                if summary.get("calculated_values_fingerprint"):
+                    # A preparation may finish after its source was withdrawn.
+                    # Keep its snapshot, while leaving the live window available.
+                    cur.execute(
+                        "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+                        (community_id,),
+                    )
+                    cur.execute(
+                        """SELECT EXISTS (
+                            SELECT 1 FROM vnb_calculated_values_deliveries d
+                            WHERE d.community_id = %s AND d.content_fingerprint = %s
+                              AND d.period_start = %s AND d.period_end = %s
+                              AND d.status = 'accepted'
+                              AND NOT EXISTS (
+                                  SELECT 1 FROM vnb_calculated_values_events e
+                                  WHERE e.delivery_id = d.id
+                              )
+                        ) AS evidence_current""",
+                        (
+                            community_id,
+                            summary["calculated_values_fingerprint"],
+                            period_start,
+                            period_end,
+                        ),
+                    )
+                    if not cur.fetchone()["evidence_current"]:
+                        status = "invalidated"
                 cur.execute(
                     """
                     INSERT INTO billing_periods
@@ -75,7 +103,7 @@ def save_billing_period(
                      reconciliation, billing_policy_snapshot, prepared_by,
                      battery_snapshot, calculated_values_fingerprint, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s::jsonb, %s, 'draft')
+                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s::jsonb, %s, %s)
                     RETURNING id
                 """,
                     (
@@ -112,6 +140,7 @@ def save_billing_period(
                             else None
                         ),
                         summary.get("calculated_values_fingerprint"),
+                        status,
                     ),
                 )
                 period_id = cur.fetchone()["id"]
@@ -393,6 +422,28 @@ def approve_billing_period(
                         "Issued billing period has no invoices"
                     )
                 return invoices
+            if period.get("calculated_values_fingerprint"):
+                cur.execute(
+                    """SELECT 1 FROM vnb_calculated_values_deliveries d
+                       WHERE d.community_id = %s AND d.content_fingerprint = %s
+                         AND d.period_start = %s AND d.period_end = %s
+                         AND d.status = 'accepted'
+                         AND NOT EXISTS (
+                             SELECT 1 FROM vnb_calculated_values_events e
+                             WHERE e.delivery_id = d.id
+                         )""",
+                    (
+                        community_id,
+                        period["calculated_values_fingerprint"],
+                        period["period_start"],
+                        period["period_end"],
+                    ),
+                )
+                if not cur.fetchone():
+                    raise billing_approval.BillingApprovalError(
+                        "Der VNB-Beleg dieses Entwurfs ist nicht mehr aktuell. "
+                        "Erstellen Sie den Entwurf neu."
+                    )
             if status != "draft":
                 raise billing_approval.BillingApprovalError(
                     "Only a draft billing period can be approved"
@@ -483,6 +534,7 @@ def get_billing_period_for_window(
             """
             SELECT id, input_fingerprint FROM billing_periods
             WHERE community_id = %s AND period_start = %s AND period_end = %s
+              AND status IS DISTINCT FROM 'invalidated'
             """,
             (community_id, period_start, period_end),
         )

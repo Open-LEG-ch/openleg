@@ -355,7 +355,11 @@ def leg_billing_workspace_location(community_id: str) -> str:
     return "/leg/community/" + quote(community_id, safe="") + "/billing"
 
 
-_BILLING_STATUS_LABELS = {"draft": "Entwurf", "issued": "Freigegeben"}
+_BILLING_STATUS_LABELS = {
+    "draft": "Entwurf",
+    "issued": "Freigegeben",
+    "invalidated": _N("Entwurf ungültig"),
+}
 InvoiceLifecycleError = billing_lifecycle.InvoiceLifecycleError
 
 

@@ -198,10 +198,12 @@ it.
 
 ## store/calculated_values
 
-- **Tables:** `vnb_calculated_values_deliveries`
+- **Tables:** `vnb_calculated_values_deliveries`, `vnb_calculated_values_events`
 - **Holds:** VNB case, source, period, content and evidence fingerprints,
   normalized quarter-hour LEG allocations, validation diagnostics, and the
-  original evidence bytes.
+  original evidence bytes. Append-only withdrawal events preserve the source
+  delivery ID, tenant/community scope, authenticated admin-token principal,
+  operator's reason, request fingerprint, idempotency key and event time.
 - **Purpose:** independent VNB evidence for the billing allocation check.
 - **Owner:** the LEG identified by `community_id`; access is tenant-scoped
   through its administrator's `city_id`.

@@ -129,6 +129,8 @@ def _period_summary(period):
     result["status_label"] = (
         _N("Entwurf")
         if period.get("status") == "draft"
+        else _N("Entwurf ungültig")
+        if period.get("status") == "invalidated"
         else str(period.get("status", ""))
     )
     return result

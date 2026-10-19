@@ -267,6 +267,43 @@ earlier values. The import therefore upserts with last write wins.
 `Condition` flags individual values but does not reliably predict corrections.
 Do not rely on it.
 
+### Withdrawal of calculated VNB evidence
+
+The separate `vnb-calculated-values/1` delivery ledger preserves the original
+source bytes and validation result. An authorized operator withdraws an accepted
+delivery with `POST /admin/vnb-calculated-values/{territory}/{delivery_id}/withdrawals`,
+using `X-Admin-Token`, an `Idempotency-Key` of 1-128 ASCII letters, digits, dots,
+underscores or hyphens, and a JSON body such as:
+
+```json
+{"reason": "VNB withdrawal reference SYNTHETIC-123; corrected delivery follows"}
+```
+
+The command records the authenticated principal as `admin-token`; it does not
+identify the person holding that credential. It appends the operator's reason,
+source ID and request fingerprint, and never rewrites or deletes the delivery.
+An identical command retry returns the original event. Changed input under the
+same key conflicts. The request path bounds the tenant; a body field cannot
+change that scope.
+
+Delivery `status` remains its original validation result. `lifecycle_state`
+shows whether accepted evidence is `current` or `withdrawn`. Reimporting the
+original file is a replay and cannot reactivate withdrawn evidence.
+
+Withdrawal invalidates dependent drafts, preserving their input snapshots and
+line items. A preparation saved after withdrawal is retained as an invalidated
+version and does not reserve the live window. Once corrected evidence passes the normal import and billing gates,
+the runner may create a new draft for the same window. Only one non-invalidated
+period can occupy that window. Approval rechecks the current evidence fingerprint
+under the community lock, including when an older preparation finishes late.
+
+Until corrected evidence arrives, billing fails closed. Issued periods and
+invoice snapshots remain unchanged. An operator must review their existing
+cancellation/correction workflow. Withdrawal and approval serialize: the first
+committed operation determines whether the draft is invalidated or the issued
+snapshot survives. This endpoint does not interpret E66 cancellation messages;
+the E66 adapter remains tracked in #685.
+
 ### Data quality policy
 
 `billing_readings.load_period_frames` refuses a period and reports every defect
@@ -293,7 +330,8 @@ draft and applies these fail-closed rules:
 - internal and grid prices, network level, and distribution model are copied
   onto the draft; public H4 data and zero defaults are never substitutes
 - incomplete readings or a difference from the VNB allocation persist nothing
-- `(community_id, period_start, period_end)` is unique
+- only one current period may occupy `(community_id, period_start, period_end)`;
+  invalidated draft versions remain available for audit
 - identical input fingerprints are retry no-ops; changed inputs require review
 - the cron counts work only after `save_billing_period` returns a committed ID
 
@@ -302,8 +340,9 @@ consumption frames, participant IDs, VNB reference, tariff, generated summary,
 and reconciliation. Its public runner contract pins a stable SHA-256 vector, so
 removing any of those inputs is observable before an immutable draft is reused.
 
-Invoice issuance remains disabled until the LEG and its VNB approve tax, HKN,
-tariff-class, rounding-tolerance, and operational cutoff rules.
+Invoice issuance uses the explicit approval path and frozen billing policy.
+The precision-aware reconciliation change remains tracked in #684; withdrawal
+does not relax the current allocation checks.
 
 ### Billing cron diagnostics
 
