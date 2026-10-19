@@ -810,6 +810,37 @@ def test_refused_e66_can_retry_after_a_different_overlapping_window_is_withdrawn
     assert len(db.list_calculated_values_deliveries("dietikon")) == 3
 
 
+@pytest.mark.parametrize("operation", ["e66", "mapping"])
+def test_unexpected_import_validation_text_stays_private(
+    configured_e66, monkeypatch, caplog, operation
+):
+    import e66_evidence
+
+    client, db, _, source = configured_e66
+    marker = "PRIVATE-SYNTHETIC-VALIDATION-DETAIL"
+
+    def fail(*_args):
+        exception = e66_evidence.E66EvidenceError if operation == "e66" else ValueError
+        raise exception(marker)
+
+    if operation == "e66":
+        monkeypatch.setattr(db, "ingest_e66_calculated_values", fail)
+        response = post_e66(client, source)
+        assert response.status_code == 422
+        assert response.get_json() == {"error": "invalid_e66"}
+    else:
+        monkeypatch.setattr(vnb_calculated_values, "record_meter_assignment", fail)
+        response = client.post(
+            "/admin/vnb-calculated-values/dietikon/mappings/SYNTHETIC-METER-1",
+            headers={"X-Admin-Token": "synthetic-admin"},
+            json={},
+        )
+        assert response.status_code == 400
+        assert response.get_json() == {"error": "invalid_calculated_values_request"}
+    assert marker not in response.text + caplog.text
+    assert response.headers["Cache-Control"] == "no-store"
+
+
 @pytest.mark.parametrize(
     "local_start,intervals", [("2026-03-29T00:00:00", 92), ("2026-10-25T00:00:00", 100)]
 )

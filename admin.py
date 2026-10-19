@@ -42,6 +42,32 @@ _WITHDRAWAL_ERROR_CODES = {
     "idempotency_conflict": "idempotency_conflict",
     "delivery_already_retired": "delivery_already_retired",
 }
+_ASSIGNMENT_ERROR_CODES = {
+    "membership_attestation_required": "membership_attestation_required",
+    "invalid_source_reference": "invalid_source_reference",
+    "invalid_assignment_period": "invalid_assignment_period",
+}
+_E66_ERROR_CODES = {
+    "invalid_e66": "invalid_e66",
+    "ambiguous_e66_identity": "ambiguous_e66_identity",
+    "e66_function_requires_operator_review": "e66_function_requires_operator_review",
+    "missing_e66_provenance": "missing_e66_provenance",
+    "invalid_e66_period": "invalid_e66_period",
+    "incomplete_e66_channels": "incomplete_e66_channels",
+    "duplicate_e66_channel": "duplicate_e66_channel",
+    "incomplete_e66_period": "incomplete_e66_period",
+    "ambiguous_e66_observation": "ambiguous_e66_observation",
+    "unsupported_e66_quality": "unsupported_e66_quality",
+    "invalid_e66_precision": "invalid_e66_precision",
+    "e66_value_out_of_range": "e66_value_out_of_range",
+    "unbalanced_e66_channels": "unbalanced_e66_channels",
+    "e66_mapping_unavailable": "e66_mapping_unavailable",
+    "ambiguous_e66_community": "ambiguous_e66_community",
+    "e66_mapping_outside_validity": "e66_mapping_outside_validity",
+    "e66_mapping_direction_mismatch": "e66_mapping_direction_mismatch",
+    "e66_document_identity_conflict": "e66_document_identity_conflict",
+    "e66_replacement_requires_withdrawal": "e66_replacement_requires_withdrawal",
+}
 
 
 def require_admin():
@@ -121,7 +147,7 @@ def admin_e66_calculated_values(territory):
         document = e66_evidence.parse_source(evidence)
         result = db.ingest_e66_calculated_values(territory, document, evidence)
     except e66_evidence.E66EvidenceError as error:
-        return jsonify(error=str(error)), 422
+        return jsonify(error=_E66_ERROR_CODES.get(str(error), "invalid_e66")), 422
     except psycopg2.Error:
         return jsonify(error="calculated_values_unavailable"), 503
     if result["status"] != "accepted":
@@ -184,7 +210,11 @@ def admin_calculated_meter_assignment(territory, metering_point_id):
     except db.CalculatedValuesLifecycleMissing:
         return jsonify(error="meter_mapping_not_found"), 404
     except ValueError as error:
-        return jsonify(error=str(error)), 400
+        return jsonify(
+            error=_ASSIGNMENT_ERROR_CODES.get(
+                str(error), "invalid_calculated_values_request"
+            )
+        ), 400
     except psycopg2.Error:
         return jsonify(error="calculated_values_unavailable"), 503
     return jsonify(result), 201
