@@ -85,6 +85,8 @@ def test_municipality_notice_uses_canonical_verified_consent_and_own_language(
         subject, body = captured[email]
         assert "Nouvelle" in subject
         assert "lang=fr-CH" in body
+        assert ">Se désinscrire</a>" in body
+        assert ">Se déconnecter</a>" not in body
         assert "<script>" not in body
         assert "newcomer@example.invalid" not in body
     assert "Neue LEG-Interessenmeldung" in captured["german@example.invalid"][0]
