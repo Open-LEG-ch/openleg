@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Safe operator diagnostics through the authenticated billing cron."""
 
+import psycopg2
 import pytest
 
 import billing_runner
 import database
+from store import billing
 from tests import test_billing_cron_contract, test_billing_runner
 
 app_with_cron_secret = test_billing_cron_contract.app_with_cron_secret
@@ -130,3 +132,76 @@ def test_cron_exposes_only_approved_codes(
     assert secret not in caplog.text
     assert "private-source-token" not in response.text
     assert "private-source-token" not in caplog.text
+
+
+@pytest.mark.parametrize("stage", ["discovery", "persistence"])
+def test_real_store_failures_do_not_log_private_details(
+    app_with_cron_secret, monkeypatch, caplog, stage
+):
+    secret = "private-metering-point password=private-database-token"
+    if stage == "persistence":
+        test_billing_runner._install_billing_fixture(monkeypatch)
+        monkeypatch.setattr(
+            database, "get_active_communities", lambda: [{"community_id": "c1"}]
+        )
+        monkeypatch.setattr(
+            billing_runner,
+            "previous_complete_month",
+            lambda: (test_billing_runner.START, test_billing_runner.END),
+        )
+        monkeypatch.setattr(
+            database, "save_billing_period", billing.save_billing_period
+        )
+
+    def unavailable():
+        raise psycopg2.OperationalError(secret)
+
+    monkeypatch.setattr(database, "get_connection", unavailable)
+
+    response = test_billing_cron_contract._post_process_billing(app_with_cron_secret)
+
+    if stage == "discovery":
+        assert response.status_code == 503
+        assert response.json == {
+            "status": "error",
+            "error": "billing_store_unavailable",
+        }
+    else:
+        assert response.status_code == 200
+        assert response.json["processed"] == 0
+        assert response.json["failures"] == [
+            {"community_id": "c1", "error": "billing_store_unavailable"}
+        ]
+    assert secret not in response.text
+    assert secret not in caplog.text
+
+
+def test_driver_failure_reports_safe_codes_for_every_community(
+    app_with_cron_secret, monkeypatch, caplog
+):
+    secret = "private-metering-point password=private-database-token"
+    monkeypatch.setattr(
+        database,
+        "get_active_communities",
+        lambda: [
+            {"community_id": "c1"},
+            {"community_id": "c2"},
+        ],
+    )
+
+    def unavailable():
+        raise psycopg2.OperationalError(secret)
+
+    monkeypatch.setattr(database, "get_connection", unavailable)
+
+    response = test_billing_cron_contract._post_process_billing(app_with_cron_secret)
+
+    assert response.status_code == 200
+    assert response.json["failed"] == 2
+    assert response.json["processed"] == 0
+    assert response.json["failures"] == [
+        {"community_id": "c1", "error": "billing_store_unavailable"},
+        {"community_id": "c2", "error": "billing_store_unavailable"},
+    ]
+    assert secret not in response.text
+    assert secret not in caplog.text

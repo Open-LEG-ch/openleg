@@ -281,8 +281,9 @@ tariff-class, rounding-tolerance, and operational cutoff rules.
 
 The authenticated `POST /api/cron/process-billing` returns one safe `error` code
 per failed community. Failed runs do not count as processed, and other
-communities continue. HTTP responses and cron logs omit exception messages,
-metering identifiers and source contents.
+communities continue. The cron handler returns fixed codes and logs a failed
+community's identifier without exception messages, metering identifiers or source
+contents. Discovery and draft-persistence storage failures also use safe messages.
 
 | Code | Operator action |
 | --- | --- |

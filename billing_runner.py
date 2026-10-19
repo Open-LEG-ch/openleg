@@ -6,6 +6,8 @@ import json
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from psycopg2 import Error as DatabaseError
+
 import billing_engine
 import billing_policy
 import billing_readings
@@ -254,7 +256,7 @@ def run_billing_period(
         raise
     except billing_readings.PeriodDataError as exc:
         raise BillingRunError(str(exc), code="metering_readings_invalid") from exc
-    except db.BillingStoreError as exc:
+    except (db.BillingStoreError, DatabaseError) as exc:
         raise BillingRunError(str(exc), code="billing_store_unavailable") from exc
     except (KeyError, ValueError) as exc:
         raise BillingRunError(str(exc)) from exc
