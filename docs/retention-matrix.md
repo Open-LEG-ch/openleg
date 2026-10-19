@@ -95,7 +95,8 @@ email-provider retention remain governed by the deployment's policies.
 ## Overstated promises and review status
 
 1. `templates/unsubscribe.html` and the unsubscribe route/email in `app.py`
-   scope deletion to the registration profile. Before confirmation, the page
+   scope deletion to the registration bound to the confirmation link: an address
+   profile or an unresolved coverage request. Before confirmation, the page
    states that issued invoices, billing-relevant metering data and usage events
    remain. The deletion code and retention horizons are unchanged. The complete
    privacy notice still requires the named legal or DPO review in #558.
