@@ -8,6 +8,10 @@ import hashlib
 import json
 from datetime import date, datetime
 from decimal import Decimal
+from itertools import groupby, islice
+
+from psycopg2 import sql
+from psycopg2.extras import Json, execute_values
 
 SCHEMA_VERSION = "openleg-community-archive/1"
 SOURCE_PROVENANCE = "OpenLEG PostgreSQL operational store"
@@ -18,7 +22,7 @@ class ArchiveError(ValueError):
 
 
 def _json_value(value):
-    if isinstance(value, bytes):
+    if isinstance(value, (bytes, bytearray, memoryview)):
         return {"$binary": base64.b64encode(value).decode("ascii")}
     if isinstance(value, datetime):
         return {"$datetime": value.isoformat()}
@@ -198,10 +202,15 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
         errors.append("Invoice scope violation: invoice_lifecycle_events")
     if not errors and hasattr(store, "validate_records"):
         errors.extend(store.validate_records(datasets))
-    try:
-        decoded = _python_value(datasets)
-    except (ValueError, TypeError):
-        errors.append("Invalid tagged value")
+    if not errors:
+        try:
+            decoded = (
+                store.decode_records(datasets)
+                if hasattr(store, "decode_records")
+                else _python_value(datasets)
+            )
+        except (ValueError, TypeError):
+            errors.append("Invalid tagged value")
     conflicts = (
         store.find_conflicts(community_id, datasets)
         if not errors and hasattr(store, "find_conflicts")
@@ -290,6 +299,9 @@ class PostgresArchiveStore:
         return result if result["communities"] else None
 
     def find_conflicts(self, community_id, datasets):
+        archived = self.decode_records({"communities": datasets["communities"]})[
+            "communities"
+        ][0]
         with self._connection() as conn, conn.cursor() as cur:
             cur.execute(
                 "SELECT * FROM communities WHERE community_id = %s", (community_id,)
@@ -297,7 +309,6 @@ class PostgresArchiveStore:
             existing = cur.fetchone()
             if existing is None:
                 return []
-            archived = _python_value(datasets["communities"])[0]
             return (
                 []
                 if all(existing[key] == value for key, value in archived.items())
@@ -315,10 +326,38 @@ class PostgresArchiveStore:
             allowed.setdefault(record["table_name"], set()).add(record["column_name"])
         return allowed
 
+    def decode_records(self, datasets):
+        """Decode archive scalar tags without interpreting literal JSON objects."""
+        with self._connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT table_name, column_name FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND data_type IN ('json', 'jsonb')"
+            )
+            json_columns = {
+                (row["table_name"], row["column_name"]) for row in cur.fetchall()
+            }
+        return {
+            table: [
+                {
+                    column: value
+                    if (table, column) in json_columns
+                    else _python_value(value)
+                    for column, value in row.items()
+                }
+                for row in rows
+            ]
+            for table, rows in datasets.items()
+        }
+
     def validate_records(self, datasets):
         with self._connection() as conn, conn.cursor() as cur:
             allowed = self._allowed_columns(cur)
+            sequences = self._serial_sequences(
+                cur, [table for table, _, _ in _DATASETS if datasets.get(table)]
+            )
         errors = []
+        if any(row["seqincrement"] < 1 or row["seqcache"] != 1 for row in sequences):
+            errors.append("Restore requires ascending sequences with CACHE 1")
         for table, _, _ in _DATASETS:
             rows = datasets.get(table, [])
             for row in rows if isinstance(rows, list) else []:
@@ -332,6 +371,13 @@ class PostgresArchiveStore:
     def restore_community(self, datasets):
         with self._connection() as conn, conn.cursor() as cur:
             allowed_columns = self._allowed_columns(cur)
+            cur.execute(
+                "SELECT table_name, column_name FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND data_type IN ('json', 'jsonb')"
+            )
+            json_columns = {
+                (row["table_name"], row["column_name"]) for row in cur.fetchall()
+            }
             cur.execute(
                 "SELECT tc.table_name, kcu.column_name "
                 "FROM information_schema.table_constraints tc "
@@ -347,8 +393,35 @@ class PostgresArchiveStore:
                 primary_keys.setdefault(record["table_name"], []).append(
                     record["column_name"]
                 )
+            sequences = self._serial_sequences(
+                cur, [table for table, _, _ in _DATASETS if datasets.get(table)]
+            )
+            # Lock before inserting explicit IDs. Otherwise a writer can reserve
+            # the same ID and wait on our row while we wait on its sequence lock.
+            for sequence in sequences:
+                if sequence["seqincrement"] < 1 or sequence["seqcache"] != 1:
+                    raise ArchiveError(
+                        "Restore requires ascending sequences with CACHE 1"
+                    )
+                cur.execute(
+                    sql.SQL("ALTER SEQUENCE {} INCREMENT BY {}").format(
+                        sql.Identifier(sequence["nspname"], sequence["relname"]),
+                        sql.Literal(sequence["seqincrement"]),
+                    )
+                )
             for table, _, _ in _DATASETS:
-                for row in datasets.get(table, []):
+                rows = datasets.get(table, [])
+                if (
+                    table in {"meter_readings", "metering_point_readings"}
+                    and primary_keys.get(table) == ["id"]
+                    and rows
+                    and all(isinstance(row, dict) and "id" in row for row in rows)
+                ):
+                    self._restore_readings(
+                        cur, table, rows, allowed_columns[table], json_columns
+                    )
+                    continue
+                for row in rows:
                     if not isinstance(row, dict) or not row:
                         raise ArchiveError(f"Invalid record: {table}")
                     # Column names are always derived from the database
@@ -364,7 +437,13 @@ class PostgresArchiveStore:
                     cur.execute(
                         f"INSERT INTO {table} ({', '.join(columns)}) "
                         f"VALUES ({placeholders}) ON CONFLICT DO NOTHING",
-                        tuple(row[column] for column in columns),
+                        tuple(
+                            Json(row[column])
+                            if (table, column) in json_columns
+                            and row[column] is not None
+                            else row[column]
+                            for column in columns
+                        ),
                     )
                     if cur.rowcount == 0:
                         keys = primary_keys.get(table, [])
@@ -376,7 +455,105 @@ class PostgresArchiveStore:
                             tuple(row[key] for key in keys),
                         )
                         existing = cur.fetchone()
-                        if existing is None or any(
-                            existing[column] != row[column] for column in columns
-                        ):
+                        if not self._same_record(existing, row, columns):
                             raise ArchiveError(f"Conflicting record: {table}")
+            self._advance_sequences(cur, sequences)
+
+    @staticmethod
+    def _same_record(existing, row, columns):
+        return existing is not None and all(
+            (
+                bytes(existing[column])
+                if isinstance(existing[column], memoryview)
+                else existing[column]
+            )
+            == row[column]
+            for column in columns
+        )
+
+    def _restore_readings(self, cur, table, rows, catalog_columns, json_columns):
+        """Bound database round trips while retaining every row conflict check."""
+        for row in rows:
+            if not set(row) <= catalog_columns:
+                raise ArchiveError(f"Unknown column: {table}")
+        for columns, group in groupby(
+            rows,
+            key=lambda row: tuple(
+                column for column in sorted(catalog_columns) if column in row
+            ),
+        ):
+            while batch := list(islice(group, 500)):
+                inserted = execute_values(
+                    cur,
+                    f"INSERT INTO {table} ({', '.join(columns)}) VALUES %s "
+                    "ON CONFLICT DO NOTHING RETURNING *",
+                    [
+                        tuple(
+                            Json(row[column])
+                            if (table, column) in json_columns
+                            and row[column] is not None
+                            else row[column]
+                            for column in columns
+                        )
+                        for row in batch
+                    ],
+                    page_size=500,
+                    fetch=True,
+                )
+                stored = {row["id"]: row for row in inserted}
+                missing = [row["id"] for row in batch if row["id"] not in stored]
+                if missing:
+                    cur.execute(f"SELECT * FROM {table} WHERE id = ANY(%s)", (missing,))
+                    stored.update((row["id"], row) for row in cur.fetchall())
+                if any(
+                    not self._same_record(stored.get(row["id"]), row, columns)
+                    for row in batch
+                ):
+                    raise ArchiveError(f"Conflicting record: {table}")
+
+    @staticmethod
+    def _serial_sequences(cur, tables):
+        cur.execute(
+            "SELECT t.relname AS table_name, a.attname AS column_name, "
+            "n.nspname, c.relname, s.seqincrement, s.seqcache "
+            "FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "JOIN pg_sequence s ON s.seqrelid = c.oid "
+            "JOIN pg_depend d ON d.classid = 'pg_class'::regclass "
+            "AND d.objid = c.oid AND d.deptype IN ('a', 'i') "
+            "JOIN pg_class t ON t.oid = d.refobjid "
+            "JOIN pg_namespace tn ON tn.oid = t.relnamespace "
+            "JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid "
+            "WHERE tn.nspname = 'public' AND t.relname = ANY(%s) "
+            "ORDER BY t.relname, a.attname",
+            (tables,),
+        )
+        return cur.fetchall()
+
+    @staticmethod
+    def _advance_sequences(cur, sequences):
+        """Keep restored serial IDs and future writes compatible, transactionally."""
+        for sequence in sequences:
+            table, column = sequence["table_name"], sequence["column_name"]
+            increment = sequence["seqincrement"]
+            identifier = sql.Identifier(sequence["nspname"], sequence["relname"])
+            cur.execute(
+                sql.SQL("SELECT last_value, is_called FROM {}").format(identifier)
+            )
+            position = cur.fetchone()
+            cur.execute(
+                sql.SQL("SELECT MAX({}) AS maximum FROM {}").format(
+                    sql.Identifier(column), sql.Identifier(table)
+                )
+            )
+            maximum = cur.fetchone()["maximum"]
+            next_value = max(
+                position["last_value"] + (increment if position["is_called"] else 0),
+                (maximum + increment)
+                if maximum is not None
+                else position["last_value"],
+            )
+            cur.execute(
+                sql.SQL("ALTER SEQUENCE {} RESTART WITH {}").format(
+                    identifier, sql.Literal(next_value)
+                )
+            )
