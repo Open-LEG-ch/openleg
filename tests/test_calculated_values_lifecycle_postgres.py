@@ -872,3 +872,27 @@ def test_withdrawal_history_cannot_be_mutated_in_postgresql(
     assert (
         db.get_validated_calculated_values(payload["community_id"], start, end) is None
     )
+
+
+@pytest.mark.parametrize("conflict", [False, True])
+def test_unexpected_withdrawal_validation_error_stays_private(
+    calculated_client, monkeypatch, caplog, conflict
+):
+    client, db, _ = calculated_client
+    marker = "PRIVATE-SYNTHETIC-DRIVER-DETAIL"
+    exception = db.CalculatedValuesLifecycleConflict if conflict else ValueError
+
+    def fail(*_args):
+        raise exception(marker)
+
+    monkeypatch.setattr(db, "withdraw_calculated_values_delivery", fail)
+    response = client.post(
+        "/admin/vnb-calculated-values/dietikon/1/withdrawals",
+        headers={"X-Admin-Token": "synthetic-admin", "Idempotency-Key": "private"},
+        json={"reason": "Synthetic withdrawal"},
+    )
+
+    assert response.status_code == (409 if conflict else 400)
+    assert response.get_json() == {"error": "invalid_calculated_values_request"}
+    assert response.headers["Cache-Control"] == "no-store"
+    assert marker not in response.text + caplog.text
