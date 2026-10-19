@@ -3733,7 +3733,7 @@ msgstr "Vérifier le brouillon"
 
 #: billing_workspace.py:132 dashboard.py:361
 msgid "Entwurf ungültig"
-msgstr "Brouillon invalidé"
+msgstr "Brouillon invalide"
 
 #: store/formation_activation.py:150
 msgid "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
