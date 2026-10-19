@@ -35,6 +35,13 @@ except ImportError:
 
 admin_bp = Blueprint("admin", __name__)
 
+_WITHDRAWAL_ERROR_CODES = {
+    "invalid_idempotency_key": "invalid_idempotency_key",
+    "invalid_reason": "invalid_reason",
+    "idempotency_conflict": "idempotency_conflict",
+    "delivery_already_retired": "delivery_already_retired",
+}
+
 
 def require_admin():
     admin_token = os.getenv("ADMIN_TOKEN", "").strip()
@@ -122,9 +129,17 @@ def admin_withdraw_calculated_values(territory, delivery_id):
     except db.CalculatedValuesLifecycleMissing:
         return jsonify(error="delivery_not_found"), 404
     except db.CalculatedValuesLifecycleConflict as error:
-        return jsonify(error=str(error)), 409
+        return jsonify(
+            error=_WITHDRAWAL_ERROR_CODES.get(
+                str(error), "invalid_calculated_values_request"
+            )
+        ), 409
     except ValueError as error:
-        return jsonify(error=str(error)), 400
+        return jsonify(
+            error=_WITHDRAWAL_ERROR_CODES.get(
+                str(error), "invalid_calculated_values_request"
+            )
+        ), 400
     except psycopg2.Error:
         return jsonify(error="calculated_values_unavailable"), 503
     return jsonify(result), 200 if result["replayed"] else 201
