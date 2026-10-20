@@ -33,9 +33,16 @@ class BillingRunError(ValueError):
         }
     )
 
-    def __init__(self, message, *, code="billing_run_failed"):
+    _REASONS = frozenset({"vnb_balancing_policy_required"})
+
+    def __init__(self, message, *, code="billing_run_failed", reason=None):
         super().__init__(message)
         self.code = code if code in self._PUBLIC_CODES else "billing_run_failed"
+        self.reason = (
+            reason
+            if reason in self._REASONS and self.code == "vnb_allocation_mismatch"
+            else None
+        )
 
 
 def _battery_lines(community_id, participants, period_start, period_end):
@@ -234,6 +241,12 @@ def run_billing_period(
                     distribution_model=policy["distribution_model"],
                     settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
                 )
+            except billing_engine.VnbBalancingPolicyRequired as exc:
+                raise BillingRunError(
+                    str(exc),
+                    code="vnb_allocation_mismatch",
+                    reason="vnb_balancing_policy_required",
+                ) from exc
             except ValueError as exc:
                 raise BillingRunError(str(exc), code="vnb_allocation_mismatch") from exc
             reconciliation["precision_policy"] = certificate
