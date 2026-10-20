@@ -17,7 +17,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.10.3\n"
+"Generated-By: Babel 2.18.0\n"
 
 #: templates/index.html:677
 #, python-format
@@ -918,7 +918,6 @@ msgstr ""
 "selben Netzgebiet angeschlossen, nutzen höchstens"
 
 #: templates/how-it-works.html:52
-#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1188,7 +1187,6 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h StromVV"
 
 #: templates/leg_kalkulator.html:267
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1211,7 +1209,6 @@ msgstr ""
 "Spannungstransformation."
 
 #: templates/leg_kalkulator.html:288
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -2456,7 +2453,6 @@ msgid "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil trage
 msgstr "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil tragen."
 
 #: templates/gemeinde/methodik.html:95
-#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -4465,7 +4461,6 @@ msgid "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutz
 msgstr "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um"
 
 #: templates/how-it-works.html:42
-#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -9017,7 +9012,6 @@ msgstr ""
 "Buchstabe oder Ziffer."
 
 #: templates/llms.txt:9
-#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -9672,7 +9666,6 @@ msgstr ""
 "              Die Kennzahl zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt."
 
 #: templates/gemeinde/rangliste.html:127
-#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
