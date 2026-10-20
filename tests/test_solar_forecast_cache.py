@@ -107,7 +107,9 @@ def test_refresh_and_view_preserve_zero_missing_data_location_and_interval(
 
 
 @pytest.mark.parametrize("failure", ["download", "checksum", "pipeline"])
-def test_failed_refresh_keeps_previous_complete_public_view(forecast_redis, failure):
+def test_failed_refresh_keeps_previous_complete_public_view(
+    forecast_redis, failure, caplog
+):
     assert publish(forecast_redis)["state"] == "updated"
     forecast_redis.delete(weather.ATTEMPT)
     downloads = responses(radiation=RADIATION.replace(b"100", b"200"))
@@ -116,7 +118,7 @@ def test_failed_refresh_keeps_previous_complete_public_view(forecast_redis, fail
 
     def download(url, limit):
         if failure == "download":
-            raise TimeoutError()
+            raise TimeoutError("private upstream context")
         return downloads[url]
 
     class FailingPipeline:
@@ -142,6 +144,14 @@ def test_failed_refresh_keeps_previous_complete_public_view(forecast_redis, fail
         "state": "unavailable"
     }
     assert read(forecast_redis)["intervals"][0]["radiation_w_m2"] == "100"
+    stage, error = {
+        "download": ("metadata", "TimeoutError"),
+        "checksum": ("radiation", "ForecastError"),
+        "pipeline": ("publication", "ConnectionError"),
+    }[failure]
+    assert f"Solar forecast refresh failed at {stage} ({error})" in caplog.text
+    assert "private upstream context" not in caplog.text
+    assert "stop before publication" not in caplog.text
 
 
 def test_lost_lease_cannot_publish_or_delete_a_replacement_workers_lock(forecast_redis):

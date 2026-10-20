@@ -128,6 +128,7 @@ def refresh(
     token = uuid.uuid4().hex
     client = None
     held = False
+    stage = "cache"
     try:
         client = redis_client if redis_client is not None else cache._get_redis()
         if not client.set(LEASE, token, nx=True, ex=120):
@@ -136,6 +137,7 @@ def refresh(
         if not client.set(ATTEMPT, "1", nx=True, ex=840):
             return {"state": "cooldown"}
         get = download or _download
+        stage = "metadata"
         collection = json.loads(get(COLLECTION_URL, 2 * 1024 * 1024))
         items = json.loads(get(ITEMS_URL, 2 * 1024 * 1024))
         release = forecast.select_release(items, now)
@@ -185,15 +187,18 @@ def refresh(
                 for index in range(0, len(keys), 500)
             ) == len(keys):
                 return {"state": "unchanged"}
+        stage = "points"
         points = forecast.parse_points(
             _checked(get, points_url, metadata["file:checksum"], 2 * 1024 * 1024)
         )
+        stage = "radiation"
         radiation = forecast.parse_radiation(
             _checked(
                 get, release.source_url, "1220" + release.sha256, forecast.MAX_CSV_BYTES
             ),
             release.released_at,
         )
+        stage = "publication"
         pipeline = client.pipeline(transaction=False)
         selected = [point for point in points if point.point_type_id == 2]
         for index, point in enumerate(selected):
@@ -238,7 +243,10 @@ def refresh(
             if published == -1
             else "unavailable"
         }
-    except Exception:
+    except Exception as exc:
+        logger.warning(
+            "Solar forecast refresh failed at %s (%s)", stage, type(exc).__name__
+        )
         return {"state": "unavailable"}
     finally:
         if held and client is not None:
