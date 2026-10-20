@@ -21,68 +21,95 @@ python -m mutmut results
 
 The scope's strict score moved from 69.45 to 75.99 percent. Every one of the
 360 previously uncovered mutants of data_enricher is now covered, and 372 of
-the 395 previously unscored or surviving mutants are killed. The 23 remaining
-survivors are classified below. None of them changes a pinned public
-outcome; they are recorded here instead of hidden or excluded. The 13
-uncovered mutants left in the scope belong to `public_data` and are outside
-this wave's tickets.
+the 395 previously unscored or surviving mutants are killed. The survivors
+then remaining (23 of them) are recorded below, reclassified wave by wave:
+the fresh classification sits in "Fresh kills for #677" and the equivalence
+tables carry the mutants that still survive at HEAD. None of them changes a
+pinned public outcome; they are recorded here instead of hidden or excluded.
+The 13 uncovered mutants left in the scope at that time belonged to
+`public_data` and were outside this wave's tickets.
 
 ## Intentional equivalents
 
-### Mock suggestion fallback (`_get_mock_address_suggestions`)
+Position for this wave (#677 and the fresh run, below): operator diagnostics
+on stdout ARE observable behavior. The earlier entries that called diagnostic
+wording un-pinned are superseded — `tests/test_conversion_paths.py` now pins
+the exact diagnostic lines, and the affected mutants are killed. What remains
+below are mutants that no public seam can distinguish.
 
-| Mutant | Mutation | Why behavior is unchanged |
-| --- | --- | --- |
-| `x__get_mock_address_suggestions__mutmut_3` | Rename the `lat` key. | Every consumer reads the payload through `_normalize_address_suggestions`, which re-derives `lat` with `.get("lat")`; a renamed key yields the same `None`. |
-| `x__get_mock_address_suggestions__mutmut_4` | Rename the `lat` key to `LAT`. | Same normalization argument. |
-| `x__get_mock_address_suggestions__mutmut_5` | Rename the `lon` key. | Same normalization argument. |
-| `x__get_mock_address_suggestions__mutmut_6` | Rename the `lon` key to `LON`. | Same normalization argument. |
-| `x__get_mock_address_suggestions__mutmut_7` | Rename the `plz` key. | Same normalization argument. |
-| `x__get_mock_address_suggestions__mutmut_8` | Rename the `plz` key to `PLZ`. | Same normalization argument. |
+### Address suggestions fallback (`_get_mock_address_suggestions`)
+
+None remain. The offline fallback shape is pinned directly
+(`test_the_offline_mock_suggestions_keep_the_suggestion_shape`), killing the
+six key-rename mutants the earlier wave had classified equivalent through the
+normalization argument.
 
 ### Coordinates (`get_coordinates_from_address`)
 
 | Mutant | Mutation | Why behavior is unchanged |
 | --- | --- | --- |
-| `x_get_coordinates_from_address__mutmut_20` | Default missing `results` to `None` instead of `[]`. | A missing key yields a falsy value either way; `if not results` takes the same branch. |
+| `x_get_coordinates_from_address__mutmut_20` | Default missing `results` to `None`. | The value only feeds `if not results`, which takes the same branch for `None` and `[]`. |
 | `x_get_coordinates_from_address__mutmut_22` | Drop the default for missing `results`. | Same falsy-default argument. |
-| `x_get_coordinates_from_address__mutmut_27` | Wrap the miss diagnostic in `XX`. | Operator stdout text is not a repository contract; the miss path and its return value are pinned. |
-| `x_get_coordinates_from_address__mutmut_46` | Default a missing `label` to `XXXX`. | The regex finds no four digit number in `XXXX` just as it finds none in the empty string, so the fallback produces the same `None` PLZ. |
+| `x_get_coordinates_from_address__mutmut_46` | Default a missing `label` to `XXXX`. | The regex looks for four digits; neither default carries them, so both produce a `None` PLZ. |
 
 ### PV potential (`get_pv_potential_from_coords`)
 
 | Mutant | Mutation | Why behavior is unchanged |
 | --- | --- | --- |
-| `x_get_pv_potential_from_coords__mutmut_46` | Default missing `results` to `None`. | A falsy default reaches the same not-found branch. |
-| `x_get_pv_potential_from_coords__mutmut_48` | Drop the default for missing `results`. | Same falsy-default argument. |
-| `x_get_pv_potential_from_coords__mutmut_53` | Wrap the no-building diagnostic in `XX`. | Operator stdout text is not a repository contract. |
+| `x_get_pv_potential_from_coords__mutmut_50` | Default missing identify `results` to `None`. | The value only feeds `if not results`; the same not-found branch runs. |
+| `x_get_pv_potential_from_coords__mutmut_52` | Drop the default for missing identify `results`. | Same falsy-default argument. |
+| `x_get_pv_potential_from_coords__mutmut_170` | Default a missing `stromertrag` to `None`. | The sum feeds the value through `or 0`, which absorbs `None` and `0` alike. |
+| `x_get_pv_potential_from_coords__mutmut_172` | Drop the default for missing `stromertrag`. | Same `or 0` absorption. |
+
+### Municipality (`get_municipality_from_coords`)
+
+| Mutant | Mutation | Why behavior is unchanged |
+| --- | --- | --- |
+| `x_get_municipality_from_coords__mutmut_74` | Default `current.get("attributes", {})` missing to `None`. | Only a row passing the `is_current_jahr` filter becomes `current`, and that filter reads the item's `attributes` — so the key is always present and truthy at the second read. |
+| `x_get_municipality_from_coords__mutmut_76` | Drop the same default. | Same reachability argument. |
 
 ### Energy profile (`get_energy_profile_for_address`)
 
 | Mutant | Mutation | Why behavior is unchanged |
 | --- | --- | --- |
-| `x_get_energy_profile_for_address__mutmut_2` | Initialise `in_tag` to `None`. | `None` is falsy like `False`; the markup loop tests `not in_tag`. |
+| `x_get_energy_profile_for_address__mutmut_2` | Initialise `in_tag` to `None`. | `None` is falsy like `False`; the markup loop only tests `not in_tag`. |
 | `x_get_energy_profile_for_address__mutmut_10` | Assign `None` instead of `False` when a tag closes. | Same falsy argument. |
-| `x_get_energy_profile_for_address__mutmut_31` | Pass `None` for the latitude into the mock GWR lookup. | The simulator selects the building record by PLZ only; coordinates carry no contract. |
-| `x_get_energy_profile_for_address__mutmut_32` | Pass `None` for the longitude into the mock GWR lookup. | Same simulator argument. |
-| `x_get_energy_profile_for_address__mutmut_42` | Pass `None` as the energy surface into the consumption estimate. | The surface only feeds the commercial branch, and the mock GWR records are always `EFH` or `MFH`, so the branch is unreachable through the public flow. |
-| `x_get_energy_profile_for_address__mutmut_83` | Wrap the completion diagnostic in `XX`. | Operator stdout text is not a repository contract. |
 
 ### Mock energy profile (`get_mock_energy_profile_for_address`)
 
 | Mutant | Mutation | Why behavior is unchanged |
 | --- | --- | --- |
-| `x_get_mock_energy_profile_for_address__mutmut_46` | Draw PV as `randint(30)`. | `randint(30)` is `randint(0, 30)` by numpy's own signature. |
-| `x_get_mock_energy_profile_for_address__mutmut_73` | Wrap the completion diagnostic in `XX`. | Operator stdout text is not a repository contract. |
+| `x_get_mock_energy_profile_for_address__mutmut_46` | Draw PV as `randint(30)`. | `randint(30)` is `randint(0, 30)` under numpy's signature; the interval is identical. |
 
-The randint upper bound shifts (`randint(4000, 20001)` for mutant 41 and
-`randint(0, 31)` for mutant 49) are not equivalents: their boundary draws are
-reachable, and reference addresses of length 18989 and 51 pin them
-(`annual_consumption_kwh` 19727 and `potential_pv_kwp` 20.0 change under the
-mutants). They are killed.
+## Fresh kills for #677 (native evidence for #478)
 
-Malformed SQL, wrong parameters, changed arithmetic, swapped operands,
-inverted filters, dropped limits, and diagnostic prints that lose their
-message (`print(None)`) or change case are not classified as equivalent. The
-behavior tests kill those mutants; the caps-from-stdout assertions pin the
-operator diagnostics that carry information.
+Native mutmut 3.7.0 reference run at `a4c1f35` from an empty cache scores the
+module at 875 mutants with 759 killed and 116 survived. This wave's behavior
+tests in `tests/test_conversion_paths.py` kill 104 of the 116, leaving the
+twelve equivalents above:
+
+- `get_municipality_from_coords`: the geoadmin identify query is pinned field
+  by field, including URL and timeout; sparse answers degrade silently and
+  exactly (no operator error text for a no-match); the missing-name and
+  missing-BFS refusals are discriminated separately from the upstream-failure
+  diagnostic; the label fallback name is pinned; a 150-character name is
+  truncated to its first 120 characters; the operator error line is pinned.
+- `get_pv_potential_from_coords`: the missing-building, missing-identity,
+  incomplete-facet, no-progress and page-limit diagnostics are pinned word for
+  word; the zero-return values on each failure branch are pinned; a mixed
+  facet without solar values contributes zero and still renders the success
+  line; a page response without results degrades to zero solar data with the
+  success line.
+- `get_coordinates_from_address`: the not-found diagnostic is pinned exactly.
+- `get_energy_profile_for_address`: the municipality lookup receives the
+  coordinates the walk actually found; the GWR simulator receives coordinates,
+  PLZ and their values; a service building's consumption is derived from its
+  energy surface; both the no-municipality and completion diagnostics are
+  pinned exactly.
+- `get_mock_energy_profile_for_address`: the completion diagnostic is pinned
+  exactly, and the seeded reference-address draws keep pinning the
+  `randint(4000, 20001)` and `randint(0, 31)` boundary shifts the first wave
+  killed.
+- `_plz_in_ranges`: inclusive PLZ boundaries at 1000, 9999 and inside a
+  custom range.
+- `_get_mock_address_suggestions`: the offline suggestion shape is pinned.

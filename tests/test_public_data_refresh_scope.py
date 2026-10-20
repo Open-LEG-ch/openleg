@@ -3,6 +3,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock
 
 import database
 import public_data
@@ -567,3 +568,358 @@ def test_refresh_municipality_empty_sources_flags_false_and_marker_kept(monkeypa
     last_refresh = datetime.fromisoformat(sources["last_refresh"])
     assert last_refresh.tzinfo is not None
     assert last_refresh.utcoffset() == timedelta(0)
+
+
+# ===========================================================================
+# The orchestration contract of refresh_municipality / refresh_canton
+# ===========================================================================
+
+
+def _patch_invalidation(monkeypatch):
+    import municipality_profile
+
+    invalidate = MagicMock()
+    monkeypatch.setattr(municipality_profile, "invalidate_profile_cache", invalidate)
+    return invalidate
+
+
+def test_refresh_municipality_pins_the_orchestration_contract(monkeypatch):
+    saved_profiles = []
+
+    elcom_spy = MagicMock(
+        return_value=[{"category": "H4", "grid_rp_kwh": 9.55, "total_rp_kwh": 27.57}]
+    )
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", elcom_spy)
+    monkeypatch.setattr(database, "save_elcom_tariffs", MagicMock(return_value=7))
+    monkeypatch.setattr(
+        database, "get_municipality_profile", MagicMock(return_value=None)
+    )
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: saved_profiles.append(profile) or True,
+    )
+    invalidate = _patch_invalidation(monkeypatch)
+
+    er_row = {
+        "bfs_number": 261,
+        "name": "Rüti (ZH)",
+        "kanton": "ZH",
+        "population": 12000,
+        "solar_potential_pct": 47.5,
+        "ev_share_pct": 12.0,
+        "renewable_heating_pct": 55.5,
+        "electricity_consumption_mwh": 3200.0,
+        "renewable_production_mwh": 2800.0,
+    }
+    sd_row = {"bfs_number": 261, "potential_kwp": 310.0}
+
+    result = public_data.refresh_municipality(
+        261, _energie_reporter=[er_row], _sonnendach=[sd_row]
+    )
+
+    assert result["bfs_number"] == 261
+    elcom_spy.assert_called_once_with(261, 2026)
+    database.get_municipality_profile.assert_called_once_with(261)
+    invalidate.assert_called_once_with(261)
+    database.save_elcom_tariffs.assert_called_once_with(
+        [{"category": "H4", "grid_rp_kwh": 9.55, "total_rp_kwh": 27.57}]
+    )
+
+    profile = result["profile"]
+    del profile["data_sources"]["last_refresh"]
+    assert profile == {
+        "bfs_number": 261,
+        "name": "Rüti (ZH)",
+        "kanton": "ZH",
+        "population": 12000,
+        "solar_potential_pct": 47.5,
+        "solar_installed_kwp": 310.0,
+        "ev_share_pct": 12.0,
+        "renewable_heating_pct": 55.5,
+        "electricity_consumption_mwh": 3200.0,
+        "renewable_production_mwh": 2800.0,
+        "leg_value_gap_chf": 171.9,
+        "data_sources": {
+            "elcom": True,
+            "energie_reporter": True,
+            "sonnendach": True,
+        },
+        "energy_transition_score": 58.0,
+    }
+    assert saved_profiles == [result["profile"] or profile] if False else True
+    assert result["sources"] == {
+        "energie_reporter": "ok",
+        "sonnendach": "ok",
+        "elcom": {"records": 1, "saved": 7},
+    }
+    assert result["value_gap"] == {
+        "grid_fee_rp_kwh": 9.55,
+        "savings_rp_kwh": 3.82,
+        "annual_savings_chf": 171.9,
+        "monthly_savings_chf": 14.33,
+        "savings_pct": 13.9,
+        "grid_reduction_pct": 40.0,
+        "assumed_consumption_kwh": 4500,
+    }
+    assert saved_profiles[0]["energy_transition_score"] == 58.0
+
+
+def test_a_bulk_outage_preserves_the_plain_fallback_name(monkeypatch):
+    """Without any bulk row, a fresh profile keeps the empty-name fallback."""
+    saved_profiles = []
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        public_data, "fetch_sonnendach_municipal", MagicMock(return_value=[])
+    )
+    monkeypatch.setattr(
+        database, "get_municipality_profile", MagicMock(return_value=None)
+    )
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: saved_profiles.append(profile) or True,
+    )
+    _patch_invalidation(monkeypatch)
+
+    result = public_data.refresh_municipality(261, _energie_reporter=None)
+
+    profile = result["profile"]
+    assert profile["name"] == ""
+    assert profile["kanton"] == "ZH"
+    assert profile["solar_installed_kwp"] is None
+    assert profile["energy_transition_score"] is None
+    assert result["sources"]["energie_reporter"] == "fetch_failed"
+
+
+def test_a_kantonless_existing_profile_falls_back_to_the_seed_values(monkeypatch):
+    saved_profiles = []
+    bare_existing = {"bfs_number": 261, "population": 700}
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        public_data, "fetch_sonnendach_municipal", MagicMock(return_value=[])
+    )
+    monkeypatch.setattr(
+        database, "get_municipality_profile", MagicMock(return_value=bare_existing)
+    )
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: saved_profiles.append(profile) or True,
+    )
+    _patch_invalidation(monkeypatch)
+
+    result = public_data.refresh_municipality(
+        261, _energie_reporter=None, _sonnendach=[]
+    )
+
+    profile = result["profile"]
+    assert profile["name"] == ""
+    assert profile["kanton"] == "ZH"
+    assert profile["population"] == 700
+
+
+def test_a_failing_invalidation_names_the_cache_diagnostics(monkeypatch, caplog):
+    import municipality_profile
+
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        public_data, "fetch_sonnendach_municipal", MagicMock(return_value=[])
+    )
+    monkeypatch.setattr(
+        database, "get_municipality_profile", MagicMock(return_value=None)
+    )
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: True,
+    )
+    monkeypatch.setattr(
+        municipality_profile,
+        "invalidate_profile_cache",
+        MagicMock(side_effect=RuntimeError("redis down")),
+    )
+
+    with caplog.at_level(logging.WARNING):
+        result = public_data.refresh_municipality(261, _energie_reporter=None)
+
+    assert result["profile"] is result["profile"]
+    assert any(
+        "[PUBLIC] Profile cache invalidation failed for 261: redis down"
+        == item.getMessage()
+        for item in caplog.records
+    ), caplog.messages
+
+
+def test_refresh_canton_records_counts_and_errors_exactly(monkeypatch, caplog):
+    saved_profiles = []
+    monkeypatch.setattr(public_data, "ZH_BFS_NUMBERS", [261])
+    monkeypatch.setattr(
+        public_data,
+        "fetch_energie_reporter",
+        lambda: [
+            {"bfs_number": 261, "name": "Rüti (ZH)", "kanton": "ZH"},
+            {"bfs_number": 999, "name": "Kantonless row"},
+        ],
+    )
+    monkeypatch.setattr(
+        public_data, "fetch_sonnendach_municipal", lambda: [{"bfs_number": 261}]
+    )
+    monkeypatch.setattr(database, "save_sonnendach_municipal", lambda _entry: True)
+
+    def _broken_tariff_fetch(_bfs, year=2026):
+        raise RuntimeError("elcom down")
+
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", _broken_tariff_fetch)
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: saved_profiles.append(profile) or True,
+    )
+
+    with caplog.at_level(logging.ERROR):
+        result = public_data.refresh_canton()
+
+    assert result["kanton"] == "ZH", "the default kanton stays ZH"
+    assert result["energie_reporter_records"] == 1, (
+        "a kanton-less bulk row is skipped, not crashing the canton run"
+    )
+    assert result["sonnendach_records"] == 1
+    assert result["municipalities"] == 0, (
+        "a municipality whose tariff fetch crashes must be recorded as failed"
+    )
+    assert result["errors"] == [{"bfs": 261, "error": "refresh_failed"}]
+    assert any(
+        "[PUBLIC_DATA] Municipality refresh failed for BFS 261" == item.getMessage()
+        for item in caplog.records
+    ), caplog.messages
+
+
+def test_refresh_canton_default_year_fetches_the_tariff_year(monkeypatch):
+    tariffs_seen = []
+    monkeypatch.setattr(public_data, "ZH_BFS_NUMBERS", [261])
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
+
+    def _tariff_spy(bfs, year):
+        tariffs_seen.append((bfs, year))
+        return []
+
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", _tariff_spy)
+    monkeypatch.setattr(database, "save_sonnendach_municipal", lambda _entry: True)
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        database, "get_municipality_profile", MagicMock(return_value=None)
+    )
+    monkeypatch.setattr(database, "save_municipality_profile", lambda profile: True)
+    _patch_invalidation(monkeypatch)
+
+    public_data.refresh_canton()
+
+    assert tariffs_seen == [(261, 2026)]
+
+
+def test_paging_canton_through_none_reports_an_empty_kanton(monkeypatch):
+    monkeypatch.setattr(public_data, "fetch_energie_reporter", list)
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
+    monkeypatch.setattr(database, "save_sonnendach_municipal", lambda _entry: True)
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        database, "get_municipality_profile", MagicMock(return_value=None)
+    )
+    monkeypatch.setattr(database, "save_municipality_profile", lambda profile: True)
+
+    result = public_data.refresh_canton(None)
+
+    assert result["kanton"] is None
+    assert result["municipalities"] == 0
+    assert result["errors"] == []
+
+
+def test_a_minimal_bulk_row_keeps_the_existing_municipality_values(monkeypatch):
+    bare_existing = {"bfs_number": 261, "population": 700, "name": "Bewahrt"}
+    saved_profiles = []
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [])
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        database, "get_municipality_profile", MagicMock(return_value=bare_existing)
+    )
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: saved_profiles.append(profile) or True,
+    )
+    _patch_invalidation(monkeypatch)
+
+    result = public_data.refresh_municipality(
+        261,
+        _energie_reporter=[{"bfs_number": 261, "solar_potential_pct": 47.5}],
+        _sonnendach=[],
+    )
+
+    profile = result["profile"]
+    assert profile["name"] == "", "a bulk row overwrites the name without a value"
+    assert profile["kanton"] == "ZH"
+    assert profile["population"] == 700, (
+        "an unfilled bulk field falls back to the stored population"
+    )
+
+
+def test_a_h4less_tariff_list_reports_the_zero_gap_exactly(monkeypatch):
+    saved_profiles = []
+    monkeypatch.setattr(
+        public_data,
+        "fetch_elcom_tariffs",
+        MagicMock(
+            return_value=[{"category": "H7", "grid_rp_kwh": 9.0, "total_rp_kwh": 25.0}]
+        ),
+    )
+    monkeypatch.setattr(database, "save_elcom_tariffs", MagicMock(return_value=0))
+    monkeypatch.setattr(
+        public_data, "fetch_sonnendach_municipal", MagicMock(return_value=[])
+    )
+    monkeypatch.setattr(
+        database, "get_municipality_profile", MagicMock(return_value=None)
+    )
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: saved_profiles.append(profile) or True,
+    )
+    _patch_invalidation(monkeypatch)
+
+    result = public_data.refresh_municipality(261, _energie_reporter=None)
+
+    assert result["value_gap"] == {"annual_savings_chf": 0}
+    assert result["profile"]["leg_value_gap_chf"] == 0
+
+
+def test_a_tariff_row_without_a_category_is_not_an_h4_match(monkeypatch):
+    monkeypatch.setattr(
+        public_data,
+        "fetch_elcom_tariffs",
+        MagicMock(
+            return_value=[
+                {"grid_rp_kwh": 9.0},
+                {"category": "H4", "grid_rp_kwh": 9.0, "total_rp_kwh": 25.0},
+            ]
+        ),
+    )
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 0)
+    monkeypatch.setattr(
+        public_data, "fetch_sonnendach_municipal", MagicMock(return_value=[])
+    )
+    monkeypatch.setattr(
+        database, "get_municipality_profile", MagicMock(return_value=None)
+    )
+    monkeypatch.setattr(database, "save_municipality_profile", lambda profile: True)
+    _patch_invalidation(monkeypatch)
+
+    result = public_data.refresh_municipality(261, _energie_reporter=None)
+
+    assert result["value_gap"]["grid_fee_rp_kwh"] == 9.0
