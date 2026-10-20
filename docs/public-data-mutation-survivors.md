@@ -66,8 +66,12 @@ Commit `dd8090c0a68825a56c80aee47caf96017d2ce29f` adds
 pass, and each of the six exact generated-function targeted replays fails
 one of the new tests. The fresh unfiltered native checkpoint
 `3bf1aa479b9daa03a32e3dcf2f4dcd749540caad`, which preceded those tests,
-still lists all six as survived. No later native kill count or score exists;
-the later evidence is targeted replay only.
+still lists all six as survived. The later clean frozen native checkpoint
+`a8539d5999d474dca5b794e9974fbdf9ca28bb0f`, verified with the complete
+ordinary suites (4564 passing) before and after, natively killed all six
+IDs (134, 138, 139, 209, 213, 214). Its overall native result is 7860
+mutants with 7537 killed and 323 survived (95.89% strict), so the
+unchanged ten-source gate still fails.
 
 ## Killed by behavior tests in the #674 waves
 
