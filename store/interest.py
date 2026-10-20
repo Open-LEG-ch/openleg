@@ -239,8 +239,16 @@ def get_verified_interest_recipient_preferences(bfs_number, exclude_email=""):
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT v.email, v.preferred_locale
+                SELECT v.email,
+                       CASE WHEN v.address_problem THEN coverage.preferred_locale
+                            ELSE building.preferred_locale END AS preferred_locale
                 FROM verified_interest v
+                LEFT JOIN buildings building
+                    ON building.building_id = v.source_id
+                    AND v.address_problem = FALSE
+                LEFT JOIN coverage_requests coverage
+                    ON coverage.request_id = v.source_id
+                    AND v.address_problem = TRUE
                 LEFT JOIN consents c
                     ON c.building_id = v.source_id
                     AND v.address_problem = FALSE

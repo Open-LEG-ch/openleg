@@ -121,22 +121,35 @@ def create_tables():
                     CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
             """)
 
+            # Keep the seven-column projection accepted by v0.1.21 startup.
+            # Existing extended views need recreation; dependencies fail closed.
+            cur.execute("""
+                DO $$ BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM pg_attribute
+                        WHERE attrelid = to_regclass('verified_interest')
+                          AND attname = 'preferred_locale' AND NOT attisdropped
+                    ) THEN
+                        DROP VIEW verified_interest;
+                    END IF;
+                END $$
+            """)
             cur.execute("""
                 CREATE OR REPLACE VIEW verified_interest AS
                 SELECT DISTINCT ON (bfs_number, LOWER(email))
                        bfs_number, LOWER(email) AS email, roles, has_solar,
-                       created_at, address_problem, source_id, preferred_locale
+                       created_at, address_problem, source_id
                 FROM (
                     SELECT bfs_number, email, roles, has_solar,
                            registered_at AS created_at,
                            FALSE AS address_problem, 1 AS source_priority,
-                           building_id AS source_id, preferred_locale
+                           building_id AS source_id
                     FROM buildings
                     WHERE verified = TRUE AND bfs_number IS NOT NULL
                     UNION ALL
                     SELECT bfs_number, email, roles, has_solar, created_at,
                            TRUE AS address_problem, 2 AS source_priority,
-                           request_id AS source_id, preferred_locale
+                           request_id AS source_id
                     FROM coverage_requests
                     WHERE verified = TRUE AND bfs_number IS NOT NULL
                 ) interest
@@ -919,9 +932,23 @@ def create_tables():
                 ALTER TABLE billing_periods DROP CONSTRAINT IF EXISTS
                     billing_periods_community_id_period_start_period_end_key
             """)
-            cur.execute("DROP INDEX IF EXISTS uq_billing_period_community_window")
+            # The previous app uses IF NOT EXISTS with this legacy name.
+            # Keep its name, while retaining the current live-window predicate.
             cur.execute("""
-                CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_period_live_window
+                DO $$ BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM pg_index
+                        WHERE indexrelid = to_regclass('uq_billing_period_community_window')
+                          AND indrelid = 'billing_periods'::regclass
+                          AND indpred IS NULL
+                    ) THEN
+                        DROP INDEX uq_billing_period_community_window;
+                    END IF;
+                END $$
+            """)
+            cur.execute("DROP INDEX IF EXISTS idx_billing_period_live_window")
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_period_community_window
                 ON billing_periods (community_id, period_start, period_end)
                 WHERE status IS DISTINCT FROM 'invalidated'
             """)
