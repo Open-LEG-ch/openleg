@@ -2968,6 +2968,10 @@ msgstr ""
 "possibles. Après le contrôle technique, les organisateurs ont accès à l'administration et peuvent"
 " enregistrer les entrées et sorties en ligne."
 
+#: templates/telemetry_dashboard.html:80
+msgid "Die Messquelle hat die Störungsmeldung zurückgenommen."
+msgstr "La source a retiré le signalement de défaut."
+
 #: templates/telemetry_dashboard.html:77
 msgid "Die Messquelle liefert wieder aktuelle Werte."
 msgstr "La source transmet à nouveau des valeurs actuelles."
@@ -4849,6 +4853,14 @@ msgstr "Appareil"
 msgid "Gerät erfassen"
 msgstr "Ajouter un appareil"
 
+#: templates/telemetry_dashboard.html:26
+msgid "Gerät meldet eine Störung"
+msgstr "L’appareil signale un défaut"
+
+#: templates/telemetry_dashboard.html:79
+msgid "Gerät meldet keine Störung mehr"
+msgstr "L’appareil ne signale plus de défaut"
+
 #: templates/equipment_form.html:39
 msgid "Gerät und Leistung"
 msgstr "Appareil et puissance"
@@ -4868,6 +4880,14 @@ msgstr "Supprimer l'entrée de l'appareil"
 #: templates/equipment_error.html:5
 msgid "Geräteeintrag nicht verfügbar"
 msgstr "Fiche de l’appareil indisponible"
+
+#: templates/telemetry_dashboard.html:102
+msgid "Gerätemeldung"
+msgstr "Signalement de l’appareil"
+
+#: templates/telemetry_dashboard.html:14
+msgid "Gerätestatus"
+msgstr "État de l’appareil"
 
 #: templates/equipment_error.html:2
 msgid "Gerätezugang |"
@@ -6650,6 +6670,14 @@ msgstr "Puissance de votre système en kWc"
 #: templates/index.html:179
 msgid "Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst."
 msgstr "Consultez le code, utilisez l’API ou hébergez OpenLEG vous-même."
+
+#: templates/telemetry_dashboard.html:96
+msgid "Letzte Gerätemeldung: Störung"
+msgstr "Dernier état signalé par l’appareil : défaut"
+
+#: templates/telemetry_dashboard.html:96
+msgid "Letzte Gerätemeldung: keine Störung"
+msgstr "Dernier état signalé par l’appareil : aucun défaut"
 
 #: advisories.py:56
 msgid "Letzte Quellenprüfung fehlgeschlagen"
@@ -8623,6 +8651,10 @@ msgstr ""
 "l'alimentation de secours sur « Inconnu ». Ensuite, vérifiez et enregistrez-le à nouveau. Il n’y "
 "a pas de valeur de sécurité globale."
 
+#: templates/telemetry_dashboard.html:35
+msgid "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
+msgstr "Vérifiez l’affichage de l’appareil et les indications du fabricant."
+
 #: formation_wizard.py:356
 msgid "Prüfen Sie die Gemeinschaftsvereinbarung."
 msgstr "Vérifiez l'accord communautaire."
@@ -9864,6 +9896,10 @@ msgstr "Niveau 3 :"
 #: templates/telemetry_dashboard.html:49
 msgid "Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt."
 msgstr "Moyenne horaire du rayonnement solaire global au point de prévision."
+
+#: templates/telemetry_dashboard.html:16
+msgid "Störungsmeldung"
+msgstr "Signalement de défaut"
 
 #: templates/gemeinde/onboarding.html:112
 msgid "Suche aktuell nicht verfügbar."

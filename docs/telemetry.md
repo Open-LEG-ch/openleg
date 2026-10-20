@@ -27,8 +27,8 @@ receipt, without sorting the retained history. The query has a two-second
 transaction-local limit and preserves any stricter database limit. A timeout
 returns the private unavailable page; refreshing can retry once storage recovers.
 
-The owner-readings and persistent-notices slices of #617 are implemented.
-Device fault ingestion, community summaries with sharing and coverage controls,
+The owner-readings, normalized device-fault and persistent-notices slices of #617 are implemented.
+Device-specific fault mappings, community summaries with sharing and coverage controls,
 and an authorized hardware/user pilot remain open. #615 and
 #621 still gate claims of hardware support. Telemetry remains separate from
 validated VNB billing evidence.
@@ -87,6 +87,27 @@ Active rows remain until resolved or the installation is deleted. Resolved rows
 expire after that installation's raw-data retention period; expiry is enforced
 on reads and physical deletion uses the existing telemetry cleanup. Installation,
 membership, profile and community deletion cascade notices.
+
+## Device-reported faults
+
+A local adapter can submit a normalized `device_fault` sample with unit `state`,
+location `device`, direction `status` and value `1` (fault reported) or `0`
+(no fault reported). It must map an explicit device indication using that
+device's documented profile. A timeout, missing sample, night shutdown or
+zero generation cannot supply this flag. Arbitrary vendor codes and free text
+are rejected; device-specific mappings and hardware trials remain pending.
+
+Fresh reports with known source time and measured quality create the separate
+owner notice. Estimated fault states are rejected. Unknown quality/time, future
+clocks and stale reports describe unavailable status instead. The page shows
+the source, device, report time and freshness alongside the last report.
+
+A fresh explicit zero clears the reported-fault notice. This means the device
+withdrew its report; it does not establish a physical diagnosis. Expiry or an
+unavailable report changes the notice state without claiming fault clearance.
+Acknowledgement, cooldown and new episodes use the same private owner controls.
+Older buffered reports cannot override a newer observation. Fault flags are
+retained as samples and notices, and are excluded from hourly numeric statistics.
 
 ## Enrollment and access
 

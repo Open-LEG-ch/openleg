@@ -2939,6 +2939,10 @@ msgstr ""
 "Prüfung erhalten Organisierende Zugang zur Verwaltung und können Ein- und Austritte online "
 "erfassen."
 
+#: templates/telemetry_dashboard.html:80
+msgid "Die Messquelle hat die Störungsmeldung zurückgenommen."
+msgstr "Die Messquelle hat die Störungsmeldung zurückgenommen."
+
 #: templates/telemetry_dashboard.html:77
 msgid "Die Messquelle liefert wieder aktuelle Werte."
 msgstr "Die Messquelle liefert wieder aktuelle Werte."
@@ -4796,6 +4800,14 @@ msgstr "Gerät"
 msgid "Gerät erfassen"
 msgstr "Gerät erfassen"
 
+#: templates/telemetry_dashboard.html:26
+msgid "Gerät meldet eine Störung"
+msgstr "Gerät meldet eine Störung"
+
+#: templates/telemetry_dashboard.html:79
+msgid "Gerät meldet keine Störung mehr"
+msgstr "Gerät meldet keine Störung mehr"
+
 #: templates/equipment_form.html:39
 msgid "Gerät und Leistung"
 msgstr "Gerät und Leistung"
@@ -4815,6 +4827,14 @@ msgstr "Geräteeintrag löschen"
 #: templates/equipment_error.html:5
 msgid "Geräteeintrag nicht verfügbar"
 msgstr "Geräteeintrag nicht verfügbar"
+
+#: templates/telemetry_dashboard.html:102
+msgid "Gerätemeldung"
+msgstr "Gerätemeldung"
+
+#: templates/telemetry_dashboard.html:14
+msgid "Gerätestatus"
+msgstr "Gerätestatus"
 
 #: templates/equipment_error.html:2
 msgid "Gerätezugang |"
@@ -6582,6 +6602,14 @@ msgstr "Leistung Ihrer Anlage in kWp"
 #: templates/index.html:179
 msgid "Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst."
 msgstr "Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst."
+
+#: templates/telemetry_dashboard.html:96
+msgid "Letzte Gerätemeldung: Störung"
+msgstr "Letzte Gerätemeldung: Störung"
+
+#: templates/telemetry_dashboard.html:96
+msgid "Letzte Gerätemeldung: keine Störung"
+msgstr "Letzte Gerätemeldung: keine Störung"
 
 #: advisories.py:56
 msgid "Letzte Quellenprüfung fehlgeschlagen"
@@ -8534,6 +8562,10 @@ msgstr ""
 "Checkliste, Cloud-Prüfung und Ersatzstromangaben auf «Unbekannt». Prüfen und speichern Sie diese "
 "danach erneut. Es gibt keinen zusammengefassten Sicherheitswert."
 
+#: templates/telemetry_dashboard.html:35
+msgid "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
+msgstr "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
+
 #: formation_wizard.py:356
 msgid "Prüfen Sie die Gemeinschaftsvereinbarung."
 msgstr "Prüfen Sie die Gemeinschaftsvereinbarung."
@@ -9759,6 +9791,10 @@ msgstr "Stufe 3:"
 #: templates/telemetry_dashboard.html:49
 msgid "Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt."
 msgstr "Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt."
+
+#: templates/telemetry_dashboard.html:16
+msgid "Störungsmeldung"
+msgstr "Störungsmeldung"
 
 #: templates/gemeinde/onboarding.html:112
 msgid "Suche aktuell nicht verfügbar."

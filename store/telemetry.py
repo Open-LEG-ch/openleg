@@ -254,6 +254,7 @@ def _owner_overview(cur, actor, now, installation_ids):
         for location, directions in contract.LOCATIONS.items()
         for direction in sorted(directions)
         if (metric == "state_of_charge") == (direction == "stored")
+        and (metric == "device_fault") == (location == "device")
     ]
     cur.execute(
         """
@@ -419,7 +420,7 @@ def ingest(community, installation, token, payload):
                 ),
             )
             # Hourly statistics only. Never integrate W or difference Wh counters.
-            if sample["observed_at"] is not None:
+            if sample["observed_at"] is not None and sample["metric"] != "device_fault":
                 hour = contract.timestamp(sample["observed_at"]).replace(
                     minute=0, second=0, microsecond=0
                 )
