@@ -181,9 +181,30 @@ def test_busy_and_cooldown_states_do_not_download(forecast_redis):
     ) == {"state": "busy"}
     forecast_redis.delete(weather.LEASE)
     assert publish(forecast_redis)["state"] == "updated"
+    # Leave a minute for scheduler jitter before the next 15-minute tick.
+    assert 0 < forecast_redis.ttl(weather.ATTEMPT) <= 840
     assert weather.refresh(
         now=NOW, redis_client=forecast_redis, download=forbidden
     ) == {"state": "cooldown"}
+
+
+def test_cached_serving_window_still_covers_24_hours_at_the_freshness_boundary(
+    forecast_redis,
+):
+    release = NOW.replace(minute=0)
+    body = b"point_id;point_type_id;Date;gre000h0\n" + b"".join(
+        f"1;2;{release + timedelta(hours=hour):%Y%m%d%H%M};{hour}\n".encode()
+        for hour in range(1, 30)
+    )
+    assert publish(forecast_redis, radiation=body)["state"] == "updated"
+    result = read(forecast_redis, release + timedelta(hours=3))
+    assert result["state"] == "current"
+    assert [row["radiation_w_m2"] for row in result["intervals"]] == [
+        str(hour) for hour in range(4, 28)
+    ]
+    header = json.loads(forecast_redis.get(weather.PUBLISHED))
+    cached = json.loads(forecast_redis.get(weather.point_key(header["version"], 2, 1)))
+    assert len(cached) == 28
 
 
 def test_empty_or_missing_selected_point_is_unavailable(forecast_redis):

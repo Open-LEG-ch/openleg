@@ -22,7 +22,7 @@ class ForecastError(ValueError):
     """An unsupported or malformed public forecast must remain unavailable."""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Point:
     point_type_id: int
     point_id: int
@@ -31,20 +31,20 @@ class Point:
     longitude: float
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class LocatedPoint:
     point: Point
     distance_km: float
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Release:
     released_at: datetime
     source_url: str
     sha256: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Radiation:
     starts_at: datetime
     ends_at: datetime
@@ -87,7 +87,9 @@ def select_release(items: dict, now: datetime) -> Release | None:
 def _rows(data: bytes, required: set[str]):
     if len(data) > MAX_CSV_BYTES:
         raise ForecastError("forecast_download_too_large")
-    reader = csv.DictReader(io.StringIO(data.decode("latin-1")), delimiter=";")
+    reader = csv.DictReader(
+        io.TextIOWrapper(io.BytesIO(data), encoding="latin-1"), delimiter=";"
+    )
     if not required.issubset(reader.fieldnames or []):
         raise ForecastError("invalid_forecast_columns")
     for index, row in enumerate(reader):
@@ -169,11 +171,19 @@ def nearest_point(
     )
 
 
-def parse_radiation(data: bytes) -> dict[tuple[int, int], list[Radiation]]:
+def parse_radiation(
+    data: bytes, released_at: datetime
+) -> dict[tuple[int, int], list[Radiation]]:
+    """Validate source rows and retain postal intervals through release + 28 h."""
     grouped: dict[tuple[int, int], dict[datetime, Radiation]] = {}
-    timestamps: dict[str, datetime] = {}
+    timestamps: dict[str, tuple[datetime, datetime]] = {}
+    identities: set[tuple[int, int]] = set()
+    last_end = released_at + timedelta(hours=28)
     for row in _rows(data, {"point_id", "point_type_id", "Date", "gre000h0"}):
         identity = _identity(row)
+        identities.add(identity)
+        if len(identities) > 10_000:
+            raise ForecastError("invalid_forecast_point")
         stamp = row["Date"]
         if stamp not in timestamps:
             try:
@@ -182,14 +192,16 @@ def parse_radiation(data: bytes) -> dict[tuple[int, int], list[Radiation]]:
                 raise ForecastError("invalid_forecast_interval") from None
             if len(stamp) != 12 or ends_at.minute != 0 or len(timestamps) >= 1000:
                 raise ForecastError("invalid_forecast_interval")
-            timestamps[stamp] = ends_at
+            timestamps[stamp] = (ends_at - timedelta(hours=1), ends_at)
         if row["gre000h0"] == "":
             continue
         if not re.fullmatch(r"\d{1,9}(?:\.\d{1,6})?", row["gre000h0"]):
             raise ForecastError("invalid_forecast_radiation")
+        starts_at, ends_at = timestamps[stamp]
+        if identity[0] != 2 or not released_at < ends_at <= last_end:
+            continue
         value = Decimal(row["gre000h0"])
-        ends_at = timestamps[stamp]
-        reading = Radiation(ends_at - timedelta(hours=1), ends_at, value)
+        reading = Radiation(starts_at, ends_at, value)
         values = grouped.setdefault(identity, {})
         if ends_at in values and values[ends_at] != reading:
             raise ForecastError("conflicting_forecast_interval")

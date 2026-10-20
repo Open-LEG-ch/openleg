@@ -133,7 +133,7 @@ def refresh(
         if not client.set(LEASE, token, nx=True, ex=120):
             return {"state": "busy"}
         held = True
-        if not client.set(ATTEMPT, "1", nx=True, ex=900):
+        if not client.set(ATTEMPT, "1", nx=True, ex=840):
             return {"state": "cooldown"}
         get = download or _download
         collection = json.loads(get(COLLECTION_URL, 2 * 1024 * 1024))
@@ -191,7 +191,8 @@ def refresh(
         radiation = forecast.parse_radiation(
             _checked(
                 get, release.source_url, "1220" + release.sha256, forecast.MAX_CSV_BYTES
-            )
+            ),
+            release.released_at,
         )
         pipeline = client.pipeline(transaction=False)
         selected = [point for point in points if point.point_type_id == 2]

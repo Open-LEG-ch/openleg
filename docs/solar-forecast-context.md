@@ -32,7 +32,8 @@ unavailable. Refresh attempts never change the source release time.
 `POST /api/cron/refresh-solar-forecast` requires `X-Cron-Secret`. Schedule it every
 15 minutes in the deployment; registering this route does not install a scheduler.
 MeteoSwiss publishes hourly. A shared Redis lease permits one worker, and a
-15-minute attempt key bounds retries after failures. An unchanged complete
+14-minute attempt key bounds retries after failures and allows scheduler jitter
+before the next 15-minute tick. An unchanged complete
 generation only fetches STAC metadata again, without downloading both CSV files.
 
 The worker uses the fixed official HTTPS host, verified certificates, direct
@@ -40,7 +41,10 @@ connections without inherited proxies, and no redirects. Metadata is bounded to
 2 MiB per response and radiation to 34 MiB. Connections have a five-second socket
 timeout and a 20-second transfer watchdog per request; DNS uses the host resolver.
 Both downloaded CSV files must match the SHA-256 checksums in official metadata.
-The parser bounds rows, points and distinct intervals.
+The parser bounds rows, points and distinct intervals. It streams CSV rows and
+retains only postal-point intervals ending after the release through release plus
+28 hours. That deterministic window covers the 24-hour view throughout the
+three-hour freshness limit and bounds application and Redis memory use.
 
 Redis stores public point metadata and per-point intervals under source-checksum
 generation keys. Entries expire after four hours. Publication follows all point

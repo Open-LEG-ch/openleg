@@ -9,6 +9,7 @@ import pytest
 import solar_forecast as forecast
 
 NOW = datetime(2026, 10, 25, 1, 30, tzinfo=UTC)
+RELEASED_AT = datetime(2026, 10, 25, tzinfo=UTC)
 PREFIX = "https://data.geo.admin.ch/ch.meteoschweiz.ogd-local-forecasting/"
 
 
@@ -82,7 +83,7 @@ def test_interval_end_is_utc_and_both_dst_hours_remain_distinct():
         "1;2;202610250200;12.3\n"
         "1;2;202610250300;\n"
     ).encode("ascii")
-    rows = forecast.parse_radiation(data)
+    rows = forecast.parse_radiation(data, RELEASED_AT)
     readings = rows[(2, 1)]
     assert len(readings) == 2
     assert readings[0].starts_at == datetime(2026, 10, 25, 0, tzinfo=UTC)
@@ -102,14 +103,34 @@ def test_interval_end_is_utc_and_both_dst_hours_remain_distinct():
 def test_invalid_radiation_is_rejected_without_becoming_zero(value):
     data = f"point_id;point_type_id;Date;gre000h0\n1;2;202610250100;{value}\n".encode()
     with pytest.raises(forecast.ForecastError):
-        forecast.parse_radiation(data)
+        forecast.parse_radiation(data, RELEASED_AT)
 
 
 def test_conflicting_duplicates_and_wrong_intervals_are_rejected():
     head = "point_id;point_type_id;Date;gre000h0\n"
     for body in ("1;2;202610250130;12\n", "1;2;202610250100;12\n1;2;202610250100;13\n"):
         with pytest.raises(forecast.ForecastError):
-            forecast.parse_radiation((head + body).encode())
+            forecast.parse_radiation((head + body).encode(), RELEASED_AT)
+
+
+def test_retained_postal_intervals_cover_the_view_through_the_release_freshness_window():
+    head = "point_id;point_type_id;Date;gre000h0\n"
+    body = "".join(
+        f"1;{kind};{(RELEASED_AT + timedelta(hours=hour)):%Y%m%d%H%M};{hour + 1}\n"
+        for kind in (1, 2, 3)
+        for hour in range(-1, 30)
+    )
+    rows = forecast.parse_radiation((head + body).encode(), RELEASED_AT)
+    assert set(rows) == {(2, 1)}
+    assert [reading.ends_at for reading in rows[(2, 1)]] == [
+        RELEASED_AT + timedelta(hours=hour) for hour in range(1, 29)
+    ]
+
+
+def test_discarded_intervals_still_reject_malformed_source_values():
+    data = b"point_id;point_type_id;Date;gre000h0\n1;1;202611010100;NaN\n"
+    with pytest.raises(forecast.ForecastError):
+        forecast.parse_radiation(data, RELEASED_AT)
 
 
 def test_release_age_distinguishes_current_stale_and_future():

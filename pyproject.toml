@@ -146,6 +146,8 @@ also_copy = [
     "security_extensions.py",
     "security_utils.py",
     "self_host.py",
+    "solar_forecast.py",
+    "solar_forecast_cache.py",
     "store",
     "templates",
     "telemetry.py",
