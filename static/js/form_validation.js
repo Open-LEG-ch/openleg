@@ -36,7 +36,7 @@
     for (const input of document.querySelectorAll('input[type="file"]:not(.hidden)')) {
         if (input.hidden || input.style.display === "none") continue;
         const wrapper = document.createElement("div");
-        wrapper.className = "flex flex-wrap items-center gap-3 text-sm";
+        wrapper.className = "relative flex flex-wrap items-center gap-3 text-sm";
         const button = document.createElement("button");
         button.type = "button";
         button.className = "rounded border border-line px-3 py-2 font-semibold";
@@ -51,11 +51,25 @@
         else button.setAttribute("aria-label", fieldName ? messages.chooseFile + " : " + fieldName : messages.chooseFile);
         button.setAttribute("aria-describedby", [input.getAttribute("aria-describedby"), name.id].filter(Boolean).join(" "));
         button.addEventListener("click", () => input.click());
-        input.addEventListener("change", () => { name.textContent = [...input.files].map(file => file.name).join(", ") || messages.noFile; });
+        input.addEventListener("change", () => {
+            name.textContent = [...input.files].map(file => file.name).join(", ") || messages.noFile;
+            name.setAttribute("role", "status");
+            button.removeAttribute("aria-invalid");
+        });
         input.before(wrapper);
         wrapper.append(button, name, input);
         input.classList.add("sr-only");
+        Object.assign(input.style, { width: "1px", height: "1px", padding: "0", borderWidth: "0" });
         input.tabIndex = -1;
-        input.addEventListener("invalid", () => button.focus());
+        input.addEventListener("invalid", event => {
+            event.preventDefault();
+            name.textContent = input.validationMessage;
+            name.setAttribute("role", "alert");
+            button.setAttribute("aria-invalid", "true");
+            const firstInvalid = input.form ? [...input.form.elements].find(control => control.willValidate && !control.validity.valid) : input;
+            if (firstInvalid === input) setTimeout(() => {
+                if (input.willValidate && !input.validity.valid) button.focus();
+            }, 0);
+        });
     }
 })();
