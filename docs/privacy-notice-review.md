@@ -86,7 +86,7 @@ specific statement. It does not prescribe a legal basis or retention period.
 | store/registry | No specific statement. Review public directory data, withdrawal and verification contacts. |
 | store/ops | No specific statement. Review masked operational reports and snapshots with no automated expiry. |
 | store/ranking | Public snapshot-derived rankings. Record whether these require any personal-data wording. |
-| store/municipality | No specific statement. Review municipality account contacts and onboarding records. A current administrator's profile deletion is blocked by `municipalities.admin_building_id` until the reference is handed over. |
+| store/municipality | No specific statement. Review municipality account contacts and onboarding records. A current administrator's profile deletion is blocked by `municipalities.admin_building_id` until the retaining reference changes. |
 
 ## Approval record
 
