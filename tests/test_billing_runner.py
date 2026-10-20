@@ -7,6 +7,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from decimal import Decimal
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -627,6 +628,32 @@ def test_calculated_values_evidence_changes_the_public_run_fingerprint(monkeypat
     assert changed != baseline
 
 
+def test_vnb_evidence_fields_change_the_public_run_fingerprint(monkeypatch):
+    """Runs backed by different VNB case ids or sources must never share one
+    fingerprint: the drafted period must be traceable to its exact evidence."""
+
+    def case_with_evidence(vnb_case_id, vnb_source):
+        case = _fingerprint_case()
+        provenance = case["frames"].provenance
+        provenance["calculated_values_fingerprint"] = "c" * 64
+        provenance["vnb_case_id"] = vnb_case_id
+        provenance["vnb_source"] = vnb_source
+        return case
+
+    baseline = _fingerprint_through_runner(
+        monkeypatch, case_with_evidence("case-4711", "VNB portal export")
+    )
+    other_case = _fingerprint_through_runner(
+        monkeypatch, case_with_evidence("case-4712", "VNB portal export")
+    )
+    other_source = _fingerprint_through_runner(
+        monkeypatch, case_with_evidence("case-4711", "VNB letter")
+    )
+
+    assert other_case != baseline, "the VNB case id must change the fingerprint"
+    assert other_source != baseline, "the VNB source must change the fingerprint"
+
+
 def _install_billing_fixture(
     monkeypatch, *, policy=DEFAULT_POLICY, consumption_community_kwh=0.5
 ):
@@ -736,9 +763,56 @@ def test_operational_billing_requires_accepted_calculated_values(monkeypatch):
     monkeypatch.setattr(
         database, "get_validated_calculated_values", lambda *_args: None
     )
-    with pytest.raises(BillingRunError, match="no validated VNB calculated-values"):
+    with pytest.raises(BillingRunError) as exc:
         run_billing_period(COMMUNITY, START, END)
+    assert str(exc.value) == (
+        "Billing period has no validated VNB calculated-values evidence"
+    )
     assert saved == []
+
+
+def test_operational_billing_stamps_the_recorded_vnb_evidence(monkeypatch):
+    """A run on the real database path must fetch the validated evidence for
+    exactly this community and period, stamp it into the frames, and freeze
+    the evidence's fingerprint plus the prepared-by actor in the draft."""
+    import billing_runner
+    from billing_runner import run_billing_period
+
+    case = _battery_case()
+    provenance = case["frames"].provenance
+    provenance["calculated_values_fingerprint"] = "c" * 64
+    provenance["vnb_case_id"] = "case-4711"
+    provenance["vnb_source"] = "VNB portal export"
+    saved = _install_battery_fixture(monkeypatch, case, None)
+    monkeypatch.setattr(database, "is_db_available", lambda: True)
+
+    calculated = {"interval_count": 3}
+    calculated_read = MagicMock(return_value=calculated)
+    monkeypatch.setattr(database, "get_validated_calculated_values", calculated_read)
+    stamped = MagicMock(side_effect=lambda frames, _evidence: frames)
+    monkeypatch.setattr(
+        billing_runner.billing_readings, "with_calculated_vnb_evidence", stamped
+    )
+
+    result = run_billing_period(COMMUNITY, START, END)
+
+    assert result["status"] == "created"
+    calculated_read.assert_called_once_with(COMMUNITY, START, END)
+    assert stamped.call_count == 1
+    assert stamped.call_args[0][0] is not None
+    assert stamped.call_args[0][1] is calculated, (
+        "the fetched evidence must be the one stamped into the frames"
+    )
+    assert saved[0][:3] == (COMMUNITY, START, END), (
+        "the draft must persist for the billed community and period"
+    )
+    summary = saved[0][3]
+    assert summary["prepared_by"] == "system", (
+        "a run without an operator must record the system as preparer"
+    )
+    assert summary["calculated_values_fingerprint"] == "c" * 64, (
+        "the draft must carry the stamped VNB evidence fingerprint"
+    )
 
 
 def test_an_unassigned_period_point_refuses_to_persist(monkeypatch):
@@ -1053,6 +1127,63 @@ def test_battery_cost_share_lines_enter_the_draft_and_snapshot(monkeypatch):
     assert summary["battery_snapshot"]["period_start"] == START.isoformat()
     assert summary["battery_snapshot"]["period_end"] == END.isoformat()
     assert Decimal(summary["battery_snapshot"]["period_fraction"]) > 0
+    assert set(summary["battery_snapshot"]) == {
+        "community_id",
+        "participant_id",
+        "capacity_kwh",
+        "annual_cost_chf",
+        "period_start",
+        "period_end",
+        "period_fraction",
+        "shares",
+        "attribution",
+        "energy",
+    }, "the auditable snapshot must carry exactly these fields"
+    assert summary["battery_snapshot"]["community_id"] == COMMUNITY
+    assert summary["battery_snapshot"]["participant_id"] == "battery-a"
+    assert summary["battery_snapshot"]["capacity_kwh"] == "45"
+
+
+def test_battery_read_is_scoped_to_the_billed_community(monkeypatch):
+    import billing_runner
+    from billing_runner import run_billing_period
+
+    case = _battery_case()
+    _install_battery_fixture(monkeypatch, case, None)
+    battery_read = MagicMock(return_value=None)
+    monkeypatch.setattr(database, "get_battery", battery_read)
+    monkeypatch.setattr(
+        billing_runner.billing_readings,
+        "load_period_frames",
+        lambda _c, _s, _e: deepcopy(case["frames"]),
+    )
+    run_billing_period(COMMUNITY, START, END)
+
+    battery_read.assert_called_once_with(COMMUNITY)
+
+
+def test_a_battery_participant_row_never_hides_later_cost_shares(monkeypatch):
+    """The battery participant itself carries no cost share, and skipping it
+    must not stop the run from billing later participants."""
+    from billing_runner import run_billing_period
+
+    case = _battery_case()
+    case["frames"].participants = ("battery-a", "building-a")
+    saved = _install_battery_fixture(
+        monkeypatch, case, {k: v for k, v in BATTERY_CONFIG.items()}
+    )
+
+    run_billing_period(COMMUNITY, START, END)
+
+    share_lines = [
+        item
+        for item in saved[0][3]["line_items"]
+        if item["item_type"] == "battery_cost_share"
+    ]
+    assert len(share_lines) == 1, (
+        "the participant after the battery row must still receive its line"
+    )
+    assert share_lines[0]["participant_id"] == "building-a"
 
 
 def test_battery_config_incomplete_for_a_billed_participant_fails_closed(
@@ -1067,8 +1198,12 @@ def test_battery_config_incomplete_for_a_billed_participant_fails_closed(
     }
     saved = _install_battery_fixture(monkeypatch, case, battery)
 
-    with pytest.raises(BillingRunError, match="building-a"):
+    with pytest.raises(BillingRunError) as exc:
         run_billing_period(COMMUNITY, START, END)
+    assert str(exc.value) == (
+        "Der Quartierakku ist unvollständig konfiguriert: "
+        "Teilnehmer building-a hat keinen Anteil."
+    )
 
     assert saved == []
 

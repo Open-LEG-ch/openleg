@@ -1,5 +1,7 @@
 # Store formation mutation results
 
+These are historical results from the earlier #478 working branch. Mutant IDs and counts need a fresh unfiltered run at the current source revision. These classifications do not change native statuses or the automated gate.
+
 This record covers native `mutmut 3.7.0` runs for the formation repository. The
 configured, unfiltered run was executed in a clean copy with the repository
 virtual environment.
@@ -42,3 +44,24 @@ tests pin join completeness, consent filters, distance boundaries, ordering,
 and user parameters. The added failure-diagnostic assertions killed all 12
 targeted survivors. The three-function slice moved from 26/38 to 38/38 killed;
 none were classified as equivalent.
+
+## Scoped roles and dual control
+
+The functions `set_member_access_roles` and `set_community_dual_control`
+arrived after the slices above and held 22 survivors at the fresh baseline for
+#478 (native mutmut 3.7.0 at `1bc638f`, full scope, empty cache). Behavior
+tests in `tests/test_store_formation.py` kill all 22; none were classified as
+equivalent:
+
+- the membership read is pinned to the community parameter, the
+  `FOR UPDATE` lock, and the actor lookup scoped to
+  `community_id` plus `building_id`;
+- refusals are pinned for an unknown actor, an unknown target, a member
+  without the membership capability, and a membership manager attempting an
+  administrator demotion — a refusal must return `False` and write nothing;
+- an administrator may demote another administrator while one confirmed
+  administrator remains; the remaining-admin count reads each row's status
+  field, so every miscounted or miscompared status mutant flips the outcome;
+- dual control requires a confirmed administrator, refuses an unconfirmed
+  administrator and a plain member, and reports no change when the update
+  matches no row, without tracking an event.

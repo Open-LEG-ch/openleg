@@ -5,6 +5,7 @@ import json
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 from datetime import datetime
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -22,7 +23,7 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
-def rounded_delivery(configured_e66, monkeypatch):
+def rounded_delivery(configured_e66, monkeypatch, request):
     client, db, payload, _ = configured_e66
     monkeypatch.setattr(db, "_db_initialized", True)
     cid = payload["community_id"]
@@ -106,7 +107,7 @@ def rounded_delivery(configured_e66, monkeypatch):
             "effective_from": "2026-09-01",
             "internal_price_chf_per_kwh": "0.12",
             "grid_fee_chf_per_kwh": "0.08",
-            "settlement_fee_chf_per_kwh": "0",
+            "settlement_fee_chf_per_kwh": getattr(request, "param", "0"),
             "network_level": "same",
             "distribution_model": "proportional",
             "vat_mode": "none",
@@ -117,6 +118,44 @@ def rounded_delivery(configured_e66, monkeypatch):
         },
     )
     return client, db, payload, ET.tostring(root)
+
+
+@pytest.mark.parametrize("rounded_delivery", ["0.03"], indirect=True)
+def test_nonzero_settlement_fee_reaches_approved_rounded_e66_invoices(rounded_delivery):
+    client, db, payload, source = rounded_delivery
+    assert e66.post_e66(client, source).status_code == 201
+    start, end = (
+        datetime.fromisoformat(payload[key]).astimezone(ZoneInfo("Europe/Zurich"))
+        for key in ("period_start", "period_end")
+    )
+
+    prepared = billing_runner.run_billing_period(
+        payload["community_id"], start, end, prepared_by="member"
+    )
+    invoices = db.approve_billing_period(
+        prepared["period_id"], payload["community_id"], approver_id="producer"
+    )
+
+    fees = {
+        invoice["participant_id"]: tuple(
+            Decimal(str(item[key]))
+            for key in ("quantity_kwh", "unit_price_chf_per_kwh", "amount_chf")
+        )
+        for invoice in invoices
+        for item in invoice["line_items_snapshot"]
+        if item["item_type"] == "settlement_fee"
+    }
+    assert fees == {
+        "member": (Decimal("0.333"), Decimal("0.03"), Decimal("0.009990")),
+        "consumer-b": (Decimal("0.667"), Decimal("0.03"), Decimal("0.020010")),
+        "producer": (Decimal(0), Decimal("0.03"), Decimal(0)),
+    }
+    consumers = {invoice["participant_id"]: invoice for invoice in invoices}
+    for person, total in (("member", "0.05"), ("consumer-b", "0.10")):
+        invoice = consumers[person]
+        assert Decimal(str(invoice["net_chf"])) == Decimal(total)
+        assert Decimal(str(invoice["vat_chf"])) == 0
+        assert Decimal(str(invoice["gross_chf"])) == Decimal(total)
 
 
 def test_rounded_e66_quantities_reach_approved_invoice_without_a_second_document(
@@ -155,6 +194,22 @@ def test_rounded_e66_quantities_reach_approved_invoice_without_a_second_document
     assert (
         period["reconciliation"]["precision_policy"]["outcome"] == "rounding_compatible"
     )
+    source_evidence = period["reconciliation"]["source_evidence"]
+    audit_fields = {
+        "document_status",
+        "evidence_sha256",
+        "sender_id",
+        "receiver_id",
+        "document_created_at",
+        "vnb_community_id",
+        "precision",
+        "quality_policy",
+        "channel_balance_policy",
+        "products",
+    }
+    # Issued invoices retain the accepted document's audit facts while limiting
+    # participant mappings to the invoiced member.
+    assert audit_fields <= source_evidence["metadata"].keys()
     for invoice in invoices:
         own = invoice["participant_id"]
         provenance = invoice["provenance_snapshot"]["reconciliation"]
@@ -165,6 +220,16 @@ def test_rounded_e66_quantities_reach_approved_invoice_without_a_second_document
             item["building_id"]
             for item in provenance["source_evidence"]["metadata"]["mappings"]
         } == {own}
+        expected_evidence = deepcopy(source_evidence)
+        expected_evidence["metadata"] = {
+            key: source_evidence["metadata"][key] for key in audit_fields
+        }
+        expected_evidence["metadata"]["mappings"] = [
+            mapping
+            for mapping in source_evidence["metadata"]["mappings"]
+            if mapping["building_id"] == own
+        ]
+        assert provenance["source_evidence"] == expected_evidence
     assert (
         client.post(
             f"/admin/vnb-calculated-values/dietikon/{accepted['id']}/withdrawals",

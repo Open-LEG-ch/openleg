@@ -192,6 +192,71 @@ def test_provisional_match_uses_the_same_bfs_municipality_not_distance():
     distance.assert_not_called()
 
 
+def test_provisional_match_scans_past_a_foreign_municipality_row():
+    """The read is scoped to the caller's municipality, but a foreign row
+    must never stop the scan: later same-municipality households still count."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    caller = {**CALLER_PROFILE, "building_id": "mine"}
+    foreign_then_neighbour = [
+        {**NEIGHBOUR_PROFILES[0], "bfs_number": 9999},
+        {**NEIGHBOUR_PROFILES[0], "building_id": "other"},
+    ]
+
+    with (
+        patch.object(
+            database,
+            "get_all_building_profiles",
+            return_value=foreign_then_neighbour,
+        ),
+        patch.object(
+            neighbor_view.ml_models,
+            "calculate_community_autarky",
+            return_value=(0.5, 0, 0),
+        ),
+    ):
+        summary = neighbor_view.find_provisional_matches(caller)
+
+    assert summary is not None, (
+        "a foreign row ahead of the read must not hide the same-municipality household"
+    )
+    assert summary["num_members"] == 2
+
+
+def test_provisional_match_excludes_only_the_callers_own_building():
+    """A caller whose registration already exists must not match itself, but
+    every other household in the municipality must survive that exclusion."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    caller = {**CALLER_PROFILE, "building_id": "mine"}
+    own_row_then_other = [
+        {**NEIGHBOUR_PROFILES[0], "building_id": "mine"},
+        {**NEIGHBOUR_PROFILES[0], "building_id": "other"},
+    ]
+    seen_buildings = []
+
+    def fixed_autarky(community, _profiles):
+        seen_buildings.extend(community["building_id"].tolist())
+        return 0.5, 0, 0
+
+    with (
+        patch.object(
+            database, "get_all_building_profiles", return_value=own_row_then_other
+        ),
+        patch.object(
+            neighbor_view.ml_models, "calculate_community_autarky", fixed_autarky
+        ),
+    ):
+        summary = neighbor_view.find_provisional_matches(caller)
+
+    assert summary is not None
+    assert summary["num_members"] == 2, (
+        "the caller's own stored row must be excluded once, not the neighbours with it"
+    )
+    assert seen_buildings == ["mine", "other"], (
+        "the autarky calculation must see the caller and the other household, "
+        "never the caller's stored row twice"
+    )
+
+
 def test_provisional_match_summary_reports_members_and_autarky_percentage():
     neighbor_view = importlib.import_module("neighbor_view")
     seen_buildings = []
@@ -624,6 +689,23 @@ def test_jitter_coordinates_normalizes_geographic_boundaries():
         )
 
 
+def test_jitter_coordinates_pole_adjacent_points_stay_valid_latitudes():
+    """The clamp is part of the result contract: even beside the poles, where
+    the anonymity radius spans more latitude degrees, the point stays a valid
+    coordinate and never escapes the +-90 degree bounds."""
+    neighbor_view = importlib.import_module("neighbor_view")
+
+    north = neighbor_view.jitter_coordinates(89.9999, 8.54, seed=0)
+    south = neighbor_view.jitter_coordinates(-89.9999, 8.54, seed=3)
+
+    assert -90.0 <= north[0] <= 90.0, (
+        "a northward jitter beside the pole must clamp to a valid latitude"
+    )
+    assert -90.0 <= south[0] <= 90.0, (
+        "a southward jitter beside the pole must clamp to a valid latitude"
+    )
+
+
 # ---------------------------------------------------------------------------
 # The map a fresh registration receives
 # ---------------------------------------------------------------------------
@@ -729,6 +811,18 @@ def test_collect_building_locations_passes_the_requested_city_to_the_read():
     assert locations == [{"lat": point[0], "lon": point[1], "type": "owner"}], (
         "exactly the supplied building must come back, jittered and typed"
     )
+
+
+def test_collect_building_locations_passes_the_requested_municipality_to_the_read():
+    """A municipality-scoped map must scope the read itself, not filter after."""
+    neighbor_view = importlib.import_module("neighbor_view")
+    read = MagicMock(return_value=[])
+
+    with patch.object(neighbor_view.db, "get_all_buildings", read):
+        locations = neighbor_view.collect_building_locations(bfs_number=261)
+
+    read.assert_called_once_with(city_id=None, bfs_number=261)
+    assert locations == []
 
 
 def test_collect_building_locations_defaults_to_anonymous_without_user_type():

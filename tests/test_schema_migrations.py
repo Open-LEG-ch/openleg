@@ -206,15 +206,18 @@ def _pool_against(url):
     import database
 
     old_pool = database._connection_pool
+    old_pid = database._pool_pid
     new_pool = psycopg2.pool.ThreadedConnectionPool(
         1, 2, url, cursor_factory=psycopg2.extras.RealDictCursor
     )
     database._connection_pool = new_pool
+    database._pool_pid = os.getpid()
     try:
         yield
     finally:
         new_pool.closeall()
         database._connection_pool = old_pool
+        database._pool_pid = old_pid
 
 
 @pytest.mark.integration

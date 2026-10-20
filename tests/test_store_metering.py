@@ -1231,12 +1231,17 @@ def test_record_sdat_veracity_flags_clears_stale_flags_without_new_ones(monkeypa
     assert "DELETE FROM sdat_veracity_flags" in cur.executed[0][0]
 
 
-def test_record_sdat_veracity_flags_swallows_errors(monkeypatch):
+def test_record_sdat_veracity_flags_swallows_errors(monkeypatch, caplog):
     cur = _FakeCursor()
     cur.execute = lambda *_: (_ for _ in ()).throw(RuntimeError("db down"))
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    assert metering.record_sdat_veracity_flags("DOC-1", []) is False
+    with caplog.at_level(logging.ERROR):
+        assert metering.record_sdat_veracity_flags("DOC-1", []) is False
+
+    assert caplog.records[-1].getMessage() == (
+        "[DB] Error recording SDAT veracity flags: db down"
+    )
 
 
 def test_get_sdat_veracity_flags_reads_the_period_window(monkeypatch):
@@ -1264,12 +1269,17 @@ def test_get_sdat_veracity_flags_reads_the_period_window(monkeypatch):
     assert params == (MEASURED_AT, MEASURED_AT + timedelta(days=1))
 
 
-def test_get_sdat_veracity_flags_degrades_to_empty(monkeypatch):
+def test_get_sdat_veracity_flags_degrades_to_empty(monkeypatch, caplog):
     cur = _FakeCursor()
     cur.execute = lambda *_: (_ for _ in ()).throw(RuntimeError("db down"))
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    assert metering.get_sdat_veracity_flags(MEASURED_AT, MEASURED_AT) == []
+    with caplog.at_level(logging.ERROR):
+        assert metering.get_sdat_veracity_flags(MEASURED_AT, MEASURED_AT) == []
+
+    assert caplog.records[-1].getMessage() == (
+        "[DB] Error getting SDAT veracity flags: db down"
+    )
 
 
 def test_sdat_veracity_flags_table_exists_in_schema():

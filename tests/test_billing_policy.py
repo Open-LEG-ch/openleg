@@ -8,7 +8,7 @@ the admin routes.
 """
 
 import re
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -780,6 +780,172 @@ def test_missing_fields_fail_closed(field):
     result = billing_policy.validate_policy_form(form)
     assert result["policy"] is None
     assert field in result["errors"]
+
+
+_GERMAN_FORM_ERRORS = {
+    "effective_from": "Gültig-ab-Datum im Format JJJJ-MM-TT eingeben.",
+    "internal_price_rp": (
+        "Interner Preis in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
+    ),
+    "grid_fee_rp": (
+        "Netzentgelt in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
+    ),
+    "network_level": "Unbekannte Netzebene.",
+    "distribution_model": "Unbekanntes Verteilmodell.",
+    "vat_mode": "Unbekannter Mehrwertsteuer-Modus.",
+    "payment_days": "Zahlungsfrist in ganzen Tagen, zwischen 1 und 365.",
+    "invoice_prefix": (
+        "Rechnungspräfix: 2 bis 16 Zeichen, nur Grossbuchstaben, Ziffern "
+        "und Bindestrich, beginnend mit Buchstabe oder Ziffer."
+    ),
+    "delivery_method": "Unbekannte Zustellmethode.",
+}
+
+
+_BAD_FORM_VALUES = {
+    "effective_from": "nicht-ein-datum",
+    "internal_price_rp": "-1",
+    "grid_fee_rp": "2000.01",
+    "network_level": "crossed",
+    "distribution_model": "flat",
+    "vat_mode": "libre",
+    "payment_days": "400",
+    "invoice_prefix": "leg-2026",
+    "delivery_method": "fax",
+}
+
+
+@pytest.mark.parametrize("field", sorted(_GERMAN_FORM_ERRORS))
+def test_a_refused_field_names_the_exact_german_diagnostic(field):
+    result = billing_policy.validate_policy_form(
+        _form(**{field: _BAD_FORM_VALUES[field]})
+    )
+
+    assert result["policy"] is None
+    assert result["errors"][field] == _GERMAN_FORM_ERRORS[field]
+
+
+def test_a_vat_rate_without_the_standard_mode_is_refused():
+    result = billing_policy.validate_policy_form(_form(vat_rate_pct="8.1"))
+
+    assert result["policy"] is None
+    assert result["errors"]["vat_rate_pct"] == (
+        "Mehrwertsteuersatz nur zusammen mit dem Mehrwertsteuer-Modus."
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "boundary_value"),
+    [
+        ("internal_price_rp", "1000"),
+        ("grid_fee_rp", "1000"),
+        ("settlement_fee_rp", "1000"),
+    ],
+)
+def test_the_upper_price_boundary_stays_valid(field, boundary_value):
+    result = billing_policy.validate_policy_form(_form(**{field: boundary_value}))
+
+    assert result["errors"] == {}
+
+
+def test_a_price_at_four_places_stays_valid():
+    """A price with exactly four decimal places is the densest valid rate."""
+    result = billing_policy.validate_policy_form(_form(internal_price_rp="8.1234"))
+
+    assert result["errors"] == {}
+    assert result["policy"]["internal_price_chf_per_kwh"] == Decimal("0.081234")
+
+
+def test_a_price_above_the_boundary_or_beyond_four_places_is_refused():
+    over_limit = billing_policy.validate_policy_form(_form(grid_fee_rp="1000.01"))[
+        "errors"
+    ]["grid_fee_rp"]
+    over_precise = billing_policy.validate_policy_form(_form(grid_fee_rp="0.00001"))[
+        "errors"
+    ]["grid_fee_rp"]
+
+    assert over_limit == _GERMAN_FORM_ERRORS["grid_fee_rp"]
+    assert over_precise == _GERMAN_FORM_ERRORS["grid_fee_rp"]
+
+
+_VAT_RATE_ERROR = "Mehrwertsteuersatz in Prozent, über 0 und höchstens 100."
+
+
+@pytest.mark.parametrize("vat_rate", ["0", "1e1", "NaN", "101", "100.01", "0.001"])
+def test_vat_rates_outside_the_domain_are_refused(vat_rate):
+    result = billing_policy.validate_policy_form(
+        _form(vat_mode="standard", vat_rate_pct=vat_rate)
+    )
+
+    assert result["policy"] is None
+    assert result["errors"]["vat_rate_pct"] == _VAT_RATE_ERROR
+
+
+@pytest.mark.parametrize("vat_rate", ["0.01", "1", "100"])
+def test_inner_vat_rate_boundaries_stay_valid(vat_rate):
+    result = billing_policy.validate_policy_form(
+        _form(vat_mode="standard", vat_rate_pct=vat_rate)
+    )
+
+    assert result["errors"] == {}
+
+
+@pytest.mark.parametrize("payment_days", ["1", "365"])
+def test_payment_day_boundaries_stay_valid(payment_days):
+    result = billing_policy.validate_policy_form(_form(payment_days=payment_days))
+
+    assert result["errors"] == {}
+
+
+def test_the_vat_rate_may_be_absent_without_the_standard_mode():
+    form = _form(vat_mode="none")
+    form.pop("vat_rate_pct")
+
+    result = billing_policy.validate_policy_form(form)
+
+    assert result["errors"] == {}, (
+        "an absent field and an empty field must validate identically"
+    )
+
+
+def test_a_non_string_vat_field_is_read_as_empty_not_as_text():
+    form = dict(_form())
+    form["vat_rate_pct"] = 5
+
+    assert billing_policy.validate_policy_form(form)["errors"] == {}
+
+
+def test_suggest_price_band_accepts_a_zero_floor_and_formats_two_places():
+    band = billing_policy.suggest_price_band(
+        grid_total_rp=30, settlement_fee_rp=5, feed_in_floor_rp=0
+    )
+
+    assert band["floor_rp"] == Decimal(0)
+    assert band["ceiling_rp"] == Decimal(25)
+    assert band["floor_rp_display"] == "0.00"
+    assert band["ceiling_rp_display"] == "25.00"
+
+
+def test_suggest_price_band_refuses_negative_inputs():
+    assert (
+        billing_policy.suggest_price_band(
+            grid_total_rp=-1, settlement_fee_rp=5, feed_in_floor_rp=0
+        )
+        is None
+    )
+
+
+def test_a_persisted_policy_at_the_settlement_fee_boundary_stays_valid():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[billing_policy.SETTLEMENT_FEE_FIELD] = Decimal("10.00")
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized[billing_policy.SETTLEMENT_FEE_FIELD] == Decimal("10.00")
 
 
 @pytest.mark.parametrize(
@@ -1717,6 +1883,80 @@ def test_describe_version_shows_populated_payment_days_and_prefix():
     assert described["payment_days_display"] == "30 Tage"
     assert described["invoice_prefix_display"] == "LEG-2026"
     assert described["settlement_fee_display"] == "2.00 Rp./kWh"
+
+
+def test_describe_version_renders_the_complete_display_record():
+    """The persisted version's display record is rendered by operators and
+    templates; every field must come from the stored values."""
+    version = {
+        "effective_from": datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
+        "internal_price_chf_per_kwh": Decimal("0.15"),
+        "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "settlement_fee_chf_per_kwh": Decimal("0.02"),
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "standard",
+        "vat_rate_pct": Decimal("8.1"),
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+    described = billing_policy.describe_version(version)
+
+    assert described == {
+        **version,
+        "effective_from_display": "2026-01-01",
+        "internal_price_display": "15.00 Rp./kWh",
+        "grid_fee_display": "8.00 Rp./kWh",
+        "settlement_fee_display": "2.00 Rp./kWh",
+        "network_level_label": "Gleiche Netzebene",
+        "distribution_model_label": "Proportional",
+        "vat_label": "Mehrwertsteuer ausweisen",
+        "delivery_method_label": "E-Mail",
+        "payment_days_display": "30 Tage",
+        "invoice_prefix_display": "LEG-2026",
+    }
+
+
+def test_describe_version_falls_back_to_nicht_angegeben_display():
+    version = {
+        "effective_from": None,
+        "vat_rate_pct": Decimal(0),
+    }
+    described = billing_policy.describe_version(version)
+
+    assert described == {
+        "effective_from": None,
+        "vat_rate_pct": Decimal(0),
+        "effective_from_display": "None",
+        "internal_price_display": "Nicht angegeben",
+        "grid_fee_display": "Nicht angegeben",
+        "settlement_fee_display": "Nicht angegeben",
+        "network_level_label": "Nicht angegeben",
+        "distribution_model_label": "Nicht angegeben",
+        "vat_label": "Nicht angegeben",
+        "delivery_method_label": "Nicht angegeben",
+        "payment_days_display": "Nicht angegeben",
+        "invoice_prefix_display": "Nicht angegeben",
+    }
+
+
+def test_describe_version_displays_a_legacy_string_effective_date_verbatim():
+    """A persisted row predating the date migration carries a plain string
+    date; the display must show it as stored, not as a None placeholder."""
+    described = billing_policy.describe_version(
+        {"effective_from": "2026-03-01", "network_level": "same"}
+    )
+
+    assert described["effective_from_display"] == "2026-03-01"
+    assert described["network_level_label"] == "Gleiche Netzebene"
+
+
+def test_rate_rp_text_formats_stored_prices_and_degrades_to_display_fallback():
+    assert billing_policy.rate_rp_text(Decimal("0.15")) == "15.00 Rp./kWh"
+    assert billing_policy.rate_rp_text("nan") == "Nicht angegeben"
+    assert billing_policy.rate_rp_text(None) == "Nicht angegeben"
+    assert billing_policy.rate_rp_text(0) == "0.00 Rp./kWh"
 
 
 def test_policy_template_uses_display_values_for_payment_days_and_prefix():

@@ -13,6 +13,8 @@ from flask import Flask, render_template_string
 from flask_babel import force_locale, ngettext
 from flask_babel import gettext as _
 
+from tests.native_environment import isolated_environment as native_environment
+
 # Pin import-time dependency settings as well as build_config/request settings.
 # Clearing the mapping also prevents newly introduced settings from inheriting
 # host values. patch.dict restores the caller's entire environment on exit.
@@ -51,7 +53,7 @@ _TEST_ENVIRONMENT = {
 
 @contextmanager
 def _synthetic_environment():
-    with patch.dict(os.environ, _TEST_ENVIRONMENT, clear=True):
+    with patch.dict(os.environ, native_environment(_TEST_ENVIRONMENT), clear=True):
         yield
 
 
@@ -408,10 +410,11 @@ def test_synthetic_environment_restores_caller_even_on_error(monkeypatch, raises
     monkeypatch.setenv("BABEL_DEFAULT_LOCALE", "it_CH")
     monkeypatch.setenv("UNRECOGNIZED_HOST_SETTING", "outside")
     before = dict(os.environ)
+    expected_environment = native_environment(_TEST_ENVIRONMENT)
 
     def exercise():
         with _synthetic_environment():
-            assert dict(os.environ) == _TEST_ENVIRONMENT
+            assert dict(os.environ) == expected_environment
             os.environ["BABEL_DEFAULT_LOCALE"] = "fr_CH"
             if raises:
                 raise RuntimeError("synthetic test failure")
