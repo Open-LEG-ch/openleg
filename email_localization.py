@@ -20,7 +20,7 @@ _TEMPLATES = frozenset(
         (7, "consumption"),
         (14, "formation"),
     ]
-).union({"emails/municipality_interest.html"})
+).union({"emails/municipality_interest.html", "emails/formation_nudge.html"})
 
 
 @lru_cache(maxsize=2)

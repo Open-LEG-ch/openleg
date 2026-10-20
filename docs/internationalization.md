@@ -141,4 +141,9 @@ include a participant's contact details or choice of shared fields.
 Operator-entered correspondence remains in the author's language. Any future
 generated mail must select an explicit recipient language before its sender
 is enabled.
+The registered formation-reminder template supports explicit German/French
+worker rendering, plural day counts, translated domain labels and localized
+links. Dynamic community, status and next-step text is escaped. It has no
+active sender or schedule; a future sender must choose the recipient's saved
+language for both subject and body.
 This implementation records no human language or legal approval.

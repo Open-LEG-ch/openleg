@@ -934,7 +934,6 @@ msgstr ""
 " réseau et dans la même zone de desserte, utilisent au maximum"
 
 #: templates/how-it-works.html:52
-#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1209,7 +1208,6 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h OApEl"
 
 #: templates/leg_kalkulator.html:267
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1231,7 +1229,6 @@ msgstr ""
 "tension."
 
 #: templates/leg_kalkulator.html:288
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -1505,6 +1502,10 @@ msgstr "Copier la commande"
 #: templates/partials/install_console.html:1
 msgid "Befehl kopiert."
 msgstr "Commande copiée."
+
+#: templates/emails/formation_nudge.html:43
+msgid "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
+msgstr "Si vous avez des questions, répondez directement à cet e-mail ou contactez-nous à"
 
 #: templates/fuer_gemeinden.html:83
 msgid ""
@@ -2470,7 +2471,6 @@ msgstr ""
 "une part des coûts."
 
 #: templates/gemeinde/methodik.html:95
-#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -4454,7 +4454,6 @@ msgstr ""
 "du réseau diminue de"
 
 #: templates/how-it-works.html:42
-#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -5101,6 +5100,10 @@ msgstr "Création"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Les étapes de création"
 
+#: templates/emails/formation_nudge.html:40
+msgid "Gründung fortsetzen"
+msgstr "Poursuivre la création"
+
 #: formation_wizard.py:51
 msgid "Gründung gestartet"
 msgstr "Création démarrée"
@@ -5204,6 +5207,10 @@ msgstr "Avez-vous un compteur intelligent ?"
 #: templates/impressum.html:39
 msgid "Haftungsausschluss"
 msgstr "Exclusion de responsabilité"
+
+#: templates/emails/formation_nudge.html:29
+msgid "Hallo,"
+msgstr "Bonjour,"
 
 #: templates/contact_requests.html:70 templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
@@ -5460,6 +5467,21 @@ msgstr "Votre commune"
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
 msgstr "Votre commune voit les prochaines étapes"
 
+#: templates/emails/formation_nudge.html:30
+#, python-format
+msgid ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tag nicht bewegt."
+msgid_plural ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tagen nicht bewegt."
+msgstr[0] ""
+"Votre communauté %(community_name)s est actuellement au statut %(status)s et n’a pas progressé "
+"depuis %(count)s jour."
+msgstr[1] ""
+"Votre communauté %(community_name)s est actuellement au statut %(status)s et n’a pas progressé "
+"depuis %(count)s jours."
+
 #: dashboard_routes.py:151
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr "Vos demandes de contact sur OpenLEG"
@@ -5475,6 +5497,11 @@ msgstr "Votre CEL choisit son mode d’exploitation."
 #: email_automation.py:45
 msgid "Ihre LEG-Gemeinschaft kann starten"
 msgstr "Votre communauté électrique locale peut démarrer"
+
+#: email_automation.py:55 templates/emails/formation_nudge.html:6
+#: templates/emails/formation_nudge.html:28
+msgid "Ihre LEG-Gründung wartet"
+msgstr "Votre création de CEL est en attente"
 
 #: templates/self_host.html:73
 msgid ""
@@ -6348,6 +6375,10 @@ msgstr "Gratuit et open source | OpenLEG"
 #: templates/pricing.html:34
 msgid "Kostenlos. Open Source. Für immer."
 msgstr "Gratuit. Open source. Pour toujours."
+
+#: templates/emails/formation_nudge.html:46
+msgid "Kostenlose LEG-Infrastruktur"
+msgstr "Infrastructure CEL gratuite"
 
 #: templates/leg_kalkulator.html:201
 msgid "Kostenvergleich (pro Jahr)"
@@ -8971,7 +9002,6 @@ msgstr ""
 "d'union, commençant par une lettre ou un chiffre."
 
 #: templates/llms.txt:9
-#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -9618,7 +9648,6 @@ msgstr ""
 "par la commune."
 
 #: templates/gemeinde/rangliste.html:127
-#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
@@ -10844,6 +10873,12 @@ msgstr "À qui appartiennent les données ?"
 #: templates/fuer_bewohner.html:98
 msgid "Weniger Netznutzungsentgelt für lokalen Strom"
 msgstr "Une utilisation du réseau moins chère pour l’électricité locale"
+
+#: templates/emails/formation_nudge.html:37
+msgid ""
+"Wenn Sie festhängen, antworten Sie auf diese E-Mail. Wir schauen den nächsten Schritt mit Ihnen "
+"an."
+msgstr "Si vous êtes bloqué, répondez à cet e-mail. Nous examinerons la prochaine étape avec vous."
 
 #: templates/emails/day_3_smartmeter.html:35
 msgid ""

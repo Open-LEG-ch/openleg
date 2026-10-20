@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 04:07+0000\n"
+"POT-Creation-Date: 2026-10-20 04:52+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -609,7 +609,7 @@ msgstr ""
 
 #: templates/emails/day_0_welcome.html:63 templates/emails/day_14_formation.html:86
 #: templates/emails/day_3_smartmeter.html:45 templates/emails/day_7_consumption.html:60
-#: templates/emails/municipality_interest.html:7
+#: templates/emails/formation_nudge.html:47 templates/emails/municipality_interest.html:7
 msgctxt "email-unsubscribe"
 msgid "Abmelden"
 msgstr ""
@@ -1423,6 +1423,10 @@ msgstr ""
 
 #: templates/partials/install_console.html:1
 msgid "Befehl kopiert."
+msgstr ""
+
+#: templates/emails/formation_nudge.html:43
+msgid "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
 msgstr ""
 
 #: templates/fuer_gemeinden.html:83
@@ -4677,6 +4681,10 @@ msgstr ""
 msgid "Gründung als Arbeitsfolge"
 msgstr ""
 
+#: templates/emails/formation_nudge.html:40
+msgid "Gründung fortsetzen"
+msgstr ""
+
 #: formation_wizard.py:51
 msgid "Gründung gestartet"
 msgstr ""
@@ -4768,6 +4776,10 @@ msgstr ""
 
 #: templates/impressum.html:39
 msgid "Haftungsausschluss"
+msgstr ""
+
+#: templates/emails/formation_nudge.html:29
+msgid "Hallo,"
 msgstr ""
 
 #: templates/contact_requests.html:70 templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
@@ -5007,6 +5019,17 @@ msgstr ""
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
 msgstr ""
 
+#: templates/emails/formation_nudge.html:30
+#, python-format
+msgid ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tag nicht bewegt."
+msgid_plural ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tagen nicht bewegt."
+msgstr[0] ""
+msgstr[1] ""
+
 #: dashboard_routes.py:151
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr ""
@@ -5019,8 +5042,13 @@ msgstr ""
 msgid "Ihre LEG wählt, wie sie betrieben wird."
 msgstr ""
 
-#: email_automation.py:45
+#: email_automation.py:46
 msgid "Ihre LEG-Gemeinschaft kann starten"
+msgstr ""
+
+#: email_automation.py:55 templates/emails/formation_nudge.html:6
+#: templates/emails/formation_nudge.html:28
+msgid "Ihre LEG-Gründung wartet"
 msgstr ""
 
 #: templates/self_host.html:73
@@ -5843,6 +5871,10 @@ msgstr ""
 
 #: templates/pricing.html:34
 msgid "Kostenlos. Open Source. Für immer."
+msgstr ""
+
+#: templates/emails/formation_nudge.html:46
+msgid "Kostenlose LEG-Infrastruktur"
 msgstr ""
 
 #: templates/leg_kalkulator.html:201
@@ -6994,7 +7026,7 @@ msgstr ""
 msgid "Netzwerkfehler. Bitte erneut versuchen."
 msgstr ""
 
-#: email_automation.py:99
+#: email_automation.py:100
 #, python-format
 msgid "Neue LEG-Interessenmeldung in %(municipality_name)s"
 msgstr ""
@@ -7251,7 +7283,8 @@ msgstr ""
 msgid "Nächster Schritt für %(profile_name)s"
 msgstr ""
 
-#: templates/fuer_gemeinden.html:37 templates/leg_dashboard.html:275
+#: templates/emails/formation_nudge.html:33 templates/fuer_gemeinden.html:37
+#: templates/leg_dashboard.html:275
 msgid "Nächster Schritt:"
 msgstr ""
 
@@ -7661,7 +7694,7 @@ msgstr ""
 msgid "Ops Dashboard"
 msgstr ""
 
-#: email_automation.py:40
+#: email_automation.py:41
 msgid "Optimieren Sie Ihr LEG-Matching"
 msgstr ""
 
@@ -8491,7 +8524,7 @@ msgstr ""
 msgid "Schema"
 msgstr ""
 
-#: email_automation.py:35
+#: email_automation.py:36
 msgid "Schnelle Frage: Haben Sie einen Smart Meter?"
 msgstr ""
 
@@ -10044,6 +10077,12 @@ msgstr ""
 msgid "Weniger Netznutzungsentgelt für lokalen Strom"
 msgstr ""
 
+#: templates/emails/formation_nudge.html:37
+msgid ""
+"Wenn Sie festhängen, antworten Sie auf diese E-Mail. Wir schauen den nächsten Schritt mit Ihnen "
+"an."
+msgstr ""
+
 #: templates/emails/day_3_smartmeter.html:35
 msgid ""
 "Wenn wir wissen, ob Sie schon einen Smart Meter haben, können wir den nächsten Schritt besser "
@@ -10158,7 +10197,7 @@ msgstr ""
 msgid "Willkommen bei %(platform_name)s"
 msgstr ""
 
-#: email_automation.py:27
+#: email_automation.py:28
 #, python-format
 msgid "Willkommen bei %(platform_name)s! Ihre Nachbarn warten"
 msgstr ""

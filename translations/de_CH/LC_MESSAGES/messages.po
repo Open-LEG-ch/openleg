@@ -918,7 +918,6 @@ msgstr ""
 "selben Netzgebiet angeschlossen, nutzen höchstens"
 
 #: templates/how-it-works.html:52
-#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1188,7 +1187,6 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h StromVV"
 
 #: templates/leg_kalkulator.html:267
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1211,7 +1209,6 @@ msgstr ""
 "Spannungstransformation."
 
 #: templates/leg_kalkulator.html:288
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -1486,6 +1483,10 @@ msgstr "Befehl kopieren"
 #: templates/partials/install_console.html:1
 msgid "Befehl kopiert."
 msgstr "Befehl kopiert."
+
+#: templates/emails/formation_nudge.html:43
+msgid "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
+msgstr "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
 
 #: templates/fuer_gemeinden.html:83
 msgid ""
@@ -2443,7 +2444,6 @@ msgid "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil trage
 msgstr "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil tragen."
 
 #: templates/gemeinde/methodik.html:95
-#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -4408,7 +4408,6 @@ msgid "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutz
 msgstr "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um"
 
 #: templates/how-it-works.html:42
-#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -5049,6 +5048,10 @@ msgstr "Gründung"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Gründung als Arbeitsfolge"
 
+#: templates/emails/formation_nudge.html:40
+msgid "Gründung fortsetzen"
+msgstr "Gründung fortsetzen"
+
 #: formation_wizard.py:51
 msgid "Gründung gestartet"
 msgstr "Gründung gestartet"
@@ -5152,6 +5155,10 @@ msgstr "Haben Sie einen Smart Meter?"
 #: templates/impressum.html:39
 msgid "Haftungsausschluss"
 msgstr "Haftungsausschluss"
+
+#: templates/emails/formation_nudge.html:29
+msgid "Hallo,"
+msgstr "Hallo,"
 
 #: templates/contact_requests.html:70 templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
@@ -5406,6 +5413,21 @@ msgstr "Ihre Gemeinde"
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
 msgstr "Ihre Gemeinde sieht, was als Nächstes ansteht"
 
+#: templates/emails/formation_nudge.html:30
+#, python-format
+msgid ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tag nicht bewegt."
+msgid_plural ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tagen nicht bewegt."
+msgstr[0] ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tag nicht bewegt."
+msgstr[1] ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tagen nicht bewegt."
+
 #: dashboard_routes.py:151
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr "Ihre Kontaktanfragen bei OpenLEG"
@@ -5421,6 +5443,11 @@ msgstr "Ihre LEG wählt, wie sie betrieben wird."
 #: email_automation.py:45
 msgid "Ihre LEG-Gemeinschaft kann starten"
 msgstr "Ihre LEG-Gemeinschaft kann starten"
+
+#: email_automation.py:55 templates/emails/formation_nudge.html:6
+#: templates/emails/formation_nudge.html:28
+msgid "Ihre LEG-Gründung wartet"
+msgstr "Ihre LEG-Gründung wartet"
 
 #: templates/self_host.html:73
 msgid ""
@@ -6285,6 +6312,10 @@ msgstr "Kostenlos und Open Source | OpenLEG"
 #: templates/pricing.html:34
 msgid "Kostenlos. Open Source. Für immer."
 msgstr "Kostenlos. Open Source. Für immer."
+
+#: templates/emails/formation_nudge.html:46
+msgid "Kostenlose LEG-Infrastruktur"
+msgstr "Kostenlose LEG-Infrastruktur"
 
 #: templates/leg_kalkulator.html:201
 msgid "Kostenvergleich (pro Jahr)"
@@ -8880,7 +8911,6 @@ msgstr ""
 "Buchstabe oder Ziffer."
 
 #: templates/llms.txt:9
-#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -9517,7 +9547,6 @@ msgstr ""
 "              Die Kennzahl zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt."
 
 #: templates/gemeinde/rangliste.html:127
-#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
@@ -10738,6 +10767,14 @@ msgstr "Wem gehören die Daten?"
 #: templates/fuer_bewohner.html:98
 msgid "Weniger Netznutzungsentgelt für lokalen Strom"
 msgstr "Weniger Netznutzungsentgelt für lokalen Strom"
+
+#: templates/emails/formation_nudge.html:37
+msgid ""
+"Wenn Sie festhängen, antworten Sie auf diese E-Mail. Wir schauen den nächsten Schritt mit Ihnen "
+"an."
+msgstr ""
+"Wenn Sie festhängen, antworten Sie auf diese E-Mail. Wir schauen den nächsten Schritt mit Ihnen "
+"an."
 
 #: templates/emails/day_3_smartmeter.html:35
 msgid ""
