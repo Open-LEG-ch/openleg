@@ -11,8 +11,8 @@ from flask_babel import get_locale
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
+from i18n import format_number_label, ngettext
 from i18n import gettext as _
-from i18n import ngettext
 from translation_markers import gettext_noop
 
 DISTRIBUTION_LABELS = {
@@ -164,7 +164,7 @@ def generate_teilnehmervertrag(
         participant_name=Markup(participant_name),
         participant_address=Markup(participant_address),
         role_label=Markup(role_label),
-        annual_consumption=Markup(format(annual_consumption_kwh, ",.0f")),
+        annual_consumption=Markup(format_number_label(annual_consumption_kwh)),
         pv_section=Markup(pv_section),
         signature_name=Markup(participant_name),
         signature_community=Markup(community_name),

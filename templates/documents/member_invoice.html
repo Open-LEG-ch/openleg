@@ -3,11 +3,11 @@
 <style>
 body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm; }
 h1 { font-size: 16pt; }
-h2 { font-size: 13pt; margin-top: 1.5em; }
-table { border-collapse: collapse; width: 100%; margin: 1em 0; }
-td, th { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 10pt; }
+h2 { font-size: 13pt; margin-top: 1em; }
+table { border-collapse: collapse; width: 100%; margin: .7em 0; }
+td, th { border: 1px solid #333; padding: 4px 7px; text-align: left; font-size: 10pt; }
 th { background: #f0f0f0; }
-.footer { margin-top: 3em; font-size: 9pt; color: #666; }
+.footer { margin-top: 1.5em; font-size: 9pt; color: #666; }
 </style></head><body>
 <h1>{{ _('Rechnung') }} {{ invoice_number }}</h1>
 <p><strong>{{ _('Aussteller:') }}</strong> {{ issuer_name }}<br>
@@ -15,7 +15,7 @@ th { background: #f0f0f0; }
 <strong>{{ _('Rechnungsdatum:') }}</strong> {{ issue_date }}<br>
 <strong>{{ _('Fällig am:') }}</strong> {{ due_date }}<br>
 <strong>{{ _('Interner Preis:') }}</strong> {{ policy_unit_price }} {{ _('Rp./kWh') }}<br>
-{{ grid_fee_line }}<strong>{{ _('Zahlungsfrist:') }}</strong> {{ payment_days }} {{ _('Tage') }}</p>
+{{ grid_fee_line }}<strong>{{ _('Zahlungsfrist:') }}</strong> {{ ngettext("%(count)s Tag", "%(count)s Tage", payment_days_count, count=payment_days) }}</p>
 
 <h2>{{ _('Verbrauchskosten') }}</h2>
 <table><tr><th>{{ _('Position') }}</th><th>{{ _('Menge (kWh)') }}</th><th>{{ _('Preis (Rp./kWh)') }}</th><th>{{ _('Betrag (CHF)') }}</th></tr>

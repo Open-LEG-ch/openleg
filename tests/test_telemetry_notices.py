@@ -232,7 +232,7 @@ def test_dashboard_acknowledgement_is_private_and_uses_the_saved_language(
     page = client.get("/dashboard/telemetry?lang=fr-CH")
     assert page.status_code == 200
     assert path in page.text
-    assert "Confirmer le message" in page.text
+    assert "J’ai pris connaissance de ce message" in page.text
     assert 'name="csrf_token" value="csrf-secret"' in page.text
     assert (
         client.post(
@@ -251,8 +251,8 @@ def test_dashboard_acknowledgement_is_private_and_uses_the_saved_language(
     assert response.status_code == 303
     page = client.get(response.headers["Location"])
     assert page.headers["Cache-Control"] == "no-store"
-    assert "Message confirmé" in page.text
-    assert "Confirmer le message" not in page.text
+    assert "Message pris en compte" in page.text
+    assert "J’ai pris connaissance de ce message" not in page.text
 
 
 def test_expired_channel_is_changed_not_claimed_to_have_recovered(telemetry_client):

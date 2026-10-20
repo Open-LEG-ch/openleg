@@ -52,7 +52,7 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     </div>
 
     {% if neighbor_count > 0 %}
-    <p style="font-size:14px;color:#6b7280;">{{ _("Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die Angaben sind, desto besser lässt sich die Gruppe planen.", neighbor_count=neighbor_count) }}</p>
+    <p style="font-size:14px;color:#6b7280;">{{ ngettext("Aktuell hat sich %(neighbor_count)s Haushalt in Ihrer Nähe registriert. Je vollständiger die Angaben sind, desto besser lässt sich die Gruppe planen.", "Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die Angaben sind, desto besser lässt sich die Gruppe planen.", neighbor_count, neighbor_count=neighbor_count) }}</p>
     {% endif %}
   </div>
   <div class="footer">

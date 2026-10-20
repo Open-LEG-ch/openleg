@@ -163,3 +163,6 @@ operation updates only the session owner's `preferred_locale`, preserving other
 account settings and other accounts. Subsequent login emails read that persisted
 choice. Other roles retain their existing profile and administrator bindings;
 this does not create a new generic preference or token system.
+
+The [German / Swiss French glossary](glossary-de-fr.md) records display terminology
+and the contractual and banking terms that still require human validation.

@@ -63,6 +63,13 @@ msgid_plural "%(count)s Sekunden"
 msgstr[0] "%(count)s seconde"
 msgstr[1] "%(count)s secondes"
 
+#: templates/documents/member_invoice.html:18
+#, python-format
+msgid "%(count)s Tag"
+msgid_plural "%(count)s Tage"
+msgstr[0] "%(count)s jour"
+msgstr[1] "%(count)s jours"
+
 #: templates/index.html:674
 #, python-format
 msgid "%(count)s interessierte Person in derselben Gemeinde."
@@ -107,6 +114,13 @@ msgstr "%(name)s | Répertoire des CEL | OpenLEG"
 #, python-format
 msgid "%(neighbor_count)s weitere Haushalte in Ihrer Nähe haben sich bereits registriert."
 msgstr "%(neighbor_count)s autres ménages de votre voisinage se sont déjà inscrits."
+
+#: templates/emails/day_0_welcome.html:38
+#, python-format
+msgid "%(neighbor_count)s weiterer Haushalt in Ihrer Nähe hat sich bereits registriert."
+msgid_plural "%(neighbor_count)s weitere Haushalte in Ihrer Nähe haben sich bereits registriert."
+msgstr[0] "%(neighbor_count)s autre ménage de votre voisinage s’est déjà inscrit."
+msgstr[1] "%(neighbor_count)s autres ménages de votre voisinage se sont déjà inscrits."
 
 #: templates/gemeinde/verzeichnis.html:72
 #, python-format
@@ -860,7 +874,7 @@ msgstr ""
 
 #: templates/telemetry_dashboard.html:17
 msgid "Aktualität unbekannt"
-msgstr "Fraîcheur des données inconnue"
+msgstr "Actualité des données inconnue"
 
 #: templates/telemetry_dashboard.html:17
 msgid "Aktuell"
@@ -872,6 +886,21 @@ msgid ""
 "Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die "
 "Angaben sind, desto besser lässt sich die Gruppe planen."
 msgstr ""
+"Actuellement, %(neighbor_count)s ménages se sont inscrits dans votre voisinage. Plus les "
+"informations sont complètes, mieux le groupe peut être préparé."
+
+#: templates/emails/day_7_consumption.html:55
+#, python-format
+msgid ""
+"Aktuell hat sich %(neighbor_count)s Haushalt in Ihrer Nähe registriert. Je vollständiger die "
+"Angaben sind, desto besser lässt sich die Gruppe planen."
+msgid_plural ""
+"Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die "
+"Angaben sind, desto besser lässt sich die Gruppe planen."
+msgstr[0] ""
+"Actuellement, %(neighbor_count)s ménage s’est inscrit dans votre voisinage. Plus les informations"
+" sont complètes, mieux le groupe peut être préparé."
+msgstr[1] ""
 "Actuellement, %(neighbor_count)s ménages se sont inscrits dans votre voisinage. Plus les "
 "informations sont complètes, mieux le groupe peut être préparé."
 
@@ -969,7 +998,7 @@ msgstr "Signalé comme terminé"
 
 #: templates/telemetry_dashboard.html:60
 msgid "Alter beim Laden"
-msgstr "Âge au chargement"
+msgstr "Ancienneté de la mesure au chargement"
 
 #: advisories.py:50 equipment.py:17
 msgid "Am Gerät abgelesen"
@@ -2162,7 +2191,7 @@ msgstr "Puis-je installer, adapter ou créer un fork d’OpenLEG ?"
 
 #: billing_policy.py:181
 msgid "Das Abrechnungsentgelt der Richtlinie liegt ausserhalb des zulässigen Bereichs."
-msgstr "Les frais de facturation de la politique sont hors de portée."
+msgstr "Les frais de facturation définis dans la règle dépassent les limites autorisées."
 
 #: templates/leg_dashboard.html:294
 msgid "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind."
@@ -2218,7 +2247,7 @@ msgstr "Le préfixe de facture de la règle de facturation n'est pas valide."
 
 #: billing_policy.py:206
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
-msgstr "Le modèle de distribution de la règle de facturation n'est pas valide."
+msgstr "Le modèle de répartition de la règle de facturation n'est pas valide."
 
 #: dashboard.py:1030
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
@@ -2620,8 +2649,8 @@ msgstr ""
 "Le gestionnaire du réseau de distribution vérifie quelles connexions répondent aux exigences en "
 "fonction de la topologie de son réseau. La décision topologique du gestionnaire du réseau de "
 "distribution est contraignante. Les systèmes d'énergie renouvelable introduits doivent "
-"représenter ensemble au moins 5 pour cent de la charge connectée de tous les consommateurs finaux"
-" participants."
+"représenter ensemble au moins 5 pour cent de la puissance de raccordement de tous les "
+"consommateurs finaux participants."
 
 #: app.py:101 formation_guide.py:35
 msgid ""
@@ -2787,8 +2816,8 @@ msgid ""
 "Die BKW liefert Rohdaten im ebIX-Format. Die LEG kann die interne Abrechnung selbst führen oder "
 "einen externen Dienstleister beauftragen."
 msgstr ""
-"FMB fournit des données brutes au format ebIX. CEL peut gérer elle-même la facturation interne ou"
-" faire appel à un prestataire de services externe."
+"FMB fournit des données brutes au format ebIX. La CEL peut gérer elle-même la facturation interne"
+" ou faire appel à un prestataire de services externe."
 
 #: templates/dashboard.html:325
 msgid "Die Berechnung ist gerade nicht möglich. Bitte versuchen Sie es in einer Minute erneut."
@@ -2833,8 +2862,8 @@ msgid ""
 "Die EBL übernimmt keine interne Abrechnung. Dafür ist die LEG-Vertretung oder ein beauftragter "
 "Dienstleister zuständig."
 msgstr ""
-"L'EBL ne gère aucune facturation interne. Le représentant de CEL ou un prestataire de services "
-"mandaté en est responsable."
+"L'EBL ne gère aucune facturation interne. Le représentant de la CEL ou un prestataire de services"
+" mandaté en est responsable."
 
 #: templates/gemeinde/pilotgemeinde.html:40
 msgid "Die ElCom ist die zuständige Aufsichts- und Schlichtungsstelle für Streitfälle im Strommarkt."
@@ -5399,11 +5428,11 @@ msgstr "Justificatif d’installateur enregistré"
 
 #: templates/telemetry_dashboard.html:68
 msgid "Hinweis bestätigen"
-msgstr "Confirmer le message"
+msgstr "J’ai pris connaissance de ce message"
 
 #: templates/telemetry_dashboard.html:71
 msgid "Hinweis bestätigt"
-msgstr "Message confirmé"
+msgstr "Message pris en compte"
 
 #: templates/advisories_error.html:5
 msgid "Hinweis nicht verfügbar"
@@ -5498,6 +5527,23 @@ msgstr "Vos informations sur la capacité d'alimentation de secours"
 #: templates/interest_confirmed.html:8
 msgid "Ihre Anmeldung"
 msgstr "Votre inscription"
+
+#: templates/interest_confirmed.html:9
+#, python-format
+msgid ""
+"Ihre Anmeldung für %(municipality_name)s ist jetzt bestätigt. Wir benachrichtigen Sie, wenn "
+"weitere bestätigte Interessierte aus derselben Gemeinde dazukommen."
+msgstr ""
+"Votre inscription pour %(municipality_name)s est maintenant confirmée. Nous vous informerons "
+"lorsque d’autres personnes de la même commune auront confirmé leur intérêt."
+
+#: templates/interest_confirmed.html:11
+msgid ""
+"Ihre Anmeldung ist jetzt bestätigt. Wir benachrichtigen Sie, wenn weitere bestätigte "
+"Interessierte aus derselben Gemeinde dazukommen."
+msgstr ""
+"Votre inscription est maintenant confirmée. Nous vous informerons lorsque d’autres personnes de "
+"la même commune auront confirmé leur intérêt."
 
 #: templates/index.html:467
 msgid "Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt."
@@ -6759,6 +6805,13 @@ msgstr ""
 msgid "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 msgstr "Invitez au moins %(count)s voisins supplémentaires."
 
+#: formation_wizard.py:347
+#, python-format
+msgid "Laden Sie mindestens %(count)s weiteren Nachbarn ein."
+msgid_plural "Laden Sie mindestens %(count)s weitere Nachbarn ein."
+msgstr[0] "Invitez au moins %(count)s voisin supplémentaire."
+msgstr[1] "Invitez au moins %(count)s voisins supplémentaires."
+
 #: templates/telemetry_dashboard.html:15
 msgid "Ladezustand"
 msgstr "État de charge"
@@ -7119,7 +7172,7 @@ msgstr "Mes mesures"
 
 #: templates/dashboard.html:46
 msgid "Meine Messwerte und ihre Aktualität"
-msgstr "Mes mesures et leur âge"
+msgstr "Mes mesures et leur actualité"
 
 #: templates/dashboard.html:229 templates/member_invoices.html:11
 msgid "Meine Rechnungen"
@@ -7906,7 +7959,7 @@ msgstr ""
 
 #: templates/meter_upload.html:39
 msgid "Nur LEG-Teilnahme, Daten mit Nachbarn und Gemeinde teilen"
-msgstr "Participation de la CEL uniquement, partage des données avec les voisins et la communauté"
+msgstr "Participation à la CEL uniquement, partage des données avec les voisins et la commune"
 
 #: templates/dashboard.html:50
 msgid "Nur Lesezugriff"
@@ -8626,7 +8679,7 @@ msgstr "Primeo Energie"
 
 #: templates/admin/ops.html:78
 msgid "Private Betreiberansicht. Diese Daten erscheinen nicht im Gemeinde-Dashboard."
-msgstr "Vue de l'opérateur privé. Ces données n'apparaissent pas dans le tableau de bord de la communauté."
+msgstr "Vue privée de l’exploitant. Ces données n’apparaissent pas dans le tableau de bord communal."
 
 #: templates/equipment_form.html:87
 msgid "Private Details ohne Weitergabe"
@@ -9544,7 +9597,7 @@ msgstr "vous connaissez les adresses des raccordements intéressés."
 
 #: templates/telemetry_dashboard.html:68
 msgid "Sie haben keine angemeldeten Anlagen in einer bestätigten LEG-Mitgliedschaft."
-msgstr "Vous n'avez pas d'installation enregistrée dans une LEG avec une adhésion confirmée."
+msgstr "Vous n’avez aucune installation enregistrée dans une CEL à laquelle votre adhésion est confirmée."
 
 #: templates/equipment_index.html:19
 msgid "Sie haben noch kein Gerät erfasst. Fehlende Angaben können unbekannt bleiben."
@@ -10348,7 +10401,7 @@ msgstr "Mode TVA inconnu."
 
 #: billing_policy.py:464
 msgid "Unbekanntes Verteilmodell."
-msgstr "Modèle de distribution inconnu."
+msgstr "Modèle de répartition inconnu."
 
 #: templates/admin/ops.html:39
 msgid "Unbestätigt (LEG-Verzeichnis)"
@@ -10631,11 +10684,11 @@ msgstr "Population desservie"
 #: templates/leg_billing_policy.html:53 templates/leg_billing_policy.html:109
 #: templates/leg_community_create.html:20
 msgid "Verteilmodell"
-msgstr "Modèle de distribution"
+msgstr "Modèle de répartition"
 
 #: dashboard.py:153
 msgid "Verteilmodell wird geprüft"
-msgstr "Le modèle de distribution est vérifié"
+msgstr "Le modèle de répartition est vérifié"
 
 #: templates/leg_dashboard.html:30
 msgid "Verteilmodell:"
