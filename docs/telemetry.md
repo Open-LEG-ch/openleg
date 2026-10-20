@@ -147,6 +147,9 @@ a private SQLite spool and forwards to a single locally configured endpoint.
 It has no listener or device adapter. Use a private configuration file (0600)
 and private spool directory (0700):
 
+The separate [experimental Fronius reader](fronius-experimental.md) can enqueue
+compatible samples. Its hardware profile and measurement age remain unverified.
+
 ```json
 {
   "installation_id": "c3fc9e27-60af-460b-8b83-ec81d533dcb9",
