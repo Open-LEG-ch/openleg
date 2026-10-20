@@ -66,6 +66,13 @@ raw-data expiry or a change to unknown quality, the page asks the owner to check
 the current state. It does not claim recovery. Zero production at night and
 fresh estimated values create no missing-reading notice.
 
+Notice calculation uses a savepoint during ingestion. A calculation failure
+leaves valid samples committed and a retry marker on the installation. The next
+successful reconciliation clears the marker and requires a new confirmation for
+any still-active condition from that uncertain span. This prevents an earlier
+confirmation from hiding a recovery and subsequent incident missed during the
+failure. Duplicate-only deliveries do not create a new retry marker.
+
 Conditions are reconciled on new ingestion and owner reads. There is no
 background monitor or external delivery. Only a verified owner with current
 confirmed membership can read or acknowledge notices. Explicit sample sharing

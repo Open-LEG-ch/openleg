@@ -56,6 +56,8 @@ The equipment advisory workflow is documented under `store/advisories` below.
   device/source identity, sample sequence and deduplication fingerprint,
   metric, unit, value, direction, location, quality, cadence, source observation
   and server receipt times. Hourly descriptive statistics retain those dimensions.
+- Derived state: `notice_refresh_pending` records deferred notice processing.
+  It contains no sample or error details and clears on successful reconciliation.
 - Purpose: private operational observations. No meter import, allocation,
   billing input, device credentials or control commands.
 - Owner: the verified, confirmed community member who enrolled the installation.
