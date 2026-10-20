@@ -53,7 +53,7 @@
   <!-- Hero -->
   <section class="relative overflow-hidden bg-paper" data-home-hero>
     <div class="relative max-w-7xl mx-auto px-4 pt-10 pb-20 md:pt-14 md:pb-24 grid lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-center">
-      <div>
+      <div class="@container min-w-0">
         <div class="inline-flex rounded-full border border-line bg-paper-deep p-1 text-sm" role="tablist" aria-label="{{ _("Zielgruppe") }}">
           <button class="rounded-full bg-white px-4 py-2 font-semibold text-ink shadow-xs" data-seg-tab="bewohner" role="tab" aria-selected="true">{{ _("Bewohner") }}</button>
           <button class="rounded-full px-4 py-2 font-medium text-ink-muted" data-seg-tab="gemeinde" role="tab" aria-selected="false">{{ _("Gemeinde") }}</button>
@@ -61,7 +61,7 @@
 
         <div class="mt-7" aria-live="polite">
           <div data-seg-panel="bewohner">
-            <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] text-ink">{{ _("Gründen Sie eine") }}<br><span class="underline decoration-accent decoration-4 underline-offset-[6px] sm:decoration-[6px]">{{ _("Stromgemeinschaft") }}</span></h1>
+            <h1 class="home-hero-heading font-bold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] text-ink">{{ _("Gründen Sie eine") }}<br><span class="underline decoration-accent decoration-4 underline-offset-[6px] sm:decoration-[6px]">{{ _("Stromgemeinschaft") }}</span></h1>
             <p class="mt-6 text-lg leading-8 text-ink-muted max-w-xl">{{ _("Strom, den Ihre LEG selbst erzeugt und verbraucht, kostet bis zu 40% weniger Netznutzungsentgelt. OpenLEG prüft Ihre Adresse, zeigt das bestätigte Interesse in Ihrer politischen Gemeinde und führt Sie durch die Gründung. OpenLEG verkauft keine Daten.") }}</p>
             <div class="mt-7 flex flex-col sm:flex-row gap-3">
               <a href="#registrieren" class="rounded-xl bg-brand px-6 py-3.5 font-semibold text-white shadow-xs hover:bg-brand-dark text-center">{{ _("Adresse prüfen") }}</a>
@@ -75,7 +75,7 @@
           </div>
 
           <div data-seg-panel="gemeinde" class="hidden">
-            <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] text-ink">{{ _("Solarpotenzial sehen.") }}<br><span class="underline decoration-accent decoration-4 underline-offset-[6px] sm:decoration-[6px]">{{ _("LEG ermöglichen.") }}</span></h1>
+            <h1 class="home-hero-heading font-bold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] text-ink">{{ _("Solarpotenzial sehen.") }}<br><span class="underline decoration-accent decoration-4 underline-offset-[6px] sm:decoration-[6px]">{{ _("LEG ermöglichen.") }}</span></h1>
             <p class="mt-6 text-lg leading-8 text-ink-muted max-w-xl">{{ _("Vergleichen Sie Ihre Solarnutzung mit ähnlichen Gemeinden, finden Sie ungenutzte Dächer und ermöglichen Sie lokale Stromgemeinschaften.") }}</p>
             <div class="mt-7 flex flex-col sm:flex-row gap-3">
               <a href="/rangliste" class="rounded-xl bg-brand px-6 py-3.5 font-semibold text-white shadow-xs hover:bg-brand-dark text-center">{{ _("Rangliste ansehen") }}</a>
