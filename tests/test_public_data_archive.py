@@ -301,3 +301,67 @@ def test_reporter_stops_reading_an_oversized_archive_before_consuming_it_all(
     # fetcher must reject this delivery before consuming the entire 8 MiB.
     assert 5 * 1024 * 1024 < source.consumed <= 6 * 1024 * 1024
     assert source.closed
+
+
+@pytest.mark.parametrize("installed_kwp", [1200, 0])
+def test_refresh_persists_reporter_installed_pv_before_potential(
+    monkeypatch, installed_kwp
+):
+    import database
+    import municipality_profile
+
+    header = (
+        "bfs_nr,municipality,canton,electric_car_share,solar_potential_usage,"
+        "solar_power_installed_kwp,renewable_heating_share,"
+        "elec_consumption_mwh_per_year,renelec_production_mwh_per_year\n"
+    )
+    archive = _archive(
+        {
+            "energyreporter_municipality_latest.csv": header
+            + f"99971,Synthetic OW,OW,0.125,0.25,{installed_kwp},0.5,400,150\n"
+        }
+    )
+
+    def get(url, **kwargs):
+        if url == public_data.ENERGIE_REPORTER_URL:
+            return _response(
+                json.dumps(
+                    {
+                        "result": {
+                            "resources": [
+                                {
+                                    "format": "ZIP",
+                                    "url": "https://data.example.invalid/energyreporter_latest.zip",
+                                }
+                            ]
+                        }
+                    }
+                ).encode()
+            )
+        assert url == "https://data.example.invalid/energyreporter_latest.zip"
+        return _response(archive)
+
+    saved = []
+    monkeypatch.setattr(requests, "get", get)
+    monkeypatch.setattr(public_data, "fetch_elcom_tariffs", lambda *_args: [])
+    monkeypatch.setattr(
+        database,
+        "get_municipality_profile",
+        lambda _bfs: {"name": "Old", "kanton": "OW", "solar_installed_kwp": 222},
+    )
+    monkeypatch.setattr(
+        database,
+        "save_municipality_profile",
+        lambda profile: saved.append(dict(profile)),
+    )
+    monkeypatch.setattr(
+        municipality_profile, "invalidate_profile_cache", lambda _bfs: None
+    )
+
+    result = public_data.refresh_municipality(
+        99971, _sonnendach=[{"bfs_number": 99971, "potential_kwp": 999}]
+    )
+
+    assert result["profile"]["solar_installed_kwp"] == installed_kwp
+    assert len(saved) == 1
+    assert saved[0]["solar_installed_kwp"] == installed_kwp
