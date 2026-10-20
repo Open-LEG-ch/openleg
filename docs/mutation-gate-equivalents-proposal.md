@@ -1,10 +1,15 @@
 # Proposal: reviewed equivalents in the mutation strong gate
 
-Status: **proposal, awaiting maintainer ratification** (parent #478, opening
-evidence in the #484 store-metering classification). Nothing in this document
-changes a running gate; the automated strong gate keeps failing on every
-survivor and every uncovered mutant until a maintainer ratifies the change
-described here.
+Status: **superseded by the maintainer's decision of 2026-10-20** (parent
+#478). The maintainer retired the universal 100% completion objective as not
+planned, and no survivor exemption, filter, or equivalent registry was
+approved. The configured threshold stays 100%, the native source scope stays
+the ten targets, ordinary CI remains unchanged, and the remaining survivors
+are not all declared harmless. With no exemption approved, surviving mutants
+keep the strict gate red; nothing in this document changes a running gate.
+
+Everything below is preserved as written while this was a live proposal. It is
+a historical record of the options considered, not a current recommendation.
 
 ## The decision to make
 
