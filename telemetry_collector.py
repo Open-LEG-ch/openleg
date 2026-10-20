@@ -7,6 +7,7 @@ Scheduling and hardware adapters belong to the local operator.
 
 import argparse
 import fcntl
+import hashlib
 import ipaddress
 import json
 import os
@@ -24,6 +25,7 @@ from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_ope
 import telemetry
 
 MAX_QUEUE = 10000
+MAX_SOURCE_HISTORY = 10000
 MAX_SAMPLE_BYTES = 8192
 MAX_AGE = 86400
 MAX_ATTEMPTS = 8
@@ -167,6 +169,11 @@ class Collector:
             CREATE TABLE IF NOT EXISTS samples (
                 sequence INTEGER PRIMARY KEY, queued_at REAL NOT NULL, body TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS source_samples (
+                source_key TEXT PRIMARY KEY, fingerprint TEXT NOT NULL,
+                sequence INTEGER NOT NULL, accepted_at REAL NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS source_samples_age ON source_samples (accepted_at,sequence);
         """)
         identity = json.dumps(
             {
@@ -190,6 +197,10 @@ class Collector:
         self.db.close()
 
     def _expire(self):
+        self.db.execute(
+            "DELETE FROM source_samples WHERE accepted_at<?",
+            (self.clock() - MAX_AGE,),
+        )
         removed = self.db.execute(
             "DELETE FROM samples WHERE queued_at<?", (self.clock() - MAX_AGE,)
         ).rowcount
@@ -207,7 +218,7 @@ class Collector:
         self.db.executemany("DELETE FROM samples WHERE sequence=?", stale)
         return removed + len(stale)
 
-    def enqueue(self, sample):
+    def enqueue(self, sample, *, source_key=None):
         """Return assigned sequence. Preserve explicit null observation timestamps."""
         if (
             not isinstance(sample, dict)
@@ -215,14 +226,14 @@ class Collector:
             & sample.keys()
         ):
             raise ValueError("normalized_sample_required")
+        if source_key is not None and (
+            not isinstance(source_key, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", source_key)
+        ):
+            raise ValueError("invalid_source_sample_key")
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
             self._expire()
-            if (
-                self.db.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
-                >= MAX_QUEUE
-            ):
-                raise ValueError("collector_queue_full")
             sequence = self.db.execute("SELECT sequence FROM state").fetchone()[0] + 1
             row = {
                 **sample,
@@ -239,6 +250,43 @@ class Collector:
                 datetime.fromtimestamp(self.clock(), UTC),
             )
             row.pop("fingerprint")
+            if source_key is not None:
+                fingerprint = hashlib.sha256(
+                    json.dumps(
+                        {
+                            k: v
+                            for k, v in row.items()
+                            if k not in {"sample_id", "sequence"}
+                        },
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ).encode()
+                ).hexdigest()
+                previous = self.db.execute(
+                    "SELECT fingerprint,sequence FROM source_samples WHERE source_key=?",
+                    (source_key,),
+                ).fetchone()
+                if previous is not None:
+                    if previous[0] != fingerprint:
+                        raise ValueError("source_sample_conflict")
+                    return previous[1]
+            if (
+                self.db.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
+                >= MAX_QUEUE
+            ):
+                raise ValueError("collector_queue_full")
+            if source_key is not None:
+                excess = (
+                    self.db.execute("SELECT COUNT(*) FROM source_samples").fetchone()[0]
+                    - MAX_SOURCE_HISTORY
+                    + 1
+                )
+                if excess > 0:
+                    self.db.execute(
+                        "DELETE FROM source_samples WHERE source_key IN "
+                        "(SELECT source_key FROM source_samples ORDER BY accepted_at,sequence LIMIT ?)",
+                        (excess,),
+                    )
             body = json.dumps(row, separators=(",", ":"))
             if len(body.encode()) > MAX_SAMPLE_BYTES:
                 raise ValueError("sample_too_large")
@@ -246,6 +294,11 @@ class Collector:
                 "INSERT INTO samples VALUES(?,?,?)", (sequence, self.clock(), body)
             )
             self.db.execute("UPDATE state SET sequence=?", (sequence,))
+            if source_key is not None:
+                self.db.execute(
+                    "INSERT INTO source_samples VALUES(?,?,?,?)",
+                    (source_key, fingerprint, sequence, self.clock()),
+                )
         return sequence
 
     def resume(self):

@@ -56,6 +56,8 @@ The equipment advisory workflow is documented under `store/advisories` below.
   device/source identity, sample sequence and deduplication fingerprint,
   metric, unit, value, direction, location, quality, cadence, source observation
   and server receipt times. Hourly descriptive statistics retain those dimensions.
+- Derived state: `notice_refresh_pending` records deferred notice processing.
+  It contains no sample or error details and clears on successful reconciliation.
 - Purpose: private operational observations. No meter import, allocation,
   billing input, device credentials or control commands.
 - Owner: the verified, confirmed community member who enrolled the installation.
@@ -68,6 +70,24 @@ The equipment advisory workflow is documented under `store/advisories` below.
   cleanup cron enforce separate operational horizons. See `docs/telemetry.md`.
 - Credentials: ingestion-only, installation/community-bound, hashed at rest;
   rotation preserves the sequence watermark. Deletion cascades all four tables.
+
+## store/telemetry_notices
+
+- Table: `telemetry_notices` (DDL in `store/telemetry_notices.py`, initialized
+  with telemetry tables).
+- Holds: installation reference, bounded condition/channel codes, episode count,
+  active flag, raised/acknowledged/snoozed/resolved timestamps and recovery code.
+  No copied samples, free text, device credentials or delivery addresses.
+- Purpose: owner action prompts with one-hour acknowledgement cooldown and
+  distinct recovery states. Derived on ingestion and owner reads.
+- Sensitivity: private household operational state; never sold or aggregated
+  for third parties. No access through sample sharing or administrator status.
+- Access: current verified owner with confirmed community membership. Mutations
+  require the dashboard session's CSRF token and current episode.
+- Retention: active rows remain until resolution or installation deletion.
+  Resolved rows use the installation's raw-data horizon, including read-time
+  expiry and the existing cleanup cron. Installation, owner membership/profile
+  and community deletion cascade the rows. No separate acknowledgement history.
 
 ## store/building
 

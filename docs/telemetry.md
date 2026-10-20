@@ -27,9 +27,9 @@ receipt, without sorting the retained history. The query has a two-second
 transaction-local limit and preserves any stricter database limit. A timeout
 returns the private unavailable page; refreshing can retry once storage recovers.
 
-This is the owner-readings slice of #617. Device fault ingestion, persistent
-notice acknowledgement/cooldown/recovery, community summaries with sharing and
-coverage controls, and an authorized hardware/user pilot remain open. #615 and
+The owner-readings and persistent-notices slices of #617 are implemented.
+Device fault ingestion, community summaries with sharing and coverage controls,
+and an authorized hardware/user pilot remain open. #615 and
 #621 still gate claims of hardware support. Telemetry remains separate from
 validated VNB billing evidence.
 
@@ -43,6 +43,46 @@ owner's chosen OpenLEG host, and host to an authorized viewer. A read-only
 collector does not make a device physically incapable of control. Operators
 must restrict device access locally. OpenLEG exposes no scanner, register
 operation, device proxy, arbitrary forwarding URL or command channel.
+
+## Owner notices
+
+The owner page and `GET {base}/{installation_id}/notices` show persisted
+conditions for overdue collector delivery, missing channels, old source readings,
+unknown quality/time and future source clocks. Here `{base}` is the installation
+API path below. These states describe available readings; a missing delivery
+does not establish that a collector is offline or that the installation failed.
+
+The dashboard form or
+`POST {base}/{installation_id}/notices/{notice_id}/acknowledge` accepts the
+current integer `episode`. The API body is `{"episode": 1}` and requires the
+owner session and its CSRF token. A confirmation postpones the action prompt for
+one hour while the sample's freshness and quality remain visible. Retrying the
+same confirmation during that hour does not extend it. A recovered condition
+that returns starts a new episode; an old confirmation cannot silence it.
+
+A recovery says readings are current only when that channel has a fresh reading
+and recent delivery. If a condition disappears for another reason, including
+raw-data expiry or a change to unknown quality, the page asks the owner to check
+the current state. It does not claim recovery. Zero production at night and
+fresh estimated values create no missing-reading notice.
+
+Notice calculation uses a savepoint during ingestion. A calculation failure
+leaves valid samples committed and a retry marker on the installation. The next
+successful reconciliation clears the marker and requires a new confirmation for
+any still-active condition from that uncertain span. This prevents an earlier
+confirmation from hiding a recovery and subsequent incident missed during the
+failure. Duplicate-only deliveries do not create a new retry marker.
+
+Conditions are reconciled on new ingestion and owner reads. There is no
+background monitor or external delivery. Only a verified owner with current
+confirmed membership can read or acknowledge notices. Explicit sample sharing
+and administrator roles confer no access to notice or acknowledgement state.
+
+One state row per installation, condition and supported channel bounds storage.
+Active rows remain until resolved or the installation is deleted. Resolved rows
+expire after that installation's raw-data retention period; expiry is enforced
+on reads and physical deletion uses the existing telemetry cleanup. Installation,
+membership, profile and community deletion cascade notices.
 
 ## Enrollment and access
 
@@ -142,6 +182,9 @@ times produce no aggregate. Buckets use source time, never receipt time.
 
 ## Local forwarder
 
+The [selected MQTT export](mqtt-selected-export.md) can enqueue explicitly
+selected local sensor readings. Reader-specific hardware mappings remain pending.
+
 `telemetry_collector.py` accepts normalized samples on stdin, persists them in
 a private SQLite spool and forwards to a single locally configured endpoint.
 It has no listener or device adapter. Use a private configuration file (0600)
@@ -174,6 +217,9 @@ Allowlisting a different path cannot enable commands or general URL requests.
 python telemetry_collector.py /private/collector.json enqueue < observation.json
 python telemetry_collector.py /private/collector.json flush
 ```
+
+The separate [experimental Fronius reader](fronius-experimental.md) can enqueue
+compatible samples. Its hardware profile and measurement age remain unverified.
 
 The stdin object contains the measurement fields from the sample example,
 without `sample_id`, `sequence`, `device_id`, `source_id` or `cadence_seconds`.
