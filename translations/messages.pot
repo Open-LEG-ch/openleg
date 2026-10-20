@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 04:57+0000\n"
+"POT-Creation-Date: 2026-10-20 05:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -5697,6 +5697,10 @@ msgstr ""
 msgid "Keine LEGs gefunden"
 msgstr ""
 
+#: templates/telemetry_shared.html:61
+msgid "Keine Leistungswerte im Aufbewahrungszeitraum verfügbar."
+msgstr ""
+
 #: templates/pricing.html:10
 msgid "Keine Lizenzkosten, keine Anbieterbindung, kein Datenverkauf. So finanziert sich OpenLEG."
 msgstr ""
@@ -5710,7 +5714,6 @@ msgid "Keine Messdaten in der Datei gefunden. Bitte EKZ-CSV-Export verwenden."
 msgstr ""
 
 #: templates/telemetry_dashboard.html:21 templates/telemetry_dashboard.html:113
-#: templates/telemetry_shared.html:61
 msgid "Keine Messwerte im Aufbewahrungszeitraum verfügbar."
 msgstr ""
 

@@ -58,7 +58,7 @@
             {% if sample.observed_at %}<p class="text-sm">{{ _("Messzeit") }}: <time datetime="{{ sample.observed_at }}">{{ sample.observed_label }}</time></p>{% else %}<p>{{ _("Messzeit unbekannt") }}</p>{% endif %}
             {% if sample.age_seconds is not none %}<p class="text-sm">{{ _("Alter beim Laden") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", sample.age_seconds, count=sample.age_seconds) }}</p>{% endif %}
           </div>
-        {% else %}<p class="mt-2">{{ _("Keine Messwerte im Aufbewahrungszeitraum verfügbar.") }}</p>{% endfor %}
+        {% else %}<p class="mt-2">{{ _("Keine Leistungswerte im Aufbewahrungszeitraum verfügbar.") }}</p>{% endfor %}
       </section>
     {% endfor %}
   {% endif %}

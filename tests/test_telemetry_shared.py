@@ -338,3 +338,51 @@ def test_old_buffered_reading_does_not_replace_current_shared_value(shared):
     )
     group = client.get(SUMMARY).json["groups"][0]
     assert group["state"] == "available" and group["value"] == "300"
+
+
+@pytest.mark.parametrize(
+    "locale,message",
+    [
+        ("de-CH", "Keine Leistungswerte im Aufbewahrungszeitraum verfügbar."),
+        (
+            "fr-CH",
+            "Aucune mesure de puissance disponible pendant la durée de conservation.",
+        ),
+    ],
+)
+def test_retained_non_power_readings_do_not_claim_the_source_has_no_data(
+    telemetry_client, clock, locale, message
+):
+    client = telemetry_client
+    installation, token = api.enroll(client)
+    assert (
+        api.ingest(
+            client,
+            installation,
+            token,
+            [
+                api.sample(
+                    metric="state_of_charge",
+                    unit="%",
+                    measurement_location="battery",
+                    direction="stored",
+                    value="51",
+                    observed_at=clock[0].isoformat(),
+                )
+            ],
+        ).status_code
+        == 201
+    )
+    assert (
+        client.get(f"{api.BASE}/{installation}/samples").json["samples"][0]["value"]
+        == "51"
+    )
+    response = client.get("/leg/community/community-a/telemetry?lang=" + locale)
+    assert response.status_code == 200
+    assert "local-reader" in response.text
+    assert message in response.text
+    assert "Keine Messwerte im Aufbewahrungszeitraum verfügbar." not in response.text
+    assert (
+        "Aucune mesure disponible pendant la durée de conservation."
+        not in response.text
+    )
