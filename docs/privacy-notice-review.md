@@ -2,7 +2,7 @@
 
 Status: legal/DPO review pending. Issue #558 has no assigned reviewer as of
 20 October 2026. Code evidence below reflects commit
-`1242af5898ecbed1bf7f755ca56d53809341475e`.
+`6e913946ce614f01f68403aab57a20072df5cd65`.
 
 The reviewer must record their name, role and approval date before closing
 [#558](https://github.com/Open-LEG-ch/openleg/issues/558). Use
@@ -49,7 +49,7 @@ specific statement. It does not prescribe a legal basis or retention period.
 
 | Domain | Current notice coverage and review question |
 | --- | --- |
-| store/building | Registration is covered. Review its saved email-language preference, profile-deletion wording and retained linked records. |
+| store/building | Registration is covered. Review its saved email-language preference, profile-deletion wording and retained linked records. The weather view selects a cached public point locally from existing coordinates; it sends no household coordinates upstream and adds no household location to the public forecast cache. |
 | store/interest | Sections 2, 3 and 6 cover interest and cleanup. Confirm refreshed-registration timing, the saved email-language preference and deletion of one bound record. |
 | store/consent | Consent and revocation appear in sections 3, 4 and 8. Confirm the distinction between stopping disclosure and deleting records. |
 | store/contact_request | Mutual disclosure appears in section 5. Review accepted/revoked snapshots, terminal history, access-time expiry and copies recipients already hold. |
