@@ -93,7 +93,7 @@ def test_readiness_bonus_starts_at_min_community_size(confirmed, expected_score)
         (
             FormationStatus.INTERESTED.value,
             2,
-            ["Laden Sie mindestens 1 weitere Nachbarn ein."],
+            ["Laden Sie mindestens 1 weiteren Nachbarn ein."],
         ),
         (FormationStatus.INTERESTED.value, 3, ["Starten Sie den Gründungsprozess."]),
         (

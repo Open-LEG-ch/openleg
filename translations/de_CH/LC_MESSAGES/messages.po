@@ -63,6 +63,13 @@ msgid_plural "%(count)s Sekunden"
 msgstr[0] "%(count)s Sekunde"
 msgstr[1] "%(count)s Sekunden"
 
+#: templates/documents/member_invoice.html:18
+#, python-format
+msgid "%(count)s Tag"
+msgid_plural "%(count)s Tage"
+msgstr[0] "%(count)s Tag"
+msgstr[1] "%(count)s Tage"
+
 #: templates/index.html:674
 #, python-format
 msgid "%(count)s interessierte Person in derselben Gemeinde."
@@ -107,6 +114,13 @@ msgstr "%(name)s | LEG-Verzeichnis | OpenLEG"
 #, python-format
 msgid "%(neighbor_count)s weitere Haushalte in Ihrer Nähe haben sich bereits registriert."
 msgstr "%(neighbor_count)s weitere Haushalte in Ihrer Nähe haben sich bereits registriert."
+
+#: templates/emails/day_0_welcome.html:38
+#, python-format
+msgid "%(neighbor_count)s weiterer Haushalt in Ihrer Nähe hat sich bereits registriert."
+msgid_plural "%(neighbor_count)s weitere Haushalte in Ihrer Nähe haben sich bereits registriert."
+msgstr[0] "%(neighbor_count)s weiterer Haushalt in Ihrer Nähe hat sich bereits registriert."
+msgstr[1] "%(neighbor_count)s weitere Haushalte in Ihrer Nähe haben sich bereits registriert."
 
 #: templates/gemeinde/verzeichnis.html:72
 #, python-format
@@ -858,6 +872,21 @@ msgid ""
 "Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die "
 "Angaben sind, desto besser lässt sich die Gruppe planen."
 msgstr ""
+"Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die "
+"Angaben sind, desto besser lässt sich die Gruppe planen."
+
+#: templates/emails/day_7_consumption.html:55
+#, python-format
+msgid ""
+"Aktuell hat sich %(neighbor_count)s Haushalt in Ihrer Nähe registriert. Je vollständiger die "
+"Angaben sind, desto besser lässt sich die Gruppe planen."
+msgid_plural ""
+"Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die "
+"Angaben sind, desto besser lässt sich die Gruppe planen."
+msgstr[0] ""
+"Aktuell hat sich %(neighbor_count)s Haushalt in Ihrer Nähe registriert. Je vollständiger die "
+"Angaben sind, desto besser lässt sich die Gruppe planen."
+msgstr[1] ""
 "Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die "
 "Angaben sind, desto besser lässt sich die Gruppe planen."
 
@@ -5445,6 +5474,23 @@ msgstr "Ihre Angabe zur Ersatzstromfähigkeit"
 msgid "Ihre Anmeldung"
 msgstr "Ihre Anmeldung"
 
+#: templates/interest_confirmed.html:9
+#, python-format
+msgid ""
+"Ihre Anmeldung für %(municipality_name)s ist jetzt bestätigt. Wir benachrichtigen Sie, wenn "
+"weitere bestätigte Interessierte aus derselben Gemeinde dazukommen."
+msgstr ""
+"Ihre Anmeldung für %(municipality_name)s ist jetzt bestätigt. Wir benachrichtigen Sie, wenn "
+"weitere bestätigte Interessierte aus derselben Gemeinde dazukommen."
+
+#: templates/interest_confirmed.html:11
+msgid ""
+"Ihre Anmeldung ist jetzt bestätigt. Wir benachrichtigen Sie, wenn weitere bestätigte "
+"Interessierte aus derselben Gemeinde dazukommen."
+msgstr ""
+"Ihre Anmeldung ist jetzt bestätigt. Wir benachrichtigen Sie, wenn weitere bestätigte "
+"Interessierte aus derselben Gemeinde dazukommen."
+
 #: templates/index.html:467
 msgid "Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt."
 msgstr "Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt."
@@ -6691,6 +6737,13 @@ msgstr ""
 #, python-format
 msgid "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 msgstr "Laden Sie mindestens %(count)s weitere Nachbarn ein."
+
+#: formation_wizard.py:347
+#, python-format
+msgid "Laden Sie mindestens %(count)s weiteren Nachbarn ein."
+msgid_plural "Laden Sie mindestens %(count)s weitere Nachbarn ein."
+msgstr[0] "Laden Sie mindestens %(count)s weiteren Nachbarn ein."
+msgstr[1] "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 
 #: templates/telemetry_dashboard.html:15
 msgid "Ladezustand"

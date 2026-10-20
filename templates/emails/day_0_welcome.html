@@ -35,7 +35,7 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
 
     {% if neighbor_count > 0 %}
     <div class="highlight">
-      <p>{{ _("%(neighbor_count)s weitere Haushalte in Ihrer Nähe haben sich bereits registriert.", neighbor_count=neighbor_count) }}</p>
+      <p>{{ ngettext("%(neighbor_count)s weiterer Haushalt in Ihrer Nähe hat sich bereits registriert.", "%(neighbor_count)s weitere Haushalte in Ihrer Nähe haben sich bereits registriert.", neighbor_count, neighbor_count=neighbor_count) }}</p>
     </div>
     {% endif %}
 

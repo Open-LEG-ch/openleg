@@ -1,0 +1,18 @@
+{% extends 'product_base.html' %}
+{% block content %}
+<div class="mx-auto max-w-2xl px-4 py-8">
+  <h1 class="text-2xl font-bold">{{ _('Sprache für E-Mails') }}</h1>
+  <p>{{ client.company_name }}</p>
+  <form method="post" class="mt-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="preferred_locale">{{ _('Sprache für E-Mails') }}</label>
+    <select id="preferred_locale" name="preferred_locale">
+      {% for locale, label in supported_locales.items() %}
+      <option value="{{ locale }}"{% if client.preferred_locale == locale %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">{{ _('Sprache speichern') }}</button>
+  </form>
+  <a href="{{ url_for('utility.dashboard') }}">{{ _('Dashboard') }}</a>
+</div>
+{% endblock %}

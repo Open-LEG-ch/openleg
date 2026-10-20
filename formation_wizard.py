@@ -11,6 +11,7 @@ import logging
 from enum import Enum
 
 from flask_babel import gettext as _
+from flask_babel import ngettext
 
 import database as db
 from translation_markers import gettext_noop as _l
@@ -343,8 +344,10 @@ def _get_next_steps(status: str, confirmed_count: int) -> list[str]:
     if status == FormationStatus.INTERESTED.value:
         if confirmed_count < FORMATION_CONFIG["min_community_size"]:
             steps.append(
-                _(
+                ngettext(
+                    "Laden Sie mindestens %(count)s weiteren Nachbarn ein.",
                     "Laden Sie mindestens %(count)s weitere Nachbarn ein.",
+                    FORMATION_CONFIG["min_community_size"] - confirmed_count,
                     count=FORMATION_CONFIG["min_community_size"] - confirmed_count,
                 )
             )

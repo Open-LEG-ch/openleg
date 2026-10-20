@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block head_extra %}
-{% if true %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>{% endif %}
+{% if not private_page %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>{% endif %}
 <script type="application/ld+json">{{ jsonld|tojson }}</script>
 {% endblock %}
 
@@ -79,7 +79,7 @@
     </div>
     {% endif %}
 
-    {% if solar %}<div class="mt-8 max-w-xl"><h3 class="font-semibold mb-3">{{ _("Solarpotenzial") }}</h3><canvas id="solarChart" height="200"></canvas><a href="#data-provenance" data-source-marker="sonnendach-chart" class="inline-block mt-2 font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: BFE Sonnendach") }}</a></div>{% endif %}
+    {% if solar and not private_page %}<div class="mt-8 max-w-xl"><h3 class="font-semibold mb-3">{{ _("Solarpotenzial") }}</h3><canvas id="solarChart" height="200"></canvas><a href="#data-provenance" data-source-marker="sonnendach-chart" class="inline-block mt-2 font-mono text-xs text-ink-muted hover:text-brand">{{ _("Quelle: BFE Sonnendach") }}</a></div>{% endif %}
   </section>
 
   <section data-evidence-tier="derived" aria-labelledby="derived-title" class="mb-10 border-t border-slate-200 pt-6">
@@ -138,7 +138,7 @@
 {% endblock %}
 
 {% block scripts %}
-{% if solar %}<script>
+{% if solar and not private_page %}<script>
 const ctx = document.getElementById('solarChart').getContext('2d');
 new Chart(ctx, {type: 'doughnut', data: {labels: [{{ _("Genutzt")|tojson }}, {{ _("Ungenutzt (geeignet)")|tojson }}, {{ _("Nicht geeignet")|tojson }}], datasets: [{data: [{{ solar.utilization_pct|default(0)|float }}, {{ ((solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100) - solar.utilization_pct|default(0)|float)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }}, {{ (100 - solar.suitable_roof_area_m2|float / solar.total_roof_area_m2|float * 100)|round(1) if solar.total_roof_area_m2|float > 0 else 0 }}], backgroundColor: ['#4f46e5', '#a5b4fc', '#e2e8f0']}]}, options: {responsive: true, plugins: {legend: {position: 'bottom', labels: {font: {size: 12}}}}}});
 </script>{% endif %}

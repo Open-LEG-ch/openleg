@@ -6,6 +6,7 @@ Routes: /utility/*
 """
 
 import hashlib
+import hmac
 import logging
 import os
 import secrets
@@ -14,6 +15,7 @@ from functools import wraps
 
 from flask import (
     Blueprint,
+    abort,
     current_app,
     g,
     jsonify,
@@ -30,6 +32,7 @@ from email_localization import gettext, recipient_locale
 from email_utils import send_email
 from i18n import gettext as _
 from i18n import localized_url, select_locale
+from locale_policy import normalize_locale
 
 logger = logging.getLogger(__name__)
 
@@ -169,9 +172,8 @@ def login_page():
 
     # Handle magic link callback
     if token:
-        client = db.get_utility_client_by_magic_token(token)
+        client = db.consume_utility_magic_token(token)
         if client:
-            db.clear_utility_magic_token(client["client_id"])
             session["utility_client_id"] = client["client_id"]
             session.permanent = True
             if client["status"] == "pending":
@@ -271,12 +273,34 @@ def generate_api_key():
 # --- Admin: list all utility clients ---
 
 
-@utility_bp.route("/settings", methods=["GET"])
+@utility_bp.route("/settings", methods=["GET", "POST"])
 @require_utility_auth
 def settings_page():
     client = g.utility_client
+    csrf_token = session.get("utility_settings_csrf")
+    if request.method == "POST":
+        supplied = request.form.get("csrf_token", "")
+        if (
+            not isinstance(csrf_token, str)
+            or not csrf_token
+            or not hmac.compare_digest(
+                csrf_token.encode("utf-8"), supplied.encode("utf-8")
+            )
+        ):
+            abort(403)
+        selected = normalize_locale(request.form.get("preferred_locale"))
+        if selected is None:
+            abort(400)
+        if not db.update_utility_client_locale(client["client_id"], selected):
+            abort(503)
+        session["locale"] = selected
+        return redirect(url_for("utility.settings_page"))
+    if not isinstance(csrf_token, str) or not csrf_token:
+        csrf_token = secrets.token_urlsafe(32)
+        session["utility_settings_csrf"] = csrf_token
     return render_template(
         "utility/settings.html",
+        csrf_token=csrf_token,
         client=client,
         site_url=_site_url(),
         tenant=getattr(g, "tenant", {}),
