@@ -3,9 +3,12 @@
 The LEG dashboard exports `openleg-community-archive/2` JSON. The reader also
 accepts the exact version 1 dataset contract. Older installations reject
 version 2; upgrade the destination before importing a version 2 archive.
-Export requires a confirmed administrator session.
-Dry-run and restore require the same authority and CSRF protection. Protect the
-file as private personal, metering and financial data.
+Export requires a confirmed LEG administrator session. Dry-run and HTTP restore
+require that session and CSRF protection. HTTP restore writes also require
+platform administrator authentication; send the credential in `X-Admin-Token`.
+Dry-run checks archive consistency, not VNB provenance or restore authority.
+Trusted installation operators can use the low-level restore function.
+Protect the file as private personal, metering and financial data.
 
 The manifest declares the datasets and their SHA-256 hashes. The archive covers
 those datasets; it does not include every private operations ledger. Binary
