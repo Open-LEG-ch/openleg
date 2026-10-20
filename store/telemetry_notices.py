@@ -178,11 +178,18 @@ def reconcile(cur, installations, now, *, uncertain=None):
                 AND h.channel_key=n.channel_key)
                 THEN CASE WHEN n.kind='device_fault' THEN 'device_report_clear' ELSE 'readings_current' END
                 ELSE 'condition_changed' END
-        WHERE n.installation_id=ANY(%s::uuid[]) AND n.active=TRUE
+        FROM telemetry_installations i
+        WHERE i.id=n.installation_id AND n.installation_id=ANY(%s::uuid[])
+            AND (n.active=TRUE OR (
+                n.kind='device_fault' AND n.recovery='condition_changed'
+                AND n.resolved_at >= %s-i.raw_retention_days*INTERVAL '1 day'
+                AND EXISTS (SELECT 1 FROM healthy h WHERE h.installation_id=n.installation_id
+                    AND h.channel_key=n.channel_key)
+            ))
             AND NOT EXISTS (SELECT 1 FROM desired d WHERE d.installation_id=n.installation_id
                 AND d.kind=n.kind AND d.channel_key=n.channel_key)
         """,
-        (Json(desired), Json(healthy), now, ids),
+        (Json(desired), Json(healthy), now, ids, now),
     )
     cur.execute(
         """

@@ -241,3 +241,68 @@ def test_sample_sharing_does_not_share_fault_acknowledgements(telemetry_client, 
     assert client.get(f"{api.BASE}/{installation}/samples").status_code == 200
     assert client.get(f"{api.BASE}/{installation}/notices").status_code == 403
     assert lifecycle.acknowledge(client, installation, fault).status_code == 403
+
+
+def test_explicit_clearance_after_unknown_span_is_reported_once(
+    telemetry_client, clock
+):
+    client = telemetry_client
+    installation, token = api.enroll(client)
+    assert report(client, installation, token, clock, sequence=1).status_code == 201
+    fault = lifecycle.notices(client, installation)[0]
+    clock[0] += timedelta(seconds=61)
+    uncertain = next(
+        row
+        for row in lifecycle.notices(client, installation)
+        if row["id"] == fault["id"]
+    )
+    assert not uncertain["active"] and uncertain["recovery"] == "condition_changed"
+    clock[0] += timedelta(seconds=1)
+    assert (
+        report(client, installation, token, clock, sequence=2, value="0").status_code
+        == 201
+    )
+    cleared = next(
+        row
+        for row in lifecycle.notices(client, installation)
+        if row["id"] == fault["id"]
+    )
+    assert cleared["recovery"] == "device_report_clear"
+    assert cleared["resolved_at"] != uncertain["resolved_at"]
+    assert "Gerät meldet keine Störung mehr" in client.get("/dashboard/telemetry").text
+    clock[0] += timedelta(seconds=1)
+    repeated = next(
+        row
+        for row in lifecycle.notices(client, installation)
+        if row["id"] == fault["id"]
+    )
+    assert repeated["resolved_at"] == cleared["resolved_at"]
+
+
+def test_clearance_does_not_resurrect_expired_notice_history(telemetry_client, clock):
+    client = telemetry_client
+    installation, token = api.enroll(client, raw_retention_days=1)
+    assert report(client, installation, token, clock, sequence=1).status_code == 201
+    fault = lifecycle.notices(client, installation)[0]
+    clock[0] += timedelta(seconds=61)
+    uncertain = next(
+        row
+        for row in lifecycle.notices(client, installation)
+        if row["id"] == fault["id"]
+    )
+    clock[0] += timedelta(days=1, seconds=1)
+    assert (
+        report(client, installation, token, clock, sequence=2, value="0").status_code
+        == 201
+    )
+    assert not any(
+        row["id"] == fault["id"] for row in lifecycle.notices(client, installation)
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT recovery,resolved_at FROM telemetry_notices WHERE id=%s",
+            (fault["id"],),
+        )
+        old = cur.fetchone()
+    assert old["recovery"] == "condition_changed"
+    assert old["resolved_at"].isoformat() == uncertain["resolved_at"]

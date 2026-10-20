@@ -102,7 +102,9 @@ owner notice. Estimated fault states are rejected. Unknown quality/time, future
 clocks and stale reports describe unavailable status instead. The page shows
 the source, device, report time and freshness alongside the last report.
 
-A fresh explicit zero clears the reported-fault notice. This means the device
+A fresh explicit zero clears the reported-fault notice, including after an
+unavailable span while the notice history is retained. Repeated reads do not
+extend that recovery's retention. This means the device
 withdrew its report; it does not establish a physical diagnosis. Expiry or an
 unavailable report changes the notice state without claiming fault clearance.
 Acknowledgement, cooldown and new episodes use the same private owner controls.
@@ -172,15 +174,17 @@ POST JSON, no compression, at most 65,536 bytes and 100 samples:
 - `device_id`, `source_id` and cadence must match enrollment. Identifiers use
   ASCII letters, digits, `_`, `.`, `:`, `-`, at most 128 characters.
 - Metrics are `power`/`W`, `energy_counter`/`Wh`, `interval_energy`/`Wh`,
-  and `state_of_charge`/`%`. Counter resets are not inferred. Interval energy
+  `state_of_charge`/`%`, and `device_fault`/`state`. Counter resets are not inferred. Interval energy
   also requires timezone-aware `interval_start` and `interval_end`; end equals
   observation time, start precedes end, duration is at most one day.
 - Values are finite nonnegative magnitudes, at most 10^12 with nine decimal
-  places, or at most 100 for state of charge. The local adapter must normalize
+  places, or at most 100 for state of charge. Device fault flags accept only
+  zero or one and reject estimated quality. The local adapter must normalize
   any signed device convention into explicit directions without netting them.
 - Locations/directions: `grid_connection` uses `import`/`export`;
   `pv_inverter` uses `generation`; `site` uses `consumption`/`generation`;
   `battery` uses `charge`/`discharge`, or `stored` for state of charge.
+  Device fault flags exclusively use `device`/`status`.
 - Quality is `measured`, `estimated` or `unknown`. Freshness does not upgrade
   quality or make a measurement validated for billing.
 - Observation time is timezone-aware ISO 8601 or explicit `null`. Receipt is
