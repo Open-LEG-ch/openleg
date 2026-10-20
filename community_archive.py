@@ -68,6 +68,8 @@ def export_community_archive(community_id: str, *, store=None) -> bytes:
         raise ArchiveError("LEG not found")
     if _validate_vnb_evidence(datasets):
         raise ArchiveError("VNB evidence cannot be archived safely")
+    if _validate_operating_relations(datasets):
+        raise ArchiveError("Operational record cannot be archived safely")
     encoded = {table: _json_value(datasets.get(table, [])) for table, _, _ in _DATASETS}
     hashes = {
         name: f"sha256:{hashlib.sha256(_canonical(rows)).hexdigest()}"
@@ -225,6 +227,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
             errors.append("Invalid tagged value")
     if not errors:
         errors.extend(_validate_vnb_evidence(decoded))
+        errors.extend(_validate_operating_relations(decoded))
 
     conflicts = (
         store.find_conflicts(community_id, datasets)
@@ -343,6 +346,28 @@ _DATASETS += (
 )
 
 
+_DATASETS += (
+    ("bank_statement_imports", "community_id = %s", "community_id"),
+    ("bank_statement_entries", "community_id = %s", "community_id"),
+    ("invoice_queries", "community_id = %s", "community_id"),
+    (
+        "invoice_query_messages",
+        "query_id IN (SELECT id FROM invoice_queries WHERE community_id = %s)",
+        "community_id",
+    ),
+    (
+        "invoice_query_events",
+        "query_id IN (SELECT id FROM invoice_queries WHERE community_id = %s)",
+        "community_id",
+    ),
+    ("community_role_events", "community_id = %s", "community_id"),
+    ("community_batteries", "community_id = %s", "community_id"),
+    ("community_battery_shares", "community_id = %s", "community_id"),
+    ("operator_events", "community_id = %s", "community_id"),
+    ("operator_action_idempotency", "community_id = %s", "community_id"),
+)
+
+
 def _validate_vnb_evidence(datasets):
     """Keep accepted source identity and withdrawal ownership intact on import."""
     deliveries = datasets.get("vnb_calculated_values_deliveries", [])
@@ -439,6 +464,43 @@ def _validate_e66_ledger(source, datasets):
     ):
         return ["VNB E66 source or ledger identity mismatch"]
     return []
+
+
+def _validate_operating_relations(datasets):
+    """Reject foreign parent references before export or restore can disclose them."""
+    errors = []
+    invoices = {row.get("id"): row for row in datasets.get("invoices", [])}
+    queries = {row.get("id") for row in datasets.get("invoice_queries", [])}
+    imports = {row.get("id") for row in datasets.get("bank_statement_imports", [])}
+    members = {row.get("building_id") for row in datasets.get("community_members", [])}
+    for row in datasets.get("invoice_queries", []):
+        invoice = invoices.get(row.get("invoice_id"))
+        if not invoice or row.get("participant_id") != invoice.get("participant_id"):
+            errors.append("Invoice question scope violation")
+    for table in ("invoice_query_messages", "invoice_query_events"):
+        if any(row.get("query_id") not in queries for row in datasets.get(table, [])):
+            errors.append("Invoice question history scope violation")
+    if any(
+        row.get("statement_import_id") not in imports
+        or (row.get("invoice_id") is not None and row.get("invoice_id") not in invoices)
+        for row in datasets.get("bank_statement_entries", [])
+    ):
+        errors.append("Payment reconciliation scope violation")
+    if any(
+        row.get("building_id") not in members
+        or (
+            row.get("actor_building_id") is not None
+            and row.get("actor_building_id") not in members
+        )
+        for row in datasets.get("community_role_events", [])
+    ):
+        errors.append("Role history scope violation")
+    if any(
+        row.get("building_id") not in members
+        for row in datasets.get("community_battery_shares", [])
+    ):
+        errors.append("Battery share scope violation")
+    return errors
 
 
 class PostgresArchiveStore:

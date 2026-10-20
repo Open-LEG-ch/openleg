@@ -48,6 +48,24 @@ billing draft approvable. Reimport the authorized original evidence when needed.
 Version 2 also preserves VNB formation packages, membership mutation cases and
 acknowledgement history, including original binary packages and response evidence.
 
-The archive still excludes statement reconciliation records, invoice questions,
-role audit history and battery settings. These operating datasets remain follow-up work in #606.
-This version does not establish complete operational portability.
+Version 2 also retains statement imports and reconciliation decisions, private
+invoice questions and their messages, attachments and status history, scoped
+role audit, battery settings and cost shares. Community-owned operator events
+and idempotency responses keep their identifiers and payloads. An API client
+reenrolled on the destination can replay an earlier completed case/payment
+request without appending a second transition.
+
+Live operator credentials, webhook destinations/signing secrets, pending webhook
+dispatch and credential rate-usage logs are excluded. Reenrol clients, configure
+webhook subscriptions and assess any undelivered events explicitly on the
+destination. Restoring an archive does not send old webhooks. Tenant-wide SDAT
+scheduler settings and run logs are excluded because they can cover several
+LEGs and contain installation paths. Configure destination credentials, tenant
+mappings and external cron schedules separately; old runtime job identifiers do
+not establish that a destination job ran.
+
+Owner-only equipment, household telemetry, contact grants and platform operations
+are outside the LEG administrator's export authority and remain excluded. The
+archive covers the declared community operating datasets, not every deployment
+record. #606 remains open for its owner-approved operating facts and any
+separately documented integration limits.
