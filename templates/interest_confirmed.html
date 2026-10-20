@@ -5,7 +5,11 @@
   <div class="rounded-xl border border-slate-200 bg-white p-8">
     <h1 class="text-3xl font-bold">{{ _('Interesse bestätigt') }}</h1>
     <p class="mt-4 text-ink-muted">
-      {{ _('Ihre Anmeldung') }}{% if municipality_name %} {{ _('für') }} {{ municipality_name }}{% endif %} {{ _('ist jetzt bestätigt.\n      Wir benachrichtigen Sie, wenn weitere bestätigte Interessierte aus derselben Gemeinde dazukommen.') }}
+      {% if municipality_name %}
+      {{ _('Ihre Anmeldung für %(municipality_name)s ist jetzt bestätigt. Wir benachrichtigen Sie, wenn weitere bestätigte Interessierte aus derselben Gemeinde dazukommen.', municipality_name=municipality_name) }}
+      {% else %}
+      {{ _('Ihre Anmeldung ist jetzt bestätigt. Wir benachrichtigen Sie, wenn weitere bestätigte Interessierte aus derselben Gemeinde dazukommen.') }}
+      {% endif %}
     </p>
     <p class="mt-3 text-sm text-ink-muted">
       {{ _('Ob eine LEG technisch möglich ist, bestätigt später der zuständige Netzbetreiber.') }}

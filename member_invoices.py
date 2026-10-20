@@ -719,6 +719,7 @@ def render_pdf_html_string(invoice: dict) -> str:
         policy_unit_price=Markup(policy_unit_price),
         grid_fee_line=Markup(grid_fee_line),
         payment_days=Markup(payment_days),
+        payment_days_count=invoice.get("policy_payment_days", 30),
         charges_rows=Markup(
             charges_rows
             or '<tr><td colspan="4">'

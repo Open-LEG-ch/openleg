@@ -25,6 +25,7 @@
             <div class="flex flex-wrap items-center gap-3 text-sm">
                 <span class="text-gray-600">{{ client.company_name }}</span>
                 <span class="px-2 py-1 bg-brand/10 text-brand-dark rounded-sm text-xs font-medium uppercase">{{ client_tier_label }}</span>
+                <a href="{{ url_for('utility.settings_page') }}" class="text-gray-500 hover:text-brand">{{ _("Sprache für E-Mails") }}</a>
                 <a href="/utility/logout" class="text-gray-500 hover:text-red-600">{{ _("Abmelden") }}</a>
             </div>
         </div>
