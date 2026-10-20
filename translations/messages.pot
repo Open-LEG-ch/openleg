@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 04:47+0000\n"
+"POT-Creation-Date: 2026-10-20 04:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2512,12 +2512,6 @@ msgstr ""
 msgid "Dichte"
 msgstr ""
 
-#: templates/telemetry_shared.html:22
-msgid ""
-"Die Abdeckung umfasst nur diese Quellen. Nicht freigegebene Anlagen werden weder angezeigt noch "
-"gezählt."
-msgstr ""
-
 #: templates/leg_gruenden.html:86
 msgid ""
 "Die Abläufe der Netzbetreiber können sich ändern. Prüfen Sie deshalb vor der Anmeldung die "
@@ -2556,6 +2550,12 @@ msgstr ""
 
 #: templates/advisories.html:85
 msgid "Die Ansicht zeigt höchstens die letzten 100 gespeicherten Abklärungen."
+msgstr ""
+
+#: templates/telemetry_shared.html:22
+msgid ""
+"Die Ansicht zeigt und zählt nur eigene und freigegebene Quellen. Sie umfasst keine weiteren "
+"Anlagen."
 msgstr ""
 
 #: quartierakku.py:42
@@ -2758,8 +2758,8 @@ msgstr ""
 
 #: templates/telemetry_shared.html:29
 msgid ""
-"Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Quellen verschiedener Messkanäle "
-"werden getrennt angezeigt."
+"Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Die Ansicht trennt Quellen "
+"verschiedener Messkanäle."
 msgstr ""
 
 #: templates/leg_dashboard.html:237
@@ -3396,7 +3396,7 @@ msgstr ""
 #: templates/telemetry_shared.html:28
 msgid ""
 "Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen "
-"Messzeit. Mehrere Quellen desselben Profils im gleichen Kanal werden ausgeschlossen."
+"Messzeit. Die Summe schliesst Profile mit mehreren Quellen im gleichen Kanal aus."
 msgstr ""
 
 #: billing_lifecycle.py:47

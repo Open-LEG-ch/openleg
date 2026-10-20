@@ -19,14 +19,14 @@
     <p class="mt-6" role="alert">{{ _("Messwerte derzeit nicht verfügbar") }}. {{ _("Bitte laden Sie die Seite später erneut.") }}</p>
   {% else %}
     <p class="text-ink-muted mt-2">{{ _("Sie sehen eigene Anlagen und ausdrücklich für Sie freigegebene Quellen mit aktiver Nachbarschaftsfreigabe.") }}</p>
-    <p class="text-ink-muted mt-2">{{ _("Die Abdeckung umfasst nur diese Quellen. Nicht freigegebene Anlagen werden weder angezeigt noch gezählt.") }}</p>
+    <p class="text-ink-muted mt-2">{{ _("Die Ansicht zeigt und zählt nur eigene und freigegebene Quellen. Sie umfasst keine weiteren Anlagen.") }}</p>
     <p class="text-sm text-ink-muted mt-2">{{ _("Die Summen sind keine vollständige LEG-Bilanz. Für die Abrechnung gelten die validierten VNB-Messdaten.") }}</p>
     <p class="mt-4">{{ _("Sichtbare Anlagen: %(count)s", count=summary.authorized_installations) }}</p>
     <p class="text-sm">{{ _("Stand beim Laden") }}: <time datetime="{{ summary.as_of }}">{{ summary.as_of_label }}</time></p>
     <a class="inline-block mt-4 text-brand hover:underline" href="/leg/community/{{ summary.community_id|urlencode }}/telemetry">{{ _("Messwerte aktualisieren") }}</a>
     <h2 class="text-xl font-bold mt-6">{{ _("Summen nach Messkanal") }}</h2>
-    <p class="text-sm text-ink-muted mt-2">{{ _("Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen Messzeit. Mehrere Quellen desselben Profils im gleichen Kanal werden ausgeschlossen.") }}</p>
-    <p class="text-sm text-ink-muted mt-2">{{ _("Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Quellen verschiedener Messkanäle werden getrennt angezeigt.") }}</p>
+    <p class="text-sm text-ink-muted mt-2">{{ _("Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen Messzeit. Die Summe schliesst Profile mit mehreren Quellen im gleichen Kanal aus.") }}</p>
+    <p class="text-sm text-ink-muted mt-2">{{ _("Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Die Ansicht trennt Quellen verschiedener Messkanäle.") }}</p>
     {% for group in summary.groups %}
       <section class="mt-4 bg-white rounded-xl border border-line p-6">
         <h3 class="font-semibold">{{ channels[group.measurement_location][group.direction] }}</h3>

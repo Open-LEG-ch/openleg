@@ -17,7 +17,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.18.0\n"
+"Generated-By: Babel 2.10.3\n"
 
 #: templates/index.html:677
 #, python-format
@@ -934,6 +934,7 @@ msgstr ""
 " réseau et dans la même zone de desserte, utilisent au maximum"
 
 #: templates/how-it-works.html:52
+#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1208,6 +1209,7 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h OApEl"
 
 #: templates/leg_kalkulator.html:267
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1229,6 +1231,7 @@ msgstr ""
 "tension."
 
 #: templates/leg_kalkulator.html:288
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -2476,6 +2479,7 @@ msgstr ""
 "une part des coûts."
 
 #: templates/gemeinde/methodik.html:95
+#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -2712,14 +2716,6 @@ msgstr "Dense (< 3000)"
 msgid "Dichte"
 msgstr "Densité"
 
-#: templates/telemetry_shared.html:22
-msgid ""
-"Die Abdeckung umfasst nur diese Quellen. Nicht freigegebene Anlagen werden weder angezeigt noch "
-"gezählt."
-msgstr ""
-"La couverture comprend uniquement ces sources. Les installations non partagées ne sont ni "
-"affichées ni comptées."
-
 #: templates/leg_gruenden.html:86
 msgid ""
 "Die Abläufe der Netzbetreiber können sich ändern. Prüfen Sie deshalb vor der Anmeldung die "
@@ -2765,6 +2761,14 @@ msgstr ""
 #: templates/advisories.html:85
 msgid "Die Ansicht zeigt höchstens die letzten 100 gespeicherten Abklärungen."
 msgstr "La vue affiche au maximum les 100 dernières clarifications enregistrées."
+
+#: templates/telemetry_shared.html:22
+msgid ""
+"Die Ansicht zeigt und zählt nur eigene und freigegebene Quellen. Sie umfasst keine weiteren "
+"Anlagen."
+msgstr ""
+"La vue affiche et compte uniquement vos sources et celles qui sont partagées avec vous. Elle ne "
+"couvre aucune autre installation."
 
 #: quartierakku.py:42
 msgid "Die Anteile enthalten unbekannte Teilnehmer."
@@ -3021,11 +3025,11 @@ msgstr "Les mesures pour cette période sont incomplètes."
 
 #: templates/telemetry_shared.html:29
 msgid ""
-"Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Quellen verschiedener Messkanäle "
-"werden getrennt angezeigt."
+"Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Die Ansicht trennt Quellen "
+"verschiedener Messkanäle."
 msgstr ""
-"Le nombre minimum ne rend pas anonymes les valeurs individuelles partagées. Les sources de "
-"différents canaux sont affichées séparément."
+"Le nombre minimum ne rend pas anonymes les valeurs individuelles partagées. La vue sépare les "
+"sources des différents canaux de mesure."
 
 #: templates/leg_dashboard.html:236
 msgid ""
@@ -3756,10 +3760,10 @@ msgstr ""
 #: templates/telemetry_shared.html:28
 msgid ""
 "Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen "
-"Messzeit. Mehrere Quellen desselben Profils im gleichen Kanal werden ausgeschlossen."
+"Messzeit. Die Summe schliesst Profile mit mehreren Quellen im gleichen Kanal aus."
 msgstr ""
 "Une somme nécessite au moins trois profils avec des valeurs mesurées et actuelles au même "
-"instant. Plusieurs sources du même profil dans le même canal sont exclues."
+"instant. Elle exclut les profils avec plusieurs sources dans le même canal."
 
 #: billing_lifecycle.py:47
 msgid "Eine Zahlungsreferenz ist erforderlich."
@@ -4503,6 +4507,7 @@ msgstr ""
 "du réseau diminue de"
 
 #: templates/how-it-works.html:42
+#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -9063,6 +9068,7 @@ msgstr ""
 "d'union, commençant par une lettre ou un chiffre."
 
 #: templates/llms.txt:9
+#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -9729,6 +9735,7 @@ msgstr ""
 "par la commune."
 
 #: templates/gemeinde/rangliste.html:127
+#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
