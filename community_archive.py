@@ -66,6 +66,8 @@ def export_community_archive(community_id: str, *, store=None) -> bytes:
     datasets = store.export_community(community_id)
     if not datasets:
         raise ArchiveError("LEG not found")
+    if _validate_vnb_evidence(datasets):
+        raise ArchiveError("VNB evidence cannot be archived safely")
     encoded = {table: _json_value(datasets.get(table, [])) for table, _, _ in _DATASETS}
     hashes = {
         name: f"sha256:{hashlib.sha256(_canonical(rows)).hexdigest()}"
@@ -157,11 +159,10 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
     }
     if version == SCHEMA_VERSION:
         source_document_ids.update(
-            row["source_metadata"]["document_id"]
+            row["vnb_case_id"]
             for row in dataset_rows("vnb_calculated_values_deliveries")
             if isinstance(row, dict)
-            and isinstance(row.get("source_metadata"), dict)
-            and isinstance(row["source_metadata"].get("document_id"), str)
+            and isinstance(row.get("vnb_case_id"), str)
             and row.get("format_version") == "e66/1"
         )
     period_ids = {
@@ -224,6 +225,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
             errors.append("Invalid tagged value")
     if not errors:
         errors.extend(_validate_vnb_evidence(decoded))
+
     conflicts = (
         store.find_conflicts(community_id, datasets)
         if not errors and hasattr(store, "find_conflicts")
@@ -306,7 +308,7 @@ _DATASETS = tuple(
         table,
         predicate
         + (
-            " OR document_id IN (SELECT d.source_metadata->>'document_id' "
+            " OR document_id IN (SELECT d.vnb_case_id "
             "FROM vnb_calculated_values_deliveries d WHERE d.id IN ("
             + _OWNED_DELIVERY_IDS
             + ") AND d.format_version = 'e66/1')"
@@ -324,11 +326,18 @@ _DATASETS = tuple(
     ),
     (
         "vnb_calculated_values_events",
-        "delivery_id IN (" + _OWNED_DELIVERY_IDS + ") "
-        "AND community_id = (SELECT d.community_id FROM vnb_calculated_values_deliveries d "
-        "WHERE d.id = vnb_calculated_values_events.delivery_id) "
-        "AND territory = (SELECT d.territory FROM vnb_calculated_values_deliveries d "
-        "WHERE d.id = vnb_calculated_values_events.delivery_id)",
+        "delivery_id IN (" + _OWNED_DELIVERY_IDS + ")",
+        "community_id",
+    ),
+)
+
+
+_DATASETS += (
+    ("vnb_submission_cases", "community_id = %s", "community_id"),
+    ("vnb_mutation_cases", "community_id = %s", "community_id"),
+    (
+        "vnb_mutation_events",
+        "case_id IN (SELECT case_id FROM vnb_mutation_cases WHERE community_id = %s)",
         "community_id",
     ),
 )
@@ -338,8 +347,19 @@ def _validate_vnb_evidence(datasets):
     """Keep accepted source identity and withdrawal ownership intact on import."""
     deliveries = datasets.get("vnb_calculated_values_deliveries", [])
     events = datasets.get("vnb_calculated_values_events", [])
+    mutation_cases = {
+        row.get("case_id") for row in datasets.get("vnb_mutation_cases", [])
+    }
+    mutation_errors = (
+        ["VNB mutation event scope violation"]
+        if any(
+            row.get("case_id") not in mutation_cases
+            for row in datasets.get("vnb_mutation_events", [])
+        )
+        else []
+    )
     if not deliveries and not events:
-        return []
+        return mutation_errors
     community = datasets["communities"][0]
     owner = next(
         (
@@ -350,7 +370,7 @@ def _validate_vnb_evidence(datasets):
         {},
     )
     territory = owner.get("city_id")
-    errors = []
+    errors = list(mutation_errors)
     by_id = {}
     for row in deliveries:
         delivery_id = row.get("id")
@@ -371,6 +391,9 @@ def _validate_vnb_evidence(datasets):
             hashlib.sha256(evidence).hexdigest() != row.get("evidence_sha256")
         ):
             errors.append("VNB source evidence hash mismatch")
+            continue
+        if row.get("format_version") == "e66/1":
+            errors.extend(_validate_e66_ledger(row, datasets))
     for row in events:
         delivery_id = row.get("delivery_id")
         source = by_id.get(delivery_id) if type(delivery_id) is int else None
@@ -382,6 +405,40 @@ def _validate_vnb_evidence(datasets):
         ):
             errors.append("VNB withdrawal scope violation")
     return errors
+
+
+def _validate_e66_ledger(source, datasets):
+    import e66_evidence
+
+    try:
+        document = e66_evidence.parse_source(bytes(source["evidence_bytes"]))
+    except e66_evidence.E66EvidenceError:
+        return ["VNB E66 source identity mismatch"]
+    metadata = source.get("source_metadata")
+    ledger = next(
+        (
+            row
+            for row in datasets.get("sdat_imports", [])
+            if row.get("document_id") == source.get("vnb_case_id")
+        ),
+        None,
+    )
+    if (
+        not isinstance(metadata, dict)
+        or source.get("vnb_case_id") != document["document_id"]
+        or source.get("period_start") != document["period_start"]
+        or source.get("period_end") != document["period_end"]
+        or metadata.get("vnb_community_id") != document["vnb_community_id"]
+        or metadata.get("evidence_sha256") != source["evidence_sha256"]
+        or not ledger
+        or ledger.get("vnb_community_id") != document["vnb_community_id"]
+        or ledger.get("period_start") != document["period_start"]
+        or ledger.get("period_end") != document["period_end"]
+        or ledger.get("document_created_at") != document["document_created_at"]
+        or ledger.get("doc_type") != "E66"
+    ):
+        return ["VNB E66 source or ledger identity mismatch"]
+    return []
 
 
 class PostgresArchiveStore:
