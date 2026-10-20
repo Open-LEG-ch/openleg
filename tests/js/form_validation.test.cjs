@@ -9,6 +9,7 @@ class Element {
     addEventListener(name, fn) {this.listeners[name]=fn;}
     getAttribute(name) {return this.attributes[name] || null;}
     setAttribute(name, value) {this.attributes[name]=value;}
+    removeAttribute(name) {delete this.attributes[name];}
     append(...nodes) {this.children=nodes;}
     before(node) {this.wrapper=node;}
     setCustomValidity(text) {this.message=text;}
@@ -18,7 +19,7 @@ const labels={date:'Veuillez saisir une date valide.',number:'Veuillez saisir un
 function setup(files=[]) {
     const listeners={};
     const document={documentElement:{lang:'fr-CH'},getElementById:() => ({textContent:JSON.stringify(labels)}),querySelectorAll:() => files,createElement:() => new Element(),addEventListener:(name,fn) => {listeners[name]=fn;}};
-    vm.runInNewContext(fs.readFileSync(path.resolve(__dirname,'../../static/js/form_validation.js'),'utf8'),{document,HTMLInputElement:Element,HTMLTextAreaElement:Element,HTMLSelectElement:Element,Intl});
+    vm.runInNewContext(fs.readFileSync(path.resolve(__dirname,'../../static/js/form_validation.js'),'utf8'),{document,HTMLInputElement:Element,HTMLTextAreaElement:Element,HTMLSelectElement:Element,Intl,setTimeout:fn => fn()});
     return listeners;
 }
 test('partially entered date reports a date error while numbers keep number errors', () => {
@@ -34,11 +35,20 @@ test('partially entered date reports a date error while numbers keep number erro
 });
 test('localized file button retains field context and file status for accessibility', () => {
     const input=new Element();input.id='query-attachment';input.labels=[{textContent:'Justificatif PDF, facultatif, maximum 2 Mo'}];input.attributes['aria-describedby']='attachment-help';
+    input.willValidate=true;input.validity={valid:false};input.validationMessage='localized required message';
     setup([input]);
     const [button,status]=input.wrapper.children;
     assert.match(button.getAttribute('aria-label'),/Justificatif PDF, facultatif, maximum 2 Mo/);
     assert.ok(status.id); assert.ok(button.getAttribute('aria-describedby').includes(status.id));
     assert.ok(button.getAttribute('aria-describedby').includes('attachment-help'));
-    input.listeners.invalid();assert.equal(button.focused,true);
-    input.files=[{name:'facture.pdf'}];input.listeners.change();assert.equal(status.textContent,'facture.pdf');
+    const event={preventDefault(){this.cancelled=true;}};
+    input.listeners.invalid(event);assert.ok(event.cancelled);
+    assert.equal(status.textContent,'localized required message');
+    assert.equal(status.getAttribute('role'),'alert');
+    assert.equal(button.getAttribute('aria-invalid'),'true');
+    assert.equal(button.focused,true);
+    input.files=[{name:'facture.pdf'}];input.listeners.change();
+    assert.equal(status.textContent,'facture.pdf');
+    assert.equal(status.getAttribute('role'),'status');
+    assert.equal(button.getAttribute('aria-invalid'),null);
 });
