@@ -15,6 +15,7 @@ from fractions import Fraction
 from sdat_e66 import exact_e66_kwh
 
 VERSION = "vnb-proportional-e66-rounding/1"
+EINFACH_VERSION = "vnb-einfach-e66-reported-total-witness/1"
 _HALF_QUANTUM = Fraction(1, 2000)
 _INTERVAL = timedelta(minutes=15)
 _MAX_STEPS = 128
@@ -234,8 +235,106 @@ def _interval_witness(group):
     )
 
 
+def _einfach_interval_witness(records):
+    participants = sorted({row["participant_id"] for row in records})
+    totals = {
+        direction: dict.fromkeys(participants, Fraction(0))
+        for direction in ("consumption", "production")
+    }
+    seen = set()
+    for row in records:
+        identity = (row["participant_id"], row["direction"])
+        if identity in seen:
+            raise ReconciliationError("incomplete_vnb_source")
+        seen.add(identity)
+        totals[row["direction"]][row["participant_id"]] = exact_e66_kwh(
+            row["source_quantities"]["total_kwh"]
+        )
+    production = sum(totals["production"].values(), Fraction(0))
+    share = production / len(participants)
+    allocated = {
+        participant: min(consumed, share)
+        for participant, consumed in totals["consumption"].items()
+    }
+    remaining = production - sum(allocated.values(), Fraction(0))
+    unfilled = {
+        participant: consumed - allocated[participant]
+        for participant, consumed in totals["consumption"].items()
+    }
+    unfilled_total = sum(unfilled.values(), Fraction(0))
+    redistribute = remaining > Fraction(1, 1000) and unfilled_total > 0
+    if redistribute:
+        allocated = {
+            participant: allocated[participant]
+            + min(free, remaining * free / unfilled_total)
+            for participant, free in unfilled.items()
+        }
+    allocated_total = sum(allocated.values(), Fraction(0))
+    modeled = {
+        "consumption": allocated,
+        "production": {
+            participant: produced * allocated_total / production
+            if production
+            else Fraction(0)
+            for participant, produced in totals["production"].items()
+        },
+    }
+    for row in records:
+        values = row["source_quantities"]
+        total = totals[row["direction"]][row["participant_id"]]
+        local = modeled[row["direction"]][row["participant_id"]]
+        for channel, witness in (
+            ("total_kwh", total),
+            ("community_kwh", local),
+            ("grid_kwh", total - local),
+        ):
+            cell = _cell(values[channel])
+            if not cell.lower <= witness < cell.upper:
+                raise ReconciliationError("unresolved_vnb_einfach_rounding")
+    return {
+        "participant_count": len(participants),
+        "allocated_kwh": str(allocated_total),
+        "redistribution_applied": redistribute,
+    }
+
+
+def _audit_einfach_e66(delivery):
+    """Exhibit the reported-total witness; failure does not prove disagreement."""
+    try:
+        _group_source(delivery)
+        groups = {}
+        for row in delivery["normalized_records"]:
+            groups.setdefault(_moment(row["measured_at"]), []).append(row)
+        intervals = [
+            {"measured_at": moment.isoformat(), **_einfach_interval_witness(records)}
+            for moment, records in sorted(groups.items())
+        ]
+        certificate = {
+            "version": EINFACH_VERSION,
+            "outcome": "rounding_compatible",
+            "model": "einfach",
+            "witness_basis": "reported_total_channels",
+            "redistribution_threshold_kwh": "0.001",
+            "source_precision_kwh": "0.001",
+            "rounding": "nonnegative_half_up",
+            "source_fingerprint": delivery["fingerprint"],
+            "interval_count": len(intervals),
+            "intervals": intervals,
+        }
+        certificate["certificate_sha256"] = hashlib.sha256(
+            json.dumps(certificate, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        return certificate
+    except ReconciliationError:
+        raise
+    except (KeyError, TypeError, ValueError, ArithmeticError, InvalidOperation):
+        raise ReconciliationError("incomplete_vnb_source") from None
+
+
 def audit_e66(delivery, *, model):
     """Return a checkable interval certificate or refuse the billing evidence."""
+    if model == "einfach":
+        return _audit_einfach_e66(delivery)
     if model != "proportional":
         raise ReconciliationError("unsupported_vnb_allocation_model")
     try:

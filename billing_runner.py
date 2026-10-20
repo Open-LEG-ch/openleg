@@ -208,7 +208,7 @@ def run_billing_period(
         precision_basis = (
             calculated is not None
             and calculated.get("format_version") == "e66/1"
-            and policy["distribution_model"] == "proportional"
+            and policy["distribution_model"] in {"proportional", "einfach"}
             and not battery
         )
         if precision_basis:
