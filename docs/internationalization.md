@@ -37,8 +37,7 @@ and tests together. Features added later must also update their explicit locale
 constraints and media variants. No separate application is necessary.
 
 Run scripts/tdd_cycle.sh gate before proposing changes. The framework tests cover
-normalization, fallback, session isolation, links and escaping. French interface
-coverage is deliberately introduced in the next contribution.
+normalization, fallback, session isolation, links and escaping.
 
 ## Interface coverage
 
