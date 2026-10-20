@@ -194,6 +194,22 @@ def test_rounded_e66_quantities_reach_approved_invoice_without_a_second_document
     assert (
         period["reconciliation"]["precision_policy"]["outcome"] == "rounding_compatible"
     )
+    source_evidence = period["reconciliation"]["source_evidence"]
+    audit_fields = {
+        "document_status",
+        "evidence_sha256",
+        "sender_id",
+        "receiver_id",
+        "document_created_at",
+        "vnb_community_id",
+        "precision",
+        "quality_policy",
+        "channel_balance_policy",
+        "products",
+    }
+    # Issued invoices retain the accepted document's audit facts while limiting
+    # participant mappings to the invoiced member.
+    assert audit_fields <= source_evidence["metadata"].keys()
     for invoice in invoices:
         own = invoice["participant_id"]
         provenance = invoice["provenance_snapshot"]["reconciliation"]
@@ -204,6 +220,16 @@ def test_rounded_e66_quantities_reach_approved_invoice_without_a_second_document
             item["building_id"]
             for item in provenance["source_evidence"]["metadata"]["mappings"]
         } == {own}
+        expected_evidence = deepcopy(source_evidence)
+        expected_evidence["metadata"] = {
+            key: source_evidence["metadata"][key] for key in audit_fields
+        }
+        expected_evidence["metadata"]["mappings"] = [
+            mapping
+            for mapping in source_evidence["metadata"]["mappings"]
+            if mapping["building_id"] == own
+        ]
+        assert provenance["source_evidence"] == expected_evidence
     assert (
         client.post(
             f"/admin/vnb-calculated-values/dietikon/{accepted['id']}/withdrawals",
