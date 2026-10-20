@@ -52,6 +52,16 @@ def telemetry_view(installations):
     return installations
 
 
+def shared_telemetry_view(summary):
+    """Present coverage and source times with the same Swiss timezone labels."""
+    telemetry_view(summary["sources"])
+    summary["as_of_label"] = _telemetry_time_label(summary["as_of"])
+    for group in summary["groups"]:
+        for field in ("earliest_observed_at", "latest_observed_at"):
+            group[field + "_label"] = _telemetry_time_label(group[field])
+    return summary
+
+
 _PROFILE_EXPORT_FIELDS = (
     "building_id",
     "email",

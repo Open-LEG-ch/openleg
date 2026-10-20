@@ -94,6 +94,11 @@ def aggregates(community, installation):
     return jsonify(store.read(community, str(installation), _actor(), aggregates=True))
 
 
+@telemetry_bp.get("/summary")
+def summary(community):
+    return jsonify(store.shared_overview(community, _actor()))
+
+
 @telemetry_bp.get("/<uuid:installation>/notices")
 def notices(community, installation):
     return jsonify(store.owner_notices(community, str(installation), _actor()))

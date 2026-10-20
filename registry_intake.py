@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 
 import database as db
 import security_utils
+from locale_policy import resolve_locale
 from translation_markers import gettext_noop
 
 VALID_LEG_STATUSES = {"planung", "gruendung", "aktiv", "pausiert"}
@@ -93,6 +94,7 @@ def submit(payload, source: str) -> dict:
         description=(payload.get("description") or "").strip(),
         website_url=website_url,
         source=source,
+        preferred_locale=resolve_locale(payload.get("preferred_locale")),
     )
     if not saved:
         return {

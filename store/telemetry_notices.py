@@ -3,6 +3,7 @@
 
 import uuid
 from datetime import timedelta
+from decimal import Decimal
 
 from psycopg2.extras import Json
 
@@ -17,7 +18,7 @@ def create_tables(cur):
             id UUID PRIMARY KEY,
             installation_id UUID NOT NULL REFERENCES telemetry_installations ON DELETE CASCADE,
             kind TEXT NOT NULL CHECK (kind IN ('collector_late','source_missing','source_old',
-                'source_channel_missing','source_unknown','source_clock')),
+                'source_channel_missing','source_unknown','source_clock','device_fault')),
             channel_key TEXT NOT NULL,
             episode BIGINT NOT NULL DEFAULT 1 CHECK (episode > 0),
             active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -25,11 +26,30 @@ def create_tables(cur):
             acknowledged_at TIMESTAMPTZ,
             snoozed_until TIMESTAMPTZ,
             resolved_at TIMESTAMPTZ,
-            recovery TEXT CHECK (recovery IN ('readings_current','condition_changed')),
+            recovery TEXT CHECK (recovery IN ('readings_current','condition_changed','device_report_clear')),
             UNIQUE (installation_id,kind,channel_key)
         );
         CREATE INDEX IF NOT EXISTS telemetry_notice_expiry ON telemetry_notices (resolved_at)
             WHERE active=FALSE;
+    """)
+    cur.execute("""
+        DO $$ BEGIN
+            IF EXISTS (SELECT 1 FROM pg_constraint
+                WHERE conrelid='telemetry_notices'::regclass AND conname='telemetry_notices_kind_check'
+                AND position('device_fault' in pg_get_constraintdef(oid))=0) THEN
+                ALTER TABLE telemetry_notices DROP CONSTRAINT telemetry_notices_kind_check;
+                ALTER TABLE telemetry_notices ADD CONSTRAINT telemetry_notices_kind_check
+                    CHECK (kind IN ('collector_late','source_missing','source_old',
+                        'source_channel_missing','source_unknown','source_clock','device_fault'));
+            END IF;
+            IF EXISTS (SELECT 1 FROM pg_constraint
+                WHERE conrelid='telemetry_notices'::regclass AND conname='telemetry_notices_recovery_check'
+                AND position('device_report_clear' in pg_get_constraintdef(oid))=0) THEN
+                ALTER TABLE telemetry_notices DROP CONSTRAINT telemetry_notices_recovery_check;
+                ALTER TABLE telemetry_notices ADD CONSTRAINT telemetry_notices_recovery_check
+                    CHECK (recovery IN ('readings_current','condition_changed','device_report_clear'));
+            END IF;
+        END $$;
     """)
 
 
@@ -42,6 +62,8 @@ def _conditions(installation):
     for sample in installation["samples"]:
         freshness = sample["freshness"]
         if freshness == "fresh":
+            if sample["metric"] == "device_fault" and Decimal(sample["value"]) == 1:
+                result.append(("device_fault", "device_fault:device:status"))
             continue
         if freshness == "stale":
             kind = (
@@ -153,12 +175,21 @@ def reconcile(cur, installations, now, *, uncertain=None):
         )
         UPDATE telemetry_notices n SET active=FALSE,resolved_at=%s,
             recovery=CASE WHEN EXISTS (SELECT 1 FROM healthy h WHERE h.installation_id=n.installation_id
-                AND h.channel_key=n.channel_key) THEN 'readings_current' ELSE 'condition_changed' END
-        WHERE n.installation_id=ANY(%s::uuid[]) AND n.active=TRUE
+                AND h.channel_key=n.channel_key)
+                THEN CASE WHEN n.kind='device_fault' THEN 'device_report_clear' ELSE 'readings_current' END
+                ELSE 'condition_changed' END
+        FROM telemetry_installations i
+        WHERE i.id=n.installation_id AND n.installation_id=ANY(%s::uuid[])
+            AND (n.active=TRUE OR (
+                n.kind='device_fault' AND n.recovery='condition_changed'
+                AND n.resolved_at >= %s-i.raw_retention_days*INTERVAL '1 day'
+                AND EXISTS (SELECT 1 FROM healthy h WHERE h.installation_id=n.installation_id
+                    AND h.channel_key=n.channel_key)
+            ))
             AND NOT EXISTS (SELECT 1 FROM desired d WHERE d.installation_id=n.installation_id
                 AND d.kind=n.kind AND d.channel_key=n.channel_key)
         """,
-        (Json(desired), Json(healthy), now, ids),
+        (Json(desired), Json(healthy), now, ids, now),
     )
     cur.execute(
         """

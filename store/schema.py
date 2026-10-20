@@ -652,6 +652,17 @@ def create_tables():
                 )
             """)
 
+            cur.execute("""
+                ALTER TABLE utility_clients ADD COLUMN IF NOT EXISTS preferred_locale
+                    VARCHAR(5) NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+            cur.execute("""
+                ALTER TABLE leg_registry ADD COLUMN IF NOT EXISTS preferred_locale
+                    VARCHAR(5) NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+
             # Migration: add verification_token columns to leg_registry if missing
             # (leg_registry shipped in Phase 1 without these Phase 2 columns).
             cur.execute("""

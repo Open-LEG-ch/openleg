@@ -19,11 +19,13 @@ UNITS = {
     "energy_counter": "Wh",
     "interval_energy": "Wh",
     "state_of_charge": "%",
+    "device_fault": "state",
 }
 LOCATIONS = {
     "pv_inverter": {"generation"},
     "grid_connection": {"import", "export"},
     "battery": {"charge", "discharge", "stored"},
+    "device": {"status"},
     "site": {"consumption", "generation"},
 }
 
@@ -159,6 +161,8 @@ def observation(sample, installation, now):
         raise TelemetryError()
     if (metric == "state_of_charge") != (direction == "stored"):
         raise TelemetryError()
+    if (metric == "device_fault") != (location == "device"):
+        raise TelemetryError()
     if row["quality"] not in ("measured", "estimated", "unknown"):
         raise TelemetryError()
     try:
@@ -173,6 +177,10 @@ def observation(sample, installation, now):
             raise ValueError()
     except (InvalidOperation, ValueError):
         raise TelemetryError() from None
+    if metric == "device_fault" and (
+        value not in (Decimal(0), Decimal(1)) or row["quality"] == "estimated"
+    ):
+        raise TelemetryError()
     row["value"] = format(value, "f")
     observed = timestamp(row["observed_at"]) if row["observed_at"] is not None else None
     cutoff = now - timedelta(days=installation["raw_retention_days"])

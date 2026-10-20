@@ -10,9 +10,10 @@
   "pv_inverter": {"generation": _("PV-Erzeugung")},
   "grid_connection": {"import": _("Netzbezug"), "export": _("Netzeinspeisung")},
   "battery": {"stored": _("Batteriestand"), "charge": _("Batterieladung"), "discharge": _("Batterieentladung")},
-  "site": {"consumption": _("Standortverbrauch"), "generation": _("Standorterzeugung")}
+  "site": {"consumption": _("Standortverbrauch"), "generation": _("Standorterzeugung")},
+  "device": {"status": _("Gerätestatus")}
 } %}
-{% set metric_labels = {"power": _("Leistung"), "energy_counter": _("Zählerstand"), "interval_energy": _("Intervallenergie"), "state_of_charge": _("Ladezustand")} %}
+{% set metric_labels = {"power": _("Leistung"), "energy_counter": _("Zählerstand"), "interval_energy": _("Intervallenergie"), "state_of_charge": _("Ladezustand"), "device_fault": _("Störungsmeldung")} %}
 {% set quality_labels = {"measured": _("Gemessen"), "estimated": _("Geschätzt"), "unknown": _("Qualität unbekannt")} %}
 {% set freshness_labels = {"fresh": _("Aktuell"), "stale": _("Veraltet"), "unknown": _("Aktualität unbekannt"), "clock_skew": _("Zeitangabe prüfen")} %}
 {% set notice_titles = {
@@ -21,7 +22,8 @@
   "source_old": _("Veraltet"),
   "source_channel_missing": _("Kein aktueller Wert"),
   "source_unknown": _("Aktualität unbekannt"),
-  "source_clock": _("Zeitangabe prüfen")
+  "source_clock": _("Zeitangabe prüfen"),
+  "device_fault": _("Gerät meldet eine Störung")
 } %}
 {% set notice_messages = {
   "collector_late": _("Prüfen Sie den Kollektor und seine Verbindung."),
@@ -29,7 +31,8 @@
   "source_old": _("Messquelle liefert ältere Werte. Prüfen Sie Messquelle und Gerätezeit."),
   "source_channel_missing": _("Für diesen Messkanal fehlen neue Daten. Prüfen Sie die Messquelle."),
   "source_unknown": _("Prüfen Sie, ob die Messquelle Zeit und Qualität der Messung mitliefert."),
-  "source_clock": _("Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle.")
+  "source_clock": _("Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."),
+  "device_fault": _("Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers.")
 } %}
 <div class="max-w-6xl mx-auto px-4 pt-8 pb-16">
   <a href="/dashboard" class="text-brand hover:underline">{{ _("Zurück zum Dashboard") }}</a>
@@ -72,6 +75,9 @@
                   <p>{{ notice_titles[notice.kind] }}</p>
                   <p class="text-sm text-ink-muted">{{ _("Bestätigt bis") }} <time datetime="{{ notice.snoozed_until }}">{{ notice.snoozed_label }}</time></p>
                 {% endif %}
+              {% elif notice.recovery == "device_report_clear" %}
+                <h4 class="font-semibold">{{ _("Gerät meldet keine Störung mehr") }}</h4>
+                <p class="text-ink-muted">{{ _("Die Messquelle hat die Störungsmeldung zurückgenommen.") }}</p>
               {% elif notice.recovery == "readings_current" %}
                 <h4 class="font-semibold">{{ _("Messwerte wieder aktuell") }}</h4>
                 <p class="text-ink-muted">{{ _("Die Messquelle liefert wieder aktuelle Werte.") }}</p>
@@ -86,12 +92,14 @@
           <div class="mt-4 border-t border-line pt-4">
             <h3 class="font-semibold">{{ channel_labels[sample.measurement_location][sample.direction] }}</h3>
             <p class="text-sm text-ink-muted">{{ metric_labels[sample.metric] }}</p>
-            {% if sample.freshness in ("fresh", "stale") %}
+            {% if sample.metric == "device_fault" and sample.freshness in ("fresh", "stale") %}
+              <p class="text-lg">{{ _("Letzte Gerätemeldung: Störung") if sample.value|float == 1 else _("Letzte Gerätemeldung: keine Störung") }}</p>
+            {% elif sample.freshness in ("fresh", "stale") %}
               <p class="font-mono text-2xl">{{ sample.value }} {{ sample.unit }}</p>
             {% else %}
               <p class="text-lg">{{ _("Kein aktueller Wert") }}</p>
             {% endif %}
-            <p>{{ quality_labels[sample.quality] }} · {{ freshness_labels[sample.freshness] }}</p>
+            <p>{{ _("Gerätemeldung") if sample.metric == "device_fault" and sample.quality == "measured" else quality_labels[sample.quality] }} · {{ freshness_labels[sample.freshness] }}</p>
             {% if sample.observed_at %}
               <p class="text-sm text-ink-muted">{{ _("Messzeit") }}: <time datetime="{{ sample.observed_at }}">{{ sample.observed_label }}</time></p>
             {% else %}

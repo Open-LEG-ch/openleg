@@ -27,9 +27,9 @@ receipt, without sorting the retained history. The query has a two-second
 transaction-local limit and preserves any stricter database limit. A timeout
 returns the private unavailable page; refreshing can retry once storage recovers.
 
-The owner-readings and persistent-notices slices of #617 are implemented.
-Device fault ingestion, community summaries with sharing and coverage controls,
-and an authorized hardware/user pilot remain open. #615 and
+The owner-readings, normalized device-fault and persistent-notices slices of #617 are implemented.
+The shared power view below adds permission and coverage controls. Device-specific
+fault mappings and an authorized hardware/user pilot remain open. #615 and
 #621 still gate claims of hardware support. Telemetry remains separate from
 validated VNB billing evidence.
 
@@ -47,6 +47,39 @@ operation, device proxy, arbitrary forwarding URL or command channel.
 Cached public weather context appears after current readings and notices. See
 [solar forecast context](solar-forecast-context.md) for source, coverage and cache
 behavior. It computes no installation production or monetary recommendation.
+
+## Shared power readings
+
+Confirmed, verified members open `/leg/community/{community_id}/telemetry`
+from their LEG dashboard, or `GET {base}/summary`. The view includes the
+member's own sources and sources explicitly shared with that member whose
+owner also has active neighbour-sharing consent. Administration confers no
+extra access. Every request rechecks membership, verification, grants and
+consent. Revocation takes effect on the next read; leaving and rejoining does
+not restore removed grants.
+
+Only authorized sources enter coverage counts. Private installation labels,
+owner identifiers, credentials and notice acknowledgement state are excluded.
+Source/device identifiers and individual power readings remain visible under
+the grant; the view does not claim anonymity. A sum additionally requires at
+least three distinct building profiles with measured, fresh readings and
+recent delivery at exactly the same instant. Profiles do not establish
+independent households. Smaller groups show their authorized individual
+readings and withhold the sum.
+
+Each power channel has its own sum. Multiple sources of one profile in the
+same channel exclude that profile to avoid overlapping inverter/meter totals.
+Different locations/directions remain separate. Unknown, stale and estimated
+values are excluded. Different eligible observation times withhold the sum;
+the view shows their earliest/latest times and exclusion counts. Missing
+values never become zero. Actual measured zero is included. The view computes
+no site consumption, energy balance, battery state average or billing amount.
+It does not establish complete community coverage.
+
+The shared query has a two-second transaction-local limit and a maximum of
+200 authorized installations. Timeout or excess coverage returns unavailable,
+never a partial successful sum. No derived view is persisted or cached;
+responses use `no-store` and `no-referrer`. Existing source retention applies.
 
 ## Owner notices
 
@@ -87,6 +120,29 @@ Active rows remain until resolved or the installation is deleted. Resolved rows
 expire after that installation's raw-data retention period; expiry is enforced
 on reads and physical deletion uses the existing telemetry cleanup. Installation,
 membership, profile and community deletion cascade notices.
+
+## Device-reported faults
+
+A local adapter can submit a normalized `device_fault` sample with unit `state`,
+location `device`, direction `status` and value `1` (fault reported) or `0`
+(no fault reported). It must map an explicit device indication using that
+device's documented profile. A timeout, missing sample, night shutdown or
+zero generation cannot supply this flag. Arbitrary vendor codes and free text
+are rejected; device-specific mappings and hardware trials remain pending.
+
+Fresh reports with known source time and measured quality create the separate
+owner notice. Estimated fault states are rejected. Unknown quality/time, future
+clocks and stale reports describe unavailable status instead. The page shows
+the source, device, report time and freshness alongside the last report.
+
+A fresh explicit zero clears the reported-fault notice, including after an
+unavailable span while the notice history is retained. Repeated reads do not
+extend that recovery's retention. This means the device
+withdrew its report; it does not establish a physical diagnosis. Expiry or an
+unavailable report changes the notice state without claiming fault clearance.
+Acknowledgement, cooldown and new episodes use the same private owner controls.
+Older buffered reports cannot override a newer observation. Fault flags are
+retained as samples and notices, and are excluded from hourly numeric statistics.
 
 ## Enrollment and access
 
@@ -151,15 +207,17 @@ POST JSON, no compression, at most 65,536 bytes and 100 samples:
 - `device_id`, `source_id` and cadence must match enrollment. Identifiers use
   ASCII letters, digits, `_`, `.`, `:`, `-`, at most 128 characters.
 - Metrics are `power`/`W`, `energy_counter`/`Wh`, `interval_energy`/`Wh`,
-  and `state_of_charge`/`%`. Counter resets are not inferred. Interval energy
+  `state_of_charge`/`%`, and `device_fault`/`state`. Counter resets are not inferred. Interval energy
   also requires timezone-aware `interval_start` and `interval_end`; end equals
   observation time, start precedes end, duration is at most one day.
 - Values are finite nonnegative magnitudes, at most 10^12 with nine decimal
-  places, or at most 100 for state of charge. The local adapter must normalize
+  places, or at most 100 for state of charge. Device fault flags accept only
+  zero or one and reject estimated quality. The local adapter must normalize
   any signed device convention into explicit directions without netting them.
 - Locations/directions: `grid_connection` uses `import`/`export`;
   `pv_inverter` uses `generation`; `site` uses `consumption`/`generation`;
   `battery` uses `charge`/`discharge`, or `stored` for state of charge.
+  Device fault flags exclusively use `device`/`status`.
 - Quality is `measured`, `estimated` or `unknown`. Freshness does not upgrade
   quality or make a measurement validated for billing.
 - Observation time is timezone-aware ISO 8601 or explicit `null`. Receipt is

@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from psycopg2.extras import Json
 
 import telemetry as contract
+import telemetry_summary
 from store import telemetry_notices as notices
 from telemetry import TelemetryError
 
@@ -246,14 +247,43 @@ def owner_overview(actor):
         return installations
 
 
-def _owner_overview(cur, actor, now, installation_ids):
-    """Seek the latest retained value on each supported channel for this owner."""
+def shared_overview(community, actor):
+    now = datetime.now(UTC)
+    with _cursor() as cur:
+        _limit_overview_query(cur)
+        _member(cur, community, actor, lock=True)
+        cur.execute(
+            """
+            SELECT i.id FROM telemetry_installations i
+            JOIN community_members m ON m.community_id=i.community_id AND m.building_id=i.owner_building_id
+            JOIN buildings b ON b.building_id=i.owner_building_id AND b.verified=TRUE
+            WHERE i.community_id=%s AND m.status='confirmed' AND (
+                i.owner_building_id=%s OR EXISTS (
+                    SELECT 1 FROM telemetry_shares s
+                    JOIN consents c ON c.building_id=i.owner_building_id AND c.share_with_neighbors=TRUE
+                    WHERE s.installation_id=i.id AND s.community_id=i.community_id AND s.viewer_building_id=%s
+                )
+            )
+            ORDER BY i.id LIMIT 201 FOR SHARE OF i
+            """,
+            (community, actor, actor),
+        )
+        ids = [str(row["id"]) for row in cur.fetchall()]
+        if len(ids) > 200:
+            raise TelemetryError("telemetry_unavailable", 503)
+        installations = _owner_overview(cur, actor, now, ids, include_shared=True)
+        return telemetry_summary.view(installations, now, community)
+
+
+def _owner_overview(cur, actor, now, installation_ids, *, include_shared=False):
+    """Seek latest retained channels, rechecking permission in this snapshot."""
     channels = [
         {"metric": metric, "location": location, "direction": direction}
         for metric in contract.UNITS
         for location, directions in contract.LOCATIONS.items()
         for direction in sorted(directions)
         if (metric == "state_of_charge") == (direction == "stored")
+        and (metric == "device_fault") == (location == "device")
     ]
     cur.execute(
         """
@@ -297,7 +327,16 @@ def _owner_overview(cur, actor, now, installation_ids):
                 LIMIT 1
             ) observed ON TRUE
         ) latest ON TRUE
-        WHERE i.owner_building_id=%s AND i.id=ANY(%s::uuid[])
+        WHERE i.id=ANY(%s::uuid[]) AND (
+            i.owner_building_id=%s OR (%s AND EXISTS (
+                SELECT 1 FROM telemetry_shares s
+                JOIN consents c ON c.building_id=i.owner_building_id AND c.share_with_neighbors=TRUE
+                JOIN community_members viewer ON viewer.community_id=s.community_id
+                    AND viewer.building_id=s.viewer_building_id AND viewer.status='confirmed'
+                JOIN buildings vb ON vb.building_id=viewer.building_id AND vb.verified=TRUE
+                WHERE s.installation_id=i.id AND s.community_id=i.community_id AND s.viewer_building_id=%s
+            ))
+        )
         ORDER BY i.created_at, i.id, latest.observation->>'metric',
             latest.observation->>'measurement_location', latest.observation->>'direction'
         """,
@@ -306,8 +345,10 @@ def _owner_overview(cur, actor, now, installation_ids):
             contract.FRESHNESS_MIN_SECONDS,
             contract.FRESHNESS_CADENCES,
             Json(channels),
-            actor,
             installation_ids,
+            actor,
+            include_shared,
+            actor,
         ),
     )
     installations = {}
@@ -317,6 +358,7 @@ def _owner_overview(cur, actor, now, installation_ids):
             {
                 "id": str(row["id"]),
                 "community_id": row["community_id"],
+                "owner_building_id": row["owner_building_id"],
                 "_notice_refresh_pending": row["notice_refresh_pending"],
                 "name": row["name"],
                 "source_id": row["source_id"],
@@ -419,7 +461,7 @@ def ingest(community, installation, token, payload):
                 ),
             )
             # Hourly statistics only. Never integrate W or difference Wh counters.
-            if sample["observed_at"] is not None:
+            if sample["observed_at"] is not None and sample["metric"] != "device_fault":
                 hour = contract.timestamp(sample["observed_at"]).replace(
                     minute=0, second=0, microsecond=0
                 )

@@ -17,7 +17,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.18.0\n"
+"Generated-By: Babel 2.10.3\n"
 
 #: templates/index.html:677
 #, python-format
@@ -918,7 +918,6 @@ msgstr ""
 "selben Netzgebiet angeschlossen, nutzen höchstens"
 
 #: templates/how-it-works.html:52
-#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1188,7 +1187,6 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h StromVV"
 
 #: templates/leg_kalkulator.html:267
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1211,7 +1209,6 @@ msgstr ""
 "Spannungstransformation."
 
 #: templates/leg_kalkulator.html:288
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -1303,6 +1300,15 @@ msgstr "Ausblick: zentrales LEG-Register"
 #: templates/leg_dashboard.html:343 templates/leg_dashboard.html:362
 msgid "Ausgang"
 msgstr "Ausgang"
+
+#: templates/telemetry_shared.html:41
+#, python-format
+msgid ""
+"Ausgeschlossene Profile: %(overlap)s mit überlappenden Quellen, %(unavailable)s ohne aktuellen "
+"Messwert, %(estimated)s mit Schätzwerten, %(unsynchronized)s mit abweichenden Messzeiten."
+msgstr ""
+"Ausgeschlossene Profile: %(overlap)s mit überlappenden Quellen, %(unavailable)s ohne aktuellen "
+"Messwert, %(estimated)s mit Schätzwerten, %(unsynchronized)s mit abweichenden Messzeiten."
 
 #: templates/leg_kalkulator.html:90
 msgid "Ausgewählt:"
@@ -1486,6 +1492,10 @@ msgstr "Befehl kopieren"
 #: templates/partials/install_console.html:1
 msgid "Befehl kopiert."
 msgstr "Befehl kopiert."
+
+#: templates/emails/formation_nudge.html:43
+msgid "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
+msgstr "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
 
 #: templates/fuer_gemeinden.html:83
 msgid ""
@@ -1839,6 +1849,19 @@ msgstr "Bitte E-Mail bestätigen"
 #: interest_intake.py:109
 msgid "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 msgstr "Bitte bestätigen Sie Ihre E-Mail-Adresse."
+
+#: leg_registry.py:55
+#, python-format
+msgid ""
+"Bitte bestätigen Sie, dass der Eintrag \"%(name)s\" im OpenLEG-Verzeichnis noch aktuell ist (Link"
+" 14 Tage gültig):\n"
+"\n"
+"%(url)s"
+msgstr ""
+"Bitte bestätigen Sie, dass der Eintrag \"%(name)s\" im OpenLEG-Verzeichnis noch aktuell ist (Link"
+" 14 Tage gültig):\n"
+"\n"
+"%(url)s"
 
 #: templates/partials/form_validation.html:2
 msgid "Bitte füllen Sie dieses Feld aus."
@@ -2430,7 +2453,6 @@ msgid "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil trage
 msgstr "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil tragen."
 
 #: templates/gemeinde/methodik.html:95
-#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -2519,6 +2541,19 @@ msgid ""
 msgstr ""
 "Der Rechner zeigt nur mögliche laufende Einsparungen. Einmalige und laufende Kosten unterscheiden"
 " sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet."
+
+#: dashboard_routes.py:153
+#, python-format
+msgid ""
+"Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
+"prüfen.\n"
+"\n"
+"%(url)s"
+msgstr ""
+"Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
+"prüfen.\n"
+"\n"
+"%(url)s"
 
 #: templates/leg_gruenden.html:71
 msgid ""
@@ -2702,6 +2737,14 @@ msgstr ""
 #: templates/advisories.html:85
 msgid "Die Ansicht zeigt höchstens die letzten 100 gespeicherten Abklärungen."
 msgstr "Die Ansicht zeigt höchstens die letzten 100 gespeicherten Abklärungen."
+
+#: templates/telemetry_shared.html:22
+msgid ""
+"Die Ansicht zeigt und zählt nur eigene und freigegebene Quellen. Sie umfasst keine weiteren "
+"Anlagen."
+msgstr ""
+"Die Ansicht zeigt und zählt nur eigene und freigegebene Quellen. Sie umfasst keine weiteren "
+"Anlagen."
 
 #: quartierakku.py:42
 msgid "Die Anteile enthalten unbekannte Teilnehmer."
@@ -2939,6 +2982,10 @@ msgstr ""
 "Prüfung erhalten Organisierende Zugang zur Verwaltung und können Ein- und Austritte online "
 "erfassen."
 
+#: templates/telemetry_dashboard.html:80
+msgid "Die Messquelle hat die Störungsmeldung zurückgenommen."
+msgstr "Die Messquelle hat die Störungsmeldung zurückgenommen."
+
 #: templates/telemetry_dashboard.html:77
 msgid "Die Messquelle liefert wieder aktuelle Werte."
 msgstr "Die Messquelle liefert wieder aktuelle Werte."
@@ -2946,6 +2993,14 @@ msgstr "Die Messquelle liefert wieder aktuelle Werte."
 #: member_savings.py:340
 msgid "Die Messwerte dieser Periode sind unvollständig."
 msgstr "Die Messwerte dieser Periode sind unvollständig."
+
+#: templates/telemetry_shared.html:29
+msgid ""
+"Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Die Ansicht trennt Quellen "
+"verschiedener Messkanäle."
+msgstr ""
+"Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Die Ansicht trennt Quellen "
+"verschiedener Messkanäle."
 
 #: templates/leg_dashboard.html:236
 msgid ""
@@ -3068,6 +3123,14 @@ msgstr "Die Solarnutzung beruht auf"
 #: templates/api_docs.html:245
 msgid "Die Suchanfrage muss mindestens 2 Zeichen enthalten."
 msgstr "Die Suchanfrage muss mindestens 2 Zeichen enthalten."
+
+#: templates/telemetry_shared.html:23
+msgid ""
+"Die Summen sind keine vollständige LEG-Bilanz. Für die Abrechnung gelten die validierten VNB-"
+"Messdaten."
+msgstr ""
+"Die Summen sind keine vollständige LEG-Bilanz. Für die Abrechnung gelten die validierten VNB-"
+"Messdaten."
 
 #: billing_policy.py:155
 msgid "Die Tarif-ID der Richtlinie ist ungültig."
@@ -3651,6 +3714,14 @@ msgstr ""
 "aus erneuerbaren Anlagen verbrauchen. Sie ist seit dem 1. Januar 2026 in der ganzen Schweiz "
 "möglich. Rechtsgrundlage: Art. 17d und 17e StromVG sowie Art. 19e bis 19h StromVV."
 
+#: templates/telemetry_shared.html:28
+msgid ""
+"Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen "
+"Messzeit. Die Summe schliesst Profile mit mehreren Quellen im gleichen Kanal aus."
+msgstr ""
+"Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen "
+"Messzeit. Die Summe schliesst Profile mit mehreren Quellen im gleichen Kanal aus."
+
 #: billing_lifecycle.py:47
 msgid "Eine Zahlungsreferenz ist erforderlich."
 msgstr "Eine Zahlungsreferenz ist erforderlich."
@@ -3803,6 +3874,10 @@ msgstr "Einwohner"
 #: templates/partials/install_console.html:9
 msgid "Einzeiler"
 msgstr "Einzeiler"
+
+#: templates/telemetry_shared.html:47
+msgid "Einzelne Quellen"
+msgstr "Einzelne Quellen"
 
 #: templates/leg_gruenden.html:218
 msgid "ElCom"
@@ -4285,6 +4360,10 @@ msgstr "Freigabe widerrufen"
 msgid "Freigegeben"
 msgstr "Freigegeben"
 
+#: templates/leg_dashboard.html:31 templates/telemetry_shared.html:3 templates/telemetry_shared.html:17
+msgid "Freigegebene Messwerte"
+msgstr "Freigegebene Messwerte"
+
 #: templates/leg_billing.html:100
 msgid "Freigegebene Rechnungen"
 msgstr "Freigegebene Rechnungen"
@@ -4382,7 +4461,6 @@ msgid "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutz
 msgstr "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um"
 
 #: templates/how-it-works.html:42
-#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -4796,6 +4874,14 @@ msgstr "Gerät"
 msgid "Gerät erfassen"
 msgstr "Gerät erfassen"
 
+#: templates/telemetry_dashboard.html:26
+msgid "Gerät meldet eine Störung"
+msgstr "Gerät meldet eine Störung"
+
+#: templates/telemetry_dashboard.html:79
+msgid "Gerät meldet keine Störung mehr"
+msgstr "Gerät meldet keine Störung mehr"
+
 #: templates/equipment_form.html:39
 msgid "Gerät und Leistung"
 msgstr "Gerät und Leistung"
@@ -4815,6 +4901,14 @@ msgstr "Geräteeintrag löschen"
 #: templates/equipment_error.html:5
 msgid "Geräteeintrag nicht verfügbar"
 msgstr "Geräteeintrag nicht verfügbar"
+
+#: templates/telemetry_dashboard.html:102
+msgid "Gerätemeldung"
+msgstr "Gerätemeldung"
+
+#: templates/telemetry_dashboard.html:14
+msgid "Gerätestatus"
+msgstr "Gerätestatus"
 
 #: templates/equipment_error.html:2
 msgid "Gerätezugang |"
@@ -5023,6 +5117,10 @@ msgstr "Gründung"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Gründung als Arbeitsfolge"
 
+#: templates/emails/formation_nudge.html:40
+msgid "Gründung fortsetzen"
+msgstr "Gründung fortsetzen"
+
 #: formation_wizard.py:51
 msgid "Gründung gestartet"
 msgstr "Gründung gestartet"
@@ -5059,6 +5157,29 @@ msgstr "Gründungsassistent und Vorlagen ansehen"
 #: templates/leg_gruenden.html:62
 msgid "Gründungsassistent öffnen"
 msgstr "Gründungsassistent öffnen"
+
+#: utility_portal.py:313
+#, python-format
+msgid ""
+"Guten Tag,\n"
+"\n"
+"Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Dieser Link ist %(minutes)s Minuten gültig.\n"
+"\n"
+"Ihr OpenLEG-Team"
+msgstr ""
+"Guten Tag,\n"
+"\n"
+"Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Dieser Link ist %(minutes)s Minuten gültig.\n"
+"\n"
+"Ihr OpenLEG-Team"
 
 #: templates/admin/abrechnungen.html:123
 msgid "Gutschriften"
@@ -5103,6 +5224,10 @@ msgstr "Haben Sie einen Smart Meter?"
 #: templates/impressum.html:39
 msgid "Haftungsausschluss"
 msgstr "Haftungsausschluss"
+
+#: templates/emails/formation_nudge.html:29
+msgid "Hallo,"
+msgstr "Hallo,"
 
 #: templates/contact_requests.html:70 templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
@@ -5280,6 +5405,10 @@ msgstr "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgid "Ihr Dashboard-Zugangslink"
 msgstr "Ihr Dashboard-Zugangslink"
 
+#: municipality.py:216
+msgid "Ihr Gemeinde-Dashboard-Zugangslink"
+msgstr "Ihr Gemeinde-Dashboard-Zugangslink"
+
 #: templates/leg_verzeichnis/bestaetigt.html:7
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
 msgstr "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
@@ -5353,6 +5482,25 @@ msgstr "Ihre Gemeinde"
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
 msgstr "Ihre Gemeinde sieht, was als Nächstes ansteht"
 
+#: templates/emails/formation_nudge.html:30
+#, python-format
+msgid ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tag nicht bewegt."
+msgid_plural ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tagen nicht bewegt."
+msgstr[0] ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tag nicht bewegt."
+msgstr[1] ""
+"Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit "
+"%(count)s Tagen nicht bewegt."
+
+#: dashboard_routes.py:151
+msgid "Ihre Kontaktanfragen bei OpenLEG"
+msgstr "Ihre Kontaktanfragen bei OpenLEG"
+
 #: templates/emails/day_14_formation.html:6
 msgid "Ihre LEG kann starten"
 msgstr "Ihre LEG kann starten"
@@ -5364,6 +5512,11 @@ msgstr "Ihre LEG wählt, wie sie betrieben wird."
 #: email_automation.py:45
 msgid "Ihre LEG-Gemeinschaft kann starten"
 msgstr "Ihre LEG-Gemeinschaft kann starten"
+
+#: email_automation.py:55 templates/emails/formation_nudge.html:6
+#: templates/emails/formation_nudge.html:28
+msgid "Ihre LEG-Gründung wartet"
+msgstr "Ihre LEG-Gründung wartet"
 
 #: templates/self_host.html:73
 msgid ""
@@ -5631,6 +5784,10 @@ msgstr "Internet-Erreichbarkeit"
 #: templates/telemetry_dashboard.html:15
 msgid "Intervallenergie"
 msgstr "Intervallenergie"
+
+#: leg_registry.py:53
+msgid "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
+msgstr "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
 
 #: app.py:138 formation_guide.py:72
 msgid "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
@@ -6013,6 +6170,14 @@ msgstr "Keine Snapshots"
 msgid "Keine Solardaten gefunden."
 msgstr "Keine Solardaten gefunden."
 
+#: templates/telemetry_shared.html:36
+msgid "Keine Summe: Die Messzeiten unterscheiden sich."
+msgstr "Keine Summe: Die Messzeiten unterscheiden sich."
+
+#: templates/telemetry_shared.html:38
+msgid "Keine Summe: Weniger als drei Profile liefern geeignete Werte."
+msgstr "Keine Summe: Weniger als drei Profile liefern geeignete Werte."
+
 #: templates/leg_kalkulator.html:425
 msgid "Keine Tarifdaten für diese Gemeinde verfügbar."
 msgstr "Keine Tarifdaten für diese Gemeinde verfügbar."
@@ -6036,6 +6201,10 @@ msgstr "Keine direkten Partner gefunden."
 #: templates/index.html:416
 msgid "Keine eindeutige Adresse gefunden. Sie können Ihr Interesse trotzdem für Ihre Gemeinde anmelden."
 msgstr "Keine eindeutige Adresse gefunden. Sie können Ihr Interesse trotzdem für Ihre Gemeinde anmelden."
+
+#: templates/telemetry_shared.html:46
+msgid "Keine freigegebenen Leistungswerte verfügbar."
+msgstr "Keine freigegebenen Leistungswerte verfügbar."
 
 #: advisories.py:22
 msgid "Keine genaue Gerätezuordnung"
@@ -6224,6 +6393,10 @@ msgstr "Kostenlos und Open Source | OpenLEG"
 #: templates/pricing.html:34
 msgid "Kostenlos. Open Source. Für immer."
 msgstr "Kostenlos. Open Source. Für immer."
+
+#: templates/emails/formation_nudge.html:46
+msgid "Kostenlose LEG-Infrastruktur"
+msgstr "Kostenlose LEG-Infrastruktur"
 
 #: templates/leg_kalkulator.html:201
 msgid "Kostenvergleich (pro Jahr)"
@@ -6582,6 +6755,14 @@ msgstr "Leistung Ihrer Anlage in kWp"
 #: templates/index.html:179
 msgid "Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst."
 msgstr "Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst."
+
+#: templates/telemetry_dashboard.html:96
+msgid "Letzte Gerätemeldung: Störung"
+msgstr "Letzte Gerätemeldung: Störung"
+
+#: templates/telemetry_dashboard.html:96
+msgid "Letzte Gerätemeldung: keine Störung"
+msgstr "Letzte Gerätemeldung: keine Störung"
 
 #: advisories.py:56
 msgid "Letzte Quellenprüfung fehlgeschlagen"
@@ -6981,6 +7162,10 @@ msgstr "Messzeit"
 #: templates/telemetry_dashboard.html:57
 msgid "Messzeit unbekannt"
 msgstr "Messzeit unbekannt"
+
+#: templates/telemetry_shared.html:43
+msgid "Messzeiten der geeigneten Werte"
+msgstr "Messzeiten der geeigneten Werte"
 
 #: i18n.py:69
 msgid "Methode nicht erlaubt"
@@ -8159,6 +8344,10 @@ msgstr "OpenLEG-Netzwerk"
 msgid "OpenLEG. Kein eigener technischer Betrieb."
 msgstr "OpenLEG. Kein eigener technischer Betrieb."
 
+#: utility_portal.py:311
+msgid "OpenLEG: Ihr Login-Link"
+msgstr "OpenLEG: Ihr Login-Link"
+
 #: interest_intake.py:100
 msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr "OpenLEG: Interessenmeldung bestätigen"
@@ -8534,6 +8723,10 @@ msgstr ""
 "Checkliste, Cloud-Prüfung und Ersatzstromangaben auf «Unbekannt». Prüfen und speichern Sie diese "
 "danach erneut. Es gibt keinen zusammengefassten Sicherheitswert."
 
+#: templates/telemetry_dashboard.html:35
+msgid "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
+msgstr "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
+
 #: formation_wizard.py:356
 msgid "Prüfen Sie die Gemeinschaftsvereinbarung."
 msgstr "Prüfen Sie die Gemeinschaftsvereinbarung."
@@ -8815,7 +9008,6 @@ msgstr ""
 "Buchstabe oder Ziffer."
 
 #: templates/llms.txt:9
-#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -9228,6 +9420,16 @@ msgstr "Sicherheitshinweise zu meinem Gerät |"
 msgid "Sicherheitshinweise |"
 msgstr "Sicherheitshinweise |"
 
+#: templates/telemetry_shared.html:24
+#, python-format
+msgid "Sichtbare Anlagen: %(count)s"
+msgstr "Sichtbare Anlagen: %(count)s"
+
+#: templates/telemetry_shared.html:40
+#, python-format
+msgid "Sichtbare Profile: %(visible)s. Geeignete Profile: %(eligible)s. In der Summe: %(included)s."
+msgstr "Sichtbare Profile: %(visible)s. Geeignete Profile: %(eligible)s. In der Summe: %(included)s."
+
 #: templates/fuer_gemeinden.html:50
 msgid ""
 "Sie behalten die fachliche Verantwortung. OpenLEG stellt die Infrastruktur bereit. Der "
@@ -9267,6 +9469,14 @@ msgstr ""
 #: templates/fuer_gemeinden.html:36
 msgid "Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein."
 msgstr "Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein."
+
+#: templates/telemetry_shared.html:21
+msgid ""
+"Sie sehen eigene Anlagen und ausdrücklich für Sie freigegebene Quellen mit aktiver "
+"Nachbarschaftsfreigabe."
+msgstr ""
+"Sie sehen eigene Anlagen und ausdrücklich für Sie freigegebene Quellen mit aktiver "
+"Nachbarschaftsfreigabe."
 
 #: templates/fuer_gemeinden.html:35
 msgid "Sie sehen, wie viele Interessierte sich gemeldet haben."
@@ -9452,7 +9662,6 @@ msgstr ""
 "              Die Kennzahl zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt."
 
 #: templates/gemeinde/rangliste.html:127
-#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
@@ -9570,6 +9779,10 @@ msgstr "Stand"
 #: templates/advisories.html:58
 msgid "Stand Ihrer Abklärung"
 msgstr "Stand Ihrer Abklärung"
+
+#: templates/telemetry_shared.html:25
+msgid "Stand beim Laden"
+msgstr "Stand beim Laden"
 
 #: templates/equipment_form.html:75
 msgid "Stand der manuellen Prüfung"
@@ -9760,6 +9973,10 @@ msgstr "Stufe 3:"
 msgid "Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt."
 msgstr "Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt."
 
+#: templates/telemetry_dashboard.html:16
+msgid "Störungsmeldung"
+msgstr "Störungsmeldung"
+
 #: templates/gemeinde/onboarding.html:112
 msgid "Suche aktuell nicht verfügbar."
 msgstr "Suche aktuell nicht verfügbar."
@@ -9771,6 +9988,10 @@ msgstr "Suchen"
 #: templates/admin/ops.html:197 templates/admin/ops.html:226
 msgid "Summary"
 msgstr "Zusammenfassung"
+
+#: templates/telemetry_shared.html:27
+msgid "Summen nach Messkanal"
+msgstr "Summen nach Messkanal"
 
 #: templates/utility/dashboard.html:13
 msgid "Suspended"
@@ -10673,6 +10894,14 @@ msgstr "Wem gehören die Daten?"
 #: templates/fuer_bewohner.html:98
 msgid "Weniger Netznutzungsentgelt für lokalen Strom"
 msgstr "Weniger Netznutzungsentgelt für lokalen Strom"
+
+#: templates/emails/formation_nudge.html:37
+msgid ""
+"Wenn Sie festhängen, antworten Sie auf diese E-Mail. Wir schauen den nächsten Schritt mit Ihnen "
+"an."
+msgstr ""
+"Wenn Sie festhängen, antworten Sie auf diese E-Mail. Wir schauen den nächsten Schritt mit Ihnen "
+"an."
 
 #: templates/emails/day_3_smartmeter.html:35
 msgid ""
@@ -11887,6 +12116,21 @@ msgid ""
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 msgstr ""
 "Öffnen Sie Ihr Dashboard über diesen Link:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
+
+#: municipality.py:218
+#, python-format
+msgid ""
+"Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
+msgstr ""
+"Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n"
 "\n"
 "%(url)s\n"
 "\n"

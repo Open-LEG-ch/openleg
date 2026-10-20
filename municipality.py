@@ -26,6 +26,7 @@ import municipality_profile
 import pv_data
 import security_utils
 from cantons import SWISS_CANTONS
+from email_localization import gettext, recipient_locale
 from i18n import gettext as _
 from i18n import localized_url, ngettext, normalize_locale, select_locale
 from ranking import Ranking
@@ -202,17 +203,24 @@ def access_request():
             access_token.MUNICIPALITY, db, municipality_id, ttl_seconds=900
         )
         if token:
+            admin_id = municipality.get("admin_building_id")
+            profile = db.get_building(admin_id) if admin_id else None
+            locale = recipient_locale(profile, normalized_email)
             url = access_token.access_url(
                 access_token.MUNICIPALITY, current_app.config["APP_BASE_URL"], token
             )
+            url = localized_url(url, locale=locale)
             try:
                 email_utils.send_email(
                     normalized_email,
-                    "Ihr Gemeinde-Dashboard-Zugangslink",
-                    "Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n\n"
-                    f"{url}\n\n"
-                    "Falls Sie diesen Link nicht angefordert haben, können Sie "
-                    "diese E-Mail ignorieren.",
+                    gettext("Ihr Gemeinde-Dashboard-Zugangslink", locale=locale),
+                    gettext(
+                        "Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n\n"
+                        "%(url)s\n\nFalls Sie diesen Link nicht angefordert haben, "
+                        "können Sie diese E-Mail ignorieren.",
+                        locale=locale,
+                        url=url,
+                    ),
                 )
             except Exception:
                 current_app.logger.exception(

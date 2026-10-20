@@ -47,9 +47,12 @@ redacted installer handoff. OpenLEG does not verify the entered claims or change
 devices.
 
 Owners with enrolled telemetry installations can open `/dashboard/telemetry`
-to see source readings, quality, observation time and data age. This first
-dashboard view remains private to the owner. Device faults, community summaries
-and hardware-pilot validation remain tracked in [#617](https://github.com/Open-LEG-ch/openleg/issues/617).
+to see source readings, quality, observation time, age and device-reported faults.
+The LEG dashboard links to explicitly shared power readings with coverage and
+exclusion counts. Sums exclude overlapping profiles and require at least three
+synchronized eligible profiles.
+Device-specific fault mappings and hardware/user-pilot validation remain tracked
+in [#617](https://github.com/Open-LEG-ch/openleg/issues/617).
 
 Equipment pages also show private matches against an explicitly reviewed
 advisory catalog. The catalog starts empty with notices disabled. A named source
@@ -216,9 +219,12 @@ nicht und verändert keine Geräte.
 
 Eigentümer mit angemeldeten Telemetrie-Anlagen sehen unter
 `/dashboard/telemetry` ihre Messwerte mit Quelle, Qualität, Messzeit und Alter.
-Diese erste Ansicht bleibt privat für den Eigentümer. Gerätestörungen,
-Gemeinschaftsübersichten und die Prüfung im Hardware-Pilot bleiben in
-[#617](https://github.com/Open-LEG-ch/openleg/issues/617) offen.
+Die Ansicht zeigt auch gemeldete Gerätestörungen. Das LEG-Dashboard verlinkt
+ausdrücklich freigegebene Leistungswerte mit Angaben zu Abdeckung und Ausschlüssen.
+Summen schliessen Profile mit überlappenden Quellen aus und erfordern mindestens
+drei geeignete Profile mit gleicher Messzeit.
+Gerätespezifische Störungszuordnungen und die Prüfung mit Hardware und Pilotnutzern
+bleiben in [#617](https://github.com/Open-LEG-ch/openleg/issues/617) offen.
 
 Die Geräteseiten zeigen auch private Zuordnungen zu einem ausdrücklich geprüften
 Hinweiskatalog. Er beginnt leer und mit ausgeschalteten Hinweisen. Vor dem

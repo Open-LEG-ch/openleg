@@ -454,3 +454,4 @@ from store.equipment import (  # noqa: F401
 )
 from store.telemetry import acknowledge_notice as acknowledge_telemetry_notice  # noqa: F401
 from store.telemetry import owner_overview as get_owner_telemetry_overview  # noqa: F401
+from store.telemetry import shared_overview as get_shared_telemetry_overview  # noqa: F401

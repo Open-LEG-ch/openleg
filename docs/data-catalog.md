@@ -64,7 +64,11 @@ The equipment advisory workflow is documented under `store/advisories` below.
 - Sensitivity: household energy data; never sold or aggregated for third parties.
 - Access: owner dashboard session, or an explicit `telemetry_shares` grant to a
   verified confirmed member of the same community. All reads, exports and
-  aggregates check current access. Neighbour consent grants no access.
+  aggregates check current access. Neighbour consent grants no access alone.
+  The shared power view additionally requires active neighbour consent for
+  other owners, strips private labels and owner/notice state, and counts only
+  authorized sources. Its three-profile minimum does not anonymize individual
+  grant-visible readings. The computed view is not stored or cached.
 - Retention: product defaults of 7 days raw and 90 days aggregates; shorter
   whole-day settings and owner deletion supported. Read-time expiry and the
   cleanup cron enforce separate operational horizons. See `docs/telemetry.md`.
@@ -340,7 +344,8 @@ it.
 
 - **Tables:** `utility_clients`
 - **Holds:** VNB/EVU contacts (`company_name`, `contact_email`,
-  `kanton`, service territory).
+  `kanton`, service territory), plus German or Swiss French `preferred_locale`
+  for account email.
 - **Purpose:** routing LEG applications and consents to the right grid
   operator.
 - **Owner:** the utility (business contact data).
@@ -525,11 +530,13 @@ it.
 
 - **Tables:** `leg_registry`
 - **Holds:** registered LEGs (`community_name`, `kanton`, `plz`, member
-  count, `verified` status).
+  count, `verified` status), private contact email and `preferred_locale`
+  for verification reminders.
 - **Purpose:** the public LEG directory and federation verification.
 - **Owner:** the LEG (it registers itself).
-- **Sensitivity:** business facts a LEG chose to publish.
-- **Resident-visible:** yes, public by design.
+- **Sensitivity:** published business facts and private business contact data.
+- **Resident-visible:** directory fields are public; contact email and language
+  stay out of public API responses.
 - **Consent gate:** none.
 
 ## store/ops

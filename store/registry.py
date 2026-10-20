@@ -14,6 +14,8 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 
 import logging
 
+from locale_policy import require_recipient_locale
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,12 +42,14 @@ def save_registry_entry(
     description: str = "",
     website_url: str = "",
     source: str = "self_submitted",
+    preferred_locale: str = "de_CH",
 ) -> dict | None:
     """Create a new registry entry, pending moderation.
 
     Returns the newly created row as a dict (e.g. {"id": ...}), or None on
     failure.
     """
+    preferred_locale = require_recipient_locale(preferred_locale)
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
@@ -54,10 +58,10 @@ def save_registry_entry(
                         slug, name, contact_email, kanton, plz, ort,
                         bfs_number, vnb_name, member_count_estimate,
                         leg_status, description, website_url,
-                        moderation_status, source
+                        moderation_status, source, preferred_locale
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s
+                        %s, %s, %s
                     )
                     RETURNING id
                 """,
@@ -76,6 +80,7 @@ def save_registry_entry(
                     website_url,
                     "pending",
                     source,
+                    preferred_locale,
                 ),
             )
             row = cur.fetchone()

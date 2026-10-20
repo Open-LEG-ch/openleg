@@ -15,6 +15,7 @@ import secrets
 import psycopg2
 from flask import (
     abort,
+    after_this_request,
     current_app,
     g,
     redirect,
@@ -144,13 +145,20 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         failed = False
         for recipient in recipients:
+            locale = recipient_locale(recipient, recipient["email"])
             try:
                 result = send_email(
-                    recipient,
-                    "Ihre Kontaktanfragen bei OpenLEG",
-                    "Der Stand Ihrer Kontaktanfragen hat sich geändert. "
-                    "Öffnen Sie Ihr Dashboard, um die Anfrage zu prüfen.\n\n"
-                    f"{current_app.config['APP_BASE_URL'].rstrip('/')}/dashboard/contacts",
+                    recipient["email"],
+                    gettext("Ihre Kontaktanfragen bei OpenLEG", locale=locale),
+                    gettext(
+                        "Der Stand Ihrer Kontaktanfragen hat sich geändert. "
+                        "Öffnen Sie Ihr Dashboard, um die Anfrage zu prüfen.\n\n%(url)s",
+                        locale=locale,
+                        url=localized_url(
+                            f"{current_app.config['APP_BASE_URL'].rstrip('/')}/dashboard/contacts",
+                            locale=locale,
+                        ),
+                    ),
                     private=True,
                 )
                 failed = failed or result is False
@@ -232,6 +240,25 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             csrf_token=_dashboard_csrf_token(),
             forecast=forecast,
         )
+
+    @bp.get("/leg/community/<community_id>/telemetry")
+    def community_telemetry(community_id):
+        @after_this_request
+        def private_response(response):
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["Referrer-Policy"] = "no-referrer"
+            return response
+
+        actor = _require_dashboard_session()
+        try:
+            summary = dashboard_module.shared_telemetry_view(
+                db.get_shared_telemetry_overview(community_id, actor)
+            )
+        except TelemetryError as exc:
+            if exc.status != 503:
+                abort(exc.status)
+            return render_city_template("telemetry_shared.html", unavailable=True), 503
+        return render_city_template("telemetry_shared.html", summary=summary)
 
     @bp.post(
         "/dashboard/telemetry/<uuid:installation>/notices/<uuid:notice_id>/acknowledge"
