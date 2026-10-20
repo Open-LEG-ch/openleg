@@ -220,8 +220,32 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 "telemetry_dashboard.html", unavailable=True
             ), 503
         return render_city_template(
-            "telemetry_dashboard.html", installations=installations
+            "telemetry_dashboard.html",
+            installations=installations,
+            csrf_token=_dashboard_csrf_token(),
         )
+
+    @bp.post(
+        "/dashboard/telemetry/<uuid:installation>/notices/<uuid:notice_id>/acknowledge"
+    )
+    def dashboard_telemetry_notice_acknowledge(installation, notice_id):
+        actor = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            episode = int(request.form.get("episode", ""))
+        except ValueError:
+            abort(400)
+        try:
+            db.acknowledge_telemetry_notice(
+                request.form.get("community_id", ""),
+                str(installation),
+                actor,
+                str(notice_id),
+                {"episode": episode},
+            )
+        except TelemetryError as exc:
+            abort(exc.status)
+        return redirect(localized_url("/dashboard/telemetry"), code=303)
 
     @bp.post("/dashboard/language")
     def dashboard_language_update():
