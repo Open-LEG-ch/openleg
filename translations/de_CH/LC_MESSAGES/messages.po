@@ -2533,6 +2533,19 @@ msgstr ""
 "Der Rechner zeigt nur mögliche laufende Einsparungen. Einmalige und laufende Kosten unterscheiden"
 " sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet."
 
+#: dashboard_routes.py:153
+#, python-format
+msgid ""
+"Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
+"prüfen.\n"
+"\n"
+"%(url)s"
+msgstr ""
+"Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
+"prüfen.\n"
+"\n"
+"%(url)s"
+
 #: templates/leg_gruenden.html:71
 msgid ""
 "Der VNB liefert die Messdaten und rechnet den Netzbezug gegenüber dem vZEV ab. Die interne "
@@ -5392,6 +5405,10 @@ msgstr "Ihre Gemeinde"
 #: templates/fuer_gemeinden.html:20
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
 msgstr "Ihre Gemeinde sieht, was als Nächstes ansteht"
+
+#: dashboard_routes.py:151
+msgid "Ihre Kontaktanfragen bei OpenLEG"
+msgstr "Ihre Kontaktanfragen bei OpenLEG"
 
 #: templates/emails/day_14_formation.html:6
 msgid "Ihre LEG kann starten"

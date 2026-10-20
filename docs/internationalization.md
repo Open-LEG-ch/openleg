@@ -133,5 +133,12 @@ does not expose the contact language. Both new preferences stay with their
 existing account or registry record and share its retention rules. The guarded
 schema upgrade defaults existing records to German.
 
-Contact updates and other invoice correspondence still need recipient delivery coverage.
+Contact-request updates read each participant's saved language and mailbox
+together during the authorized request or transition. Notifications contain
+only the generic status message and localized dashboard link. They do not
+include a participant's contact details or choice of shared fields.
+
+Operator-entered correspondence remains in the author's language. Any future
+generated mail must select an explicit recipient language before its sender
+is enabled.
 This implementation records no human language or legal approval.

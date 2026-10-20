@@ -1,24 +1,40 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Account mail follows stored recipient choices, independent of the requester."""
 
-from unittest.mock import MagicMock
+import os
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-import access_token
-import leg_registry
-import municipality
-import registry_intake
-import utility_portal
-from tests import (
-    test_i18n_utility,
-    test_interest_postgres,
-    test_municipality_access_routes,
-)
+from tests import test_i18n
+
+with test_i18n._synthetic_environment():
+    import access_token
+    import leg_registry
+    import municipality
+    import registry_intake
+    import utility_portal
+    from tests import (
+        test_i18n_utility,
+        test_interest_postgres,
+        test_municipality_access_routes,
+    )
 
 web = test_i18n_utility.web
 interest_database = test_interest_postgres.interest_database
 app_module = test_municipality_access_routes.app_module
+
+
+@pytest.fixture(autouse=True)
+def isolated_settings():
+    # Keep native services and mutation controls while isolating app settings.
+    controls = {
+        key: os.environ[key]
+        for key in ("DATABASE_URL", "MUTANT_UNDER_TEST", "MUTMUT_DEPENDENCY_DEPTH")
+        if key in os.environ
+    }
+    with test_i18n._synthetic_environment(), patch.dict(os.environ, controls):
+        yield
 
 
 @pytest.mark.parametrize("matching", [True, False])

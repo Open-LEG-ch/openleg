@@ -9,11 +9,13 @@ from unittest.mock import MagicMock
 import pytest
 
 import database as db
+from tests import test_account_mail_language
 from tests.test_dashboard_access_routes import _set_session, app_module
 from tests.test_interest_postgres import interest_database
 
 # Reuse fixtures, keeping the real store and authorization path intact.
 __all__ = ["app_module", "interest_database"]
+isolated_settings = test_account_mail_language.isolated_settings
 pytestmark = pytest.mark.integration
 
 
@@ -97,6 +99,37 @@ def test_mutual_acceptance_reveals_only_explicit_fields(contacts):
         assert call.args[0] in {"alice@example.ch", "bob@example.ch"}
         assert "@example.ch" not in call.args[2]
         assert "phone-" not in call.args[2]
+
+
+@pytest.mark.parametrize("action", ["accept", "decline", "revoke"])
+def test_notifications_use_each_participants_saved_language(contacts, action):
+    client, sent = contacts
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE buildings SET preferred_locale='fr_CH' WHERE building_id='bob'"
+        )
+    rid = _request_bob(client)
+    if action != "revoke":
+        _set_session(client, "bob")
+    response = _post(
+        client,
+        f"/dashboard/contacts/{rid}/{action}?lang=de",
+        share_phone="yes",
+        preferred_locale="de_CH",
+    )
+    assert response.status_code == 302
+    assert sent.call_count == 4
+    for call in sent.call_args_list:
+        french = call.args[0] == "bob@example.ch"
+        assert (
+            "Vos demandes de contact" if french else "Ihre Kontaktanfragen"
+        ) in call.args[1]
+        assert (
+            "Ouvrez votre tableau" if french else "Öffnen Sie Ihr Dashboard"
+        ) in call.args[2]
+        assert "lang=" + ("fr-CH" if french else "de-CH") in call.args[2]
+        assert call.kwargs == {"private": True}
+        assert "@example.ch" not in call.args[2]
 
 
 @pytest.mark.parametrize("action", ["accept", "decline", "revoke"])

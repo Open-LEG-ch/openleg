@@ -2560,6 +2560,19 @@ msgstr ""
 "récurrents varient selon la CEL, sa forme juridique et le gestionnaire de réseau ; ils ne sont "
 "pas inclus."
 
+#: dashboard_routes.py:153
+#, python-format
+msgid ""
+"Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
+"prüfen.\n"
+"\n"
+"%(url)s"
+msgstr ""
+"Le statut de vos demandes de contact a changé. Ouvrez votre tableau de bord pour consulter la "
+"demande.\n"
+"\n"
+"%(url)s"
+
 #: templates/leg_gruenden.html:71
 msgid ""
 "Der VNB liefert die Messdaten und rechnet den Netzbezug gegenüber dem vZEV ab. Die interne "
@@ -5446,6 +5459,10 @@ msgstr "Votre commune"
 #: templates/fuer_gemeinden.html:20
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
 msgstr "Votre commune voit les prochaines étapes"
+
+#: dashboard_routes.py:151
+msgid "Ihre Kontaktanfragen bei OpenLEG"
+msgstr "Vos demandes de contact sur OpenLEG"
 
 #: templates/emails/day_14_formation.html:6
 msgid "Ihre LEG kann starten"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 04:03+0000\n"
+"POT-Creation-Date: 2026-10-20 04:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2385,6 +2385,15 @@ msgid ""
 " sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet."
 msgstr ""
 
+#: dashboard_routes.py:153
+#, python-format
+msgid ""
+"Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
+"prüfen.\n"
+"\n"
+"%(url)s"
+msgstr ""
+
 #: templates/leg_gruenden.html:71
 msgid ""
 "Der VNB liefert die Messdaten und rechnet den Netzbezug gegenüber dem vZEV ab. Die interne "
@@ -2508,7 +2517,7 @@ msgstr ""
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr ""
 
-#: dashboard_routes.py:949
+#: dashboard_routes.py:956
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr ""
 
@@ -2992,7 +3001,7 @@ msgid ""
 "Quelldokumente."
 msgstr ""
 
-#: dashboard_routes.py:914
+#: dashboard_routes.py:921
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -3771,7 +3780,7 @@ msgstr ""
 msgid "Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink."
 msgstr ""
 
-#: dashboard_routes.py:331
+#: dashboard_routes.py:338
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr ""
 
@@ -4917,7 +4926,7 @@ msgstr ""
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgstr ""
 
-#: dashboard_routes.py:370
+#: dashboard_routes.py:377
 msgid "Ihr Dashboard-Zugangslink"
 msgstr ""
 
@@ -4996,6 +5005,10 @@ msgstr ""
 
 #: templates/fuer_gemeinden.html:20
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
+msgstr ""
+
+#: dashboard_routes.py:151
+msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr ""
 
 #: templates/emails/day_14_formation.html:6
@@ -11179,7 +11192,7 @@ msgstr ""
 msgid "Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail."
 msgstr ""
 
-#: dashboard_routes.py:372
+#: dashboard_routes.py:379
 #, python-format
 msgid ""
 "Öffnen Sie Ihr Dashboard über diesen Link:\n"
