@@ -51,12 +51,25 @@
         else button.setAttribute("aria-label", fieldName ? messages.chooseFile + " : " + fieldName : messages.chooseFile);
         button.setAttribute("aria-describedby", [input.getAttribute("aria-describedby"), name.id].filter(Boolean).join(" "));
         button.addEventListener("click", () => input.click());
-        input.addEventListener("change", () => { name.textContent = [...input.files].map(file => file.name).join(", ") || messages.noFile; });
+        input.addEventListener("change", () => {
+            name.textContent = [...input.files].map(file => file.name).join(", ") || messages.noFile;
+            name.setAttribute("role", "status");
+            button.removeAttribute("aria-invalid");
+        });
         input.before(wrapper);
         wrapper.append(button, name, input);
         input.classList.add("sr-only");
         Object.assign(input.style, { width: "1px", height: "1px", padding: "0", borderWidth: "0" });
         input.tabIndex = -1;
-        input.addEventListener("invalid", () => button.focus());
+        input.addEventListener("invalid", event => {
+            event.preventDefault();
+            name.textContent = input.validationMessage;
+            name.setAttribute("role", "alert");
+            button.setAttribute("aria-invalid", "true");
+            const firstInvalid = input.form ? [...input.form.elements].find(control => control.willValidate && !control.validity.valid) : input;
+            if (firstInvalid === input) setTimeout(() => {
+                if (input.willValidate && !input.validity.valid) button.focus();
+            }, 0);
+        });
     }
 })();
