@@ -82,5 +82,5 @@ not establish that a destination job ran.
 Owner-only equipment, household telemetry, contact grants and platform operations
 are outside the LEG administrator's export authority and remain excluded. The
 archive covers the declared community operating datasets, not every deployment
-record. #606 remains open for its owner-approved operating facts and any
+record. #612 remains open for owner-approved operating facts and any
 separately documented integration limits.
