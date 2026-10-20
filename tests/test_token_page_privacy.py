@@ -90,7 +90,8 @@ def test_ordinary_public_pages_retain_analytics(web, path):
     assert "https://stats.openleg.ch/matomo.js" in response.text
     csp_directives = response.headers["Content-Security-Policy"].split(";")
     assert any(
-        tokens[:1] == ["script-src"] and "https://stats.openleg.ch" in tokens[1:]
+        tokens[:1] == ["script-src"]
+        and any(source == "https://stats.openleg.ch" for source in tokens[1:])
         for tokens in (directive.split() for directive in csp_directives)
     )
 
