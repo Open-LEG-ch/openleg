@@ -27,6 +27,11 @@ by OpenLEG's schema. Dry-run rejects a destination with incompatible sequence
 settings. Restore rechecks the settings inside its transaction. The database
 role must own these sequences, as it does when it creates the application schema.
 
+Export captures a consistent point-in-time snapshot of the community. Later
+source changes do not synchronize to the destination. Coordinate the final
+export and cutover so source and destination do not run community mutations or
+external ingestion concurrently.
+
 An identical restore is safe to repeat. Export does not delete source records,
 and restore does not change retention policy or establish legal retention periods.
 
