@@ -2,7 +2,6 @@
 """Private equipment through owner HTTP sessions and real PostgreSQL."""
 
 import os
-from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -142,9 +141,7 @@ def test_owner_records_provenance_model_applicability_cloud_and_backup_separatel
         {
             "evidence": {
                 "kind": "owner_report",
-                "reviewed_on": (
-                    datetime.now(UTC).date() + timedelta(days=1)
-                ).isoformat(),
+                "reviewed_on": "9999-12-31",
             }
         },
         {"evidence": {"kind": "unknown", "reviewed_on": "2026-01-02"}},

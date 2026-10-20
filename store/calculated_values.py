@@ -253,8 +253,8 @@ def record_calculated_meter_assignment(
             (mapped["community_id"],),
         )
         cur.execute(
-            """SELECT mp.assignment_effective_from, mp.assignment_effective_until,
-                      mp.assignment_reference FROM metering_points mp
+            """SELECT mp.community_id, mp.building_id, mp.vnb_community_id,
+                      mp.expected_directions FROM metering_points mp
                JOIN communities c ON c.community_id = mp.community_id
                JOIN buildings b ON b.building_id = c.admin_building_id
                JOIN community_members cm ON cm.community_id = c.community_id
@@ -267,23 +267,40 @@ def record_calculated_meter_assignment(
                FOR SHARE OF b, cm""",
             (metering_point_id, mapped["community_id"], territory),
         )
-        statement = cur.fetchone()
-        if not statement:
+        binding = cur.fetchone()
+        if not binding:
             raise CalculatedValuesLifecycleMissing()
-        if (
-            statement["assignment_effective_from"],
-            statement["assignment_effective_until"],
-            statement["assignment_reference"],
-        ) == (start, end, reference):
-            return {"metering_point_id": metering_point_id}
         cur.execute(
-            """UPDATE metering_points SET assignment_effective_from = %s,
+            """UPDATE metering_points SET
+                   assignment_recorded_at = CASE WHEN
+                       (assignment_effective_from, assignment_effective_until,
+                        assignment_reference) IS NOT DISTINCT FROM (%s, %s, %s)
+                       THEN assignment_recorded_at ELSE CURRENT_TIMESTAMP END,
+                   assignment_effective_from = %s,
                    assignment_effective_until = %s, assignment_reference = %s,
-                   assignment_actor = 'admin-token', assignment_recorded_at = CURRENT_TIMESTAMP
-               WHERE metering_point_id = %s RETURNING metering_point_id""",
-            (start, end, reference, metering_point_id),
+                   assignment_actor = 'admin-token'
+               WHERE metering_point_id = %s AND active = TRUE
+                 AND (community_id, building_id, vnb_community_id, expected_directions)
+                     IS NOT DISTINCT FROM (%s, %s, %s, %s::VARCHAR[])
+               RETURNING metering_point_id""",
+            (
+                start,
+                end,
+                reference,
+                start,
+                end,
+                reference,
+                metering_point_id,
+                binding["community_id"],
+                binding["building_id"],
+                binding["vnb_community_id"],
+                binding["expected_directions"],
+            ),
         )
-        return dict(cur.fetchone())
+        recorded = cur.fetchone()
+        if not recorded:
+            raise CalculatedValuesLifecycleMissing()
+        return dict(recorded)
 
 
 def find_overlapping_calculated_values(

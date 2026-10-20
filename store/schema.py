@@ -1943,6 +1943,30 @@ def create_tables():
                     END IF;
                 END $$
             """)
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION clear_metering_assignment_validity()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                    NEW.assignment_effective_from := NULL;
+                    NEW.assignment_effective_until := NULL;
+                    NEW.assignment_reference := NULL;
+                    NEW.assignment_actor := NULL;
+                    NEW.assignment_recorded_at := NULL;
+                    RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+            cur.execute("""
+                CREATE OR REPLACE TRIGGER metering_assignment_binding_changed
+                BEFORE UPDATE OF vnb_community_id, community_id, building_id,
+                    expected_directions ON metering_points
+                FOR EACH ROW
+                WHEN ((OLD.vnb_community_id, OLD.community_id, OLD.building_id,
+                       OLD.expected_directions) IS DISTINCT FROM
+                      (NEW.vnb_community_id, NEW.community_id, NEW.building_id,
+                       NEW.expected_directions))
+                EXECUTE FUNCTION clear_metering_assignment_validity()
+            """)
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_metering_points_building ON metering_points(building_id)"
             )
