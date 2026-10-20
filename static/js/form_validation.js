@@ -44,27 +44,33 @@
         const name = document.createElement("span");
         name.textContent = messages.noFile;
         name.setAttribute("role", "status");
-        name.id = "localized-file-status-" + (++fileIndex);
+        name.setAttribute("aria-atomic", "true");
+        const error = document.createElement("span");
+        error.textContent = "";
+        error.setAttribute("role", "alert");
+        error.setAttribute("aria-atomic", "true");
+        const index = ++fileIndex;
+        name.id = "localized-file-status-" + index;
+        error.id = "localized-file-error-" + index;
         const labelledBy = input.getAttribute("aria-labelledby");
         const fieldName = input.getAttribute("aria-label") || [...(input.labels || [])].map(label => label.textContent.trim()).join(" ");
         if (labelledBy) button.setAttribute("aria-labelledby", labelledBy);
         else button.setAttribute("aria-label", fieldName ? messages.chooseFile + " : " + fieldName : messages.chooseFile);
-        button.setAttribute("aria-describedby", [input.getAttribute("aria-describedby"), name.id].filter(Boolean).join(" "));
+        button.setAttribute("aria-describedby", [input.getAttribute("aria-describedby"), name.id, error.id].filter(Boolean).join(" "));
         button.addEventListener("click", () => input.click());
         input.addEventListener("change", () => {
             name.textContent = [...input.files].map(file => file.name).join(", ") || messages.noFile;
-            name.setAttribute("role", "status");
+            error.textContent = "";
             button.removeAttribute("aria-invalid");
         });
         input.before(wrapper);
-        wrapper.append(button, name, input);
+        wrapper.append(button, name, error, input);
         input.classList.add("sr-only");
         Object.assign(input.style, { width: "1px", height: "1px", padding: "0", borderWidth: "0" });
         input.tabIndex = -1;
         input.addEventListener("invalid", event => {
             event.preventDefault();
-            name.textContent = input.validationMessage;
-            name.setAttribute("role", "alert");
+            error.textContent = input.validationMessage;
             button.setAttribute("aria-invalid", "true");
             const firstInvalid = input.form ? [...input.form.elements].find(control => control.willValidate && !control.validity.valid) : input;
             if (firstInvalid === input) setTimeout(() => {
