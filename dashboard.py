@@ -32,18 +32,23 @@ from translation_markers import gettext_noop as _N
 logger = logging.getLogger(__name__)
 
 
+def _telemetry_time_label(value):
+    return (
+        telemetry.timestamp(value)
+        .astimezone(ZoneInfo("Europe/Zurich"))
+        .strftime("%d.%m.%Y %H:%M:%S %Z (%z)")
+        if value
+        else None
+    )
+
+
 def telemetry_view(installations):
     """Present source timestamps in Swiss local time, preserving their UTC value."""
     for installation in installations:
         for sample in installation["samples"]:
-            observed = sample["observed_at"]
-            sample["observed_label"] = (
-                telemetry.timestamp(observed)
-                .astimezone(ZoneInfo("Europe/Zurich"))
-                .strftime("%d.%m.%Y %H:%M:%S %Z (%z)")
-                if observed
-                else None
-            )
+            sample["observed_label"] = _telemetry_time_label(sample["observed_at"])
+        for notice in installation.get("notices", []):
+            notice["snoozed_label"] = _telemetry_time_label(notice["snoozed_until"])
     return installations
 
 

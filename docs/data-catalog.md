@@ -69,6 +69,24 @@ The equipment advisory workflow is documented under `store/advisories` below.
 - Credentials: ingestion-only, installation/community-bound, hashed at rest;
   rotation preserves the sequence watermark. Deletion cascades all four tables.
 
+## store/telemetry_notices
+
+- Table: `telemetry_notices` (DDL in `store/telemetry_notices.py`, initialized
+  with telemetry tables).
+- Holds: installation reference, bounded condition/channel codes, episode count,
+  active flag, raised/acknowledged/snoozed/resolved timestamps and recovery code.
+  No copied samples, free text, device credentials or delivery addresses.
+- Purpose: owner action prompts with one-hour acknowledgement cooldown and
+  distinct recovery states. Derived on ingestion and owner reads.
+- Sensitivity: private household operational state; never sold or aggregated
+  for third parties. No access through sample sharing or administrator status.
+- Access: current verified owner with confirmed community membership. Mutations
+  require the dashboard session's CSRF token and current episode.
+- Retention: active rows remain until resolution or installation deletion.
+  Resolved rows use the installation's raw-data horizon, including read-time
+  expiry and the existing cleanup cron. Installation, owner membership/profile
+  and community deletion cascade the rows. No separate acknowledgement history.
+
 ## store/building
 
 - **Tables:** `buildings`
