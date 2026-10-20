@@ -106,7 +106,7 @@
           <p class="text-sm text-ink-muted mt-1 mb-4">{{ _('Vier Punkte entscheiden, ob die Anmeldung starten kann.') }}</p>
           <ul class="grid gap-3">
             {% for label, done in checks %}
-              <li class="flex items-center justify-between gap-3 rounded-lg border px-4 py-3 {{ 'border-line bg-sage-light/50' if done else 'border-line' }}">
+              <li class="flex flex-col items-start justify-between gap-3 rounded-lg border px-4 py-3 lg:flex-row lg:items-center {{ 'border-line bg-sage-light/50' if done else 'border-line' }}">
                 <span class="flex items-center gap-3">
                   {% if done %}
                     <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sage-dark text-white text-sm font-bold shrink-0" aria-hidden="true">&#10003;</span>

@@ -34,6 +34,7 @@ import payment_reconciliation
 import quartierakku
 import security_utils
 import solar_forecast_cache
+from admin import require_admin
 from email_localization import gettext, recipient_locale
 from i18n import gettext as _
 from i18n import localized_url, normalize_locale
@@ -690,6 +691,8 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def _restore_archive_response(community_id, *, dry_run):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
+        if not dry_run:
+            require_admin()
         upload = request.files.get("archive")
         if upload is None:
             abort(400)
