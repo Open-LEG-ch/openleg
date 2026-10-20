@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale }}"><head><meta charset="utf-8">
+<style>
+body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm; }
+h1 { font-size: 16pt; }
+h2 { font-size: 13pt; margin-top: 1.5em; }
+.footer { margin-top: 3em; font-size: 9pt; color: #666; }
+</style></head><body>
+<h1>{{ _('Teilnehmervertrag') }}</h1>
+<h2>{{ _('LEG:') }} {{ community_name }}</h2>
+<p>{{ _('Datum:') }} {{ date_str }}</p>
+
+<h2>{{ _('Teilnehmer') }}</h2>
+<p><strong>{{ _('Name:') }}</strong> {{ participant_name }}<br>
+<strong>{{ _('Adresse:') }}</strong> {{ participant_address }}<br>
+<strong>{{ _('Rolle:') }}</strong> {{ role_label }}<br>
+<strong>{{ _('Jahresverbrauch:') }}</strong> {{ annual_consumption }} kWh</p>
+{{ pv_section }}
+
+<h2>{{ _('Pflichten') }}</h2>
+<ul>
+<li>{{ _('Installation eines kommunikativen Smart Meters (Frist: 3 Monate nach Beitritt)') }}</li>
+<li>{{ _('Bereitstellung der 15-Minuten-Messdaten an die Gemeinschaft') }}</li>
+<li>{{ _('Einhaltung der Gemeinschaftsvereinbarung') }}</li>
+</ul>
+
+<h2>{{ _('Kündigung') }}</h2>
+<p>{{ _('Austritt mit 3 Monaten Frist auf Quartalsende. Alle offenen Abrechnungen\nwerden vor Austritt abgeschlossen.') }}</p>
+
+<h2>{{ _('Unterschrift') }}</h2>
+<table style="border:none; width:100%">
+<tr><td style="border:none; width:50%">
+<p>______________________<br>{{ signature_name }}<br>{{ _('Datum:') }} </p>
+</td><td style="border:none; width:50%">
+<p>______________________<br>{{ _('Vertreter') }} {{ signature_community }}<br>{{ _('Datum:') }} </p>
+</td></tr></table>
+
+<div class="footer">{{ _('Generiert durch OpenLEG Platform, openleg.ch') }}</div>
+</body></html>

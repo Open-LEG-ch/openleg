@@ -24,7 +24,9 @@ import quartierakku
 import security_utils
 import telemetry
 import vnb_exchange
+from email_localization import gettext
 from i18n import localized_url
+from locale_policy import resolve_locale
 from translation_markers import gettext_noop as _N
 
 logger = logging.getLogger(__name__)
@@ -65,6 +67,7 @@ _PROFILE_EXPORT_FIELDS = (
     "share_with_utility",
     "updates_opt_in",
     "consent_version",
+    "preferred_locale",
 )
 
 
@@ -569,14 +572,21 @@ def leg_deliver_invoice(
         return {"error": None, **delivery}
     if delivery["delivery_method"] == "email":
         recipient = delivery.get("recipient_email")
+        locale = resolve_locale(delivery.get("recipient_locale"))
         sent = bool(
             recipient
             and send_email(
                 recipient,
-                f"Ihre Rechnung {delivery['invoice_number']}",
-                (
+                gettext(
+                    "Ihre Rechnung %(invoice_number)s",
+                    invoice_number=delivery["invoice_number"],
+                    locale=locale,
+                ),
+                gettext(
                     "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard "
-                    f"verfügbar: {invoice_url}"
+                    "verfügbar: %(invoice_url)s",
+                    invoice_url=localized_url(invoice_url, locale),
+                    locale=locale,
                 ),
             )
         )

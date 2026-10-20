@@ -706,6 +706,7 @@
       try {
           const payload = {
               email, phone, profile: selectedProfile,
+              preferred_locale: {{ current_locale|tojson }},
               roles: selectedValues('interest-role'),
               has_solar: optionalBoolean('has-solar'),
               consents: {share_with_neighbors: cn, updates_opt_in: co}
@@ -749,7 +750,8 @@
           plz: document.getElementById('interest-plz').value,
           municipality_name: document.getElementById('interest-municipality').value,
           roles: selectedValues('fallback-role'),
-          has_solar: optionalBoolean('fallback-has-solar')
+          has_solar: optionalBoolean('fallback-has-solar'),
+          preferred_locale: {{ current_locale|tojson }}
       };
       try {
           const res = await fetch('/api/register_interest', {

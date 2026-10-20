@@ -45,11 +45,14 @@ from admin import admin_bp, require_admin
 from advisory_routes import advisory_bp
 from api_public import public_api_bp
 from cron import cron_bp
+from email_localization import gettext, recipient_locale
 from email_utils import send_email
 from equipment_routes import equipment_bp
 from health import health_bp
 from i18n import gettext as _
+from i18n import localized_url
 from leg_registry import registry_api_bp
+from locale_policy import resolve_locale
 from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
 from operator_api import operator_api_bp
@@ -208,20 +211,31 @@ def send_activity_notification(activity_type, details):
 
 
 def send_confirmation_email(email, verification_url, building_id=None, address=None):
+    profile = db.get_building(building_id) if building_id else None
+    locale = recipient_locale(profile, email)
+    verification_url = localized_url(verification_url, locale)
     name = _tenant_name()
     try:
         city = getattr(g, "tenant", {}).get("city_name", "Zürich")
     except RuntimeError:
         city = "Zürich"
-    subject = f"{name}: Interessenmeldung bestätigen"
-    message_body = (
-        f"Bestätigen Sie Ihre Interessenmeldung für eine Lokale "
-        f"Elektrizitätsgemeinschaft (LEG) in {city}:\n\n"
-        f"{verification_url}\n\n"
+    subject = gettext(
+        "%(platform_name)s: Interessenmeldung bestätigen",
+        platform_name=name,
+        locale=locale,
+    )
+    message_body = gettext(
+        "Bestätigen Sie Ihre Interessenmeldung für eine Lokale "
+        "Elektrizitätsgemeinschaft (LEG) in %(city_name)s:\n\n"
+        "%(verification_url)s\n\n"
         "Erst danach wird Ihre Anmeldung anonym gezählt. Wir informieren Sie, "
         "wenn weitere bestätigte Interessierte aus derselben Gemeinde dazukommen.\n\n"
         "Falls Sie sich nicht angemeldet haben, ignorieren Sie diese E-Mail.\n\n"
-        f"Ihr {name}-Team"
+        "Ihr %(platform_name)s-Team",
+        city_name=city,
+        verification_url=verification_url,
+        platform_name=name,
+        locale=locale,
     )
     send_email(email, subject, message_body)
 
@@ -694,17 +708,27 @@ def unsubscribe_page():
                     tokens.append(token)
             tokens.extend(db.create_coverage_deletion_tokens(email_value))
             for token in tokens:
-                unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
+                locale = resolve_locale(
+                    db.get_deletion_recipient_locale(token, email_value)
+                )
+                unsubscribe_url = localized_url(
+                    f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}",
+                    locale,
+                )
                 try:
                     send_email(
                         email_value,
-                        "OpenLEG: Löschung bestätigen",
-                        "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen "
-                        "Gebietsanfrage bei OpenLEG über "
-                        f"diesen Link:\n\n{unsubscribe_url}\n\n"
-                        "Jeder Link bezieht sich auf einen einzelnen Eintrag. "
-                        "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
-                        "nicht angefordert haben, ignorieren Sie diese E-Mail.",
+                        gettext("OpenLEG: Löschung bestätigen", locale=locale),
+                        gettext(
+                            "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen "
+                            "Gebietsanfrage bei OpenLEG über "
+                            "diesen Link:\n\n%(unsubscribe_url)s\n\n"
+                            "Jeder Link bezieht sich auf einen einzelnen Eintrag. "
+                            "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
+                            "nicht angefordert haben, ignorieren Sie diese E-Mail.",
+                            unsubscribe_url=unsubscribe_url,
+                            locale=locale,
+                        ),
                     )
                 except Exception:
                     current_app.logger.exception(

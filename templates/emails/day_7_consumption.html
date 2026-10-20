@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ current_locale }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verbrauch ergänzen</title>
+<title>{{ _("Verbrauch ergänzen") }}</title>
 <style>
 body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
 .wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
@@ -28,36 +28,36 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     <h1>{{ platform_name }}</h1>
   </div>
   <div class="content">
-    <h2>Ergänzen Sie Ihren Stromverbrauch</h2>
-    <p>Mit ein paar Angaben zu Ihrem Stromverbrauch kann OpenLEG besser einschätzen, welche Nachbarn gut zu Ihrer LEG passen.</p>
+    <h2>{{ _("Ergänzen Sie Ihren Stromverbrauch") }}</h2>
+    <p>{{ _("Mit ein paar Angaben zu Ihrem Stromverbrauch kann OpenLEG besser einschätzen, welche Nachbarn gut zu Ihrer LEG passen.") }}</p>
 
     <div class="savings-box">
-      <div class="amount">CHF 500 bis 800</div>
-      <p>mögliche jährliche Ersparnis pro Haushalt</p>
+      <div class="amount">{{ _("CHF 500 bis 800") }}</div>
+      <p>{{ _("mögliche jährliche Ersparnis pro Haushalt") }}</p>
     </div>
 
-    <p><strong>Was wir benötigen:</strong></p>
+    <p><strong>{{ _("Was wir benötigen:") }}</strong></p>
     <ul style="font-size:15px;line-height:1.8;">
-      <li>Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)</li>
-      <li>Ob Sie eine Solaranlage haben (oder planen)</li>
-      <li>Ihre übliche Verbrauchszeit, tagsüber oder abends</li>
+      <li>{{ _("Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)") }}</li>
+      <li>{{ _("Ob Sie eine Solaranlage haben (oder planen)") }}</li>
+      <li>{{ _("Ihre übliche Verbrauchszeit, tagsüber oder abends") }}</li>
     </ul>
 
     <p style="text-align:center;">
-      <a href="{{ dashboard_url }}" class="cta">Verbrauchsdaten ergänzen</a>
+      <a href="{{ dashboard_url|localized_url }}" class="cta">{{ _("Verbrauchsdaten ergänzen") }}</a>
     </p>
 
     <div class="tip">
-      <p><strong>Tipp:</strong> Ihre letzte Stromrechnung von {{ utility_name }} enthält die nötigen Angaben.</p>
+      <p><strong>{{ _("Tipp:") }}</strong> {{ _("Ihre letzte Stromrechnung von %(utility_name)s enthält die nötigen Angaben.", utility_name=utility_name) }}</p>
     </div>
 
     {% if neighbor_count > 0 %}
-    <p style="font-size:14px;color:#6b7280;">Aktuell haben sich {{ neighbor_count }} Haushalte in Ihrer Nähe registriert. Je vollständiger die Angaben sind, desto besser lässt sich die Gruppe planen.</p>
+    <p style="font-size:14px;color:#6b7280;">{{ _("Aktuell haben sich %(neighbor_count)s Haushalte in Ihrer Nähe registriert. Je vollständiger die Angaben sind, desto besser lässt sich die Gruppe planen.", neighbor_count=neighbor_count) }}</p>
     {% endif %}
   </div>
   <div class="footer">
-    <p>{{ platform_name }} &middot; LEG für {{ city_name }}</p>
-    <p><a href="{{ unsubscribe_url }}">Abmelden</a> &middot; <a href="{{ site_url }}/datenschutz">Datenschutz</a></p>
+    <p>{{ _("%(platform_name)s · LEG für %(city_name)s", platform_name=platform_name, city_name=city_name) }}</p>
+    <p><a href="{{ unsubscribe_url|localized_url }}">{{ pgettext("email-unsubscribe", "Abmelden") }}</a> {{ _("·") }} <a href="{{ (site_url + "/datenschutz")|localized_url }}">{{ _("Datenschutz") }}</a></p>
   </div>
 </div>
 </body>

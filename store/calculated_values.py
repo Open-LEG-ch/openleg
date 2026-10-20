@@ -4,6 +4,9 @@
 import hashlib
 import json
 import re
+from contextlib import nullcontext
+from functools import partial
+from types import SimpleNamespace
 
 from store.operator_api import enqueue_event
 
@@ -22,9 +25,180 @@ def _get_connection():
     return database.get_connection()
 
 
-def get_calculated_values_community(community_id):
-    """Resolve ownership through the community administrator's tenant."""
+def _find_e66_replay(cur, territory, evidence_sha256):
+    cur.execute(
+        """SELECT d.community_id FROM vnb_calculated_values_deliveries d
+           JOIN communities c ON c.community_id = d.community_id
+           JOIN buildings b ON b.building_id = c.admin_building_id
+           WHERE d.territory = %s AND b.city_id = %s
+             AND d.format_version = 'e66/1' AND d.evidence_sha256 = %s
+             AND d.status = 'accepted'""",
+        (territory, territory, evidence_sha256),
+    )
+    previous = cur.fetchone()
+    if not previous:
+        return None
+    cur.execute(
+        "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+        (previous["community_id"],),
+    )
+    cur.execute(
+        """SELECT d.*, TRUE AS replayed,
+              COALESCE((SELECT e.action FROM vnb_calculated_values_events e
+                        WHERE e.delivery_id = d.id), 'current') AS lifecycle_state
+           FROM vnb_calculated_values_deliveries d
+           JOIN communities c ON c.community_id = d.community_id
+           JOIN buildings b ON b.building_id = c.admin_building_id
+           WHERE d.territory = %s AND b.city_id = %s
+             AND d.format_version = 'e66/1' AND d.evidence_sha256 = %s
+             AND d.status = 'accepted'
+           FOR SHARE OF b""",
+        (territory, territory, evidence_sha256),
+    )
+    row = cur.fetchone()
+    return _delivery_row(row) if row else None
+
+
+def ingest_e66_calculated_values(territory, document, evidence):
+    """Commit source evidence, physical readings and the import ledger together."""
+    import e66_evidence
+    import vnb_calculated_values
+    from store import metering
+
     with _get_connection() as conn, conn.cursor() as cur:
+        for point in sorted(document["point_ids"]):
+            cur.execute(
+                "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                (f"metering-point-binding:{point}",),
+            )
+        previous = _find_e66_replay(cur, territory, document["evidence_sha256"])
+        if previous:
+            return previous
+        cur.execute(
+            """SELECT DISTINCT c.community_id FROM metering_points mp
+               JOIN communities c ON c.community_id = mp.community_id
+               JOIN buildings b ON b.building_id = c.admin_building_id
+               WHERE mp.vnb_community_id = %s AND b.city_id = %s AND mp.active = TRUE""",
+            (document["vnb_community_id"], territory),
+        )
+        communities = cur.fetchall()
+        if len(communities) != 1:
+            raise e66_evidence.E66EvidenceError("e66_mapping_unavailable")
+        community_id = communities[0]["community_id"]
+        cur.execute(
+            "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+            (community_id,),
+        )
+        # A concurrent first import may have committed while we waited.
+        previous = _find_e66_replay(cur, territory, document["evidence_sha256"])
+        if previous:
+            return previous
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s))",
+            (f"sdat-document:{document['document_id']}",),
+        )
+        cur.execute(
+            "SELECT 1 FROM sdat_imports WHERE document_id = %s",
+            (document["document_id"],),
+        )
+        if cur.fetchone():
+            raise e66_evidence.E66EvidenceError("e66_document_identity_conflict")
+        cur.execute(
+            """SELECT mp.metering_point_id, mp.community_id, mp.building_id,
+                      mp.vnb_community_id, mp.expected_directions,
+                      mp.assignment_effective_from, mp.assignment_effective_until,
+                      mp.assignment_reference, mp.assignment_actor, mp.assignment_recorded_at
+               FROM metering_points mp
+               JOIN communities c ON c.community_id = mp.community_id
+               JOIN buildings b ON b.building_id = c.admin_building_id
+               JOIN community_members cm ON cm.community_id = c.community_id
+                    AND cm.building_id = mp.building_id
+               WHERE mp.metering_point_id = ANY(%s) AND mp.active = TRUE
+                 AND c.community_id = %s AND b.city_id = %s AND cm.status = 'confirmed'
+               ORDER BY mp.metering_point_id FOR SHARE OF mp, b, cm""",
+            (document["point_ids"], community_id, territory),
+        )
+        payload, metadata = e66_evidence.build_delivery(
+            territory, document, [dict(row) for row in cur.fetchall()]
+        )
+        cur.execute(
+            """SELECT d.id, d.content_fingerprint FROM vnb_calculated_values_deliveries d
+               JOIN vnb_calculated_values_events e ON e.delivery_id = d.id
+               WHERE d.community_id = %s AND d.territory = %s
+                 AND d.status = 'accepted' AND d.period_start = %s AND d.period_end = %s
+               ORDER BY d.id""",
+            (community_id, territory, document["period_start"], document["period_end"]),
+        )
+        metadata["previously_withdrawn_deliveries"] = [
+            dict(row) for row in cur.fetchall()
+        ]
+        if (
+            metadata["document_status"] == "5"
+            and not metadata["previously_withdrawn_deliveries"]
+        ):
+            raise e66_evidence.E66EvidenceError("e66_replacement_requires_withdrawal")
+        if metadata["document_status"] == "5" and find_overlapping_calculated_values(
+            territory,
+            community_id,
+            document["period_start"],
+            document["period_end"],
+            connection=conn,
+        ):
+            raise e66_evidence.E66EvidenceError("e66_replacement_requires_withdrawal")
+        overlaps = find_overlapping_calculated_values(
+            territory,
+            community_id,
+            document["period_start"],
+            document["period_end"],
+            connection=conn,
+        )
+        metadata["live_overlaps_sha256"] = hashlib.sha256(
+            json.dumps(sorted(row["fingerprint"] for row in overlaps)).encode()
+        ).hexdigest()
+        repository = SimpleNamespace(
+            **{
+                name: partial(globals()[name], connection=conn)
+                for name in (
+                    "get_calculated_values_community",
+                    "find_overlapping_calculated_values",
+                    "save_calculated_values_delivery",
+                )
+            }
+        )
+        result = vnb_calculated_values.accept_delivery(
+            payload,
+            transport="file",
+            evidence=evidence,
+            repository=repository,
+            source_metadata=metadata,
+        )
+        if result["status"] != "accepted":
+            return result
+        counts = metering.save_metering_point_readings(
+            document["rows"],
+            source_document_id=document["document_id"],
+            connection=conn,
+        )
+        metering.record_sdat_import(
+            {
+                **document,
+                "row_count": len(document["rows"]),
+                "new_count": counts["new"],
+                "corrected_count": counts["corrected"],
+            },
+            connection=conn,
+        )
+        return result
+
+
+def get_calculated_values_community(community_id, *, connection=None):
+    """Resolve ownership through the community administrator's tenant."""
+    with (
+        (
+            nullcontext(connection) if connection is not None else _get_connection()
+        ) as conn,
+        conn.cursor() as cur,
+    ):
         cur.execute(
             """
             SELECT c.community_id, b.city_id AS territory,
@@ -53,10 +227,91 @@ def get_calculated_values_community(community_id):
         return dict(row) if row else None
 
 
-def find_overlapping_calculated_values(
-    territory, community_id, period_start, period_end
+def record_calculated_meter_assignment(
+    territory, metering_point_id, start, end, reference
 ):
+    """Bind a dated statement to the current, tenant-owned meter assignment."""
     with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s))",
+            (f"metering-point-binding:{metering_point_id}",),
+        )
+        cur.execute(
+            """SELECT c.community_id FROM metering_points mp
+               JOIN communities c ON c.community_id = mp.community_id
+               JOIN buildings b ON b.building_id = c.admin_building_id
+               WHERE mp.metering_point_id = %s AND mp.active = TRUE AND b.city_id = %s
+                 AND NULLIF(btrim(mp.vnb_community_id), '') IS NOT NULL
+                 AND mp.expected_directions IS NOT NULL""",
+            (metering_point_id, territory),
+        )
+        mapped = cur.fetchone()
+        if not mapped:
+            raise CalculatedValuesLifecycleMissing()
+        cur.execute(
+            "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+            (mapped["community_id"],),
+        )
+        cur.execute(
+            """SELECT mp.community_id, mp.building_id, mp.vnb_community_id,
+                      mp.expected_directions FROM metering_points mp
+               JOIN communities c ON c.community_id = mp.community_id
+               JOIN buildings b ON b.building_id = c.admin_building_id
+               JOIN community_members cm ON cm.community_id = c.community_id
+                    AND cm.building_id = mp.building_id
+               WHERE mp.metering_point_id = %s AND mp.active = TRUE
+                 AND c.community_id = %s AND b.city_id = %s
+                 AND cm.status = 'confirmed'
+                 AND NULLIF(btrim(mp.vnb_community_id), '') IS NOT NULL
+                 AND mp.expected_directions IS NOT NULL
+               FOR SHARE OF b, cm""",
+            (metering_point_id, mapped["community_id"], territory),
+        )
+        binding = cur.fetchone()
+        if not binding:
+            raise CalculatedValuesLifecycleMissing()
+        cur.execute(
+            """UPDATE metering_points SET
+                   assignment_recorded_at = CASE WHEN
+                       (assignment_effective_from, assignment_effective_until,
+                        assignment_reference) IS NOT DISTINCT FROM (%s, %s, %s)
+                       THEN assignment_recorded_at ELSE CURRENT_TIMESTAMP END,
+                   assignment_effective_from = %s,
+                   assignment_effective_until = %s, assignment_reference = %s,
+                   assignment_actor = 'admin-token'
+               WHERE metering_point_id = %s AND active = TRUE
+                 AND (community_id, building_id, vnb_community_id, expected_directions)
+                     IS NOT DISTINCT FROM (%s, %s, %s, %s::VARCHAR[])
+               RETURNING metering_point_id""",
+            (
+                start,
+                end,
+                reference,
+                start,
+                end,
+                reference,
+                metering_point_id,
+                binding["community_id"],
+                binding["building_id"],
+                binding["vnb_community_id"],
+                binding["expected_directions"],
+            ),
+        )
+        recorded = cur.fetchone()
+        if not recorded:
+            raise CalculatedValuesLifecycleMissing()
+        return dict(recorded)
+
+
+def find_overlapping_calculated_values(
+    territory, community_id, period_start, period_end, *, connection=None
+):
+    with (
+        (
+            nullcontext(connection) if connection is not None else _get_connection()
+        ) as conn,
+        conn.cursor() as cur,
+    ):
         cur.execute(
             """
             SELECT content_fingerprint FROM vnb_calculated_values_deliveries d
@@ -69,9 +324,14 @@ def find_overlapping_calculated_values(
         return [{"fingerprint": row["content_fingerprint"]} for row in cur.fetchall()]
 
 
-def save_calculated_values_delivery(delivery):
+def save_calculated_values_delivery(delivery, *, connection=None):
     """Persist evidence and normalized records atomically; replay is a no-op."""
-    with _get_connection() as conn, conn.cursor() as cur:
+    with (
+        (
+            nullcontext(connection) if connection is not None else _get_connection()
+        ) as conn,
+        conn.cursor() as cur,
+    ):
         if delivery.get("community_id"):
             # Match withdrawal/approval lock order before advisory or FK locks.
             cur.execute(
@@ -120,9 +380,9 @@ def save_calculated_values_delivery(delivery):
                  community_id, period_start, period_end, timezone, source,
                  vnb_case_id, content_fingerprint, evidence_sha256,
                  evidence_bytes, status, diagnostics, normalized_records,
-                 record_count)
+                 record_count, source_metadata)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s)
+                    %s, %s, %s, %s, %s, %s)
             ON CONFLICT (territory, content_fingerprint) DO NOTHING
             RETURNING *, FALSE AS replayed
             """,
@@ -144,6 +404,7 @@ def save_calculated_values_delivery(delivery):
                 json.dumps(delivery["diagnostics"]),
                 json.dumps(delivery["normalized_records"]),
                 delivery["record_count"],
+                json.dumps(delivery.get("source_metadata")),
             ),
         )
         row = cur.fetchone()

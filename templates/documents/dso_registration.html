@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale }}"><head><meta charset="utf-8">
+<style>
+body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm; }
+h1 { font-size: 16pt; }
+h2 { font-size: 13pt; margin-top: 1.5em; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+td, th { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 10pt; }
+th { background: #f0f0f0; }
+.footer { margin-top: 3em; font-size: 9pt; color: #666; }
+</style></head><body>
+<h1>{{ _('Anmeldung Lokale Elektrizitätsgemeinschaft') }}</h1>
+<p><strong>{{ _('An:') }}</strong> {{ dso_name }}<br>
+<strong>{{ _('Datum:') }}</strong> {{ date_str }}</p>
+
+<h2>{{ _('Gemeinschaft') }}</h2>
+<p><strong>{{ _('Name:') }}</strong> {{ community_name }}<br>
+<strong>{{ _('Netzebene:') }}</strong> {{ network_level }}<br>
+<strong>{{ _('Gesamte PV-Leistung:') }}</strong> {{ total_pv_kwp }} kWp</p>
+
+<h2>{{ _('Teilnehmer und Messpunkte') }}</h2>
+<table><tr><th>#</th><th>{{ _('Name') }}</th><th>{{ _('Adresse') }}</th><th>{{ _('Messpunkt-ID') }}</th></tr>{{ participant_rows }}</table>
+
+<h2>{{ _('Beilagen') }}</h2>
+<ul>
+<li>{{ _('Gemeinschaftsvereinbarung (unterzeichnet)') }}</li>
+<li>{{ _('Teilnehmerverträge (unterzeichnet)') }}</li>
+<li>{{ _('Nachweis PV-Anlage(n)') }}</li>
+</ul>
+
+<h2>{{ _('Kontakt') }}</h2>
+<p>{{ _('Vertreter der Gemeinschaft:') }}<br>
+{{ _('[Name, Adresse, Telefon, E-Mail]') }}</p>
+
+<div class="footer">{{ _('Generiert durch OpenLEG Platform, openleg.ch') }}</div>
+</body></html>

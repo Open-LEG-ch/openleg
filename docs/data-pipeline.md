@@ -329,7 +329,8 @@ draft and applies these fail-closed rules:
 - one explicit `billing_tariffs` row must cover the complete period
 - internal and grid prices, network level, and distribution model are copied
   onto the draft; public H4 data and zero defaults are never substitutes
-- incomplete readings or a difference from the VNB allocation persist nothing
+- incomplete readings or an unexplained difference from the VNB allocation
+  persist nothing
 - only one current period may occupy `(community_id, period_start, period_end)`;
   invalidated draft versions remain available for audit
 - identical input fingerprints are retry no-ops; changed inputs require review
@@ -341,8 +342,42 @@ and reconciliation. Its public runner contract pins a stable SHA-256 vector, so
 removing any of those inputs is observable before an immutable draft is reused.
 
 Invoice issuance uses the explicit approval path and frozen billing policy.
-The precision-aware reconciliation change remains tracked in #684; withdrawal
-does not relax the current allocation checks.
+Withdrawal makes source evidence ineligible for new approval.
+
+### Rounded E66 allocation evidence
+
+For the proportional model without a battery, accepted E66 source quantities
+can supply invoice quantities under `vnb-proportional-e66-rounding/1`. The
+independent model result and its actual differences remain in reconciliation.
+The audit uses exact rational half-open rounding cells for every quarter hour,
+participant and direction across all three source channels. It must find a
+common proportional allocation consistent with those cells; a monthly total
+or a fixed energy tolerance cannot substitute for that proof. The bounded
+search refuses unresolved boundaries.
+
+Physical reading frames must match the accepted source at the existing
+six-decimal persistence precision. Consumer charges, producer credits and
+settlement fees use the VNB quantities. Their consumer and producer totals
+must balance exactly over the billing period. Unequal rounded totals are
+refused until there is a reviewed accounting policy for the energy difference;
+the cash rounding line cannot absorb it. Battery and equal-model rounding
+remain subject to the existing exact reconciliation gate. Legacy JSON evidence
+and drafts keep their existing approval rules.
+
+Approval reloads the current accepted source under the community lock. Even
+older E66 drafts without a precision certificate must match its quantities
+and independent model audit while retaining the legacy zero-gap rule. Removing
+the marker cannot downgrade source verification. For the precision policy it
+recomputes the certificate and independent model audit, checks the billed
+quantities against the source, and retains tariff and dual-control checks.
+Each invoice keeps its own participant differences and meter mapping, plus the
+certificate digest. Full interval witnesses stay in the private draft.
+Retries of issued periods return their stored snapshots.
+
+This is an engineering compatibility policy for the supported source profile.
+It does not establish the VNB's unrounded quantities or record legal approval.
+Representative privacy-safe real E66 samples are still needed for field
+validation.
 
 ### Billing cron diagnostics
 

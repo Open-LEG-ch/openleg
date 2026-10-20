@@ -197,7 +197,9 @@ from store.calculated_values import (  # noqa: F401
     find_overlapping_calculated_values,
     get_calculated_values_community,
     get_validated_calculated_values,
+    ingest_e66_calculated_values,
     list_calculated_values_deliveries,
+    record_calculated_meter_assignment,
     save_calculated_values_delivery,
     withdraw_calculated_values_delivery,
 )
@@ -215,7 +217,10 @@ from store.correspondence import (  # noqa: F401
     list_correspondence,
     log_correspondence,
 )
-from store.dashboard_profile import update_dashboard_profile  # noqa: F401
+from store.dashboard_profile import (  # noqa: F401
+    update_dashboard_profile,
+    update_recipient_locale,
+)
 from store.document import (  # noqa: F401
     get_leg_document,
     list_leg_documents,
@@ -244,6 +249,12 @@ from store.formation import (  # noqa: F401
     set_member_access_roles,
     submit_community_to_dso,
 )
+from store.formation_activation import (  # noqa: F401
+    ActivationConflict,
+    ActivationDenied,
+    activate_community,
+    record_vnb_start_confirmation,
+)
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
 from store.interest import (  # noqa: F401
     InterestReadUnavailable,
@@ -253,6 +264,7 @@ from store.interest import (  # noqa: F401
     get_municipality_interest_summary,
     get_operator_interest_counts,
     get_operator_interest_records,
+    get_verified_interest_recipient_preferences,
     get_verified_interest_recipients,
     save_coverage_request,
     verify_coverage_request,
@@ -361,6 +373,7 @@ from store.token import (  # noqa: F401
     confirm_profile_deletion,
     create_coverage_deletion_tokens,
     delete_tokens_for_building,
+    get_deletion_recipient_locale,
     get_token,
     save_token,
     use_token,

@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale }}">
+<head><meta charset="UTF-8"></head>
+<body>
+  <p>{{ _("In %(municipality_name)s gibt es jetzt %(total)s bestätigte Interessierte für eine Lokale Elektrizitätsgemeinschaft.", municipality_name=municipality_name, total=total) }}</p>
+  <p>{{ _("Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine passende Gruppe entsteht, erhalten Sie die nächsten Schritte.") }}</p>
+  <p><a href="{{ unsubscribe_url|localized_url }}">{{ pgettext("email-unsubscribe", "Abmelden") }}</a></p>
+</body>
+</html>

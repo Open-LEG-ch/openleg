@@ -6,6 +6,9 @@ import secrets
 import uuid
 
 import registration
+from email_localization import gettext as _
+from i18n import localized_url
+from locale_policy import require_recipient_locale
 from translation_markers import gettext_noop
 
 
@@ -20,6 +23,14 @@ class InterestIntakeError(Exception):
 def submit(data, *, db, security, base_url, send_email):
     if not isinstance(data, dict):
         raise InterestIntakeError(gettext_noop("Bitte senden Sie ein JSON-Objekt."))
+    try:
+        preferred_locale = require_recipient_locale(
+            data.get("preferred_locale", "de_CH")
+        )
+    except ValueError as locale_error:
+        raise InterestIntakeError(
+            gettext_noop("Bitte wählen Sie eine gültige Sprache.")
+        ) from locale_error
     email = (data.get("email") or "").strip()
     valid, email, error = security.validate_email_address(email)
     if not valid:
@@ -71,20 +82,27 @@ def submit(data, *, db, security, base_url, send_email):
         roles=roles,
         has_solar=has_solar,
         verification_token=verification_token,
+        **(
+            {"preferred_locale": preferred_locale} if "preferred_locale" in data else {}
+        ),
     )
     if not saved:
         raise InterestIntakeError(
             gettext_noop("Die Interessenmeldung konnte nicht gespeichert werden.")
         )
 
-    verification_url = f"{base_url.rstrip('/')}/interest/confirm/{verification_token}"
+    verification_url = localized_url(
+        f"{base_url.rstrip('/')}/interest/confirm/{verification_token}",
+        preferred_locale,
+    )
     send_email(
         email,
-        "OpenLEG: Interessenmeldung bestätigen",
-        "Bestätigen Sie Ihre Interessenmeldung:\n\n"
-        f"{verification_url}\n\n"
-        "Erst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht "
-        "angemeldet haben, ignorieren Sie diese E-Mail.",
+        _("OpenLEG: Interessenmeldung bestätigen", locale=preferred_locale),
+        _(
+            "Bestätigen Sie Ihre Interessenmeldung:\n\n%(verification_url)s\n\nErst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht angemeldet haben, ignorieren Sie diese E-Mail.",
+            verification_url=verification_url,
+            locale=preferred_locale,
+        ),
     )
     return {
         "accepted": True,

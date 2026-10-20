@@ -206,6 +206,78 @@ def generate_billing_summary(
     battery_participant_id=None,
     battery_capacity_kwh=None,
 ):
+    """Allocate physical readings and price the independent model result."""
+    return _generate_billing_summary(
+        production,
+        consumption,
+        grid_fee_per_kwh,
+        internal_price_per_kwh,
+        network_level,
+        distribution_model,
+        settlement_fee_per_kwh,
+        battery_participant_id,
+        battery_capacity_kwh,
+    )
+
+
+def generate_vnb_billing_summary(
+    production,
+    consumption,
+    vnb_consumption,
+    vnb_production,
+    grid_fee_per_kwh,
+    internal_price_per_kwh,
+    network_level,
+    distribution_model="proportional",
+    settlement_fee_per_kwh=0.0,
+):
+    """Price source quantities after the caller's interval compatibility audit.
+
+    Source consumption and production must balance exactly over the period.
+    Unequal rounded totals need a separately reviewed accounting policy.
+    """
+    return _generate_billing_summary(
+        production,
+        consumption,
+        grid_fee_per_kwh,
+        internal_price_per_kwh,
+        network_level,
+        distribution_model,
+        settlement_fee_per_kwh,
+        vnb_consumption=vnb_consumption,
+        vnb_production=vnb_production,
+    )
+
+
+def _source_quantities(frame, physical):
+    from sdat_e66 import exact_e66_kwh
+
+    if not frame.index.equals(physical.index) or not frame.columns.equals(
+        physical.columns
+    ):
+        raise ValueError("VNB quantity intervals and participants must match")
+
+    def quantity(value):
+        exact = exact_e66_kwh(value)
+        return Decimal(exact.numerator) / Decimal(exact.denominator)
+
+    return frame.map(quantity)
+
+
+def _generate_billing_summary(
+    production,
+    consumption,
+    grid_fee_per_kwh,
+    internal_price_per_kwh,
+    network_level,
+    distribution_model="proportional",
+    settlement_fee_per_kwh=0.0,
+    battery_participant_id=None,
+    battery_capacity_kwh=None,
+    *,
+    vnb_consumption=None,
+    vnb_production=None,
+):
     """Generate billing summary for a period.
 
     Args:
@@ -262,9 +334,18 @@ def generate_billing_summary(
     if not total_production_series.index.equals(consumption.index):
         raise ValueError("Production and consumption intervals must match")
 
-    allocation = allocate_energy(
-        total_production_series, consumption, model=distribution_model
-    )
+    source_quantities = vnb_consumption is not None
+    if source_quantities:
+        if producer_production is None or vnb_production is None:
+            raise ValueError("VNB pricing requires participant production")
+        allocation = _source_quantities(vnb_consumption, consumption)
+        source_credits = _source_quantities(vnb_production, producer_production)
+        if sum(allocation.sum(), Decimal(0)) != sum(source_credits.sum(), Decimal(0)):
+            raise ValueError("VNB quantities require a reviewed balancing policy")
+    else:
+        allocation = allocate_energy(
+            total_production_series, consumption, model=distribution_model
+        )
 
     battery_attribution = None
     battery_audit = None
@@ -290,7 +371,11 @@ def generate_billing_summary(
     charge_fee_total = Decimal(0)
     for col in allocation.columns:
         alloc_kwh = float(allocation[col].sum())
-        priced_quantity = round(alloc_kwh, 6)
+        priced_quantity = (
+            str(sum(allocation[col], Decimal(0)))
+            if source_quantities
+            else round(alloc_kwh, 6)
+        )
         cons_kwh = float(consumption[col].sum())
         discount = compute_network_discount(alloc_kwh, grid_fee_per_kwh, network_level)
         cost = _priced_amount(priced_quantity, internal_price_per_kwh)
@@ -335,11 +420,14 @@ def generate_billing_summary(
                 )
 
     if producer_production is not None:
-        allocated_by_interval = allocation.sum(axis=1)
-        shares = producer_production.div(
-            total_production_series.replace(0, float("nan")), axis=0
-        ).fillna(0)
-        credited = shares.mul(allocated_by_interval, axis=0).sum(axis=0)
+        if source_quantities:
+            credited = source_credits.sum(axis=0)
+        else:
+            allocated_by_interval = allocation.sum(axis=1)
+            shares = producer_production.div(
+                total_production_series.replace(0, float("nan")), axis=0
+            ).fillna(0)
+            credited = shares.mul(allocated_by_interval, axis=0).sum(axis=0)
         charge_total = sum(
             _money(item["amount_chf"])
             for item in line_items
@@ -348,7 +436,11 @@ def generate_billing_summary(
         credited_total = Decimal(0)
         producer_ids = list(credited.index)
         for producer_id in producer_ids:
-            quantity = round(float(credited[producer_id]), 6)
+            quantity = (
+                str(credited[producer_id])
+                if source_quantities
+                else round(float(credited[producer_id]), 6)
+            )
             amount = _priced_amount(quantity, internal_price_per_kwh)
             credited_total += amount
             line_items.append(

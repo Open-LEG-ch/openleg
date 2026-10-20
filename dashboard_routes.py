@@ -12,6 +12,7 @@ import io
 import json
 import secrets
 
+import psycopg2
 from flask import (
     abort,
     current_app,
@@ -31,8 +32,9 @@ import database as db
 import payment_reconciliation
 import quartierakku
 import security_utils
+from email_localization import gettext, recipient_locale
 from i18n import gettext as _
-from i18n import normalize_locale
+from i18n import localized_url, normalize_locale
 from store import contact_request
 from telemetry import TelemetryError
 
@@ -221,6 +223,23 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             "telemetry_dashboard.html", installations=installations
         )
 
+    @bp.post("/dashboard/language")
+    def dashboard_language_update():
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        selected = normalize_locale(request.form.get("preferred_locale"))
+        if selected is None:
+            abort(400)
+        try:
+            updated = db.update_recipient_locale(building_id, selected)
+        except Exception:
+            current_app.logger.warning("Recipient language update failed")
+            abort(503)
+        if not updated:
+            abort(403)
+        session["locale"] = selected
+        return redirect("/dashboard?lang=" + selected.replace("_", "-"))
+
     @bp.route("/dashboard/profile", methods=["POST"])
     def dashboard_profile_update():
         building_id = _require_dashboard_session()
@@ -306,17 +325,25 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             )
             if not token:
                 continue
-            url = access_token.access_url(
-                access_token.DASHBOARD, current_app.config["APP_BASE_URL"], token
+            locale = recipient_locale(db.get_building(building_id), normalized_email)
+            url = localized_url(
+                access_token.access_url(
+                    access_token.DASHBOARD, current_app.config["APP_BASE_URL"], token
+                ),
+                locale,
             )
             try:
                 send_email(
                     normalized_email,
-                    "Ihr Dashboard-Zugangslink",
-                    "Öffnen Sie Ihr Dashboard über diesen Link:\n\n"
-                    f"{url}\n\n"
-                    "Falls Sie diesen Link nicht angefordert haben, können Sie diese "
-                    "E-Mail ignorieren.",
+                    gettext("Ihr Dashboard-Zugangslink", locale=locale),
+                    gettext(
+                        "Öffnen Sie Ihr Dashboard über diesen Link:\n\n"
+                        "%(url)s\n\n"
+                        "Falls Sie diesen Link nicht angefordert haben, können Sie diese "
+                        "E-Mail ignorieren.",
+                        url=url,
+                        locale=locale,
+                    ),
                 )
             except Exception:
                 current_app.logger.exception("Failed to send dashboard access email")
@@ -624,6 +651,46 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @bp.route("/leg/community/<community_id>/archive/restore", methods=["POST"])
     def leg_community_archive_restore(community_id):
         return _restore_archive_response(community_id, dry_run=False)
+
+    def activation_response(community_id, operation, *args):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            operation(community_id, building_id, *args)
+        except db.ActivationDenied:
+            abort(403)
+        except (db.ActivationConflict, ValueError) as error:
+            context = dashboard_module.leg_overview(community_id, building_id)
+            if context.get("error"):
+                abort(403)
+            return render_city_template(
+                "leg_dashboard.html",
+                **context,
+                viewer_has_session=True,
+                csrf_token=_dashboard_csrf_token(),
+                activation_error=str(error),
+            ), (400 if isinstance(error, ValueError) else 409)
+        except psycopg2.Error:
+            abort(503)
+        return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/vnb-start-confirmation", methods=["POST"])
+    def leg_community_start_confirmation(community_id):
+        if request.form.get("confirm_start") != "yes":
+            _require_dashboard_session()
+            _require_dashboard_csrf()
+            abort(400)
+        return activation_response(
+            community_id,
+            db.record_vnb_start_confirmation,
+            request.form.get("correspondence_id", ""),
+            request.form.get("effective_date", ""),
+            request.form.get("reference", ""),
+        )
+
+    @bp.route("/leg/community/<community_id>/activate", methods=["POST"])
+    def leg_community_activate(community_id):
+        return activation_response(community_id, db.activate_community)
 
     @bp.route("/leg/community/<community_id>/vnb-submissions", methods=["POST"])
     def leg_community_vnb_submission(community_id):

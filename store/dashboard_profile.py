@@ -7,6 +7,8 @@ so existing test monkeypatches on ``database.get_connection`` keep working.
 
 import logging
 
+from locale_policy import require_recipient_locale
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,6 +16,19 @@ def _get_connection():
     import database
 
     return database.get_connection()
+
+
+def update_recipient_locale(building_id: str, preferred_locale: str) -> bool:
+    """Change only the authenticated, verified owner's recipient preference."""
+    selected = require_recipient_locale(preferred_locale)
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE buildings SET preferred_locale = %s, updated_at = CURRENT_TIMESTAMP
+               WHERE building_id = %s AND verified IS TRUE
+               RETURNING building_id""",
+            (selected, building_id),
+        )
+        return cur.fetchone() is not None
 
 
 def update_dashboard_profile(

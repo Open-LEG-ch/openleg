@@ -108,22 +108,35 @@ def create_tables():
                 ON coverage_requests (bfs_number, verified)
             """)
 
+            # ADD COLUMN also backfills existing rows; the inline constraint
+            # is created once, alongside the column, on either schema path.
+            cur.execute("""
+                ALTER TABLE buildings ADD COLUMN IF NOT EXISTS preferred_locale
+                    TEXT NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+            cur.execute("""
+                ALTER TABLE coverage_requests ADD COLUMN IF NOT EXISTS preferred_locale
+                    TEXT NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+
             cur.execute("""
                 CREATE OR REPLACE VIEW verified_interest AS
                 SELECT DISTINCT ON (bfs_number, LOWER(email))
                        bfs_number, LOWER(email) AS email, roles, has_solar,
-                       created_at, address_problem, source_id
+                       created_at, address_problem, source_id, preferred_locale
                 FROM (
                     SELECT bfs_number, email, roles, has_solar,
                            registered_at AS created_at,
                            FALSE AS address_problem, 1 AS source_priority,
-                           building_id AS source_id
+                           building_id AS source_id, preferred_locale
                     FROM buildings
                     WHERE verified = TRUE AND bfs_number IS NOT NULL
                     UNION ALL
                     SELECT bfs_number, email, roles, has_solar, created_at,
                            TRUE AS address_problem, 2 AS source_priority,
-                           request_id AS source_id
+                           request_id AS source_id, preferred_locale
                     FROM coverage_requests
                     WHERE verified = TRUE AND bfs_number IS NOT NULL
                 ) interest
@@ -245,6 +258,7 @@ def create_tables():
                     dso_submitted_at TIMESTAMP,
                     dso_approved_at TIMESTAMP,
                     activated_at TIMESTAMP,
+                    vnb_start_confirmation JSONB,
                     vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover',
                     require_dual_control BOOLEAN NOT NULL DEFAULT FALSE
                 )
@@ -252,6 +266,7 @@ def create_tables():
 
             cur.execute("""
                 ALTER TABLE communities
+                    ADD COLUMN IF NOT EXISTS vnb_start_confirmation JSONB,
                     ADD COLUMN IF NOT EXISTS vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover',
                     ADD COLUMN IF NOT EXISTS require_dual_control BOOLEAN NOT NULL DEFAULT FALSE
             """)
@@ -1887,6 +1902,41 @@ def create_tables():
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 )
             """)
+            cur.execute("""
+                ALTER TABLE metering_points
+                    ADD COLUMN IF NOT EXISTS assignment_effective_from TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS assignment_effective_until TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS assignment_reference VARCHAR(128),
+                    ADD COLUMN IF NOT EXISTS assignment_actor VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS assignment_recorded_at TIMESTAMPTZ
+            """)
+            cur.execute("""
+                DO $$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'chk_metering_assignment_validity'
+                          AND conrelid = 'metering_points'::regclass
+                    ) THEN
+                        ALTER TABLE metering_points ADD CONSTRAINT
+                            chk_metering_assignment_validity CHECK (
+                                (assignment_effective_from IS NULL
+                                 AND assignment_effective_until IS NULL
+                                 AND assignment_reference IS NULL
+                                 AND assignment_actor IS NULL
+                                 AND assignment_recorded_at IS NULL)
+                                OR
+                                (assignment_effective_from IS NOT NULL
+                                 AND assignment_reference IS NOT NULL
+                                 AND btrim(assignment_reference) <> ''
+                                 AND assignment_actor IS NOT NULL
+                                 AND assignment_actor = 'admin-token'
+                                 AND assignment_recorded_at IS NOT NULL
+                                 AND (assignment_effective_until IS NULL
+                                      OR assignment_effective_until > assignment_effective_from))
+                            );
+                    END IF;
+                END $$
+            """)
             # Migration: add expected_directions to existing metering_points
             # tables. Legacy rows stay NULL: the migration must not invent a
             # direction for existing citizen data.
@@ -1907,6 +1957,30 @@ def create_tables():
                             );
                     END IF;
                 END $$
+            """)
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION clear_metering_assignment_validity()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                    NEW.assignment_effective_from := NULL;
+                    NEW.assignment_effective_until := NULL;
+                    NEW.assignment_reference := NULL;
+                    NEW.assignment_actor := NULL;
+                    NEW.assignment_recorded_at := NULL;
+                    RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+            cur.execute("""
+                CREATE OR REPLACE TRIGGER metering_assignment_binding_changed
+                BEFORE UPDATE OF vnb_community_id, community_id, building_id,
+                    expected_directions ON metering_points
+                FOR EACH ROW
+                WHEN ((OLD.vnb_community_id, OLD.community_id, OLD.building_id,
+                       OLD.expected_directions) IS DISTINCT FROM
+                      (NEW.vnb_community_id, NEW.community_id, NEW.building_id,
+                       NEW.expected_directions))
+                EXECUTE FUNCTION clear_metering_assignment_validity()
             """)
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_metering_points_building ON metering_points(building_id)"
@@ -1995,6 +2069,15 @@ def create_tables():
                 CREATE INDEX IF NOT EXISTS idx_vnb_calculated_values_period
                 ON vnb_calculated_values_deliveries
                     (community_id, period_start, period_end, received_at DESC)
+            """)
+            cur.execute("""
+                ALTER TABLE vnb_calculated_values_deliveries
+                ADD COLUMN IF NOT EXISTS source_metadata JSONB
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_vnb_e66_evidence_hash
+                ON vnb_calculated_values_deliveries (territory, evidence_sha256)
+                WHERE format_version = 'e66/1'
             """)
 
             # Withdrawals preserve the original VNB delivery and its evidence.

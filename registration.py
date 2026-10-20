@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from locale_policy import require_recipient_locale
 from translation_markers import gettext_noop
 
 CONSENT_VERSION = "2026-01-01"
@@ -81,6 +82,14 @@ def parse_roles(raw_roles):
 def register(data, *, city_id, user_type, deps: RegistrationDeps):
     db = deps.db
     security = deps.security
+    try:
+        preferred_locale = require_recipient_locale(
+            data.get("preferred_locale", "de_CH")
+        )
+    except ValueError as error:
+        raise RegistrationError(
+            gettext_noop("Bitte wählen Sie eine gültige Sprache.")
+        ) from error
     phone = (data.get("phone") or "").strip()
     email = (data.get("email") or "").strip()
     profile = data.get("profile")
@@ -137,6 +146,11 @@ def register(data, *, city_id, user_type, deps: RegistrationDeps):
             has_solar=has_solar,
             verified=False,
             verification_token=verification_token,
+            **(
+                {"preferred_locale": preferred_locale}
+                if "preferred_locale" in data
+                else {}
+            ),
         )
     except db.VerifiedRegistrationConflict as error:
         raise RegistrationError(

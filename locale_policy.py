@@ -16,6 +16,14 @@ def normalize_locale(value):
     return _ALIASES.get(value) if isinstance(value, str) else None
 
 
+def require_recipient_locale(value):
+    """Refuse unsupported persisted choices instead of silently changing them."""
+    selected = normalize_locale(value)
+    if selected is None:
+        raise ValueError("unsupported_recipient_locale")
+    return selected
+
+
 def resolve_locale(*candidates):
     """First supported choice wins; untrusted/unknown values cannot select files."""
     return next(

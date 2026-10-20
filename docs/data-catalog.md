@@ -75,7 +75,7 @@ The equipment advisory workflow is documented under `store/advisories` below.
 - **Holds:** `building_id`, `email`, `address`, `lat`, `lon`, `plz`,
   `building_type`, `annual_consumption_kwh`, `potential_pv_kwp`, `user_type`,
   `verified`, `city_id`, `referrer_id`, `bfs_number`, `municipality_name`,
-  `canton`, `roles`, `has_solar`
+  `canton`, `roles`, `has_solar`, `preferred_locale` (German or Swiss French)
 - **Purpose:** resident registration and readiness; the map of consenting
   neighbours.
 - **Owner:** the resident (each row is one household's record).
@@ -92,7 +92,7 @@ The equipment advisory workflow is documented under `store/advisories` below.
 
 - **Tables:** `coverage_requests`; also reads verified rows from `buildings`.
 - **Holds:** `email`, optional `address`, `plz`, `municipality_name`, `canton`,
-  `bfs_number`, `roles`, `has_solar`, verification token and timestamps.
+  `bfs_number`, `roles`, `has_solar`, `preferred_locale`, verification token and timestamps.
 - **Purpose:** preserve demand when an address cannot be checked, publish an
   anonymised municipality count, notify verified participants when that count
   grows, and provide a private operator follow-up list.
@@ -103,6 +103,8 @@ The equipment advisory workflow is documented under `store/advisories` below.
   the exact count from three onward.
 - **Consent gate:** email verification is required before any count or
   notification. Map visibility remains separately opt-in.
+- Notification language follows the same canonical verified record and consent
+  selection as the recipient. The email-only legacy reader retains its return shape.
 
 ## store/consent
 
@@ -362,6 +364,22 @@ it.
 - **Resident-visible:** to members of the community.
 - **Consent gate:** applies to member-visible aggregates.
 
+## store/formation_activation
+
+- **Tables:** `communities`; reads source attachments from `correspondence_log`.
+- **Holds:** `vnb_start_confirmation` with the incoming correspondence ID,
+  SHA-256, VNB reference, confirmed start date, recording and activating actors,
+  and UTC audit times; also sets `dso_approved_at` and `activated_at`.
+- **Purpose:** two explicit transitions from submitted formation to confirmed
+  start and active operation. A transport receipt never activates the LEG.
+- **Owner:** the LEG.
+- **Sensitivity:** community references, actor identifiers and linked evidence.
+- **Resident-visible:** private community views; only a current confirmed
+  administrator can record the evidence or activate. Other members' visibility
+  still follows `share_with_neighbors`.
+- **Retention:** the existing community record and correspondence attachment
+  have no automated expiry. These operations add no cleanup or retention period.
+
 ## store/formation_documents
 
 - **Tables:** none of its own (writes `community_documents` atomically).
@@ -403,7 +421,7 @@ it.
 - **Tables:** none of its own; it is the seam for the resident's
   self-service writes to `buildings` and `consents`.
 - **Holds:** updates `annual_consumption_kwh`, `potential_pv_kwp`,
-  `share_with_utility`, `share_with_neighbors`.
+  `share_with_utility`, `share_with_neighbors`, `preferred_locale`.
 - **Purpose:** the resident's own profile and consent changes.
 - **Owner:** the resident.
 - **Sensitivity:** personal + energy.

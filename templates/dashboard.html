@@ -192,6 +192,17 @@
             {% endif %}
             <button type="button" id="calc-btn" class="border border-brand text-brand px-4 py-3 rounded-lg font-semibold hover:bg-brand/5 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Ersparnis berechnen') }}</button>
           </form>
+          {% if csrf_token %}
+          <form method="post" action="/dashboard/language" class="mt-4 grid gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label for="preferred-locale" class="text-sm font-semibold text-ink-soft">{{ _('Sprache für E-Mails') }}</label>
+            <select id="preferred-locale" name="preferred_locale" class="rounded-lg border border-line px-3 py-2">
+              <option value="de_CH" {% if user.preferred_locale|default('de_CH') == 'de_CH' %}selected{% endif %}>Deutsch</option>
+              <option value="fr_CH" {% if user.preferred_locale == 'fr_CH' %}selected{% endif %}>Français</option>
+            </select>
+            <button type="submit" class="rounded-lg border border-brand px-4 py-2 text-brand">{{ _('Sprache speichern') }}</button>
+          </form>
+          {% endif %}
           <div id="calc-error" class="hidden mt-3 rounded-lg border border-line bg-paper px-4 py-3 text-sm text-ink" role="alert"></div>
           <div id="savings-result" class="hidden mt-4 rounded-lg border border-sage bg-sage-light/50 p-4 text-center" aria-live="polite">
             <p class="text-sm text-brand m-0">{{ _('Geschätzte jährliche Ersparnis') }}</p>

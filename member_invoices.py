@@ -19,20 +19,24 @@ import json
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
-from markupsafe import escape
+from markupsafe import Markup, escape
 
 import billing_lifecycle
 import billing_policy
 import billing_workspace
 import database as db
 import document_generator
+from document_generator import render_document_template
+from i18n import format_period_label
+from i18n import gettext as _
+from translation_markers import gettext_noop
 
 _ITEM_TYPE_LABELS = {
-    "consumer_charge": "Verbrauchskosten",
-    "producer_credit": "Produzentengutschrift",
-    "rounding_adjustment": "Rundungsausgleich",
-    "settlement_fee": "Abrechnungsentgelt",
-    "battery_cost_share": "Quartierakku-Anteil",
+    "consumer_charge": gettext_noop("Verbrauchskosten"),
+    "producer_credit": gettext_noop("Produzentengutschrift"),
+    "rounding_adjustment": gettext_noop("Rundungsausgleich"),
+    "settlement_fee": gettext_noop("Abrechnungsentgelt"),
+    "battery_cost_share": gettext_noop("Quartierakku-Anteil"),
 }
 _ALLOWED_ITEM_TYPES = tuple(_ITEM_TYPE_LABELS)
 
@@ -639,7 +643,7 @@ def _rows_html(items) -> str:
     for item in items:
         rows.append(
             "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(
-                escape(item.get("item_type_label", "")),
+                escape(_(item.get("item_type_label", ""))),
                 escape(item.get("display_quantity_kwh") or "-"),
                 escape(item.get("display_unit_price_rp") or "-"),
                 escape(item.get("display_amount_chf", "0.00")),
@@ -665,8 +669,8 @@ def render_pdf_html_string(invoice: dict) -> str:
     charges_rows = _rows_html(invoice.get("charges", []))
     settlement_rows = _rows_html(invoice.get("settlement_charges", []))
     settlement_section = (
-        f"""<h2>Abrechnungsentgelt</h2>
-<table><tr><th>Position</th><th>Menge (kWh)</th><th>Preis (Rp./kWh)</th><th>Betrag (CHF)</th></tr>
+        f"""<h2>{_("Abrechnungsentgelt")}</h2>
+<table><tr><th>{_("Position")}</th><th>{_("Menge (kWh)")}</th><th>{_("Preis (Rp./kWh)")}</th><th>{_("Betrag (CHF)")}</th></tr>
 {settlement_rows}
 </table>"""
         if settlement_rows
@@ -674,8 +678,8 @@ def render_pdf_html_string(invoice: dict) -> str:
     )
     battery_rows = _rows_html(invoice.get("battery_shares", []))
     battery_section = (
-        f"""<h2>Quartierakku-Anteil</h2>
-<table><tr><th>Position</th><th>Menge (kWh)</th><th>Preis (Rp./kWh)</th><th>Betrag (CHF)</th></tr>
+        f"""<h2>{_("Quartierakku-Anteil")}</h2>
+<table><tr><th>{_("Position")}</th><th>{_("Menge (kWh)")}</th><th>{_("Preis (Rp./kWh)")}</th><th>{_("Betrag (CHF)")}</th></tr>
 {battery_rows}
 </table>"""
         if battery_rows
@@ -688,10 +692,10 @@ def render_pdf_html_string(invoice: dict) -> str:
 
     invoice_number = escape(invoice.get("invoice_number", ""))
     issuer_name = escape(invoice.get("issuer_name", ""))
-    period_label = escape(invoice.get("period_label", ""))
+    period_label = escape(format_period_label(invoice.get("period_label", "")))
     issue_date = escape(invoice.get("issue_date", ""))
     due_date = escape(invoice.get("due_date", ""))
-    vat_mode_label = escape(invoice.get("vat_mode_label", ""))
+    vat_mode_label = escape(_(invoice.get("vat_mode_label", "")))
     vat_rate = escape(invoice.get("display_vat_rate_pct", "0.00"))
     policy_unit_price = escape(invoice.get("display_policy_unit_price_rp", ""))
     grid_fee_rp = invoice.get("display_grid_fee_rp")
@@ -700,55 +704,40 @@ def render_pdf_html_string(invoice: dict) -> str:
     vat_chf = escape(invoice.get("display_vat_chf", "0.00"))
     gross_chf = escape(invoice.get("display_gross_chf", "0.00"))
     grid_fee_line = (
-        f"<strong>Netzentgelt:</strong> {escape(grid_fee_rp)} Rp./kWh<br>"
+        f"<strong>{_('Netzentgelt:')}</strong> {escape(grid_fee_rp)} {_('Rp./kWh')}<br>"
         if grid_fee_rp
         else ""
     )
 
-    html = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8">
-<style>
-body {{ font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm; }}
-h1 {{ font-size: 16pt; }}
-h2 {{ font-size: 13pt; margin-top: 1.5em; }}
-table {{ border-collapse: collapse; width: 100%; margin: 1em 0; }}
-td, th {{ border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 10pt; }}
-th {{ background: #f0f0f0; }}
-.footer {{ margin-top: 3em; font-size: 9pt; color: #666; }}
-</style></head><body>
-<h1>Rechnung {invoice_number}</h1>
-<p><strong>Aussteller:</strong> {issuer_name}<br>
-<strong>Periode:</strong> {period_label}<br>
-<strong>Rechnungsdatum:</strong> {issue_date}<br>
-<strong>Fällig am:</strong> {due_date}<br>
-<strong>Interner Preis:</strong> {policy_unit_price} Rp./kWh<br>
-{grid_fee_line}<strong>Zahlungsfrist:</strong> {payment_days} Tage</p>
-
-<h2>Verbrauchskosten</h2>
-<table><tr><th>Position</th><th>Menge (kWh)</th><th>Preis (Rp./kWh)</th><th>Betrag (CHF)</th></tr>
-{charges_rows or '<tr><td colspan="4">Keine Verbrauchskosten</td></tr>'}
-</table>
-
-{settlement_section}
-
-{battery_section}
-
-<h2>Gutschriften und Ausgleich</h2>
-<table><tr><th>Position</th><th>Menge (kWh)</th><th>Preis (Rp./kWh)</th><th>Betrag (CHF)</th></tr>
-{credits_rows or '<tr><td colspan="4">Keine Gutschriften</td></tr>'}
-</table>
-
-<h2>Mehrwertsteuer</h2>
-<p>{vat_mode_label} ({vat_rate}%)</p>
-
-<h2>Total</h2>
-<table>
-<tr><td>Nettobetrag</td><td>{net_chf} CHF</td></tr>
-<tr><td>Mehrwertsteuer</td><td>{vat_chf} CHF</td></tr>
-<tr><td>Gesamtbetrag</td><td>{gross_chf} CHF</td></tr>
-</table>
-
-<div class="footer">Erstellt mit OpenLEG</div>
-</body></html>"""
+    html = render_document_template(
+        "documents/member_invoice.html",
+        invoice_number=Markup(invoice_number),
+        issuer_name=Markup(issuer_name),
+        period_label=Markup(period_label),
+        issue_date=Markup(issue_date),
+        due_date=Markup(due_date),
+        policy_unit_price=Markup(policy_unit_price),
+        grid_fee_line=Markup(grid_fee_line),
+        payment_days=Markup(payment_days),
+        charges_rows=Markup(
+            charges_rows
+            or '<tr><td colspan="4">'
+            + str(escape(_("Keine Verbrauchskosten")))
+            + "</td></tr>"
+        ),
+        settlement_section=Markup(settlement_section),
+        battery_section=Markup(battery_section),
+        credits_rows=Markup(
+            credits_rows
+            or '<tr><td colspan="4">'
+            + str(escape(_("Keine Gutschriften")))
+            + "</td></tr>"
+        ),
+        vat_mode_label=Markup(vat_mode_label),
+        vat_rate=Markup(vat_rate),
+        net_chf=Markup(net_chf),
+        vat_chf=Markup(vat_chf),
+        gross_chf=Markup(gross_chf),
+    )
 
     return html

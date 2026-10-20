@@ -11,6 +11,7 @@ from psycopg2 import Error as DatabaseError
 import billing_engine
 import billing_policy
 import billing_readings
+import billing_reconciliation
 import database as db
 import quartierakku
 
@@ -159,6 +160,7 @@ def run_billing_period(
         frames = billing_readings.load_period_frames(
             community_id, period_start, period_end
         )
+        calculated = None
         if db.is_db_available():
             calculated = db.get_validated_calculated_values(
                 community_id,
@@ -195,6 +197,46 @@ def run_billing_period(
             settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
             **battery_kwargs,
         )
+        reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
+        precision_basis = (
+            calculated is not None
+            and calculated.get("format_version") == "e66/1"
+            and policy["distribution_model"] == "proportional"
+            and not battery
+        )
+        if precision_basis:
+            try:
+                certificate = billing_reconciliation.audit_e66(
+                    calculated, model=policy["distribution_model"]
+                )
+                source_frames = billing_readings.frames_from_calculated_source(
+                    calculated
+                )
+                if any(
+                    not actual.tz_convert("UTC").round(6).equals(source.round(6))
+                    for actual, source in (
+                        (frames.consumption, source_frames.consumption),
+                        (frames.production, source_frames.production),
+                    )
+                ):
+                    raise ValueError("Physical readings differ from accepted source")
+                vnb_consumption, vnb_production = (
+                    billing_readings.calculated_quantity_frames(frames, calculated)
+                )
+                summary = billing_engine.generate_vnb_billing_summary(
+                    frames.production,
+                    frames.consumption,
+                    vnb_consumption,
+                    vnb_production,
+                    grid_fee_per_kwh=policy["grid_fee_chf_per_kwh"],
+                    internal_price_per_kwh=policy["internal_price_chf_per_kwh"],
+                    network_level=policy["network_level"],
+                    distribution_model=policy["distribution_model"],
+                    settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
+                )
+            except ValueError as exc:
+                raise BillingRunError(str(exc), code="vnb_allocation_mismatch") from exc
+            reconciliation["precision_policy"] = certificate
         if battery_lines:
             summary["line_items"].extend(battery_lines)
         if battery_snapshot:
@@ -209,10 +251,9 @@ def run_billing_period(
             }
             battery_snapshot["energy"] = dict(summary["battery_energy"])
             summary["battery_snapshot"] = battery_snapshot
-        reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
         participant_gaps = reconciliation["per_participant"].values()
         production_gaps = reconciliation["production_per_participant"].values()
-        if (
+        if not precision_basis and (
             reconciliation["difference_kwh"] != 0
             or reconciliation["production_difference_kwh"] != 0
             or any(item["difference_kwh"] != 0 for item in participant_gaps)

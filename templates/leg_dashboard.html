@@ -295,6 +295,33 @@
       {% endif %}
     </section>
 
+    <section class="bg-white rounded-xl border p-6 mb-8" aria-labelledby="activation-title">
+      <h2 id="activation-title" class="font-bold mb-2">{{ _('Betriebsstart') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Der Netzbetreiber muss den Start der LEG bestätigen. Eine Empfangsbestätigung für die Anmeldung reicht dafür nicht aus.') }}</p>
+      {% if activation_error %}<p role="alert" class="mb-4 text-accent">{{ _(activation_error) }}</p>{% endif %}
+      {% if community.vnb_start_confirmation %}
+      <p>{{ _('Bestätigter Start: %(date)s. Referenz: %(reference)s.', date=community.vnb_start_confirmation.effective_date, reference=community.vnb_start_confirmation.reference) }}</p>
+      <p class="text-sm text-ink-muted mt-2">{{ _('Den Originalbeleg finden Sie im Korrespondenzjournal.') }}</p>
+      {% if community.status == "dso_approved" and is_admin and viewer_has_session %}
+      <form method="post" action="/leg/community/{{ community.community_id }}/activate" class="mt-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold">{{ _('LEG aktivieren') }}</button>
+        <p class="text-sm text-ink-muted mt-2">{{ _('Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie weiterhin vollständige Tarife, Messwerte und VNB-Zuteilungen.') }}</p>
+      </form>
+      {% endif %}
+      {% elif community.status == "dso_submitted" and is_admin and viewer_has_session %}
+      <p class="text-sm mb-4">{{ _('Erfassen Sie zuerst die tatsächliche Startbestätigung als Eingang mit Anhang im Korrespondenzjournal. Wählen Sie danach diesen Beleg aus.') }}</p>
+      <form method="post" action="/leg/community/{{ community.community_id }}/vnb-start-confirmation" class="grid gap-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>{{ _('Beleg') }} <select name="correspondence_id" required class="w-full border rounded-lg px-3 py-2"><option value="">{{ _('Beleg auswählen') }}</option>{% for entry in correspondence if entry.direction == "in" and entry.attachment_filename %}<option value="{{ entry.id }}">{{ entry.subject }} ({{ entry.counterparty }})</option>{% endfor %}</select></label>
+        <label>{{ _('Bestätigtes Startdatum') }} <input type="date" name="effective_date" required class="w-full border rounded-lg px-3 py-2"></label>
+        <label>{{ _('Referenz des Netzbetreibers') }} <input name="reference" maxlength="255" required class="w-full border rounded-lg px-3 py-2"></label>
+        <label><input type="checkbox" name="confirm_start" value="yes" required> {{ _('Ich habe geprüft, dass der Netzbetreiber den Start der LEG zu diesem Datum bestätigt.') }}</label>
+        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold">{{ _('Startbestätigung erfassen') }}</button>
+      </form>
+      {% endif %}
+    </section>
+
     <section class="bg-white rounded-xl border p-6 mb-8">
       <h2 class="font-bold mb-2">{{ _('Korrespondenz') }}</h2>
       <p class="text-sm text-ink-muted mb-4">{{ _('Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist.') }}</p>

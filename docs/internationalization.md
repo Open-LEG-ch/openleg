@@ -1,9 +1,9 @@
 # Internationalization
 
 OpenLEG uses Flask-Babel/gettext for German (Switzerland, de_CH) and Swiss French
-(fr_CH). German remains the installation default. This first contribution ships
-the generic framework and language selection; interface, documents and recipient
-communications are added in subsequent contributions.
+(fr_CH). German remains the installation default. The framework, interface and
+printable documents support both locales. The four scheduled onboarding emails
+and municipality interest notices use a persisted recipient preference.
 
 ## Language selection
 
@@ -47,5 +47,75 @@ visible validation errors, accessibility text, JavaScript and demonstration medi
 are translated. Raw API schemas and machine identifiers remain unchanged. The
 API playground adds localized human explanations beside the original response.
 
-Documents/PDF and recipient email preferences are separate subsequent changes.
-No persistent language preference schema is introduced by this interface layer.
+## Printable documents
+
+Community agreements, participant contracts, VNB registration forms and member
+invoices render their labels in the selected application locale. Rendering
+outside a configured application keeps the German default. Trusted document
+templates use escaped source values; names, meter identifiers, dates and frozen
+invoice amounts keep their original values. Rendering a translated invoice
+does not mutate its stored snapshot. Previously stored formation PDFs are
+served as stored; language selection does not rewrite their bytes.
+
+The raw contract-template API still describes its German sections as German.
+PDF presentation does not relabel those source sections. This implementation
+records no legal approval of the document text or its translation.
+
+This stage adapts the document work from the contributor's
+`i18n-fr-ch` commit `b4bc68f`, preserving the current authorization and
+consent-filtering code.
+
+## Recipient language
+
+New registration forms store the selected German or Swiss French language as
+`preferred_locale`. Building and unresolved coverage records accept only these
+two normalized values. Existing records default to German. Public re-registration
+cannot change a verified building's preference.
+
+A verified resident can change their own preference in the private dashboard.
+The update requires the dashboard session and CSRF token; a submitted building
+identifier cannot select someone else's record. Page language selection alone
+does not write this preference. The resident's profile export includes it.
+
+The four scheduled onboarding emails read the current building preference at
+delivery. Subjects, escaped HTML and destination links use that explicit locale,
+independent of the cron request, tenant default or another recipient. The renderer
+also works outside Flask and keeps personal values out of shared template globals.
+Queue retry, address scrubbing and deletion rules continue to apply. The preference
+shares its registration's retention and deletion rules.
+
+This stage adapts the four email templates and translations from the same
+contributor commit. Municipality notices use the language of the canonical
+verified record for each recipient. The existing building-before-coverage
+priority, case-insensitive deduplication, newcomer exclusion and update consent
+continue to apply. An unverified or duplicate coverage submission cannot change
+a verified building's language. Municipality names are escaped in HTML; no
+recipient identity or newcomer contact details appear in the message.
+
+Unresolved-address signup confirmations use the explicit validated choice from
+that submission, including its verification link, without requiring a Flask
+request or worker context. Missing choices retain German.
+
+Building signup confirmations and resident dashboard access links use the
+addressed profile's saved language. The profile email must match the addressee;
+unknown or mismatched records use German. A requester cannot choose another
+resident's email language through the access form or page language. Verification
+and login links carry the recipient's locale through the existing token exchange.
+Background confirmation mail works without a Flask context. These messages do
+not write a language preference or change token, authorization or delivery rules.
+
+Issued invoice delivery notices use the invoiced member's saved language and a
+localized dashboard link. The delivery reservation reads the address and language
+from that member together. Missing language defaults to German. The notice works
+outside Flask; existing delivery retry rules and stored invoice amounts remain
+unchanged.
+
+Deletion confirmations use the language of the specific address profile or
+coverage request bound to each active token and mailbox. A shared mailbox can
+receive one link per record with different languages. Page language and submitted
+preferences cannot change those choices. Missing language information uses German.
+The existing confirmation, expiry and one-record deletion rules still apply.
+
+Contact updates, other invoice correspondence and
+municipality/utility/registry mail still need recipient delivery coverage.
+This implementation records no human language or legal approval.

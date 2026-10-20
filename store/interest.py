@@ -4,6 +4,8 @@
 import json
 import logging
 
+from locale_policy import require_recipient_locale
+
 logger = logging.getLogger(__name__)
 
 UNVERIFIED_INTEREST_RETENTION_DAYS = 30
@@ -32,8 +34,10 @@ def save_coverage_request(
     roles,
     has_solar,
     verification_token,
+    preferred_locale="de_CH",
 ):
     """Persist an address-coverage request pending email verification."""
+    canonical_locale = require_recipient_locale(preferred_locale)
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
@@ -41,9 +45,9 @@ def save_coverage_request(
                 INSERT INTO coverage_requests (
                     request_id, email, address, plz, municipality_name, canton,
                     bfs_number, roles, has_solar, verification_token,
-                    token_expires_at
+                    token_expires_at, preferred_locale
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    CURRENT_TIMESTAMP + INTERVAL '30 days')
+                    CURRENT_TIMESTAMP + INTERVAL '30 days', %s)
                 """,
                 (
                     request_id,
@@ -56,6 +60,7 @@ def save_coverage_request(
                     json.dumps(roles),
                     has_solar,
                     verification_token,
+                    canonical_locale,
                 ),
             )
             return True
@@ -220,11 +225,21 @@ def get_interest_count(bfs_number, *, strict=False):
 
 def get_verified_interest_recipients(bfs_number, exclude_email=""):
     """Return distinct verified recipient addresses for one municipality."""
+    return [
+        row["email"]
+        for row in get_verified_interest_recipient_preferences(
+            bfs_number, exclude_email
+        )
+    ]
+
+
+def get_verified_interest_recipient_preferences(bfs_number, exclude_email=""):
+    """Read each canonical, consented recipient and its saved language together."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT v.email
+                SELECT v.email, v.preferred_locale
                 FROM verified_interest v
                 LEFT JOIN consents c
                     ON c.building_id = v.source_id
@@ -236,7 +251,7 @@ def get_verified_interest_recipients(bfs_number, exclude_email=""):
                 """,
                 (bfs_number, exclude_email),
             )
-            return [row["email"] for row in cur.fetchall() if row.get("email")]
+            return [dict(row) for row in cur.fetchall() if row.get("email")]
     except Exception:
         logger.exception("[DB] Error loading verified interest recipients")
         return []

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale }}"><head><meta charset="utf-8">
+<style>
+body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm; }
+h1 { font-size: 16pt; }
+h2 { font-size: 13pt; margin-top: 1.5em; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+td, th { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 10pt; }
+th { background: #f0f0f0; }
+.footer { margin-top: 3em; font-size: 9pt; color: #666; }
+</style></head><body>
+<h1>{{ _('Gemeinschaftsvereinbarung') }}</h1>
+<h2>{{ _('Lokale Elektrizitätsgemeinschaft:') }} {{ community_name }}</h2>
+<p>{{ _('Gemeinde:') }} {{ municipality }}<br>{{ _('Datum:') }} {{ date_str }}</p>
+
+<h2>{{ _('1. Teilnehmer') }}</h2>
+<table><tr><th>#</th><th>{{ _('Name') }}</th><th>{{ _('Adresse') }}</th><th>{{ _('Rolle') }}</th></tr>{{ participant_rows }}</table>
+
+<h2>{{ _('2. Verteilmodell') }}</h2>
+<p>{{ distribution_label }}</p>
+<p>{{ _('Die intern produzierte Energie wird gemäss dem gewählten Modell auf alle Teilnehmer verteilt.\nDie Abrechnung erfolgt auf Basis von 15-Minuten-Messintervallen.') }}</p>
+
+<h2>{{ _('3. Rechtsgrundlage') }}</h2>
+<p>{{ _('Diese Vereinbarung stützt sich auf Art. 17d und 17e des Stromversorgungsgesetzes (StromVG)\nsowie Art. 19e bis 19h der Stromversorgungsverordnung (StromVV).') }}</p>
+
+<h2>{{ _('4. Interne Preisgestaltung') }}</h2>
+<p>{{ _('Der interne Strompreis wird durch die Gemeinschaft festgelegt und darf den lokalen\nStandardtarif des Verteilnetzbetreibers nicht übersteigen.') }}</p>
+
+<h2>{{ _('5. Ein- und Austritt') }}</h2>
+<p>{{ _('Neue Teilnehmer können mit Zustimmung der bestehenden Mitglieder beitreten.\nDer Austritt ist mit einer Frist von 3 Monaten auf Quartalsende möglich.') }}</p>
+
+<h2>{{ _('6. Vertretung') }}</h2>
+<p>{{ _('Die Gemeinschaft wird gegenüber dem Verteilnetzbetreiber durch den Vertreter vertreten,\nder gemäss separater Vollmacht bestimmt wird.') }}</p>
+
+<h2>{{ _('7. Unterschriften') }}</h2>
+<table><tr><th>{{ _('Name') }}</th><th>{{ _('Datum') }}</th><th>{{ _('Unterschrift') }}</th></tr>
+{{ signature_rows }}
+</table>
+
+<div class="footer">{{ _('Generiert durch OpenLEG Platform, openleg.ch') }}</div>
+</body></html>

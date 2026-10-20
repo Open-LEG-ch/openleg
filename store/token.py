@@ -137,6 +137,30 @@ def create_coverage_deletion_tokens(email: str) -> list[str]:
         return []
 
 
+def get_deletion_recipient_locale(token: str, email: str) -> str | None:
+    """Read the language of one active deletion token's matching addressee."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                    SELECT COALESCE(b.preferred_locale, c.preferred_locale) AS preferred_locale
+                    FROM tokens t
+                    LEFT JOIN buildings b ON b.building_id = t.building_id
+                    LEFT JOIN coverage_requests c ON c.request_id = t.coverage_request_id
+                    WHERE t.token = %s AND t.token_type = 'unsubscribe'
+                      AND t.used_at IS NULL
+                      AND (t.expires_at IS NULL OR t.expires_at > CURRENT_TIMESTAMP)
+                      AND LOWER(TRIM(COALESCE(b.email, c.email))) = LOWER(TRIM(%s))
+                """,
+                (token, email),
+            )
+            record = cur.fetchone()
+            return record["preferred_locale"] if record else None
+    except Exception:
+        logger.warning("[DB] Could not read deletion recipient language")
+        return None
+
+
 def confirm_profile_deletion(token: str) -> bool:
     """Delete the profile for a valid unsubscribe token in one transaction."""
     try:
