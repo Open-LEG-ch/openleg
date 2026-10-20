@@ -139,3 +139,69 @@ def test_prior_index_initialization_accepts_a_corrected_window(
                 INSERT INTO billing_periods(community_id,period_start,period_end,status)
                 VALUES('synthetic-index','2026-09-01Z','2026-10-01Z','draft')
             """)
+
+
+# The intermediate migration appended an eighth locale column.
+EXTENDED_VIEW_SQL = """
+CREATE OR REPLACE VIEW verified_interest AS
+SELECT DISTINCT ON (bfs_number, LOWER(email))
+       bfs_number, LOWER(email) AS email, roles, has_solar,
+       created_at, address_problem, source_id, preferred_locale
+FROM (
+    SELECT bfs_number, email, roles, has_solar,
+           registered_at AS created_at,
+           FALSE AS address_problem, 1 AS source_priority,
+           building_id AS source_id, preferred_locale
+    FROM buildings
+    WHERE verified = TRUE AND bfs_number IS NOT NULL
+    UNION ALL
+    SELECT bfs_number, email, roles, has_solar, created_at,
+           TRUE AS address_problem, 2 AS source_priority,
+           request_id AS source_id, preferred_locale
+    FROM coverage_requests
+    WHERE verified = TRUE AND bfs_number IS NOT NULL
+) interest
+ORDER BY bfs_number, LOWER(email), source_priority,
+         created_at DESC NULLS LAST, source_id
+"""
+
+
+def test_extended_view_migration_preserves_locale_and_prior_startup(interest_database):
+    db = interest_database
+    assert db.save_building(
+        "synthetic-extended",
+        "extended@example.invalid",
+        {"address": "Synthetic extended", "lat": 47, "lon": 8, "bfs_number": 261},
+        {"updates_opt_in": True},
+        verified=True,
+        preferred_locale="fr_CH",
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(EXTENDED_VIEW_SQL)
+    db.create_tables()
+    db.create_tables()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(LEGACY_VIEW_SQL)
+    assert db.get_verified_interest_recipient_preferences(261) == [
+        {"email": "extended@example.invalid", "preferred_locale": "fr_CH"}
+    ]
+
+
+def test_extended_view_dependency_blocks_migration_without_cascade(interest_database):
+    import psycopg2
+
+    db = interest_database
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(EXTENDED_VIEW_SQL)
+        cur.execute(
+            "CREATE VIEW synthetic_dependent_interest AS SELECT * FROM verified_interest"
+        )
+    with pytest.raises(psycopg2.errors.DependentObjectsStillExist):
+        db.create_tables()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT preferred_locale FROM synthetic_dependent_interest")
+        assert cur.fetchall() == []
+        cur.execute("DROP VIEW synthetic_dependent_interest")
+    db.create_tables()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(LEGACY_VIEW_SQL)
