@@ -360,9 +360,34 @@ six-decimal persistence precision. Consumer charges, producer credits and
 settlement fees use the VNB quantities. Their consumer and producer totals
 must balance exactly over the billing period. Unequal rounded totals are
 refused until there is a reviewed accounting policy for the energy difference;
-the cash rounding line cannot absorb it. Battery and equal-model rounding
-remain subject to the existing exact reconciliation gate. Legacy JSON evidence
-and drafts keep their existing approval rules.
+the cash rounding line cannot absorb it. Battery rounding remains subject to
+the existing exact reconciliation gate. Legacy JSON evidence and drafts keep
+their existing approval rules.
+
+New periods under the `einfach` model without a battery can use
+`vnb-einfach-e66-reported-total-witness/1`. This rule treats the reported total
+channels as one exact rational witness. It applies the existing two-pass model
+to the complete participant set, including producer-only participants with zero
+consumption. The second pass runs only when the remaining production exceeds
+0.001 kWh. Producer credits share the allocated sum in proportion to production.
+Every total, local and residual channel must contain the witness in its exact
+half-open rounding cell, including the lower boundary and excluding the upper.
+
+The independent audit still uses the engine's floating-point arithmetic. At an
+exact remainder of 0.001 kWh, binary rounding can make that audit run the second
+pass. The certificate uses the exact threshold. The audit records the resulting
+difference, and the VNB source channels determine the prices.
+
+A failed reported-total witness is `unresolved_vnb_einfach_rounding`, not proof
+that the source is impossible. Another set of unrounded totals can explain a
+valid delivery even when this bounded witness fails. Such deliveries remain
+blocked for review. The rule neither changes the proportional certificate nor
+supplies an accounting policy for unequal source totals.
+
+Existing unmarked `einfach` periods retain their legacy exact calculation and
+original fingerprint on retry. A matching retry returns the stored period
+without repricing or adding a certificate. Changed inputs remain blocked.
+New periods always require the new witness; legacy approval rules stay intact.
 
 Approval reloads the current accepted source under the community lock. Even
 older E66 drafts without a precision certificate must match its quantities
