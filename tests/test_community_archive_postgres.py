@@ -59,6 +59,7 @@ class _PauseAtCommunityInsert:
         "writer_during_restore",
         "bulk_readings",
         "bulk_readings_conflict",
+        "preflight_race",
         "reserved_json",
     ],
 )
@@ -170,6 +171,7 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
             "concurrent_writer",
             "writer_during_restore",
             "bulk_readings_conflict",
+            "preflight_race",
         }:
             with db.get_connection() as conn, conn.cursor() as cur:
                 cur.execute("SELECT setval('community_members_id_seq', 100, true)")
@@ -199,7 +201,15 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
                         VALUES (5000, 'unrelated', '2026-01-01', 0.4321)
                     """)
         assert db.fetch_user_communities("archive-founder") == []
+        foreign_before = (
+            community_archive.export_community_archive(other)
+            if target_mode
+            in {"conflicting_record", "bulk_readings_conflict", "preflight_race"}
+            else None
+        )
         dry_run = community_archive.restore_community_archive(payload, dry_run=True)
+        if foreign_before is not None:
+            assert community_archive.export_community_archive(other) == foreign_before
         if target_mode == "cached_sequence":
             assert not dry_run["valid"]
             assert any("CACHE 1" in error for error in dry_run["errors"])
@@ -213,6 +223,46 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
             assert db.get_building("archive-founder") is None
             assert db.list_correspondence(cid) == []
             return
+        if target_mode == "preflight_race":
+            assert dry_run == {"valid": True, "errors": [], "conflicts": []}
+
+            class CollisionAfterPreflight(community_archive.PostgresArchiveStore):
+                def find_conflicts(self, community_id, datasets):
+                    conflicts = super().find_conflicts(community_id, datasets)
+                    assert conflicts == []
+                    assert (
+                        db.log_correspondence(
+                            other,
+                            "in",
+                            "email",
+                            "Unrelated VNB",
+                            "Concurrent conflicting evidence",
+                        )
+                        == entry
+                    )
+                    self.after_insert = community_archive.export_community_archive(
+                        other
+                    )
+                    return conflicts
+
+            store = CollisionAfterPreflight()
+            with pytest.raises(
+                community_archive.ArchiveError,
+                match=r"^Conflicting record: correspondence_log$",
+            ):
+                community_archive.restore_community_archive(payload, store=store)
+            assert db.fetch_user_communities("archive-founder") == []
+            assert db.get_building("archive-founder") is None
+            assert db.list_correspondence(cid) == []
+            assert (
+                community_archive.export_community_archive(other) == store.after_insert
+            )
+            assert (
+                db.list_correspondence(other)[0]["subject"]
+                == "Concurrent conflicting evidence"
+            )
+            return
+
         if target_mode in {"conflicting_record", "bulk_readings_conflict"}:
             table = (
                 "correspondence_log"
@@ -310,7 +360,11 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
 
                                     def execute(self, query, params=None):
                                         text = (
-                                            query.decode()
+                                            query.as_string(cursor)
+                                            if isinstance(
+                                                query, psycopg2.sql.Composable
+                                            )
+                                            else query.decode()
                                             if isinstance(query, bytes)
                                             else query
                                         )
@@ -320,7 +374,10 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
                                                     f"INSERT INTO {table} "
                                                 ) or (
                                                     text.startswith("SELECT ")
-                                                    and f"FROM {table} " in text
+                                                    and (
+                                                        f"FROM {table} " in text
+                                                        or f'FROM "{table}" ' in text
+                                                    )
                                                 ):
                                                     queries.append(text)
                                         return cursor.execute(query, params)

@@ -22,6 +22,10 @@ transaction. Writers that need the same sequences, including other communities,
 can wait until the full restore commits. Reading rows are inserted in batches
 to reduce database round trips; this does not remove the transaction-wide lock.
 
+Dry-run reports differing records that already use an archived primary key;
+identical records remain safe to repeat. Another unique constraint or a concurrent
+write can still make the final restore refuse and roll back.
+
 The supported destination uses ascending sequences with `CACHE 1`, as created
 by OpenLEG's schema. Dry-run rejects a destination with incompatible sequence
 settings. Restore rechecks the settings inside its transaction. The database
