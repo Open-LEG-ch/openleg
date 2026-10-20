@@ -9,6 +9,8 @@ import os
 import threading
 from contextlib import contextmanager
 
+import release_mode
+
 logger = logging.getLogger(__name__)
 
 # Check for psycopg2
@@ -40,6 +42,7 @@ _pool_lock = threading.Lock()
 def init_db():
     """Initialize database connection pool and create tables if needed."""
     global _connection_pool, _pool_pid
+    read_only = release_mode.read_only_enabled()
 
     if not HAS_POSTGRES:
         logger.warning("[DB] PostgreSQL not available, using fallback JSON storage")
@@ -58,8 +61,9 @@ def init_db():
             f"[DB] Connection pool created (min={DB_POOL_MIN}, max={DB_POOL_MAX})"
         )
 
-        # Create tables
-        _create_tables()
+        # Release validation uses a separately migrated schema.
+        if not read_only:
+            _create_tables()
         return True
     except Exception as e:
         logger.error(f"[DB] Failed to initialize database: {e}")
@@ -70,6 +74,7 @@ def init_db():
 def get_connection():
     """Get a database connection from the pool."""
     global _connection_pool, _pool_pid
+    read_only = release_mode.read_only_enabled()
     if _pool_pid is not None and _pool_pid != os.getpid():
         with _pool_lock:
             if _pool_pid != os.getpid():
@@ -86,6 +91,8 @@ def get_connection():
     connection_pool = _connection_pool
     try:
         conn = connection_pool.getconn()
+        if read_only or getattr(conn, "readonly", None) is True:
+            conn.set_session(readonly=read_only)
         yield conn
         conn.commit()
     except Exception:
@@ -108,9 +115,10 @@ _db_initialized = False
 def is_db_available() -> bool:
     """Check if PostgreSQL database is available."""
     global _db_initialized
+    read_only = release_mode.read_only_enabled()
     if not _db_initialized:
         _db_initialized = init_db()
-        if _db_initialized:
+        if _db_initialized and not read_only:
             try:
                 seed_default_tenant()
             except Exception as e:
