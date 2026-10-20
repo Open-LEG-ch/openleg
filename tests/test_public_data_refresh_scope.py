@@ -2,6 +2,7 @@
 """Tests for canton-scoped refresh behavior."""
 
 import logging
+from copy import deepcopy
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
@@ -626,7 +627,7 @@ def test_refresh_municipality_pins_the_orchestration_contract(monkeypatch):
         [{"category": "H4", "grid_rp_kwh": 9.55, "total_rp_kwh": 27.57}]
     )
 
-    profile = result["profile"]
+    profile = deepcopy(result["profile"])
     del profile["data_sources"]["last_refresh"]
     assert profile == {
         "bfs_number": 261,
@@ -647,7 +648,7 @@ def test_refresh_municipality_pins_the_orchestration_contract(monkeypatch):
         },
         "energy_transition_score": 58.0,
     }
-    assert saved_profiles == [result["profile"] or profile] if False else True
+    assert saved_profiles == [result["profile"]]
     assert result["sources"] == {
         "energie_reporter": "ok",
         "sonnendach": "ok",
@@ -746,7 +747,8 @@ def test_a_failing_invalidation_names_the_cache_diagnostics(monkeypatch, caplog)
     with caplog.at_level(logging.WARNING):
         result = public_data.refresh_municipality(261, _energie_reporter=None)
 
-    assert result["profile"] is result["profile"]
+    assert result["profile"]["bfs_number"] == 261
+    assert result["profile"]["kanton"] == "ZH"
     assert any(
         "[PUBLIC] Profile cache invalidation failed for 261: redis down"
         == item.getMessage()
