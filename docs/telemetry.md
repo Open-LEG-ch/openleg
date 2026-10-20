@@ -142,6 +142,9 @@ times produce no aggregate. Buckets use source time, never receipt time.
 
 ## Local forwarder
 
+The [selected MQTT export](mqtt-selected-export.md) can enqueue explicitly
+selected local sensor readings. Reader-specific hardware mappings remain pending.
+
 `telemetry_collector.py` accepts normalized samples on stdin, persists them in
 a private SQLite spool and forwards to a single locally configured endpoint.
 It has no listener or device adapter. Use a private configuration file (0600)
