@@ -17,6 +17,10 @@ DISCOUNT_SAME_LEVEL = 0.40
 DISCOUNT_CROSS_LEVEL = 0.20
 
 
+class VnbBalancingPolicyRequired(ValueError):
+    """Source quantities whose rounded totals do not balance need a reviewed policy."""
+
+
 def _money(value):
     return Decimal(str(value)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
@@ -341,7 +345,9 @@ def _generate_billing_summary(
         allocation = _source_quantities(vnb_consumption, consumption)
         source_credits = _source_quantities(vnb_production, producer_production)
         if sum(allocation.sum(), Decimal(0)) != sum(source_credits.sum(), Decimal(0)):
-            raise ValueError("VNB quantities require a reviewed balancing policy")
+            raise VnbBalancingPolicyRequired(
+                "VNB quantities require a reviewed balancing policy"
+            )
     else:
         allocation = allocate_energy(
             total_production_series, consumption, model=distribution_model

@@ -149,7 +149,10 @@ def api_cron_process_billing():
             )
         except billing_runner.BillingRunError as exc:
             logger.error("Billing run failed for community %s", community_id)
-            failures.append({"community_id": community_id, "error": exc.code})
+            failure = {"community_id": community_id, "error": exc.code}
+            if exc.reason is not None:
+                failure["reason"] = exc.reason
+            failures.append(failure)
             continue
         if result["status"] == "created":
             processed += 1
