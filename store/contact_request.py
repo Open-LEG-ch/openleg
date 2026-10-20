@@ -103,8 +103,10 @@ def _compatible(left, right):
 def _identity(profile):
     # Changes to verification, municipality, contact data or discovery consent
     # invalidate an earlier grant, even when a profile is later re-enabled.
+    identity = dict(profile)
+    identity.pop("preferred_locale", None)
     return hashlib.sha256(
-        json.dumps(dict(profile), sort_keys=True, default=str).encode()
+        json.dumps(identity, sort_keys=True, default=str).encode()
     ).hexdigest()
 
 

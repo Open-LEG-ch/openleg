@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Mutual consent through private HTTP routes and real PostgreSQL."""
 
+import hashlib
+import json
 import re
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
@@ -130,6 +132,75 @@ def test_notifications_use_each_participants_saved_language(contacts, action):
         assert "lang=" + ("fr-CH" if french else "de-CH") in call.args[2]
         assert call.kwargs == {"private": True}
         assert "@example.ch" not in call.args[2]
+
+
+@pytest.mark.parametrize("status", ["pending", "accepted"])
+@pytest.mark.parametrize("legacy", [False, True])
+def test_language_changes_preserve_existing_contact_grants(contacts, status, legacy):
+    client, _sent = contacts
+    rid = _request_bob(client)
+    if status == "accepted":
+        _set_session(client, "bob")
+        assert (
+            _post(
+                client, f"/dashboard/contacts/{rid}/accept", share_phone="yes"
+            ).status_code
+            == 302
+        )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        if legacy:
+            # Reproduce fingerprints persisted before mail preferences existed
+            # in this projection; test the upgrade without a mass rewrite.
+            hashes = []
+            for actor in ("alice", "bob"):
+                cur.execute(
+                    """
+                    SELECT b.building_id,b.email,b.phone,b.verified,b.verified_at,
+                           b.verification_revision,b.bfs_number,c.share_with_neighbors,
+                           c.consent_timestamp
+                    FROM buildings b JOIN consents c USING (building_id)
+                    WHERE b.building_id=%s
+                """,
+                    (actor,),
+                )
+                hashes.append(
+                    hashlib.sha256(
+                        json.dumps(
+                            dict(cur.fetchone()), sort_keys=True, default=str
+                        ).encode()
+                    ).hexdigest()
+                )
+            cur.execute(
+                "UPDATE contact_requests SET requester_identity=%s,recipient_identity=%s WHERE id=%s",
+                (*hashes, rid),
+            )
+        cur.execute(
+            "SELECT requester_fields,recipient_fields FROM contact_requests WHERE id=%s",
+            (rid,),
+        )
+        before = dict(cur.fetchone())
+    for locale in ("de_CH", "fr_CH"):
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE buildings SET preferred_locale=%s WHERE building_id='bob'",
+                (locale,),
+            )
+        for actor in ("alice", "bob"):
+            _set_session(client, actor)
+            page = client.get("/dashboard/contacts")
+            assert page.status_code == 200
+            if status == "accepted":
+                assert (
+                    "alice@example.ch" if actor == "bob" else "phone-bob"
+                ) in page.text
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT status,requester_fields,recipient_fields FROM contact_requests WHERE id=%s",
+                (rid,),
+            )
+            after = dict(cur.fetchone())
+        assert after.pop("status") == status
+        assert after == before
 
 
 @pytest.mark.parametrize("action", ["accept", "decline", "revoke"])
