@@ -147,15 +147,20 @@ Publish with QoS 1. The subscriber acknowledges after the normalized sample and
 its duplicate marker commit together in the private SQLite spool. Reconnects
 use the same client ID and a one-day broker session, with retry delays from two
 to 300 seconds. The broker must retain pending QoS 1 messages for that session.
-Storage failure or a full queue disconnects without acknowledging that sample;
-restart after resolving the cause. Invalid messages are discarded and
+Storage failure or a full queue disconnects without acknowledging that sample.
+The process prints a fixed failure state without credentials or payloads and exits
+unsuccessfully so an operator or supervisor can detect the stop. Restart after
+resolving the cause. Invalid messages are discarded and
 acknowledged so they cannot block later readings.
 
-Duplicate identity is retained for one day, including after a successful flush.
-An identical retry returns its original sequence; changing a payload under the
-same ID fails. History and the pending queue are each capped at 10,000 samples.
-IDs can be reused after history expires, so they must remain unique at the
-source. Neither expiry nor a retained replay upgrades unknown freshness.
+Duplicate identity is retained for at most one day, including after a successful
+flush. History holds the 10,000 most recently accepted source IDs; higher traffic
+evicts older IDs sooner. An identical retry within that history returns its
+original sequence; changing a payload under the same ID fails. A retry outside
+the history can queue again with a new sequence and its original source timestamp.
+IDs must therefore remain unique at the source. Expiry and eviction never refresh
+observation time or upgrade unknown freshness. The separate pending queue holds
+at most 10,000 samples and stops ingestion when full.
 
 Sources: [Home Assistant MQTT](https://www.home-assistant.io/integrations/mqtt/),
 [Paho Python client](https://eclipse.dev/paho/files/paho.mqtt.python/html/client.html),

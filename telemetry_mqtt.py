@@ -190,6 +190,8 @@ def subscriber(export):
     from paho.mqtt.properties import Properties
 
     class DirectClient(mqtt.Client):
+        stop_reason: str | None = None
+
         def _get_proxy(self):
             # Paho 2.1.0 otherwise inherits mqtt_proxy and PySocks defaults.
             return None
@@ -218,11 +220,13 @@ def subscriber(export):
                 message.topic, bytes(message.payload), retained=bool(message.retain)
             )
         except ValueError as exc:
-            if str(exc) in {"collector_queue_full", "source_sample_history_full"}:
+            if str(exc) == "collector_queue_full":
+                connection.stop_reason = "collector_queue_full"
                 connection.disconnect()
                 return
             print(json.dumps({"state": "rejected_sample"}), flush=True)
         except sqlite3.Error:
+            connection.stop_reason = "storage_unavailable"
             connection.disconnect()
             return
         connection.ack(message.mid, message.qos)
@@ -256,6 +260,9 @@ def main():
         client = subscriber(MQTTExport(collector, settings))
         try:
             client.loop_forever(retry_first_connection=True)
+            if client.stop_reason is not None:
+                print(json.dumps({"state": client.stop_reason}), flush=True)
+                return 1
         finally:
             client.disconnect()
     except KeyboardInterrupt:

@@ -25,6 +25,7 @@ from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_ope
 import telemetry
 
 MAX_QUEUE = 10000
+MAX_SOURCE_HISTORY = 10000
 MAX_SAMPLE_BYTES = 8192
 MAX_AGE = 86400
 MAX_ATTEMPTS = 8
@@ -172,6 +173,7 @@ class Collector:
                 source_key TEXT PRIMARY KEY, fingerprint TEXT NOT NULL,
                 sequence INTEGER NOT NULL, accepted_at REAL NOT NULL
             );
+            CREATE INDEX IF NOT EXISTS source_samples_age ON source_samples (accepted_at,sequence);
         """)
         identity = json.dumps(
             {
@@ -273,12 +275,18 @@ class Collector:
                 >= MAX_QUEUE
             ):
                 raise ValueError("collector_queue_full")
-            if (
-                source_key is not None
-                and self.db.execute("SELECT COUNT(*) FROM source_samples").fetchone()[0]
-                >= MAX_QUEUE
-            ):
-                raise ValueError("source_sample_history_full")
+            if source_key is not None:
+                excess = (
+                    self.db.execute("SELECT COUNT(*) FROM source_samples").fetchone()[0]
+                    - MAX_SOURCE_HISTORY
+                    + 1
+                )
+                if excess > 0:
+                    self.db.execute(
+                        "DELETE FROM source_samples WHERE source_key IN "
+                        "(SELECT source_key FROM source_samples ORDER BY accepted_at,sequence LIMIT ?)",
+                        (excess,),
+                    )
             body = json.dumps(row, separators=(",", ":"))
             if len(body.encode()) > MAX_SAMPLE_BYTES:
                 raise ValueError("sample_too_large")

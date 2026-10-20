@@ -14,6 +14,7 @@ import pytest
 import yaml
 from jinja2 import Environment
 
+import telemetry_mqtt as mqtt_module
 from telemetry_collector import Collector
 from telemetry_mqtt import (
     MQTTExport,
@@ -464,3 +465,102 @@ def test_subscriber_never_routes_loopback_credentials_through_inherited_proxies(
     client = subscriber(export)
     assert client._create_socket_connection() is sentinel
     assert calls == [("127.0.0.1", 8883)]
+
+
+def test_busy_export_evicts_old_history_without_stopping_an_empty_queue(
+    tmp_path, monkeypatch
+):
+    import telemetry_collector
+
+    monkeypatch.setattr(telemetry_collector, "MAX_SOURCE_HISTORY", 2, raising=False)
+    config = collector_config(tmp_path)
+    endpoint = f"https://owner.example/api/telemetry/v1/communities/community-a/installations/{INSTALLATION}/samples"
+    config.update(
+        endpoint=endpoint, allowed_endpoints=[endpoint], credential="olt_" + "a" * 43
+    )
+
+    def send(endpoint, credential, body):
+        return 201, json.dumps(
+            {
+                "schema_version": "telemetry/1",
+                "accepted": len(json.loads(body)["samples"]),
+                "duplicates": 0,
+            }
+        ).encode()
+
+    queue = Collector(config, send=send, clock=lambda: NOW.timestamp())
+    bridge = MQTTExport(queue, settings())
+    try:
+        for number in range(1, 4):
+            assert (
+                bridge.receive(
+                    TOPIC, payload(sample_id=f"source-{number}"), retained=False
+                )
+                == number
+            )
+            assert queue.flush_once()["state"] == "sent"
+        assert queue.db.execute("SELECT COUNT(*) FROM samples").fetchone()[0] == 0
+        assert (
+            queue.db.execute("SELECT COUNT(*) FROM source_samples").fetchone()[0] == 2
+        )
+        assert bridge.receive(TOPIC, payload(sample_id="source-3"), retained=True) == 3
+        # A retry beyond the bounded history can queue again, with its old source age.
+        assert bridge.receive(TOPIC, payload(sample_id="source-1"), retained=True) == 4
+        sample = json.loads(queue.db.execute("SELECT body FROM samples").fetchone()[0])
+        assert sample["observed_at"] == NOW.isoformat()
+    finally:
+        queue.close()
+
+
+@pytest.mark.parametrize(
+    "failure,expected",
+    [("queue", "collector_queue_full"), ("storage", "storage_unavailable")],
+)
+def test_cli_exits_unsuccessfully_when_durable_ingestion_stops(
+    tmp_path, monkeypatch, capsys, failure, expected
+):
+    import paho.mqtt.client as mqtt
+
+    import telemetry_collector
+
+    collector_path = tmp_path / "collector.json"
+    mqtt_path = tmp_path / "mqtt.json"
+    collector_path.write_text(json.dumps(collector_config(tmp_path)))
+    mqtt_path.write_text(json.dumps(settings()))
+    collector_path.chmod(0o600)
+    mqtt_path.chmod(0o600)
+    monkeypatch.setattr(
+        "sys.argv", ["telemetry_mqtt.py", str(collector_path), str(mqtt_path)]
+    )
+    monkeypatch.setattr(mqtt, "Client", FakeClient)
+    actual_subscriber = mqtt_module.subscriber
+
+    def controlled_subscriber(export):
+        client = actual_subscriber(export)
+
+        def run(**kwargs):
+            if failure == "queue":
+                monkeypatch.setattr(telemetry_collector, "MAX_QUEUE", 0)
+            else:
+                export.collector.db.close()
+            client.on_message(
+                client,
+                None,
+                SimpleNamespace(
+                    topic=TOPIC,
+                    payload=payload(observed_at=None),
+                    retain=False,
+                    mid=19,
+                    qos=1,
+                ),
+            )
+            assert client.acknowledgements == []
+
+        client.loop_forever = run
+        return client
+
+    monkeypatch.setattr(mqtt_module, "subscriber", controlled_subscriber)
+    assert mqtt_module.main() == 1
+    output = capsys.readouterr().out
+    assert json.loads(output) == {"state": expected}
+    assert settings()["broker"]["password"] not in output
