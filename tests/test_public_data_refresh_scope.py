@@ -925,3 +925,57 @@ def test_a_tariff_row_without_a_category_is_not_an_h4_match(monkeypatch):
     result = public_data.refresh_municipality(261, _energie_reporter=None)
 
     assert result["value_gap"]["grid_fee_rp_kwh"] == 9.0
+
+
+def test_refresh_retains_stored_non_zh_canton(monkeypatch):
+    """A stored non-ZH kanton must survive the single-municipality refresh.
+
+    Mutation guard for the stored-canton family: with both bulk sources
+    unavailable, the refreshed profile must keep the persisted kanton
+    instead of falling back to the ZH seed value, while an ElCom tariff
+    update still persists the profile.
+    """
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    tariff = {"category": "H4", "grid_rp_kwh": 10, "total_rp_kwh": 25}
+    monkeypatch.setattr(
+        database,
+        "get_municipality_profile",
+        lambda _bfs: dict(_EXISTING_PROFILE, bfs_number=351, kanton="BE"),
+    )
+    monkeypatch.setattr(
+        public_data, "fetch_elcom_tariffs", lambda _bfs, year=2026: [tariff]
+    )
+    monkeypatch.setattr(database, "save_elcom_tariffs", lambda _rows: 1)
+
+    result = public_data.refresh_municipality(
+        351, _energie_reporter=None, _sonnendach=None
+    )
+
+    assert result["profile"]["bfs_number"] == 351
+    assert result["profile"]["kanton"] == "BE"
+    assert len(saved_profiles) == 1
+    assert saved_profiles[0]["bfs_number"] == 351
+    assert saved_profiles[0]["kanton"] == "BE"
+
+
+def test_refresh_stores_reporter_canton_for_new_non_zh_profile(monkeypatch):
+    """A fresh profile must store the Energie Reporter row's kanton.
+
+    Mutation guard for the reporter-canton family: with no stored profile,
+    the reporter row's kanton must reach the saved profile instead of the
+    ZH default.
+    """
+    saved_profiles, _saved_sonnendach = _patch_profile_repository(monkeypatch)
+    monkeypatch.setattr(database, "get_municipality_profile", lambda _bfs: None)
+
+    result = public_data.refresh_municipality(
+        351,
+        _energie_reporter=[{"bfs_number": 351, "name": "Synthetic BE", "kanton": "BE"}],
+        _sonnendach=[],
+    )
+
+    assert result["profile"]["bfs_number"] == 351
+    assert result["profile"]["kanton"] == "BE"
+    assert len(saved_profiles) == 1
+    assert saved_profiles[0]["bfs_number"] == 351
+    assert saved_profiles[0]["kanton"] == "BE"
