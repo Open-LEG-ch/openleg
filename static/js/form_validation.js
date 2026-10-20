@@ -36,7 +36,7 @@
     for (const input of document.querySelectorAll('input[type="file"]:not(.hidden)')) {
         if (input.hidden || input.style.display === "none") continue;
         const wrapper = document.createElement("div");
-        wrapper.className = "flex flex-wrap items-center gap-3 text-sm";
+        wrapper.className = "relative flex flex-wrap items-center gap-3 text-sm";
         const button = document.createElement("button");
         button.type = "button";
         button.className = "rounded border border-line px-3 py-2 font-semibold";
@@ -55,6 +55,7 @@
         input.before(wrapper);
         wrapper.append(button, name, input);
         input.classList.add("sr-only");
+        Object.assign(input.style, { width: "1px", height: "1px", padding: "0", borderWidth: "0" });
         input.tabIndex = -1;
         input.addEventListener("invalid", () => button.focus());
     }
