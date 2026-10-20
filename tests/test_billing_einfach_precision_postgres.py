@@ -139,6 +139,7 @@ def test_einfach_precision_reaches_approved_invoice_from_reported_total_witness(
 
     assert result["status"] == "created"
     period = db.get_billing_period(result["period_id"], payload["community_id"])
+    assert period["distribution_model"] == policy["distribution_model"]
     assert period["calculated_values_fingerprint"] == accepted["fingerprint"]
     reconciliation = period["reconciliation"]
     certificate = reconciliation["precision_policy"]
