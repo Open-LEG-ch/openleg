@@ -207,6 +207,7 @@ def test_restore_dry_run_and_restore_use_uploaded_archive(
     app_module,  # noqa: F811
     monkeypatch,
 ):
+    monkeypatch.setenv("ADMIN_TOKEN", "synthetic-archive-admin")
     client = app_module.web.test_client()
     _set_session(client, building_id="admin", csrf_token="csrf")
     restore = MagicMock(
@@ -223,6 +224,7 @@ def test_restore_dry_run_and_restore_use_uploaded_archive(
     )
     restored = client.post(
         "/leg/community/leg-1/archive/restore",
+        headers={"X-Admin-Token": "synthetic-archive-admin"},
         data={"csrf_token": "csrf", "archive": (io.BytesIO(b"{}"), "archive.json")},
     )
 
