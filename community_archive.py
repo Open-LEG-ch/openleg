@@ -13,7 +13,8 @@ from itertools import groupby, islice
 from psycopg2 import sql
 from psycopg2.extras import Json, execute_values
 
-SCHEMA_VERSION = "openleg-community-archive/1"
+LEGACY_SCHEMA_VERSION = "openleg-community-archive/1"
+SCHEMA_VERSION = "openleg-community-archive/2"
 SOURCE_PROVENANCE = "OpenLEG PostgreSQL operational store"
 
 
@@ -106,7 +107,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
             "conflicts": [],
         }
     version = manifest.get("schema_version")
-    if version != SCHEMA_VERSION:
+    if version not in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}:
         errors.append("Unsupported schema version")
     hashes = manifest.get("hashes")
     if not isinstance(hashes, dict):
@@ -115,10 +116,11 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
             "errors": ["Archive hashes manifest is not a mapping"],
             "conflicts": [],
         }
-    expected_datasets = {table for table, _, _ in _DATASETS}
+    dataset_specs = _LEGACY_DATASETS if version == LEGACY_SCHEMA_VERSION else _DATASETS
+    expected_datasets = {table for table, _, _ in dataset_specs}
     if set(datasets) != expected_datasets:
         errors.append("Archive dataset list does not match schema")
-    for table, _, _ in _DATASETS:
+    for table, _, _ in dataset_specs:
         if table not in datasets:
             continue
         actual = f"sha256:{hashlib.sha256(_canonical(datasets[table])).hexdigest()}"
@@ -153,6 +155,15 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
         for row in dataset_rows("metering_point_readings")
         if isinstance(row, dict) and row.get("source_document_id") is not None
     }
+    if version == SCHEMA_VERSION:
+        source_document_ids.update(
+            row["source_metadata"]["document_id"]
+            for row in dataset_rows("vnb_calculated_values_deliveries")
+            if isinstance(row, dict)
+            and isinstance(row.get("source_metadata"), dict)
+            and isinstance(row["source_metadata"].get("document_id"), str)
+            and row.get("format_version") == "e66/1"
+        )
     period_ids = {
         row.get("id")
         for row in dataset_rows("billing_periods")
@@ -161,7 +172,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
     invoice_ids = {
         row.get("id") for row in dataset_rows("invoices") if isinstance(row, dict)
     }
-    for table, _, _ in _DATASETS:
+    for table, _, _ in dataset_specs:
         records = datasets.get(table)
         if not isinstance(records, list) or any(
             not isinstance(row, dict) for row in records
@@ -211,6 +222,8 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
             )
         except (ValueError, TypeError):
             errors.append("Invalid tagged value")
+    if not errors:
+        errors.extend(_validate_vnb_evidence(decoded))
     conflicts = (
         store.find_conflicts(community_id, datasets)
         if not errors and hasattr(store, "find_conflicts")
@@ -225,7 +238,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
 
 # Restore order follows foreign keys. All identifiers are fixed here, never read
 # from the archive, so table and column interpolation cannot become SQL input.
-_DATASETS = (
+_LEGACY_DATASETS = (
     (
         "buildings",
         "building_id IN (SELECT building_id FROM community_members WHERE community_id = %s)",
@@ -281,6 +294,96 @@ _DATASETS = (
 )
 
 
+# An accepted source belongs to the LEG only while its tenant matches the
+# administrator's tenant. Refused intake may contain unassigned private data.
+_OWNED_DELIVERY_IDS = """SELECT d.id FROM vnb_calculated_values_deliveries d
+    JOIN communities c ON c.community_id = d.community_id
+    JOIN buildings b ON b.building_id = c.admin_building_id
+    WHERE d.community_id = %s AND d.territory = b.city_id
+      AND d.status = 'accepted'"""
+_DATASETS = tuple(
+    (
+        table,
+        predicate
+        + (
+            " OR document_id IN (SELECT d.source_metadata->>'document_id' "
+            "FROM vnb_calculated_values_deliveries d WHERE d.id IN ("
+            + _OWNED_DELIVERY_IDS
+            + ") AND d.format_version = 'e66/1')"
+            if table == "sdat_imports"
+            else ""
+        ),
+        scope,
+    )
+    for table, predicate, scope in _LEGACY_DATASETS
+) + (
+    (
+        "vnb_calculated_values_deliveries",
+        "id IN (" + _OWNED_DELIVERY_IDS + ")",
+        "community_id",
+    ),
+    (
+        "vnb_calculated_values_events",
+        "delivery_id IN (" + _OWNED_DELIVERY_IDS + ") "
+        "AND community_id = (SELECT d.community_id FROM vnb_calculated_values_deliveries d "
+        "WHERE d.id = vnb_calculated_values_events.delivery_id) "
+        "AND territory = (SELECT d.territory FROM vnb_calculated_values_deliveries d "
+        "WHERE d.id = vnb_calculated_values_events.delivery_id)",
+        "community_id",
+    ),
+)
+
+
+def _validate_vnb_evidence(datasets):
+    """Keep accepted source identity and withdrawal ownership intact on import."""
+    deliveries = datasets.get("vnb_calculated_values_deliveries", [])
+    events = datasets.get("vnb_calculated_values_events", [])
+    if not deliveries and not events:
+        return []
+    community = datasets["communities"][0]
+    owner = next(
+        (
+            row
+            for row in datasets.get("buildings", [])
+            if row.get("building_id") == community.get("admin_building_id")
+        ),
+        {},
+    )
+    territory = owner.get("city_id")
+    errors = []
+    by_id = {}
+    for row in deliveries:
+        delivery_id = row.get("id")
+        if (
+            type(delivery_id) is not int
+            or delivery_id < 1
+            or delivery_id in by_id
+            or row.get("status") != "accepted"
+            or not territory
+            or row.get("territory") != territory
+            or row.get("community_id") != community.get("community_id")
+        ):
+            errors.append("VNB source scope violation")
+            continue
+        by_id[delivery_id] = row
+        evidence = row.get("evidence_bytes")
+        if not isinstance(evidence, (bytes, bytearray, memoryview)) or (
+            hashlib.sha256(evidence).hexdigest() != row.get("evidence_sha256")
+        ):
+            errors.append("VNB source evidence hash mismatch")
+    for row in events:
+        delivery_id = row.get("delivery_id")
+        source = by_id.get(delivery_id) if type(delivery_id) is int else None
+        if (
+            not source
+            or row.get("community_id") != source.get("community_id")
+            or row.get("territory") != source.get("territory")
+            or row.get("action") != "withdrawn"
+        ):
+            errors.append("VNB withdrawal scope violation")
+    return errors
+
+
 class PostgresArchiveStore:
     """PostgreSQL adapter for the community archive interface."""
 
@@ -293,8 +396,13 @@ class PostgresArchiveStore:
     def export_community(self, community_id):
         result = {}
         with self._connection() as conn, conn.cursor() as cur:
+            cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
             for table, predicate, _ in _DATASETS:
-                cur.execute(f"SELECT * FROM {table} WHERE {predicate}", (community_id,))
+                query = f"SELECT * FROM {table} WHERE {predicate}"
+                cur.execute(
+                    query.replace("%s", "%(community_id)s"),
+                    {"community_id": community_id},
+                )
                 result[table] = [dict(row) for row in cur.fetchall()]
         return result if result["communities"] else None
 
