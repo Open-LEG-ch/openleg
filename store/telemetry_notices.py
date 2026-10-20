@@ -73,11 +73,28 @@ def _public(row, now):
     return result
 
 
-def reconcile(cur, installations, now):
+def reconcile(cur, installations, now, *, uncertain=None):
     """Caller holds installation locks; keep one row per condition/channel."""
     if not installations:
         return
     ids = [installation["id"] for installation in installations]
+    if uncertain is None:
+        uncertain = [
+            installation["id"]
+            for installation in installations
+            if installation.get("_notice_refresh_pending")
+        ]
+    if uncertain:
+        # A missed projection can hide an intermediate recovery. Require a new
+        # confirmation instead of reusing acknowledgement from that uncertain span.
+        cur.execute(
+            """
+            UPDATE telemetry_notices SET episode=episode+1,raised_at=%s,
+                acknowledged_at=NULL,snoozed_until=NULL
+            WHERE installation_id=ANY(%s::uuid[]) AND active=TRUE
+            """,
+            (now, uncertain),
+        )
     desired = [
         {
             "id": str(uuid.uuid4()),
@@ -157,6 +174,12 @@ def reconcile(cur, installations, now):
         installation["notices"] = []
     for row in cur.fetchall():
         by_id[str(row["installation_id"])]["notices"].append(_public(row, now))
+    cur.execute(
+        "UPDATE telemetry_installations SET notice_refresh_pending=FALSE WHERE id=ANY(%s::uuid[])",
+        (ids,),
+    )
+    for installation in installations:
+        installation.pop("_notice_refresh_pending", None)
 
 
 def acknowledge(cur, installation, notice_id, episode, now):

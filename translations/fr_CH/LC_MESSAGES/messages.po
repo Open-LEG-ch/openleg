@@ -2771,7 +2771,7 @@ msgstr ""
 
 #: templates/telemetry_dashboard.html:80
 msgid "Die Datenlage hat sich geändert. Prüfen Sie den aktuellen Messstatus."
-msgstr "Les données ont changé. Vérifiez l’état actuel des mesures."
+msgstr "La situation des données a changé. Vérifiez l’état actuel des mesures."
 
 #: templates/leg_gruenden.html:60
 msgid ""

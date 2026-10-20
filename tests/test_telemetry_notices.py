@@ -415,3 +415,47 @@ def test_overview_reconciles_only_installations_it_locked(
         )
         assert cur.fetchall() == []
     assert [row["id"] for row in rows] == [first]
+
+
+def test_failed_notice_projection_preserves_valid_ingestion(
+    telemetry_client, monkeypatch
+):
+    client = telemetry_client
+    installation, token = api.enroll(client)
+
+    def failed_projection(cur, *args, **kwargs):
+        cur.execute("SELECT 1/0")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(store.notices, "reconcile", failed_projection)
+        response = api.ingest(client, installation, token, [api.sample(value="100")])
+    assert response.status_code == 201
+    assert response.json["accepted"] == 1
+    stored = client.get(f"{api.BASE}/{installation}/samples")
+    assert len(stored.json["samples"]) == 1
+    assert stored.json["samples"][0]["value"] == "100"
+    assert notices(client, installation) == []
+
+
+def test_projection_failure_cannot_reuse_an_old_acknowledgement(
+    telemetry_client, clock, monkeypatch
+):
+    client = telemetry_client
+    installation, token = api.enroll(client)
+    deliver(client, installation, token, clock, sequence=1, age_seconds=600)
+    first = notices(client, installation)[0]
+    assert acknowledge(client, installation, first).status_code == 200
+
+    def failed_projection(cur, *args, **kwargs):
+        cur.execute("SELECT 1/0")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(store.notices, "reconcile", failed_projection)
+        deliver(client, installation, token, clock, sequence=2)
+    # The fresh delivery was committed, but its recovery projection failed.
+    clock[0] += timedelta(seconds=601)
+    deliver(client, installation, token, clock, sequence=3, age_seconds=600)
+    assert acknowledge(client, installation, first).status_code == 409
+    current = notices(client, installation)[0]
+    assert current["attention_required"]
+    assert current["episode"] == 2
