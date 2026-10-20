@@ -34,11 +34,11 @@ def gettext(message, *, locale="de_CH", **variables):
     return message % variables if variables else message
 
 
-def recipient_locale(profile, email):
+def recipient_locale(profile, email, *, email_field="email"):
     """Use a profile choice only for the email address bound to that profile."""
     if not isinstance(profile, Mapping) or not isinstance(email, str):
         return "de_CH"
-    stored_email = profile.get("email")
+    stored_email = profile.get(email_field)
     if (
         not isinstance(stored_email, str)
         or stored_email.strip().casefold() != email.strip().casefold()

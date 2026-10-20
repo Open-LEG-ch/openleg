@@ -70,7 +70,7 @@ def create_tables(cur):
 def _profile(cur, actor):
     cur.execute(
         """
-        SELECT b.building_id, b.email, b.phone, b.verified, b.verified_at,
+        SELECT b.building_id, b.email, b.preferred_locale, b.phone, b.verified, b.verified_at,
                b.verification_revision, b.bfs_number, c.share_with_neighbors,
                c.consent_timestamp
         FROM buildings b JOIN consents c USING (building_id)
@@ -103,8 +103,10 @@ def _compatible(left, right):
 def _identity(profile):
     # Changes to verification, municipality, contact data or discovery consent
     # invalidate an earlier grant, even when a profile is later re-enabled.
+    identity = dict(profile)
+    identity.pop("preferred_locale", None)
     return hashlib.sha256(
-        json.dumps(dict(profile), sort_keys=True, default=str).encode()
+        json.dumps(identity, sort_keys=True, default=str).encode()
     ).hexdigest()
 
 
@@ -271,7 +273,10 @@ def create(actor, candidate, fields, secret):
         if not cur.fetchone():
             raise ContactDenied()
         _event(cur, rid, actor, "requested", fields)
-        return [left["email"], right["email"]]
+        return [
+            {"email": profile["email"], "preferred_locale": profile["preferred_locale"]}
+            for profile in (left, right)
+        ]
 
 
 def transition(actor, rid, action, fields=()):
@@ -306,12 +311,15 @@ def transition(actor, rid, action, fields=()):
                 (json.dumps(approved), rid),
             )
             _event(cur, rid, actor, "accepted", fields)
-            recipients = [left["email"], right["email"]]
+            recipients = (left, right)
         elif (action == "decline" and pending_recipient) or (
             action == "revoke" and row["status"] in {"pending", "accepted"}
         ):
             _end(cur, row, "declined" if action == "decline" else "revoked", actor)
-            recipients = [left["email"], right["email"]]
+            recipients = (left, right)
     if recipients is None:
         raise ContactDenied()
-    return recipients
+    return [
+        {"email": profile["email"], "preferred_locale": profile["preferred_locale"]}
+        for profile in recipients
+    ]

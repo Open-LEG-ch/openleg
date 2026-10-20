@@ -1840,6 +1840,19 @@ msgstr "Bitte E-Mail bestätigen"
 msgid "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 msgstr "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 
+#: leg_registry.py:55
+#, python-format
+msgid ""
+"Bitte bestätigen Sie, dass der Eintrag \"%(name)s\" im OpenLEG-Verzeichnis noch aktuell ist (Link"
+" 14 Tage gültig):\n"
+"\n"
+"%(url)s"
+msgstr ""
+"Bitte bestätigen Sie, dass der Eintrag \"%(name)s\" im OpenLEG-Verzeichnis noch aktuell ist (Link"
+" 14 Tage gültig):\n"
+"\n"
+"%(url)s"
+
 #: templates/partials/form_validation.html:2
 msgid "Bitte füllen Sie dieses Feld aus."
 msgstr "Bitte füllen Sie dieses Feld aus."
@@ -2519,6 +2532,19 @@ msgid ""
 msgstr ""
 "Der Rechner zeigt nur mögliche laufende Einsparungen. Einmalige und laufende Kosten unterscheiden"
 " sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet."
+
+#: dashboard_routes.py:153
+#, python-format
+msgid ""
+"Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
+"prüfen.\n"
+"\n"
+"%(url)s"
+msgstr ""
+"Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
+"prüfen.\n"
+"\n"
+"%(url)s"
 
 #: templates/leg_gruenden.html:71
 msgid ""
@@ -5080,6 +5106,29 @@ msgstr "Gründungsassistent und Vorlagen ansehen"
 msgid "Gründungsassistent öffnen"
 msgstr "Gründungsassistent öffnen"
 
+#: utility_portal.py:313
+#, python-format
+msgid ""
+"Guten Tag,\n"
+"\n"
+"Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Dieser Link ist %(minutes)s Minuten gültig.\n"
+"\n"
+"Ihr OpenLEG-Team"
+msgstr ""
+"Guten Tag,\n"
+"\n"
+"Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Dieser Link ist %(minutes)s Minuten gültig.\n"
+"\n"
+"Ihr OpenLEG-Team"
+
 #: templates/admin/abrechnungen.html:123
 msgid "Gutschriften"
 msgstr "Gutschriften"
@@ -5300,6 +5349,10 @@ msgstr "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgid "Ihr Dashboard-Zugangslink"
 msgstr "Ihr Dashboard-Zugangslink"
 
+#: municipality.py:216
+msgid "Ihr Gemeinde-Dashboard-Zugangslink"
+msgstr "Ihr Gemeinde-Dashboard-Zugangslink"
+
 #: templates/leg_verzeichnis/bestaetigt.html:7
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
 msgstr "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
@@ -5372,6 +5425,10 @@ msgstr "Ihre Gemeinde"
 #: templates/fuer_gemeinden.html:20
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
 msgstr "Ihre Gemeinde sieht, was als Nächstes ansteht"
+
+#: dashboard_routes.py:151
+msgid "Ihre Kontaktanfragen bei OpenLEG"
+msgstr "Ihre Kontaktanfragen bei OpenLEG"
 
 #: templates/emails/day_14_formation.html:6
 msgid "Ihre LEG kann starten"
@@ -5651,6 +5708,10 @@ msgstr "Internet-Erreichbarkeit"
 #: templates/telemetry_dashboard.html:15
 msgid "Intervallenergie"
 msgstr "Intervallenergie"
+
+#: leg_registry.py:53
+msgid "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
+msgstr "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
 
 #: app.py:138 formation_guide.py:72
 msgid "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
@@ -8186,6 +8247,10 @@ msgstr "OpenLEG-Netzwerk"
 #: templates/self_host.html:58
 msgid "OpenLEG. Kein eigener technischer Betrieb."
 msgstr "OpenLEG. Kein eigener technischer Betrieb."
+
+#: utility_portal.py:311
+msgid "OpenLEG: Ihr Login-Link"
+msgstr "OpenLEG: Ihr Login-Link"
 
 #: interest_intake.py:100
 msgid "OpenLEG: Interessenmeldung bestätigen"
@@ -11923,6 +11988,21 @@ msgid ""
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 msgstr ""
 "Öffnen Sie Ihr Dashboard über diesen Link:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
+
+#: municipality.py:218
+#, python-format
+msgid ""
+"Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
+msgstr ""
+"Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n"
 "\n"
 "%(url)s\n"
 "\n"

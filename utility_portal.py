@@ -26,8 +26,10 @@ from flask import (
 
 import database as db
 import security_utils
+from email_localization import gettext, recipient_locale
 from email_utils import send_email
 from i18n import gettext as _
+from i18n import localized_url, select_locale
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +126,7 @@ def register():
         vnb_name=vnb_name,
         population=population,
         kanton=kanton,
+        preferred_locale=select_locale(),
     )
     if not saved:
         return jsonify(
@@ -303,14 +306,19 @@ def _send_magic_link(client_id: str, email: str):
     token = secrets.token_urlsafe(48)
     db.set_utility_magic_token(client_id, token, MAGIC_LINK_TTL)
 
-    login_url = f"{_site_url()}/utility/login?token={token}"
-    subject = "OpenLEG: Ihr Login-Link"
-    body = (
-        f"Guten Tag,\n\n"
-        f"Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n\n"
-        f"{login_url}\n\n"
-        f"Dieser Link ist {MAGIC_LINK_TTL // 60} Minuten gültig.\n\n"
-        f"Ihr OpenLEG-Team"
+    locale = recipient_locale(
+        db.get_utility_client(client_id), email, email_field="contact_email"
+    )
+    login_url = localized_url(
+        f"{_site_url()}/utility/login?token={token}", locale=locale
+    )
+    subject = gettext("OpenLEG: Ihr Login-Link", locale=locale)
+    body = gettext(
+        "Guten Tag,\n\nKlicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n\n"
+        "%(url)s\n\nDieser Link ist %(minutes)s Minuten gültig.\n\nIhr OpenLEG-Team",
+        locale=locale,
+        url=login_url,
+        minutes=MAGIC_LINK_TTL // 60,
     )
     send_email(email, subject, body)
     logger.info(f"[UTILITY] Magic link sent to {email}")

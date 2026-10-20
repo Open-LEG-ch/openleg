@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 04:16+0000\n"
+"POT-Creation-Date: 2026-10-20 04:34+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -118,7 +118,7 @@ msgid_plural "%(num)s Gemeinden in dieser Liga"
 msgstr[0] ""
 msgstr[1] ""
 
-#: municipality.py:371
+#: municipality.py:379
 #, python-format
 msgid "%(num)s Interessierte"
 msgid_plural "%(num)s Interessierte"
@@ -150,7 +150,7 @@ msgid_plural "%(num)s Tage"
 msgstr[0] ""
 msgstr[1] ""
 
-#: municipality.py:367
+#: municipality.py:375
 #, python-format
 msgid "%(num)s bestätigte Interessierte"
 msgid_plural "%(num)s bestätigte Interessierte"
@@ -483,11 +483,11 @@ msgstr ""
 msgid "9. Kontakt"
 msgstr ""
 
-#: municipality.py:363
+#: municipality.py:371
 msgid "< 3 Interessierte"
 msgstr ""
 
-#: municipality.py:363
+#: municipality.py:371
 msgid "< 3 bestätigte Interessierte"
 msgstr ""
 
@@ -538,7 +538,7 @@ msgstr ""
 msgid "API-Schlüssel erstellen"
 msgstr ""
 
-#: utility_portal.py:259
+#: utility_portal.py:262
 msgid "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 msgstr ""
 
@@ -814,7 +814,7 @@ msgstr ""
 msgid "Aktion derzeit nicht möglich"
 msgstr ""
 
-#: formation_wizard.py:56 municipality.py:101 municipality.py:283
+#: formation_wizard.py:56 municipality.py:102 municipality.py:291
 msgid "Aktiv"
 msgstr ""
 
@@ -877,7 +877,7 @@ msgstr ""
 msgid "Alle Grössen"
 msgstr ""
 
-#: municipality.py:433 rangliste.py:52
+#: municipality.py:441 rangliste.py:52
 msgid "Alle Kantone"
 msgstr ""
 
@@ -1356,7 +1356,7 @@ msgstr ""
 msgid "BFS municipality number"
 msgstr ""
 
-#: municipality.py:59
+#: municipality.py:60
 msgid "BFS-Nummer und E-Mail erforderlich."
 msgstr ""
 
@@ -1746,6 +1746,15 @@ msgstr ""
 
 #: interest_intake.py:109
 msgid "Bitte bestätigen Sie Ihre E-Mail-Adresse."
+msgstr ""
+
+#: leg_registry.py:59
+#, python-format
+msgid ""
+"Bitte bestätigen Sie, dass der Eintrag \"%(name)s\" im OpenLEG-Verzeichnis noch aktuell ist (Link"
+" 14 Tage gültig):\n"
+"\n"
+"%(url)s"
 msgstr ""
 
 #: templates/partials/form_validation.html:2
@@ -2269,7 +2278,7 @@ msgstr ""
 msgid "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
 msgstr ""
 
-#: registry_intake.py:99
+#: registry_intake.py:101
 msgid "Der Eintrag konnte nicht gespeichert werden."
 msgstr ""
 
@@ -2376,6 +2385,15 @@ msgid ""
 " sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet."
 msgstr ""
 
+#: dashboard_routes.py:153
+#, python-format
+msgid ""
+"Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
+"prüfen.\n"
+"\n"
+"%(url)s"
+msgstr ""
+
 #: templates/leg_gruenden.html:71
 msgid ""
 "Der VNB liefert die Messdaten und rechnet den Netzbezug gegenüber dem vZEV ab. Die interne "
@@ -2450,7 +2468,7 @@ msgstr ""
 msgid "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgstr ""
 
-#: municipality.py:166
+#: municipality.py:167
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr ""
 
@@ -2499,7 +2517,7 @@ msgstr ""
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr ""
 
-#: dashboard_routes.py:949
+#: dashboard_routes.py:956
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr ""
 
@@ -2939,7 +2957,7 @@ msgid ""
 "und wie Sie Auskunft, Korrektur oder Löschung verlangen."
 msgstr ""
 
-#: utility_portal.py:98
+#: utility_portal.py:100
 msgid "Diese E-Mail ist bereits registriert. Bitte einloggen."
 msgstr ""
 
@@ -2987,7 +3005,7 @@ msgid ""
 "Quelldokumente."
 msgstr ""
 
-#: dashboard_routes.py:914
+#: dashboard_routes.py:921
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -3230,7 +3248,7 @@ msgstr ""
 msgid "Eigentümer-Dashboard"
 msgstr ""
 
-#: municipality.py:130 municipality.py:295 templates/index.html:431 templates/index.html:459
+#: municipality.py:131 municipality.py:303 templates/index.html:431 templates/index.html:459
 msgid "Eigentümer/in"
 msgstr ""
 
@@ -3766,17 +3784,17 @@ msgstr ""
 msgid "Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink."
 msgstr ""
 
-#: dashboard_routes.py:331
+#: dashboard_routes.py:338
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr ""
 
-#: municipality.py:190
+#: municipality.py:191
 msgid ""
 "Falls eine Gemeinde zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink "
 "gesendet."
 msgstr ""
 
-#: utility_portal.py:208
+#: utility_portal.py:211
 msgid "Falls registriert, erhalten Sie einen Login-Link per E-Mail."
 msgstr ""
 
@@ -3859,7 +3877,7 @@ msgstr ""
 msgid "Firmenname und E-Mail sind Pflichtfelder."
 msgstr ""
 
-#: utility_portal.py:87
+#: utility_portal.py:89
 msgid "Firmenname und E-Mail sind erforderlich."
 msgstr ""
 
@@ -4259,7 +4277,7 @@ msgstr ""
 msgid "Gemeinde auswählen"
 msgstr ""
 
-#: municipality.py:179 templates/api_docs.html:242
+#: municipality.py:180 templates/api_docs.html:242
 msgid "Gemeinde nicht gefunden."
 msgstr ""
 
@@ -4318,7 +4336,7 @@ msgstr ""
 msgid "Gemeinde-Dashboard öffnen"
 msgstr ""
 
-#: municipality.py:134 templates/index.html:435 templates/index.html:459
+#: municipality.py:135 templates/index.html:435 templates/index.html:459
 msgid "Gemeinde/Organisation"
 msgstr ""
 
@@ -4714,6 +4732,20 @@ msgstr ""
 msgid "Gründungsassistent öffnen"
 msgstr ""
 
+#: utility_portal.py:317
+#, python-format
+msgid ""
+"Guten Tag,\n"
+"\n"
+"Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Dieser Link ist %(minutes)s Minuten gültig.\n"
+"\n"
+"Ihr OpenLEG-Team"
+msgstr ""
+
 #: templates/admin/abrechnungen.html:123
 msgid "Gutschriften"
 msgstr ""
@@ -4914,8 +4946,12 @@ msgstr ""
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgstr ""
 
-#: dashboard_routes.py:370
+#: dashboard_routes.py:377
 msgid "Ihr Dashboard-Zugangslink"
+msgstr ""
+
+#: municipality.py:216
+msgid "Ihr Gemeinde-Dashboard-Zugangslink"
 msgstr ""
 
 #: templates/leg_verzeichnis/bestaetigt.html:7
@@ -4989,6 +5025,10 @@ msgstr ""
 
 #: templates/fuer_gemeinden.html:20
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
+msgstr ""
+
+#: dashboard_routes.py:151
+msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr ""
 
 #: templates/emails/day_14_formation.html:6
@@ -5107,7 +5147,7 @@ msgid ""
 "die mögliche Ersparnis."
 msgstr ""
 
-#: municipality.py:100 municipality.py:143
+#: municipality.py:101 municipality.py:144
 msgid "In Prüfung"
 msgstr ""
 
@@ -5253,6 +5293,10 @@ msgstr ""
 
 #: templates/telemetry_dashboard.html:16
 msgid "Intervallenergie"
+msgstr ""
+
+#: leg_registry.py:57
+msgid "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
 msgstr ""
 
 #: app.py:138 formation_guide.py:72
@@ -6243,7 +6287,7 @@ msgstr ""
 msgid "Login | OpenLEG Utility Portal"
 msgstr ""
 
-#: utility_portal.py:214
+#: utility_portal.py:217
 msgid "Login-Link per E-Mail gesendet."
 msgstr ""
 
@@ -6312,7 +6356,7 @@ msgstr ""
 msgid "Lokale Stromgemeinschaften seit dem 1. Januar erlaubt."
 msgstr ""
 
-#: municipality.py:133 templates/index.html:434 templates/index.html:459
+#: municipality.py:134 templates/index.html:434 templates/index.html:459
 msgid "Lokales Unternehmen"
 msgstr ""
 
@@ -6569,7 +6613,7 @@ msgstr ""
 msgid "Methodik und Datenquellen"
 msgstr ""
 
-#: municipality.py:131 municipality.py:296 templates/index.html:432 templates/index.html:459
+#: municipality.py:132 municipality.py:304 templates/index.html:432 templates/index.html:459
 msgid "Mieter/in"
 msgstr ""
 
@@ -6805,7 +6849,7 @@ msgstr ""
 msgid "Name oder Ort"
 msgstr ""
 
-#: registry_intake.py:52
+#: registry_intake.py:53
 msgid "Name und Kontakt-E-Mail sind erforderlich."
 msgstr ""
 
@@ -7049,7 +7093,7 @@ msgstr ""
 msgid "Nicht mehr benötigte Zugänge"
 msgstr ""
 
-#: municipality.py:358 templates/admin/ops.html:44 templates/admin/ops.html:48
+#: municipality.py:366 templates/admin/ops.html:44 templates/admin/ops.html:48
 msgid "Nicht verfügbar"
 msgstr ""
 
@@ -7623,6 +7667,10 @@ msgstr ""
 
 #: templates/self_host.html:58
 msgid "OpenLEG. Kein eigener technischer Betrieb."
+msgstr ""
+
+#: utility_portal.py:315
+msgid "OpenLEG: Ihr Login-Link"
 msgstr ""
 
 #: interest_intake.py:100
@@ -8339,7 +8387,7 @@ msgstr ""
 msgid "Registrierung erfolgreich! Ihre Instanz: %(subdomain)s.openleg.ch"
 msgstr ""
 
-#: utility_portal.py:152
+#: utility_portal.py:155
 msgid "Registrierung erfolgreich. Login-Link per E-Mail gesendet."
 msgstr ""
 
@@ -8347,7 +8395,7 @@ msgstr ""
 msgid "Registrierung erfolgreich. Prüfen Sie Ihre E-Mail für den Login-Link."
 msgstr ""
 
-#: municipality.py:96 templates/utility/register.html:149
+#: municipality.py:97 templates/utility/register.html:149
 msgid "Registrierung fehlgeschlagen."
 msgstr ""
 
@@ -8894,7 +8942,7 @@ msgstr ""
 msgid "Solarpotenzial sehen."
 msgstr ""
 
-#: municipality.py:132 templates/index.html:433 templates/index.html:459
+#: municipality.py:133 templates/index.html:433 templates/index.html:459
 msgid "Solarstromproduzent/in"
 msgstr ""
 
@@ -9361,7 +9409,7 @@ msgstr ""
 msgid "Unbekannt"
 msgstr ""
 
-#: municipality.py:67
+#: municipality.py:68
 msgid "Unbekannte BFS-Nummer."
 msgstr ""
 
@@ -9436,7 +9484,7 @@ msgstr ""
 msgid "Ungültige Schweizer Telefonnummer"
 msgstr ""
 
-#: utility_portal.py:179
+#: utility_portal.py:182
 msgid "Ungültiger oder abgelaufener Login-Link."
 msgstr ""
 
@@ -9645,7 +9693,7 @@ msgstr ""
 msgid "Vergrössern"
 msgstr ""
 
-#: municipality.py:102
+#: municipality.py:103
 msgid "Verifiziert"
 msgstr ""
 
@@ -9998,7 +10046,7 @@ msgstr ""
 msgid "Website (optional)"
 msgstr ""
 
-#: registry_intake.py:77
+#: registry_intake.py:78
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr ""
 
@@ -10204,7 +10252,7 @@ msgstr ""
 msgid "Wir konnten die Adresse nicht prüfen."
 msgstr ""
 
-#: utility_portal.py:132
+#: utility_portal.py:135
 msgid "Wir konnten die Registrierung nicht speichern. Bitte versuchen Sie es später erneut."
 msgstr ""
 
@@ -11180,10 +11228,20 @@ msgstr ""
 msgid "Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail."
 msgstr ""
 
-#: dashboard_routes.py:372
+#: dashboard_routes.py:379
 #, python-format
 msgid ""
 "Öffnen Sie Ihr Dashboard über diesen Link:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
+msgstr ""
+
+#: municipality.py:218
+#, python-format
+msgid ""
+"Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n"
 "\n"
 "%(url)s\n"
 "\n"

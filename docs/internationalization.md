@@ -115,6 +115,30 @@ receive one link per record with different languages. Page language and submitte
 preferences cannot change those choices. Missing language information uses German.
 The existing confirmation, expiry and one-record deletion rules still apply.
 
-Contact updates, other invoice correspondence and
-municipality/utility/registry mail still need recipient delivery coverage.
+Municipality dashboard access links use the saved language of the linked
+administrator building only when its email matches the municipality addressee.
+Unlinked or mismatched records use German. The public access request cannot
+change this choice.
+
+Utility registration saves the selected display language with the new account.
+Subsequent login emails use that account's language and registered email together;
+public login requests cannot override it. Updating other account fields preserves
+the language unless the caller supplies a new supported choice.
+
+Registry submissions accept an optional `preferred_locale` through the API.
+Supported aliases normalize to German or Swiss French; omitted or unsupported
+values use German. Verification reminders use each entry's saved language and
+localized confirmation link, including outside Flask. The public directory API
+does not expose the contact language. Both new preferences stay with their
+existing account or registry record and share its retention rules. The guarded
+schema upgrade defaults existing records to German.
+
+Contact-request updates read each participant's saved language and mailbox
+together during the authorized request or transition. Notifications contain
+only the generic status message and localized dashboard link. They do not
+include a participant's contact details or choice of shared fields.
+
+Operator-entered correspondence remains in the author's language. Any future
+generated mail must select an explicit recipient language before its sender
+is enabled.
 This implementation records no human language or legal approval.

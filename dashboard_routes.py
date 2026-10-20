@@ -144,13 +144,20 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         failed = False
         for recipient in recipients:
+            locale = recipient_locale(recipient, recipient["email"])
             try:
                 result = send_email(
-                    recipient,
-                    "Ihre Kontaktanfragen bei OpenLEG",
-                    "Der Stand Ihrer Kontaktanfragen hat sich geändert. "
-                    "Öffnen Sie Ihr Dashboard, um die Anfrage zu prüfen.\n\n"
-                    f"{current_app.config['APP_BASE_URL'].rstrip('/')}/dashboard/contacts",
+                    recipient["email"],
+                    gettext("Ihre Kontaktanfragen bei OpenLEG", locale=locale),
+                    gettext(
+                        "Der Stand Ihrer Kontaktanfragen hat sich geändert. "
+                        "Öffnen Sie Ihr Dashboard, um die Anfrage zu prüfen.\n\n%(url)s",
+                        locale=locale,
+                        url=localized_url(
+                            f"{current_app.config['APP_BASE_URL'].rstrip('/')}/dashboard/contacts",
+                            locale=locale,
+                        ),
+                    ),
                     private=True,
                 )
                 failed = failed or result is False
