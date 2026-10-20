@@ -23,6 +23,7 @@ from flask import (
     session,
 )
 from flask_talisman import Talisman
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import access_token  # noqa: F401
 import app_config
@@ -1021,6 +1022,19 @@ def create_app(config=None, *, load_environment=True, check_database=True):
 
     application = Flask(__name__)
     application.config.from_mapping(app_config.build_config(os.environ, config))
+    # Topology precondition: ProxyFix may only rewrite REMOTE_ADDR from
+    # X-Forwarded-For when exactly one trusted reverse proxy sits in front of
+    # the WSGI server. Without that topology the header is client-controlled,
+    # so forwarded-header trust stays off unless explicitly enabled.
+    if application.config["TRUSTED_PROXY_HOPS"] == 1:
+        application.wsgi_app = ProxyFix(
+            application.wsgi_app,
+            x_for=1,
+            x_proto=0,
+            x_host=0,
+            x_port=0,
+            x_prefix=0,
+        )
     release_mode.install_http_guard(application, read_only=read_only)
     i18n.init_app(application)
     application.context_processor(private_http.template_context)

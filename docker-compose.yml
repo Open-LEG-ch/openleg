@@ -16,6 +16,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://openleg:${POSTGRES_PASSWORD}@postgres:5432/openleg
       - REDIS_URL=redis://redis:6379/0
+      # Trust exactly one private Caddy hop; flask must stay unreachable from untrusted clients
+      - OPENLEG_TRUSTED_PROXY_HOPS=${OPENLEG_TRUSTED_PROXY_HOPS-1}
     volumes:
       - flask_data:/data
     healthcheck:
