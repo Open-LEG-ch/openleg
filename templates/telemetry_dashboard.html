@@ -108,6 +108,32 @@
     {% else %}
       <p class="mt-6">{{ _("Sie haben keine angemeldeten Anlagen in einer bestätigten LEG-Mitgliedschaft.") }}</p>
     {% endfor %}
+    <section class="mt-6 bg-white rounded-xl border border-line p-6" aria-labelledby="solar-forecast-heading">
+      <h2 id="solar-forecast-heading" class="text-xl font-bold">{{ _("Wetterprognose") }}</h2>
+      {% if forecast and forecast.state == "current" %}
+        <p class="text-ink-muted mt-2">{{ _("Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt.") }}</p>
+        <p class="text-sm text-ink-muted">{{ _("Die Prognose berechnet keine Anlagenleistung oder Überschüsse.") }}</p>
+        <p class="mt-2">{{ _("Prognosepunkt") }}: {{ forecast.point_name }} · {{ forecast.distance_km|round(1)|numberlabel }} km</p>
+        <p class="text-sm text-ink-muted">{{ _("Prognosestand") }}: <time datetime="{{ forecast.released_at }}">{{ forecast.released_label }}</time></p>
+        <p class="text-sm"><a class="text-brand hover:underline" href="{{ forecast.source_url }}" rel="noopener noreferrer">{{ _("Quelle") }}: MeteoSwiss</a></p>
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-left text-sm">
+            <thead><tr><th scope="col" class="py-2">{{ _("Zeitraum") }}</th><th scope="col" class="py-2">{{ _("Globalstrahlung, Stundenmittel") }}</th></tr></thead>
+            <tbody>
+              {% for interval in forecast.intervals %}
+                <tr class="border-t border-line">
+                  <th scope="row" class="py-2 font-normal"><time datetime="{{ interval.starts_at }}">{{ interval.local_label }}</time> - <time datetime="{{ interval.ends_at }}">{{ interval.local_end_label }}</time></th>
+                  <td class="py-2">{% if interval.radiation_w_m2 is not none %}{{ interval.radiation_w_m2|numberlabel }} W/m²{% else %}{{ _("Keine Prognose verfügbar") }}{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-ink-muted mt-2">{{ _("Wetterprognose derzeit nicht verfügbar") }}</p>
+        {% if forecast and forecast.state == "stale" %}<p class="text-sm text-ink-muted">{{ _("Der Prognosestand ist veraltet. Bitte prüfen Sie die Wetterprognose später erneut.") }}</p>{% endif %}
+      {% endif %}
+    </section>
   {% endif %}
 </div>
 {% endblock %}

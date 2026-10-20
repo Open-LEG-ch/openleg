@@ -15,6 +15,15 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
       postgres:
         image: postgres:16-alpine
         env:
@@ -45,4 +54,5 @@ jobs:
       - name: Run tests
         env:
           DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
+          OPENLEG_TEST_FORECAST_REDIS_URL: redis://127.0.0.1:6379/15
         run: bash scripts/test.sh full

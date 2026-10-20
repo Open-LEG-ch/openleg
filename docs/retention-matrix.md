@@ -15,6 +15,11 @@ confirmation (`store/token.py::confirm_profile_deletion`, one transaction,
 implemented in code; where the horizon is a legal or policy claim, it says so
 below.
 
+Current community and municipality administrator references block profile
+deletion through `NO ACTION` foreign keys while they still point to that
+profile. The [privacy review packet](privacy-notice-review.md)
+records the owner decisions still needed.
+
 The community operations archive is a portability copy, not a deletion or
 retention trigger. It carries the source domains' retention meaning with it.
 An administrator must protect exported files as personal, metering, and
@@ -55,7 +60,7 @@ history or retention period. Scheduled email delivery reads the current choice.
 | store/utility | Life of the utility account | Not implemented | - | Business contacts |
 | store/referral | Life of the registration | Profile deletion (`referred_id` CASCADE, `referrer_id` SET NULL) | Edges where the deleted building was referred; the referrer edge survives anonymised (`SET NULL`) | Aggregate street counts; `street_stats` is an unused table (deletion candidate) |
 | store/document | Life of the LEG | Not implemented | - | Signed and signing documents |
-| store/formation | Life of the LEG | Not implemented | Profile deletion CASCADEs `community_members`; the `communities` row survives with a dangling `admin_building_id` (no FK action) | The LEG record and its accounting |
+| store/formation | Life of the LEG | Not implemented | Ordinary member profile deletion CASCADEs `community_members`. A current administrator's profile deletion is blocked by `communities.admin_building_id` (`NO ACTION`) until the retaining reference changes. | The LEG record and its accounting |
 | store/formation_documents | Life of the LEG | Not implemented | - | The document bundle |
 | store/formation_activation | Follows the community and correspondence records | Not implemented | No deletion through activation or consent revocation | Start-confirmation projection, source reference and actor/time audit fields; original evidence stays in `correspondence_log` |
 | store/correspondence | Life of the LEG | Not implemented | - | The shared journal is the LEG's memory |
@@ -69,7 +74,7 @@ history or retention period. Scheduled email delivery reads the current choice.
 | store/registry | Until the LEG withdraws | Withdrawal flow, not profile deletion | The registry entry | - |
 | store/ops | Unlimited today (finding, filed) | Not implemented | - | Job reports and snapshots; payloads are masked |
 | store/ranking | Follows the snapshot files | Snapshot regeneration | Replaced snapshots | - |
-| store/municipality | Life of the Gemeinde account | Not implemented | - | Onboarding state |
+| store/municipality | Life of the Gemeinde account | Not implemented | A current administrator's profile deletion is blocked by `municipalities.admin_building_id` (`NO ACTION`) until the retaining reference changes. | Onboarding state |
 
 ## Contact request audit and limits (#567)
 

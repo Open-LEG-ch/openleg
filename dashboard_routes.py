@@ -32,6 +32,7 @@ import database as db
 import payment_reconciliation
 import quartierakku
 import security_utils
+import solar_forecast_cache
 from email_localization import gettext, recipient_locale
 from i18n import gettext as _
 from i18n import localized_url, normalize_locale
@@ -219,10 +220,17 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             return render_city_template(
                 "telemetry_dashboard.html", unavailable=True
             ), 503
+        building = db.get_building(actor) if installations else None
+        forecast = (
+            solar_forecast_cache.view(building["lat"], building["lon"])
+            if building
+            else {"state": "unavailable"}
+        )
         return render_city_template(
             "telemetry_dashboard.html",
             installations=installations,
             csrf_token=_dashboard_csrf_token(),
+            forecast=forecast,
         )
 
     @bp.post(
