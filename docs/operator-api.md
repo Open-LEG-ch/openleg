@@ -1,7 +1,10 @@
 # Private Betreiber-API v1
 
 Die Betreiber-API bindet jedes Credential an genau eine LEG. Sie dient für
-Gründungsanmeldungen und VNB-Mitgliedermutationen; sie ist kein Datenbankexport.
+Gründungsanmeldungen, VNB-Mitgliedermutationen sowie Operationen rund um
+Messdaten, Abrechnung und Zahlungen; sie ist kein Datenbankexport. Den
+detaillierten Vertrag mit allen Endpunkten beschreibt
+[operator-operations-api.md](operator-operations-api.md).
 
 ## Credentials
 
@@ -15,9 +18,10 @@ den bisherigen Token sofort ungültig; Widerruf wird
 bei der nächsten HTTP-Anfrage geprüft.
 
 Capabilities sind explizit: `formation.read`, `formation.mutate`,
-`membership.read` und `membership.mutate`. Ein Credential erhält keine
-Capability automatisch. Pro Credential gilt standardmäßig ein Limit von 100
-Anfragen pro Stunde.
+`membership.read`, `membership.mutate`, `metering.read`, `metering.mutate`,
+`billing.read`, `cases.read`, `cases.mutate`, `payments.read` und `payments.mutate`. Ein
+Credential erhält keine Capability automatisch. Pro Credential gilt
+standardmäßig ein Limit von 100 Anfragen pro Stunde.
 
 ## HTTP
 
