@@ -53,7 +53,7 @@ helper whose six mutants had become the module's uncovered block.
 
 One equivalent remains from the fresh run (`#73`, table above). Four older
 jitter equivalents (`#15`, `#38`, `#49`, `#50`) are unchanged. The other
-fifteen survivors are killed by behavior tests in
+fourteen survivors are killed by behavior tests in
 `tests/test_neighbor_view_privacy.py`:
 
 - `find_provisional_matches` #11-#14 and #21-#26: the self-exclusion tests

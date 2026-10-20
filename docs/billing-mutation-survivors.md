@@ -31,7 +31,8 @@ values.
 The runner battery path (`_battery_lines`), the public fingerprint's VNB
 evidence fields, and the database-backed run path in `run_billing_period`
 grew after the September waves and held 42 unclassified survivors. Behavior
-tests in `tests/test_billing_runner.py` kill all of them:
+tests in `tests/test_billing_runner.py` kill 40 of them; the remaining two are
+classified as intentional equivalents (table below):
 
 - `_battery_lines` #2 and `run_billing_period` #52: the community battery
   read is pinned to the billed community
@@ -105,6 +106,8 @@ unquoted identifiers and treats keywords case-insensitively.
 
 | Mutant | Mutation | Why behavior is unchanged |
 | --- | --- | --- |
+| `billing_runner.x__battery_lines__mutmut_6` | Rename the `community_id` key of the dict handed to `validate_battery_config`. | `db.get_battery` only returns the row whose `community_id` equals the queried community, so the reinforcement key can never change the validated result. |
+| `billing_runner.x__battery_lines__mutmut_7` | Rename the `community_id` key of the dict handed to `validate_battery_config`. | `db.get_battery` only returns the row whose `community_id` equals the queried community, so the reinforcement key can never change the validated result. |
 | `billing_runner.x_previous_complete_month__mutmut_26` | Subtract two days instead of one from the first day of the current month, then replace the day with 1. | Both dates are inside the previous calendar month, so both produce its first day. |
 | `store.metering.x__canonical_directions__mutmut_8` | Replace `, ` with `XX, XX` between unknown direction values. | Every bad value remains in the error and the write still fails. Separator punctuation is not a repository contract. |
 | `store.metering.x_get_metering_points__mutmut_10` | Lowercase `AND` in SQL. | PostgreSQL keywords are case-insensitive. |
