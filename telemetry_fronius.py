@@ -84,7 +84,7 @@ class FroniusReader:
     ):
         try:
             if not isinstance(address, str):
-                raise ValueError()
+                raise TypeError()
             parsed = ipaddress.IPv4Address(address)
             if not any(parsed in network for network in LAN_NETWORKS):
                 raise ValueError()
