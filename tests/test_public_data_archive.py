@@ -43,7 +43,10 @@ def test_reporter_latest_archive_maps_published_municipal_units(monkeypatch):
         }
     )
 
+    network_calls = []
+
     def get(url, **kwargs):
+        network_calls.append((url, kwargs))
         if url == public_data.ENERGIE_REPORTER_URL:
             return _response(
                 json.dumps(
@@ -80,6 +83,13 @@ def test_reporter_latest_archive_maps_published_municipal_units(monkeypatch):
             "electricity_consumption_mwh": 400,
             "renewable_production_mwh": 150,
         }
+    ]
+    assert network_calls == [
+        (public_data.ENERGIE_REPORTER_URL, {"timeout": 15}),
+        (
+            "https://data.example.invalid/energyreporter_latest.zip",
+            {"timeout": 30, "stream": True},
+        ),
     ]
 
 
