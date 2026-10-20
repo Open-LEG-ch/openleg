@@ -979,3 +979,60 @@ def test_refresh_stores_reporter_canton_for_new_non_zh_profile(monkeypatch):
     assert len(saved_profiles) == 1
     assert saved_profiles[0]["bfs_number"] == 351
     assert saved_profiles[0]["kanton"] == "BE"
+
+
+def test_canton_refresh_persists_the_requested_nondefault_tariff_year(monkeypatch):
+    import json
+
+    import requests
+
+    import municipality_profile
+
+    queries = []
+    saved_tariffs = []
+    response = requests.Response()
+    response.status_code = 200
+    response._content = json.dumps(
+        {
+            "results": {
+                "bindings": [
+                    {
+                        "category": {"value": "H4"},
+                        "total": {"value": "40"},
+                        "grid": {"value": "10"},
+                    }
+                ]
+            }
+        }
+    ).encode()
+
+    def post(url, **kwargs):
+        assert url == public_data.LINDAS_ENDPOINT
+        queries.append(kwargs["data"]["query"])
+        return response
+
+    monkeypatch.setattr(requests, "post", post)
+    monkeypatch.setattr(
+        public_data,
+        "fetch_energie_reporter",
+        lambda: [{"bfs_number": 99971, "name": "Synthetic OW", "kanton": "OW"}],
+    )
+    monkeypatch.setattr(public_data, "fetch_sonnendach_municipal", list)
+    monkeypatch.setattr(database, "get_municipality_profile", lambda _bfs: None)
+    monkeypatch.setattr(database, "save_municipality_profile", lambda _profile: None)
+    monkeypatch.setattr(
+        database,
+        "save_elcom_tariffs",
+        lambda rows: saved_tariffs.extend(deepcopy(rows)) or len(rows),
+    )
+    monkeypatch.setattr(
+        municipality_profile, "invalidate_profile_cache", lambda _bfs: None
+    )
+
+    result = public_data.refresh_canton("OW", year=2027)
+
+    assert result["municipalities"] == 1
+    assert result["errors"] == []
+    assert len(queries) == 1
+    assert '"2027"' in queries[0]
+    assert [tariff["year"] for tariff in saved_tariffs] == [2027]
