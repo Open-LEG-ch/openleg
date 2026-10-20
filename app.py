@@ -1005,6 +1005,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     application = Flask(__name__)
     application.config.from_mapping(app_config.build_config(os.environ, config))
     i18n.init_app(application)
+    application.context_processor(private_http.template_context)
 
     public_site_base = app_config.validated_public_site_url(
         application.config["PUBLIC_SITE_URL"]

@@ -14,7 +14,7 @@
   </main>
   {% include 'partials/site_footer.html' %}
   {% block scripts %}{% endblock %}
-  {% if matomo_site_id %}
+  {% if matomo_site_id and not private_page %}
   <script>
     window._paq = window._paq || [];
     window._paq.push(['disableCookies']);

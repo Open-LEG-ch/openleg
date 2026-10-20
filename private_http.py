@@ -16,6 +16,9 @@ PRIVATE_RESPONSE_HEADERS = {
 
 # Token-bearing and member-only surfaces are private with or without a session.
 _PRIVATE_PATH_PREFIXES = (
+    "/confirm/",
+    "/interest/confirm/",
+    "/unsubscribe/",
     "/admin/vnb-calculated-values",
     "/api/operator/",
     "/api/telemetry/",
@@ -61,17 +64,39 @@ def is_private_response(
     return municipality_session and path in _MUNICIPALITY_SESSION_PATHS
 
 
+def request_is_private():
+    """One classification shared by headers and template resource decisions."""
+    building_id = session.get("dashboard_building_id")
+    sensitive_parameters = {"token", "access_token", "verification_token", "secret"}
+    return (
+        bool(sensitive_parameters.intersection(request.args))
+        or bool(
+            session.get("utility_client_id") and request.path.startswith("/utility/")
+        )
+        or is_private_response(
+            request.path,
+            dashboard_session=isinstance(building_id, str)
+            and bool(building_id.strip()),
+            municipality_session=bool(session.get("municipality_id")),
+        )
+    )
+
+
+def template_context():
+    return {"private_page": request_is_private()}
+
+
 def apply_private_response_headers(response):
     """Stamp both private headers when the current request classified private."""
-    dashboard_building_id = session.get("dashboard_building_id")
-    if is_private_response(
-        request.path,
-        dashboard_session=(
-            isinstance(dashboard_building_id, str)
-            and bool(dashboard_building_id.strip())
-        ),
-        municipality_session=bool(session.get("municipality_id")),
-    ):
+    if request_is_private():
         for header, value in PRIVATE_RESPONSE_HEADERS.items():
             response.headers[header] = value
+        # Inline product scripts/styles remain usable, but no third-party URL
+        # can receive this page's token, even if a future template adds one.
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+            "font-src 'self' data:; connect-src 'self'; form-action 'self'; "
+            "frame-src 'none'; object-src 'none'; base-uri 'self'"
+        )
     return response
