@@ -195,6 +195,23 @@ def clear_utility_magic_token(client_id: str) -> bool:
         return False
 
 
+def update_utility_client_locale(client_id: str, preferred_locale: str) -> bool:
+    """Update only an authenticated owner's supported correspondence language."""
+    selected = require_recipient_locale(preferred_locale)
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """UPDATE utility_clients
+                SET preferred_locale = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE client_id = %s""",
+                (selected, client_id),
+            )
+            return cur.rowcount == 1
+    except Exception as error:
+        logger.error("[DB] Error updating utility language: %s", error)
+        return False
+
+
 def update_utility_client_status(client_id: str, status: str) -> bool:
     """Update utility client status."""
     try:

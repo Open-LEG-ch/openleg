@@ -147,3 +147,19 @@ links. Dynamic community, status and next-step text is escaped. It has no
 active sender or schedule; a future sender must choose the recipient's saved
 language for both subject and body.
 This implementation records no human language or legal approval.
+
+
+### Deferred registration confirmations and GRD preferences
+
+The registration route copies the trusted tenant's platform and municipality
+names into the confirmation callback before leaving the request. The worker
+still resolves the recipient locale from the email-bound stored profile through
+`email_localization`; it does not depend on another request or session. The
+confirmation URL keeps the configured `APP_BASE_URL` origin.
+
+Authenticated GRD accounts can edit their correspondence language at
+`/utility/settings`. The form requires its session CSRF token. Its storage
+operation updates only the session owner's `preferred_locale`, preserving other
+account settings and other accounts. Subsequent login emails read that persisted
+choice. Other roles retain their existing profile and administrator bindings;
+this does not create a new generic preference or token system.

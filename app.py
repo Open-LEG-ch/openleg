@@ -4,6 +4,7 @@ import logging
 import os
 import secrets
 import threading
+from functools import partial
 from urllib.parse import urljoin, urlparse
 
 from dotenv import load_dotenv
@@ -210,15 +211,19 @@ def send_activity_notification(activity_type, details):
     send_email(current_app.config["ADMIN_EMAIL"], subject, message_body)
 
 
-def send_confirmation_email(email, verification_url, building_id=None, address=None):
+def send_confirmation_email(
+    email, verification_url, building_id=None, address=None, *, presentation=None
+):
     profile = db.get_building(building_id) if building_id else None
     locale = recipient_locale(profile, email)
     verification_url = localized_url(verification_url, locale)
-    name = _tenant_name()
-    try:
-        city = getattr(g, "tenant", {}).get("city_name", "Zürich")
-    except RuntimeError:
-        city = "Zürich"
+    if presentation is None:
+        try:
+            presentation = getattr(g, "tenant", {})
+        except RuntimeError:
+            presentation = {}
+    name = presentation.get("platform_name", "OpenLEG")
+    city = presentation.get("city_name", "Zürich")
     subject = gettext(
         "%(platform_name)s: Interessenmeldung bestätigen",
         platform_name=name,
@@ -548,7 +553,16 @@ def _registration_response(user_type):
         security=security_utils,
         app_base_url=current_app.config["APP_BASE_URL"],
         thread=threading.Thread,
-        send_confirmation_email=send_confirmation_email,
+        send_confirmation_email=partial(
+            send_confirmation_email,
+            presentation={
+                key: g.tenant.get(key, fallback)
+                for key, fallback in (
+                    ("platform_name", "OpenLEG"),
+                    ("city_name", "Zürich"),
+                )
+            },
+        ),
         find_provisional_matches=find_provisional_matches,
         collect_building_locations=collect_building_locations,
     )
