@@ -1,5 +1,7 @@
 # Neighbor view mutation survivor classification
 
+These are historical results from the earlier #478 working branch. Mutant IDs and counts need a fresh unfiltered run at the current source revision. These classifications do not change native statuses or the automated gate.
+
 Record covers native `mutmut 3.7.0` runs for `neighbor_view.py` (issue #498,
 parent #478), run from a clean clone with the repository venv:
 

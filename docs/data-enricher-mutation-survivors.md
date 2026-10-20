@@ -1,5 +1,7 @@
 # Data enricher mutation survivor classification
 
+These are historical results from the earlier #478 working branch. Mutant IDs and counts need a fresh unfiltered run at the current source revision. These classifications do not change native statuses or the automated gate.
+
 This record covers native `mutmut 3.7.0` runs for `data_enricher.py` in the
 ten-module scope, for the wave that closed #506, #507 and #508.
 

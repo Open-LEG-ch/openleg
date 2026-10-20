@@ -1,5 +1,7 @@
 # Public data mutation survivor classification
 
+These are historical results from the earlier #478 working branch. Mutant IDs and counts need a fresh unfiltered run at the current source revision. These classifications do not change native statuses or the automated gate.
+
 Record for the #674 waves (parent #478), updated to the native run at
 `30b6b8e` from an empty cache: `public_data.py` scores 1,101 mutants with
 1,065 killed and 36 survived, uncovered at 0.
