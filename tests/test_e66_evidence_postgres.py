@@ -3,7 +3,9 @@
 
 import hashlib
 import xml.etree.ElementTree as ET
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
+from threading import Event
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -248,6 +250,83 @@ def test_all_binding_writers_clear_the_assignment_statement(assignment_request, 
         "assignment_recorded_at",
     ):
         assert stored[field] is None
+
+
+@pytest.mark.parametrize("existing", [False, True])
+@pytest.mark.parametrize("binding", ["external", "directions"])
+def test_assignment_recorder_cannot_reattach_proof_after_concurrent_rebinding(
+    assignment_request, monkeypatch, existing, binding
+):
+    from store import calculated_values
+
+    client, db, _, point, payload = assignment_request
+    endpoint = f"/admin/vnb-calculated-values/dietikon/mappings/{point}"
+    headers = {"X-Admin-Token": "synthetic-admin"}
+    if existing:
+        assert client.post(endpoint, headers=headers, json=payload).status_code == 201
+    validated, resume = Event(), Event()
+    original_connection = calculated_values._get_connection
+
+    class PausedCursor:
+        def __init__(self, cursor):
+            self.cursor = cursor
+            self.pause = False
+
+        def execute(self, query, parameters=None):
+            self.pause = "FOR SHARE OF b, cm" in query
+            return self.cursor.execute(query, parameters)
+
+        def fetchone(self):
+            result = self.cursor.fetchone()
+            if self.pause and result is not None:
+                self.pause = False
+                validated.set()
+                if not resume.wait(timeout=10):
+                    raise TimeoutError("test did not resume validated assignment")
+            return result
+
+    class PausedConnection:
+        def __init__(self, connection):
+            self.connection = connection
+
+        @contextmanager
+        def cursor(self):
+            with self.connection.cursor() as cursor:
+                yield PausedCursor(cursor)
+
+    @contextmanager
+    def pause_after_validation():
+        with original_connection() as connection:
+            yield PausedConnection(connection)
+
+    monkeypatch.setattr(calculated_values, "_get_connection", pause_after_validation)
+    with lifecycle.test_interest_postgres.transaction_race(monkeypatch) as race:
+        recording = race.start(
+            lambda: client.application.test_client().post(
+                endpoint, headers=headers, json=payload
+            )
+        )
+        try:
+            assert validated.wait(timeout=5)
+            with db.get_connection() as connection, connection.cursor() as cursor:
+                if binding == "external":
+                    cursor.execute(
+                        "UPDATE metering_points SET vnb_community_id = %s WHERE metering_point_id = %s",
+                        ("SYNTHETIC-REBOUND", point),
+                    )
+                else:
+                    cursor.execute(
+                        "UPDATE metering_points SET expected_directions = %s WHERE metering_point_id = %s",
+                        (["production"], point),
+                    )
+        finally:
+            resume.set()
+        response = race.finish(recording)
+    assert response.status_code == 404
+    stored = db.get_metering_point(point)
+    assert stored["assignment_effective_from"] is None
+    assert stored["assignment_reference"] is None
+    assert stored["assignment_recorded_at"] is None
 
 
 def test_assignment_retry_keeps_the_original_statement_time(assignment_request):
