@@ -243,3 +243,51 @@ def test_reporter_archive_limits_accept_boundary_and_reject_one_over(
         assert result[0]["bfs_number"] == 99971
         assert result[0]["name"] == "Synthetic OW"
         assert result[0]["ev_share_pct"] == 10
+
+
+def test_reporter_stops_reading_an_oversized_archive_before_consuming_it_all(
+    monkeypatch,
+):
+    from urllib3.response import HTTPResponse
+
+    content = io.BytesIO()
+    with zipfile.ZipFile(content, "w", zipfile.ZIP_STORED) as archive:
+        archive.writestr("notes.txt", b"x" * (8 * 1024 * 1024))
+
+    class CountedStream(io.BytesIO):
+        consumed = 0
+
+        def read(self, size=-1):
+            block = super().read(size)
+            self.consumed += len(block)
+            return block
+
+    source = CountedStream(content.getvalue())
+    response = requests.Response()
+    response.status_code = 200
+    response.raw = HTTPResponse(body=source, preload_content=False)
+
+    def get(url, **kwargs):
+        if url == public_data.ENERGIE_REPORTER_URL:
+            return _response(
+                json.dumps(
+                    {
+                        "result": {
+                            "resources": [
+                                {
+                                    "format": "ZIP",
+                                    "url": "https://data.example.invalid/energyreporter_latest.zip",
+                                }
+                            ]
+                        }
+                    }
+                ).encode()
+            )
+        return response
+
+    monkeypatch.setattr(requests, "get", get)
+    assert public_data.fetch_energie_reporter() is None
+    # Allow a full MiB of read-ahead beyond the 5 MiB download cap. The
+    # fetcher must reject this delivery before consuming the entire 8 MiB.
+    assert 5 * 1024 * 1024 < source.consumed <= 6 * 1024 * 1024
+    assert source.closed
