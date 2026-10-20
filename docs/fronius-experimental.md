@@ -22,9 +22,10 @@ verified profile.
 One reader serializes requests. It waits at least four seconds after version
 confirmation; subsequent reads follow the configured cadence (30 seconds by
 default, at least four). Failures back off from 30 to 300 seconds. Responses are
-limited to 64 KiB, with a five-second socket timeout and a ten-second read
-budget. A socket operation already in progress can extend the total to roughly
-15 seconds. Use one polling process per logger. Poll state is in memory; the
+limited to 64 KiB. A socket watchdog applies a ten-second overall request
+budget across connection, status, headers and body. Socket inactivity also times
+out after at most five seconds. Malformed HTTP framing follows the same
+unavailable/backoff path. Use one polling process per logger. Poll state is in memory; the
 operator must preserve request spacing across restarts.
 
 ## Measurements and faults

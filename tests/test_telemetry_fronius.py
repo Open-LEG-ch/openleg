@@ -4,7 +4,9 @@
 import json
 import subprocess
 import sys
+import time
 from copy import deepcopy
+from datetime import UTC, datetime
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -210,7 +212,17 @@ def test_only_enrolled_fixed_reads_run_with_spacing_backoff_and_recovery():
 
 
 @pytest.mark.parametrize(
-    "mode", ["redirect", "oversize", "duplicate", "compressed", "ok"]
+    "mode",
+    [
+        "redirect",
+        "oversize",
+        "duplicate",
+        "compressed",
+        "invalid_chunk",
+        "slow_headers",
+        "slow_body",
+        "ok",
+    ],
 )
 def test_actual_http_transport_is_bounded_and_ignores_environment_proxies(
     monkeypatch, mode
@@ -224,11 +236,36 @@ def test_actual_http_transport_is_bounded_and_ignores_environment_proxies(
             paths.append(self.path)
             if self.path == "/solar_api/GetAPIVersion.cgi":
                 raw = b'{"APIVersion":1}'
-            elif mode == "redirect":
+            elif mode == "redirect" and self.path != "/device-management":
+                raw = json.dumps(response()).encode()
                 self.send_response(307)
                 self.send_header("Location", "/device-management")
-                self.send_header("Content-Length", "0")
+                self.send_header("Content-Length", str(len(raw)))
                 self.end_headers()
+                self.wfile.write(raw)
+                return
+            elif mode == "invalid_chunk":
+                self.wfile.write(
+                    b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\nnot-a-chunk\r\n"
+                )
+                return
+            elif mode in {"slow_headers", "slow_body"}:
+                raw = json.dumps(response()).encode()
+                try:
+                    self.wfile.write(b"HTTP/1.0 200 OK\r\n")
+                    if mode == "slow_headers":
+                        for _ in range(30):
+                            self.wfile.write(b"X-Slow: yes\r\n")
+                            time.sleep(0.05)
+                    self.wfile.write(f"Content-Length: {len(raw)}\r\n\r\n".encode())
+                    if mode == "slow_body":
+                        for byte in raw:
+                            self.wfile.write(bytes([byte]))
+                            time.sleep(0.05)
+                    else:
+                        self.wfile.write(raw)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
                 return
             elif mode == "oversize":
                 raw = json.dumps(response()).encode()
@@ -264,6 +301,7 @@ def test_actual_http_transport_is_bounded_and_ignores_environment_proxies(
     monkeypatch.setattr(adapter, "_get", route_to_fixture)
     monkeypatch.setenv("http_proxy", "http://127.0.0.1:1")
     monkeypatch.setenv("no_proxy", "")
+    monkeypatch.setattr(adapter, "REQUEST_BUDGET_SECONDS", 0.25)
     now = [0.0]
     try:
         reader = adapter.FroniusReader(
@@ -271,13 +309,17 @@ def test_actual_http_transport_is_bounded_and_ignores_environment_proxies(
         )
         assert reader.poll()["state"] == "api_confirmed"
         now[0] = 4
+        started = time.monotonic()
         result = reader.poll()
+        assert time.monotonic() - started < 1
         assert result["state"] == ("available" if mode == "ok" else "unavailable")
         assert len(paths) == 2
         assert all(path.startswith("/solar_api/") for path in paths)
         assert "/device-management" not in paths
         if mode != "ok":
             assert result["samples"] == []
+            assert result["retry_after"] == 30
+            assert reader.poll()["state"] == "backoff"
     finally:
         server.shutdown()
         server.server_close()
@@ -333,4 +375,7 @@ def test_offline_cli_queues_counter_resets_without_inventing_measurement_age(tmp
     ] == ["1000", "1"]
     assert all(sample["metric"] != "interval_energy" for sample in samples)
     assert [sample["sequence"] for sample in samples] == [1, 2, 3, 4]
-    assert all(telemetry.freshness(sample, None) == "unknown" for sample in samples)
+    assert all(
+        telemetry.freshness(sample, datetime(2026, 10, 20, tzinfo=UTC)) == "unknown"
+        for sample in samples
+    )

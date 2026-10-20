@@ -9,22 +9,21 @@ import sys
 import time
 from copy import deepcopy
 from decimal import Decimal, InvalidOperation
-from threading import Lock
+from http.client import HTTPConnection, HTTPException
+from socket import SHUT_RDWR
+from threading import Lock, Timer
 from urllib.error import URLError
-from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+from urllib.parse import urlsplit
 
 import telemetry
 
 MAX_RESPONSE_BYTES = 65536
+REQUEST_BUDGET_SECONDS = 10
+SOCKET_TIMEOUT_SECONDS = 5
 LAN_NETWORKS = tuple(
     ipaddress.ip_network(value)
     for value in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
 )
-
-
-class _NoRedirect(HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
 
 
 def _unique_object(pairs):
@@ -44,29 +43,57 @@ def decimal_text(value):
 
 
 def _get(url):
-    deadline = time.monotonic() + 10
-    request = Request(url, method="GET", headers={"Accept": "application/json"})
-    with build_opener(ProxyHandler({}), _NoRedirect()).open(
-        request, timeout=5
-    ) as reply:
-        if (
-            reply.status != 200
-            or reply.headers.get("Content-Encoding", "identity") != "identity"
-        ):
-            raise ValueError("invalid_fronius_response")
-        raw = bytearray()
-        while True:
-            if time.monotonic() >= deadline:
-                raise TimeoutError()
-            chunk = reply.read1(min(4096, MAX_RESPONSE_BYTES + 1 - len(raw)))
-            if not chunk:
-                break
-            raw.extend(chunk)
-            if len(raw) > MAX_RESPONSE_BYTES:
-                raise ValueError("fronius_response_too_large")
+    deadline = time.monotonic() + REQUEST_BUDGET_SECONDS
+    parsed = urlsplit(url)
+    if parsed.scheme != "http" or not parsed.hostname:
+        raise ValueError("invalid_fronius_address")
+    connection = HTTPConnection(
+        parsed.hostname,
+        parsed.port,
+        timeout=min(SOCKET_TIMEOUT_SECONDS, REQUEST_BUDGET_SECONDS),
+    )
+    watchdog = None
+    try:
+        connection.connect()
+        sock = connection.sock
+
+        def expire():
+            try:
+                sock.shutdown(SHUT_RDWR)
+            except OSError:
+                pass
+
+        # Closing the socket also interrupts a header or chunked-body trickle.
+        watchdog = Timer(max(0, deadline - time.monotonic()), expire)
+        watchdog.daemon = True
+        watchdog.start()
+        target = parsed.path + ("?" + parsed.query if parsed.query else "")
+        connection.request("GET", target, headers={"Accept": "application/json"})
+        with connection.getresponse() as reply:
+            if (
+                reply.status != 200
+                or reply.headers.get("Content-Encoding", "identity") != "identity"
+            ):
+                raise ValueError("invalid_fronius_response")
+            raw = bytearray()
+            while True:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError()
+                chunk = reply.read1(min(4096, MAX_RESPONSE_BYTES + 1 - len(raw)))
+                if not chunk:
+                    break
+                raw.extend(chunk)
+                if len(raw) > MAX_RESPONSE_BYTES:
+                    raise ValueError("fronius_response_too_large")
         payload = json.loads(raw, object_pairs_hook=_unique_object, parse_float=Decimal)
         json.dumps(payload, allow_nan=False, default=decimal_text)
+        if time.monotonic() >= deadline:
+            raise TimeoutError()
         return payload
+    finally:
+        if watchdog is not None:
+            watchdog.cancel()
+        connection.close()
 
 
 class FroniusReader:
@@ -149,6 +176,7 @@ class FroniusReader:
                 RecursionError,
                 URLError,
                 OSError,
+                HTTPException,
             ):
                 self.failures = min(self.failures + 1, 5)
                 self.next_due = self.clock() + min(300, 30 * 2 ** (self.failures - 1))
