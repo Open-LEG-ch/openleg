@@ -45,7 +45,9 @@ Version 1 archives lack these source datasets. Import preserves their legacy
 scope; it cannot reconstruct missing source evidence or make a source-less
 billing draft approvable. Reimport the authorized original evidence when needed.
 
-The archive still excludes VNB formation and membership handover cases,
-statement reconciliation records, invoice questions, role audit history and
-battery settings. These operating datasets remain follow-up work in #606.
+Version 2 also preserves VNB formation packages, membership mutation cases and
+acknowledgement history, including original binary packages and response evidence.
+
+The archive still excludes statement reconciliation records, invoice questions,
+role audit history and battery settings. These operating datasets remain follow-up work in #606.
 This version does not establish complete operational portability.
