@@ -228,13 +228,13 @@ def owner_overview(actor):
             """,
             (actor,),
         )
-        cur.fetchall()
-        installations = _owner_overview(cur, actor, now)
+        locked_ids = [str(row["id"]) for row in cur.fetchall()]
+        installations = _owner_overview(cur, actor, now, locked_ids)
         notices.reconcile(cur, installations, now)
         return installations
 
 
-def _owner_overview(cur, actor, now, installation=None):
+def _owner_overview(cur, actor, now, installation_ids):
     """Seek the latest retained value on each supported channel for this owner."""
     channels = [
         {"metric": metric, "location": location, "direction": direction}
@@ -285,7 +285,7 @@ def _owner_overview(cur, actor, now, installation=None):
                 LIMIT 1
             ) observed ON TRUE
         ) latest ON TRUE
-        WHERE i.owner_building_id=%s AND (%s::uuid IS NULL OR i.id=%s::uuid)
+        WHERE i.owner_building_id=%s AND i.id=ANY(%s::uuid[])
         ORDER BY i.created_at, i.id, latest.observation->>'metric',
             latest.observation->>'measurement_location', latest.observation->>'direction'
         """,
@@ -295,8 +295,7 @@ def _owner_overview(cur, actor, now, installation=None):
             contract.FRESHNESS_CADENCES,
             Json(channels),
             actor,
-            installation,
-            installation,
+            installation_ids,
         ),
     )
     installations = {}
@@ -451,7 +450,9 @@ def ingest(community, installation, token, payload):
         )
         _limit_overview_query(cur)
         notices.reconcile(
-            cur, _owner_overview(cur, row["owner_building_id"], now, installation), now
+            cur,
+            _owner_overview(cur, row["owner_building_id"], now, [installation]),
+            now,
         )
         return {
             "schema_version": contract.VERSION,
@@ -599,7 +600,7 @@ def cleanup():
 def _notice_snapshot(cur, community, installation, actor, now):
     _limit_overview_query(cur)
     _access(cur, community, installation, actor, owner=True)
-    installations = _owner_overview(cur, actor, now, installation)
+    installations = _owner_overview(cur, actor, now, [installation])
     if not installations:
         raise TelemetryError("telemetry_forbidden", 403)
     notices.reconcile(cur, installations, now)

@@ -364,3 +364,54 @@ def test_ingestion_records_recovery_before_a_stale_acknowledgement(
     # No overview request between the fresh reading and the new incident.
     assert acknowledge(client, installation, first).status_code == 409
     assert notices(client, installation)[0]["episode"] == 2
+
+
+def test_overview_reconciles_only_installations_it_locked(
+    telemetry_client, monkeypatch
+):
+    from threading import Event, current_thread
+
+    client = telemetry_client
+    first, _ = api.enroll(client)
+    before_read, allow_read = Event(), Event()
+    before_reconcile, allow_reconcile = Event(), Event()
+    original_read = store._owner_overview
+    original_reconcile = store.notices.reconcile
+
+    def paused_read(*args, **kwargs):
+        if current_thread().name.startswith("notice-overview"):
+            before_read.set()
+            assert allow_read.wait(10)
+        return original_read(*args, **kwargs)
+
+    def paused_reconcile(*args, **kwargs):
+        if current_thread().name.startswith("notice-overview"):
+            before_reconcile.set()
+            assert allow_reconcile.wait(10)
+        return original_reconcile(*args, **kwargs)
+
+    monkeypatch.setattr(store, "_owner_overview", paused_read)
+    monkeypatch.setattr(store.notices, "reconcile", paused_reconcile)
+    with ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix="notice-overview"
+    ) as pool:
+        result = pool.submit(store.owner_overview, "owner")
+        try:
+            assert before_read.wait(10)
+            second, token = api.enroll(client)
+            allow_read.set()
+            assert before_reconcile.wait(10)
+            reading = api.sample(observed_at=datetime.now(UTC).isoformat())
+            assert api.ingest(client, second, token, [reading]).status_code == 201
+            allow_reconcile.set()
+            rows = result.result(timeout=10)
+        finally:
+            allow_read.set()
+            allow_reconcile.set()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT kind FROM telemetry_notices WHERE installation_id=%s AND active=TRUE",
+            (second,),
+        )
+        assert cur.fetchall() == []
+    assert [row["id"] for row in rows] == [first]
