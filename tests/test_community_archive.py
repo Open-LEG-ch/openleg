@@ -130,7 +130,7 @@ def test_representative_archive_round_trip_preserves_records_and_identifiers():
     restored = community_archive.restore_community_archive(archive, store=target)
 
     payload = json.loads(archive)
-    assert payload["manifest"]["schema_version"] == "openleg-community-archive/1"
+    assert payload["manifest"]["schema_version"] == "openleg-community-archive/2"
     assert payload["manifest"]["units"]["energy"] == "kWh"
     assert payload["manifest"]["time_zones"] == ["Europe/Zurich", "UTC"]
     assert dry_run == {"valid": True, "errors": [], "conflicts": []}
