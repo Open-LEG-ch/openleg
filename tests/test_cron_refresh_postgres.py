@@ -11,6 +11,7 @@ import pytest
 import requests
 
 from tests import test_interest_postgres
+from tests.native_environment import isolated_environment
 
 interest_database = test_interest_postgres.interest_database
 
@@ -31,7 +32,7 @@ def refresh_web(interest_database, monkeypatch):
         "DATABASE_URL": os.environ["DATABASE_URL"],
         "REDIS_URL": "",
     }
-    with patch.dict(os.environ, environment, clear=True):
+    with patch.dict(os.environ, isolated_environment(environment), clear=True):
         import app
         import public_data
 

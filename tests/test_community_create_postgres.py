@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from tests import test_interest_postgres
+from tests.native_environment import isolated_environment
 from tests.test_dashboard_access_routes import _set_session
 
 interest_database = test_interest_postgres.interest_database
@@ -25,7 +26,9 @@ def founder(interest_database):
     )
     with patch.dict(
         os.environ,
-        {"DATABASE_URL": os.environ["DATABASE_URL"], "REDIS_URL": ""},
+        isolated_environment(
+            {"DATABASE_URL": os.environ["DATABASE_URL"], "REDIS_URL": ""}
+        ),
         clear=True,
     ):
         import app

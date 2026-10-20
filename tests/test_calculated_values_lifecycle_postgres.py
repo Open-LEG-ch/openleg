@@ -11,6 +11,7 @@ import pytest
 
 import billing_approval
 from tests import test_interest_postgres
+from tests.native_environment import isolated_environment
 from tests.test_billing_approval import _draft
 from tests.test_dashboard_access_routes import _set_session
 
@@ -45,11 +46,13 @@ def calculated_client(interest_database):
     )
     with patch.dict(
         os.environ,
-        {
-            "DATABASE_URL": os.environ["DATABASE_URL"],
-            "REDIS_URL": "",
-            "ADMIN_TOKEN": "synthetic-admin",
-        },
+        isolated_environment(
+            {
+                "DATABASE_URL": os.environ["DATABASE_URL"],
+                "REDIS_URL": "",
+                "ADMIN_TOKEN": "synthetic-admin",
+            }
+        ),
         clear=True,
     ):
         from app import create_app
