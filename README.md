@@ -73,6 +73,17 @@ The path from raw metering data to a member invoice runs as one workflow in this
 
 Invoice approval stays a deliberate operator action. VNB-specific transport and credentials require local configuration.
 
+Complete E66 LEG deliveries can also enter the calculated-values evidence path
+directly. An administrator records explicit meter-assignment validity, then
+uploads the original XML to `/admin/vnb-calculated-values/<territory>/e66`.
+The import saves source evidence, physical readings and the import ledger in one
+transaction. [E66 operator setup](docs/vnb-exchange.md#e66-calculated-values-evidence)
+describes supported channels, quality restrictions and correction handling.
+For proportional billing without a battery, an exact interval audit can explain
+source rounding while invoices use the VNB quantities. Consumer and producer
+totals must balance exactly. The [rounding policy](docs/data-pipeline.md#rounded-e66-allocation-evidence)
+describes approval checks and unsupported cases.
+
 ### Quick start
 
 ```bash
@@ -216,6 +227,18 @@ die Sortierung nach Namen. Öffentliche Zahlen von eins oder zwei bleiben als
 Der Weg von Rohmessdaten zur Mitgliederrechnung läuft als ein Ablauf in diesem Repo:
 
 1. **Import.** `scripts/fetch_sdat.py` holt SDAT-Dateien vom Swisseldex Datahub, `scripts/import_sdat.py` liest ebIX-E66-Dokumente nach `store/metering.py`; `sdat_datahub.py` und `sdat_e66.py` enthalten Transport und Parsing, `scripts/sdat_pipeline.sh` verkettet die Schritte. `scripts/import_metering_points.py` ordnet Messpunkte den Gebäuden zu.
+
+   Vollständige E66-LEG-Lieferungen lassen sich mit ausdrücklich bestätigter
+   Messpunktzuordnung direkt als Berechnungsbeleg übernehmen. Der Admin-Endpunkt
+   `/admin/vnb-calculated-values/<territory>/e66` speichert Originaldatei,
+   Messwerte und Importprotokoll in einer Transaktion.
+   [Einrichtung und Einschränkungen](docs/vnb-exchange.md#e66-calculated-values-evidence)
+   beschreiben die unterstützten Kanäle und den Korrekturablauf.
+   Bei proportionaler Abrechnung ohne Akku kann eine exakte Viertelstundenprüfung
+   die Quellenrundung erklären; die Rechnung verwendet die VNB-Mengen. Verbrauchs-
+   und Produktionssummen müssen exakt übereinstimmen. Die
+   [Rundungsregel](docs/data-pipeline.md#rounded-e66-allocation-evidence) beschreibt
+   Freigabeprüfungen und Einschränkungen.
 2. **Verteilung.** `billing_readings.py` formt messpunktbezogene Werte in Teilnehmerreihen um und weist eine Periode zurück, die es nicht abrechnen kann. `billing_engine.py` verteilt die Viertelstunden und erzeugt einen prüfbaren Entwurf mit positiven `consumer_charge` Positionen und negativen `producer_credit` Positionen; `store/billing.py` speichert Periode, Preisstand und Positionen mit Vorzeichen. `billing_runner.py` steuert einen Lauf, `POST /api/cron/process-billing` in `cron.py` rechnet den letzten vollen Monat für jede aktive Gemeinschaft.
 3. **Policy und Freigabe.** Die Betreiberin pflegt den versionierten Tarif unter `/leg/community/<community_id>/billing-policy` (`billing_policy.py`, `templates/leg_billing_policy.html`) und prüft den Entwurf unter `/leg/community/<community_id>/billing` (`templates/leg_billing.html`). Die Freigabe friert je Teilnehmer eine unveränderliche Rechnung aus dem gespeicherten Policy-Snapshot ein (`billing_approval.py`).
 4. **Lebenszyklus und Zustellung.** Eine freigegebene Rechnung durchläuft `issued`, `delivered`, `paid`, `cancelled` und `corrected` (`billing_lifecycle.py`). Mitglieder lesen ihre Rechnungen unter `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>` und `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).

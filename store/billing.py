@@ -422,9 +422,10 @@ def approve_billing_period(
                         "Issued billing period has no invoices"
                     )
                 return invoices
+            calculated_values = None
             if period.get("calculated_values_fingerprint"):
                 cur.execute(
-                    """SELECT 1 FROM vnb_calculated_values_deliveries d
+                    """SELECT d.* FROM vnb_calculated_values_deliveries d
                        WHERE d.community_id = %s AND d.content_fingerprint = %s
                          AND d.period_start = %s AND d.period_end = %s
                          AND d.status = 'accepted'
@@ -439,11 +440,16 @@ def approve_billing_period(
                         period["period_end"],
                     ),
                 )
-                if not cur.fetchone():
+                source_row = cur.fetchone()
+                if not source_row:
                     raise billing_approval.BillingApprovalError(
                         "Der VNB-Beleg dieses Entwurfs ist nicht mehr aktuell. "
                         "Erstellen Sie den Entwurf neu."
                     )
+                calculated_values = dict(source_row)
+                calculated_values["fingerprint"] = calculated_values[
+                    "content_fingerprint"
+                ]
             if status != "draft":
                 raise billing_approval.BillingApprovalError(
                     "Only a draft billing period can be approved"
@@ -466,7 +472,7 @@ def approve_billing_period(
             )
             period["line_items"] = [dict(item) for item in cur.fetchall()]
             snapshots = billing_approval.prepare_invoice_snapshots(
-                period, issue_date=issue_date
+                period, issue_date=issue_date, calculated_values=calculated_values
             )
 
             prefix = str(snapshots[0]["policy_snapshot"]["invoice_prefix"])
