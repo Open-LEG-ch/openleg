@@ -1,5 +1,17 @@
 # OpenLEG
 
+<div align="center">
+
+<img src=".github/assets/openleg-wordmark.svg" alt="OpenLEG wordmark: open in regular monospace, LEG in bold, followed by a gold caret" width="320">
+
+[Website](https://openleg.ch) · [Docs](docs/architecture.md) · [Contribute](docs/contributor-onboarding.md) · [Discussions](https://github.com/Open-LEG-ch/openleg/discussions) · [Milestones](https://github.com/Open-LEG-ch/openleg/milestones)
+
+[![Test status](https://github.com/Open-LEG-ch/openleg/actions/workflows/deploy.yml/badge.svg)](https://github.com/Open-LEG-ch/openleg/actions/workflows/deploy.yml)
+[![Lint status](https://github.com/Open-LEG-ch/openleg/actions/workflows/lint.yml/badge.svg)](https://github.com/Open-LEG-ch/openleg/actions/workflows/lint.yml)
+[AGPL-3.0-or-later](https://www.gnu.org/licenses/agpl-3.0.html)
+
+</div>
+
 [English](#english) | [Deutsch](#deutsch)
 
 Open-source infrastructure for Swiss Local Electricity Communities. Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften.
@@ -7,6 +19,14 @@ Open-source infrastructure for Swiss Local Electricity Communities. Offene Infra
 ## English
 
 OpenLEG is the public website, product application, and API for founding and operating a Swiss Local Electricity Community, known as a LEG. The private `openleg-ops` repository owns production deployment, not the public site runtime or assets.
+
+### Product preview
+
+Synthetic demo images with fictional data, not production screenshots:
+
+<img src="static/images/product/leg-formation-static.webp" alt="Synthetic demo of the LEG formation flow in the OpenLEG app" width="800">
+
+<img src="static/images/product/municipality-dashboard-static.webp" alt="Synthetic demo of the municipality dashboard in the OpenLEG app" width="800">
 
 ### Operating model
 

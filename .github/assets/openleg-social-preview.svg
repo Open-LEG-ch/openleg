@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-labelledby="ol-sp-title ol-sp-desc">
+  <title id="ol-sp-title">OpenLEG social preview</title>
+  <desc id="ol-sp-desc">The OpenLEG wordmark with a gold caret and the caption Open-source infrastructure for Swiss Local Electricity Communities, on a paper background.</desc>
+  <rect width="1280" height="640" fill="#f5f2ea"/>
+  <g font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="120" fill="#22201b">
+    <text x="364" y="300" textLength="288" lengthAdjust="spacing">open</text>
+    <text x="652" y="300" textLength="216" lengthAdjust="spacing" font-weight="700">LEG</text>
+  </g>
+  <rect x="892" y="210" width="24" height="96" rx="5" fill="#e8a13a"/>
+  <g font-family="ui-sans-serif, system-ui, Helvetica Neue, Arial, sans-serif" font-size="36" fill="#3a362c" text-anchor="middle">
+    <text x="640" y="404">Open-source infrastructure for</text>
+    <text x="640" y="452">Swiss Local Electricity Communities</text>
+  </g>
+</svg>
