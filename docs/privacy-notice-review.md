@@ -2,7 +2,7 @@
 
 Status: legal/DPO review pending. Issue #558 has no assigned reviewer as of
 20 October 2026. Code evidence below reflects commit
-`cdb8655c3bb85db7110e55f36c982beb20c345dc`.
+`a3eae99dee13d017cf9e1bd42dfc1240b49a8679`.
 
 The reviewer must record their name, role and approval date before closing
 [#558](https://github.com/Open-LEG-ch/openleg/issues/558). Use
@@ -56,6 +56,7 @@ specific statement. It does not prescribe a legal basis or retention period.
 | store/cluster | No separate statement. Review provisional neighbour assignments and their profile-deletion cascade. |
 | store/metering | No specific retention statement. Review detached meter points, validated readings and the SDAT ledger. |
 | store/telemetry | No specific statement. Review raw/hourly product defaults, shorter owner settings, sharing grants, expiry, replay watermark and installation deletion. |
+| store/telemetry_notices | No specific statement. Review private condition codes, episode and acknowledgement/cooldown/recovery timestamps. Only the current verified owner with confirmed membership has access; sample sharing grants no notice access. Active states are bounded per installation/condition/channel; resolved states expire at the raw-data horizon. Installation, membership/profile and community deletion cascade them. |
 | store/equipment | No specific statement. Review device identifiers, private network details, named remote users, checklists and owner-downloaded handoffs. |
 | store/advisories | No specific statement. Distinguish deployment-lifetime public evidence/maintainer audit from private equipment actions that cascade on deletion. |
 | store/calculated_values | No specific statement. Review original VNB evidence, allocations and validation/replay records with no automated expiry. #703 adds append-only withdrawal events; withdrawing a source changes billing eligibility without erasing evidence or issued invoices. |
