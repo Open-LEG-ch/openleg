@@ -53,6 +53,14 @@ def test_french_invoice_still_escapes_untrusted_snapshot_values(web):
     assert "&lt;img" in french
 
 
+def test_french_invoice_explains_an_empty_consumption_table(web):
+    invoice = deepcopy(DETAIL_VIEW)
+    invoice["charges"] = []
+    with web.app_context(), force_locale("fr_CH"):
+        french = member_invoices.render_pdf_html_string(invoice)
+    assert "Aucun coût de consommation" in french
+
+
 def test_formation_pdf_translates_text_and_keeps_names_and_escaping(web, monkeypatch):
     monkeypatch.setattr(document_generator, "_render_pdf", lambda html: html)
     with web.app_context(), force_locale("fr_CH"):

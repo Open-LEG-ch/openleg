@@ -6032,7 +6032,7 @@ msgstr "Aucun tarif disponible pour cette commune."
 
 #: member_invoices.py:725
 msgid "Keine Verbrauchskosten"
-msgstr "Aucuns coûts de consommation"
+msgstr "Aucun coût de consommation"
 
 #: templates/member_invoice_detail.html:83
 msgid "Keine Verbrauchskosten."
