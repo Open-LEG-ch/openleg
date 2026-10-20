@@ -69,6 +69,6 @@ def render_template(name, *, locale="de_CH", **context):
         .get_template(name)
         .render(
             **context,
-            current_locale=selected,
+            current_locale=selected.replace("_", "-"),
         )
     )

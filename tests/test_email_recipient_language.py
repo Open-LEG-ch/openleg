@@ -59,7 +59,7 @@ def test_every_scheduled_template_renders_outside_flask(
     if locale == "fr_CH":
         assert ">Se désinscrire</a>" in body
         assert ">Se déconnecter</a>" not in body
-    assert f'lang="{locale}"' in body
+    assert f'lang="{locale.replace("_", "-")}"' in body
     assert "<script>" not in body
     assert "&lt;script&gt;private&lt;/script&gt;" in body
     assert "<b>city</b>" not in body
