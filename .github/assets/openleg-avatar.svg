@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="ol-av-title ol-av-desc">
+  <title id="ol-av-title">OpenLEG avatar</title>
+  <desc id="ol-av-desc">A solid gold caret on a rounded dark green square.</desc>
+  <rect width="512" height="512" rx="128" fill="#1f3d32"/>
+  <rect x="192" y="128" width="128" height="256" rx="16" fill="#e8a13a"/>
+</svg>
