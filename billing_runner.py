@@ -205,11 +205,28 @@ def run_billing_period(
             **battery_kwargs,
         )
         reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
+        existing = db.get_billing_period_for_window(
+            community_id, period_start, period_end
+        )
+        existing_einfach = (
+            db.get_billing_period(existing["id"], community_id)
+            if existing is not None and policy["distribution_model"] == "einfach"
+            else None
+        )
+        # Existing unmarked einfach drafts retain their original pricing and
+        # exact audit; only the original legacy fingerprint permits a retry.
+        legacy_einfach = (
+            policy["distribution_model"] == "einfach"
+            and isinstance(existing_einfach, dict)
+            and isinstance(existing_einfach.get("reconciliation"), dict)
+            and "precision_policy" not in existing_einfach["reconciliation"]
+        )
         precision_basis = (
             calculated is not None
             and calculated.get("format_version") == "e66/1"
             and policy["distribution_model"] in {"proportional", "einfach"}
             and not battery
+            and not legacy_einfach
         )
         if precision_basis:
             try:
@@ -278,9 +295,6 @@ def run_billing_period(
             )
 
         fingerprint = _fingerprint(frames, policy, summary, reconciliation)
-        existing = db.get_billing_period_for_window(
-            community_id, period_start, period_end
-        )
         if existing:
             if existing["input_fingerprint"] != fingerprint:
                 raise BillingRunError(
