@@ -196,6 +196,60 @@ def test_binding_changes_invalidate_the_old_statement(
             assert stored[key] is not None
 
 
+@pytest.mark.parametrize(
+    "change", ["delete_building", "delete_community", "direct_update"]
+)
+def test_all_binding_writers_clear_the_assignment_statement(assignment_request, change):
+    client, db, community, point, payload = assignment_request
+    assert db.save_building(
+        "other-member",
+        "other@example.invalid",
+        {"address": "Synthetic other", "lat": 47.2, "lon": 8.2},
+        {},
+        verified=True,
+    )
+    assert db.insert_invited_member(community["community_id"], "other-member", "member")
+    assert db.confirm_invited_member(community["community_id"], "other-member")
+    assert (
+        db.upsert_metering_points(
+            [{"metering_point_id": point, "building_id": "other-member"}]
+        )
+        == 1
+    )
+    assert (
+        client.post(
+            f"/admin/vnb-calculated-values/dietikon/mappings/{point}",
+            headers={"X-Admin-Token": "synthetic-admin"},
+            json=payload,
+        ).status_code
+        == 201
+    )
+    with db.get_connection() as connection, connection.cursor() as cursor:
+        if change == "delete_building":
+            cursor.execute(
+                "DELETE FROM buildings WHERE building_id = %s", ("other-member",)
+            )
+        elif change == "delete_community":
+            cursor.execute(
+                "DELETE FROM communities WHERE community_id = %s",
+                (community["community_id"],),
+            )
+        else:
+            cursor.execute(
+                "UPDATE metering_points SET building_id = NULL WHERE metering_point_id = %s",
+                (point,),
+            )
+    stored = db.get_metering_point(point)
+    for field in (
+        "assignment_effective_from",
+        "assignment_effective_until",
+        "assignment_reference",
+        "assignment_actor",
+        "assignment_recorded_at",
+    ):
+        assert stored[field] is None
+
+
 def test_assignment_retry_keeps_the_original_statement_time(assignment_request):
     client, db, _, point, payload = assignment_request
     endpoint = f"/admin/vnb-calculated-values/dietikon/mappings/{point}"
