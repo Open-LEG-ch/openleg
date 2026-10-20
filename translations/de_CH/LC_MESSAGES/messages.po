@@ -918,7 +918,6 @@ msgstr ""
 "selben Netzgebiet angeschlossen, nutzen höchstens"
 
 #: templates/how-it-works.html:52
-#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1188,7 +1187,6 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h StromVV"
 
 #: templates/leg_kalkulator.html:267
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1211,7 +1209,6 @@ msgstr ""
 "Spannungstransformation."
 
 #: templates/leg_kalkulator.html:288
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -1303,6 +1300,15 @@ msgstr "Ausblick: zentrales LEG-Register"
 #: templates/leg_dashboard.html:343 templates/leg_dashboard.html:362
 msgid "Ausgang"
 msgstr "Ausgang"
+
+#: templates/telemetry_shared.html:41
+#, python-format
+msgid ""
+"Ausgeschlossene Profile: %(overlap)s mit überlappenden Quellen, %(unavailable)s ohne aktuellen "
+"Messwert, %(estimated)s mit Schätzwerten, %(unsynchronized)s mit abweichenden Messzeiten."
+msgstr ""
+"Ausgeschlossene Profile: %(overlap)s mit überlappenden Quellen, %(unavailable)s ohne aktuellen "
+"Messwert, %(estimated)s mit Schätzwerten, %(unsynchronized)s mit abweichenden Messzeiten."
 
 #: templates/leg_kalkulator.html:90
 msgid "Ausgewählt:"
@@ -2443,7 +2449,6 @@ msgid "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil trage
 msgstr "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil tragen."
 
 #: templates/gemeinde/methodik.html:95
-#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -2680,6 +2685,14 @@ msgstr "Dicht (< 3000)"
 #: templates/gemeinde/rangliste.html:61 templates/gemeinde/rangliste_fortschritte.html:65
 msgid "Dichte"
 msgstr "Dichte"
+
+#: templates/telemetry_shared.html:22
+msgid ""
+"Die Abdeckung umfasst nur diese Quellen. Nicht freigegebene Anlagen werden weder angezeigt noch "
+"gezählt."
+msgstr ""
+"Die Abdeckung umfasst nur diese Quellen. Nicht freigegebene Anlagen werden weder angezeigt noch "
+"gezählt."
 
 #: templates/leg_gruenden.html:86
 msgid ""
@@ -2977,6 +2990,14 @@ msgstr "Die Messquelle liefert wieder aktuelle Werte."
 msgid "Die Messwerte dieser Periode sind unvollständig."
 msgstr "Die Messwerte dieser Periode sind unvollständig."
 
+#: templates/telemetry_shared.html:29
+msgid ""
+"Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Quellen verschiedener Messkanäle "
+"werden getrennt angezeigt."
+msgstr ""
+"Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Quellen verschiedener Messkanäle "
+"werden getrennt angezeigt."
+
 #: templates/leg_dashboard.html:236
 msgid ""
 "Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der"
@@ -3098,6 +3119,14 @@ msgstr "Die Solarnutzung beruht auf"
 #: templates/api_docs.html:245
 msgid "Die Suchanfrage muss mindestens 2 Zeichen enthalten."
 msgstr "Die Suchanfrage muss mindestens 2 Zeichen enthalten."
+
+#: templates/telemetry_shared.html:23
+msgid ""
+"Die Summen sind keine vollständige LEG-Bilanz. Für die Abrechnung gelten die validierten VNB-"
+"Messdaten."
+msgstr ""
+"Die Summen sind keine vollständige LEG-Bilanz. Für die Abrechnung gelten die validierten VNB-"
+"Messdaten."
 
 #: billing_policy.py:155
 msgid "Die Tarif-ID der Richtlinie ist ungültig."
@@ -3681,6 +3710,14 @@ msgstr ""
 "aus erneuerbaren Anlagen verbrauchen. Sie ist seit dem 1. Januar 2026 in der ganzen Schweiz "
 "möglich. Rechtsgrundlage: Art. 17d und 17e StromVG sowie Art. 19e bis 19h StromVV."
 
+#: templates/telemetry_shared.html:28
+msgid ""
+"Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen "
+"Messzeit. Mehrere Quellen desselben Profils im gleichen Kanal werden ausgeschlossen."
+msgstr ""
+"Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen "
+"Messzeit. Mehrere Quellen desselben Profils im gleichen Kanal werden ausgeschlossen."
+
 #: billing_lifecycle.py:47
 msgid "Eine Zahlungsreferenz ist erforderlich."
 msgstr "Eine Zahlungsreferenz ist erforderlich."
@@ -3833,6 +3870,10 @@ msgstr "Einwohner"
 #: templates/partials/install_console.html:9
 msgid "Einzeiler"
 msgstr "Einzeiler"
+
+#: templates/telemetry_shared.html:47
+msgid "Einzelne Quellen"
+msgstr "Einzelne Quellen"
 
 #: templates/leg_gruenden.html:218
 msgid "ElCom"
@@ -4315,6 +4356,10 @@ msgstr "Freigabe widerrufen"
 msgid "Freigegeben"
 msgstr "Freigegeben"
 
+#: templates/leg_dashboard.html:31 templates/telemetry_shared.html:3 templates/telemetry_shared.html:17
+msgid "Freigegebene Messwerte"
+msgstr "Freigegebene Messwerte"
+
 #: templates/leg_billing.html:100
 msgid "Freigegebene Rechnungen"
 msgstr "Freigegebene Rechnungen"
@@ -4412,7 +4457,6 @@ msgid "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutz
 msgstr "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um"
 
 #: templates/how-it-works.html:42
-#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -6094,6 +6138,14 @@ msgstr "Keine Snapshots"
 msgid "Keine Solardaten gefunden."
 msgstr "Keine Solardaten gefunden."
 
+#: templates/telemetry_shared.html:36
+msgid "Keine Summe: Die Messzeiten unterscheiden sich."
+msgstr "Keine Summe: Die Messzeiten unterscheiden sich."
+
+#: templates/telemetry_shared.html:38
+msgid "Keine Summe: Weniger als drei Profile liefern geeignete Werte."
+msgstr "Keine Summe: Weniger als drei Profile liefern geeignete Werte."
+
 #: templates/leg_kalkulator.html:425
 msgid "Keine Tarifdaten für diese Gemeinde verfügbar."
 msgstr "Keine Tarifdaten für diese Gemeinde verfügbar."
@@ -6117,6 +6169,10 @@ msgstr "Keine direkten Partner gefunden."
 #: templates/index.html:416
 msgid "Keine eindeutige Adresse gefunden. Sie können Ihr Interesse trotzdem für Ihre Gemeinde anmelden."
 msgstr "Keine eindeutige Adresse gefunden. Sie können Ihr Interesse trotzdem für Ihre Gemeinde anmelden."
+
+#: templates/telemetry_shared.html:46
+msgid "Keine freigegebenen Leistungswerte verfügbar."
+msgstr "Keine freigegebenen Leistungswerte verfügbar."
 
 #: advisories.py:22
 msgid "Keine genaue Gerätezuordnung"
@@ -7070,6 +7126,10 @@ msgstr "Messzeit"
 #: templates/telemetry_dashboard.html:57
 msgid "Messzeit unbekannt"
 msgstr "Messzeit unbekannt"
+
+#: templates/telemetry_shared.html:43
+msgid "Messzeiten der geeigneten Werte"
+msgstr "Messzeiten der geeigneten Werte"
 
 #: i18n.py:69
 msgid "Methode nicht erlaubt"
@@ -8912,7 +8972,6 @@ msgstr ""
 "Buchstabe oder Ziffer."
 
 #: templates/llms.txt:9
-#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -9325,6 +9384,16 @@ msgstr "Sicherheitshinweise zu meinem Gerät |"
 msgid "Sicherheitshinweise |"
 msgstr "Sicherheitshinweise |"
 
+#: templates/telemetry_shared.html:24
+#, python-format
+msgid "Sichtbare Anlagen: %(count)s"
+msgstr "Sichtbare Anlagen: %(count)s"
+
+#: templates/telemetry_shared.html:40
+#, python-format
+msgid "Sichtbare Profile: %(visible)s. Geeignete Profile: %(eligible)s. In der Summe: %(included)s."
+msgstr "Sichtbare Profile: %(visible)s. Geeignete Profile: %(eligible)s. In der Summe: %(included)s."
+
 #: templates/fuer_gemeinden.html:50
 msgid ""
 "Sie behalten die fachliche Verantwortung. OpenLEG stellt die Infrastruktur bereit. Der "
@@ -9364,6 +9433,14 @@ msgstr ""
 #: templates/fuer_gemeinden.html:36
 msgid "Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein."
 msgstr "Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein."
+
+#: templates/telemetry_shared.html:21
+msgid ""
+"Sie sehen eigene Anlagen und ausdrücklich für Sie freigegebene Quellen mit aktiver "
+"Nachbarschaftsfreigabe."
+msgstr ""
+"Sie sehen eigene Anlagen und ausdrücklich für Sie freigegebene Quellen mit aktiver "
+"Nachbarschaftsfreigabe."
 
 #: templates/fuer_gemeinden.html:35
 msgid "Sie sehen, wie viele Interessierte sich gemeldet haben."
@@ -9549,7 +9626,6 @@ msgstr ""
 "              Die Kennzahl zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt."
 
 #: templates/gemeinde/rangliste.html:127
-#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
@@ -9667,6 +9743,10 @@ msgstr "Stand"
 #: templates/advisories.html:58
 msgid "Stand Ihrer Abklärung"
 msgstr "Stand Ihrer Abklärung"
+
+#: templates/telemetry_shared.html:25
+msgid "Stand beim Laden"
+msgstr "Stand beim Laden"
 
 #: templates/equipment_form.html:75
 msgid "Stand der manuellen Prüfung"
@@ -9872,6 +9952,10 @@ msgstr "Suchen"
 #: templates/admin/ops.html:197 templates/admin/ops.html:226
 msgid "Summary"
 msgstr "Zusammenfassung"
+
+#: templates/telemetry_shared.html:27
+msgid "Summen nach Messkanal"
+msgstr "Summen nach Messkanal"
 
 #: templates/utility/dashboard.html:13
 msgid "Suspended"

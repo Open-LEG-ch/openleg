@@ -148,6 +148,7 @@ also_copy = [
     "self_host.py",
     "solar_forecast.py",
     "solar_forecast_cache.py",
+    "telemetry_summary.py",
     "store",
     "templates",
     "telemetry.py",

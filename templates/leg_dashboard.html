@@ -28,6 +28,7 @@
       <p class="text-sm font-semibold text-brand mb-2">{{ _('LEG-Dashboard') }}</p>
       <h1 class="text-3xl font-bold tracking-tight mb-1">{{ community.name }}</h1>
       <p class="text-ink-muted">{{ _('Status:') }} <span class="font-semibold">{{ _(community.status_label) }}</span> &middot; {{ _('Verteilmodell:') }} {{ _(community.distribution_model_label) }}</p>
+      {% if viewer_has_session %}<a href="/leg/community/{{ community.community_id|urlencode }}/telemetry" class="inline-block mt-4 text-brand hover:underline">{{ _('Freigegebene Messwerte') }}</a>{% endif %}
     </header>
 
     <section class="grid sm:grid-cols-3 gap-4 mb-8">

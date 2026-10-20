@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 04:34+0000\n"
+"POT-Creation-Date: 2026-10-20 04:47+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -53,6 +53,7 @@ msgid "%(count)s Messwerte erfolgreich importiert."
 msgstr ""
 
 #: templates/telemetry_dashboard.html:53 templates/telemetry_dashboard.html:109
+#: templates/telemetry_shared.html:51 templates/telemetry_shared.html:59
 #, python-format
 msgid "%(count)s Sekunde"
 msgid_plural "%(count)s Sekunden"
@@ -213,7 +214,7 @@ msgstr ""
 msgid "(Plausibilität, kein Fehler; Import und Freigabe bleiben möglich.)"
 msgstr ""
 
-#: templates/leg_dashboard.html:99 templates/leg_dashboard.html:161
+#: templates/leg_dashboard.html:100 templates/leg_dashboard.html:162
 msgid "(Sie)"
 msgstr ""
 
@@ -571,7 +572,7 @@ msgid "Abgelaufen"
 msgstr ""
 
 #: formation_wizard.py:57 formation_wizard.py:74 templates/contact_requests.html:32
-#: templates/leg_dashboard.html:244 templates/leg_dashboard.html:273
+#: templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 msgid "Abgelehnt"
 msgstr ""
 
@@ -599,7 +600,7 @@ msgstr ""
 msgid "Ablehnen"
 msgstr ""
 
-#: templates/leg_dashboard.html:275
+#: templates/leg_dashboard.html:276
 msgid "Ablehnung prüfen"
 msgstr ""
 
@@ -630,7 +631,7 @@ msgstr ""
 msgid "Abrechnung vorbereiten"
 msgstr ""
 
-#: dashboard.py:702
+#: dashboard.py:712
 msgid "Abrechnung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -642,11 +643,11 @@ msgstr ""
 msgid "Abrechnungen prüfen | OpenLEG"
 msgstr ""
 
-#: templates/leg_dashboard.html:416
+#: templates/leg_dashboard.html:417
 msgid "Abrechnungen öffnen"
 msgstr ""
 
-#: templates/leg_billing_policy.html:5 templates/leg_dashboard.html:413
+#: templates/leg_billing_policy.html:5 templates/leg_dashboard.html:414
 msgid "Abrechnungs-Richtlinie"
 msgstr ""
 
@@ -671,7 +672,7 @@ msgstr ""
 msgid "Abrechnungsentwurf"
 msgstr ""
 
-#: dashboard.py:708
+#: dashboard.py:718
 msgid "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
 msgstr ""
 
@@ -679,7 +680,7 @@ msgstr ""
 msgid "Abrechnungsperioden"
 msgstr ""
 
-#: templates/leg_dashboard.html:403
+#: templates/leg_dashboard.html:404
 msgid "Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr ""
 
@@ -720,7 +721,7 @@ msgid "Administration"
 msgstr ""
 
 #: templates/documents/community_agreement.html:17 templates/documents/dso_registration.html:22
-#: templates/leg_dashboard.html:153
+#: templates/leg_dashboard.html:154
 msgid "Adresse"
 msgstr ""
 
@@ -818,17 +819,18 @@ msgstr ""
 msgid "Aktiv"
 msgstr ""
 
-#: templates/leg_dashboard.html:309
+#: templates/leg_dashboard.html:310
 msgid ""
 "Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie "
 "weiterhin vollständige Tarife, Messwerte und VNB-Zuteilungen."
 msgstr ""
 
 #: templates/telemetry_dashboard.html:18 templates/telemetry_dashboard.html:24
+#: templates/telemetry_shared.html:14
 msgid "Aktualität unbekannt"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:18
+#: templates/telemetry_dashboard.html:18 templates/telemetry_shared.html:14
 msgid "Aktuell"
 msgstr ""
 
@@ -881,7 +883,7 @@ msgstr ""
 msgid "Alle Kantone"
 msgstr ""
 
-#: templates/leg_dashboard.html:215
+#: templates/leg_dashboard.html:216
 msgid "Alle Mitglieder"
 msgstr ""
 
@@ -922,7 +924,7 @@ msgstr ""
 msgid "Als erledigt angegeben"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:109
+#: templates/telemetry_dashboard.html:109 templates/telemetry_shared.html:59
 msgid "Alter beim Laden"
 msgstr ""
 
@@ -934,7 +936,7 @@ msgstr ""
 msgid "Amtliche Gemeindenummer (BFS), Kanton und freiwillige Angaben zu Rolle und Solaranlage"
 msgstr ""
 
-#: templates/leg_dashboard.html:275
+#: templates/leg_dashboard.html:276
 msgid "An VNB eskalieren"
 msgstr ""
 
@@ -994,7 +996,7 @@ msgstr ""
 msgid "Angenommen"
 msgstr ""
 
-#: dashboard.py:1249
+#: dashboard.py:1259
 msgid "Anhänge müssen PDF-Dateien sein."
 msgstr ""
 
@@ -1014,11 +1016,11 @@ msgstr ""
 msgid "Anleitung zum privaten Netzwerk"
 msgstr ""
 
-#: templates/leg_dashboard.html:278
+#: templates/leg_dashboard.html:279
 msgid "Anmeldepaket herunterladen"
 msgstr ""
 
-#: templates/leg_dashboard.html:291
+#: templates/leg_dashboard.html:292
 msgid "Anmeldepaket vorbereiten"
 msgstr ""
 
@@ -1026,7 +1028,7 @@ msgstr ""
 msgid "Anmeldung Lokale Elektrizitätsgemeinschaft"
 msgstr ""
 
-#: templates/emails/day_14_formation.html:57 templates/leg_dashboard.html:267
+#: templates/emails/day_14_formation.html:57 templates/leg_dashboard.html:268
 msgid "Anmeldung beim Netzbetreiber"
 msgstr ""
 
@@ -1077,7 +1079,7 @@ msgstr ""
 msgid "Ansprechperson"
 msgstr ""
 
-#: templates/leg_dashboard.html:92
+#: templates/leg_dashboard.html:93
 msgid "Anteil"
 msgstr ""
 
@@ -1090,7 +1092,7 @@ msgstr ""
 msgid "Anteil für %(participant)s in Prozent, zwischen 0 und 100, höchstens 2 Nachkommastellen."
 msgstr ""
 
-#: templates/leg_dashboard.html:132
+#: templates/leg_dashboard.html:133
 msgid "Anteil in %"
 msgstr ""
 
@@ -1098,16 +1100,16 @@ msgstr ""
 msgid "Anteil lokal verbrauchbar:"
 msgstr ""
 
-#: templates/api_docs.html:234 templates/leg_billing.html:182 templates/leg_dashboard.html:240
+#: templates/api_docs.html:234 templates/leg_billing.html:182 templates/leg_dashboard.html:241
 #: templates/member_invoice_detail.html:212
 msgid "Antwort"
 msgstr ""
 
-#: dashboard.py:911
+#: dashboard.py:921
 msgid "Antwort oder Status ist erforderlich."
 msgstr ""
 
-#: templates/leg_dashboard.html:274
+#: templates/leg_dashboard.html:275
 msgid "Antwort:"
 msgstr ""
 
@@ -1249,8 +1251,15 @@ msgstr ""
 msgid "Ausblick: zentrales LEG-Register"
 msgstr ""
 
-#: templates/leg_dashboard.html:343 templates/leg_dashboard.html:362
+#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:363
 msgid "Ausgang"
+msgstr ""
+
+#: templates/telemetry_shared.html:41
+#, python-format
+msgid ""
+"Ausgeschlossene Profile: %(overlap)s mit überlappenden Quellen, %(unavailable)s ohne aktuellen "
+"Messwert, %(estimated)s mit Schätzwerten, %(unsynchronized)s mit abweichenden Messzeiten."
 msgstr ""
 
 #: templates/leg_kalkulator.html:90
@@ -1282,7 +1291,7 @@ msgstr ""
 msgid "Aussteller:"
 msgstr ""
 
-#: templates/leg_dashboard.html:242 templates/leg_dashboard.html:257
+#: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Austritt"
 msgstr ""
 
@@ -1388,11 +1397,11 @@ msgstr ""
 msgid "Batterieenergie"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:12
+#: templates/telemetry_dashboard.html:12 templates/telemetry_shared.html:10
 msgid "Batterieentladung"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:12
+#: templates/telemetry_dashboard.html:12 templates/telemetry_shared.html:10
 msgid "Batterieladung"
 msgstr ""
 
@@ -1435,11 +1444,11 @@ msgstr ""
 msgid "Beilagen"
 msgstr ""
 
-#: templates/leg_dashboard.html:261
+#: templates/leg_dashboard.html:262
 msgid "Beim VNB einreichen"
 msgstr ""
 
-#: templates/leg_dashboard.html:242 templates/leg_dashboard.html:257
+#: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Beitritt"
 msgstr ""
 
@@ -1447,11 +1456,11 @@ msgstr ""
 msgid "Belastungen"
 msgstr ""
 
-#: templates/leg_dashboard.html:316
+#: templates/leg_dashboard.html:317
 msgid "Beleg"
 msgstr ""
 
-#: templates/leg_dashboard.html:316
+#: templates/leg_dashboard.html:317
 msgid "Beleg auswählen"
 msgstr ""
 
@@ -1490,7 +1499,7 @@ msgstr[1] ""
 msgid "Bereits registriert?"
 msgstr ""
 
-#: templates/dashboard.html:74 templates/leg_dashboard.html:35
+#: templates/dashboard.html:74 templates/leg_dashboard.html:36
 msgid "Bereitschaft"
 msgstr ""
 
@@ -1583,8 +1592,8 @@ msgstr ""
 msgid "Bestätigen Sie, dass der Eintrag «"
 msgstr ""
 
-#: formation_wizard.py:50 formation_wizard.py:73 templates/leg_dashboard.html:244
-#: templates/leg_dashboard.html:273
+#: formation_wizard.py:50 formation_wizard.py:73 templates/leg_dashboard.html:245
+#: templates/leg_dashboard.html:274
 msgid "Bestätigt"
 msgstr ""
 
@@ -1596,11 +1605,11 @@ msgstr ""
 msgid "Bestätigte Interessenmeldungen"
 msgstr ""
 
-#: templates/leg_dashboard.html:40
+#: templates/leg_dashboard.html:41
 msgid "Bestätigte Mitglieder"
 msgstr ""
 
-#: templates/leg_dashboard.html:303
+#: templates/leg_dashboard.html:304
 #, python-format
 msgid "Bestätigter Start: %(date)s. Referenz: %(reference)s."
 msgstr ""
@@ -1609,7 +1618,7 @@ msgstr ""
 msgid "Bestätigtes LEG-Interesse"
 msgstr ""
 
-#: templates/leg_dashboard.html:317
+#: templates/leg_dashboard.html:318
 msgid "Bestätigtes Startdatum"
 msgstr ""
 
@@ -1644,7 +1653,7 @@ msgstr ""
 msgid "Betrag (CHF)"
 msgstr ""
 
-#: templates/leg_dashboard.html:336 templates/leg_dashboard.html:370
+#: templates/leg_dashboard.html:337 templates/leg_dashboard.html:371
 msgid "Betreff"
 msgstr ""
 
@@ -1681,7 +1690,7 @@ msgstr ""
 msgid "Betriebsmodelle"
 msgstr ""
 
-#: templates/leg_dashboard.html:299
+#: templates/leg_dashboard.html:300
 msgid "Betriebsstart"
 msgstr ""
 
@@ -1781,7 +1790,7 @@ msgstr ""
 msgid "Bitte geben Sie eine E-Mail an."
 msgstr ""
 
-#: dashboard.py:987 templates/partials/form_validation.html:3
+#: dashboard.py:997 templates/partials/form_validation.html:3
 msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgstr ""
 
@@ -1789,7 +1798,7 @@ msgstr ""
 msgid "Bitte geben Sie eine gültige Schweizer PLZ an."
 msgstr ""
 
-#: dashboard.py:1410 dashboard.py:1413
+#: dashboard.py:1420 dashboard.py:1423
 msgid "Bitte geben Sie eine gültige Solarleistung ein."
 msgstr ""
 
@@ -1805,7 +1814,7 @@ msgstr ""
 msgid "Bitte geben Sie einen Wert im zulässigen Schrittintervall ein."
 msgstr ""
 
-#: dashboard.py:1397 dashboard.py:1405
+#: dashboard.py:1407 dashboard.py:1415
 msgid "Bitte geben Sie einen gültigen Jahresverbrauch ein."
 msgstr ""
 
@@ -1823,7 +1832,7 @@ msgstr ""
 msgid "Bitte geben Sie mindestens %(value)s Zeichen ein."
 msgstr ""
 
-#: templates/telemetry_dashboard.html:46
+#: templates/telemetry_dashboard.html:46 templates/telemetry_shared.html:19
 msgid "Bitte laden Sie die Seite später erneut."
 msgstr ""
 
@@ -1885,7 +1894,7 @@ msgstr ""
 msgid "Breitengrad ausserhalb des gültigen Bereichs"
 msgstr ""
 
-#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:367
+#: templates/leg_dashboard.html:345 templates/leg_dashboard.html:368
 msgid "Brief"
 msgstr ""
 
@@ -2026,7 +2035,7 @@ msgstr ""
 msgid "Das Abrechnungsentgelt der Richtlinie liegt ausserhalb des zulässigen Bereichs."
 msgstr ""
 
-#: templates/leg_dashboard.html:294
+#: templates/leg_dashboard.html:295
 msgid "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind."
 msgstr ""
 
@@ -2034,7 +2043,7 @@ msgstr ""
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr ""
 
-#: dashboard.py:1425
+#: dashboard.py:1435
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
 msgstr ""
 
@@ -2052,7 +2061,7 @@ msgstr ""
 msgid "Das Inkrafttretungsdatum der Richtlinie ist ungültig."
 msgstr ""
 
-#: templates/leg_dashboard.html:358
+#: templates/leg_dashboard.html:359
 msgid ""
 "Das Journal bleibt nachvollziehbar: Korrekturen bleiben als neue Einträge sichtbar. Bestehende "
 "Einträge werden nicht überschrieben oder gelöscht."
@@ -2074,7 +2083,7 @@ msgstr ""
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr ""
 
-#: dashboard.py:1035
+#: dashboard.py:1045
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr ""
 
@@ -2228,7 +2237,7 @@ msgstr ""
 msgid "Datenzugriff"
 msgstr ""
 
-#: templates/documents/community_agreement.html:36 templates/leg_dashboard.html:337
+#: templates/documents/community_agreement.html:36 templates/leg_dashboard.html:338
 msgid "Datum"
 msgstr ""
 
@@ -2254,7 +2263,7 @@ msgstr ""
 msgid "Den Ablauf zuerst selbst prüfen"
 msgstr ""
 
-#: templates/leg_dashboard.html:304
+#: templates/leg_dashboard.html:305
 msgid "Den Originalbeleg finden Sie im Korrespondenzjournal."
 msgstr ""
 
@@ -2270,7 +2279,7 @@ msgstr ""
 msgid "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
 msgstr ""
 
-#: dashboard.py:1251
+#: dashboard.py:1261
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr ""
 
@@ -2328,7 +2337,7 @@ msgstr ""
 msgid "Der Netzbetreiber die Anmeldung bearbeitet und der Messbedarf geklärt ist."
 msgstr ""
 
-#: templates/leg_dashboard.html:300
+#: templates/leg_dashboard.html:301
 msgid ""
 "Der Netzbetreiber muss den Start der LEG bestätigen. Eine Empfangsbestätigung für die Anmeldung "
 "reicht dafür nicht aus."
@@ -2351,7 +2360,7 @@ msgid ""
 "gewählten Dienstleister betreiben können."
 msgstr ""
 
-#: dashboard.py:1253
+#: dashboard.py:1263
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr ""
 
@@ -2385,7 +2394,7 @@ msgid ""
 " sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet."
 msgstr ""
 
-#: dashboard_routes.py:153
+#: dashboard_routes.py:154
 #, python-format
 msgid ""
 "Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
@@ -2402,7 +2411,7 @@ msgid ""
 " melden Sie den vZEV beim VNB an."
 msgstr ""
 
-#: templates/leg_dashboard.html:235
+#: templates/leg_dashboard.html:236
 msgid "Der VNB-Austausch ist derzeit nicht verfügbar."
 msgstr ""
 
@@ -2439,7 +2448,7 @@ msgstr ""
 msgid "Der Wert muss mindestens %(value)s betragen."
 msgstr ""
 
-#: templates/leg_dashboard.html:37
+#: templates/leg_dashboard.html:38
 #, python-format
 msgid ""
 "Der Wert setzt sich aus vier Schritten zusammen: Mindestens %(count)s Mitglieder bestätigen ihre "
@@ -2503,6 +2512,12 @@ msgstr ""
 msgid "Dichte"
 msgstr ""
 
+#: templates/telemetry_shared.html:22
+msgid ""
+"Die Abdeckung umfasst nur diese Quellen. Nicht freigegebene Anlagen werden weder angezeigt noch "
+"gezählt."
+msgstr ""
+
 #: templates/leg_gruenden.html:86
 msgid ""
 "Die Abläufe der Netzbetreiber können sich ändern. Prüfen Sie deshalb vor der Anmeldung die "
@@ -2517,7 +2532,7 @@ msgstr ""
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr ""
 
-#: dashboard_routes.py:956
+#: dashboard_routes.py:976
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr ""
 
@@ -2741,7 +2756,13 @@ msgstr ""
 msgid "Die Messwerte dieser Periode sind unvollständig."
 msgstr ""
 
-#: templates/leg_dashboard.html:236
+#: templates/telemetry_shared.html:29
+msgid ""
+"Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Quellen verschiedener Messkanäle "
+"werden getrennt angezeigt."
+msgstr ""
+
+#: templates/leg_dashboard.html:237
 msgid ""
 "Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der"
 " Netzbetreiber verarbeitet. Eine VNB-Antwort ändert den LEG-Vertrag nicht."
@@ -2770,7 +2791,7 @@ msgstr ""
 msgid "Die Prognose berechnet keine Anlagenleistung oder Überschüsse."
 msgstr ""
 
-#: templates/leg_dashboard.html:64
+#: templates/leg_dashboard.html:65
 msgid "Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut."
 msgstr ""
 
@@ -2836,7 +2857,7 @@ msgstr ""
 msgid "Die Richtlinien-Kopie ist unvollständig: "
 msgstr ""
 
-#: dashboard.py:1017
+#: dashboard.py:1027
 msgid "Die Rollen konnten nicht geändert werden. Mindestens eine Administration muss bestehen bleiben."
 msgstr ""
 
@@ -2852,6 +2873,12 @@ msgstr ""
 
 #: templates/api_docs.html:245
 msgid "Die Suchanfrage muss mindestens 2 Zeichen enthalten."
+msgstr ""
+
+#: templates/telemetry_shared.html:23
+msgid ""
+"Die Summen sind keine vollständige LEG-Bilanz. Für die Abrechnung gelten die validierten VNB-"
+"Messdaten."
 msgstr ""
 
 #: billing_policy.py:155
@@ -2886,7 +2913,7 @@ msgstr ""
 msgid "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein."
 msgstr ""
 
-#: templates/leg_dashboard.html:71
+#: templates/leg_dashboard.html:72
 msgid "Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, Jahreskosten und Anteile."
 msgstr ""
 
@@ -2993,7 +3020,7 @@ msgstr ""
 msgid "Diese Versionsangabe lässt sich mit dem geprüften Versionsschema nicht vergleichen."
 msgstr ""
 
-#: templates/leg_dashboard.html:201
+#: templates/leg_dashboard.html:202
 msgid ""
 "Diese Vorlagen sind automatisch erstellte Entwürfe und keine Rechtsberatung. Lassen Sie die "
 "Dokumente vor der Unterzeichnung juristisch prüfen."
@@ -3005,7 +3032,7 @@ msgid ""
 "Quelldokumente."
 msgstr ""
 
-#: dashboard_routes.py:921
+#: dashboard_routes.py:941
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -3036,7 +3063,7 @@ msgstr ""
 msgid "Dieser Statuswechsel ist nicht zulässig."
 msgstr ""
 
-#: templates/leg_dashboard.html:115
+#: templates/leg_dashboard.html:116
 msgid "Dieser Teilnehmer führt Ladung und Entladung des Speichers über seinen eigenen Messpunkt."
 msgstr ""
 
@@ -3070,7 +3097,7 @@ msgstr ""
 msgid "Dokumentablauf im Assistenten öffnen"
 msgstr ""
 
-#: community_access.py:62 templates/leg_dashboard.html:200
+#: community_access.py:62 templates/leg_dashboard.html:201
 msgid "Dokumente"
 msgstr ""
 
@@ -3095,12 +3122,12 @@ msgid "Drucken"
 msgstr ""
 
 #: billing_policy.py:96 templates/admin/ops.html:84 templates/index.html:424 templates/index.html:450
-#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:366
+#: templates/leg_dashboard.html:345 templates/leg_dashboard.html:367
 #: templates/utility/dashboard.html:126
 msgid "E-Mail"
 msgstr ""
 
-#: dashboard.py:106 dashboard.py:108 dashboard.py:1365
+#: dashboard.py:116 dashboard.py:118 dashboard.py:1375
 msgid "E-Mail bestätigt"
 msgstr ""
 
@@ -3109,7 +3136,7 @@ msgid "E-Mail unterwegs"
 msgstr ""
 
 #: templates/contact_requests.html:40 templates/dashboard.html:20 templates/dashboard.html:60
-#: templates/dashboard.html:257 templates/gemeinde/dashboard.html:151 templates/leg_dashboard.html:391
+#: templates/dashboard.html:257 templates/gemeinde/dashboard.html:151 templates/leg_dashboard.html:392
 #: templates/unsubscribe.html:48
 msgid "E-Mail-Adresse"
 msgstr ""
@@ -3166,7 +3193,7 @@ msgstr ""
 msgid "EVU Registrierung"
 msgstr ""
 
-#: dashboard.py:116 dashboard.py:118 dashboard.py:1367
+#: dashboard.py:126 dashboard.py:128 dashboard.py:1377
 msgid "EVU-Einwilligung erteilt"
 msgstr ""
 
@@ -3312,13 +3339,13 @@ msgid ""
 "verlangt der Netzbetreiber für die Abrechnung des geteilten Stroms."
 msgstr ""
 
-#: templates/leg_dashboard.html:69
+#: templates/leg_dashboard.html:70
 msgid ""
 "Ein gemeinsamer Speicher für die ganze LEG. Jeder Anteil zeigt, wer welchen Teil der Jahreskosten"
 " trägt."
 msgstr ""
 
-#: billing_lifecycle.py:50 dashboard.py:627
+#: billing_lifecycle.py:50 dashboard.py:637
 msgid "Ein gültiges Zahlungsdatum ist erforderlich."
 msgstr ""
 
@@ -3366,6 +3393,12 @@ msgid ""
 "möglich. Rechtsgrundlage: Art. 17d und 17e StromVG sowie Art. 19e bis 19h StromVV."
 msgstr ""
 
+#: templates/telemetry_shared.html:28
+msgid ""
+"Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen "
+"Messzeit. Mehrere Quellen desselben Profils im gleichen Kanal werden ausgeschlossen."
+msgstr ""
+
 #: billing_lifecycle.py:47
 msgid "Eine Zahlungsreferenz ist erforderlich."
 msgstr ""
@@ -3378,7 +3411,7 @@ msgstr ""
 msgid "Eine andere Startbestätigung liegt bereits vor."
 msgstr ""
 
-#: dashboard.py:655
+#: dashboard.py:665
 msgid "Eine gültige Ersatzrechnung ist erforderlich."
 msgstr ""
 
@@ -3391,7 +3424,7 @@ msgstr ""
 msgid "Einfach"
 msgstr ""
 
-#: templates/leg_dashboard.html:343 templates/leg_dashboard.html:363
+#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:364
 msgid "Eingang"
 msgstr ""
 
@@ -3400,7 +3433,7 @@ msgstr ""
 msgid "Eingehende Anfrage vom %(date)s UTC"
 msgstr ""
 
-#: formation_wizard.py:49 formation_wizard.py:72 templates/leg_dashboard.html:44
+#: formation_wizard.py:49 formation_wizard.py:72 templates/leg_dashboard.html:45
 msgid "Eingeladen"
 msgstr ""
 
@@ -3408,7 +3441,7 @@ msgstr ""
 msgid "Einhaltung der Gemeinschaftsvereinbarung"
 msgstr ""
 
-#: templates/leg_dashboard.html:393
+#: templates/leg_dashboard.html:394
 msgid "Einladen"
 msgstr ""
 
@@ -3418,7 +3451,7 @@ msgid_plural "Einladungen"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dashboard.py:970
+#: dashboard.py:980
 msgid "Einladung nicht möglich (bereits Mitglied?)."
 msgstr ""
 
@@ -3434,7 +3467,7 @@ msgstr ""
 msgid "Einladungslink kopiert"
 msgstr ""
 
-#: templates/leg_dashboard.html:275
+#: templates/leg_dashboard.html:276
 msgid "Einleitung erneut möglich"
 msgstr ""
 
@@ -3450,7 +3483,7 @@ msgstr ""
 msgid "Einspeisevergütung"
 msgstr ""
 
-#: templates/leg_dashboard.html:405
+#: templates/leg_dashboard.html:406
 msgid "Einstellung speichern"
 msgstr ""
 
@@ -3482,7 +3515,7 @@ msgstr ""
 msgid "Eintrag bestätigt: "
 msgstr ""
 
-#: templates/leg_dashboard.html:373
+#: templates/leg_dashboard.html:374
 msgid "Eintrag hinzufügen"
 msgstr ""
 
@@ -3498,7 +3531,7 @@ msgstr ""
 msgid "Eintrag und Checkliste öffnen"
 msgstr ""
 
-#: dashboard.py:1268
+#: dashboard.py:1278
 msgid "Eintrag ungültig (Richtung oder Kanal unbekannt)."
 msgstr ""
 
@@ -3517,6 +3550,10 @@ msgstr ""
 
 #: templates/partials/install_console.html:9
 msgid "Einzeiler"
+msgstr ""
+
+#: templates/telemetry_shared.html:47
+msgid "Einzelne Quellen"
 msgstr ""
 
 #: templates/leg_gruenden.html:218
@@ -3625,15 +3662,15 @@ msgstr ""
 msgid "Entwurf"
 msgstr ""
 
-#: templates/leg_dashboard.html:205
+#: templates/leg_dashboard.html:206
 msgid "Entwurf bereit"
 msgstr ""
 
-#: templates/leg_dashboard.html:216
+#: templates/leg_dashboard.html:217
 msgid "Entwurf prüfen"
 msgstr ""
 
-#: billing_workspace.py:132 dashboard.py:369
+#: billing_workspace.py:132 dashboard.py:379
 msgid "Entwurf ungültig"
 msgstr ""
 
@@ -3641,7 +3678,7 @@ msgstr ""
 msgid "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
 msgstr ""
 
-#: templates/leg_dashboard.html:313
+#: templates/leg_dashboard.html:314
 msgid ""
 "Erfassen Sie zuerst die tatsächliche Startbestätigung als Eingang mit Anhang im "
 "Korrespondenzjournal. Wählen Sie danach diesen Beleg aus."
@@ -3683,7 +3720,7 @@ msgstr ""
 msgid "Ersatzstrom getrennt erfassen"
 msgstr ""
 
-#: templates/leg_dashboard.html:244
+#: templates/leg_dashboard.html:245
 msgid "Ersetzt"
 msgstr ""
 
@@ -3728,11 +3765,11 @@ msgstr ""
 msgid "Erster Login"
 msgstr ""
 
-#: templates/leg_dashboard.html:218
+#: templates/leg_dashboard.html:219
 msgid "Erwartete Dauer:"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:53
+#: templates/telemetry_dashboard.html:53 templates/telemetry_shared.html:51
 msgid "Erwarteter Messtakt"
 msgstr ""
 
@@ -3784,7 +3821,7 @@ msgstr ""
 msgid "Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink."
 msgstr ""
 
-#: dashboard_routes.py:338
+#: dashboard_routes.py:358
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr ""
 
@@ -3845,7 +3882,7 @@ msgstr ""
 msgid "Fehler:"
 msgstr ""
 
-#: templates/leg_dashboard.html:244 templates/leg_dashboard.html:273
+#: templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 msgid "Fehlgeschlagen"
 msgstr ""
 
@@ -3985,6 +4022,10 @@ msgstr ""
 msgid "Freigegeben"
 msgstr ""
 
+#: templates/leg_dashboard.html:31 templates/telemetry_shared.html:3 templates/telemetry_shared.html:17
+msgid "Freigegebene Messwerte"
+msgstr ""
+
 #: templates/leg_billing.html:100
 msgid "Freigegebene Rechnungen"
 msgstr ""
@@ -4114,7 +4155,7 @@ msgstr ""
 msgid "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung mit einer anderen E-Mail-Adresse."
 msgstr ""
 
-#: dashboard.py:836
+#: dashboard.py:846
 msgid "Für dieses Gültig-ab-Datum existiert bereits eine Version."
 msgstr ""
 
@@ -4189,7 +4230,7 @@ msgstr ""
 msgid "Geben Sie den Namen Ihrer Gemeinde ein."
 msgstr ""
 
-#: templates/leg_dashboard.html:387
+#: templates/leg_dashboard.html:388
 msgid ""
 "Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen"
 " nicht an, ob bereits ein Profil existiert."
@@ -4231,7 +4272,7 @@ msgstr ""
 msgid "Geeignete Dachfläche"
 msgstr ""
 
-#: templates/leg_dashboard.html:335 templates/leg_dashboard.html:369
+#: templates/leg_dashboard.html:336 templates/leg_dashboard.html:370
 msgid "Gegenstelle"
 msgstr ""
 
@@ -4377,7 +4418,7 @@ msgstr ""
 msgid "Gemeinsam gründen Sie Ihre LEG und sparen je nach Situation mehrere hundert Franken pro Jahr."
 msgstr ""
 
-#: templates/leg_dashboard.html:327
+#: templates/leg_dashboard.html:328
 msgid ""
 "Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem "
 "Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist."
@@ -4407,7 +4448,7 @@ msgstr ""
 msgid "Gemeldete Angaben bestätigt am"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:17
+#: templates/telemetry_dashboard.html:17 templates/telemetry_shared.html:13
 msgid "Gemessen"
 msgstr ""
 
@@ -4452,7 +4493,7 @@ msgstr ""
 msgid "Geprüfte und unterzeichnete Gründungsdokumente."
 msgstr ""
 
-#: templates/telemetry_dashboard.html:52
+#: templates/telemetry_dashboard.html:52 templates/telemetry_shared.html:50
 msgid "Gerät"
 msgstr ""
 
@@ -4524,7 +4565,7 @@ msgstr ""
 msgid "Geschäftliche E-Mail *"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:17
+#: templates/telemetry_dashboard.html:17 templates/telemetry_shared.html:13
 msgid "Geschätzt"
 msgstr ""
 
@@ -4701,12 +4742,12 @@ msgstr ""
 msgid "Gründung gestartet"
 msgstr ""
 
-#: dashboard.py:1077
+#: dashboard.py:1087
 msgid "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
 msgstr ""
 
-#: templates/emails/day_14_formation.html:71 templates/leg_dashboard.html:422
-#: templates/leg_dashboard.html:426 templates/leg_dashboard.html:432
+#: templates/emails/day_14_formation.html:71 templates/leg_dashboard.html:423
+#: templates/leg_dashboard.html:427 templates/leg_dashboard.html:433
 msgid "Gründung starten"
 msgstr ""
 
@@ -4852,11 +4893,11 @@ msgstr ""
 msgid "Heute registriert"
 msgstr ""
 
-#: templates/leg_dashboard.html:354
+#: templates/leg_dashboard.html:355
 msgid "Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu."
 msgstr ""
 
-#: templates/leg_dashboard.html:223
+#: templates/leg_dashboard.html:224
 msgid "Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf."
 msgstr ""
 
@@ -4938,7 +4979,7 @@ msgstr ""
 msgid "Ich habe diese Version des Hinweises gelesen."
 msgstr ""
 
-#: templates/leg_dashboard.html:319
+#: templates/leg_dashboard.html:320
 msgid "Ich habe geprüft, dass der Netzbetreiber den Start der LEG zu diesem Datum bestätigt."
 msgstr ""
 
@@ -4946,7 +4987,7 @@ msgstr ""
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgstr ""
 
-#: dashboard_routes.py:377
+#: dashboard_routes.py:397
 msgid "Ihr Dashboard-Zugangslink"
 msgstr ""
 
@@ -5015,7 +5056,7 @@ msgstr ""
 msgid "Ihre Daten, Ihre Kontrolle"
 msgstr ""
 
-#: templates/leg_dashboard.html:188
+#: templates/leg_dashboard.html:189
 msgid "Ihre Einladung"
 msgstr ""
 
@@ -5027,7 +5068,7 @@ msgstr ""
 msgid "Ihre Gemeinde sieht, was als Nächstes ansteht"
 msgstr ""
 
-#: dashboard_routes.py:151
+#: dashboard_routes.py:152
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr ""
 
@@ -5054,7 +5095,7 @@ msgstr ""
 msgid "Ihre Nachbarn bestätigen die Teilnahme. Wir koordinieren die Kontaktaufnahme."
 msgstr ""
 
-#: dashboard.py:586
+#: dashboard.py:596
 #, python-format
 msgid "Ihre Rechnung %(invoice_number)s"
 msgstr ""
@@ -5087,7 +5128,7 @@ msgstr ""
 msgid "Ihre letzte Stromrechnung von %(utility_name)s enthält die nötigen Angaben."
 msgstr ""
 
-#: dashboard.py:591
+#: dashboard.py:601
 #, python-format
 msgid "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar: %(invoice_url)s"
 msgstr ""
@@ -5100,11 +5141,11 @@ msgstr ""
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr ""
 
-#: templates/leg_dashboard.html:377
+#: templates/leg_dashboard.html:378
 msgid "Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern."
 msgstr ""
 
-#: templates/leg_dashboard.html:433
+#: templates/leg_dashboard.html:434
 msgid "Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen."
 msgstr ""
 
@@ -5319,7 +5360,7 @@ msgid ""
 "Zusammenfassung und keine Rechtsberatung."
 msgstr ""
 
-#: templates/leg_dashboard.html:124
+#: templates/leg_dashboard.html:125
 msgid "Jahreskosten (CHF)"
 msgstr ""
 
@@ -5327,7 +5368,7 @@ msgstr ""
 msgid "Jahreskosten in CHF, zwischen 0 und 100000, höchstens 2 Nachkommastellen."
 msgstr ""
 
-#: templates/leg_dashboard.html:76
+#: templates/leg_dashboard.html:77
 msgid "Jahreskosten:"
 msgstr ""
 
@@ -5418,7 +5459,7 @@ msgstr ""
 msgid "Jährlicher Verbrauch:"
 msgstr ""
 
-#: templates/leg_dashboard.html:334 templates/leg_dashboard.html:365
+#: templates/leg_dashboard.html:335 templates/leg_dashboard.html:366
 msgid "Kanal"
 msgstr ""
 
@@ -5460,7 +5501,7 @@ msgstr ""
 msgid "Kanton filtern"
 msgstr ""
 
-#: templates/leg_dashboard.html:109
+#: templates/leg_dashboard.html:110
 msgid "Kapazität und Anteile erfassen"
 msgstr ""
 
@@ -5496,11 +5537,11 @@ msgstr ""
 msgid "Kein H4-Tarif gefunden. Aktualisieren Sie zuerst die Daten."
 msgstr ""
 
-#: dashboard.py:96
+#: dashboard.py:106
 msgid "Kein Profil angegeben."
 msgstr ""
 
-#: dashboard.py:967
+#: dashboard.py:977
 msgid "Kein Profil zum Einladen angegeben."
 msgstr ""
 
@@ -5516,14 +5557,15 @@ msgstr ""
 msgid "Kein Zugang angegeben"
 msgstr ""
 
-#: dashboard.py:215 dashboard.py:226 dashboard.py:453 dashboard.py:558 dashboard.py:611
-#: dashboard.py:622 dashboard.py:639 dashboard.py:650 dashboard.py:668 dashboard.py:695
-#: dashboard.py:775 dashboard.py:804 dashboard.py:825 dashboard.py:894 dashboard.py:909
-#: dashboard.py:920 dashboard.py:1061 dashboard.py:1245
+#: dashboard.py:225 dashboard.py:236 dashboard.py:463 dashboard.py:568 dashboard.py:621
+#: dashboard.py:632 dashboard.py:649 dashboard.py:660 dashboard.py:678 dashboard.py:705
+#: dashboard.py:785 dashboard.py:814 dashboard.py:835 dashboard.py:904 dashboard.py:919
+#: dashboard.py:930 dashboard.py:1071 dashboard.py:1255
 msgid "Kein Zugriff."
 msgstr ""
 
 #: templates/telemetry_dashboard.html:23 templates/telemetry_dashboard.html:100
+#: templates/telemetry_shared.html:55
 msgid "Kein aktueller Wert"
 msgstr ""
 
@@ -5531,7 +5573,7 @@ msgstr ""
 msgid "Kein eigener technischer Betrieb"
 msgstr ""
 
-#: templates/leg_dashboard.html:216
+#: templates/leg_dashboard.html:217
 msgid "Kein offener Schritt"
 msgstr ""
 
@@ -5554,15 +5596,15 @@ msgstr ""
 msgid "Keine Angabe"
 msgstr ""
 
-#: dashboard.py:1141
+#: dashboard.py:1151
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1095
+#: dashboard.py:1105
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
-#: dashboard.py:1177
+#: dashboard.py:1187
 msgid "Keine Berechtigung."
 msgstr ""
 
@@ -5640,6 +5682,7 @@ msgid "Keine Messdaten in der Datei gefunden. Bitte EKZ-CSV-Export verwenden."
 msgstr ""
 
 #: templates/telemetry_dashboard.html:21 templates/telemetry_dashboard.html:113
+#: templates/telemetry_shared.html:61
 msgid "Keine Messwerte im Aufbewahrungszeitraum verfügbar."
 msgstr ""
 
@@ -5657,6 +5700,14 @@ msgstr ""
 
 #: templates/api_docs.html:243
 msgid "Keine Solardaten gefunden."
+msgstr ""
+
+#: templates/telemetry_shared.html:36
+msgid "Keine Summe: Die Messzeiten unterscheiden sich."
+msgstr ""
+
+#: templates/telemetry_shared.html:38
+msgid "Keine Summe: Weniger als drei Profile liefern geeignete Werte."
 msgstr ""
 
 #: templates/leg_kalkulator.html:425
@@ -5683,6 +5734,10 @@ msgstr ""
 msgid "Keine eindeutige Adresse gefunden. Sie können Ihr Interesse trotzdem für Ihre Gemeinde anmelden."
 msgstr ""
 
+#: templates/telemetry_shared.html:46
+msgid "Keine freigegebenen Leistungswerte verfügbar."
+msgstr ""
+
 #: advisories.py:22
 msgid "Keine genaue Gerätezuordnung"
 msgstr ""
@@ -5691,15 +5746,15 @@ msgstr ""
 msgid "Keine gültigen Messdaten gefunden."
 msgstr ""
 
-#: templates/telemetry_dashboard.html:20
+#: templates/telemetry_dashboard.html:20 templates/telemetry_shared.html:57
 msgid "Keine neue Kollektor-Lieferung"
 msgstr ""
 
-#: dashboard.py:1064
+#: dashboard.py:1074
 msgid "Keine offene Einladung gefunden."
 msgstr ""
 
-#: templates/leg_dashboard.html:56
+#: templates/leg_dashboard.html:57
 msgid "Keine offenen Schritte."
 msgstr ""
 
@@ -5811,11 +5866,11 @@ msgstr ""
 msgid "Korrekturgrund"
 msgstr ""
 
-#: templates/leg_dashboard.html:326
+#: templates/leg_dashboard.html:327
 msgid "Korrespondenz"
 msgstr ""
 
-#: templates/leg_dashboard.html:330
+#: templates/leg_dashboard.html:331
 msgid "Korrespondenzjournal dieser Stromgemeinschaft"
 msgstr ""
 
@@ -5831,11 +5886,11 @@ msgstr ""
 msgid "Kosten"
 msgstr ""
 
-#: templates/leg_dashboard.html:93
+#: templates/leg_dashboard.html:94
 msgid "Kostenanteil pro Jahr"
 msgstr ""
 
-#: templates/leg_dashboard.html:88
+#: templates/leg_dashboard.html:89
 msgid "Kostenanteile am Quartierakku"
 msgstr ""
 
@@ -5907,7 +5962,7 @@ msgstr ""
 msgid "LEG Toolkit"
 msgstr ""
 
-#: templates/leg_dashboard.html:308
+#: templates/leg_dashboard.html:309
 msgid "LEG aktivieren"
 msgstr ""
 
@@ -5983,11 +6038,11 @@ msgstr ""
 msgid "LEG gründen: so geht es"
 msgstr ""
 
-#: dashboard.py:954
+#: dashboard.py:964
 msgid "LEG konnte nicht erstellt werden."
 msgstr ""
 
-#: dashboard.py:219 dashboard.py:807
+#: dashboard.py:229 dashboard.py:817
 msgid "LEG nicht gefunden."
 msgstr ""
 
@@ -5995,7 +6050,7 @@ msgstr ""
 msgid "LEG value-gap analysis"
 msgstr ""
 
-#: templates/leg_dashboard.html:215
+#: templates/leg_dashboard.html:216
 msgid "LEG-Administration"
 msgstr ""
 
@@ -6085,7 +6140,7 @@ msgstr ""
 msgid "LEG-Verzeichnis: Lokale Elektrizitätsgemeinschaften in der Schweiz | OpenLEG"
 msgstr ""
 
-#: templates/leg_dashboard.html:240
+#: templates/leg_dashboard.html:241
 msgid "LEG-Vorgang"
 msgstr ""
 
@@ -6180,7 +6235,7 @@ msgid ""
 "Netzbetreiber folgt im Gründungsprozess."
 msgstr ""
 
-#: templates/leg_dashboard.html:414
+#: templates/leg_dashboard.html:415
 msgid ""
 "Legen Sie Preise, Netzentgelt, Mehrwertsteuer und Zustellung versioniert fest. Die Richtlinie "
 "steuert künftige Abrechnungsentwürfe."
@@ -6394,11 +6449,11 @@ msgstr ""
 msgid "Manuell geprüft"
 msgstr ""
 
-#: dashboard.py:1207
+#: dashboard.py:1217
 msgid "Manuelle Zustellung fehlgeschlagen."
 msgstr ""
 
-#: templates/leg_dashboard.html:244
+#: templates/leg_dashboard.html:245
 msgid "Manuelle Übergabe bereit"
 msgstr ""
 
@@ -6557,7 +6612,7 @@ msgstr ""
 msgid "Messpunkt-Teilnehmer des Quartierakkus mit 1 bis 64 Zeichen angeben."
 msgstr ""
 
-#: templates/leg_dashboard.html:113
+#: templates/leg_dashboard.html:114
 msgid "Messpunkt-Teilnehmer des Speichers"
 msgstr ""
 
@@ -6573,11 +6628,11 @@ msgstr ""
 msgid "Messwerte"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:42
+#: templates/telemetry_dashboard.html:42 templates/telemetry_shared.html:26
 msgid "Messwerte aktualisieren"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:45
+#: templates/telemetry_dashboard.html:45 templates/telemetry_shared.html:19
 msgid "Messwerte derzeit nicht verfügbar"
 msgstr ""
 
@@ -6585,12 +6640,16 @@ msgstr ""
 msgid "Messwerte wieder aktuell"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:104
+#: templates/telemetry_dashboard.html:104 templates/telemetry_shared.html:58
 msgid "Messzeit"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:106
+#: templates/telemetry_dashboard.html:106 templates/telemetry_shared.html:58
 msgid "Messzeit unbekannt"
+msgstr ""
+
+#: templates/telemetry_shared.html:43
+msgid "Messzeiten der geeigneten Werte"
 msgstr ""
 
 #: i18n.py:69
@@ -6646,18 +6705,18 @@ msgstr ""
 msgid "Mit einem prüfbaren Schritt beginnen"
 msgstr ""
 
-#: formation_wizard.py:68 templates/leg_dashboard.html:41 templates/leg_dashboard.html:45
+#: formation_wizard.py:68 templates/leg_dashboard.html:42 templates/leg_dashboard.html:46
 #: templates/leg_verzeichnis/liste.html:73
 msgid "Mitglied"
 msgid_plural "Mitglieder"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/leg_dashboard.html:386
+#: templates/leg_dashboard.html:387
 msgid "Mitglied einladen"
 msgstr ""
 
-#: templates/leg_dashboard.html:146
+#: templates/leg_dashboard.html:147
 msgid "Mitglieder"
 msgstr ""
 
@@ -6665,11 +6724,11 @@ msgstr ""
 msgid "Mitglieder (geschätzt)"
 msgstr ""
 
-#: templates/leg_dashboard.html:150
+#: templates/leg_dashboard.html:151
 msgid "Mitglieder dieser Stromgemeinschaft"
 msgstr ""
 
-#: templates/leg_dashboard.html:239
+#: templates/leg_dashboard.html:240
 msgid "Mitgliedermutationen und deren VNB-Verarbeitungsstatus"
 msgstr ""
 
@@ -6681,7 +6740,7 @@ msgstr ""
 msgid "Mitgliederzahl (geschätzt, optional)"
 msgstr ""
 
-#: templates/leg_dashboard.html:234
+#: templates/leg_dashboard.html:235
 msgid "Mitgliedschaft: LEG und VNB"
 msgstr ""
 
@@ -6786,7 +6845,7 @@ msgid ""
 "liefert sie Messdaten als CSV oder S-DAT."
 msgstr ""
 
-#: dashboard.py:121 dashboard.py:123 dashboard.py:1368
+#: dashboard.py:131 dashboard.py:133 dashboard.py:1378
 msgid "Nachbar-Einwilligung erteilt"
 msgstr ""
 
@@ -6853,7 +6912,7 @@ msgstr ""
 msgid "Name und Kontakt-E-Mail sind erforderlich."
 msgstr ""
 
-#: dashboard.py:948
+#: dashboard.py:958
 msgid "Name und Profil sind erforderlich."
 msgstr ""
 
@@ -6922,7 +6981,7 @@ msgstr ""
 msgid "Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden."
 msgstr ""
 
-#: dashboard.py:1104
+#: dashboard.py:1114
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -6943,7 +7002,7 @@ msgstr ""
 msgid "Netzbetreiber: %(municipality_dso_name)s"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:11
+#: templates/telemetry_dashboard.html:11 templates/telemetry_shared.html:9
 msgid "Netzbezug"
 msgstr ""
 
@@ -6960,7 +7019,7 @@ msgstr ""
 msgid "Netzebene:"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:11
+#: templates/telemetry_dashboard.html:11 templates/telemetry_shared.html:9
 msgid "Netzeinspeisung"
 msgstr ""
 
@@ -7058,7 +7117,7 @@ msgid "Neuenburg"
 msgstr ""
 
 #: billing_workspace.py:224 billing_workspace.py:231 billing_workspace.py:274 billing_workspace.py:278
-#: billing_workspace.py:282 dashboard.py:487 templates/utility/dashboard.html:59
+#: billing_workspace.py:282 dashboard.py:497 templates/utility/dashboard.html:59
 #: templates/utility/dashboard.html:123 templates/utility/dashboard.html:131
 msgid "Nicht angegeben"
 msgstr ""
@@ -7208,7 +7267,7 @@ msgstr ""
 msgid "Not found"
 msgstr ""
 
-#: templates/leg_dashboard.html:371
+#: templates/leg_dashboard.html:372
 msgid "Notiz"
 msgstr ""
 
@@ -7233,19 +7292,19 @@ msgid ""
 "Adressen."
 msgstr ""
 
-#: dashboard.py:1006
+#: dashboard.py:1016
 msgid "Nur die Administration kann Rollen ändern."
 msgstr ""
 
-#: dashboard.py:1032
+#: dashboard.py:1042
 msgid "Nur die Administration kann das Vier-Augen-Prinzip ändern."
 msgstr ""
 
-#: dashboard.py:1073
+#: dashboard.py:1083
 msgid "Nur die Administration kann die Gründung starten."
 msgstr ""
 
-#: dashboard.py:965 dashboard.py:983
+#: dashboard.py:975 dashboard.py:993
 msgid "Nur die Administration kann einladen."
 msgstr ""
 
@@ -7266,11 +7325,11 @@ msgstr ""
 msgid "Nächste Aktion"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:86 templates/leg_dashboard.html:50
+#: templates/gemeinde/dashboard.html:86 templates/leg_dashboard.html:51
 msgid "Nächste Schritte"
 msgstr ""
 
-#: templates/leg_dashboard.html:216
+#: templates/leg_dashboard.html:217
 msgid "Nächster Schritt"
 msgstr ""
 
@@ -7279,7 +7338,7 @@ msgstr ""
 msgid "Nächster Schritt für %(profile_name)s"
 msgstr ""
 
-#: templates/fuer_gemeinden.html:37 templates/leg_dashboard.html:275
+#: templates/fuer_gemeinden.html:37 templates/leg_dashboard.html:276
 msgid "Nächster Schritt:"
 msgstr ""
 
@@ -7508,7 +7567,7 @@ msgstr ""
 msgid "OpenLEG hat den Eintrag freigeschaltet. Kein Betreiber hat ihn beansprucht."
 msgstr ""
 
-#: templates/leg_dashboard.html:268
+#: templates/leg_dashboard.html:269
 msgid ""
 "OpenLEG hält Paket, Zustellung und Antwort als eigenen Vorgang fest. Ohne konfigurierte "
 "Schnittstelle laden Sie dasselbe Paket herunter und bestätigen die Zustellung von Hand."
@@ -7705,11 +7764,11 @@ msgstr ""
 msgid "Ort"
 msgstr ""
 
-#: templates/leg_dashboard.html:210
+#: templates/leg_dashboard.html:211
 msgid "PDF öffnen"
 msgstr ""
 
-#: templates/leg_dashboard.html:372
+#: templates/leg_dashboard.html:373
 msgid "PDF-Anhang"
 msgstr ""
 
@@ -7742,7 +7801,7 @@ msgstr ""
 msgid "PV-Ertrag pro kWp"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:10
+#: templates/telemetry_dashboard.html:10 templates/telemetry_shared.html:8
 msgid "PV-Erzeugung"
 msgstr ""
 
@@ -7753,7 +7812,7 @@ msgid ""
 "hinterlegte Nachweis bleiben getrennt."
 msgstr ""
 
-#: templates/leg_dashboard.html:273
+#: templates/leg_dashboard.html:274
 msgid "Paket bereit"
 msgstr ""
 
@@ -7790,7 +7849,7 @@ msgstr ""
 msgid "Perioden"
 msgstr ""
 
-#: templates/leg_dashboard.html:240
+#: templates/leg_dashboard.html:241
 msgid "Person"
 msgstr ""
 
@@ -7929,7 +7988,7 @@ msgstr ""
 msgid "Profil löschen"
 msgstr ""
 
-#: dashboard.py:100
+#: dashboard.py:110
 msgid "Profil nicht gefunden."
 msgstr ""
 
@@ -8094,15 +8153,15 @@ msgstr ""
 msgid "Prüfung ausstehend"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:17
+#: templates/telemetry_dashboard.html:17 templates/telemetry_shared.html:13
 msgid "Qualität unbekannt"
 msgstr ""
 
-#: templates/leg_dashboard.html:63 templates/leg_dashboard.html:68
+#: templates/leg_dashboard.html:64 templates/leg_dashboard.html:69
 msgid "Quartierakku"
 msgstr ""
 
-#: templates/leg_dashboard.html:137
+#: templates/leg_dashboard.html:138
 msgid "Quartierakku speichern"
 msgstr ""
 
@@ -8125,6 +8184,7 @@ msgstr ""
 
 #: templates/admin/ops.html:87 templates/gemeinde/methodik.html:38
 #: templates/telemetry_dashboard.html:52 templates/telemetry_dashboard.html:126
+#: templates/telemetry_shared.html:50
 msgid "Quelle"
 msgstr ""
 
@@ -8215,7 +8275,7 @@ msgstr ""
 msgid "Quelloffene Infrastruktur für Lokale Elektrizitätsgemeinschaften"
 msgstr ""
 
-#: templates/leg_dashboard.html:259
+#: templates/leg_dashboard.html:260
 msgid "Quellvertrag"
 msgstr ""
 
@@ -8284,7 +8344,7 @@ msgstr ""
 msgid "Rechnung"
 msgstr ""
 
-#: dashboard.py:882
+#: dashboard.py:892
 msgid "Rechnung nicht gefunden."
 msgstr ""
 
@@ -8345,7 +8405,7 @@ msgstr ""
 msgid "Reduktion der Netzkosten"
 msgstr ""
 
-#: templates/leg_dashboard.html:318
+#: templates/leg_dashboard.html:319
 msgid "Referenz des Netzbetreibers"
 msgstr ""
 
@@ -8411,11 +8471,11 @@ msgstr ""
 msgid "Richten Sie die Abrechnung ein."
 msgstr ""
 
-#: templates/leg_dashboard.html:415
+#: templates/leg_dashboard.html:416
 msgid "Richtlinie verwalten"
 msgstr ""
 
-#: templates/leg_dashboard.html:333 templates/leg_dashboard.html:361
+#: templates/leg_dashboard.html:334 templates/leg_dashboard.html:362
 msgid "Richtung"
 msgstr ""
 
@@ -8427,11 +8487,11 @@ msgstr ""
 msgid "Richtwerte Schweiz: 1 Person ca. 1'500 kWh, 2 Personen ca. 2'500 kWh, 4 Personen ca. 4'500 kWh."
 msgstr ""
 
-#: templates/documents/community_agreement.html:17 templates/leg_dashboard.html:154
+#: templates/documents/community_agreement.html:17 templates/leg_dashboard.html:155
 msgid "Rolle"
 msgstr ""
 
-#: dashboard.py:165
+#: dashboard.py:175
 msgid "Rolle wird geprüft"
 msgstr ""
 
@@ -8447,7 +8507,7 @@ msgstr ""
 msgid "Rollen müssen als Liste angegeben werden."
 msgstr ""
 
-#: templates/leg_dashboard.html:175
+#: templates/leg_dashboard.html:176
 msgid "Rollen speichern"
 msgstr ""
 
@@ -8693,6 +8753,16 @@ msgstr ""
 msgid "Sicherheitshinweise |"
 msgstr ""
 
+#: templates/telemetry_shared.html:24
+#, python-format
+msgid "Sichtbare Anlagen: %(count)s"
+msgstr ""
+
+#: templates/telemetry_shared.html:40
+#, python-format
+msgid "Sichtbare Profile: %(visible)s. Geeignete Profile: %(eligible)s. In der Summe: %(included)s."
+msgstr ""
+
 #: templates/fuer_gemeinden.html:50
 msgid ""
 "Sie behalten die fachliche Verantwortung. OpenLEG stellt die Infrastruktur bereit. Der "
@@ -8729,11 +8799,17 @@ msgstr ""
 msgid "Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein."
 msgstr ""
 
+#: templates/telemetry_shared.html:21
+msgid ""
+"Sie sehen eigene Anlagen und ausdrücklich für Sie freigegebene Quellen mit aktiver "
+"Nachbarschaftsfreigabe."
+msgstr ""
+
 #: templates/fuer_gemeinden.html:35
 msgid "Sie sehen, wie viele Interessierte sich gemeldet haben."
 msgstr ""
 
-#: templates/leg_dashboard.html:189
+#: templates/leg_dashboard.html:190
 #, python-format
 msgid "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
 msgstr ""
@@ -8859,7 +8935,7 @@ msgstr ""
 msgid "Sobald es genug Leute sind, stellen wir den Kontakt her."
 msgstr ""
 
-#: templates/leg_dashboard.html:423
+#: templates/leg_dashboard.html:424
 msgid "Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess."
 msgstr ""
 
@@ -8973,7 +9049,7 @@ msgstr ""
 msgid "Sparpotenzial berechnen"
 msgstr ""
 
-#: templates/leg_dashboard.html:119
+#: templates/leg_dashboard.html:120
 msgid "Speicherkapazität (kWh)"
 msgstr ""
 
@@ -8981,7 +9057,7 @@ msgstr ""
 msgid "Speicherkapazität in kWh, grösser 0 und höchstens 10000, höchstens 2 Nachkommastellen."
 msgstr ""
 
-#: templates/leg_dashboard.html:75
+#: templates/leg_dashboard.html:76
 msgid "Speicherkapazität:"
 msgstr ""
 
@@ -9014,6 +9090,10 @@ msgstr ""
 msgid "Stand Ihrer Abklärung"
 msgstr ""
 
+#: templates/telemetry_shared.html:25
+msgid "Stand beim Laden"
+msgstr ""
+
 #: templates/equipment_form.html:75
 msgid "Stand der manuellen Prüfung"
 msgstr ""
@@ -9026,11 +9106,11 @@ msgstr ""
 msgid "Standardpasswörter"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:13
+#: templates/telemetry_dashboard.html:13 templates/telemetry_shared.html:11
 msgid "Standorterzeugung"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:13
+#: templates/telemetry_dashboard.html:13 templates/telemetry_shared.html:11
 msgid "Standortverbrauch"
 msgstr ""
 
@@ -9039,7 +9119,7 @@ msgstr ""
 msgid "Start, wenn"
 msgstr ""
 
-#: templates/leg_dashboard.html:320
+#: templates/leg_dashboard.html:321
 msgid "Startbestätigung erfassen"
 msgstr ""
 
@@ -9055,8 +9135,8 @@ msgstr ""
 msgid "Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert."
 msgstr ""
 
-#: templates/admin/ops.html:88 templates/admin/ops.html:225 templates/leg_dashboard.html:155
-#: templates/leg_dashboard.html:214 templates/leg_verzeichnis/detail.html:32
+#: templates/admin/ops.html:88 templates/admin/ops.html:225 templates/leg_dashboard.html:156
+#: templates/leg_dashboard.html:215 templates/leg_verzeichnis/detail.html:32
 #: templates/leg_verzeichnis/eintragen.html:66 templates/utility/dashboard.html:50
 msgid "Status"
 msgstr ""
@@ -9069,11 +9149,11 @@ msgstr ""
 msgid "Status im Dashboard angeben"
 msgstr ""
 
-#: dashboard.py:153 dashboard.py:168 templates/leg_dashboard.html:214
+#: dashboard.py:163 dashboard.py:178 templates/leg_dashboard.html:215
 msgid "Status wird geprüft"
 msgstr ""
 
-#: templates/leg_billing.html:57 templates/leg_dashboard.html:30 templates/leg_dashboard.html:273
+#: templates/leg_billing.html:57 templates/leg_dashboard.html:30 templates/leg_dashboard.html:274
 #: templates/member_invoice_detail.html:52
 msgid "Status:"
 msgstr ""
@@ -9214,6 +9294,10 @@ msgstr ""
 msgid "Summary"
 msgstr ""
 
+#: templates/telemetry_shared.html:27
+msgid "Summen nach Messkanal"
+msgstr ""
+
 #: templates/utility/dashboard.html:13
 msgid "Suspended"
 msgstr ""
@@ -9266,7 +9350,7 @@ msgid ""
 "Haushalte melden sich direkt an."
 msgstr ""
 
-#: templates/leg_dashboard.html:193
+#: templates/leg_dashboard.html:194
 msgid "Teilnahme bestätigen"
 msgstr ""
 
@@ -9279,7 +9363,7 @@ msgid "Teilnehmende und Anlagen erfassen"
 msgstr ""
 
 #: templates/admin/abrechnungen.html:112 templates/admin/abrechnungen.html:134
-#: templates/documents/participant_contract.html:13 templates/leg_dashboard.html:91
+#: templates/documents/participant_contract.html:13 templates/leg_dashboard.html:92
 msgid "Teilnehmer"
 msgstr ""
 
@@ -9287,7 +9371,7 @@ msgstr ""
 msgid "Teilnehmer und Messpunkte"
 msgstr ""
 
-#: templates/leg_dashboard.html:256
+#: templates/leg_dashboard.html:257
 msgid "Teilnehmer-ID"
 msgstr ""
 
@@ -9504,11 +9588,11 @@ msgstr ""
 msgid "Unterschrift"
 msgstr ""
 
-#: templates/leg_dashboard.html:205
+#: templates/leg_dashboard.html:206
 msgid "Unterschrift abgelehnt"
 msgstr ""
 
-#: templates/leg_dashboard.html:216
+#: templates/leg_dashboard.html:217
 msgid "Unterschriften abschliessen"
 msgstr ""
 
@@ -9524,11 +9608,11 @@ msgstr ""
 msgid "Unterstützung anfragen"
 msgstr ""
 
-#: templates/leg_dashboard.html:205
+#: templates/leg_dashboard.html:206
 msgid "Unterzeichnet"
 msgstr ""
 
-#: dashboard.py:256 dashboard.py:257
+#: dashboard.py:266 dashboard.py:267
 msgid "Unvollständig"
 msgstr ""
 
@@ -9564,7 +9648,7 @@ msgstr ""
 msgid "VNB Monitor"
 msgstr ""
 
-#: templates/leg_dashboard.html:275
+#: templates/leg_dashboard.html:276
 msgid "VNB kontaktieren"
 msgstr ""
 
@@ -9572,7 +9656,7 @@ msgstr ""
 msgid "VNB-Abgleich"
 msgstr ""
 
-#: dashboard.py:1152
+#: dashboard.py:1162
 msgid "VNB-Mutation vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -9580,7 +9664,7 @@ msgstr ""
 msgid "VNB-Plausibilität"
 msgstr ""
 
-#: templates/leg_dashboard.html:240
+#: templates/leg_dashboard.html:241
 msgid "VNB-Status"
 msgstr ""
 
@@ -9593,10 +9677,11 @@ msgid "Value-gap calculation"
 msgstr ""
 
 #: templates/telemetry_dashboard.html:18 templates/telemetry_dashboard.html:22
+#: templates/telemetry_shared.html:14
 msgid "Veraltet"
 msgstr ""
 
-#: templates/leg_dashboard.html:215
+#: templates/leg_dashboard.html:216
 msgid "Verantwortlich"
 msgstr ""
 
@@ -9624,7 +9709,7 @@ msgstr ""
 msgid "Verbrauchsdaten ergänzen"
 msgstr ""
 
-#: dashboard.py:111 dashboard.py:113 dashboard.py:1366
+#: dashboard.py:121 dashboard.py:123 dashboard.py:1376
 msgid "Verbrauchsdaten hinterlegt"
 msgstr ""
 
@@ -9718,7 +9803,7 @@ msgstr ""
 msgid "Verteilmodell"
 msgstr ""
 
-#: dashboard.py:158
+#: dashboard.py:168
 msgid "Verteilmodell wird geprüft"
 msgstr ""
 
@@ -9739,7 +9824,7 @@ msgstr ""
 msgid "Vertrag unterzeichnen"
 msgstr ""
 
-#: templates/leg_dashboard.html:228
+#: templates/leg_dashboard.html:229
 msgid "Vertragsentwürfe erstellen"
 msgstr ""
 
@@ -9787,7 +9872,7 @@ msgstr ""
 msgid "Vier Punkte entscheiden, ob die Anmeldung starten kann."
 msgstr ""
 
-#: templates/leg_dashboard.html:398
+#: templates/leg_dashboard.html:399
 msgid "Vier-Augen-Prinzip"
 msgstr ""
 
@@ -9795,7 +9880,7 @@ msgstr ""
 msgid "Vollständig abgeglichen"
 msgstr ""
 
-#: templates/leg_dashboard.html:378 templates/leg_dashboard.html:434
+#: templates/leg_dashboard.html:379 templates/leg_dashboard.html:435
 msgid "Vollzugriff im persönlichen Dashboard anfordern"
 msgstr ""
 
@@ -9830,7 +9915,7 @@ msgstr[1] ""
 msgid "Von Solar über Zähler zur Stromgemeinschaft"
 msgstr ""
 
-#: templates/leg_dashboard.html:205
+#: templates/leg_dashboard.html:206
 msgid "Von Unterzeichnenden geöffnet"
 msgstr ""
 
@@ -9861,7 +9946,7 @@ msgstr ""
 msgid "Vorbereitet durch:"
 msgstr ""
 
-#: dashboard.py:676
+#: dashboard.py:686
 msgid "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr ""
 
@@ -9878,15 +9963,15 @@ msgstr ""
 msgid "Vorbilder in %(profile_kanton)s"
 msgstr ""
 
-#: templates/leg_dashboard.html:257
+#: templates/leg_dashboard.html:258
 msgid "Vorgang"
 msgstr ""
 
-#: templates/leg_dashboard.html:255
+#: templates/leg_dashboard.html:256
 msgid "Vorgangs-ID"
 msgstr ""
 
-#: templates/leg_dashboard.html:216
+#: templates/leg_dashboard.html:217
 msgid "Vorgehen klären"
 msgstr ""
 
@@ -10344,15 +10429,15 @@ msgstr ""
 msgid "Wird nicht veröffentlicht, nur für die Prüfung und spätere Beanspruchung des Eintrags."
 msgstr ""
 
-#: templates/leg_dashboard.html:273
+#: templates/leg_dashboard.html:274
 msgid "Wird vorbereitet"
 msgstr ""
 
-#: templates/leg_dashboard.html:240
+#: templates/leg_dashboard.html:241
 msgid "Wirksam"
 msgstr ""
 
-#: templates/leg_dashboard.html:258
+#: templates/leg_dashboard.html:259
 msgid "Wirksamkeitsdatum"
 msgstr ""
 
@@ -10450,6 +10535,7 @@ msgid "Zeile %(line)s: Ungültiger Zeitstempel '%(timestamp)s'"
 msgstr ""
 
 #: templates/telemetry_dashboard.html:18 templates/telemetry_dashboard.html:25
+#: templates/telemetry_shared.html:14
 msgid "Zeitangabe prüfen"
 msgstr ""
 
@@ -10510,7 +10596,7 @@ msgstr ""
 msgid "Zugangslink anfordern"
 msgstr ""
 
-#: billing_lifecycle.py:16 templates/leg_dashboard.html:244 templates/leg_dashboard.html:273
+#: billing_lifecycle.py:16 templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 msgid "Zugestellt"
 msgstr ""
 
@@ -10555,7 +10641,7 @@ msgstr ""
 msgid "Zur Startseite"
 msgstr ""
 
-#: templates/leg_dashboard.html:205
+#: templates/leg_dashboard.html:206
 msgid "Zur Unterschrift versendet"
 msgstr ""
 
@@ -10573,6 +10659,7 @@ msgstr ""
 
 #: templates/contact_requests.html:18 templates/equipment_index.html:5
 #: templates/member_invoices.html:10 templates/telemetry_dashboard.html:38
+#: templates/telemetry_shared.html:16
 msgid "Zurück zum Dashboard"
 msgstr ""
 
@@ -10608,7 +10695,7 @@ msgstr ""
 msgid "Zustellung als erfolgt bestätigen"
 msgstr ""
 
-#: templates/leg_dashboard.html:249 templates/leg_dashboard.html:281
+#: templates/leg_dashboard.html:250 templates/leg_dashboard.html:282
 msgid "Zustellung bestätigen"
 msgstr ""
 
@@ -10640,7 +10727,7 @@ msgstr ""
 msgid "[Name, Adresse, Telefon, E-Mail]"
 msgstr ""
 
-#: templates/leg_dashboard.html:218
+#: templates/leg_dashboard.html:219
 msgid "abhängig von Ihrer Prüfung"
 msgstr ""
 
@@ -10690,7 +10777,7 @@ msgid_plural "bestätigte Interessierte"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/leg_dashboard.html:218
+#: templates/leg_dashboard.html:219
 msgid "bis 14 Tage"
 msgstr ""
 
@@ -10757,7 +10844,7 @@ msgstr ""
 msgid "geschätztes Dachpotenzial minus installierte Leistung."
 msgstr ""
 
-#: templates/leg_dashboard.html:349
+#: templates/leg_dashboard.html:350
 msgid "herunterladen"
 msgstr ""
 
@@ -10861,7 +10948,7 @@ msgstr ""
 msgid "n/a"
 msgstr ""
 
-#: templates/leg_dashboard.html:392
+#: templates/leg_dashboard.html:393
 msgid "name@beispiel.ch"
 msgstr ""
 
@@ -10911,11 +10998,11 @@ msgstr ""
 msgid "open"
 msgstr ""
 
-#: templates/leg_dashboard.html:371
+#: templates/leg_dashboard.html:372
 msgid "optional"
 msgstr ""
 
-#: templates/leg_dashboard.html:372
+#: templates/leg_dashboard.html:373
 msgid "optional, höchstens 2 MB"
 msgstr ""
 
@@ -11011,7 +11098,7 @@ msgstr ""
 msgid "z. B. 30"
 msgstr ""
 
-#: templates/leg_dashboard.html:120
+#: templates/leg_dashboard.html:121
 msgid "z. B. 45"
 msgstr ""
 
@@ -11031,7 +11118,7 @@ msgstr ""
 msgid "z. B. 8.5"
 msgstr ""
 
-#: templates/leg_dashboard.html:125
+#: templates/leg_dashboard.html:126
 msgid "z. B. 960"
 msgstr ""
 
@@ -11047,15 +11134,15 @@ msgstr ""
 msgid "z. B. LEG-2026"
 msgstr ""
 
-#: templates/leg_dashboard.html:369
+#: templates/leg_dashboard.html:370
 msgid "z. B. Netzbetreiber"
 msgstr ""
 
-#: templates/leg_dashboard.html:114
+#: templates/leg_dashboard.html:115
 msgid "z. B. batterie-1"
 msgstr ""
 
-#: templates/leg_dashboard.html:255
+#: templates/leg_dashboard.html:256
 msgid "z. B. mitglied-2026-001"
 msgstr ""
 
@@ -11168,7 +11255,7 @@ msgstr ""
 msgid "· Rang %(p_pv_rank)s CH"
 msgstr ""
 
-#: templates/leg_dashboard.html:242
+#: templates/leg_dashboard.html:243
 msgid "· Vertrag"
 msgstr ""
 
@@ -11188,7 +11275,7 @@ msgstr ""
 msgid "Ändern"
 msgstr ""
 
-#: templates/leg_dashboard.html:242 templates/leg_dashboard.html:257
+#: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Änderung"
 msgstr ""
 
@@ -11196,7 +11283,7 @@ msgstr ""
 msgid "Änderung dieser Katalogversion"
 msgstr ""
 
-#: templates/leg_dashboard.html:260
+#: templates/leg_dashboard.html:261
 msgid "Änderungsdaten (nur bei Änderung; JSON mit status, role oder access_roles)"
 msgstr ""
 
@@ -11228,7 +11315,7 @@ msgstr ""
 msgid "Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail."
 msgstr ""
 
-#: dashboard_routes.py:379
+#: dashboard_routes.py:399
 #, python-format
 msgid ""
 "Öffnen Sie Ihr Dashboard über diesen Link:\n"
@@ -11264,7 +11351,7 @@ msgstr ""
 msgid "Übergabe an Ihren Installateur"
 msgstr ""
 
-#: templates/leg_dashboard.html:249
+#: templates/leg_dashboard.html:250
 msgid "Übergabepaket herunterladen"
 msgstr ""
 
