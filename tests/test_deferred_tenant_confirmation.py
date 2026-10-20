@@ -90,3 +90,40 @@ def test_registration_thread_keeps_captured_tenant(
     assert "https://lab.example.invalid/confirm/" in body
     assert "lang=" + locale.replace("_", "-") in body
     assert "Zürich" not in body
+
+
+def test_registration_without_tenant_keeps_default_confirmation(
+    app_module, monkeypatch
+):
+    callbacks = []
+
+    def register(data, *, city_id, user_type, deps):
+        assert city_id == "zurich"
+        callbacks.append(deps.send_confirmation_email)
+        return {"success": True}
+
+    monkeypatch.setattr(app_module.registration, "register", register)
+    monkeypatch.setattr(
+        app_module.security_utils, "check_request_size", lambda _: (True, None)
+    )
+    send = Mock()
+    monkeypatch.setattr(app_module, "send_email", send)
+    web = app_module.create_app(
+        {"TESTING": True, "RATELIMIT_STORAGE_URI": "memory://"},
+        load_environment=False,
+        check_database=False,
+    )
+
+    @web.before_request
+    def missing_tenant():
+        g.pop("tenant", None)
+
+    response = web.test_client().post("/api/register_full", json=valid_data())
+    assert response.status_code == 200
+    assert response.json == {"success": True}
+    assert not has_app_context()
+    callbacks[0]("user@example.invalid", "https://example.invalid/confirm/synthetic")
+    recipient, subject, body = send.call_args.args
+    assert recipient == "user@example.invalid"
+    assert "OpenLEG" in subject
+    assert "Zürich" in body

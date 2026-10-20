@@ -547,7 +547,8 @@ def _registration_response(user_type):
     if not is_valid_size:
         return jsonify({"error": _(size_error)}), 413
 
-    city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
+    tenant = getattr(g, "tenant", None) or {}
+    city_id = tenant.get("territory", "zurich")
     deps = registration.RegistrationDeps(
         db=db,
         security=security_utils,
@@ -556,7 +557,7 @@ def _registration_response(user_type):
         send_confirmation_email=partial(
             send_confirmation_email,
             presentation={
-                key: g.tenant.get(key, fallback)
+                key: tenant.get(key, fallback)
                 for key, fallback in (
                     ("platform_name", "OpenLEG"),
                     ("city_name", "Zürich"),

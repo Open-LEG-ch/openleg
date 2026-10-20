@@ -102,3 +102,40 @@ def test_authenticated_utility_response_is_private(web, monkeypatch):
     assert response.status_code == 302
     assert response.headers["Cache-Control"] == "no-store"
     assert response.headers["Referrer-Policy"] == "no-referrer"
+
+
+@pytest.mark.parametrize("lang", ["de-CH", "fr-CH"])
+@pytest.mark.parametrize("private", [False, True])
+def test_profile_chart_resources_follow_response_privacy(
+    web, monkeypatch, lang, private
+):
+    import database
+    import municipality_profile
+
+    monkeypatch.setattr(database, "get_interest_count", lambda *args, **kwargs: 0)
+    monkeypatch.setattr(
+        municipality_profile,
+        "profile_context",
+        lambda *args, **kwargs: {
+            "profile": {"bfs_number": 261, "name": "Synthetic", "kanton": "ZH"},
+            "solar": {
+                "suitable_roof_area_m2": 250000,
+                "total_roof_area_m2": 500000,
+                "potential_kwp": 180000,
+                "utilization_pct": 8.3,
+            },
+            "solar_score": None,
+            "jsonld": {},
+        },
+    )
+    query = {"lang": lang}
+    if private:
+        query["token"] = "synthetic-token"
+    response = web.test_client().get("/gemeinde/profil/261", query_string=query)
+    assert response.status_code == 200
+    assert 'data-source-marker="sonnendach-area"' in response.text
+    for resource in ("cdn.jsdelivr.net/npm/chart.js", "new Chart(", 'id="solarChart"'):
+        assert (resource in response.text) is not private
+    if private:
+        assert response.headers["Cache-Control"] == "no-store"
+        assert response.headers["Referrer-Policy"] == "no-referrer"
