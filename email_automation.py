@@ -14,6 +14,7 @@ import database as db
 from email_localization import gettext as _
 from email_localization import render_template
 from email_utils import send_email
+from translation_markers import gettext_noop as _N
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ def get_email_sequence(platform_name="OpenLEG", *, locale="de_CH"):
 # Standalone trigger templates (not part of drip sequence)
 TRIGGER_TEMPLATES = {
     "formation_nudge": {
-        "subject": "Ihre LEG-Gründung wartet",
+        "subject": _N("Ihre LEG-Gründung wartet"),
         "template": "emails/formation_nudge.html",
     },
 }

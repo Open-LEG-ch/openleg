@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ current_locale }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ihre LEG-Gründung wartet</title>
+<title>{{ _("Ihre LEG-Gründung wartet") }}</title>
 <style>
 body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
 .wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
@@ -25,26 +25,26 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     <h1>{{ platform_name }}</h1>
   </div>
   <div class="content">
-    <h2>Ihre LEG-Gründung wartet</h2>
-    <p>Hallo,</p>
-    <p>Ihre Gemeinschaft <strong>{{ community_name }}</strong> steht aktuell im Status <strong>{{ current_status }}</strong> und hat sich seit {{ days_stuck }} Tagen nicht bewegt.</p>
+    <h2>{{ _("Ihre LEG-Gründung wartet") }}</h2>
+    <p>{{ _("Hallo,") }}</p>
+    <p>{{ ngettext("Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit %(count)s Tag nicht bewegt.", "Ihre Gemeinschaft %(community_name)s steht aktuell im Status %(status)s und hat sich seit %(count)s Tagen nicht bewegt.", days_stuck, community_name=community_name, status=_(current_status)|forceescape, count=days_stuck) }}</p>
 
     <div class="status-box">
-      <p><strong>Nächster Schritt:</strong></p>
-      <p>{{ next_step_description }}</p>
+      <p><strong>{{ _("Nächster Schritt:") }}</strong></p>
+      <p>{{ _(next_step_description)|forceescape }}</p>
     </div>
 
-    <p>Wenn Sie festhängen, antworten Sie auf diese E-Mail. Wir schauen den nächsten Schritt mit Ihnen an.</p>
+    <p>{{ _("Wenn Sie festhängen, antworten Sie auf diese E-Mail. Wir schauen den nächsten Schritt mit Ihnen an.") }}</p>
 
     <p style="text-align: center;">
-      <a href="{{ dashboard_url }}" class="cta">Gründung fortsetzen</a>
+      <a href="{{ dashboard_url|localized_url }}" class="cta">{{ _("Gründung fortsetzen") }}</a>
     </p>
 
-    <p>Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+    <p>{{ _("Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter") }} <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
   </div>
   <div class="footer">
-    <p>{{ platform_name }} &middot; Kostenlose LEG-Infrastruktur</p>
-    <p><a href="{{ unsubscribe_url }}">Abmelden</a></p>
+    <p>{{ platform_name }} &middot; {{ _("Kostenlose LEG-Infrastruktur") }}</p>
+    <p><a href="{{ unsubscribe_url|localized_url }}">{{ pgettext("email-unsubscribe", "Abmelden") }}</a></p>
   </div>
 </div>
 </body>
