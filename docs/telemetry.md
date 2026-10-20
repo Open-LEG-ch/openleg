@@ -44,6 +44,10 @@ collector does not make a device physically incapable of control. Operators
 must restrict device access locally. OpenLEG exposes no scanner, register
 operation, device proxy, arbitrary forwarding URL or command channel.
 
+Cached public weather context appears after current readings and notices. See
+[solar forecast context](solar-forecast-context.md) for source, coverage and cache
+behavior. It computes no installation production or monetary recommendation.
+
 ## Owner notices
 
 The owner page and `GET {base}/{installation_id}/notices` show persisted

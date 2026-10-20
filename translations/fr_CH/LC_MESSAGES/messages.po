@@ -2508,6 +2508,10 @@ msgstr ""
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr "La taille de la pièce jointe PDF ne doit pas dépasser 2 Mo."
 
+#: templates/telemetry_dashboard.html:69
+msgid "Der Prognosestand ist veraltet. Bitte prüfen Sie die Wetterprognose später erneut."
+msgstr "La prévision n’est plus à jour. Consultez-la plus tard."
+
 #: quartierakku.py:81
 msgid "Der Quartierakku hat keine gültigen Angaben."
 msgstr "Les données de la batterie de quartier ne sont pas valides."
@@ -3002,6 +3006,10 @@ msgstr ""
 "La plateforme est open source sous licence AGPL-3.0-or-later. Le code est sur GitHub et OpenLEG "
 "peut être auto-hébergé. OpenLEG permet d’exporter et de restaurer les données d’exploitation "
 "d’une CEL. Les inscriptions personnelles peuvent être supprimées."
+
+#: templates/telemetry_dashboard.html:50
+msgid "Die Prognose berechnet keine Anlagenleistung oder Überschüsse."
+msgstr "La prévision ne calcule ni la puissance de l’installation ni un excédent."
 
 #: templates/leg_dashboard.html:64
 msgid "Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut."
@@ -4982,6 +4990,10 @@ msgstr "Répartition uniforme"
 msgid "Gleichverteilt"
 msgstr "Réparti de manière égale"
 
+#: templates/telemetry_dashboard.html:56
+msgid "Globalstrahlung, Stundenmittel"
+msgstr "Rayonnement global, moyenne horaire"
+
 #: templates/utility/register.html:52
 msgid "Graubünden"
 msgstr "Grisons"
@@ -6049,6 +6061,10 @@ msgstr "Aucune mesure disponible dans la période de conservation."
 #: templates/admin/abrechnungen.html:139
 msgid "Keine Positionen in dieser Kategorie."
 msgstr "Aucun poste dans cette catégorie."
+
+#: templates/telemetry_dashboard.html:61
+msgid "Keine Prognose verfügbar"
+msgstr "Aucune prévision disponible"
 
 #: templates/admin/ops.html:211
 msgid "Keine Snapshots"
@@ -8512,6 +8528,14 @@ msgstr "Les données du profil sont manquantes."
 msgid "Profildaten herunterladen"
 msgstr "Télécharger les données de profil"
 
+#: templates/telemetry_dashboard.html:51
+msgid "Prognosepunkt"
+msgstr "Point de prévision"
+
+#: templates/telemetry_dashboard.html:52
+msgid "Prognosestand"
+msgstr "Publication de la prévision"
+
 #: templates/fuer_gemeinden.html:120
 msgid "Projektsupport anfragen"
 msgstr "Demander un accompagnement de projet"
@@ -9837,6 +9861,10 @@ msgstr "Niveau 2 :"
 msgid "Stufe 3:"
 msgstr "Niveau 3 :"
 
+#: templates/telemetry_dashboard.html:49
+msgid "Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt."
+msgstr "Moyenne horaire du rayonnement solaire global au point de prévision."
+
 #: templates/gemeinde/onboarding.html:112
 msgid "Suche aktuell nicht verfügbar."
 msgstr "Recherche actuellement indisponible."
@@ -10790,6 +10818,14 @@ msgstr "Valeur"
 msgid "Wert zum internen Preis"
 msgstr "Valeur au prix interne"
 
+#: templates/telemetry_dashboard.html:47
+msgid "Wetterprognose"
+msgstr "Prévisions météorologiques"
+
+#: templates/telemetry_dashboard.html:68
+msgid "Wetterprognose derzeit nicht verfügbar"
+msgstr "Prévisions météorologiques actuellement indisponibles"
+
 #: templates/utility/dashboard.html:103
 msgid "White-Label Branding konfigurieren"
 msgstr "Configurer l’identité visuelle"
@@ -11170,6 +11206,10 @@ msgid "Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in d
 msgstr ""
 "Planification et dernière exécution par locataire. Des informations sur les codes d'erreur "
 "peuvent être trouvées dans la documentation d'exploitation."
+
+#: templates/telemetry_dashboard.html:56
+msgid "Zeitraum"
+msgstr "Période"
 
 #: i18n.py:81
 msgid "Zeitüberschreitung beim vorgelagerten Dienst"

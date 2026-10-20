@@ -2480,6 +2480,10 @@ msgstr ""
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr "Der PDF-Anhang darf höchstens 2 MB gross sein."
 
+#: templates/telemetry_dashboard.html:69
+msgid "Der Prognosestand ist veraltet. Bitte prüfen Sie die Wetterprognose später erneut."
+msgstr "Der Prognosestand ist veraltet. Bitte prüfen Sie die Wetterprognose später erneut."
+
 #: quartierakku.py:81
 msgid "Der Quartierakku hat keine gültigen Angaben."
 msgstr "Der Quartierakku hat keine gültigen Angaben."
@@ -2972,6 +2976,10 @@ msgstr ""
 "Die Plattform ist Open Source unter AGPL-3.0-or-later. Der Code liegt auf GitHub und OpenLEG kann"
 " selbst betrieben werden. OpenLEG unterstützt den Export und die Wiederherstellung der "
 "Betriebsdaten einer LEG. Persönliche Registrierungseinträge können gelöscht werden."
+
+#: templates/telemetry_dashboard.html:50
+msgid "Die Prognose berechnet keine Anlagenleistung oder Überschüsse."
+msgstr "Die Prognose berechnet keine Anlagenleistung oder Überschüsse."
 
 #: templates/leg_dashboard.html:64
 msgid "Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut."
@@ -4930,6 +4938,10 @@ msgstr "Gleichmässige Verteilung"
 msgid "Gleichverteilt"
 msgstr "Gleichverteilt"
 
+#: templates/telemetry_dashboard.html:56
+msgid "Globalstrahlung, Stundenmittel"
+msgstr "Globalstrahlung, Stundenmittel"
+
 #: templates/utility/register.html:52
 msgid "Graubünden"
 msgstr "Graubünden"
@@ -5988,6 +6000,10 @@ msgstr "Keine Messwerte im Aufbewahrungszeitraum verfügbar."
 #: templates/admin/abrechnungen.html:139
 msgid "Keine Positionen in dieser Kategorie."
 msgstr "Keine Positionen in dieser Kategorie."
+
+#: templates/telemetry_dashboard.html:61
+msgid "Keine Prognose verfügbar"
+msgstr "Keine Prognose verfügbar"
 
 #: templates/admin/ops.html:211
 msgid "Keine Snapshots"
@@ -8422,6 +8438,14 @@ msgstr "Profildaten fehlen."
 msgid "Profildaten herunterladen"
 msgstr "Profildaten herunterladen"
 
+#: templates/telemetry_dashboard.html:51
+msgid "Prognosepunkt"
+msgstr "Prognosepunkt"
+
+#: templates/telemetry_dashboard.html:52
+msgid "Prognosestand"
+msgstr "Prognosestand"
+
 #: templates/fuer_gemeinden.html:120
 msgid "Projektsupport anfragen"
 msgstr "Projektsupport anfragen"
@@ -9732,6 +9756,10 @@ msgstr "Stufe 2:"
 msgid "Stufe 3:"
 msgstr "Stufe 3:"
 
+#: templates/telemetry_dashboard.html:49
+msgid "Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt."
+msgstr "Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt."
+
 #: templates/gemeinde/onboarding.html:112
 msgid "Suche aktuell nicht verfügbar."
 msgstr "Suche aktuell nicht verfügbar."
@@ -10686,6 +10714,14 @@ msgstr "Wert"
 msgid "Wert zum internen Preis"
 msgstr "Wert zum internen Preis"
 
+#: templates/telemetry_dashboard.html:47
+msgid "Wetterprognose"
+msgstr "Wetterprognose"
+
+#: templates/telemetry_dashboard.html:68
+msgid "Wetterprognose derzeit nicht verfügbar"
+msgstr "Wetterprognose derzeit nicht verfügbar"
+
 #: templates/utility/dashboard.html:103
 msgid "White-Label Branding konfigurieren"
 msgstr "White-Label Branding konfigurieren"
@@ -11066,6 +11102,10 @@ msgstr "Zeitplan"
 #: templates/admin/ops.html:55
 msgid "Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in der Betriebsdokumentation."
 msgstr "Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in der Betriebsdokumentation."
+
+#: templates/telemetry_dashboard.html:56
+msgid "Zeitraum"
+msgstr "Zeitraum"
 
 #: i18n.py:81
 msgid "Zeitüberschreitung beim vorgelagerten Dienst"

@@ -20,6 +20,7 @@ import email_automation
 import leg_registry
 import operator_api
 import sdat_ingestion
+import solar_forecast_cache
 from cantons import SWISS_CANTONS
 from security_utils import log_security_event
 from store import invoice_query, telemetry
@@ -76,6 +77,13 @@ def api_cron_cleanup_telemetry():
         return jsonify(telemetry.cleanup())
     except TelemetryError:
         return jsonify({"error": "telemetry_cleanup_failed"}), 503
+
+
+@cron_bp.post("/api/cron/refresh-solar-forecast")
+def api_cron_refresh_solar_forecast():
+    _require_cron_secret()
+    result = solar_forecast_cache.refresh()
+    return jsonify(result), 503 if result["state"] == "unavailable" else 200
 
 
 @cron_bp.route("/api/cron/refresh-public-data", methods=["POST"])

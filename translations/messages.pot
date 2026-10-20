@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 02:08+0000\n"
+"POT-Creation-Date: 2026-10-20 02:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2346,6 +2346,10 @@ msgstr ""
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr ""
 
+#: templates/telemetry_dashboard.html:134
+msgid "Der Prognosestand ist veraltet. Bitte prüfen Sie die Wetterprognose später erneut."
+msgstr ""
+
 #: quartierakku.py:81
 msgid "Der Quartierakku hat keine gültigen Angaben."
 msgstr ""
@@ -2495,7 +2499,7 @@ msgstr ""
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr ""
 
-#: dashboard_routes.py:941
+#: dashboard_routes.py:949
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr ""
 
@@ -2740,6 +2744,10 @@ msgid ""
 "Betriebsdaten einer LEG. Persönliche Registrierungseinträge können gelöscht werden."
 msgstr ""
 
+#: templates/telemetry_dashboard.html:115
+msgid "Die Prognose berechnet keine Anlagenleistung oder Überschüsse."
+msgstr ""
+
 #: templates/leg_dashboard.html:64
 msgid "Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut."
 msgstr ""
@@ -2975,7 +2983,7 @@ msgid ""
 "Quelldokumente."
 msgstr ""
 
-#: dashboard_routes.py:906
+#: dashboard_routes.py:914
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -3754,7 +3762,7 @@ msgstr ""
 msgid "Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink."
 msgstr ""
 
-#: dashboard_routes.py:323
+#: dashboard_routes.py:331
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr ""
 
@@ -4566,6 +4574,10 @@ msgstr ""
 msgid "Gleichverteilt"
 msgstr ""
 
+#: templates/telemetry_dashboard.html:121
+msgid "Globalstrahlung, Stundenmittel"
+msgstr ""
+
 #: templates/utility/register.html:52
 msgid "Graubünden"
 msgstr ""
@@ -4882,7 +4894,7 @@ msgstr ""
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgstr ""
 
-#: dashboard_routes.py:362
+#: dashboard_routes.py:370
 msgid "Ihr Dashboard-Zugangslink"
 msgstr ""
 
@@ -5569,6 +5581,10 @@ msgstr ""
 
 #: templates/admin/abrechnungen.html:139
 msgid "Keine Positionen in dieser Kategorie."
+msgstr ""
+
+#: templates/telemetry_dashboard.html:126
+msgid "Keine Prognose verfügbar"
 msgstr ""
 
 #: templates/admin/ops.html:211
@@ -7853,6 +7869,14 @@ msgstr ""
 msgid "Profildaten herunterladen"
 msgstr ""
 
+#: templates/telemetry_dashboard.html:116
+msgid "Prognosepunkt"
+msgstr ""
+
+#: templates/telemetry_dashboard.html:117
+msgid "Prognosestand"
+msgstr ""
+
 #: templates/fuer_gemeinden.html:120
 msgid "Projektsupport anfragen"
 msgstr ""
@@ -8020,7 +8044,7 @@ msgid "Quelldokumente:"
 msgstr ""
 
 #: templates/admin/ops.html:87 templates/gemeinde/methodik.html:38
-#: templates/telemetry_dashboard.html:49
+#: templates/telemetry_dashboard.html:49 templates/telemetry_dashboard.html:118
 msgid "Quelle"
 msgstr ""
 
@@ -9090,6 +9114,10 @@ msgstr ""
 msgid "Stufe 3:"
 msgstr ""
 
+#: templates/telemetry_dashboard.html:114
+msgid "Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt."
+msgstr ""
+
 #: templates/gemeinde/onboarding.html:112
 msgid "Suche aktuell nicht verfügbar."
 msgstr ""
@@ -10004,6 +10032,14 @@ msgstr ""
 msgid "Wert zum internen Preis"
 msgstr ""
 
+#: templates/telemetry_dashboard.html:112
+msgid "Wetterprognose"
+msgstr ""
+
+#: templates/telemetry_dashboard.html:133
+msgid "Wetterprognose derzeit nicht verfügbar"
+msgstr ""
+
 #: templates/utility/dashboard.html:103
 msgid "White-Label Branding konfigurieren"
 msgstr ""
@@ -10339,6 +10375,10 @@ msgstr ""
 
 #: templates/admin/ops.html:55
 msgid "Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in der Betriebsdokumentation."
+msgstr ""
+
+#: templates/telemetry_dashboard.html:121
+msgid "Zeitraum"
 msgstr ""
 
 #: i18n.py:81
@@ -11104,7 +11144,7 @@ msgstr ""
 msgid "Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail."
 msgstr ""
 
-#: dashboard_routes.py:364
+#: dashboard_routes.py:372
 #, python-format
 msgid ""
 "Öffnen Sie Ihr Dashboard über diesen Link:\n"

@@ -97,7 +97,9 @@ The equipment advisory workflow is documented under `store/advisories` below.
   `verified`, `city_id`, `referrer_id`, `bfs_number`, `municipality_name`,
   `canton`, `roles`, `has_solar`, `preferred_locale` (German or Swiss French)
 - **Purpose:** resident registration and readiness; the map of consenting
-  neighbours.
+  neighbours. The owner weather view uses existing `lat`/`lon` locally to choose
+  a cached public forecast point. It sends no household coordinates upstream and
+  stores no household location in the public forecast cache.
 - **Owner:** the resident (each row is one household's record).
 - **Sensitivity:** personal + energy; citizen meter data stays within each
   LEG and is never sold, never aggregated for third parties.
