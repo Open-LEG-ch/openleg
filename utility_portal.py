@@ -169,9 +169,8 @@ def login_page():
 
     # Handle magic link callback
     if token:
-        client = db.get_utility_client_by_magic_token(token)
+        client = db.consume_utility_magic_token(token)
         if client:
-            db.clear_utility_magic_token(client["client_id"])
             session["utility_client_id"] = client["client_id"]
             session.permanent = True
             if client["status"] == "pending":

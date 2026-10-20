@@ -380,6 +380,7 @@ from store.token import (  # noqa: F401
 )
 from store.utility import (  # noqa: F401
     clear_utility_magic_token,
+    consume_utility_magic_token,
     get_all_utility_clients,
     get_utility_client,
     get_utility_client_by_email,

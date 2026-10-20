@@ -128,6 +128,32 @@ def get_utility_client_by_magic_token(token: str) -> dict | None:
         return None
 
 
+def consume_utility_magic_token(token: str) -> dict | None:
+    """Consume the exact unexpired link in one PostgreSQL statement.
+
+    Concurrent updates recheck the token predicate after waiting for the row
+    lock. A replacement token therefore cannot be erased by an older request.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE utility_clients
+                SET magic_link_token = NULL, magic_link_expires_at = NULL,
+                    last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                WHERE magic_link_token = %s
+                    AND magic_link_expires_at > CURRENT_TIMESTAMP
+                RETURNING *
+                """,
+                (token,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as error:
+        logger.error("[DB] Error consuming utility magic token: %s", error)
+        return None
+
+
 def set_utility_magic_token(client_id: str, token: str, ttl_seconds: int = 900) -> bool:
     """Set a magic link token for a utility client (default 15min TTL)."""
     try:
