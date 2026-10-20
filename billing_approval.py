@@ -239,7 +239,7 @@ def _require_canonical_reconciliation(
                 raise BillingApprovalError(
                     "Der Abgleich enthält einen ungültigen Energiewert."
                 ) from None
-            if engine_kwh != billed_quantities[participant]:
+            if engine_kwh != billed_quantities.get(participant, Decimal(0)):
                 raise BillingApprovalError(
                     "Abgleich und Abrechnungspositionen melden unterschiedliche Mengen."
                 )
