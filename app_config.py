@@ -127,6 +127,20 @@ def validated_matomo_site_id(value):
     return normalized
 
 
+def validated_trusted_proxy_hops(value):
+    """Return 0 or 1 for the OPENLEG_TRUSTED_PROXY_HOPS value, or refuse it.
+
+    Only the exact strings "0"/"1" and the exact ints 0/1 are accepted.
+    Booleans, whitespace, empty strings and higher hop counts all fail closed,
+    because forwarded-header trust is only safe behind a known topology.
+    """
+    if type(value) is int and value in (0, 1):
+        return value
+    if type(value) is str and value in ("0", "1"):
+        return int(value)
+    raise ValueError("OPENLEG_TRUSTED_PROXY_HOPS must be 0 or 1")
+
+
 def build_config(env=None, overrides=None):
     """The mapping create_app hands to Flask, from the environment and overrides.
 
@@ -164,6 +178,7 @@ def build_config(env=None, overrides=None):
         "SITE_URL": app_base_url.rstrip("/"),
         "PUBLIC_SITE_URL": env.get("PUBLIC_SITE_URL", DEFAULT_PUBLIC_SITE_URL),
         "ALLOWED_HOSTS": env.get("ALLOWED_HOSTS", DEFAULT_ALLOWED_HOSTS).split(","),
+        "TRUSTED_PROXY_HOPS": env.get("OPENLEG_TRUSTED_PROXY_HOPS", "0"),
         "ADMIN_EMAIL": env.get("ADMIN_EMAIL", DEFAULT_ADMIN_EMAIL),
         "CRON_SECRET": env.get("CRON_SECRET", "").strip(),
         "RATELIMIT_STORAGE_URI": env.get("REDIS_URL", DEFAULT_REDIS_URL),
@@ -181,6 +196,10 @@ def build_config(env=None, overrides=None):
             and config["APP_BASE_URL"].startswith("https://")
         ):
             config["SESSION_COOKIE_SECURE"] = True
+
+    config["TRUSTED_PROXY_HOPS"] = validated_trusted_proxy_hops(
+        config["TRUSTED_PROXY_HOPS"]
+    )
 
     locale = config["BABEL_DEFAULT_LOCALE"]
     if isinstance(locale, str):
