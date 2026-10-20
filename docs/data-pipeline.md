@@ -399,6 +399,12 @@ contents. Discovery and draft-persistence storage failures also use safe message
 | `billing_store_unavailable` | Restore database access before retrying. |
 | `billing_run_failed` | Investigate the unclassified failure in a controlled environment. |
 
+A failure may carry an optional `reason` beside the unchanged `error` code; the
+only reason is `vnb_balancing_policy_required`, marking a `vnb_allocation_mismatch`
+whose accepted rounded E66 source totals do not balance. That reason means the
+operator must obtain a reviewed accounting decision for the energy difference,
+never adjust the physical readings.
+
 Unknown error codes use `billing_run_failed`. The existing direct Python runner
 retains its detailed exception for local diagnosis; do not publish that exception
 or customer data when filing an issue.
