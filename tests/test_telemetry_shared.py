@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Shared views require explicit grants and never infer missing community power."""
 
+import re
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 
@@ -288,7 +289,8 @@ def test_shared_dashboard_localizes_coverage_and_hides_private_fields(
     response = client.get("/leg/community/community-a/telemetry?lang=" + language)
     assert response.status_code == 200
     assert title in response.text
-    assert "300 W" in response.text and "0 W" in response.text
+    assert "300 W" in response.text
+    assert re.search(r">\s*0 W\s*</p>", response.text)
     assert (
         shared[2][0].astimezone(ZoneInfo("Europe/Zurich")).strftime("%z")
         in response.text
