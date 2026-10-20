@@ -110,6 +110,12 @@ from that member together. Missing language defaults to German. The notice works
 outside Flask; existing delivery retry rules and stored invoice amounts remain
 unchanged.
 
-Contact updates, deletion confirmations, other invoice correspondence and
+Deletion confirmations use the language of the specific address profile or
+coverage request bound to each active token and mailbox. A shared mailbox can
+receive one link per record with different languages. Page language and submitted
+preferences cannot change those choices. Missing language information uses German.
+The existing confirmation, expiry and one-record deletion rules still apply.
+
+Contact updates, other invoice correspondence and
 municipality/utility/registry mail still need recipient delivery coverage.
 This implementation records no human language or legal approval.

@@ -365,6 +365,7 @@ from store.token import (  # noqa: F401
     confirm_profile_deletion,
     create_coverage_deletion_tokens,
     delete_tokens_for_building,
+    get_deletion_recipient_locale,
     get_token,
     save_token,
     use_token,

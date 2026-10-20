@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenLEG \n"
 "Report-Msgid-Bugs-To: https://github.com/Open-LEG-ch/openleg/issues\n"
-"POT-Creation-Date: 2026-10-19 23:50+0000\n"
+"POT-Creation-Date: 2026-10-19 23:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr_CH\n"
@@ -186,7 +186,7 @@ msgstr[1] ""
 msgid "%(platform_name)s · LEG für %(city_name)s"
 msgstr "%(platform_name)s · CEL pour %(city_name)s"
 
-#: app.py:222
+#: app.py:223
 #, python-format
 msgid "%(platform_name)s: Interessenmeldung bestätigen"
 msgstr "%(platform_name)s : confirmer votre déclaration d’intérêt"
@@ -786,11 +786,11 @@ msgstr "L’adresse est obligatoire"
 msgid "Adresse ist zu kurz"
 msgstr "L’adresse est trop courte"
 
-#: app.py:510
+#: app.py:511
 msgid "Adresse konnte nicht analysiert werden."
 msgstr "L’adresse n’a pas pu être analysée."
 
-#: app.py:502
+#: app.py:503
 msgid "Adresse konnte nicht eindeutig geprüft werden."
 msgstr "L’adresse n’a pas pu être vérifiée avec certitude."
 
@@ -1042,7 +1042,7 @@ msgstr "Les pièces jointes doivent être des fichiers PDF."
 msgid "Anlagen-Matching"
 msgstr "Attribution des installations"
 
-#: app.py:130 formation_guide.py:65
+#: app.py:131 formation_guide.py:65
 msgid "Anleitung zum eigenen Betrieb"
 msgstr "Guide d’auto-hébergement"
 
@@ -1601,7 +1601,7 @@ msgstr "Désigne une personne de contact."
 msgid "Bestätigen"
 msgstr "Confirmer"
 
-#: app.py:227
+#: app.py:228
 #, python-format
 msgid ""
 "Bestätigen Sie Ihre Interessenmeldung für eine Lokale Elektrizitätsgemeinschaft (LEG) in "
@@ -1644,6 +1644,25 @@ msgstr ""
 "\n"
 "Votre inscription sera comptée de manière anonyme uniquement après confirmation. Si vous ne vous "
 "êtes pas inscrit, ignorez cet e-mail."
+
+#: app.py:723
+#, python-format
+msgid ""
+"Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen Gebietsanfrage bei OpenLEG "
+"über diesen Link:\n"
+"\n"
+"%(unsubscribe_url)s\n"
+"\n"
+"Jeder Link bezieht sich auf einen einzelnen Eintrag. Der Link ist eine Stunde gültig. Falls Sie "
+"die Löschung nicht angefordert haben, ignorieren Sie diese E-Mail."
+msgstr ""
+"Confirmez la suppression de votre profil d’adresse ou de votre demande de couverture en cours "
+"auprès d’OpenLEG via ce lien :\n"
+"\n"
+"%(unsubscribe_url)s\n"
+"\n"
+"Chaque lien concerne une seule inscription. Le lien est valable une heure. Si vous n’avez pas "
+"demandé cette suppression, ignorez cet e-mail."
 
 #: templates/leg_verzeichnis/beanspruchen.html:7
 msgid "Bestätigen Sie per E-Mail, dass Sie diesen LEG-Eintrag im offenen Verzeichnis betreiben."
@@ -1934,7 +1953,7 @@ msgstr "Veuillez d’abord choisir une commune dans la recherche."
 msgid "Bitte zwei Gemeinden mit verfügbaren Daten wählen."
 msgstr "Veuillez choisir deux communes disposant de données."
 
-#: app.py:74 formation_guide.py:9
+#: app.py:75 formation_guide.py:9
 msgid "Brauchen die Teilnehmenden eigene Smart Meter?"
 msgstr "Les participants doivent-ils posséder leur propre compteur intelligent ?"
 
@@ -2077,7 +2096,7 @@ msgstr ""
 msgid "Danke für die Bestätigung"
 msgstr "Merci pour votre confirmation"
 
-#: app.py:109 formation_guide.py:44
+#: app.py:110 formation_guide.py:44
 msgid "Darf ich OpenLEG installieren, anpassen oder forken?"
 msgstr "Puis-je installer, adapter ou créer un fork d’OpenLEG ?"
 
@@ -2508,7 +2527,7 @@ msgstr ""
 "représenter ensemble au moins 5 pour cent de la charge connectée de tous les consommateurs finaux"
 " participants."
 
-#: app.py:100 formation_guide.py:35
+#: app.py:101 formation_guide.py:35
 msgid ""
 "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei Teilnehmenden in der "
 "Grundversorgung auch den übrigen Strombezug. Die LEG oder ihr Dienstleister rechnet den innerhalb"
@@ -2583,7 +2602,7 @@ msgstr ""
 "que le membre ne reçoive pas d'e-mail en double. Vérifiez l'expédition puis confirmez la "
 "livraison."
 
-#: app.py:777
+#: app.py:788
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -4000,7 +4019,7 @@ msgstr "Comparaison équitable selon le canton, la taille et la densité"
 msgid "Falls Sie keinen gültigen Link mehr haben, senden wir Ihnen einen neuen Zugang per E-Mail."
 msgstr "Si votre lien n’est plus valable, nous vous envoyons un nouveau lien d’accès par e-mail."
 
-#: app.py:729
+#: app.py:740
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr "Si une inscription existe, vous recevrez un lien de confirmation par e-mail."
 
@@ -4473,7 +4492,7 @@ msgstr "Périmètre et comptage :"
 msgid "Gebiet und Voraussetzungen prüfen"
 msgstr "Vérifier le périmètre et les conditions"
 
-#: app.py:658
+#: app.py:659
 msgid "Gebäude nicht gefunden."
 msgstr "Bâtiment introuvable."
 
@@ -5552,7 +5571,7 @@ msgstr "Accessibilité Internet"
 msgid "Intervallenergie"
 msgstr "Énergie sur l'intervalle"
 
-#: app.py:137 formation_guide.py:72
+#: app.py:138 formation_guide.py:72
 msgid "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
 msgstr "OpenLEG est-il lié à un gestionnaire de réseau particulier ?"
 
@@ -5564,7 +5583,7 @@ msgstr "Le calcul est-il précis ?"
 msgid "Ja"
 msgstr "Oui"
 
-#: app.py:113 formation_guide.py:48
+#: app.py:114 formation_guide.py:48
 msgid ""
 "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG installieren, nutzen und anpassen. Auch"
 " ein Fork ist erlaubt. Wenn Sie eine veränderte Version über ein Netzwerk anbieten, müssen Sie "
@@ -5692,11 +5711,11 @@ msgstr "Consommation annuelle :"
 msgid "Kanal"
 msgstr "Canal"
 
-#: app.py:148 formation_guide.py:83
+#: app.py:149 formation_guide.py:83
 msgid "Kann OpenLEG unsere Gruppe persönlich unterstützen?"
 msgstr "OpenLEG peut-il accompagner personnellement notre groupe ?"
 
-#: app.py:86 formation_guide.py:21
+#: app.py:87 formation_guide.py:21
 msgid "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 msgstr "Une CEL peut-elle couvrir plusieurs communes ou zones de desserte ?"
 
@@ -5859,7 +5878,7 @@ msgstr "Aucune dépendance cloud spécifiée"
 msgid "Keine Datei ausgewählt"
 msgstr "Aucun fichier choisi"
 
-#: app.py:487 app.py:539 app.py:582
+#: app.py:488 app.py:540 app.py:583
 msgid "Keine Daten empfangen."
 msgstr "Aucune donnée reçue."
 
@@ -5946,7 +5965,7 @@ msgstr "Pas de frais de consommation."
 msgid "Keine ausstehenden Einträge"
 msgstr "Aucune entrée en attente"
 
-#: app.py:517
+#: app.py:518
 msgid "Keine direkten Partner gefunden."
 msgstr "Aucun partenaire direct trouvé."
 
@@ -6560,7 +6579,7 @@ msgstr "Voir en direct"
 msgid "Lizenz"
 msgstr "Licence"
 
-#: app.py:122 formation_guide.py:57
+#: app.py:123 formation_guide.py:57
 msgid "Lizenz lesen"
 msgstr "Lire la licence"
 
@@ -7187,7 +7206,7 @@ msgstr "Ouvrir la navigation"
 msgid "Nein"
 msgstr "Non"
 
-#: app.py:90 formation_guide.py:25
+#: app.py:91 formation_guide.py:25
 msgid ""
 "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im Netzgebiet eines "
 "Verteilnetzbetreibers. Für mehrere Gemeinden oder VNB-Gebiete braucht es separate lokale LEGs."
@@ -7196,7 +7215,7 @@ msgstr ""
 " gestionnaire de réseau de distribution. Plusieurs communes ou zones de desserte nécessitent des "
 "CEL locales distinctes."
 
-#: app.py:77 formation_guide.py:12
+#: app.py:78 formation_guide.py:12
 msgid ""
 "Nein. Vorhandene gesetzeskonforme Smart Meter des Verteilnetzbetreibers werden weiterverwendet. "
 "Fehlende erforderliche Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
@@ -7932,7 +7951,7 @@ msgstr ""
 "OpenLEG est une infrastructure open source gratuite pour les communautés électriques suisses : "
 "habitants, communes et développeurs, sans frais de licence ni vente de données."
 
-#: app.py:141 formation_guide.py:76 templates/leg_gruenden.html:87
+#: app.py:142 formation_guide.py:76 templates/leg_gruenden.html:87
 msgid ""
 "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. Noch ist nicht jede VNB-Anbindung "
 "fertig umgesetzt. Anmeldung und Datenlieferung müssen pro VNB konfiguriert werden."
@@ -8096,6 +8115,10 @@ msgstr "OpenLEG. Aucune exploitation technique à votre charge."
 msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr "OpenLEG : confirmer votre intérêt"
 
+#: app.py:721
+msgid "OpenLEG: Löschung bestätigen"
+msgstr "OpenLEG : confirmer la suppression"
+
 #: templates/leg_gruenden.html:205
 msgid "OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos."
 msgstr "Le logiciel d'OpenLEG pour la facturation, les documents et la gestion des adhésions est gratuit."
@@ -8188,11 +8211,11 @@ msgstr "Paramètres"
 msgid "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgstr "Erreur de lecture avec le séparateur « %(delimiter)s »."
 
-#: app.py:524
+#: app.py:525
 msgid "Partner gefunden!"
 msgstr "Des partenaires ont été trouvés !"
 
-#: app.py:964
+#: app.py:975
 msgid "Period not found"
 msgstr "Période introuvable"
 
@@ -8832,7 +8855,7 @@ msgstr "Échec de l’inscription."
 msgid "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
 msgstr "L’inscription a échoué. Veuillez réessayer."
 
-#: app.py:126 formation_guide.py:61
+#: app.py:127 formation_guide.py:61
 msgid "Repository öffnen"
 msgstr "Ouvrir le dépôt"
 
@@ -9118,11 +9141,11 @@ msgstr "Auto-hébergement | OpenLEG"
 msgid "Seriennummer (optional)"
 msgstr "Numéro de série (facultatif)"
 
-#: app.py:673
+#: app.py:674
 msgid "Server-Fehler beim Verarbeiten der Messdaten."
 msgstr "Erreur du serveur lors du traitement des mesures."
 
-#: app.py:532
+#: app.py:533
 msgid "Server-Fehler. Bitte später erneut versuchen."
 msgstr "Erreur du serveur. Veuillez réessayer plus tard."
 
@@ -10011,7 +10034,7 @@ msgstr "Signatures en attente"
 msgid "Unterstützt werden nur camt.053 und camt.054."
 msgstr "Seuls camt.053 et camt.054 sont pris en charge."
 
-#: app.py:155 formation_guide.py:90
+#: app.py:156 formation_guide.py:90
 msgid "Unterstützung anfragen"
 msgstr "Demander un accompagnement"
 
@@ -10409,7 +10432,7 @@ msgstr ""
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr "Les suggestions ne sont pas disponibles. Vous pouvez quand même vérifier l’adresse."
 
-#: app.py:151 formation_guide.py:86
+#: app.py:152 formation_guide.py:86
 msgid ""
 "Vorträge, Workshops und Projektunterstützung bieten wir nach vorgängiger Vereinbarung gegen "
 "Honorar an."
@@ -10610,7 +10633,7 @@ msgstr ""
 msgid "Wer einen Fehler verfolgt oder einen Pull Request plant, findet hier den passenden Einstieg."
 msgstr "Vous recherchez un bug ou préparez une pull request ? Voici les points d’entrée adaptés."
 
-#: app.py:97 formation_guide.py:32
+#: app.py:98 formation_guide.py:32
 msgid "Wer ist für die Abrechnung zuständig?"
 msgstr "Qui est responsable du décompte ?"
 
@@ -10758,7 +10781,7 @@ msgstr ""
 "Nous ne communiquons aucun nom, adresse ou coordonnée. Vous recevrez les prochaines étapes dès "
 "qu’un groupe adapté se formera."
 
-#: app.py:765
+#: app.py:776
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -11027,7 +11050,7 @@ msgstr "Public cible"
 msgid "Zu meinen Solargeräten"
 msgstr "À mes appareils solaires"
 
-#: app.py:167 templates/index.html:648
+#: app.py:168 templates/index.html:648
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
 msgstr "Trop de demandes. Patientez une minute, puis réessayez."
 
@@ -11240,11 +11263,11 @@ msgstr "jusqu'à 14 jours"
 msgid "bis 40"
 msgstr "jusqu’à 40"
 
-#: app.py:911
+#: app.py:922
 msgid "building_id required"
 msgstr "building_id est obligatoire"
 
-#: app.py:652
+#: app.py:653
 msgid "building_id und csv_content erforderlich."
 msgstr "building_id et csv_content sont obligatoires."
 
@@ -11511,7 +11534,7 @@ msgstr ""
 "membres, la commande de lancement d’un décompte et les documents de facturation définitifs ne "
 "forment pas encore un parcours continu."
 
-#: app.py:649
+#: app.py:650
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr "tier doit valoir 1, 2 ou 3."
 

@@ -52,6 +52,7 @@ from health import health_bp
 from i18n import gettext as _
 from i18n import localized_url
 from leg_registry import registry_api_bp
+from locale_policy import resolve_locale
 from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
 from operator_api import operator_api_bp
@@ -707,17 +708,27 @@ def unsubscribe_page():
                     tokens.append(token)
             tokens.extend(db.create_coverage_deletion_tokens(email_value))
             for token in tokens:
-                unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
+                locale = resolve_locale(
+                    db.get_deletion_recipient_locale(token, email_value)
+                )
+                unsubscribe_url = localized_url(
+                    f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}",
+                    locale,
+                )
                 try:
                     send_email(
                         email_value,
-                        "OpenLEG: Löschung bestätigen",
-                        "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen "
-                        "Gebietsanfrage bei OpenLEG über "
-                        f"diesen Link:\n\n{unsubscribe_url}\n\n"
-                        "Jeder Link bezieht sich auf einen einzelnen Eintrag. "
-                        "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
-                        "nicht angefordert haben, ignorieren Sie diese E-Mail.",
+                        gettext("OpenLEG: Löschung bestätigen", locale=locale),
+                        gettext(
+                            "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen "
+                            "Gebietsanfrage bei OpenLEG über "
+                            "diesen Link:\n\n%(unsubscribe_url)s\n\n"
+                            "Jeder Link bezieht sich auf einen einzelnen Eintrag. "
+                            "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
+                            "nicht angefordert haben, ignorieren Sie diese E-Mail.",
+                            unsubscribe_url=unsubscribe_url,
+                            locale=locale,
+                        ),
                     )
                 except Exception:
                     current_app.logger.exception(
