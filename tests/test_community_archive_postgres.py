@@ -214,10 +214,17 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
             assert db.list_correspondence(cid) == []
             return
         if target_mode in {"conflicting_record", "bulk_readings_conflict"}:
-            with pytest.raises(
-                community_archive.ArchiveError, match="Conflicting record"
-            ):
-                community_archive.restore_community_archive(payload)
+            table = (
+                "correspondence_log"
+                if target_mode == "conflicting_record"
+                else "meter_readings"
+            )
+            assert dry_run == {
+                "valid": True,
+                "errors": [],
+                "conflicts": [f"Conflicting record: {table}"],
+            }
+            assert community_archive.restore_community_archive(payload) == dry_run
             assert db.fetch_user_communities("archive-founder") == []
             assert db.get_building("archive-founder") is None
             assert db.list_correspondence(cid) == []

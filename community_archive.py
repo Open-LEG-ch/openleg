@@ -603,21 +603,56 @@ class PostgresArchiveStore:
         return result if result["communities"] else None
 
     def find_conflicts(self, community_id, datasets):
-        archived = self.decode_records({"communities": datasets["communities"]})[
-            "communities"
-        ][0]
+        decoded = self.decode_records(datasets)
+        conflicts = []
         with self._connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                "SELECT * FROM communities WHERE community_id = %s", (community_id,)
-            )
-            existing = cur.fetchone()
-            if existing is None:
-                return []
-            return (
-                []
-                if all(existing[key] == value for key, value in archived.items())
-                else ["Community already exists with different data"]
-            )
+            cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+            primary_keys = self._primary_keys(cur)
+            for table, _, _ in _DATASETS:
+                keys = primary_keys.get(table, [])
+                if not keys:
+                    continue
+                rows = iter(
+                    row
+                    for row in decoded.get(table, [])
+                    if all(key in row for key in keys)
+                )
+                query = sql.SQL("SELECT * FROM {} WHERE ({}) IN %s").format(
+                    sql.Identifier(table),
+                    sql.SQL(", ").join(sql.Identifier(key) for key in keys),
+                )
+                while batch := list(islice(rows, 500)):
+                    identities = tuple(tuple(row[key] for key in keys) for row in batch)
+                    cur.execute(query, (identities,))
+                    existing = {
+                        tuple(row[key] for key in keys): row for row in cur.fetchall()
+                    }
+                    if any(
+                        identity in existing
+                        and not self._same_record(existing[identity], row, tuple(row))
+                        for identity, row in zip(identities, batch)
+                    ):
+                        conflicts.append(f"Conflicting record: {table}")
+                        break
+        return conflicts
+
+    @staticmethod
+    def _primary_keys(cur):
+        cur.execute(
+            "SELECT tc.table_name, kcu.column_name "
+            "FROM information_schema.table_constraints tc "
+            "JOIN information_schema.key_column_usage kcu "
+            "ON tc.constraint_name = kcu.constraint_name "
+            "AND tc.table_schema = kcu.table_schema "
+            "AND tc.table_name = kcu.table_name "
+            "WHERE tc.table_schema = 'public' "
+            "AND tc.constraint_type = 'PRIMARY KEY' "
+            "ORDER BY kcu.ordinal_position"
+        )
+        result = {}
+        for record in cur.fetchall():
+            result.setdefault(record["table_name"], []).append(record["column_name"])
+        return result
 
     @staticmethod
     def _allowed_columns(cur):
@@ -682,21 +717,7 @@ class PostgresArchiveStore:
             json_columns = {
                 (row["table_name"], row["column_name"]) for row in cur.fetchall()
             }
-            cur.execute(
-                "SELECT tc.table_name, kcu.column_name "
-                "FROM information_schema.table_constraints tc "
-                "JOIN information_schema.key_column_usage kcu "
-                "ON tc.constraint_name = kcu.constraint_name "
-                "AND tc.table_schema = kcu.table_schema "
-                "WHERE tc.table_schema = 'public' "
-                "AND tc.constraint_type = 'PRIMARY KEY' "
-                "ORDER BY kcu.ordinal_position"
-            )
-            primary_keys = {}
-            for record in cur.fetchall():
-                primary_keys.setdefault(record["table_name"], []).append(
-                    record["column_name"]
-                )
+            primary_keys = self._primary_keys(cur)
             sequences = self._serial_sequences(
                 cur, [table for table, _, _ in _DATASETS if datasets.get(table)]
             )
