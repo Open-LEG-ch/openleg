@@ -111,6 +111,11 @@
   --nav-icon-bg: rgb(255 255 255 / 0.05);
 }
 
+@utility home-hero-heading {
+  font-size: clamp(1.5rem, 9cqw, 4.5rem);
+  overflow-wrap: anywhere;
+}
+
 @utility ol-fillbar-track {
   /* Messblatt: the proportional fill bar embedded in each ranking row. The
      table itself is the chart; this is the only chart-like element on the
