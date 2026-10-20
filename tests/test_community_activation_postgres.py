@@ -55,6 +55,7 @@ def test_french_activation_labels_errors_and_confirmation_remain_localized(
     page = client.get(f"/leg/dashboard?cid={cid}&lang=fr-CH")
     assert page.status_code == 200
     assert "Mise en service" in page.text
+    assert "confirme la mise en service de la CEL à cette date." in page.text
     assert "Référence du gestionnaire de réseau" in page.text
     assert "Betriebsstart" not in page.text
 

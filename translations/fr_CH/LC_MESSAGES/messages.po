@@ -5000,7 +5000,7 @@ msgstr "J'ai lu cette version de l'avis."
 
 #: templates/leg_dashboard.html:319
 msgid "Ich habe geprüft, dass der Netzbetreiber den Start der LEG zu diesem Datum bestätigt."
-msgstr "J’ai vérifié que le gestionnaire de réseau confirme la mise en service de la LEG à cette date."
+msgstr "J’ai vérifié que le gestionnaire de réseau confirme la mise en service de la CEL à cette date."
 
 #: templates/index.html:442
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
