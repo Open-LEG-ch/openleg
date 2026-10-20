@@ -40,6 +40,7 @@ import interest_confirmation
 import interest_intake
 import private_http
 import registration
+import release_mode
 import security_utils
 import tenant as tenant_module
 from admin import admin_bp, require_admin
@@ -1009,6 +1010,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     """Create one configured OpenLEG Flask application."""
     if load_environment:
         load_dotenv()
+    read_only = release_mode.read_only_enabled()
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -1019,6 +1021,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
 
     application = Flask(__name__)
     application.config.from_mapping(app_config.build_config(os.environ, config))
+    release_mode.install_http_guard(application, read_only=read_only)
     i18n.init_app(application)
     application.context_processor(private_http.template_context)
 
