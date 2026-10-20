@@ -13,6 +13,8 @@ from flask import Flask, render_template_string
 from flask_babel import force_locale, ngettext
 from flask_babel import gettext as _
 
+from tests.native_environment import isolated_environment as native_environment
+
 # Pin import-time dependency settings as well as build_config/request settings.
 # Clearing the mapping also prevents newly introduced settings from inheriting
 # host values. patch.dict restores the caller's entire environment on exit.
@@ -51,7 +53,7 @@ _TEST_ENVIRONMENT = {
 
 @contextmanager
 def _synthetic_environment():
-    with patch.dict(os.environ, _TEST_ENVIRONMENT, clear=True):
+    with patch.dict(os.environ, native_environment(_TEST_ENVIRONMENT), clear=True):
         yield
 
 

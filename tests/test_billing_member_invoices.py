@@ -2097,18 +2097,60 @@ class _PdfVisibleText(HTMLParser):
         super().__init__()
         self.in_style = False
         self.parts = []
+        self.labels = []
+        self.label_tag = None
+        self.label_parts = []
 
     def handle_starttag(self, tag, attrs):
         if tag == "style":
             self.in_style = True
+        if tag in {"h2", "th"}:
+            self.label_tag = tag
+            self.label_parts = []
 
     def handle_endtag(self, tag):
         if tag == "style":
             self.in_style = False
+        if tag == self.label_tag:
+            self.labels.append((tag, "".join(self.label_parts).strip()))
+            self.label_tag = None
 
     def handle_data(self, data):
         if not self.in_style and data.strip():
             self.parts.append(data.strip())
+        if self.label_tag is not None:
+            self.label_parts.append(data)
+
+
+@pytest.mark.parametrize(
+    "field,title",
+    [
+        ("settlement_charges", "Abrechnungsentgelt"),
+        ("battery_shares", "Quartierakku-Anteil"),
+    ],
+)
+def test_pdf_optional_charge_sections_have_headings_and_units(field, title):
+    import member_invoices
+
+    view = copy.deepcopy(DETAIL_VIEW)
+    view[field] = [
+        {
+            "item_type_label": title,
+            "display_quantity_kwh": "1.000" if field == "settlement_charges" else None,
+            "display_unit_price_rp": "2.00" if field == "settlement_charges" else None,
+            "display_amount_chf": "0.02",
+        }
+    ]
+    parser = _PdfVisibleText()
+    parser.feed(member_invoices.render_pdf_html_string(view))
+
+    heading = parser.labels.index(("h2", title))
+    assert parser.labels[heading + 1 : heading + 5] == [
+        ("th", "Position"),
+        ("th", "Menge (kWh)"),
+        ("th", "Preis (Rp./kWh)"),
+        ("th", "Betrag (CHF)"),
+    ]
 
 
 def test_pdf_visible_values_include_charges_credits_and_rounding():

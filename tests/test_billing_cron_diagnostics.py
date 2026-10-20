@@ -12,6 +12,46 @@ from tests import test_billing_cron_contract, test_billing_runner
 app_with_cron_secret = test_billing_cron_contract.app_with_cron_secret
 
 
+def test_missing_participant_battery_share_is_actionable_and_other_leg_continues(
+    app_with_cron_secret, monkeypatch
+):
+    saved = test_billing_runner._install_billing_fixture(monkeypatch)
+    monkeypatch.setattr(
+        database,
+        "get_active_communities",
+        lambda: [{"community_id": "c1"}, {"community_id": "c2"}],
+    )
+    monkeypatch.setattr(
+        billing_runner,
+        "previous_complete_month",
+        lambda: (test_billing_runner.START, test_billing_runner.END),
+    )
+    monkeypatch.setattr(
+        database,
+        "get_battery",
+        lambda community: (
+            {
+                "participant_id": "battery-a",
+                "capacity_kwh": 8,
+                "annual_cost_chf": 960,
+                "shares": {"another-participant": 100},
+            }
+            if community == "c1"
+            else None
+        ),
+    )
+
+    response = test_billing_cron_contract._post_process_billing(app_with_cron_secret)
+
+    assert response.status_code == 200
+    assert response.json["failures"] == [
+        {"community_id": "c1", "error": "battery_configuration_invalid"}
+    ]
+    assert response.json["processed"] == 1
+    assert len(saved) == 1
+    assert saved[0][0] == "c2"
+
+
 def test_cron_identifies_a_missing_billing_tariff(app_with_cron_secret, monkeypatch):
     monkeypatch.setattr(
         database, "get_active_communities", lambda: [{"community_id": "c1"}]

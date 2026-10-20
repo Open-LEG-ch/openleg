@@ -155,6 +155,7 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
             cursor_factory=psycopg2.extras.RealDictCursor,
         )
         monkeypatch.setattr(db, "_connection_pool", pool)
+        monkeypatch.setattr(db, "_pool_pid", os.getpid())
         db.create_tables()
         if target_mode == "advanced_sequence":
             with db.get_connection() as conn, conn.cursor() as cur:

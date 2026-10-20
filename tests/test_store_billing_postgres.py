@@ -48,6 +48,7 @@ def billing_database(monkeypatch):
             cursor_factory=psycopg2.extras.RealDictCursor,
         )
         monkeypatch.setattr(db, "_connection_pool", pool)
+        monkeypatch.setattr(db, "_pool_pid", os.getpid())
         db.create_tables()
         yield db
     finally:

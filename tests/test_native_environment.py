@@ -25,8 +25,17 @@ refresh_web = refresh.refresh_web
 pytestmark = pytest.mark.integration
 
 
+@pytest.fixture
+def native_i18n_environment():
+    from tests.test_i18n import _synthetic_environment
+
+    with _synthetic_environment():
+        yield
+
+
 @pytest.mark.parametrize(
-    "fixture_name", ["calculated_client", "founder", "refresh_web"]
+    "fixture_name",
+    ["calculated_client", "founder", "refresh_web", "native_i18n_environment"],
 )
 def test_native_fixture_preserves_test_runner_environment(
     request, monkeypatch, fixture_name

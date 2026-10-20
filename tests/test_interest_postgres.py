@@ -38,6 +38,7 @@ def interest_database(monkeypatch):
             cursor_factory=psycopg2.extras.RealDictCursor,
         )
         monkeypatch.setattr(db, "_connection_pool", pool)
+        monkeypatch.setattr(db, "_pool_pid", os.getpid())
         db.create_tables()
         monkeypatch.setattr(db, "_db_initialized", True)
         yield db

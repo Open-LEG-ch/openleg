@@ -65,6 +65,7 @@ pytest_add_cli_args_test_selection = [
     "tests/test_formation_transitions.py",
     "tests/test_formation_nudge.py",
     "tests/test_community_activation_postgres.py",
+    "tests/test_community_create_postgres.py",
     "tests/test_store_formation.py",
     "tests/test_public_data.py",
     "tests/test_public_data_archive.py",
@@ -73,6 +74,7 @@ pytest_add_cli_args_test_selection = [
     "tests/test_conversion_paths.py",
     "tests/test_billing_member_invoices.py",
     "tests/test_i18n_documents.py",
+    "tests/test_i18n_regressions.py",
     "tests/test_neighbor_view_privacy.py",
 ]
 # mutmut copies only what it mutates into that sandbox, so everything those
