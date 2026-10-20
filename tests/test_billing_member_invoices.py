@@ -2443,3 +2443,24 @@ def test_detail_explains_an_overflowing_finite_vat_amount(monkeypatch):
         member_invoices.detail_view(42, "building-session")
 
     assert str(exc.value) == "Die Rechnungssummen sind nicht berechenbar."
+
+
+@pytest.mark.parametrize("payment_days,phrase", [(1, "1 Tag"), (2, "2 Tage")])
+def test_pdf_payment_term_uses_the_frozen_day_count(monkeypatch, payment_days, phrase):
+    from datetime import date, timedelta
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["policy_snapshot"]["payment_days"] = payment_days
+    row["due_date"] = (date(2026, 8, 5) + timedelta(days=payment_days)).isoformat()
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_args: row
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+    parser = _PdfVisibleText()
+    parser.feed(member_invoices.render_pdf_html_string(view))
+
+    assert view["policy_payment_days"] == payment_days
+    assert phrase in parser.parts
