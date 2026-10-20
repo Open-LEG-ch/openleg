@@ -3,6 +3,7 @@
 
 import hashlib
 import hmac
+import logging
 import secrets
 import uuid
 from contextlib import contextmanager
@@ -11,7 +12,10 @@ from datetime import UTC, datetime
 from psycopg2.extras import Json
 
 import telemetry as contract
+from store import telemetry_notices as notices
 from telemetry import TelemetryError
+
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -42,6 +46,7 @@ def create_tables(cur):
             aggregate_retention_days INTEGER NOT NULL DEFAULT 90 CHECK (aggregate_retention_days BETWEEN 1 AND 90),
             credential_hash TEXT,
             highwater BIGINT NOT NULL DEFAULT 0,
+            notice_refresh_pending BOOLEAN NOT NULL DEFAULT FALSE,
             rate_window TIMESTAMPTZ,
             rate_count INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -49,6 +54,8 @@ def create_tables(cur):
                 REFERENCES community_members (community_id, building_id) ON DELETE CASCADE
         );
         CREATE INDEX IF NOT EXISTS telemetry_owner ON telemetry_installations (owner_building_id);
+        ALTER TABLE telemetry_installations
+            ADD COLUMN IF NOT EXISTS notice_refresh_pending BOOLEAN NOT NULL DEFAULT FALSE;
         CREATE TABLE IF NOT EXISTS telemetry_samples (
             installation_id UUID NOT NULL REFERENCES telemetry_installations ON DELETE CASCADE,
             sample_id TEXT NOT NULL,
@@ -102,6 +109,7 @@ def create_tables(cur):
         CREATE TRIGGER telemetry_membership_revoked AFTER UPDATE OF status ON community_members
             FOR EACH ROW EXECUTE FUNCTION revoke_inactive_telemetry_shares();
     """)
+    notices.create_tables(cur)
 
 
 def _member(cur, community, actor, *, lock=False):
@@ -153,7 +161,13 @@ def _public(row):
         key: (str(value) if key == "id" else value)
         for key, value in row.items()
         if key
-        not in {"credential_hash", "rate_window", "rate_count", "owner_building_id"}
+        not in {
+            "credential_hash",
+            "rate_window",
+            "rate_count",
+            "owner_building_id",
+            "notice_refresh_pending",
+        }
     }
 
 
@@ -203,7 +217,36 @@ def list_installations(community, actor):
         return [_public(row) for row in cur.fetchall()]
 
 
+def _limit_overview_query(cur):
+    # Bound the page query even under contention or pathological buffering.
+    cur.execute("""
+        SELECT set_config('statement_timeout',
+            LEAST(2000, COALESCE(NULLIF(setting,'0')::int,2000))::text, TRUE)
+        FROM pg_settings WHERE name='statement_timeout'
+    """)
+
+
 def owner_overview(actor):
+    now = datetime.now(UTC)
+    with _cursor() as cur:
+        _limit_overview_query(cur)
+        cur.execute(
+            """
+            SELECT i.id FROM telemetry_installations i
+            JOIN community_members m ON m.community_id=i.community_id AND m.building_id=i.owner_building_id
+            JOIN buildings b ON b.building_id=i.owner_building_id
+            WHERE i.owner_building_id=%s AND m.status='confirmed' AND b.verified=TRUE
+            ORDER BY i.id FOR UPDATE OF i
+            """,
+            (actor,),
+        )
+        locked_ids = [str(row["id"]) for row in cur.fetchall()]
+        installations = _owner_overview(cur, actor, now, locked_ids)
+        notices.reconcile(cur, installations, now)
+        return installations
+
+
+def _owner_overview(cur, actor, now, installation_ids):
     """Seek the latest retained value on each supported channel for this owner."""
     channels = [
         {"metric": metric, "location": location, "direction": direction}
@@ -212,104 +255,97 @@ def owner_overview(actor):
         for direction in sorted(directions)
         if (metric == "state_of_charge") == (direction == "stored")
     ]
-    now = datetime.now(UTC)
-    with _cursor() as cur:
-        # Bound the page query even under contention or pathological buffering.
-        cur.execute("""
-            SELECT set_config('statement_timeout',
-                LEAST(2000, COALESCE(NULLIF(setting,'0')::int,2000))::text, TRUE)
-            FROM pg_settings WHERE name='statement_timeout'
-        """)
-        cur.execute(
-            """
-            WITH request_time AS (SELECT %s::timestamptz AS now)
-            SELECT i.*, latest.observation, latest.received_at, latest.recently_received
-            FROM telemetry_installations i
-            JOIN community_members m ON m.community_id=i.community_id
-                AND m.building_id=i.owner_building_id AND m.status='confirmed'
-            JOIN buildings b ON b.building_id=i.owner_building_id AND b.verified=TRUE
-            CROSS JOIN request_time
-            LEFT JOIN LATERAL (
-                SELECT observed.observation, observed.received_at,
-                    COALESCE((
-                        SELECT TRUE FROM telemetry_samples recent
-                        WHERE recent.installation_id=i.id
-                            AND recent.observation->>'metric'=channel.metric
-                            AND recent.observation->>'measurement_location'=channel.location
-                            AND recent.observation->>'direction'=channel.direction
-                            AND COALESCE(recent.observed_at,recent.received_at)
-                                >= request_time.now-i.raw_retention_days*INTERVAL '1 day'
-                            AND recent.received_at >= GREATEST(
-                                request_time.now-i.raw_retention_days*INTERVAL '1 day',
-                                request_time.now-GREATEST(%s,i.cadence_seconds*%s)*INTERVAL '1 second'
-                            )
-                        ORDER BY recent.received_at DESC
-                        LIMIT 1
-                    ), FALSE) AS recently_received
-                FROM jsonb_to_recordset(%s::jsonb)
-                    AS channel(metric TEXT, location TEXT, direction TEXT)
-                JOIN LATERAL (
-                    SELECT s.observation, s.received_at
-                    FROM telemetry_samples s
-                    WHERE s.installation_id=i.id
-                        AND s.observation->>'metric'=channel.metric
-                        AND s.observation->>'measurement_location'=channel.location
-                        AND s.observation->>'direction'=channel.direction
-                        AND COALESCE(s.observed_at,s.received_at)
+    cur.execute(
+        """
+        WITH request_time AS (SELECT %s::timestamptz AS now)
+        SELECT i.*, latest.observation, latest.received_at, latest.recently_received
+        FROM telemetry_installations i
+        JOIN community_members m ON m.community_id=i.community_id
+            AND m.building_id=i.owner_building_id AND m.status='confirmed'
+        JOIN buildings b ON b.building_id=i.owner_building_id AND b.verified=TRUE
+        CROSS JOIN request_time
+        LEFT JOIN LATERAL (
+            SELECT observed.observation, observed.received_at,
+                COALESCE((
+                    SELECT TRUE FROM telemetry_samples recent
+                    WHERE recent.installation_id=i.id
+                        AND recent.observation->>'metric'=channel.metric
+                        AND recent.observation->>'measurement_location'=channel.location
+                        AND recent.observation->>'direction'=channel.direction
+                        AND COALESCE(recent.observed_at,recent.received_at)
                             >= request_time.now-i.raw_retention_days*INTERVAL '1 day'
-                        AND s.received_at >= request_time.now-i.raw_retention_days*INTERVAL '1 day'
-                    ORDER BY COALESCE(s.observed_at,s.received_at) DESC, s.sequence DESC
+                        AND recent.received_at >= GREATEST(
+                            request_time.now-i.raw_retention_days*INTERVAL '1 day',
+                            request_time.now-GREATEST(%s,i.cadence_seconds*%s)*INTERVAL '1 second'
+                        )
+                    ORDER BY recent.received_at DESC
                     LIMIT 1
-                ) observed ON TRUE
-            ) latest ON TRUE
-            WHERE i.owner_building_id=%s
-            ORDER BY i.created_at, i.id, latest.observation->>'metric',
-                latest.observation->>'measurement_location', latest.observation->>'direction'
-            """,
-            (
-                now,
-                contract.FRESHNESS_MIN_SECONDS,
-                contract.FRESHNESS_CADENCES,
-                Json(channels),
-                actor,
-            ),
+                ), FALSE) AS recently_received
+            FROM jsonb_to_recordset(%s::jsonb)
+                AS channel(metric TEXT, location TEXT, direction TEXT)
+            JOIN LATERAL (
+                SELECT s.observation, s.received_at
+                FROM telemetry_samples s
+                WHERE s.installation_id=i.id
+                    AND s.observation->>'metric'=channel.metric
+                    AND s.observation->>'measurement_location'=channel.location
+                    AND s.observation->>'direction'=channel.direction
+                    AND COALESCE(s.observed_at,s.received_at)
+                        >= request_time.now-i.raw_retention_days*INTERVAL '1 day'
+                    AND s.received_at >= request_time.now-i.raw_retention_days*INTERVAL '1 day'
+                ORDER BY COALESCE(s.observed_at,s.received_at) DESC, s.sequence DESC
+                LIMIT 1
+            ) observed ON TRUE
+        ) latest ON TRUE
+        WHERE i.owner_building_id=%s AND i.id=ANY(%s::uuid[])
+        ORDER BY i.created_at, i.id, latest.observation->>'metric',
+            latest.observation->>'measurement_location', latest.observation->>'direction'
+        """,
+        (
+            now,
+            contract.FRESHNESS_MIN_SECONDS,
+            contract.FRESHNESS_CADENCES,
+            Json(channels),
+            actor,
+            installation_ids,
+        ),
+    )
+    installations = {}
+    for row in cur.fetchall():
+        installation = installations.setdefault(
+            str(row["id"]),
+            {
+                "id": str(row["id"]),
+                "community_id": row["community_id"],
+                "_notice_refresh_pending": row["notice_refresh_pending"],
+                "name": row["name"],
+                "source_id": row["source_id"],
+                "device_id": row["device_id"],
+                "cadence_seconds": row["cadence_seconds"],
+                "delivery_status": "missing",
+                "samples": [],
+            },
         )
-        installations = {}
-        for row in cur.fetchall():
-            installation = installations.setdefault(
-                str(row["id"]),
-                {
-                    "id": str(row["id"]),
-                    "name": row["name"],
-                    "source_id": row["source_id"],
-                    "device_id": row["device_id"],
-                    "cadence_seconds": row["cadence_seconds"],
-                    "delivery_status": "missing",
-                    "samples": [],
-                },
+        if row["observation"] is not None:
+            delivery_status = "recent" if row["recently_received"] else "late"
+            if installation["delivery_status"] != "recent":
+                installation["delivery_status"] = delivery_status
+            observed = row["observation"]["observed_at"]
+            age = (
+                (now - contract.timestamp(observed)).total_seconds()
+                if observed
+                else None
             )
-            if row["observation"] is not None:
-                delivery_status = "recent" if row["recently_received"] else "late"
-                if installation["delivery_status"] != "recent":
-                    installation["delivery_status"] = delivery_status
-                observed = row["observation"]["observed_at"]
-                age = (
-                    (now - contract.timestamp(observed)).total_seconds()
-                    if observed
-                    else None
-                )
-                installation["samples"].append(
-                    {
-                        **row["observation"],
-                        "received_at": row["received_at"].isoformat(),
-                        "freshness": contract.freshness(row["observation"], now),
-                        "delivery_status": delivery_status,
-                        "age_seconds": int(age)
-                        if age is not None and age >= 0
-                        else None,
-                    }
-                )
-        return list(installations.values())
+            installation["samples"].append(
+                {
+                    **row["observation"],
+                    "received_at": row["received_at"].isoformat(),
+                    "freshness": contract.freshness(row["observation"], now),
+                    "delivery_status": delivery_status,
+                    "age_seconds": int(age) if age is not None and age >= 0 else None,
+                }
+            )
+    return list(installations.values())
 
 
 def _authenticate(row, token):
@@ -422,9 +458,23 @@ def ingest(community, installation, token, payload):
                 )
             accepted += 1
         cur.execute(
-            "UPDATE telemetry_installations SET highwater=%s WHERE id=%s",
-            (highwater, installation),
+            "UPDATE telemetry_installations SET highwater=%s,notice_refresh_pending=notice_refresh_pending OR %s WHERE id=%s",
+            (highwater, accepted > 0, installation),
         )
+        cur.execute("SAVEPOINT notice_projection")
+        try:
+            _limit_overview_query(cur)
+            notices.reconcile(
+                cur,
+                _owner_overview(cur, row["owner_building_id"], now, [installation]),
+                now,
+                uncertain=[installation] if row["notice_refresh_pending"] else [],
+            )
+        except Exception:
+            cur.execute("ROLLBACK TO SAVEPOINT notice_projection")
+            logger.debug("Telemetry notice reconciliation deferred")
+        finally:
+            cur.execute("RELEASE SAVEPOINT notice_projection")
         return {
             "schema_version": contract.VERSION,
             "accepted": accepted,
@@ -558,9 +608,41 @@ def _cleanup(cur, installation=None):
     """,
         (installation, installation),
     )
-    return {"samples_deleted": raw, "aggregates_deleted": cur.rowcount}
+    aggregates = cur.rowcount
+    notices.cleanup(cur, installation)
+    return {"samples_deleted": raw, "aggregates_deleted": aggregates}
 
 
 def cleanup():
     with _cursor() as cur:
         return _cleanup(cur)
+
+
+def _notice_snapshot(cur, community, installation, actor, now):
+    _limit_overview_query(cur)
+    _access(cur, community, installation, actor, owner=True)
+    installations = _owner_overview(cur, actor, now, [installation])
+    if not installations:
+        raise TelemetryError("telemetry_forbidden", 403)
+    notices.reconcile(cur, installations, now)
+    return installations[0]["notices"]
+
+
+def owner_notices(community, installation, actor):
+    with _cursor() as cur:
+        return {
+            "notices": _notice_snapshot(
+                cur, community, installation, actor, datetime.now(UTC)
+            )
+        }
+
+
+def acknowledge_notice(community, installation, actor, notice_id, payload):
+    if not isinstance(payload, dict) or set(payload) != {"episode"}:
+        raise TelemetryError()
+    now = datetime.now(UTC)
+    with _cursor() as cur:
+        _notice_snapshot(cur, community, installation, actor, now)
+        return notices.acknowledge(
+            cur, installation, notice_id, payload["episode"], now
+        )

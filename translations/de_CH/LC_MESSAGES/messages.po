@@ -1032,6 +1032,10 @@ msgstr "Anhänge müssen PDF-Dateien sein."
 msgid "Anlagen-Matching"
 msgstr "Anlagen-Matching"
 
+#: templates/telemetry_dashboard.html:52
+msgid "Anlagenhinweise"
+msgstr "Anlagenhinweise"
+
 #: app.py:131 formation_guide.py:65
 msgid "Anleitung zum eigenen Betrieb"
 msgstr "Anleitung zum eigenen Betrieb"
@@ -1673,6 +1677,10 @@ msgstr "Bestätigen Sie, dass der Eintrag «"
 #: templates/leg_dashboard.html:273
 msgid "Bestätigt"
 msgstr "Bestätigt"
+
+#: templates/telemetry_dashboard.html:73
+msgid "Bestätigt bis"
+msgstr "Bestätigt bis"
 
 #: templates/gemeinde/verzeichnis.html:98
 msgid "Bestätigte Interessenmeldungen"
@@ -2737,6 +2745,10 @@ msgstr ""
 "Die Daten gehören den Bewohnern. OpenLEG verkauft keine Bürgerdaten und gibt sie nicht an Dritte "
 "weiter."
 
+#: templates/telemetry_dashboard.html:80
+msgid "Die Datenlage hat sich geändert. Prüfen Sie den aktuellen Messstatus."
+msgstr "Die Datenlage hat sich geändert. Prüfen Sie den aktuellen Messstatus."
+
 #: templates/leg_gruenden.html:60
 msgid ""
 "Die Demo zeigt den echten Arbeitsstand für Mitglieder, Vereinbarung, Dokumente und Anmeldung. "
@@ -2922,6 +2934,10 @@ msgstr ""
 "Die Matching-Plattform zeigt nach der Adresseingabe mögliche Teilnehmende. Nach der technischen "
 "Prüfung erhalten Organisierende Zugang zur Verwaltung und können Ein- und Austritte online "
 "erfassen."
+
+#: templates/telemetry_dashboard.html:77
+msgid "Die Messquelle liefert wieder aktuelle Werte."
+msgstr "Die Messquelle liefert wieder aktuelle Werte."
 
 #: member_savings.py:340
 msgid "Die Messwerte dieser Periode sind unvollständig."
@@ -3584,6 +3600,10 @@ msgstr ""
 #: templates/leg_gruenden.html:161
 msgid "Ein von der Gruppe geprüfter Vereinbarungsentwurf."
 msgstr "Ein von der Gruppe geprüfter Vereinbarungsentwurf."
+
+#: templates/telemetry_dashboard.html:53
+msgid "Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt sichtbar."
+msgstr "Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt sichtbar."
 
 #: templates/leg_gruenden.html:135
 msgid ""
@@ -5188,6 +5208,14 @@ msgstr "Hier sehen Sie künftig Registrierungen, Solarnutzung und den Stand Ihre
 msgid "Hinterlegter Installateurnachweis"
 msgstr "Hinterlegter Installateurnachweis"
 
+#: templates/telemetry_dashboard.html:68
+msgid "Hinweis bestätigen"
+msgstr "Hinweis bestätigen"
+
+#: templates/telemetry_dashboard.html:71
+msgid "Hinweis bestätigt"
+msgstr "Hinweis bestätigt"
+
 #: templates/advisories_error.html:5
 msgid "Hinweis nicht verfügbar"
 msgstr "Hinweis nicht verfügbar"
@@ -5203,6 +5231,10 @@ msgstr "Hinweise ausgeschaltet"
 #: templates/advisories.html:49
 msgid "Hinweise des Anbieters zur Abhilfe"
 msgstr "Hinweise des Anbieters zur Abhilfe"
+
+#: templates/telemetry_dashboard.html:79
+msgid "Hinweisstatus geändert"
+msgstr "Hinweisstatus geändert"
 
 #: templates/how-it-works.html:107 templates/leg_kalkulator.html:283
 msgid "Häufige Fragen"
@@ -6922,6 +6954,10 @@ msgstr "Messwerte aktualisieren"
 msgid "Messwerte derzeit nicht verfügbar"
 msgstr "Messwerte derzeit nicht verfügbar"
 
+#: templates/telemetry_dashboard.html:76
+msgid "Messwerte wieder aktuell"
+msgstr "Messwerte wieder aktuell"
+
 #: templates/telemetry_dashboard.html:55
 msgid "Messzeit"
 msgstr "Messzeit"
@@ -8478,6 +8514,10 @@ msgstr ""
 msgid "Prüfen Sie die Gemeinschaftsvereinbarung."
 msgstr "Prüfen Sie die Gemeinschaftsvereinbarung."
 
+#: templates/telemetry_dashboard.html:32
+msgid "Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."
+msgstr "Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."
+
 #: templates/leg_verzeichnis/leg_check.html:90
 msgid "Prüfen Sie die Schreibweise oder durchsuchen Sie das"
 msgstr "Prüfen Sie die Schreibweise oder durchsuchen Sie das"
@@ -8503,6 +8543,10 @@ msgstr ""
 #: templates/fuer_gemeinden.html:107
 msgid "Prüfen Sie zuerst die Solarnutzung oder bestehende Gemeinschaften im"
 msgstr "Prüfen Sie zuerst die Solarnutzung oder bestehende Gemeinschaften im"
+
+#: templates/telemetry_dashboard.html:31
+msgid "Prüfen Sie, ob die Messquelle Zeit und Qualität der Messung mitliefert."
+msgstr "Prüfen Sie, ob die Messquelle Zeit und Qualität der Messung mitliefert."
 
 #: templates/fuer_bewohner.html:34
 msgid "Prüfen Sie, ob sich eine LEG bei Ihnen lohnt"

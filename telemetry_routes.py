@@ -94,6 +94,24 @@ def aggregates(community, installation):
     return jsonify(store.read(community, str(installation), _actor(), aggregates=True))
 
 
+@telemetry_bp.get("/<uuid:installation>/notices")
+def notices(community, installation):
+    return jsonify(store.owner_notices(community, str(installation), _actor()))
+
+
+@telemetry_bp.post("/<uuid:installation>/notices/<uuid:notice_id>/acknowledge")
+def acknowledge_notice(community, installation, notice_id):
+    return jsonify(
+        store.acknowledge_notice(
+            community,
+            str(installation),
+            _actor(mutation=True),
+            str(notice_id),
+            _payload(),
+        )
+    )
+
+
 @telemetry_bp.delete("/<uuid:installation>")
 def delete(community, installation):
     return jsonify(

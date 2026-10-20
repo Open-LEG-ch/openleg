@@ -15,6 +15,22 @@
 {% set metric_labels = {"power": _("Leistung"), "energy_counter": _("Zählerstand"), "interval_energy": _("Intervallenergie"), "state_of_charge": _("Ladezustand")} %}
 {% set quality_labels = {"measured": _("Gemessen"), "estimated": _("Geschätzt"), "unknown": _("Qualität unbekannt")} %}
 {% set freshness_labels = {"fresh": _("Aktuell"), "stale": _("Veraltet"), "unknown": _("Aktualität unbekannt"), "clock_skew": _("Zeitangabe prüfen")} %}
+{% set notice_titles = {
+  "collector_late": _("Keine neue Kollektor-Lieferung"),
+  "source_missing": _("Keine Messwerte im Aufbewahrungszeitraum verfügbar."),
+  "source_old": _("Veraltet"),
+  "source_channel_missing": _("Kein aktueller Wert"),
+  "source_unknown": _("Aktualität unbekannt"),
+  "source_clock": _("Zeitangabe prüfen")
+} %}
+{% set notice_messages = {
+  "collector_late": _("Prüfen Sie den Kollektor und seine Verbindung."),
+  "source_missing": _("Prüfen Sie den Kollektor und seine Verbindung."),
+  "source_old": _("Messquelle liefert ältere Werte. Prüfen Sie Messquelle und Gerätezeit."),
+  "source_channel_missing": _("Für diesen Messkanal fehlen neue Daten. Prüfen Sie die Messquelle."),
+  "source_unknown": _("Prüfen Sie, ob die Messquelle Zeit und Qualität der Messung mitliefert."),
+  "source_clock": _("Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle.")
+} %}
 <div class="max-w-6xl mx-auto px-4 pt-8 pb-16">
   <a href="/dashboard" class="text-brand hover:underline">{{ _("Zurück zum Dashboard") }}</a>
   <h1 class="text-3xl font-bold mt-4">{{ _("Meine Messwerte") }}</h1>
@@ -32,9 +48,39 @@
         <h2 id="installation-{{ installation.id }}" class="text-xl font-bold wrap-break-word">{{ installation.name }}</h2>
         <p class="text-sm text-ink-muted mt-2 wrap-break-word">{{ _("Quelle") }}: {{ installation.source_id }} · {{ _("Gerät") }}: {{ installation.device_id }}</p>
         <p class="text-sm text-ink-muted">{{ _("Erwarteter Messtakt") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", installation.cadence_seconds, count=installation.cadence_seconds) }}</p>
-        {% if installation.delivery_status == "late" %}
-          <p class="mt-4 font-semibold">{{ _("Keine neue Kollektor-Lieferung") }}</p>
-          <p class="text-ink-muted">{{ _("Prüfen Sie den Kollektor und seine Verbindung.") }}</p>
+        {% if installation.notices %}
+          <h3 class="font-semibold mt-4">{{ _("Anlagenhinweise") }}</h3>
+          <p class="text-sm text-ink-muted">{{ _("Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt sichtbar.") }}</p>
+          {% for notice in installation.notices %}
+            <div class="mt-4 border-t border-line pt-4" role="status">
+              {% if notice.channel_key != "delivery" %}
+                {% set channel = notice.channel_key.split(":") %}
+                <p class="text-sm">{{ channel_labels[channel[1]][channel[2]] }} · {{ metric_labels[channel[0]] }}</p>
+              {% endif %}
+              {% if notice.active %}
+                {% if notice.attention_required %}
+                  <h4 class="font-semibold">{{ notice_titles[notice.kind] }}</h4>
+                  <p class="text-ink-muted">{{ notice_messages[notice.kind] }}</p>
+                  <form method="post" action="/dashboard/telemetry/{{ installation.id }}/notices/{{ notice.id }}/acknowledge" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="community_id" value="{{ installation.community_id }}">
+                    <input type="hidden" name="episode" value="{{ notice.episode }}">
+                    <button type="submit" class="text-brand font-semibold hover:underline">{{ _("Hinweis bestätigen") }}</button>
+                  </form>
+                {% else %}
+                  <h4 class="font-semibold">{{ _("Hinweis bestätigt") }}</h4>
+                  <p>{{ notice_titles[notice.kind] }}</p>
+                  <p class="text-sm text-ink-muted">{{ _("Bestätigt bis") }} <time datetime="{{ notice.snoozed_until }}">{{ notice.snoozed_label }}</time></p>
+                {% endif %}
+              {% elif notice.recovery == "readings_current" %}
+                <h4 class="font-semibold">{{ _("Messwerte wieder aktuell") }}</h4>
+                <p class="text-ink-muted">{{ _("Die Messquelle liefert wieder aktuelle Werte.") }}</p>
+              {% else %}
+                <h4 class="font-semibold">{{ _("Hinweisstatus geändert") }}</h4>
+                <p class="text-ink-muted">{{ _("Die Datenlage hat sich geändert. Prüfen Sie den aktuellen Messstatus.") }}</p>
+              {% endif %}
+            </div>
+          {% endfor %}
         {% endif %}
         {% for sample in installation.samples %}
           <div class="mt-4 border-t border-line pt-4">
@@ -46,11 +92,6 @@
               <p class="text-lg">{{ _("Kein aktueller Wert") }}</p>
             {% endif %}
             <p>{{ quality_labels[sample.quality] }} · {{ freshness_labels[sample.freshness] }}</p>
-            {% if sample.freshness == "stale" and sample.delivery_status == "recent" %}
-              <p class="text-ink-muted">{{ _("Messquelle liefert ältere Werte. Prüfen Sie Messquelle und Gerätezeit.") }}</p>
-            {% elif sample.freshness == "stale" and installation.delivery_status == "recent" %}
-              <p class="text-ink-muted">{{ _("Für diesen Messkanal fehlen neue Daten. Prüfen Sie die Messquelle.") }}</p>
-            {% endif %}
             {% if sample.observed_at %}
               <p class="text-sm text-ink-muted">{{ _("Messzeit") }}: <time datetime="{{ sample.observed_at }}">{{ sample.observed_label }}</time></p>
             {% else %}
