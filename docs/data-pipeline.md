@@ -373,6 +373,11 @@ consumption. The second pass runs only when the remaining production exceeds
 Every total, local and residual channel must contain the witness in its exact
 half-open rounding cell, including the lower boundary and excluding the upper.
 
+The independent audit still uses the engine's floating-point arithmetic. At an
+exact remainder of 0.001 kWh, binary rounding can make that audit run the second
+pass. The certificate uses the exact threshold. The audit records the resulting
+difference, and the VNB source channels determine the prices.
+
 A failed reported-total witness is `unresolved_vnb_einfach_rounding`, not proof
 that the source is impossible. Another set of unrounded totals can explain a
 valid delivery even when this bounded witness fails. Such deliveries remain

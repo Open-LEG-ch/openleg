@@ -237,3 +237,92 @@ def test_einfach_rounding_never_bypasses_existing_battery_exact_gate(einfach_del
         billing_runner.run_billing_period(payload["community_id"], start, end)
     assert error.value.code == "vnb_allocation_mismatch"
     assert db.get_billing_period_for_window(payload["community_id"], start, end) is None
+
+
+def test_exact_threshold_witness_keeps_the_float_branch_difference_in_audit(
+    rounded_delivery,
+):
+    client, db, payload, source = rounded_delivery
+    cid = payload["community_id"]
+    point = "SYNTHETIC-PRODUCER"
+    assert (
+        db.upsert_metering_points(
+            [
+                {
+                    "metering_point_id": point,
+                    "expected_directions": ["consumption", "production"],
+                }
+            ]
+        )
+        == 1
+    )
+    assert (
+        client.post(
+            f"/admin/vnb-calculated-values/dietikon/mappings/{point}",
+            headers={"X-Admin-Token": "synthetic-admin"},
+            json={
+                "effective_from": "2026-09-01T00:00:00Z",
+                "source_reference": "SYNTHETIC-PROSUMER",
+                "confirmed_membership": True,
+            },
+        ).status_code
+        == 201
+    )
+    root = ET.fromstring(source)
+    templates = [
+        ET.tostring(block)
+        for block in root.findall("MeteringData")
+        if block.find("ConsumptionMeteringPoint/VSENationalID") is not None
+        and block.find("ConsumptionMeteringPoint/VSENationalID").text
+        == "SYNTHETIC-METER-1"
+    ]
+    for template in templates:
+        clone = ET.fromstring(template)
+        clone.find("ConsumptionMeteringPoint/VSENationalID").text = point
+        root.append(clone)
+    values = {
+        ("SYNTHETIC-METER-1", "consumption"): ("0.003", "0.003", "0.000"),
+        ("SYNTHETIC-CONSUMER-B", "consumption"): ("0.010", "0.004", "0.006"),
+        (point, "consumption"): ("0.020", "0.004", "0.016"),
+        (point, "production"): ("0.012", "0.011", "0.001"),
+    }
+    for block in root.findall("MeteringData"):
+        identity = block.find("ConsumptionMeteringPoint/VSENationalID")
+        direction = "consumption"
+        if identity is None:
+            identity = block.find("ProductionMeteringPoint/VSENationalID")
+            direction = "production"
+        code = block.find("Product/ID/VSENationalCode").text
+        position = ("8716867000030", "2404050010123", "2404050010124").index(code)
+        block.find("Observation/Volume").text = values[(identity.text, direction)][
+            position
+        ]
+    start, end = _window(payload)
+    policy = db.get_billing_policy(cid, start, end)
+    db.save_billing_policy(
+        cid, {**policy, "effective_from": "2026-09-15", "distribution_model": "einfach"}
+    )
+    assert e66.post_e66(client, ET.tostring(root)).status_code == 201
+    result = billing_runner.run_billing_period(cid, start, end, prepared_by="member")
+    period = db.get_billing_period(result["period_id"], cid)
+    certificate = period["reconciliation"]["precision_policy"]
+    assert certificate["intervals"][0]["redistribution_applied"] is False
+    assert certificate["intervals"][0]["allocated_kwh"] == "11/1000"
+    assert period["reconciliation"]["vnb_allocated_kwh"] == 0.011
+    assert period["reconciliation"]["engine_allocated_kwh"] == 0.012
+    assert period["reconciliation"]["difference_kwh"] == 0.001
+    invoices = db.approve_billing_period(
+        result["period_id"], cid, approver_id="producer"
+    )
+    quantities = {
+        (invoice["participant_id"], item["item_type"]): Decimal(
+            str(item["quantity_kwh"])
+        )
+        for invoice in invoices
+        for item in invoice["line_items_snapshot"]
+        if item["item_type"] in {"consumer_charge", "producer_credit"}
+    }
+    assert quantities[("member", "consumer_charge")] == Decimal("0.003")
+    assert quantities[("consumer-b", "consumer_charge")] == Decimal("0.004")
+    assert quantities[("producer", "consumer_charge")] == Decimal("0.004")
+    assert quantities[("producer", "producer_credit")] == Decimal("0.011")
