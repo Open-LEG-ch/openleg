@@ -131,6 +131,7 @@ def test_reporter_uses_the_published_archive_when_metadata_is_unavailable(monkey
         "invalid_zip",
         "missing_municipal",
         "ambiguous_municipal",
+        "ambiguous_municipal_nested",
         "compressed_limit",
         "expanded_limit",
         "member_limit",
@@ -149,6 +150,8 @@ def test_reporter_rejects_unsupported_or_excessive_archives(monkeypatch, failure
         files = {"energyreporter_canton_latest.csv": municipal}
     elif failure == "ambiguous_municipal":
         files["nested/energyreporter_municipality_latest.csv"] = municipal
+    elif failure == "ambiguous_municipal_nested":
+        files["releases/latest/energyreporter_municipality_latest.csv"] = municipal
     elif failure == "compressed_limit":
         files["unneeded.bin"] = "x" * (5 * 1024 * 1024)
     elif failure == "expanded_limit":
