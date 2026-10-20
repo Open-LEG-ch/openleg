@@ -82,7 +82,8 @@ The broker address must be a literal RFC1918 or loopback IPv4 address. Network
 connections require TLS with certificate and hostname/IP verification. The
 certificate must cover that address. A custom trusted CA is optional. Plaintext
 requires both a literal loopback address and the explicit loopback option; it
-is only for an isolated local broker. No internet port forwarding is needed.
+is only for an isolated local broker. Inherited MQTT and PySocks proxies are
+disabled. No internet port forwarding is needed.
 
 For Mosquitto, the dedicated reader's ACL contains only its selected topics:
 

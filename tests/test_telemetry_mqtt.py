@@ -264,6 +264,11 @@ def test_duplicate_payload_keys_are_rejected(export):
         export.receive(TOPIC, b'{"value":"1","value":"2"}', retained=False)
 
 
+def test_deeply_nested_json_is_an_invalid_sample(export):
+    with pytest.raises(ValueError):
+        export.receive(TOPIC, b"[" * 4000 + b"0" + b"]" * 4000, retained=False)
+
+
 class FakeClient:
     def __init__(self, *args, **kwargs):
         self.options = kwargs
@@ -418,3 +423,44 @@ def test_duplicate_history_expires_on_flush_without_new_source_messages(export):
         export.collector.db.execute("SELECT COUNT(*) FROM source_samples").fetchone()[0]
         == 0
     )
+
+
+@pytest.mark.parametrize("proxy_source", ["environment", "default"])
+def test_subscriber_never_routes_loopback_credentials_through_inherited_proxies(
+    export, monkeypatch, proxy_source
+):
+    import paho.mqtt.client as mqtt
+
+    def forbidden_proxy(*args, **kwargs):
+        pytest.fail("broker credentials routed through an inherited proxy")
+
+    monkeypatch.setattr(
+        mqtt,
+        "socks",
+        SimpleNamespace(
+            HTTP=3,
+            SOCKS4=1,
+            SOCKS5=2,
+            get_default_proxy=lambda: (3, "203.0.113.99", 8080, True, None, None),
+            create_connection=forbidden_proxy,
+        ),
+    )
+    monkeypatch.setenv("no_proxy", "")
+    monkeypatch.delenv("NO_PROXY", raising=False)
+    monkeypatch.delenv("MQTT_PROXY", raising=False)
+    if proxy_source == "environment":
+        monkeypatch.setenv("mqtt_proxy", "http://203.0.113.99:8080")
+    else:
+        monkeypatch.delenv("mqtt_proxy", raising=False)
+    export.settings["broker"].update(host="127.0.0.1", allow_loopback_plaintext=True)
+    calls = []
+    sentinel = object()
+
+    def direct_connection(address, **kwargs):
+        calls.append(address)
+        return sentinel
+
+    monkeypatch.setattr(mqtt.socket, "create_connection", direct_connection)
+    client = subscriber(export)
+    assert client._create_socket_connection() is sentinel
+    assert calls == [("127.0.0.1", 8883)]

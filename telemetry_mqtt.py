@@ -158,7 +158,10 @@ class MQTTExport:
             raise ValueError("mqtt_payload_too_large")
         if type(retained) is not bool:
             raise ValueError("invalid_retained_flag")
-        data = json.loads(payload, object_pairs_hook=_unique_object)
+        try:
+            data = json.loads(payload, object_pairs_hook=_unique_object)
+        except RecursionError:
+            raise ValueError("mqtt_json_too_deep") from None
         if (
             not isinstance(data, dict)
             or set(data)
@@ -186,8 +189,13 @@ def subscriber(export):
     from paho.mqtt.packettypes import PacketTypes
     from paho.mqtt.properties import Properties
 
+    class DirectClient(mqtt.Client):
+        def _get_proxy(self):
+            # Paho 2.1.0 otherwise inherits mqtt_proxy and PySocks defaults.
+            return None
+
     broker = export.settings["broker"]
-    client = mqtt.Client(
+    client = DirectClient(
         mqtt.CallbackAPIVersion.VERSION2,
         client_id="openleg-" + export.collector.config["installation_id"],
         protocol=mqtt.MQTTv5,
@@ -252,7 +260,7 @@ def main():
             client.disconnect()
     except KeyboardInterrupt:
         return 0
-    except (ValueError, TypeError, OSError, sqlite3.Error, ImportError):
+    except (ValueError, TypeError, OSError, sqlite3.Error, ImportError, RecursionError):
         print(json.dumps({"state": "mqtt_unavailable"}))
         return 1
     finally:
