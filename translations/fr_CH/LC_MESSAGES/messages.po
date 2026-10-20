@@ -1865,6 +1865,19 @@ msgstr "Veuillez confirmer votre e-mail"
 msgid "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 msgstr "Veuillez confirmer votre adresse e-mail."
 
+#: leg_registry.py:55
+#, python-format
+msgid ""
+"Bitte bestätigen Sie, dass der Eintrag \"%(name)s\" im OpenLEG-Verzeichnis noch aktuell ist (Link"
+" 14 Tage gültig):\n"
+"\n"
+"%(url)s"
+msgstr ""
+"Veuillez confirmer que l’inscription « %(name)s » dans l’annuaire OpenLEG est toujours à jour "
+"(lien valable 14 jours) :\n"
+"\n"
+"%(url)s"
+
 #: templates/partials/form_validation.html:2
 msgid "Bitte füllen Sie dieses Feld aus."
 msgstr "Veuillez remplir ce champ."
@@ -5112,6 +5125,29 @@ msgstr "Afficher l'assistant de démarrage et les modèles"
 msgid "Gründungsassistent öffnen"
 msgstr "Ouvrir l’assistant de création"
 
+#: utility_portal.py:313
+#, python-format
+msgid ""
+"Guten Tag,\n"
+"\n"
+"Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Dieser Link ist %(minutes)s Minuten gültig.\n"
+"\n"
+"Ihr OpenLEG-Team"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"Cliquez sur le lien suivant pour vous connecter à OpenLEG :\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Ce lien est valable %(minutes)s minutes.\n"
+"\n"
+"L’équipe OpenLEG"
+
 #: templates/admin/abrechnungen.html:123
 msgid "Gutschriften"
 msgstr "Crédits"
@@ -5333,6 +5369,10 @@ msgstr "Je souhaite recevoir des nouvelles par e-mail. (facultatif)"
 #: dashboard_routes.py:338
 msgid "Ihr Dashboard-Zugangslink"
 msgstr "Votre lien d’accès au tableau de bord"
+
+#: municipality.py:216
+msgid "Ihr Gemeinde-Dashboard-Zugangslink"
+msgstr "Votre lien d’accès au tableau de bord communal"
 
 #: templates/leg_verzeichnis/bestaetigt.html:7
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
@@ -5691,6 +5731,10 @@ msgstr "Accessibilité Internet"
 #: templates/telemetry_dashboard.html:15
 msgid "Intervallenergie"
 msgstr "Énergie sur l'intervalle"
+
+#: leg_registry.py:53
+msgid "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
+msgstr "Votre inscription de CEL sur OpenLEG est-elle toujours à jour ?"
 
 #: app.py:138 formation_guide.py:72
 msgid "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
@@ -8247,6 +8291,10 @@ msgstr "Réseau OpenLEG"
 #: templates/self_host.html:58
 msgid "OpenLEG. Kein eigener technischer Betrieb."
 msgstr "OpenLEG. Aucune exploitation technique à votre charge."
+
+#: utility_portal.py:311
+msgid "OpenLEG: Ihr Login-Link"
+msgstr "OpenLEG : Votre lien de connexion"
 
 #: interest_intake.py:100
 msgid "OpenLEG: Interessenmeldung bestätigen"
@@ -11996,6 +12044,21 @@ msgid ""
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 msgstr ""
 "Ouvrez votre tableau de bord à l’aide de ce lien :\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Si vous n’avez pas demandé ce lien, vous pouvez ignorer cet e-mail."
+
+#: municipality.py:218
+#, python-format
+msgid ""
+"Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n"
+"\n"
+"%(url)s\n"
+"\n"
+"Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
+msgstr ""
+"Ouvrez votre tableau de bord communal avec ce lien :\n"
 "\n"
 "%(url)s\n"
 "\n"

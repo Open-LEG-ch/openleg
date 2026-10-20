@@ -11,6 +11,8 @@ legacy callers.
 
 import logging
 
+from locale_policy import require_recipient_locale
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,16 +35,19 @@ def save_utility_client(
     population: int | None = None,
     kanton: str = "",
     tier: str = "starter",
+    preferred_locale: str | None = None,
 ) -> bool:
     """Create or update a utility client."""
+    if preferred_locale is not None:
+        preferred_locale = require_recipient_locale(preferred_locale)
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
                     INSERT INTO utility_clients (
                         client_id, company_name, contact_name, contact_email,
-                        contact_phone, vnb_name, population, kanton, tier, status
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+                        contact_phone, vnb_name, population, kanton, tier, preferred_locale, status
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, COALESCE(%s, 'de_CH'), 'pending')
                     ON CONFLICT (client_id) DO UPDATE SET
                         company_name = EXCLUDED.company_name,
                         contact_name = EXCLUDED.contact_name,
@@ -52,6 +57,7 @@ def save_utility_client(
                         population = EXCLUDED.population,
                         kanton = EXCLUDED.kanton,
                         tier = EXCLUDED.tier,
+                        preferred_locale = COALESCE(%s, utility_clients.preferred_locale),
                         updated_at = CURRENT_TIMESTAMP
                 """,
                 (
@@ -64,6 +70,8 @@ def save_utility_client(
                     population,
                     kanton,
                     tier,
+                    preferred_locale,
+                    preferred_locale,
                 ),
             )
             return True

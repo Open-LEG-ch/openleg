@@ -340,7 +340,8 @@ it.
 
 - **Tables:** `utility_clients`
 - **Holds:** VNB/EVU contacts (`company_name`, `contact_email`,
-  `kanton`, service territory).
+  `kanton`, service territory), plus German or Swiss French `preferred_locale`
+  for account email.
 - **Purpose:** routing LEG applications and consents to the right grid
   operator.
 - **Owner:** the utility (business contact data).
@@ -525,11 +526,13 @@ it.
 
 - **Tables:** `leg_registry`
 - **Holds:** registered LEGs (`community_name`, `kanton`, `plz`, member
-  count, `verified` status).
+  count, `verified` status), private contact email and `preferred_locale`
+  for verification reminders.
 - **Purpose:** the public LEG directory and federation verification.
 - **Owner:** the LEG (it registers itself).
-- **Sensitivity:** business facts a LEG chose to publish.
-- **Resident-visible:** yes, public by design.
+- **Sensitivity:** published business facts and private business contact data.
+- **Resident-visible:** directory fields are public; contact email and language
+  stay out of public API responses.
 - **Consent gate:** none.
 
 ## store/ops
