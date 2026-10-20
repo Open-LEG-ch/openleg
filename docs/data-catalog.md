@@ -194,7 +194,9 @@ it.
   immutable invoices, delivery/correction records and lifecycle events,
   accepted VNB sources and withdrawals, VNB handover/mutation evidence, payment
   reconciliation, invoice questions and attachments, role audit, batteries,
-  community-owned operator events and completed replay responses.
+  community-owned operator events and completed case/payment replay responses
+  bound to archived parents. In-flight reservations, deployment-specific
+  metering retries and orphan keys are excluded.
 - **Scope:** every query starts from `community_id`; profiles are limited to
   current community members. Tokens, unrelated profiles, other communities,
   platform operations and public reference data are excluded. Live operator

@@ -364,12 +364,64 @@ _DATASETS += (
     ("community_batteries", "community_id = %s", "community_id"),
     ("community_battery_shares", "community_id = %s", "community_id"),
     ("operator_events", "community_id = %s", "community_id"),
-    ("operator_action_idempotency", "community_id = %s", "community_id"),
+    (
+        "operator_action_idempotency",
+        (
+            "community_id = %s AND response IS NOT NULL AND ("
+            "action IN (SELECT 'case.respond:' || q.id::text FROM invoice_queries q "
+            "WHERE q.community_id = operator_action_idempotency.community_id) OR "
+            "action IN (SELECT 'payment.confirm:' || e.id::text FROM bank_statement_entries e "
+            "WHERE e.community_id = operator_action_idempotency.community_id))"
+        ),
+        "community_id",
+    ),
 )
+
+
+_VNB_IDENTIFIERS = {
+    "vnb_calculated_values_deliveries": {"id": (int,), "vnb_case_id": (str,)},
+    "vnb_calculated_values_events": {"id": (int,), "delivery_id": (int,)},
+    "vnb_submission_cases": {"case_id": (str,)},
+    "vnb_mutation_cases": {"case_id": (str,)},
+    "vnb_mutation_events": {"id": (int,), "case_id": (str,)},
+}
+_OPERATING_IDENTIFIERS = {
+    "bank_statement_imports": {"id": (int,)},
+    "bank_statement_entries": {
+        "id": (int,),
+        "statement_import_id": (int,),
+        "invoice_id": (int, type(None)),
+    },
+    "invoice_queries": {"id": (int,), "invoice_id": (int,), "participant_id": (str,)},
+    "invoice_query_messages": {"id": (int,), "query_id": (int,), "actor_id": (str,)},
+    "invoice_query_events": {"id": (int,), "query_id": (int,), "actor_id": (str,)},
+    "community_role_events": {
+        "id": (int,),
+        "building_id": (str,),
+        "actor_building_id": (str, type(None)),
+    },
+    "community_batteries": {"participant_id": (str, type(None))},
+    "community_battery_shares": {"building_id": (str,)},
+    "operator_events": {"event_id": (str,), "aggregate_id": (str,)},
+    "operator_action_idempotency": {"action": (str,), "idempotency_key": (str,)},
+}
+
+
+def _invalid_relationship_identifiers(datasets, fields):
+    for table, columns in fields.items():
+        for row in datasets.get(table, []):
+            if not isinstance(row, dict) or any(
+                type(row.get(column)) not in types for column, types in columns.items()
+            ):
+                return ["Invalid archive relationship identifier"]
+    return []
 
 
 def _validate_vnb_evidence(datasets):
     """Keep accepted source identity and withdrawal ownership intact on import."""
+    shape_errors = _invalid_relationship_identifiers(datasets, _VNB_IDENTIFIERS)
+    if shape_errors:
+        return shape_errors
     deliveries = datasets.get("vnb_calculated_values_deliveries", [])
     events = datasets.get("vnb_calculated_values_events", [])
     mutation_cases = {
@@ -468,6 +520,9 @@ def _validate_e66_ledger(source, datasets):
 
 def _validate_operating_relations(datasets):
     """Reject foreign parent references before export or restore can disclose them."""
+    shape_errors = _invalid_relationship_identifiers(datasets, _OPERATING_IDENTIFIERS)
+    if shape_errors:
+        return shape_errors
     errors = []
     invoices = {row.get("id"): row for row in datasets.get("invoices", [])}
     queries = {row.get("id") for row in datasets.get("invoice_queries", [])}
@@ -500,6 +555,28 @@ def _validate_operating_relations(datasets):
         for row in datasets.get("community_battery_shares", [])
     ):
         errors.append("Battery share scope violation")
+    payment_ids = {row["id"] for row in datasets.get("bank_statement_entries", [])}
+    event_ids = {row["event_id"] for row in datasets.get("operator_events", [])}
+    portable = {"case.respond": queries, "payment.confirm": payment_ids}
+    for row in datasets.get("operator_action_idempotency", []):
+        kind, separator, identifier = row["action"].partition(":")
+        try:
+            parent_id = int(identifier)
+        except (ValueError, OverflowError):
+            parent_id = None
+        response = row.get("response")
+        if (
+            not separator
+            or kind not in portable
+            or parent_id not in portable.get(kind, ())
+            or identifier != str(parent_id)
+            or not isinstance(response, dict)
+            or type(response.get("id")) is not int
+            or response["id"] != parent_id
+            or not isinstance(response.get("event_id"), str)
+            or response["event_id"] not in event_ids
+        ):
+            errors.append("Operator replay scope violation")
     return errors
 
 

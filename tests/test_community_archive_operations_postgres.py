@@ -87,6 +87,31 @@ def operating_archive(rounded_delivery):
         cid, "member", "synthetic.xml", CAMT_053, db
     )
     assert bank["duplicate"] is False
+    db.prepare_invoice_delivery(own["id"], cid, "member")
+    assert (
+        db.complete_invoice_delivery(own["id"], cid, "member")["lifecycle_state"]
+        == "delivered"
+    )
+    exact_statement = (
+        CAMT_053.replace(b"120.50", str(own["gross_chf"]).encode())
+        .replace(b"bank-entry-1", b"bank-entry-exact")
+        .replace(b"statement-1", b"statement-exact")
+        .replace(b"2026-09-14", b"2026-10-20")
+    )
+    exact_bank = payment_reconciliation.import_statement(
+        cid, "member", "exact.xml", exact_statement, db
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT id FROM bank_statement_entries WHERE statement_import_id=%s",
+            (exact_bank["statement_import_id"],),
+        )
+        payment_entry_id = cur.fetchone()["id"]
+    payment_answer = db.confirm_operator_payment_match(
+        payment_entry_id, own["id"], cid, "member", "archive-payment"
+    )
+    assert payment_answer["match_decision"] == "matched"
+    bank["portable_payment"] = (payment_entry_id, payment_answer)
     bank["public_entries"] = db.list_bank_statement_entries(cid)
     assert db.set_member_access_roles(cid, "consumer-b", ["auditor"], "member")
     db.save_battery(
@@ -129,6 +154,35 @@ def operating_archive(rounded_delivery):
                 )
             expected[table] = [dict(row) for row in cur.fetchall()]
             assert expected[table], table
+    with db.get_connection() as conn, conn.cursor() as cur:
+        for action, key, response in (
+            (f"case.respond:{query_id}", "PRIVATE-PENDING-LOCK", None),
+            (
+                "metering.retry:1",
+                "PRIVATE-RUNTIME-JOB",
+                {"job_id": 1, "status": "success"},
+            ),
+            (
+                f"case.respond:{query_id + 999}",
+                "PRIVATE-ORPHAN-CASE",
+                {"id": query_id + 999},
+            ),
+            (
+                f"payment.confirm:{payment_entry_id + 999}",
+                "PRIVATE-ORPHAN-PAYMENT",
+                {"id": payment_entry_id + 999},
+            ),
+        ):
+            cur.execute(
+                "INSERT INTO operator_action_idempotency(community_id,action,idempotency_key,request_hash,response) VALUES (%s,%s,%s,%s,%s)",
+                (
+                    cid,
+                    action,
+                    key,
+                    "d" * 64,
+                    psycopg2.extras.Json(response) if response is not None else None,
+                ),
+            )
     archive = community_archive.export_community_archive(cid)
     assert b"PRIVATE-FOREIGN" not in archive
     assert b"PRIVATE-SOURCE-CLIENT" not in archive
@@ -144,6 +198,10 @@ def test_operating_records_and_api_replay_survive_clean_restore(
     operating_archive, monkeypatch
 ):
     client, db, cid, own, query_id, bank, answer, expected, archive = operating_archive
+    assert b"PRIVATE-PENDING-LOCK" not in archive
+    assert b"PRIVATE-RUNTIME-JOB" not in archive
+    assert b"PRIVATE-ORPHAN-CASE" not in archive
+    assert b"PRIVATE-ORPHAN-PAYMENT" not in archive
     with evidence.clean_destination(db, monkeypatch):
         result = community_archive.restore_community_archive(archive)
         assert result["valid"], result
@@ -176,7 +234,12 @@ def test_operating_records_and_api_replay_survive_clean_restore(
             headers={"X-CSRF-Token": "archive-csrf"},
             json={
                 "name": "New destination client",
-                "capabilities": ["cases.read", "cases.mutate"],
+                "capabilities": [
+                    "cases.read",
+                    "cases.mutate",
+                    "payments.read",
+                    "payments.mutate",
+                ],
             },
         )
         assert enrollment.status_code == 201, enrollment.get_json()
@@ -193,6 +256,21 @@ def test_operating_records_and_api_replay_survive_clean_restore(
         assert replay.get_json() == {
             "schema_version": "operator-api/1",
             **answer,
+            "replayed": True,
+        }
+        entry_id, payment_answer = bank["portable_payment"]
+        payment_replay = client.post(
+            f"/api/operator/v1/communities/{cid}/payments/matches/{entry_id}/confirm",
+            headers={
+                "Authorization": "Bearer " + token,
+                "Idempotency-Key": "archive-payment",
+            },
+            json={"invoice_id": own["id"]},
+        )
+        assert payment_replay.status_code == 200, payment_replay.get_json()
+        assert payment_replay.get_json() == {
+            "schema_version": "operator-api/1",
+            **payment_answer,
             "replayed": True,
         }
         assert (

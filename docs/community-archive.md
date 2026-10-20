@@ -51,7 +51,10 @@ acknowledgement history, including original binary packages and response evidenc
 Version 2 also retains statement imports and reconciliation decisions, private
 invoice questions and their messages, attachments and status history, scoped
 role audit, battery settings and cost shares. Community-owned operator events
-and idempotency responses keep their identifiers and payloads. An API client
+keep their identifiers and payloads. Completed `case.respond:<query_id>` and
+`payment.confirm:<entry_id>` responses migrate only when their parent question
+or bank entry belongs to the archive. In-flight reservations, metering retry
+keys tied to deployment job IDs and orphan replay keys are excluded. An API client
 reenrolled on the destination can replay an earlier completed case/payment
 request without appending a second transition.
 
