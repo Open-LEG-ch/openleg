@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Exact compatibility checks for independently rounded E66 LEG channels.
 
-A certificate proves that one proportional allocation can explain every source
+A certificate proves that one supported allocation can explain every source
 channel's rounding cell. It does not reconstruct the VNB's unrounded values.
 """
 
