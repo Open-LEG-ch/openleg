@@ -115,7 +115,7 @@ def accept_delivery(
     if payload.get("contract_version") != CONTRACT_VERSION:
         diagnostics.append({"code": "unsupported_contract"})
     if payload.get("format_version") not in FORMAT_VERSIONS or (
-        payload.get("format_version") == "e66/1" and source_metadata is None
+        (payload.get("format_version") == "e66/1") != (source_metadata is not None)
     ):
         diagnostics.append({"code": "unsupported_format"})
     if not payload.get("source") or not payload.get("vnb_case_id"):
@@ -150,7 +150,11 @@ def accept_delivery(
     seen = set()
     record_problem = False
     for record in payload.get("records") or []:
-        if not isinstance(record, dict):
+        if not isinstance(record, dict) or (
+            payload.get("format_version") == "e66/1"
+            and source_metadata is not None
+            and not {"source_metering_point_id", "source_quantities"} <= record.keys()
+        ):
             diagnostics.append({"code": "invalid_interval"})
             record_problem = True
             continue
@@ -194,7 +198,7 @@ def accept_delivery(
                 "allocated_kwh": float(kwh),
             }
         )
-        if source_metadata is not None:
+        if source_metadata is not None and payload.get("format_version") == "e66/1":
             normalized[-1].update(
                 source_metering_point_id=record["source_metering_point_id"],
                 source_quantities=record["source_quantities"],
