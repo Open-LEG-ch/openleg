@@ -13,9 +13,10 @@ before claiming a complete result.
 
 ## Intentional equivalents
 
-Every listed mutant is only reachable through a default that the next
-expression already absorbs or a key lookup that can never match. The kill
-evidence lives in `tests/test_public_data.py` and
+Every listed mutant falls into one of three classes: a default that the next
+expression already absorbs, a key lookup or name constant that can never
+match, or a branch made unreachable by the fail-closed guard. The behavior
+coverage lives in `tests/test_public_data.py` and
 `tests/test_public_data_refresh_scope.py`.
 
 ### Absorbed `.get(key, default) or 0` defaults
