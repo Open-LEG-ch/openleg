@@ -85,3 +85,13 @@ def test_energy_battery_state_and_fault_flags_do_not_enter_power_sums():
     summary = telemetry_summary.view(sources, NOW, "community")
     assert summary["groups"] == []
     assert all(not source["samples"] for source in summary["sources"])
+
+
+def test_partial_coverage_can_sum_three_remaining_nonoverlapping_profiles():
+    sources = [installation(str(n), value="100") for n in range(4)]
+    sources.append({**installation("0", value="999"), "id": "overlapping-source"})
+    group = telemetry_summary.view(sources, NOW, "community")["groups"][0]
+    assert group["state"] == "available" and group["value"] == "300"
+    assert group["contributing_profiles"] == 3
+    assert group["visible_profiles"] == 4
+    assert group["excluded"]["overlapping"] == 1

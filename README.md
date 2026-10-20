@@ -49,7 +49,8 @@ devices.
 Owners with enrolled telemetry installations can open `/dashboard/telemetry`
 to see source readings, quality, observation time, age and device-reported faults.
 The LEG dashboard links to explicitly shared power readings with coverage and
-exclusion counts; small, overlapping or unsynchronized groups have no sum.
+exclusion counts. Sums exclude overlapping profiles and require at least three
+synchronized eligible profiles.
 Device-specific fault mappings and hardware/user-pilot validation remain tracked
 in [#617](https://github.com/Open-LEG-ch/openleg/issues/617).
 
@@ -220,7 +221,8 @@ Eigentümer mit angemeldeten Telemetrie-Anlagen sehen unter
 `/dashboard/telemetry` ihre Messwerte mit Quelle, Qualität, Messzeit und Alter.
 Die Ansicht zeigt auch gemeldete Gerätestörungen. Das LEG-Dashboard verlinkt
 ausdrücklich freigegebene Leistungswerte mit Angaben zu Abdeckung und Ausschlüssen.
-Kleine, überlappende oder zeitlich abweichende Gruppen erhalten keine Summe.
+Summen schliessen Profile mit überlappenden Quellen aus und erfordern mindestens
+drei geeignete Profile mit gleicher Messzeit.
 Gerätespezifische Störungszuordnungen und die Prüfung mit Hardware und Pilotnutzern
 bleiben in [#617](https://github.com/Open-LEG-ch/openleg/issues/617) offen.
 
