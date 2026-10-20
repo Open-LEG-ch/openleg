@@ -112,7 +112,7 @@ def test_failed_refresh_keeps_previous_complete_public_view(forecast_redis, fail
     forecast_redis.delete(weather.ATTEMPT)
     downloads = responses(radiation=RADIATION.replace(b"100", b"200"))
     if failure == "checksum":
-        downloads[asset()[1]["href"]] += b"changed"
+        downloads[asset()[1]["href"]] = RADIATION.replace(b"100", b"300")
 
     def download(url, limit):
         if failure == "download":
