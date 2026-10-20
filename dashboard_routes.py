@@ -12,6 +12,7 @@ import io
 import json
 import secrets
 
+import psycopg2
 from flask import (
     abort,
     current_app,
@@ -650,6 +651,46 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @bp.route("/leg/community/<community_id>/archive/restore", methods=["POST"])
     def leg_community_archive_restore(community_id):
         return _restore_archive_response(community_id, dry_run=False)
+
+    def activation_response(community_id, operation, *args):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            operation(community_id, building_id, *args)
+        except db.ActivationDenied:
+            abort(403)
+        except (db.ActivationConflict, ValueError) as error:
+            context = dashboard_module.leg_overview(community_id, building_id)
+            if context.get("error"):
+                abort(403)
+            return render_city_template(
+                "leg_dashboard.html",
+                **context,
+                viewer_has_session=True,
+                csrf_token=_dashboard_csrf_token(),
+                activation_error=str(error),
+            ), (400 if isinstance(error, ValueError) else 409)
+        except psycopg2.Error:
+            abort(503)
+        return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/vnb-start-confirmation", methods=["POST"])
+    def leg_community_start_confirmation(community_id):
+        if request.form.get("confirm_start") != "yes":
+            _require_dashboard_session()
+            _require_dashboard_csrf()
+            abort(400)
+        return activation_response(
+            community_id,
+            db.record_vnb_start_confirmation,
+            request.form.get("correspondence_id", ""),
+            request.form.get("effective_date", ""),
+            request.form.get("reference", ""),
+        )
+
+    @bp.route("/leg/community/<community_id>/activate", methods=["POST"])
+    def leg_community_activate(community_id):
+        return activation_response(community_id, db.activate_community)
 
     @bp.route("/leg/community/<community_id>/vnb-submissions", methods=["POST"])
     def leg_community_vnb_submission(community_id):

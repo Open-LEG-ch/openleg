@@ -21,6 +21,7 @@ from flask import (
 import agentmail_event
 import billing_workspace
 import database as db
+import e66_evidence
 import leg_registry
 import sdat_ingestion
 import vnb_calculated_values
@@ -40,6 +41,32 @@ _WITHDRAWAL_ERROR_CODES = {
     "invalid_reason": "invalid_reason",
     "idempotency_conflict": "idempotency_conflict",
     "delivery_already_retired": "delivery_already_retired",
+}
+_ASSIGNMENT_ERROR_CODES = {
+    "membership_attestation_required": "membership_attestation_required",
+    "invalid_source_reference": "invalid_source_reference",
+    "invalid_assignment_period": "invalid_assignment_period",
+}
+_E66_ERROR_CODES = {
+    "invalid_e66": "invalid_e66",
+    "ambiguous_e66_identity": "ambiguous_e66_identity",
+    "e66_function_requires_operator_review": "e66_function_requires_operator_review",
+    "missing_e66_provenance": "missing_e66_provenance",
+    "invalid_e66_period": "invalid_e66_period",
+    "incomplete_e66_channels": "incomplete_e66_channels",
+    "duplicate_e66_channel": "duplicate_e66_channel",
+    "incomplete_e66_period": "incomplete_e66_period",
+    "ambiguous_e66_observation": "ambiguous_e66_observation",
+    "unsupported_e66_quality": "unsupported_e66_quality",
+    "invalid_e66_precision": "invalid_e66_precision",
+    "e66_value_out_of_range": "e66_value_out_of_range",
+    "unbalanced_e66_channels": "unbalanced_e66_channels",
+    "e66_mapping_unavailable": "e66_mapping_unavailable",
+    "ambiguous_e66_community": "ambiguous_e66_community",
+    "e66_mapping_outside_validity": "e66_mapping_outside_validity",
+    "e66_mapping_direction_mismatch": "e66_mapping_direction_mismatch",
+    "e66_document_identity_conflict": "e66_document_identity_conflict",
+    "e66_replacement_requires_withdrawal": "e66_replacement_requires_withdrawal",
 }
 
 
@@ -108,6 +135,26 @@ def admin_vnb_calculated_values(territory):
     return jsonify(result), 201 if result["status"] == "accepted" else 422
 
 
+@admin_bp.route("/admin/vnb-calculated-values/<territory>/e66", methods=["POST"])
+def admin_e66_calculated_values(territory):
+    require_admin()
+    if not _TERRITORY_RE.fullmatch(territory):
+        return jsonify(error="invalid_territory"), 400
+    if request.mimetype not in {"application/xml", "text/xml"}:
+        return jsonify(error="e66_xml_required"), 415
+    evidence = request.get_data(cache=True)
+    try:
+        document = e66_evidence.parse_source(evidence)
+        result = db.ingest_e66_calculated_values(territory, document, evidence)
+    except e66_evidence.E66EvidenceError as error:
+        return jsonify(error=_E66_ERROR_CODES.get(str(error), "invalid_e66")), 422
+    except psycopg2.Error:
+        return jsonify(error="calculated_values_unavailable"), 503
+    if result["status"] != "accepted":
+        return jsonify(result), 422
+    return jsonify(result), 200 if result.get("replayed") else 201
+
+
 @admin_bp.route(
     "/admin/vnb-calculated-values/<territory>/<int:delivery_id>/withdrawals",
     methods=["POST"],
@@ -143,6 +190,34 @@ def admin_withdraw_calculated_values(territory, delivery_id):
     except psycopg2.Error:
         return jsonify(error="calculated_values_unavailable"), 503
     return jsonify(result), 200 if result["replayed"] else 201
+
+
+@admin_bp.route(
+    "/admin/vnb-calculated-values/<territory>/mappings/<metering_point_id>",
+    methods=["POST"],
+)
+def admin_calculated_meter_assignment(territory, metering_point_id):
+    require_admin()
+    if not _TERRITORY_RE.fullmatch(territory):
+        return jsonify(error="invalid_territory"), 400
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error="invalid_payload"), 400
+    try:
+        result = vnb_calculated_values.record_meter_assignment(
+            territory, metering_point_id, payload
+        )
+    except db.CalculatedValuesLifecycleMissing:
+        return jsonify(error="meter_mapping_not_found"), 404
+    except ValueError as error:
+        return jsonify(
+            error=_ASSIGNMENT_ERROR_CODES.get(
+                str(error), "invalid_calculated_values_request"
+            )
+        ), 400
+    except psycopg2.Error:
+        return jsonify(error="calculated_values_unavailable"), 503
+    return jsonify(result), 201
 
 
 @admin_bp.route("/admin/sdat-schedules/<territory>/run", methods=["POST"])

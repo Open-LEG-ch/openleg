@@ -97,7 +97,7 @@ def test_contract_declares_capability_and_supported_formats():
     assert exchange.exchange_capabilities() == {
         "calculated_values": {
             "contract_version": "vnb-calculated-values/1",
-            "format_versions": ["json/1"],
+            "format_versions": ["json/1", "e66/1"],
             "transports": ["api", "file", "manual"],
             "units": ["kWh", "Wh"],
         }

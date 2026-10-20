@@ -197,7 +197,9 @@ from store.calculated_values import (  # noqa: F401
     find_overlapping_calculated_values,
     get_calculated_values_community,
     get_validated_calculated_values,
+    ingest_e66_calculated_values,
     list_calculated_values_deliveries,
+    record_calculated_meter_assignment,
     save_calculated_values_delivery,
     withdraw_calculated_values_delivery,
 )
@@ -246,6 +248,12 @@ from store.formation import (  # noqa: F401
     set_community_dual_control,
     set_member_access_roles,
     submit_community_to_dso,
+)
+from store.formation_activation import (  # noqa: F401
+    ActivationConflict,
+    ActivationDenied,
+    activate_community,
+    record_vnb_start_confirmation,
 )
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
 from store.interest import (  # noqa: F401
