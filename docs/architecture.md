@@ -187,6 +187,24 @@ and the re-export block, and nothing else. Every domain lives in `store/`.
 New storage code for a cohesive domain gets its own module there. Nothing is
 appended to `database.py`.
 
+## Schema startup compatibility
+
+Schema initialization retains the seven-column `verified_interest` projection
+accepted by v0.1.21. Locale-aware reads join its selected source record. An
+existing extended view is recreated transactionally without `CASCADE`; dependent
+custom views block migration rather than being removed.
+
+Live billing windows keep their partial uniqueness predicate under the legacy
+index name `uq_billing_period_community_window`. The previous application's
+initialization therefore skips recreating a full unique index over invalidated
+and replacement periods.
+
+This preserves startup and tested record reads. Older billing code does not
+understand VNB withdrawals or the new source certificates. Successful startup
+does not establish financial-write compatibility or authorize image rollback
+after new application state has been written; a separate verified recovery plan
+is required.
+
 ## Verified municipality interest
 
 `store/schema.py` defines the `verified_interest` view. It selects one verified
