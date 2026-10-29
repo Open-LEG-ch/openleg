@@ -243,7 +243,7 @@
           <td class="p-2"><code>{{ mutation.mutation_id }}</code><br><span class="text-xs text-ink-muted">{{ {"join": _("Beitritt"), "exit": _("Austritt"), "change": _("Änderung")}.get(mutation.mutation_type, mutation.mutation_type) }} {{ _('· Vertrag') }} {{ mutation.source_agreement_id }}</span></td>
           <td class="p-2"><code>{{ mutation.participant_id }}</code></td><td class="p-2">{{ mutation.effective_date }}</td>
           <td class="p-2">{{ {"prepared": _("Manuelle Übergabe bereit"), "delivered": _("Zugestellt"), "acknowledged": _("Bestätigt"), "rejected": _("Abgelehnt"), "failed": _("Fehlgeschlagen"), "superseded": _("Ersetzt")}.get(mutation.state, mutation.state) }}</td>
-          <td class="p-2">{{ mutation.response_status or "–" }}</td>
+          <td class="p-2">{{ mutation.response_status or _('Keine Angabe') }}</td>
         </tr>{% endfor %}</tbody>
       </table></div>
       {% for mutation in vnb_mutations if mutation.state == "prepared" and is_admin and viewer_has_session %}

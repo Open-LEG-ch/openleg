@@ -64,8 +64,8 @@
         {% for schedule in sdat_schedules %}
         <tr><td class="px-4 py-3">{{ schedule.territory }}</td>
           <td>{{ schedule.local_time }} {{ schedule.timezone }}{% if not schedule.enabled %} {{ _('(aus)') }}{% endif %}</td>
-          <td>{{ schedule.last_success_at or '–' }}</td>
-          <td>{{ schedule.last_failure_at or '–' }}{% if schedule.last_failure_error %}: {{ schedule.last_failure_error }}{% endif %}</td>
+          <td>{{ schedule.last_success_at or _('Keine Angabe') }}</td>
+          <td>{{ schedule.last_failure_at or _('Keine Angabe') }}{% if schedule.last_failure_error %}: {{ schedule.last_failure_error }}{% endif %}</td>
           <td>{{ schedule.imported_files or 0 }}</td><td>{{ schedule.imported_readings or 0 }}</td></tr>
         {% else %}<tr><td class="px-4 py-3 text-gray-400" colspan="6">{{ _('Kein SDAT-Zeitplan konfiguriert.') }}</td></tr>{% endfor %}
       </tbody>
@@ -92,8 +92,8 @@
           {% for record in interest_records %}
           <tr>
             <td class="px-4 py-3">{{ record.email }}</td>
-            <td class="px-4 py-3 text-gray-300">{{ record.municipality_name or '–' }}{% if record.canton %} ({{ record.canton }}){% endif %}</td>
-            <td class="px-4 py-3 text-gray-400">{{ record.plz or '–' }}</td>
+            <td class="px-4 py-3 text-gray-300">{{ record.municipality_name or _('Keine Angabe') }}{% if record.canton %} ({{ record.canton }}){% endif %}</td>
+            <td class="px-4 py-3 text-gray-400">{{ record.plz or _('Keine Angabe') }}</td>
             <td class="px-4 py-3 text-gray-400">{{ _('Adressprüfung') if record.source == 'address_check' else _('Abdeckungsanfrage') }}</td>
             <td class="px-4 py-3">{{ _('bestätigt') if record.verified else _('offen') }}</td>
           </tr>
