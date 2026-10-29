@@ -30,8 +30,8 @@ $ scripts/contribute doctor
 Required to run the gate
 OK Python: 3.12.10
 OK pytest: importable
-OK ruff executable: 0.16.6, matches pin
-OK python3 -m ruff: 0.16.6, matches pin
+OK ruff executable: 0.17.2, matches pin
+OK python3 -m ruff: 0.17.2, matches pin
 Required to match CI
 OK node: present
 OK npm: present
@@ -58,8 +58,8 @@ $ scripts/contribute doctor
 Required to run the gate
 OK Python: 3.12.10
 OK pytest: importable
-OK ruff executable: 0.16.6, matches pin
-OK python3 -m ruff: 0.16.6, matches pin
+OK ruff executable: 0.17.2, matches pin
+OK python3 -m ruff: 0.17.2, matches pin
 Required to match CI
 OK node: present
 OK npm: present
@@ -284,5 +284,5 @@ Match the line from `doctor` exactly, then apply the fix.
 | --- | --- |
 | `FAIL Python: 3.9, need 3.11 or newer` | Install Python 3.11 or newer, then rerun `scripts/contribute doctor`. |
 | `FAIL pytest: not found. Next: python3 -m pip install -r requirements-dev.txt` | Run `scripts/contribute setup`, activate `.venv`, then rerun `doctor`. |
-| `FAIL ruff executable: required 0.16.6, found 0.15.20. Next: python3 -m pip install -r requirements-dev.txt` | Reinstall the development requirements in the active environment. |
-| `FAIL ruff sources: ruff executable 0.15.20; python3 -m ruff 0.16.6; versions disagree. Next: python3 -m pip install -r requirements-dev.txt` | Remove the stale executable from `PATH`, reinstall the development requirements, and rerun `doctor`. |
+| `FAIL ruff executable: required 0.17.2, found 0.15.20. Next: python3 -m pip install -r requirements-dev.txt` | Reinstall the development requirements in the active environment. |
+| `FAIL ruff sources: ruff executable 0.15.20; python3 -m ruff 0.17.2; versions disagree. Next: python3 -m pip install -r requirements-dev.txt` | Remove the stale executable from `PATH`, reinstall the development requirements, and rerun `doctor`. |
