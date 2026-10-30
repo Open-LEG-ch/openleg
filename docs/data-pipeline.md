@@ -275,6 +275,13 @@ balanced source totals; an unequal total there stops with
 `vnb_balancing_policy_required`. Both paths keep `engine_audit` beside the
 billed quantities.
 
+A period with a Quartierakku still requires the VNB split to equal the engine
+allocation at 6 decimals, for consumption and production alike. The battery
+attribution is derived from the engine's interval allocation, so a differing
+split would freeze battery shares that do not add up to the billed energy;
+such a period stops with `vnb_allocation_mismatch` until attribution can follow
+the billed split.
+
 ### Timezone semantics
 
 `measured_at` is `TIMESTAMPTZ` and holds the interval **start** in UTC, because
