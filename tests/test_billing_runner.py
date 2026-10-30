@@ -1303,8 +1303,12 @@ def test_a_draft_without_a_battery_carries_no_battery_lines(monkeypatch):
     )
 
 
-def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch):
-    """The public runner freezes source attribution and bills the battery point."""
+def _install_eight_household_battery(monkeypatch, *, billed_consumption=None):
+    """Eight homes share one solar roof by day and one Quartierakku by night.
+
+    ``billed_consumption`` overrides the VNB's consumption split; by default it
+    matches what the engine allocates, 2 kWh per home.
+    """
     import billing_runner
 
     homes = tuple(f"home-{number}" for number in range(1, 9))
@@ -1329,7 +1333,8 @@ def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch
         vnb_reference={
             "community_kwh": 16.0,
             "billed": {
-                "consumption_kwh": {**dict.fromkeys(homes, 2.0), "battery-a": 0.0},
+                "consumption_kwh": billed_consumption
+                or {**dict.fromkeys(homes, 2.0), "battery-a": 0.0},
                 "production_kwh": {"home-1": 8.0, "battery-a": 8.0},
             },
         },
@@ -1367,6 +1372,15 @@ def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch
         lambda *_args: saved.append(_args) or 42,
     )
 
+    return homes, saved
+
+
+def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch):
+    """The public runner freezes source attribution and bills the battery point."""
+    import billing_runner
+
+    homes, saved = _install_eight_household_battery(monkeypatch)
+
     result = billing_runner.run_billing_period(COMMUNITY, START, END)
 
     assert result == {"status": "created", "period_id": 42}
@@ -1393,6 +1407,32 @@ def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch
         if item["participant_id"] == "battery-a"
     }
     assert battery_line_types == {"consumer_charge", "producer_credit"}
+
+
+def test_a_battery_period_billed_off_the_engine_split_fails_closed(monkeypatch):
+    """Battery attribution is derived from the engine's allocation.
+
+    Billing a VNB split that departs from it would freeze an attribution that
+    no longer adds up to the billed energy, so the run stops for review.
+    """
+    import billing_runner
+
+    homes = tuple(f"home-{number}" for number in range(1, 9))
+    _, saved = _install_eight_household_battery(
+        monkeypatch,
+        billed_consumption={
+            **dict.fromkeys(homes, 2.0),
+            "home-1": 2.5,
+            "home-2": 1.5,
+            "battery-a": 0.0,
+        },
+    )
+
+    with pytest.raises(billing_runner.BillingRunError) as excinfo:
+        billing_runner.run_billing_period(COMMUNITY, START, END)
+
+    assert excinfo.value.code == "vnb_allocation_mismatch"
+    assert saved == []
 
 
 def test_configured_battery_without_its_meter_series_blocks_the_public_run(

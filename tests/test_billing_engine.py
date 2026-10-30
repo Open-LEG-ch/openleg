@@ -475,6 +475,60 @@ class TestQuartierakkuAllocation:
         ]
         assert any(item["item_type"] == "producer_credit" for item in battery_items)
 
+    def _overnight_summary(self, billed_allocation):
+        from billing_engine import generate_billing_summary
+
+        return generate_billing_summary(
+            pd.DataFrame({"solar": [4.0, 0.0, 0.0], "battery": [0.0, 3.0, 1.0]}),
+            pd.DataFrame(
+                {
+                    "home-a": [2.0, 2.0, 1.0],
+                    "home-b": [2.0, 1.0, 0.0],
+                    "battery": [0.0, 0.0, 0.0],
+                }
+            ),
+            grid_fee_per_kwh=0.08,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            battery_participant_id="battery",
+            battery_capacity_kwh=4,
+            billed_allocation=billed_allocation,
+        )
+
+    def test_a_billed_split_equal_to_the_engine_keeps_the_attribution(self):
+        summary = self._overnight_summary(
+            {
+                "consumption_kwh": {"home-a": 5.0, "home-b": 3.0, "battery": 0.0},
+                "production_kwh": {"solar": 4.0, "battery": 4.0},
+            }
+        )
+
+        participants = {item["id"]: item for item in summary["participants"]}
+        assert participants["home-a"]["battery_kwh"] == 3.0
+        assert participants["home-b"]["battery_kwh"] == 1.0
+
+    @pytest.mark.parametrize(
+        "billed_allocation",
+        [
+            {
+                "consumption_kwh": {"home-a": 4.5, "home-b": 3.5, "battery": 0.0},
+                "production_kwh": {"solar": 4.0, "battery": 4.0},
+            },
+            {
+                "consumption_kwh": {"home-a": 5.0, "home-b": 3.0, "battery": 0.0},
+                "production_kwh": {"solar": 4.000001, "battery": 3.999999},
+            },
+        ],
+        ids=["consumption", "production"],
+    )
+    def test_a_billed_split_off_the_engine_fails_closed(self, billed_allocation):
+        """The attribution follows the engine; billing anything else would
+        freeze battery shares that do not add up to the billed energy."""
+        from billing_engine import BatteryBilledSplitMismatch
+
+        with pytest.raises(BatteryBilledSplitMismatch):
+            self._overnight_summary(billed_allocation)
+
     def test_charge_and_discharge_at_empty_and_full_edges_reconcile(self):
         from billing_engine import generate_billing_summary
 
