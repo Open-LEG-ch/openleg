@@ -9,7 +9,11 @@ import registration
 
 
 class InterestIntakeError(Exception):
-    pass
+    """Validation failure with a message intended for the public response."""
+
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
 
 
 def submit(data, *, db, security, base_url, send_email):
@@ -32,7 +36,7 @@ def submit(data, *, db, security, base_url, send_email):
     try:
         roles = registration.parse_roles(data.get("roles"))
     except registration.RegistrationError as error:
-        raise InterestIntakeError(str(error)) from error
+        raise InterestIntakeError(error.message) from error
     raw_has_solar = data.get("has_solar")
     has_solar = (
         registration.coerce_bool(raw_has_solar) if raw_has_solar is not None else None

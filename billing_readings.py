@@ -21,7 +21,7 @@ Two deliberate choices:
 """
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import timedelta
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
@@ -603,3 +603,49 @@ def reconcile_with_vnb(frames, summary):
         "vnb_imbalance_ratio": frames.vnb_reference["imbalance_ratio"],
         "engine_audit": summary.get("engine_audit"),
     }
+
+
+def with_calculated_vnb_evidence(frames, delivery):
+    """Replace the E66 allocation claim with one accepted calculated delivery."""
+    if not delivery or delivery.get("status") != "accepted":
+        raise PeriodDataError(
+            [_problem("invalid_vnb_evidence", "delivery is not accepted")]
+        )
+    # Dezimal, nicht Gleitkomma: eine akzeptierte Lieferung wird verrechnet,
+    # also zählt sie wie die E66-Werte.
+    delivered = {"consumption": {}, "production": {}}
+    for row in delivery.get("normalized_records") or []:
+        participant = row["participant_id"]
+        direction = row["direction"]
+        delivered[direction][participant] = delivered[direction].get(
+            participant, Decimal(0)
+        ) + Decimal(str(row["allocated_kwh"]))
+    all_participants = set(frames.participants)
+    if set(delivered["consumption"]) | set(delivered["production"]) != all_participants:
+        raise PeriodDataError(
+            [
+                _problem(
+                    "invalid_vnb_evidence",
+                    "participant set does not match billing inputs",
+                )
+            ]
+        )
+    # Through the same builder as the E66 path: a calculated delivery is billed
+    # on the VNB's own split too, so it owes the same billed block and has to
+    # clear the same imbalance guard.
+    totals = {
+        direction: {
+            participant: delivered[direction].get(participant, Decimal(0))
+            for participant in frames.participants
+        }
+        for direction in ("consumption", "production")
+    }
+    problems = []
+    reference = _vnb_reference(totals, frames.participants, problems)
+    if problems:
+        raise PeriodDataError(problems)
+    provenance = dict(frames.provenance)
+    provenance["calculated_values_fingerprint"] = delivery["fingerprint"]
+    provenance["vnb_case_id"] = delivery["vnb_case_id"]
+    provenance["vnb_source"] = delivery["source"]
+    return replace(frames, vnb_reference=reference, provenance=provenance)

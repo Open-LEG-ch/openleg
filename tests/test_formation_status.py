@@ -176,3 +176,13 @@ def test_status_assembly_failure_is_reported_as_missing(caplog):
 
     assert result is None
     assert caplog.messages == ["[FORMATION] Error assembling community status"]
+
+
+def test_status_model_exposes_the_dual_control_policy():
+    row = _row(FormationStatus.INTERESTED.value, None)
+    row["require_dual_control"] = True
+
+    with patch("database.fetch_community_with_members", return_value=row):
+        result = get_community_status("community-1")
+
+    assert result["require_dual_control"] is True

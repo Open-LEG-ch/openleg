@@ -69,6 +69,7 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/email_queue` | Outbound mail queue |
 | `store/utility` | EVU/VNB utility clients |
 | `store/metering` | Messpunkte, 15-minute E66 readings, SDAT import ledger |
+| `store/calculated_values` | Tenant-scoped VNB-calculated LEG allocations, validation outcomes, replay fingerprints, and original evidence |
 | `store/meter` | Per-building meter readings from the upload path |
 | `store/registry` | LEG registry entries and verification |
 | `store/tenant` | White-label tenant configs |
@@ -94,6 +95,7 @@ Domain logic sits above storage and stays free of SQL:
 | `billing_runner.py` | Fail-closed draft run; resolves and fingerprints the complete effective policy |
 | `billing_approval.py` | Fail-closed approval validation; immutable invoice snapshots from the stored policy/provenance seam |
 | `billing_lifecycle.py` | Allowed invoice state transitions and shared member/admin status labels |
+| `payment_reconciliation.py` | ISO 20022 camt.053/.054 parsing and deterministic invoice payment matching |
 | `pv_ranking.py`, `ranking.py` | Utilization, peer comparison, progress |
 | `public_data.py` | Gemeindeprofil refresh outcomes, source-field preservation, tariff/solar merge, and value-gap assembly |
 | `municipality_profile.py` | Gemeindeprofil presentation helpers |

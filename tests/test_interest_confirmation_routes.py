@@ -250,6 +250,23 @@ def test_coverage_intake_rejects_non_object_json(interest_client, payload):
 
 
 @pytest.mark.integration
+def test_coverage_intake_returns_only_the_public_validation_message(
+    interest_client, monkeypatch
+):
+    client, _tasks, _cluster = interest_client
+    import interest_intake
+
+    error = interest_intake.InterestIntakeError("Bitte prüfen Sie Ihre Angaben.")
+    error.args = ("internal database credentials and traceback",)
+    monkeypatch.setattr(interest_intake, "submit", MagicMock(side_effect=error))
+
+    response = client.post("/api/register_interest", json={"email": "one@example.ch"})
+
+    assert response.status_code == 400
+    assert response.json == {"error": "Bitte prüfen Sie Ihre Angaben."}
+
+
+@pytest.mark.integration
 def test_coverage_intake_keeps_its_roles_validation_response(interest_client):
     client, tasks, _cluster = interest_client
     response = client.post(

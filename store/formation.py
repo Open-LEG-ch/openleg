@@ -9,6 +9,10 @@ consent-gated neighbour search. Formation rules and status assembly live in
 import logging
 import uuid
 
+from psycopg2.extras import Json
+
+import community_access
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,10 +57,16 @@ def create_community_record(
                 cur.execute(
                     """
                     INSERT INTO community_members (
-                        community_id, building_id, role, status, joined_at
-                    ) VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        community_id, building_id, role, access_roles, status, joined_at
+                    ) VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                 """,
-                    (community_id, admin_building_id, "admin", "confirmed"),
+                    (
+                        community_id,
+                        admin_building_id,
+                        "admin",
+                        Json([community_access.ADMIN]),
+                        "confirmed",
+                    ),
                 )
 
                 logger.info(
@@ -219,6 +229,7 @@ def fetch_community_with_members(community_id: str) -> dict | None:
                                 'building_id', cm.building_id,
                                 'role', cm.role,
                                 'status', cm.status,
+                                'access_roles', cm.access_roles,
                                 'email', b.email,
                                 'address', b.address,
                                 'confirmed_at', cm.confirmed_at
@@ -238,6 +249,123 @@ def fetch_community_with_members(community_id: str) -> dict | None:
     except Exception:
         logger.exception("[FORMATION] Error getting community status")
         return None
+
+
+def set_member_access_roles(
+    community_id: str,
+    building_id: str,
+    roles,
+    actor_building_id: str,
+) -> bool:
+    """Replace scoped roles atomically and preserve at least one administrator."""
+    new_roles = community_access.validate_roles(roles)
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                SELECT building_id, role, access_roles, status
+                FROM community_members
+                WHERE community_id = %s
+                FOR UPDATE
+            """,
+            (community_id,),
+        )
+        members = [dict(row) for row in cur.fetchall()]
+        actor = next(
+            (row for row in members if row["building_id"] == actor_building_id), None
+        )
+        target = next(
+            (row for row in members if row["building_id"] == building_id), None
+        )
+        if (
+            not community_access.allows(actor, community_access.MANAGE_MEMBERS)
+            or not target
+        ):
+            return False
+
+        previous_roles = sorted(community_access.roles_for(target))
+        admin_role_changes = (community_access.ADMIN in previous_roles) != (
+            community_access.ADMIN in new_roles
+        )
+        if admin_role_changes and (
+            not community_access.is_administrator(actor)
+            or actor.get("status") != "confirmed"
+        ):
+            return False
+
+        remaining_admins = sum(
+            community_access.is_administrator(row)
+            for row in members
+            if row["building_id"] != building_id and row.get("status") == "confirmed"
+        )
+        if (
+            community_access.ADMIN not in new_roles
+            and community_access.is_administrator(target)
+            and remaining_admins == 0
+        ):
+            return False
+
+        legacy_role = "admin" if community_access.ADMIN in new_roles else "member"
+        cur.execute(
+            """
+                UPDATE community_members
+                SET role = %s, access_roles = %s
+                WHERE community_id = %s AND building_id = %s
+            """,
+            (legacy_role, Json(list(new_roles)), community_id, building_id),
+        )
+        cur.execute(
+            """
+                INSERT INTO community_role_events (
+                    community_id, building_id, actor_building_id,
+                    previous_roles, new_roles
+                ) VALUES (%s, %s, %s, %s, %s)
+            """,
+            (
+                community_id,
+                building_id,
+                actor_building_id,
+                Json(previous_roles),
+                Json(list(new_roles)),
+            ),
+        )
+        return True
+
+
+def set_community_dual_control(
+    community_id: str, enabled: bool, actor_building_id: str
+) -> bool:
+    """Set the billing dual-control policy when the actor is an administrator."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                SELECT building_id, role, access_roles, status
+                FROM community_members
+                WHERE community_id = %s AND building_id = %s
+            """,
+            (community_id, actor_building_id),
+        )
+        actor = cur.fetchone()
+        if (
+            not community_access.is_administrator(actor)
+            or actor.get("status") != "confirmed"
+        ):
+            return False
+        cur.execute(
+            """
+                UPDATE communities
+                SET require_dual_control = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE community_id = %s
+            """,
+            (bool(enabled), community_id),
+        )
+        changed = cur.rowcount > 0
+        if changed:
+            _track_event(
+                "community_dual_control_changed",
+                actor_building_id,
+                {"community_id": community_id, "enabled": bool(enabled)},
+            )
+        return changed
 
 
 def fetch_user_communities(building_id: str) -> list[dict] | None:

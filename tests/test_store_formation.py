@@ -20,10 +20,12 @@ REEXPORTED = (
     "count_confirmed_members",
     "create_community_record",
     "fetch_community_with_members",
+    "set_member_access_roles",
     "fetch_nearby_consenting_neighbours",
     "fetch_user_communities",
     "insert_invited_member",
     "mark_formation_started",
+    "set_community_dual_control",
     "submit_community_to_dso",
 )
 
@@ -105,7 +107,9 @@ def test_create_community_record_inserts_community_and_admin(monkeypatch, caplog
     assert "interested" in community_params
     member_sql, member_params = cur.executed[1]
     assert "INSERT INTO community_members" in member_sql
-    assert member_params == (community_id, "b-admin", "admin", "confirmed")
+    assert member_params[:3] == (community_id, "b-admin", "admin")
+    assert member_params[3].adapted == ["admin"]
+    assert member_params[4] == "confirmed"
     assert caplog.messages == [
         f"[FORMATION] Created community {community_id} by b-admin"
     ]
@@ -318,6 +322,139 @@ def test_fetch_user_communities_reads_the_membership_rows(monkeypatch):
     assert "INNER JOIN consents cns ON counted.building_id = cns.building_id" in query
     assert "cns.share_with_neighbors = TRUE" in query
     assert params == ("b1",)
+
+
+def test_set_member_access_roles_records_an_audited_change(monkeypatch):
+    rows = [
+        {
+            "building_id": "b-admin",
+            "role": "admin",
+            "access_roles": ["admin"],
+            "status": "confirmed",
+        },
+        {
+            "building_id": "b-operator",
+            "role": "member",
+            "access_roles": [],
+            "status": "confirmed",
+        },
+    ]
+    cur = _FakeCursor(rows=rows)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert formation.set_member_access_roles(
+        "c1", "b-operator", ["documents", "membership"], "b-admin"
+    )
+
+    assert "FOR UPDATE" in cur.executed[0][0]
+    update_sql, update_params = cur.executed[1]
+    assert "UPDATE community_members" in update_sql
+    assert update_params[0] == "member"
+    assert update_params[1].adapted == ["documents", "membership"]
+    assert update_params[2:] == ("c1", "b-operator")
+    event_sql, event_params = cur.executed[2]
+    assert "INSERT INTO community_role_events" in event_sql
+    assert event_params[:3] == ("c1", "b-operator", "b-admin")
+    assert event_params[3].adapted == []
+    assert event_params[4].adapted == ["documents", "membership"]
+
+
+def test_set_member_access_roles_protects_the_last_admin(monkeypatch):
+    cur = _FakeCursor(
+        rows=[
+            {
+                "building_id": "b-admin",
+                "role": "admin",
+                "access_roles": ["admin"],
+                "status": "confirmed",
+            }
+        ]
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert not formation.set_member_access_roles("c1", "b-admin", [], "b-admin")
+    assert len(cur.executed) == 1
+
+
+def test_set_member_access_roles_promotes_a_second_administrator(monkeypatch):
+    cur = _FakeCursor(
+        rows=[
+            {
+                "building_id": "b-admin",
+                "role": "admin",
+                "access_roles": ["admin"],
+                "status": "confirmed",
+            },
+            {
+                "building_id": "b-member",
+                "role": "member",
+                "access_roles": [],
+                "status": "confirmed",
+            },
+        ]
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert formation.set_member_access_roles("c1", "b-member", ["admin"], "b-admin")
+
+    update_sql, update_params = cur.executed[1]
+    assert "UPDATE community_members" in update_sql
+    assert update_params[0] == "admin"
+    assert update_params[1].adapted == ["admin"]
+    assert update_params[2:] == ("c1", "b-member")
+    event_sql, event_params = cur.executed[2]
+    assert "INSERT INTO community_role_events" in event_sql
+    assert event_params[:3] == ("c1", "b-member", "b-admin")
+    assert event_params[3].adapted == []
+    assert event_params[4].adapted == ["admin"]
+
+
+def test_membership_manager_cannot_promote_an_administrator(monkeypatch):
+    cur = _FakeCursor(
+        rows=[
+            {
+                "building_id": "b-manager",
+                "role": "member",
+                "access_roles": ["membership"],
+                "status": "confirmed",
+            },
+            {
+                "building_id": "b-target",
+                "role": "member",
+                "access_roles": [],
+                "status": "confirmed",
+            },
+        ]
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert not formation.set_member_access_roles(
+        "c1", "b-target", ["admin"], "b-manager"
+    )
+    assert len(cur.executed) == 1
+
+
+def test_set_community_dual_control_requires_admin_and_tracks_change(monkeypatch):
+    cur = _FakeCursor(
+        one={
+            "building_id": "b-admin",
+            "role": "admin",
+            "access_roles": ["admin"],
+            "status": "confirmed",
+        }
+    )
+    events = _events(monkeypatch)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert formation.set_community_dual_control("c1", True, "b-admin")
+    update_sql, update_params = cur.executed[1]
+    assert "require_dual_control" in update_sql
+    assert update_params == (True, "c1")
+    events.assert_called_once_with(
+        "community_dual_control_changed",
+        "b-admin",
+        {"community_id": "c1", "enabled": True},
+    )
 
 
 def test_fetch_nearby_consenting_neighbours_pins_location_and_boundary_params(

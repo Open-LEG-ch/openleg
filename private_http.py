@@ -16,11 +16,14 @@ PRIVATE_RESPONSE_HEADERS = {
 
 # Token-bearing and member-only surfaces are private with or without a session.
 _PRIVATE_PATH_PREFIXES = (
+    "/admin/vnb-calculated-values",
+    "/api/operator/",
     "/dashboard/access/",
     "/dashboard/invoices",
     "/gemeinde/access/",
     "/registry/verify/",
     "/leg/document/",
+    "/leg/community/",
 )
 
 # Resident and LEG operator surfaces turn private once a dashboard session exists.
@@ -41,7 +44,9 @@ def is_private_response(
     path, *, dashboard_session: bool, municipality_session: bool
 ) -> bool:
     """Classify one request path; the session flags mark authenticated viewers."""
-    if path.startswith(_PRIVATE_PATH_PREFIXES):
+    if path.startswith(_PRIVATE_PATH_PREFIXES) or (
+        path.startswith("/leg/community/") and "/archive" in path
+    ):
         return True
     if dashboard_session and (
         path in _DASHBOARD_SESSION_PATHS or path.startswith(_DASHBOARD_SESSION_PREFIXES)

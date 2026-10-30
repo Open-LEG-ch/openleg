@@ -307,6 +307,7 @@ def get_community_status(community_id: str) -> dict | None:
             "status": row["status"],
             "distribution_model": row["distribution_model"],
             "admin_building_id": row["admin_building_id"],
+            "require_dual_control": bool(row.get("require_dual_control")),
             "created_at": _iso(row["created_at"]),
             "formation_started_at": _iso(row["formation_started_at"]),
             "dso_submitted_at": _iso(row["dso_submitted_at"]),

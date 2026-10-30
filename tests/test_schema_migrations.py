@@ -113,7 +113,9 @@ def _drop_invoice_schema_for_legacy_fixture(cur):
     """Remove fresh tables that depend on invoices before installing old DDL."""
     cur.execute(
         """
-        DROP TABLE invoice_corrections, invoice_delivery_jobs,
+        DROP TABLE bank_statement_entries, invoice_query_events,
+                   invoice_query_messages, invoice_queries,
+                   invoice_corrections, invoice_delivery_jobs,
                    invoice_lifecycle_events, invoices
         """
     )
