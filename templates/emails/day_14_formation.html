@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ current_locale }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ihre LEG kann starten</title>
+<title>{{ _("Ihre LEG kann starten") }}</title>
 <style>
 body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
 .wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
@@ -32,58 +32,58 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     <h1>{{ platform_name }}</h1>
   </div>
   <div class="content">
-    <h2>Ihre Stromgemeinschaft kann starten</h2>
-    <p>Wir haben genug Interessierte in Ihrer Nähe gefunden. Jetzt geht es an die Gründung.</p>
+    <h2>{{ _("Ihre Stromgemeinschaft kann starten") }}</h2>
+    <p>{{ _("Wir haben genug Interessierte in Ihrer Nähe gefunden. Jetzt geht es an die Gründung.") }}</p>
 
-    <p><strong>So läuft die Gründung ab:</strong></p>
+    <p><strong>{{ _("So läuft die Gründung ab:") }}</strong></p>
     <div class="timeline">
       <div class="timeline-item">
         <div class="timeline-dot">1</div>
         <div class="timeline-text">
-          <strong>Gemeinschaft bilden</strong>
-          <span>Ihre Nachbarn bestätigen die Teilnahme. Wir koordinieren die Kontaktaufnahme.</span>
+          <strong>{{ _("Gemeinschaft bilden") }}</strong>
+          <span>{{ _("Ihre Nachbarn bestätigen die Teilnahme. Wir koordinieren die Kontaktaufnahme.") }}</span>
         </div>
       </div>
       <div class="timeline-item">
         <div class="timeline-dot">2</div>
         <div class="timeline-text">
-          <strong>Vertrag unterzeichnen</strong>
-          <span>Alle Teilnehmer unterzeichnen den Gemeinschaftsvertrag digital.</span>
+          <strong>{{ _("Vertrag unterzeichnen") }}</strong>
+          <span>{{ _("Alle Teilnehmer unterzeichnen den Gemeinschaftsvertrag digital.") }}</span>
         </div>
       </div>
       <div class="timeline-item">
         <div class="timeline-dot">3</div>
         <div class="timeline-text">
-          <strong>Anmeldung beim Netzbetreiber</strong>
-          <span>Wir erstellen die Unterlagen für {{ utility_name }}. Sie müssen nur unterschreiben.</span>
+          <strong>{{ _("Anmeldung beim Netzbetreiber") }}</strong>
+          <span>{{ _("Wir erstellen die Unterlagen für %(utility_name)s. Sie müssen nur unterschreiben.", utility_name=utility_name) }}</span>
         </div>
       </div>
       <div class="timeline-item">
         <div class="timeline-dot">4</div>
         <div class="timeline-text">
-          <strong>Strom teilen und sparen</strong>
-          <span>Nach der Genehmigung teilen Sie den lokalen Strom innerhalb der LEG.</span>
+          <strong>{{ _("Strom teilen und sparen") }}</strong>
+          <span>{{ _("Nach der Genehmigung teilen Sie den lokalen Strom innerhalb der LEG.") }}</span>
         </div>
       </div>
     </div>
 
     <p style="text-align:center;">
-      <a href="{{ dashboard_url }}" class="cta">Gründung starten</a>
+      <a href="{{ dashboard_url|localized_url }}" class="cta">{{ _("Gründung starten") }}</a>
     </p>
 
     {% if referral_link %}
     <div class="referral-box">
-      <p><strong>Noch mehr Nachbarn einladen?</strong></p>
-      <p style="font-size:14px;">Grössere Gemeinschaften sparen mehr. Teilen Sie den Link:</p>
-      <div class="referral-link">{{ referral_link }}</div>
+      <p><strong>{{ _("Noch mehr Nachbarn einladen?") }}</strong></p>
+      <p style="font-size:14px;">{{ _("Grössere Gemeinschaften sparen mehr. Teilen Sie den Link:") }}</p>
+      <div class="referral-link">{{ referral_link|localized_url }}</div>
     </div>
     {% endif %}
 
-    <p style="font-size:13px;color:#6b7280;">Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns: <a href="mailto:{{ contact_email }}" style="color:{{ primary_color }};">{{ contact_email }}</a></p>
+    <p style="font-size:13px;color:#6b7280;">{{ _("Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns:") }} <a href="mailto:{{ contact_email }}" style="color:{{ primary_color }};">{{ contact_email }}</a></p>
   </div>
   <div class="footer">
-    <p>{{ platform_name }} &middot; LEG für {{ city_name }}</p>
-    <p><a href="{{ unsubscribe_url }}">Abmelden</a> &middot; <a href="{{ site_url }}/datenschutz">Datenschutz</a></p>
+    <p>{{ _("%(platform_name)s · LEG für %(city_name)s", platform_name=platform_name, city_name=city_name) }}</p>
+    <p><a href="{{ unsubscribe_url|localized_url }}">{{ pgettext("email-unsubscribe", "Abmelden") }}</a> {{ _("·") }} <a href="{{ (site_url + "/datenschutz")|localized_url }}">{{ _("Datenschutz") }}</a></p>
   </div>
 </div>
 </body>

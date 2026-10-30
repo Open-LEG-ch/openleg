@@ -9,7 +9,7 @@ suite needs no network, no credentials, and no live Datahub account.
 import ftplib
 import os
 import runpy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -140,13 +140,13 @@ class TestLoadConfig:
 
 class TestListRemoteFiles:
     def test_remote_file_normalizes_a_naive_modified_time_to_utc(self):
-        naive = datetime(2026, 8, 8, 12, 0, tzinfo=timezone.utc).replace(tzinfo=None)
+        naive = datetime(2026, 8, 8, 12, 0, tzinfo=UTC).replace(tzinfo=None)
         remote = sdat_datahub.RemoteFile("new.xml", modified=naive)
         older = sdat_datahub.RemoteFile(
-            "old.xml", modified=datetime(2026, 8, 7, 12, 0, tzinfo=timezone.utc)
+            "old.xml", modified=datetime(2026, 8, 7, 12, 0, tzinfo=UTC)
         )
 
-        assert remote.modified == naive.replace(tzinfo=timezone.utc)
+        assert remote.modified == naive.replace(tzinfo=UTC)
         assert sdat_datahub.sort_newest_first([older, remote]) == [remote, older]
 
     @pytest.mark.parametrize(
@@ -168,7 +168,7 @@ class TestListRemoteFiles:
         assert client.cwd_calls == ["/outbox"]
         assert [f.name for f in files] == ["a.xml"]
         assert files[0].size == len(SDAT_XML)
-        assert files[0].modified == datetime(2026, 8, 7, 12, 0, 0, tzinfo=timezone.utc)
+        assert files[0].modified == datetime(2026, 8, 7, 12, 0, 0, tzinfo=UTC)
 
     def test_recursive_descends_into_subfolders(self):
         client = FakeFTP(
@@ -221,7 +221,7 @@ class TestListRemoteFiles:
 
         assert [f.name for f in files] == ["a.xml"]
         assert files[0].size == len(SDAT_XML)
-        assert files[0].modified == datetime(2026, 8, 7, 12, 0, 0, tzinfo=timezone.utc)
+        assert files[0].modified == datetime(2026, 8, 7, 12, 0, 0, tzinfo=UTC)
 
     def test_rejects_names_that_escape_the_download_directory(self):
         client = FakeFTP(
@@ -244,20 +244,20 @@ class TestPlanTransfers:
         disk: the plan performs no filesystem reads.
         """
         old = sdat_datahub.RemoteFile(
-            "old.xml", size=1, modified=datetime(2026, 1, 1, tzinfo=timezone.utc)
+            "old.xml", size=1, modified=datetime(2026, 1, 1, tzinfo=UTC)
         )
         undated = sdat_datahub.RemoteFile("undated.xml", size=len(SDAT_XML))
         existing = sdat_datahub.RemoteFile(
             "existing.xml",
             size=len(SDAT_XML),
-            modified=datetime(2026, 8, 8, 12, 0, tzinfo=timezone.utc),
+            modified=datetime(2026, 8, 8, 12, 0, tzinfo=UTC),
         )
         local_sizes = {"existing.xml": len(SDAT_XML)}
 
         pending, skipped = sdat_datahub.plan_transfers(
             [old, undated, existing],
             local_sizes,
-            since=datetime(2026, 8, 1, tzinfo=timezone.utc),
+            since=datetime(2026, 8, 1, tzinfo=UTC),
             limit=1,
         )
 
@@ -397,7 +397,7 @@ class TestFetchLatest:
             }
         )
         result = sdat_datahub.fetch_latest(
-            config, client=client, since=datetime(2026, 8, 1, tzinfo=timezone.utc)
+            config, client=client, since=datetime(2026, 8, 1, tzinfo=UTC)
         )
         assert result["downloaded"] == ["new.xml"]
 

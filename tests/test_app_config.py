@@ -19,6 +19,40 @@ def _env(**overrides):
     return base
 
 
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        (None, "de_CH"),
+        ("", "de_CH"),
+        ("  ", "de_CH"),
+        ("fr_CH ", "fr_CH"),
+        ("de_CH", "de_CH"),
+    ],
+)
+def test_display_locale_environment_trims_whitespace_and_defaults_empty(raw, expected):
+    environment = _env()
+    if raw is not None:
+        environment["BABEL_DEFAULT_LOCALE"] = raw
+    assert app_config.build_config(environment)["BABEL_DEFAULT_LOCALE"] == expected
+
+
+@pytest.mark.parametrize(
+    "override,expected",
+    [
+        ("", "de_CH"),
+        (" ", "de_CH"),
+        (" de_CH ", "de_CH"),
+        ("fr_CH ", "fr_CH"),
+        ("fr-CH", "fr-CH"),
+    ],
+)
+def test_display_locale_explicit_override_wins_and_is_normalized(override, expected):
+    config = app_config.build_config(
+        _env(BABEL_DEFAULT_LOCALE="fr_CH"), {"BABEL_DEFAULT_LOCALE": override}
+    )
+    assert config["BABEL_DEFAULT_LOCALE"] == expected
+
+
 # ---------------------------------------------------------------------------
 # The dashboard token TTLs
 # ---------------------------------------------------------------------------
@@ -87,6 +121,51 @@ def test_a_valid_public_site_url_is_reduced_to_its_origin(value, expected):
 def test_a_malformed_public_site_url_is_refused(value, message):
     with pytest.raises(ValueError, match=message):
         app_config.validated_public_site_url(value)
+
+
+# ---------------------------------------------------------------------------
+# The cookieless Matomo site id
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    (
+        pytest.param("", "", id="empty-disables-tracking"),
+        pytest.param(None, "", id="unset-disables-tracking"),
+        pytest.param("  ", "", id="blank-is-normalized-away"),
+        pytest.param("1", "1", id="single-digit"),
+        pytest.param(" 7 ", "7", id="padded-is-stripped"),
+        pytest.param("42", "42", id="multi-digit"),
+    ),
+)
+def test_a_valid_matomo_site_id_is_normalized(value, expected):
+    assert app_config.validated_matomo_site_id(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value",
+    (
+        pytest.param("1'];alert(1)//", id="script-content"),
+        pytest.param("0", id="leading-zero"),
+        pytest.param("007", id="zero-padded"),
+        pytest.param("-1", id="negative"),
+        pytest.param("1.5", id="float"),
+        pytest.param("abc", id="letters"),
+        pytest.param("1 2", id="internal-space"),
+        pytest.param(0, id="integer-zero-is-configured-not-unset"),
+        pytest.param(False, id="false-is-configured-not-unset"),
+    ),
+)
+def test_a_malformed_matomo_site_id_is_refused(value):
+    with pytest.raises(ValueError, match="positive integer"):
+        app_config.validated_matomo_site_id(value)
+
+
+def test_the_environment_reaches_the_matomo_site_id_setting():
+    config = app_config.build_config(_env(MATOMO_SITE_ID=" 3 "))
+
+    assert config["MATOMO_SITE_ID"] == "3"
 
 
 # ---------------------------------------------------------------------------

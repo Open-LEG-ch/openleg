@@ -651,7 +651,7 @@ class TestApiDocs:
         resp = client.get("/api/v1/docs")
         assert resp.status_code == 200
         html = resp.data.decode("utf-8", errors="ignore")
-        assert '<html lang="de">' in html
+        assert '<html lang="de-CH">' in html
         assert '<meta name="description"' in html
         assert 'rel="canonical"' in html
         assert 'property="og:title"' in html

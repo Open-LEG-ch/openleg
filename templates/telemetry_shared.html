@@ -1,0 +1,66 @@
+{% extends "product_base.html" %}
+{% block meta %}
+<title>{{ _("Freigegebene Messwerte") }} | {{ platform_name }}</title>
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+{% block content %}
+{% set channels = {
+  "pv_inverter": {"generation": _("PV-Erzeugung")},
+  "grid_connection": {"import": _("Netzbezug"), "export": _("Netzeinspeisung")},
+  "battery": {"charge": _("Batterieladung"), "discharge": _("Batterieentladung")},
+  "site": {"consumption": _("Standortverbrauch"), "generation": _("Standorterzeugung")}
+} %}
+{% set quality = {"measured": _("Gemessen"), "estimated": _("Geschätzt"), "unknown": _("Qualität unbekannt")} %}
+{% set freshness = {"fresh": _("Aktuell"), "stale": _("Veraltet"), "unknown": _("Aktualität unbekannt"), "clock_skew": _("Zeitangabe prüfen")} %}
+<div class="max-w-6xl mx-auto px-4 pt-8 pb-16">
+  <a href="/dashboard" class="text-brand hover:underline">{{ _("Zurück zum Dashboard") }}</a>
+  <h1 class="text-3xl font-bold mt-4">{{ _("Freigegebene Messwerte") }}</h1>
+  {% if unavailable %}
+    <p class="mt-6" role="alert">{{ _("Messwerte derzeit nicht verfügbar") }}. {{ _("Bitte laden Sie die Seite später erneut.") }}</p>
+  {% else %}
+    <p class="text-ink-muted mt-2">{{ _("Sie sehen eigene Anlagen und ausdrücklich für Sie freigegebene Quellen mit aktiver Nachbarschaftsfreigabe.") }}</p>
+    <p class="text-ink-muted mt-2">{{ _("Die Ansicht zeigt und zählt nur eigene und freigegebene Quellen. Sie umfasst keine weiteren Anlagen.") }}</p>
+    <p class="text-sm text-ink-muted mt-2">{{ _("Die Summen sind keine vollständige LEG-Bilanz. Für die Abrechnung gelten die validierten VNB-Messdaten.") }}</p>
+    <p class="mt-4">{{ _("Sichtbare Anlagen: %(count)s", count=summary.authorized_installations) }}</p>
+    <p class="text-sm">{{ _("Stand beim Laden") }}: <time datetime="{{ summary.as_of }}">{{ summary.as_of_label }}</time></p>
+    <a class="inline-block mt-4 text-brand hover:underline" href="/leg/community/{{ summary.community_id|urlencode }}/telemetry">{{ _("Messwerte aktualisieren") }}</a>
+    <h2 class="text-xl font-bold mt-6">{{ _("Summen nach Messkanal") }}</h2>
+    <p class="text-sm text-ink-muted mt-2">{{ _("Eine Summe erfordert mindestens drei Profile mit gemessenen, aktuellen Werten zur gleichen Messzeit. Die Summe schliesst Profile mit mehreren Quellen im gleichen Kanal aus.") }}</p>
+    <p class="text-sm text-ink-muted mt-2">{{ _("Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Die Ansicht trennt Quellen verschiedener Messkanäle.") }}</p>
+    {% for group in summary.groups %}
+      <section class="mt-4 bg-white rounded-xl border border-line p-6">
+        <h3 class="font-semibold">{{ channels[group.measurement_location][group.direction] }}</h3>
+        {% if group.state == "available" %}
+          <p class="font-mono text-2xl">{{ group.value }} W</p>
+        {% elif group.state == "unsynchronized" %}
+          <p>{{ _("Keine Summe: Die Messzeiten unterscheiden sich.") }}</p>
+        {% else %}
+          <p>{{ _("Keine Summe: Weniger als drei Profile liefern geeignete Werte.") }}</p>
+        {% endif %}
+        <p class="text-sm mt-2">{{ _("Sichtbare Profile: %(visible)s. Geeignete Profile: %(eligible)s. In der Summe: %(included)s.", visible=group.visible_profiles, eligible=group.eligible_profiles, included=group.contributing_profiles) }}</p>
+        <p class="text-sm text-ink-muted">{{ _("Ausgeschlossene Profile: %(overlap)s mit überlappenden Quellen, %(unavailable)s ohne aktuellen Messwert, %(estimated)s mit Schätzwerten, %(unsynchronized)s mit abweichenden Messzeiten.", overlap=group.excluded.overlapping, unavailable=group.excluded.unavailable, estimated=group.excluded.estimated, unsynchronized=group.excluded.unsynchronized) }}</p>
+        {% if group.earliest_observed_at %}
+          <p class="text-sm mt-2">{{ _("Messzeiten der geeigneten Werte") }}: <time datetime="{{ group.earliest_observed_at }}">{{ group.earliest_observed_at_label }}</time> / <time datetime="{{ group.latest_observed_at }}">{{ group.latest_observed_at_label }}</time></p>
+        {% endif %}
+      </section>
+    {% else %}<p class="mt-4">{{ _("Keine freigegebenen Leistungswerte verfügbar.") }}</p>{% endfor %}
+    <h2 class="text-xl font-bold mt-6">{{ _("Einzelne Quellen") }}</h2>
+    {% for source in summary.sources %}
+      <section class="mt-4 bg-white rounded-xl border border-line p-6">
+        <h3 class="font-semibold wrap-break-word">{{ _("Quelle") }}: {{ source.source_id }} · {{ _("Gerät") }}: {{ source.device_id }}</h3>
+        <p class="text-sm">{{ _("Erwarteter Messtakt") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", source.cadence_seconds, count=source.cadence_seconds) }}</p>
+        {% for sample in source.samples %}
+          <div class="mt-4 border-t border-line pt-4">
+            <h4 class="font-semibold">{{ channels[sample.measurement_location][sample.direction] }}</h4>
+            <p class="font-mono text-xl">{% if sample.value is not none %}{{ sample.value }} W{% else %}{{ _("Kein aktueller Wert") }}{% endif %}</p>
+            <p>{{ quality[sample.quality] }} · {{ freshness[sample.freshness] }}</p>
+            {% if sample.delivery_status != "recent" %}<p>{{ _("Keine neue Kollektor-Lieferung") }}</p>{% endif %}
+            {% if sample.observed_at %}<p class="text-sm">{{ _("Messzeit") }}: <time datetime="{{ sample.observed_at }}">{{ sample.observed_label }}</time></p>{% else %}<p>{{ _("Messzeit unbekannt") }}</p>{% endif %}
+            {% if sample.age_seconds is not none %}<p class="text-sm">{{ _("Alter beim Laden") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", sample.age_seconds, count=sample.age_seconds) }}</p>{% endif %}
+          </div>
+        {% else %}<p class="mt-2">{{ _("Keine Leistungswerte im Aufbewahrungszeitraum verfügbar.") }}</p>{% endfor %}
+      </section>
+    {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

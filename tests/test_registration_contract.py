@@ -217,12 +217,16 @@ def test_registration_happy_path_contract(
     db.track_event.assert_called_once_with(
         "registration", "building-1", {"type": user_type, "city_id": "zurich"}
     )
+    assert threads[0].target.func is app_module.send_confirmation_email
+    assert threads[0].target.keywords == {
+        "presentation": {"platform_name": "OpenLEG", "city_name": "Zürich"}
+    }
     assert [
         (thread.target, thread.args, thread.daemon, thread.started)
         for thread in threads
     ] == [
         (
-            app_module.send_confirmation_email,
+            threads[0].target,
             (
                 "user@example.ch",
                 db.save_building.call_args.kwargs["verification_token"].join(

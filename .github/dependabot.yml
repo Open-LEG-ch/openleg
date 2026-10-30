@@ -10,6 +10,11 @@ updates:
       - dependencies
       - python
     ignore:
+      # Native mutation evidence and verification tooling require 3.7.0.
+      # Upgrade only together with the evidence and tooling migration.
+      - dependency-name: mutmut
+        versions:
+          - ">3.7.0"
       # numpy 2.5 requires Python >= 3.12. CI, the Dockerfile and the docs all
       # target 3.11, so every 2.5 bump fails to install before a test can run.
       # Lift this together with the Python version, not on its own.

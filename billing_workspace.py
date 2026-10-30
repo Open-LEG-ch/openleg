@@ -7,6 +7,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
 
 import database as db
+from translation_markers import gettext_noop as _N
 
 # Perioden sind halboffene Zürcher Kalendermonate, gespeichert in UTC.
 PERIOD_TIMEZONE = "Europe/Zurich"
@@ -86,6 +87,9 @@ def _json_value(value, fallback):
     return value if isinstance(value, type(fallback)) else fallback
 
 
+_LOCAL_TZ = ZoneInfo(PERIOD_TIMEZONE)
+
+
 def _period_label(value):
     """Return a Swiss High German month and year label.
 
@@ -99,10 +103,12 @@ def _period_label(value):
         except ValueError:
             return value
     if isinstance(value, datetime) and value.tzinfo is not None:
-        value = value.astimezone(ZoneInfo(PERIOD_TIMEZONE))
+        # Periods are Europe/Zurich calendar months stored as UTC instants:
+        # September starts at 2026-08-31T22:00Z and must not read as August.
+        value = value.astimezone(_LOCAL_TZ)
     if isinstance(value, (datetime, date)):
         return f"{_MONTHS[value.month - 1]} {value.year}"
-    return "Periode"
+    return _N("Periode")
 
 
 def period_label(value):
@@ -129,7 +135,11 @@ def _period_summary(period):
     result = _normalise(period)
     result["period_label"] = _period_label(period.get("period_start"))
     result["status_label"] = (
-        "Entwurf" if period.get("status") == "draft" else str(period.get("status", ""))
+        _N("Entwurf")
+        if period.get("status") == "draft"
+        else _N("Entwurf ungültig")
+        if period.get("status") == "invalidated"
+        else str(period.get("status", ""))
     )
     return result
 
@@ -160,10 +170,37 @@ def _detail_model(period):
     """Build the complete read-only audit model for one billing period."""
     raw_reconciliation = _json_value(period.get("reconciliation"), {})
     source_ids = _json_value(period.get("source_document_ids"), [])
+    battery_snapshot = _json_value(period.get("battery_snapshot"), {})
+    raw_battery_energy = _json_value(battery_snapshot.get("energy"), {})
+    raw_attribution = _json_value(battery_snapshot.get("attribution"), {})
+    battery_energy = (
+        {
+            key: _decimal_text(raw_battery_energy.get(key), 3)
+            for key in (
+                "charged_kwh",
+                "discharged_kwh",
+                "charge_discharge_difference_kwh",
+                "allocated_battery_kwh",
+                "unallocated_discharge_kwh",
+            )
+        }
+        if raw_battery_energy
+        else None
+    )
+    battery_attribution = [
+        {
+            "participant_id": participant_id,
+            "direct_solar_kwh": _decimal_text(values.get("direct_solar_kwh"), 3),
+            "battery_kwh": _decimal_text(values.get("battery_kwh"), 3),
+            "value_chf": _decimal_text(values.get("value_chf"), 2),
+        }
+        for participant_id, values in sorted(raw_attribution.items())
+        if isinstance(participant_id, str) and isinstance(values, dict)
+    ]
     line_items = [_display_line_item(item) for item in period.get("line_items", [])]
     result = _period_summary(period)
     result.update(
-        draft_notice=(
+        draft_notice=_N(
             "Dieser Abrechnungsentwurf ist keine definitive Rechnung. "
             "Prüfen Sie Tarif, Abgleich und Quelldokumente."
         ),
@@ -187,28 +224,28 @@ def _detail_model(period):
             "internal_price": _rate(period.get("internal_price_chf_per_kwh")),
             "grid_fee": _rate(period.get("grid_fee_chf_per_kwh")),
             "distribution_model": {
-                "proportional": "Proportional",
-                "einfach": "Einfach",
-                "simple": "Einfach",
+                "proportional": _N("Proportional"),
+                "einfach": _N("Einfach"),
+                "simple": _N("Einfach"),
             }.get(
                 period.get("distribution_model"),
-                str(period.get("distribution_model") or "Nicht angegeben"),
+                str(period.get("distribution_model") or _N("Nicht angegeben")),
             ),
             "network_level": {
-                "same": "Gleiche Netzebene",
-                "different": "Unterschiedliche Netzebenen",
+                "same": _N("Gleiche Netzebene"),
+                "different": _N("Unterschiedliche Netzebenen"),
             }.get(
                 period.get("network_level"),
-                str(period.get("network_level") or "Nicht angegeben"),
+                str(period.get("network_level") or _N("Nicht angegeben")),
             ),
         },
         reconciliation={
             **_normalise(raw_reconciliation),
             "balanced": _is_balanced(raw_reconciliation),
             "label": (
-                "Vollständig abgeglichen"
+                _N("Vollständig abgeglichen")
                 if _is_balanced(raw_reconciliation)
-                else "Abweichung prüfen"
+                else _N("Abweichung prüfen")
             ),
         },
         provenance={
@@ -219,6 +256,14 @@ def _detail_model(period):
         consumer_charges=[
             item for item in line_items if item.get("item_type") == "consumer_charge"
         ],
+        settlement_charges=[
+            item for item in line_items if item.get("item_type") == "settlement_fee"
+        ],
+        battery_shares=[
+            item for item in line_items if item.get("item_type") == "battery_cost_share"
+        ],
+        battery_energy=battery_energy,
+        battery_attribution=battery_attribution,
         producer_credits=[
             item for item in line_items if item.get("item_type") == "producer_credit"
         ],
@@ -234,15 +279,15 @@ def _detail_model(period):
 def _rate(value):
     """Format a CHF/kWh decimal as Rp./kWh for display."""
     if value is None:
-        return "Nicht angegeben"
+        return _N("Nicht angegeben")
     try:
         rate_rp = Decimal(str(value)) * 100
         if not rate_rp.is_finite():
-            return "Nicht angegeben"
+            return _N("Nicht angegeben")
         rounded = rate_rp.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         return f"{rounded:.2f} Rp./kWh"
     except (ArithmeticError, TypeError, ValueError):
-        return "Nicht angegeben"
+        return _N("Nicht angegeben")
 
 
 def load(period_id=None):

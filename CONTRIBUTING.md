@@ -39,10 +39,14 @@ Use the [research template](.github/ISSUE_TEMPLATE/research.yml) for:
 
 ### Pull Requests
 
+Small reproducible fixes can go straight to a focused PR with a regression
+test. Discuss changes to allocation, reconciliation or rounding, VNB formats,
+billing lifecycle, and schema or API contracts in an issue before implementation.
+
 1. Fork the repository
 2. Create a branch: `git checkout -b fix/issue-description`
 3. Make your changes
-4. Run the full gate: `scripts/tdd_cycle.sh gate`
+4. Run the local gate: `scripts/tdd_cycle.sh gate`; include PostgreSQL validation when the change touches database behavior.
 5. Commit with descriptive message
 6. Push and create a Pull Request
 
@@ -87,15 +91,28 @@ source .venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt -r requirements-dev.txt
 
-# Run tests, lint, and formatting checks
+# Run local tests, lint, and formatting checks
 scripts/tdd_cycle.sh gate
 ```
+
+The local gate can pass while PostgreSQL tests are skipped if `DATABASE_URL`
+is unset. Follow the [disposable PostgreSQL 16 setup](docs/contributor-onboarding.md#postgresql-validation)
+to execute them. SQL query doubles do not validate PostgreSQL parsing or behavior.
+Never use a production database for tests.
 
 ### Testing
 
 - Use small red, green, refactor slices
 - Keep the test that exposed each non-trivial bug
 - Run `scripts/tdd_cycle.sh gate` before every PR
+- For database changes, run the relevant PostgreSQL tests and check that their
+  results say `PASSED`, not `SKIPPED`. See the onboarding guide for the database
+  privileges, cleanup and additional CI checks.
+
+### Security vulnerabilities
+
+Follow [SECURITY.md](SECURITY.md) to report vulnerabilities privately. Do not
+include credentials or customer data in a public issue or pull request.
 
 ### Documentation
 

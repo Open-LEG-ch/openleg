@@ -8,9 +8,8 @@ nor mutmut was installed or declared, so no earlier claim about a coverage or
 mutation pass on this repository could be reproduced from its own state.
 """
 
-from pathlib import Path
-
 import tomllib
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 

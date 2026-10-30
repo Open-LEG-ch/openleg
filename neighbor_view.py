@@ -58,18 +58,6 @@ def collect_building_locations(city_id=None, bfs_number=None, exclude_building_i
     return locations
 
 
-def _coordinates(profile):
-    """Latitude and longitude as floats, or None when the row carries neither.
-
-    buildings.lat and buildings.lon are nullable, so a neighbour without
-    coordinates must be skipped rather than abort the whole request.
-    """
-    try:
-        return float(profile["lat"]), float(profile["lon"])
-    except (KeyError, TypeError, ValueError):
-        return None
-
-
 def find_provisional_matches(new_profile):
     """Find consented candidates in the same political municipality."""
     bfs_number = new_profile.get("bfs_number")

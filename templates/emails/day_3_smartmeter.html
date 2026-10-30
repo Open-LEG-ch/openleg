@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ current_locale }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Meter Frage</title>
+<title>{{ _("Smart Meter Frage") }}</title>
 <style>
 body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; }
 .wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
@@ -25,24 +25,24 @@ body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, B
     <h1>{{ platform_name }}</h1>
   </div>
   <div class="content">
-    <h2>Haben Sie einen Smart Meter?</h2>
-    <p>Für eine lokale Stromgemeinschaft (LEG) brauchen Sie einen Smart Meter, also einen digitalen Stromzähler. Ihr Netzbetreiber ({{ utility_name }}) muss ihn innert 3 Monaten einbauen, das ist Ihr Recht nach Art. 17e StromVG.</p>
+    <h2>{{ _("Haben Sie einen Smart Meter?") }}</h2>
+    <p>{{ _("Für eine lokale Stromgemeinschaft (LEG) brauchen Sie einen Smart Meter, also einen digitalen Stromzähler. Ihr Netzbetreiber (%(utility_name)s) muss ihn innert 3 Monaten einbauen, das ist Ihr Recht nach Art. 17e StromVG.", utility_name=utility_name) }}</p>
 
     <div class="info-box">
-      <p><strong>So prüfen Sie es:</strong> Schauen Sie auf Ihren Stromzähler im Keller oder Hausanschlussraum. Ein Smart Meter hat ein digitales Display (keine Drehscheibe).</p>
+      <p><strong>{{ _("So prüfen Sie es:") }}</strong> {{ _("Schauen Sie auf Ihren Stromzähler im Keller oder Hausanschlussraum. Ein Smart Meter hat ein digitales Display (keine Drehscheibe).") }}</p>
     </div>
 
-    <p>Wenn wir wissen, ob Sie schon einen Smart Meter haben, können wir den nächsten Schritt besser planen.</p>
+    <p>{{ _("Wenn wir wissen, ob Sie schon einen Smart Meter haben, können wir den nächsten Schritt besser planen.") }}</p>
 
     <p style="text-align:center;">
-      <a href="{{ dashboard_url }}" class="cta">Status im Dashboard angeben</a>
+      <a href="{{ dashboard_url|localized_url }}" class="cta">{{ _("Status im Dashboard angeben") }}</a>
     </p>
 
-    <p style="font-size:13px;color:#6b7280;">Noch keinen Smart Meter? Kein Problem. Sobald Ihre Stromgemeinschaft bereit ist, stellen wir die Anfrage an den Netzbetreiber. Er muss den Smart Meter innert 3 Monaten installieren.</p>
+    <p style="font-size:13px;color:#6b7280;">{{ _("Noch keinen Smart Meter? Kein Problem. Sobald Ihre Stromgemeinschaft bereit ist, stellen wir die Anfrage an den Netzbetreiber. Er muss den Smart Meter innert 3 Monaten installieren.") }}</p>
   </div>
   <div class="footer">
-    <p>{{ platform_name }} &middot; LEG für {{ city_name }}</p>
-    <p><a href="{{ unsubscribe_url }}">Abmelden</a> &middot; <a href="{{ site_url }}/datenschutz">Datenschutz</a></p>
+    <p>{{ _("%(platform_name)s · LEG für %(city_name)s", platform_name=platform_name, city_name=city_name) }}</p>
+    <p><a href="{{ unsubscribe_url|localized_url }}">{{ pgettext("email-unsubscribe", "Abmelden") }}</a> {{ _("·") }} <a href="{{ (site_url + "/datenschutz")|localized_url }}">{{ _("Datenschutz") }}</a></p>
   </div>
 </div>
 </body>

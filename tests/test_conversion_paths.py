@@ -1093,6 +1093,153 @@ def test_municipality_lookup_returns_the_current_bfs_identity(monkeypatch):
     assert data_enricher.MUNICIPALITY_LAYER in kwargs["params"]["layers"]
 
 
+def test_municipality_lookup_pins_the_geoadmin_identity_query(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {"results": []}
+    request = MagicMock(return_value=response)
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    data_enricher.get_municipality_from_coords(47.23216, 7.56877)
+
+    args, kwargs = request.call_args
+    assert args[0] == ("https://api3.geo.admin.ch/rest/services/api/MapServer/identify")
+    params = dict(kwargs["params"])
+    map_extent = [float(part) for part in params.pop("mapExtent").split(",")]
+    assert map_extent == pytest.approx([7.54877, 47.21216, 7.58877, 47.25216])
+    assert params == {
+        "geometry": "7.56877,47.23216",
+        "geometryType": "esriGeometryPoint",
+        "sr": 4326,
+        "layers": f"all:{data_enricher.MUNICIPALITY_LAYER}",
+        "tolerance": 1,
+        "imageDisplay": "800,600,96",
+        "returnGeometry": "false",
+    }
+    assert kwargs["timeout"] == 5
+
+
+def test_municipality_lookup_uses_the_label_fallback_name(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {
+                "attributes": {
+                    "gde_nr": 2554,
+                    "label": "Riedholz (SO)",
+                    "kanton": "SO",
+                    "is_current_jahr": True,
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+
+    assert data_enricher.get_municipality_from_coords(47.23216, 7.56877) == {
+        "bfs_number": 2554,
+        "municipality_name": "Riedholz (SO)",
+        "canton": "SO",
+    }
+
+
+def test_the_municipality_read_degrades_silently_on_sparse_results(monkeypatch, capsys):
+    """An empty or attribute-less answer is a normal no-match, not an
+    upstream error: the operator log must stay quiet and the call must
+    return None."""
+
+    def sparse_response(payload):
+        response = MagicMock()
+        response.json.return_value = payload
+        monkeypatch.setattr(
+            data_enricher.requests, "get", MagicMock(return_value=response)
+        )
+        assert data_enricher.get_municipality_from_coords(47.1, 9.5) is None
+        assert "GEO FEHLER" not in capsys.readouterr().out, (
+            f"payload {payload} is a no-match, not an upstream failure"
+        )
+
+    sparse_response({"no_results_key": True})
+    sparse_response({"results": []})
+    sparse_response({"results": [{}]})
+    sparse_response({"results": [{"attributes": {"is_current_jahr": False}}]})
+
+
+def test_municipality_lookup_fails_closed_without_a_name(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {
+                "attributes": {
+                    "gde_nr": 2554,
+                    "kanton": "SO",
+                    "is_current_jahr": True,
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+
+    assert data_enricher.get_municipality_from_coords(47.23216, 7.56877) is None
+
+
+def test_municipality_lookup_fails_closed_without_a_bfs_number(monkeypatch, capsys):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {
+                "attributes": {
+                    "gemname": "Riedholz",
+                    "kanton": "SO",
+                    "is_current_jahr": True,
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+
+    assert data_enricher.get_municipality_from_coords(47.23216, 7.56877) is None
+    assert "GEO FEHLER" not in capsys.readouterr().out, (
+        "a municipality without a BFS number is a stated no-match, not an upstream failure"
+    )
+
+
+def test_municipality_lookup_trims_a_long_name_to_the_display_limit(monkeypatch):
+    long_name = "U" + "x" * 149
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {
+                "attributes": {
+                    "gde_nr": 2554,
+                    "gemname": long_name,
+                    "kanton": "SO",
+                    "is_current_jahr": True,
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+
+    municipality = data_enricher.get_municipality_from_coords(47.23216, 7.56877)
+
+    assert municipality is not None
+    assert municipality["municipality_name"] == "U" + "x" * 119, (
+        "the display name must be the sanitized first 120 characters"
+    )
+    assert len(municipality["municipality_name"]) == 120
+
+
+def test_municipality_lookup_reports_the_operator_error(monkeypatch, capsys):
+    def fail(*_args, **_kwargs):
+        raise RuntimeError("upstream down")
+
+    monkeypatch.setattr(data_enricher.requests, "get", fail)
+
+    assert data_enricher.get_municipality_from_coords(47.1, 9.5) is None
+    assert "  [GEO FEHLER bei Gemeinde] upstream down" in (
+        capsys.readouterr().out.splitlines()
+    )
+
+
 def test_municipality_lookup_fails_closed_without_a_bfs_identity(monkeypatch):
     response = MagicMock()
     response.json.return_value = {"results": [{"attributes": {"label": "Riedholz"}}]}
@@ -1271,6 +1418,185 @@ def test_pv_potential_paginates_and_deduplicates_large_buildings(monkeypatch):
     ]
 
 
+def test_pv_potential_reports_zero_with_the_exact_missing_building_notice(
+    monkeypatch, capsys
+):
+    response = MagicMock()
+    response.json.return_value = {}
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
+    assert (
+        "  [GEO FEHLER] Kein Gebäude für PV-Potenzial gefunden."
+        in capsys.readouterr().out.splitlines()
+    )
+
+
+def test_pv_potential_reports_zero_with_the_exact_missing_identity_notice(
+    monkeypatch, capsys
+):
+    response = MagicMock()
+    response.json.return_value = {"results": [{"featureId": 1, "attributes": {}}]}
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
+    lines = capsys.readouterr().out.splitlines()
+    assert "  [GEO FEHLER] Keine Gebäude-ID für PV-Potenzial gefunden." in lines
+
+
+def test_pv_potential_reports_zero_for_incomplete_facet_data(monkeypatch, capsys):
+    identify_response = MagicMock()
+    identify_response.json.return_value = {
+        "results": [{"attributes": {"building_id": 7}}]
+    }
+    incomplete_page = MagicMock()
+    incomplete_page.json.return_value = {
+        "results": [{"attributes": {"building_id": 7, "stromertrag": 5}}]
+    }
+    request = MagicMock(side_effect=[identify_response, incomplete_page])
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
+    assert (
+        "  [GEO FEHLER] Unvollständige PV-Daten erhalten."
+        in capsys.readouterr().out.splitlines()
+    )
+
+
+def test_pv_potential_reports_the_exact_no_progress_notice(monkeypatch, capsys):
+    identify_response = MagicMock()
+    identify_response.json.return_value = {
+        "results": [{"attributes": {"building_id": 1968732}}]
+    }
+    repeated_page = MagicMock()
+    repeated_page.json.return_value = {
+        "results": [
+            {
+                "featureId": feature_id,
+                "attributes": {"building_id": 1968732, "stromertrag": 1},
+            }
+            for feature_id in range(200)
+        ]
+    }
+    request = MagicMock(side_effect=[identify_response, repeated_page, repeated_page])
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_pv_potential_from_coords(47.376, 8.548) == (0, 0)
+    assert (
+        "  [GEO FEHLER] PV-Seitenabfrage macht keinen Fortschritt."
+        in capsys.readouterr().out.splitlines()
+    )
+
+
+def test_pv_potential_reports_zero_after_too_many_facet_pages(monkeypatch, capsys):
+    identify_response = MagicMock()
+    identify_response.json.return_value = {
+        "results": [{"attributes": {"building_id": 5}}]
+    }
+    full_pages = [
+        MagicMock(
+            json=lambda offset=offset: {
+                "results": [
+                    {
+                        "featureId": offset * 200 + index,
+                        "attributes": {"building_id": 5, "stromertrag": 1},
+                    }
+                    for index in range(200)
+                ]
+            }
+        )
+        for offset in range(data_enricher.SOLAR_MAX_PAGES)
+    ]
+    request = MagicMock(side_effect=[identify_response, *full_pages])
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0)
+    assert (
+        "  [GEO FEHLER] Zu viele PV-Dachflächen für sichere Summierung."
+        in capsys.readouterr().out.splitlines()
+    )
+
+
+def test_pv_potential_tolerates_facets_without_solar_values(monkeypatch, capsys):
+    identify_response = MagicMock()
+    identify_response.json.return_value = {
+        "results": [{"attributes": {"building_id": 9}}]
+    }
+    mixed_page = MagicMock()
+    mixed_page.json.return_value = {
+        "results": [
+            {"featureId": 1, "attributes": {"building_id": 9, "stromertrag": 4000}},
+            {"featureId": 2},
+        ]
+    }
+    request = MagicMock(side_effect=[identify_response, mixed_page])
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (4000, 4.0)
+    assert "GEO OK" in capsys.readouterr().out, (
+        "a facet without solar data may contribute zero without failing the query"
+    )
+
+
+def test_a_paginated_page_without_results_degrades_to_zero_solar_data(
+    monkeypatch, capsys
+):
+    identify_response = MagicMock()
+    identify_response.json.return_value = {
+        "results": [{"attributes": {"building_id": 9}}]
+    }
+    empty_page = MagicMock()
+    empty_page.json.return_value = {}
+    request = MagicMock(side_effect=[identify_response, empty_page])
+    monkeypatch.setattr(data_enricher.requests, "get", request)
+
+    assert data_enricher.get_pv_potential_from_coords(47.5, 8.3) == (0, 0.0)
+    assert "GEO OK" in capsys.readouterr().out
+
+
+def test_coordinator_coordinates_report_the_exact_not_found_notice(monkeypatch, capsys):
+    response = MagicMock()
+    response.json.return_value = {"results": []}
+    monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
+
+    assert data_enricher.get_coordinates_from_address("Nirgendwo 1") == (
+        None,
+        None,
+        None,
+    )
+    assert (
+        "  [GEO FEHLER] Adresse nicht gefunden." in capsys.readouterr().out.splitlines()
+    )
+
+
+def test_plz_range_boundaries_are_inclusive():
+    assert data_enricher._plz_in_ranges(1000) is True
+    assert data_enricher._plz_in_ranges(999) is False
+    assert data_enricher._plz_in_ranges(9999) is True
+    assert data_enricher._plz_in_ranges(10000) is False
+    assert data_enricher._plz_in_ranges(1000, [(1000, 1100)]) is True
+    assert data_enricher._plz_in_ranges(999, [(1000, 1100)]) is False
+    assert data_enricher._plz_in_ranges(1100, [(1000, 1100)]) is True
+    assert data_enricher._plz_in_ranges(1101, [(1000, 1100)]) is False
+
+
+def test_the_offline_mock_suggestions_keep_the_suggestion_shape():
+    suggestions = data_enricher._get_mock_address_suggestions("Neugasse 7")
+
+    assert suggestions == [
+        {"label": "Neugasse 7", "lat": None, "lon": None, "plz": None}
+    ]
+
+
+def test_the_mock_energy_profile_reports_the_exact_completion_line(monkeypatch, capsys):
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.0))
+
+    data_enricher.get_mock_energy_profile_for_address("Beispielweg 4, 8000 Zürich")
+
+    output = capsys.readouterr().out.splitlines()
+    assert "--- [MOCK ENRICHER] Analyse abgeschlossen ---" in output
+
+
 def test_pv_potential_fails_closed_when_pagination_makes_no_progress(monkeypatch):
     identify_response = MagicMock()
     identify_response.json.return_value = {
@@ -1390,8 +1716,83 @@ def test_profile_walks_coordinates_pv_statistics_and_profiles(monkeypatch, capsy
     assert profiles is marker
     flow_output = capsys.readouterr().out
     assert "Starte ECHTE Analyse" in flow_output
-    assert "Analyse abgeschlossen" in flow_output
+    assert "--- [ENRICHER] Analyse abgeschlossen ---" in flow_output.splitlines()
     assert "Mellingerstrasse 12, 5400 Baden" in flow_output
+
+
+def test_profile_walks_a_service_building_from_its_surface_estimate(monkeypatch):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {"attrs": {"lat": 47.5, "lon": 8.4, "plz": 5400, "label": "Lindenpark"}}
+        ]
+    }
+
+    def fake_get(url, params=None, timeout=None):
+        if url == data_enricher.GEO_API_URL:
+            return response
+        solar = MagicMock()
+        solar.json.return_value = {"results": []}
+        return solar
+
+    marker = ("generated", "profiles")
+    municipality_read = MagicMock(
+        return_value={"bfs_number": 4040, "municipality_name": "Baden", "canton": "AG"}
+    )
+    gwr_read = MagicMock(return_value=("SO", 1, 123.5))
+
+    monkeypatch.setattr(data_enricher.requests, "get", fake_get)
+    monkeypatch.setattr(
+        data_enricher, "get_municipality_from_coords", municipality_read
+    )
+    monkeypatch.setattr(data_enricher, "mock_get_gwr_data", gwr_read)
+    monkeypatch.setattr(
+        data_enricher, "mock_get_plz_stats", MagicMock(return_value=(0.0, 1.0))
+    )
+    monkeypatch.setattr(
+        data_enricher.ml_models,
+        "generate_mock_profiles",
+        lambda **_kwargs: marker,
+    )
+    monkeypatch.setattr(data_enricher.np.random, "rand", MagicMock(return_value=0.0))
+
+    estimates, _profiles = data_enricher.get_energy_profile_for_address("Lindenpark 5")
+
+    (
+        municipality_read.assert_called_once_with(47.5, 8.4),
+        ("the municipality lookup must receive the coordinates actually found"),
+    )
+    gwr_read.assert_called_once_with(47.5, 8.4, 5400)
+    assert estimates["annual_consumption_kwh"] == 123.5 * 20, (
+        "a service building's consumption must come from its energy surface"
+    )
+
+
+def test_profile_walks_reports_the_exact_no_municipality_line(monkeypatch, capsys):
+    response = MagicMock()
+    response.json.return_value = {
+        "results": [
+            {"attrs": {"lat": 47.5, "lon": 8.4, "plz": 5400, "label": "Lindenpark"}}
+        ]
+    }
+
+    def fake_get(url, params=None, timeout=None):
+        if url == data_enricher.GEO_API_URL:
+            return response
+        solar = MagicMock()
+        solar.json.return_value = {"results": []}
+        return solar
+
+    monkeypatch.setattr(data_enricher.requests, "get", fake_get)
+    monkeypatch.setattr(
+        data_enricher, "get_municipality_from_coords", MagicMock(return_value=None)
+    )
+
+    assert data_enricher.get_energy_profile_for_address("Lindenpark 5") == (None, None)
+    assert (
+        "  [ENRICHER] Keine Gemeindezuordnung gefunden für: Lindenpark 5"
+        in capsys.readouterr().out.splitlines()
+    )
 
 
 def test_profile_walks_a_single_family_home_with_an_ev_charge(monkeypatch):

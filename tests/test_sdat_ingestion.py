@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Scheduled SDAT ingestion behaviour at its public module interface."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from shutil import copyfile
 
@@ -146,12 +146,12 @@ def test_due_schedule_uses_local_calendar_date_across_dst_boundary():
         "enabled": True,
         "timezone": "Europe/Zurich",
         "local_time": "02:30",
-        "last_started_at": datetime(2026, 10, 24, 0, 30, tzinfo=timezone.utc),
+        "last_started_at": datetime(2026, 10, 24, 0, 30, tzinfo=UTC),
     }
 
     # The repeated 02:30 hour on DST fallback must still produce one daily run.
-    first_0230 = datetime(2026, 10, 25, 0, 30, tzinfo=timezone.utc)
-    second_0230 = datetime(2026, 10, 25, 1, 30, tzinfo=timezone.utc)
+    first_0230 = datetime(2026, 10, 25, 0, 30, tzinfo=UTC)
+    second_0230 = datetime(2026, 10, 25, 1, 30, tzinfo=UTC)
     assert sdat_ingestion.is_due(schedule, first_0230) is True
     schedule["last_started_at"] = first_0230
     assert sdat_ingestion.is_due(schedule, second_0230) is False
@@ -162,14 +162,11 @@ def test_nonexistent_spring_time_runs_at_first_tick_after_local_time():
         "enabled": True,
         "timezone": "Europe/Zurich",
         "local_time": "02:30",
-        "last_started_at": datetime(2026, 3, 28, 1, 30, tzinfo=timezone.utc),
+        "last_started_at": datetime(2026, 3, 28, 1, 30, tzinfo=UTC),
     }
 
     assert (
-        sdat_ingestion.is_due(
-            schedule, datetime(2026, 3, 29, 1, 0, tzinfo=timezone.utc)
-        )
-        is True
+        sdat_ingestion.is_due(schedule, datetime(2026, 3, 29, 1, 0, tzinfo=UTC)) is True
     )
 
 
@@ -232,7 +229,7 @@ def test_due_tenants_continue_after_one_unexpected_failure():
 
     result = sdat_ingestion.run_due(
         schedules,
-        now=datetime(2026, 9, 15, 12, tzinfo=timezone.utc),
+        now=datetime(2026, 9, 15, 12, tzinfo=UTC),
         runner=runner,
     )
     assert result == {"due": 2, "succeeded": 1, "failed": 1, "locked": 0}

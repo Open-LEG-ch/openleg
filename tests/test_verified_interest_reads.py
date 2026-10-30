@@ -125,3 +125,36 @@ def test_reader_failures_keep_existing_empty_fallbacks(interest_database):
     assert db.get_interest_counts_by_bfs() == {}
     assert db.get_verified_interest_recipients(2554) == []
     assert db.get_municipality_interest_summary(2554) == {}
+
+
+@pytest.mark.integration
+def test_strict_scoped_count_distinguishes_absent_from_query_failure(interest_database):
+    assert db.get_interest_count(2554, strict=True) is None
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("DROP VIEW verified_interest")
+    with pytest.raises(db.InterestReadUnavailable):
+        db.get_interest_count(2554, strict=True)
+
+
+@pytest.mark.integration
+def test_strict_bulk_counts_distinguish_empty_from_query_failure(interest_database):
+    assert db.get_interest_counts_by_bfs(strict=True) == {}
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("DROP VIEW verified_interest")
+    with pytest.raises(db.InterestReadUnavailable):
+        db.get_interest_counts_by_bfs(strict=True)
+
+
+@pytest.mark.integration
+def test_strict_summary_distinguishes_zero_from_query_failure(interest_database):
+    assert db.get_municipality_interest_summary(2554, strict=True) == {
+        "verified_total": 0,
+        "last_30_days": 0,
+        "has_solar": 0,
+        "address_problems": 0,
+        "roles": {},
+    }
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("DROP VIEW verified_interest")
+    with pytest.raises(db.InterestReadUnavailable):
+        db.get_municipality_interest_summary(2554, strict=True)

@@ -480,7 +480,7 @@ class TestAgentmailSignatureVerification:
 
         from svix.webhooks import Webhook
 
-        timestamp = datetime.datetime.now(datetime.timezone.utc)
+        timestamp = datetime.datetime.now(datetime.UTC)
         signature = Webhook(AGENTMAIL_TEST_SECRET).sign(
             "msg_test", timestamp, body.decode()
         )

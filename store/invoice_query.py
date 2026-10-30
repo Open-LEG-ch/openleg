@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Persistence for private invoice questions and their append-only history."""
 
+from collections import defaultdict
 from datetime import datetime
 
 import invoice_queries
@@ -114,20 +115,35 @@ def list_invoice_queries(
             params,
         )
         cases = [dict(row) for row in cur.fetchall()]
+        if not cases:
+            return []
+        query_ids = [case["id"] for case in cases]
+        cur.execute(
+            """
+                SELECT query_id, id, actor_id, message, attachment_filename, created_at
+                FROM invoice_query_messages
+                WHERE query_id = ANY(%s) ORDER BY query_id, id
+            """,
+            (query_ids,),
+        )
+        messages = defaultdict(list)
+        for row in cur.fetchall():
+            row = dict(row)
+            messages[row.pop("query_id")].append(row)
+        cur.execute(
+            """
+                SELECT * FROM invoice_query_events
+                WHERE query_id = ANY(%s) ORDER BY query_id, id
+            """,
+            (query_ids,),
+        )
+        events = defaultdict(list)
+        for row in cur.fetchall():
+            row = dict(row)
+            events[row["query_id"]].append(row)
         for case in cases:
-            cur.execute(
-                """
-                    SELECT id, actor_id, message, attachment_filename, created_at
-                    FROM invoice_query_messages WHERE query_id = %s ORDER BY id
-                """,
-                (case["id"],),
-            )
-            case["messages"] = [dict(row) for row in cur.fetchall()]
-            cur.execute(
-                "SELECT * FROM invoice_query_events WHERE query_id = %s ORDER BY id",
-                (case["id"],),
-            )
-            case["events"] = [dict(row) for row in cur.fetchall()]
+            case["messages"] = messages[case["id"]]
+            case["events"] = events[case["id"]]
         return cases
 
 

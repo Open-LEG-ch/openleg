@@ -22,8 +22,9 @@ def test_source_and_compiled_css_have_global_focus_visible_treatment():
     compiled = (ROOT / "static/css/openleg.css").read_text(encoding="utf-8")
 
     for css in (source, compiled):
-        assert re.search(
-            r":focus-visible[^\{]*\{[^\}]*outline:[^\}]*outline-offset:", css
+        focus_rules = re.findall(r":focus-visible[^\{]*\{([^\}]*)\}", css)
+        assert any(
+            "outline:" in rule and "outline-offset:" in rule for rule in focus_rules
         )
         for element in ("button", "input", "select", "textarea", "summary"):
             assert f"{element}:focus-visible" in css

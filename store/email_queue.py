@@ -73,7 +73,7 @@ def get_pending_emails(limit: int = 50) -> list[dict]:
             cur.execute(
                 """
                     SELECT se.id, se.building_id, se.email, se.template_key, se.send_at,
-                           b.address, b.lat, b.lon, b.plz
+                           b.address, b.lat, b.lon, b.plz, b.preferred_locale
                     FROM scheduled_emails se
                     JOIN buildings b ON se.building_id = b.building_id
                     WHERE se.status = 'pending' AND se.send_at <= CURRENT_TIMESTAMP

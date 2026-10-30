@@ -51,3 +51,7 @@ curl "https://openleg.ch/api/v1/docs"
 ```
 
 For browser usage, open `/api/v1/docs`.
+# Private Betreiberintegrationen
+
+Die versionierte, community-begrenzte API und signierte Events sind in der
+Betreiber-API-Dokumentation beschrieben.

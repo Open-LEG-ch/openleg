@@ -13,7 +13,7 @@ import os
 import re
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TAILWIND_CONFIG = os.path.join(PROJECT_ROOT, "tailwind.config.js")
+SOURCE_CSS = os.path.join(PROJECT_ROOT, "static", "css", "tailwind.css")
 BUILT_CSS = os.path.join(PROJECT_ROOT, "static", "css", "openleg.css")
 DESIGN_DOC = os.path.join(PROJECT_ROOT, "design.md")
 FAVICON_SVG = os.path.join(PROJECT_ROOT, "static", "favicon.svg")
@@ -41,17 +41,15 @@ def _read(path):
 
 
 def test_config_defines_daylight_tokens():
-    config = _read(TAILWIND_CONFIG).lower()
+    config = _read(SOURCE_CSS).lower()
     missing = [t for t in DAYLIGHT_TOKENS if t not in config]
-    assert not missing, f"tailwind.config.js is missing daylight tokens: {missing}"
+    assert not missing, f"tailwind.css is missing daylight tokens: {missing}"
 
 
 def test_config_has_no_legacy_neon_tokens():
-    config = _read(TAILWIND_CONFIG).lower()
+    config = _read(SOURCE_CSS).lower()
     offenders = [t for t in LEGACY_NEON if t in config]
-    assert not offenders, (
-        f"tailwind.config.js still carries legacy neon tokens: {offenders}"
-    )
+    assert not offenders, f"tailwind.css still carries legacy neon tokens: {offenders}"
 
 
 def test_built_css_is_rebuilt_with_pine():

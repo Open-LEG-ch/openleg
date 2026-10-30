@@ -9,7 +9,7 @@ misses are observable so the claimed win is measurable; cache unavailability
 degrades to direct reads.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from unittest import mock
 
@@ -40,7 +40,7 @@ def _context(profile):
         "tariffs": [{"category": "H4", "total_rp_kwh": Decimal("26.50")}],
         "solar": None,
         "value_gap": {"annual_savings_chf": 171.0},
-        "created": datetime(2026, 1, 1, tzinfo=timezone.utc),
+        "created": datetime(2026, 1, 1, tzinfo=UTC),
     }
 
 

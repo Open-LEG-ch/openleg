@@ -2,10 +2,12 @@
 """Dashboard readiness verb."""
 
 import json
+import logging
 import math
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from urllib.parse import quote, urlencode
+from zoneinfo import ZoneInfo
 
 import billing_lifecycle
 import billing_policy
@@ -16,9 +18,49 @@ import database as db
 import formation_documents
 import formation_wizard
 import member_invoices
+import member_savings
 import payment_reconciliation
+import quartierakku
 import security_utils
+import telemetry
 import vnb_exchange
+from email_localization import gettext
+from i18n import localized_url
+from locale_policy import resolve_locale
+from translation_markers import gettext_noop as _N
+
+logger = logging.getLogger(__name__)
+
+
+def _telemetry_time_label(value):
+    return (
+        telemetry.timestamp(value)
+        .astimezone(ZoneInfo("Europe/Zurich"))
+        .strftime("%d.%m.%Y %H:%M:%S %Z (%z)")
+        if value
+        else None
+    )
+
+
+def telemetry_view(installations):
+    """Present source timestamps in Swiss local time, preserving their UTC value."""
+    for installation in installations:
+        for sample in installation["samples"]:
+            sample["observed_label"] = _telemetry_time_label(sample["observed_at"])
+        for notice in installation.get("notices", []):
+            notice["snoozed_label"] = _telemetry_time_label(notice["snoozed_until"])
+    return installations
+
+
+def shared_telemetry_view(summary):
+    """Present coverage and source times with the same Swiss timezone labels."""
+    telemetry_view(summary["sources"])
+    summary["as_of_label"] = _telemetry_time_label(summary["as_of"])
+    for group in summary["groups"]:
+        for field in ("earliest_observed_at", "latest_observed_at"):
+            group[field + "_label"] = _telemetry_time_label(group[field])
+    return summary
+
 
 _PROFILE_EXPORT_FIELDS = (
     "building_id",
@@ -40,6 +82,7 @@ _PROFILE_EXPORT_FIELDS = (
     "share_with_utility",
     "updates_opt_in",
     "consent_version",
+    "preferred_locale",
 )
 
 
@@ -60,34 +103,34 @@ def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict
     and error is set.
     """
     if not building_id:
-        return {"error": "Kein Profil angegeben.", "user": None}
+        return {"error": _N("Kein Profil angegeben."), "user": None}
 
     user = db.get_building_for_dashboard(building_id)
     if not user:
-        return {"error": "Profil nicht gefunden.", "user": None}
+        return {"error": _N("Profil nicht gefunden."), "user": None}
 
     score = 0
     checks = []
     if user.get("verified"):
         score += 25
-        checks.append(("E-Mail bestätigt", True))
+        checks.append((_N("E-Mail bestätigt"), True))
     else:
-        checks.append(("E-Mail bestätigt", False))
+        checks.append((_N("E-Mail bestätigt"), False))
     if user.get("annual_consumption_kwh"):
         score += 25
-        checks.append(("Verbrauchsdaten hinterlegt", True))
+        checks.append((_N("Verbrauchsdaten hinterlegt"), True))
     else:
-        checks.append(("Verbrauchsdaten hinterlegt", False))
+        checks.append((_N("Verbrauchsdaten hinterlegt"), False))
     if user.get("share_with_utility"):
         score += 25
-        checks.append(("EVU-Einwilligung erteilt", True))
+        checks.append((_N("EVU-Einwilligung erteilt"), True))
     else:
-        checks.append(("EVU-Einwilligung erteilt", False))
+        checks.append((_N("EVU-Einwilligung erteilt"), False))
     if user.get("share_with_neighbors"):
         score += 25
-        checks.append(("Nachbar-Einwilligung erteilt", True))
+        checks.append((_N("Nachbar-Einwilligung erteilt"), True))
     else:
-        checks.append(("Nachbar-Einwilligung erteilt", False))
+        checks.append((_N("Nachbar-Einwilligung erteilt"), False))
 
     neighbor_count = 0
     lat = user.get("lat")
@@ -100,7 +143,7 @@ def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict
     referral_link = ""
     ref_code = db.get_referral_code(building_id)
     if ref_code:
-        referral_link = f"{app_base_url}/?ref={ref_code}"
+        referral_link = localized_url(f"{app_base_url}/?ref={ref_code}")
 
     return {
         "user": user,
@@ -117,26 +160,58 @@ def _with_german_labels(community: dict) -> dict:
     """Return a shallow copy with German display labels for rendering."""
     labeled = dict(community)
     labeled["status_label"] = formation_wizard.FORMATION_STATUS_LABELS.get(
-        labeled.get("status"), "Status wird geprüft"
+        labeled.get("status"), _N("Status wird geprüft")
     )
     labeled["distribution_model_label"] = (
         formation_wizard.DISTRIBUTION_MODEL_LABELS.get(
             labeled.get("distribution_model"),
-            "Verteilmodell wird geprüft",
+            _N("Verteilmodell wird geprüft"),
         )
     )
     labeled_members = []
     for member in labeled.get("members") or []:
         labeled_member = dict(member)
         labeled_member["role_label"] = formation_wizard.MEMBER_ROLE_LABELS.get(
-            labeled_member.get("role"), "Rolle wird geprüft"
+            labeled_member.get("role"), _N("Rolle wird geprüft")
         )
         labeled_member["status_label"] = formation_wizard.MEMBER_STATUS_LABELS.get(
-            labeled_member.get("status"), "Status wird geprüft"
+            labeled_member.get("status"), _N("Status wird geprüft")
         )
         labeled_members.append(labeled_member)
     labeled["members"] = labeled_members
     return labeled
+
+
+def _battery_view(config: dict, members: list) -> dict:
+    """Display-ready battery block for the LEG dashboard."""
+    addresses = {
+        member["building_id"]: member.get("address") or member["building_id"]
+        for member in members or []
+    }
+    shares = [
+        {
+            "building_id": building_id,
+            "address": addresses.get(building_id, building_id),
+            "share_display": f"{share} %",
+            "cost_display": f"CHF {_money_display(quartierakku.cost_share_chf(config['annual_cost_chf'], share))}",
+        }
+        for building_id, share in sorted(config["shares"].items())
+    ]
+    return {
+        "capacity_display": f"{config['capacity_kwh']} kWh",
+        "annual_cost_display": f"CHF {_money_display(config['annual_cost_chf'])}",
+        "shares": shares,
+    }
+
+
+def _money_display(value) -> str:
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return "0.00"
+    if not amount.is_finite():
+        return "0.00"
+    return f"{amount:.2f}"
 
 
 def leg_overview(community_id: str, building_id: str) -> dict:
@@ -147,18 +222,18 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     get the error view, never another community's data.
     """
     if not community_id or not building_id:
-        return {"error": "Kein Zugriff.", "community": None}
+        return {"error": _N("Kein Zugriff."), "community": None}
 
-    status = formation_wizard.get_community_status(community_id)
+    status = formation_wizard.get_community_status(community_id, building_id)
     if not status:
-        return {"error": "LEG nicht gefunden.", "community": None}
+        return {"error": _N("LEG nicht gefunden."), "community": None}
 
     member = next(
         (m for m in status["members"] or [] if m["building_id"] == building_id),
         None,
     )
     if not member:
-        return {"error": "Kein Zugriff.", "community": None}
+        return {"error": _N("Kein Zugriff."), "community": None}
 
     vnb_exchange_available = db.is_db_available()
     if vnb_exchange_available:
@@ -173,6 +248,37 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         vnb_submissions = []
         vnb_mutations = []
     capabilities = community_access.capabilities_for(member)
+    battery_unavailable = False
+    try:
+        battery = db.get_battery(community_id)
+    except db.BillingStoreError:
+        battery = None
+        battery_unavailable = True
+    battery_view = None
+    battery_form_values = {}
+    if battery:
+        try:
+            battery = quartierakku.validate_battery_config(
+                {**battery, "community_id": community_id}
+            )
+        except quartierakku.InvalidBatteryConfig:
+            battery_view = {
+                "capacity_display": _N("Unvollständig"),
+                "annual_cost_display": _N("Unvollständig"),
+                "shares": [],
+                "invalid": True,
+            }
+        else:
+            battery_view = _battery_view(battery, status["members"])
+            battery_form_values = {
+                "participant_id": battery["participant_id"],
+                "capacity_kwh": str(battery["capacity_kwh"]),
+                "annual_cost_chf": str(battery["annual_cost_chf"]),
+                **{
+                    f"share:{building_id}": str(share)
+                    for building_id, share in battery["shares"].items()
+                },
+            }
     return {
         "error": None,
         "community": _with_german_labels(status),
@@ -192,12 +298,15 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "vnb_submissions": vnb_submissions,
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,
+        "battery": battery_view,
+        "battery_unavailable": battery_unavailable,
+        "battery_form_values": battery_form_values,
     }
 
 
 def _require_role(community_id: str, building_id: str, role: str):
     """Return the member row if building_id has the given role, else None."""
-    status = formation_wizard.get_community_status(community_id)
+    status = formation_wizard.get_community_status(community_id, building_id)
     if not status:
         return None
     return next(
@@ -249,7 +358,7 @@ def leg_restore_archive(
 
 def _require_capability(community_id: str, building_id: str, capability: str):
     """Return a confirmed member when the central access policy permits it."""
-    status = formation_wizard.get_community_status(community_id)
+    status = formation_wizard.get_community_status(community_id, building_id)
     if not status:
         return None
     member = next(
@@ -264,7 +373,11 @@ def leg_billing_workspace_location(community_id: str) -> str:
     return "/leg/community/" + quote(community_id, safe="") + "/billing"
 
 
-_BILLING_STATUS_LABELS = {"draft": "Entwurf", "issued": "Freigegeben"}
+_BILLING_STATUS_LABELS = {
+    "draft": "Entwurf",
+    "issued": "Freigegeben",
+    "invalidated": _N("Entwurf ungültig"),
+}
 InvoiceLifecycleError = billing_lifecycle.InvoiceLifecycleError
 
 
@@ -347,7 +460,7 @@ def leg_billing_workspace_view(
         community_id, building_id, community_access.AUDIT_BILLING
     )
     if not member:
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
     capabilities = community_access.capabilities_for(member)
     periods = db.list_community_billing_periods(community_id)
     flag_counts = _veracity_flag_counts(periods)
@@ -381,7 +494,7 @@ def leg_billing_workspace_view(
             else None
         )
         invoice["delivery_method_label"] = billing_policy.DELIVERY_METHOD_LABELS.get(
-            delivery_method, "Nicht angegeben"
+            delivery_method, _N("Nicht angegeben")
         )
         invoice["display_unit_price_rp"] = billing_policy.rate_rp_text(
             policy_snapshot.get("internal_price_chf_per_kwh")
@@ -438,9 +551,9 @@ def leg_billing_workspace_view(
         "approval_error": None,
         "viewer_building_id": building_id,
         "require_dual_control": bool(
-            (formation_wizard.get_community_status(community_id) or {}).get(
-                "require_dual_control"
-            )
+            (
+                formation_wizard.get_community_status(community_id, building_id) or {}
+            ).get("require_dual_control")
         ),
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
@@ -452,7 +565,7 @@ def leg_billing_workspace_view(
 def leg_import_bank_statement(community_id, building_id, source_name, content):
     """Import a statement only for a confirmed administrator of the LEG."""
     if not _require_confirmed_admin(community_id, building_id):
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
     result = payment_reconciliation.import_statement(
         community_id, building_id, source_name, content, db
     )
@@ -474,14 +587,21 @@ def leg_deliver_invoice(
         return {"error": None, **delivery}
     if delivery["delivery_method"] == "email":
         recipient = delivery.get("recipient_email")
+        locale = resolve_locale(delivery.get("recipient_locale"))
         sent = bool(
             recipient
             and send_email(
                 recipient,
-                f"Ihre Rechnung {delivery['invoice_number']}",
-                (
+                gettext(
+                    "Ihre Rechnung %(invoice_number)s",
+                    invoice_number=delivery["invoice_number"],
+                    locale=locale,
+                ),
+                gettext(
                     "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard "
-                    f"verfügbar: {invoice_url}"
+                    "verfügbar: %(invoice_url)s",
+                    invoice_url=localized_url(invoice_url, locale),
+                    locale=locale,
                 ),
             )
         )
@@ -498,7 +618,7 @@ def leg_confirm_invoice_delivery(community_id, building_id, invoice_id):
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
     confirmed = db.confirm_invoice_delivery(invoice_id, community_id, building_id)
     return {"error": None, **confirmed}
 
@@ -509,12 +629,12 @@ def leg_record_invoice_payment(
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
     try:
         parsed_date = date.fromisoformat(paid_date)
     except (TypeError, ValueError):
         raise InvoiceLifecycleError(
-            "Ein gültiges Zahlungsdatum ist erforderlich."
+            _N("Ein gültiges Zahlungsdatum ist erforderlich.")
         ) from None
     db.record_invoice_payment(
         invoice_id, community_id, building_id, parsed_date, reference
@@ -526,7 +646,7 @@ def leg_cancel_invoice(community_id, building_id, invoice_id, reason):
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
     db.cancel_invoice(invoice_id, community_id, building_id, reason)
     return {"error": None}
 
@@ -537,12 +657,12 @@ def leg_correct_invoice(
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
     try:
         corrected_id = int(corrected_invoice_id)
     except (TypeError, ValueError):
         raise InvoiceLifecycleError(
-            "Eine gültige Ersatzrechnung ist erforderlich."
+            _N("Eine gültige Ersatzrechnung ist erforderlich.")
         ) from None
     db.correct_invoice(invoice_id, corrected_id, community_id, building_id, reason)
     return {"error": None}
@@ -555,15 +675,17 @@ def leg_approve_billing_period(
     if not _require_capability(
         community_id, building_id, community_access.APPROVE_BILLING
     ):
-        return {"error": "Kein Zugriff.", "invoices": []}
-    status = formation_wizard.get_community_status(community_id) or {}
+        return {"error": _N("Kein Zugriff."), "invoices": []}
+    status = formation_wizard.get_community_status(community_id, building_id) or {}
     if status.get("require_dual_control"):
         period = db.get_billing_period(period_id) or {}
         if not period.get("prepared_by") or period.get("prepared_by") == building_id:
             return {
                 "error": (
-                    "Vorbereitung und Freigabe müssen durch verschiedene "
-                    "Personen erfolgen."
+                    _N(
+                        "Vorbereitung und Freigabe müssen durch verschiedene "
+                        "Personen erfolgen."
+                    )
                 ),
                 "invoices": [],
             }
@@ -580,19 +702,21 @@ def leg_prepare_billing_period(
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
-        return {"error": "Kein Zugriff.", "error_status": 403}
+        return {"error": _N("Kein Zugriff."), "error_status": 403}
     try:
         recorded = db.record_billing_period_preparer(
             period_id, community_id, building_id
         )
     except db.BillingStoreError:
         return {
-            "error": "Abrechnung vorübergehend nicht verfügbar.",
+            "error": _N("Abrechnung vorübergehend nicht verfügbar."),
             "error_status": 503,
         }
     if not recorded:
         return {
-            "error": "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf.",
+            "error": _N(
+                "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
+            ),
             "error_status": 409,
         }
     return {"error": None}
@@ -603,12 +727,62 @@ def leg_billing_policy_location(community_id: str) -> str:
     return "/leg/community/" + quote(community_id, safe="") + "/billing-policy"
 
 
+def _internal_price_band(community_id: str, building_id: str) -> dict | None:
+    """ElCom-based band for the internal price; None without usable data.
+
+    Advisory only: the ceiling is the utility's H4 total price minus the
+    settlement fee of the newest policy version, the floor is the feed-in
+    default the kalkulator documents. Missing data hides the suggestion
+    instead of guessing.
+    """
+    try:
+        building = db.get_building(building_id)
+        bfs = building.get("bfs_number") if building else None
+        if not isinstance(bfs, int) or bfs <= 0:
+            return None
+        tariffs = db.get_elcom_tariffs(bfs)
+        if not tariffs:
+            return None
+        year = tariffs[0].get("year")
+        h4 = next(
+            (
+                tariff
+                for tariff in tariffs
+                if tariff.get("year") == year
+                and str(tariff.get("category") or "").startswith("H4")
+                and tariff.get("total_rp_kwh") is not None
+            ),
+            None,
+        )
+        if not h4:
+            return None
+        versions = db.list_billing_policies(community_id)
+        settlement_fee_rp = (
+            Decimal(str(versions[0]["settlement_fee_chf_per_kwh"])) * 100
+            if versions and versions[0].get("settlement_fee_chf_per_kwh") is not None
+            else None
+        )
+        band = billing_policy.suggest_price_band(
+            grid_total_rp=h4.get("total_rp_kwh"),
+            settlement_fee_rp=settlement_fee_rp,
+            feed_in_floor_rp=formation_wizard.DEFAULT_GRID_SELL_PRICE_RP,
+        )
+        if band:
+            band["year"] = year
+        return band
+    except db.BillingStoreError:
+        raise
+    except Exception:
+        logger.exception("Internal price band suggestion failed")
+        return None
+
+
 def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dict:
     """Admin-gated view model for the versioned billing policy page."""
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
     versions = db.list_billing_policies(community_id)
     view = {
         "error": None,
@@ -617,6 +791,7 @@ def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dic
             billing_policy.describe_version(version) for version in versions
         ],
         "policy_disclaimer": billing_policy.POLICY_DISCLAIMER,
+        "price_band": _internal_price_band(community_id, building_id),
         "policy_labels": {
             "network_level": billing_policy.NETWORK_LEVEL_LABELS,
             "distribution_model": billing_policy.DISTRIBUTION_MODEL_LABELS,
@@ -631,12 +806,33 @@ def leg_billing_policy_view(community_id: str, building_id: str, **extra) -> dic
     return view
 
 
+def leg_save_battery(community_id: str, building_id: str, form) -> dict:
+    """Record or update the Quartierakku; only billing preparation may write."""
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
+        return {"error": _N("Kein Zugriff."), "errors": {}}
+    status = formation_wizard.get_community_status(community_id, building_id)
+    if not status:
+        return {"error": _N("LEG nicht gefunden."), "errors": {}}
+    member_ids = [
+        member["building_id"]
+        for member in status["members"] or []
+        if member.get("status") == "confirmed"
+    ]
+    result = quartierakku.validate_battery_form(form, member_ids)
+    if result["errors"]:
+        return {"error": None, "errors": result["errors"]}
+    db.save_battery(community_id, result["battery"])
+    return {"error": None, "errors": {}}
+
+
 def leg_save_billing_policy(community_id: str, building_id: str, form) -> dict:
     """Validate and persist one new policy version; only the admin may write."""
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
-        return {"error": "Kein Zugriff.", "errors": {}}
+        return {"error": _N("Kein Zugriff."), "errors": {}}
     result = billing_policy.validate_policy_form(form)
     if result["errors"]:
         return {"error": None, "errors": result["errors"]}
@@ -647,7 +843,7 @@ def leg_save_billing_policy(community_id: str, building_id: str, form) -> dict:
             "error": None,
             "errors": {
                 "effective_from": (
-                    "Für dieses Gültig-ab-Datum existiert bereits eine Version."
+                    _N("Für dieses Gültig-ab-Datum existiert bereits eine Version.")
                 )
             },
         }
@@ -693,7 +889,7 @@ def member_open_invoice_query(
     except ValueError as exc:
         return {"error": str(exc), "query_id": None}
     if not query_id:
-        return {"error": "Rechnung nicht gefunden.", "query_id": None}
+        return {"error": _N("Rechnung nicht gefunden."), "query_id": None}
     return {"error": None, "query_id": query_id}
 
 
@@ -705,7 +901,7 @@ def member_reply_invoice_query(query_id: int, building_id: str, message: str) ->
         )
     except ValueError as exc:
         return {"error": str(exc)}
-    return {"error": None if changed else "Kein Zugriff."}
+    return {"error": None if changed else _N("Kein Zugriff.")}
 
 
 def operator_update_invoice_query(
@@ -720,9 +916,9 @@ def operator_update_invoice_query(
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
     if not (message or "").strip() and not (status or "").strip():
-        return {"error": "Antwort oder Status ist erforderlich."}
+        return {"error": _N("Antwort oder Status ist erforderlich.")}
     try:
         if not db.update_invoice_query(
             query_id,
@@ -731,7 +927,7 @@ def operator_update_invoice_query(
             message=message,
             target_status=status,
         ):
-            return {"error": "Kein Zugriff."}
+            return {"error": _N("Kein Zugriff.")}
     except ValueError as exc:
         return {"error": str(exc)}
     return {"error": None}
@@ -742,17 +938,30 @@ def member_invoice_pdf_bytes(invoice: dict) -> bytes:
     return member_invoices.render_pdf(invoice)
 
 
+MemberSavingsDataError = member_savings.MemberSavingsDataError
+
+
+def member_invoice_savings_view(invoice_id: int, building_id: str) -> dict | None:
+    """Realized savings behind one own invoice, from metered E66 readings.
+
+    Thin seam over member_savings. Returns None for a missing or another
+    member's invoice id; raises MemberSavingsDataError when the stored
+    billing or metering data cannot be shown honestly.
+    """
+    return member_savings.invoice_savings_view(invoice_id, building_id)
+
+
 def leg_create(name: str, building_id: str, distribution_model: str) -> dict:
     """Create a community with building_id as admin."""
     name = (name or "").strip()
     if not name or not building_id:
-        return {"error": "Name und Profil sind erforderlich.", "community_id": None}
+        return {"error": _N("Name und Profil sind erforderlich."), "community_id": None}
     if distribution_model not in ("simple", "proportional", "custom"):
         distribution_model = "simple"
     created = formation_wizard.create_community(name, building_id, distribution_model)
     if not created:
         return {
-            "error": "LEG konnte nicht erstellt werden.",
+            "error": _N("LEG konnte nicht erstellt werden."),
             "community_id": None,
         }
     return {"error": None, "community_id": created["community_id"]}
@@ -763,12 +972,12 @@ def leg_invite(community_id: str, building_id: str, invite_building_id: str) -> 
     if not _require_capability(
         community_id, building_id, community_access.MANAGE_MEMBERS
     ):
-        return {"error": "Nur die Administration kann einladen."}
+        return {"error": _N("Nur die Administration kann einladen.")}
     if not invite_building_id:
-        return {"error": "Kein Profil zum Einladen angegeben."}
+        return {"error": _N("Kein Profil zum Einladen angegeben.")}
     ok = formation_wizard.invite_member(community_id, invite_building_id, building_id)
     if not ok:
-        return {"error": "Einladung nicht möglich (bereits Mitglied?)."}
+        return {"error": _N("Einladung nicht möglich (bereits Mitglied?).")}
     return {"error": None}
 
 
@@ -781,10 +990,12 @@ def leg_invite_by_email(community_id: str, building_id: str, invite_email: str) 
     if not _require_capability(
         community_id, building_id, community_access.MANAGE_MEMBERS
     ):
-        return {"error": "Nur die Administration kann einladen."}
+        return {"error": _N("Nur die Administration kann einladen.")}
     valid, normalized, error = security_utils.validate_email_address(invite_email)
     if not valid or not normalized:
-        return {"error": error or "Bitte geben Sie eine gültige E-Mail-Adresse ein."}
+        return {
+            "error": error or _N("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
+        }
 
     for profile in db.get_building_by_email(normalized) or []:
         invite_building_id = (profile.get("building_id") or "").strip()
@@ -802,7 +1013,7 @@ def leg_set_member_roles(
     if not _require_capability(
         community_id, building_id, community_access.MANAGE_MEMBERS
     ):
-        return {"error": "Nur die Administration kann Rollen ändern."}
+        return {"error": _N("Nur die Administration kann Rollen ändern.")}
     try:
         changed = db.set_member_access_roles(
             community_id, member_building_id, roles, building_id
@@ -812,8 +1023,10 @@ def leg_set_member_roles(
     if not changed:
         return {
             "error": (
-                "Die Rollen konnten nicht geändert werden. "
-                "Mindestens eine Administration muss bestehen bleiben."
+                _N(
+                    "Die Rollen konnten nicht geändert werden. "
+                    "Mindestens eine Administration muss bestehen bleiben."
+                )
             )
         }
     return {"error": None}
@@ -825,9 +1038,11 @@ def leg_set_dual_control(community_id: str, building_id: str, enabled: bool) -> 
         community_id, building_id, community_access.MANAGE_MEMBERS
     )
     if not community_access.is_administrator(member):
-        return {"error": "Nur die Administration kann das Vier-Augen-Prinzip ändern."}
+        return {
+            "error": _N("Nur die Administration kann das Vier-Augen-Prinzip ändern.")
+        }
     if not db.set_community_dual_control(community_id, enabled, building_id):
-        return {"error": "Das Vier-Augen-Prinzip konnte nicht geändert werden."}
+        return {"error": _N("Das Vier-Augen-Prinzip konnte nicht geändert werden.")}
     return {"error": None}
 
 
@@ -853,10 +1068,10 @@ def export_profile(building_id: str) -> dict:
 def leg_confirm(community_id: str, building_id: str) -> dict:
     """Confirm one's own invited membership."""
     if not community_id or not building_id:
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
     ok = formation_wizard.confirm_membership(community_id, building_id)
     if not ok:
-        return {"error": "Keine offene Einladung gefunden."}
+        return {"error": _N("Keine offene Einladung gefunden.")}
     return {"error": None}
 
 
@@ -865,10 +1080,12 @@ def leg_start_formation(community_id: str, building_id: str) -> dict:
     if not _require_capability(
         community_id, building_id, community_access.MANAGE_MEMBERS
     ):
-        return {"error": "Nur die Administration kann die Gründung starten."}
+        return {"error": _N("Nur die Administration kann die Gründung starten.")}
     ok = formation_wizard.start_formation(community_id)
     if not ok:
-        return {"error": "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."}
+        return {
+            "error": _N("Gründung noch nicht möglich (genug bestätigte Mitglieder?).")
+        }
     return {"error": None}
 
 
@@ -885,7 +1102,7 @@ def leg_submit_vnb_formation(community_id: str, building_id: str) -> dict:
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return {
-            "error": "Keine Berechtigung für die Netzbetreiber-Anmeldung.",
+            "error": _N("Keine Berechtigung für die Netzbetreiber-Anmeldung."),
             "error_status": 403,
         }
     except vnb_exchange.FormationSubmissionInvalid as error:
@@ -894,7 +1111,7 @@ def leg_submit_vnb_formation(community_id: str, building_id: str) -> dict:
         return {"error": str(error), "error_status": 409}
     except db.VnbExchangeStoreError:
         return {
-            "error": "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar.",
+            "error": _N("Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."),
             "error_status": 503,
         }
     return {
@@ -931,7 +1148,7 @@ def leg_submit_vnb_mutation(
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return {
-            "error": "Keine Berechtigung für Mitgliedermutationen.",
+            "error": _N("Keine Berechtigung für Mitgliedermutationen."),
             "error_status": 403,
         }
     except (
@@ -942,7 +1159,7 @@ def leg_submit_vnb_mutation(
         return {"error": str(error), "error_status": 409}
     except db.VnbExchangeStoreError:
         return {
-            "error": "VNB-Mutation vorübergehend nicht verfügbar.",
+            "error": _N("VNB-Mutation vorübergehend nicht verfügbar."),
             "error_status": 503,
         }
     return {
@@ -967,7 +1184,7 @@ def leg_mark_vnb_mutation_delivered(
     if not _require_capability(
         community_id, building_id, community_access.MANAGE_MEMBERS
     ):
-        return {"error": "Keine Berechtigung.", "error_status": 403}
+        return {"error": _N("Keine Berechtigung."), "error_status": 403}
     try:
         row = db.mark_vnb_mutation_manual_delivered(community_id, case_id, building_id)
     except db.VnbExchangeStoreError as error:
@@ -997,7 +1214,7 @@ def leg_mark_vnb_manual_delivered(
         db.VnbExchangeStoreError,
     ) as error:
         return {
-            "error": str(error) or "Manuelle Zustellung fehlgeschlagen.",
+            "error": str(error) or _N("Manuelle Zustellung fehlgeschlagen."),
             "error_status": (
                 403
                 if isinstance(error, vnb_exchange.FormationSubmissionForbidden)
@@ -1012,7 +1229,7 @@ def leg_document_for_member(doc_id: int, building_id: str):
     doc = db.get_leg_document(doc_id)
     if not doc:
         return None
-    status = formation_wizard.get_community_status(doc["community_id"])
+    status = formation_wizard.get_community_status(doc["community_id"], building_id)
     if not status:
         return None
     is_member = any(m["building_id"] == building_id for m in status["members"] or [])
@@ -1031,19 +1248,19 @@ def leg_log_correspondence(
     attachment_data: bytes | None = None,
 ) -> dict:
     """Append a ledger entry; any confirmed or invited member may log."""
-    status = formation_wizard.get_community_status(community_id)
+    status = formation_wizard.get_community_status(community_id, building_id)
     if not status or not any(
         m["building_id"] == building_id for m in status["members"] or []
     ):
-        return {"error": "Kein Zugriff."}
+        return {"error": _N("Kein Zugriff.")}
 
     if attachment_data is not None:
         if not attachment_filename.lower().endswith(".pdf"):
-            return {"error": "Anhänge müssen PDF-Dateien sein."}
+            return {"error": _N("Anhänge müssen PDF-Dateien sein.")}
         if not attachment_data.startswith(b"%PDF-"):
-            return {"error": "Der Anhang ist keine gültige PDF-Datei."}
+            return {"error": _N("Der Anhang ist keine gültige PDF-Datei.")}
         if len(attachment_data) > 2 * 1024 * 1024:
-            return {"error": "Der PDF-Anhang darf höchstens 2 MB gross sein."}
+            return {"error": _N("Der PDF-Anhang darf höchstens 2 MB gross sein.")}
 
     entry_id = db.log_correspondence(
         community_id=community_id,
@@ -1058,7 +1275,7 @@ def leg_log_correspondence(
         attachment_data=attachment_data,
     )
     if entry_id is None:
-        return {"error": "Eintrag ungültig (Richtung oder Kanal unbekannt)."}
+        return {"error": _N("Eintrag ungültig (Richtung oder Kanal unbekannt).")}
     return {"error": None, "entry_id": entry_id}
 
 
@@ -1066,7 +1283,7 @@ def leg_correspondence_attachment(
     entry_id: int, community_id: str, building_id: str
 ) -> dict | None:
     """Return a correspondence attachment only to a current LEG member."""
-    status = formation_wizard.get_community_status(community_id)
+    status = formation_wizard.get_community_status(community_id, building_id)
     if not status or not any(
         member["building_id"] == building_id for member in status["members"] or []
     ):
@@ -1128,6 +1345,18 @@ def leg_demo_overview() -> dict:
             "min_community_size"
         ],
         "community": _with_german_labels(community),
+        "battery": {
+            "capacity_display": "45 kWh",
+            "annual_cost_display": "CHF 960.00",
+            "shares": [
+                {
+                    "building_id": "demo-building",
+                    "address": "Musterweg 1, 5400 Baden",
+                    "share_display": "12.5 %",
+                    "cost_display": "CHF 120.00",
+                }
+            ],
+        },
     }
 
 
@@ -1143,10 +1372,10 @@ def demo_readiness() -> dict:
         },
         "readiness_score": 75,
         "checks": [
-            ("E-Mail bestätigt", True),
-            ("Verbrauchsdaten hinterlegt", True),
-            ("EVU-Einwilligung erteilt", False),
-            ("Nachbar-Einwilligung erteilt", True),
+            (_N("E-Mail bestätigt"), True),
+            (_N("Verbrauchsdaten hinterlegt"), True),
+            (_N("EVU-Einwilligung erteilt"), False),
+            (_N("Nachbar-Einwilligung erteilt"), True),
         ],
         "neighbor_count": 18,
         "neighbor_box_half_width_m": int(db.NEIGHBOR_BOX_HALF_WIDTH_KM * 1000),
@@ -1175,7 +1404,7 @@ def update_profile(
             else None
         )
     except (TypeError, ValueError):
-        return {"error": "Bitte geben Sie einen gültigen Jahresverbrauch ein."}
+        return {"error": _N("Bitte geben Sie einen gültigen Jahresverbrauch ein.")}
 
     if (
         consumption is None
@@ -1183,15 +1412,15 @@ def update_profile(
         or consumption <= 0
         or consumption > 9_999_999_999.99
     ):
-        return {"error": "Bitte geben Sie einen gültigen Jahresverbrauch ein."}
+        return {"error": _N("Bitte geben Sie einen gültigen Jahresverbrauch ein.")}
 
     try:
         pv = float(potential_pv_kwp) if potential_pv_kwp not in (None, "") else None
     except (TypeError, ValueError):
-        return {"error": "Bitte geben Sie eine gültige Solarleistung ein."}
+        return {"error": _N("Bitte geben Sie eine gültige Solarleistung ein.")}
 
     if pv is not None and (not math.isfinite(pv) or pv < 0 or pv > 999_999.99):
-        return {"error": "Bitte geben Sie eine gültige Solarleistung ein."}
+        return {"error": _N("Bitte geben Sie eine gültige Solarleistung ein.")}
 
     saved = db.update_dashboard_profile(
         building_id,
@@ -1202,7 +1431,9 @@ def update_profile(
     )
     if not saved:
         return {
-            "error": "Das Energieprofil konnte nicht gespeichert werden. "
-            "Bitte versuchen Sie es erneut."
+            "error": _N(
+                "Das Energieprofil konnte nicht gespeichert werden. "
+                "Bitte versuchen Sie es erneut."
+            )
         }
     return {"error": None}

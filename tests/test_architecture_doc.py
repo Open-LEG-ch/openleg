@@ -25,6 +25,9 @@ BLUEPRINTS = {
     "rangliste_bp": "rangliste.py",
     "self_host_bp": "self_host.py",
     "operator_api_bp": "operator_api.py",
+    "telemetry_bp": "telemetry_routes.py",
+    "equipment_bp": "equipment_routes.py",
+    "advisory_bp": "advisory_routes.py",
 }
 
 

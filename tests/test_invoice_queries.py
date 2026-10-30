@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -32,7 +32,7 @@ def test_status_history_only_moves_forward():
 def test_question_deadlines_follow_operator_configuration(monkeypatch):
     monkeypatch.setenv("INVOICE_QUERY_RESPONSE_DAYS", "8")
     monkeypatch.setenv("INVOICE_QUERY_REMINDER_DAYS", "3")
-    opened_at = datetime(2026, 9, 15, 12, tzinfo=timezone.utc)
+    opened_at = datetime(2026, 9, 15, 12, tzinfo=UTC)
 
     response_due_at, reminder_due_at = invoice_queries.deadlines(opened_at)
 
@@ -44,7 +44,7 @@ def test_question_deadline_configuration_fails_closed(monkeypatch):
     monkeypatch.setenv("INVOICE_QUERY_RESPONSE_DAYS", "0")
 
     with pytest.raises(ValueError):
-        invoice_queries.deadlines(datetime(2026, 9, 15, tzinfo=timezone.utc))
+        invoice_queries.deadlines(datetime(2026, 9, 15, tzinfo=UTC))
 
 
 def test_operator_update_validates_transition_before_appending_message(monkeypatch):
@@ -170,7 +170,7 @@ class SingleUseConnection:
 def test_due_reminders_scan_filters_by_status_deadline_and_unsent(monkeypatch):
     cursor = RecordingCursor(rows=[{"id": 3}, {"id": 5}])
     monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(cursor))
-    now = datetime(2026, 9, 16, 6, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 16, 6, tzinfo=UTC)
 
     due = invoice_query.due_invoice_query_reminders(now)
 

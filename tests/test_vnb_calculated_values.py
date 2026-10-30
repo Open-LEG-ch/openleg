@@ -97,11 +97,50 @@ def test_contract_declares_capability_and_supported_formats():
     assert exchange.exchange_capabilities() == {
         "calculated_values": {
             "contract_version": "vnb-calculated-values/1",
-            "format_versions": ["json/1"],
+            "format_versions": ["json/1", "e66/1"],
             "transports": ["api", "file", "manual"],
             "units": ["kWh", "Wh"],
         }
     }
+
+
+def test_json_delivery_with_e66_metadata_is_rejected_without_an_exception():
+    result = exchange.accept_delivery(
+        delivery(),
+        transport="file",
+        evidence=b"invalid mixed format",
+        repository=Repository(),
+        source_metadata={"document_status": "9"},
+    )
+    assert result["status"] == "rejected"
+    assert {"code": "unsupported_format"} in result["diagnostics"]
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        ("source_metering_point_id",),
+        ("source_quantities",),
+        ("source_metering_point_id", "source_quantities"),
+    ],
+)
+def test_e66_delivery_requires_both_source_fields_before_normalization(missing):
+    payload = delivery()
+    payload["format_version"] = "e66/1"
+    for row in payload["records"]:
+        row.update(source_metering_point_id="point-a", source_quantities={})
+        for key in missing:
+            del row[key]
+    result = exchange.accept_delivery(
+        payload,
+        transport="file",
+        evidence=b"incomplete source record",
+        repository=Repository(),
+        source_metadata={"document_status": "9"},
+    )
+    assert result["status"] == "partially_invalid"
+    assert {"code": "invalid_interval"} in result["diagnostics"]
+    assert result["normalized_records"] == []
 
 
 @pytest.mark.parametrize("transport", ["api", "file", "manual"])

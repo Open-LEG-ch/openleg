@@ -8,19 +8,21 @@ from hashlib import sha256
 
 from defusedxml import ElementTree
 
+from translation_markers import gettext_noop as _N
+
 
 class StatementError(ValueError):
     """The uploaded document is not a supported, valid bank statement."""
 
 
 DECISION_LABELS = {
-    "matched": "Automatisch verbucht",
-    "unmatched": "Keine passende Rechnung",
-    "ambiguous": "Mehrere mögliche Rechnungen",
-    "split_payment": "Teilzahlung",
-    "overpayment": "Überzahlung",
-    "reversal": "Rückbuchung",
-    "mismatch": "Angaben stimmen nicht überein",
+    "matched": _N("Automatisch verbucht"),
+    "unmatched": _N("Keine passende Rechnung"),
+    "ambiguous": _N("Mehrere mögliche Rechnungen"),
+    "split_payment": _N("Teilzahlung"),
+    "overpayment": _N("Überzahlung"),
+    "reversal": _N("Rückbuchung"),
+    "mismatch": _N("Angaben stimmen nicht überein"),
 }
 
 
@@ -69,39 +71,41 @@ def _amount(element, fallback):
     candidates = _children(element, "Amt")
     amount_element = candidates[0] if candidates else fallback
     if amount_element is None:
-        raise StatementError("Der Zahlungseintrag enthält keinen Betrag.")
+        raise StatementError(_N("Der Zahlungseintrag enthält keinen Betrag."))
     try:
         amount = Decimal((amount_element.text or "").strip())
     except InvalidOperation as error:
         raise StatementError(
-            "Der Zahlungseintrag enthält keinen gültigen Betrag."
+            _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
         ) from error
     if not amount.is_finite() or amount <= 0:
-        raise StatementError("Der Zahlungseintrag enthält keinen gültigen Betrag.")
+        raise StatementError(_N("Der Zahlungseintrag enthält keinen gültigen Betrag."))
     currency = (amount_element.attrib.get("Ccy") or "").strip().upper()
     if len(currency) != 3:
-        raise StatementError("Der Zahlungseintrag enthält keine gültige Währung.")
+        raise StatementError(_N("Der Zahlungseintrag enthält keine gültige Währung."))
     return amount, currency
 
 
 def parse_statement(content: bytes) -> Statement:
     """Parse camt.053 or camt.054 bytes into deterministic payment entries."""
     if not isinstance(content, bytes) or not content.strip():
-        raise StatementError("Die Kontoauszugsdatei ist leer.")
+        raise StatementError(_N("Die Kontoauszugsdatei ist leer."))
     try:
         root = ElementTree.fromstring(content)
     except (ElementTree.ParseError, ValueError) as error:
-        raise StatementError("Die Kontoauszugsdatei ist kein gültiges XML.") from error
+        raise StatementError(
+            _N("Die Kontoauszugsdatei ist kein gültiges XML.")
+        ) from error
     namespace = root.tag.split("}", 1)[0].lstrip("{") if "}" in root.tag else ""
     if "camt.053." in namespace:
         message_type, container_name = "camt.053", "Stmt"
     elif "camt.054." in namespace:
         message_type, container_name = "camt.054", "Ntfctn"
     else:
-        raise StatementError("Unterstützt werden nur camt.053 und camt.054.")
+        raise StatementError(_N("Unterstützt werden nur camt.053 und camt.054."))
     containers = _children(root, container_name)
     if not containers:
-        raise StatementError("Der Kontoauszug enthält keinen Auszug.")
+        raise StatementError(_N("Der Kontoauszug enthält keinen Auszug."))
     statement_reference = _text(containers[0], "Id")
     entries = []
     for entry_number, entry in enumerate(_children(root, "Ntry"), start=1):
@@ -109,19 +113,21 @@ def parse_statement(content: bytes) -> Statement:
         booking_elements = _children(entry, "BookgDt")
         if not booking_elements:
             raise StatementError(
-                "Der Zahlungseintrag enthält kein gültiges Buchungsdatum."
+                _N("Der Zahlungseintrag enthält kein gültiges Buchungsdatum.")
             )
         booking_text = _text(booking_elements[0], "Dt", "DtTm")
         try:
             booking_date = date.fromisoformat(booking_text[:10])
         except ValueError as error:
             raise StatementError(
-                "Der Zahlungseintrag enthält kein gültiges Buchungsdatum."
+                _N("Der Zahlungseintrag enthält kein gültiges Buchungsdatum.")
             ) from error
         reversal = _text(entry, "RvslInd").lower() == "true"
         credit_debit_indicator = _text(entry, "CdtDbtInd").upper()
         if credit_debit_indicator not in {"CRDT", "DBIT"}:
-            raise StatementError("Der Zahlungseintrag enthält keine gültige Richtung.")
+            raise StatementError(
+                _N("Der Zahlungseintrag enthält keine gültige Richtung.")
+            )
         transactions = _children(entry, "TxDtls") or [entry]
         for transaction_number, transaction in enumerate(transactions, start=1):
             amount, currency = _amount(
@@ -145,7 +151,7 @@ def parse_statement(content: bytes) -> Statement:
                 )
             )
     if not entries:
-        raise StatementError("Der Kontoauszug enthält keine Zahlungseinträge.")
+        raise StatementError(_N("Der Kontoauszug enthält keine Zahlungseinträge."))
     return Statement(message_type, statement_reference, tuple(entries))
 
 

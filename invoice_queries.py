@@ -2,7 +2,7 @@
 """Domain rules for invoice-scoped member questions."""
 
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 CATEGORIES = frozenset({"amount", "metering", "payment", "other"})
 STATUSES = frozenset({"open", "acknowledged", "resolved"})
@@ -19,7 +19,7 @@ def deadlines(opened_at: datetime | None = None) -> tuple[datetime, datetime]:
     reminder_days = int(os.getenv("INVOICE_QUERY_REMINDER_DAYS", "2"))
     if response_days < 1 or reminder_days < 1 or reminder_days >= response_days:
         raise ValueError("Ungültige Fristen für Rechnungsfragen.")
-    opened_at = opened_at or datetime.now(timezone.utc)
+    opened_at = opened_at or datetime.now(UTC)
     return (
         opened_at + timedelta(days=response_days),
         opened_at + timedelta(days=response_days - reminder_days),

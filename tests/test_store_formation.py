@@ -434,6 +434,102 @@ def test_membership_manager_cannot_promote_an_administrator(monkeypatch):
     assert len(cur.executed) == 1
 
 
+_ADMIN_ROW = {
+    "building_id": "b-admin",
+    "role": "admin",
+    "access_roles": ["admin"],
+    "status": "confirmed",
+}
+
+
+def test_set_member_access_roles_refuses_unknown_or_unauthorised_members(monkeypatch):
+    rows = [dict(_ADMIN_ROW)]
+
+    def _refused(target, actor):
+        cur = _FakeCursor(rows=[dict(row) for row in rows])
+        monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+        result = formation.set_member_access_roles("c1", target, ["documents"], actor)
+        select_sql, select_params = cur.executed[0]
+        assert "FOR UPDATE" in select_sql
+        assert select_params == ("c1",), (
+            "the membership read must be scoped to the community"
+        )
+        assert len(cur.executed) == 1, "a refusal must not write anything"
+        return result
+
+    assert not _refused("b-admin", "b-stranger"), (
+        "a caller who is not a member must be refused"
+    )
+    assert not _refused("b-ghost", "b-admin"), (
+        "an unknown target member must be refused"
+    )
+
+    rows = [
+        {
+            "building_id": "b-nocaps",
+            "role": "member",
+            "access_roles": [],
+            "status": "confirmed",
+        },
+        {
+            "building_id": "b-target",
+            "role": "member",
+            "access_roles": [],
+            "status": "confirmed",
+        },
+        {**_ADMIN_ROW, "building_id": "b-admin-two"},
+    ]
+    assert not _refused("b-target", "b-nocaps"), (
+        "a member without the membership capability must be refused"
+    )
+
+
+def test_set_member_access_roles_refuses_a_demotion_by_a_non_administrator(monkeypatch):
+    cur = _FakeCursor(
+        rows=[
+            {
+                "building_id": "b-manager",
+                "role": "member",
+                "access_roles": ["membership"],
+                "status": "confirmed",
+            },
+            {
+                "building_id": "b-target",
+                "role": "admin",
+                "access_roles": ["admin"],
+                "status": "confirmed",
+            },
+            {**_ADMIN_ROW, "building_id": "b-admin-two"},
+        ]
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert not formation.set_member_access_roles("c1", "b-target", [], "b-manager"), (
+        "removing the administrator role stays an administrator decision"
+    )
+    assert len(cur.executed) == 1
+
+
+def test_set_member_access_roles_lets_an_administrator_demote_another_admin(
+    monkeypatch,
+):
+    cur = _FakeCursor(
+        rows=[
+            dict(_ADMIN_ROW),
+            {**_ADMIN_ROW, "building_id": "b-target"},
+            {**_ADMIN_ROW, "building_id": "b-admin-two"},
+        ]
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert formation.set_member_access_roles("c1", "b-target", [], "b-admin"), (
+        "an administrator may demote another administrator while one remains"
+    )
+    update_sql, update_params = cur.executed[1]
+    assert "UPDATE community_members" in update_sql
+    assert update_params[0] == "member"
+
+
 def test_set_community_dual_control_requires_admin_and_tracks_change(monkeypatch):
     cur = _FakeCursor(
         one={
@@ -455,6 +551,58 @@ def test_set_community_dual_control_requires_admin_and_tracks_change(monkeypatch
         "b-admin",
         {"community_id": "c1", "enabled": True},
     )
+
+
+def test_set_community_dual_control_pins_the_membership_read(monkeypatch):
+    cur = _FakeCursor(one=dict(_ADMIN_ROW))
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    formation.set_community_dual_control("c1", True, "b-admin")
+
+    select_sql, select_params = cur.executed[0]
+    assert "FROM community_members" in select_sql
+    assert "WHERE community_id = %s AND building_id = %s" in select_sql, (
+        "the actor lookup must stay scoped to one membership"
+    )
+    assert select_params == ("c1", "b-admin")
+
+
+def test_set_community_dual_control_requires_a_confirmed_administrator(monkeypatch):
+    pending_admin = {**_ADMIN_ROW, "status": "pending"}
+    cur = _FakeCursor(one=dict(pending_admin))
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert not formation.set_community_dual_control("c1", True, "b-admin"), (
+        "an unconfirmed administrator must not change the dual-control policy"
+    )
+    assert len(cur.executed) == 1
+
+    member = {
+        "building_id": "b-member",
+        "role": "member",
+        "access_roles": [],
+        "status": "confirmed",
+    }
+    cur = _FakeCursor(one=member)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert not formation.set_community_dual_control("c1", True, "b-member"), (
+        "a member without administrator authority must be refused"
+    )
+    assert len(cur.executed) == 1
+
+
+def test_set_community_dual_control_reports_no_change_without_a_matched_row(
+    monkeypatch,
+):
+    cur = _FakeCursor(one=dict(_ADMIN_ROW), rowcount=0)
+    events = _events(monkeypatch)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert not formation.set_community_dual_control("c1", True, "b-admin"), (
+        "no matched community row means nothing changed"
+    )
+    events.assert_not_called()
 
 
 def test_fetch_nearby_consenting_neighbours_pins_location_and_boundary_params(

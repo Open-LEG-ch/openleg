@@ -4,10 +4,16 @@
 import json
 import logging
 
+from locale_policy import require_recipient_locale
+
 logger = logging.getLogger(__name__)
 
 UNVERIFIED_INTEREST_RETENTION_DAYS = 30
 VERIFIED_COVERAGE_RETENTION_MONTHS = 12
+
+
+class InterestReadUnavailable(RuntimeError):
+    """An interest query failed, independently of an empty result."""
 
 
 def _get_connection():
@@ -28,8 +34,10 @@ def save_coverage_request(
     roles,
     has_solar,
     verification_token,
+    preferred_locale="de_CH",
 ):
     """Persist an address-coverage request pending email verification."""
+    canonical_locale = require_recipient_locale(preferred_locale)
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
@@ -37,9 +45,9 @@ def save_coverage_request(
                 INSERT INTO coverage_requests (
                     request_id, email, address, plz, municipality_name, canton,
                     bfs_number, roles, has_solar, verification_token,
-                    token_expires_at
+                    token_expires_at, preferred_locale
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    CURRENT_TIMESTAMP + INTERVAL '30 days')
+                    CURRENT_TIMESTAMP + INTERVAL '30 days', %s)
                 """,
                 (
                     request_id,
@@ -52,6 +60,7 @@ def save_coverage_request(
                     json.dumps(roles),
                     has_solar,
                     verification_token,
+                    canonical_locale,
                 ),
             )
             return True
@@ -103,6 +112,7 @@ def cleanup_expired_interest():
                 WHERE verified = FALSE
                   AND COALESCE(verification_requested_at, registered_at)
                       < CURRENT_TIMESTAMP - INTERVAL '{UNVERIFIED_INTEREST_RETENTION_DAYS} days'
+                  AND NOT EXISTS (SELECT 1 FROM communities WHERE communities.admin_building_id = buildings.building_id)
                 """
             )
             return {
@@ -167,8 +177,8 @@ def get_operator_interest_counts():
         return {"interest_verified": None, "interest_unverified": None}
 
 
-def get_interest_counts_by_bfs():
-    """Return exact verified household totals keyed by BFS municipality."""
+def get_interest_counts_by_bfs(*, strict=False):
+    """Return exact household totals; strict readers raise on query failure."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
@@ -184,14 +194,16 @@ def get_interest_counts_by_bfs():
             }
     except Exception:
         logger.exception("[DB] Error loading municipality interest counts")
+        if strict:
+            raise InterestReadUnavailable from None
         return {}
 
 
-def get_interest_count(bfs_number):
+def get_interest_count(bfs_number, *, strict=False):
     """Return a municipality total, or None for an absent/failed lookup.
 
-    The distinction preserves the profile's zero and notification's one
-    fallbacks without querying the national aggregate.
+    Strict readers raise on query failure; an absent municipality stays None.
+    The default keeps the notification's existing one-person fallback.
     """
     try:
         with _get_connection() as conn, conn.cursor() as cur:
@@ -206,17 +218,37 @@ def get_interest_count(bfs_number):
             return int(row["interest_count"]) if row else None
     except Exception:
         logger.exception("[DB] Error loading municipality interest count")
+        if strict:
+            raise InterestReadUnavailable from None
         return None
 
 
 def get_verified_interest_recipients(bfs_number, exclude_email=""):
     """Return distinct verified recipient addresses for one municipality."""
+    return [
+        row["email"]
+        for row in get_verified_interest_recipient_preferences(
+            bfs_number, exclude_email
+        )
+    ]
+
+
+def get_verified_interest_recipient_preferences(bfs_number, exclude_email=""):
+    """Read each canonical, consented recipient and its saved language together."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT v.email
+                SELECT v.email,
+                       CASE WHEN v.address_problem THEN coverage.preferred_locale
+                            ELSE building.preferred_locale END AS preferred_locale
                 FROM verified_interest v
+                LEFT JOIN buildings building
+                    ON building.building_id = v.source_id
+                    AND v.address_problem = FALSE
+                LEFT JOIN coverage_requests coverage
+                    ON coverage.request_id = v.source_id
+                    AND v.address_problem = TRUE
                 LEFT JOIN consents c
                     ON c.building_id = v.source_id
                     AND v.address_problem = FALSE
@@ -227,14 +259,14 @@ def get_verified_interest_recipients(bfs_number, exclude_email=""):
                 """,
                 (bfs_number, exclude_email),
             )
-            return [row["email"] for row in cur.fetchall() if row.get("email")]
+            return [dict(row) for row in cur.fetchall() if row.get("email")]
     except Exception:
         logger.exception("[DB] Error loading verified interest recipients")
         return []
 
 
-def get_municipality_interest_summary(bfs_number):
-    """Return aggregate-only demand facts for a municipality dashboard."""
+def get_municipality_interest_summary(bfs_number, *, strict=False):
+    """Return aggregate demand facts; strict readers raise on query failure."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
@@ -267,4 +299,6 @@ def get_municipality_interest_summary(bfs_number):
             return summary
     except Exception:
         logger.exception("[DB] Error loading municipality interest summary")
+        if strict:
+            raise InterestReadUnavailable from None
         return {}

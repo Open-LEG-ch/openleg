@@ -12,8 +12,10 @@ import io
 import json
 import secrets
 
+import psycopg2
 from flask import (
     abort,
+    after_this_request,
     current_app,
     g,
     redirect,
@@ -25,10 +27,19 @@ from flask import (
 
 import access_token
 import billing_policy
+import community_access
 import dashboard as dashboard_module
 import database as db
 import payment_reconciliation
+import quartierakku
 import security_utils
+import solar_forecast_cache
+from admin import require_admin
+from email_localization import gettext, recipient_locale
+from i18n import gettext as _
+from i18n import localized_url, normalize_locale
+from store import contact_request
+from telemetry import TelemetryError
 
 
 def _dashboard_session_building_id():
@@ -40,8 +51,16 @@ def _dashboard_csrf_token():
     return token if isinstance(token, str) else ""
 
 
-def _set_dashboard_session(building_id: str):
+def _clear_dashboard_session():
+    """Discard authentication state while retaining a validated UI language."""
+    locale = normalize_locale(session.get("locale"))
     session.clear()
+    if locale:
+        session["locale"] = locale
+
+
+def _set_dashboard_session(building_id: str):
+    _clear_dashboard_session()
     session.permanent = True
     session["dashboard_building_id"] = building_id
     session["dashboard_csrf_token"] = secrets.token_urlsafe(32)
@@ -111,6 +130,81 @@ def _rate_limit(limiter, limit_string):
 def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     """Register all resident and LEG dashboard routes on *bp*."""
 
+    def contact_response(operation):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        fields = [
+            name
+            for name in ("email", "phone")
+            if request.form.get(f"share_{name}") == "yes"
+        ]
+        try:
+            recipients = operation(building_id, fields)
+        except contact_request.ContactDenied:
+            abort(403)
+        except contact_request.ContactStoreError:
+            abort(503)
+        failed = False
+        for recipient in recipients:
+            locale = recipient_locale(recipient, recipient["email"])
+            try:
+                result = send_email(
+                    recipient["email"],
+                    gettext("Ihre Kontaktanfragen bei OpenLEG", locale=locale),
+                    gettext(
+                        "Der Stand Ihrer Kontaktanfragen hat sich geändert. "
+                        "Öffnen Sie Ihr Dashboard, um die Anfrage zu prüfen.\n\n%(url)s",
+                        locale=locale,
+                        url=localized_url(
+                            f"{current_app.config['APP_BASE_URL'].rstrip('/')}/dashboard/contacts",
+                            locale=locale,
+                        ),
+                    ),
+                    private=True,
+                )
+                failed = failed or result is False
+            except Exception:
+                # Provider exceptions can contain recipients. Do not log them.
+                current_app.logger.warning("Contact notification delivery failed")
+                failed = True
+        return redirect(
+            "/dashboard/contacts?notice=" + ("mail-failed" if failed else "saved")
+        )
+
+    @bp.route("/dashboard/contacts")
+    def dashboard_contacts():
+        actor = _require_dashboard_session()
+        try:
+            view = contact_request.view(actor, current_app.secret_key)
+        except contact_request.ContactDenied:
+            abort(403)
+        except contact_request.ContactStoreError:
+            abort(503)
+        return render_city_template(
+            "contact_requests.html",
+            **view,
+            csrf_token=_dashboard_csrf_token(),
+            notice=request.args.get("notice", ""),
+        )
+
+    @bp.route("/dashboard/contacts", methods=["POST"])
+    @_rate_limit(limiter, "10 per hour")
+    def dashboard_contact_request():
+        return contact_response(
+            lambda actor, fields: contact_request.create(
+                actor, request.form.get("candidate", ""), fields, current_app.secret_key
+            )
+        )
+
+    @bp.route("/dashboard/contacts/<request_id>/<action>", methods=["POST"])
+    @_rate_limit(limiter, "30 per hour")
+    def dashboard_contact_transition(request_id, action):
+        return contact_response(
+            lambda actor, fields: contact_request.transition(
+                actor, request_id, action, fields
+            )
+        )
+
     @bp.route("/dashboard")
     def dashboard():
         session_building_id = _dashboard_session_building_id()
@@ -123,6 +217,88 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 ),
             )
         return render_city_template("dashboard.html", **_dashboard_public_context())
+
+    @bp.get("/dashboard/telemetry")
+    def dashboard_telemetry():
+        actor = _require_dashboard_session()
+        try:
+            installations = dashboard_module.telemetry_view(
+                db.get_owner_telemetry_overview(actor)
+            )
+        except TelemetryError:
+            return render_city_template(
+                "telemetry_dashboard.html", unavailable=True
+            ), 503
+        building = db.get_building(actor) if installations else None
+        forecast = (
+            solar_forecast_cache.view(building["lat"], building["lon"])
+            if building
+            else {"state": "unavailable"}
+        )
+        return render_city_template(
+            "telemetry_dashboard.html",
+            installations=installations,
+            csrf_token=_dashboard_csrf_token(),
+            forecast=forecast,
+        )
+
+    @bp.get("/leg/community/<community_id>/telemetry")
+    def community_telemetry(community_id):
+        @after_this_request
+        def private_response(response):
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["Referrer-Policy"] = "no-referrer"
+            return response
+
+        actor = _require_dashboard_session()
+        try:
+            summary = dashboard_module.shared_telemetry_view(
+                db.get_shared_telemetry_overview(community_id, actor)
+            )
+        except TelemetryError as exc:
+            if exc.status != 503:
+                abort(exc.status)
+            return render_city_template("telemetry_shared.html", unavailable=True), 503
+        return render_city_template("telemetry_shared.html", summary=summary)
+
+    @bp.post(
+        "/dashboard/telemetry/<uuid:installation>/notices/<uuid:notice_id>/acknowledge"
+    )
+    def dashboard_telemetry_notice_acknowledge(installation, notice_id):
+        actor = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            episode = int(request.form.get("episode", ""))
+        except ValueError:
+            abort(400)
+        try:
+            db.acknowledge_telemetry_notice(
+                request.form.get("community_id", ""),
+                str(installation),
+                actor,
+                str(notice_id),
+                {"episode": episode},
+            )
+        except TelemetryError as exc:
+            abort(exc.status)
+        return redirect(localized_url("/dashboard/telemetry"), code=303)
+
+    @bp.post("/dashboard/language")
+    def dashboard_language_update():
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        selected = normalize_locale(request.form.get("preferred_locale"))
+        if selected is None:
+            abort(400)
+        try:
+            updated = db.update_recipient_locale(building_id, selected)
+        except Exception:
+            current_app.logger.warning("Recipient language update failed")
+            abort(503)
+        if not updated:
+            abort(403)
+        session["locale"] = selected
+        return redirect("/dashboard?lang=" + selected.replace("_", "-"))
 
     @bp.route("/dashboard/profile", methods=["POST"])
     def dashboard_profile_update():
@@ -179,7 +355,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @_rate_limit(limiter, "5 per minute")
     def dashboard_access_request():
         email = (request.form.get("email") or "").strip().lower()
-        generic_message = (
+        generic_message = _(
             "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen "
             "neuen Zugangslink gesendet."
         )
@@ -209,17 +385,25 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             )
             if not token:
                 continue
-            url = access_token.access_url(
-                access_token.DASHBOARD, current_app.config["APP_BASE_URL"], token
+            locale = recipient_locale(db.get_building(building_id), normalized_email)
+            url = localized_url(
+                access_token.access_url(
+                    access_token.DASHBOARD, current_app.config["APP_BASE_URL"], token
+                ),
+                locale,
             )
             try:
                 send_email(
                     normalized_email,
-                    "Ihr Dashboard-Zugangslink",
-                    "Öffnen Sie Ihr Dashboard über diesen Link:\n\n"
-                    f"{url}\n\n"
-                    "Falls Sie diesen Link nicht angefordert haben, können Sie diese "
-                    "E-Mail ignorieren.",
+                    gettext("Ihr Dashboard-Zugangslink", locale=locale),
+                    gettext(
+                        "Öffnen Sie Ihr Dashboard über diesen Link:\n\n"
+                        "%(url)s\n\n"
+                        "Falls Sie diesen Link nicht angefordert haben, können Sie diese "
+                        "E-Mail ignorieren.",
+                        url=url,
+                        locale=locale,
+                    ),
                 )
             except Exception:
                 current_app.logger.exception("Failed to send dashboard access email")
@@ -236,7 +420,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
         db.revoke_dashboard_access_tokens(building_id)
-        session.clear()
+        _clear_dashboard_session()
         return redirect("/dashboard")
 
     @bp.route("/dashboard/demo")
@@ -263,9 +447,16 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if not invoice:
             abort(404)
+        try:
+            savings = dashboard_module.member_invoice_savings_view(
+                invoice_id, building_id
+            )
+        except (db.BillingStoreError, dashboard_module.MemberSavingsDataError):
+            abort(503)
         return render_city_template(
             "member_invoice_detail.html",
             invoice=invoice,
+            savings=savings,
             csrf_token=_dashboard_csrf_token(),
         )
 
@@ -348,17 +539,29 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             csrf_token="",
         )
 
-    @bp.route("/leg/community/create", methods=["POST"])
+    @bp.route("/leg/community/create", methods=["GET", "POST"])
     def leg_community_create():
-        name = request.form.get("name", "")
         building_id = _require_dashboard_session()
+        if request.method == "GET":
+            return render_city_template(
+                "leg_community_create.html",
+                csrf_token=_dashboard_csrf_token(),
+                error=None,
+                name="",
+                distribution_model="simple",
+            )
+        name = request.form.get("name", "")
         _require_dashboard_csrf()
         model = request.form.get("distribution_model", "simple")
         result = dashboard_module.leg_create(name, building_id, model)
         if result["error"]:
             return (
                 render_city_template(
-                    "leg_dashboard.html", error=result["error"], community=None
+                    "leg_community_create.html",
+                    error=result["error"],
+                    name=name,
+                    distribution_model=model,
+                    csrf_token=_dashboard_csrf_token(),
                 ),
                 400,
             )
@@ -405,7 +608,34 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                     **dashboard_module.leg_overview(community_id, building_id),
                     viewer_has_session=True,
                     csrf_token=_dashboard_csrf_token(),
-                    roles_error=result["error"],
+                    roles_error=community_access.localize_role_error(result["error"]),
+                ),
+                400,
+            )
+        return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/battery", methods=["POST"])
+    def leg_community_battery(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            result = dashboard_module.leg_save_battery(
+                community_id, building_id, request.form
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"]:
+            abort(403)
+        if result["errors"]:
+            view = dashboard_module.leg_overview(community_id, building_id)
+            view["battery_form_values"] = request.form
+            return (
+                render_city_template(
+                    "leg_dashboard.html",
+                    **view,
+                    viewer_has_session=True,
+                    csrf_token=_dashboard_csrf_token(),
+                    battery_errors=quartierakku.localize_form_errors(result["errors"]),
                 ),
                 400,
             )
@@ -461,6 +691,8 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def _restore_archive_response(community_id, *, dry_run):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
+        if not dry_run:
+            require_admin()
         upload = request.files.get("archive")
         if upload is None:
             abort(400)
@@ -481,6 +713,46 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @bp.route("/leg/community/<community_id>/archive/restore", methods=["POST"])
     def leg_community_archive_restore(community_id):
         return _restore_archive_response(community_id, dry_run=False)
+
+    def activation_response(community_id, operation, *args):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            operation(community_id, building_id, *args)
+        except db.ActivationDenied:
+            abort(403)
+        except (db.ActivationConflict, ValueError) as error:
+            context = dashboard_module.leg_overview(community_id, building_id)
+            if context.get("error"):
+                abort(403)
+            return render_city_template(
+                "leg_dashboard.html",
+                **context,
+                viewer_has_session=True,
+                csrf_token=_dashboard_csrf_token(),
+                activation_error=str(error),
+            ), (400 if isinstance(error, ValueError) else 409)
+        except psycopg2.Error:
+            abort(503)
+        return _leg_dashboard_redirect(community_id)
+
+    @bp.route("/leg/community/<community_id>/vnb-start-confirmation", methods=["POST"])
+    def leg_community_start_confirmation(community_id):
+        if request.form.get("confirm_start") != "yes":
+            _require_dashboard_session()
+            _require_dashboard_csrf()
+            abort(400)
+        return activation_response(
+            community_id,
+            db.record_vnb_start_confirmation,
+            request.form.get("correspondence_id", ""),
+            request.form.get("effective_date", ""),
+            request.form.get("reference", ""),
+        )
+
+    @bp.route("/leg/community/<community_id>/activate", methods=["POST"])
+    def leg_community_activate(community_id):
+        return activation_response(community_id, db.activate_community)
 
     @bp.route("/leg/community/<community_id>/vnb-submissions", methods=["POST"])
     def leg_community_vnb_submission(community_id):
@@ -668,7 +940,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 abort(503)
             if view["error"]:
                 abort(403)
-            view["approval_error"] = (
+            view["approval_error"] = _(
                 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. "
                 "Er ist unvollständig, nicht vollständig abgeglichen oder wurde "
                 "zwischenzeitlich verändert. Prüfen Sie die Periode und versuchen "
@@ -703,7 +975,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 )
             except db.BillingStoreError:
                 abort(503)
-            view["lifecycle_error"] = (
+            view["lifecycle_error"] = _(
                 "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
             )
             return (
@@ -872,7 +1144,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 )
             except db.BillingStoreError:
                 abort(503)
-            view["form_errors"] = result["errors"]
+            view["form_errors"] = billing_policy.localize_form_errors(result["errors"])
             view["form_values"] = {
                 field: request.form.get(field, "")
                 for field in billing_policy.FORM_FIELDS

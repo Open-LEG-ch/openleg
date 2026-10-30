@@ -42,13 +42,13 @@ def test_verified_newcomer_notifies_each_existing_municipality_recipient_once(
 ):
     monkeypatch.setattr(
         email_automation.db,
-        "get_verified_interest_recipients",
+        "get_verified_interest_recipient_preferences",
         MagicMock(
             return_value=[
-                "eins@example.ch",
-                "zwei@example.ch",
-                "eins@example.ch",
-                "neu@example.ch",
+                {"email": "eins@example.ch", "preferred_locale": "de_CH"},
+                {"email": "zwei@example.ch", "preferred_locale": "de_CH"},
+                {"email": "eins@example.ch", "preferred_locale": "de_CH"},
+                {"email": "neu@example.ch", "preferred_locale": "de_CH"},
             ]
         ),
         raising=False,
@@ -83,8 +83,10 @@ def test_verified_newcomer_notifies_each_existing_municipality_recipient_once(
 def test_new_interest_notification_uses_configured_unsubscribe_url(monkeypatch):
     monkeypatch.setattr(
         email_automation.db,
-        "get_verified_interest_recipients",
-        MagicMock(return_value=["eins@example.ch"]),
+        "get_verified_interest_recipient_preferences",
+        MagicMock(
+            return_value=[{"email": "eins@example.ch", "preferred_locale": "de_CH"}]
+        ),
     )
     monkeypatch.setattr(
         email_automation.db,
@@ -124,8 +126,12 @@ def test_confirmation_link_makes_interest_visible_and_notifies_existing_user(
     )
     monkeypatch.setattr(
         app_module.db,
-        "get_verified_interest_recipients",
-        MagicMock(return_value=["bestehend@example.ch"]),
+        "get_verified_interest_recipient_preferences",
+        MagicMock(
+            return_value=[
+                {"email": "bestehend@example.ch", "preferred_locale": "de_CH"}
+            ]
+        ),
     )
     monkeypatch.setattr(
         app_module.db,
@@ -202,8 +208,12 @@ def test_coverage_confirmation_counts_and_notifies_without_exposing_address(
     )
     monkeypatch.setattr(
         app_module.db,
-        "get_verified_interest_recipients",
-        MagicMock(return_value=["bestehend@example.ch"]),
+        "get_verified_interest_recipient_preferences",
+        MagicMock(
+            return_value=[
+                {"email": "bestehend@example.ch", "preferred_locale": "de_CH"}
+            ]
+        ),
     )
     monkeypatch.setattr(
         app_module.db,

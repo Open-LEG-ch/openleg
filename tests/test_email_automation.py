@@ -347,7 +347,7 @@ class TestVerifiedWebhookPersistsTheCanonicalEvent:
 
         module = app_with_agentmail_secret
         body = json.dumps(ROUTE_PAYLOAD).encode()
-        timestamp = datetime.datetime.now(datetime.timezone.utc)
+        timestamp = datetime.datetime.now(datetime.UTC)
         signature = Webhook(AGENTMAIL_TEST_SECRET).sign(
             "msg_test", timestamp, body.decode()
         )

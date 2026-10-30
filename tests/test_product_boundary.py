@@ -126,6 +126,7 @@ def test_app_factory_registers_public_website_and_product_routes():
     assert PRODUCT_RULES <= registered
     assert {
         "/how-it-works",
+        "/leg-check",
         "/fuer-bewohner",
         "/fuer-gemeinden",
         "/open-source",

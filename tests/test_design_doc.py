@@ -8,7 +8,7 @@ import pytest
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DESIGN_PATH = os.path.join(PROJECT_ROOT, "design.md")
-TAILWIND_CONFIG_PATH = os.path.join(PROJECT_ROOT, "tailwind.config.js")
+SOURCE_CSS_PATH = os.path.join(PROJECT_ROOT, "static", "css", "tailwind.css")
 
 LEGACY_AMBER_HEXES = ("#f59e0b", "#fbbf24", "#d97706", "#ffc043")
 
@@ -19,24 +19,10 @@ def _read(path):
 
 
 def _shipped_brand_hexes():
-    """Extract the hex tokens from the colors block of tailwind.config.js."""
-    config = _read(TAILWIND_CONFIG_PATH)
-    start = config.find("colors:")
-    assert start != -1, "colors block not found in tailwind.config.js"
-    brace_start = config.index("{", start)
-    depth = 0
-    end = None
-    for index in range(brace_start, len(config)):
-        if config[index] == "{":
-            depth += 1
-        elif config[index] == "}":
-            depth -= 1
-            if depth == 0:
-                end = index + 1
-                break
-    assert end, "unbalanced colors block in tailwind.config.js"
-    hexes = set(re.findall(r"#[0-9a-fA-F]{6}", config[brace_start:end]))
-    assert hexes, "no hex tokens found in tailwind.config.js colors block"
+    """Extract every declared colour token from the shipped source CSS."""
+    css = _read(SOURCE_CSS_PATH)
+    hexes = set(re.findall(r"--color-[a-z0-9-]+:\s*(#[0-9a-fA-F]{6})\b", css))
+    assert hexes, "no colour tokens found in tailwind.css"
     return hexes
 
 
@@ -50,7 +36,7 @@ class TestDesignDocBrandSync:
         for hex_token in sorted(_shipped_brand_hexes()):
             assert hex_token.lower() in self.design_lower, (
                 f"design.md does not document shipped token {hex_token} "
-                "from tailwind.config.js"
+                "from tailwind.css"
             )
 
     def test_no_legacy_amber_hex(self):

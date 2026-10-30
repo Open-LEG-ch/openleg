@@ -8,6 +8,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from locale_policy import require_recipient_locale
+from translation_markers import gettext_noop
+
 CONSENT_VERSION = "2026-01-01"
 ALLOWED_ROLES = {
     "owner",
@@ -63,12 +66,14 @@ def parse_roles(raw_roles):
     if raw_roles is None:
         return []
     if not isinstance(raw_roles, list):
-        raise RegistrationError("Bitte wählen Sie gültige Rollen aus.")
+        raise RegistrationError(gettext_noop("Bitte wählen Sie gültige Rollen aus."))
     roles = []
     for raw_role in raw_roles:
         role = raw_role.strip() if isinstance(raw_role, str) else ""
         if role not in ALLOWED_ROLES:
-            raise RegistrationError("Bitte wählen Sie gültige Rollen aus.")
+            raise RegistrationError(
+                gettext_noop("Bitte wählen Sie gültige Rollen aus.")
+            )
         if role not in roles:
             roles.append(role)
     return roles
@@ -77,6 +82,14 @@ def parse_roles(raw_roles):
 def register(data, *, city_id, user_type, deps: RegistrationDeps):
     db = deps.db
     security = deps.security
+    try:
+        preferred_locale = require_recipient_locale(
+            data.get("preferred_locale", "de_CH")
+        )
+    except ValueError as error:
+        raise RegistrationError(
+            gettext_noop("Bitte wählen Sie eine gültige Sprache.")
+        ) from error
     phone = (data.get("phone") or "").strip()
     email = (data.get("email") or "").strip()
     profile = data.get("profile")
@@ -105,7 +118,7 @@ def register(data, *, city_id, user_type, deps: RegistrationDeps):
         phone = normalized_phone
 
     if not profile:
-        raise RegistrationError("Profildaten fehlen.")
+        raise RegistrationError(gettext_noop("Profildaten fehlen."))
     building_id = profile.get("building_id")
     is_valid_id, id_error = security.validate_building_id(building_id)
     if not is_valid_id:
@@ -133,16 +146,24 @@ def register(data, *, city_id, user_type, deps: RegistrationDeps):
             has_solar=has_solar,
             verified=False,
             verification_token=verification_token,
+            **(
+                {"preferred_locale": preferred_locale}
+                if "preferred_locale" in data
+                else {}
+            ),
         )
     except db.VerifiedRegistrationConflict as error:
         raise RegistrationError(
-            "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung "
-            "mit einer anderen E-Mail-Adresse.",
+            gettext_noop(
+                "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung "
+                "mit einer anderen E-Mail-Adresse."
+            ),
             status=409,
         ) from error
     if not saved:
         raise RegistrationError(
-            "Die Interessenmeldung konnte nicht gespeichert werden.", status=503
+            gettext_noop("Die Interessenmeldung konnte nicht gespeichert werden."),
+            status=503,
         )
 
     verification_url = f"{deps.app_base_url}/confirm/{verification_token}"

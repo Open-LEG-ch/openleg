@@ -3,6 +3,8 @@
 
 import logging
 
+from store import advisories, contact_request, equipment, telemetry
+
 logger = logging.getLogger(__name__)
 
 
@@ -77,6 +79,10 @@ def create_tables():
                 )
             """)
 
+            contact_request.create_tables(cur)
+            equipment.create_tables(cur)
+            advisories.create_tables(cur)
+
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS coverage_requests (
                     request_id VARCHAR(64) PRIMARY KEY,
@@ -102,6 +108,32 @@ def create_tables():
                 ON coverage_requests (bfs_number, verified)
             """)
 
+            # ADD COLUMN also backfills existing rows; the inline constraint
+            # is created once, alongside the column, on either schema path.
+            cur.execute("""
+                ALTER TABLE buildings ADD COLUMN IF NOT EXISTS preferred_locale
+                    TEXT NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+            cur.execute("""
+                ALTER TABLE coverage_requests ADD COLUMN IF NOT EXISTS preferred_locale
+                    TEXT NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+
+            # Keep the seven-column projection accepted by v0.1.21 startup.
+            # Existing extended views need recreation; dependencies fail closed.
+            cur.execute("""
+                DO $$ BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM pg_attribute
+                        WHERE attrelid = to_regclass('verified_interest')
+                          AND attname = 'preferred_locale' AND NOT attisdropped
+                    ) THEN
+                        DROP VIEW verified_interest;
+                    END IF;
+                END $$
+            """)
             cur.execute("""
                 CREATE OR REPLACE VIEW verified_interest AS
                 SELECT DISTINCT ON (bfs_number, LOWER(email))
@@ -239,6 +271,7 @@ def create_tables():
                     dso_submitted_at TIMESTAMP,
                     dso_approved_at TIMESTAMP,
                     activated_at TIMESTAMP,
+                    vnb_start_confirmation JSONB,
                     vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover',
                     require_dual_control BOOLEAN NOT NULL DEFAULT FALSE
                 )
@@ -246,6 +279,7 @@ def create_tables():
 
             cur.execute("""
                 ALTER TABLE communities
+                    ADD COLUMN IF NOT EXISTS vnb_start_confirmation JSONB,
                     ADD COLUMN IF NOT EXISTS vnb_adapter_key VARCHAR(128) NOT NULL DEFAULT 'manual-handover',
                     ADD COLUMN IF NOT EXISTS require_dual_control BOOLEAN NOT NULL DEFAULT FALSE
             """)
@@ -283,6 +317,7 @@ def create_tables():
                 )
             """)
             # Community documents table
+            telemetry.create_tables(cur)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS community_documents (
                     community_id VARCHAR(64) PRIMARY KEY REFERENCES communities(community_id) ON DELETE CASCADE,
@@ -630,6 +665,17 @@ def create_tables():
                 )
             """)
 
+            cur.execute("""
+                ALTER TABLE utility_clients ADD COLUMN IF NOT EXISTS preferred_locale
+                    VARCHAR(5) NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+            cur.execute("""
+                ALTER TABLE leg_registry ADD COLUMN IF NOT EXISTS preferred_locale
+                    VARCHAR(5) NOT NULL DEFAULT 'de_CH'
+                    CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
+            """)
+
             # Migration: add verification_token columns to leg_registry if missing
             # (leg_registry shipped in Phase 1 without these Phase 2 columns).
             cur.execute("""
@@ -653,6 +699,7 @@ def create_tables():
                     effective_to TIMESTAMPTZ,
                     internal_price_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (internal_price_chf_per_kwh >= 0),
                     grid_fee_chf_per_kwh DECIMAL(12, 6) NOT NULL CHECK (grid_fee_chf_per_kwh >= 0),
+                    settlement_fee_chf_per_kwh DECIMAL(12, 6) NOT NULL DEFAULT 0 CHECK (settlement_fee_chf_per_kwh >= 0),
                     network_level VARCHAR(16) NOT NULL CHECK (network_level IN ('same', 'cross')),
                     distribution_model VARCHAR(20),
                     vat_mode VARCHAR(16),
@@ -688,6 +735,9 @@ def create_tables():
             # CHECK constraints. Columns stay nullable without defaults so legacy
             # rows are never assigned invented money-path values;
             # get_billing_policy refuses them as incomplete.
+            # Exception: the VNB settlement fee defaults to 0. Periods billed
+            # before the fee existed were settled without one, so 0 reproduces
+            # their stored behaviour instead of inventing a charge.
             # PostgreSQL 16 does not support ADD CONSTRAINT IF NOT EXISTS, so each
             # constraint is added inside a DO block that checks pg_constraint.
             cur.execute("""
@@ -697,7 +747,21 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS vat_rate_pct DECIMAL(5, 2),
                     ADD COLUMN IF NOT EXISTS payment_days INTEGER,
                     ADD COLUMN IF NOT EXISTS invoice_prefix VARCHAR(32),
-                    ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16);
+                    ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16),
+                    ADD COLUMN IF NOT EXISTS settlement_fee_chf_per_kwh DECIMAL(12, 6) NOT NULL DEFAULT 0;
+
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conrelid = 'billing_tariffs'::regclass
+                          AND conname = 'chk_billing_tariffs_settlement_fee'
+                    ) THEN
+                        ALTER TABLE billing_tariffs
+                        ADD CONSTRAINT chk_billing_tariffs_settlement_fee
+                        CHECK (settlement_fee_chf_per_kwh >= 0);
+                    END IF;
+                END $$;
 
                 DO $$
                 BEGIN
@@ -799,6 +863,7 @@ def create_tables():
                     network_level VARCHAR(16) DEFAULT 'same',
                     internal_price_chf_per_kwh DECIMAL(12, 6),
                     grid_fee_chf_per_kwh DECIMAL(12, 6),
+                    battery_snapshot JSONB,
                     timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich',
                     input_fingerprint VARCHAR(64),
                     source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -834,13 +899,15 @@ def create_tables():
                 ALTER TABLE billing_periods
                     ADD COLUMN IF NOT EXISTS internal_price_chf_per_kwh DECIMAL(12, 6),
                     ADD COLUMN IF NOT EXISTS grid_fee_chf_per_kwh DECIMAL(12, 6),
+                    ADD COLUMN IF NOT EXISTS battery_snapshot JSONB,
                     ADD COLUMN IF NOT EXISTS timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Zurich',
                     ADD COLUMN IF NOT EXISTS input_fingerprint VARCHAR(64),
                     ADD COLUMN IF NOT EXISTS source_document_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
                     ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB,
                     ADD COLUMN IF NOT EXISTS prepared_by VARCHAR(64),
-                    ADD COLUMN IF NOT EXISTS calculated_values_fingerprint VARCHAR(64)
+                    ADD COLUMN IF NOT EXISTS calculated_values_fingerprint VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS status VARCHAR(32) DEFAULT 'draft'
             """)
 
             cur.execute("""
@@ -862,8 +929,28 @@ def create_tables():
             """)
 
             cur.execute("""
+                ALTER TABLE billing_periods DROP CONSTRAINT IF EXISTS
+                    billing_periods_community_id_period_start_period_end_key
+            """)
+            # The previous app uses IF NOT EXISTS with this legacy name.
+            # Keep its name, while retaining the current live-window predicate.
+            cur.execute("""
+                DO $$ BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM pg_index
+                        WHERE indexrelid = to_regclass('uq_billing_period_community_window')
+                          AND indrelid = 'billing_periods'::regclass
+                          AND indpred IS NULL
+                    ) THEN
+                        DROP INDEX uq_billing_period_community_window;
+                    END IF;
+                END $$
+            """)
+            cur.execute("DROP INDEX IF EXISTS idx_billing_period_live_window")
+            cur.execute("""
                 CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_period_community_window
                 ON billing_periods (community_id, period_start, period_end)
+                WHERE status IS DISTINCT FROM 'invalidated'
             """)
 
             cur.execute("""
@@ -996,6 +1083,66 @@ def create_tables():
                     CHECK (new_state IN ('issued', 'delivered', 'paid', 'cancelled', 'corrected'))
                 )
             """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoice_queries (
+                    id BIGSERIAL PRIMARY KEY,
+                    invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+                    community_id VARCHAR(64) NOT NULL,
+                    participant_id VARCHAR(64) NOT NULL,
+                    category VARCHAR(32) NOT NULL,
+                    status VARCHAR(32) NOT NULL DEFAULT 'open',
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoice_query_messages (
+                    id BIGSERIAL PRIMARY KEY,
+                    query_id BIGINT NOT NULL REFERENCES invoice_queries(id) ON DELETE CASCADE,
+                    actor_id VARCHAR(64) NOT NULL,
+                    message TEXT NOT NULL,
+                    attachment_filename TEXT,
+                    attachment_data BYTEA,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_invoice_queries_invoice
+                ON invoice_queries(invoice_id)
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_invoice_queries_community
+                ON invoice_queries(community_id)
+            """)
+            # Quartierakku (#628): one shared storage battery per community
+            # with one cost share per participant. One battery per community
+            # until a second real-world case shows up.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS community_batteries (
+                    community_id VARCHAR(64) PRIMARY KEY REFERENCES communities(community_id) ON DELETE CASCADE,
+                    capacity_kwh DECIMAL(10, 2) NOT NULL CHECK (capacity_kwh > 0),
+                    annual_cost_chf DECIMAL(12, 2) NOT NULL CHECK (annual_cost_chf >= 0),
+                    participant_id VARCHAR(64),
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                ALTER TABLE community_batteries
+                ADD COLUMN IF NOT EXISTS participant_id VARCHAR(64)
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS community_battery_shares (
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
+                    building_id VARCHAR(64) NOT NULL REFERENCES buildings(building_id) ON DELETE CASCADE,
+                    share_pct DECIMAL(5, 2) NOT NULL CHECK (share_pct >= 0 AND share_pct <= 100),
+                    PRIMARY KEY (community_id, building_id)
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_community_battery_shares_building "
+                "ON community_battery_shares(building_id)"
+            )
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS invoice_queries (
                     id BIGSERIAL PRIMARY KEY,
@@ -1372,6 +1519,178 @@ def create_tables():
                 "CREATE INDEX IF NOT EXISTS idx_leg_registry_claim_token ON leg_registry(claim_token)"
             )
 
+            # Versioned, idempotent VNB formation exchange. Private package and
+            # acknowledgement bytes are never selected by ordinary read models.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS vnb_submission_cases (
+                    case_id VARCHAR(64) PRIMARY KEY,
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
+                    created_by VARCHAR(64) NOT NULL,
+                    delivered_by VARCHAR(64),
+                    adapter_key VARCHAR(128) NOT NULL,
+                    contract_version VARCHAR(64) NOT NULL,
+                    capability_snapshot JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    payload_fingerprint VARCHAR(64) NOT NULL,
+                    state VARCHAR(32) NOT NULL,
+                    next_action VARCHAR(64) NOT NULL,
+                    external_request_id VARCHAR(255),
+                    response_status VARCHAR(128),
+                    manual_package BYTEA,
+                    response_evidence BYTEA,
+                    retryable BOOLEAN NOT NULL DEFAULT FALSE,
+                    failure_code VARCHAR(128),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    attempted_at TIMESTAMPTZ,
+                    delivered_at TIMESTAMPTZ,
+                    acknowledged_at TIMESTAMPTZ,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE (community_id, contract_version, payload_fingerprint),
+                    CHECK (state IN ('claimed', 'prepared', 'delivered', 'acknowledged', 'rejected', 'failed'))
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vnb_submission_cases_community ON vnb_submission_cases(community_id, created_at DESC)"
+            )
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_vnb_submission_active_community
+                ON vnb_submission_cases(community_id)
+                WHERE state IN ('claimed', 'prepared', 'delivered', 'acknowledged')
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS vnb_mutation_cases (
+                    case_id VARCHAR(64) PRIMARY KEY,
+                    mutation_id VARCHAR(128) NOT NULL,
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
+                    participant_id VARCHAR(64) NOT NULL,
+                    created_by VARCHAR(64) NOT NULL,
+                    mutation_type VARCHAR(16) NOT NULL CHECK (mutation_type IN ('join', 'exit', 'change')),
+                    effective_date DATE NOT NULL,
+                    source_agreement_id VARCHAR(128) NOT NULL,
+                    before_facts JSONB NOT NULL,
+                    after_facts JSONB NOT NULL,
+                    adapter_key VARCHAR(128) NOT NULL,
+                    contract_version VARCHAR(64) NOT NULL,
+                    capability_snapshot JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    payload_fingerprint VARCHAR(64) NOT NULL,
+                    state VARCHAR(32) NOT NULL,
+                    next_action VARCHAR(64) NOT NULL,
+                    external_request_id VARCHAR(255),
+                    response_status VARCHAR(128),
+                    manual_package BYTEA,
+                    retryable BOOLEAN NOT NULL DEFAULT FALSE,
+                    failure_code VARCHAR(128),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE (community_id, mutation_id),
+                    CHECK (state IN ('claimed', 'prepared', 'delivered', 'acknowledged', 'rejected', 'failed', 'superseded'))
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS vnb_mutation_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    case_id VARCHAR(64) NOT NULL REFERENCES vnb_mutation_cases(case_id) ON DELETE CASCADE,
+                    state VARCHAR(32) NOT NULL,
+                    external_request_id VARCHAR(255),
+                    response_status VARCHAR(128),
+                    evidence BYTEA,
+                    retryable BOOLEAN NOT NULL DEFAULT FALSE,
+                    failure_code VARCHAR(128),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE NULLS NOT DISTINCT (case_id, state, external_request_id, response_status)
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vnb_mutations_community ON vnb_mutation_cases(community_id, created_at DESC)"
+            )
+
+            # Private operator API credentials and transactional event outbox.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS operator_api_clients (
+                    id VARCHAR(64) PRIMARY KEY,
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
+                    created_by VARCHAR(64) NOT NULL,
+                    name VARCHAR(128) NOT NULL,
+                    capabilities JSONB NOT NULL,
+                    token_hash VARCHAR(64) UNIQUE NOT NULL,
+                    webhook_url TEXT,
+                    webhook_secret_version INTEGER NOT NULL DEFAULT 1,
+                    rate_limit_per_hour INTEGER NOT NULL DEFAULT 100 CHECK (rate_limit_per_hour > 0),
+                    active BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    rotated_at TIMESTAMPTZ,
+                    revoked_at TIMESTAMPTZ,
+                    last_used_at TIMESTAMPTZ
+                )
+            """)
+            cur.execute("""
+                ALTER TABLE operator_api_clients
+                    ADD COLUMN IF NOT EXISTS webhook_secret_version INTEGER NOT NULL DEFAULT 1
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_operator_clients_community ON operator_api_clients(community_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_operator_clients_token ON operator_api_clients(token_hash) WHERE active=TRUE"
+            )
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS operator_api_usage (
+                    id BIGSERIAL PRIMARY KEY,
+                    client_id VARCHAR(64) NOT NULL REFERENCES operator_api_clients(id) ON DELETE CASCADE,
+                    endpoint VARCHAR(255) NOT NULL,
+                    called_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_operator_usage_limit ON operator_api_usage(client_id,called_at DESC)"
+            )
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS operator_events (
+                    event_id VARCHAR(64) PRIMARY KEY,
+                    event_type VARCHAR(128) NOT NULL,
+                    schema_version VARCHAR(32) NOT NULL CHECK (schema_version = 'operator-event/1'),
+                    aggregate_id VARCHAR(128) NOT NULL,
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
+                    payload JSONB NOT NULL,
+                    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(event_type,event_id)
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS operator_webhook_deliveries (
+                    delivery_id VARCHAR(64) PRIMARY KEY,
+                    event_id VARCHAR(64) NOT NULL REFERENCES operator_events(event_id) ON DELETE CASCADE,
+                    client_id VARCHAR(64) NOT NULL REFERENCES operator_api_clients(id) ON DELETE CASCADE,
+                    status VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','processing','retry','delivered','failed')),
+                    attempt_count INTEGER NOT NULL DEFAULT 0,
+                    response_status INTEGER,
+                    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_attempt_at TIMESTAMPTZ,
+                    claimed_at TIMESTAMPTZ,
+                    claim_id VARCHAR(64),
+                    UNIQUE(event_id,client_id)
+                )
+            """)
+            cur.execute(
+                "ALTER TABLE operator_events DROP CONSTRAINT IF EXISTS operator_events_schema_version_check"
+            )
+            cur.execute(
+                "ALTER TABLE operator_events ADD CONSTRAINT operator_events_schema_version_check CHECK (schema_version = 'operator-event/1')"
+            )
+            cur.execute(
+                "ALTER TABLE operator_webhook_deliveries ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ"
+            )
+            cur.execute(
+                "ALTER TABLE operator_webhook_deliveries ADD COLUMN IF NOT EXISTS claim_id VARCHAR(64)"
+            )
+            cur.execute(
+                "ALTER TABLE operator_webhook_deliveries DROP CONSTRAINT IF EXISTS operator_webhook_deliveries_status_check"
+            )
+            cur.execute(
+                "ALTER TABLE operator_webhook_deliveries ADD CONSTRAINT operator_webhook_deliveries_status_check CHECK (status IN ('pending','processing','retry','delivered','failed'))"
+            )
+
             # Community correspondence ledger: shared in/out mail log per LEG
             # (email and physical post, manually logged). Phase 6 MVP, see
             # docs/leg-registry.md.
@@ -1572,18 +1891,8 @@ def create_tables():
                     PRIMARY KEY (community_id, action, idempotency_key)
                 )
             """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS operator_events (
-                    event_id VARCHAR(64) PRIMARY KEY,
-                    event_type VARCHAR(128) NOT NULL,
-                    schema_version VARCHAR(32) NOT NULL,
-                    aggregate_id VARCHAR(128) NOT NULL,
-                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
-                    payload JSONB NOT NULL,
-                    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(event_type,event_id)
-                )
-            """)
+            # A case can emit multiple updates. Stable event IDs deduplicate a
+            # replay; aggregate IDs must not collapse distinct transitions.
             cur.execute("""
                 ALTER TABLE operator_events
                 DROP CONSTRAINT IF EXISTS operator_events_event_type_aggregate_id_key
@@ -1631,6 +1940,41 @@ def create_tables():
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 )
             """)
+            cur.execute("""
+                ALTER TABLE metering_points
+                    ADD COLUMN IF NOT EXISTS assignment_effective_from TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS assignment_effective_until TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS assignment_reference VARCHAR(128),
+                    ADD COLUMN IF NOT EXISTS assignment_actor VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS assignment_recorded_at TIMESTAMPTZ
+            """)
+            cur.execute("""
+                DO $$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'chk_metering_assignment_validity'
+                          AND conrelid = 'metering_points'::regclass
+                    ) THEN
+                        ALTER TABLE metering_points ADD CONSTRAINT
+                            chk_metering_assignment_validity CHECK (
+                                (assignment_effective_from IS NULL
+                                 AND assignment_effective_until IS NULL
+                                 AND assignment_reference IS NULL
+                                 AND assignment_actor IS NULL
+                                 AND assignment_recorded_at IS NULL)
+                                OR
+                                (assignment_effective_from IS NOT NULL
+                                 AND assignment_reference IS NOT NULL
+                                 AND btrim(assignment_reference) <> ''
+                                 AND assignment_actor IS NOT NULL
+                                 AND assignment_actor = 'admin-token'
+                                 AND assignment_recorded_at IS NOT NULL
+                                 AND (assignment_effective_until IS NULL
+                                      OR assignment_effective_until > assignment_effective_from))
+                            );
+                    END IF;
+                END $$
+            """)
             # Migration: add expected_directions to existing metering_points
             # tables. Legacy rows stay NULL: the migration must not invent a
             # direction for existing citizen data.
@@ -1651,6 +1995,30 @@ def create_tables():
                             );
                     END IF;
                 END $$
+            """)
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION clear_metering_assignment_validity()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                    NEW.assignment_effective_from := NULL;
+                    NEW.assignment_effective_until := NULL;
+                    NEW.assignment_reference := NULL;
+                    NEW.assignment_actor := NULL;
+                    NEW.assignment_recorded_at := NULL;
+                    RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+            cur.execute("""
+                CREATE OR REPLACE TRIGGER metering_assignment_binding_changed
+                BEFORE UPDATE OF vnb_community_id, community_id, building_id,
+                    expected_directions ON metering_points
+                FOR EACH ROW
+                WHEN ((OLD.vnb_community_id, OLD.community_id, OLD.building_id,
+                       OLD.expected_directions) IS DISTINCT FROM
+                      (NEW.vnb_community_id, NEW.community_id, NEW.building_id,
+                       NEW.expected_directions))
+                EXECUTE FUNCTION clear_metering_assignment_validity()
             """)
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_metering_points_building ON metering_points(building_id)"
@@ -1739,6 +2107,51 @@ def create_tables():
                 CREATE INDEX IF NOT EXISTS idx_vnb_calculated_values_period
                 ON vnb_calculated_values_deliveries
                     (community_id, period_start, period_end, received_at DESC)
+            """)
+            cur.execute("""
+                ALTER TABLE vnb_calculated_values_deliveries
+                ADD COLUMN IF NOT EXISTS source_metadata JSONB
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_vnb_e66_evidence_hash
+                ON vnb_calculated_values_deliveries (territory, evidence_sha256)
+                WHERE format_version = 'e66/1'
+            """)
+
+            # Withdrawals preserve the original VNB delivery and its evidence.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS vnb_calculated_values_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    territory VARCHAR(64) NOT NULL,
+                    community_id VARCHAR(64) NOT NULL,
+                    delivery_id BIGINT NOT NULL REFERENCES vnb_calculated_values_deliveries(id),
+                    action VARCHAR(16) NOT NULL CHECK (action = 'withdrawn'),
+                    idempotency_key VARCHAR(128) NOT NULL,
+                    request_fingerprint CHAR(64) NOT NULL,
+                    authenticated_actor VARCHAR(64) NOT NULL,
+                    reason TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (territory, idempotency_key),
+                    UNIQUE (delivery_id)
+                )
+            """)
+
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION reject_calculated_values_event_mutation()
+                RETURNS trigger AS $$
+                BEGIN
+                    RAISE EXCEPTION 'Calculated-values lifecycle events are append-only';
+                END;
+                $$ LANGUAGE plpgsql
+            """)
+            cur.execute(
+                "DROP TRIGGER IF EXISTS calculated_values_events_append_only "
+                "ON vnb_calculated_values_events"
+            )
+            cur.execute("""
+                CREATE TRIGGER calculated_values_events_append_only
+                BEFORE UPDATE OR DELETE OR TRUNCATE ON vnb_calculated_values_events
+                FOR EACH STATEMENT EXECUTE FUNCTION reject_calculated_values_event_mutation()
             """)
 
             # Veracity-Flags (#517): Markierungen zu importierten, aber

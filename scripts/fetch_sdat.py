@@ -18,7 +18,7 @@ import argparse
 import logging
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -96,7 +96,7 @@ def main(argv=None) -> int:
         config.remote_dir = args.remote_dir
 
     since = (
-        datetime.now(timezone.utc) - timedelta(days=args.since_days)
+        datetime.now(UTC) - timedelta(days=args.since_days)
         if args.since_days is not None
         else None
     )

@@ -117,6 +117,11 @@ def test_member_routes_render_all_states_and_correction_links(
         "member_invoice_detail",
         MagicMock(return_value=detail),
     )
+    monkeypatch.setattr(
+        dashboard_app_module.dashboard_module,
+        "member_invoice_savings_view",
+        MagicMock(return_value={"available": False, "period_label": "", "message": ""}),
+    )
     client = dashboard_app_module.web.test_client()
     _set_session(client)
 
@@ -1362,7 +1367,7 @@ def test_saved_periods_carry_a_default_system_preparer(monkeypatch):
     insert_query, insert_params = cursor.executed[insert_index]
 
     assert "prepared_by" in insert_query
-    assert insert_params[-1] is None
+    assert insert_params[16] is None
 
 
 def test_store_correction_links_open_invoice_queries_to_the_correction(monkeypatch):

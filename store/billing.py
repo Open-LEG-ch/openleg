@@ -65,6 +65,34 @@ def save_billing_period(
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
+                status = "draft"
+                if summary.get("calculated_values_fingerprint"):
+                    # A preparation may finish after its source was withdrawn.
+                    # Keep its snapshot, while leaving the live window available.
+                    cur.execute(
+                        "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+                        (community_id,),
+                    )
+                    cur.execute(
+                        """SELECT EXISTS (
+                            SELECT 1 FROM vnb_calculated_values_deliveries d
+                            WHERE d.community_id = %s AND d.content_fingerprint = %s
+                              AND d.period_start = %s AND d.period_end = %s
+                              AND d.status = 'accepted'
+                              AND NOT EXISTS (
+                                  SELECT 1 FROM vnb_calculated_values_events e
+                                  WHERE e.delivery_id = d.id
+                              )
+                        ) AS evidence_current""",
+                        (
+                            community_id,
+                            summary["calculated_values_fingerprint"],
+                            period_start,
+                            period_end,
+                        ),
+                    )
+                    if not cur.fetchone()["evidence_current"]:
+                        status = "invalidated"
                 cur.execute(
                     """
                     INSERT INTO billing_periods
@@ -73,9 +101,9 @@ def save_billing_period(
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
                      timezone, input_fingerprint, source_document_ids,
                      reconciliation, billing_policy_snapshot, prepared_by,
-                     calculated_values_fingerprint, status)
+                     battery_snapshot, calculated_values_fingerprint, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s, 'draft')
+                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s::jsonb, %s, %s)
                     RETURNING id
                 """,
                     (
@@ -103,7 +131,16 @@ def save_billing_period(
                             else None
                         ),
                         prepared_by,
+                        (
+                            json.dumps(
+                                summary["battery_snapshot"],
+                                default=_json_default,
+                            )
+                            if summary.get("battery_snapshot")
+                            else None
+                        ),
                         summary.get("calculated_values_fingerprint"),
+                        status,
                     ),
                 )
                 period_id = cur.fetchone()["id"]
@@ -164,8 +201,8 @@ def save_billing_period(
                         )
 
                 return period_id
-    except Exception as e:
-        logger.error(f"[DB] Error saving billing period: {e}")
+    except Exception:
+        logger.error("[DB] Error saving billing period")
         raise
 
 
@@ -203,7 +240,7 @@ def get_active_communities() -> list[dict]:
             cur.execute("SELECT * FROM communities WHERE status = 'active'")
             return [dict(row) for row in cur.fetchall()]
     except Exception as e:
-        logger.error(f"[DB] Error getting active communities: {e}")
+        logger.error("[DB] Error getting active communities")
         raise BillingStoreError("Could not load active communities") from e
 
 
@@ -385,6 +422,34 @@ def approve_billing_period(
                         "Issued billing period has no invoices"
                     )
                 return invoices
+            calculated_values = None
+            if period.get("calculated_values_fingerprint"):
+                cur.execute(
+                    """SELECT d.* FROM vnb_calculated_values_deliveries d
+                       WHERE d.community_id = %s AND d.content_fingerprint = %s
+                         AND d.period_start = %s AND d.period_end = %s
+                         AND d.status = 'accepted'
+                         AND NOT EXISTS (
+                             SELECT 1 FROM vnb_calculated_values_events e
+                             WHERE e.delivery_id = d.id
+                         )""",
+                    (
+                        community_id,
+                        period["calculated_values_fingerprint"],
+                        period["period_start"],
+                        period["period_end"],
+                    ),
+                )
+                source_row = cur.fetchone()
+                if not source_row:
+                    raise billing_approval.BillingApprovalError(
+                        "Der VNB-Beleg dieses Entwurfs ist nicht mehr aktuell. "
+                        "Erstellen Sie den Entwurf neu."
+                    )
+                calculated_values = dict(source_row)
+                calculated_values["fingerprint"] = calculated_values[
+                    "content_fingerprint"
+                ]
             if status != "draft":
                 raise billing_approval.BillingApprovalError(
                     "Only a draft billing period can be approved"
@@ -407,7 +472,7 @@ def approve_billing_period(
             )
             period["line_items"] = [dict(item) for item in cur.fetchall()]
             snapshots = billing_approval.prepare_invoice_snapshots(
-                period, issue_date=issue_date
+                period, issue_date=issue_date, calculated_values=calculated_values
             )
 
             prefix = str(snapshots[0]["policy_snapshot"]["invoice_prefix"])
@@ -475,6 +540,7 @@ def get_billing_period_for_window(
             """
             SELECT id, input_fingerprint FROM billing_periods
             WHERE community_id = %s AND period_start = %s AND period_end = %s
+              AND status IS DISTINCT FROM 'invalidated'
             """,
             (community_id, period_start, period_end),
         )
@@ -495,7 +561,8 @@ def get_billing_policy(community_id: str, period_start, period_end) -> dict | No
             """
             WITH newest AS (
                 SELECT t.id, t.community_id, t.internal_price_chf_per_kwh,
-                       t.grid_fee_chf_per_kwh, t.network_level,
+                       t.grid_fee_chf_per_kwh, t.settlement_fee_chf_per_kwh,
+                       t.network_level,
                        t.distribution_model, t.vat_mode, t.vat_rate_pct,
                        t.payment_days, t.invoice_prefix, t.delivery_method,
                        t.effective_from, t.effective_to
@@ -509,6 +576,7 @@ def get_billing_policy(community_id: str, period_start, period_end) -> dict | No
             )
             SELECT id AS tariff_id, t.community_id,
                    internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
+                   settlement_fee_chf_per_kwh,
                    network_level, distribution_model, vat_mode, vat_rate_pct,
                    payment_days, invoice_prefix, delivery_method,
                    effective_from
@@ -545,7 +613,15 @@ def save_billing_policy(community_id: str, policy: dict) -> int:
         columns = ("community_id", *billing_policy.EDITABLE_POLICY_FIELDS)
         column_sql = ", ".join(columns)
         placeholders = ", ".join("%s" for _ in columns)
-        values = (community_id, *(policy[field] for field in columns[1:]))
+        values = (
+            community_id,
+            *(
+                policy.get(field, 0)
+                if field == "settlement_fee_chf_per_kwh"
+                else policy[field]
+                for field in columns[1:]
+            ),
+        )
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 f"""
@@ -577,9 +653,9 @@ def get_invoices_for_participant(building_id: str) -> list[dict]:
             cur.execute(
                 """
                 SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
-                       policy_snapshot, provenance_snapshot,
-                       line_items_snapshot, net_chf, vat_rate_pct, vat_chf,
-                       gross_chf, issue_date, due_date,
+                       i.policy_snapshot, i.provenance_snapshot,
+                       i.line_items_snapshot, i.net_chf, i.vat_rate_pct, i.vat_chf,
+                       i.gross_chf, i.issue_date, i.due_date,
                        COALESCE((
                            SELECT e.new_state FROM invoice_lifecycle_events e
                            WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
@@ -648,7 +724,7 @@ def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | Non
 def _locked_invoice(cur, invoice_id, community_id):
     cur.execute(
         """
-        SELECT i.*, b.email AS recipient_email
+        SELECT i.*, b.email AS recipient_email, b.preferred_locale AS recipient_locale
         FROM invoices i
         LEFT JOIN buildings b ON b.building_id = i.participant_id
         WHERE i.id = %s AND i.community_id = %s AND i.status = 'issued'
@@ -818,6 +894,7 @@ def prepare_invoice_delivery(invoice_id, community_id, actor_id):
                 "already_delivered": False,
                 "delivery_method": method,
                 "recipient_email": invoice.get("recipient_email"),
+                "recipient_locale": invoice.get("recipient_locale"),
                 "invoice_number": invoice["invoice_number"],
             }
     except billing_lifecycle.InvoiceLifecycleError:

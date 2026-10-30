@@ -143,7 +143,7 @@ def test_dual_control_refuses_the_person_who_prepared_the_period(monkeypatch):
     monkeypatch.setattr(
         dashboard.formation_wizard,
         "get_community_status",
-        lambda _community_id: {"require_dual_control": True},
+        lambda _community_id, _viewer=None: {"require_dual_control": True},
     )
     monkeypatch.setattr(
         dashboard.db,
@@ -166,7 +166,7 @@ def test_dual_control_refuses_a_period_without_a_recorded_preparer(monkeypatch):
     monkeypatch.setattr(
         dashboard.formation_wizard,
         "get_community_status",
-        lambda _community_id: {"require_dual_control": True},
+        lambda _community_id, _viewer=None: {"require_dual_control": True},
     )
     monkeypatch.setattr(dashboard.db, "get_billing_period", lambda _period_id: {})
 

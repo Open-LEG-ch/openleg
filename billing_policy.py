@@ -12,6 +12,9 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
+from i18n import gettext as _
+from translation_markers import gettext_noop as _N
+
 NETWORK_LEVELS = ("same", "cross")
 DISTRIBUTION_MODELS = ("proportional", "einfach")
 VAT_MODES = ("none", "standard")
@@ -26,7 +29,7 @@ INVOICE_PREFIX_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9-]{1,15}\Z")
 _STRICT_DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PLAIN_DECIMAL_PATTERN = re.compile(r"^\d+(\.\d+)?$")
 
-POLICY_DISCLAIMER = (
+POLICY_DISCLAIMER = _N(
     "Tarife und Mehrwertsteuer liegen in der Verantwortung der LEG. "
     "OpenLEG erteilt keine Rechts- oder Steuerberatung und legt diese Werte "
     "nicht fest. Prüfen Sie Ihre Wahl vor dem Speichern."
@@ -38,6 +41,7 @@ PERSISTED_POLICY_FIELDS = (
     "effective_from",
     "internal_price_chf_per_kwh",
     "grid_fee_chf_per_kwh",
+    "settlement_fee_chf_per_kwh",
     "network_level",
     "distribution_model",
     "vat_mode",
@@ -52,6 +56,7 @@ EDITABLE_POLICY_FIELDS = PERSISTED_POLICY_FIELDS[2:]
 _FORM_INPUT_FOR_POLICY_FIELD = {
     "internal_price_chf_per_kwh": "internal_price_rp",
     "grid_fee_chf_per_kwh": "grid_fee_rp",
+    "settlement_fee_chf_per_kwh": "settlement_fee_rp",
 }
 
 FORM_FIELDS = tuple(
@@ -63,24 +68,33 @@ FINGERPRINT_POLICY_FIELDS = tuple(
 _DECIMAL_POLICY_FIELDS = (
     "internal_price_chf_per_kwh",
     "grid_fee_chf_per_kwh",
+    "settlement_fee_chf_per_kwh",
     "vat_rate_pct",
 )
 
+# Snapshots frozen before the settlement fee existed carry no fee key. Their
+# periods were billed without one, so the missing field is read as zero and
+# every pre-fee fingerprint, draft and invoice stays reproducible.
+SETTLEMENT_FEE_FIELD = "settlement_fee_chf_per_kwh"
+_PAYMENT_DAYS_ERROR = _N(
+    "Zahlungsfrist in ganzen Tagen, zwischen %(minimum)s und %(maximum)s."
+)
+
 NETWORK_LEVEL_LABELS = {
-    "same": "Gleiche Netzebene",
-    "cross": "Unterschiedliche Netzebenen",
+    "same": _N("Gleiche Netzebene"),
+    "cross": _N("Unterschiedliche Netzebenen"),
 }
 DISTRIBUTION_MODEL_LABELS = {
-    "proportional": "Proportional",
-    "einfach": "Einfach",
+    "proportional": _N("Proportional"),
+    "einfach": _N("Einfach"),
 }
 VAT_MODE_LABELS = {
-    "none": "Keine Mehrwertsteuer",
-    "standard": "Mehrwertsteuer ausweisen",
+    "none": _N("Keine Mehrwertsteuer"),
+    "standard": _N("Mehrwertsteuer ausweisen"),
 }
 DELIVERY_METHOD_LABELS = {
-    "email": "E-Mail",
-    "download": "PDF-Download",
+    "email": _N("E-Mail"),
+    "download": _N("PDF-Download"),
 }
 
 
@@ -107,7 +121,7 @@ def _persisted_temporal(value):
             except ValueError:
                 pass
     raise InvalidPersistedPolicy(
-        "Das Inkrafttretungsdatum der Richtlinie ist ungültig."
+        _N("Das Inkrafttretungsdatum der Richtlinie ist ungültig.")
     )
 
 
@@ -119,22 +133,26 @@ def validate_persisted_policy(policy, *, period_start, community_id) -> dict:
     """Validate and normalize one stored policy snapshot, failing closed."""
     if not isinstance(policy, dict) or not policy:
         raise InvalidPersistedPolicy(
-            "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
+            _N("Der Abrechnungsentwurf hat keine Richtlinien-Kopie.")
         )
-    missing = [field for field in PERSISTED_POLICY_FIELDS if policy.get(field) is None]
+    missing = [
+        field
+        for field in PERSISTED_POLICY_FIELDS
+        if field != SETTLEMENT_FEE_FIELD and policy.get(field) is None
+    ]
     if missing:
         raise InvalidPersistedPolicy(
-            "Die Richtlinien-Kopie ist unvollständig: " + ", ".join(missing)
+            _N("Die Richtlinien-Kopie ist unvollständig: ") + ", ".join(missing)
         )
     if policy["community_id"] != community_id or not isinstance(
         policy["community_id"], str
     ):
         raise InvalidPersistedPolicy(
-            "Die Richtlinien-Kopie gehört nicht zur Community des Entwurfs."
+            _N("Die Richtlinien-Kopie gehört nicht zur Community des Entwurfs.")
         )
     tariff_id = policy["tariff_id"]
     if isinstance(tariff_id, bool) or not isinstance(tariff_id, int) or tariff_id <= 0:
-        raise InvalidPersistedPolicy("Die Tarif-ID der Richtlinie ist ungültig.")
+        raise InvalidPersistedPolicy(_N("Die Tarif-ID der Richtlinie ist ungültig."))
 
     normalized = dict(policy)
     max_price_chf = MAX_PRICE_RP / Decimal(100)
@@ -142,9 +160,29 @@ def validate_persisted_policy(policy, *, period_start, community_id) -> dict:
         value = _persisted_decimal(policy[field])
         if not _has_precision(value, 6) or value < 0 or value > max_price_chf:
             raise InvalidPersistedPolicy(
-                "Ein Energiepreis der Richtlinie liegt ausserhalb des zulässigen Bereichs."
+                _N(
+                    "Ein Energiepreis der Richtlinie liegt ausserhalb des zulässigen Bereichs."
+                )
             )
         normalized[field] = value
+
+    settlement_fee = policy.get(SETTLEMENT_FEE_FIELD)
+    if settlement_fee is None:
+        settlement_fee = Decimal(0)
+    else:
+        settlement_fee = _persisted_decimal(settlement_fee)
+        if (
+            not _has_precision(settlement_fee, 6)
+            or settlement_fee < 0
+            or settlement_fee > max_price_chf
+        ):
+            raise InvalidPersistedPolicy(
+                _N(
+                    "Das Abrechnungsentgelt der Richtlinie liegt ausserhalb des "
+                    "zulässigen Bereichs."
+                )
+            )
+    normalized[SETTLEMENT_FEE_FIELD] = settlement_fee
 
     effective_from = _persisted_temporal(policy["effective_from"])
     try:
@@ -153,20 +191,24 @@ def validate_persisted_policy(policy, *, period_start, community_id) -> dict:
         effective = False
     if not effective:
         raise InvalidPersistedPolicy(
-            "Die Richtlinie gilt noch nicht zum Periodenbeginn."
+            _N("Die Richtlinie gilt noch nicht zum Periodenbeginn.")
         )
 
     for field, allowed, message in (
-        ("network_level", NETWORK_LEVELS, "Die Netzebene der Richtlinie ist ungültig."),
+        (
+            "network_level",
+            NETWORK_LEVELS,
+            _N("Die Netzebene der Richtlinie ist ungültig."),
+        ),
         (
             "distribution_model",
             DISTRIBUTION_MODELS,
-            "Das Verteilmodell der Richtlinie ist ungültig.",
+            _N("Das Verteilmodell der Richtlinie ist ungültig."),
         ),
         (
             "delivery_method",
             DELIVERY_METHODS,
-            "Die Zustellmethode der Richtlinie ist ungültig.",
+            _N("Die Zustellmethode der Richtlinie ist ungültig."),
         ),
     ):
         if policy[field] not in allowed:
@@ -175,42 +217,92 @@ def validate_persisted_policy(policy, *, period_start, community_id) -> dict:
     if not isinstance(
         policy["invoice_prefix"], str
     ) or not INVOICE_PREFIX_PATTERN.match(policy["invoice_prefix"]):
-        raise InvalidPersistedPolicy("Das Rechnungspräfix der Richtlinie ist ungültig.")
+        raise InvalidPersistedPolicy(
+            _N("Das Rechnungspräfix der Richtlinie ist ungültig.")
+        )
     payment_days = policy["payment_days"]
     if (
         isinstance(payment_days, bool)
         or not isinstance(payment_days, int)
         or not MIN_PAYMENT_DAYS <= payment_days <= MAX_PAYMENT_DAYS
     ):
-        raise InvalidPersistedPolicy("Die Zahlungsfrist der Richtlinie ist ungültig.")
+        raise InvalidPersistedPolicy(
+            _N("Die Zahlungsfrist der Richtlinie ist ungültig.")
+        )
 
     vat_mode = policy["vat_mode"]
     vat_rate = _persisted_decimal(policy["vat_rate_pct"])
     if vat_mode not in VAT_MODES or not _has_precision(vat_rate, 2):
         raise InvalidPersistedPolicy(
-            "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
+            _N("Der Mehrwertsteuersatz der Richtlinie ist ungültig.")
         )
     if vat_mode == "none" and vat_rate != 0:
-        raise InvalidPersistedPolicy("Ohne Mehrwertsteuer muss der Satz 0 sein.")
+        raise InvalidPersistedPolicy(_N("Ohne Mehrwertsteuer muss der Satz 0 sein."))
     if vat_mode == "standard" and not 0 < vat_rate <= MAX_VAT_RATE_PCT:
         raise InvalidPersistedPolicy(
-            "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
+            _N("Der Mehrwertsteuersatz der Richtlinie ist ungültig.")
         )
     normalized["vat_rate_pct"] = vat_rate
     return normalized
 
 
 def policy_fingerprint_values(policy: dict) -> dict:
-    """Project the complete persisted policy into deterministic JSON values."""
+    """Project the complete persisted policy into deterministic JSON values.
+
+    A zero or absent settlement fee projects nothing: pre-fee policies were
+    fingerprinted without the field, and their re-runs must stay byte-identical.
+    """
     projected = {}
     for field in FINGERPRINT_POLICY_FIELDS:
-        value = policy[field]
+        if field == SETTLEMENT_FEE_FIELD:
+            value = policy.get(field)
+            if value is None or not Decimal(str(value or 0)):
+                continue
+        else:
+            value = policy[field]
         if field in _DECIMAL_POLICY_FIELDS:
             value = str(value)
         elif isinstance(value, (datetime, date)):
             value = value.isoformat()
         projected[field] = value
     return projected
+
+
+def suggest_price_band(
+    *, grid_total_rp, settlement_fee_rp, feed_in_floor_rp
+) -> dict | None:
+    """Suggest a fair band for the internal price, or None when none exists.
+
+    The floor is the producer's alternative: the feed-in tariff they would
+    earn by exporting. The ceiling is
+    the utility's total grid price minus the settlement fee, the highest
+    price that still beats buying from the grid. Every input is Rp/kWh.
+    Anything missing, non-finite, or negative yields no suggestion: OpenLEG
+    does not guess money-path inputs.
+    """
+    values = {}
+    for key, value in (
+        ("grid_total_rp", grid_total_rp),
+        ("settlement_fee_rp", settlement_fee_rp),
+        ("feed_in_floor_rp", feed_in_floor_rp),
+    ):
+        if value is None:
+            return None
+        number = _persisted_decimal(value)
+        if not number.is_finite() or number < 0:
+            return None
+        values[key] = number
+
+    floor = values["feed_in_floor_rp"]
+    ceiling = values["grid_total_rp"] - values["settlement_fee_rp"]
+    if floor >= ceiling:
+        return None
+    return {
+        "floor_rp": floor,
+        "ceiling_rp": ceiling,
+        "floor_rp_display": format(floor.quantize(Decimal("0.01")), "f"),
+        "ceiling_rp_display": format(ceiling.quantize(Decimal("0.01")), "f"),
+    }
 
 
 def rate_rp_text(value):
@@ -237,6 +329,9 @@ def describe_version(version: dict) -> dict:
         version.get("internal_price_chf_per_kwh")
     )
     described["grid_fee_display"] = rate_rp_text(version.get("grid_fee_chf_per_kwh"))
+    described["settlement_fee_display"] = rate_rp_text(
+        version.get(SETTLEMENT_FEE_FIELD)
+    )
     described["network_level_label"] = NETWORK_LEVEL_LABELS.get(
         version.get("network_level"), "Nicht angegeben"
     )
@@ -265,6 +360,19 @@ def _field(form, name):
     if not isinstance(value, str):
         return ""
     return value.strip()
+
+
+def localize_form_errors(errors: dict) -> dict:
+    """Translate a copy for the form without changing canonical diagnostics."""
+    bounds = {"minimum": MIN_PAYMENT_DAYS, "maximum": MAX_PAYMENT_DAYS}
+    return {
+        field: (
+            _(_PAYMENT_DAYS_ERROR, **bounds)
+            if field == "payment_days" and message == _PAYMENT_DAYS_ERROR % bounds
+            else _(message)
+        )
+        for field, message in errors.items()
+    }
 
 
 def _price_rp(value):
@@ -329,61 +437,67 @@ def validate_policy_form(form) -> dict:
 
     effective_from = _effective_from(_field(form, "effective_from"))
     if effective_from is None:
-        errors["effective_from"] = "Gültig-ab-Datum im Format JJJJ-MM-TT eingeben."
+        errors["effective_from"] = _N("Gültig-ab-Datum im Format JJJJ-MM-TT eingeben.")
 
     internal_price_rp = _price_rp(_field(form, "internal_price_rp"))
     if internal_price_rp is None:
-        errors["internal_price_rp"] = (
+        errors["internal_price_rp"] = _N(
             "Interner Preis in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
         )
     grid_fee_rp = _price_rp(_field(form, "grid_fee_rp"))
     if grid_fee_rp is None:
-        errors["grid_fee_rp"] = (
+        errors["grid_fee_rp"] = _N(
             "Netzentgelt in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
+        )
+    settlement_fee_rp = _price_rp(_field(form, "settlement_fee_rp"))
+    if settlement_fee_rp is None:
+        errors["settlement_fee_rp"] = _N(
+            "Abrechnungsentgelt in Rp./kWh, zwischen 0 und 1000, höchstens 4 "
+            "Nachkommastellen."
         )
 
     network_level = _enum(_field(form, "network_level"), NETWORK_LEVELS)
     if network_level is None:
-        errors["network_level"] = "Unbekannte Netzebene."
+        errors["network_level"] = _N("Unbekannte Netzebene.")
     distribution_model = _enum(_field(form, "distribution_model"), DISTRIBUTION_MODELS)
     if distribution_model is None:
-        errors["distribution_model"] = "Unbekanntes Verteilmodell."
+        errors["distribution_model"] = _N("Unbekanntes Verteilmodell.")
 
     vat_mode = _enum(_field(form, "vat_mode"), VAT_MODES)
     if vat_mode is None:
-        errors["vat_mode"] = "Unbekannter Mehrwertsteuer-Modus."
+        errors["vat_mode"] = _N("Unbekannter Mehrwertsteuer-Modus.")
     vat_rate_input = _field(form, "vat_rate_pct")
     vat_rate_pct = Decimal(0)
     if vat_mode == "standard":
         parsed_rate = _vat_rate(vat_rate_input)
         if parsed_rate is None:
-            errors["vat_rate_pct"] = (
+            errors["vat_rate_pct"] = _N(
                 "Mehrwertsteuersatz in Prozent, über 0 und höchstens 100."
             )
         else:
             vat_rate_pct = parsed_rate
     elif vat_rate_input:
-        errors["vat_rate_pct"] = (
+        errors["vat_rate_pct"] = _N(
             "Mehrwertsteuersatz nur zusammen mit dem Mehrwertsteuer-Modus."
         )
 
     payment_days = _payment_days(_field(form, "payment_days"))
     if payment_days is None:
-        errors["payment_days"] = (
-            f"Zahlungsfrist in ganzen Tagen, zwischen {MIN_PAYMENT_DAYS} und "
-            f"{MAX_PAYMENT_DAYS}."
-        )
+        errors["payment_days"] = _PAYMENT_DAYS_ERROR % {
+            "minimum": MIN_PAYMENT_DAYS,
+            "maximum": MAX_PAYMENT_DAYS,
+        }
 
     invoice_prefix = _field(form, "invoice_prefix")
     if not INVOICE_PREFIX_PATTERN.match(invoice_prefix):
-        errors["invoice_prefix"] = (
+        errors["invoice_prefix"] = _N(
             "Rechnungspräfix: 2 bis 16 Zeichen, nur Grossbuchstaben, Ziffern "
             "und Bindestrich, beginnend mit Buchstabe oder Ziffer."
         )
 
     delivery_method = _enum(_field(form, "delivery_method"), DELIVERY_METHODS)
     if delivery_method is None:
-        errors["delivery_method"] = "Unbekannte Zustellmethode."
+        errors["delivery_method"] = _N("Unbekannte Zustellmethode.")
 
     if errors:
         return {"policy": None, "errors": errors}
@@ -391,6 +505,7 @@ def validate_policy_form(form) -> dict:
         "effective_from": effective_from,
         "internal_price_chf_per_kwh": internal_price_rp / 100,
         "grid_fee_chf_per_kwh": grid_fee_rp / 100,
+        "settlement_fee_chf_per_kwh": settlement_fee_rp / 100,
         "network_level": network_level,
         "distribution_model": distribution_model,
         "vat_mode": vat_mode,

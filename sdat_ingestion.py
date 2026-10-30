@@ -15,7 +15,7 @@ import logging
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -151,7 +151,7 @@ def run(
     if not store.acquire(territory):
         return {"status": "locked", "territory": territory}
 
-    started_at = datetime.now(timezone.utc)
+    started_at = datetime.now(UTC)
     report = None
     downloaded_names = set()
     imported_totals = {
@@ -175,7 +175,7 @@ def run(
                     "status": "success",
                     "territory": territory,
                     "started_at": started_at,
-                    "finished_at": datetime.now(timezone.utc),
+                    "finished_at": datetime.now(UTC),
                     "attempts": attempt,
                     "downloaded_files": len(downloaded_names),
                     "existing_downloads": len(fetched.get("skipped", ())),
@@ -197,7 +197,7 @@ def run(
                         "status": "failure",
                         "territory": territory,
                         "started_at": started_at,
-                        "finished_at": datetime.now(timezone.utc),
+                        "finished_at": datetime.now(UTC),
                         "attempts": attempt,
                         "downloaded_files": len(downloaded_names),
                         "existing_downloads": 0,
@@ -221,7 +221,7 @@ def is_due(schedule: dict, now: datetime | None = None) -> bool:
     """Return whether the tenant's once-daily local schedule is due."""
     if not schedule.get("enabled"):
         return False
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     try:
         local_now = now.astimezone(ZoneInfo(schedule.get("timezone", "Europe/Zurich")))
     except ZoneInfoNotFoundError:

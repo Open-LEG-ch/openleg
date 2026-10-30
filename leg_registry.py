@@ -8,6 +8,9 @@ from flask import Blueprint, jsonify, request
 import database as db
 import email_utils
 import registry_intake
+from email_localization import gettext, recipient_locale
+from i18n import gettext as _
+from i18n import localized_url
 
 VERIFICATION_TOKEN_TTL_SECONDS = 14 * 24 * 60 * 60
 VERIFICATION_STALE_DAYS = 90
@@ -18,10 +21,12 @@ registry_api_bp = Blueprint("registry_api", __name__)
 def api_registry_publish():
     """Accept self-hosted registry submissions for moderator review."""
     result = registry_intake.submit(
-        request.get_json(silent=True) or {}, source="self_hosted"
+        request.get_json(silent=True) or {},
+        source="self_hosted",
     )
     if result["error"]:
-        return jsonify({"error": result["error"]}), result["status"]
+        message = result["error"]
+        return jsonify({"error": _(message)}), result["status"]
     return jsonify({"slug": result["slug"], "moderation_status": "pending"}), 201
 
 
@@ -41,13 +46,22 @@ def send_verification_nudges(base_url=""):
             result["errors"] += 1
             continue
 
-        confirm_url = f"{base_url}/registry/verify/{token}"
+        locale = recipient_locale(
+            entry, entry["contact_email"], email_field="contact_email"
+        )
+        confirm_url = localized_url(
+            f"{base_url}/registry/verify/{token}", locale=locale
+        )
         email_utils.send_email(
             entry["contact_email"],
-            "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?",
-            f'Bitte bestätigen Sie, dass der Eintrag "{entry["name"]}" im '
-            f"OpenLEG-Verzeichnis noch aktuell ist (Link 14 Tage gültig):\n\n"
-            f"{confirm_url}",
+            gettext("Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?", locale=locale),
+            gettext(
+                'Bitte bestätigen Sie, dass der Eintrag "%(name)s" im OpenLEG-Verzeichnis '
+                "noch aktuell ist (Link 14 Tage gültig):\n\n%(url)s",
+                locale=locale,
+                name=entry["name"],
+                url=confirm_url,
+            ),
         )
         result["sent"] += 1
 

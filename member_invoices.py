@@ -20,18 +20,24 @@ from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
 
-from markupsafe import escape
+from markupsafe import Markup, escape
 
 import billing_lifecycle
 import billing_policy
 import billing_workspace
 import database as db
 import document_generator
+from document_generator import render_document_template
+from i18n import format_period_label
+from i18n import gettext as _
+from translation_markers import gettext_noop
 
 _ITEM_TYPE_LABELS = {
-    "consumer_charge": "Verbrauchskosten",
-    "producer_credit": "Produzentengutschrift",
-    "rounding_adjustment": "Rundungsausgleich",
+    "consumer_charge": gettext_noop("Verbrauchskosten"),
+    "producer_credit": gettext_noop("Produzentengutschrift"),
+    "rounding_adjustment": gettext_noop("Rundungsausgleich"),
+    "settlement_fee": gettext_noop("Abrechnungsentgelt"),
+    "battery_cost_share": gettext_noop("Quartierakku-Anteil"),
 }
 _ALLOWED_ITEM_TYPES = tuple(_ITEM_TYPE_LABELS)
 
@@ -129,7 +135,7 @@ def _decimal_text(value: Decimal, places: int, scale: Decimal = Decimal(1)) -> s
 
 
 def _line_item_view(
-    item: dict, participant_id: str, policy_unit_price: Decimal
+    item: dict, participant_id: str, policy_unit_price: Decimal, policy_settlement_fee
 ) -> tuple[dict, Decimal]:
     if not isinstance(item, dict):
         raise MemberInvoiceDataError("Eine Rechnungsposition ist fehlerhaft.")
@@ -153,6 +159,16 @@ def _line_item_view(
             )
         display_quantity_kwh = None
         display_unit_price_rp = None
+    elif item_type == "battery_cost_share":
+        if (
+            item.get("quantity_kwh") is not None
+            or item.get("unit_price_chf_per_kwh") is not None
+        ):
+            raise MemberInvoiceDataError(
+                "Ein Quartierakku-Anteil darf weder Menge noch Preis enthalten."
+            )
+        display_quantity_kwh = None
+        display_unit_price_rp = None
     else:
         quantity = _require_finite_decimal(
             item.get("quantity_kwh"),
@@ -162,7 +178,16 @@ def _line_item_view(
             item.get("unit_price_chf_per_kwh"),
             "Eine Rechnungsposition hat keinen gültigen Preis.",
         )
-        if quantity < 0 or unit_price < 0 or unit_price != policy_unit_price:
+        if quantity < 0 or unit_price < 0:
+            raise MemberInvoiceDataError(
+                "Eine Rechnungsposition stimmt nicht mit der Richtlinie überein."
+            )
+        policy_price = (
+            policy_settlement_fee
+            if item_type == "settlement_fee"
+            else policy_unit_price
+        )
+        if policy_price is None or unit_price != policy_price:
             raise MemberInvoiceDataError(
                 "Eine Rechnungsposition stimmt nicht mit der Richtlinie überein."
             )
@@ -383,12 +408,25 @@ def _policy_snapshot_view(invoice: dict) -> tuple:
         raise MemberInvoiceDataError(
             "Die Richtlinien-Kopie hat keine gültige Zahlungsfrist."
         )
+    frozen_settlement_fee = policy.get("settlement_fee_chf_per_kwh")
+    if frozen_settlement_fee is None:
+        policy_settlement_fee = None
+    else:
+        policy_settlement_fee = _require_finite_decimal(
+            frozen_settlement_fee,
+            "Die Richtlinien-Kopie hat ein ungültiges Abrechnungsentgelt.",
+        )
+        if policy_settlement_fee < 0:
+            raise MemberInvoiceDataError(
+                "Die Richtlinien-Kopie hat ein ungültiges Abrechnungsentgelt."
+            )
     return (
         vat_mode,
         policy_vat_rate,
         policy_unit_price,
         payment_days,
         policy_grid_fee,
+        policy_settlement_fee,
     )
 
 
@@ -407,6 +445,30 @@ def _issuer_name(invoice: dict, provenance: dict) -> str:
     return _require_text(
         issuer.get("name"), "Die Rechnung hat keinen gültigen Aussteller."
     )
+
+
+def _battery_source_view(provenance: dict) -> dict | None:
+    """Read the immutable battery attribution frozen when the invoice was issued."""
+    source = provenance.get("battery_source")
+    if source is None:
+        return None
+    if not isinstance(source, dict):
+        raise MemberInvoiceDataError(
+            "Die Quartierakku-Angabe dieser Rechnung ist ungültig."
+        )
+    battery_kwh = _require_finite_decimal(
+        source.get("battery_kwh"),
+        "Die Quartierakku-Angabe dieser Rechnung ist ungültig.",
+    )
+    value_chf = _require_finite_decimal(
+        source.get("value_chf"),
+        "Die Quartierakku-Angabe dieser Rechnung ist ungültig.",
+    )
+    if battery_kwh < 0 or value_chf < 0:
+        raise MemberInvoiceDataError(
+            "Die Quartierakku-Angabe dieser Rechnung ist ungültig."
+        )
+    return {"battery_kwh": battery_kwh, "value_chf": value_chf}
 
 
 def _require_invoice_totals(
@@ -479,9 +541,14 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
     if participant_id != building_id:
         raise MemberInvoiceDataError("Die Rechnung hat eine ungültige Zuordnung.")
 
-    vat_mode, policy_vat_rate, policy_unit_price, payment_days, policy_grid_fee = (
-        _policy_snapshot_view(invoice)
-    )
+    (
+        vat_mode,
+        policy_vat_rate,
+        policy_unit_price,
+        payment_days,
+        policy_grid_fee,
+        policy_settlement_fee,
+    ) = _policy_snapshot_view(invoice)
 
     provenance = _require_json_dict(
         invoice.get("provenance_snapshot"),
@@ -500,7 +567,7 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
         "Die Rechnung hat keine gültigen Positionen.",
     )
     rendered_items = [
-        _line_item_view(item, participant_id, policy_unit_price)
+        _line_item_view(item, participant_id, policy_unit_price, policy_settlement_fee)
         for item in line_items_raw
     ]
     line_items = [item for item, _ in rendered_items]
@@ -509,6 +576,7 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
     )
 
     issuer_name = _issuer_name(invoice, provenance)
+    battery_source = _battery_source_view(provenance)
 
     vat_rate, net, vat = _require_invoice_totals(
         invoice, vat_mode, policy_vat_rate, rendered_items
@@ -545,11 +613,33 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
         "policy_payment_days": payment_days,
         "display_net_chf": _decimal_text(net, 2),
         "display_vat_chf": _decimal_text(vat, 2),
+        "battery_source": battery_source,
+        "display_battery_kwh": (
+            _decimal_text(battery_source["battery_kwh"], 3)
+            if battery_source is not None
+            else None
+        ),
+        "display_battery_value_chf": (
+            _decimal_text(battery_source["value_chf"], 2)
+            if battery_source is not None
+            else None
+        ),
         "charges": [i for i in line_items if i["item_type"] == "consumer_charge"],
+        "settlement_charges": [
+            i for i in line_items if i["item_type"] == "settlement_fee"
+        ],
+        "battery_shares": [
+            i for i in line_items if i["item_type"] == "battery_cost_share"
+        ],
         "credits": [i for i in line_items if i["item_type"] == "producer_credit"],
         "rounding_adjustments": [
             i for i in line_items if i["item_type"] == "rounding_adjustment"
         ],
+        "display_settlement_fee_rp": (
+            _decimal_text(policy_settlement_fee, 2, Decimal(100))
+            if policy_settlement_fee is not None
+            else None
+        ),
     }
 
 
@@ -570,7 +660,7 @@ def _rows_html(items) -> str:
     for item in items:
         rows.append(
             "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(
-                escape(item.get("item_type_label", "")),
+                escape(_(item.get("item_type_label", ""))),
                 escape(item.get("display_quantity_kwh") or "-"),
                 escape(item.get("display_unit_price_rp") or "-"),
                 escape(item.get("display_amount_chf", "0.00")),
@@ -588,7 +678,30 @@ def render_pdf(invoice: dict) -> bytes:
     frozen, display-ready value detail_view() produced, so the PDF can never
     diverge from what the member already saw on the HTML page.
     """
+    return document_generator.render_pdf_html(render_pdf_html_string(invoice))
+
+
+def render_pdf_html_string(invoice: dict) -> str:
+    """Build the printable invoice HTML from the exact detail_view() dict."""
     charges_rows = _rows_html(invoice.get("charges", []))
+    settlement_rows = _rows_html(invoice.get("settlement_charges", []))
+    settlement_section = (
+        f"""<h2>{_("Abrechnungsentgelt")}</h2>
+<table><tr><th>{_("Position")}</th><th>{_("Menge (kWh)")}</th><th>{_("Preis (Rp./kWh)")}</th><th>{_("Betrag (CHF)")}</th></tr>
+{settlement_rows}
+</table>"""
+        if settlement_rows
+        else ""
+    )
+    battery_rows = _rows_html(invoice.get("battery_shares", []))
+    battery_section = (
+        f"""<h2>{_("Quartierakku-Anteil")}</h2>
+<table><tr><th>{_("Position")}</th><th>{_("Menge (kWh)")}</th><th>{_("Preis (Rp./kWh)")}</th><th>{_("Betrag (CHF)")}</th></tr>
+{battery_rows}
+</table>"""
+        if battery_rows
+        else ""
+    )
     credit_items = list(invoice.get("credits", [])) + list(
         invoice.get("rounding_adjustments", [])
     )
@@ -596,10 +709,10 @@ def render_pdf(invoice: dict) -> bytes:
 
     invoice_number = escape(invoice.get("invoice_number", ""))
     issuer_name = escape(invoice.get("issuer_name", ""))
-    period_label = escape(invoice.get("period_label", ""))
+    period_label = escape(format_period_label(invoice.get("period_label", "")))
     issue_date = escape(invoice.get("issue_date", ""))
     due_date = escape(invoice.get("due_date", ""))
-    vat_mode_label = escape(invoice.get("vat_mode_label", ""))
+    vat_mode_label = escape(_(invoice.get("vat_mode_label", "")))
     vat_rate = escape(invoice.get("display_vat_rate_pct", "0.00"))
     policy_unit_price = escape(invoice.get("display_policy_unit_price_rp", ""))
     grid_fee_rp = invoice.get("display_grid_fee_rp")
@@ -608,51 +721,41 @@ def render_pdf(invoice: dict) -> bytes:
     vat_chf = escape(invoice.get("display_vat_chf", "0.00"))
     gross_chf = escape(invoice.get("display_gross_chf", "0.00"))
     grid_fee_line = (
-        f"<strong>Netzentgelt:</strong> {escape(grid_fee_rp)} Rp./kWh<br>"
+        f"<strong>{_('Netzentgelt:')}</strong> {escape(grid_fee_rp)} {_('Rp./kWh')}<br>"
         if grid_fee_rp
         else ""
     )
 
-    html = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8">
-<style>
-body {{ font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm; }}
-h1 {{ font-size: 16pt; }}
-h2 {{ font-size: 13pt; margin-top: 1.5em; }}
-table {{ border-collapse: collapse; width: 100%; margin: 1em 0; }}
-td, th {{ border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 10pt; }}
-th {{ background: #f0f0f0; }}
-.footer {{ margin-top: 3em; font-size: 9pt; color: #666; }}
-</style></head><body>
-<h1>Rechnung {invoice_number}</h1>
-<p><strong>Aussteller:</strong> {issuer_name}<br>
-<strong>Periode:</strong> {period_label}<br>
-<strong>Rechnungsdatum:</strong> {issue_date}<br>
-<strong>Fällig am:</strong> {due_date}<br>
-<strong>Interner Preis:</strong> {policy_unit_price} Rp./kWh<br>
-{grid_fee_line}<strong>Zahlungsfrist:</strong> {payment_days} Tage</p>
+    html = render_document_template(
+        "documents/member_invoice.html",
+        invoice_number=Markup(invoice_number),
+        issuer_name=Markup(issuer_name),
+        period_label=Markup(period_label),
+        issue_date=Markup(issue_date),
+        due_date=Markup(due_date),
+        policy_unit_price=Markup(policy_unit_price),
+        grid_fee_line=Markup(grid_fee_line),
+        payment_days=Markup(payment_days),
+        payment_days_count=invoice.get("policy_payment_days", 30),
+        charges_rows=Markup(
+            charges_rows
+            or '<tr><td colspan="4">'
+            + str(escape(_("Keine Verbrauchskosten")))
+            + "</td></tr>"
+        ),
+        settlement_section=Markup(settlement_section),
+        battery_section=Markup(battery_section),
+        credits_rows=Markup(
+            credits_rows
+            or '<tr><td colspan="4">'
+            + str(escape(_("Keine Gutschriften")))
+            + "</td></tr>"
+        ),
+        vat_mode_label=Markup(vat_mode_label),
+        vat_rate=Markup(vat_rate),
+        net_chf=Markup(net_chf),
+        vat_chf=Markup(vat_chf),
+        gross_chf=Markup(gross_chf),
+    )
 
-<h2>Verbrauchskosten</h2>
-<table><tr><th>Position</th><th>Menge (kWh)</th><th>Preis (Rp./kWh)</th><th>Betrag (CHF)</th></tr>
-{charges_rows or '<tr><td colspan="4">Keine Verbrauchskosten</td></tr>'}
-</table>
-
-<h2>Gutschriften und Ausgleich</h2>
-<table><tr><th>Position</th><th>Menge (kWh)</th><th>Preis (Rp./kWh)</th><th>Betrag (CHF)</th></tr>
-{credits_rows or '<tr><td colspan="4">Keine Gutschriften</td></tr>'}
-</table>
-
-<h2>Mehrwertsteuer</h2>
-<p>{vat_mode_label} ({vat_rate}%)</p>
-
-<h2>Total</h2>
-<table>
-<tr><td>Nettobetrag</td><td>{net_chf} CHF</td></tr>
-<tr><td>Mehrwertsteuer</td><td>{vat_chf} CHF</td></tr>
-<tr><td>Gesamtbetrag</td><td>{gross_chf} CHF</td></tr>
-</table>
-
-<div class="footer">Erstellt mit OpenLEG</div>
-</body></html>"""
-
-    return document_generator.render_pdf_html(html)
+    return html

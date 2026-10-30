@@ -7,6 +7,8 @@ Verbesserungsziel, Vorbild-Eignung. Keine DB-Zugriffe.
 
 from math import floor
 
+from translation_markers import gettext_noop
+
 # Grössenbänder nach Einwohnerzahl
 SIZE_BANDS = (("small", 5000), ("medium", 20000), ("large", 100000))
 SIZE_XL = "xl"
@@ -16,16 +18,16 @@ DENSITY_BANDS = (("low", 250), ("mid", 1000), ("high", 3000))
 DENSITY_VERY_HIGH = "very_high"
 
 SIZE_LABELS = {
-    "small": "Kleine Gemeinden",
-    "medium": "Mittlere Gemeinden",
-    "large": "Grosse Gemeinden",
-    "xl": "Sehr grosse Gemeinden",
+    "small": gettext_noop("Kleine Gemeinden"),
+    "medium": gettext_noop("Mittlere Gemeinden"),
+    "large": gettext_noop("Grosse Gemeinden"),
+    "xl": gettext_noop("Sehr grosse Gemeinden"),
 }
 DENSITY_LABELS = {
-    "low": "Ländlich",
-    "mid": "Mittlere Dichte",
-    "high": "Dicht",
-    "very_high": "Sehr dicht",
+    "low": gettext_noop("Ländlich"),
+    "mid": gettext_noop("Mittlere Dichte"),
+    "high": gettext_noop("Dicht"),
+    "very_high": gettext_noop("Sehr dicht"),
 }
 
 # Durchschnittliche Dachanlage in kWp (für die Dächer-Schätzung)
@@ -155,7 +157,7 @@ def league_standings(all_rows: list[dict], profile: dict) -> list[dict]:
         if entry:
             chips.append({"label": label, **entry})
 
-    add("Schweiz", all_rows)
+    add(gettext_noop("Schweiz"), all_rows)
     if kanton:
         add(f"Kanton {kanton}", filter_league(all_rows, kanton=kanton))
     if size:

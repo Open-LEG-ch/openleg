@@ -59,6 +59,9 @@ without code changes.
 | `rangliste_bp` | `rangliste.py` | `/rangliste` |
 | `self_host_bp` | `self_host.py` | `/self-host`, `/install.sh` |
 | `operator_api_bp` | `operator_api.py` | `/api/operator/v1`, `/leg/community` |
+| `telemetry_bp` | `telemetry_routes.py` | `/api/telemetry/v1/communities/{community}/installations` |
+| `equipment_bp` | `equipment_routes.py` | `/dashboard/equipment`, `/api/equipment/v1/records` |
+| `advisory_bp` | `advisory_routes.py` | `/api/admin/advisories/v1`, `/dashboard/equipment/{id}/advisories` |
 
 ## Route map
 
@@ -165,9 +168,10 @@ domains move into `store/`, each resolving the seam through a lazy
 `import database as db; db.<fn>()` keeps working unchanged.
 
 Shipped stores: `store/access_token`, `store/analytics`, `store/api_client`,
+`store/advisories`,
 `store/billing`, `store/building`, `store/cluster`, `store/consent`,
 `store/correspondence`, `store/dashboard_profile`, `store/document`,
-`store/email_queue`, `store/formation_documents`, `store/meter`,
+`store/email_queue`, `store/equipment`, `store/formation_documents`, `store/meter`,
 `store/metering`, `store/municipality`, `store/ops`, `store/profile`,
 `store/ranking`, `store/referral`, `store/registry`, `store/sdat_ingestion`,
 `store/tenant`, `store/token`, `store/utility`.
@@ -182,6 +186,24 @@ and the re-export block, and nothing else. Every domain lives in `store/`.
 
 New storage code for a cohesive domain gets its own module there. Nothing is
 appended to `database.py`.
+
+## Schema startup compatibility
+
+Schema initialization retains the seven-column `verified_interest` projection
+accepted by v0.1.21. Locale-aware reads join its selected source record. An
+existing extended view is recreated transactionally without `CASCADE`; dependent
+custom views block migration rather than being removed.
+
+Live billing windows keep their partial uniqueness predicate under the legacy
+index name `uq_billing_period_community_window`. The previous application's
+initialization therefore skips recreating a full unique index over invalidated
+and replacement periods.
+
+This preserves startup and tested record reads. Older billing code does not
+understand VNB withdrawals or the new source certificates. Successful startup
+does not establish financial-write compatibility or authorize image rollback
+after new application state has been written; a separate verified recovery plan
+is required.
 
 ## Verified municipality interest
 
@@ -312,3 +334,8 @@ test, or a killed mutant, says anything about the query.
   Those live in the private ops repository; see `docs/repo-boundary.md`.
 - Prefer focused tests before implementation.
 - Run `pytest tests/ -q`, `ruff check .`, and `ruff format --check .`.
+
+## Internationalization
+
+Flask-Babel/gettext provides request-local presentation languages. See
+[internationalization](internationalization.md) for fallback and catalog rules.

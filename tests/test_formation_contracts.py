@@ -7,7 +7,7 @@ full status model, the savings arithmetic, and the neighbour cap. Each test
 asserts exact values so a changed constant or operator fails loudly.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 import pytest
@@ -156,9 +156,9 @@ def _full_row():
         "distribution_model": "proportional",
         "admin_building_id": "b-admin",
         "require_dual_control": True,
-        "created_at": datetime(2026, 8, 1, 12, 0, 0, tzinfo=timezone.utc),
-        "formation_started_at": datetime(2026, 8, 2, 12, 0, 0, tzinfo=timezone.utc),
-        "dso_submitted_at": datetime(2026, 8, 3, 12, 0, 0, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 8, 1, 12, 0, 0, tzinfo=UTC),
+        "formation_started_at": datetime(2026, 8, 2, 12, 0, 0, tzinfo=UTC),
+        "dso_submitted_at": datetime(2026, 8, 3, 12, 0, 0, tzinfo=UTC),
         "members": [
             {"building_id": "b-admin", "status": "confirmed"},
             {"building_id": "b-2", "status": "confirmed"},

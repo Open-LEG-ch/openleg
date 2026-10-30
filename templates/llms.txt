@@ -1,0 +1,25 @@
+# OpenLEG
+
+{{ _("> Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften (LEG), %(site_url)s. Code: https://github.com/Open-LEG-ch/openleg, Lizenz AGPL-3.0-or-later, Betrieb in der Schweiz.", site_url=site_url) }}
+
+{{ _("OpenLEG prüft Solarpotenzial pro Adresse, unterstützt die Organisation einer LEG und bereitet Dokumente und die Netzbetreiber-Anmeldung vor. Die öffentlich angebotenen Funktionen sind kostenlos.") }}
+
+{{ _("Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die Abrechnung. Sie wählt den Betreiber und Hosting-Anbieter. OpenLEG stellt dafür prüfbare, selbst betreibbare Software bereit. Der Netzbetreiber prüft Netzgebiet und Netzebene, misst, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten. Der Grundversorger liefert den übrigen Strom. OpenLEG ersetzt diese gesetzlichen Aufgaben nicht. Nicht jede VNB-Anbindung ist umgesetzt; Anmeldung und Datenlieferung müssen pro Netzbetreiber eingerichtet werden.") }}
+
+{{ _("Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das Netznutzungsentgelt um 40% ohne und 20% mit Spannungstransformation (Art. 19h StromVV). Voraussetzungen: gleiche politische Gemeinde, gleiche Netzebene, gleiches Netzgebiet, höchstens 36 kV, intelligente Messsysteme, mindestens 5% erneuerbare Anschlussleistung.") }}
+
+{{ _("## Seiten") }}
+{{ _("- [Homepage](%(url)s): LEG-Definition, Kennzahlen, Einstiege", url=(site_url ~ "/")|localized_url) }}
+{{ _("- [So funktioniert eine Stromgemeinschaft](%(url)s): Ablauf in drei Schritten und häufige Fragen", url=(site_url ~ "/how-it-works")|localized_url) }}
+{{ _("- [Für Bewohner und Gründer](%(url)s): Adresse prüfen, Nachbarn finden, gründen", url=(site_url ~ "/fuer-bewohner")|localized_url) }}
+{{ _("- [Für Gemeinden](%(url)s): Dashboard, Verantwortlichkeiten, Betriebsmodelle", url=(site_url ~ "/fuer-gemeinden")|localized_url) }}
+{{ _("- [Solarnutzungs-Rangliste](%(url)s): alle Schweizer Gemeinden mit prüfbarer Solarnutzung", url=(site_url ~ "/rangliste")|localized_url) }}
+{{ _("- [LEG-Verzeichnis](%(url)s): bestehende Lokale Elektrizitätsgemeinschaften", url=(site_url ~ "/leg-verzeichnis")|localized_url) }}
+{{ _("- [Gemeinde-Verzeichnis](%(url)s): Profile aller Schweizer Gemeinden", url=(site_url ~ "/gemeinde/verzeichnis")|localized_url) }}
+{{ _("- [Ersparnis-Kalkulator](%(url)s): Ersparnis für eine LEG berechnen", url=(site_url ~ "/leg-kalkulator")|localized_url) }}
+{{ _("- [Fallstudie Baden](%(url)s): Tarife, Solardaten und Potenzial für Baden AG", url=(site_url ~ "/pilotgemeinde/baden")|localized_url) }}
+{{ _("- [Open Source](%(url)s): Architektur, Repos und Datenpipeline", url=(site_url ~ "/open-source")|localized_url) }}
+{{ _("- [Selbst betreiben](%(url)s): Installation auf eigener Hardware", url=(site_url ~ "/self-host")|localized_url) }}
+{{ _("- [Kosten](%(url)s): Kostenlos, ohne Datenverkauf; Finanzierung", url=(site_url ~ "/pricing")|localized_url) }}
+{{ _("- [Öffentliche API](%(url)s): Tarife, Solardaten, Rangliste, ohne API-Key", url=(site_url ~ "/api/v1/docs")|localized_url) }}
+{{ _("- [Kontakt](mailto:%(email)s): E-Mail", email=contact_email) }}

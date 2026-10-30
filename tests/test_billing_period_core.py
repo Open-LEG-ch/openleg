@@ -316,7 +316,7 @@ def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch)
     period_query, period_params = cursor.executed[0]
     assert "internal_price_chf_per_kwh" in period_query
     assert "grid_fee_chf_per_kwh" in period_query
-    assert "'draft'" in period_query
+    assert period_params[-1] == "draft"
     assert period_params[9:11] == (0.15, 0.10)
     item_queries = cursor.executed[1:]
     assert len(item_queries) == 3

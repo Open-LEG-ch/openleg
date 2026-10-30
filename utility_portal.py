@@ -6,6 +6,7 @@ Routes: /utility/*
 """
 
 import hashlib
+import hmac
 import logging
 import os
 import secrets
@@ -14,6 +15,7 @@ from functools import wraps
 
 from flask import (
     Blueprint,
+    abort,
     current_app,
     g,
     jsonify,
@@ -26,7 +28,11 @@ from flask import (
 
 import database as db
 import security_utils
+from email_localization import gettext, recipient_locale
 from email_utils import send_email
+from i18n import gettext as _
+from i18n import localized_url, select_locale
+from locale_policy import normalize_locale
 
 logger = logging.getLogger(__name__)
 
@@ -83,18 +89,18 @@ def register():
     kanton = (data.get("kanton") or "").strip().upper()[:2]
 
     if not company_name or not contact_email:
-        return jsonify({"error": "Firmenname und E-Mail sind erforderlich."}), 400
+        return jsonify({"error": _("Firmenname und E-Mail sind erforderlich.")}), 400
 
     is_valid, normalized, error = security_utils.validate_email_address(contact_email)
     if not is_valid:
-        return jsonify({"error": error}), 400
+        return jsonify({"error": _(error)}), 400
     contact_email = normalized
 
     # Check if already registered
     existing = db.get_utility_client_by_email(contact_email)
     if existing:
         return jsonify(
-            {"error": "Diese E-Mail ist bereits registriert. Bitte einloggen."}
+            {"error": _("Diese E-Mail ist bereits registriert. Bitte einloggen.")}
         ), 409
 
     if contact_phone:
@@ -123,12 +129,15 @@ def register():
         vnb_name=vnb_name,
         population=population,
         kanton=kanton,
+        preferred_locale=select_locale(),
     )
     if not saved:
         return jsonify(
             {
-                "error": "Wir konnten die Registrierung nicht speichern. "
-                "Bitte versuchen Sie es später erneut."
+                "error": _(
+                    "Wir konnten die Registrierung nicht speichern. "
+                    "Bitte versuchen Sie es später erneut."
+                )
             }
         ), 503
 
@@ -145,7 +154,9 @@ def register():
         return jsonify(
             {
                 "success": True,
-                "message": "Registrierung erfolgreich. Login-Link per E-Mail gesendet.",
+                "message": _(
+                    "Registrierung erfolgreich. Login-Link per E-Mail gesendet."
+                ),
             }
         )
     return redirect(url_for("utility.login_page", registered=1))
@@ -161,9 +172,8 @@ def login_page():
 
     # Handle magic link callback
     if token:
-        client = db.get_utility_client_by_magic_token(token)
+        client = db.consume_utility_magic_token(token)
         if client:
-            db.clear_utility_magic_token(client["client_id"])
             session["utility_client_id"] = client["client_id"]
             session.permanent = True
             if client["status"] == "pending":
@@ -171,7 +181,7 @@ def login_page():
             return redirect(url_for("utility.dashboard"))
         return render_template(
             "utility/login.html",
-            error="Ungültiger oder abgelaufener Login-Link.",
+            error=_("Ungültiger oder abgelaufener Login-Link."),
             site_url=_site_url(),
             tenant=getattr(g, "tenant", {}),
         )
@@ -191,7 +201,7 @@ def login_submit():
 
     is_valid, normalized, error = security_utils.validate_email_address(email)
     if not is_valid:
-        return jsonify({"error": error}), 400
+        return jsonify({"error": _(error)}), 400
 
     client = db.get_utility_client_by_email(normalized)
     if not client:
@@ -199,12 +209,14 @@ def login_submit():
         return jsonify(
             {
                 "success": True,
-                "message": "Falls registriert, erhalten Sie einen Login-Link per E-Mail.",
+                "message": _(
+                    "Falls registriert, erhalten Sie einen Login-Link per E-Mail."
+                ),
             }
         )
 
     _send_magic_link(client["client_id"], normalized)
-    return jsonify({"success": True, "message": "Login-Link per E-Mail gesendet."})
+    return jsonify({"success": True, "message": _("Login-Link per E-Mail gesendet.")})
 
 
 @utility_bp.route("/logout")
@@ -248,7 +260,9 @@ def generate_api_key():
         {
             "success": True,
             "api_key": raw_key,
-            "message": "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt.",
+            "message": _(
+                "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
+            ),
         }
     )
 
@@ -256,19 +270,41 @@ def generate_api_key():
 # --- Settings ---
 
 
-@utility_bp.route("/settings", methods=["GET"])
+# --- Admin: list all utility clients ---
+
+
+@utility_bp.route("/settings", methods=["GET", "POST"])
 @require_utility_auth
 def settings_page():
     client = g.utility_client
+    csrf_token = session.get("utility_settings_csrf")
+    if request.method == "POST":
+        supplied = request.form.get("csrf_token", "")
+        if (
+            not isinstance(csrf_token, str)
+            or not csrf_token
+            or not hmac.compare_digest(
+                csrf_token.encode("utf-8"), supplied.encode("utf-8")
+            )
+        ):
+            abort(403)
+        selected = normalize_locale(request.form.get("preferred_locale"))
+        if selected is None:
+            abort(400)
+        if not db.update_utility_client_locale(client["client_id"], selected):
+            abort(503)
+        session["locale"] = selected
+        return redirect(url_for("utility.settings_page"))
+    if not isinstance(csrf_token, str) or not csrf_token:
+        csrf_token = secrets.token_urlsafe(32)
+        session["utility_settings_csrf"] = csrf_token
     return render_template(
         "utility/settings.html",
+        csrf_token=csrf_token,
         client=client,
         site_url=_site_url(),
         tenant=getattr(g, "tenant", {}),
     )
-
-
-# --- Admin: list all utility clients ---
 
 
 @utility_bp.route("/admin/clients")
@@ -294,14 +330,19 @@ def _send_magic_link(client_id: str, email: str):
     token = secrets.token_urlsafe(48)
     db.set_utility_magic_token(client_id, token, MAGIC_LINK_TTL)
 
-    login_url = f"{_site_url()}/utility/login?token={token}"
-    subject = "OpenLEG: Ihr Login-Link"
-    body = (
-        f"Guten Tag,\n\n"
-        f"Klicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n\n"
-        f"{login_url}\n\n"
-        f"Dieser Link ist {MAGIC_LINK_TTL // 60} Minuten gültig.\n\n"
-        f"Ihr OpenLEG-Team"
+    locale = recipient_locale(
+        db.get_utility_client(client_id), email, email_field="contact_email"
+    )
+    login_url = localized_url(
+        f"{_site_url()}/utility/login?token={token}", locale=locale
+    )
+    subject = gettext("OpenLEG: Ihr Login-Link", locale=locale)
+    body = gettext(
+        "Guten Tag,\n\nKlicken Sie auf den folgenden Link, um sich bei OpenLEG anzumelden:\n\n"
+        "%(url)s\n\nDieser Link ist %(minutes)s Minuten gültig.\n\nIhr OpenLEG-Team",
+        locale=locale,
+        url=login_url,
+        minutes=MAGIC_LINK_TTL // 60,
     )
     send_email(email, subject, body)
     logger.info(f"[UTILITY] Magic link sent to {email}")

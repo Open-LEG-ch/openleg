@@ -1,5 +1,17 @@
 # OpenLEG
 
+<div align="center">
+
+<img src=".github/assets/openleg-wordmark.svg" alt="OpenLEG wordmark: open in regular monospace, LEG in bold, followed by a gold caret" width="320">
+
+[Website](https://openleg.ch) · [Docs](docs/architecture.md) · [Contribute](docs/contributor-onboarding.md) · [Discussions](https://github.com/Open-LEG-ch/openleg/discussions) · [Milestones](https://github.com/Open-LEG-ch/openleg/milestones)
+
+[![Test status](https://github.com/Open-LEG-ch/openleg/actions/workflows/deploy.yml/badge.svg)](https://github.com/Open-LEG-ch/openleg/actions/workflows/deploy.yml)
+[![Lint status](https://github.com/Open-LEG-ch/openleg/actions/workflows/lint.yml/badge.svg)](https://github.com/Open-LEG-ch/openleg/actions/workflows/lint.yml)
+[AGPL-3.0-or-later](https://www.gnu.org/licenses/agpl-3.0.html)
+
+</div>
+
 [English](#english) | [Deutsch](#deutsch)
 
 Open-source infrastructure for Swiss Local Electricity Communities. Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften.
@@ -8,6 +20,14 @@ Open-source infrastructure for Swiss Local Electricity Communities. Offene Infra
 
 OpenLEG is the public website, product application, and API for founding and operating a Swiss Local Electricity Community, known as a LEG. The private `openleg-ops` repository owns production deployment, not the public site runtime or assets.
 
+### Product preview
+
+Synthetic demo images with fictional data, not production screenshots:
+
+<img src="static/images/product/leg-formation-static.webp" alt="Synthetic demo of the LEG formation flow in the OpenLEG app" width="800">
+
+<img src="static/images/product/municipality-dashboard-static.webp" alt="Synthetic demo of the municipality dashboard in the OpenLEG app" width="800">
+
 ### Operating model
 
 The LEG chooses its representative, participant agreements, internal energy price, administration, billing operator, and hosting provider. OpenLEG supplies inspectable, self-hostable infrastructure for that community-controlled work under AGPL-3.0-or-later.
@@ -15,6 +35,13 @@ The LEG chooses its representative, participant agreements, internal energy pric
 The distribution system operator (VNB) still verifies the statutory network-area and network-level requirements, performs its metering duties, charges network use with the statutory discount, and delivers the data assigned to it. The basic supplier supplies residual electricity where applicable. OpenLEG does not replace those duties. Formation submissions and data delivery must be configured for each VNB; end-to-end integration is not available for every VNB.
 
 The current code covers formation records, VNB handovers, participant changes, scheduled SDAT ingestion, quarter-hour allocation, tariff versions, invoice approval, immutable invoices, payment reconciliation, and operational archive export and restore.
+
+The [community archive guide](docs/community-archive.md) explains its dataset scope, destination checks and restore requirements.
+Community activation requires recorded VNB start evidence and an explicit
+administrator action on or after the confirmed date. See the
+[operating-start workflow](docs/vnb-exchange.md#confirmed-operating-start).
+
+The admin API can withdraw a VNB calculated-values delivery while preserving its source and audit record. Dependent drafts become invalid; issued invoices remain unchanged. The [data pipeline guide](docs/data-pipeline.md#withdrawal-of-calculated-vnb-evidence) documents correction and retry handling.
 
 ### What this repo is
 
@@ -33,6 +60,31 @@ The current code covers formation records, VNB handovers, participant changes, s
 | Municipality | `/gemeinde/dashboard` | Open the municipality dashboard. |
 | Developer or self-hoster | `/api/v1/docs` | Use the API or run your own instance. |
 
+Verified owners can keep private solar equipment records and a checklist for
+their model at `/dashboard/equipment`, without LEG membership or telemetry.
+Cloud-access reviews and backup evidence remain separate. Owners can download a
+redacted installer handoff. OpenLEG does not verify the entered claims or change
+devices.
+
+Owners with enrolled telemetry installations can open `/dashboard/telemetry`
+to see source readings, quality, observation time, age and device-reported faults.
+The LEG dashboard links to explicitly shared power readings with coverage and
+exclusion counts. Sums exclude overlapping profiles and require at least three
+synchronized eligible profiles.
+Device-specific fault mappings and hardware/user-pilot validation remain tracked
+in [#617](https://github.com/Open-LEG-ch/openleg/issues/617).
+
+Equipment pages also show private matches against an explicitly reviewed
+advisory catalog. The catalog starts empty with notices disabled. A named source
+reviewer, review cadence and successful source review are required before
+enabling notices. Unknown firmware remains unresolved; no match is not a safety
+assessment. See [advisory review and owner notices](docs/advisories.md).
+
+Municipality profiles, the directory, and the municipality dashboard distinguish
+zero confirmed expressions of interest from temporarily unavailable counts. When
+counts cannot be loaded, interest sorting falls back to sorting by name. Public
+counts of one or two remain hidden as `< 3`.
+
 ### From meter reading to invoice
 
 The path from raw metering data to a member invoice runs as one workflow in this repository:
@@ -43,6 +95,28 @@ The path from raw metering data to a member invoice runs as one workflow in this
 4. **Lifecycle and delivery.** An issued invoice moves through `issued`, `delivered`, `paid`, `cancelled`, and `corrected` (`billing_lifecycle.py`). Members read their own invoices at `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>`, and `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
 
 Invoice approval stays a deliberate operator action. VNB-specific transport and credentials require local configuration.
+Formation documents and invoice PDFs support German and Swiss French labels;
+stored invoice figures and existing formation files remain unchanged. See
+[document language behavior](docs/internationalization.md#printable-documents).
+Residents can save German or Swiss French for the four scheduled onboarding
+emails and municipality interest notices in their private dashboard. Unresolved
+address confirmations use the language chosen at signup. Resident confirmation
+and login links, plus issued invoice notices and deletion confirmations, use the
+addressed record's saved choice.
+Existing registrations default to German;
+changing the page language alone does not change a saved preference. See
+[recipient language](docs/internationalization.md#recipient-language).
+
+Complete E66 LEG deliveries can also enter the calculated-values evidence path
+directly. An administrator records explicit meter-assignment validity, then
+uploads the original XML to `/admin/vnb-calculated-values/<territory>/e66`.
+The import saves source evidence, physical readings and the import ledger in one
+transaction. [E66 operator setup](docs/vnb-exchange.md#e66-calculated-values-evidence)
+describes supported channels, quality restrictions and correction handling.
+For proportional billing without a battery, an exact interval audit can explain
+source rounding while invoices use the VNB quantities. Consumer and producer
+totals must balance exactly. The [rounding policy](docs/data-pipeline.md#rounded-e66-allocation-evidence)
+describes approval checks and unsupported cases.
 
 ### Quick start
 
@@ -84,8 +158,9 @@ Read the [engineering contract](docs/engineering-contract.md), [architecture](do
 
 - `/` public website for anonymous visitors
 - `/login` role chooser for owners and municipalities
-- `/dashboard` owner dashboard and secure access request
+- `/dashboard` owner dashboard and secure access request; signed-in founders can create a LEG at `/leg/community/create`
 - `/leg/dashboard` LEG operator dashboard
+- After VNB submission, a confirmed LEG administrator can record the actual VNB start confirmation from the correspondence journal and explicitly activate the LEG on or after its confirmed start date. See [VNB exchange](docs/vnb-exchange.md).
 - `/gemeinde/dashboard` municipality dashboard and secure access request
 - `/utility/login` grid-operator login
 - `/api/v1/docs` public API documentation
@@ -96,6 +171,11 @@ Read the [engineering contract](docs/engineering-contract.md), [architecture](do
 Public data fetchers live in `public_data.py`. Database persistence uses `database.py` and `store/`. The PV ranking import is `scripts/load_pv_data.py`; SDAT retrieval from the Swisseldex Datahub lives in `sdat_datahub.py` and `scripts/fetch_sdat.py`. API read paths live in `api_public.py` and the ranking blueprints.
 
 ### Contributing
+
+German and Swiss French are available through the language selector. To default
+a self-hosted instance to French, set `BABEL_DEFAULT_LOCALE=fr_CH`. See the
+[internationalization guide](docs/internationalization.md) for translation coverage,
+catalog maintenance and adding further languages.
 
 New to the codebase? Follow the [contributor onboarding guide](docs/contributor-onboarding.md).
 
@@ -127,6 +207,13 @@ Der Verteilnetzbetreiber (VNB) prüft weiterhin die gesetzlichen Anforderungen a
 
 Der aktuelle Code deckt Gründungsunterlagen, VNB-Übergaben, Teilnehmeränderungen, den zeitgesteuerten SDAT-Abruf, die Viertelstundenverteilung, Tarifversionen, Rechnungsfreigabe, unveränderliche Rechnungen, Zahlungsabgleich sowie Export und Wiederherstellung der Betriebsdaten ab.
 
+Die [Archivanleitung](docs/community-archive.md) beschreibt die enthaltenen Datensätze, die Prüfung des Zielsystems und die Voraussetzungen für die Wiederherstellung.
+Die Aktivierung einer Gemeinschaft verlangt einen erfassten VNB-Startbeleg
+und eine ausdrückliche Handlung der Administration ab dem bestätigten Datum.
+Der [Startablauf](docs/vnb-exchange.md#confirmed-operating-start) beschreibt die Schritte.
+
+Über die Admin-API können Betreiber berechnete VNB-Werte zurückziehen. Quelle und Prüfverlauf bleiben erhalten. Abhängige Entwürfe verlieren ihre Gültigkeit; ausgestellte Rechnungen bleiben unverändert. Die [Datenpipeline](docs/data-pipeline.md#withdrawal-of-calculated-vnb-evidence) dokumentiert Korrekturen und Wiederholungen.
+
 ### Was dieses Repo enthält
 
 - `app.py` verbindet Flask-Routen und Nutzerwege
@@ -144,11 +231,50 @@ Der aktuelle Code deckt Gründungsunterlagen, VNB-Übergaben, Teilnehmeränderun
 | Gemeinde | `/gemeinde/dashboard` | Gemeinde-Dashboard öffnen. |
 | Entwickler oder Selbsthoster | `/api/v1/docs` | API nutzen oder eigene Instanz betreiben. |
 
+Bestätigte Eigentümer erfassen unter `/dashboard/equipment` private Solargeräte
+und eine Checkliste für ihr Modell, auch ohne LEG-Mitgliedschaft oder Telemetrie.
+Cloud-Zugriffe und Ersatzstromnachweise bleiben getrennt. Eigentümer können eine
+bereinigte Übergabe für den Installateur herunterladen. OpenLEG prüft die Angaben
+nicht und verändert keine Geräte.
+
+Eigentümer mit angemeldeten Telemetrie-Anlagen sehen unter
+`/dashboard/telemetry` ihre Messwerte mit Quelle, Qualität, Messzeit und Alter.
+Die Ansicht zeigt auch gemeldete Gerätestörungen. Das LEG-Dashboard verlinkt
+ausdrücklich freigegebene Leistungswerte mit Angaben zu Abdeckung und Ausschlüssen.
+Summen schliessen Profile mit überlappenden Quellen aus und erfordern mindestens
+drei geeignete Profile mit gleicher Messzeit.
+Gerätespezifische Störungszuordnungen und die Prüfung mit Hardware und Pilotnutzern
+bleiben in [#617](https://github.com/Open-LEG-ch/openleg/issues/617) offen.
+
+Die Geräteseiten zeigen auch private Zuordnungen zu einem ausdrücklich geprüften
+Hinweiskatalog. Er beginnt leer und mit ausgeschalteten Hinweisen. Vor dem
+Einschalten braucht es eine benannte Quellenverantwortung, einen Prüfturnus und
+eine erfolgreiche Quellenprüfung. Unbekannte Firmware bleibt ungeklärt. Ein
+fehlender Treffer belegt nicht, dass die Anlage sicher ist. Siehe [Hinweiskatalog und Quellenprüfung](docs/advisories.md).
+
+Gemeindeprofile, Verzeichnis und Gemeinde-Dashboard unterscheiden null bestätigte
+Interessenmeldungen von vorübergehend nicht verfügbaren Zahlen. Können die Zahlen
+nicht geladen werden, ersetzt das Verzeichnis die Sortierung nach Interesse durch
+die Sortierung nach Namen. Öffentliche Zahlen von eins oder zwei bleiben als
+`< 3` verborgen.
+
 ### Vom Zählerwert zur Rechnung
 
 Der Weg von Rohmessdaten zur Mitgliederrechnung läuft als ein Ablauf in diesem Repo:
 
 1. **Import.** `scripts/fetch_sdat.py` holt SDAT-Dateien vom Swisseldex Datahub, `scripts/import_sdat.py` liest ebIX-E66-Dokumente nach `store/metering.py`; `sdat_datahub.py` und `sdat_e66.py` enthalten Transport und Parsing, `scripts/sdat_pipeline.sh` verkettet die Schritte. `scripts/import_metering_points.py` ordnet Messpunkte den Gebäuden zu.
+
+   Vollständige E66-LEG-Lieferungen lassen sich mit ausdrücklich bestätigter
+   Messpunktzuordnung direkt als Berechnungsbeleg übernehmen. Der Admin-Endpunkt
+   `/admin/vnb-calculated-values/<territory>/e66` speichert Originaldatei,
+   Messwerte und Importprotokoll in einer Transaktion.
+   [Einrichtung und Einschränkungen](docs/vnb-exchange.md#e66-calculated-values-evidence)
+   beschreiben die unterstützten Kanäle und den Korrekturablauf.
+   Bei proportionaler Abrechnung ohne Akku kann eine exakte Viertelstundenprüfung
+   die Quellenrundung erklären; die Rechnung verwendet die VNB-Mengen. Verbrauchs-
+   und Produktionssummen müssen exakt übereinstimmen. Die
+   [Rundungsregel](docs/data-pipeline.md#rounded-e66-allocation-evidence) beschreibt
+   Freigabeprüfungen und Einschränkungen.
 2. **Verteilung.** `billing_readings.py` formt messpunktbezogene Werte in Teilnehmerreihen um und weist eine Periode zurück, die es nicht abrechnen kann. `billing_engine.py` verteilt die Viertelstunden und erzeugt einen prüfbaren Entwurf mit positiven `consumer_charge` Positionen und negativen `producer_credit` Positionen; `store/billing.py` speichert Periode, Preisstand und Positionen mit Vorzeichen. `billing_runner.py` steuert einen Lauf, `POST /api/cron/process-billing` in `cron.py` rechnet den letzten vollen Monat für jede aktive Gemeinschaft.
 3. **Policy und Freigabe.** Die Betreiberin pflegt den versionierten Tarif unter `/leg/community/<community_id>/billing-policy` (`billing_policy.py`, `templates/leg_billing_policy.html`) und prüft den Entwurf unter `/leg/community/<community_id>/billing` (`templates/leg_billing.html`). Die Freigabe friert je Teilnehmer eine unveränderliche Rechnung aus dem gespeicherten Policy-Snapshot ein (`billing_approval.py`).
 4. **Lebenszyklus und Zustellung.** Eine freigegebene Rechnung durchläuft `issued`, `delivered`, `paid`, `cancelled` und `corrected` (`billing_lifecycle.py`). Mitglieder lesen ihre Rechnungen unter `/dashboard/invoices`, `/dashboard/invoices/<invoice_id>` und `/dashboard/invoices/<invoice_id>/pdf` (`member_invoices.py`, `templates/member_invoices.html`, `templates/member_invoice_detail.html`).
@@ -160,6 +286,18 @@ Freigabe. Mitglieder können zu ihrer eigenen Rechnung eine private Frage mit
 PDF-Beleg eröffnen und den Status im Rechnungsdetail verfolgen.
 
 Die Rechnungsfreigabe bleibt eine bewusste Entscheidung der Betreiberin. VNB-spezifischer Transport und Zugangsdaten müssen lokal eingerichtet werden.
+Gründungsdokumente und Rechnungs-PDFs unterstützen deutsche und französische
+Beschriftungen. Gespeicherte Rechnungsbeträge und vorhandene Gründungsdateien
+bleiben erhalten. Die [Sprachdokumentation](docs/internationalization.md#printable-documents)
+beschreibt das Verhalten.
+Bewohnerinnen und Bewohner können im privaten Dashboard Deutsch oder Französisch
+für die vier zeitversetzten Einstiegs-E-Mails und Gemeinde-Interessenmeldungen
+speichern. Bestätigungen bei ungeklärten Adressen verwenden die Sprache der
+Anmeldung. Bestätigungsmails und Zugangslinks zum Bewohnerdashboard verwenden
+die gespeicherte Sprache, ebenso die Benachrichtigung über eine freigegebene
+Rechnung und die Löschbestätigung für den jeweiligen Eintrag. Bestehende Anmeldungen
+behalten Deutsch. Ein Sprachwechsel auf der Seite ändert diese Einstellung nicht.
+Siehe [E-Mail-Sprache](docs/internationalization.md#recipient-language).
 
 ### Schnellstart
 
@@ -201,8 +339,9 @@ Lesen Sie den [Entwicklungsvertrag](docs/engineering-contract.md), die [Architek
 
 - `/` öffentliche Website für nicht angemeldete Personen
 - `/login` Rollenwahl für Eigentümer und Gemeinden
-- `/dashboard` Eigentümer-Dashboard mit sicherer Zugangsanfrage
+- `/dashboard` Eigentümer-Dashboard mit sicherer Zugangsanfrage; angemeldete Gründer legen unter `/leg/community/create` eine LEG an
 - `/leg/dashboard` Dashboard für LEG-Betreiber
+- Nach der VNB-Anmeldung erfasst eine bestätigte LEG-Administration die tatsächliche Startbestätigung aus dem Korrespondenzjournal und aktiviert die LEG frühestens am bestätigten Startdatum. Siehe [VNB-Austausch](docs/vnb-exchange.md).
 - `/gemeinde/dashboard` Gemeinde-Dashboard mit sicherer Zugangsanfrage
 - `/utility/login` Login für Netzbetreiber
 - `/api/v1/docs` öffentliche API-Dokumentation

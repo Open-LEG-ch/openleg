@@ -4,6 +4,7 @@ import logging
 import os
 import secrets
 import threading
+from functools import partial
 from urllib.parse import urljoin, urlparse
 
 from dotenv import load_dotenv
@@ -22,6 +23,7 @@ from flask import (
     session,
 )
 from flask_talisman import Talisman
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import access_token  # noqa: F401
 import app_config
@@ -34,18 +36,26 @@ import email_automation  # noqa: F401
 import formation_guide
 import formation_wizard
 import homepage_view_model
+import i18n
 import interest_confirmation
 import interest_intake
 import private_http
 import registration
+import release_mode
 import security_utils
 import tenant as tenant_module
 from admin import admin_bp, require_admin
+from advisory_routes import advisory_bp
 from api_public import public_api_bp
 from cron import cron_bp
+from email_localization import gettext, recipient_locale
 from email_utils import send_email
+from equipment_routes import equipment_bp
 from health import health_bp
+from i18n import gettext as _
+from i18n import localized_url
 from leg_registry import registry_api_bp
+from locale_policy import resolve_locale
 from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
 from operator_api import operator_api_bp
@@ -54,12 +64,101 @@ from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import RATE_LIMIT_RETRY_AFTER_SECONDS, limiter
 from security_utils import log_security_event
 from self_host import self_host_bp
+from telemetry_routes import telemetry_bp
+from translation_markers import gettext_noop
 from utility_portal import utility_bp
 
 logger = logging.getLogger(__name__)
 
 # --- App routes ---
 main_bp = Blueprint("main", __name__)
+
+LEG_FORMATION_FAQS = (
+    {
+        "question": gettext_noop("Brauchen die Teilnehmenden eigene Smart Meter?"),
+        "answer": (
+            gettext_noop(
+                "Nein. Vorhandene gesetzeskonforme Smart Meter des "
+                "Verteilnetzbetreibers werden weiterverwendet. Fehlende erforderliche "
+                "Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
+                "Regulierte Messtarife können weiterhin anfallen."
+            )
+        ),
+    },
+    {
+        "question": gettext_noop(
+            "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
+        ),
+        "answer": (
+            gettext_noop(
+                "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im "
+                "Netzgebiet eines Verteilnetzbetreibers. Für mehrere Gemeinden oder "
+                "VNB-Gebiete braucht es separate lokale LEGs."
+            )
+        ),
+    },
+    {
+        "question": gettext_noop("Wer ist für die Abrechnung zuständig?"),
+        "answer": (
+            gettext_noop(
+                "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei "
+                "Teilnehmenden in der Grundversorgung auch den übrigen Strombezug. Die "
+                "LEG oder ihr Dienstleister rechnet den innerhalb der Gemeinschaft "
+                "ausgetauschten Strom ab."
+            )
+        ),
+    },
+    {
+        "question": gettext_noop(
+            "Darf ich OpenLEG installieren, anpassen oder forken?"
+        ),
+        "answer": (
+            gettext_noop(
+                "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG "
+                "installieren, nutzen und anpassen. Auch ein Fork ist erlaubt. "
+                "Wenn Sie eine veränderte Version über ein Netzwerk anbieten, müssen "
+                "Sie den Nutzenden den entsprechenden Quellcode zugänglich machen. "
+                "Das ist eine praktische Zusammenfassung und keine Rechtsberatung."
+            )
+        ),
+        "links": (
+            {
+                "label": gettext_noop("Lizenz lesen"),
+                "href": "https://github.com/Open-LEG-ch/openleg/blob/main/LICENSE",
+            },
+            {
+                "label": gettext_noop("Repository öffnen"),
+                "href": "https://github.com/Open-LEG-ch/openleg",
+            },
+            {
+                "label": gettext_noop("Anleitung zum eigenen Betrieb"),
+                "href": "/self-host",
+            },
+        ),
+    },
+    {
+        "question": gettext_noop(
+            "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
+        ),
+        "answer": (
+            gettext_noop(
+                "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. "
+                "Noch ist nicht jede VNB-Anbindung fertig umgesetzt. Anmeldung und "
+                "Datenlieferung müssen pro VNB konfiguriert werden."
+            )
+        ),
+    },
+    {
+        "question": gettext_noop("Kann OpenLEG unsere Gruppe persönlich unterstützen?"),
+        "answer": (
+            gettext_noop(
+                "Vorträge, Workshops und Projektunterstützung bieten wir nach "
+                "vorgängiger Vereinbarung gegen Honorar an."
+            )
+        ),
+        "contact_label": gettext_noop("Unterstützung anfragen"),
+    },
+)
 
 
 @main_bp.app_errorhandler(429)
@@ -68,8 +167,10 @@ def handle_rate_limit(_error):
         jsonify(
             {
                 "error": (
-                    "Zu viele Anfragen. Bitte warten Sie eine Minute und "
-                    "versuchen Sie es erneut."
+                    _(
+                        "Zu viele Anfragen. Bitte warten Sie eine Minute und "
+                        "versuchen Sie es erneut."
+                    )
                 ),
                 "retry_after_seconds": RATE_LIMIT_RETRY_AFTER_SECONDS,
             }
@@ -112,21 +213,36 @@ def send_activity_notification(activity_type, details):
     send_email(current_app.config["ADMIN_EMAIL"], subject, message_body)
 
 
-def send_confirmation_email(email, verification_url, building_id=None, address=None):
-    name = _tenant_name()
-    try:
-        city = getattr(g, "tenant", {}).get("city_name", "Zürich")
-    except RuntimeError:
-        city = "Zürich"
-    subject = f"{name}: Interessenmeldung bestätigen"
-    message_body = (
-        f"Bestätigen Sie Ihre Interessenmeldung für eine Lokale "
-        f"Elektrizitätsgemeinschaft (LEG) in {city}:\n\n"
-        f"{verification_url}\n\n"
+def send_confirmation_email(
+    email, verification_url, building_id=None, address=None, *, presentation=None
+):
+    profile = db.get_building(building_id) if building_id else None
+    locale = recipient_locale(profile, email)
+    verification_url = localized_url(verification_url, locale)
+    if presentation is None:
+        try:
+            presentation = getattr(g, "tenant", {})
+        except RuntimeError:
+            presentation = {}
+    name = presentation.get("platform_name", "OpenLEG")
+    city = presentation.get("city_name", "Zürich")
+    subject = gettext(
+        "%(platform_name)s: Interessenmeldung bestätigen",
+        platform_name=name,
+        locale=locale,
+    )
+    message_body = gettext(
+        "Bestätigen Sie Ihre Interessenmeldung für eine Lokale "
+        "Elektrizitätsgemeinschaft (LEG) in %(city_name)s:\n\n"
+        "%(verification_url)s\n\n"
         "Erst danach wird Ihre Anmeldung anonym gezählt. Wir informieren Sie, "
         "wenn weitere bestätigte Interessierte aus derselben Gemeinde dazukommen.\n\n"
         "Falls Sie sich nicht angemeldet haben, ignorieren Sie diese E-Mail.\n\n"
-        f"Ihr {name}-Team"
+        "Ihr %(platform_name)s-Team",
+        city_name=city,
+        verification_url=verification_url,
+        platform_name=name,
+        locale=locale,
     )
     send_email(email, subject, message_body)
 
@@ -207,6 +323,39 @@ def leg_kalkulator():
     return render_city_template("leg_kalkulator.html")
 
 
+@main_bp.get("/leg-check")
+def leg_check():
+    """Show public municipality data without claiming network eligibility."""
+    q = request.args.get("q", "").strip()[:200]
+    matches = db.search_municipality_profiles(q) if q else []
+    exact = [p for p in matches if p["name"].casefold() == q.casefold()]
+    profile = exact[0] if len(exact) == 1 else None
+    if "bfs" in request.args:
+        bfs = request.args.get("bfs", type=int)
+        profile = next((p for p in matches if p.get("bfs_number") == bfs), None)
+        if bfs is None or profile is None:
+            abort(400)
+    if profile is None and len(matches) == 1:
+        profile = matches[0]
+    operators = []
+    entries = []
+    if profile:
+        tariffs = db.get_elcom_tariffs(profile["bfs_number"])
+        operators = sorted(
+            {t["operator_name"] for t in tariffs if t.get("operator_name")}
+        )
+        entries = db.list_registry_entries(bfs_number=profile["bfs_number"])
+    return render_city_template(
+        "leg_verzeichnis/leg_check.html",
+        canonical_path="/leg-check",
+        q=q,
+        profile=profile,
+        matches=matches,
+        operators=operators,
+        entries=entries,
+    )
+
+
 @main_bp.route("/pricing")
 def pricing():
     return render_city_template("pricing.html")
@@ -264,36 +413,17 @@ def robots_txt():
 @main_bp.route("/llms.txt")
 def llms_txt():
     tenant = getattr(g, "tenant", tenant_module.DEFAULT_TENANT)
-    contact_email = tenant.get("contact_email", "hallo@openleg.ch")
-    lines = [
-        "# OpenLEG",
-        "",
-        f"> Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften (LEG), {current_app.config['SITE_URL']}. Code: https://github.com/Open-LEG-ch/openleg, Lizenz AGPL-3.0-or-later, Betrieb in der Schweiz.",
-        "",
-        "OpenLEG prüft Solarpotenzial pro Adresse, unterstützt die Organisation einer LEG und bereitet Dokumente und die Netzbetreiber-Anmeldung vor. Die öffentlich angebotenen Funktionen sind kostenlos.",
-        "",
-        "Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die Abrechnung. Sie wählt den Betreiber und Hosting-Anbieter. OpenLEG stellt dafür prüfbare, selbst betreibbare Software bereit. Der Netzbetreiber prüft Netzgebiet und Netzebene, misst, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten. Der Grundversorger liefert den übrigen Strom. OpenLEG ersetzt diese gesetzlichen Aufgaben nicht. Nicht jede VNB-Anbindung ist umgesetzt; Anmeldung und Datenlieferung müssen pro Netzbetreiber eingerichtet werden.",
-        "",
-        "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und 17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das Netznutzungsentgelt um 40% ohne und 20% mit Spannungstransformation (Art. 19h StromVV). Voraussetzungen: gleiche politische Gemeinde, gleiche Netzebene, gleiches Netzgebiet, höchstens 36 kV, intelligente Messsysteme, mindestens 5% erneuerbare Anschlussleistung.",
-        "",
-        "## Seiten",
-        f"- [Homepage]({current_app.config['SITE_URL']}/): LEG-Definition, Kennzahlen, Einstiege",
-        f"- [So funktioniert eine Stromgemeinschaft]({current_app.config['SITE_URL']}/how-it-works): Ablauf in drei Schritten und häufige Fragen",
-        f"- [Für Bewohner und Gründer]({current_app.config['SITE_URL']}/fuer-bewohner): Adresse prüfen, Nachbarn finden, gründen",
-        f"- [Für Gemeinden]({current_app.config['SITE_URL']}/fuer-gemeinden): Dashboard, Verantwortlichkeiten, Betriebsmodelle",
-        f"- [Solarnutzungs-Rangliste]({current_app.config['SITE_URL']}/rangliste): alle Schweizer Gemeinden mit prüfbarer Solarnutzung",
-        f"- [LEG-Verzeichnis]({current_app.config['SITE_URL']}/leg-verzeichnis): bestehende Lokale Elektrizitätsgemeinschaften",
-        f"- [Gemeinde-Verzeichnis]({current_app.config['SITE_URL']}/gemeinde/verzeichnis): Profile aller Schweizer Gemeinden",
-        f"- [Ersparnis-Kalkulator]({current_app.config['SITE_URL']}/leg-kalkulator): Ersparnis für eine LEG berechnen",
-        f"- [Fallstudie Baden]({current_app.config['SITE_URL']}/pilotgemeinde/baden): Tarife, Solardaten und Potenzial für Baden AG",
-        f"- [Open Source]({current_app.config['SITE_URL']}/open-source): Architektur, Repos und Datenpipeline",
-        f"- [Selbst betreiben]({current_app.config['SITE_URL']}/self-host): Installation auf eigener Hardware",
-        f"- [Kosten]({current_app.config['SITE_URL']}/pricing): Kostenlos, ohne Datenverkauf; Finanzierung",
-        f"- [Öffentliche API]({current_app.config['SITE_URL']}/api/v1/docs): Tarife, Solardaten, Rangliste, ohne API-Key",
-        f"- [Kontakt](mailto:{contact_email}): E-Mail",
-        "",
-    ]
-    return Response("\n".join(lines) + "\n", mimetype="text/plain")
+    response = Response(
+        render_template(
+            "llms.txt",
+            site_url=current_app.config["SITE_URL"],
+            contact_email=tenant.get("contact_email", "hallo@openleg.ch"),
+        ),
+        mimetype="text/plain",
+    )
+    response.headers["Content-Language"] = i18n.select_locale().replace("_", "-")
+    response.vary.add("Cookie")
+    return response
 
 
 @main_bp.route("/sitemap.xml")
@@ -360,15 +490,15 @@ def api_check_potential():
     try:
         is_valid_size, size_error = security_utils.check_request_size(request)
         if not is_valid_size:
-            return jsonify({"error": size_error}), 413
+            return jsonify({"error": _(size_error)}), 413
         if not request.json:
-            return jsonify({"error": "Keine Daten empfangen."}), 400
+            return jsonify({"error": _("Keine Daten empfangen.")}), 400
         address = request.json.get("address", "").strip()
         is_valid, sanitized_address, error_msg = security_utils.validate_address(
             address
         )
         if not is_valid:
-            return jsonify({"error": error_msg}), 400
+            return jsonify({"error": _(error_msg)}), 400
         address = sanitized_address
 
         outcome = data_enricher.resolve_address_profile(address)
@@ -377,7 +507,7 @@ def api_check_potential():
             return (
                 jsonify(
                     {
-                        "error": "Adresse konnte nicht eindeutig geprüft werden.",
+                        "error": _("Adresse konnte nicht eindeutig geprüft werden."),
                         "can_register_interest": True,
                         "reason": outcome.live_status,
                     }
@@ -385,45 +515,57 @@ def api_check_potential():
                 422,
             )
         if not outcome.estimates:
-            return jsonify({"error": "Adresse konnte nicht analysiert werden."}), 404
+            return jsonify({"error": _("Adresse konnte nicht analysiert werden.")}), 404
 
         cluster_info = find_provisional_matches(outcome.estimates)
         if not cluster_info:
             return jsonify(
                 {
                     "potential": False,
-                    "message": "Keine direkten Partner gefunden.",
+                    "message": _("Keine direkten Partner gefunden."),
                     "profile_summary": outcome.estimates,
                 }
             )
         return jsonify(
             {
                 "potential": True,
-                "message": "Partner gefunden!",
+                "message": _("Partner gefunden!"),
                 "cluster_info": cluster_info,
                 "profile_summary": outcome.estimates,
             }
         )
     except Exception:
         current_app.logger.exception("Unhandled error in /api/check_potential")
-        return jsonify({"error": "Server-Fehler. Bitte später erneut versuchen."}), 500
+        return jsonify(
+            {"error": _("Server-Fehler. Bitte später erneut versuchen.")}
+        ), 500
 
 
 # --- Registration ---
 def _registration_response(user_type):
     if not request.json:
-        return jsonify({"error": "Keine Daten empfangen."}), 400
+        return jsonify({"error": _("Keine Daten empfangen.")}), 400
     is_valid_size, size_error = security_utils.check_request_size(request)
     if not is_valid_size:
-        return jsonify({"error": size_error}), 413
+        return jsonify({"error": _(size_error)}), 413
 
-    city_id = g.tenant.get("territory", "zurich") if hasattr(g, "tenant") else "zurich"
+    tenant = getattr(g, "tenant", None) or {}
+    city_id = tenant.get("territory", "zurich")
     deps = registration.RegistrationDeps(
         db=db,
         security=security_utils,
         app_base_url=current_app.config["APP_BASE_URL"],
         thread=threading.Thread,
-        send_confirmation_email=send_confirmation_email,
+        send_confirmation_email=partial(
+            send_confirmation_email,
+            presentation={
+                key: tenant.get(key, fallback)
+                for key, fallback in (
+                    ("platform_name", "OpenLEG"),
+                    ("city_name", "Zürich"),
+                )
+            },
+        ),
         find_provisional_matches=find_provisional_matches,
         collect_building_locations=collect_building_locations,
     )
@@ -432,7 +574,7 @@ def _registration_response(user_type):
             request.json, city_id=city_id, user_type=user_type, deps=deps
         )
     except registration.RegistrationError as error:
-        return jsonify({"error": error.message}), error.status
+        return jsonify({"error": _(error.message)}), error.status
     return jsonify(payload)
 
 
@@ -453,9 +595,9 @@ def api_register_full():
 def api_register_interest():
     is_valid_size, size_error = security_utils.check_request_size(request)
     if not is_valid_size:
-        return jsonify({"error": size_error}), 413
+        return jsonify({"error": _(size_error)}), 413
     if not request.json:
-        return jsonify({"error": "Keine Daten empfangen."}), 400
+        return jsonify({"error": _("Keine Daten empfangen.")}), 400
     try:
         result = interest_intake.submit(
             request.json,
@@ -465,8 +607,9 @@ def api_register_interest():
             send_email=send_email,
         )
     except interest_intake.InterestIntakeError as error:
-        return jsonify({"error": error.message}), 400
-    return jsonify(result), 202
+        return jsonify({"error": _(error.message)}), 400
+    message = result["message"]
+    return jsonify({**result, "message": _(message)}), 202
 
 
 @main_bp.route("/confirm/<token>")
@@ -521,16 +664,16 @@ def api_meter_data_upload():
         if tier not in (1, 2, 3):
             raise ValueError
     except (TypeError, ValueError):
-        return jsonify({"error": "tier muss 1, 2 oder 3 sein."}), 400
+        return jsonify({"error": _("tier muss 1, 2 oder 3 sein.")}), 400
 
     if not building_id or not csv_content:
-        return jsonify({"error": "building_id und csv_content erforderlich."}), 400
+        return jsonify({"error": _("building_id und csv_content erforderlich.")}), 400
 
     try:
         # Verify building exists
         building = db.get_building(building_id)
         if not building:
-            return jsonify({"error": "Gebäude nicht gefunden."}), 404
+            return jsonify({"error": _("Gebäude nicht gefunden.")}), 404
 
         # Save consent tier
         db.save_data_consent(
@@ -544,7 +687,9 @@ def api_meter_data_upload():
         return jsonify(meter_data.ingest_file(building_id, csv_content))
     except Exception:
         current_app.logger.exception("Unhandled error in /api/meter-data/upload")
-        return jsonify({"error": "Server-Fehler beim Verarbeiten der Messdaten."}), 500
+        return jsonify(
+            {"error": _("Server-Fehler beim Verarbeiten der Messdaten.")}
+        ), 500
 
 
 @main_bp.route("/meter-upload")
@@ -567,7 +712,7 @@ def unsubscribe_page():
         )
         if not is_valid_email:
             status = "error"
-            message = email_error
+            message = _(email_error)
         else:
             email_value = normalized_email
             matches = db.get_building_by_email(email_value)
@@ -580,15 +725,27 @@ def unsubscribe_page():
                     tokens.append(token)
             tokens.extend(db.create_coverage_deletion_tokens(email_value))
             for token in tokens:
-                unsubscribe_url = f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}"
+                locale = resolve_locale(
+                    db.get_deletion_recipient_locale(token, email_value)
+                )
+                unsubscribe_url = localized_url(
+                    f"{current_app.config['APP_BASE_URL'].rstrip('/')}/unsubscribe/{token}",
+                    locale,
+                )
                 try:
                     send_email(
                         email_value,
-                        "OpenLEG: Löschung bestätigen",
-                        "Bestätigen Sie die Löschung Ihrer OpenLEG-Daten über "
-                        f"diesen Link:\n\n{unsubscribe_url}\n\n"
-                        "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
-                        "nicht angefordert haben, ignorieren Sie diese E-Mail.",
+                        gettext("OpenLEG: Löschung bestätigen", locale=locale),
+                        gettext(
+                            "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen "
+                            "Gebietsanfrage bei OpenLEG über "
+                            "diesen Link:\n\n%(unsubscribe_url)s\n\n"
+                            "Jeder Link bezieht sich auf einen einzelnen Eintrag. "
+                            "Der Link ist eine Stunde gültig. Falls Sie die Löschung "
+                            "nicht angefordert haben, ignorieren Sie diese E-Mail.",
+                            unsubscribe_url=unsubscribe_url,
+                            locale=locale,
+                        ),
                     )
                 except Exception:
                     current_app.logger.exception(
@@ -596,7 +753,7 @@ def unsubscribe_page():
                     )
             email_value = ""
             status = "success"
-            message = (
+            message = _(
                 "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink "
                 "per E-Mail."
             )
@@ -632,8 +789,9 @@ def unsubscribe_token(token):
             render_template(
                 "unsubscribe.html",
                 status="error",
-                message=(
-                    "Ihre Daten wurden nicht gelöscht. Der Link ist möglicherweise "
+                message=_(
+                    "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene "
+                    "Gebietsanfrage) nicht gelöscht. Der Link ist möglicherweise "
                     "abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
                 ),
                 email="",
@@ -643,7 +801,10 @@ def unsubscribe_token(token):
     return render_template(
         "unsubscribe.html",
         status="success",
-        message="Ihre Daten wurden erfolgreich gelöscht.",
+        message=_(
+            "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene "
+            "Gebietsanfrage) ist jetzt erfolgreich gelöscht."
+        ),
         email="",
     )
 
@@ -701,7 +862,9 @@ def api_referral_stats(building_id):
         {
             "referral_code": referral_code,
             "referral_link": (
-                f"{current_app.config['APP_BASE_URL']}/?ref={referral_code}"
+                i18n.localized_url(
+                    f"{current_app.config['APP_BASE_URL']}/?ref={referral_code}"
+                )
             )
             if referral_code
             else None,
@@ -773,7 +936,7 @@ def api_formation_optimize():
     data = request.json or {}
     building_id = data.get("building_id", "").strip()
     if not building_id:
-        return jsonify({"error": "building_id required"}), 400
+        return jsonify({"error": _("building_id required")}), 400
 
     clusters = formation_wizard.get_formable_clusters(building_id)
     return jsonify({"clusters": clusters})
@@ -826,7 +989,7 @@ def api_billing_period(community_id, period_id):
     except db.BillingStoreError:
         abort(503)
     if not period:
-        return jsonify({"error": "Period not found"}), 404
+        return jsonify({"error": _("Period not found")}), 404
     return jsonify(period)
 
 
@@ -848,6 +1011,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     """Create one configured OpenLEG Flask application."""
     if load_environment:
         load_dotenv()
+    read_only = release_mode.read_only_enabled()
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -858,9 +1022,28 @@ def create_app(config=None, *, load_environment=True, check_database=True):
 
     application = Flask(__name__)
     application.config.from_mapping(app_config.build_config(os.environ, config))
+    # Topology precondition: ProxyFix may only rewrite REMOTE_ADDR from
+    # X-Forwarded-For when exactly one trusted reverse proxy sits in front of
+    # the WSGI server. Without that topology the header is client-controlled,
+    # so forwarded-header trust stays off unless explicitly enabled.
+    if application.config["TRUSTED_PROXY_HOPS"] == 1:
+        application.wsgi_app = ProxyFix(
+            application.wsgi_app,
+            x_for=1,
+            x_proto=0,
+            x_host=0,
+            x_port=0,
+            x_prefix=0,
+        )
+    release_mode.install_http_guard(application, read_only=read_only)
+    i18n.init_app(application)
+    application.context_processor(private_http.template_context)
 
     public_site_base = app_config.validated_public_site_url(
         application.config["PUBLIC_SITE_URL"]
+    )
+    matomo_site_id = app_config.validated_matomo_site_id(
+        application.config["MATOMO_SITE_ID"]
     )
 
     def public_site_url(path):
@@ -870,9 +1053,10 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         parsed_path = urlparse(relative_path)
         if parsed_path.scheme or parsed_path.netloc:
             raise ValueError("public site link must be a relative path")
-        return urljoin(f"{public_site_base}/", relative_path)
+        return i18n.localized_url(urljoin(f"{public_site_base}/", relative_path))
 
     application.jinja_env.globals["public_site_url"] = public_site_url
+    application.jinja_env.globals["matomo_site_id"] = matomo_site_id
 
     for blueprint in (
         main_bp,
@@ -887,6 +1071,9 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         admin_bp,
         cron_bp,
         operator_api_bp,
+        telemetry_bp,
+        equipment_bp,
+        advisory_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)
@@ -904,6 +1091,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
                 "https://unpkg.com",
                 "https://cdn.jsdelivr.net",
                 "https://www.googletagmanager.com",
+                "https://stats.openleg.ch",
             ],
             "style-src": [
                 "'self'",
@@ -919,6 +1107,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
                 "https://www.google-analytics.com",
                 "https://region1.google-analytics.com",
                 "https://www.googletagmanager.com",
+                "https://stats.openleg.ch",
             ],
         },
         content_security_policy_nonce_in=None,

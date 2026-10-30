@@ -53,11 +53,20 @@ def _new_secret(prefix: str) -> str:
     return prefix + secrets.token_urlsafe(32)
 
 
-def _webhook_secret(client_id: str, signing_key: str | None = None) -> str:
+def _webhook_secret(
+    client_id: str, signing_key: str | None = None, version: int = 1
+) -> str:
     """Derive an independent stable secret from the instance key and client ID."""
     key = signing_key or current_app.config["SECRET_KEY"]
+    # Version 1 was issued before secret rotation existed. Preserve its exact
+    # derivation so an upgrade does not invalidate installed webhook receivers.
+    identity = f"openleg-webhook-v1:{client_id}"
+    if int(version) != 1:
+        identity += f":{int(version)}"
     digest = hmac.new(
-        key.encode(), f"openleg-webhook-v1:{client_id}".encode(), hashlib.sha256
+        key.encode(),
+        identity.encode(),
+        hashlib.sha256,
     )
     return "olwhsec_" + digest.hexdigest()
 
@@ -438,7 +447,7 @@ def confirm_payment_match(community_id, entry_id):
 
 
 def _admin_for(community_id: str, building_id: str | None) -> bool:
-    status = formation_wizard.get_community_status(community_id)
+    status = formation_wizard.get_community_status(community_id, building_id)
     member = next(
         (
             row
@@ -525,10 +534,13 @@ def create_credential(community_id):
         token_hash,
         webhook_url,
     )
+    webhook_secret = _webhook_secret(
+        row["id"], version=row.get("webhook_secret_version", 1)
+    )
     return jsonify(
         credential=_safe_credential(row),
         token=token,
-        webhook_secret=_webhook_secret(row["id"]),
+        webhook_secret=webhook_secret,
     ), 201
 
 
@@ -560,6 +572,9 @@ def rotate_credential(community_id, client_id):
         jsonify(
             credential=_safe_credential(row),
             token=token,
+            webhook_secret=_webhook_secret(
+                row["id"], version=row.get("webhook_secret_version", 1)
+            ),
         )
         if row
         else _error("Credential not found", 404)
@@ -701,7 +716,12 @@ def dispatch_pending_webhooks(
             "Content-Type": "application/json",
             "OpenLEG-Delivery": row["delivery_id"],
             "OpenLEG-Signature": sign_webhook(
-                body, _webhook_secret(row["client_id"], signing_key)
+                body,
+                _webhook_secret(
+                    row["client_id"],
+                    signing_key,
+                    row.get("webhook_secret_version", 1),
+                ),
             ),
         }
         try:

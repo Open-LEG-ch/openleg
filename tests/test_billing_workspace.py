@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Behavioral contract for the read-only admin billing workspace."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from importlib import import_module
 from zoneinfo import ZoneInfo
@@ -267,6 +267,23 @@ def test_non_finite_numeric_values_are_never_displayed(monkeypatch, non_finite):
     assert selected["tariff"]["internal_price"] == "Nicht angegeben"
 
 
+@pytest.mark.parametrize(
+    ("period_start", "expected"),
+    [
+        # PostgreSQL returns TIMESTAMPTZ in the session zone, typically UTC.
+        # September 2026 starts at 2026-08-31T22:00Z (CEST), January 2026 at
+        # 2025-12-31T23:00Z (CET); the label must name the Swiss month.
+        (datetime(2026, 8, 31, 22, 0, tzinfo=ZoneInfo("UTC")), "September 2026"),
+        ("2026-08-31T22:00:00+00:00", "September 2026"),
+        (datetime(2025, 12, 31, 23, 0, tzinfo=ZoneInfo("UTC")), "Januar 2026"),
+        (datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")), "September 2026"),
+        ("2026-07-01", "Juli 2026"),
+    ],
+)
+def test_period_label_names_the_swiss_calendar_month(period_start, expected):
+    assert _module().period_label(period_start) == expected
+
+
 def test_rate_uses_explicit_half_up_rounding():
     workspace = _module()
 
@@ -286,3 +303,152 @@ def test_a_period_stored_in_utc_is_labelled_in_its_own_month():
         workspace.period_label(datetime(2026, 8, 1, tzinfo=ZoneInfo("Europe/Zurich")))
         == "August 2026"
     )
+
+
+def test_workspace_groups_settlement_fee_lines_separately(monkeypatch):
+    from decimal import Decimal
+
+    import billing_workspace as workspace
+
+    start = datetime(2026, 6, 1, 0, 0, tzinfo=ZoneInfo("Europe/Zurich"))
+    periods = [
+        {
+            "id": 42,
+            "period_start": start,
+            "period_end": start + timedelta(days=30),
+            "status": "draft",
+        }
+    ]
+    detail = {
+        **periods[0],
+        "line_items": [
+            {
+                "participant_id": "consumer-a",
+                "item_type": "settlement_fee",
+                "quantity_kwh": Decimal("100.25"),
+                "unit_price_chf_per_kwh": Decimal("0.02"),
+                "amount_chf": Decimal("2.005"),
+            },
+        ],
+    }
+    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit=100: periods)
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda period_id: detail)
+
+    selected = workspace.load()["selected"]
+
+    assert [item["participant_id"] for item in selected["settlement_charges"]] == [
+        "consumer-a"
+    ]
+    fee = selected["settlement_charges"][0]
+    assert fee["display_quantity_kwh"] == "100.250"
+    assert fee["display_unit_price_rp"] == "2.00"
+    assert fee["display_amount_chf"] == "2.01"
+    assert all(
+        item["item_type"] != "settlement_fee"
+        for item in selected["consumer_charges"] + selected["producer_credits"]
+    )
+
+
+def test_workspace_groups_battery_share_lines_separately(monkeypatch):
+    from decimal import Decimal
+
+    import billing_workspace as workspace
+
+    start = datetime(2026, 6, 1, 0, 0, tzinfo=ZoneInfo("Europe/Zurich"))
+    periods = [
+        {
+            "id": 42,
+            "period_start": start,
+            "period_end": start + timedelta(days=30),
+            "status": "draft",
+        }
+    ]
+    detail = {
+        **periods[0],
+        "line_items": [
+            {
+                "participant_id": "consumer-a",
+                "item_type": "battery_cost_share",
+                "quantity_kwh": None,
+                "unit_price_chf_per_kwh": None,
+                "amount_chf": Decimal("120.00"),
+            },
+        ],
+    }
+    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit=100: periods)
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda period_id: detail)
+
+    selected = workspace.load()["selected"]
+
+    assert [item["participant_id"] for item in selected["battery_shares"]] == [
+        "consumer-a"
+    ]
+    share = selected["battery_shares"][0]
+    assert share["display_quantity_kwh"] is None
+    assert share["display_unit_price_rp"] is None
+    assert share["display_amount_chf"] == "120.00"
+    assert all(
+        item["item_type"] != "battery_cost_share"
+        for item in selected["consumer_charges"] + selected["producer_credits"]
+    )
+
+
+def test_workspace_exposes_the_frozen_battery_source_audit(monkeypatch):
+    workspace = _module()
+    period = {
+        "id": 42,
+        "community_id": "community-a",
+        "period_start": "2026-07-01",
+        "status": "draft",
+    }
+    detail = {
+        **period,
+        "battery_snapshot": {
+            "participant_id": "battery-a",
+            "energy": {
+                "charged_kwh": "7.5",
+                "discharged_kwh": "7.0",
+                "charge_discharge_difference_kwh": "0.5",
+                "allocated_battery_kwh": "6.75",
+                "unallocated_discharge_kwh": "0.25",
+            },
+            "attribution": {
+                "home-a": {
+                    "direct_solar_kwh": "3.25",
+                    "battery_kwh": "2.5",
+                    "value_chf": "0.38",
+                },
+                "home-b": {
+                    "direct_solar_kwh": "1",
+                    "battery_kwh": "4.25",
+                    "value_chf": "0.64",
+                },
+            },
+        },
+        "line_items": [],
+    }
+    monkeypatch.setattr(
+        workspace.db, "list_billing_periods", lambda limit=100: [period]
+    )
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda _period_id: detail)
+
+    selected = workspace.load()["selected"]
+
+    assert selected["battery_energy"]["charged_kwh"] == "7.500"
+    assert selected["battery_energy"]["discharged_kwh"] == "7.000"
+    assert selected["battery_energy"]["charge_discharge_difference_kwh"] == "0.500"
+    assert selected["battery_energy"]["unallocated_discharge_kwh"] == "0.250"
+    assert selected["battery_attribution"] == [
+        {
+            "participant_id": "home-a",
+            "direct_solar_kwh": "3.250",
+            "battery_kwh": "2.500",
+            "value_chf": "0.38",
+        },
+        {
+            "participant_id": "home-b",
+            "direct_solar_kwh": "1.000",
+            "battery_kwh": "4.250",
+            "value_chf": "0.64",
+        },
+    ]

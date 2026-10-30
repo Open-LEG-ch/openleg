@@ -13,7 +13,7 @@ The public app repository serves both surfaces on `openleg.ch`:
 `PUBLIC_SITE_URL` is a link-generation seam. It does not transfer ownership of
 `openleg.ch/` to another runtime. A proposal to split the website into another
 service requires an approved migration plan that proves routing, content parity,
-redirects, SEO metadata, rollback, and production ownership before any public
+redirects, SEO metadata, recovery, and production ownership before any public
 route or asset is removed.
 
 ## Invariants
@@ -21,7 +21,7 @@ route or asset is removed.
 Every change must preserve these observable behaviours:
 
 1. Anonymous `GET /` returns 200 and contains the public homepage markers
-   `Ihr Strom.` and `Ihre Gemeinschaft.`.
+   `Gründen Sie eine`, `Stromgemeinschaft` and `Was ist eine LEG?`.
 2. Anonymous `GET /` contains the shared public navigation and footer and does
    not contain `Dashboard-Zugang`.
 3. `GET /login` returns 200, contains `Dashboard-Zugang`, and offers exactly the
@@ -61,10 +61,10 @@ The release image must contain:
 
 ## Production Smoke Check
 
-After digest deployment, make a bounded set of requests:
+After digest deployment, make a bounded set of anonymous requests:
 
 1. Check `/livez` and `/health` once.
-2. Check `/` once for both public homepage markers and the absence of
+2. Check `/` once for all three current homepage markers and the absence of
    `Dashboard-Zugang`.
 3. Check `/login` once for `Dashboard-Zugang`.
 4. Check the fixed primary public routes once each.
@@ -74,7 +74,12 @@ After digest deployment, make a bounded set of requests:
    the release ledger.
 
 Treat any unexpected 4xx/5xx, missing marker, missing asset, or hash mismatch as
-a failed release. Use the private `openleg-ops` rollback procedure.
+a failed release. Follow the owning recovery procedure in private `openleg-ops`.
+For the product, once candidate initialization has begun, keep the same candidate
+verified read-only or stopped and recover through a validated roll-forward
+correction. Do not automatically start an older image or restore the database
+after that point. See [read-only release validation](release-validation.md) for
+the public process-mode contract.
 
 Do not crawl the full municipality directory during a smoke test. It contains
 thousands of profile links and will correctly trigger rate limiting.

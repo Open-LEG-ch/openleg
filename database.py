@@ -6,7 +6,10 @@ Replaces JSON file persistence with proper database storage.
 
 import logging
 import os
+import threading
 from contextlib import contextmanager
+
+import release_mode
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +30,19 @@ DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", "10"))
 
 # Connection pool
 _connection_pool = None
+# Process that created _connection_pool. With gunicorn --preload that is the
+# master, and every worker inherits its sockets; get_connection reopens there.
+_pool_pid = None
+# Pools inherited across fork(), kept referenced so they are never closed or
+# garbage collected here: that would end sessions the parent still owns.
+_inherited_pools: list[object] = []
+_pool_lock = threading.Lock()
 
 
 def init_db():
     """Initialize database connection pool and create tables if needed."""
-    global _connection_pool
+    global _connection_pool, _pool_pid
+    read_only = release_mode.read_only_enabled()
 
     if not HAS_POSTGRES:
         logger.warning("[DB] PostgreSQL not available, using fallback JSON storage")
@@ -45,12 +56,14 @@ def init_db():
         _connection_pool = pool.ThreadedConnectionPool(
             DB_POOL_MIN, DB_POOL_MAX, DATABASE_URL, cursor_factory=RealDictCursor
         )
+        _pool_pid = os.getpid()
         logger.info(
             f"[DB] Connection pool created (min={DB_POOL_MIN}, max={DB_POOL_MAX})"
         )
 
-        # Create tables
-        _create_tables()
+        # Release validation uses a separately migrated schema.
+        if not read_only:
+            _create_tables()
         return True
     except Exception as e:
         logger.error(f"[DB] Failed to initialize database: {e}")
@@ -60,9 +73,26 @@ def init_db():
 @contextmanager
 def get_connection():
     """Get a database connection from the pool."""
+    global _connection_pool, _pool_pid
+    read_only = release_mode.read_only_enabled()
+    if _pool_pid is not None and _pool_pid != os.getpid():
+        with _pool_lock:
+            if _pool_pid != os.getpid():
+                _inherited_pools.append(_connection_pool)
+                _connection_pool = pool.ThreadedConnectionPool(
+                    DB_POOL_MIN,
+                    DB_POOL_MAX,
+                    DATABASE_URL,
+                    cursor_factory=RealDictCursor,
+                )
+                _pool_pid = os.getpid()
+                logger.info(f"[DB] Connection pool reopened in process {_pool_pid}")
     conn = None
+    connection_pool = _connection_pool
     try:
-        conn = _connection_pool.getconn()
+        conn = connection_pool.getconn()
+        if read_only or getattr(conn, "readonly", None) is True:
+            conn.set_session(readonly=read_only)
         yield conn
         conn.commit()
     except Exception:
@@ -71,7 +101,7 @@ def get_connection():
         raise
     finally:
         if conn:
-            _connection_pool.putconn(conn)
+            connection_pool.putconn(conn)
 
 
 def _create_tables():
@@ -85,9 +115,10 @@ _db_initialized = False
 def is_db_available() -> bool:
     """Check if PostgreSQL database is available."""
     global _db_initialized
+    read_only = release_mode.read_only_enabled()
     if not _db_initialized:
         _db_initialized = init_db()
-        if _db_initialized:
+        if _db_initialized and not read_only:
             try:
                 seed_default_tenant()
             except Exception as e:
@@ -123,6 +154,7 @@ from store.api_client import (  # noqa: F401
     save_api_client,
     track_api_usage,
 )
+from store.battery import get_battery, save_battery  # noqa: F401
 from store.billing import (  # noqa: F401
     BillingPolicyConflict,
     BillingStoreError,
@@ -168,11 +200,16 @@ from store.building import (  # noqa: F401
     update_building_verified,
 )
 from store.calculated_values import (  # noqa: F401
+    CalculatedValuesLifecycleConflict,
+    CalculatedValuesLifecycleMissing,
     find_overlapping_calculated_values,
     get_calculated_values_community,
     get_validated_calculated_values,
+    ingest_e66_calculated_values,
     list_calculated_values_deliveries,
+    record_calculated_meter_assignment,
     save_calculated_values_delivery,
+    withdraw_calculated_values_delivery,
 )
 from store.cluster import (  # noqa: F401
     save_cluster,
@@ -188,7 +225,10 @@ from store.correspondence import (  # noqa: F401
     list_correspondence,
     log_correspondence,
 )
-from store.dashboard_profile import update_dashboard_profile  # noqa: F401
+from store.dashboard_profile import (  # noqa: F401
+    update_dashboard_profile,
+    update_recipient_locale,
+)
 from store.document import (  # noqa: F401
     get_leg_document,
     list_leg_documents,
@@ -217,14 +257,22 @@ from store.formation import (  # noqa: F401
     set_member_access_roles,
     submit_community_to_dso,
 )
+from store.formation_activation import (  # noqa: F401
+    ActivationConflict,
+    ActivationDenied,
+    activate_community,
+    record_vnb_start_confirmation,
+)
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
 from store.interest import (  # noqa: F401
+    InterestReadUnavailable,
     cleanup_expired_interest,
     get_interest_count,
     get_interest_counts_by_bfs,
     get_municipality_interest_summary,
     get_operator_interest_counts,
     get_operator_interest_records,
+    get_verified_interest_recipient_preferences,
     get_verified_interest_recipients,
     save_coverage_request,
     verify_coverage_request,
@@ -243,6 +291,7 @@ from store.meter import (  # noqa: F401
 )
 from store.metering import (  # noqa: F401
     get_billable_period_snapshot,
+    get_building_period_readings,
     get_community_metering_points,
     get_metering_point,
     get_metering_point_reading_stats,
@@ -332,12 +381,14 @@ from store.token import (  # noqa: F401
     confirm_profile_deletion,
     create_coverage_deletion_tokens,
     delete_tokens_for_building,
+    get_deletion_recipient_locale,
     get_token,
     save_token,
     use_token,
 )
 from store.utility import (  # noqa: F401
     clear_utility_magic_token,
+    consume_utility_magic_token,
     get_all_utility_clients,
     get_utility_client,
     get_utility_client_by_email,
@@ -346,6 +397,7 @@ from store.utility import (  # noqa: F401
     save_utility_client,
     set_utility_magic_token,
     update_utility_client_api_key,
+    update_utility_client_locale,
     update_utility_client_status,
 )
 
@@ -389,3 +441,27 @@ list_operator_invoice_cases = _operator_operations.list_cases
 list_operator_payment_matches = _operator_operations.list_payments
 respond_operator_invoice_case = _operator_operations.respond_case
 confirm_operator_payment_match = _operator_operations.confirm_payment
+
+from store.advisories import (  # noqa: F401
+    append_advisory_revision,
+    create_advisory,
+    get_advisory_history,
+    get_advisory_source_policy,
+    get_equipment_advisories,
+    list_advisory_catalog,
+    list_advisory_source_reviews,
+    publish_advisory_revision,
+    record_advisory_source_review,
+    record_equipment_advisory_action,
+    set_advisory_source_policy,
+)
+from store.equipment import (  # noqa: F401
+    create_equipment,
+    delete_equipment,
+    get_equipment,
+    list_equipment,
+    update_equipment,
+)
+from store.telemetry import acknowledge_notice as acknowledge_telemetry_notice  # noqa: F401
+from store.telemetry import owner_overview as get_owner_telemetry_overview  # noqa: F401
+from store.telemetry import shared_overview as get_shared_telemetry_overview  # noqa: F401

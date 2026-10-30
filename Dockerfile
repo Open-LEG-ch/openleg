@@ -25,8 +25,11 @@ RUN pip install --no-cache-dir --upgrade "setuptools>=84.0.0"
 COPY *.py ./
 COPY store/ store/
 COPY templates/ templates/
+COPY translations/ translations/
 COPY static/ static/
 COPY scripts/ scripts/
+COPY babel.cfg .
+RUN python scripts/translations.py compile
 
 RUN test -f /app/app.py \
     && test -f /app/templates/dashboard.html \

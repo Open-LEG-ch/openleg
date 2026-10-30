@@ -2,9 +2,11 @@
   "name": "openleg",
   "private": true,
   "scripts": {
-    "build:css": "tailwindcss -i static/css/tailwind.css -o static/css/openleg.css --minify"
+    "build:css": "tailwindcss -i static/css/tailwind.css -o static/css/openleg.css --minify",
+    "test:js": "node --test tests/js/*.test.cjs"
   },
   "devDependencies": {
-    "tailwindcss": "3.4.17"
+    "@tailwindcss/cli": "4.3.3",
+    "tailwindcss": "4.3.3"
   }
 }

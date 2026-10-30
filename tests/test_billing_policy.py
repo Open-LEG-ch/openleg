@@ -8,7 +8,7 @@ the admin routes.
 """
 
 import re
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -20,6 +20,7 @@ VALID_FORM = {
     "effective_from": "2026-09-01",
     "internal_price_rp": "15.00",
     "grid_fee_rp": "8.00",
+    "settlement_fee_rp": "2.00",
     "network_level": "same",
     "distribution_model": "proportional",
     "vat_mode": "none",
@@ -46,6 +47,7 @@ def test_valid_form_produces_complete_policy():
     )
     assert policy["internal_price_chf_per_kwh"] == Decimal("0.15")
     assert policy["grid_fee_chf_per_kwh"] == Decimal("0.08")
+    assert policy["settlement_fee_chf_per_kwh"] == Decimal("0.02")
     assert policy["network_level"] == "same"
     assert policy["distribution_model"] == "proportional"
     assert policy["vat_mode"] == "none"
@@ -62,6 +64,7 @@ def test_persisted_policy_definition_owns_the_complete_field_set():
         "effective_from",
         "internal_price_chf_per_kwh",
         "grid_fee_chf_per_kwh",
+        "settlement_fee_chf_per_kwh",
         "network_level",
         "distribution_model",
         "vat_mode",
@@ -79,6 +82,7 @@ def test_fingerprint_projection_uses_every_persisted_policy_field():
         "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
         "internal_price_chf_per_kwh": Decimal("0.15"),
         "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "settlement_fee_chf_per_kwh": Decimal("0.02"),
         "network_level": "same",
         "distribution_model": "proportional",
         "vat_mode": "none",
@@ -93,6 +97,34 @@ def test_fingerprint_projection_uses_every_persisted_policy_field():
     assert tuple(projected) == billing_policy.FINGERPRINT_POLICY_FIELDS
     assert "effective_from" not in projected
     assert projected["internal_price_chf_per_kwh"] == "0.15"
+    assert projected["settlement_fee_chf_per_kwh"] == "0.02"
+
+
+def test_fingerprint_projection_omits_a_zero_or_absent_settlement_fee():
+    """Pre-fee periods stay reproducible: a zero fee projects nothing."""
+    policy = {
+        "tariff_id": 7,
+        "community_id": "community-a",
+        "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        "internal_price_chf_per_kwh": Decimal("0.15"),
+        "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "none",
+        "vat_rate_pct": Decimal(0),
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+
+    projected = billing_policy.policy_fingerprint_values(policy)
+    assert "settlement_fee_chf_per_kwh" not in projected
+
+    legacy = {key: value for key, value in policy.items()}
+    legacy.pop("settlement_fee_chf_per_kwh", None)
+    assert "settlement_fee_chf_per_kwh" not in billing_policy.policy_fingerprint_values(
+        legacy
+    )
 
 
 def test_persisted_policy_refuses_temporal_types_that_cannot_be_compared():
@@ -167,6 +199,7 @@ def test_validate_persisted_policy_normalizes_one_complete_policy():
         "effective_from": datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
         "internal_price_chf_per_kwh": Decimal("0.15"),
         "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "settlement_fee_chf_per_kwh": Decimal(0),
         "network_level": "same",
         "distribution_model": "proportional",
         "vat_mode": "none",
@@ -352,6 +385,28 @@ _PERSISTED_POLICY_DIAGNOSTICS = (
             "vat_rate_pct": Decimal("100.01"),
         },
         "Der Mehrwertsteuersatz der Richtlinie ist ungültig.",
+    ),
+    (
+        "settlement-fee-outside-range",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "settlement_fee_chf_per_kwh": Decimal("10.01"),
+        },
+        (
+            "Das Abrechnungsentgelt der Richtlinie liegt ausserhalb des zulässigen "
+            "Bereichs."
+        ),
+    ),
+    (
+        "settlement-fee-too-precise",
+        lambda: {
+            **_IDENTITY_VALID_POLICY,
+            "settlement_fee_chf_per_kwh": Decimal("0.0212345"),
+        },
+        (
+            "Das Abrechnungsentgelt der Richtlinie liegt ausserhalb des zulässigen "
+            "Bereichs."
+        ),
     ),
 )
 
@@ -711,6 +766,7 @@ def test_disclaimer_promises_no_legal_advice():
         "effective_from",
         "internal_price_rp",
         "grid_fee_rp",
+        "settlement_fee_rp",
         "network_level",
         "distribution_model",
         "vat_mode",
@@ -724,6 +780,172 @@ def test_missing_fields_fail_closed(field):
     result = billing_policy.validate_policy_form(form)
     assert result["policy"] is None
     assert field in result["errors"]
+
+
+_GERMAN_FORM_ERRORS = {
+    "effective_from": "Gültig-ab-Datum im Format JJJJ-MM-TT eingeben.",
+    "internal_price_rp": (
+        "Interner Preis in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
+    ),
+    "grid_fee_rp": (
+        "Netzentgelt in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
+    ),
+    "network_level": "Unbekannte Netzebene.",
+    "distribution_model": "Unbekanntes Verteilmodell.",
+    "vat_mode": "Unbekannter Mehrwertsteuer-Modus.",
+    "payment_days": "Zahlungsfrist in ganzen Tagen, zwischen 1 und 365.",
+    "invoice_prefix": (
+        "Rechnungspräfix: 2 bis 16 Zeichen, nur Grossbuchstaben, Ziffern "
+        "und Bindestrich, beginnend mit Buchstabe oder Ziffer."
+    ),
+    "delivery_method": "Unbekannte Zustellmethode.",
+}
+
+
+_BAD_FORM_VALUES = {
+    "effective_from": "nicht-ein-datum",
+    "internal_price_rp": "-1",
+    "grid_fee_rp": "2000.01",
+    "network_level": "crossed",
+    "distribution_model": "flat",
+    "vat_mode": "libre",
+    "payment_days": "400",
+    "invoice_prefix": "leg-2026",
+    "delivery_method": "fax",
+}
+
+
+@pytest.mark.parametrize("field", sorted(_GERMAN_FORM_ERRORS))
+def test_a_refused_field_names_the_exact_german_diagnostic(field):
+    result = billing_policy.validate_policy_form(
+        _form(**{field: _BAD_FORM_VALUES[field]})
+    )
+
+    assert result["policy"] is None
+    assert result["errors"][field] == _GERMAN_FORM_ERRORS[field]
+
+
+def test_a_vat_rate_without_the_standard_mode_is_refused():
+    result = billing_policy.validate_policy_form(_form(vat_rate_pct="8.1"))
+
+    assert result["policy"] is None
+    assert result["errors"]["vat_rate_pct"] == (
+        "Mehrwertsteuersatz nur zusammen mit dem Mehrwertsteuer-Modus."
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "boundary_value"),
+    [
+        ("internal_price_rp", "1000"),
+        ("grid_fee_rp", "1000"),
+        ("settlement_fee_rp", "1000"),
+    ],
+)
+def test_the_upper_price_boundary_stays_valid(field, boundary_value):
+    result = billing_policy.validate_policy_form(_form(**{field: boundary_value}))
+
+    assert result["errors"] == {}
+
+
+def test_a_price_at_four_places_stays_valid():
+    """A price with exactly four decimal places is the densest valid rate."""
+    result = billing_policy.validate_policy_form(_form(internal_price_rp="8.1234"))
+
+    assert result["errors"] == {}
+    assert result["policy"]["internal_price_chf_per_kwh"] == Decimal("0.081234")
+
+
+def test_a_price_above_the_boundary_or_beyond_four_places_is_refused():
+    over_limit = billing_policy.validate_policy_form(_form(grid_fee_rp="1000.01"))[
+        "errors"
+    ]["grid_fee_rp"]
+    over_precise = billing_policy.validate_policy_form(_form(grid_fee_rp="0.00001"))[
+        "errors"
+    ]["grid_fee_rp"]
+
+    assert over_limit == _GERMAN_FORM_ERRORS["grid_fee_rp"]
+    assert over_precise == _GERMAN_FORM_ERRORS["grid_fee_rp"]
+
+
+_VAT_RATE_ERROR = "Mehrwertsteuersatz in Prozent, über 0 und höchstens 100."
+
+
+@pytest.mark.parametrize("vat_rate", ["0", "1e1", "NaN", "101", "100.01", "0.001"])
+def test_vat_rates_outside_the_domain_are_refused(vat_rate):
+    result = billing_policy.validate_policy_form(
+        _form(vat_mode="standard", vat_rate_pct=vat_rate)
+    )
+
+    assert result["policy"] is None
+    assert result["errors"]["vat_rate_pct"] == _VAT_RATE_ERROR
+
+
+@pytest.mark.parametrize("vat_rate", ["0.01", "1", "100"])
+def test_inner_vat_rate_boundaries_stay_valid(vat_rate):
+    result = billing_policy.validate_policy_form(
+        _form(vat_mode="standard", vat_rate_pct=vat_rate)
+    )
+
+    assert result["errors"] == {}
+
+
+@pytest.mark.parametrize("payment_days", ["1", "365"])
+def test_payment_day_boundaries_stay_valid(payment_days):
+    result = billing_policy.validate_policy_form(_form(payment_days=payment_days))
+
+    assert result["errors"] == {}
+
+
+def test_the_vat_rate_may_be_absent_without_the_standard_mode():
+    form = _form(vat_mode="none")
+    form.pop("vat_rate_pct")
+
+    result = billing_policy.validate_policy_form(form)
+
+    assert result["errors"] == {}, (
+        "an absent field and an empty field must validate identically"
+    )
+
+
+def test_a_non_string_vat_field_is_read_as_empty_not_as_text():
+    form = dict(_form())
+    form["vat_rate_pct"] = 5
+
+    assert billing_policy.validate_policy_form(form)["errors"] == {}
+
+
+def test_suggest_price_band_accepts_a_zero_floor_and_formats_two_places():
+    band = billing_policy.suggest_price_band(
+        grid_total_rp=30, settlement_fee_rp=5, feed_in_floor_rp=0
+    )
+
+    assert band["floor_rp"] == Decimal(0)
+    assert band["ceiling_rp"] == Decimal(25)
+    assert band["floor_rp_display"] == "0.00"
+    assert band["ceiling_rp_display"] == "25.00"
+
+
+def test_suggest_price_band_refuses_negative_inputs():
+    assert (
+        billing_policy.suggest_price_band(
+            grid_total_rp=-1, settlement_fee_rp=5, feed_in_floor_rp=0
+        )
+        is None
+    )
+
+
+def test_a_persisted_policy_at_the_settlement_fee_boundary_stays_valid():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy[billing_policy.SETTLEMENT_FEE_FIELD] = Decimal("10.00")
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich")),
+        community_id="community-a",
+    )
+
+    assert normalized[billing_policy.SETTLEMENT_FEE_FIELD] == Decimal("10.00")
 
 
 @pytest.mark.parametrize(
@@ -741,12 +963,57 @@ def test_unknown_enum_options_are_refused(field, value):
     assert field in result["errors"]
 
 
-@pytest.mark.parametrize("field", ["internal_price_rp", "grid_fee_rp"])
+@pytest.mark.parametrize(
+    "field", ["internal_price_rp", "grid_fee_rp", "settlement_fee_rp"]
+)
 @pytest.mark.parametrize("value", ["-0.01", "abc", "nan", "inf", "1e3", "12.12345"])
 def test_unsafe_prices_are_refused(field, value):
     result = billing_policy.validate_policy_form(_form(**{field: value}))
     assert result["policy"] is None
     assert field in result["errors"]
+
+
+def test_settlement_fee_error_message_names_the_field_in_german():
+    result = billing_policy.validate_policy_form(_form(settlement_fee_rp="-0.01"))
+
+    assert result["errors"]["settlement_fee_rp"] == (
+        "Abrechnungsentgelt in Rp./kWh, zwischen 0 und 1000, höchstens 4 "
+        "Nachkommastellen."
+    )
+
+
+def test_zero_settlement_fee_is_allowed():
+    result = billing_policy.validate_policy_form(_form(settlement_fee_rp="0"))
+    assert result["errors"] == {}
+    assert result["policy"]["settlement_fee_chf_per_kwh"] == Decimal(0)
+
+
+def test_persisted_policy_reads_a_missing_settlement_fee_as_zero():
+    """Snapshots frozen before the settlement fee stay reproducible."""
+    legacy = dict(_IDENTITY_VALID_POLICY)
+    legacy.pop("settlement_fee_chf_per_kwh", None)
+    assert "settlement_fee_chf_per_kwh" not in legacy
+
+    normalized = billing_policy.validate_persisted_policy(
+        legacy,
+        period_start=_DIAGNOSTIC_PERIOD_START,
+        community_id="community-a",
+    )
+
+    assert normalized["settlement_fee_chf_per_kwh"] == Decimal(0)
+
+
+def test_persisted_policy_normalizes_a_present_settlement_fee():
+    policy = dict(_IDENTITY_VALID_POLICY)
+    policy["settlement_fee_chf_per_kwh"] = "0.02"
+
+    normalized = billing_policy.validate_persisted_policy(
+        policy,
+        period_start=_DIAGNOSTIC_PERIOD_START,
+        community_id="community-a",
+    )
+
+    assert normalized["settlement_fee_chf_per_kwh"] == Decimal("0.02")
 
 
 def test_zero_prices_are_allowed():
@@ -939,13 +1206,14 @@ def test_save_billing_policy_inserts_one_new_version(monkeypatch):
     assert params[1] == datetime(2026, 9, 1, tzinfo=ZoneInfo("Europe/Zurich"))
     assert params[2] == Decimal("0.15")
     assert params[3] == Decimal("0.08")
-    assert params[4] == "same"
-    assert params[5] == "proportional"
-    assert params[6] == "none"
-    assert params[7] == Decimal(0)
-    assert params[8] == 30
-    assert params[9] == "LEG-2026"
-    assert params[10] == "email"
+    assert params[4] == Decimal("0.02")
+    assert params[5] == "same"
+    assert params[6] == "proportional"
+    assert params[7] == "none"
+    assert params[8] == Decimal(0)
+    assert params[9] == 30
+    assert params[10] == "LEG-2026"
+    assert params[11] == "email"
 
 
 def test_save_billing_policy_refuses_duplicate_effective_date(monkeypatch):
@@ -1016,6 +1284,7 @@ def test_schema_versions_billing_policy_columns_additively():
         "payment_days",
         "invoice_prefix",
         "delivery_method",
+        "settlement_fee_chf_per_kwh",
     ):
         assert column in create_block
         assert f"ADD COLUMN IF NOT EXISTS {column}" in alter_block
@@ -1123,6 +1392,7 @@ def test_get_billing_policy_selects_the_complete_versioned_policy(monkeypatch):
         "payment_days",
         "invoice_prefix",
         "delivery_method",
+        "settlement_fee_chf_per_kwh",
     ):
         assert f"t.{column}" in query
     assert "COALESCE" not in query, "versioned distribution_model is authoritative"
@@ -1145,6 +1415,7 @@ def test_billing_runner_fingerprints_each_complete_policy_field(monkeypatch):
         "payment_days": 14,
         "invoice_prefix": "LEG-X",
         "delivery_method": "download",
+        "settlement_fee_chf_per_kwh": Decimal("0.02"),
     }
     for field, value in changes.items():
         baseline = _fingerprint_through_runner(monkeypatch, _fingerprint_case())
@@ -1219,7 +1490,7 @@ def test_policy_page_refuses_members_and_strangers(app_module, monkeypatch):  # 
 def test_policy_page_refuses_unknown_community(app_module, monkeypatch):  # noqa: F811
     _patch_admin(monkeypatch, app_module)
     app_module.dashboard_module.formation_wizard.get_community_status = MagicMock(
-        side_effect=lambda cid: dict(STATUS) if cid == COMMUNITY else None
+        side_effect=lambda cid, _viewer=None: dict(STATUS) if cid == COMMUNITY else None
     )
     client = app_module.web.test_client()
     _set_session(client, building_id="b-admin")
@@ -1267,6 +1538,7 @@ def test_policy_page_renders_form_disclaimer_and_versions(app_module, monkeypatc
         "effective_from",
         "internal_price_rp",
         "grid_fee_rp",
+        "settlement_fee_rp",
         "network_level",
         "distribution_model",
         "vat_mode",
@@ -1474,6 +1746,7 @@ def test_runner_refuses_an_incomplete_policy_with_missing_vat_fields(monkeypatch
         "tariff_id": 7,
         "internal_price_chf_per_kwh": 0.12,
         "grid_fee_chf_per_kwh": 0.08,
+        "settlement_fee_chf_per_kwh": 0,
         "network_level": "same",
         "distribution_model": "proportional",
     }
@@ -1589,6 +1862,7 @@ def test_describe_version_shows_legacy_null_payment_days_and_prefix():
     described = billing_policy.describe_version(version)
     assert described["payment_days_display"] == "Nicht angegeben"
     assert described["invoice_prefix_display"] == "Nicht angegeben"
+    assert described["settlement_fee_display"] == "Nicht angegeben"
 
 
 def test_describe_version_shows_populated_payment_days_and_prefix():
@@ -1596,6 +1870,7 @@ def test_describe_version_shows_populated_payment_days_and_prefix():
         "effective_from": date(2026, 1, 1),
         "internal_price_chf_per_kwh": Decimal("0.15"),
         "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "settlement_fee_chf_per_kwh": Decimal("0.02"),
         "network_level": "same",
         "distribution_model": "proportional",
         "vat_mode": "none",
@@ -1607,6 +1882,81 @@ def test_describe_version_shows_populated_payment_days_and_prefix():
     described = billing_policy.describe_version(version)
     assert described["payment_days_display"] == "30 Tage"
     assert described["invoice_prefix_display"] == "LEG-2026"
+    assert described["settlement_fee_display"] == "2.00 Rp./kWh"
+
+
+def test_describe_version_renders_the_complete_display_record():
+    """The persisted version's display record is rendered by operators and
+    templates; every field must come from the stored values."""
+    version = {
+        "effective_from": datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
+        "internal_price_chf_per_kwh": Decimal("0.15"),
+        "grid_fee_chf_per_kwh": Decimal("0.08"),
+        "settlement_fee_chf_per_kwh": Decimal("0.02"),
+        "network_level": "same",
+        "distribution_model": "proportional",
+        "vat_mode": "standard",
+        "vat_rate_pct": Decimal("8.1"),
+        "payment_days": 30,
+        "invoice_prefix": "LEG-2026",
+        "delivery_method": "email",
+    }
+    described = billing_policy.describe_version(version)
+
+    assert described == {
+        **version,
+        "effective_from_display": "2026-01-01",
+        "internal_price_display": "15.00 Rp./kWh",
+        "grid_fee_display": "8.00 Rp./kWh",
+        "settlement_fee_display": "2.00 Rp./kWh",
+        "network_level_label": "Gleiche Netzebene",
+        "distribution_model_label": "Proportional",
+        "vat_label": "Mehrwertsteuer ausweisen",
+        "delivery_method_label": "E-Mail",
+        "payment_days_display": "30 Tage",
+        "invoice_prefix_display": "LEG-2026",
+    }
+
+
+def test_describe_version_falls_back_to_nicht_angegeben_display():
+    version = {
+        "effective_from": None,
+        "vat_rate_pct": Decimal(0),
+    }
+    described = billing_policy.describe_version(version)
+
+    assert described == {
+        "effective_from": None,
+        "vat_rate_pct": Decimal(0),
+        "effective_from_display": "None",
+        "internal_price_display": "Nicht angegeben",
+        "grid_fee_display": "Nicht angegeben",
+        "settlement_fee_display": "Nicht angegeben",
+        "network_level_label": "Nicht angegeben",
+        "distribution_model_label": "Nicht angegeben",
+        "vat_label": "Nicht angegeben",
+        "delivery_method_label": "Nicht angegeben",
+        "payment_days_display": "Nicht angegeben",
+        "invoice_prefix_display": "Nicht angegeben",
+    }
+
+
+def test_describe_version_displays_a_legacy_string_effective_date_verbatim():
+    """A persisted row predating the date migration carries a plain string
+    date; the display must show it as stored, not as a None placeholder."""
+    described = billing_policy.describe_version(
+        {"effective_from": "2026-03-01", "network_level": "same"}
+    )
+
+    assert described["effective_from_display"] == "2026-03-01"
+    assert described["network_level_label"] == "Gleiche Netzebene"
+
+
+def test_rate_rp_text_formats_stored_prices_and_degrades_to_display_fallback():
+    assert billing_policy.rate_rp_text(Decimal("0.15")) == "15.00 Rp./kWh"
+    assert billing_policy.rate_rp_text("nan") == "Nicht angegeben"
+    assert billing_policy.rate_rp_text(None) == "Nicht angegeben"
+    assert billing_policy.rate_rp_text(0) == "0.00 Rp./kWh"
 
 
 def test_policy_template_uses_display_values_for_payment_days_and_prefix():
@@ -1617,3 +1967,155 @@ def test_policy_template_uses_display_values_for_payment_days_and_prefix():
     assert "version.invoice_prefix_display" in source
     assert "{{ version.payment_days }} Tage" not in source
     assert "{{ version.invoice_prefix }}" not in source
+
+
+# --- Issue #632: the suggested internal price band ---------------------------
+
+
+def test_suggest_price_band_spans_feed_in_to_grid_total_minus_fees():
+    band = billing_policy.suggest_price_band(
+        grid_total_rp=Decimal("25.00"),
+        settlement_fee_rp=Decimal("2.00"),
+        feed_in_floor_rp=6.0,
+    )
+    assert band["floor_rp"] == Decimal("6.00")
+    assert band["ceiling_rp"] == Decimal("23.00")
+    assert band["floor_rp_display"] == "6.00"
+    assert band["ceiling_rp_display"] == "23.00"
+
+
+def test_suggest_price_band_floor_is_the_feed_in_alternative():
+    band = billing_policy.suggest_price_band(
+        grid_total_rp=Decimal("25.00"),
+        settlement_fee_rp=Decimal("8.00"),
+        feed_in_floor_rp=6.0,
+    )
+    assert band["floor_rp"] == Decimal("6.00")
+    assert band["ceiling_rp"] == Decimal("17.00")
+
+
+def test_suggest_price_band_yields_none_when_no_fair_band_remains():
+    assert (
+        billing_policy.suggest_price_band(
+            grid_total_rp=Decimal("7.00"),
+            settlement_fee_rp=Decimal("4.00"),
+            feed_in_floor_rp=6.0,
+        )
+        is None
+    )
+    assert (
+        billing_policy.suggest_price_band(
+            grid_total_rp=Decimal("8.00"),
+            settlement_fee_rp=Decimal("4.00"),
+            feed_in_floor_rp=4.0,
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize(
+    ("values"),
+    [
+        {"grid_total_rp": None, "settlement_fee_rp": 2, "feed_in_floor_rp": 6},
+        {"grid_total_rp": 25, "settlement_fee_rp": None, "feed_in_floor_rp": 6},
+        {"grid_total_rp": "nan", "settlement_fee_rp": 2, "feed_in_floor_rp": 6},
+        {"grid_total_rp": -25, "settlement_fee_rp": 2, "feed_in_floor_rp": 6},
+    ],
+)
+def test_suggest_price_band_hides_itself_without_usable_inputs(values):
+    assert billing_policy.suggest_price_band(**values) is None
+
+
+def test_policy_page_shows_the_band_when_elcom_data_exists(app_module, monkeypatch):  # noqa: F811
+    _patch_admin(monkeypatch, app_module)
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(return_value={"building_id": "b-admin", "bfs_number": 4063}),
+    )
+    monkeypatch.setattr(
+        app_module.db,
+        "get_elcom_tariffs",
+        MagicMock(
+            return_value=[
+                {
+                    "year": 2026,
+                    "category": "H4",
+                    "total_rp_kwh": Decimal("25.00"),
+                }
+            ]
+        ),
+    )
+    app_module.db.list_billing_policies.return_value = [
+        {"settlement_fee_chf_per_kwh": Decimal("0.02")}
+    ]
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.get(POLICY_URL)
+
+    html = response.get_data(as_text=True)
+    assert "6.00" in html
+    assert "23.00" in html
+
+
+def test_policy_page_hides_the_band_without_municipality_data(app_module, monkeypatch):  # noqa: F811
+    _patch_admin(monkeypatch, app_module)
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(return_value={"building_id": "b-admin", "bfs_number": None}),
+    )
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.get(POLICY_URL)
+
+    assert response.status_code == 200
+    assert "Üblicher Bereich" not in response.get_data(as_text=True)
+
+
+def test_policy_page_reports_price_band_storage_failure(app_module, monkeypatch):  # noqa: F811
+    _patch_admin(monkeypatch, app_module)
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(return_value={"building_id": "b-admin", "bfs_number": 4063}),
+    )
+    monkeypatch.setattr(
+        app_module.db,
+        "get_elcom_tariffs",
+        MagicMock(
+            return_value=[
+                {
+                    "year": 2026,
+                    "category": "H4",
+                    "total_rp_kwh": Decimal("25.00"),
+                }
+            ]
+        ),
+    )
+    app_module.db.list_billing_policies.side_effect = [
+        [],
+        app_module.db.BillingStoreError("down"),
+    ]
+    client = app_module.web.test_client()
+    _set_session(client, building_id="b-admin")
+
+    response = client.get(POLICY_URL)
+
+    assert response.status_code == 503
+
+
+def test_price_band_logs_unexpected_lookup_failure(app_module, monkeypatch, caplog):  # noqa: F811
+    monkeypatch.setattr(
+        app_module.db,
+        "get_building",
+        MagicMock(side_effect=ValueError("broken building")),
+    )
+
+    with caplog.at_level("ERROR", logger="dashboard"):
+        band = app_module.dashboard_module._internal_price_band(COMMUNITY, "b-admin")
+
+    assert band is None
+    assert "Internal price band suggestion failed" in caplog.text

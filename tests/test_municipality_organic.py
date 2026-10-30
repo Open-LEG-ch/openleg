@@ -6,13 +6,15 @@ from pathlib import Path
 from flask import Flask
 
 import municipality
+from i18n import init_app as init_i18n
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def _client():
     app = Flask(__name__, template_folder=ROOT / "templates")
-    app.config["TESTING"] = True
+    app.config.update(TESTING=True, SECRET_KEY="municipality-test-session")
+    init_i18n(app)
     app.jinja_env.globals["public_site_url"] = lambda path: f"https://openleg.ch{path}"
     app.register_blueprint(municipality.municipality_bp)
     return app.test_client()
@@ -112,7 +114,9 @@ def test_public_municipality_profile_route_is_restored(monkeypatch):
     monkeypatch.setattr(municipality.db, "get_sonnendach_municipal", lambda _bfs: None)
     monkeypatch.setattr(municipality.db, "list_registry_entries", lambda **_kwargs: [])
     monkeypatch.setattr(
-        municipality.db, "get_interest_count", lambda bfs: 2 if bfs == 261 else None
+        municipality.db,
+        "get_interest_count",
+        lambda bfs, **_kwargs: 2 if bfs == 261 else None,
     )
 
     response = _client().get("/gemeinde/profil/261")
@@ -223,7 +227,7 @@ def test_verzeichnis_publishes_thresholded_verified_interest_and_sorts_it(
     monkeypatch.setattr(
         municipality.db,
         "get_interest_counts_by_bfs",
-        lambda: {2: 1, 3: 2, 2554: 3},
+        lambda **_kwargs: {2: 1, 3: 2, 2554: 3},
     )
 
     class _EmptyRanking:

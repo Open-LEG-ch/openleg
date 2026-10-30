@@ -583,7 +583,7 @@ def reconcile_with_vnb(frames, summary):
             "engine_kwh": round(engine_kwh, 6),
             "difference_kwh": round(engine_kwh - vnb_kwh, 6),
         }
-    return {
+    result = {
         "vnb_allocated_kwh": round(vnb_allocated, 6),
         "engine_allocated_kwh": round(engine_allocated, 6),
         "difference_kwh": round(difference, 6),
@@ -603,6 +603,9 @@ def reconcile_with_vnb(frames, summary):
         "vnb_imbalance_ratio": frames.vnb_reference["imbalance_ratio"],
         "engine_audit": summary.get("engine_audit"),
     }
+    if getattr(frames, "provenance", {}).get("vnb_evidence"):
+        result["source_evidence"] = frames.provenance["vnb_evidence"]
+    return result
 
 
 def with_calculated_vnb_evidence(frames, delivery):
@@ -648,4 +651,61 @@ def with_calculated_vnb_evidence(frames, delivery):
     provenance["calculated_values_fingerprint"] = delivery["fingerprint"]
     provenance["vnb_case_id"] = delivery["vnb_case_id"]
     provenance["vnb_source"] = delivery["source"]
+    if delivery.get("source_metadata") is not None:
+        provenance["vnb_evidence"] = {
+            "fingerprint": delivery["fingerprint"],
+            "evidence_sha256": delivery["evidence_sha256"],
+            "format_version": delivery["format_version"],
+            "source": delivery["source"],
+            "vnb_case_id": delivery["vnb_case_id"],
+            "metadata": delivery["source_metadata"],
+        }
     return replace(frames, vnb_reference=reference, provenance=provenance)
+
+
+def calculated_quantity_frames(frames, delivery):
+    """Project audited source channels into the billing participant intervals."""
+    quantities = {
+        direction: pd.DataFrame(
+            Decimal(0),
+            index=frames.consumption.index,
+            columns=frames.participants,
+            dtype=object,
+        )
+        for direction in ("consumption", "production")
+    }
+    for row in delivery["normalized_records"]:
+        moment = pd.Timestamp(row["measured_at"])
+        participant = row["participant_id"]
+        frame = quantities[row["direction"]]
+        if moment not in frame.index or participant not in frame.columns:
+            raise PeriodDataError(
+                [_problem("invalid_vnb_evidence", "source shape changed")]
+            )
+        frame.at[moment, participant] += Decimal(
+            row["source_quantities"]["community_kwh"]
+        )
+    return quantities["consumption"], quantities["production"]
+
+
+def frames_from_calculated_source(delivery):
+    """Rebuild independent audit inputs from an already audited E66 source."""
+    rows = delivery["normalized_records"]
+    index = pd.DatetimeIndex(sorted({pd.Timestamp(row["measured_at"]) for row in rows}))
+    participants = tuple(sorted({row["participant_id"] for row in rows}))
+    physical = {
+        direction: pd.DataFrame(0.0, index=index, columns=participants)
+        for direction in ("consumption", "production")
+    }
+    for row in rows:
+        physical[row["direction"]].at[
+            pd.Timestamp(row["measured_at"]), row["participant_id"]
+        ] += float(row["source_quantities"]["total_kwh"])
+    frames = PeriodFrames(
+        consumption=physical["consumption"],
+        production=physical["production"],
+        participants=participants,
+        vnb_reference={},
+        provenance={},
+    )
+    return with_calculated_vnb_evidence(frames, delivery)

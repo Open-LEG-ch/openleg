@@ -1,108 +1,145 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss' source(none);
+@source '../../templates';
+@source '../js';
 
-@layer components {
-  .skip-link {
-    position: fixed;
-    left: 1rem;
-    top: 1rem;
-    z-index: 60;
-    transform: translateY(-250%);
-    border-radius: 0.5rem;
-    background: #22201b;
-    color: #fff;
-    padding: 0.625rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 700;
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-    transition: transform 150ms ease;
+@theme {
+  --color-brand: #1f3d32;
+  --color-brand-light: #2c5545;
+  --color-brand-dark: #16302a;
+
+  --color-accent: #e8a13a;
+  --color-accent-light: #f0b968;
+  --color-accent-dark: #c9832a;
+
+  --color-sage: #6e8f7c;
+  --color-sage-light: #e4ede6;
+  --color-sage-dark: #4f6d5c;
+
+  --color-paper: #f5f2ea;
+  --color-paper-deep: #ece7da;
+
+  --color-line: #ded7c6;
+
+  --color-ink: #22201b;
+  --color-ink-soft: #3a362c;
+  --color-ink-muted: #6b6555;
+
+  --font-mono: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Preserve v3 border colours where no explicit colour is set. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
   }
 
-  .skip-link:focus {
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@utility skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 60;
+  transform: translateY(-250%);
+  border-radius: 0.5rem;
+  background: #22201b;
+  color: #fff;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  transition: transform 150ms ease;
+
+  &:focus {
     transform: translateY(0);
     outline: 2px solid #1f3d32;
     outline-offset: 2px;
   }
+}
 
-  a:focus-visible,
-  button:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible,
-  summary:focus-visible {
-    outline: 2px solid #2563eb !important;
-    outline-offset: 2px !important;
-  }
+@utility site-nav {
+  --nav-bg: rgb(255 255 255 / 0.9);
+  --nav-border: rgb(226 232 240 / 0.7);
+  --nav-text: #475569;
+  --nav-strong: #22201b;
+  --nav-icon-bg: #fff;
+  background: var(--nav-bg);
+  border-color: var(--nav-border);
+}
 
-  .site-nav {
-    --nav-bg: rgb(255 255 255 / 0.9);
-    --nav-border: rgb(226 232 240 / 0.7);
-    --nav-text: #475569;
-    --nav-strong: #22201b;
-    --nav-icon-bg: #fff;
-    background: var(--nav-bg);
-    border-color: var(--nav-border);
-  }
+@utility site-nav-links {
+  color: var(--nav-text);
+}
 
-  .site-nav-links {
-    color: var(--nav-text);
-  }
+@utility site-nav-icon {
+  background: var(--nav-icon-bg);
+  border-color: var(--nav-border);
+  color: var(--nav-strong);
+}
 
-  .site-nav-icon {
-    background: var(--nav-icon-bg);
-    border-color: var(--nav-border);
-    color: var(--nav-strong);
-  }
+@utility site-nav-menu {
+  background: var(--nav-bg);
+  border-color: var(--nav-border);
+}
 
-  .site-nav-menu {
-    background: var(--nav-bg);
-    border-color: var(--nav-border);
-  }
+@utility site-nav-menu-link {
+  color: var(--nav-strong);
+}
 
-  .site-nav-menu-link {
-    color: var(--nav-strong);
-  }
+@utility site-nav-bar {
+  background: var(--nav-strong);
+}
 
-  .site-nav-bar {
-    background: var(--nav-strong);
-  }
+@utility site-nav--dark {
+  --nav-bg: #16302a;
+  --nav-border: rgb(255 255 255 / 0.15);
+  --nav-text: #d8e0d5;
+  --nav-strong: #fff;
+  --nav-icon-bg: rgb(255 255 255 / 0.05);
+}
 
-  .site-nav--dark {
-    --nav-bg: #16302a;
-    --nav-border: rgb(255 255 255 / 0.15);
-    --nav-text: #d8e0d5;
-    --nav-strong: #fff;
-    --nav-icon-bg: rgb(255 255 255 / 0.05);
-  }
+@utility home-hero-heading {
+  font-size: clamp(1.5rem, 9cqw, 4.5rem);
+  overflow-wrap: anywhere;
+}
 
+@utility ol-fillbar-track {
   /* Messblatt: the proportional fill bar embedded in each ranking row. The
      table itself is the chart; this is the only chart-like element on the
      ranking/directory pages (issue #211). Plain CSS width, no library. */
-  .ol-fillbar-track {
-    position: relative;
-    height: 0.5rem;
-    border-radius: 9999px;
-    background: #ded7c6;
-    overflow: hidden;
-  }
+  position: relative;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #ded7c6;
+  overflow: hidden;
+}
 
-  .ol-fillbar {
-    position: absolute;
-    inset: 0 auto 0 0;
-    height: 100%;
-    border-radius: 9999px;
-    background: #1f3d32;
-    transition: width 200ms ease;
-  }
+@utility ol-fillbar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  border-radius: 9999px;
+  background: #1f3d32;
+  transition: width 200ms ease;
 
   @media (prefers-reduced-motion: reduce) {
-    .ol-fillbar {
-      transition: none;
-    }
+    transition: none;
   }
 
-  .ol-fillbar[data-score-over-100="true"] {
+  &[data-score-over-100='true'] {
     background: #16302a;
     background-image: repeating-linear-gradient(
       135deg,
@@ -112,38 +149,48 @@
       transparent 6px
     );
   }
+}
 
+@utility ol-deltabar-track {
   /* Fortschritte: delta bar reading away from a zero baseline. */
-  .ol-deltabar-track {
-    position: relative;
-    height: 0.5rem;
-  }
+  position: relative;
+  height: 0.5rem;
+}
 
-  .ol-baseline {
-    position: absolute;
-    left: 50%;
-    top: -0.25rem;
-    bottom: -0.25rem;
-    width: 1px;
-    background: #94a3b8;
-  }
+@utility ol-baseline {
+  position: absolute;
+  left: 50%;
+  top: -0.25rem;
+  bottom: -0.25rem;
+  width: 1px;
+  background: #94a3b8;
+}
 
-  .ol-deltabar {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    background: #1f3d32;
-    border-radius: 2px;
-    transition: width 200ms ease;
-  }
+@utility ol-deltabar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: #1f3d32;
+  border-radius: 2px;
+  transition: width 200ms ease;
 
-  .ol-deltabar[data-direction="down"] {
+  &[data-direction='down'] {
     background: #94a3b8;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ol-deltabar {
-      transition: none;
-    }
+    transition: none;
+  }
+}
+
+@layer components {
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid #2563eb !important;
+    outline-offset: 2px !important;
   }
 }

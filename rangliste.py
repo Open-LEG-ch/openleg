@@ -13,24 +13,25 @@ import database as db
 import pv_data
 from cantons import SWISS_CANTONS
 from ranking import Ranking
+from translation_markers import gettext_noop
 
 logger = logging.getLogger(__name__)
 
 rangliste_bp = Blueprint("rangliste", __name__)
 
 SIZE_OPTIONS = [
-    ("", "Alle Grössen"),
-    ("small", "Klein (< 5000)"),
-    ("medium", "Mittel (< 20000)"),
-    ("large", "Gross (< 100000)"),
-    ("xl", "Sehr gross (>= 100000)"),
+    ("", gettext_noop("Alle Grössen")),
+    ("small", gettext_noop("Klein (< 5000)")),
+    ("medium", gettext_noop("Mittel (< 20000)")),
+    ("large", gettext_noop("Gross (< 100000)")),
+    ("xl", gettext_noop("Sehr gross (>= 100000)")),
 ]
 DENSITY_OPTIONS = [
-    ("", "Alle Dichten"),
-    ("low", "Ländlich (< 250)"),
-    ("mid", "Mittel (< 1000)"),
-    ("high", "Dicht (< 3000)"),
-    ("very_high", "Sehr dicht (>= 3000)"),
+    ("", gettext_noop("Alle Dichten")),
+    ("low", gettext_noop("Ländlich (< 250)")),
+    ("mid", gettext_noop("Mittel (< 1000)")),
+    ("high", gettext_noop("Dicht (< 3000)")),
+    ("very_high", gettext_noop("Sehr dicht (>= 3000)")),
 ]
 
 
@@ -48,7 +49,7 @@ def _common_context(kanton, size, density):
         "density": density or "",
         "site_url": request.url_root.rstrip("/"),
         "canton_options": [
-            ("all", "Alle Kantone"),
+            ("all", gettext_noop("Alle Kantone")),
             *((code, code) for code in sorted(SWISS_CANTONS)),
         ],
         "size_options": SIZE_OPTIONS,

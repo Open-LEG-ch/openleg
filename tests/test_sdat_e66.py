@@ -9,7 +9,7 @@ refusing the file.
 """
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import sdat_e66
@@ -36,7 +36,7 @@ def _parsed():
 
 
 def _row(rows, point, direction, sequence):
-    measured_at = datetime(2026, 1, 5, 23, 0, tzinfo=timezone.utc)
+    measured_at = datetime(2026, 1, 5, 23, 0, tzinfo=UTC)
     measured_at = measured_at.replace(minute=15 * (sequence - 1))
     for row in rows:
         if (
@@ -57,8 +57,8 @@ def test_parses_document_metadata():
     assert document["doc_type"] == "E66"
     assert document["vnb_community_id"] == "TEST-COMMUNITY"
     assert document["block_count"] == 9
-    assert document["period_start"] == datetime(2026, 1, 5, 23, 0, tzinfo=timezone.utc)
-    assert document["period_end"] == datetime(2026, 1, 5, 23, 45, tzinfo=timezone.utc)
+    assert document["period_start"] == datetime(2026, 1, 5, 23, 0, tzinfo=UTC)
+    assert document["period_end"] == datetime(2026, 1, 5, 23, 45, tzinfo=UTC)
 
 
 def test_reports_the_distinct_metering_points():
@@ -80,22 +80,22 @@ def test_derives_timestamps_from_sequence_and_resolution():
         row["measured_at"] for row in rows if row["metering_point_id"] == POINT_ONE
     )
     assert stamps == [
-        datetime(2026, 1, 5, 23, 0, tzinfo=timezone.utc),
-        datetime(2026, 1, 5, 23, 15, tzinfo=timezone.utc),
-        datetime(2026, 1, 5, 23, 30, tzinfo=timezone.utc),
+        datetime(2026, 1, 5, 23, 0, tzinfo=UTC),
+        datetime(2026, 1, 5, 23, 15, tzinfo=UTC),
+        datetime(2026, 1, 5, 23, 30, tzinfo=UTC),
     ]
 
 
 def test_every_timestamp_is_timezone_aware_utc():
     for row in _parsed()["rows"]:
         assert row["measured_at"].tzinfo is not None
-        assert row["measured_at"].utcoffset() == timezone.utc.utcoffset(None)
+        assert row["measured_at"].utcoffset() == UTC.utcoffset(None)
 
 
 def test_rows_are_labelled_with_the_interval_start():
     rows = _parsed()["rows"]
     first = _row(rows, POINT_ONE, "consumption", 1)
-    assert first["measured_at"] == datetime(2026, 1, 5, 23, 0, tzinfo=timezone.utc)
+    assert first["measured_at"] == datetime(2026, 1, 5, 23, 0, tzinfo=UTC)
     assert first["resolution_minutes"] == 15
 
 

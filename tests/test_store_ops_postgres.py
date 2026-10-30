@@ -5,7 +5,7 @@ import json
 import os
 import secrets
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import urlsplit, urlunsplit
 
 import psycopg2
@@ -15,9 +15,9 @@ import pytest
 
 import database
 
-T1 = datetime(2026, 6, 14, 10, 0, tzinfo=timezone.utc)
-T2 = datetime(2026, 6, 14, 10, 3, tzinfo=timezone.utc)
-T3 = datetime(2026, 6, 14, 10, 5, tzinfo=timezone.utc)
+T1 = datetime(2026, 6, 14, 10, 0, tzinfo=UTC)
+T2 = datetime(2026, 6, 14, 10, 3, tzinfo=UTC)
+T3 = datetime(2026, 6, 14, 10, 5, tzinfo=UTC)
 
 
 @contextmanager
@@ -56,15 +56,18 @@ def _temporary_database():
 @contextmanager
 def _pool_against(url):
     old_pool = database._connection_pool
+    old_pid = database._pool_pid
     new_pool = psycopg2.pool.ThreadedConnectionPool(
         1, 2, url, cursor_factory=psycopg2.extras.RealDictCursor
     )
     database._connection_pool = new_pool
+    database._pool_pid = os.getpid()
     try:
         yield
     finally:
         new_pool.closeall()
         database._connection_pool = old_pool
+        database._pool_pid = old_pid
 
 
 def _seed(source, category, created_at, status="ok", summary="", payload=None):

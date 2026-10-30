@@ -18,7 +18,7 @@ import os
 import ssl
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ class RemoteFile:
 
     def __post_init__(self) -> None:
         if self.modified is not None and self.modified.utcoffset() is None:
-            self.modified = self.modified.replace(tzinfo=timezone.utc)
+            self.modified = self.modified.replace(tzinfo=UTC)
         if not self.path:
             self.path = self.name
 
@@ -236,7 +236,7 @@ def _parse_mlsd_time(value: str | None) -> datetime | None:
     # Fenster von --since-days verschiebt sich um den Offset.
     for fmt in ("%Y%m%d%H%M%S", "%Y%m%d%H%M%S.%f"):
         try:
-            return datetime.strptime(value.strip(), fmt).replace(tzinfo=timezone.utc)
+            return datetime.strptime(value.strip(), fmt).replace(tzinfo=UTC)
         except ValueError:
             continue
     return None
@@ -351,7 +351,7 @@ def sort_newest_first(entries: Iterable[RemoteFile]) -> list[RemoteFile]:
         entries,
         key=lambda f: (
             f.modified is not None,
-            f.modified or datetime.min.replace(tzinfo=timezone.utc),
+            f.modified or datetime.min.replace(tzinfo=UTC),
             f.name,
         ),
         reverse=True,

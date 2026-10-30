@@ -67,6 +67,7 @@ def test_security_policy_allows_google_analytics_region_collect(full_app_module)
         "https://www.google-analytics.com",
         "https://region1.google-analytics.com",
         "https://www.googletagmanager.com",
+        "https://stats.openleg.ch",
     }
 
 

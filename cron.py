@@ -10,9 +10,9 @@ way in #271.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from flask import Blueprint, abort, current_app, jsonify, request
+from flask import Blueprint, abort, current_app, g, jsonify, request
 
 import billing_runner
 import database as db
@@ -20,8 +20,11 @@ import email_automation
 import leg_registry
 import operator_api
 import sdat_ingestion
+import solar_forecast_cache
+from cantons import SWISS_CANTONS
 from security_utils import log_security_event
-from store import invoice_query
+from store import invoice_query, telemetry
+from telemetry import TelemetryError
 
 logger = logging.getLogger(__name__)
 
@@ -67,12 +70,31 @@ def api_cron_cleanup_interest():
     return jsonify(result)
 
 
+@cron_bp.post("/api/cron/cleanup-telemetry")
+def api_cron_cleanup_telemetry():
+    _require_cron_secret()
+    try:
+        return jsonify(telemetry.cleanup())
+    except TelemetryError:
+        return jsonify({"error": "telemetry_cleanup_failed"}), 503
+
+
+@cron_bp.post("/api/cron/refresh-solar-forecast")
+def api_cron_refresh_solar_forecast():
+    _require_cron_secret()
+    result = solar_forecast_cache.refresh()
+    return jsonify(result), 503 if result["state"] == "unavailable" else 200
+
+
 @cron_bp.route("/api/cron/refresh-public-data", methods=["POST"])
 def api_cron_refresh_public_data():
     _require_cron_secret()
     import public_data
 
-    result = public_data.refresh_canton("ZH")
+    kanton = request.args.get("canton", g.tenant["kanton_code"]).strip().upper()
+    if kanton not in SWISS_CANTONS:
+        return jsonify({"error": "invalid_canton"}), 400
+    result = public_data.refresh_canton(kanton)
     return jsonify(result)
 
 
@@ -125,11 +147,12 @@ def api_cron_process_billing():
             result = billing_runner.run_billing_period(
                 community_id, period_start, period_end
             )
-        except billing_runner.BillingRunError:
+        except billing_runner.BillingRunError as exc:
             logger.error("Billing run failed for community %s", community_id)
-            failures.append(
-                {"community_id": community_id, "error": "billing_run_failed"}
-            )
+            failure = {"community_id": community_id, "error": exc.code}
+            if exc.reason is not None:
+                failure["reason"] = exc.reason
+            failures.append(failure)
             continue
         if result["status"] == "created":
             processed += 1
@@ -161,7 +184,7 @@ def api_cron_verify_registry_entries():
 @cron_bp.route("/api/cron/invoice-query-reminders", methods=["POST"])
 def api_cron_invoice_query_reminders():
     _require_cron_secret()
-    due = invoice_query.due_invoice_query_reminders(datetime.now(timezone.utc))
+    due = invoice_query.due_invoice_query_reminders(datetime.now(UTC))
     reminded = 0
     for case in due:
         if invoice_query.mark_invoice_query_reminded(case["id"], "system"):

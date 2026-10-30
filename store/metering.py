@@ -12,6 +12,7 @@ did not change and report how many rows were new versus corrected.
 """
 
 import logging
+from contextlib import nullcontext
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,24 @@ _PERIOD_READINGS_SQL = """
     ORDER BY r.measured_at, r.metering_point_id, r.direction
 """
 
+_BUILDING_PERIOD_READINGS_SQL = """
+    SELECT r.metering_point_id,
+           r.direction,
+           r.measured_at,
+           r.resolution_minutes,
+           r.total_kwh,
+           r.grid_kwh,
+           r.community_kwh,
+           r.source_document_id
+    FROM metering_point_readings r
+    JOIN metering_points mp
+      ON mp.metering_point_id = r.metering_point_id
+    WHERE mp.building_id = %s
+      AND r.measured_at >= %s
+      AND r.measured_at < %s
+    ORDER BY r.measured_at, r.metering_point_id, r.direction
+"""
+
 _UNASSIGNED_PERIOD_POINTS_SQL = """
     SELECT DISTINCT mp.metering_point_id
     FROM metering_points mp
@@ -203,7 +222,9 @@ def _dedupe(rows):
     return list(unique.values())
 
 
-def save_metering_point_readings(rows, source_document_id=None, batch_size=5000):
+def save_metering_point_readings(
+    rows, source_document_id=None, batch_size=5000, *, connection=None
+):
     """E66 Zeilen schreiben, unveränderte überspringen.
 
     Returns:
@@ -217,7 +238,9 @@ def save_metering_point_readings(rows, source_document_id=None, batch_size=5000)
     try:
         from psycopg2.extras import execute_values
 
-        with _get_connection() as conn:
+        with (
+            nullcontext(connection) if connection is not None else _get_connection()
+        ) as conn:
             with conn.cursor() as cur:
                 points = sorted({row["metering_point_id"] for row in rows})
                 execute_values(cur, _POINT_STUB_SQL, [(point,) for point in points])
@@ -262,6 +285,8 @@ def save_metering_point_readings(rows, source_document_id=None, batch_size=5000)
                     "samples": samples,
                 }
     except Exception as e:
+        if connection is not None:
+            raise
         logger.error(f"[DB] Error saving metering point readings: {e}")
         return empty
 
@@ -280,6 +305,13 @@ def upsert_metering_points(points):
 
         with _get_connection() as conn:
             with conn.cursor() as cur:
+                # Match evidence/configuration writers: point locks precede
+                # community/FK locks, with a stable order for multi-point calls.
+                for point_id in sorted({str(p["metering_point_id"]) for p in points}):
+                    cur.execute(
+                        "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                        (f"metering-point-binding:{point_id}",),
+                    )
                 values = [
                     (
                         point["metering_point_id"],
@@ -428,6 +460,26 @@ def get_period_readings(community_id, period_start, period_end):
         return []
 
 
+def get_building_period_readings(building_id, period_start, period_end):
+    """Messwerte aller Messpunkte eines Gebäudes im halboffenen Intervall.
+
+    Gebäudescope statt Communityscope: ein Teilnehmer darf nur die eigenen
+    Messpunkte lesen. Die NUMERIC-Kanäle kommen ungerändert als Decimal
+    zurück; die Geldrechnung der Anzeige rundet selbst.
+
+    Fehler werden nicht verschluckt: eine Anzeige, die einen Datenbankfehler
+    als leere Periode verkaufen würde, müsste geschlossene Ausfälle als
+    "keine Messwerte" tarnen.
+    """
+    with _get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                _BUILDING_PERIOD_READINGS_SQL,
+                (building_id, period_start, period_end),
+            )
+            return [dict(row) for row in cur.fetchall()]
+
+
 def get_billable_period_snapshot(community_id, period_start, period_end):
     """Alle Abrechnungsgrundlagen einer Periode in einem stabilen Snapshot.
 
@@ -491,10 +543,12 @@ def get_metering_point_reading_stats(metering_point_id=None):
         return {}
 
 
-def record_sdat_import(document):
+def record_sdat_import(document, *, connection=None):
     """Eine importierte Datei im Ledger festhalten."""
     try:
-        with _get_connection() as conn:
+        with (
+            nullcontext(connection) if connection is not None else _get_connection()
+        ) as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -527,6 +581,8 @@ def record_sdat_import(document):
                 )
                 return True
     except Exception as e:
+        if connection is not None:
+            raise
         logger.error(f"[DB] Error recording SDAT import: {e}")
         return False
 

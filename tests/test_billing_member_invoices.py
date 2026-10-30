@@ -10,8 +10,11 @@ identical figures, because the PDF is rendered from the exact same
 detail_view() dict the HTML page used, not from a second calculation.
 """
 
+import copy
+import json
 import re
 from copy import deepcopy
+from html.parser import HTMLParser
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -146,6 +149,73 @@ def test_member_invoice_detail_view_builds_model_from_frozen_snapshot_only(
     assert view["charges"][0]["item_type"] == "consumer_charge"
     assert len(view["credits"]) == 1
     assert view["credits"][0]["item_type"] == "producer_credit"
+
+
+def test_member_invoice_detail_uses_the_frozen_battery_source(monkeypatch):
+    import copy
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["provenance_snapshot"]["battery_source"] = {
+        "battery_kwh": "18.500000",
+        "value_chf": "2.78",
+    }
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["battery_source"] == {
+        "battery_kwh": member_invoices.Decimal("18.500000"),
+        "value_chf": member_invoices.Decimal("2.78"),
+    }
+    assert view["display_battery_kwh"] == "18.500"
+    assert view["display_battery_value_chf"] == "2.78"
+
+
+def test_member_invoice_detail_hides_battery_source_without_a_frozen_allocation(
+    monkeypatch,
+):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=INVOICE_ROW),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["battery_source"] is None
+    assert view["display_battery_kwh"] is None
+    assert view["display_battery_value_chf"] is None
+
+
+@pytest.mark.parametrize(
+    "source",
+    ["not a mapping", {}, {"battery_kwh": "-1", "value_chf": "1"}],
+)
+def test_member_invoice_detail_fails_closed_on_invalid_battery_source(
+    monkeypatch, source
+):
+    import copy
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["provenance_snapshot"]["battery_source"] = source
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError, match="Quartierakku"):
+        member_invoices.detail_view(42, "building-session")
 
 
 def test_member_invoice_detail_uses_frozen_community_id_for_legacy_invoice(
@@ -567,6 +637,39 @@ def test_detail_view_rejects_zero_vat_rate_in_standard_mode(monkeypatch):
     )
 
 
+def test_member_views_name_the_swiss_month_of_a_utc_period_start(monkeypatch):
+    """The billing runner persists the period start as a UTC instant: August
+    2026 begins at 2026-07-31T22:00Z. List, detail and PDF must still read
+    "August 2026", not the UTC calendar date's month."""
+    import member_invoices
+
+    row = _corrupt_invoice_row(
+        provenance_snapshot={
+            **INVOICE_ROW["provenance_snapshot"],
+            "period_start": "2026-07-31T22:00:00+00:00",
+            "period_end": "2026-08-31T22:00:00+00:00",
+        },
+        issue_date="2026-09-05",
+        due_date="2026-10-05",
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoices_for_participant",
+        MagicMock(return_value=[row]),
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    listed = member_invoices.list_view("building-session")
+    detail = member_invoices.detail_view(42, "building-session")
+
+    assert [item["period_label"] for item in listed["invoices"]] == ["August 2026"]
+    assert detail["period_label"] == "August 2026"
+
+
 def test_list_view_fails_closed_on_corrupted_snapshot(monkeypatch):
     import member_invoices
 
@@ -913,6 +1016,16 @@ def _patch_invoice_detail(flask_app_module, monkeypatch, view_by_owner):
     )
 
 
+def _patch_invoice_savings(flask_app_module, monkeypatch):
+    """The realized-savings section rides on the detail page; keep it out of
+    the invoice snapshot contracts unless a test targets it."""
+    monkeypatch.setattr(
+        flask_app_module.dashboard_module,
+        "member_invoice_savings_view",
+        MagicMock(return_value={"available": False, "period_label": "", "message": ""}),
+    )
+
+
 def test_dashboard_invoices_list_requires_session(dashboard_app_module):  # noqa: F811
     client = dashboard_app_module.web.test_client()
     response = client.get("/dashboard/invoices")
@@ -966,6 +1079,7 @@ def test_dashboard_invoice_detail_renders_own_invoice_privately(
     _patch_invoice_detail(
         dashboard_app_module, monkeypatch, view_by_owner={42: DETAIL_VIEW}
     )
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
     client = dashboard_app_module.web.test_client()
     _set_session(client)
 
@@ -989,6 +1103,7 @@ def test_dashboard_invoice_detail_renders_the_applied_policy_summary(
     _patch_invoice_detail(
         dashboard_app_module, monkeypatch, view_by_owner={42: DETAIL_VIEW}
     )
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
     client = dashboard_app_module.web.test_client()
     _set_session(client)
 
@@ -1001,6 +1116,44 @@ def test_dashboard_invoice_detail_renders_the_applied_policy_summary(
     assert "8.00 Rp./kWh" in body
     assert "Zahlungsfrist" in body
     assert "30 Tage" in body
+
+
+def test_dashboard_invoice_detail_renders_the_frozen_battery_source(
+    dashboard_app_module,  # noqa: F811
+    monkeypatch,
+):
+    view = {
+        **DETAIL_VIEW,
+        "battery_source": {"battery_kwh": "18.5", "value_chf": "2.78"},
+        "display_battery_kwh": "18.500",
+        "display_battery_value_chf": "2.78",
+    }
+    _patch_invoice_detail(dashboard_app_module, monkeypatch, view_by_owner={42: view})
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
+    client = dashboard_app_module.web.test_client()
+    _set_session(client)
+
+    body = client.get("/dashboard/invoices/42").get_data(as_text=True)
+
+    assert "Strom aus dem Quartierakku" in body
+    assert "18.500 kWh" in body
+    assert "2.78 CHF" in body
+
+
+def test_dashboard_invoice_detail_has_no_battery_placeholder_without_allocation(
+    dashboard_app_module,  # noqa: F811
+    monkeypatch,
+):
+    _patch_invoice_detail(
+        dashboard_app_module, monkeypatch, view_by_owner={42: DETAIL_VIEW}
+    )
+    _patch_invoice_savings(dashboard_app_module, monkeypatch)
+    client = dashboard_app_module.web.test_client()
+    _set_session(client)
+
+    body = client.get("/dashboard/invoices/42").get_data(as_text=True)
+
+    assert "Strom aus dem Quartierakku" not in body
 
 
 def test_dashboard_invoice_pdf_requires_session(dashboard_app_module):  # noqa: F811
@@ -1293,3 +1446,1047 @@ def test_a_period_frozen_in_utc_is_dated_in_its_own_month(monkeypatch):
     assert detail["period_label"] == "August 2026"
     assert detail["period_start"] == "2026-08-01"
     assert detail["period_end"] == "2026-09-01"
+
+
+# === Settlement fee (#629) ===
+
+
+def _fee_invoice_row():
+    import copy
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["policy_snapshot"]["settlement_fee_chf_per_kwh"] = "0.020000"
+    row["line_items_snapshot"].append(
+        {
+            "participant_id": "building-session",
+            "item_type": "settlement_fee",
+            "quantity_kwh": "120.500000",
+            "unit_price_chf_per_kwh": "0.020000",
+            "amount_chf": "2.410000",
+        }
+    )
+    row["net_chf"] = "14.49"
+    row["vat_chf"] = "1.12"
+    row["gross_chf"] = "15.61"
+    return row
+
+
+def test_detail_view_renders_the_settlement_fee_from_the_frozen_snapshot(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=_fee_invoice_row()),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert len(view["settlement_charges"]) == 1
+    fee_item = view["settlement_charges"][0]
+    assert fee_item["item_type_label"] == "Abrechnungsentgelt"
+    assert fee_item["display_quantity_kwh"] == "120.500"
+    assert fee_item["display_unit_price_rp"] == "2.00"
+    assert fee_item["display_amount_chf"] == "2.41"
+    assert view["display_settlement_fee_rp"] == "2.00"
+
+
+def test_detail_view_omits_the_settlement_fee_for_legacy_snapshots(monkeypatch):
+    import copy
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["settlement_charges"] == []
+    assert view["display_settlement_fee_rp"] is None
+
+
+def test_detail_view_fails_closed_on_a_settlement_fee_with_a_foreign_price(
+    monkeypatch,
+):
+
+    import member_invoices
+
+    row = _fee_invoice_row()
+    row["line_items_snapshot"][-1]["unit_price_chf_per_kwh"] = "0.030000"
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError):
+        member_invoices.detail_view(42, "building-session")
+
+
+def test_detail_view_fails_closed_on_a_fee_line_without_a_fee_policy(monkeypatch):
+    import copy
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["line_items_snapshot"].append(
+        {
+            "participant_id": "building-session",
+            "item_type": "settlement_fee",
+            "quantity_kwh": "120.500000",
+            "unit_price_chf_per_kwh": "0.000000",
+            "amount_chf": "0.000000",
+        }
+    )
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError):
+        member_invoices.detail_view(42, "building-session")
+
+
+def test_member_invoice_pdf_renders_the_settlement_fee_section(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=_fee_invoice_row()),
+    )
+
+    invoice = member_invoices.detail_view(42, "building-session")
+
+    with patch.object(
+        member_invoices.document_generator,
+        "_render_pdf",
+        return_value=b"%PDF-fake",
+    ) as render_pdf:
+        member_invoices.render_pdf(invoice)
+
+    pdf_html = render_pdf.call_args.args[0]
+
+    assert "Abrechnungsentgelt" in pdf_html
+    assert "2.41" in pdf_html
+
+
+def test_settlement_fee_section_is_hidden_for_legacy_invoices():
+    template = _read_template("member_invoice_detail.html")
+
+    assert "settlement_charges" in template
+    assert "{% if invoice.settlement_charges %}" in template
+
+
+# === Quartierakku cost share (#628) ===
+
+
+def _battery_invoice_row():
+    import copy
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["line_items_snapshot"].append(
+        {
+            "participant_id": "building-session",
+            "item_type": "battery_cost_share",
+            "quantity_kwh": None,
+            "unit_price_chf_per_kwh": None,
+            "amount_chf": "120.00",
+        }
+    )
+    row["net_chf"] = "132.08"
+    row["vat_chf"] = "10.17"
+    row["gross_chf"] = "142.25"
+    return row
+
+
+def test_detail_view_shows_the_quartierakku_share(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=_battery_invoice_row()),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert len(view["battery_shares"]) == 1
+    share = view["battery_shares"][0]
+    assert share["item_type_label"] == "Quartierakku-Anteil"
+    assert share["display_quantity_kwh"] is None
+    assert share["display_unit_price_rp"] is None
+    assert share["display_amount_chf"] == "120.00"
+
+
+def test_detail_view_omits_the_battery_block_without_battery_lines(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=INVOICE_ROW),
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["battery_shares"] == []
+
+
+def test_detail_view_fails_closed_on_a_battery_share_with_a_quantity(monkeypatch):
+    import member_invoices
+
+    row = _battery_invoice_row()
+    row["line_items_snapshot"][-1]["quantity_kwh"] = "5"
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=row),
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError):
+        member_invoices.detail_view(42, "building-session")
+
+
+def test_member_invoice_pdf_renders_the_battery_share_section(monkeypatch):
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        MagicMock(return_value=_battery_invoice_row()),
+    )
+
+    invoice = member_invoices.detail_view(42, "building-session")
+
+    with patch.object(
+        member_invoices.document_generator,
+        "_render_pdf",
+        return_value=b"%PDF-fake",
+    ) as render_pdf:
+        member_invoices.render_pdf(invoice)
+
+    pdf_html = render_pdf.call_args.args[0]
+
+    assert "Quartierakku-Anteil" in pdf_html
+    assert "120.00" in pdf_html
+
+
+def test_battery_share_section_is_hidden_for_legacy_invoices():
+    template = _read_template("member_invoice_detail.html")
+
+    assert "{% if invoice.battery_shares %}" in template
+
+
+@pytest.mark.parametrize(
+    "field", ["policy_snapshot", "provenance_snapshot", "line_items_snapshot"]
+)
+def test_detail_accepts_json_encoded_frozen_snapshots(monkeypatch, field):
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row[field] = json.dumps(row[field])
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["display_gross_chf"] == "13.01"
+    assert view["charges"][0]["display_quantity_kwh"] == "120.500"
+    assert view["period_label"] == "Juli 2026"
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "message"),
+    [
+        (("id",), True, "Die Rechnung hat keine gültige ID."),
+        (("id",), 0, "Die Rechnung hat keine gültige ID."),
+        (("invoice_number",), " ", "Die Rechnung hat keine gültige Rechnungsnummer."),
+        (("participant_id",), "", "Die Rechnung hat keine gültige Teilnehmer-ID."),
+        (
+            ("participant_id",),
+            "someone-else",
+            "Die Rechnung hat eine ungültige Zuordnung.",
+        ),
+        (("issue_date",), "invalid", "Die Rechnung hat kein gültiges Rechnungsdatum."),
+        (("due_date",), False, "Die Rechnung hat kein gültiges Fälligkeitsdatum."),
+        (
+            ("policy_snapshot",),
+            "{",
+            "Die Rechnung hat keine gültige Richtlinien-Kopie.",
+        ),
+        (("policy_snapshot",), {}, "Die Rechnung hat keine gültige Richtlinien-Kopie."),
+        (
+            ("policy_snapshot",),
+            [1],
+            "Die Rechnung hat keine gültige Richtlinien-Kopie.",
+        ),
+        (
+            ("policy_snapshot", "vat_mode"),
+            "invalid",
+            "Die Rechnung hat einen ungültigen Mehrwertsteuer-Modus.",
+        ),
+        (
+            ("policy_snapshot", "vat_rate_pct"),
+            "NaN",
+            "Die Richtlinien-Kopie hat keinen gültigen Mehrwertsteuersatz.",
+        ),
+        (
+            ("policy_snapshot", "internal_price_chf_per_kwh"),
+            "NaN",
+            "Die Richtlinien-Kopie hat keinen gültigen Tarifpreis.",
+        ),
+        (
+            ("policy_snapshot", "payment_days"),
+            True,
+            "Die Richtlinien-Kopie hat keine gültige Zahlungsfrist.",
+        ),
+        (
+            ("policy_snapshot", "payment_days"),
+            30.0,
+            "Die Richtlinien-Kopie hat keine gültige Zahlungsfrist.",
+        ),
+        (
+            ("policy_snapshot", "settlement_fee_chf_per_kwh"),
+            "NaN",
+            "Die Richtlinien-Kopie hat ein ungültiges Abrechnungsentgelt.",
+        ),
+        (
+            ("policy_snapshot", "settlement_fee_chf_per_kwh"),
+            "-0.01",
+            "Die Richtlinien-Kopie hat ein ungültiges Abrechnungsentgelt.",
+        ),
+        (
+            ("provenance_snapshot",),
+            "{",
+            "Die Rechnung hat keine gültige Periodenangabe.",
+        ),
+        (
+            ("provenance_snapshot", "period_start"),
+            "invalid",
+            "Die Rechnung hat keine gültige Periodenangabe.",
+        ),
+        (
+            ("provenance_snapshot", "period_end"),
+            "",
+            "Die Rechnung hat keine gültige Periodenangabe.",
+        ),
+        (
+            ("provenance_snapshot", "period_end"),
+            "2026-07-01",
+            "Die Datumsangaben der Rechnung sind inkonsistent.",
+        ),
+        (("community_id",), None, "Die Rechnung hat keinen gültigen Aussteller."),
+        (
+            ("provenance_snapshot", "issuer", "name"),
+            " ",
+            "Die Rechnung hat keinen gültigen Aussteller.",
+        ),
+        (
+            ("provenance_snapshot", "battery_source"),
+            [1],
+            "Die Quartierakku-Angabe dieser Rechnung ist ungültig.",
+        ),
+        (
+            ("provenance_snapshot", "battery_source"),
+            {"battery_kwh": "NaN", "value_chf": "1"},
+            "Die Quartierakku-Angabe dieser Rechnung ist ungültig.",
+        ),
+        (
+            ("provenance_snapshot", "battery_source"),
+            {"battery_kwh": "1", "value_chf": "NaN"},
+            "Die Quartierakku-Angabe dieser Rechnung ist ungültig.",
+        ),
+        (
+            ("provenance_snapshot", "battery_source"),
+            {"battery_kwh": "1", "value_chf": "-1"},
+            "Die Quartierakku-Angabe dieser Rechnung ist ungültig.",
+        ),
+        (("line_items_snapshot",), "[", "Die Rechnung hat keine gültigen Positionen."),
+        (("line_items_snapshot",), {}, "Die Rechnung hat keine gültigen Positionen."),
+        (
+            ("line_items_snapshot",),
+            {"not": "a list"},
+            "Die Rechnung hat keine gültigen Positionen.",
+        ),
+        (("line_items_snapshot",), [], "Die Rechnung hat keine gültigen Positionen."),
+        (
+            ("line_items_snapshot", 0),
+            "invalid",
+            "Eine Rechnungsposition ist fehlerhaft.",
+        ),
+        (
+            ("line_items_snapshot", 0, "item_type"),
+            "invalid",
+            "Eine Rechnungsposition hat einen ungültigen Typ.",
+        ),
+        (
+            ("line_items_snapshot", 0, "participant_id"),
+            "other",
+            "Eine Rechnungsposition gehört nicht zu dieser Rechnung.",
+        ),
+        (
+            ("line_items_snapshot", 0, "amount_chf"),
+            "NaN",
+            "Eine Rechnungsposition hat keinen gültigen Betrag.",
+        ),
+        (
+            ("line_items_snapshot", 0, "quantity_kwh"),
+            "NaN",
+            "Eine Rechnungsposition hat keine gültige Menge.",
+        ),
+        (
+            ("line_items_snapshot", 0, "unit_price_chf_per_kwh"),
+            "NaN",
+            "Eine Rechnungsposition hat keinen gültigen Preis.",
+        ),
+        (
+            ("line_items_snapshot", 0, "quantity_kwh"),
+            "-1",
+            "Eine Rechnungsposition stimmt nicht mit der Richtlinie überein.",
+        ),
+        (
+            ("line_items_snapshot", 0, "unit_price_chf_per_kwh"),
+            "0.2",
+            "Eine Rechnungsposition stimmt nicht mit der Richtlinie überein.",
+        ),
+        (
+            ("line_items_snapshot", 0, "quantity_kwh"),
+            "1e40",
+            "Der Betrag einer Rechnungsposition ist nicht berechenbar.",
+        ),
+        (
+            ("line_items_snapshot", 0, "amount_chf"),
+            "1",
+            "Der Betrag einer Rechnungsposition ist rechnerisch inkonsistent.",
+        ),
+        (
+            ("vat_rate_pct",),
+            "NaN",
+            "Die Rechnung hat keinen gültigen Mehrwertsteuersatz.",
+        ),
+        (
+            ("vat_rate_pct",),
+            "8.1",
+            "Die Mehrwertsteuer stimmt nicht mit der Richtlinien-Kopie überein.",
+        ),
+        (("net_chf",), "NaN", "Die Rechnung hat keinen gültigen Nettobetrag."),
+        (
+            ("net_chf",),
+            "12.07",
+            "Die Rechnungssumme stimmt nicht mit den Positionen überein.",
+        ),
+        (("vat_chf",), "NaN", "Die Rechnung hat keinen gültigen Mehrwertsteuerbetrag."),
+        (("vat_chf",), "0.92", "Die Rechnungssummen sind rechnerisch inkonsistent."),
+        (("gross_chf",), "NaN", "Die Rechnung hat keinen gültigen Gesamtbetrag."),
+    ],
+)
+def test_detail_explains_why_a_frozen_invoice_cannot_be_displayed(
+    monkeypatch, path, value, message
+):
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    node = row
+    for key in path[:-1]:
+        node = node[key]
+    node[path[-1]] = value
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as exc:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(exc.value) == message
+
+
+@pytest.mark.parametrize("payment_days", [1, 365])
+def test_detail_accepts_zero_energy_zero_prices_and_payment_boundaries(
+    monkeypatch, payment_days
+):
+    from datetime import UTC, date, datetime, timedelta
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["line_items_snapshot"] = [row["line_items_snapshot"][0]]
+    row["line_items_snapshot"][0].update(
+        quantity_kwh="0", unit_price_chf_per_kwh="0", amount_chf="0"
+    )
+    row["policy_snapshot"].update(
+        internal_price_chf_per_kwh="0",
+        grid_fee_chf_per_kwh="0",
+        settlement_fee_chf_per_kwh="0",
+        payment_days=payment_days,
+        vat_mode="none",
+        vat_rate_pct="0",
+    )
+    row.update(
+        net_chf="0",
+        vat_rate_pct="0",
+        vat_chf="0",
+        gross_chf="0",
+        issue_date=datetime(2026, 8, 1, 0, 0, tzinfo=UTC),
+        due_date=date(2026, 8, 1) + timedelta(days=payment_days),
+    )
+    row["provenance_snapshot"]["battery_source"] = {
+        "battery_kwh": "0",
+        "value_chf": "0",
+    }
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["issue_date"] == "2026-08-01"
+    assert view["period_start"] == "2026-07-01"
+    assert view["period_end"] == "2026-08-01"
+    assert view["display_vat_rate_pct"] == "0.00"
+    assert view["display_gross_chf"] == "0.00"
+    assert view["display_grid_fee_rp"] == "0.00"
+    assert view["display_settlement_fee_rp"] == "0.00"
+    assert view["display_battery_kwh"] == "0.000"
+    assert view["display_battery_value_chf"] == "0.00"
+    assert view["rounding_adjustments"] == []
+    assert view["charges"] == [
+        {
+            "item_type": "consumer_charge",
+            "item_type_label": "Verbrauchskosten",
+            "display_quantity_kwh": "0.000",
+            "display_unit_price_rp": "0.00",
+            "display_amount_chf": "0.00",
+        }
+    ]
+
+
+def test_detail_rounds_money_and_vat_half_up(monkeypatch):
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["line_items_snapshot"] = [row["line_items_snapshot"][0]]
+    row["line_items_snapshot"][0].update(quantity_kwh="0.333333", amount_chf="0.050000")
+    row["policy_snapshot"]["vat_rate_pct"] = "10"
+    row.update(net_chf="0.05", vat_rate_pct="10", vat_chf="0.01", gross_chf="0.06")
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["display_net_chf"] == "0.05"
+    assert view["display_vat_chf"] == "0.01"
+    assert view["display_gross_chf"] == "0.06"
+    assert view["display_vat_rate_pct"] == "10.00"
+
+
+def test_list_preserves_the_frozen_invoice_correction_links(monkeypatch):
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row.update(
+        corrects_invoice_number="LEG-2026-000009",
+        corrected_by_invoice_number="LEG-2026-000011",
+    )
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoices_for_participant", lambda *_: [row]
+    )
+
+    view = member_invoices.list_view("building-session")["invoices"][0]
+
+    assert view["corrects_invoice_number"] == "LEG-2026-000009"
+    assert view["corrected_by_invoice_number"] == "LEG-2026-000011"
+
+
+def _rounded_invoice():
+    row = copy.deepcopy(INVOICE_ROW)
+    row["line_items_snapshot"].append(
+        {
+            "participant_id": "building-session",
+            "item_type": "rounding_adjustment",
+            "quantity_kwh": None,
+            "unit_price_chf_per_kwh": None,
+            "amount_chf": "0.01",
+        }
+    )
+    row["provenance_snapshot"].pop("rounding_adjustment")
+    row["provenance_snapshot"]["reconciliation"] = {
+        "production_per_participant": {"building-session": {}}
+    }
+    row.update(net_chf="12.09", vat_chf="0.93", gross_chf="13.02")
+    return row
+
+
+@pytest.mark.parametrize("with_proof", [False, True])
+def test_detail_accepts_a_cent_rounding_residual_and_keeps_it_separate(
+    monkeypatch, with_proof
+):
+    import member_invoices
+
+    row = _rounded_invoice()
+    if with_proof:
+        row["provenance_snapshot"]["rounding_adjustment"] = {
+            "participant_id": "building-session",
+            "amount_chf": "0.01",
+        }
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["rounding_adjustments"] == [
+        {
+            "item_type": "rounding_adjustment",
+            "item_type_label": "Rundungsausgleich",
+            "display_quantity_kwh": None,
+            "display_unit_price_rp": None,
+            "display_amount_chf": "0.01",
+        }
+    ]
+    assert len(view["credits"]) == 1
+    assert view["display_gross_chf"] == "13.02"
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "message"),
+    [
+        (
+            ("line_items_snapshot", 2, "quantity_kwh"),
+            "0",
+            "Ein Rundungsausgleich darf weder Menge noch Preis enthalten.",
+        ),
+        (
+            ("line_items_snapshot", 2, "unit_price_chf_per_kwh"),
+            "0",
+            "Ein Rundungsausgleich darf weder Menge noch Preis enthalten.",
+        ),
+        (
+            ("provenance_snapshot", "rounding_adjustment"),
+            [],
+            "Der Rundungsausgleich ist nicht zulässig.",
+        ),
+        (
+            ("provenance_snapshot", "rounding_adjustment"),
+            {"participant_id": "building-session", "amount_chf": "NaN"},
+            "Der Rundungsausgleich ist nicht zulässig.",
+        ),
+        (
+            ("provenance_snapshot", "reconciliation"),
+            {"production_per_participant": [1]},
+            "Der Rundungsausgleich ist nicht zulässig.",
+        ),
+        (
+            ("provenance_snapshot", "reconciliation"),
+            {"production_per_participant": {"": {}}},
+            "Der Rundungsausgleich ist nicht zulässig.",
+        ),
+        (
+            ("provenance_snapshot", "reconciliation"),
+            {"production_per_participant": {"aaa": {}, "building-session": {}}},
+            "Der Rundungsausgleich ist nicht zulässig.",
+        ),
+        (
+            ("line_items_snapshot", 2, "amount_chf"),
+            "0.010001",
+            "Der Rundungsausgleich übersteigt den zulässigen Restbetrag.",
+        ),
+    ],
+)
+def test_detail_explains_invalid_rounding_evidence(monkeypatch, path, value, message):
+    import member_invoices
+
+    row = _rounded_invoice()
+    node = row
+    for key in path[:-1]:
+        node = node[key]
+    node[path[-1]] = value
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as exc:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(exc.value) == message
+
+
+class _PdfVisibleText(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.in_style = False
+        self.parts = []
+        self.labels = []
+        self.label_tag = None
+        self.label_parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "style":
+            self.in_style = True
+        if tag in {"h2", "th"}:
+            self.label_tag = tag
+            self.label_parts = []
+
+    def handle_endtag(self, tag):
+        if tag == "style":
+            self.in_style = False
+        if tag == self.label_tag:
+            self.labels.append((tag, "".join(self.label_parts).strip()))
+            self.label_tag = None
+
+    def handle_data(self, data):
+        if not self.in_style and data.strip():
+            self.parts.append(data.strip())
+        if self.label_tag is not None:
+            self.label_parts.append(data)
+
+
+@pytest.mark.parametrize(
+    "field,title",
+    [
+        ("settlement_charges", "Abrechnungsentgelt"),
+        ("battery_shares", "Quartierakku-Anteil"),
+    ],
+)
+def test_pdf_optional_charge_sections_have_headings_and_units(field, title):
+    import member_invoices
+
+    view = copy.deepcopy(DETAIL_VIEW)
+    view[field] = [
+        {
+            "item_type_label": title,
+            "display_quantity_kwh": "1.000" if field == "settlement_charges" else None,
+            "display_unit_price_rp": "2.00" if field == "settlement_charges" else None,
+            "display_amount_chf": "0.02",
+        }
+    ]
+    parser = _PdfVisibleText()
+    parser.feed(member_invoices.render_pdf_html_string(view))
+
+    heading = parser.labels.index(("h2", title))
+    assert parser.labels[heading + 1 : heading + 5] == [
+        ("th", "Position"),
+        ("th", "Menge (kWh)"),
+        ("th", "Preis (Rp./kWh)"),
+        ("th", "Betrag (CHF)"),
+    ]
+
+
+def test_pdf_visible_values_include_charges_credits_and_rounding():
+    import member_invoices
+
+    view = copy.deepcopy(DETAIL_VIEW)
+    view["rounding_adjustments"] = [
+        {
+            "item_type_label": "Rundungsausgleich",
+            "display_quantity_kwh": None,
+            "display_unit_price_rp": None,
+            "display_amount_chf": "0.01",
+        }
+    ]
+    parser = _PdfVisibleText()
+    parser.feed(member_invoices.render_pdf_html_string(view))
+
+    assert parser.parts == [
+        "Rechnung LEG-2026-000001",
+        "Aussteller:",
+        "LEG Musterweg",
+        "Periode:",
+        "Juli 2026",
+        "Rechnungsdatum:",
+        "2026-08-05",
+        "Fällig am:",
+        "2026-09-04",
+        "Interner Preis:",
+        "15.00 Rp./kWh",
+        "Netzentgelt:",
+        "8.00 Rp./kWh",
+        "Zahlungsfrist:",
+        "30 Tage",
+        "Verbrauchskosten",
+        "Position",
+        "Menge (kWh)",
+        "Preis (Rp./kWh)",
+        "Betrag (CHF)",
+        "Verbrauchskosten",
+        "120.500",
+        "15.00",
+        "18.08",
+        "Gutschriften und Ausgleich",
+        "Position",
+        "Menge (kWh)",
+        "Preis (Rp./kWh)",
+        "Betrag (CHF)",
+        "Produzentengutschrift",
+        "40.000",
+        "15.00",
+        "-6.00",
+        "Rundungsausgleich",
+        "-",
+        "-",
+        "0.01",
+        "Mehrwertsteuer",
+        "Mehrwertsteuer ausweisen (7.70%)",
+        "Total",
+        "Nettobetrag",
+        "12.08 CHF",
+        "Mehrwertsteuer",
+        "0.93 CHF",
+        "Gesamtbetrag",
+        "13.01 CHF",
+        "Erstellt mit OpenLEG",
+    ]
+
+
+def test_detail_rounds_display_values_independently_of_decimal_context(monkeypatch):
+    from decimal import ROUND_DOWN, localcontext
+
+    import member_invoices
+
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        lambda *_: copy.deepcopy(INVOICE_ROW),
+    )
+    with localcontext() as context:
+        context.rounding = ROUND_DOWN
+        view = member_invoices.detail_view(42, "building-session")
+
+    assert view["charges"][0]["display_amount_chf"] == "18.08"
+    assert view["display_gross_chf"] == "13.01"
+
+
+@pytest.mark.parametrize(
+    ("rate", "vat", "gross"), [("0.5", "0.06", "12.14"), ("100", "12.08", "24.16")]
+)
+def test_detail_accepts_positive_vat_at_the_allowed_boundaries(
+    monkeypatch, rate, vat, gross
+):
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["policy_snapshot"]["vat_rate_pct"] = rate
+    row.update(vat_rate_pct=rate, vat_chf=vat, gross_chf=gross)
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["display_vat_chf"] == vat
+    assert view["display_gross_chf"] == gross
+
+
+@pytest.mark.parametrize(
+    "problem",
+    [
+        "quantity",
+        "price",
+        "duplicate",
+        "double_rounding",
+        "no_producer",
+        "empty_production",
+        "bad_producer_id",
+        "overflow",
+    ],
+)
+def test_detail_explains_remaining_position_and_source_failures(monkeypatch, problem):
+    import member_invoices
+
+    row = _rounded_invoice()
+    if problem in ("quantity", "price"):
+        row = _battery_invoice_row()
+        share = next(
+            item
+            for item in row["line_items_snapshot"]
+            if item["item_type"] == "battery_cost_share"
+        )
+        share["quantity_kwh" if problem == "quantity" else "unit_price_chf_per_kwh"] = (
+            "0"
+        )
+        message = "Ein Quartierakku-Anteil darf weder Menge noch Preis enthalten."
+    elif problem == "duplicate":
+        row["line_items_snapshot"].append(copy.deepcopy(row["line_items_snapshot"][0]))
+        message = "Die Rechnung enthält doppelte Positionen."
+    elif problem == "double_rounding":
+        row["line_items_snapshot"].append(copy.deepcopy(row["line_items_snapshot"][-1]))
+        message = "Der Rundungsausgleich ist nicht zulässig."
+    elif problem == "no_producer":
+        row["line_items_snapshot"].pop(1)
+        message = "Der Rundungsausgleich ist nicht zulässig."
+    elif problem == "empty_production":
+        row["provenance_snapshot"]["reconciliation"]["production_per_participant"] = {}
+        message = "Der Rundungsausgleich ist nicht zulässig."
+    elif problem == "bad_producer_id":
+        row["provenance_snapshot"]["reconciliation"]["production_per_participant"] = {
+            42: {},
+            "building-session": {},
+        }
+        # Invalid ids do not nominate a producer; the valid frozen id still does.
+        message = None
+    else:
+        row["provenance_snapshot"]["battery_source"] = {
+            "battery_kwh": "1e40",
+            "value_chf": "1",
+        }
+        message = "Ein Betrag der Rechnung ist ungültig."
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    if message is None:
+        assert (
+            member_invoices.detail_view(42, "building-session")["display_gross_chf"]
+            == "13.02"
+        )
+    else:
+        with pytest.raises(member_invoices.MemberInvoiceDataError) as exc:
+            member_invoices.detail_view(42, "building-session")
+        assert str(exc.value) == message
+
+
+def test_detail_preserves_the_invoice_lifecycle_error(monkeypatch):
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["lifecycle_state"] = "invalid"
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as exc:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(exc.value) == "Die Rechnung hat einen ungültigen Status."
+
+
+@pytest.mark.parametrize("problem", ["production_list", "vat_exempt", "sum_overflow"])
+def test_detail_refuses_inconsistent_frozen_evidence_before_display(
+    monkeypatch, problem
+):
+    import member_invoices
+
+    row = _rounded_invoice()
+    if problem == "production_list":
+        row["provenance_snapshot"]["reconciliation"]["production_per_participant"] = [
+            "building-session"
+        ]
+        message = "Der Rundungsausgleich ist nicht zulässig."
+    elif problem == "vat_exempt":
+        row["policy_snapshot"]["vat_mode"] = "none"
+        message = "Die Rechnung hat einen ungültigen Mehrwertsteuersatz."
+    else:
+        row["line_items_snapshot"][-1]["amount_chf"] = "90000000000000000000000000"
+        row["line_items_snapshot"].append(
+            {
+                "participant_id": "building-session",
+                "item_type": "battery_cost_share",
+                "quantity_kwh": None,
+                "unit_price_chf_per_kwh": None,
+                "amount_chf": "90000000000000000000000000",
+            }
+        )
+        row["provenance_snapshot"]["rounding_adjustment"] = {
+            "participant_id": "building-session",
+            "amount_chf": "90000000000000000000000000",
+        }
+        message = "Die Rechnungssumme ist nicht berechenbar."
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as exc:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(exc.value) == message
+
+
+def test_pdf_explains_empty_sections_and_omits_an_unknown_legacy_grid_fee():
+    import member_invoices
+
+    view = copy.deepcopy(DETAIL_VIEW)
+    view.update(charges=[], credits=[], rounding_adjustments=[])
+    view["display_grid_fee_rp"] = None
+    parser = _PdfVisibleText()
+    parser.feed(member_invoices.render_pdf_html_string(view))
+
+    assert parser.parts == [
+        "Rechnung LEG-2026-000001",
+        "Aussteller:",
+        "LEG Musterweg",
+        "Periode:",
+        "Juli 2026",
+        "Rechnungsdatum:",
+        "2026-08-05",
+        "Fällig am:",
+        "2026-09-04",
+        "Interner Preis:",
+        "15.00 Rp./kWh",
+        "Zahlungsfrist:",
+        "30 Tage",
+        "Verbrauchskosten",
+        "Position",
+        "Menge (kWh)",
+        "Preis (Rp./kWh)",
+        "Betrag (CHF)",
+        "Keine Verbrauchskosten",
+        "Gutschriften und Ausgleich",
+        "Position",
+        "Menge (kWh)",
+        "Preis (Rp./kWh)",
+        "Betrag (CHF)",
+        "Keine Gutschriften",
+        "Mehrwertsteuer",
+        "Mehrwertsteuer ausweisen (7.70%)",
+        "Total",
+        "Nettobetrag",
+        "12.08 CHF",
+        "Mehrwertsteuer",
+        "0.93 CHF",
+        "Gesamtbetrag",
+        "13.01 CHF",
+        "Erstellt mit OpenLEG",
+    ]
+
+
+def test_detail_explains_an_overflowing_finite_vat_amount(monkeypatch):
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["vat_chf"] = "1e1000000"
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError) as exc:
+        member_invoices.detail_view(42, "building-session")
+
+    assert str(exc.value) == "Die Rechnungssummen sind nicht berechenbar."
+
+
+@pytest.mark.parametrize("payment_days,phrase", [(1, "1 Tag"), (2, "2 Tage")])
+def test_pdf_payment_term_uses_the_frozen_day_count(monkeypatch, payment_days, phrase):
+    from datetime import date, timedelta
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row["policy_snapshot"]["payment_days"] = payment_days
+    row["due_date"] = (date(2026, 8, 5) + timedelta(days=payment_days)).isoformat()
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_args: row
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+    parser = _PdfVisibleText()
+    parser.feed(member_invoices.render_pdf_html_string(view))
+
+    assert view["policy_payment_days"] == payment_days
+    assert phrase in parser.parts

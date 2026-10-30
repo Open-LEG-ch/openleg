@@ -80,6 +80,7 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/document` | Generated LEG documents and their signing status |
 | `store/ops` | LEA job reports and operational snapshots |
 | `store/access_token` | Hashed, single-use magic-link tokens, dashboard and municipality |
+| `store/advisories` | Immutable reviewed source revisions, source-review policy/history and private equipment acknowledgements |
 
 The extraction is finished. `database.py` owns the connection pool,
 `get_connection`, the schema call, and the re-export block, and nothing else.
@@ -109,6 +110,7 @@ Domain logic sits above storage and stays free of SQL:
 | `access_token.py` | Magic-link access policy: token format, hashing, expiry bounds, access URLs |
 | `interest_intake.py` | Coverage-request validation and confirmation-mail submission |
 | `interest_confirmation.py` | Building and coverage confirmation outcomes, then mail scheduling, deferred clustering, and municipality notification |
+| `advisories.py` | Exact reviewed device identity, conservative version profiles, source-review freshness and private notice presentation |
 
 ## Naming Rules
 

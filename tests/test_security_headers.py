@@ -7,6 +7,9 @@ flag loosens. Intentional exceptions carry their reason here:
 - ``script-src``/``style-src`` allow ``'unsafe-inline'`` and three document
   CDNs (unpkg, jsdelivr, Google Fonts) because product templates inline their
   scripts and load Leaflet, Swagger UI, Chart.js and fonts from those CDNs.
+- ``script-src``/``connect-src`` allow ``https://stats.openleg.ch`` for the
+  cookieless Matomo tracker (#562); it only renders when ``MATOMO_SITE_ID``
+  is configured, so unset deployments make no tracking requests.
 - ``img-src`` allows ``https:`` for remote images (municipality and user
   content); ``http:`` was removed, nothing referenced it and mixed content
   would block it anyway.
@@ -20,6 +23,7 @@ flag loosens. Intentional exceptions carry their reason here:
 from unittest import mock
 
 import pytest
+from flask import render_template
 
 
 def _make_app(**overrides):
@@ -56,6 +60,14 @@ _SECURITY_HEADERS = (
     "Content-Security-Policy",
     "Referrer-Policy",
 )
+
+
+def _csp_source_hosts(csp, directive_name):
+    """The exact hosts of one CSP directive, compared without their scheme."""
+    part = next(
+        piece for piece in csp.split(";") if piece.strip().startswith(directive_name)
+    )
+    return {source.split("://", 1)[-1] for source in part.split()[1:]}
 
 
 class TestHeadersOnEverySurface:
@@ -97,6 +109,44 @@ class TestHeadersOnEverySurface:
         assert "http:" not in img_part.replace("https:", ""), (
             "img-src must not allow arbitrary http images"
         )
+
+
+class TestCookielessMatomoTracking:
+    """The product app tracks cookieless, like the public site (#562)."""
+
+    def test_csp_allows_the_tracker_subdomain_for_scripts_and_connects(self, client):
+        csp = client.get("/").headers["Content-Security-Policy"]
+        script_hosts = _csp_source_hosts(csp, "script-src")
+        connect_hosts = _csp_source_hosts(csp, "connect-src")
+        assert "stats.openleg.ch" in script_hosts
+        assert "stats.openleg.ch" in connect_hosts
+
+    def test_the_tracker_is_absent_while_the_site_id_is_unset(self, client):
+        rendered = client.get("/").get_data(as_text=True)
+
+        assert "matomo.js" not in rendered
+        assert "stats.openleg.ch" not in rendered
+
+    def test_a_configured_site_id_renders_the_cookieless_tracker(self):
+        application = _make_app(MATOMO_SITE_ID="1")
+        rendered = application.test_client().get("/").get_data(as_text=True)
+
+        assert "https://stats.openleg.ch/matomo.js" in rendered
+        assert "['disableCookies']" in rendered
+        assert "['setDoNotTrack', true]" in rendered
+        assert "['setSiteId', '1']" in rendered
+        assert "https://stats.openleg.ch/matomo.php" in rendered
+
+    def test_the_dashboard_shell_carries_the_tracker_too(self):
+        application = _make_app(MATOMO_SITE_ID="1")
+
+        with application.test_request_context("/dashboard"):
+            rendered = render_template("product_base.html", matomo_site_id="1")
+        assert "matomo.js" in rendered
+
+    def test_a_malformed_site_id_refuses_to_build_the_app(self):
+        with pytest.raises(ValueError, match="positive integer"):
+            _make_app(MATOMO_SITE_ID="1'];alert(1)//")
 
 
 class TestSessionCookieFlags:

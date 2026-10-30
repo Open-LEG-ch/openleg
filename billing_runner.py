@@ -6,14 +6,104 @@ import json
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from psycopg2 import Error as DatabaseError
+
 import billing_engine
 import billing_policy
 import billing_readings
+import billing_reconciliation
 import database as db
+import quartierakku
 
 
 class BillingRunError(ValueError):
-    """Billing inputs are complete but not safe to persist."""
+    """A billing run cannot safely persist a draft."""
+
+    _PUBLIC_CODES = frozenset(
+        {
+            "billing_run_failed",
+            "billing_tariff_missing",
+            "vnb_evidence_missing",
+            "metering_readings_invalid",
+            "vnb_allocation_mismatch",
+            "billing_inputs_changed",
+            "battery_configuration_invalid",
+            "billing_store_unavailable",
+            "billing_provenance_missing",
+        }
+    )
+
+    _REASONS = frozenset({"vnb_balancing_policy_required"})
+
+    def __init__(self, message, *, code="billing_run_failed", reason=None):
+        super().__init__(message)
+        self.code = code if code in self._PUBLIC_CODES else "billing_run_failed"
+        self.reason = (
+            reason
+            if reason in self._REASONS and self.code == "vnb_allocation_mismatch"
+            else None
+        )
+
+
+def _battery_lines(community_id, participants, period_start, period_end):
+    """Return (battery_snapshot, cost_share_lines) for the billed participants.
+
+    No battery in the community bills nothing. A battery whose config is
+    incomplete, or that does not cover every billed participant, fails
+    closed: the cost share must be auditable for every participant.
+    """
+    battery = db.get_battery(community_id)
+    if not battery:
+        return None, None, []
+    try:
+        battery = quartierakku.validate_battery_config(
+            {**battery, "community_id": community_id}
+        )
+    except quartierakku.InvalidBatteryConfig as exc:
+        raise BillingRunError(str(exc), code="battery_configuration_invalid") from exc
+    lines = []
+    battery_participant_id = battery["participant_id"]
+    for participant_id in participants:
+        if participant_id == battery_participant_id:
+            continue
+        share = battery["shares"].get(participant_id)
+        if share is None:
+            raise BillingRunError(
+                "Der Quartierakku ist unvollständig konfiguriert: Teilnehmer "
+                f"{participant_id} hat keinen Anteil.",
+                code="battery_configuration_invalid",
+            )
+        lines.append(
+            {
+                "participant_id": participant_id,
+                "item_type": "battery_cost_share",
+                "quantity_kwh": None,
+                "unit_price_chf_per_kwh": None,
+                "amount_chf": float(
+                    quartierakku.period_cost_share_chf(
+                        battery["annual_cost_chf"],
+                        share,
+                        period_start,
+                        period_end,
+                    )
+                ),
+            }
+        )
+    # The snapshot is fingerprinted and JSONB-frozen: decimals travel as
+    # exact strings so a re-run hashes identically.
+    snapshot = {
+        "community_id": community_id,
+        "participant_id": battery_participant_id,
+        "capacity_kwh": str(battery["capacity_kwh"]),
+        "annual_cost_chf": str(battery["annual_cost_chf"]),
+        "period_start": period_start.isoformat(),
+        "period_end": period_end.isoformat(),
+        "period_fraction": str(quartierakku.period_fraction(period_start, period_end)),
+        "shares": {
+            participant: str(share) for participant, share in battery["shares"].items()
+        },
+    }
+    return battery, snapshot, lines
 
 
 def previous_complete_month(now=None):
@@ -62,17 +152,22 @@ def _fingerprint(frames, policy, summary, reconciliation):
     return hashlib.sha256(encoded).hexdigest()
 
 
-def run_billing_period(community_id, period_start, period_end):
+def run_billing_period(
+    community_id, period_start, period_end, *, prepared_by: str | None = None
+):
     """Validate, reconcile and persist one immutable draft billing period."""
     try:
         policy = db.get_billing_policy(community_id, period_start, period_end)
         if not policy:
-            raise BillingRunError("No effective billing tariff configured")
+            raise BillingRunError(
+                "No effective billing tariff configured", code="billing_tariff_missing"
+            )
         policy = {**policy, "community_id": community_id}
 
         frames = billing_readings.load_period_frames(
             community_id, period_start, period_end
         )
+        calculated = None
         if db.is_db_available():
             calculated = db.get_validated_calculated_values(
                 community_id,
@@ -81,11 +176,24 @@ def run_billing_period(community_id, period_start, period_end):
             )
             if not calculated:
                 raise BillingRunError(
-                    "Billing period has no validated VNB calculated-values evidence"
+                    "Billing period has no validated VNB calculated-values evidence",
+                    code="vnb_evidence_missing",
                 )
             frames = billing_readings.with_calculated_vnb_evidence(frames, calculated)
         if not frames.provenance["source_document_ids"]:
-            raise BillingRunError("Billing readings have no import provenance")
+            raise BillingRunError(
+                "Billing readings have no import provenance",
+                code="billing_provenance_missing",
+            )
+        battery, battery_snapshot, battery_lines = _battery_lines(
+            community_id, list(frames.participants), period_start, period_end
+        )
+        battery_kwargs = {}
+        if battery:
+            battery_kwargs = {
+                "battery_participant_id": battery["participant_id"],
+                "battery_capacity_kwh": battery["capacity_kwh"],
+            }
         summary = billing_engine.generate_billing_summary(
             frames.production,
             frames.consumption,
@@ -93,30 +201,109 @@ def run_billing_period(community_id, period_start, period_end):
             internal_price_per_kwh=policy["internal_price_chf_per_kwh"],
             network_level=policy["network_level"],
             distribution_model=policy["distribution_model"],
+            settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
             # Verrechnet wird die Aufteilung des VNB, nicht die eigene: sie
             # steht auf der Abrechnung, die das Mitglied selbst nachprüfen kann.
             billed_allocation=frames.vnb_reference["billed"],
+            **battery_kwargs,
         )
         reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
+        existing = db.get_billing_period_for_window(
+            community_id, period_start, period_end
+        )
+        existing_einfach = (
+            db.get_billing_period(existing["id"], community_id)
+            if existing is not None and policy["distribution_model"] == "einfach"
+            else None
+        )
+        # Existing unmarked einfach drafts retain their original pricing and
+        # exact audit; only the original legacy fingerprint permits a retry.
+        legacy_einfach = (
+            policy["distribution_model"] == "einfach"
+            and isinstance(existing_einfach, dict)
+            and isinstance(existing_einfach.get("reconciliation"), dict)
+            and "precision_policy" not in existing_einfach["reconciliation"]
+        )
+        precision_basis = (
+            calculated is not None
+            and calculated.get("format_version") == "e66/1"
+            and policy["distribution_model"] in {"proportional", "einfach"}
+            and not battery
+            and not legacy_einfach
+        )
+        if precision_basis:
+            try:
+                certificate = billing_reconciliation.audit_e66(
+                    calculated, model=policy["distribution_model"]
+                )
+                source_frames = billing_readings.frames_from_calculated_source(
+                    calculated
+                )
+                if any(
+                    not actual.tz_convert("UTC").round(6).equals(source.round(6))
+                    for actual, source in (
+                        (frames.consumption, source_frames.consumption),
+                        (frames.production, source_frames.production),
+                    )
+                ):
+                    raise ValueError("Physical readings differ from accepted source")
+                vnb_consumption, vnb_production = (
+                    billing_readings.calculated_quantity_frames(frames, calculated)
+                )
+                summary = billing_engine.generate_vnb_billing_summary(
+                    frames.production,
+                    frames.consumption,
+                    vnb_consumption,
+                    vnb_production,
+                    grid_fee_per_kwh=policy["grid_fee_chf_per_kwh"],
+                    internal_price_per_kwh=policy["internal_price_chf_per_kwh"],
+                    network_level=policy["network_level"],
+                    distribution_model=policy["distribution_model"],
+                    settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
+                )
+            except billing_engine.VnbBalancingPolicyRequired as exc:
+                raise BillingRunError(
+                    str(exc),
+                    code="vnb_allocation_mismatch",
+                    reason="vnb_balancing_policy_required",
+                ) from exc
+            except ValueError as exc:
+                raise BillingRunError(str(exc), code="vnb_allocation_mismatch") from exc
+            reconciliation["precision_policy"] = certificate
+        if battery_lines:
+            summary["line_items"].extend(battery_lines)
+        if battery_snapshot:
+            battery_snapshot["attribution"] = {
+                participant["id"]: {
+                    "direct_solar_kwh": participant["direct_solar_kwh"],
+                    "battery_kwh": participant["battery_kwh"],
+                    "value_chf": participant["battery_value_chf"],
+                }
+                for participant in summary["participants"]
+                if participant["id"] != battery["participant_id"]
+            }
+            battery_snapshot["energy"] = dict(summary["battery_energy"])
+            summary["battery_snapshot"] = battery_snapshot
         participant_gaps = reconciliation["per_participant"].values()
         production_gaps = reconciliation["production_per_participant"].values()
-        if (
+        if not precision_basis and (
             reconciliation["difference_kwh"] != 0
             or reconciliation["production_difference_kwh"] != 0
             or any(item["difference_kwh"] != 0 for item in participant_gaps)
             or any(item["difference_kwh"] != 0 for item in production_gaps)
         ):
             raise BillingRunError(
-                "OpenLEG allocation does not match the VNB allocation"
+                "OpenLEG allocation does not match the VNB allocation",
+                code="vnb_allocation_mismatch",
             )
 
         fingerprint = _fingerprint(frames, policy, summary, reconciliation)
-        existing = db.get_billing_period_for_window(
-            community_id, period_start, period_end
-        )
         if existing:
             if existing["input_fingerprint"] != fingerprint:
-                raise BillingRunError("Billing period inputs changed after processing")
+                raise BillingRunError(
+                    "Billing period inputs changed after processing",
+                    code="billing_inputs_changed",
+                )
             return {"status": "already_processed", "period_id": existing["id"]}
 
         summary.update(
@@ -130,6 +317,7 @@ def run_billing_period(community_id, period_start, period_end):
             # Freeze the complete effective policy so approval never
             # reconstructs historic choices from mutable tariff tables.
             billing_policy_snapshot=dict(policy),
+            prepared_by=prepared_by or "system",
         )
         period_id = db.save_billing_period(
             community_id, period_start, period_end, summary
@@ -137,5 +325,9 @@ def run_billing_period(community_id, period_start, period_end):
         return {"status": "created", "period_id": period_id}
     except BillingRunError:
         raise
+    except billing_readings.PeriodDataError as exc:
+        raise BillingRunError(str(exc), code="metering_readings_invalid") from exc
+    except (db.BillingStoreError, DatabaseError) as exc:
+        raise BillingRunError(str(exc), code="billing_store_unavailable") from exc
     except (KeyError, ValueError) as exc:
         raise BillingRunError(str(exc)) from exc

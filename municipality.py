@@ -26,8 +26,12 @@ import municipality_profile
 import pv_data
 import security_utils
 from cantons import SWISS_CANTONS
+from email_localization import gettext, recipient_locale
+from i18n import gettext as _
+from i18n import localized_url, ngettext, normalize_locale, select_locale
 from ranking import Ranking
 from security_extensions import rate_limit
+from translation_markers import gettext_noop
 
 logger = logging.getLogger(__name__)
 
@@ -53,15 +57,15 @@ def register():
     admin_email = data.get("admin_email", "").strip()
 
     if not bfs or not admin_email:
-        return jsonify({"error": "BFS-Nummer und E-Mail erforderlich."}), 400
+        return jsonify({"error": _("BFS-Nummer und E-Mail erforderlich.")}), 400
 
     is_valid, normalized, error = security_utils.validate_email_address(admin_email)
     if not is_valid:
-        return jsonify({"error": error}), 400
+        return jsonify({"error": _(error)}), 400
 
     profile = db.get_municipality_profile(int(bfs))
     if not profile:
-        return jsonify({"error": "Unbekannte BFS-Nummer."}), 400
+        return jsonify({"error": _("Unbekannte BFS-Nummer.")}), 400
 
     name = (profile.get("name") or "").strip()
     kanton = (profile.get("kanton") or "").strip().upper()[:2]
@@ -90,13 +94,13 @@ def register():
             {"success": True, "municipality_id": muni_id, "subdomain": subdomain}
         )
 
-    return jsonify({"error": "Registrierung fehlgeschlagen."}), 500
+    return jsonify({"error": _("Registrierung fehlgeschlagen.")}), 500
 
 
 ONBOARDING_STATUS_LABELS = {
-    "pending": "In Prüfung",
-    "active": "Aktiv",
-    "verified": "Verifiziert",
+    "pending": gettext_noop("In Prüfung"),
+    "active": gettext_noop("Aktiv"),
+    "verified": gettext_noop("Verifiziert"),
 }
 
 
@@ -115,17 +119,20 @@ def _dashboard_context(muni):
             )
             profile = None
     profile = profile or {}
-    interest_summary = (
-        db.get_municipality_interest_summary(int(muni["bfs_number"]))
-        if muni.get("bfs_number")
-        else {}
-    )
+    try:
+        interest_summary = (
+            db.get_municipality_interest_summary(int(muni["bfs_number"]), strict=True)
+            if muni.get("bfs_number")
+            else {}
+        )
+    except db.InterestReadUnavailable:
+        interest_summary = None
     role_labels = {
-        "owner": "Eigentümer/in",
-        "tenant": "Mieter/in",
-        "solar_producer": "Solarstromproduzent/in",
-        "local_business": "Lokales Unternehmen",
-        "municipality_organisation": "Gemeinde/Organisation",
+        "owner": gettext_noop("Eigentümer/in"),
+        "tenant": gettext_noop("Mieter/in"),
+        "solar_producer": gettext_noop("Solarstromproduzent/in"),
+        "local_business": gettext_noop("Lokales Unternehmen"),
+        "municipality_organisation": gettext_noop("Gemeinde/Organisation"),
     }
     if subdomain:
         invite_url = f"https://{subdomain}.openleg.ch"
@@ -134,16 +141,16 @@ def _dashboard_context(muni):
     return {
         "municipality": muni,
         "status_label": ONBOARDING_STATUS_LABELS.get(
-            muni.get("onboarding_status"), "In Prüfung"
+            muni.get("onboarding_status"), gettext_noop("In Prüfung")
         ),
         "stats": stats,
         "solar_score": profile.get("pv_score_pct"),
         "energy_score": profile.get("energy_transition_score"),
-        "invite_url": invite_url,
+        "invite_url": localized_url(invite_url, locale=select_locale()),
         "interest_summary": interest_summary,
         "interest_roles": [
             {"label": role_labels.get(role, role), "count": count}
-            for role, count in (interest_summary.get("roles") or {}).items()
+            for role, count in ((interest_summary or {}).get("roles") or {}).items()
         ],
         "error": None,
     }
@@ -157,7 +164,7 @@ def dashboard():
             "gemeinde/dashboard.html",
             municipality=None,
             error=(
-                "Der Zugangslink ist ungültig oder bereits verwendet."
+                _("Der Zugangslink ist ungültig oder bereits verwendet.")
                 if request.args.get("access") == "invalid"
                 else None
             ),
@@ -170,7 +177,7 @@ def dashboard():
         return render_template(
             "gemeinde/dashboard.html",
             municipality=None,
-            error="Gemeinde nicht gefunden.",
+            error=_("Gemeinde nicht gefunden."),
         )
 
     return render_template("gemeinde/dashboard.html", **_dashboard_context(muni))
@@ -180,7 +187,7 @@ def dashboard():
 @rate_limit("5 per minute")
 def access_request():
     email = (request.form.get("email") or "").strip().lower()
-    generic_message = (
+    generic_message = _(
         "Falls eine Gemeinde zu dieser E-Mail-Adresse existiert, haben wir einen "
         "neuen Zugangslink gesendet."
     )
@@ -196,17 +203,24 @@ def access_request():
             access_token.MUNICIPALITY, db, municipality_id, ttl_seconds=900
         )
         if token:
+            admin_id = municipality.get("admin_building_id")
+            profile = db.get_building(admin_id) if admin_id else None
+            locale = recipient_locale(profile, normalized_email)
             url = access_token.access_url(
                 access_token.MUNICIPALITY, current_app.config["APP_BASE_URL"], token
             )
+            url = localized_url(url, locale=locale)
             try:
                 email_utils.send_email(
                     normalized_email,
-                    "Ihr Gemeinde-Dashboard-Zugangslink",
-                    "Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n\n"
-                    f"{url}\n\n"
-                    "Falls Sie diesen Link nicht angefordert haben, können Sie "
-                    "diese E-Mail ignorieren.",
+                    gettext("Ihr Gemeinde-Dashboard-Zugangslink", locale=locale),
+                    gettext(
+                        "Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n\n"
+                        "%(url)s\n\nFalls Sie diesen Link nicht angefordert haben, "
+                        "können Sie diese E-Mail ignorieren.",
+                        locale=locale,
+                        url=url,
+                    ),
                 )
             except Exception:
                 current_app.logger.exception(
@@ -227,7 +241,10 @@ def access_exchange(token):
     if not municipality_id:
         response = redirect("/gemeinde/dashboard?access=invalid")
     else:
+        locale = normalize_locale(session.get("locale"))
         session.clear()
+        if locale:
+            session["locale"] = locale
         session.permanent = True
         session["municipality_id"] = municipality_id
         session["municipality_csrf_token"] = secrets.token_urlsafe(32)
@@ -252,7 +269,10 @@ def logout():
     ):
         abort(400)
     db.revoke_municipality_access_tokens(municipality_id)
+    locale = normalize_locale(session.get("locale"))
     session.clear()
+    if locale:
+        session["locale"] = locale
     return redirect("/")
 
 
@@ -268,11 +288,11 @@ def dashboard_demo():
             "dso_name": "Regionalwerke AG Baden",
             "onboarding_status": "active",
         },
-        status_label="Aktiv",
+        status_label=gettext_noop("Aktiv"),
         stats={"total_buildings": 42, "registrations_today": 3},
         solar_score=34,
         energy_score=61,
-        invite_url="https://baden.openleg.ch",
+        invite_url=localized_url("https://baden.openleg.ch", locale=select_locale()),
         interest_summary={
             "verified_total": 42,
             "last_30_days": 3,
@@ -280,8 +300,8 @@ def dashboard_demo():
             "address_problems": 2,
         },
         interest_roles=[
-            {"label": "Eigentümer/in", "count": 27},
-            {"label": "Mieter/in", "count": 15},
+            {"label": gettext_noop("Eigentümer/in"), "count": 27},
+            {"label": gettext_noop("Mieter/in"), "count": 15},
         ],
         error=None,
     )
@@ -313,7 +333,10 @@ def profil(bfs):
     )
     if ctx is None:
         abort(404)
-    interest_count = db.get_interest_count(bfs) or 0
+    try:
+        interest_count = db.get_interest_count(bfs, strict=True) or 0
+    except db.InterestReadUnavailable:
+        interest_count = None
     ctx["interest_count"] = interest_count
     ctx["interest_label"] = _public_interest_label(interest_count, confirmed=True)
     return render_template("gemeinde/profil.html", **ctx)
@@ -339,11 +362,21 @@ def _normalize_kanton_param(raw_value):
 
 
 def _public_interest_label(count, *, confirmed=False):
+    if count is None:
+        return _("Nicht verfügbar")
     count = max(0, int(count or 0))
-    noun = "bestätigte Interessierte" if confirmed else "Interessierte"
     if 0 < count < 3:
-        return f"< 3 {noun}"
-    return f"{count} {noun}"
+        # Preserve the existing privacy threshold; never expose an exact count.
+        return (
+            _("< 3 bestätigte Interessierte") if confirmed else _("< 3 Interessierte")
+        )
+    if confirmed:
+        return ngettext(
+            "%(num)s bestätigte Interessierte",
+            "%(num)s bestätigte Interessierte",
+            count,
+        )
+    return ngettext("%(num)s Interessierte", "%(num)s Interessierte", count)
 
 
 @municipality_bp.route("/verzeichnis")
@@ -369,16 +402,23 @@ def verzeichnis():
             if query.lower() in (profile.get("name", "") or "").lower()
         ]
     ranking_rows = {row["bfs_number"]: row for row in Ranking.load().national()}
-    interest_counts = db.get_interest_counts_by_bfs()
+    try:
+        interest_counts = db.get_interest_counts_by_bfs(strict=True)
+    except db.InterestReadUnavailable:
+        interest_counts = None
     for profile in profiles:
         row = ranking_rows.get(profile.get("bfs_number"), {})
         profile["pv_rank"] = row.get("rank")
         profile["display_score"] = row.get("display_score")
         profile["score_over_100"] = row.get("score_over_100")
-        interest_count = interest_counts.get(profile.get("bfs_number"), 0)
+        interest_count = (
+            interest_counts.get(profile.get("bfs_number"), 0)
+            if interest_counts is not None
+            else None
+        )
         profile["interest_count"] = interest_count
         profile["interest_label"] = _public_interest_label(interest_count)
-    if order_by == "interest":
+    if order_by == "interest" and interest_counts is not None:
         profiles.sort(
             key=lambda profile: (
                 -(
@@ -394,10 +434,11 @@ def verzeichnis():
         profiles=profiles,
         kanton=kanton,
         query=query,
-        sort=order_by,
+        sort="name" if order_by == "interest" and interest_counts is None else order_by,
+        interest_available=interest_counts is not None,
         site_url=request.url_root.rstrip("/"),
         canton_options=[
-            ("all", "Alle Kantone"),
+            ("all", gettext_noop("Alle Kantone")),
             *((code, code) for code in sorted(SWISS_CANTONS)),
         ],
         canonical_path="/gemeinde/verzeichnis",

@@ -5,11 +5,11 @@
 
 {% block meta %}
 {{ page_meta(
-  title="Datenschutz | " ~ platform_name,
-  description="Datenschutzerklärung von " ~ platform_name ~ ": welche Daten wir nutzen, warum wir sie brauchen und wie Sie Auskunft oder Löschung verlangen.",
+  title=_("Datenschutz | %(platform)s", platform=platform_name),
+  description=_("Datenschutzerklärung von %(platform)s: welche Daten wir nutzen, warum wir sie brauchen und wie Sie Auskunft oder Löschung verlangen.", platform=platform_name),
   path="/datenschutz",
-  og_title="Datenschutz | " ~ platform_name,
-  og_description="Welche Daten " ~ platform_name ~ " nutzt und wie Sie die Kontrolle behalten.",
+  og_title=_("Datenschutz | %(platform)s", platform=platform_name),
+  og_description=_("Welche Daten %(platform)s nutzt und wie Sie die Kontrolle behalten.", platform=platform_name),
   og_type="article",
   robots="index, follow",
   site_url=site_url,
@@ -18,71 +18,66 @@
 
 {% block content %}
   <div class="max-w-3xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold mb-4">Datenschutz</h1>
+    <h1 class="text-2xl font-bold mb-4">{{ _("Datenschutz") }}</h1>
 
     <p class="mb-4">
-      Diese Datenschutzerklärung sagt, welche Personendaten {{ platform_name }} nutzt,
-      warum wir sie brauchen und wie Sie Auskunft, Korrektur oder Löschung verlangen.
+      {{ _("Diese Datenschutzerklärung sagt, welche Personendaten %(platform)s nutzt, warum wir sie brauchen und wie Sie Auskunft, Korrektur oder Löschung verlangen.", platform=platform_name) }}
     </p>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">1. Verantwortliche Stelle</h2>
+    <h2 class="text-xl font-semibold mt-6 mb-2">{{ _("1. Verantwortliche Stelle") }}</h2>
     <p class="mb-4">
       {{ platform_name }}<br>
       Sihl Icon Valley @ <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
     </p>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">2. Verarbeitete Daten</h2>
+    <h2 class="text-xl font-semibold mt-6 mb-2">{{ _("2. Verarbeitete Daten") }}</h2>
     <ul class="list-disc ml-6 mb-4">
-      <li>E-Mail-Adresse (zur Kontaktaufnahme und Verifikation)</li>
-      <li>Adresse oder, falls die Adressprüfung nicht gelingt, Postleitzahl und Gemeinde</li>
-      <li>Amtliche Gemeindenummer (BFS), Kanton und freiwillige Angaben zu Rolle und Solaranlage</li>
-      <li>Systemdaten (Server-Logs, Zeitstempel für Bestätigungen)</li>
+      <li>{{ _("E-Mail-Adresse (zur Kontaktaufnahme und Verifikation)") }}</li>
+      <li>{{ _("Adresse oder, falls die Adressprüfung nicht gelingt, Postleitzahl und Gemeinde") }}</li>
+      <li>{{ _("Amtliche Gemeindenummer (BFS), Kanton und freiwillige Angaben zu Rolle und Solaranlage") }}</li>
+      <li>{{ _("Systemdaten (Server-Logs, Zeitstempel für Bestätigungen)") }}</li>
     </ul>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">3. Zweck der Verarbeitung</h2>
+    <h2 class="text-xl font-semibold mt-6 mb-2">{{ _("3. Zweck der Verarbeitung") }}</h2>
     <ul class="list-disc ml-6 mb-4">
-      <li>Ermittlung von bestätigtem Interesse innerhalb einer politischen Gemeinde</li>
-      <li>Bestätigung per E-Mail und Benachrichtigung bei neuen bestätigten Interessenmeldungen</li>
-      <li>Öffentliche, anonymisierte Gemeindezählung; bei weniger als drei Personen zeigen wir nur «&lt; 3»</li>
-      <li>Anonymisierte Kartendarstellung nur mit Ihrer freiwilligen Einwilligung</li>
+      <li>{{ _("Ermittlung von bestätigtem Interesse innerhalb einer politischen Gemeinde") }}</li>
+      <li>{{ _("Bestätigung per E-Mail und Benachrichtigung bei neuen bestätigten Interessenmeldungen") }}</li>
+      <li>{{ _("Öffentliche, anonymisierte Gemeindezählung; bei weniger als drei Personen zeigen wir nur «< 3»") }}</li>
+      <li>{{ _("Anonymisierte Kartendarstellung nur mit Ihrer freiwilligen Einwilligung") }}</li>
     </ul>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">4. Rechtsgrundlagen</h2>
+    <h2 class="text-xl font-semibold mt-6 mb-2">{{ _("4. Rechtsgrundlagen") }}</h2>
     <p class="mb-4">
-      Wir verarbeiten Ihre Daten, um den von Ihnen angefragten Dienst zu erbringen, und auf Basis Ihrer Einwilligung
-      (z. B. Klick auf den Bestätigungslink).
+      {{ _("Wir verarbeiten Ihre Daten, um den von Ihnen angefragten Dienst zu erbringen, und auf Basis Ihrer Einwilligung\n      (z. B. Klick auf den Bestätigungslink).") }}
     </p>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">5. Weitergabe</h2>
+    <h2 class="text-xl font-semibold mt-6 mb-2">{{ _("5. Weitergabe") }}</h2>
     <p class="mb-4">
-      Wir geben Personendaten nur dann an Dritte weiter, wenn dies für den Betrieb notwendig ist
-      (z. B. Hosting-Provider) oder Sie explizit zugestimmt haben (Austausch von Kontaktdaten nach beidseitiger Bestätigung).
-      Gemeinden und Netzbetreiber erhalten von uns keine Namen, Adressen oder Kontaktdaten. Das Gemeinde-Dashboard zeigt nur zusammengefasste Zahlen.
+      {{ _("Wir geben Personendaten nur dann an Dritte weiter, wenn dies für den Betrieb notwendig ist\n      (z. B. Hosting-Provider) oder Sie explizit zugestimmt haben (Austausch von Kontaktdaten nach beidseitiger Bestätigung).\n      Gemeinden und Netzbetreiber erhalten von uns keine Namen, Adressen oder Kontaktdaten. Das Gemeinde-Dashboard zeigt nur zusammengefasste Zahlen.") }}
     </p>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">6. Speicherdauer</h2>
+    <h2 class="text-xl font-semibold mt-6 mb-2">{{ _("6. Speicherdauer") }}</h2>
     <p class="mb-4">
-      Nicht bestätigte Interessenmeldungen löschen wir nach 30 Tagen. Bestätigte Meldungen zu einer nicht aufgelösten Adresse löschen wir nach zwölf Monaten.
-      Ein bestätigtes Adressprofil bleibt bis zur Abmeldung bestehen. Gesetzliche Aufbewahrungspflichten für spätere Abrechnungsdaten bleiben vorbehalten.
+      {{ _("Nicht bestätigte Interessenmeldungen löschen wir nach 30 Tagen. Bestätigte Meldungen zu einer nicht aufgelösten Adresse löschen wir nach zwölf Monaten.\n      Ein bestätigtes Adressprofil bleibt bis zur Abmeldung bestehen. Gesetzliche Aufbewahrungspflichten für spätere Abrechnungsdaten bleiben vorbehalten.") }}
     </p>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">7. Sicherheit</h2>
+    <h2 class="text-xl font-semibold mt-6 mb-2">{{ _("7. Sicherheit") }}</h2>
     <p class="mb-4">
-      Wir schützen Daten mit technischen und organisatorischen Massnahmen vor Verlust, Missbrauch und unbefugtem Zugriff.
+      {{ _("Wir schützen Daten mit technischen und organisatorischen Massnahmen vor Verlust, Missbrauch und unbefugtem Zugriff.") }}
     </p>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">8. Ihre Rechte</h2>
+    <h2 class="text-xl font-semibold mt-6 mb-2">{{ _("8. Ihre Rechte") }}</h2>
     <ul class="list-disc ml-6 mb-4">
-      <li>Auskunft, Berichtigung, Löschung</li>
-      <li>Widerruf erteilter Einwilligungen für künftige Verarbeitungen</li>
-      <li>Beschwerderecht bei einer Aufsichtsbehörde</li>
+      <li>{{ _("Auskunft, Berichtigung, Löschung") }}</li>
+      <li>{{ _("Widerruf erteilter Einwilligungen für künftige Verarbeitungen") }}</li>
+      <li>{{ _("Beschwerderecht bei einer Aufsichtsbehörde") }}</li>
     </ul>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">9. Kontakt</h2>
+    <h2 class="text-xl font-semibold mt-6 mb-2">{{ _("9. Kontakt") }}</h2>
     <p class="mb-4">
-      Für Anfragen wenden Sie sich bitte an: <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
+      {{ _("Für Anfragen wenden Sie sich bitte an:") }} <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
     </p>
 
-    <a href="/" class="inline-block mt-6 text-sm underline">Zurück zur Startseite</a>
+    <a href="/" class="inline-block mt-6 text-sm underline">{{ _("Zurück zur Startseite") }}</a>
   </div>
 {% endblock %}

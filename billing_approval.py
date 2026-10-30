@@ -15,13 +15,22 @@ from decimal import ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
 
 import billing_policy
+import quartierakku
 
 _CENT = Decimal("0.01")
 _KWH_QUANTUM = Decimal("0.000001")
 
 _FINGERPRINT_PATTERN = re.compile(r"[0-9a-f]{64}")
 
-_ALLOWED_ITEM_TYPES = ("consumer_charge", "producer_credit", "rounding_adjustment")
+_ALLOWED_ITEM_TYPES = (
+    "consumer_charge",
+    "producer_credit",
+    "rounding_adjustment",
+    "settlement_fee",
+    "battery_cost_share",
+)
+
+_ENERGY_ITEM_TYPES = ("consumer_charge", "producer_credit")
 
 
 class BillingApprovalError(RuntimeError):
@@ -134,12 +143,14 @@ def _require_finite_decimal(value, message):
     return number
 
 
-def _validated_difference(node, vnb_key, engine_key, difference_key):
-    """Require finite vnb/engine evidence and a documented true zero gap.
+def _validated_difference(
+    node, vnb_key, engine_key, difference_key, *, vnb_basis=False
+):
+    """Require the documented model gap at six-decimal persisted precision.
 
-    The difference must equal engine minus vnb at the 6-decimal persisted
-    precision and must be exactly zero. Returns the engine value for the
-    cross-check against billed quantities.
+    Legacy billing requires a zero gap and prices the engine quantity. An
+    independently verified E66 certificate permits a truthful model gap and
+    prices the VNB quantity.
     """
     for key in (vnb_key, engine_key, difference_key):
         if key not in node:
@@ -152,12 +163,18 @@ def _validated_difference(node, vnb_key, engine_key, difference_key):
     )
     difference = _as_decimal(node[difference_key])
     expected = (engine - vnb).quantize(_KWH_QUANTUM, rounding=ROUND_HALF_UP)
-    if not difference.is_finite() or difference != expected or difference != 0:
+    if (
+        not difference.is_finite()
+        or difference != expected
+        or (not vnb_basis and difference != 0)
+    ):
         raise BillingApprovalError("Der Abgleich zwischen OpenLEG und VNB weicht ab.")
-    return engine
+    return vnb if vnb_basis else engine
 
 
-def _require_canonical_reconciliation(reconciliation, consumption_kwh, production_kwh):
+def _require_canonical_reconciliation(
+    reconciliation, consumption_kwh, production_kwh, *, vnb_basis=False
+):
     """Require the complete reconcile_with_vnb evidence, cross-checked.
 
     Canonical contract: top-level vnb/engine totals for allocation and
@@ -178,12 +195,14 @@ def _require_canonical_reconciliation(reconciliation, consumption_kwh, productio
             "vnb_allocated_kwh",
             "engine_allocated_kwh",
             "difference_kwh",
+            vnb_basis=vnb_basis,
         )
         engine_production = _validated_difference(
             reconciliation,
             "vnb_production_kwh",
             "engine_production_kwh",
             "production_difference_kwh",
+            vnb_basis=vnb_basis,
         )
     except ArithmeticError:
         raise BillingApprovalError(
@@ -210,7 +229,11 @@ def _require_canonical_reconciliation(reconciliation, consumption_kwh, productio
                 )
             try:
                 engine_kwh = _validated_difference(
-                    entry, "vnb_kwh", "engine_kwh", "difference_kwh"
+                    entry,
+                    "vnb_kwh",
+                    "engine_kwh",
+                    "difference_kwh",
+                    vnb_basis=vnb_basis,
                 )
             except ArithmeticError:
                 raise BillingApprovalError(
@@ -235,7 +258,7 @@ def _require_canonical_reconciliation(reconciliation, consumption_kwh, productio
         ) from None
 
 
-def _validated_line_item(item, internal_price):
+def _validated_line_item(item, internal_price, settlement_fee):
     """Require one line item's exact shape and money; return the values.
 
     Validates the dict structure, the participant id (a non-empty string
@@ -244,9 +267,10 @@ def _validated_line_item(item, internal_price):
     most 6 amount decimals. A standard line carries a finite non-negative
     quantity and unit price equal to the policy internal price, with an
     amount equal to quantity times price at 6-decimal precision (negated
-    for producer credits). Returns ``(participant_id, item_type, amount,
-    quantity)`` for the aggregation; ``quantity`` is ``None`` for rounding
-    adjustments.
+    for producer credits). A settlement fee line prices the settled energy
+    at the policy settlement fee instead. Returns ``(participant_id,
+    item_type, amount, quantity)`` for the aggregation; ``quantity`` is
+    ``None`` for rounding adjustments.
     """
     if not isinstance(item, dict):
         raise BillingApprovalError(
@@ -281,6 +305,23 @@ def _validated_line_item(item, internal_price):
                 "Der Rundungsausgleich darf höchstens 6 Dezimalstellen haben."
             )
         return participant_id, item_type, amount, None
+    if item_type == "battery_cost_share":
+        if (
+            item.get("quantity_kwh") is not None
+            or item.get("unit_price_chf_per_kwh") is not None
+        ):
+            raise BillingApprovalError(
+                "Ein Quartierakku-Anteil darf weder Menge noch Preis tragen."
+            )
+        if amount < 0:
+            raise BillingApprovalError(
+                "Ein Quartierakku-Anteil darf keinen negativen Betrag haben."
+            )
+        if _exceeds_precision(amount, 6):
+            raise BillingApprovalError(
+                "Der Quartierakku-Anteil darf höchstens 6 Dezimalstellen haben."
+            )
+        return participant_id, item_type, amount, None
     quantity = _require_finite_decimal(
         item.get("quantity_kwh"),
         "Eine Abrechnungsposition hat keine gültige Menge.",
@@ -293,7 +334,8 @@ def _validated_line_item(item, internal_price):
         raise BillingApprovalError(
             "Menge und Preis einer Abrechnungsposition müssen nicht-negativ sein."
         )
-    if unit_price != internal_price:
+    policy_price = settlement_fee if item_type == "settlement_fee" else internal_price
+    if unit_price != policy_price:
         raise BillingApprovalError(
             "Der Preis einer Abrechnungsposition weicht von der Richtlinie ab."
         )
@@ -380,23 +422,25 @@ def _require_rounding_adjustment(
             )
 
 
-def _require_wellformed_line_items(line_items, internal_price):
+def _require_wellformed_line_items(line_items, internal_price, settlement_fee):
     """Fail closed on anything but the exact shapes the billing engine emits.
 
     Consumer charges and producer credits carry a finite non-negative
     quantity, the policy internal unit price, and an amount equal to quantity
     times price at 6-decimal precision (non-negative for consumers,
-    non-positive for producers). Non-rounding lines must be unique per
-    (participant_id, item_type). The total billed consumer and producer
-    quantities must conserve allocated energy
-    within the aggregate rounding tolerance of 0.5e-6 kWh per non-rounding
-    line. A rounding adjustment is permitted only when producer credits exist,
-    it is assigned to the deterministic minimum producer participant id, its
-    amount is exactly the negative of the non-rounding total at persisted
-    6-decimal precision, its magnitude does not exceed the derived monetary
-    residue bound, and at most one exists. Returns ``(line_items,
-    consumption_kwh, production_kwh)`` with the billed quantity per participant
-    for the reconciliation cross-check.
+    non-positive for producers). A settlement fee line carries the policy
+    settlement fee price and the same quantity as the participant's billed
+    energy; its amounts stay outside the rounding pool. Non-rounding lines
+    must be unique per (participant_id, item_type). The total billed consumer
+    and producer quantities must conserve allocated energy within the
+    aggregate rounding tolerance of 0.5e-6 kWh per non-rounding line. A
+    rounding adjustment is permitted only when producer credits exist, it is
+    assigned to the deterministic minimum producer participant id, its amount
+    is exactly the negative of the non-rounding total at persisted 6-decimal
+    precision, its magnitude does not exceed the derived monetary residue
+    bound, and at most one exists. Returns ``(line_items, consumption_kwh,
+    production_kwh)`` with the billed quantity per participant for the
+    reconciliation cross-check.
     """
     if isinstance(line_items, (list, tuple)) and not line_items:
         raise BillingApprovalError("Der Abrechnungsentwurf hat keine Positionen.")
@@ -406,6 +450,8 @@ def _require_wellformed_line_items(line_items, internal_price):
         )
     consumption_kwh = {}
     production_kwh = {}
+    settlement_quantities = {}
+    battery_items = []
     rounding_items = []
     non_rounding_total = Decimal(0)
     consumer_count = 0
@@ -416,10 +462,12 @@ def _require_wellformed_line_items(line_items, internal_price):
 
     for item in line_items:
         participant_id, item_type, amount, quantity = _validated_line_item(
-            item, internal_price
+            item, internal_price, settlement_fee
         )
         if item_type == "rounding_adjustment":
             rounding_items.append(item)
+        elif item_type == "battery_cost_share":
+            battery_items.append(item)
         else:
             item_key = (participant_id, item_type)
             if item_key in seen_non_rounding_keys:
@@ -442,6 +490,13 @@ def _require_wellformed_line_items(line_items, internal_price):
                     raise BillingApprovalError(
                         "Die abgerechneten Energiemengen sind nicht ausgeglichen."
                     ) from None
+            elif item_type == "settlement_fee":
+                if amount < 0:
+                    raise BillingApprovalError(
+                        "Eine Abrechnungsposition muss einen nicht-negativen "
+                        "Betrag haben."
+                    )
+                settlement_quantities[participant_id] = quantity
             else:
                 if amount > 0:
                     raise BillingApprovalError(
@@ -458,7 +513,11 @@ def _require_wellformed_line_items(line_items, internal_price):
                     raise BillingApprovalError(
                         "Die abgerechneten Energiemengen sind nicht ausgeglichen."
                     ) from None
-        if item_type != "rounding_adjustment":
+        if item_type not in (
+            "rounding_adjustment",
+            "settlement_fee",
+            "battery_cost_share",
+        ):
             try:
                 non_rounding_total += amount
             except ArithmeticError:
@@ -489,6 +548,20 @@ def _require_wellformed_line_items(line_items, internal_price):
             "Der Rundungsausgleich enthält einen ungültigen Betrag."
         ) from None
 
+    if settlement_fee == 0 and settlement_quantities:
+        raise BillingApprovalError("Das Abrechnungsentgelt passt nicht zur Richtlinie.")
+    if settlement_fee != 0:
+        for participant_id, fee_quantity in settlement_quantities.items():
+            if consumption_kwh.get(participant_id) != fee_quantity:
+                raise BillingApprovalError(
+                    "Das Abrechnungsentgelt passt nicht zur abgerechneten Energie."
+                )
+        for participant_id, billed_quantity in consumption_kwh.items():
+            if settlement_quantities.get(participant_id) != billed_quantity:
+                raise BillingApprovalError(
+                    "Das Abrechnungsentgelt passt nicht zur abgerechneten Energie."
+                )
+
     producer_ids = list(production_kwh.keys())
     if not producer_ids:
         if rounding_items:
@@ -504,6 +577,170 @@ def _require_wellformed_line_items(line_items, internal_price):
     return line_items, consumption_kwh, production_kwh
 
 
+def _require_battery_energy_snapshot(
+    battery_snapshot, battery, consumption_kwh, production_kwh, internal_price
+):
+    """Reconcile the frozen source attribution with approved energy lines."""
+    participant_id = battery["participant_id"]
+    energy = battery_snapshot.get("energy")
+    attribution = battery_snapshot.get("attribution")
+    if not isinstance(energy, dict) or not isinstance(attribution, dict):
+        raise BillingApprovalError(
+            "Die Energieaufteilung des Quartierakkus ist unvollständig."
+        )
+
+    def quantity(container, key, *, signed=False):
+        value = _as_decimal(container.get(key))
+        if (
+            not value.is_finite()
+            or _exceeds_precision(value, 6)
+            or (not signed and value < 0)
+        ):
+            raise BillingApprovalError(
+                "Die Energieaufteilung des Quartierakkus ist ungültig."
+            )
+        return value
+
+    charged = quantity(energy, "charged_kwh")
+    discharged = quantity(energy, "discharged_kwh")
+    difference = quantity(energy, "charge_discharge_difference_kwh", signed=True)
+    allocated = quantity(energy, "allocated_battery_kwh")
+    unallocated = quantity(energy, "unallocated_discharge_kwh")
+    if difference != charged - discharged or unallocated != discharged - allocated:
+        raise BillingApprovalError(
+            "Die Energiebilanz des Quartierakkus ist nicht ausgeglichen."
+        )
+
+    expected_consumers = set(consumption_kwh) - {participant_id}
+    if set(attribution) != expected_consumers:
+        raise BillingApprovalError(
+            "Die Energieaufteilung des Quartierakkus deckt die Teilnehmer nicht ab."
+        )
+    attributed_battery = Decimal(0)
+    for consumer_id in sorted(expected_consumers):
+        values = attribution.get(consumer_id)
+        if not isinstance(values, dict):
+            raise BillingApprovalError(
+                "Die Energieaufteilung des Quartierakkus ist ungültig."
+            )
+        direct = quantity(values, "direct_solar_kwh")
+        battery_kwh = quantity(values, "battery_kwh")
+        value_chf = quantity(values, "value_chf")
+        expected_value = (battery_kwh * internal_price).quantize(
+            _CENT, rounding=ROUND_HALF_UP
+        )
+        if value_chf != expected_value:
+            raise BillingApprovalError(
+                "Der Wert der Quartierakku-Energie stimmt nicht mit dem Entwurf überein."
+            )
+        if direct + battery_kwh != consumption_kwh[consumer_id]:
+            raise BillingApprovalError(
+                "Die Energiequellen des Quartierakkus stimmen für einen "
+                "Teilnehmer nicht mit dem Entwurf überein."
+            )
+        attributed_battery += battery_kwh
+
+    if (
+        attributed_battery != allocated
+        or production_kwh.get(participant_id) != allocated
+        or participant_id not in consumption_kwh
+        or consumption_kwh[participant_id] > charged
+    ):
+        raise BillingApprovalError(
+            "Die Energieaufteilung des Quartierakkus stimmt nicht mit dem Entwurf überein."
+        )
+
+
+def _require_battery_cost_shares(
+    period, community_id, line_items, consumption_kwh, production_kwh
+):
+    """Require the battery cost shares the frozen asset config implies.
+
+    A draft without a battery snapshot may carry no battery lines. With one,
+    the config must be complete, name this community, and cover every billed
+    participant with exactly one cost-share line whose amount equals the
+    frozen annual cost times the frozen share at persisted precision.
+    """
+    battery_snapshot = period.get("battery_snapshot")
+    if battery_snapshot is None:
+        if any(item.get("item_type") == "battery_cost_share" for item in line_items):
+            raise BillingApprovalError(
+                "Ein Quartierakku-Anteil passt nicht zum Entwurf."
+            )
+        return
+    try:
+        battery = quartierakku.validate_battery_config(battery_snapshot)
+    except quartierakku.InvalidBatteryConfig as exc:
+        raise BillingApprovalError(str(exc)) from exc
+    if battery.get("community_id") != community_id:
+        raise BillingApprovalError(
+            "Der Quartierakku gehört nicht zur Community des Entwurfs."
+        )
+    expected_fraction = quartierakku.period_fraction(
+        period.get("period_start"), period.get("period_end")
+    )
+    period_start = period.get("period_start")
+    period_end = period.get("period_end")
+    period_start_text = (
+        period_start.isoformat() if hasattr(period_start, "isoformat") else period_start
+    )
+    period_end_text = (
+        period_end.isoformat() if hasattr(period_end, "isoformat") else period_end
+    )
+    if (
+        battery_snapshot.get("period_start") != period_start_text
+        or battery_snapshot.get("period_end") != period_end_text
+        or _as_decimal(battery_snapshot.get("period_fraction")) != expected_fraction
+    ):
+        raise BillingApprovalError(
+            "Die Abrechnungsperiode des Quartierakkus stimmt nicht mit dem Entwurf überein."
+        )
+    battery_participant_id = battery.get("participant_id")
+    billed = {
+        item["participant_id"]
+        for item in line_items
+        if item["participant_id"] != battery_participant_id
+    }
+    share_lines = [
+        item for item in line_items if item.get("item_type") == "battery_cost_share"
+    ]
+    share_participants = [item["participant_id"] for item in share_lines]
+    if (
+        len(share_participants) != len(set(share_participants))
+        or set(share_participants) != billed
+    ):
+        raise BillingApprovalError(
+            "Der Quartierakku ist unvollständig konfiguriert: Jeder "
+            "beteiligte Teilnehmer braucht genau einen Anteil."
+        )
+    for item in share_lines:
+        share = battery["shares"].get(item["participant_id"])
+        if share is None:
+            raise BillingApprovalError(
+                "Der Quartierakku ist unvollständig konfiguriert: Teilnehmer "
+                f"{item['participant_id']} hat keinen Anteil."
+            )
+        expected = quartierakku.period_cost_share_chf(
+            battery["annual_cost_chf"],
+            share,
+            period.get("period_start"),
+            period.get("period_end"),
+        )
+        amount = _as_decimal(item.get("amount_chf"))
+        if amount != expected:
+            raise BillingApprovalError(
+                "Der Quartierakku-Anteil entspricht nicht der gespeicherten "
+                "Kostenaufteilung."
+            )
+    _require_battery_energy_snapshot(
+        battery_snapshot,
+        battery,
+        consumption_kwh,
+        production_kwh,
+        _as_decimal(period["billing_policy_snapshot"]["internal_price_chf_per_kwh"]),
+    )
+
+
 def _exceeds_precision(value, places):
     """Return whether a finite decimal carries more than ``places`` decimals."""
     return -value.as_tuple().exponent > places
@@ -516,7 +753,8 @@ def _require_valid_policy(policy, period_start, community_id):
     the rules the policy form enforces, including the persisted precision of
     the money fields, and the snapshot must name the period's community. The
     snapshot is only read, never mutated. Returns the validated
-    ``(vat_rate, payment_days, internal_price)`` triple.
+    ``(vat_rate, payment_days, internal_price, settlement_fee)`` tuple; a
+    snapshot frozen before the settlement fee existed reads as zero.
     """
     try:
         validated = billing_policy.validate_persisted_policy(
@@ -528,10 +766,11 @@ def _require_valid_policy(policy, period_start, community_id):
         validated["vat_rate_pct"],
         validated["payment_days"],
         validated["internal_price_chf_per_kwh"],
+        validated["settlement_fee_chf_per_kwh"],
     )
 
 
-def prepare_invoice_snapshots(period, issue_date=None):
+def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None):
     """Build one immutable invoice snapshot per billed participant.
 
     Fails closed with :class:`BillingApprovalError` unless the period is a
@@ -552,14 +791,41 @@ def prepare_invoice_snapshots(period, issue_date=None):
     source_document_ids = _require_source_document_ids(
         period.get("source_document_ids")
     )
-    vat_rate, payment_days, internal_price = _require_valid_policy(
+    vat_rate, payment_days, internal_price, settlement_fee = _require_valid_policy(
         period.get("billing_policy_snapshot"), period_start, community_id
     )
     line_items, consumption_kwh, production_kwh = _require_wellformed_line_items(
-        period.get("line_items"), internal_price
+        period.get("line_items"), internal_price, settlement_fee
     )
     reconciliation = period.get("reconciliation")
-    _require_canonical_reconciliation(reconciliation, consumption_kwh, production_kwh)
+    vnb_basis = (
+        isinstance(reconciliation, dict) and "precision_policy" in reconciliation
+    )
+    e66_source = (
+        isinstance(calculated_values, dict)
+        and calculated_values.get("format_version") == "e66/1"
+    )
+    if vnb_basis or e66_source:
+        import billing_reconciliation
+
+        try:
+            billing_reconciliation.validate_billed_source(
+                period,
+                calculated_values,
+                consumption_kwh,
+                production_kwh,
+                require_certificate=vnb_basis,
+            )
+        except billing_reconciliation.ReconciliationError:
+            raise BillingApprovalError(
+                "Der VNB-Beleg bestätigt diese Mengen nicht."
+            ) from None
+    _require_canonical_reconciliation(
+        reconciliation, consumption_kwh, production_kwh, vnb_basis=vnb_basis
+    )
+    _require_battery_cost_shares(
+        period, community_id, line_items, consumption_kwh, production_kwh
+    )
 
     policy = period["billing_policy_snapshot"]
     due_date = issue_date + timedelta(days=payment_days)
@@ -581,6 +847,59 @@ def prepare_invoice_snapshots(period, issue_date=None):
             None,
         )
         participant_provenance = dict(provenance)
+        if vnb_basis:
+            participant_provenance["reconciliation"] = {
+                **provenance["reconciliation"],
+                "precision_policy": {
+                    key: value
+                    for key, value in reconciliation["precision_policy"].items()
+                    if key != "intervals"
+                },
+            }
+        if reconciliation.get("source_evidence"):
+            source = reconciliation["source_evidence"]
+            metadata = source["metadata"]
+            participant_provenance["reconciliation"] = {
+                **participant_provenance["reconciliation"],
+                "per_participant": {
+                    key: value
+                    for key, value in reconciliation["per_participant"].items()
+                    if key == participant_id
+                },
+                "production_per_participant": {
+                    key: value
+                    for key, value in reconciliation[
+                        "production_per_participant"
+                    ].items()
+                    if key == participant_id
+                },
+                "source_evidence": {
+                    **source,
+                    "metadata": {
+                        **{
+                            key: metadata[key]
+                            for key in (
+                                "document_status",
+                                "evidence_sha256",
+                                "sender_id",
+                                "receiver_id",
+                                "document_created_at",
+                                "vnb_community_id",
+                                "precision",
+                                "quality_policy",
+                                "channel_balance_policy",
+                                "products",
+                            )
+                            if key in metadata
+                        },
+                        "mappings": [
+                            mapping
+                            for mapping in metadata["mappings"]
+                            if mapping["building_id"] == participant_id
+                        ],
+                    },
+                },
+            }
         participant_provenance["rounding_adjustment"] = (
             {
                 "participant_id": participant_id,
@@ -589,6 +908,16 @@ def prepare_invoice_snapshots(period, issue_date=None):
             if participant_rounding
             else None
         )
+        battery_snapshot = period.get("battery_snapshot")
+        battery_source = None
+        if battery_snapshot is not None:
+            attribution = battery_snapshot["attribution"].get(participant_id)
+            if attribution is not None:
+                battery_source = {
+                    "battery_kwh": attribution["battery_kwh"],
+                    "value_chf": attribution["value_chf"],
+                }
+        participant_provenance["battery_source"] = _json_safe(battery_source)
         net = sum((_as_decimal(item.get("amount_chf")) for item in items), Decimal(0))
         if not net.is_finite():
             raise BillingApprovalError(

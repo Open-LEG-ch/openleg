@@ -11,7 +11,7 @@ import logging
 import subprocess
 import sys
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -20,7 +20,7 @@ import pytest
 import database
 from store import metering
 
-MEASURED_AT = datetime(2026, 1, 5, 23, 0, tzinfo=timezone.utc)
+MEASURED_AT = datetime(2026, 1, 5, 23, 0, tzinfo=UTC)
 POINT = "CH000000000000000000000000000001"
 
 
@@ -121,6 +121,7 @@ def _capture_execute_values(monkeypatch, returned):
 def test_database_reexports_are_identical_objects():
     for name in (
         "get_billable_period_snapshot",
+        "get_building_period_readings",
         "upsert_metering_points",
         "get_metering_points",
         "get_metering_point",
@@ -607,7 +608,7 @@ def test_record_sdat_import_passes_the_complete_ledger_record(monkeypatch):
     cur = _FakeCursor()
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    created_at = datetime(2026, 1, 6, 1, 0, tzinfo=timezone.utc)
+    created_at = datetime(2026, 1, 6, 1, 0, tzinfo=UTC)
     period_end = MEASURED_AT + timedelta(days=5)
     result = metering.record_sdat_import(
         {
@@ -772,6 +773,51 @@ def test_period_readings_convert_numerics_to_float(monkeypatch):
 
     assert isinstance(readings[0]["total_kwh"], float)
     assert not isinstance(readings[0]["total_kwh"], Decimal)
+
+
+def test_building_period_readings_are_scoped_to_the_callers_building(monkeypatch):
+    """A member reads their own building's readings only: the join filters on
+    the caller's building_id in the same query, never on a client-side filter."""
+    cur = _FakeCursor(
+        rows=[_row()],
+        required_sql=("mp.building_id = %s", "measured_at >= %s", "measured_at < %s"),
+        expected_params=(
+            "BUILDING-1",
+            MEASURED_AT,
+            MEASURED_AT + timedelta(minutes=15),
+        ),
+    )
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    readings = metering.get_building_period_readings(
+        "BUILDING-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
+    )
+
+    assert len(readings) == 1
+    assert readings[0]["metering_point_id"] == POINT
+
+
+def test_building_period_readings_keep_decimal_channels(monkeypatch):
+    """The savings display rounds its own money; the store hands Decimals on."""
+    cur = _FakeCursor(rows=[_row(total="0.500")])
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    readings = metering.get_building_period_readings(
+        "BUILDING-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
+    )
+
+    assert isinstance(readings[0]["total_kwh"], Decimal)
+    assert isinstance(readings[0]["community_kwh"], Decimal)
+
+
+def test_building_period_readings_propagate_storage_failure(monkeypatch):
+    """A member display must not dress a database outage up as an empty period."""
+    monkeypatch.setattr(database, "get_connection", _broken_conn())
+
+    with pytest.raises(RuntimeError, match="db down"):
+        metering.get_building_period_readings(
+            "BUILDING-1", MEASURED_AT, MEASURED_AT + timedelta(minutes=15)
+        )
 
 
 def test_reading_stats_return_the_database_aggregate(monkeypatch):
@@ -1185,12 +1231,17 @@ def test_record_sdat_veracity_flags_clears_stale_flags_without_new_ones(monkeypa
     assert "DELETE FROM sdat_veracity_flags" in cur.executed[0][0]
 
 
-def test_record_sdat_veracity_flags_swallows_errors(monkeypatch):
+def test_record_sdat_veracity_flags_swallows_errors(monkeypatch, caplog):
     cur = _FakeCursor()
     cur.execute = lambda *_: (_ for _ in ()).throw(RuntimeError("db down"))
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    assert metering.record_sdat_veracity_flags("DOC-1", []) is False
+    with caplog.at_level(logging.ERROR):
+        assert metering.record_sdat_veracity_flags("DOC-1", []) is False
+
+    assert caplog.records[-1].getMessage() == (
+        "[DB] Error recording SDAT veracity flags: db down"
+    )
 
 
 def test_get_sdat_veracity_flags_reads_the_period_window(monkeypatch):
@@ -1218,12 +1269,17 @@ def test_get_sdat_veracity_flags_reads_the_period_window(monkeypatch):
     assert params == (MEASURED_AT, MEASURED_AT + timedelta(days=1))
 
 
-def test_get_sdat_veracity_flags_degrades_to_empty(monkeypatch):
+def test_get_sdat_veracity_flags_degrades_to_empty(monkeypatch, caplog):
     cur = _FakeCursor()
     cur.execute = lambda *_: (_ for _ in ()).throw(RuntimeError("db down"))
     monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
 
-    assert metering.get_sdat_veracity_flags(MEASURED_AT, MEASURED_AT) == []
+    with caplog.at_level(logging.ERROR):
+        assert metering.get_sdat_veracity_flags(MEASURED_AT, MEASURED_AT) == []
+
+    assert caplog.records[-1].getMessage() == (
+        "[DB] Error getting SDAT veracity flags: db down"
+    )
 
 
 def test_sdat_veracity_flags_table_exists_in_schema():

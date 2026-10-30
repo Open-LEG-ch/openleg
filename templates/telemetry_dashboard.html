@@ -1,0 +1,147 @@
+{% extends "product_base.html" %}
+
+{% block meta %}
+  <title>{{ _("Meine Messwerte") }} | {{ platform_name }}</title>
+  <meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
+{% block content %}
+{% set channel_labels = {
+  "pv_inverter": {"generation": _("PV-Erzeugung")},
+  "grid_connection": {"import": _("Netzbezug"), "export": _("Netzeinspeisung")},
+  "battery": {"stored": _("Batteriestand"), "charge": _("Batterieladung"), "discharge": _("Batterieentladung")},
+  "site": {"consumption": _("Standortverbrauch"), "generation": _("Standorterzeugung")},
+  "device": {"status": _("Gerätestatus")}
+} %}
+{% set metric_labels = {"power": _("Leistung"), "energy_counter": _("Zählerstand"), "interval_energy": _("Intervallenergie"), "state_of_charge": _("Ladezustand"), "device_fault": _("Störungsmeldung")} %}
+{% set quality_labels = {"measured": _("Gemessen"), "estimated": _("Geschätzt"), "unknown": _("Qualität unbekannt")} %}
+{% set freshness_labels = {"fresh": _("Aktuell"), "stale": _("Veraltet"), "unknown": _("Aktualität unbekannt"), "clock_skew": _("Zeitangabe prüfen")} %}
+{% set notice_titles = {
+  "collector_late": _("Keine neue Kollektor-Lieferung"),
+  "source_missing": _("Keine Messwerte im Aufbewahrungszeitraum verfügbar."),
+  "source_old": _("Veraltet"),
+  "source_channel_missing": _("Kein aktueller Wert"),
+  "source_unknown": _("Aktualität unbekannt"),
+  "source_clock": _("Zeitangabe prüfen"),
+  "device_fault": _("Gerät meldet eine Störung")
+} %}
+{% set notice_messages = {
+  "collector_late": _("Prüfen Sie den Kollektor und seine Verbindung."),
+  "source_missing": _("Prüfen Sie den Kollektor und seine Verbindung."),
+  "source_old": _("Messquelle liefert ältere Werte. Prüfen Sie Messquelle und Gerätezeit."),
+  "source_channel_missing": _("Für diesen Messkanal fehlen neue Daten. Prüfen Sie die Messquelle."),
+  "source_unknown": _("Prüfen Sie, ob die Messquelle Zeit und Qualität der Messung mitliefert."),
+  "source_clock": _("Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."),
+  "device_fault": _("Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers.")
+} %}
+<div class="max-w-6xl mx-auto px-4 pt-8 pb-16">
+  <a href="/dashboard" class="text-brand hover:underline">{{ _("Zurück zum Dashboard") }}</a>
+  <h1 class="text-3xl font-bold mt-4">{{ _("Meine Messwerte") }}</h1>
+  <p class="text-ink-muted mt-2">{{ _("Betriebsdaten Ihrer angemeldeten Anlagen. Für die Abrechnung gelten die validierten VNB-Messdaten.") }}</p>
+  <p class="text-sm text-ink-muted mt-2">{{ _("Alle Angaben gelten beim Laden dieser Seite. Jede Quelle wird einzeln angezeigt.") }}</p>
+  <a href="/dashboard/telemetry" class="inline-block mt-4 font-semibold text-brand hover:underline">{{ _("Messwerte aktualisieren") }}</a>
+  {% if unavailable %}
+    <section class="mt-6 bg-white rounded-xl border border-line p-6" role="alert">
+      <h2 class="text-lg font-bold">{{ _("Messwerte derzeit nicht verfügbar") }}</h2>
+      <p class="text-ink-muted mt-2">{{ _("Bitte laden Sie die Seite später erneut.") }}</p>
+    </section>
+  {% else %}
+    {% for installation in installations %}
+      <section class="mt-6 bg-white rounded-xl border border-line p-6" aria-labelledby="installation-{{ installation.id }}">
+        <h2 id="installation-{{ installation.id }}" class="text-xl font-bold wrap-break-word">{{ installation.name }}</h2>
+        <p class="text-sm text-ink-muted mt-2 wrap-break-word">{{ _("Quelle") }}: {{ installation.source_id }} · {{ _("Gerät") }}: {{ installation.device_id }}</p>
+        <p class="text-sm text-ink-muted">{{ _("Erwarteter Messtakt") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", installation.cadence_seconds, count=installation.cadence_seconds) }}</p>
+        {% if installation.notices %}
+          <h3 class="font-semibold mt-4">{{ _("Anlagenhinweise") }}</h3>
+          <p class="text-sm text-ink-muted">{{ _("Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt sichtbar.") }}</p>
+          {% for notice in installation.notices %}
+            <div class="mt-4 border-t border-line pt-4" role="status">
+              {% if notice.channel_key != "delivery" %}
+                {% set channel = notice.channel_key.split(":") %}
+                <p class="text-sm">{{ channel_labels[channel[1]][channel[2]] }} · {{ metric_labels[channel[0]] }}</p>
+              {% endif %}
+              {% if notice.active %}
+                {% if notice.attention_required %}
+                  <h4 class="font-semibold">{{ notice_titles[notice.kind] }}</h4>
+                  <p class="text-ink-muted">{{ notice_messages[notice.kind] }}</p>
+                  <form method="post" action="/dashboard/telemetry/{{ installation.id }}/notices/{{ notice.id }}/acknowledge" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="community_id" value="{{ installation.community_id }}">
+                    <input type="hidden" name="episode" value="{{ notice.episode }}">
+                    <button type="submit" class="text-brand font-semibold hover:underline">{{ _("Hinweis bestätigen") }}</button>
+                  </form>
+                {% else %}
+                  <h4 class="font-semibold">{{ _("Hinweis bestätigt") }}</h4>
+                  <p>{{ notice_titles[notice.kind] }}</p>
+                  <p class="text-sm text-ink-muted">{{ _("Bestätigt bis") }} <time datetime="{{ notice.snoozed_until }}">{{ notice.snoozed_label }}</time></p>
+                {% endif %}
+              {% elif notice.recovery == "device_report_clear" %}
+                <h4 class="font-semibold">{{ _("Gerät meldet keine Störung mehr") }}</h4>
+                <p class="text-ink-muted">{{ _("Die Messquelle hat die Störungsmeldung zurückgenommen.") }}</p>
+              {% elif notice.recovery == "readings_current" %}
+                <h4 class="font-semibold">{{ _("Messwerte wieder aktuell") }}</h4>
+                <p class="text-ink-muted">{{ _("Die Messquelle liefert wieder aktuelle Werte.") }}</p>
+              {% else %}
+                <h4 class="font-semibold">{{ _("Hinweisstatus geändert") }}</h4>
+                <p class="text-ink-muted">{{ _("Die Datenlage hat sich geändert. Prüfen Sie den aktuellen Messstatus.") }}</p>
+              {% endif %}
+            </div>
+          {% endfor %}
+        {% endif %}
+        {% for sample in installation.samples %}
+          <div class="mt-4 border-t border-line pt-4">
+            <h3 class="font-semibold">{{ channel_labels[sample.measurement_location][sample.direction] }}</h3>
+            <p class="text-sm text-ink-muted">{{ metric_labels[sample.metric] }}</p>
+            {% if sample.metric == "device_fault" and sample.freshness in ("fresh", "stale") %}
+              <p class="text-lg">{{ _("Letzte Gerätemeldung: Störung") if sample.value|float == 1 else _("Letzte Gerätemeldung: keine Störung") }}</p>
+            {% elif sample.freshness in ("fresh", "stale") %}
+              <p class="font-mono text-2xl">{{ sample.value }} {{ sample.unit }}</p>
+            {% else %}
+              <p class="text-lg">{{ _("Kein aktueller Wert") }}</p>
+            {% endif %}
+            <p>{{ _("Gerätemeldung") if sample.metric == "device_fault" and sample.quality == "measured" else quality_labels[sample.quality] }} · {{ freshness_labels[sample.freshness] }}</p>
+            {% if sample.observed_at %}
+              <p class="text-sm text-ink-muted">{{ _("Messzeit") }}: <time datetime="{{ sample.observed_at }}">{{ sample.observed_label }}</time></p>
+            {% else %}
+              <p class="text-sm text-ink-muted">{{ _("Messzeit unbekannt") }}</p>
+            {% endif %}
+            {% if sample.age_seconds is not none %}
+              <p class="text-sm text-ink-muted">{{ _("Alter beim Laden") }}: {{ ngettext("%(count)s Sekunde", "%(count)s Sekunden", sample.age_seconds, count=sample.age_seconds) }}</p>
+            {% endif %}
+          </div>
+        {% else %}
+          <p class="mt-4">{{ _("Keine Messwerte im Aufbewahrungszeitraum verfügbar.") }}</p>
+        {% endfor %}
+      </section>
+    {% else %}
+      <p class="mt-6">{{ _("Sie haben keine angemeldeten Anlagen in einer bestätigten LEG-Mitgliedschaft.") }}</p>
+    {% endfor %}
+    <section class="mt-6 bg-white rounded-xl border border-line p-6" aria-labelledby="solar-forecast-heading">
+      <h2 id="solar-forecast-heading" class="text-xl font-bold">{{ _("Wetterprognose") }}</h2>
+      {% if forecast and forecast.state == "current" %}
+        <p class="text-ink-muted mt-2">{{ _("Stundenmittel der globalen Sonneneinstrahlung am Prognosepunkt.") }}</p>
+        <p class="text-sm text-ink-muted">{{ _("Die Prognose berechnet keine Anlagenleistung oder Überschüsse.") }}</p>
+        <p class="mt-2">{{ _("Prognosepunkt") }}: {{ forecast.point_name }} · {{ forecast.distance_km|round(1)|numberlabel }} km</p>
+        <p class="text-sm text-ink-muted">{{ _("Prognosestand") }}: <time datetime="{{ forecast.released_at }}">{{ forecast.released_label }}</time></p>
+        <p class="text-sm"><a class="text-brand hover:underline" href="{{ forecast.source_url }}" rel="noopener noreferrer">{{ _("Quelle") }}: MeteoSwiss</a></p>
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-left text-sm">
+            <thead><tr><th scope="col" class="py-2">{{ _("Zeitraum") }}</th><th scope="col" class="py-2">{{ _("Globalstrahlung, Stundenmittel") }}</th></tr></thead>
+            <tbody>
+              {% for interval in forecast.intervals %}
+                <tr class="border-t border-line">
+                  <th scope="row" class="py-2 font-normal"><time datetime="{{ interval.starts_at }}">{{ interval.local_label }}</time> - <time datetime="{{ interval.ends_at }}">{{ interval.local_end_label }}</time></th>
+                  <td class="py-2">{% if interval.radiation_w_m2 is not none %}{{ interval.radiation_w_m2|numberlabel }} W/m²{% else %}{{ _("Keine Prognose verfügbar") }}{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-ink-muted mt-2">{{ _("Wetterprognose derzeit nicht verfügbar") }}</p>
+        {% if forecast and forecast.state == "stale" %}<p class="text-sm text-ink-muted">{{ _("Der Prognosestand ist veraltet. Bitte prüfen Sie die Wetterprognose später erneut.") }}</p>{% endif %}
+      {% endif %}
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -14,7 +14,8 @@ def test_frontend_build_is_pinned_and_documented():
     assert package["scripts"]["build:css"] == (
         "tailwindcss -i static/css/tailwind.css -o static/css/openleg.css --minify"
     )
-    assert package["devDependencies"]["tailwindcss"] == "3.4.17"
+    assert package["devDependencies"]["tailwindcss"] == "4.3.3"
+    assert package["devDependencies"]["@tailwindcss/cli"] == "4.3.3"
     assert (ROOT / "package-lock.json").is_file()
     lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
     assert lock["name"] == "openleg"

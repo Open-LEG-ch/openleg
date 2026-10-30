@@ -11,6 +11,8 @@ legacy callers.
 
 import logging
 
+from locale_policy import require_recipient_locale
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,16 +35,19 @@ def save_utility_client(
     population: int | None = None,
     kanton: str = "",
     tier: str = "starter",
+    preferred_locale: str | None = None,
 ) -> bool:
     """Create or update a utility client."""
+    if preferred_locale is not None:
+        preferred_locale = require_recipient_locale(preferred_locale)
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
                     INSERT INTO utility_clients (
                         client_id, company_name, contact_name, contact_email,
-                        contact_phone, vnb_name, population, kanton, tier, status
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+                        contact_phone, vnb_name, population, kanton, tier, preferred_locale, status
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, COALESCE(%s, 'de_CH'), 'pending')
                     ON CONFLICT (client_id) DO UPDATE SET
                         company_name = EXCLUDED.company_name,
                         contact_name = EXCLUDED.contact_name,
@@ -52,6 +57,7 @@ def save_utility_client(
                         population = EXCLUDED.population,
                         kanton = EXCLUDED.kanton,
                         tier = EXCLUDED.tier,
+                        preferred_locale = COALESCE(%s, utility_clients.preferred_locale),
                         updated_at = CURRENT_TIMESTAMP
                 """,
                 (
@@ -64,6 +70,8 @@ def save_utility_client(
                     population,
                     kanton,
                     tier,
+                    preferred_locale,
+                    preferred_locale,
                 ),
             )
             return True
@@ -120,6 +128,32 @@ def get_utility_client_by_magic_token(token: str) -> dict | None:
         return None
 
 
+def consume_utility_magic_token(token: str) -> dict | None:
+    """Consume the exact unexpired link in one PostgreSQL statement.
+
+    Concurrent updates recheck the token predicate after waiting for the row
+    lock. A replacement token therefore cannot be erased by an older request.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE utility_clients
+                SET magic_link_token = NULL, magic_link_expires_at = NULL,
+                    last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                WHERE magic_link_token = %s
+                    AND magic_link_expires_at > CURRENT_TIMESTAMP
+                RETURNING *
+                """,
+                (token,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as error:
+        logger.error("[DB] Error consuming utility magic token: %s", error)
+        return None
+
+
 def set_utility_magic_token(client_id: str, token: str, ttl_seconds: int = 900) -> bool:
     """Set a magic link token for a utility client (default 15min TTL)."""
     try:
@@ -158,6 +192,23 @@ def clear_utility_magic_token(client_id: str) -> bool:
                 return cur.rowcount > 0
     except Exception as e:
         logger.error(f"[DB] Error clearing magic token: {e}")
+        return False
+
+
+def update_utility_client_locale(client_id: str, preferred_locale: str) -> bool:
+    """Update only an authenticated owner's supported correspondence language."""
+    selected = require_recipient_locale(preferred_locale)
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """UPDATE utility_clients
+                SET preferred_locale = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE client_id = %s""",
+                (selected, client_id),
+            )
+            return cur.rowcount == 1
+    except Exception as error:
+        logger.error("[DB] Error updating utility language: %s", error)
         return False
 
 

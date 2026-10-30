@@ -14,6 +14,34 @@ against an empty development database.
 - ElCom: electricity tariff data used by public API and calculator flows.
 - Energie Reporter: municipality energy transition indicators.
 
+## Refresh public municipality data
+
+`POST /api/cron/refresh-public-data` requires `X-Cron-Secret`. It refreshes the
+tenant's `kanton_code` by default. Pass a Swiss canton code explicitly to refresh
+another canton, for example `?canton=OW`. Unknown codes return HTTP 400 before
+fetching or saving data.
+
+The fetchers discover resources through the municipal datasets on
+opendata.swiss. If the metadata request fails, they use the publisher's fixed
+delivery URL. A failed delivery or incompatible schema reports `fetch_failed`;
+it does not replace existing data with an empty delivery.
+
+- [Energie Reporter resource](https://opendata.swiss/de/dataset/energie-reporter/resource/6a07d309-6a8e-41c0-842e-66dff203edd3):
+  read `energyreporter_municipality_latest.csv` from the current ZIP, excluding
+  canton, national, and historical series. Convert the published solar, electric
+  car, and renewable heating fractions to percentages. Keep installed PV capacity
+  in kWp and annual energy in MWh. Downloads stop above 5 MiB; archives allow at
+  most 100 members, 20 MiB expanded in total, and a 10 MiB municipal CSV.
+  Data attribution: [Energie Reporter](https://www.energiereporter.ch/), geoimpact,
+  and EnergieSchweiz.
+- [BFE municipal solar potential](https://opendata.swiss/de/dataset/solarenergiepotenziale-der-schweizer-gemeinden):
+  use scenario 1, roofs only, and convert annual GWh to kWh. This dataset supplies
+  generation potential. It supplies no installed capacity, roof area, or
+  utilization percentage; those fields remain unknown in the parsed result.
+
+Legacy semicolon CSV deliveries remain supported. Upstream requests have timeouts
+and failures use safe log messages without response bodies or exception text.
+
 ## Main Paths
 
 - `public_data.py` fetches ElCom, Energie Reporter, and Sonnendach data.
@@ -240,6 +268,13 @@ delivery, and the period fails closed with a `vnb_imbalance` problem rather than
 distributing it. So does a period where the VNB allocated energy to consumers
 and none to producers.
 
+The residue distribution applies to periods billed from the loaded readings.
+A period on the precision policy below (an accepted `e66/1` delivery, no
+battery) is priced from the exact source decimals instead and still needs
+balanced source totals; an unequal total there stops with
+`vnb_balancing_policy_required`. Both paths keep `engine_audit` beside the
+billed quantities.
+
 ### Timezone semantics
 
 `measured_at` is `TIMESTAMPTZ` and holds the interval **start** in UTC, because
@@ -259,6 +294,43 @@ earlier values. The import therefore upserts with last write wins.
 
 `Condition` flags individual values but does not reliably predict corrections.
 Do not rely on it.
+
+### Withdrawal of calculated VNB evidence
+
+The separate `vnb-calculated-values/1` delivery ledger preserves the original
+source bytes and validation result. An authorized operator withdraws an accepted
+delivery with `POST /admin/vnb-calculated-values/{territory}/{delivery_id}/withdrawals`,
+using `X-Admin-Token`, an `Idempotency-Key` of 1-128 ASCII letters, digits, dots,
+underscores or hyphens, and a JSON body such as:
+
+```json
+{"reason": "VNB withdrawal reference SYNTHETIC-123; corrected delivery follows"}
+```
+
+The command records the authenticated principal as `admin-token`; it does not
+identify the person holding that credential. It appends the operator's reason,
+source ID and request fingerprint, and never rewrites or deletes the delivery.
+An identical command retry returns the original event. Changed input under the
+same key conflicts. The request path bounds the tenant; a body field cannot
+change that scope.
+
+Delivery `status` remains its original validation result. `lifecycle_state`
+shows whether accepted evidence is `current` or `withdrawn`. Reimporting the
+original file is a replay and cannot reactivate withdrawn evidence.
+
+Withdrawal invalidates dependent drafts, preserving their input snapshots and
+line items. A preparation saved after withdrawal is retained as an invalidated
+version and does not reserve the live window. Once corrected evidence passes the normal import and billing gates,
+the runner may create a new draft for the same window. Only one non-invalidated
+period can occupy that window. Approval rechecks the current evidence fingerprint
+under the community lock, including when an older preparation finishes late.
+
+Until corrected evidence arrives, billing fails closed. Issued periods and
+invoice snapshots remain unchanged. An operator must review their existing
+cancellation/correction workflow. Withdrawal and approval serialize: the first
+committed operation determines whether the draft is invalidated or the issued
+snapshot survives. This endpoint does not interpret E66 cancellation messages;
+the E66 adapter remains tracked in #685.
 
 ### Data quality policy
 
@@ -287,7 +359,8 @@ draft and applies these fail-closed rules:
   onto the draft; public H4 data and zero defaults are never substitutes
 - incomplete readings, an unbalanced VNB delivery, or billed quantities that
   depart from the VNB reference persist nothing
-- `(community_id, period_start, period_end)` is unique
+- only one current period may occupy `(community_id, period_start, period_end)`;
+  invalidated draft versions remain available for audit
 - identical input fingerprints are retry no-ops; changed inputs require review
 - the cron counts work only after `save_billing_period` returns a committed ID
 
@@ -296,8 +369,98 @@ consumption frames, participant IDs, VNB reference, tariff, generated summary,
 and reconciliation. Its public runner contract pins a stable SHA-256 vector, so
 removing any of those inputs is observable before an immutable draft is reused.
 
-Invoice issuance remains disabled until the LEG and its VNB approve tax, HKN,
-tariff-class, rounding-tolerance, and operational cutoff rules.
+Invoice issuance uses the explicit approval path and frozen billing policy.
+Withdrawal makes source evidence ineligible for new approval.
+
+### Rounded E66 allocation evidence
+
+For the proportional model without a battery, accepted E66 source quantities
+can supply invoice quantities under `vnb-proportional-e66-rounding/1`. The
+independent model result and its actual differences remain in reconciliation.
+The audit uses exact rational half-open rounding cells for every quarter hour,
+participant and direction across all three source channels. It must find a
+common proportional allocation consistent with those cells; a monthly total
+or a fixed energy tolerance cannot substitute for that proof. The bounded
+search refuses unresolved boundaries.
+
+Physical reading frames must match the accepted source at the existing
+six-decimal persistence precision. Consumer charges, producer credits and
+settlement fees use the VNB quantities. Their consumer and producer totals
+must balance exactly over the billing period. Unequal rounded totals are
+refused until there is a reviewed accounting policy for the energy difference;
+the cash rounding line cannot absorb it. Battery rounding remains subject to
+the existing exact reconciliation gate. Legacy JSON evidence and drafts keep
+their existing approval rules.
+
+New periods under the `einfach` model without a battery can use
+`vnb-einfach-e66-reported-total-witness/1`. This rule treats the reported total
+channels as one exact rational witness. It applies the existing two-pass model
+to the complete participant set, including producer-only participants with zero
+consumption. The second pass runs only when the remaining production exceeds
+0.001 kWh. Producer credits share the allocated sum in proportion to production.
+Every total, local and residual channel must contain the witness in its exact
+half-open rounding cell, including the lower boundary and excluding the upper.
+
+The independent audit still uses the engine's floating-point arithmetic. At an
+exact remainder of 0.001 kWh, binary rounding can make that audit run the second
+pass. The certificate uses the exact threshold. The audit records the resulting
+difference, and the VNB source channels determine the prices.
+
+A failed reported-total witness is `unresolved_vnb_einfach_rounding`, not proof
+that the source is impossible. Another set of unrounded totals can explain a
+valid delivery even when this bounded witness fails. Such deliveries remain
+blocked for review. The rule neither changes the proportional certificate nor
+supplies an accounting policy for unequal source totals.
+
+Existing unmarked `einfach` periods retain their legacy exact calculation and
+original fingerprint on retry. A matching retry returns the stored period
+without repricing or adding a certificate. Changed inputs remain blocked.
+New periods always require the new witness; legacy approval rules stay intact.
+
+Approval reloads the current accepted source under the community lock. Even
+older E66 drafts without a precision certificate must match its quantities
+and independent model audit while retaining the legacy zero-gap rule. Removing
+the marker cannot downgrade source verification. For the precision policy it
+recomputes the certificate and independent model audit, checks the billed
+quantities against the source, and retains tariff and dual-control checks.
+Each invoice keeps its own participant differences and meter mapping, plus the
+certificate digest. Full interval witnesses stay in the private draft.
+Retries of issued periods return their stored snapshots.
+
+This is an engineering compatibility policy for the supported source profile.
+It does not establish the VNB's unrounded quantities or record legal approval.
+Representative privacy-safe real E66 samples are still needed for field
+validation.
+
+### Billing cron diagnostics
+
+The authenticated `POST /api/cron/process-billing` returns one safe `error` code
+per failed community. Failed runs do not count as processed, and other
+communities continue. The cron handler returns fixed codes and logs a failed
+community's identifier without exception messages, metering identifiers or source
+contents. Discovery and draft-persistence storage failures also use safe messages.
+
+| Code | Operator action |
+| --- | --- |
+| `billing_tariff_missing` | Configure an explicit tariff covering the complete billing window. |
+| `vnb_evidence_missing` | Import and validate the VNB calculated-values delivery for that window. |
+| `metering_readings_invalid` | Check meter ownership, expected channels, interval coverage and reading quality. |
+| `vnb_allocation_mismatch` | Compare the VNB allocation with the independent calculation before retrying. |
+| `billing_provenance_missing` | Restore the source-document evidence for the readings. |
+| `battery_configuration_invalid` | Check the battery participant, capacity and participant cost shares. |
+| `billing_inputs_changed` | Review changed inputs against the existing immutable draft. |
+| `billing_store_unavailable` | Restore database access before retrying. |
+| `billing_run_failed` | Investigate the unclassified failure in a controlled environment. |
+
+A failure may carry an optional `reason` beside the unchanged `error` code; the
+only reason is `vnb_balancing_policy_required`, marking a `vnb_allocation_mismatch`
+whose accepted rounded E66 source totals do not balance. That reason means the
+operator must obtain a reviewed accounting decision for the energy difference,
+never adjust the physical readings.
+
+Unknown error codes use `billing_run_failed`. The existing direct Python runner
+retains its detailed exception for local diagnosis; do not publish that exception
+or customer data when filing an issue.
 
 ### Running the import
 

@@ -3,7 +3,7 @@
 
 import io
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from unittest.mock import MagicMock
 
@@ -113,7 +113,7 @@ def tagged_data():
             "community_id": "leg-1",
             "timezone": "Europe/Zurich",
             "grid_fee_rp_kwh": Decimal("123.45"),
-            "valid_from": datetime(2026, 3, 15, 12, 0, 0, tzinfo=timezone.utc),
+            "valid_from": datetime(2026, 3, 15, 12, 0, 0, tzinfo=UTC),
         }
     ]
     return data
@@ -130,7 +130,7 @@ def test_representative_archive_round_trip_preserves_records_and_identifiers():
     restored = community_archive.restore_community_archive(archive, store=target)
 
     payload = json.loads(archive)
-    assert payload["manifest"]["schema_version"] == "openleg-community-archive/1"
+    assert payload["manifest"]["schema_version"] == "openleg-community-archive/2"
     assert payload["manifest"]["units"]["energy"] == "kWh"
     assert payload["manifest"]["time_zones"] == ["Europe/Zurich", "UTC"]
     assert dry_run == {"valid": True, "errors": [], "conflicts": []}
@@ -207,6 +207,7 @@ def test_restore_dry_run_and_restore_use_uploaded_archive(
     app_module,  # noqa: F811
     monkeypatch,
 ):
+    monkeypatch.setenv("ADMIN_TOKEN", "synthetic-archive-admin")
     client = app_module.web.test_client()
     _set_session(client, building_id="admin", csrf_token="csrf")
     restore = MagicMock(
@@ -223,6 +224,7 @@ def test_restore_dry_run_and_restore_use_uploaded_archive(
     )
     restored = client.post(
         "/leg/community/leg-1/archive/restore",
+        headers={"X-Admin-Token": "synthetic-archive-admin"},
         data={"csrf_token": "csrf", "archive": (io.BytesIO(b"{}"), "archive.json")},
     )
 
@@ -281,5 +283,5 @@ def test_tagged_decimal_and_datetime_values_survive_round_trip():
     assert restored == {"valid": True, "errors": [], "conflicts": [], "restored": True}
     stored = target.restored["billing_tariffs"][0]
     assert stored["grid_fee_rp_kwh"] == Decimal("123.45")
-    assert stored["valid_from"] == datetime(2026, 3, 15, 12, 0, 0, tzinfo=timezone.utc)
+    assert stored["valid_from"] == datetime(2026, 3, 15, 12, 0, 0, tzinfo=UTC)
     assert reexported == archive

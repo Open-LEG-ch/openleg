@@ -10,9 +10,88 @@ whether a consent gate applies. Field names are cited from
 
 Citizen meter data (smart-meter readings, 15-minute series, per-building
 consumption) stays within each LEG. It is never sold and never aggregated for
-third parties. Resident-visible output always carries the neighbour consent
+third parties. Neighbour discovery output always carries the neighbour consent
 gate: an inner join on `consents.share_with_neighbors`, fail closed, and a
 count uses conditions identical to its list.
+
+Operational household telemetry has its own explicit sharing grants; neighbour
+consent and community administrator roles do not grant telemetry access.
+
+## store/equipment
+
+The equipment advisory workflow is documented under `store/advisories` below.
+
+- Table: `equipment_records` (DDL in `store/equipment.py`).
+- Holds: owner `building_id`, record UUID, creation/update times and a private
+  JSON record. It contains manufacturer/model, firmware, logger, AC kW and
+  optional PV DC kWp, cloud dependency, installer-access state, optional serial,
+  named remote users, network details and private notes. Checklist, manual
+  vendor-cloud review and backup capability each retain separate evidence kind,
+  review date and optional public documentation URL.
+- Purpose: owner inventory and preparation of installation-specific tasks for
+  an installer. No scanning, telemetry ingestion or device-control commands.
+- Owner: the currently verified building owner. Neither LEG membership nor
+  telemetry enrollment is required. Every read, edit, download and deletion
+  checks the owner session against the current verified building record.
+- Sensitivity: private installation and access information. Neighbour consent,
+  community administrator status and telemetry grants confer no access.
+- Evidence: owner reports, device observations and owner-entered installer
+  evidence stay distinct. Known sources need a non-future review date.
+  OpenLEG does not verify these assertions. Manufacturer/model/firmware changes
+  reset the checklist, cloud review and backup assertions to unknown.
+- Handoff: an explicit owner action downloads allowlisted device facts,
+  findings, action states, dates and public source links. It excludes profile
+  data, serials, named remote users, network details and private notes. The
+  owner reviews the remaining device fields and links before sharing. Nothing
+  is emailed automatically. Responses use no-store and no-referrer headers.
+- Retention: until equipment or profile deletion; the JSON evidence lives in
+  the same row and the owner FK cascades on profile deletion. There is no
+  independent checklist history. Downloads are outside database deletion.
+
+## store/telemetry
+
+- Tables: `telemetry_installations`, `telemetry_samples`,
+  `telemetry_aggregates`, `telemetry_shares` (DDL in `store/telemetry.py`).
+- Holds: installation/community/owner identity, hashed ingestion credential,
+  device/source identity, sample sequence and deduplication fingerprint,
+  metric, unit, value, direction, location, quality, cadence, source observation
+  and server receipt times. Hourly descriptive statistics retain those dimensions.
+- Derived state: `notice_refresh_pending` records deferred notice processing.
+  It contains no sample or error details and clears on successful reconciliation.
+- Purpose: private operational observations. No meter import, allocation,
+  billing input, device credentials or control commands.
+- Owner: the verified, confirmed community member who enrolled the installation.
+- Sensitivity: household energy data; never sold or aggregated for third parties.
+- Access: owner dashboard session, or an explicit `telemetry_shares` grant to a
+  verified confirmed member of the same community. All reads, exports and
+  aggregates check current access. Neighbour consent grants no access alone.
+  The shared power view additionally requires active neighbour consent for
+  other owners, strips private labels and owner/notice state, and counts only
+  authorized sources. Its three-profile minimum does not anonymize individual
+  grant-visible readings. The computed view is not stored or cached.
+- Retention: product defaults of 7 days raw and 90 days aggregates; shorter
+  whole-day settings and owner deletion supported. Read-time expiry and the
+  cleanup cron enforce separate operational horizons. See `docs/telemetry.md`.
+- Credentials: ingestion-only, installation/community-bound, hashed at rest;
+  rotation preserves the sequence watermark. Deletion cascades all four tables.
+
+## store/telemetry_notices
+
+- Table: `telemetry_notices` (DDL in `store/telemetry_notices.py`, initialized
+  with telemetry tables).
+- Holds: installation reference, bounded condition/channel codes, episode count,
+  active flag, raised/acknowledged/snoozed/resolved timestamps and recovery code.
+  No copied samples, free text, device credentials or delivery addresses.
+- Purpose: owner action prompts with one-hour acknowledgement cooldown and
+  distinct recovery states. Derived on ingestion and owner reads.
+- Sensitivity: private household operational state; never sold or aggregated
+  for third parties. No access through sample sharing or administrator status.
+- Access: current verified owner with confirmed community membership. Mutations
+  require the dashboard session's CSRF token and current episode.
+- Retention: active rows remain until resolution or installation deletion.
+  Resolved rows use the installation's raw-data horizon, including read-time
+  expiry and the existing cleanup cron. Installation, owner membership/profile
+  and community deletion cascade the rows. No separate acknowledgement history.
 
 ## store/building
 
@@ -20,9 +99,11 @@ count uses conditions identical to its list.
 - **Holds:** `building_id`, `email`, `address`, `lat`, `lon`, `plz`,
   `building_type`, `annual_consumption_kwh`, `potential_pv_kwp`, `user_type`,
   `verified`, `city_id`, `referrer_id`, `bfs_number`, `municipality_name`,
-  `canton`, `roles`, `has_solar`
+  `canton`, `roles`, `has_solar`, `preferred_locale` (German or Swiss French)
 - **Purpose:** resident registration and readiness; the map of consenting
-  neighbours.
+  neighbours. The owner weather view uses existing `lat`/`lon` locally to choose
+  a cached public forecast point. It sends no household coordinates upstream and
+  stores no household location in the public forecast cache.
 - **Owner:** the resident (each row is one household's record).
 - **Sensitivity:** personal + energy; citizen meter data stays within each
   LEG and is never sold, never aggregated for third parties.
@@ -37,7 +118,7 @@ count uses conditions identical to its list.
 
 - **Tables:** `coverage_requests`; also reads verified rows from `buildings`.
 - **Holds:** `email`, optional `address`, `plz`, `municipality_name`, `canton`,
-  `bfs_number`, `roles`, `has_solar`, verification token and timestamps.
+  `bfs_number`, `roles`, `has_solar`, `preferred_locale`, verification token and timestamps.
 - **Purpose:** preserve demand when an address cannot be checked, publish an
   anonymised municipality count, notify verified participants when that count
   grows, and provide a private operator follow-up list.
@@ -48,6 +129,8 @@ count uses conditions identical to its list.
   the exact count from three onward.
 - **Consent gate:** email verification is required before any count or
   notification. Map visibility remains separately opt-in.
+- Notification language follows the same canonical verified record and consent
+  selection as the recipient. The email-only legacy reader retains its return shape.
 
 ## store/consent
 
@@ -62,6 +145,30 @@ count uses conditions identical to its list.
 - **Sensitivity:** consent data itself.
 - **Resident-visible:** no direct output; it governs other outputs.
 - **Consent gate:** this IS the gate.
+
+## store/contact_request
+
+- **Tables:** `contact_requests`, `contact_request_events` (schema in
+  `store/contact_request.py`, called by `store/schema.py`).
+- **Holds:** participant references, status, consent and expiry timestamps,
+  profile fingerprints, explicitly approved email/phone snapshots, and events
+  recording actor, action, field names and time. Events contain no contact values.
+- **Purpose:** private contact requests between verified registered households
+  in the same BFS municipality. Coverage-only interest records have no resident
+  dashboard and are not candidates.
+- **Owner:** the two participating residents, independently of LEG membership.
+- **Sensitivity:** personal contact and consent data. These records are excluded
+  from the community operations archive because a LEG administrator does not own
+  either resident's private matching history.
+- **Resident-visible:** each person sees only their requests. Before mutual
+  acceptance, candidates have opaque, viewer-bound handles and no identifying
+  details. After acceptance, only the other person's selected fields appear.
+- **Consent gate:** both profiles must remain verified, have the same nonempty
+  BFS number, different email identities, and allow neighbour discovery. Request
+  and acceptance each require explicit field selection. Changed profile or
+  discovery-consent fingerprints invalidate old grants. Private HTTP responses
+  carry `no-store` and `no-referrer`. Notifications go separately to each person
+  and contain no other participant's identity or contact details.
 
 ## store/cluster
 
@@ -80,14 +187,22 @@ it.
 
 - **Interface:** confirmed LEG administrators use the private
   `/leg/community/<community_id>/archive` controls to export, validate, and
-  restore `openleg-community-archive/1` JSON.
+  restore `openleg-community-archive/2` JSON (legacy version 1 imports remain supported).
 - **Contents:** the selected community, its member profiles and consent
   metadata, formation and signed documents, correspondence and attachments,
   metering mappings and readings, billing policies and periods, line items,
-  immutable invoices, delivery/correction records, and lifecycle events.
+  immutable invoices, delivery/correction records and lifecycle events,
+  accepted VNB sources and withdrawals, VNB handover/mutation evidence, payment
+  reconciliation, invoice questions and attachments, role audit, batteries,
+  community-owned operator events and completed case/payment replay responses
+  bound to archived parents. In-flight reservations, deployment-specific
+  metering retries and orphan keys are excluded.
 - **Scope:** every query starts from `community_id`; profiles are limited to
   current community members. Tokens, unrelated profiles, other communities,
-  platform operations, and public reference data are excluded.
+  platform operations and public reference data are excluded. Live operator
+  credentials, webhook dispatch/rate usage and tenant-wide scheduler state
+  require destination configuration; owner-only telemetry/equipment/contact
+  grants are outside the administrator's archive scope.
 - **Manifest:** records SHA-256 hashes per dataset, kWh/kWp/CHF units,
   Europe/Zurich and UTC time-zone conventions, schema version, and source
   provenance. Binary values use tagged base64 objects; dates and decimals use
@@ -119,10 +234,12 @@ it.
 
 ## store/calculated_values
 
-- **Tables:** `vnb_calculated_values_deliveries`
+- **Tables:** `vnb_calculated_values_deliveries`, `vnb_calculated_values_events`
 - **Holds:** VNB case, source, period, content and evidence fingerprints,
   normalized quarter-hour LEG allocations, validation diagnostics, and the
-  original evidence bytes.
+  original evidence bytes. Append-only withdrawal events preserve the source
+  delivery ID, tenant/community scope, authenticated admin-token principal,
+  operator's reason, request fingerprint, idempotency key and event time.
 - **Purpose:** independent VNB evidence for the billing allocation check.
 - **Owner:** the LEG identified by `community_id`; access is tenant-scoped
   through its administrator's `city_id`.
@@ -172,6 +289,37 @@ it.
   admin-gated. Member display fails closed on unreadable figures (#528).
 - **Consent gate:** not neighbour-visible.
 
+## store/battery
+
+- **Tables:** `community_batteries`, `community_battery_shares`
+- **Holds:** one shared storage battery (Quartierakku) per community:
+  capacity in kWh, annual cost in CHF, its billing participant ID, and one
+  cost share in percent per participant. The billing-period snapshot freezes
+  charged, discharged, directly sourced and battery-sourced energy.
+- **Purpose:** the shared asset behind the battery cost-share lines that the
+  billing draft and the invoices carry.
+- **Owner:** the LEG (operator records the asset and the shares).
+- **Sensitivity:** financial data about the community, cost shares per
+  building.
+- **Resident-visible:** the asset and its shares appear on the LEG
+  dashboard; members see the community's cost split.
+- **Consent gate:** not neighbour-visible.
+
+## store/invoice_query
+
+- **Tables:** `invoice_queries`, `invoice_query_messages`,
+  `invoice_query_events`
+- **Holds:** an invoice-scoped question category and status, private messages,
+  optional PDF evidence, and append-only status events with actor and time.
+- **Purpose:** let a member question an immutable invoice and follow the
+  operator's response without changing the invoice snapshot.
+- **Owner:** the invoiced member and the issuing LEG.
+- **Sensitivity:** financial correspondence and optional personal evidence.
+- **Resident-visible:** only to the invoice participant; operators are scoped
+  to the invoice's community.
+- **Consent gate:** invoice ownership or community capability, not neighbour
+  consent.
+
 ## store/profile
 
 - **Tables:** `municipalities`, `municipality_profiles`,
@@ -204,7 +352,8 @@ it.
 
 - **Tables:** `utility_clients`
 - **Holds:** VNB/EVU contacts (`company_name`, `contact_email`,
-  `kanton`, service territory).
+  `kanton`, service territory), plus German or Swiss French `preferred_locale`
+  for account email.
 - **Purpose:** routing LEG applications and consents to the right grid
   operator.
 - **Owner:** the utility (business contact data).
@@ -238,9 +387,10 @@ it.
 
 ## store/formation
 
-- **Tables:** `communities`, `community_members`
+- **Tables:** `communities`, `community_members`, `community_role_events`
 - **Holds:** the LEG record (`community_id`, `name`, `status`,
-  `distribution_model`) and memberships (`role`, `status`, `invited_by`).
+  `distribution_model`, dual-control policy), memberships (`role`,
+  `access_roles`, `status`, `invited_by`), and append-only role changes.
 - **Purpose:** LEG formation and membership lifecycle.
 - **Owner:** the LEG (its members).
 - **Sensitivity:** membership personal data; member aggregates shown to
@@ -248,6 +398,22 @@ it.
   `fetch_user_communities`, pinned by #518).
 - **Resident-visible:** to members of the community.
 - **Consent gate:** applies to member-visible aggregates.
+
+## store/formation_activation
+
+- **Tables:** `communities`; reads source attachments from `correspondence_log`.
+- **Holds:** `vnb_start_confirmation` with the incoming correspondence ID,
+  SHA-256, VNB reference, confirmed start date, recording and activating actors,
+  and UTC audit times; also sets `dso_approved_at` and `activated_at`.
+- **Purpose:** two explicit transitions from submitted formation to confirmed
+  start and active operation. A transport receipt never activates the LEG.
+- **Owner:** the LEG.
+- **Sensitivity:** community references, actor identifiers and linked evidence.
+- **Resident-visible:** private community views; only a current confirmed
+  administrator can record the evidence or activate. Other members' visibility
+  still follows `share_with_neighbors`.
+- **Retention:** the existing community record and correspondence attachment
+  have no automated expiry. These operations add no cleanup or retention period.
 
 ## store/formation_documents
 
@@ -290,7 +456,7 @@ it.
 - **Tables:** none of its own; it is the seam for the resident's
   self-service writes to `buildings` and `consents`.
 - **Holds:** updates `annual_consumption_kwh`, `potential_pv_kwp`,
-  `share_with_utility`, `share_with_neighbors`.
+  `share_with_utility`, `share_with_neighbors`, `preferred_locale`.
 - **Purpose:** the resident's own profile and consent changes.
 - **Owner:** the resident.
 - **Sensitivity:** personal + energy.
@@ -353,15 +519,32 @@ it.
 - **Resident-visible:** no.
 - **Consent gate:** none.
 
+## store/operator_api
+
+- **Tables:** `operator_api_clients`, `operator_api_usage`, `operator_events`,
+  `operator_webhook_deliveries`
+- **Holds:** community-scoped hashed API tokens, explicit capabilities,
+  endpoint usage, lifecycle-event payloads and delivery outcomes.
+- **Purpose:** private operator integration with bounded, observable webhook
+  delivery.
+- **Owner:** the LEG administration that created the credential.
+- **Sensitivity:** credentials and private LEG workflow facts. API tokens are
+  hashed and never returned after creation or rotation.
+- **Resident-visible:** no; credential administration is restricted to a
+  confirmed LEG administrator.
+- **Consent gate:** none; tenant scope and explicit capabilities are mandatory.
+
 ## store/registry
 
 - **Tables:** `leg_registry`
 - **Holds:** registered LEGs (`community_name`, `kanton`, `plz`, member
-  count, `verified` status).
+  count, `verified` status), private contact email and `preferred_locale`
+  for verification reminders.
 - **Purpose:** the public LEG directory and federation verification.
 - **Owner:** the LEG (it registers itself).
-- **Sensitivity:** business facts a LEG chose to publish.
-- **Resident-visible:** yes, public by design.
+- **Sensitivity:** published business facts and private business contact data.
+- **Resident-visible:** directory fields are public; contact email and language
+  stay out of public API responses.
 - **Consent gate:** none.
 
 ## store/ops
@@ -418,3 +601,37 @@ it.
 - **Holds:** stable idempotency responses for scoped case and payment actions.
 - **Sensitivity:** private operational data; read models redact invoice snapshots, correspondence, and source evidence.
 - **Resident-visible:** no.
+
+## store/advisories
+
+- Tables: `advisory_catalog`, `advisory_revisions`, `advisory_publications`,
+  `advisory_review_policies`, `advisory_source_reviews`,
+  `equipment_advisory_actions` (DDL in `store/advisories.py`).
+- Catalog holds public-source URLs, publisher/revision/publication date,
+  manufacturer/model names and explicit aliases, firmware bounds/profile,
+  remedy text/links, withdrawals and correction notes. Content revisions and
+  publication approvals are append-only. Approval binds an exact SHA-256 digest,
+  named reviewer and review date; reviewer identifiers are private admin data.
+- Source policy holds a private named review owner, bounded cadence, public
+  scope description, exact covered source URLs and enabled state. New policy
+  versions require their own complete successful manual source review. Review
+  events retain failures and latest successful review dates. No feed or
+  continuous collection is implemented.
+- Owner evidence holds equipment/advisory/revision references, the exact saved
+  manufacturer/model/firmware context and digest, acknowledgement, owner-declared
+  remedy state, dated evidence and optional private note. It does not verify a
+  remedy or change firmware matching.
+- Access: catalog administration requires `X-Admin-Token`, including reads of
+  reviewer identities. URL/form credentials are rejected. Equipment matches,
+  acknowledgements and remedy notes require the current verified equipment
+  owner's dashboard session. LEG administration, neighbour consent, telemetry
+  grants and admin catalog credentials grant no equipment access.
+- Output: owners receive published source facts, reasons, coverage/dates and
+  source status. Drafts and private maintainer identifiers are omitted. Text is
+  escaped; only validated public HTTPS documentation links are accepted. Every
+  owner/admin response uses no-store and no-referrer headers.
+- Purpose: private installation review with an installer. No external notices,
+  firmware installation, settings changes or attack detection.
+- Deletion: equipment/profile deletion cascades to all private owner action
+  rows. Public source revisions, approvals and source-review history remain
+  independent of registration deletion. Catalog/audit expiry is not implemented.
