@@ -325,6 +325,8 @@ def run_billing_period(
         return {"status": "created", "period_id": period_id}
     except BillingRunError:
         raise
+    except billing_engine.BatteryBilledSplitMismatch as exc:
+        raise BillingRunError(str(exc), code="vnb_allocation_mismatch") from exc
     except billing_readings.PeriodDataError as exc:
         raise BillingRunError(str(exc), code="metering_readings_invalid") from exc
     except (db.BillingStoreError, DatabaseError) as exc:

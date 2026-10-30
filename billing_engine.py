@@ -21,6 +21,14 @@ class VnbBalancingPolicyRequired(ValueError):
     """Source quantities whose rounded totals do not balance need a reviewed policy."""
 
 
+class BatteryBilledSplitMismatch(ValueError):
+    """A battery period whose billed split departs from the engine allocation.
+
+    Battery attribution is derived from the engine's interval allocation, so it
+    only adds up to the billed energy when both splits agree.
+    """
+
+
 def _money(value):
     return Decimal(str(value)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
@@ -435,6 +443,22 @@ def _generate_billing_summary(
         billed_production = _billed_quantities(
             billed_allocation, "production_kwh", engine_credited
         )
+
+    # Fail closed until battery attribution can follow a billed split: frozen
+    # battery shares that do not add up to the billed energy would mislead.
+    if battery_participant_id is not None and billed_allocation is not None:
+        for billed, engine in (
+            (billed_consumption, engine_allocated),
+            (billed_production, engine_credited),
+        ):
+            if any(
+                round(billed[participant], 6) != round(value, 6)
+                for participant, value in engine.items()
+            ):
+                raise BatteryBilledSplitMismatch(
+                    "Battery attribution requires the billed split to match "
+                    "the engine allocation"
+                )
 
     total_production = float(total_production_series.sum())
     total_allocated = float(sum(billed_consumption.values()))
