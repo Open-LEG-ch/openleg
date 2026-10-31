@@ -278,10 +278,12 @@ it.
 
 - **Tables:** `billing_periods`, `billing_tariffs`, `invoices`,
   `billing_line_items`, `invoice_corrections`, `invoice_lifecycle_events`,
-  `invoice_delivery_jobs`
+  `invoice_delivery_jobs`, `billing_imbalance_releases`,
+  `billing_imbalance_blocks`
 - **Holds:** tariffs (`internal_price_chf_per_kwh`, `grid_fee_chf_per_kwh`,
   frozen `policy_snapshot`), per-member invoice lines, lifecycle and delivery
-  state.
+  state. Community-level VNB totals of periods blocked by an imbalance, and the
+  per-period tolerance releases with reason and author.
 - **Purpose:** the LEG's financial accounting and member invoices.
 - **Owner:** the LEG (operator approves); members see their own invoices.
 - **Sensitivity:** financial personal data.
