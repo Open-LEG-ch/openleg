@@ -261,6 +261,19 @@ def run_billing_period(
                     distribution_model=policy["distribution_model"],
                     settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
                 )
+                # Here the source quantities are what gets billed, so the
+                # reconciliation keeps the engine's own allocation beside them:
+                # approval re-derives exactly this model gap from the source.
+                model = billing_engine.generate_billing_summary(
+                    frames.production,
+                    frames.consumption,
+                    grid_fee_per_kwh=policy["grid_fee_chf_per_kwh"],
+                    internal_price_per_kwh=policy["internal_price_chf_per_kwh"],
+                    network_level=policy["network_level"],
+                    distribution_model=policy["distribution_model"],
+                    settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
+                )
+                reconciliation = billing_readings.reconcile_with_vnb(frames, model)
             except billing_engine.VnbBalancingPolicyRequired as exc:
                 raise BillingRunError(
                     str(exc),
