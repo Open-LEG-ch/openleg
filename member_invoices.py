@@ -109,7 +109,10 @@ def _require_period_date_text(value, message: str) -> str:
         except ValueError:
             raise MemberInvoiceDataError(message) from None
     if isinstance(value, datetime) and value.tzinfo is not None:
-        value = value.astimezone(ZoneInfo(billing_workspace.PERIOD_TIMEZONE))
+        try:
+            value = value.astimezone(ZoneInfo(billing_workspace.PERIOD_TIMEZONE))
+        except (OverflowError, ValueError):
+            raise MemberInvoiceDataError(message) from None
     return _require_date_text(value, message)
 
 

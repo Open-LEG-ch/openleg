@@ -454,10 +454,34 @@ def approve_billing_period(
                 raise billing_approval.BillingApprovalError(
                     "Only a draft billing period can be approved"
                 )
+            release = billing_approval.imbalance_release(period)
+            persisted_release = None
+            if release is not None:
+                if type(release.get("id")) is not int or release["id"] <= 0:
+                    raise billing_approval.BillingApprovalError(
+                        "Die Toleranzfreigabe dieses Entwurfs ist ungültig."
+                    )
+                cur.execute(
+                    """SELECT * FROM billing_imbalance_releases
+                       WHERE id = %s AND community_id = %s
+                         AND period_start = %s AND period_end = %s
+                       FOR UPDATE""",
+                    (
+                        release["id"],
+                        community_id,
+                        period["period_start"],
+                        period["period_end"],
+                    ),
+                )
+                release_row = cur.fetchone()
+                persisted_release = dict(release_row) if release_row else None
+            releaser = billing_approval.validate_imbalance_release(
+                period, persisted_release
+            )
             if community_row.get("require_dual_control") and (
                 not period.get("prepared_by")
                 or period.get("prepared_by") == approver_id
-                or billing_approval.imbalance_released_by(period) == approver_id
+                or releaser == approver_id
                 or not approver_id
             ):
                 raise billing_approval.BillingApprovalError(
@@ -539,7 +563,7 @@ def get_billing_period_for_window(
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT id, input_fingerprint FROM billing_periods
+            SELECT id, input_fingerprint, status FROM billing_periods
             WHERE community_id = %s AND period_start = %s AND period_end = %s
               AND status IS DISTINCT FROM 'invalidated'
             """,

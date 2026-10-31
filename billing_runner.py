@@ -4,6 +4,7 @@
 import hashlib
 import json
 import logging
+from dataclasses import replace
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -190,6 +191,86 @@ def _fingerprint(frames, policy, summary, reconciliation):
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _main_draft_fingerprint(
+    frames, policy, summary, reconciliation, *, precision_basis, battery_kwargs
+):
+    """Reproduce main 43f8826's payload only for a mismatching existing draft.
+
+    Current evidence and policy gates run first. This projection never prices
+    or saves a new draft, and still hashes every original input.
+    """
+    reference = {
+        key: frames.vnb_reference[key]
+        for key in (
+            "community_consumption_kwh",
+            "community_production_kwh",
+            "per_participant",
+        )
+    }
+    legacy_frames = replace(
+        frames,
+        vnb_reference={
+            **frames.vnb_reference,
+            "billed": {
+                direction + "_kwh": {
+                    participant: values[direction + "_kwh"]
+                    for participant, values in reference["per_participant"].items()
+                }
+                for direction in ("consumption", "production")
+            },
+        },
+    )
+    independent = billing_engine.generate_billing_summary(
+        frames.production,
+        frames.consumption,
+        grid_fee_per_kwh=policy["grid_fee_chf_per_kwh"],
+        internal_price_per_kwh=policy["internal_price_chf_per_kwh"],
+        network_level=policy["network_level"],
+        distribution_model=policy["distribution_model"],
+        settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
+        **battery_kwargs,
+    )
+    audit = billing_readings.reconcile_with_vnb(legacy_frames, independent)
+    for key in (
+        "engine_audit",
+        "vnb_delivered_production_kwh",
+        "vnb_imbalance_kwh",
+        "vnb_imbalance_ratio",
+        "vnb_imbalance_tolerance_ratio",
+    ):
+        audit.pop(key, None)
+    if precision_basis:
+        # Main required exact source balance, before tolerance releases existed.
+        if frames.vnb_reference["imbalance_kwh"] != 0:
+            return None
+        audit["precision_policy"] = reconciliation["precision_policy"]
+    elif (
+        any(
+            item["difference_kwh"] != 0
+            for key in ("per_participant", "production_per_participant")
+            for item in audit[key].values()
+        )
+        or audit["difference_kwh"] != 0
+        or audit["production_difference_kwh"] != 0
+    ):
+        return None
+    legacy_summary = dict(summary if precision_basis else independent)
+    legacy_summary.pop("engine_audit", None)
+    if "battery_snapshot" in summary:
+        legacy_summary["battery_snapshot"] = summary["battery_snapshot"]
+        legacy_summary["line_items"] = [
+            *legacy_summary["line_items"],
+            *(
+                item
+                for item in summary["line_items"]
+                if item["item_type"] == "battery_cost_share"
+            ),
+        ]
+    return _fingerprint(
+        replace(frames, vnb_reference=reference), policy, legacy_summary, audit
+    )
+
+
 def run_billing_period(
     community_id, period_start, period_end, *, prepared_by: str | None = None
 ):
@@ -246,6 +327,31 @@ def run_billing_period(
                 "battery_participant_id": battery["participant_id"],
                 "battery_capacity_kwh": battery["capacity_kwh"],
             }
+            if calculated is not None:
+                source_consumption, source_production = (
+                    billing_readings.calculated_quantity_frames(frames, calculated)
+                )
+                allocated = billing_engine.allocate_energy(
+                    frames.production.sum(axis=1),
+                    frames.consumption,
+                    model=policy["distribution_model"],
+                )
+                shares = frames.production.div(
+                    frames.production.sum(axis=1).replace(0, float("nan")), axis=0
+                ).fillna(0)
+                credited = shares.mul(allocated.sum(axis=1), axis=0)
+                if any(
+                    not source.astype(float).round(6).equals(engine.round(6))
+                    for source, engine in (
+                        (source_consumption, allocated),
+                        (source_production, credited),
+                    )
+                ):
+                    raise BillingRunError(
+                        "Battery attribution requires the VNB interval split "
+                        "to match the engine allocation",
+                        code="vnb_allocation_mismatch",
+                    )
         summary = billing_engine.generate_billing_summary(
             frames.production,
             frames.consumption,
@@ -367,7 +473,21 @@ def run_billing_period(
 
         fingerprint = _fingerprint(frames, policy, summary, reconciliation)
         if existing:
-            if existing["input_fingerprint"] != fingerprint:
+            matches_main = (
+                existing["input_fingerprint"] != fingerprint
+                and existing.get("status") == "draft"
+                and not release
+                and existing["input_fingerprint"]
+                == _main_draft_fingerprint(
+                    frames,
+                    policy,
+                    summary,
+                    reconciliation,
+                    precision_basis=precision_basis,
+                    battery_kwargs=battery_kwargs,
+                )
+            )
+            if existing["input_fingerprint"] != fingerprint and not matches_main:
                 raise BillingRunError(
                     "Billing period inputs changed after processing",
                     code="billing_inputs_changed",

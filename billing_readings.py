@@ -700,9 +700,15 @@ def calculated_quantity_frames(frames, delivery):
             raise PeriodDataError(
                 [_problem("invalid_vnb_evidence", "source shape changed")]
             )
-        frame.at[moment, participant] += Decimal(
-            row["source_quantities"]["community_kwh"]
-        )
+        try:
+            quantity = row["source_quantities"]["community_kwh"]
+        except (KeyError, TypeError):
+            if delivery.get("format_version") != "json/1":
+                raise PeriodDataError(
+                    [_problem("invalid_vnb_evidence", "source channel missing")]
+                ) from None
+            quantity = str(row["allocated_kwh"])
+        frame.at[moment, participant] += Decimal(quantity)
     return quantities["consumption"], quantities["production"]
 
 

@@ -512,6 +512,16 @@ def _generate_billing_summary(
         billed_production = _billed_quantities(
             billed_allocation, "production_kwh", engine_credited
         )
+        if billed_allocation is not None:
+            charged, credited = (
+                sum(
+                    (Decimal(str(round(value, 6))) for value in quantities.values()),
+                    Decimal(0),
+                )
+                for quantities in (billed_consumption, billed_production)
+            )
+            if charged != credited:
+                raise ValueError("Billed consumption and production must balance")
 
     # Fail closed until battery attribution can follow a billed split: frozen
     # battery shares that do not add up to the billed energy would mislead.

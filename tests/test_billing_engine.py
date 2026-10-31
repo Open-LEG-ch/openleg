@@ -276,6 +276,26 @@ class TestBilledAllocation:
                 },
             )
 
+    @pytest.mark.parametrize("credited", [5.0, 6.000001])
+    def test_an_unbalanced_billed_split_fails_closed(self, credited):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        with pytest.raises(
+            ValueError, match="Billed consumption and production must balance"
+        ):
+            generate_billing_summary(
+                production=production,
+                consumption=consumption,
+                grid_fee_per_kwh=0.10,
+                internal_price_per_kwh=0.15,
+                network_level="same",
+                billed_allocation={
+                    "consumption_kwh": {"a": 5.0, "b": 1.0},
+                    "production_kwh": {"a": 0.0, "b": credited},
+                },
+            )
+
     def test_without_a_split_the_engine_bills_its_own_allocation(self):
         from billing_engine import generate_billing_summary
 
@@ -652,3 +672,43 @@ class TestQuartierakkuAllocation:
                 battery_participant_id="battery",
                 battery_capacity_kwh=4,
             )
+
+
+@pytest.mark.parametrize("b_quantity,valid", [(0.0000004, False), (0.0000006, True)])
+def test_billed_balance_uses_the_persisted_per_line_quantities(b_quantity, valid):
+    from decimal import Decimal
+
+    from billing_engine import generate_billing_summary
+
+    def bill():
+        return generate_billing_summary(
+            pd.DataFrame({"p": [1.0]}),
+            pd.DataFrame({"a": [1.0], "b": [1.0]}),
+            0.08,
+            0.12,
+            "same",
+            billed_allocation={
+                "consumption_kwh": {"a": 0.0000004, "b": b_quantity},
+                "production_kwh": {"p": 0.0000008},
+            },
+        )
+
+    if not valid:
+        with pytest.raises(
+            ValueError, match="Billed consumption and production must balance"
+        ):
+            bill()
+    else:
+        items = bill()["line_items"]
+        charged, credited = (
+            sum(
+                (
+                    Decimal(str(item["quantity_kwh"]))
+                    for item in items
+                    if item["item_type"] == kind
+                ),
+                Decimal(0),
+            )
+            for kind in ("consumer_charge", "producer_credit")
+        )
+        assert charged == credited == Decimal("0.000001")

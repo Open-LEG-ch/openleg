@@ -164,3 +164,97 @@ def test_dual_control_refuses_the_person_who_raised_the_tolerance(
         db.approve_billing_period(
             prepared["period_id"], community_id, approver_id="member"
         )
+
+
+@pytest.mark.parametrize(
+    "problem",
+    [
+        "ratio_only",
+        "missing",
+        "foreign_community",
+        "foreign_window",
+        "ratio",
+        "actor",
+        "reason",
+        "released_at",
+    ],
+)
+def test_approval_rejects_release_evidence_not_matching_the_persisted_row(
+    unbalanced_period, problem
+):
+    import json
+    from datetime import timedelta
+
+    db, community_id, start, end = unbalanced_period
+    db.save_billing_imbalance_release(
+        community_id, start, end, Decimal("0.002"), "BKW Ticket 4711", "member"
+    )
+    prepared = billing_runner.run_billing_period(
+        community_id, start, end, prepared_by="producer"
+    )
+    period_id = prepared["period_id"]
+    period = db.get_billing_period(period_id, community_id)
+    reconciliation = period["reconciliation"]
+    release = reconciliation["vnb_imbalance_release"]
+    if problem == "ratio_only":
+        reconciliation["vnb_imbalance_release"] = {"max_imbalance_ratio": "0.002"}
+    elif problem == "missing":
+        release["id"] = 2_000_000_000
+    elif problem == "foreign_community":
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO communities (community_id, name, status) VALUES (%s, %s, 'active')",
+                ("synthetic-foreign-release", "Synthetic foreign LEG"),
+            )
+        other = db.save_billing_imbalance_release(
+            "synthetic-foreign-release",
+            start,
+            end,
+            Decimal("0.002"),
+            "BKW Ticket 4711",
+            "member",
+        )
+        release["id"] = other["id"]
+    elif problem == "foreign_window":
+        other = db.save_billing_imbalance_release(
+            community_id,
+            start + timedelta(days=1),
+            end + timedelta(days=1),
+            Decimal("0.002"),
+            "BKW Ticket 4711",
+            "member",
+        )
+        release["id"] = other["id"]
+    elif problem == "ratio":
+        # The draft still carries a self-consistent ratio; its actual row differs.
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE billing_imbalance_releases SET max_imbalance_ratio = 0.003 WHERE id = %s",
+                (release["id"],),
+            )
+    elif problem == "actor":
+        release["released_by"] = "forged-releaser"
+    elif problem == "reason":
+        release["reason"] = "another reason"
+    else:
+        release["released_at"] = "2026-01-01T00:00:00+00:00"
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE communities SET require_dual_control = TRUE WHERE community_id = %s",
+            (community_id,),
+        )
+        cur.execute(
+            "UPDATE billing_periods SET reconciliation = %s::jsonb WHERE id = %s",
+            (json.dumps(reconciliation), period_id),
+        )
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        db.approve_billing_period(period_id, community_id, approver_id="consumer-b")
+
+    assert db.get_billing_period(period_id, community_id)["status"] == "draft"
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT count(*) AS count FROM invoices WHERE billing_period_id = %s",
+            (period_id,),
+        )
+        assert cur.fetchone()["count"] == 0

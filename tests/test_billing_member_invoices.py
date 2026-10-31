@@ -1423,6 +1423,31 @@ def test_member_invoice_detail_template_uses_natural_swiss_high_german_wording()
     assert "Verbrauchsladung" not in text
 
 
+@pytest.mark.parametrize(
+    "instant", ["9999-12-31T23:59:59+00:00", "0001-01-01T00:00:00+23:59"]
+)
+@pytest.mark.parametrize("view", ["detail", "list"])
+def test_period_timezone_overflow_fails_as_invoice_data_error(
+    monkeypatch, instant, view
+):
+    import member_invoices
+
+    invoice = deepcopy(INVOICE_ROW)
+    invoice["provenance_snapshot"]["period_start"] = instant
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: invoice
+    )
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoices_for_participant", lambda *_: [invoice]
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError, match="Periodenangabe"):
+        if view == "detail":
+            member_invoices.detail_view(42, "building-session")
+        else:
+            member_invoices.list_view("building-session")
+
+
 def test_a_period_frozen_in_utc_is_dated_in_its_own_month(monkeypatch):
     """An August invoice starts at 2026-07-31T22:00Z and is not a July one."""
     import member_invoices

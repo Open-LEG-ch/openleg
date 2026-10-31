@@ -439,9 +439,17 @@ def validate_billed_source(
         )
         expected = billing_readings.reconcile_with_vnb(source_frames, independent)
         if frozen_tolerance is None:
-            # The re-derivation reports the default it gated under; a draft
-            # from before per-period tolerances never froze one.
-            expected.pop("vnb_imbalance_tolerance_ratio", None)
+            # Main 43f8826 stored none of these fields. Only their absence is
+            # compatible; a present field must still match the source audit.
+            for key in (
+                "vnb_imbalance_tolerance_ratio",
+                "engine_audit",
+                "vnb_delivered_production_kwh",
+                "vnb_imbalance_kwh",
+                "vnb_imbalance_ratio",
+            ):
+                if key not in reconciliation:
+                    expected.pop(key, None)
         if any(reconciliation.get(key) != value for key, value in expected.items()):
             raise ReconciliationError("independent_audit_mismatch")
     except ReconciliationError:

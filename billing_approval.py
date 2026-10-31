@@ -71,25 +71,73 @@ def _require_documented_tolerance(reconciliation):
     import billing_readings
 
     frozen = reconciliation.get("vnb_imbalance_tolerance_ratio")
-    if frozen is None:
+    release = reconciliation.get("vnb_imbalance_release")
+    if frozen is None and release is None:
         return
     try:
-        tolerance = Decimal(str(frozen))
+        tolerance = billing_readings.imbalance_tolerance(frozen)
         # The draft's own record must stay within the tolerance it froze.
         if Decimal(str(reconciliation.get("vnb_imbalance_ratio", 0))) > tolerance:
             raise BillingApprovalError(
                 "Die Abweichung dieses Entwurfs übersteigt seine Toleranz."
             )
-        if tolerance <= billing_readings.DEFAULT_VNB_IMBALANCE_RATIO:
+        if (
+            tolerance <= billing_readings.DEFAULT_VNB_IMBALANCE_RATIO
+            and release is None
+        ):
             return
-        release = reconciliation.get("vnb_imbalance_release")
-        if Decimal(str(release["max_imbalance_ratio"])) == tolerance:
+        released_at = datetime.fromisoformat(release["released_at"])
+        if (
+            type(release["id"]) is int
+            and release["id"] > 0
+            and all(
+                isinstance(release[key], str) and release[key].strip()
+                for key in ("released_by", "reason")
+            )
+            and released_at.tzinfo is not None
+            and released_at.utcoffset() is not None
+            and Decimal(str(release["max_imbalance_ratio"])) == tolerance
+        ):
             return
-    except (ArithmeticError, KeyError, TypeError):
+    except (ArithmeticError, KeyError, TypeError, ValueError):
         pass
     raise BillingApprovalError(
         "Die angehobene Toleranz dieses Entwurfs ist nicht belegt."
     )
+
+
+def validate_imbalance_release(period, persisted_release):
+    """Validate frozen release evidence against the row locked by approval."""
+    reconciliation = period.get("reconciliation")
+    if not isinstance(reconciliation, dict):
+        raise BillingApprovalError("Der Entwurf hat keinen gültigen Abgleich.")
+    _require_documented_tolerance(reconciliation)
+    release = imbalance_release(period)
+    if release is None:
+        return None
+    message = "Die Toleranzfreigabe dieses Entwurfs stimmt nicht mit dem Beleg überein."
+    try:
+        if not isinstance(persisted_release, dict) or any(
+            persisted_release[key] != release[key]
+            for key in ("id", "released_by", "reason")
+        ):
+            raise BillingApprovalError(message)
+        if (
+            persisted_release["community_id"] != period["community_id"]
+            or Decimal(str(persisted_release["max_imbalance_ratio"]))
+            != Decimal(str(release["max_imbalance_ratio"]))
+            or _parse_temporal(persisted_release["released_at"], message)
+            != _parse_temporal(release["released_at"], message)
+            or any(
+                _parse_temporal(persisted_release[key], message)
+                != _parse_temporal(period[key], message)
+                for key in ("period_start", "period_end")
+            )
+        ):
+            raise BillingApprovalError(message)
+    except (ArithmeticError, KeyError, TypeError, ValueError):
+        raise BillingApprovalError(message) from None
+    return persisted_release["released_by"]
 
 
 def today():
@@ -967,6 +1015,30 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
                             if mapping["building_id"] == participant_id
                         ],
                     },
+                },
+            }
+        audit = participant_provenance["reconciliation"].get("engine_audit")
+        if isinstance(audit, dict):
+            participant_provenance["reconciliation"] = {
+                **participant_provenance["reconciliation"],
+                "engine_audit": {
+                    key: (
+                        {participant_id: value[participant_id]}
+                        if participant_id in value
+                        else {}
+                    )
+                    if key
+                    in {
+                        "consumption_kwh",
+                        "production_kwh",
+                        "allocated_kwh",
+                        "credited_kwh",
+                        "allocation_difference_kwh",
+                        "credit_difference_kwh",
+                    }
+                    and isinstance(value, dict)
+                    else value
+                    for key, value in audit.items()
                 },
             }
         participant_provenance["rounding_adjustment"] = (

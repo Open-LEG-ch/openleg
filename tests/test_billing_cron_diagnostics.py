@@ -113,15 +113,23 @@ def test_cron_reports_known_blockers_without_persisting(
             lambda *args: {"points": [], "readings": [], "unassigned_point_ids": []},
         )
     elif blocker == "vnb_allocation_mismatch":
-        # Billed quantities come from the VNB split, so only a departure from
-        # that reference is a mismatch; an unbalanced delivery fails earlier.
-        reconcile = billing_runner.billing_readings.reconcile_with_vnb
+        from tests.test_billing_pr758_regressions import install_source_runner
+        from tests.test_billing_reconciliation import evidence
 
-        def departing(*args):
-            return {**reconcile(*args), "difference_kwh": 0.25}
-
+        # The source is balanced but its interval split contradicts the model.
+        source = evidence(
+            [
+                ("a", "consumption", [("1.000", "0.300", "0.700")]),
+                ("b", "consumption", [("2.000", "0.700", "1.300")]),
+                ("p", "production", [("1.000", "1.000", "0.000")]),
+            ]
+        )
+        saved, _, _ = install_source_runner(monkeypatch, source)
+        source["community_id"] = "c1"
         monkeypatch.setattr(
-            billing_runner.billing_readings, "reconcile_with_vnb", departing
+            billing_runner,
+            "previous_complete_month",
+            lambda: (source["period_start"], source["period_end"]),
         )
     elif blocker == "billing_inputs_changed":
         monkeypatch.setattr(
@@ -261,3 +269,34 @@ def test_driver_failure_reports_safe_codes_for_every_community(
     ]
     assert secret not in response.text
     assert secret not in caplog.text
+
+
+@pytest.mark.parametrize("direction", ["consumption", "production"])
+def test_cron_identifies_the_original_unbalanced_source_without_issuing(
+    app_with_cron_secret, monkeypatch, direction
+):
+    saved = test_billing_runner._install_billing_fixture(monkeypatch)
+    snapshot = database.get_billable_period_snapshot(
+        "c1", test_billing_runner.START, test_billing_runner.END
+    )
+    for row in snapshot["readings"]:
+        if row["direction"] == direction:
+            row["community_kwh"] = 0.25
+            row["grid_kwh"] = row["total_kwh"] - 0.25
+    monkeypatch.setattr(
+        database, "get_active_communities", lambda: [{"community_id": "c1"}]
+    )
+    monkeypatch.setattr(
+        billing_runner,
+        "previous_complete_month",
+        lambda: (test_billing_runner.START, test_billing_runner.END),
+    )
+
+    response = test_billing_cron_contract._post_process_billing(app_with_cron_secret)
+
+    assert response.status_code == 200
+    assert response.json["processed"] == 0
+    assert response.json["failures"] == [
+        {"community_id": "c1", "error": "vnb_imbalance_exceeds_tolerance"}
+    ]
+    assert saved == []
