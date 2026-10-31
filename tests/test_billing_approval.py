@@ -3240,3 +3240,68 @@ def test_prepare_explains_rounding_without_any_producer():
         str(exc.value)
         == "Ein Rundungsausgleich ist ohne Produzentengutschrift nicht zulässig."
     )
+
+
+def _released_draft(release_ratio="0.003", tolerance=0.003):
+    draft = _draft()
+    draft["reconciliation"]["vnb_imbalance_tolerance_ratio"] = tolerance
+    if release_ratio is not None:
+        draft["reconciliation"]["vnb_imbalance_release"] = {
+            "id": 9,
+            "max_imbalance_ratio": release_ratio,
+            "reason": "BKW Ticket 4711, Zähler von Familie X defekt",
+            "released_by": "building-preparer",
+            "released_at": "2026-02-03T10:00:00+01:00",
+        }
+    return draft
+
+
+def test_invoices_keep_the_release_ratio_but_not_its_author_or_reason():
+    """Every member's invoice is no place for the preparer's free-text reason."""
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        _released_draft(), issue_date=date(2026, 2, 5)
+    )
+
+    for snapshot in snapshots:
+        reconciliation = snapshot["provenance_snapshot"]["reconciliation"]
+        assert reconciliation["vnb_imbalance_release"] == {
+            "id": 9,
+            "max_imbalance_ratio": "0.003",
+        }
+
+
+@pytest.mark.parametrize(
+    "release_ratio", [None, "0.002"], ids=["no-release", "other-ratio"]
+)
+def test_a_raised_tolerance_without_its_release_is_not_approvable(release_ratio):
+    """Dual control reads the releaser from the release, so it must be there."""
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(
+            _released_draft(release_ratio), issue_date=date(2026, 2, 5)
+        )
+
+
+def test_the_default_tolerance_needs_no_release():
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        _released_draft(None, tolerance=0.001), issue_date=date(2026, 2, 5)
+    )
+
+    assert snapshots
+
+
+def test_an_imbalance_above_the_frozen_tolerance_is_not_approvable():
+    """The draft's own record must not show more imbalance than it was allowed."""
+    draft = _released_draft(None, tolerance=0.001)
+    draft["reconciliation"]["vnb_imbalance_ratio"] = 0.004
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_an_imbalance_within_the_frozen_tolerance_is_approvable():
+    draft = _released_draft(None, tolerance=0.001)
+    draft["reconciliation"]["vnb_imbalance_ratio"] = 0.001
+
+    assert billing_approval.prepare_invoice_snapshots(
+        draft, issue_date=date(2026, 2, 5)
+    )
