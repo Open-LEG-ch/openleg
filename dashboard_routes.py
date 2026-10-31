@@ -859,6 +859,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 include_statement_entries=True,
                 billing_approved=request.args.get("approved") == "1",
                 statement_status=request.args.get("statement"),
+                imbalance_status=request.args.get("imbalance"),
             )
         except db.BillingStoreError:
             abort(503)
@@ -895,6 +896,50 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         return redirect(
             dashboard_module.leg_billing_workspace_location(community_id) + suffix
+        )
+
+    @bp.route(
+        "/leg/community/<community_id>/billing/imbalance-release", methods=["POST"]
+    )
+    def leg_billing_imbalance_release(community_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            result = dashboard_module.leg_release_billing_imbalance(
+                community_id, building_id, request.form
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if result["error"]:
+            abort(result["error_status"])
+        if result["errors"]:
+            try:
+                view = dashboard_module.leg_billing_workspace_view(
+                    community_id, building_id, include_statement_entries=True
+                )
+            except db.BillingStoreError:
+                abort(503)
+            if view["error"]:
+                abort(403)
+            view["imbalance_form"] = {
+                "period_start": request.form.get("period_start", ""),
+                "tolerance_pct": request.form.get("tolerance_pct", ""),
+                "reason": request.form.get("reason", ""),
+                "errors": {
+                    field: _(message, **params)
+                    for field, (message, params) in result["errors"].items()
+                },
+            }
+            return (
+                render_city_template(
+                    "leg_billing.html", csrf_token=_dashboard_csrf_token(), **view
+                ),
+                400,
+            )
+        return redirect(
+            dashboard_module.leg_billing_workspace_location(community_id)
+            + "?imbalance="
+            + result["outcome"]
         )
 
     @bp.route(

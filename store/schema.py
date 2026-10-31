@@ -877,6 +877,43 @@ def create_tables():
                 )
             """)
 
+            # A release raises the VNB imbalance tolerance for one billing
+            # window, never above 2%, and always with a reason. Insert-only:
+            # the newest release of a window applies, earlier ones stay as audit.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS billing_imbalance_releases (
+                    id SERIAL PRIMARY KEY,
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id),
+                    period_start TIMESTAMPTZ NOT NULL,
+                    period_end TIMESTAMPTZ NOT NULL,
+                    max_imbalance_ratio DECIMAL(8, 6) NOT NULL
+                        CHECK (max_imbalance_ratio > 0 AND max_imbalance_ratio <= 0.02),
+                    reason TEXT NOT NULL CHECK (length(btrim(reason)) > 0),
+                    released_by VARCHAR(64) NOT NULL,
+                    released_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                CREATE INDEX IF NOT EXISTS idx_billing_imbalance_releases_window
+                    ON billing_imbalance_releases (community_id, period_start, period_end);
+            """)
+
+            # The figures of the last run that stopped on a VNB imbalance, one
+            # row per window, so the workspace can show what blocked it.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS billing_imbalance_blocks (
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id),
+                    period_start TIMESTAMPTZ NOT NULL,
+                    period_end TIMESTAMPTZ NOT NULL,
+                    community_consumption_kwh DECIMAL(18, 6) NOT NULL,
+                    community_production_kwh DECIMAL(18, 6) NOT NULL,
+                    imbalance_kwh DECIMAL(18, 6) NOT NULL,
+                    -- Unbounded: a tiny consumption side makes any ratio possible.
+                    imbalance_ratio NUMERIC NOT NULL,
+                    tolerance_ratio DECIMAL(8, 6) NOT NULL,
+                    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    PRIMARY KEY (community_id, period_start, period_end)
+                )
+            """)
+
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS billing_line_items (
                     id SERIAL PRIMARY KEY,

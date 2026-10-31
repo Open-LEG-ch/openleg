@@ -126,6 +126,7 @@ def readiness_flags(period):
     source_ids = _json_value(period.get("source_document_ids"), [])
     return {
         "reconciled": _is_balanced(reconciliation),
+        "exact_source": _is_exact_source(reconciliation),
         "source_count": len(source_ids),
     }
 
@@ -144,10 +145,22 @@ def _period_summary(period):
     return result
 
 
+def _is_exact_source(reconciliation):
+    """Whether the draft bills the exact VNB source rather than the engine."""
+    return isinstance(reconciliation, dict) and "precision_policy" in reconciliation
+
+
 def _is_balanced(reconciliation):
-    """Return whether every available reconciliation difference is zero."""
+    """Return whether the draft's reconciliation leaves nothing to explain.
+
+    Usually every difference must be zero. Exact-source drafts bill the VNB
+    quantities, so their differences to the engine's own allocation are
+    expected and only need to be readable; approval re-derives the billed
+    quantities from the source itself.
+    """
     if not reconciliation:
         return False
+    exact_source = _is_exact_source(reconciliation)
     differences = []
 
     def collect(value, key=""):
@@ -162,13 +175,14 @@ def _is_balanced(reconciliation):
 
     collect(reconciliation)
     return bool(differences) and all(
-        value.is_finite() and value == 0 for value in differences
+        value.is_finite() and (exact_source or value == 0) for value in differences
     )
 
 
 def _detail_model(period):
     """Build the complete read-only audit model for one billing period."""
     raw_reconciliation = _json_value(period.get("reconciliation"), {})
+    balanced = _is_balanced(raw_reconciliation)
     source_ids = _json_value(period.get("source_document_ids"), [])
     battery_snapshot = _json_value(period.get("battery_snapshot"), {})
     raw_battery_energy = _json_value(battery_snapshot.get("energy"), {})
@@ -241,11 +255,15 @@ def _detail_model(period):
         },
         reconciliation={
             **_normalise(raw_reconciliation),
-            "balanced": _is_balanced(raw_reconciliation),
+            "balanced": balanced,
             "label": (
-                _N("Vollständig abgeglichen")
-                if _is_balanced(raw_reconciliation)
-                else _N("Abweichung prüfen")
+                _N("Abweichung prüfen")
+                if not balanced
+                else _N(
+                    "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+                )
+                if _is_exact_source(raw_reconciliation)
+                else _N("Vollständig abgeglichen")
             ),
         },
         provenance={

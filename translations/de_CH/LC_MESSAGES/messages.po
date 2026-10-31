@@ -32,6 +32,40 @@ msgstr ""
 msgid " mit ElCom Tarifdaten und BFE Sonnendach."
 msgstr " mit ElCom Tarifdaten und BFE Sonnendach."
 
+#: templates/leg_billing.html:106
+msgid ""
+"Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum "
+"Modell ausgewiesen."
+msgstr ""
+"Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum "
+"Modell ausgewiesen."
+
+#: templates/leg_billing.html:70
+#, python-format
+msgid ""
+"Angehobene Toleranz: %(percent)s · Begründung: %(reason)s · Durch: "
+"%(by)s"
+msgstr ""
+"Angehobene Toleranz: %(percent)s · Begründung: %(reason)s · Durch: "
+"%(by)s"
+
+#: templates/leg_billing.html:26
+msgid ""
+"Diese Periode ist nicht mehr blockiert, vermutlich wurde inzwischen "
+"ein Entwurf erstellt. Es wurde keine Toleranz gespeichert."
+msgstr ""
+"Diese Periode ist nicht mehr blockiert, vermutlich wurde inzwischen "
+"ein Entwurf erstellt. Es wurde keine Toleranz gespeichert."
+
+#: billing_workspace.py:255
+msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+msgstr "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+
+#: templates/leg_billing.html:84
+#, python-format
+msgid "Mindestens die gemessene Abweichung, höchstens %(percent)s."
+msgstr "Mindestens die gemessene Abweichung, höchstens %(percent)s."
+
 #: templates/leg_verzeichnis/bestaetigt.html:17
 #, python-format
 msgid "\"%(entry_name)s\" bleibt als aktuell markiert im Verzeichnis."
@@ -712,6 +746,10 @@ msgstr "Abrechnungsperioden"
 #: templates/leg_dashboard.html:403
 msgid "Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr "Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
+
+#: templates/leg_billing.html:66
+msgid "Abweichung"
+msgstr "Abweichung"
 
 #: billing_workspace.py:240
 msgid "Abweichung prüfen"
@@ -1522,6 +1560,10 @@ msgstr "Befehl kopieren"
 msgid "Befehl kopiert."
 msgstr "Befehl kopiert."
 
+#: templates/leg_billing.html:86
+msgid "Begründung"
+msgstr "Begründung"
+
 #: templates/emails/formation_nudge.html:43
 msgid "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
 msgstr "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
@@ -2016,6 +2058,10 @@ msgstr "Bitte wählen Sie zuerst eine Gemeinde aus der Suche."
 #: templates/gemeinde/vergleich.html:104
 msgid "Bitte zwei Gemeinden mit verfügbaren Daten wählen."
 msgstr "Bitte zwei Gemeinden mit verfügbaren Daten wählen."
+
+#: templates/leg_billing.html:57
+msgid "Blockierte Perioden"
+msgstr "Blockierte Perioden"
 
 #: app.py:75 formation_guide.py:9
 msgid "Brauchen die Teilnehmenden eigene Smart Meter?"
@@ -2731,6 +2777,15 @@ msgstr ""
 msgid "Die Abrechnungsperiode ist ungültig."
 msgstr "Die Abrechnungsperiode ist ungültig."
 
+#: templates/leg_billing.html:73
+#, python-format
+msgid ""
+"Die Abweichung übersteigt die höchstmögliche Toleranz von %(percent)s. "
+"Fordern Sie beim VNB eine korrigierte Lieferung an."
+msgstr ""
+"Die Abweichung übersteigt die höchstmögliche Toleranz von %(percent)s. "
+"Fordern Sie beim VNB eine korrigierte Lieferung an."
+
 #: templates/api_docs.html:252
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr "Die Adresse konnte nicht analysiert werden."
@@ -3165,6 +3220,28 @@ msgstr ""
 msgid "Die Tarif-ID der Richtlinie ist ungültig."
 msgstr "Die Tarif-ID der Richtlinie ist ungültig."
 
+#: dashboard.py:670
+#, python-format
+msgid "Die Toleranz darf höchstens %(percent)s betragen."
+msgstr "Die Toleranz darf höchstens %(percent)s betragen."
+
+#: dashboard.py:676
+#, python-format
+msgid "Die Toleranz muss mindestens die gemessene Abweichung von %(percent)s abdecken."
+msgstr "Die Toleranz muss mindestens die gemessene Abweichung von %(percent)s abdecken."
+
+#: templates/leg_billing.html:25
+msgid "Die Toleranz wurde gespeichert und der Abrechnungsentwurf erstellt."
+msgstr "Die Toleranz wurde gespeichert und der Abrechnungsentwurf erstellt."
+
+#: templates/leg_billing.html:26
+msgid ""
+"Die Toleranz wurde gespeichert, der Abrechnungsentwurf konnte aber noch nicht erstellt werden. "
+"Beheben Sie die Ursache und speichern Sie die Freigabe erneut."
+msgstr ""
+"Die Toleranz wurde gespeichert, der Abrechnungsentwurf konnte aber noch nicht erstellt werden. "
+"Beheben Sie die Ursache und speichern Sie die Freigabe erneut."
+
 #: billing_policy.py:230
 msgid "Die Zahlungsfrist der Richtlinie ist ungültig."
 msgstr "Die Zahlungsfrist der Richtlinie ist ungültig."
@@ -3172,6 +3249,16 @@ msgstr "Die Zahlungsfrist der Richtlinie ist ungültig."
 #: billing_policy.py:211
 msgid "Die Zustellmethode der Richtlinie ist ungültig."
 msgstr "Die Zustellmethode der Richtlinie ist ungültig."
+
+#: templates/leg_billing.html:58
+msgid ""
+"Die beiden Seiten der VNB-Lieferung weichen stärker voneinander ab, als ein Rundungsrest erklärt."
+" Für diese Perioden wurde kein Entwurf erstellt. Klären Sie die Abweichung mit dem VNB, oder "
+"heben Sie die Toleranz für genau diese Periode mit Begründung an."
+msgstr ""
+"Die beiden Seiten der VNB-Lieferung weichen stärker voneinander ab, als ein Rundungsrest erklärt."
+" Für diese Perioden wurde kein Entwurf erstellt. Klären Sie die Abweichung mit dem VNB, oder "
+"heben Sie die Toleranz für genau diese Periode mit Begründung an."
 
 #: templates/leg_gruenden.html:187
 msgid "Die eingereichte Anmeldung und die Korrespondenz mit dem Netzbetreiber."
@@ -4633,6 +4720,14 @@ msgid ""
 msgstr ""
 "Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen"
 " nicht an, ob bereits ein Profil existiert."
+
+#: dashboard.py:665
+msgid "Geben Sie die Toleranz in Prozent an, zum Beispiel 0.3."
+msgstr "Geben Sie die Toleranz in Prozent an, zum Beispiel 0.3."
+
+#: dashboard.py:684
+msgid "Geben Sie eine Begründung mit höchstens 500 Zeichen an."
+msgstr "Geben Sie eine Begründung mit höchstens 500 Zeichen an."
 
 #: store/formation_activation.py:90
 msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
@@ -6656,6 +6751,10 @@ msgstr "LEG-Potenzial für %(profile_name)s"
 msgid "LEG-Preis"
 msgstr "LEG-Preis"
 
+#: templates/leg_billing.html:65
+msgid "LEG-Produktion laut VNB"
+msgstr "LEG-Produktion laut VNB"
+
 #: templates/leg_kalkulator.html:267
 msgid "LEG-Rabatt:"
 msgstr "LEG-Rabatt:"
@@ -6663,6 +6762,10 @@ msgstr "LEG-Rabatt:"
 #: templates/leg_verzeichnis/liste.html:57
 msgid "LEG-Status"
 msgstr "LEG-Status"
+
+#: templates/leg_billing.html:64
+msgid "LEG-Verbrauch laut VNB"
+msgstr "LEG-Verbrauch laut VNB"
 
 #: templates/admin/ops.html:35 templates/fuer_gemeinden.html:107
 #: templates/leg_verzeichnis/detail.html:56 templates/leg_verzeichnis/liste.html:40
@@ -10198,6 +10301,18 @@ msgstr "Tipp:"
 #: security_utils.py:212
 msgid "Token ist erforderlich"
 msgstr "Token ist erforderlich"
+
+#: templates/leg_billing.html:90
+msgid "Toleranz anheben und Entwurf erstellen"
+msgstr "Toleranz anheben und Entwurf erstellen"
+
+#: templates/leg_billing.html:67
+msgid "Toleranz beim letzten Lauf"
+msgstr "Toleranz beim letzten Lauf"
+
+#: templates/leg_billing.html:80
+msgid "Toleranz für diese Periode in Prozent"
+msgstr "Toleranz für diese Periode in Prozent"
 
 #: templates/documents/member_invoice.html:37 templates/gemeinde/profil.html:75
 #: templates/leg_kalkulator.html:231

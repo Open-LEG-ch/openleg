@@ -382,24 +382,50 @@ def validate_billed_source(
             raise ReconciliationError("source_identity_mismatch")
         policy = period["billing_policy_snapshot"]
         reconciliation = period["reconciliation"]
+        # The tolerance the draft was billed under; drafts from before
+        # per-period tolerances carry none and keep the exact-balance rule.
+        frozen_tolerance = reconciliation.get("vnb_imbalance_tolerance_ratio")
+        tolerance = (
+            Decimal(str(frozen_tolerance)) if frozen_tolerance is not None else None
+        )
         if require_certificate:
             certificate = audit_e66(delivery, model=policy["distribution_model"])
             if reconciliation["precision_policy"] != certificate or period.get(
                 "battery_snapshot"
             ):
                 raise ReconciliationError("source_certificate_mismatch")
-        source_frames = billing_readings.frames_from_calculated_source(delivery)
+        source_frames = billing_readings.frames_from_calculated_source(
+            delivery, max_imbalance_ratio=tolerance
+        )
         source_consumption, source_production = (
             billing_readings.calculated_quantity_frames(source_frames, delivery)
         )
-        for source, billed in (
-            (source_consumption, consumption_kwh),
-            (source_production, production_kwh),
+        expected_consumption, expected_production = (
+            {
+                participant: sum(frame[participant], Decimal(0))
+                for participant in frame.columns
+            }
+            for frame in (source_consumption, source_production)
+        )
+        try:
+            closing_total = billing_engine.source_balance(
+                source_consumption, source_production, tolerance
+            )
+        except billing_engine.VnbBalancingPolicyRequired:
+            raise ReconciliationError("source_quantity_mismatch") from None
+        if closing_total is not None:
+            # Within the frozen tolerance the producers carry the residue,
+            # exactly as the runner priced it.
+            expected_production = billing_engine.conserving_credits(
+                expected_production, closing_total
+            )
+        for expected, billed in (
+            (expected_consumption, consumption_kwh),
+            (expected_production, production_kwh),
         ):
-            if set(source.columns) != set(billed) or any(
-                sum((Fraction(value) for value in source[participant]), Fraction(0))
-                != Fraction(billed[participant])
-                for participant in source.columns
+            if set(expected) != set(billed) or any(
+                Fraction(expected[participant]) != Fraction(billed[participant])
+                for participant in expected
             ):
                 raise ReconciliationError("source_quantity_mismatch")
         independent = billing_engine.generate_billing_summary(
@@ -412,6 +438,10 @@ def validate_billed_source(
             settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
         )
         expected = billing_readings.reconcile_with_vnb(source_frames, independent)
+        if frozen_tolerance is None:
+            # The re-derivation reports the default it gated under; a draft
+            # from before per-period tolerances never froze one.
+            expected.pop("vnb_imbalance_tolerance_ratio", None)
         if any(reconciliation.get(key) != value for key, value in expected.items()):
             raise ReconciliationError("independent_audit_mismatch")
     except ReconciliationError:
