@@ -176,6 +176,33 @@ def test_dual_control_refuses_a_period_without_a_recorded_preparer(monkeypatch):
     assert "Vorbereitung" in result["error"]
 
 
+def test_dual_control_refuses_the_person_who_raised_the_tolerance(monkeypatch):
+    """Raising the imbalance tolerance is a preparing decision of its own."""
+    monkeypatch.setattr(
+        dashboard,
+        "_require_capability",
+        lambda *_args: member(community_access.BILLING_APPROVER),
+    )
+    monkeypatch.setattr(
+        dashboard.formation_wizard,
+        "get_community_status",
+        lambda _community_id, _viewer=None: {"require_dual_control": True},
+    )
+    monkeypatch.setattr(
+        dashboard.db,
+        "get_billing_period",
+        lambda _period_id: {
+            "prepared_by": "b2",
+            "reconciliation": {"vnb_imbalance_release": {"released_by": "b1"}},
+        },
+    )
+
+    result = dashboard.leg_approve_billing_period("c1", "b1", 42)
+
+    assert result["invoices"] == []
+    assert "verschiedene Personen" in result["error"]
+
+
 def test_empty_operator_query_update_is_rejected(monkeypatch):
     monkeypatch.setattr(
         dashboard,

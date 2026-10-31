@@ -242,6 +242,9 @@ def test_workspace_reads_invoice_queries_once_for_the_community(monkeypatch):
         dashboard.db, "list_community_invoices", MagicMock(return_value=[])
     )
     monkeypatch.setattr(dashboard.db, "is_db_available", lambda: True)
+    monkeypatch.setattr(
+        dashboard.db, "list_billing_imbalance_blocks", MagicMock(return_value=[])
+    )
 
     dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
 

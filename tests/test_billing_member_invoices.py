@@ -13,6 +13,7 @@ detail_view() dict the HTML page used, not from a second calculation.
 import copy
 import json
 import re
+from copy import deepcopy
 from html.parser import HTMLParser
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -1420,6 +1421,56 @@ def test_member_invoice_detail_template_uses_natural_swiss_high_german_wording()
     text = _read_template("member_invoice_detail.html")
     assert "Verbrauchskosten" in text
     assert "Verbrauchsladung" not in text
+
+
+@pytest.mark.parametrize(
+    "instant", ["9999-12-31T23:59:59+00:00", "0001-01-01T00:00:00+23:59"]
+)
+@pytest.mark.parametrize("view", ["detail", "list"])
+def test_period_timezone_overflow_fails_as_invoice_data_error(
+    monkeypatch, instant, view
+):
+    import member_invoices
+
+    invoice = deepcopy(INVOICE_ROW)
+    invoice["provenance_snapshot"]["period_start"] = instant
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: invoice
+    )
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoices_for_participant", lambda *_: [invoice]
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError, match="Periodenangabe"):
+        if view == "detail":
+            member_invoices.detail_view(42, "building-session")
+        else:
+            member_invoices.list_view("building-session")
+
+
+def test_a_period_frozen_in_utc_is_dated_in_its_own_month(monkeypatch):
+    """An August invoice starts at 2026-07-31T22:00Z and is not a July one."""
+    import member_invoices
+
+    invoice = deepcopy(INVOICE_ROW)
+    invoice["provenance_snapshot"] = {
+        **invoice["provenance_snapshot"],
+        "period_start": "2026-07-31T22:00:00+00:00",
+        "period_end": "2026-08-31T22:00:00+00:00",
+    }
+    invoice["issue_date"] = "2026-09-11"
+    invoice["due_date"] = "2026-10-11"
+    monkeypatch.setattr(
+        member_invoices.db,
+        "get_invoice_for_participant",
+        lambda invoice_id, building_id: invoice,
+    )
+
+    detail = member_invoices.detail_view(42, "building-session")
+
+    assert detail["period_label"] == "August 2026"
+    assert detail["period_start"] == "2026-08-01"
+    assert detail["period_end"] == "2026-09-01"
 
 
 # === Settlement fee (#629) ===

@@ -4,13 +4,18 @@
 import json
 import logging
 import math
-from datetime import date
-from decimal import Decimal, InvalidOperation
+from datetime import date, datetime
+from decimal import ROUND_CEILING, ROUND_HALF_UP, Decimal, InvalidOperation
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
+from psycopg2 import Error as DatabaseError
+
+import billing_approval
 import billing_lifecycle
 import billing_policy
+import billing_readings
+import billing_runner
 import billing_workspace
 import community_access
 import community_archive
@@ -412,19 +417,39 @@ def _veracity_flag_counts(periods) -> dict:
     return counts
 
 
+def _period_imbalance_release(release):
+    """The raised tolerance a draft was billed under, for the approver to see."""
+    if release is None:
+        return None
+    try:
+        percent = _imbalance_percent(Decimal(str(release["max_imbalance_ratio"])))
+    except (ArithmeticError, KeyError):
+        return None
+    return {
+        "percent": percent,
+        "reason": release.get("reason"),
+        "by": release.get("released_by"),
+    }
+
+
 def _billing_workspace_period(period: dict, veracity_flag_count: int = 0) -> dict:
     """Compact display row for one billing period in the workspace."""
     status = str(period.get("status") or "")
     flags = billing_workspace.readiness_flags(period)
+    release = billing_approval.imbalance_release(period)
     return {
         "id": period.get("id"),
         "status": status,
         "status_label": _BILLING_STATUS_LABELS.get(status, status),
         "period_label": billing_workspace.period_label(period.get("period_start")),
         "reconciled": flags["reconciled"],
+        "exact_source": flags["exact_source"],
         "source_count": flags["source_count"],
         "veracity_flag_count": veracity_flag_count,
         "prepared_by": period.get("prepared_by"),
+        "imbalance_release": _period_imbalance_release(release),
+        # Read on its own: an unreadable ratio must not hide who released.
+        "imbalance_released_by": release.get("released_by") if release else None,
         "approvable": (
             status == "draft" and flags["reconciled"] and flags["source_count"] > 0
         ),
@@ -446,6 +471,54 @@ def _display_gross_chf(invoice: dict) -> tuple[str, bool]:
     if not amount.is_finite():
         return "Unlesbar", True
     return f"{amount:.2f}", False
+
+
+_IMBALANCE_REASON_MAX_LENGTH = 500
+
+
+def _imbalance_percent(ratio) -> str:
+    """A ratio as an exact percentage, e.g. 0.002004 -> 0.2004 %, 0.02 -> 2 %.
+
+    Ratios are stored with six decimals, so four percent decimals show them
+    without rounding: the minimum the page names can be typed in as is, and a
+    release never reads as lower than the deviation it covers. Anything finer
+    is rounded up, never below the value it stands for.
+    """
+    percent = (Decimal(ratio) * 100).quantize(Decimal("0.0001"), ROUND_CEILING)
+    return f"{percent.normalize():f} %"
+
+
+def _imbalance_kwh(value) -> str:
+    return f"{Decimal(value).quantize(Decimal('0.001'), ROUND_HALF_UP)} kWh"
+
+
+def _imbalance_block_view(block: dict) -> dict:
+    """Display figures of one blocked period and the release decided on it."""
+    released = block.get("release_ratio") is not None
+    return {
+        "period_label": billing_workspace.period_label(block["period_start"]),
+        "period_start": block["period_start"].isoformat(),
+        "period_end": block["period_end"].isoformat(),
+        "consumption": _imbalance_kwh(block["community_consumption_kwh"]),
+        "production": _imbalance_kwh(block["community_production_kwh"]),
+        "imbalance": _imbalance_kwh(block["imbalance_kwh"]),
+        "imbalance_percent": _imbalance_percent(block["imbalance_ratio"]),
+        "tolerance_percent": _imbalance_percent(block["tolerance_ratio"]),
+        # Above the cap no release can pass; only a corrected delivery helps.
+        "releasable": (
+            block["imbalance_ratio"]
+            <= billing_readings.MAX_RELEASED_VNB_IMBALANCE_RATIO
+        ),
+        "release": (
+            {
+                "percent": _imbalance_percent(block["release_ratio"]),
+                "reason": block["release_reason"],
+                "by": block["release_by"],
+            }
+            if released
+            else None
+        ),
+    }
 
 
 def leg_billing_workspace_view(
@@ -547,6 +620,18 @@ def leg_billing_workspace_view(
                 else []
             )
         ],
+        # Without a pool (unit and demo configurations) nothing can be blocked.
+        "imbalance_blocks": [
+            _imbalance_block_view(block)
+            for block in (
+                db.list_billing_imbalance_blocks(community_id)
+                if db.is_db_available()
+                else []
+            )
+        ],
+        "imbalance_max_percent": _imbalance_percent(
+            billing_readings.MAX_RELEASED_VNB_IMBALANCE_RATIO
+        ),
         "billing_approved": False,
         "approval_error": None,
         "viewer_building_id": building_id,
@@ -560,6 +645,138 @@ def leg_billing_workspace_view(
     }
     view.update(extra)
     return view
+
+
+def _imbalance_tolerance_ratio(text: str):
+    """Parse a percentage such as ``0.3``, ``0,3`` or ``0.3 %`` into a ratio, or None."""
+    value = (text or "").strip().removesuffix("%").strip().replace(",", ".")
+    try:
+        percent = Decimal(value)
+        if not percent.is_finite():
+            return None
+        ratio = percent / 100
+        # Six decimals, as stored: the validated ratio is exactly the frozen one.
+        # A finer input is refused rather than rounded, which could lift it over
+        # the deviation it is checked against. An absurd magnitude such as 1e40
+        # cannot be quantised and is no ratio either.
+        stored = ratio.quantize(Decimal("0.000001"), ROUND_HALF_UP)
+        return stored if stored == ratio else None
+    except ArithmeticError:
+        # InvalidOperation for text, Overflow for an exponent such as 1e999999999.
+        return None
+
+
+def _form_window(form):
+    """The window the form names as aware bounds, or None if malformed."""
+    try:
+        start = datetime.fromisoformat(form.get("period_start", ""))
+        end = datetime.fromisoformat(form.get("period_end", ""))
+    except ValueError:
+        return None
+    if start.tzinfo is None or end.tzinfo is None:
+        return None
+    return start, end
+
+
+def _blocked_window(community_id: str, start, end):
+    """The block of this window, or None if it is not blocked."""
+    # Without a pool (unit and demo configurations) nothing can be blocked.
+    if not db.is_db_available():
+        return None
+    for block in db.list_billing_imbalance_blocks(community_id):
+        if block["period_start"] == start and block["period_end"] == end:
+            return block
+    return None
+
+
+def leg_release_billing_imbalance(community_id: str, building_id: str, form) -> dict:
+    """Raise the VNB imbalance tolerance for one blocked period, then bill it.
+
+    Only a billing preparer may decide it, with a reason, for a window a run
+    actually blocked, and never above the 2% cap. The draft is created right
+    away; a run that still fails keeps the release, to be saved again once
+    the cause is fixed.
+    """
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
+        return {"error": _N("Kein Zugriff."), "error_status": 403, "errors": {}}
+    window = _form_window(form)
+    if window is None:
+        return {
+            "error": _N("Die Abrechnungsperiode ist ungültig."),
+            "error_status": 400,
+            "errors": {},
+        }
+    block = _blocked_window(community_id, *window)
+    if block is None:
+        # Usually a draft was created meanwhile; nothing is saved.
+        return {"error": None, "errors": {}, "outcome": "gone"}
+    errors = {}
+    ratio = _imbalance_tolerance_ratio(form.get("tolerance_pct"))
+    if ratio is None or ratio <= 0:
+        errors["tolerance_pct"] = (
+            _N("Geben Sie die Toleranz in Prozent an, zum Beispiel 0.3."),
+            {},
+        )
+    elif ratio > billing_readings.MAX_RELEASED_VNB_IMBALANCE_RATIO:
+        errors["tolerance_pct"] = (
+            _N("Die Toleranz darf höchstens %(percent)s betragen."),
+            {
+                "percent": _imbalance_percent(
+                    billing_readings.MAX_RELEASED_VNB_IMBALANCE_RATIO
+                )
+            },
+        )
+    elif ratio < block["imbalance_ratio"]:
+        errors["tolerance_pct"] = (
+            _N(
+                "Die Toleranz muss mindestens die gemessene Abweichung von "
+                "%(percent)s abdecken."
+            ),
+            {"percent": _imbalance_percent(block["imbalance_ratio"])},
+        )
+    # Browsers count a line break once but submit it as CRLF.
+    reason = (form.get("reason") or "").replace("\r\n", "\n").strip()
+    if not reason or len(reason) > _IMBALANCE_REASON_MAX_LENGTH:
+        errors["reason"] = (
+            _N("Geben Sie eine Begründung mit höchstens 500 Zeichen an."),
+            {},
+        )
+    if errors:
+        return {"error": None, "error_status": 400, "errors": errors}
+
+    start, end = block["period_start"], block["period_end"]
+    db.save_billing_imbalance_release(
+        community_id, start, end, ratio, reason, building_id
+    )
+    try:
+        # The releaser prepared this draft, so dual control keeps them from
+        # approving it.
+        billing_runner.run_billing_period(
+            community_id, start, end, prepared_by=building_id
+        )
+        try:
+            still_blocked = (
+                db.get_billing_period_for_window(community_id, start, end) is None
+            )
+        except (db.BillingStoreError, DatabaseError):
+            # The release and the run are committed; only the recheck is lost.
+            still_blocked = False
+        if still_blocked:
+            # No live draft came of it, e.g. the source was withdrawn meanwhile.
+            raise billing_runner.BillingRunError(
+                "no live draft after the release", code="billing_run_failed"
+            )
+    except billing_runner.BillingRunError as exc:
+        # The release stands; the preparer fixes the cause and saves again.
+        logger.warning(
+            "billing draft after imbalance release failed for %s: %s",
+            community_id,
+            exc.code,
+        )
+        return {"error": None, "errors": {}, "outcome": "pending"}
+    return {"error": None, "errors": {}, "outcome": "released"}
 
 
 def leg_import_bank_statement(community_id, building_id, source_name, content):
@@ -679,7 +896,11 @@ def leg_approve_billing_period(
     status = formation_wizard.get_community_status(community_id, building_id) or {}
     if status.get("require_dual_control"):
         period = db.get_billing_period(period_id) or {}
-        if not period.get("prepared_by") or period.get("prepared_by") == building_id:
+        if (
+            not period.get("prepared_by")
+            or period.get("prepared_by") == building_id
+            or billing_approval.imbalance_released_by(period) == building_id
+        ):
             return {
                 "error": (
                     _N(

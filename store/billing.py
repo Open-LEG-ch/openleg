@@ -454,9 +454,34 @@ def approve_billing_period(
                 raise billing_approval.BillingApprovalError(
                     "Only a draft billing period can be approved"
                 )
+            release = billing_approval.imbalance_release(period)
+            persisted_release = None
+            if release is not None:
+                if type(release.get("id")) is not int or release["id"] <= 0:
+                    raise billing_approval.BillingApprovalError(
+                        "Die Toleranzfreigabe dieses Entwurfs ist ungültig."
+                    )
+                cur.execute(
+                    """SELECT * FROM billing_imbalance_releases
+                       WHERE id = %s AND community_id = %s
+                         AND period_start = %s AND period_end = %s
+                       FOR UPDATE""",
+                    (
+                        release["id"],
+                        community_id,
+                        period["period_start"],
+                        period["period_end"],
+                    ),
+                )
+                release_row = cur.fetchone()
+                persisted_release = dict(release_row) if release_row else None
+            releaser = billing_approval.validate_imbalance_release(
+                period, persisted_release
+            )
             if community_row.get("require_dual_control") and (
                 not period.get("prepared_by")
                 or period.get("prepared_by") == approver_id
+                or releaser == approver_id
                 or not approver_id
             ):
                 raise billing_approval.BillingApprovalError(
@@ -538,7 +563,7 @@ def get_billing_period_for_window(
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT id, input_fingerprint FROM billing_periods
+            SELECT id, input_fingerprint, status FROM billing_periods
             WHERE community_id = %s AND period_start = %s AND period_end = %s
               AND status IS DISTINCT FROM 'invalidated'
             """,
@@ -599,6 +624,150 @@ def get_billing_policy(community_id: str, period_start, period_end) -> dict | No
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+def save_billing_imbalance_release(
+    community_id: str,
+    period_start,
+    period_end,
+    max_imbalance_ratio,
+    reason: str,
+    released_by: str,
+) -> dict:
+    """Insert one release of a higher VNB imbalance tolerance for a window.
+
+    Insert-only: the newest release of a window applies, earlier ones remain
+    as audit. The schema refuses a ratio outside (0, 2%] and a blank reason.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO billing_imbalance_releases
+                (community_id, period_start, period_end, max_imbalance_ratio,
+                 reason, released_by)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id, released_at
+                """,
+                (
+                    community_id,
+                    period_start,
+                    period_end,
+                    max_imbalance_ratio,
+                    reason,
+                    released_by,
+                ),
+            )
+            return dict(cur.fetchone())
+    except Exception as e:
+        logger.error(f"[DB] Error saving billing imbalance release: {e}")
+        raise BillingStoreError("Could not save billing imbalance release") from e
+
+
+def get_billing_imbalance_release(
+    community_id: str, period_start, period_end
+) -> dict | None:
+    """Return the newest imbalance release of exactly this window, if any."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, max_imbalance_ratio, reason, released_by, released_at
+                FROM billing_imbalance_releases
+                WHERE community_id = %s AND period_start = %s AND period_end = %s
+                ORDER BY released_at DESC, id DESC
+                LIMIT 1
+                """,
+                (community_id, period_start, period_end),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"[DB] Error loading billing imbalance release: {e}")
+        raise BillingStoreError("Could not load billing imbalance release") from e
+
+
+def record_billing_imbalance_block(
+    community_id: str, period_start, period_end, figures: dict
+) -> None:
+    """Keep the figures of the latest run a VNB imbalance stopped."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO billing_imbalance_blocks
+                (community_id, period_start, period_end,
+                 community_consumption_kwh, community_production_kwh,
+                 imbalance_kwh, imbalance_ratio, tolerance_ratio)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (community_id, period_start, period_end) DO UPDATE SET
+                    community_consumption_kwh = EXCLUDED.community_consumption_kwh,
+                    community_production_kwh = EXCLUDED.community_production_kwh,
+                    imbalance_kwh = EXCLUDED.imbalance_kwh,
+                    imbalance_ratio = EXCLUDED.imbalance_ratio,
+                    tolerance_ratio = EXCLUDED.tolerance_ratio,
+                    recorded_at = NOW()
+                """,
+                (
+                    community_id,
+                    period_start,
+                    period_end,
+                    figures["community_consumption_kwh"],
+                    figures["community_production_kwh"],
+                    figures["imbalance_kwh"],
+                    figures["imbalance_ratio"],
+                    figures["tolerance_ratio"],
+                ),
+            )
+    except Exception as e:
+        logger.error(f"[DB] Error recording billing imbalance block: {e}")
+        raise BillingStoreError("Could not record billing imbalance block") from e
+
+
+def list_billing_imbalance_blocks(community_id: str) -> list[dict]:
+    """List blocked windows that still have no current draft, newest first.
+
+    Each block carries the newest release of its window, if one exists, so the
+    workspace shows what was decided after the run stopped.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT b.period_start, b.period_end,
+                       b.community_consumption_kwh, b.community_production_kwh,
+                       b.imbalance_kwh, b.imbalance_ratio, b.tolerance_ratio,
+                       b.recorded_at,
+                       r.max_imbalance_ratio AS release_ratio,
+                       r.reason AS release_reason,
+                       r.released_by AS release_by,
+                       r.released_at AS release_at
+                FROM billing_imbalance_blocks b
+                LEFT JOIN LATERAL (
+                    SELECT max_imbalance_ratio, reason, released_by, released_at
+                    FROM billing_imbalance_releases r
+                    WHERE r.community_id = b.community_id
+                      AND r.period_start = b.period_start
+                      AND r.period_end = b.period_end
+                    ORDER BY r.released_at DESC, r.id DESC
+                    LIMIT 1
+                ) r ON TRUE
+                WHERE b.community_id = %s
+                  AND NOT EXISTS (
+                      SELECT 1 FROM billing_periods p
+                      WHERE p.community_id = b.community_id
+                        AND p.period_start = b.period_start
+                        AND p.period_end = b.period_end
+                        AND p.status IS DISTINCT FROM 'invalidated'
+                  )
+                ORDER BY b.period_start DESC
+                """,
+                (community_id,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing billing imbalance blocks: {e}")
+        raise BillingStoreError("Could not list billing imbalance blocks") from e
 
 
 def save_billing_policy(community_id: str, policy: dict) -> int:

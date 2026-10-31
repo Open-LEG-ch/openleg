@@ -139,8 +139,9 @@ def test_einfach_rounding_witness_does_not_supply_an_imbalance_policy(einfach_de
     )
     with pytest.raises(billing_runner.BillingRunError) as error:
         billing_runner.run_billing_period(payload["community_id"], start, end)
-    assert error.value.code == "vnb_allocation_mismatch"
-    assert error.value.reason == "vnb_balancing_policy_required"
+    # The unequal totals exceed the default tolerance, so the period stops at
+    # the imbalance gate before any source quantity is priced.
+    assert error.value.code == "vnb_imbalance_exceeds_tolerance"
     assert db.get_billing_period_for_window(payload["community_id"], start, end) is None
 
 

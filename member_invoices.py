@@ -18,6 +18,7 @@ empty items list, or "Unbekannt" as if that were real data.
 import json
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
+from zoneinfo import ZoneInfo
 
 from markupsafe import Markup, escape
 
@@ -93,6 +94,26 @@ def _require_date_text(value, message: str) -> str:
     if isinstance(value, (datetime, date)):
         return value.isoformat()[:10]
     raise MemberInvoiceDataError(message)
+
+
+def _require_period_date_text(value, message: str) -> str:
+    """Require a period boundary, read in the timezone the period was billed in.
+
+    Boundaries are frozen as UTC instants, so an August period starts at
+    2026-07-31T22:00:00+00:00. Truncating that string to its first ten
+    characters drops the offset and dates the member's own invoice to July.
+    """
+    if isinstance(value, str) and value.strip():
+        try:
+            value = datetime.fromisoformat(value)
+        except ValueError:
+            raise MemberInvoiceDataError(message) from None
+    if isinstance(value, datetime) and value.tzinfo is not None:
+        try:
+            value = value.astimezone(ZoneInfo(billing_workspace.PERIOD_TIMEZONE))
+        except (OverflowError, ValueError):
+            raise MemberInvoiceDataError(message) from None
+    return _require_date_text(value, message)
 
 
 def _require_text(value, message: str) -> str:
@@ -272,11 +293,10 @@ def _summary(invoice: dict) -> dict:
         invoice.get("provenance_snapshot"),
         "Die Rechnung hat keine gültige Periodenangabe.",
     )
-    # Validate the frozen start, but label from the full instant: the runner
-    # stores it in UTC (August starts 2026-07-31T22:00Z), and cutting it to
-    # the UTC date first would name the previous month.
-    period_start = provenance.get("period_start")
-    _require_date_text(period_start, "Die Rechnung hat keine gültige Periodenangabe.")
+    period_start = _require_period_date_text(
+        provenance.get("period_start"),
+        "Die Rechnung hat keine gültige Periodenangabe.",
+    )
     invoice_id = _require_positive_id(
         invoice.get("id"), "Die Rechnung hat keine gültige ID."
     )
@@ -537,11 +557,11 @@ def _detail_from_invoice(invoice: dict, building_id: str) -> dict:
         invoice.get("provenance_snapshot"),
         "Die Rechnung hat keine gültige Periodenangabe.",
     )
-    period_start = _require_date_text(
+    period_start = _require_period_date_text(
         provenance.get("period_start"),
         "Die Rechnung hat keine gültige Periodenangabe.",
     )
-    period_end = _require_date_text(
+    period_end = _require_period_date_text(
         provenance.get("period_end"), "Die Rechnung hat keine gültige Periodenangabe."
     )
 

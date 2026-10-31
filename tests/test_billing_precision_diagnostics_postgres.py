@@ -103,11 +103,14 @@ def test_cron_reports_rounded_source_refusals_without_leaking_evidence(
     assert body["failed"] == 1
     failure = body["failures"][0]
     assert failure["community_id"] == payload["community_id"]
-    assert failure["error"] == "vnb_allocation_mismatch"
-    if problem == "unbalanced":
-        assert failure["reason"] == "vnb_balancing_policy_required"
-    else:
-        assert "reason" not in failure
+    # Unequal source totals above the default tolerance stop at the imbalance
+    # gate; a model disagreement is still an allocation mismatch.
+    assert failure["error"] == (
+        "vnb_imbalance_exceeds_tolerance"
+        if problem == "unbalanced"
+        else "vnb_allocation_mismatch"
+    )
+    assert "reason" not in failure
     for leak in (
         "SYNTHETIC-METER-1",
         "SYNTHETIC-CONSUMER-B",

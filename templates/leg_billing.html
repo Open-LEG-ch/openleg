@@ -4,6 +4,7 @@
 {% set query_states = {'open': _('open'), 'acknowledged': _('acknowledged'), 'resolved': _('resolved')} %}
 {% set can_prepare_billing = can_prepare_billing|default(false) %}
 {% set can_approve_billing = can_approve_billing|default(false) %}
+{% set imbalance_form = imbalance_form|default({}) %}
 <div class="max-w-3xl mx-auto px-4 py-8">
   <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="text-brand hover:underline font-semibold">{{ _('Zurück zum LEG-Dashboard') }}</a></p>
   <h1 class="text-2xl font-bold mb-2">{{ _('Abrechnungen') }}</h1>
@@ -21,6 +22,9 @@
   {% endif %}
   {% if lifecycle_error %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ _(lifecycle_error) }}</p>{% endif %}
   {% if statement_status == 'imported' %}<p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">{{ _('Der Kontoauszug wurde importiert und abgeglichen.') }}</p>{% endif %}
+  {% if imbalance_status == 'released' %}<p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">{{ _('Die Toleranz wurde gespeichert und der Abrechnungsentwurf erstellt.') }}</p>{% endif %}
+  {% if imbalance_status == 'gone' %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Diese Periode ist nicht mehr blockiert, vermutlich wurde inzwischen ein Entwurf erstellt. Es wurde keine Toleranz gespeichert.') }}</p>{% endif %}
+  {% if imbalance_status == 'pending' %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Die Toleranz wurde gespeichert, der Abrechnungsentwurf konnte aber noch nicht erstellt werden. Beheben Sie die Ursache und speichern Sie die Freigabe erneut.') }}</p>{% endif %}
   {% if statement_status == 'duplicate' %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht.') }}</p>{% endif %}
 
   {% if can_prepare_billing %}
@@ -49,6 +53,52 @@
   </section>
   {% endif %}
 
+  {% if imbalance_blocks %}
+  <section class="bg-white rounded-xl border border-accent p-6 mb-6" aria-labelledby="imbalance-blocks-heading">
+    <h2 id="imbalance-blocks-heading" class="font-bold mb-2">{{ _('Blockierte Perioden') }}</h2>
+    <p class="text-sm text-ink-muted mb-4">{{ _('Die beiden Seiten der VNB-Lieferung weichen stärker voneinander ab, als ein Rundungsrest erklärt. Für diese Perioden wurde kein Entwurf erstellt. Klären Sie die Abweichung mit dem VNB, oder heben Sie die Toleranz für genau diese Periode mit Begründung an.') }}</p>
+    <div class="space-y-6">
+      {% for block in imbalance_blocks %}
+      <div class="border-l-2 border-accent pl-3">
+        <h3 class="font-semibold mb-2">{{ block.period_label|periodlabel }}</h3>
+        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm mb-3">
+          <dt class="text-ink-muted">{{ _('LEG-Verbrauch laut VNB') }}</dt><dd>{{ block.consumption }}</dd>
+          <dt class="text-ink-muted">{{ _('LEG-Produktion laut VNB') }}</dt><dd>{{ block.production }}</dd>
+          <dt class="text-ink-muted">{{ _('Abweichung') }}</dt><dd class="font-semibold">{{ block.imbalance }} ({{ block.imbalance_percent }})</dd>
+          <dt class="text-ink-muted">{{ _('Toleranz beim letzten Lauf') }}</dt><dd>{{ block.tolerance_percent }}</dd>
+        </dl>
+        {% if block.release %}
+        <p class="text-sm mb-3">{{ _('Angehobene Toleranz: %(percent)s · Begründung: %(reason)s · Durch: %(by)s', percent=block.release.percent, reason=block.release.reason, by=block.release.by) }}</p>
+        {% endif %}
+        {% if can_prepare_billing and not block.releasable %}
+        <p class="text-sm">{{ _('Die Abweichung übersteigt die höchstmögliche Toleranz von %(percent)s. Fordern Sie beim VNB eine korrigierte Lieferung an.', percent=imbalance_max_percent) }}</p>
+        {% elif can_prepare_billing %}
+        {% set errors = imbalance_form.errors|default({}) if imbalance_form.period_start == block.period_start else {} %}
+        {% set values = imbalance_form if imbalance_form.period_start == block.period_start else {} %}
+        <form method="post" action="/leg/community/{{ community_id }}/billing/imbalance-release" class="grid gap-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="period_start" value="{{ block.period_start }}">
+          <input type="hidden" name="period_end" value="{{ block.period_end }}">
+          <div>
+            <label for="tolerance-{{ loop.index }}" class="block text-sm font-semibold mb-1">{{ _('Toleranz für diese Periode in Prozent') }}</label>
+            <input id="tolerance-{{ loop.index }}" type="text" inputmode="decimal" name="tolerance_pct" required value="{{ values.tolerance_pct|default('') }}" aria-describedby="tolerance-hint-{{ loop.index }}" class="border rounded-lg px-3 py-2 w-full sm:w-40">
+            <p id="tolerance-hint-{{ loop.index }}" class="mt-1 text-xs text-ink-muted">{{ _('Mindestens die gemessene Abweichung, höchstens %(percent)s.', percent=imbalance_max_percent) }}</p>
+            {% if errors.tolerance_pct %}<p class="mt-1 text-sm text-accent" role="alert">{{ errors.tolerance_pct }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="reason-{{ loop.index }}" class="block text-sm font-semibold mb-1">{{ _('Begründung') }}</label>
+            <textarea id="reason-{{ loop.index }}" name="reason" required maxlength="500" rows="2" class="border rounded-lg px-3 py-2 w-full">{{ values.reason|default('') }}</textarea>
+            {% if errors.reason %}<p class="mt-1 text-sm text-accent" role="alert">{{ errors.reason }}</p>{% endif %}
+          </div>
+          <div><button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Toleranz anheben und Entwurf erstellen') }}</button></div>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   {% if periods %}
   <div class="space-y-6">
     {% for period in periods %}
@@ -56,15 +106,18 @@
       <h2 class="font-bold mb-2">{{ period.period_label|periodlabel }}</h2>
       <p class="text-sm mb-2">{{ _('Status:') }} <span class="font-semibold">{{ _(period.status_label) }}</span></p>
       <p class="text-sm text-ink-muted mb-4">
-        {% if period.reconciled %}{{ _('Abgleich mit dem VNB: vollständig abgeglichen.') }}{% else %}{{ _('Abgleich mit dem VNB: Abweichung prüfen.') }}{% endif %}
+        {% if period.reconciled and period.exact_source %}{{ _('Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen.') }}{% elif period.reconciled %}{{ _('Abgleich mit dem VNB: vollständig abgeglichen.') }}{% else %}{{ _('Abgleich mit dem VNB: Abweichung prüfen.') }}{% endif %}
         {{ _('Quelldokumente:') }} {{ period.source_count }}.
         {% if period.veracity_flag_count %}
           <span class="font-semibold text-accent-dark">{{ _('Auffällige Messfenster:') }} {{ period.veracity_flag_count }}</span> {{ _('(Plausibilität, kein Fehler; Import und Freigabe bleiben möglich.)') }}
         {% endif %}
       </p>
+      {% if period.imbalance_release %}
+      <p class="text-sm mb-4">{{ _('Angehobene Toleranz: %(percent)s · Begründung: %(reason)s · Durch: %(by)s', percent=period.imbalance_release.percent, reason=period.imbalance_release.reason, by=period.imbalance_release.by) }}</p>
+      {% endif %}
       {% if period.approvable %}
       {% if period.prepared_by %}<p class="text-sm text-ink-muted mb-2">{{ _('Vorbereitet durch:') }} <span class="font-semibold">{{ period.prepared_by }}</span></p>{% endif %}
-      {% if can_approve_billing and (not require_dual_control or (period.prepared_by and period.prepared_by != viewer_building_id)) %}
+      {% if can_approve_billing and (not require_dual_control or (period.prepared_by and period.prepared_by != viewer_building_id and period.imbalance_released_by != viewer_building_id)) %}
       <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/approve">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label for="confirm-approval-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">

@@ -208,6 +208,68 @@ def test_incomplete_reconciliation_and_malformed_provenance_are_visible(
     assert selected["tariff"]["internal_price"] == "Nicht angegeben"
 
 
+def test_an_exact_source_draft_reads_as_reconciled_despite_the_model_gap():
+    """Exact-source drafts bill the VNB quantities; the engine gap is expected.
+
+    Approval re-derives those quantities from the source itself, so the
+    differences to the engine's own allocation must not hide the draft's
+    prepare and approve actions.
+    """
+    workspace = _module()
+    reconciliation = {
+        "precision_policy": {"format_version": "e66/1"},
+        "difference_kwh": 0.001,
+        "participants": {"producer": {"production_difference_kwh": 0.001}},
+    }
+
+    flags = workspace.readiness_flags(
+        {"reconciliation": reconciliation, "source_document_ids": ["e66"]}
+    )
+
+    assert flags["reconciled"] is True
+    assert flags["exact_source"] is True
+
+
+def test_an_exact_source_draft_is_labelled_as_such_not_as_balanced(monkeypatch):
+    """The label must not claim a balance the figures beside it contradict."""
+    workspace = _module()
+    period = {
+        "id": 7,
+        "community_id": "community-a",
+        "period_start": "2026-07-01T00:00:00+02:00",
+        "period_end": "2026-08-01T00:00:00+02:00",
+        "status": "draft",
+        "reconciliation": {
+            "precision_policy": {"format_version": "e66/1"},
+            "difference_kwh": 0.001,
+        },
+        "source_document_ids": ["e66"],
+        "line_items": [],
+    }
+    monkeypatch.setattr(
+        workspace.db, "list_billing_periods", lambda limit=100: [period]
+    )
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda _period_id: period)
+
+    label = workspace.load()["selected"]["reconciliation"]["label"]
+
+    assert label == "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+
+
+def test_an_exact_source_draft_with_an_unreadable_difference_is_not_reconciled():
+    workspace = _module()
+    reconciliation = {
+        "precision_policy": {"format_version": "e66/1"},
+        "difference_kwh": "not-a-number",
+    }
+
+    flags = workspace.readiness_flags(
+        {"reconciliation": reconciliation, "source_document_ids": ["e66"]}
+    )
+
+    assert flags["reconciled"] is False
+
+
 def test_malformed_persisted_numeric_values_fall_back_without_error(monkeypatch):
     workspace = _module()
     period = {
@@ -288,6 +350,21 @@ def test_rate_uses_explicit_half_up_rounding():
     workspace = _module()
 
     assert workspace._rate(Decimal("0.15005")) == "15.01 Rp./kWh"
+
+
+def test_a_period_stored_in_utc_is_labelled_in_its_own_month():
+    """An August period starts at 2026-07-31T22:00Z and is not July."""
+    import billing_workspace as workspace
+
+    assert (
+        workspace.period_label(datetime(2026, 7, 31, 22, 0, tzinfo=ZoneInfo("UTC")))
+        == "August 2026"
+    )
+    assert workspace.period_label("2026-07-31T22:00:00+00:00") == "August 2026"
+    assert (
+        workspace.period_label(datetime(2026, 8, 1, tzinfo=ZoneInfo("Europe/Zurich")))
+        == "August 2026"
+    )
 
 
 def test_workspace_groups_settlement_fee_lines_separately(monkeypatch):

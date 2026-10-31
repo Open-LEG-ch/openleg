@@ -11,6 +11,7 @@ Fixtures are synthetic SDAT-E66 documents. No citizen data enters this suite.
 
 from copy import deepcopy
 from datetime import datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 from zoneinfo import ZoneInfo
@@ -79,9 +80,32 @@ def _install(monkeypatch, points, rows, *, unassigned=None):
     monkeypatch.setattr(database, "get_billable_period_snapshot", _get_snapshot)
 
 
+def _balanced(rows):
+    """Balance the fixture's LEG channel the way a real delivery does.
+
+    What one member draws from the community in an interval is what the
+    community's producers fed into it in that same interval. The XML fixture
+    predates that rule and carries a production side three times its
+    consumption side, which billing now refuses as a broken delivery rather
+    than a rounding residue. Balancing per interval keeps every sub-period of
+    the fixture billable.
+    """
+    rows = deepcopy(rows)
+    drawn = {}
+    for row in rows:
+        if row["direction"] == "consumption":
+            drawn[row["measured_at"]] = (
+                drawn.get(row["measured_at"], 0) + row["community_kwh"]
+            )
+    for row in rows:
+        if row["direction"] == "production":
+            row["community_kwh"] = drawn.get(row["measured_at"], 0)
+    return rows
+
+
 @pytest.fixture
 def rows():
-    return _fixture_rows()["rows"]
+    return _balanced(_fixture_rows()["rows"])
 
 
 # --- Step 1: participant-keyed frames for a half-open period ---
@@ -429,6 +453,7 @@ def _summary(frames, price=0.11):
         grid_fee_per_kwh=0.09,
         internal_price_per_kwh=price,
         network_level="same",
+        billed_allocation=frames.vnb_reference["billed"],
     )
 
 
@@ -465,20 +490,212 @@ def test_engine_ledger_balances_to_zero(monkeypatch, rows):
     )
 
 
-def test_reconciliation_reports_the_gap_to_the_vnb_allocation(monkeypatch, rows):
-    """The VNB already allocated. The engine reallocates. Surface the delta."""
+def test_members_are_billed_the_vnb_split_verbatim(monkeypatch, rows):
+    """A member can check their charge against their own VNB statement."""
+    _install(monkeypatch, _points(), rows)
+    frames = billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    summary = _summary(frames)
+
+    charged = {
+        item["participant_id"]: item["quantity_kwh"]
+        for item in summary["line_items"]
+        if item["item_type"] == "consumer_charge"
+    }
+    # The fixture's VNB community channel gives building A 0.22 kWh and
+    # building B 0.501 kWh on the consumption side.
+    assert charged[BUILDING_A] == pytest.approx(0.22)
+    assert charged[BUILDING_B] == pytest.approx(0.501)
+
+
+def test_credits_carry_exactly_the_charged_energy(monkeypatch, rows):
+    """Energy in equals energy out, which is what approval later requires."""
+    _install(monkeypatch, _points(), rows)
+    frames = billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    summary = _summary(frames)
+
+    charged = sum(
+        item["quantity_kwh"]
+        for item in summary["line_items"]
+        if item["item_type"] == "consumer_charge"
+    )
+    credited = sum(
+        item["quantity_kwh"]
+        for item in summary["line_items"]
+        if item["item_type"] == "producer_credit"
+    )
+    assert charged == pytest.approx(credited, abs=1e-9)
+
+
+def test_reconciliation_is_a_true_zero_against_the_billed_split(monkeypatch, rows):
+    """Billing follows the VNB reference, so any gap here is a defect."""
     _install(monkeypatch, _points(), rows)
     frames = billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
     summary = _summary(frames)
 
     report = billing_readings.reconcile_with_vnb(frames, summary)
 
-    # The fixture's VNB community channel sums to 0.721 kWh on the consumption
-    # side while proportional allocation reaches 1.75 kWh.
     assert report["vnb_allocated_kwh"] == pytest.approx(0.721)
-    assert report["engine_allocated_kwh"] == pytest.approx(1.75)
-    assert report["difference_kwh"] == pytest.approx(1.029)
+    assert report["engine_allocated_kwh"] == pytest.approx(0.721)
+    assert report["difference_kwh"] == 0
+    assert report["production_difference_kwh"] == 0
     assert report["per_participant"][BUILDING_A]["vnb_kwh"] == pytest.approx(0.22)
+
+
+def test_reconciliation_keeps_the_engine_allocation_as_an_audit_figure(
+    monkeypatch, rows
+):
+    """What proportional allocation would have billed stays visible."""
+    _install(monkeypatch, _points(), rows)
+    frames = billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+    summary = _summary(frames)
+
+    report = billing_readings.reconcile_with_vnb(frames, summary)
+
+    # Proportional allocation reaches 1.75 kWh on this fixture, well above the
+    # 0.721 kWh the VNB allocated. The difference is reported, not billed.
+    audit = report["engine_audit"]
+    assert audit["total_allocated_kwh"] == pytest.approx(1.75)
+    assert audit["distribution_model"] == "proportional"
+    assert sum(audit["allocation_difference_kwh"].values()) == pytest.approx(
+        0.721 - 1.75
+    )
+
+
+def _tilted(rows):
+    """Three production rows one Wh high: 0.003 kWh on 0.721, about 0.42%."""
+    tilted = deepcopy(rows)
+    for row in tilted:
+        if row["direction"] == "production":
+            row["community_kwh"] += Decimal("0.001")
+    return tilted
+
+
+def test_a_delivered_imbalance_is_reported_with_the_period(monkeypatch, rows):
+    """The residue the credits absorb must stay visible on the draft."""
+    _install(monkeypatch, _points(), _tilted(rows))
+    frames = billing_readings.load_period_frames(
+        COMMUNITY, PERIOD_START, PERIOD_END, max_imbalance_ratio=Decimal("0.005")
+    )
+
+    report = billing_readings.reconcile_with_vnb(frames, _summary(frames))
+
+    assert report["vnb_imbalance_kwh"] == pytest.approx(0.003)
+    assert report["vnb_delivered_production_kwh"] == pytest.approx(0.724)
+    assert report["production_difference_kwh"] == 0
+    assert report["vnb_imbalance_tolerance_ratio"] == pytest.approx(0.005)
+
+
+def test_the_default_tolerance_is_a_tenth_of_a_percent():
+    assert billing_readings.DEFAULT_VNB_IMBALANCE_RATIO == Decimal("0.001")
+    assert billing_readings.MAX_RELEASED_VNB_IMBALANCE_RATIO == Decimal("0.02")
+
+
+def test_an_imbalance_above_the_default_refuses_with_its_figures(monkeypatch, rows):
+    """The refusal carries the numbers an operator needs to investigate."""
+    _install(monkeypatch, _points(), _tilted(rows))
+
+    with pytest.raises(billing_readings.PeriodDataError) as refused:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    (problem,) = refused.value.problems
+    assert problem["kind"] == "vnb_imbalance"
+    assert problem["figures"] == {
+        "community_consumption_kwh": Decimal("0.721000"),
+        "community_production_kwh": Decimal("0.724000"),
+        "imbalance_kwh": Decimal("0.003000"),
+        "imbalance_ratio": Decimal("0.004161"),
+        "tolerance_ratio": Decimal("0.001"),
+    }
+
+
+def test_the_default_applies_to_a_period_without_a_tolerance(monkeypatch, rows):
+    """Passing None is the same as not passing a tolerance at all."""
+    _install(monkeypatch, _points(), rows)
+
+    frames = billing_readings.load_period_frames(
+        COMMUNITY, PERIOD_START, PERIOD_END, max_imbalance_ratio=None
+    )
+
+    assert frames.vnb_reference["imbalance_tolerance_ratio"] == pytest.approx(0.001)
+
+
+@pytest.mark.parametrize(
+    "ratio", [Decimal(0), Decimal("-0.001"), Decimal("0.020001"), Decimal("NaN")]
+)
+def test_a_tolerance_outside_the_released_range_fails_closed(monkeypatch, rows, ratio):
+    _install(monkeypatch, _points(), rows)
+
+    with pytest.raises(ValueError, match="tolerance"):
+        billing_readings.load_period_frames(
+            COMMUNITY, PERIOD_START, PERIOD_END, max_imbalance_ratio=ratio
+        )
+
+
+def test_calculated_evidence_honours_the_released_tolerance():
+    """The accepted-delivery path is gated by the same tolerance."""
+    index = pd.date_range("2026-01-01", periods=1, freq="15min", tz="UTC")
+    frames = billing_readings.PeriodFrames(
+        consumption=pd.DataFrame({BUILDING_A: [1.0]}, index=index),
+        production=pd.DataFrame({BUILDING_A: [1.0]}, index=index),
+        participants=(BUILDING_A,),
+        vnb_reference={},
+        provenance={},
+    )
+    delivery = {
+        "status": "accepted",
+        "fingerprint": "a" * 64,
+        "vnb_case_id": "case-1",
+        "source": "VNB",
+        "normalized_records": [
+            {
+                "participant_id": BUILDING_A,
+                "direction": "consumption",
+                "allocated_kwh": 1.0,
+            },
+            {
+                "participant_id": BUILDING_A,
+                "direction": "production",
+                "allocated_kwh": 1.004,
+            },
+        ],
+    }
+
+    with pytest.raises(billing_readings.PeriodDataError):
+        billing_readings.with_calculated_vnb_evidence(frames, delivery)
+    released = billing_readings.with_calculated_vnb_evidence(
+        frames, delivery, max_imbalance_ratio=Decimal("0.005")
+    )
+    assert released.vnb_reference["imbalance_tolerance_ratio"] == pytest.approx(0.005)
+
+
+def test_an_imbalance_beyond_a_rounding_residue_refuses_the_period(monkeypatch, rows):
+    """Production doubled is a broken delivery, not a rounding residue."""
+    tilted = deepcopy(rows)
+    for row in tilted:
+        if row["direction"] == "production":
+            row["community_kwh"] *= 2
+    _install(monkeypatch, _points(), tilted)
+
+    with pytest.raises(billing_readings.PeriodDataError) as refused:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert {problem["kind"] for problem in refused.value.problems} == {"vnb_imbalance"}
+
+
+def test_credits_without_any_vnb_production_refuse_the_period(monkeypatch, rows):
+    """Charged energy with nothing to credit it against cannot be billed."""
+    tilted = deepcopy(rows)
+    for row in tilted:
+        if row["direction"] == "production":
+            row["community_kwh"] = 0
+    _install(monkeypatch, _points(), tilted)
+
+    with pytest.raises(billing_readings.PeriodDataError) as refused:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert {problem["kind"] for problem in refused.value.problems} == {"vnb_imbalance"}
 
 
 def test_reconciliation_uses_six_decimal_charge_quantities():
@@ -486,8 +703,15 @@ def test_reconciliation_uses_six_decimal_charge_quantities():
         vnb_reference={
             "community_consumption_kwh": 0.123456,
             "community_production_kwh": 0.0,
+            "imbalance_kwh": -0.123456,
+            "imbalance_ratio": 1.0,
+            "imbalance_tolerance_ratio": 0.001,
             "per_participant": {
                 BUILDING_A: {"consumption_kwh": 0.123456, "production_kwh": 0.0},
+            },
+            "billed": {
+                "consumption_kwh": {BUILDING_A: 0.123456},
+                "production_kwh": {BUILDING_A: 0.0},
             },
         }
     )
@@ -575,3 +799,30 @@ def test_an_unknown_direction_is_refused_rather_than_dropped(monkeypatch, rows):
         billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
 
     assert "unknown_direction" in _kinds(excinfo)
+
+
+def test_bounds_in_utc_load_the_same_period_as_local_bounds(monkeypatch, rows):
+    """PostgreSQL returns the stored window in UTC; it is the same period."""
+    _install(monkeypatch, _points(), rows)
+    utc = ZoneInfo("UTC")
+
+    frames = billing_readings.load_period_frames(
+        COMMUNITY, PERIOD_START.astimezone(utc), PERIOD_END.astimezone(utc)
+    )
+
+    assert frames.provenance["period_start"].isoformat() == PERIOD_START.isoformat()
+    assert frames.provenance["period_end"].isoformat() == PERIOD_END.isoformat()
+
+
+def test_production_without_any_vnb_consumption_refuses_the_period(monkeypatch, rows):
+    """Credits with nothing charged against them are no rounding residue."""
+    tilted = deepcopy(rows)
+    for row in tilted:
+        if row["direction"] == "consumption":
+            row["community_kwh"] = 0
+    _install(monkeypatch, _points(), tilted)
+
+    with pytest.raises(billing_readings.PeriodDataError) as refused:
+        billing_readings.load_period_frames(COMMUNITY, PERIOD_START, PERIOD_END)
+
+    assert {problem["kind"] for problem in refused.value.problems} == {"vnb_imbalance"}

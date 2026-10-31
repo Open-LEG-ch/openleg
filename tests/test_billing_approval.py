@@ -3240,3 +3240,192 @@ def test_prepare_explains_rounding_without_any_producer():
         str(exc.value)
         == "Ein Rundungsausgleich ist ohne Produzentengutschrift nicht zulässig."
     )
+
+
+def _released_draft(release_ratio="0.003", tolerance=0.003):
+    draft = _draft()
+    draft["reconciliation"]["vnb_imbalance_tolerance_ratio"] = tolerance
+    if release_ratio is not None:
+        draft["reconciliation"]["vnb_imbalance_release"] = {
+            "id": 9,
+            "max_imbalance_ratio": release_ratio,
+            "reason": "BKW Ticket 4711, Zähler von Familie X defekt",
+            "released_by": "building-preparer",
+            "released_at": "2026-02-03T10:00:00+01:00",
+        }
+    return draft
+
+
+def test_invoices_keep_the_release_ratio_but_not_its_author_or_reason():
+    """Every member's invoice is no place for the preparer's free-text reason."""
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        _released_draft(), issue_date=date(2026, 2, 5)
+    )
+
+    for snapshot in snapshots:
+        reconciliation = snapshot["provenance_snapshot"]["reconciliation"]
+        assert reconciliation["vnb_imbalance_release"] == {
+            "id": 9,
+            "max_imbalance_ratio": "0.003",
+        }
+
+
+@pytest.mark.parametrize(
+    "release_ratio", [None, "0.002"], ids=["no-release", "other-ratio"]
+)
+def test_a_raised_tolerance_without_its_release_is_not_approvable(release_ratio):
+    """Dual control reads the releaser from the release, so it must be there."""
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(
+            _released_draft(release_ratio), issue_date=date(2026, 2, 5)
+        )
+
+
+def test_the_default_tolerance_needs_no_release():
+    snapshots = billing_approval.prepare_invoice_snapshots(
+        _released_draft(None, tolerance=0.001), issue_date=date(2026, 2, 5)
+    )
+
+    assert snapshots
+
+
+def test_an_imbalance_above_the_frozen_tolerance_is_not_approvable():
+    """The draft's own record must not show more imbalance than it was allowed."""
+    draft = _released_draft(None, tolerance=0.001)
+    draft["reconciliation"]["vnb_imbalance_ratio"] = 0.004
+
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_an_imbalance_within_the_frozen_tolerance_is_approvable():
+    draft = _released_draft(None, tolerance=0.001)
+    draft["reconciliation"]["vnb_imbalance_ratio"] = 0.001
+
+    assert billing_approval.prepare_invoice_snapshots(
+        draft, issue_date=date(2026, 2, 5)
+    )
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("id", None),
+        ("id", True),
+        ("id", -1),
+        ("released_by", None),
+        ("released_by", " "),
+        ("reason", None),
+        ("reason", " "),
+        ("released_at", None),
+        ("released_at", "bad-date"),
+        ("released_at", "2026-02-03"),
+    ],
+)
+def test_raised_tolerance_requires_complete_release_evidence(field, value):
+    draft = _released_draft()
+    draft["reconciliation"]["vnb_imbalance_release"][field] = value
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+def test_a_release_ratio_alone_cannot_authorize_invoices():
+    draft = _released_draft()
+    draft["reconciliation"]["vnb_imbalance_release"] = {"max_imbalance_ratio": "0.003"}
+    with pytest.raises(billing_approval.BillingApprovalError):
+        billing_approval.prepare_invoice_snapshots(draft, issue_date=date(2026, 2, 5))
+
+
+@pytest.mark.parametrize(
+    "problem",
+    [
+        "missing",
+        "id",
+        "community_id",
+        "period_start",
+        "period_end",
+        "max_imbalance_ratio",
+        "released_by",
+        "reason",
+        "released_at",
+        "malformed",
+    ],
+)
+def test_approval_requires_the_actual_locked_release_row(monkeypatch, problem):
+    draft = _released_draft()
+    release = draft["reconciliation"]["vnb_imbalance_release"]
+    actual = {
+        **release,
+        "community_id": COMMUNITY,
+        "period_start": draft["period_start"],
+        "period_end": draft["period_end"],
+    }
+    if problem == "missing":
+        actual = None
+    elif problem == "malformed":
+        release.clear()
+        release["max_imbalance_ratio"] = "0.003"
+    elif problem == "id":
+        actual[problem] = 10
+    elif problem == "max_imbalance_ratio":
+        actual[problem] = "0.004"
+    elif problem in {"period_start", "period_end", "released_at"}:
+        actual[problem] = "2026-02-04T10:00:00+01:00"
+    else:
+        actual[problem] = "another-value"
+
+    class ReleaseCursor(_ApprovalCursor):
+        def fetchone(self):
+            if "FROM billing_imbalance_releases" in self._last_query:
+                return actual
+            return super().fetchone()
+
+    cursor = ReleaseCursor(draft, draft["line_items"])
+    _approve_connection(monkeypatch, cursor)
+    with pytest.raises(billing_approval.BillingApprovalError):
+        database.approve_billing_period(
+            42, COMMUNITY, issue_date=date(2026, 2, 5), approver_id="building-approver"
+        )
+    assert not any("INSERT INTO invoices" in query for query, _ in cursor.executed)
+
+
+def test_approval_locks_release_and_uses_its_actual_actor_for_dual_control(monkeypatch):
+    draft = _released_draft()
+    draft["prepared_by"] = "another-preparer"
+    release = draft["reconciliation"]["vnb_imbalance_release"]
+    actual = {
+        **release,
+        "community_id": COMMUNITY,
+        "period_start": draft["period_start"],
+        "period_end": draft["period_end"],
+    }
+
+    class ReleaseCursor(_ApprovalCursor):
+        def fetchone(self):
+            if "FROM billing_imbalance_releases" in self._last_query:
+                return actual
+            return super().fetchone()
+
+    cursor = ReleaseCursor(draft, draft["line_items"])
+    cursor._community_row["require_dual_control"] = True
+    _approve_connection(monkeypatch, cursor)
+    with pytest.raises(billing_approval.BillingApprovalError, match="Dual-control"):
+        database.approve_billing_period(
+            42,
+            COMMUNITY,
+            issue_date=date(2026, 2, 5),
+            approver_id=actual["released_by"],
+        )
+    query, params = next(
+        (query, params)
+        for query, params in cursor.executed
+        if "FROM billing_imbalance_releases" in query
+    )
+    assert "FOR UPDATE" in query
+    assert params == (
+        release["id"],
+        COMMUNITY,
+        draft["period_start"],
+        draft["period_end"],
+    )
+    assert not any("INSERT INTO invoices" in query for query, _ in cursor.executed)
