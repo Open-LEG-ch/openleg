@@ -33,7 +33,7 @@ All figures below are synthetic. They show energy quantities before monetary rou
 
 In the more-production example, A loses 0.015994 kWh and B loses 0.024006 kWh of credited energy. The combined change is CHF 0.006 before invoice rounding. In the more-consumption example, A gains 0.016000 kWh and B gains 0.024000 kWh, again CHF 0.006 before rounding. A participant's stored credited energy would therefore differ from the VNB statement.
 
-Under the retained rule in #758, only the exact-balance row proceeds. Every nonzero difference above stops billing, regardless of size or the existence of an old exception record.
+Under the retained rule in #758, only the exact-balance row proceeds. Every nonzero difference between VNB production and consumption in this table stops billing, including for certified `e66/1` deliveries. A certified source may still differ from the independent allocation model; that model gap is audited and does not authorize unequal source totals. Old exception records cannot authorize billing.
 
 ## Decisions needed before implementation
 
