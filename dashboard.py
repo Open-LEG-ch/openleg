@@ -422,6 +422,7 @@ def _billing_workspace_period(period: dict, veracity_flag_count: int = 0) -> dic
         "status_label": _BILLING_STATUS_LABELS.get(status, status),
         "period_label": billing_workspace.period_label(period.get("period_start")),
         "reconciled": flags["reconciled"],
+        "exact_source": flags["exact_source"],
         "source_count": flags["source_count"],
         "veracity_flag_count": veracity_flag_count,
         "prepared_by": period.get("prepared_by"),

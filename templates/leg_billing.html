@@ -56,7 +56,7 @@
       <h2 class="font-bold mb-2">{{ period.period_label|periodlabel }}</h2>
       <p class="text-sm mb-2">{{ _('Status:') }} <span class="font-semibold">{{ _(period.status_label) }}</span></p>
       <p class="text-sm text-ink-muted mb-4">
-        {% if period.reconciled %}{{ _('Abgleich mit dem VNB: vollständig abgeglichen.') }}{% else %}{{ _('Abgleich mit dem VNB: Abweichung prüfen.') }}{% endif %}
+        {% if period.reconciled and period.exact_source %}{{ _('Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen.') }}{% elif period.reconciled %}{{ _('Abgleich mit dem VNB: vollständig abgeglichen.') }}{% else %}{{ _('Abgleich mit dem VNB: Abweichung prüfen.') }}{% endif %}
         {{ _('Quelldokumente:') }} {{ period.source_count }}.
         {% if period.veracity_flag_count %}
           <span class="font-semibold text-accent-dark">{{ _('Auffällige Messfenster:') }} {{ period.veracity_flag_count }}</span> {{ _('(Plausibilität, kein Fehler; Import und Freigabe bleiben möglich.)') }}

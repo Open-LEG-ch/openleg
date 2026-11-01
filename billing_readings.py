@@ -13,15 +13,18 @@ Two deliberate choices:
 * Participants are keyed on ``building_id``, not on the metering point. A member
   with a separate production meter is one participant with two points, and
   ``billing_line_items.participant_id`` already speaks building ids.
-* The engine reallocates production itself. The VNB already allocated in the
-  E66 file (the ``community_kwh`` channel), so the two numbers can disagree.
-  ``reconcile_with_vnb`` reports that gap rather than hiding it.
+* The VNB already allocated in the E66 file (the ``community_kwh`` channel) and
+  that split is what a member can check against their own VNB statement, so it
+  is what gets billed. The engine reallocates production itself; the two numbers
+  disagree, and ``reconcile_with_vnb`` reports that gap as an audit figure
+  rather than hiding it.
 """
 
 import logging
 from dataclasses import dataclass, replace
 from datetime import timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
+from math import isfinite
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -35,6 +38,7 @@ RESOLUTION_MINUTES = 15
 CONFIRMED_STATUS = "confirmed"
 
 _MAX_REPORTED = 5
+_KWH_QUANTUM = Decimal("0.000001")
 
 
 class PeriodDataError(ValueError):
@@ -75,10 +79,15 @@ def _problem(kind, detail, metering_point_id=None):
 
 
 def _localise(moment, tzinfo):
-    """Naive boundaries are read in the period timezone, not in UTC."""
+    """Naive boundaries are read in the period timezone, not in UTC.
+
+    Aware ones, such as the UTC bounds PostgreSQL returns, are the same instant
+    expressed in the period timezone, so the period and its provenance match a
+    run started with local bounds.
+    """
     if moment.tzinfo is None:
         return moment.replace(tzinfo=tzinfo)
-    return moment
+    return moment.astimezone(tzinfo)
 
 
 def _expected_index(period_start, period_end, tzinfo):
@@ -179,7 +188,18 @@ def _check_rows(readings, mapping, declarations, expected_index, problems):
 
         for channel in ("total_kwh", "grid_kwh", "community_kwh"):
             value = row.get(channel)
-            if value is not None and float(value) < 0:
+            if value is None:
+                continue
+            if not isfinite(float(value)):
+                problems.append(
+                    _problem(
+                        "non_finite_value",
+                        f"{point_id} at {measured_at} has non-finite {channel}",
+                        point_id,
+                    )
+                )
+                continue
+            if float(value) < 0:
                 problems.append(
                     _problem(
                         "negative_value",
@@ -292,15 +312,74 @@ def _empty_frame(index, participants):
     return pd.DataFrame(0.0, index=index, columns=list(participants))
 
 
+def _quantised(value):
+    """Round one kWh figure to the persisted 6-decimal precision."""
+    return value.quantize(_KWH_QUANTUM, rounding=ROUND_HALF_UP)
+
+
+def _vnb_reference(vnb_totals, participants, problems):
+    """Bill each side verbatim only when the delivered Decimal totals agree."""
+    consumption = vnb_totals["consumption"]
+    production = vnb_totals["production"]
+    consumption_total = sum(consumption.values(), Decimal(0))
+    production_total = sum(production.values(), Decimal(0))
+    imbalance = production_total - consumption_total
+    ratio = abs(imbalance) / consumption_total if consumption_total > 0 else Decimal(0)
+
+    if consumption_total != production_total:
+        problems.append(
+            _problem(
+                "vnb_imbalance", "the two VNB community totals must balance exactly"
+            )
+        )
+
+    billed_consumption = {
+        participant: _quantised(consumption[participant])
+        for participant in participants
+    }
+    billed_production = {
+        participant: _quantised(production[participant]) for participant in participants
+    }
+    return {
+        "community_consumption_kwh": float(_quantised(consumption_total)),
+        "community_production_kwh": float(_quantised(production_total)),
+        "imbalance_kwh": float(_quantised(imbalance)),
+        "imbalance_ratio": float(_quantised(ratio)),
+        "per_participant": {
+            participant: {
+                "consumption_kwh": float(_quantised(consumption[participant])),
+                "production_kwh": float(_quantised(production[participant])),
+            }
+            for participant in participants
+        },
+        "billed": {
+            "consumption_kwh": {
+                participant: float(value)
+                for participant, value in billed_consumption.items()
+            },
+            "production_kwh": {
+                participant: float(billed_production[participant])
+                for participant in participants
+            },
+        },
+    }
+
+
 def load_period_frames(
-    community_id, period_start, period_end, *, timezone=DEFAULT_TIMEZONE
+    community_id,
+    period_start,
+    period_end,
+    *,
+    timezone=DEFAULT_TIMEZONE,
+    calculated_delivery=None,
 ):
     """Load one billable period as engine-ready frames.
 
     The interval is half-open: ``[period_start, period_end)``. Naive boundaries
     are interpreted in ``timezone``. Raises :class:`PeriodDataError` listing
     every defect rather than the first one, so an operator can fix a period in
-    one pass.
+    one pass. An accepted calculated delivery supplies the allocation reference;
+    physical readings and completeness still come from the period snapshot.
     """
     tzinfo = ZoneInfo(timezone)
     period_start = _localise(period_start, tzinfo)
@@ -353,9 +432,11 @@ def load_period_frames(
         "consumption": _empty_frame(index, participants),
         "production": _empty_frame(index, participants),
     }
+    # Dezimal, nicht Gleitkomma: die gelieferten Werte haben drei Stellen, und
+    # die Summe ist der Betrag, der einem Mitglied verrechnet wird.
     vnb_totals = {
-        "consumption": dict.fromkeys(participants, 0.0),
-        "production": dict.fromkeys(participants, 0.0),
+        "consumption": {participant: Decimal(0) for participant in participants},
+        "production": {participant: Decimal(0) for participant in participants},
     }
     documents = set()
 
@@ -374,24 +455,20 @@ def load_period_frames(
         frame.loc[moment, participant] += total
         community = row.get("community_kwh")
         if community is not None:
-            vnb_totals[direction][participant] += float(community)
+            vnb_totals[direction][participant] += Decimal(str(community))
         if row.get("source_document_id"):
             documents.add(row["source_document_id"])
 
     if problems:
         raise PeriodDataError(problems)
 
-    vnb_reference = {
-        "community_consumption_kwh": round(sum(vnb_totals["consumption"].values()), 6),
-        "community_production_kwh": round(sum(vnb_totals["production"].values()), 6),
-        "per_participant": {
-            participant: {
-                "consumption_kwh": round(vnb_totals["consumption"][participant], 6),
-                "production_kwh": round(vnb_totals["production"][participant], 6),
-            }
-            for participant in participants
-        },
-    }
+    vnb_reference = (
+        _vnb_reference(vnb_totals, participants, problems)
+        if calculated_delivery is None
+        else {}
+    )
+    if problems:
+        raise PeriodDataError(problems)
     provenance = {
         "source_document_ids": tuple(sorted(documents)),
         "interval_count": len(index),
@@ -401,24 +478,31 @@ def load_period_frames(
         "timezone": timezone,
     }
 
-    return PeriodFrames(
+    result = PeriodFrames(
         consumption=frames["consumption"].astype(float),
         production=frames["production"].astype(float),
         participants=participants,
         vnb_reference=vnb_reference,
         provenance=provenance,
     )
+    if calculated_delivery is not None:
+        return with_calculated_vnb_evidence(result, calculated_delivery)
+    return result
 
 
 def reconcile_with_vnb(frames, summary):
-    """Compare the engine's allocation with the allocation the VNB delivered.
+    """Compare the billed quantities with the VNB split they are billed from.
 
     The E66 ``community_kwh`` channel is the VNB's own split between grid supply
-    and community supply. ``allocate_energy`` derives its own split from total
-    production and consumption. Both are defensible, they are not equal, and the
-    difference is what a member will ask about, so it gets reported.
+    and community supply, and it is what the line items carry, so this reads as
+    a true zero and stays a gate: a non-zero difference means billing departed
+    from the VNB reference, which is a defect, not a judgement call. What the
+    engine's own proportional reallocation would have produced is reported
+    beside it as an audit figure. The delivered source totals must balance
+    before this reconciliation runs.
     """
-    vnb_allocated = float(frames.vnb_reference["community_consumption_kwh"])
+    billed_reference = frames.vnb_reference["billed"]
+    vnb_allocated = sum(billed_reference["consumption_kwh"].values())
     charges = [
         item
         for item in summary.get("line_items", [])
@@ -442,8 +526,7 @@ def reconcile_with_vnb(frames, summary):
     per_participant = {}
     for item in summary.get("participants", []):
         participant = item["id"]
-        reference = frames.vnb_reference["per_participant"].get(participant, {})
-        vnb_kwh = float(reference.get("consumption_kwh") or 0.0)
+        vnb_kwh = float(billed_reference["consumption_kwh"].get(participant, 0.0))
         engine_kwh = charged_by_participant.get(
             participant, float(item.get("allocated_kwh") or 0.0)
         )
@@ -454,11 +537,11 @@ def reconcile_with_vnb(frames, summary):
         }
 
     difference = engine_allocated - vnb_allocated
-    vnb_production = float(frames.vnb_reference["community_production_kwh"])
+    vnb_production = sum(billed_reference["production_kwh"].values())
     engine_production = sum(production_credits.values())
     production_per_participant = {}
-    for participant, reference in frames.vnb_reference["per_participant"].items():
-        vnb_kwh = float(reference.get("production_kwh") or 0.0)
+    for participant, credited in billed_reference["production_kwh"].items():
+        vnb_kwh = float(credited)
         engine_kwh = production_credits.get(participant, 0.0)
         production_per_participant[participant] = {
             "vnb_kwh": round(vnb_kwh, 6),
@@ -477,6 +560,13 @@ def reconcile_with_vnb(frames, summary):
         "engine_production_kwh": round(engine_production, 6),
         "production_difference_kwh": round(engine_production - vnb_production, 6),
         "production_per_participant": production_per_participant,
+        # Unabhängige Liefer- und Modellwerte für den Audit.
+        "vnb_delivered_production_kwh": frames.vnb_reference[
+            "community_production_kwh"
+        ],
+        "vnb_imbalance_kwh": frames.vnb_reference["imbalance_kwh"],
+        "vnb_imbalance_ratio": frames.vnb_reference["imbalance_ratio"],
+        "engine_audit": summary.get("engine_audit"),
     }
     if getattr(frames, "provenance", {}).get("vnb_evidence"):
         result["source_evidence"] = frames.provenance["vnb_evidence"]
@@ -489,15 +579,17 @@ def with_calculated_vnb_evidence(frames, delivery):
         raise PeriodDataError(
             [_problem("invalid_vnb_evidence", "delivery is not accepted")]
         )
-    totals = {"consumption": {}, "production": {}}
+    # Dezimal, nicht Gleitkomma: eine akzeptierte Lieferung wird verrechnet,
+    # also zählt sie wie die E66-Werte.
+    delivered = {"consumption": {}, "production": {}}
     for row in delivery.get("normalized_records") or []:
         participant = row["participant_id"]
         direction = row["direction"]
-        totals[direction][participant] = totals[direction].get(
-            participant, 0.0
-        ) + float(row["allocated_kwh"])
+        delivered[direction][participant] = delivered[direction].get(
+            participant, Decimal(0)
+        ) + Decimal(str(row["allocated_kwh"]))
     all_participants = set(frames.participants)
-    if set(totals["consumption"]) | set(totals["production"]) != all_participants:
+    if set(delivered["consumption"]) | set(delivered["production"]) != all_participants:
         raise PeriodDataError(
             [
                 _problem(
@@ -506,19 +598,20 @@ def with_calculated_vnb_evidence(frames, delivery):
                 )
             ]
         )
-    reference = {
-        "community_consumption_kwh": round(sum(totals["consumption"].values()), 6),
-        "community_production_kwh": round(sum(totals["production"].values()), 6),
-        "per_participant": {
-            participant: {
-                "consumption_kwh": round(
-                    totals["consumption"].get(participant, 0.0), 6
-                ),
-                "production_kwh": round(totals["production"].get(participant, 0.0), 6),
-            }
+    # Through the same builder as the E66 path: a calculated delivery is billed
+    # on the VNB's own split too, so it owes the same billed block and has to
+    # clear the same imbalance guard.
+    totals = {
+        direction: {
+            participant: delivered[direction].get(participant, Decimal(0))
             for participant in frames.participants
-        },
+        }
+        for direction in ("consumption", "production")
     }
+    problems = []
+    reference = _vnb_reference(totals, frames.participants, problems)
+    if problems:
+        raise PeriodDataError(problems)
     provenance = dict(frames.provenance)
     provenance["calculated_values_fingerprint"] = delivery["fingerprint"]
     provenance["vnb_case_id"] = delivery["vnb_case_id"]
@@ -554,9 +647,15 @@ def calculated_quantity_frames(frames, delivery):
             raise PeriodDataError(
                 [_problem("invalid_vnb_evidence", "source shape changed")]
             )
-        frame.at[moment, participant] += Decimal(
-            row["source_quantities"]["community_kwh"]
-        )
+        try:
+            quantity = row["source_quantities"]["community_kwh"]
+        except (KeyError, TypeError):
+            if delivery.get("format_version") != "json/1":
+                raise PeriodDataError(
+                    [_problem("invalid_vnb_evidence", "source channel missing")]
+                ) from None
+            quantity = str(row["allocated_kwh"])
+        frame.at[moment, participant] += Decimal(quantity)
     return quantities["consumption"], quantities["production"]
 
 

@@ -32,6 +32,18 @@ msgstr ""
 msgid " mit ElCom Tarifdaten und BFE Sonnendach."
 msgstr " mit ElCom Tarifdaten und BFE Sonnendach."
 
+#: templates/leg_billing.html:106
+msgid ""
+"Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum "
+"Modell ausgewiesen."
+msgstr ""
+"Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum "
+"Modell ausgewiesen."
+
+#: billing_workspace.py:255
+msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+msgstr "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+
 #: templates/leg_verzeichnis/bestaetigt.html:17
 #, python-format
 msgid "\"%(entry_name)s\" bleibt als aktuell markiert im Verzeichnis."

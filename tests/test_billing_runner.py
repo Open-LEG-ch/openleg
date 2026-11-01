@@ -58,7 +58,13 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
             "resolution_minutes": 15,
             "timezone": "Europe/Zurich",
         },
-        vnb_reference={"community_kwh": 1.5},
+        vnb_reference={
+            "community_kwh": 1.5,
+            "billed": {
+                "consumption_kwh": {"CH001": 1.5},
+                "production_kwh": {"CH002": 1.5},
+            },
+        },
     )
     summary_result = {"participant_count": 2}
     reconciliation_result = {
@@ -98,7 +104,7 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
     )
     monkeypatch.setattr(
         "billing_readings.load_period_frames",
-        lambda community, period_start, period_end: (
+        lambda community, period_start, period_end, **_kwargs: (
             frame_calls.append((community, period_start, period_end)) or frames
         ),
     )
@@ -136,6 +142,7 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
                 "network_level": policy["network_level"],
                 "distribution_model": policy["distribution_model"],
                 "settlement_fee_per_kwh": policy["settlement_fee_chf_per_kwh"],
+                "billed_allocation": frames.vnb_reference["billed"],
             },
         )
     ]
@@ -182,7 +189,13 @@ def test_run_billing_period_persists_once_and_retries_as_a_noop(monkeypatch):
     )
 
     reconciliation_result["difference_kwh"] = 0
-    frames.vnb_reference = {"community_kwh": 9.9}
+    frames.vnb_reference = {
+        "community_kwh": 9.9,
+        "billed": {
+            "consumption_kwh": {"CH001": 9.9},
+            "production_kwh": {"CH002": 9.9},
+        },
+    }
     with pytest.raises(BillingRunError) as changed:
         run_billing_period(COMMUNITY, START, END)
     assert str(changed.value) == "Billing period inputs changed after processing"
@@ -270,7 +283,13 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
             "resolution_minutes": 15,
             "timezone": "Europe/Zurich",
         },
-        vnb_reference={"vnb_total_kwh": 3.0},
+        vnb_reference={
+            "vnb_total_kwh": 3.0,
+            "billed": {
+                "consumption_kwh": {"building-a": 3.0},
+                "production_kwh": {"building-a": 3.0},
+            },
+        },
     )
     policy = {
         "community_id": COMMUNITY,
@@ -317,7 +336,13 @@ def test_fingerprint_is_the_sha256_of_the_canonical_payload():
         "payment_days": 30,
         "invoice_prefix": "LEG-2026",
         "delivery_method": "email",
-        "vnb_reference": {"vnb_total_kwh": 3.0},
+        "vnb_reference": {
+            "vnb_total_kwh": 3.0,
+            "billed": {
+                "consumption_kwh": {"building-a": 3.0},
+                "production_kwh": {"building-a": 3.0},
+            },
+        },
         "summary": {"z": 1, "a": 2},
         "reconciliation": {"difference_kwh": 0, "production_difference_kwh": 0},
     }
@@ -365,11 +390,17 @@ def _fingerprint_case():
             vnb_reference={
                 "community_consumption_kwh": 1.5,
                 "community_production_kwh": 1.5,
+                "imbalance_kwh": 0.0,
+                "imbalance_ratio": 0.0,
                 "per_participant": {
                     "building-a": {
                         "consumption_kwh": 1.5,
                         "production_kwh": 1.5,
                     }
+                },
+                "billed": {
+                    "consumption_kwh": {"building-a": 1.5},
+                    "production_kwh": {"building-a": 1.5},
                 },
             },
             provenance={
@@ -448,7 +479,7 @@ def _fingerprint_through_runner(monkeypatch, case):
     monkeypatch.setattr(
         billing_runner.billing_readings,
         "load_period_frames",
-        lambda _community, _start, _end: deepcopy(case["frames"]),
+        lambda _community, _start, _end, **_kwargs: deepcopy(case["frames"]),
     )
     monkeypatch.setattr(
         billing_runner.billing_engine,
@@ -605,10 +636,17 @@ def test_equivalent_billing_inputs_keep_a_stable_fingerprint(monkeypatch):
 
 
 def test_public_billing_fingerprint_matches_the_contract_vector(monkeypatch):
+    """The vector moves only when the billed inputs themselves move.
+
+    It last moved when billing switched to the VNB's own split: the summary
+    now carries the engine's proportional result as an audit block and the
+    reconciliation the delivered imbalance, so the same readings fingerprint
+    differently than they did before.
+    """
     fingerprint = _fingerprint_through_runner(monkeypatch, _fingerprint_case())
 
     assert fingerprint == (
-        "4f16b38457c142869b04f600a964263827848e553f5938112d0361acf30dad96"
+        "f219d7a1ad8f20c86e65db1acdc341f5073facf1a178bc99ffc0a7dae2c53e9b"
     )
 
 
@@ -660,8 +698,9 @@ def _install_billing_fixture(
     """Wire one community whose readings the engine and the VNB both describe.
 
     ``consumption_community_kwh`` is the VNB's own claim about how much of the
-    consumption came from the community. Lower it and the VNB disagrees with
-    what allocate_energy derives from the same totals. Runs without a
+    consumption came from the community, and it is what gets billed. Lower it
+    and the VNB's two sides no longer describe the same energy, which is a
+    delivery the period must refuse rather than distribute. Runs without a
     database; the calculated-values gate has its own dedicated test.
     """
     monkeypatch.setattr(database, "is_db_available", lambda: False)
@@ -743,16 +782,44 @@ def _install_billing_fixture(
     return saved
 
 
-def test_a_vnb_allocation_mismatch_refuses_to_persist(monkeypatch):
-    """The namesake guard: OpenLEG never bills a split the VNB does not confirm."""
+def test_a_vnb_delivery_that_does_not_balance_refuses_to_persist(monkeypatch):
+    """Billing follows the VNB split, so the split itself has to hold together.
+
+    Halving the consumption side leaves the VNB claiming twice as much energy
+    fed into the community as drawn from it. Crediting that verbatim would pay
+    producers for energy nobody was charged for, and scaling it away silently
+    would hide a broken delivery, so the period fails closed.
+    """
     from billing_runner import BillingRunError, run_billing_period
 
     saved = _install_billing_fixture(monkeypatch, consumption_community_kwh=0.25)
 
-    with pytest.raises(BillingRunError, match="does not match the VNB allocation"):
+    with pytest.raises(BillingRunError, match="vnb_imbalance"):
         run_billing_period(COMMUNITY, START, END)
 
     assert saved == [], "a period the VNB contradicts must never reach the database"
+
+
+@pytest.mark.parametrize(
+    ("prepared_by", "stored"), [("admin-a", {"prepared_by": "admin-a"}), (None, {})]
+)
+def test_a_named_preparer_is_stored_and_automated_runs_leave_it_unset(
+    monkeypatch, prepared_by, stored
+):
+    """A named preparer persists; automated runs wait for a human to submit."""
+    from billing_runner import run_billing_period
+
+    _install_billing_fixture(monkeypatch)
+    calls = []
+    monkeypatch.setattr(
+        database,
+        "save_billing_period",
+        lambda *args, **kwargs: calls.append(kwargs) or 42,
+    )
+
+    run_billing_period(COMMUNITY, START, END, prepared_by=prepared_by)
+
+    assert calls == [stored]
 
 
 def test_operational_billing_requires_accepted_calculated_values(monkeypatch):
@@ -771,7 +838,9 @@ def test_operational_billing_requires_accepted_calculated_values(monkeypatch):
     assert saved == []
 
 
-def test_operational_billing_stamps_the_recorded_vnb_evidence(monkeypatch):
+def test_operational_billing_passes_the_recorded_vnb_evidence_to_the_loader(
+    monkeypatch,
+):
     """A run on the real database path must fetch the validated evidence for
     exactly this community and period, stamp it into the frames, and freeze
     the evidence's fingerprint plus the prepared-by actor in the draft."""
@@ -789,19 +858,17 @@ def test_operational_billing_stamps_the_recorded_vnb_evidence(monkeypatch):
     calculated = {"interval_count": 3}
     calculated_read = MagicMock(return_value=calculated)
     monkeypatch.setattr(database, "get_validated_calculated_values", calculated_read)
-    stamped = MagicMock(side_effect=lambda frames, _evidence: frames)
-    monkeypatch.setattr(
-        billing_runner.billing_readings, "with_calculated_vnb_evidence", stamped
-    )
+    loaded = MagicMock(return_value=deepcopy(case["frames"]))
+    monkeypatch.setattr(billing_runner.billing_readings, "load_period_frames", loaded)
 
     result = run_billing_period(COMMUNITY, START, END)
 
     assert result["status"] == "created"
     calculated_read.assert_called_once_with(COMMUNITY, START, END)
-    assert stamped.call_count == 1
-    assert stamped.call_args[0][0] is not None
-    assert stamped.call_args[0][1] is calculated, (
-        "the fetched evidence must be the one stamped into the frames"
+    assert loaded.call_count == 1
+    assert loaded.call_args.args == (COMMUNITY, START, END)
+    assert loaded.call_args.kwargs["calculated_delivery"] is calculated, (
+        "the fetched evidence must supply the loader's allocation reference"
     )
     assert saved[0][:3] == (COMMUNITY, START, END), (
         "the draft must persist for the billed community and period"
@@ -951,7 +1018,13 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
             "source_document_ids": ("DOC-1",),
             "timezone": "Europe/Zurich",
         },
-        vnb_reference={"community_kwh": 1.5},
+        vnb_reference={
+            "community_kwh": 1.5,
+            "billed": {
+                "consumption_kwh": {"CH001": 1.5},
+                "production_kwh": {"CH002": 1.5},
+            },
+        },
     )
     saved = []
 
@@ -972,7 +1045,7 @@ def test_every_non_zero_reconciliation_gap_blocks_persistence(
     )
     monkeypatch.setattr(
         "billing_readings.load_period_frames",
-        lambda community, period_start, period_end: frames,
+        lambda community, period_start, period_end, **_kwargs: frames,
     )
     monkeypatch.setattr(
         "billing_engine.generate_billing_summary",
@@ -1065,7 +1138,7 @@ def _install_battery_fixture(monkeypatch, case, battery):
     monkeypatch.setattr(
         billing_runner.billing_readings,
         "load_period_frames",
-        lambda _community, _start, _end: deepcopy(case["frames"]),
+        lambda _community, _start, _end, **_kwargs: deepcopy(case["frames"]),
     )
     monkeypatch.setattr(
         billing_runner.billing_engine,
@@ -1144,6 +1217,24 @@ def test_battery_cost_share_lines_enter_the_draft_and_snapshot(monkeypatch):
     assert summary["battery_snapshot"]["capacity_kwh"] == "45"
 
 
+def test_utc_bounds_freeze_the_same_draft_as_local_bounds(monkeypatch):
+    """Stored PostgreSQL bounds are UTC; the cron passes local ones."""
+    from billing_runner import run_billing_period
+
+    utc = ZoneInfo("UTC")
+    drafts = []
+    for start, end in ((START, END), (START.astimezone(utc), END.astimezone(utc))):
+        saved = _install_battery_fixture(
+            monkeypatch, _battery_case(), dict(BATTERY_CONFIG)
+        )
+        run_billing_period(COMMUNITY, start, end)
+        drafts.append(saved[0][3])
+
+    local, from_utc = drafts
+    assert from_utc["battery_snapshot"] == local["battery_snapshot"]
+    assert from_utc["input_fingerprint"] == local["input_fingerprint"]
+
+
 def test_battery_read_is_scoped_to_the_billed_community(monkeypatch):
     import billing_runner
     from billing_runner import run_billing_period
@@ -1155,7 +1246,7 @@ def test_battery_read_is_scoped_to_the_billed_community(monkeypatch):
     monkeypatch.setattr(
         billing_runner.billing_readings,
         "load_period_frames",
-        lambda _c, _s, _e: deepcopy(case["frames"]),
+        lambda _c, _s, _e, **_kwargs: deepcopy(case["frames"]),
     )
     run_billing_period(COMMUNITY, START, END)
 
@@ -1252,8 +1343,12 @@ def test_a_draft_without_a_battery_carries_no_battery_lines(monkeypatch):
     )
 
 
-def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch):
-    """The public runner freezes source attribution and bills the battery point."""
+def _install_eight_household_battery(monkeypatch, *, billed_consumption=None):
+    """Eight homes share one solar roof by day and one Quartierakku by night.
+
+    ``billed_consumption`` overrides the VNB's consumption split; by default it
+    matches what the engine allocates, 2 kWh per home.
+    """
     import billing_runner
 
     homes = tuple(f"home-{number}" for number in range(1, 9))
@@ -1275,7 +1370,14 @@ def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch
             "resolution_minutes": 15,
             "timezone": "Europe/Zurich",
         },
-        vnb_reference={"community_kwh": 16.0},
+        vnb_reference={
+            "community_kwh": 16.0,
+            "billed": {
+                "consumption_kwh": billed_consumption
+                or {**dict.fromkeys(homes, 2.0), "battery-a": 0.0},
+                "production_kwh": {"home-1": 8.0, "battery-a": 8.0},
+            },
+        },
     )
     battery = {
         "community_id": COMMUNITY,
@@ -1291,7 +1393,7 @@ def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch
     monkeypatch.setattr(
         billing_runner.billing_readings,
         "load_period_frames",
-        lambda *_args: frames,
+        lambda *_args, **_kwargs: frames,
     )
     monkeypatch.setattr(
         billing_runner.billing_readings,
@@ -1309,6 +1411,15 @@ def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch
         "save_billing_period",
         lambda *_args: saved.append(_args) or 42,
     )
+
+    return homes, saved
+
+
+def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch):
+    """The public runner freezes source attribution and bills the battery point."""
+    import billing_runner
+
+    homes, saved = _install_eight_household_battery(monkeypatch)
 
     result = billing_runner.run_billing_period(COMMUNITY, START, END)
 
@@ -1338,6 +1449,32 @@ def test_eight_households_receive_auditable_overnight_battery_energy(monkeypatch
     assert battery_line_types == {"consumer_charge", "producer_credit"}
 
 
+def test_a_battery_period_billed_off_the_engine_split_fails_closed(monkeypatch):
+    """Battery attribution is derived from the engine's allocation.
+
+    Billing a VNB split that departs from it would freeze an attribution that
+    no longer adds up to the billed energy, so the run stops for review.
+    """
+    import billing_runner
+
+    homes = tuple(f"home-{number}" for number in range(1, 9))
+    _, saved = _install_eight_household_battery(
+        monkeypatch,
+        billed_consumption={
+            **dict.fromkeys(homes, 2.0),
+            "home-1": 2.5,
+            "home-2": 1.5,
+            "battery-a": 0.0,
+        },
+    )
+
+    with pytest.raises(billing_runner.BillingRunError) as excinfo:
+        billing_runner.run_billing_period(COMMUNITY, START, END)
+
+    assert excinfo.value.code == "vnb_allocation_mismatch"
+    assert saved == []
+
+
 def test_configured_battery_without_its_meter_series_blocks_the_public_run(
     monkeypatch,
 ):
@@ -1357,7 +1494,7 @@ def test_configured_battery_without_its_meter_series_blocks_the_public_run(
     monkeypatch.setattr(
         billing_runner.billing_readings,
         "load_period_frames",
-        lambda *_args: case["frames"],
+        lambda *_args, **_kwargs: case["frames"],
     )
     saved = []
     monkeypatch.setattr(

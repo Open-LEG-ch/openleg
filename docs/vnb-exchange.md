@@ -67,6 +67,14 @@ rejected with an instruction to finish or supersede the open mutation. All reads
 downloads, and writes require membership-management authority in the same
 community.
 
+## JSON calculated-values precision
+
+New `json/1` deliveries must contain exact multiples of 0.000001 kWh after
+converting Wh to kWh (0.001 Wh). Finer quantities are refused with
+`unsupported_quantity_precision`; they are never rounded or redistributed.
+Numerically exact trailing zeros and zero are accepted. Previously accepted
+evidence remains unchanged. E66 retains its separate source precision rules.
+
 ## E66 calculated-values evidence
 
 The private `e66/1` adapter accepts original XML through

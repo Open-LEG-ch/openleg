@@ -11580,3 +11580,11 @@ msgstr ""
 #: templates/gemeinde/onboarding.html:44
 msgid "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 msgstr ""
+
+#: templates/leg_billing.html:59
+msgid "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
+msgstr ""
+
+#: billing_workspace.py:265
+msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+msgstr ""

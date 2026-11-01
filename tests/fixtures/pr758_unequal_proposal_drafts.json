@@ -1,0 +1,1593 @@
+{
+  "candidates": {
+    "einfach/consumption_more": {
+      "draft": {
+        "billing_policy_snapshot": {
+          "community_id": "community-a",
+          "delivery_method": "email",
+          "distribution_model": "einfach",
+          "effective_from": "2026-01-01T00:00:00+00:00",
+          "grid_fee_chf_per_kwh": 0.08,
+          "internal_price_chf_per_kwh": 0.12,
+          "invoice_prefix": "LEG-2026",
+          "network_level": "same",
+          "payment_days": 30,
+          "settlement_fee_chf_per_kwh": 0.0,
+          "tariff_id": 7,
+          "vat_mode": "none",
+          "vat_rate_pct": 0
+        },
+        "calculated_values_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "community_id": "community-a",
+        "distribution_model": "einfach",
+        "engine_audit": {
+          "allocated_kwh": {
+            "a": 1.666667,
+            "b": 1.666667,
+            "c": 1.666667,
+            "p": 0.0
+          },
+          "allocation_difference_kwh": {
+            "a": 0.000333,
+            "b": 0.000333,
+            "c": 0.000333,
+            "p": 0.0
+          },
+          "credit_difference_kwh": {
+            "a": 0.0,
+            "b": 0.0,
+            "c": 0.0,
+            "p": 0.001
+          },
+          "credited_kwh": {
+            "a": 0.0,
+            "b": 0.0,
+            "c": 0.0,
+            "p": 5.0
+          },
+          "distribution_model": "einfach",
+          "total_allocated_kwh": 5.0
+        },
+        "grid_fee_chf_per_kwh": 0.08,
+        "id": 42,
+        "input_fingerprint": "705365662d3138eadc42e2725cccda1667c901302611a4ba36ddb1c5e820d976",
+        "internal_price_chf_per_kwh": 0.12,
+        "line_items": [
+          {
+            "amount_chf": 0.20004,
+            "item_type": "consumer_charge",
+            "participant_id": "a",
+            "quantity_kwh": "1.667",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.20004,
+            "item_type": "consumer_charge",
+            "participant_id": "b",
+            "quantity_kwh": "1.667",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.20004,
+            "item_type": "consumer_charge",
+            "participant_id": "c",
+            "quantity_kwh": "1.667",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.0,
+            "item_type": "consumer_charge",
+            "participant_id": "p",
+            "quantity_kwh": "0",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "a",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "b",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "c",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.60012,
+            "item_type": "producer_credit",
+            "participant_id": "p",
+            "quantity_kwh": "5.001000",
+            "unit_price_chf_per_kwh": 0.12
+          }
+        ],
+        "network_level": "same",
+        "participants": [
+          {
+            "allocated_kwh": 1.67,
+            "consumption_kwh": 4.0,
+            "id": "a",
+            "internal_cost_chf": 0.2,
+            "network_discount_chf": 0.05,
+            "self_supply_ratio": 0.4168
+          },
+          {
+            "allocated_kwh": 1.67,
+            "consumption_kwh": 4.0,
+            "id": "b",
+            "internal_cost_chf": 0.2,
+            "network_discount_chf": 0.05,
+            "self_supply_ratio": 0.4168
+          },
+          {
+            "allocated_kwh": 1.67,
+            "consumption_kwh": 4.0,
+            "id": "c",
+            "internal_cost_chf": 0.2,
+            "network_discount_chf": 0.05,
+            "self_supply_ratio": 0.4168
+          },
+          {
+            "allocated_kwh": 0.0,
+            "consumption_kwh": 0.0,
+            "id": "p",
+            "internal_cost_chf": 0.0,
+            "network_discount_chf": 0.0,
+            "self_supply_ratio": 0
+          }
+        ],
+        "period_end": "2026-10-01T00:15:00+00:00",
+        "period_start": "2026-10-01T00:00:00+00:00",
+        "prepared_by": "system",
+        "reconciliation": {
+          "difference_kwh": -0.000999,
+          "difference_pct": -0.02,
+          "engine_allocated_kwh": 5.000001,
+          "engine_audit": {
+            "allocated_kwh": {
+              "a": 1.666667,
+              "b": 1.666667,
+              "c": 1.666667,
+              "p": 0.0
+            },
+            "allocation_difference_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 0.0
+            },
+            "credit_difference_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 0.0
+            },
+            "credited_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 5.0
+            },
+            "distribution_model": "einfach",
+            "total_allocated_kwh": 5.0
+          },
+          "engine_production_kwh": 5.0,
+          "per_participant": {
+            "a": {
+              "difference_kwh": -0.000333,
+              "engine_kwh": 1.666667,
+              "vnb_kwh": 1.667
+            },
+            "b": {
+              "difference_kwh": -0.000333,
+              "engine_kwh": 1.666667,
+              "vnb_kwh": 1.667
+            },
+            "c": {
+              "difference_kwh": -0.000333,
+              "engine_kwh": 1.666667,
+              "vnb_kwh": 1.667
+            },
+            "p": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            }
+          },
+          "precision_policy": {
+            "certificate_sha256": "86ff2d2a8d0ca0e5c6de5312464a1e7d0429275050de70f613aea8110c8d2270",
+            "interval_count": 1,
+            "intervals": [
+              {
+                "allocated_kwh": "5",
+                "measured_at": "2026-10-01T00:00:00+00:00",
+                "participant_count": 4,
+                "redistribution_applied": true
+              }
+            ],
+            "model": "einfach",
+            "outcome": "rounding_compatible",
+            "redistribution_threshold_kwh": "0.001",
+            "rounding": "nonnegative_half_up",
+            "source_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "source_precision_kwh": "0.001",
+            "version": "vnb-einfach-e66-reported-total-witness/1",
+            "witness_basis": "reported_total_channels"
+          },
+          "production_difference_kwh": -0.001,
+          "production_per_participant": {
+            "a": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "b": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "c": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "p": {
+              "difference_kwh": -0.001,
+              "engine_kwh": 5.0,
+              "vnb_kwh": 5.001
+            }
+          },
+          "source_evidence": {
+            "evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "format_version": "e66/1",
+            "metadata": {
+              "mappings": [
+                {
+                  "building_id": "a",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-a-consumption"
+                },
+                {
+                  "building_id": "b",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-b-consumption"
+                },
+                {
+                  "building_id": "c",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-c-consumption"
+                },
+                {
+                  "building_id": "p",
+                  "expected_directions": [
+                    "production"
+                  ],
+                  "metering_point_id": "synthetic-p-production"
+                }
+              ],
+              "precision": "0.001 kWh"
+            },
+            "source": "Synthetic VNB",
+            "vnb_case_id": "strict-balance"
+          },
+          "vnb_allocated_kwh": 5.001,
+          "vnb_delivered_production_kwh": 5.0,
+          "vnb_imbalance_kwh": -0.001,
+          "vnb_imbalance_ratio": 0.0002,
+          "vnb_imbalance_tolerance_ratio": 0.001,
+          "vnb_production_kwh": 5.001
+        },
+        "source_document_ids": [
+          "synthetic-e66"
+        ],
+        "status": "draft",
+        "timezone": "Europe/Zurich",
+        "total_allocated_kwh": 5.0,
+        "total_network_discount_chf": 0.16,
+        "total_production_kwh": 5.0,
+        "total_surplus_kwh": 0
+      },
+      "source": {
+        "community_id": "community-a",
+        "evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "format_version": "e66/1",
+        "normalized_records": [
+          {
+            "allocated_kwh": 1.667,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "a",
+            "source_metering_point_id": "synthetic-a-consumption",
+            "source_quantities": {
+              "community_kwh": "1.667",
+              "grid_kwh": "2.333",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 1.667,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "b",
+            "source_metering_point_id": "synthetic-b-consumption",
+            "source_quantities": {
+              "community_kwh": "1.667",
+              "grid_kwh": "2.333",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 1.667,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "c",
+            "source_metering_point_id": "synthetic-c-consumption",
+            "source_quantities": {
+              "community_kwh": "1.667",
+              "grid_kwh": "2.333",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 5.0,
+            "direction": "production",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "p",
+            "source_metering_point_id": "synthetic-p-production",
+            "source_quantities": {
+              "community_kwh": "5.000",
+              "grid_kwh": "0.000",
+              "total_kwh": "5.000"
+            }
+          }
+        ],
+        "period_end": "2026-10-01T00:15:00+00:00",
+        "period_start": "2026-10-01T00:00:00+00:00",
+        "source": "Synthetic VNB",
+        "source_metadata": {
+          "mappings": [
+            {
+              "building_id": "a",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-a-consumption"
+            },
+            {
+              "building_id": "b",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-b-consumption"
+            },
+            {
+              "building_id": "c",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-c-consumption"
+            },
+            {
+              "building_id": "p",
+              "expected_directions": [
+                "production"
+              ],
+              "metering_point_id": "synthetic-p-production"
+            }
+          ],
+          "precision": "0.001 kWh"
+        },
+        "status": "accepted",
+        "vnb_case_id": "strict-balance"
+      }
+    },
+    "einfach/production_more": {
+      "draft": {
+        "billing_policy_snapshot": {
+          "community_id": "community-a",
+          "delivery_method": "email",
+          "distribution_model": "einfach",
+          "effective_from": "2026-01-01T00:00:00+00:00",
+          "grid_fee_chf_per_kwh": 0.08,
+          "internal_price_chf_per_kwh": 0.12,
+          "invoice_prefix": "LEG-2026",
+          "network_level": "same",
+          "payment_days": 30,
+          "settlement_fee_chf_per_kwh": 0.0,
+          "tariff_id": 7,
+          "vat_mode": "none",
+          "vat_rate_pct": 0
+        },
+        "calculated_values_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "community_id": "community-a",
+        "distribution_model": "einfach",
+        "engine_audit": {
+          "allocated_kwh": {
+            "a": 1.333333,
+            "b": 1.333333,
+            "c": 1.333333,
+            "p": 0.0
+          },
+          "allocation_difference_kwh": {
+            "a": -0.000333,
+            "b": -0.000333,
+            "c": -0.000333,
+            "p": 0.0
+          },
+          "credit_difference_kwh": {
+            "a": 0.0,
+            "b": 0.0,
+            "c": 0.0,
+            "p": -0.001
+          },
+          "credited_kwh": {
+            "a": 0.0,
+            "b": 0.0,
+            "c": 0.0,
+            "p": 4.0
+          },
+          "distribution_model": "einfach",
+          "total_allocated_kwh": 4.0
+        },
+        "grid_fee_chf_per_kwh": 0.08,
+        "id": 42,
+        "input_fingerprint": "688a5e6f0498ab0aa764c19766db91dc8485c478cc7036d6284ef74043d63db2",
+        "internal_price_chf_per_kwh": 0.12,
+        "line_items": [
+          {
+            "amount_chf": 0.15996,
+            "item_type": "consumer_charge",
+            "participant_id": "a",
+            "quantity_kwh": "1.333",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.15996,
+            "item_type": "consumer_charge",
+            "participant_id": "b",
+            "quantity_kwh": "1.333",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.15996,
+            "item_type": "consumer_charge",
+            "participant_id": "c",
+            "quantity_kwh": "1.333",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.0,
+            "item_type": "consumer_charge",
+            "participant_id": "p",
+            "quantity_kwh": "0",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "a",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "b",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "c",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.47988,
+            "item_type": "producer_credit",
+            "participant_id": "p",
+            "quantity_kwh": "3.999000",
+            "unit_price_chf_per_kwh": 0.12
+          }
+        ],
+        "network_level": "same",
+        "participants": [
+          {
+            "allocated_kwh": 1.33,
+            "consumption_kwh": 4.0,
+            "id": "a",
+            "internal_cost_chf": 0.16,
+            "network_discount_chf": 0.04,
+            "self_supply_ratio": 0.3332
+          },
+          {
+            "allocated_kwh": 1.33,
+            "consumption_kwh": 4.0,
+            "id": "b",
+            "internal_cost_chf": 0.16,
+            "network_discount_chf": 0.04,
+            "self_supply_ratio": 0.3332
+          },
+          {
+            "allocated_kwh": 1.33,
+            "consumption_kwh": 4.0,
+            "id": "c",
+            "internal_cost_chf": 0.16,
+            "network_discount_chf": 0.04,
+            "self_supply_ratio": 0.3332
+          },
+          {
+            "allocated_kwh": 0.0,
+            "consumption_kwh": 0.0,
+            "id": "p",
+            "internal_cost_chf": 0.0,
+            "network_discount_chf": 0.0,
+            "self_supply_ratio": 0
+          }
+        ],
+        "period_end": "2026-10-01T00:15:00+00:00",
+        "period_start": "2026-10-01T00:00:00+00:00",
+        "prepared_by": "system",
+        "reconciliation": {
+          "difference_kwh": 0.000999,
+          "difference_pct": 0.025,
+          "engine_allocated_kwh": 3.999999,
+          "engine_audit": {
+            "allocated_kwh": {
+              "a": 1.333333,
+              "b": 1.333333,
+              "c": 1.333333,
+              "p": 0.0
+            },
+            "allocation_difference_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 0.0
+            },
+            "credit_difference_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 0.0
+            },
+            "credited_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 4.0
+            },
+            "distribution_model": "einfach",
+            "total_allocated_kwh": 4.0
+          },
+          "engine_production_kwh": 4.0,
+          "per_participant": {
+            "a": {
+              "difference_kwh": 0.000333,
+              "engine_kwh": 1.333333,
+              "vnb_kwh": 1.333
+            },
+            "b": {
+              "difference_kwh": 0.000333,
+              "engine_kwh": 1.333333,
+              "vnb_kwh": 1.333
+            },
+            "c": {
+              "difference_kwh": 0.000333,
+              "engine_kwh": 1.333333,
+              "vnb_kwh": 1.333
+            },
+            "p": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            }
+          },
+          "precision_policy": {
+            "certificate_sha256": "d3dadec915dd88c2542ea60bf66a481d578f3c4b5587efe2b4116fcb233d2d67",
+            "interval_count": 1,
+            "intervals": [
+              {
+                "allocated_kwh": "4",
+                "measured_at": "2026-10-01T00:00:00+00:00",
+                "participant_count": 4,
+                "redistribution_applied": true
+              }
+            ],
+            "model": "einfach",
+            "outcome": "rounding_compatible",
+            "redistribution_threshold_kwh": "0.001",
+            "rounding": "nonnegative_half_up",
+            "source_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "source_precision_kwh": "0.001",
+            "version": "vnb-einfach-e66-reported-total-witness/1",
+            "witness_basis": "reported_total_channels"
+          },
+          "production_difference_kwh": 0.001,
+          "production_per_participant": {
+            "a": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "b": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "c": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "p": {
+              "difference_kwh": 0.001,
+              "engine_kwh": 4.0,
+              "vnb_kwh": 3.999
+            }
+          },
+          "source_evidence": {
+            "evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "format_version": "e66/1",
+            "metadata": {
+              "mappings": [
+                {
+                  "building_id": "a",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-a-consumption"
+                },
+                {
+                  "building_id": "b",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-b-consumption"
+                },
+                {
+                  "building_id": "c",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-c-consumption"
+                },
+                {
+                  "building_id": "p",
+                  "expected_directions": [
+                    "production"
+                  ],
+                  "metering_point_id": "synthetic-p-production"
+                }
+              ],
+              "precision": "0.001 kWh"
+            },
+            "source": "Synthetic VNB",
+            "vnb_case_id": "strict-balance"
+          },
+          "vnb_allocated_kwh": 3.999,
+          "vnb_delivered_production_kwh": 4.0,
+          "vnb_imbalance_kwh": 0.001,
+          "vnb_imbalance_ratio": 0.00025,
+          "vnb_imbalance_tolerance_ratio": 0.001,
+          "vnb_production_kwh": 3.999
+        },
+        "source_document_ids": [
+          "synthetic-e66"
+        ],
+        "status": "draft",
+        "timezone": "Europe/Zurich",
+        "total_allocated_kwh": 4.0,
+        "total_network_discount_chf": 0.13,
+        "total_production_kwh": 4.0,
+        "total_surplus_kwh": 0.0
+      },
+      "source": {
+        "community_id": "community-a",
+        "evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "format_version": "e66/1",
+        "normalized_records": [
+          {
+            "allocated_kwh": 1.333,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "a",
+            "source_metering_point_id": "synthetic-a-consumption",
+            "source_quantities": {
+              "community_kwh": "1.333",
+              "grid_kwh": "2.667",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 1.333,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "b",
+            "source_metering_point_id": "synthetic-b-consumption",
+            "source_quantities": {
+              "community_kwh": "1.333",
+              "grid_kwh": "2.667",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 1.333,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "c",
+            "source_metering_point_id": "synthetic-c-consumption",
+            "source_quantities": {
+              "community_kwh": "1.333",
+              "grid_kwh": "2.667",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 4.0,
+            "direction": "production",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "p",
+            "source_metering_point_id": "synthetic-p-production",
+            "source_quantities": {
+              "community_kwh": "4.000",
+              "grid_kwh": "0.000",
+              "total_kwh": "4.000"
+            }
+          }
+        ],
+        "period_end": "2026-10-01T00:15:00+00:00",
+        "period_start": "2026-10-01T00:00:00+00:00",
+        "source": "Synthetic VNB",
+        "source_metadata": {
+          "mappings": [
+            {
+              "building_id": "a",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-a-consumption"
+            },
+            {
+              "building_id": "b",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-b-consumption"
+            },
+            {
+              "building_id": "c",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-c-consumption"
+            },
+            {
+              "building_id": "p",
+              "expected_directions": [
+                "production"
+              ],
+              "metering_point_id": "synthetic-p-production"
+            }
+          ],
+          "precision": "0.001 kWh"
+        },
+        "status": "accepted",
+        "vnb_case_id": "strict-balance"
+      }
+    },
+    "proportional/consumption_more": {
+      "draft": {
+        "billing_policy_snapshot": {
+          "community_id": "community-a",
+          "delivery_method": "email",
+          "distribution_model": "proportional",
+          "effective_from": "2026-01-01T00:00:00+00:00",
+          "grid_fee_chf_per_kwh": 0.08,
+          "internal_price_chf_per_kwh": 0.12,
+          "invoice_prefix": "LEG-2026",
+          "network_level": "same",
+          "payment_days": 30,
+          "settlement_fee_chf_per_kwh": 0.0,
+          "tariff_id": 7,
+          "vat_mode": "none",
+          "vat_rate_pct": 0
+        },
+        "calculated_values_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "community_id": "community-a",
+        "distribution_model": "proportional",
+        "engine_audit": {
+          "allocated_kwh": {
+            "a": 1.666667,
+            "b": 1.666667,
+            "c": 1.666667,
+            "p": 0.0
+          },
+          "allocation_difference_kwh": {
+            "a": 0.000333,
+            "b": 0.000333,
+            "c": 0.000333,
+            "p": 0.0
+          },
+          "credit_difference_kwh": {
+            "a": 0.0,
+            "b": 0.0,
+            "c": 0.0,
+            "p": 0.001
+          },
+          "credited_kwh": {
+            "a": 0.0,
+            "b": 0.0,
+            "c": 0.0,
+            "p": 5.0
+          },
+          "distribution_model": "proportional",
+          "total_allocated_kwh": 5.0
+        },
+        "grid_fee_chf_per_kwh": 0.08,
+        "id": 42,
+        "input_fingerprint": "cd9164f4a95e79a972a814310cb322ebb4781ce226002d01d90ef414c272b238",
+        "internal_price_chf_per_kwh": 0.12,
+        "line_items": [
+          {
+            "amount_chf": 0.20004,
+            "item_type": "consumer_charge",
+            "participant_id": "a",
+            "quantity_kwh": "1.667",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.20004,
+            "item_type": "consumer_charge",
+            "participant_id": "b",
+            "quantity_kwh": "1.667",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.20004,
+            "item_type": "consumer_charge",
+            "participant_id": "c",
+            "quantity_kwh": "1.667",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.0,
+            "item_type": "consumer_charge",
+            "participant_id": "p",
+            "quantity_kwh": "0",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "a",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "b",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "c",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.60012,
+            "item_type": "producer_credit",
+            "participant_id": "p",
+            "quantity_kwh": "5.001000",
+            "unit_price_chf_per_kwh": 0.12
+          }
+        ],
+        "network_level": "same",
+        "participants": [
+          {
+            "allocated_kwh": 1.67,
+            "consumption_kwh": 4.0,
+            "id": "a",
+            "internal_cost_chf": 0.2,
+            "network_discount_chf": 0.05,
+            "self_supply_ratio": 0.4168
+          },
+          {
+            "allocated_kwh": 1.67,
+            "consumption_kwh": 4.0,
+            "id": "b",
+            "internal_cost_chf": 0.2,
+            "network_discount_chf": 0.05,
+            "self_supply_ratio": 0.4168
+          },
+          {
+            "allocated_kwh": 1.67,
+            "consumption_kwh": 4.0,
+            "id": "c",
+            "internal_cost_chf": 0.2,
+            "network_discount_chf": 0.05,
+            "self_supply_ratio": 0.4168
+          },
+          {
+            "allocated_kwh": 0.0,
+            "consumption_kwh": 0.0,
+            "id": "p",
+            "internal_cost_chf": 0.0,
+            "network_discount_chf": 0.0,
+            "self_supply_ratio": 0
+          }
+        ],
+        "period_end": "2026-10-01T00:15:00+00:00",
+        "period_start": "2026-10-01T00:00:00+00:00",
+        "prepared_by": "system",
+        "reconciliation": {
+          "difference_kwh": -0.000999,
+          "difference_pct": -0.02,
+          "engine_allocated_kwh": 5.000001,
+          "engine_audit": {
+            "allocated_kwh": {
+              "a": 1.666667,
+              "b": 1.666667,
+              "c": 1.666667,
+              "p": 0.0
+            },
+            "allocation_difference_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 0.0
+            },
+            "credit_difference_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 0.0
+            },
+            "credited_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 5.0
+            },
+            "distribution_model": "proportional",
+            "total_allocated_kwh": 5.0
+          },
+          "engine_production_kwh": 5.0,
+          "per_participant": {
+            "a": {
+              "difference_kwh": -0.000333,
+              "engine_kwh": 1.666667,
+              "vnb_kwh": 1.667
+            },
+            "b": {
+              "difference_kwh": -0.000333,
+              "engine_kwh": 1.666667,
+              "vnb_kwh": 1.667
+            },
+            "c": {
+              "difference_kwh": -0.000333,
+              "engine_kwh": 1.666667,
+              "vnb_kwh": 1.667
+            },
+            "p": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            }
+          },
+          "precision_policy": {
+            "certificate_sha256": "7a729536b6397cb51e6cbc1db2f4c8bdf82693e6c37ebfe9680c86da6e2f83c7",
+            "interval_count": 1,
+            "intervals": [
+              {
+                "limiting_side": "production",
+                "measured_at": "2026-10-01T00:00:00+00:00",
+                "ratio": "1667/4000"
+              }
+            ],
+            "model": "proportional",
+            "outcome": "rounding_compatible",
+            "rounding": "nonnegative_half_up",
+            "source_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "source_precision_kwh": "0.001",
+            "version": "vnb-proportional-e66-rounding/1"
+          },
+          "production_difference_kwh": -0.001,
+          "production_per_participant": {
+            "a": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "b": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "c": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "p": {
+              "difference_kwh": -0.001,
+              "engine_kwh": 5.0,
+              "vnb_kwh": 5.001
+            }
+          },
+          "source_evidence": {
+            "evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "format_version": "e66/1",
+            "metadata": {
+              "mappings": [
+                {
+                  "building_id": "a",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-a-consumption"
+                },
+                {
+                  "building_id": "b",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-b-consumption"
+                },
+                {
+                  "building_id": "c",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-c-consumption"
+                },
+                {
+                  "building_id": "p",
+                  "expected_directions": [
+                    "production"
+                  ],
+                  "metering_point_id": "synthetic-p-production"
+                }
+              ],
+              "precision": "0.001 kWh"
+            },
+            "source": "Synthetic VNB",
+            "vnb_case_id": "strict-balance"
+          },
+          "vnb_allocated_kwh": 5.001,
+          "vnb_delivered_production_kwh": 5.0,
+          "vnb_imbalance_kwh": -0.001,
+          "vnb_imbalance_ratio": 0.0002,
+          "vnb_imbalance_tolerance_ratio": 0.001,
+          "vnb_production_kwh": 5.001
+        },
+        "source_document_ids": [
+          "synthetic-e66"
+        ],
+        "status": "draft",
+        "timezone": "Europe/Zurich",
+        "total_allocated_kwh": 5.0,
+        "total_network_discount_chf": 0.16,
+        "total_production_kwh": 5.0,
+        "total_surplus_kwh": 0
+      },
+      "source": {
+        "community_id": "community-a",
+        "evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "format_version": "e66/1",
+        "normalized_records": [
+          {
+            "allocated_kwh": 1.667,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "a",
+            "source_metering_point_id": "synthetic-a-consumption",
+            "source_quantities": {
+              "community_kwh": "1.667",
+              "grid_kwh": "2.333",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 1.667,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "b",
+            "source_metering_point_id": "synthetic-b-consumption",
+            "source_quantities": {
+              "community_kwh": "1.667",
+              "grid_kwh": "2.333",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 1.667,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "c",
+            "source_metering_point_id": "synthetic-c-consumption",
+            "source_quantities": {
+              "community_kwh": "1.667",
+              "grid_kwh": "2.333",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 5.0,
+            "direction": "production",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "p",
+            "source_metering_point_id": "synthetic-p-production",
+            "source_quantities": {
+              "community_kwh": "5.000",
+              "grid_kwh": "0.000",
+              "total_kwh": "5.000"
+            }
+          }
+        ],
+        "period_end": "2026-10-01T00:15:00+00:00",
+        "period_start": "2026-10-01T00:00:00+00:00",
+        "source": "Synthetic VNB",
+        "source_metadata": {
+          "mappings": [
+            {
+              "building_id": "a",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-a-consumption"
+            },
+            {
+              "building_id": "b",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-b-consumption"
+            },
+            {
+              "building_id": "c",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-c-consumption"
+            },
+            {
+              "building_id": "p",
+              "expected_directions": [
+                "production"
+              ],
+              "metering_point_id": "synthetic-p-production"
+            }
+          ],
+          "precision": "0.001 kWh"
+        },
+        "status": "accepted",
+        "vnb_case_id": "strict-balance"
+      }
+    },
+    "proportional/production_more": {
+      "draft": {
+        "billing_policy_snapshot": {
+          "community_id": "community-a",
+          "delivery_method": "email",
+          "distribution_model": "proportional",
+          "effective_from": "2026-01-01T00:00:00+00:00",
+          "grid_fee_chf_per_kwh": 0.08,
+          "internal_price_chf_per_kwh": 0.12,
+          "invoice_prefix": "LEG-2026",
+          "network_level": "same",
+          "payment_days": 30,
+          "settlement_fee_chf_per_kwh": 0.0,
+          "tariff_id": 7,
+          "vat_mode": "none",
+          "vat_rate_pct": 0
+        },
+        "calculated_values_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "community_id": "community-a",
+        "distribution_model": "proportional",
+        "engine_audit": {
+          "allocated_kwh": {
+            "a": 1.333333,
+            "b": 1.333333,
+            "c": 1.333333,
+            "p": 0.0
+          },
+          "allocation_difference_kwh": {
+            "a": -0.000333,
+            "b": -0.000333,
+            "c": -0.000333,
+            "p": 0.0
+          },
+          "credit_difference_kwh": {
+            "a": 0.0,
+            "b": 0.0,
+            "c": 0.0,
+            "p": -0.001
+          },
+          "credited_kwh": {
+            "a": 0.0,
+            "b": 0.0,
+            "c": 0.0,
+            "p": 4.0
+          },
+          "distribution_model": "proportional",
+          "total_allocated_kwh": 4.0
+        },
+        "grid_fee_chf_per_kwh": 0.08,
+        "id": 42,
+        "input_fingerprint": "a662cb5618856bde578ef756bb0496b66c500e14265f55ac9d5721e7c299a71e",
+        "internal_price_chf_per_kwh": 0.12,
+        "line_items": [
+          {
+            "amount_chf": 0.15996,
+            "item_type": "consumer_charge",
+            "participant_id": "a",
+            "quantity_kwh": "1.333",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.15996,
+            "item_type": "consumer_charge",
+            "participant_id": "b",
+            "quantity_kwh": "1.333",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.15996,
+            "item_type": "consumer_charge",
+            "participant_id": "c",
+            "quantity_kwh": "1.333",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": 0.0,
+            "item_type": "consumer_charge",
+            "participant_id": "p",
+            "quantity_kwh": "0",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "a",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "b",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.0,
+            "item_type": "producer_credit",
+            "participant_id": "c",
+            "quantity_kwh": "0.000000",
+            "unit_price_chf_per_kwh": 0.12
+          },
+          {
+            "amount_chf": -0.47988,
+            "item_type": "producer_credit",
+            "participant_id": "p",
+            "quantity_kwh": "3.999000",
+            "unit_price_chf_per_kwh": 0.12
+          }
+        ],
+        "network_level": "same",
+        "participants": [
+          {
+            "allocated_kwh": 1.33,
+            "consumption_kwh": 4.0,
+            "id": "a",
+            "internal_cost_chf": 0.16,
+            "network_discount_chf": 0.04,
+            "self_supply_ratio": 0.3332
+          },
+          {
+            "allocated_kwh": 1.33,
+            "consumption_kwh": 4.0,
+            "id": "b",
+            "internal_cost_chf": 0.16,
+            "network_discount_chf": 0.04,
+            "self_supply_ratio": 0.3332
+          },
+          {
+            "allocated_kwh": 1.33,
+            "consumption_kwh": 4.0,
+            "id": "c",
+            "internal_cost_chf": 0.16,
+            "network_discount_chf": 0.04,
+            "self_supply_ratio": 0.3332
+          },
+          {
+            "allocated_kwh": 0.0,
+            "consumption_kwh": 0.0,
+            "id": "p",
+            "internal_cost_chf": 0.0,
+            "network_discount_chf": 0.0,
+            "self_supply_ratio": 0
+          }
+        ],
+        "period_end": "2026-10-01T00:15:00+00:00",
+        "period_start": "2026-10-01T00:00:00+00:00",
+        "prepared_by": "system",
+        "reconciliation": {
+          "difference_kwh": 0.000999,
+          "difference_pct": 0.025,
+          "engine_allocated_kwh": 3.999999,
+          "engine_audit": {
+            "allocated_kwh": {
+              "a": 1.333333,
+              "b": 1.333333,
+              "c": 1.333333,
+              "p": 0.0
+            },
+            "allocation_difference_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 0.0
+            },
+            "credit_difference_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 0.0
+            },
+            "credited_kwh": {
+              "a": 0.0,
+              "b": 0.0,
+              "c": 0.0,
+              "p": 4.0
+            },
+            "distribution_model": "proportional",
+            "total_allocated_kwh": 4.0
+          },
+          "engine_production_kwh": 4.0,
+          "per_participant": {
+            "a": {
+              "difference_kwh": 0.000333,
+              "engine_kwh": 1.333333,
+              "vnb_kwh": 1.333
+            },
+            "b": {
+              "difference_kwh": 0.000333,
+              "engine_kwh": 1.333333,
+              "vnb_kwh": 1.333
+            },
+            "c": {
+              "difference_kwh": 0.000333,
+              "engine_kwh": 1.333333,
+              "vnb_kwh": 1.333
+            },
+            "p": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            }
+          },
+          "precision_policy": {
+            "certificate_sha256": "1f5d462812e37596ef2aee80a94f8eb8ee83bd6c39df8ce5edb8898e0efc9ccf",
+            "interval_count": 1,
+            "intervals": [
+              {
+                "limiting_side": "production",
+                "measured_at": "2026-10-01T00:00:00+00:00",
+                "ratio": "5333/16000"
+              }
+            ],
+            "model": "proportional",
+            "outcome": "rounding_compatible",
+            "rounding": "nonnegative_half_up",
+            "source_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "source_precision_kwh": "0.001",
+            "version": "vnb-proportional-e66-rounding/1"
+          },
+          "production_difference_kwh": 0.001,
+          "production_per_participant": {
+            "a": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "b": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "c": {
+              "difference_kwh": 0.0,
+              "engine_kwh": 0.0,
+              "vnb_kwh": 0.0
+            },
+            "p": {
+              "difference_kwh": 0.001,
+              "engine_kwh": 4.0,
+              "vnb_kwh": 3.999
+            }
+          },
+          "source_evidence": {
+            "evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "format_version": "e66/1",
+            "metadata": {
+              "mappings": [
+                {
+                  "building_id": "a",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-a-consumption"
+                },
+                {
+                  "building_id": "b",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-b-consumption"
+                },
+                {
+                  "building_id": "c",
+                  "expected_directions": [
+                    "consumption"
+                  ],
+                  "metering_point_id": "synthetic-c-consumption"
+                },
+                {
+                  "building_id": "p",
+                  "expected_directions": [
+                    "production"
+                  ],
+                  "metering_point_id": "synthetic-p-production"
+                }
+              ],
+              "precision": "0.001 kWh"
+            },
+            "source": "Synthetic VNB",
+            "vnb_case_id": "strict-balance"
+          },
+          "vnb_allocated_kwh": 3.999,
+          "vnb_delivered_production_kwh": 4.0,
+          "vnb_imbalance_kwh": 0.001,
+          "vnb_imbalance_ratio": 0.00025,
+          "vnb_imbalance_tolerance_ratio": 0.001,
+          "vnb_production_kwh": 3.999
+        },
+        "source_document_ids": [
+          "synthetic-e66"
+        ],
+        "status": "draft",
+        "timezone": "Europe/Zurich",
+        "total_allocated_kwh": 4.0,
+        "total_network_discount_chf": 0.13,
+        "total_production_kwh": 4.0,
+        "total_surplus_kwh": 0.0
+      },
+      "source": {
+        "community_id": "community-a",
+        "evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "format_version": "e66/1",
+        "normalized_records": [
+          {
+            "allocated_kwh": 1.333,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "a",
+            "source_metering_point_id": "synthetic-a-consumption",
+            "source_quantities": {
+              "community_kwh": "1.333",
+              "grid_kwh": "2.667",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 1.333,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "b",
+            "source_metering_point_id": "synthetic-b-consumption",
+            "source_quantities": {
+              "community_kwh": "1.333",
+              "grid_kwh": "2.667",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 1.333,
+            "direction": "consumption",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "c",
+            "source_metering_point_id": "synthetic-c-consumption",
+            "source_quantities": {
+              "community_kwh": "1.333",
+              "grid_kwh": "2.667",
+              "total_kwh": "4.000"
+            }
+          },
+          {
+            "allocated_kwh": 4.0,
+            "direction": "production",
+            "measured_at": "2026-10-01T00:00:00+00:00",
+            "participant_id": "p",
+            "source_metering_point_id": "synthetic-p-production",
+            "source_quantities": {
+              "community_kwh": "4.000",
+              "grid_kwh": "0.000",
+              "total_kwh": "4.000"
+            }
+          }
+        ],
+        "period_end": "2026-10-01T00:15:00+00:00",
+        "period_start": "2026-10-01T00:00:00+00:00",
+        "source": "Synthetic VNB",
+        "source_metadata": {
+          "mappings": [
+            {
+              "building_id": "a",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-a-consumption"
+            },
+            {
+              "building_id": "b",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-b-consumption"
+            },
+            {
+              "building_id": "c",
+              "expected_directions": [
+                "consumption"
+              ],
+              "metering_point_id": "synthetic-c-consumption"
+            },
+            {
+              "building_id": "p",
+              "expected_directions": [
+                "production"
+              ],
+              "metering_point_id": "synthetic-p-production"
+            }
+          ],
+          "precision": "0.001 kWh"
+        },
+        "status": "accepted",
+        "vnb_case_id": "strict-balance"
+      }
+    }
+  },
+  "captured_at_commit": "67669420866be690d81478dcd9f7d43f14675e25",
+  "description": "Unmodified candidate drafts captured once before strict refusal; no real metering or personal data.",
+  "synthetic_only": true
+}

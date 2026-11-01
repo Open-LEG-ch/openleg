@@ -192,7 +192,7 @@ Each pair of metering point and direction carries three channels:
 
 `total = grid + community` holds. The LEG channel balances across the
 community: what production points feed into the LEG, consumption points draw
-from it.
+from it. Billing requires these source totals to balance exactly.
 
 Observations carry no timestamp of their own. It follows from the interval
 start of the block plus `(Sequence - 1) * resolution` and marks the **start**
@@ -243,9 +243,52 @@ constrained to `consumption` or `production` and is part of the readings key,
 because one physical point can be both at the same instant. The full key is
 therefore `(metering_point_id, direction, measured_at)`.
 
-The VNB split into `grid_kwh` and `community_kwh` is authoritative. The billing
-engine reallocates totals only as an audit calculation. A missing VNB split or
-any aggregate or participant-level difference blocks the draft period.
+The VNB split into `grid_kwh` and `community_kwh` is authoritative, and it is
+what the line items carry: a member's charge is the `community_kwh` their own
+VNB statement shows. The billing engine reallocates totals only as an audit
+calculation, reported under `engine_audit` and never billed. A missing VNB split
+blocks the draft period.
+
+Consumer and producer community totals must balance exactly before any display
+or line-quantity rounding. A nonzero difference stops billing, including one
+smaller than the six-decimal display precision. There is no allowance or
+operator exception, and producer quantities are never rescaled or redistributed.
+Zero/zero energy remains valid. The delivered figures and independent model
+allocation remain visible in the reconciliation and `engine_audit`.
+
+New calculated-values JSON deliveries must be exact multiples of 0.000001 kWh
+after Wh conversion. Finer values fail ingestion with
+`unsupported_quantity_precision`, without rounding. See the
+[JSON precision contract](vnb-exchange.md#json-calculated-values-precision).
+
+With a database, the runner fetches the accepted calculated delivery before
+checking the allocation balance. Its accepted split supplies both consumer
+charges and producer credits. A balanced accepted correction can therefore
+replace an unequal imported E66 split. The imported rows still supply physical
+readings and must pass completeness, ownership and provenance checks; source
+identity and physical equality are checked against the accepted delivery.
+
+An accepted, certified `e66/1` delivery without a battery is priced from its
+source decimals for both proportional and einfach models. Precision compatibility
+alone does not authorize unequal totals. Approval rechecks the exact source
+quantities, certificate and independent engine audit. Genuine main drafts that
+lack newer audit fields remain compatible; present audit fields must match.
+Historic proposal drafts with unequal source quantities cannot be approved.
+A draft carrying an obsolete non-null allowance or release record must be prepared again;
+its free-text reason must not reach invoice provenance.
+
+For certified source pricing, the reconciliation's `difference_kwh` fields
+report the source/model gap. Its `engine_audit` comes from the independent
+engine allocation and has zero differences. The other billing path reports
+the source/model gap in `engine_audit` beside the billed quantities. The
+workspace labels certified source drafts accordingly; approval validates the
+source rather than requiring the model to reproduce its rounded quantities.
+
+A period with a Quartierakku requires the accepted VNB split to equal the engine
+allocation at six decimals for every interval, participant and direction.
+Period totals cannot hide a transfer between solar and battery energy. A
+mismatch stops billing with `vnb_allocation_mismatch` until attribution can
+follow the billed split.
 
 ### Timezone semantics
 
@@ -329,8 +372,8 @@ draft and applies these fail-closed rules:
 - one explicit `billing_tariffs` row must cover the complete period
 - internal and grid prices, network level, and distribution model are copied
   onto the draft; public H4 data and zero defaults are never substitutes
-- incomplete readings or an unexplained difference from the VNB allocation
-  persist nothing
+- incomplete readings, an unbalanced VNB delivery, or billed quantities that
+  depart from the VNB reference persist nothing
 - only one current period may occupy `(community_id, period_start, period_end)`;
   invalidated draft versions remain available for audit
 - identical input fingerprints are retry no-ops; changed inputs require review
@@ -357,10 +400,10 @@ search refuses unresolved boundaries.
 
 Physical reading frames must match the accepted source at the existing
 six-decimal persistence precision. Consumer charges, producer credits and
-settlement fees use the VNB quantities. Their consumer and producer totals
-must balance exactly over the billing period. Unequal rounded totals are
-refused until there is a reviewed accounting policy for the energy difference;
-the cash rounding line cannot absorb it. Battery rounding remains subject to
+settlement fees use the VNB quantities. Consumer and producer source totals
+must balance exactly over the period. Unequal totals are refused; a model
+precision certificate and the cash rounding line cannot absorb an energy
+difference. Battery rounding remains subject to
 the existing exact reconciliation gate. Legacy JSON evidence and drafts keep
 their existing approval rules.
 
@@ -426,9 +469,9 @@ contents. Discovery and draft-persistence storage failures also use safe message
 
 A failure may carry an optional `reason` beside the unchanged `error` code; the
 only reason is `vnb_balancing_policy_required`, marking a `vnb_allocation_mismatch`
-whose accepted rounded E66 source totals do not balance. That reason means the
-operator must obtain a reviewed accounting decision for the energy difference,
-never adjust the physical readings.
+whose accepted source totals do not balance exactly. Obtain a corrected,
+balanced VNB delivery before billing. Never adjust physical readings or absorb
+the energy difference in a money adjustment.
 
 Unknown error codes use `billing_run_failed`. The existing direct Python runner
 retains its detailed exception for local diagnosis; do not publish that exception

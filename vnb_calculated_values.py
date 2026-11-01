@@ -102,6 +102,21 @@ def _safe_result(saved):
     return {key: value for key, value in saved.items() if key != "evidence_bytes"}
 
 
+def _refused_fingerprint(fingerprint, payload, transport, diagnostics):
+    """Include discarded input without changing accepted delivery identities."""
+    identity = {
+        "normalized_fingerprint": fingerprint,
+        "refused_payload": payload,
+        "diagnostics": diagnostics,
+    }
+    if transport not in TRANSPORTS:
+        identity["unsupported_transport"] = transport
+    encoded = json.dumps(
+        identity, sort_keys=True, separators=(",", ":"), default=str
+    ).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def accept_delivery(
     payload, *, transport, evidence, repository=None, source_metadata=None
 ):
@@ -189,6 +204,20 @@ def accept_delivery(
             record_problem = True
             continue
         seen.add(key)
+        if payload.get("format_version") == "json/1":
+            # Check original digits before Decimal unit conversion can round.
+            digits = value.as_tuple()
+            excess_places = -digits.exponent - (3 if unit == "Wh" else 6)
+            if excess_places > 0 and any(digits.digits[-excess_places:]):
+                diagnostics.append(
+                    {
+                        "code": "unsupported_quantity_precision",
+                        "detail": "JSON quantities must be exact multiples of "
+                        "0.000001 kWh after unit conversion",
+                    }
+                )
+                record_problem = True
+                continue
         kwh = value / (Decimal(1000) if unit == "Wh" else Decimal(1))
         normalized.append(
             {
@@ -257,6 +286,8 @@ def accept_delivery(
         )
     ):
         diagnostics.append({"code": "overlapping_period"})
+    if diagnostics:
+        fingerprint = _refused_fingerprint(fingerprint, payload, transport, diagnostics)
     metadata_invalid = bool(diagnostics) and not record_problem
     status = (
         "partially_invalid"

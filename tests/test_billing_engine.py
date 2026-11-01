@@ -196,6 +196,126 @@ class TestEdgeCases:
         assert abs(result["a"].iloc[0] - 7.0) < 0.01
 
 
+class TestBilledAllocation:
+    """What gets billed is the caller's split, not the engine's own."""
+
+    def _frames(self):
+        production = pd.DataFrame({"a": [0.0, 0.0], "b": [4.0, 4.0]})
+        consumption = pd.DataFrame({"a": [3.0, 3.0], "b": [1.0, 1.0]})
+        return production, consumption
+
+    def test_line_items_carry_the_billed_split(self):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        summary = generate_billing_summary(
+            production=production,
+            consumption=consumption,
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            billed_allocation={
+                "consumption_kwh": {"a": 5.0, "b": 1.0},
+                "production_kwh": {"a": 0.0, "b": 6.0},
+            },
+        )
+
+        charges = {
+            item["participant_id"]: item["quantity_kwh"]
+            for item in summary["line_items"]
+            if item["item_type"] == "consumer_charge"
+        }
+        credits = {
+            item["participant_id"]: item["quantity_kwh"]
+            for item in summary["line_items"]
+            if item["item_type"] == "producer_credit"
+        }
+        assert charges == {"a": 5.0, "b": 1.0}
+        assert credits == {"a": 0.0, "b": 6.0}
+        assert summary["total_allocated_kwh"] == 6.0
+        # The discount follows the billed energy, not the engine's allocation.
+        assert summary["total_network_discount_chf"] == 0.24
+
+    def test_the_engine_allocation_survives_as_an_audit_figure(self):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        summary = generate_billing_summary(
+            production=production,
+            consumption=consumption,
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            billed_allocation={
+                "consumption_kwh": {"a": 5.0, "b": 1.0},
+                "production_kwh": {"a": 0.0, "b": 6.0},
+            },
+        )
+
+        audit = summary["engine_audit"]
+        # Proportional allocation gives a 6 kWh and b 2 kWh of the 8 kWh fed in.
+        assert audit["allocated_kwh"] == {"a": 6.0, "b": 2.0}
+        assert audit["total_allocated_kwh"] == 8.0
+        assert audit["allocation_difference_kwh"] == {"a": -1.0, "b": -1.0}
+        assert audit["credited_kwh"] == {"a": 0.0, "b": 8.0}
+
+    def test_a_split_that_misses_a_participant_fails_closed(self):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        with pytest.raises(ValueError, match="exactly the participants"):
+            generate_billing_summary(
+                production=production,
+                consumption=consumption,
+                grid_fee_per_kwh=0.10,
+                internal_price_per_kwh=0.15,
+                network_level="same",
+                billed_allocation={
+                    "consumption_kwh": {"a": 5.0},
+                    "production_kwh": {"a": 0.0, "b": 6.0},
+                },
+            )
+
+    @pytest.mark.parametrize("credited", [5.0, 6.000001])
+    def test_an_unbalanced_billed_split_fails_closed(self, credited):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        with pytest.raises(
+            ValueError, match="Billed consumption and production must balance"
+        ):
+            generate_billing_summary(
+                production=production,
+                consumption=consumption,
+                grid_fee_per_kwh=0.10,
+                internal_price_per_kwh=0.15,
+                network_level="same",
+                billed_allocation={
+                    "consumption_kwh": {"a": 5.0, "b": 1.0},
+                    "production_kwh": {"a": 0.0, "b": credited},
+                },
+            )
+
+    def test_without_a_split_the_engine_bills_its_own_allocation(self):
+        from billing_engine import generate_billing_summary
+
+        production, consumption = self._frames()
+        summary = generate_billing_summary(
+            production=production,
+            consumption=consumption,
+            grid_fee_per_kwh=0.10,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+        )
+
+        charges = {
+            item["participant_id"]: item["quantity_kwh"]
+            for item in summary["line_items"]
+            if item["item_type"] == "consumer_charge"
+        }
+        assert charges == {"a": 6.0, "b": 2.0}
+
+
 class TestSettlementFee:
     """The VNB settlement fee applies to the energy settled through the VNB."""
 
@@ -375,6 +495,60 @@ class TestQuartierakkuAllocation:
         ]
         assert any(item["item_type"] == "producer_credit" for item in battery_items)
 
+    def _overnight_summary(self, billed_allocation):
+        from billing_engine import generate_billing_summary
+
+        return generate_billing_summary(
+            pd.DataFrame({"solar": [4.0, 0.0, 0.0], "battery": [0.0, 3.0, 1.0]}),
+            pd.DataFrame(
+                {
+                    "home-a": [2.0, 2.0, 1.0],
+                    "home-b": [2.0, 1.0, 0.0],
+                    "battery": [0.0, 0.0, 0.0],
+                }
+            ),
+            grid_fee_per_kwh=0.08,
+            internal_price_per_kwh=0.15,
+            network_level="same",
+            battery_participant_id="battery",
+            battery_capacity_kwh=4,
+            billed_allocation=billed_allocation,
+        )
+
+    def test_a_billed_split_equal_to_the_engine_keeps_the_attribution(self):
+        summary = self._overnight_summary(
+            {
+                "consumption_kwh": {"home-a": 5.0, "home-b": 3.0, "battery": 0.0},
+                "production_kwh": {"solar": 4.0, "battery": 4.0},
+            }
+        )
+
+        participants = {item["id"]: item for item in summary["participants"]}
+        assert participants["home-a"]["battery_kwh"] == 3.0
+        assert participants["home-b"]["battery_kwh"] == 1.0
+
+    @pytest.mark.parametrize(
+        "billed_allocation",
+        [
+            {
+                "consumption_kwh": {"home-a": 4.5, "home-b": 3.5, "battery": 0.0},
+                "production_kwh": {"solar": 4.0, "battery": 4.0},
+            },
+            {
+                "consumption_kwh": {"home-a": 5.0, "home-b": 3.0, "battery": 0.0},
+                "production_kwh": {"solar": 4.000001, "battery": 3.999999},
+            },
+        ],
+        ids=["consumption", "production"],
+    )
+    def test_a_billed_split_off_the_engine_fails_closed(self, billed_allocation):
+        """The attribution follows the engine; billing anything else would
+        freeze battery shares that do not add up to the billed energy."""
+        from billing_engine import BatteryBilledSplitMismatch
+
+        with pytest.raises(BatteryBilledSplitMismatch):
+            self._overnight_summary(billed_allocation)
+
     def test_charge_and_discharge_at_empty_and_full_edges_reconcile(self):
         from billing_engine import generate_billing_summary
 
@@ -498,3 +672,43 @@ class TestQuartierakkuAllocation:
                 battery_participant_id="battery",
                 battery_capacity_kwh=4,
             )
+
+
+@pytest.mark.parametrize("b_quantity,valid", [(0.0000004, False), (0.0000006, True)])
+def test_billed_balance_uses_the_persisted_per_line_quantities(b_quantity, valid):
+    from decimal import Decimal
+
+    from billing_engine import generate_billing_summary
+
+    def bill():
+        return generate_billing_summary(
+            pd.DataFrame({"p": [1.0]}),
+            pd.DataFrame({"a": [1.0], "b": [1.0]}),
+            0.08,
+            0.12,
+            "same",
+            billed_allocation={
+                "consumption_kwh": {"a": 0.0000004, "b": b_quantity},
+                "production_kwh": {"p": 0.0000008},
+            },
+        )
+
+    if not valid:
+        with pytest.raises(
+            ValueError, match="Billed consumption and production must balance"
+        ):
+            bill()
+    else:
+        items = bill()["line_items"]
+        charged, credited = (
+            sum(
+                (
+                    Decimal(str(item["quantity_kwh"]))
+                    for item in items
+                    if item["item_type"] == kind
+                ),
+                Decimal(0),
+            )
+            for kind in ("consumer_charge", "producer_credit")
+        )
+        assert charged == credited == Decimal("0.000001")

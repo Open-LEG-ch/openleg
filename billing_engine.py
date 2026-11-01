@@ -18,7 +18,15 @@ DISCOUNT_CROSS_LEVEL = 0.20
 
 
 class VnbBalancingPolicyRequired(ValueError):
-    """Source quantities whose rounded totals do not balance need a reviewed policy."""
+    """Unequal source totals require a reviewed balancing policy."""
+
+
+class BatteryBilledSplitMismatch(ValueError):
+    """A battery period whose billed split departs from the engine allocation.
+
+    Battery attribution is derived from the engine's interval allocation, so it
+    only adds up to the billed energy when both splits agree.
+    """
 
 
 def _money(value):
@@ -86,6 +94,32 @@ def allocate_energy(production, consumption, model="proportional"):
             result.iloc[i] = alloc
 
     return result
+
+
+def _billed_quantities(billed_allocation, key, engine_quantities):
+    """The quantities to bill: the caller's split, or the engine's own.
+
+    Fails closed on a split that does not cover exactly the participants the
+    engine allocated for: billing a participant the caller never priced, or
+    dropping one the engine allocated to, would move energy between members.
+    """
+    if billed_allocation is None:
+        return dict(engine_quantities)
+    if not isinstance(billed_allocation, dict) or key not in billed_allocation:
+        raise ValueError("Billed allocation must carry consumption and production")
+    quantities = billed_allocation[key]
+    if not isinstance(quantities, dict) or set(quantities) != set(engine_quantities):
+        raise ValueError("Billed allocation must cover exactly the participants")
+    values = {}
+    for participant, value in quantities.items():
+        number = float(value)
+        decimal_value = Decimal(str(value))
+        if not isfinite(number) or not decimal_value.is_finite() or decimal_value < 0:
+            raise ValueError("Billed allocation must be finite and non-negative")
+        values[participant] = float(
+            decimal_value.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+        )
+    return values
 
 
 def compute_network_discount(allocated_kwh, grid_fee_per_kwh, network_level):
@@ -209,8 +243,18 @@ def generate_billing_summary(
     settlement_fee_per_kwh=0.0,
     battery_participant_id=None,
     battery_capacity_kwh=None,
+    billed_allocation=None,
 ):
-    """Allocate physical readings and price the independent model result."""
+    """Allocate physical readings and price the independent model result.
+
+    ``billed_allocation`` carries the quantities to bill, as
+    ``{"consumption_kwh": {participant: kwh}, "production_kwh": {...}}``. The
+    VNB's own split arrives that way: it is what a member can check against
+    their own statement, so it is what the line items carry. Omit it and the
+    engine bills its own allocation, which is what the model comparisons and
+    the standalone callers do. Either way the engine's own result is reported
+    under ``engine_audit``.
+    """
     return _generate_billing_summary(
         production,
         consumption,
@@ -221,6 +265,7 @@ def generate_billing_summary(
         settlement_fee_per_kwh,
         battery_participant_id,
         battery_capacity_kwh,
+        billed_allocation=billed_allocation,
     )
 
 
@@ -237,8 +282,7 @@ def generate_vnb_billing_summary(
 ):
     """Price source quantities after the caller's interval compatibility audit.
 
-    Source consumption and production must balance exactly over the period.
-    Unequal rounded totals need a separately reviewed accounting policy.
+    Source totals must balance exactly. Each producer keeps its source quantity.
     """
     return _generate_billing_summary(
         production,
@@ -281,6 +325,7 @@ def _generate_billing_summary(
     *,
     vnb_consumption=None,
     vnb_production=None,
+    billed_allocation=None,
 ):
     """Generate billing summary for a period.
 
@@ -339,6 +384,8 @@ def _generate_billing_summary(
         raise ValueError("Production and consumption intervals must match")
 
     source_quantities = vnb_consumption is not None
+    if source_quantities and billed_allocation is not None:
+        raise ValueError("Source quantities and a billed allocation exclude each other")
     if source_quantities:
         if producer_production is None or vnb_production is None:
             raise ValueError("VNB pricing requires participant production")
@@ -348,10 +395,11 @@ def _generate_billing_summary(
             raise VnbBalancingPolicyRequired(
                 "VNB quantities require a reviewed balancing policy"
             )
-    else:
-        allocation = allocate_energy(
-            total_production_series, consumption, model=distribution_model
-        )
+    engine_allocation = allocate_energy(
+        total_production_series, consumption, model=distribution_model
+    )
+    if not source_quantities:
+        allocation = engine_allocation
 
     battery_attribution = None
     battery_audit = None
@@ -366,8 +414,66 @@ def _generate_billing_summary(
             battery_capacity_kwh,
         )
 
+    engine_allocated = {
+        column: float(engine_allocation[column].sum())
+        for column in engine_allocation.columns
+    }
+    engine_credited = {}
+    if producer_production is not None:
+        allocated_by_interval = engine_allocation.sum(axis=1)
+        shares = producer_production.div(
+            total_production_series.replace(0, float("nan")), axis=0
+        ).fillna(0)
+        credited = shares.mul(allocated_by_interval, axis=0).sum(axis=0)
+        engine_credited = {
+            producer_id: float(credited[producer_id]) for producer_id in credited.index
+        }
+
+    if source_quantities:
+        # Exact source decimals: priced as delivered, never through a float.
+        billed_consumption = {
+            column: sum(allocation[column], Decimal(0)) for column in allocation.columns
+        }
+        billed_production = {
+            producer_id: sum(source_credits[producer_id], Decimal(0))
+            for producer_id in source_credits.columns
+        }
+    else:
+        billed_consumption = _billed_quantities(
+            billed_allocation, "consumption_kwh", engine_allocated
+        )
+        billed_production = _billed_quantities(
+            billed_allocation, "production_kwh", engine_credited
+        )
+        if billed_allocation is not None:
+            charged, credited = (
+                sum(
+                    (Decimal(str(round(value, 6))) for value in quantities.values()),
+                    Decimal(0),
+                )
+                for quantities in (billed_consumption, billed_production)
+            )
+            if charged != credited:
+                raise ValueError("Billed consumption and production must balance")
+
+    # Fail closed until battery attribution can follow a billed split: frozen
+    # battery shares that do not add up to the billed energy would mislead.
+    if battery_participant_id is not None and billed_allocation is not None:
+        for billed, engine in (
+            (billed_consumption, engine_allocated),
+            (billed_production, engine_credited),
+        ):
+            if any(
+                round(billed[participant], 6) != round(value, 6)
+                for participant, value in engine.items()
+            ):
+                raise BatteryBilledSplitMismatch(
+                    "Battery attribution requires the billed split to match "
+                    "the engine allocation"
+                )
+
     total_production = float(total_production_series.sum())
-    total_allocated = float(allocation.values.sum())
+    total_allocated = float(sum(billed_consumption.values()))
     total_discount = compute_network_discount(
         total_allocated, grid_fee_per_kwh, network_level
     )
@@ -376,11 +482,9 @@ def _generate_billing_summary(
     line_items = []
     charge_fee_total = Decimal(0)
     for col in allocation.columns:
-        alloc_kwh = float(allocation[col].sum())
+        alloc_kwh = float(billed_consumption[col])
         priced_quantity = (
-            str(sum(allocation[col], Decimal(0)))
-            if source_quantities
-            else round(alloc_kwh, 6)
+            str(billed_consumption[col]) if source_quantities else round(alloc_kwh, 6)
         )
         cons_kwh = float(consumption[col].sum())
         discount = compute_network_discount(alloc_kwh, grid_fee_per_kwh, network_level)
@@ -426,26 +530,18 @@ def _generate_billing_summary(
                 )
 
     if producer_production is not None:
-        if source_quantities:
-            credited = source_credits.sum(axis=0)
-        else:
-            allocated_by_interval = allocation.sum(axis=1)
-            shares = producer_production.div(
-                total_production_series.replace(0, float("nan")), axis=0
-            ).fillna(0)
-            credited = shares.mul(allocated_by_interval, axis=0).sum(axis=0)
         charge_total = sum(
             _money(item["amount_chf"])
             for item in line_items
             if item["item_type"] == "consumer_charge"
         )
         credited_total = Decimal(0)
-        producer_ids = list(credited.index)
+        producer_ids = list(billed_production)
         for producer_id in producer_ids:
             quantity = (
-                str(credited[producer_id])
+                str(billed_production[producer_id])
                 if source_quantities
-                else round(float(credited[producer_id]), 6)
+                else round(float(billed_production[producer_id]), 6)
             )
             amount = _priced_amount(quantity, internal_price_per_kwh)
             credited_total += amount
@@ -482,6 +578,29 @@ def _generate_billing_summary(
         "network_level": network_level,
         "participants": participants,
         "line_items": line_items,
+        # Was das Verteilmodell selbst zugeteilt hätte. Verrechnet wird die
+        # VNB-Aufteilung; diese Zahlen machen die Differenz sichtbar, statt sie
+        # zu verwerfen.
+        "engine_audit": {
+            "distribution_model": distribution_model,
+            "total_allocated_kwh": round(sum(engine_allocated.values()), 6),
+            "allocated_kwh": {
+                participant: round(value, 6)
+                for participant, value in engine_allocated.items()
+            },
+            "credited_kwh": {
+                participant: round(value, 6)
+                for participant, value in engine_credited.items()
+            },
+            "allocation_difference_kwh": {
+                participant: round(float(billed_consumption[participant]) - value, 6)
+                for participant, value in engine_allocated.items()
+            },
+            "credit_difference_kwh": {
+                participant: round(float(billed_production[participant]) - value, 6)
+                for participant, value in engine_credited.items()
+            },
+        },
     }
     if settlement_fee_per_kwh > 0:
         summary["settlement_fee_chf_per_kwh"] = settlement_fee_per_kwh

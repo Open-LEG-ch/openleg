@@ -104,6 +104,32 @@ def test_contract_declares_capability_and_supported_formats():
     }
 
 
+@pytest.mark.parametrize(
+    "unit,value",
+    [
+        ("kWh", "0.500000000000000000000000000000000000001"),
+        ("Wh", "500.000000000000000000000000000000000001"),
+    ],
+)
+def test_json_precision_is_checked_before_decimal_conversion_rounding(unit, value):
+    payload = delivery(unit)
+    payload["records"][0]["value"] = value
+    result = exchange.accept_delivery(
+        payload,
+        transport="file",
+        evidence=b"synthetic finer-than-context quantity",
+        repository=Repository(),
+    )
+    assert result["status"] == "partially_invalid"
+    assert any(
+        item["code"] == "unsupported_quantity_precision"
+        and "0.000001 kWh" in item["detail"]
+        and value not in item["detail"]
+        for item in result["diagnostics"]
+    )
+    assert len(result["normalized_records"]) == len(payload["records"]) - 1
+
+
 def test_json_delivery_with_e66_metadata_is_rejected_without_an_exception():
     result = exchange.accept_delivery(
         delivery(),

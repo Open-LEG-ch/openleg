@@ -5,6 +5,8 @@ import io
 import json
 import os
 import re
+from decimal import Decimal
+from math import isfinite
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import psycopg2
@@ -124,6 +126,18 @@ def admin_vnb_calculated_values(territory):
     delivery = payload.get("delivery")
     if not isinstance(delivery, dict):
         return jsonify({"error": "invalid_delivery"}), 400
+    if isinstance(delivery.get("records"), list):
+        # Decode original quantity digits for validation. Other fields retain
+        # their existing JSON types so Decimal cannot enter persisted metadata.
+        exact_payload = json.loads(request.get_data(cache=True), parse_float=Decimal)
+        for record, exact_record in zip(
+            delivery["records"], exact_payload["delivery"]["records"]
+        ):
+            if isinstance(record, dict) and "value" in record:
+                exact = exact_record["value"]
+                # Keep overflowed JSON numbers non-finite so validation refuses them.
+                if not isinstance(exact, Decimal) or isfinite(float(exact)):
+                    record["value"] = exact
     # The path is the authenticated tenant scope; clients cannot select another.
     delivery["territory"] = territory
     transport = payload.get("transport", "manual")

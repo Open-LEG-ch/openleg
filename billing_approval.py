@@ -798,6 +798,13 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
         period.get("line_items"), internal_price, settlement_fee
     )
     reconciliation = period.get("reconciliation")
+    if isinstance(reconciliation, dict) and any(
+        reconciliation.get(key) is not None
+        for key in ("vnb_imbalance_release", "vnb_imbalance_tolerance_ratio")
+    ):
+        raise BillingApprovalError(
+            "Der Entwurf enthält eine veraltete Toleranzregel. Erstellen Sie ihn neu."
+        )
     vnb_basis = (
         isinstance(reconciliation, dict) and "precision_policy" in reconciliation
     )
@@ -898,6 +905,30 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
                             if mapping["building_id"] == participant_id
                         ],
                     },
+                },
+            }
+        audit = participant_provenance["reconciliation"].get("engine_audit")
+        if isinstance(audit, dict):
+            participant_provenance["reconciliation"] = {
+                **participant_provenance["reconciliation"],
+                "engine_audit": {
+                    key: (
+                        {participant_id: value[participant_id]}
+                        if participant_id in value
+                        else {}
+                    )
+                    if key
+                    in {
+                        "consumption_kwh",
+                        "production_kwh",
+                        "allocated_kwh",
+                        "credited_kwh",
+                        "allocation_difference_kwh",
+                        "credit_difference_kwh",
+                    }
+                    and isinstance(value, dict)
+                    else value
+                    for key, value in audit.items()
                 },
             }
         participant_provenance["rounding_adjustment"] = (

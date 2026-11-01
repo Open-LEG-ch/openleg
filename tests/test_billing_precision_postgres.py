@@ -387,6 +387,8 @@ def test_unsafe_or_unpriced_source_never_creates_a_draft(rounded_delivery, probl
         )
 
     assert error.value.code == "vnb_allocation_mismatch"
+    if problem == "unbalanced_quantities":
+        assert error.value.reason == "vnb_balancing_policy_required"
     assert db.get_billing_period_for_window(payload["community_id"], start, end) is None
 
 

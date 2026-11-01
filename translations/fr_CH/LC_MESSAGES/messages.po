@@ -32,6 +32,20 @@ msgstr ""
 msgid " mit ElCom Tarifdaten und BFE Sonnendach."
 msgstr " avec les tarifs ElCom et les données OFEN Toitsolaire."
 
+#: templates/leg_billing.html:106
+msgid ""
+"Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum "
+"Modell ausgewiesen."
+msgstr ""
+"Rapprochement avec le GRD : source exacte du GRD déterminante, écart "
+"par rapport au modèle indiqué."
+
+#: billing_workspace.py:255
+msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+msgstr ""
+"Source exacte du GRD déterminante, écart par rapport au modèle "
+"indiqué"
+
 #: templates/leg_verzeichnis/bestaetigt.html:17
 #, python-format
 msgid "\"%(entry_name)s\" bleibt als aktuell markiert im Verzeichnis."

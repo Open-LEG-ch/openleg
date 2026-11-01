@@ -538,7 +538,7 @@ def get_billing_period_for_window(
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT id, input_fingerprint FROM billing_periods
+            SELECT id, input_fingerprint, status FROM billing_periods
             WHERE community_id = %s AND period_start = %s AND period_end = %s
               AND status IS DISTINCT FROM 'invalidated'
             """,

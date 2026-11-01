@@ -388,18 +388,35 @@ def validate_billed_source(
                 "battery_snapshot"
             ):
                 raise ReconciliationError("source_certificate_mismatch")
-        source_frames = billing_readings.frames_from_calculated_source(delivery)
+        try:
+            source_frames = billing_readings.frames_from_calculated_source(delivery)
+        except billing_readings.PeriodDataError as exc:
+            if any(problem["kind"] == "vnb_imbalance" for problem in exc.problems):
+                raise ReconciliationError("source_quantity_mismatch") from None
+            raise
         source_consumption, source_production = (
             billing_readings.calculated_quantity_frames(source_frames, delivery)
         )
-        for source, billed in (
-            (source_consumption, consumption_kwh),
-            (source_production, production_kwh),
+        expected_consumption, expected_production = (
+            {
+                participant: sum(
+                    (Fraction(value) for value in frame[participant]), Fraction(0)
+                )
+                for participant in frame.columns
+            }
+            for frame in (source_consumption, source_production)
+        )
+        if sum(expected_consumption.values(), Fraction(0)) != sum(
+            expected_production.values(), Fraction(0)
         ):
-            if set(source.columns) != set(billed) or any(
-                sum((Fraction(value) for value in source[participant]), Fraction(0))
-                != Fraction(billed[participant])
-                for participant in source.columns
+            raise ReconciliationError("source_quantity_mismatch")
+        for expected, billed in (
+            (expected_consumption, consumption_kwh),
+            (expected_production, production_kwh),
+        ):
+            if set(expected) != set(billed) or any(
+                expected[participant] != Fraction(billed[participant])
+                for participant in expected
             ):
                 raise ReconciliationError("source_quantity_mismatch")
         independent = billing_engine.generate_billing_summary(
@@ -412,6 +429,16 @@ def validate_billed_source(
             settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
         )
         expected = billing_readings.reconcile_with_vnb(source_frames, independent)
+        # Main stored none of these audit fields. Absence stays compatible;
+        # a present field must agree with the independent source audit.
+        for key in (
+            "engine_audit",
+            "vnb_delivered_production_kwh",
+            "vnb_imbalance_kwh",
+            "vnb_imbalance_ratio",
+        ):
+            if key not in reconciliation:
+                expected.pop(key, None)
         if any(reconciliation.get(key) != value for key, value in expected.items()):
             raise ReconciliationError("independent_audit_mismatch")
     except ReconciliationError:
