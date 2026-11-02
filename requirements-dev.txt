@@ -1,6 +1,6 @@
 -r requirements.txt
 -r requirements-telemetry.txt
-pytest>=9.1.1
+pytest>=9.2.0
 pyyaml>=6.0.3
 mypy>=2.4.0
 ruff==0.17.2
