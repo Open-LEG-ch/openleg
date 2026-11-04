@@ -18,6 +18,7 @@ import billing_lifecycle
 import billing_policy
 import payment_reconciliation
 from store import invoice_query as invoice_query_store
+from store import operator_operations
 from store.operator_api import enqueue_event
 
 logger = logging.getLogger(__name__)
@@ -1105,6 +1106,93 @@ def record_invoice_payment(invoice_id, community_id, actor_id, paid_date, refere
         raise BillingStoreError("Could not record invoice payment") from e
 
 
+def _finalize_bank_payment(cur, invoice, entry, community_id, actor_id, key):
+    new_state = billing_lifecycle.next_state(
+        invoice["lifecycle_state"],
+        "pay",
+        reference=entry["payment_reference"],
+        effective_date=entry["booking_date"],
+    )
+    _append_invoice_event(
+        cur,
+        invoice_id=invoice["id"],
+        community_id=community_id,
+        actor_id=actor_id,
+        event_type="paid",
+        previous_state=invoice["lifecycle_state"],
+        new_state=new_state,
+        reference=entry["payment_reference"],
+        effective_date=entry["booking_date"],
+        idempotency_key=key,
+    )
+    invoice["lifecycle_state"] = new_state
+
+
+def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
+    """Review an entry using the same acceptance and audit funnel as import."""
+    action = f"payment.confirm:{entry_id}"
+    fingerprint = operator_operations.request_hash({"invoice_id": invoice_id})
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s))",
+            (f"{community_id}:{action}:{key}",),
+        )
+        replay = operator_operations._replay(
+            cur, community_id, action, key, fingerprint
+        )
+        if replay:
+            return replay
+        cur.execute(
+            "SELECT * FROM bank_statement_entries WHERE id=%s AND community_id=%s FOR UPDATE",
+            (entry_id, community_id),
+        )
+        entry = cur.fetchone()
+        if not entry or entry["match_decision"] not in {
+            "unmatched",
+            "ambiguous",
+            "mismatch",
+        }:
+            return None
+        invoice = _locked_invoice(cur, invoice_id, community_id)
+        # This separate statement sees lifecycle commits made while the lock waited.
+        invoice["lifecycle_state"] = _current_invoice_state(cur, invoice_id)
+        if payment_reconciliation.payment_eligibility(entry, invoice) != "matched":
+            raise billing_lifecycle.InvoiceLifecycleError(
+                "Die Zahlung passt nicht exakt zur Rechnung."
+            )
+        cur.execute(
+            "UPDATE bank_statement_entries SET invoice_id=%s,match_decision='matched' WHERE id=%s",
+            (invoice_id, entry_id),
+        )
+        lifecycle_key = f"operator:{key}"
+        _finalize_bank_payment(
+            cur, invoice, entry, community_id, actor_id, lifecycle_key
+        )
+        cur.execute(
+            "SELECT id FROM invoice_lifecycle_events WHERE invoice_id=%s AND idempotency_key=%s",
+            (invoice_id, lifecycle_key),
+        )
+        transition_id = cur.fetchone()["id"]
+        event_id = enqueue_event(
+            cur,
+            "payment.match.confirmed",
+            str(entry_id),
+            community_id,
+            {"status": "matched"},
+            event_identity=f"transition:{transition_id}",
+        )
+        response = {
+            "id": entry_id,
+            "match_decision": "matched",
+            "event_id": event_id,
+            "replayed": False,
+        }
+        operator_operations._remember(
+            cur, community_id, action, key, fingerprint, response
+        )
+        return response
+
+
 def _statement_import_result(cur, import_id, *, duplicate):
     cur.execute(
         """
@@ -1175,11 +1263,7 @@ def reconcile_bank_statement(
             import_id = imported["id"]
             cur.execute(
                 """
-                SELECT i.id, i.invoice_number, i.gross_chf,
-                       COALESCE((
-                           SELECT e.new_state FROM invoice_lifecycle_events e
-                           WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
-                       ), 'issued') AS lifecycle_state
+                SELECT i.id, i.invoice_number, i.gross_chf
                 FROM invoices i
                 WHERE i.community_id = %s AND i.status = 'issued'
                 FOR UPDATE OF i
@@ -1187,6 +1271,8 @@ def reconcile_bank_statement(
                 (community_id,),
             )
             invoices = [dict(row) for row in cur.fetchall()]
+            for invoice in invoices:
+                invoice["lifecycle_state"] = _current_invoice_state(cur, invoice["id"])
             for entry in entries:
                 match = payment_reconciliation.match_payment(entry, invoices)
                 invoice_id = match.invoice_id
@@ -1195,21 +1281,14 @@ def reconcile_bank_statement(
                     invoice = next(
                         invoice for invoice in invoices if invoice["id"] == invoice_id
                     )
-                    _append_invoice_event(
+                    _finalize_bank_payment(
                         cur,
-                        invoice_id=invoice["id"],
-                        community_id=community_id,
-                        actor_id=actor_id,
-                        event_type="paid",
-                        previous_state="delivered",
-                        new_state="paid",
-                        reference=entry["payment_reference"],
-                        effective_date=entry["booking_date"],
-                        idempotency_key=(
-                            f"bank:{import_id}:{entry['entry_reference']}"
-                        ),
+                        invoice,
+                        entry,
+                        community_id,
+                        actor_id,
+                        f"bank:{import_id}:{entry['entry_reference']}",
                     )
-                    invoice["lifecycle_state"] = "paid"
                 cur.execute(
                     """
                     INSERT INTO bank_statement_entries (

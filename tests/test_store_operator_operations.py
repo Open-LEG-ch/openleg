@@ -11,6 +11,7 @@ import pytest
 
 import billing_lifecycle
 import database
+from store import billing as payment_store
 from store import operator_operations as store
 from store.operator_api import event_id_for
 from tests.test_billing_lifecycle import (
@@ -192,6 +193,7 @@ def _payment_entry(**overrides):
         "id": 12,
         "match_decision": "unmatched",
         "currency": "CHF",
+        "credit_debit_indicator": "CRDT",
         "is_reversal": False,
         "amount": Decimal("42.50"),
         "payment_reference": "BANK-1",
@@ -205,13 +207,14 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         [
             None,
             _payment_entry(),
-            {"id": 3, "gross_chf": Decimal("42.50"), "lifecycle_state": "delivered"},
+            {"id": 3, "gross_chf": Decimal("42.50")},
+            {"new_state": "delivered"},
             {"id": 77},
         ]
     )
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
-    result = store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12")
+    result = payment_store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12")
 
     event_id = event_id_for("payment.match.confirmed", "transition:77")
     assert result == {
@@ -227,7 +230,8 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
     )
     assert entry_params == (12, COMMUNITY)
     invoice_query_sql, invoice_params = cursor.executed[3]
-    assert "i.id=%s AND i.community_id=%s FOR UPDATE" in invoice_query_sql
+    assert "i.id = %s AND i.community_id = %s" in invoice_query_sql
+    assert "FOR UPDATE OF i" in invoice_query_sql
     assert invoice_params == (3, COMMUNITY)
     lifecycle_params = next(
         params
@@ -238,26 +242,33 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         3,
         COMMUNITY,
         "operator-a",
+        "paid",
+        "delivered",
+        "paid",
+        None,
         "BANK-1",
         date(2026, 9, 1),
         "operator:key-12",
     )
-    assert "'paid','delivered','paid'" in next(
-        query
-        for query, params in cursor.executed
-        if "INSERT INTO invoice_lifecycle_events" in query
+    assert "previous_state, new_state" in " ".join(
+        next(
+            query
+            for query, params in cursor.executed
+            if "INSERT INTO invoice_lifecycle_events" in query
+        ).split()
     )
     event_params = next(
         params
         for query, params in cursor.executed
         if "INSERT INTO operator_events" in query
+        and params[1] == "payment.match.confirmed"
     )
     assert event_params[:4] == (event_id, "payment.match.confirmed", "12", COMMUNITY)
     assert event_params[4].adapted == {"status": "matched"}
     delivery_params = next(
         params
         for query, params in cursor.executed
-        if "INSERT INTO operator_webhook_deliveries" in query
+        if "INSERT INTO operator_webhook_deliveries" in query and params[0] == event_id
     )
     assert delivery_params == (event_id, COMMUNITY, "payments.read", "payments.read")
     remember_query, remember_params = cursor.executed[-1]
@@ -270,7 +281,9 @@ def test_confirm_payment_never_matches_a_foreign_community_entry(monkeypatch):
     cursor = Cursor([None, None])
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
-    assert store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12") is None
+    assert (
+        payment_store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12") is None
+    )
 
     entry_query, entry_params = cursor.executed[2]
     assert "community_id=%s" in entry_query
@@ -282,7 +295,9 @@ def test_confirm_payment_ignores_an_already_decided_entry(monkeypatch):
     cursor = Cursor([None, _payment_entry(match_decision="matched")])
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
-    assert store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12") is None
+    assert (
+        payment_store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12") is None
+    )
     assert len(cursor.executed) == 3
 
 
@@ -291,13 +306,14 @@ def test_confirm_payment_refuses_an_amount_that_misses_the_invoice(monkeypatch):
         [
             None,
             _payment_entry(amount=Decimal("40.00")),
-            {"id": 3, "gross_chf": Decimal("42.50"), "lifecycle_state": "delivered"},
+            {"id": 3, "gross_chf": Decimal("42.50")},
+            {"new_state": "delivered"},
         ]
     )
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     with pytest.raises(billing_lifecycle.InvoiceLifecycleError):
-        store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12")
+        payment_store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12")
     assert not any(
         "UPDATE bank_statement_entries" in query for query, _ in cursor.executed
     )
@@ -308,7 +324,7 @@ def test_reused_confirm_key_with_a_different_payload_conflicts(monkeypatch):
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     with pytest.raises(ValueError, match="already used for another request"):
-        store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12")
+        payment_store.confirm_payment(12, 3, COMMUNITY, "operator-a", "key-12")
 
 
 def test_record_invoice_payment_enqueues_the_signed_paid_event(monkeypatch):

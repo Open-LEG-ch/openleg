@@ -3,9 +3,7 @@
 
 import hashlib
 import json
-from datetime import date
 
-import billing_lifecycle
 import invoice_queries
 from store.operator_api import enqueue_event
 
@@ -268,84 +266,6 @@ def respond_case(case_id, community_id, actor_id, message, status, key):
         response = {
             "id": case_id,
             "status": status,
-            "event_id": event_id,
-            "replayed": False,
-        }
-        _remember(cur, community_id, action, key, fingerprint, response)
-        return response
-
-
-def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
-    action = f"payment.confirm:{entry_id}"
-    fingerprint = request_hash({"invoice_id": invoice_id})
-    with _get_connection() as conn, conn.cursor() as cur:
-        cur.execute(
-            "SELECT pg_advisory_xact_lock(hashtext(%s))",
-            (f"{community_id}:{action}:{key}",),
-        )
-        replay = _replay(cur, community_id, action, key, fingerprint)
-        if replay:
-            return replay
-        cur.execute(
-            "SELECT * FROM bank_statement_entries WHERE id=%s AND community_id=%s FOR UPDATE",
-            (entry_id, community_id),
-        )
-        entry = cur.fetchone()
-        if not entry or entry["match_decision"] not in {
-            "unmatched",
-            "ambiguous",
-            "mismatch",
-        }:
-            return None
-        cur.execute(
-            """SELECT i.id,i.gross_chf,COALESCE((SELECT e.new_state FROM invoice_lifecycle_events e WHERE e.invoice_id=i.id ORDER BY e.id DESC LIMIT 1),'issued') lifecycle_state FROM invoices i WHERE i.id=%s AND i.community_id=%s FOR UPDATE""",
-            (invoice_id, community_id),
-        )
-        invoice = cur.fetchone()
-        if (
-            not invoice
-            or str(entry["currency"]) != "CHF"
-            or entry["is_reversal"]
-            or entry["amount"] != invoice["gross_chf"]
-        ):
-            raise billing_lifecycle.InvoiceLifecycleError(
-                "Die Zahlung passt nicht exakt zur Rechnung."
-            )
-        billing_lifecycle.next_state(
-            invoice["lifecycle_state"],
-            "pay",
-            reference=entry["payment_reference"],
-            effective_date=entry["booking_date"]
-            if isinstance(entry["booking_date"], date)
-            else date.fromisoformat(str(entry["booking_date"])),
-        )
-        cur.execute(
-            "UPDATE bank_statement_entries SET invoice_id=%s,match_decision='matched' WHERE id=%s",
-            (invoice_id, entry_id),
-        )
-        cur.execute(
-            """INSERT INTO invoice_lifecycle_events(invoice_id,community_id,actor_id,event_type,previous_state,new_state,reference,effective_date,idempotency_key) VALUES (%s,%s,%s,'paid','delivered','paid',%s,%s,%s) RETURNING id""",
-            (
-                invoice_id,
-                community_id,
-                actor_id,
-                entry["payment_reference"],
-                entry["booking_date"],
-                f"operator:{key}",
-            ),
-        )
-        transition_id = cur.fetchone()["id"]
-        event_id = enqueue_event(
-            cur,
-            "payment.match.confirmed",
-            str(entry_id),
-            community_id,
-            {"status": "matched"},
-            event_identity=f"transition:{transition_id}",
-        )
-        response = {
-            "id": entry_id,
-            "match_decision": "matched",
             "event_id": event_id,
             "replayed": False,
         }

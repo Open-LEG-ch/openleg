@@ -264,7 +264,7 @@ def test_duplicate_statement_replay_returns_duplicate_without_second_paid_event(
         for entry in payment_reconciliation.parse_statement(CAMT_053).entries
     ]
     cursor = _ReconcileCursor(
-        ones=[{"id": 7}, None, {"id": 7}],
+        ones=[{"id": 7}, {"new_state": "delivered"}, None, {"id": 7}],
         rows=[
             [_delivered_invoice()],
             [{"match_decision": "matched"}],
@@ -373,7 +373,7 @@ def test_replayed_entry_reference_does_not_append_a_second_paid_event(monkeypatc
 
     paid_invoice = {**_delivered_invoice(), "lifecycle_state": "paid"}
     cursor = _ReconcileCursor(
-        ones=[{"id": 7}, {"id": 8}],
+        ones=[{"id": 7}, {"new_state": "delivered"}, {"id": 8}, {"new_state": "paid"}],
         rows=[
             [_delivered_invoice()],
             [{"match_decision": "matched"}],
