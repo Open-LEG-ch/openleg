@@ -70,15 +70,20 @@
             <!-- API Key -->
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-bold mb-3">{{ _("API-Zugang") }}</h2>
+                {% if credential_error %}<p role="alert" class="text-sm text-red-700 mb-3">{{ credential_error }}</p>{% endif %}
                 {% if client.api_key_hash %}
-                <p class="text-sm text-green-600 mb-3">{{ _("✓ API-Schlüssel aktiv") }}</p>
+                <p id="api-key-state" class="text-sm text-green-600 mb-3">{{ _("✓ API-Schlüssel aktiv") }}</p>
                 <p class="text-xs text-gray-500 mb-3">{{ _("Nutzen Sie den Header") }} <code class="bg-gray-100 px-1 rounded-sm">{{ _("X-API-Key") }}</code> {{ _("für B2B-API-Anfragen.") }}</p>
                 {% else %}
-                <p class="text-sm text-gray-500 mb-3">{{ _("Noch kein API-Schlüssel vorhanden.") }}</p>
+                <p id="api-key-state" class="text-sm text-gray-500 mb-3">{{ _("Noch kein API-Schlüssel vorhanden.") }}</p>
                 {% endif %}
                 <button id="gen-key-btn" class="bg-brand text-white px-4 py-2 rounded-lg text-sm hover:bg-brand-dark">
                     {% if client.api_key_hash %}{{ _("Neuen Schlüssel erstellen") }}{% else %}{{ _("API-Schlüssel erstellen") }}{% endif %}
                 </button>
+                <form id="revoke-key-form" method="post" action="{{ url_for('utility.revoke_api_key') }}" class="mt-3{% if not client.api_key_hash %} hidden{% endif %}">
+                    <input type="hidden" name="csrf_token" value="{{ credential_csrf }}">
+                    <button type="submit" class="rounded-lg border border-line px-4 py-2 text-sm font-semibold">{{ _('API-Schlüssel widerrufen') }}</button>
+                </form>
                 <div id="api-key-result" class="mt-3 hidden">
                     <p class="text-sm text-ink font-medium mb-1">{{ _("Bitte sicher speichern, wird nur einmal angezeigt:") }}</p>
                     <code id="api-key-value" class="block bg-gray-100 p-2 rounded-sm text-xs break-all"></code>
@@ -156,18 +161,23 @@
         try {
             const res = await fetch('/utility/api-key', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'}
+                headers: {'Content-Type': 'application/json', 'X-CSRF-Token': {{ credential_csrf|tojson }}}
             });
             const data = await res.json();
             if (data.success) {
                 document.getElementById('api-key-value').textContent = data.api_key;
                 document.getElementById('api-key-result').classList.remove('hidden');
+                document.getElementById('revoke-key-form').classList.remove('hidden');
+                document.getElementById('api-key-state').textContent = {{ _("✓ API-Schlüssel aktiv")|tojson }};
             } else {
                 alert(data.error || {{ _("Fehler beim Erstellen des Schlüssels.")|tojson }});
             }
         } catch(e) {
             alert({{ _("Netzwerkfehler.")|tojson }});
         }
+    });
+    document.getElementById('revoke-key-form').addEventListener('submit', function(event) {
+        if (!confirm({{ _('API-Schlüssel widerrufen?')|tojson }})) event.preventDefault();
     });
     </script>
 {% include 'partials/form_validation.html' %}
