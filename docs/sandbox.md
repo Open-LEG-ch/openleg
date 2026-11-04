@@ -52,6 +52,13 @@ session signing key, working directory and in-memory cache. Product requests
 always use that process's ordinary `database.get_connection` seam. They cannot
 select a database using a hostname, object ID or request parameter.
 
+Workers share the runner's OS user. The operating system does not separate their
+files or processes. A compromised worker could read other workspace directories
+and other workers' `/proc` environments, including their database credentials
+and signing keys. The seccomp network filter does not restrict these reads.
+Run only trusted, reviewed application code in this runtime. Keep production
+credentials and production storage outside the entire sandbox service.
+
 The gateway owns provisioning credentials. A worker receives only its own
 database credential and an explicit allow-list of environment settings. Its
 Gunicorn control socket is disabled. The kernel refuses all non-Unix sockets
