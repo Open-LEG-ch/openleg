@@ -190,17 +190,21 @@ def match_payment(entry, invoices):
         return MatchDecision("ambiguous")
     if not candidates:
         return MatchDecision("unmatched")
-    invoice = candidates[0]
+    return MatchDecision(payment_eligibility(entry, candidates[0]), invoice_id)
+
+
+def payment_eligibility(entry, invoice):
+    """Classify acceptance rules shared by automatic and reviewed selection."""
+    if entry["is_reversal"]:
+        return "reversal"
     invoice_amount = Decimal(str(invoice["gross_chf"]))
     entry_amount = Decimal(str(entry["amount"]))
     if entry["credit_debit_indicator"] != "CRDT" or entry["currency"] != "CHF":
-        decision = "mismatch"
-    elif entry_amount < invoice_amount:
-        decision = "split_payment"
-    elif entry_amount > invoice_amount:
-        decision = "overpayment"
-    elif invoice["lifecycle_state"] != "delivered":
-        decision = "mismatch"
-    else:
-        decision = "matched"
-    return MatchDecision(decision, invoice_id)
+        return "mismatch"
+    if entry_amount < invoice_amount:
+        return "split_payment"
+    if entry_amount > invoice_amount:
+        return "overpayment"
+    if invoice["lifecycle_state"] != "delivered":
+        return "mismatch"
+    return "matched"
