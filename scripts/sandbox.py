@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from sandbox_runtime import create_gateway
+from sandbox_runtime import create_gateway, require_private_directory
 
 
 def process_start(pid):
@@ -20,6 +20,7 @@ def process_start(pid):
 
 
 def stop(directory):
+    require_private_directory(directory)
     record = json.loads((directory / "runner.json").read_text())
     pid = record["pid"]
     if pid <= 1 or process_start(pid) != record["start"]:
@@ -54,6 +55,7 @@ def main():
         stop(directory)
         return
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    require_private_directory(directory)
     record = directory / "runner.json"
     descriptor = os.open(record, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w") as output:
@@ -63,6 +65,7 @@ def main():
         raise SystemExit(0)
 
     signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGHUP, shutdown)
     web = None
     try:
         web = create_gateway(
@@ -75,7 +78,14 @@ def main():
         )
         # Access URLs can contain single-use tokens; keep them out of terminal logs.
         logging.getLogger("werkzeug").setLevel(logging.WARNING)
-        web.run(host="127.0.0.1", port=args.port, use_reloader=False, threaded=True)
+        web.run(
+            host="127.0.0.1",
+            port=args.port,
+            debug=False,
+            load_dotenv=False,
+            use_reloader=False,
+            threaded=True,
+        )
     finally:
         if web:
             web.extensions["villages"].close()

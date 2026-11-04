@@ -9,7 +9,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from threading import Barrier
+from threading import Barrier, Event
 from uuid import uuid4
 
 import psycopg2
@@ -109,8 +109,14 @@ def test_two_visitors_get_independent_writable_villages(village):
 @pytest.mark.integration
 def test_access_email_is_delivered_only_to_the_visitors_simulated_inbox(village):
     first, second = village.test_client(), village.test_client()
-    _enter(first)
+    first_page = _enter(first)
     _enter(second)
+    assert (
+        first.post(
+            "/dashboard/logout", data={"csrf_token": _csrf(first_page)}
+        ).status_code
+        == 302
+    )
     response = first.post(
         "/dashboard/access/request", data={"email": "sonnwil-resident@example.org"}
     )
@@ -120,9 +126,11 @@ def test_access_email_is_delivered_only_to_the_visitors_simulated_inbox(village)
     assert "sonnwil-resident@example.org" in inbox.text
     link = re.search(r'href="(/dashboard/access/[^"?]+)', inbox.text).group(1)
     assert link not in second.get("/sandbox/inbox").text
-    assert first.get(link).status_code == 302
-    assert first.get(link).location.endswith("access=invalid")
     assert second.get(link).location.endswith("access=invalid")
+    assert first.get("/dashboard/export").status_code == 401
+    assert first.get(link).location == "/dashboard"
+    assert first.get("/dashboard/export").json["building_id"] == "sonnwil-resident"
+    assert first.get(link).location.endswith("access=invalid")
 
 
 @pytest.mark.integration
@@ -247,7 +255,11 @@ def test_worker_requires_explicit_mode_even_with_an_otherwise_valid_workspace(
         "DB_POOL_MAX": "2",
     }
     enabled = subprocess.run(
-        [sys.executable, "-c", "import sandbox_worker"],
+        [
+            sys.executable,
+            "-c",
+            "import sandbox_worker; import socket; socket.socket(socket.AF_INET, socket.SOCK_STREAM)",
+        ],
         cwd=directory,
         env={**settings, "OPENLEG_SANDBOX_WORKER": "1"},
         capture_output=True,
@@ -255,7 +267,8 @@ def test_worker_requires_explicit_mode_even_with_an_otherwise_valid_workspace(
         timeout=30,
         check=False,
     )
-    assert enabled.returncode == 0, enabled.stderr
+    assert enabled.returncode != 0
+    assert "PermissionError" in enabled.stderr
     for mode in (None, "0"):
         environment = (
             settings if mode is None else {**settings, "OPENLEG_SANDBOX_WORKER": mode}
@@ -294,3 +307,59 @@ def test_workspace_database_roles_cannot_connect_to_another_village(village):
                     (owner, database_name),
                 )
                 assert cursor.fetchone()[0] is (owner == database_name)
+
+
+@pytest.mark.integration
+def test_provisioning_a_new_village_does_not_block_active_visitors(
+    village, monkeypatch
+):
+    first, second = village.test_client(), village.test_client()
+    _enter(first)
+    page = second.get("/sandbox")
+    provisioning, release = Event(), Event()
+    original = subprocess.Popen
+
+    def pause_worker(*args, **kwargs):
+        process = original(*args, **kwargs)
+        if "sandbox_worker:application" in args[0]:
+            provisioning.set()
+            assert release.wait(timeout=10)
+        return process
+
+    monkeypatch.setattr("sandbox_runtime.subprocess.Popen", pause_worker)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        startup = executor.submit(
+            second.post,
+            "/sandbox/start",
+            data={"csrf_token": _csrf(page), "persona": "resident"},
+        )
+        try:
+            assert provisioning.wait(timeout=10)
+            active = executor.submit(first.get, "/dashboard/export")
+            assert active.result(timeout=2).json["annual_consumption_kwh"] == 4500
+        finally:
+            release.set()
+        assert startup.result(timeout=30).status_code == 302
+
+
+@pytest.mark.integration
+def test_duplicate_start_for_one_visitor_reserves_one_workspace(village):
+    first = village.test_client()
+    page = first.get("/sandbox")
+    cookie = first.get_cookie("openleg_sandbox")
+    duplicate = village.test_client()
+    duplicate.set_cookie("openleg_sandbox", cookie.value)
+    simultaneous = Barrier(2)
+
+    def start(client):
+        simultaneous.wait(timeout=5)
+        return client.post(
+            "/sandbox/start", data={"csrf_token": _csrf(page), "persona": "resident"}
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        responses = list(executor.map(start, (first, duplicate)))
+    assert [r.status_code for r in responses] == [302, 302]
+    assert len(village.extensions["villages"].workspaces) == 1
+    with first.session_transaction() as a, duplicate.session_transaction() as b:
+        assert a["workspace"] == b["workspace"]

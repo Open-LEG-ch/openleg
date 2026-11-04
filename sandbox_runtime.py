@@ -9,6 +9,7 @@ import secrets
 import shutil
 import signal
 import socket
+import stat
 import subprocess
 import sys
 import tempfile
@@ -40,6 +41,16 @@ HOP_HEADERS = {
 }
 
 
+def require_private_directory(directory):
+    status = directory.stat()
+    if status.st_uid != os.getuid() or status.st_mode & 0o077:
+        raise RuntimeError("sandbox directory must be private and owned by the runner")
+    for parent in directory.parents:
+        mode = parent.stat().st_mode
+        if mode & 0o022 and not mode & stat.S_ISVTX:
+            raise RuntimeError("sandbox directory has a writable parent")
+
+
 class LocalPostgres:
     """A password-protected, Unix-socket-only PostgreSQL 16 scratch cluster."""
 
@@ -56,15 +67,12 @@ class LocalPostgres:
         self.socket_directory.mkdir(mode=0o700)
         self.password = secrets.token_urlsafe(32)
         self.data = self.directory / "data"
-        shared = self.bin.parents[3] / "share/postgresql/16"
         with (self.directory / "init.log").open("w") as output:
             subprocess.run(
                 [
                     str(self.bin / "initdb"),
                     "-D",
                     str(self.data),
-                    "-L",
-                    str(shared),
                     "--username=sandbox_admin",
                     "--pwfile=/dev/stdin",
                     "--auth=scram-sha-256",
@@ -166,6 +174,7 @@ class Villages:
             raise ValueError("sandbox upload bound must be between 64 KiB and 10 MiB")
         self.directory = Path(directory).resolve()
         self.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+        require_private_directory(self.directory)
         self.transport = tempfile.TemporaryDirectory(prefix="ols-")
         self.max_workspaces = max(1, min(int(max_workspaces), 20))
         self.lifetime_seconds = max(60, min(int(lifetime_seconds), 86400))
@@ -179,122 +188,157 @@ class Villages:
         )
         atexit.register(self.close)
 
-    def create(self, origin, locale="de_CH"):
+    def create(self, origin, locale="de_CH", *, owner=None):
+        self.reap()
         with self.lock:
-            self.reap()
-            if len(self.workspaces) >= self.max_workspaces:
-                raise OverflowError("workspace capacity reached")
-            identifier = secrets.token_hex(16)
-            name = "ols_" + identifier
-            password = secrets.token_urlsafe(32)
-            directory = self.directory / identifier
-            directory.mkdir(mode=0o700)
-            socket_path = Path(self.transport.name) / (identifier + ".sock")
-            workspace = {
-                "id": identifier,
-                "name": name,
-                "directory": directory,
-                "socket": socket_path,
-                "created": time.monotonic(),
-                "process": None,
-            }
-            self.workspaces[identifier] = workspace
-            connection = psycopg2.connect(self.postgres.dsn)
-            connection.autocommit = True
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        sql.SQL("CREATE ROLE {} LOGIN PASSWORD %s").format(
-                            sql.Identifier(name)
-                        ),
-                        (password,),
-                    )
-                    cursor.execute(
-                        sql.SQL("CREATE DATABASE {} OWNER {}").format(
-                            sql.Identifier(name), sql.Identifier(name)
-                        )
-                    )
-                    cursor.execute(
-                        sql.SQL("REVOKE CONNECT ON DATABASE {} FROM PUBLIC").format(
-                            sql.Identifier(name)
-                        )
-                    )
-                worker_dsn = make_dsn(
-                    dbname=name,
-                    user=name,
-                    password=password,
-                    host=str(self.postgres.socket_directory),
-                    connect_timeout=5,
-                )
-                # Deliberately do not inherit service credentials or configuration.
-                env = {
-                    "PATH": os.defpath,
-                    "PYTHONPATH": str(SOURCE),
-                    "PYTHONUNBUFFERED": "1",
-                    "LANG": "C.UTF-8",
-                    "DATABASE_URL": worker_dsn,
-                    "OPENLEG_SANDBOX_WORKER": "1",
-                    "OPENLEG_SANDBOX_DIRECTORY": str(directory),
-                    "OPENLEG_SANDBOX_WORKSPACE": identifier,
-                    "OPENLEG_SANDBOX_MAX_UPLOAD_BYTES": str(self.max_upload_bytes),
-                    "SECRET_KEY": secrets.token_urlsafe(48),
-                    "APP_BASE_URL": origin,
-                    "PUBLIC_SITE_URL": origin,
-                    "BABEL_DEFAULT_LOCALE": i18n.normalize_locale(locale) or "de_CH",
-                    "REDIS_URL": "memory://",
-                    "DB_POOL_MIN": "1",
-                    "DB_POOL_MAX": "4",
+            if self.closed:
+                raise RuntimeError("sandbox is closed")
+            existing = next(
+                (
+                    workspace
+                    for workspace in self.workspaces.values()
+                    if owner and workspace.get("owner") == owner
+                ),
+                None,
+            )
+            if existing is None:
+                if len(self.workspaces) >= self.max_workspaces:
+                    raise OverflowError("workspace capacity reached")
+                identifier = secrets.token_hex(16)
+                directory = self.directory / identifier
+                directory.mkdir(mode=0o700)
+                workspace = {
+                    "id": identifier,
+                    "name": "ols_" + identifier,
+                    "directory": directory,
+                    "socket": Path(self.transport.name) / (identifier + ".sock"),
+                    "created": time.monotonic(),
+                    "process": None,
+                    "operation": threading.RLock(),
+                    "provisioned": threading.Event(),
+                    "ready": False,
+                    "owner": owner,
                 }
-                with (directory / "worker.log").open("wb") as log:
-                    workspace["process"] = subprocess.Popen(
-                        [
-                            sys.executable,
-                            "-m",
-                            "gunicorn",
-                            "sandbox_worker:application",
-                            "--bind",
-                            "unix:" + str(socket_path),
-                            "--workers",
-                            "1",
-                            "--threads",
-                            "2",
-                            "--timeout",
-                            "45",
-                            "--no-control-socket",
-                            "--chdir",
-                            str(directory),
-                        ],
-                        env=env,
-                        cwd=directory,
-                        stdout=log,
-                        stderr=log,
-                        start_new_session=True,
+                self.workspaces[identifier] = workspace
+        if existing:
+            if not existing["provisioned"].wait(timeout=35):
+                raise RuntimeError("village startup did not finish")
+            with self.lock:
+                if (
+                    existing["ready"]
+                    and self.workspaces.get(existing["id"]) is existing
+                ):
+                    return existing
+            raise RuntimeError("village startup failed")
+        try:
+            with workspace["operation"]:
+                self._provision(workspace, origin, locale)
+                with self.lock:
+                    if self.closed:
+                        raise RuntimeError("sandbox is closed")
+                    workspace["ready"] = True
+            return workspace
+        except BaseException:
+            self.destroy(workspace["id"])
+            raise
+        finally:
+            workspace["provisioned"].set()
+
+    def _provision(self, workspace, origin, locale):
+        identifier, name = workspace["id"], workspace["name"]
+        directory, socket_path = workspace["directory"], workspace["socket"]
+        password = secrets.token_urlsafe(32)
+        connection = psycopg2.connect(self.postgres.dsn)
+        connection.autocommit = True
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL("CREATE ROLE {} LOGIN PASSWORD %s").format(
+                        sql.Identifier(name)
+                    ),
+                    (password,),
+                )
+                cursor.execute(
+                    sql.SQL("CREATE DATABASE {} OWNER {}").format(
+                        sql.Identifier(name), sql.Identifier(name)
                     )
-                deadline = time.monotonic() + 30
-                while time.monotonic() < deadline:
-                    if workspace["process"].poll() is not None:
-                        raise RuntimeError("village worker could not start")
-                    if socket_path.exists():
-                        try:
-                            with UnixConnection(socket_path) as channel:
-                                channel.request(
-                                    "GET",
-                                    "/livez",
-                                    headers={
-                                        "X-Forwarded-Proto": urlsplit(origin).scheme
-                                    },
-                                )
-                                if channel.getresponse().status == 200:
-                                    return workspace
-                        except (OSError, http.client.HTTPException):
-                            pass
-                    time.sleep(0.05)
-                raise RuntimeError("village worker readiness timed out")
-            except BaseException:
-                self.destroy(identifier)
-                raise
-            finally:
-                connection.close()
+                )
+                cursor.execute(
+                    sql.SQL("REVOKE CONNECT ON DATABASE {} FROM PUBLIC").format(
+                        sql.Identifier(name)
+                    )
+                )
+            worker_dsn = make_dsn(
+                dbname=name,
+                user=name,
+                password=password,
+                host=str(self.postgres.socket_directory),
+                connect_timeout=5,
+            )
+            # Deliberately do not inherit service credentials or configuration.
+            env = {
+                "PATH": os.defpath,
+                "PYTHONPATH": str(SOURCE),
+                "PYTHONUNBUFFERED": "1",
+                "LANG": "C.UTF-8",
+                "DATABASE_URL": worker_dsn,
+                "OPENLEG_SANDBOX_WORKER": "1",
+                "OPENLEG_SANDBOX_DIRECTORY": str(directory),
+                "OPENLEG_SANDBOX_WORKSPACE": identifier,
+                "OPENLEG_SANDBOX_MAX_UPLOAD_BYTES": str(self.max_upload_bytes),
+                "SECRET_KEY": secrets.token_urlsafe(48),
+                "APP_BASE_URL": origin,
+                "PUBLIC_SITE_URL": origin,
+                "BABEL_DEFAULT_LOCALE": i18n.normalize_locale(locale) or "de_CH",
+                "REDIS_URL": "memory://",
+                "DB_POOL_MIN": "1",
+                "DB_POOL_MAX": "4",
+            }
+            with (directory / "worker.log").open("wb") as log:
+                workspace["process"] = subprocess.Popen(
+                    [
+                        sys.executable,
+                        "-m",
+                        "gunicorn",
+                        "sandbox_worker:application",
+                        "--bind",
+                        "unix:" + str(socket_path),
+                        "--workers",
+                        "1",
+                        "--threads",
+                        "2",
+                        "--timeout",
+                        "45",
+                        "--no-control-socket",
+                        "--chdir",
+                        str(directory),
+                    ],
+                    env=env,
+                    cwd=directory,
+                    stdout=log,
+                    stderr=log,
+                    start_new_session=True,
+                )
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline:
+                if workspace["process"].poll() is not None:
+                    raise RuntimeError("village worker could not start")
+                if socket_path.exists():
+                    try:
+                        with UnixConnection(socket_path) as channel:
+                            channel.request(
+                                "GET",
+                                "/livez",
+                                headers={"X-Forwarded-Proto": urlsplit(origin).scheme},
+                            )
+                            if channel.getresponse().status == 200:
+                                return
+                    except (OSError, http.client.HTTPException):
+                        pass
+                time.sleep(0.05)
+            raise RuntimeError("village worker readiness timed out")
+        finally:
+            connection.close()
 
     def get(self, identifier):
         with self.lock:
@@ -304,19 +348,25 @@ class Villages:
                 and time.monotonic() - workspace["created"] < self.lifetime_seconds
             ):
                 return workspace
-            if workspace:
-                self.destroy(identifier)
-            return None
+        if workspace:
+            self.destroy(identifier)
+        return None
 
     def reap(self):
-        for identifier in list(self.workspaces):
+        with self.lock:
+            identifiers = list(self.workspaces)
+        for identifier in identifiers:
             self.get(identifier)
 
     def destroy(self, identifier):
         with self.lock:
             workspace = self.workspaces.get(identifier)
-            if not workspace:
-                return
+        if not workspace:
+            return
+        with workspace["operation"]:
+            with self.lock:
+                if self.workspaces.get(identifier) is not workspace:
+                    return
             process = workspace["process"]
             if process:
                 try:
@@ -346,19 +396,21 @@ class Villages:
                 connection.close()
             workspace["socket"].unlink(missing_ok=True)
             shutil.rmtree(workspace["directory"])
-            del self.workspaces[identifier]
+            with self.lock:
+                self.workspaces.pop(identifier, None)
 
     def close(self):
         with self.lock:
             if self.closed:
                 return
-            for identifier in list(self.workspaces):
-                self.destroy(identifier)
-            self.postgres.close()
-            shutil.rmtree(self.postgres.directory)
-            self.transport.cleanup()
             self.closed = True
-            atexit.unregister(self.close)
+            identifiers = list(self.workspaces)
+        for identifier in identifiers:
+            self.destroy(identifier)
+        self.postgres.close()
+        shutil.rmtree(self.postgres.directory)
+        self.transport.cleanup()
+        atexit.unregister(self.close)
 
 
 def create_gateway(
@@ -441,7 +493,9 @@ def create_gateway(
         if villages.get(session.get("workspace")):
             return redirect("/sandbox/home")
         try:
-            workspace = villages.create(origin, session.get("locale", "de_CH"))
+            workspace = villages.create(
+                origin, session.get("locale", "de_CH"), owner=session["csrf"]
+            )
         except OverflowError:
             return render_template(
                 "sandbox/entry.html",

@@ -23,7 +23,9 @@ Open the same address in a separate browser profile for an independent village.
 Dashboard login emails appear in the simulated inbox linked in the banner.
 
 The default is four concurrent villages, a two-MiB upload limit per request and
-a one-hour maximum lifetime. Use `--max-workspaces`, `--max-upload-mib`,
+a one-hour session lifetime. Expiry is checked on access or when another village
+is created; an idle village can remain running longer. Automatic cleanup and
+inactivity limits are tracked in #770. Use `--max-workspaces`, `--max-upload-mib`,
 `--lifetime-seconds` and `--port` to choose different local bounds. Uploads can
 be bounded from one to ten MiB through the CLI. `--postgres-bin` selects the
 PostgreSQL 16 binary directory; its default is `/usr/lib/postgresql/16/bin`.

@@ -21,8 +21,13 @@ def capture(recipient, subject, body):
     directory.mkdir(mode=0o700, exist_ok=True)
     payload = {"recipient": recipient, "subject": subject, "body": body}
     target = directory / (secrets.token_hex(16) + ".json")
-    with target.open("x", encoding="utf-8") as output:
-        json.dump(payload, output, ensure_ascii=False)
+    temporary = target.with_suffix(".pending")
+    try:
+        with temporary.open("x", encoding="utf-8") as output:
+            json.dump(payload, output, ensure_ascii=False)
+        temporary.replace(target)
+    finally:
+        temporary.unlink(missing_ok=True)
     return True
 
 
