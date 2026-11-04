@@ -55,9 +55,6 @@ class LocalPostgres:
         self.directory.mkdir(mode=0o700)
         self.socket_directory.mkdir(mode=0o700)
         self.password = secrets.token_urlsafe(32)
-        password_file = self.directory / "password"
-        password_file.write_text(self.password)
-        password_file.chmod(0o600)
         self.data = self.directory / "data"
         shared = self.bin.parents[3] / "share/postgresql/16"
         with (self.directory / "init.log").open("w") as output:
@@ -69,17 +66,17 @@ class LocalPostgres:
                     "-L",
                     str(shared),
                     "--username=sandbox_admin",
-                    f"--pwfile={password_file}",
+                    "--pwfile=/dev/stdin",
                     "--auth=scram-sha-256",
                     "--encoding=UTF8",
                     "--locale=C",
                     "--no-sync",
                 ],
+                input=(self.password + "\n").encode(),
                 stdout=output,
                 stderr=subprocess.STDOUT,
                 check=True,
             )
-        password_file.unlink()
         try:
             subprocess.run(
                 [
