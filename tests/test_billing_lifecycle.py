@@ -1390,7 +1390,7 @@ def test_store_correction_links_open_invoice_queries_to_the_correction(monkeypat
             ],
             [{"id": 901, "status": "open"}],
         ],
-        ones=[None, {"new_state": "cancelled"}, None],
+        ones=[None, {"new_state": "cancelled"}, None, {"id": 915}],
     )
     monkeypatch.setattr(database, "get_connection", _connection(cursor))
 

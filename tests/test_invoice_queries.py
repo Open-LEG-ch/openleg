@@ -90,17 +90,19 @@ def test_operator_update_validates_transition_before_appending_message(monkeypat
 
 
 def test_status_transition_enqueues_the_signed_case_event(monkeypatch):
-    cursor = RecordingCursor(rows=[{"status": "open"}])
+    cursor = RecordingCursor(rows=[{"status": "open"}, {"id": 19}])
     monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(cursor))
 
     assert (
-        invoice_query.transition_invoice_query(7, "c1", "operator", "acknowledged")
+        invoice_query.update_invoice_query(
+            7, "c1", "operator", target_status="acknowledged"
+        )
         is True
     )
 
-    event_id = event_id_for("invoice.case.updated", "7")
+    event_id = event_id_for("invoice.case.updated", "transition:19")
     assert event_id == str(
-        uuid.uuid5(uuid.NAMESPACE_URL, "openleg:invoice.case.updated:7")
+        uuid.uuid5(uuid.NAMESPACE_URL, "openleg:invoice.case.updated:transition:19")
     )
     event_query, event_params = next(
         (q, p) for q, p in cursor.executed if "INSERT INTO operator_events" in q
@@ -115,7 +117,7 @@ def test_status_transition_enqueues_the_signed_case_event(monkeypatch):
 
 
 def test_operator_reply_with_status_change_enqueues_the_case_event(monkeypatch):
-    cursor = RecordingCursor(rows=[{"status": "open"}])
+    cursor = RecordingCursor(rows=[{"status": "open"}, {"id": 19}])
     monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(cursor))
 
     assert (
@@ -183,7 +185,7 @@ def test_due_reminders_scan_filters_by_status_deadline_and_unsent(monkeypatch):
 
 
 def test_mark_reminded_appends_one_event_then_stays_silent(monkeypatch):
-    cursor = RecordingCursor(rows=[{"status": "open"}])
+    cursor = RecordingCursor(rows=[{"status": "open"}, {"id": 19}])
     monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(cursor))
 
     assert invoice_query.mark_invoice_query_reminded(7, "system") is True

@@ -282,7 +282,7 @@ from store.invoice_query import (  # noqa: F401
     add_invoice_query_message,
     list_invoice_queries,
     open_invoice_query,
-    transition_invoice_query,
+    respond_operator_invoice_case,
     update_invoice_query,
 )
 from store.meter import (  # noqa: F401
@@ -440,7 +440,6 @@ list_operator_billing_periods = _operator_operations.list_periods
 list_operator_invoices = _operator_operations.list_invoices
 list_operator_invoice_cases = _operator_operations.list_cases
 list_operator_payment_matches = _operator_operations.list_payments
-respond_operator_invoice_case = _operator_operations.respond_case
 
 from store.advisories import (  # noqa: F401
     append_advisory_revision,
