@@ -23,7 +23,7 @@ def create_worker():
 
     import database as db
     from app import create_app
-    from dashboard_routes import _set_dashboard_session
+    from dashboard_routes import _dashboard_session_building_id, _set_dashboard_session
 
     if not db.init_db():
         raise RuntimeError("sandbox PostgreSQL required")
@@ -56,7 +56,11 @@ def create_worker():
     @web.get("/sandbox/home")
     def home():
         session.setdefault("sandbox_csrf", secrets.token_urlsafe(32))
-        return render_template("sandbox/home.html", csrf_token=session["sandbox_csrf"])
+        return render_template(
+            "sandbox/home.html",
+            csrf_token=session["sandbox_csrf"],
+            signed_in=bool(_dashboard_session_building_id()),
+        )
 
     @web.get("/sandbox/inbox")
     def inbox():

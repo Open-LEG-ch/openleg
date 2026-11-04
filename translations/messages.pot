@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 21:08+0000\n"
+"POT-Creation-Date: 2026-11-04 21:25+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -925,11 +925,11 @@ msgstr ""
 msgid "Alle drei Modelle vergleichen"
 msgstr ""
 
-#: templates/sandbox/entry.html:8
+#: templates/sandbox/entry.html:9
 msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
 msgstr ""
 
-#: templates/sandbox/entry.html:12
+#: templates/sandbox/entry.html:13
 msgid "Als Haushalt anmelden"
 msgstr ""
 
@@ -961,7 +961,7 @@ msgstr ""
 msgid "Amtliche Gemeindenummer (BFS), Kanton und freiwillige Angaben zu Rolle und Solaranlage"
 msgstr ""
 
-#: templates/sandbox/inbox.html:9
+#: templates/sandbox/inbox.html:10
 #, python-format
 msgid "An %(recipient)s"
 msgstr ""
@@ -2150,7 +2150,7 @@ msgstr ""
 msgid "Dashboard | OpenLEG Utility Portal"
 msgstr ""
 
-#: templates/dashboard.html:254 templates/sandbox/home.html:10
+#: templates/dashboard.html:254 templates/sandbox/home.html:15
 msgid "Dashboard öffnen"
 msgstr ""
 
@@ -3037,7 +3037,7 @@ msgstr ""
 msgid "Diese Meldung wurde im geprüften Katalog zurückgezogen. Frühere Versionen bleiben unten erhalten."
 msgstr ""
 
-#: templates/sandbox/inbox.html:5
+#: templates/sandbox/inbox.html:6
 msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
 msgstr ""
 
@@ -3194,7 +3194,7 @@ msgstr ""
 msgid "E-Mail:"
 msgstr ""
 
-#: templates/sandbox/entry.html:14
+#: templates/sandbox/entry.html:15
 msgid "E-Mails, Dokumente und Zahlungen sind Simulationen."
 msgstr ""
 
@@ -3660,7 +3660,7 @@ msgstr ""
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr ""
 
-#: templates/sandbox/home.html:8
+#: templates/sandbox/home.html:13
 msgid "Energieprofil ändern"
 msgstr ""
 
@@ -5076,7 +5076,7 @@ msgstr ""
 msgid "Ihr Stromverbrauch"
 msgstr ""
 
-#: templates/sandbox/entry.html:6
+#: templates/sandbox/entry.html:3 templates/sandbox/entry.html:7
 msgid "Ihr eigenes Übungsdorf"
 msgstr ""
 
@@ -5194,7 +5194,7 @@ msgstr ""
 msgid "Ihre Rolle"
 msgstr ""
 
-#: templates/sandbox/entry.html:14
+#: templates/sandbox/entry.html:15
 #, python-format
 msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
 msgstr ""
@@ -6407,7 +6407,7 @@ msgstr ""
 msgid "Link erneut anfordern"
 msgstr ""
 
-#: templates/sandbox/inbox.html:11
+#: templates/sandbox/inbox.html:12
 msgid "Link im Übungsdorf öffnen"
 msgstr ""
 
@@ -7350,7 +7350,7 @@ msgstr ""
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr ""
 
-#: templates/sandbox/inbox.html:13
+#: templates/sandbox/inbox.html:14
 msgid "Noch keine simulierten Nachrichten."
 msgstr ""
 
@@ -7986,7 +7986,7 @@ msgstr ""
 msgid "Positionen"
 msgstr ""
 
-#: templates/sandbox/banner.html:5
+#: templates/sandbox/banner.html:5 templates/sandbox/inbox.html:2
 msgid "Postfach"
 msgstr ""
 
@@ -8062,7 +8062,7 @@ msgstr ""
 msgid "Privates Ops-Repo"
 msgstr ""
 
-#: templates/sandbox/entry.html:7
+#: templates/sandbox/entry.html:8
 msgid ""
 "Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen "
 "Dorf. Sie brauchen keine persönlichen Angaben."
@@ -8926,7 +8926,11 @@ msgstr ""
 msgid "Sie sehen, wie viele Interessierte sich gemeldet haben."
 msgstr ""
 
-#: templates/sandbox/home.html:5
+#: templates/sandbox/home.html:9
+msgid "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
+msgstr ""
+
+#: templates/sandbox/home.html:7
 msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
 msgstr ""
 
@@ -8940,7 +8944,7 @@ msgstr ""
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 msgstr ""
 
-#: templates/sandbox/inbox.html:4
+#: templates/sandbox/inbox.html:5
 msgid "Simuliertes Postfach"
 msgstr ""
 
@@ -9162,7 +9166,7 @@ msgstr ""
 msgid "Sonnendach solar data"
 msgstr ""
 
-#: templates/sandbox/home.html:4
+#: templates/sandbox/home.html:2 templates/sandbox/home.html:5
 msgid "Sonnwil ausprobieren"
 msgstr ""
 
@@ -10765,7 +10769,7 @@ msgstr ""
 msgid "Zum Schnellstart"
 msgstr ""
 
-#: templates/sandbox/home.html:6
+#: templates/sandbox/home.html:11
 #, python-format
 msgid ""
 "Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen "
@@ -11453,7 +11457,7 @@ msgid ""
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 msgstr ""
 
-#: templates/sandbox/home.html:9
+#: templates/sandbox/home.html:14
 msgid ""
 "Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen "
 "sehen Sie den neuen Wert."

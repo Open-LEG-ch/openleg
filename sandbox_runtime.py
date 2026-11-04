@@ -103,25 +103,25 @@ class LocalPostgres:
                 stderr=subprocess.DEVNULL,
                 check=True,
             )
+            self.dsn = make_dsn(
+                dbname="postgres",
+                user="sandbox_admin",
+                password=self.password,
+                host=str(self.socket_directory),
+                connect_timeout=5,
+            )
+            with psycopg2.connect(self.dsn) as connection:
+                connection.autocommit = True
+                with connection.cursor() as cursor:
+                    for name in ("postgres", "template1"):
+                        cursor.execute(
+                            sql.SQL("REVOKE CONNECT ON DATABASE {} FROM PUBLIC").format(
+                                sql.Identifier(name)
+                            )
+                        )
         except BaseException:
             self.close()
             raise
-        self.dsn = make_dsn(
-            dbname="postgres",
-            user="sandbox_admin",
-            password=self.password,
-            host=str(self.socket_directory),
-            connect_timeout=5,
-        )
-        with psycopg2.connect(self.dsn) as connection:
-            connection.autocommit = True
-            with connection.cursor() as cursor:
-                for name in ("postgres", "template1"):
-                    cursor.execute(
-                        sql.SQL("REVOKE CONNECT ON DATABASE {} FROM PUBLIC").format(
-                            sql.Identifier(name)
-                        )
-                    )
 
     def close(self):
         if (self.data / "postmaster.pid").exists():
@@ -282,6 +282,7 @@ class Villages:
                 "PYTHONPATH": str(SOURCE),
                 "PYTHONUNBUFFERED": "1",
                 "LANG": "C.UTF-8",
+                "TMPDIR": str(directory),
                 "DATABASE_URL": worker_dsn,
                 "OPENLEG_SANDBOX_WORKER": "1",
                 "OPENLEG_SANDBOX_DIRECTORY": str(directory),

@@ -9711,6 +9711,9 @@ msgstr ""
 msgid "Sie sehen, wie viele Interessierte sich gemeldet haben."
 msgstr "vous voyez combien de personnes ont manifesté leur intérêt."
 
+msgid "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
+msgstr "Vous êtes déconnecté. Reconnectez-vous avec le compte fictif."
+
 #: templates/sandbox/
 msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
 msgstr "Vous êtes connecté comme ménage fictif à l'adresse Musterweg 1."

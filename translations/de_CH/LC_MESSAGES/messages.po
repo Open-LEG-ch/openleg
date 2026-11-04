@@ -9611,6 +9611,9 @@ msgstr ""
 msgid "Sie sehen, wie viele Interessierte sich gemeldet haben."
 msgstr "Sie sehen, wie viele Interessierte sich gemeldet haben."
 
+msgid "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
+msgstr "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
+
 #: templates/sandbox/
 msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
 msgstr "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."

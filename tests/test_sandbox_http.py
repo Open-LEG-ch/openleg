@@ -47,6 +47,7 @@ def _csrf(response):
 def _enter(client):
     page = client.get("/sandbox")
     assert page.status_code == 200
+    assert re.search(r"<title>[^<]+</title>", page.text)
     response = client.post(
         "/sandbox/start", data={"csrf_token": _csrf(page), "persona": "resident"}
     )
@@ -118,6 +119,10 @@ def test_access_email_is_delivered_only_to_the_visitors_simulated_inbox(village)
         ).status_code
         == 302
     )
+    home = first.get("/sandbox/home")
+    assert "Sie sind als erfundener Haushalt" not in home.text
+    assert "abgemeldet" in home.text
+    assert re.search(r"<title>[^<]+</title>", home.text)
     response = first.post(
         "/dashboard/access/request", data={"email": "sonnwil-resident@example.org"}
     )
@@ -399,3 +404,77 @@ def test_proxy_preserves_encoded_path_characters(village):
         "/%C3%BCbung",
     ):
         assert client.get(path).status_code == 404
+
+
+@pytest.mark.integration
+def test_postgres_setup_failure_stops_the_cluster_it_started(
+    village, tmp_path, monkeypatch
+):
+    import tempfile
+
+    from sandbox_runtime import LocalPostgres
+
+    binary = village.extensions["villages"].postgres.bin
+    directory = tmp_path / "failed-start"
+
+    def refuse(*args, **kwargs):
+        raise psycopg2.OperationalError("deliberate setup connection failure")
+
+    with tempfile.TemporaryDirectory(prefix="ols-pg-failure-") as transport:
+        try:
+            with monkeypatch.context() as patch:
+                patch.setattr("sandbox_runtime.psycopg2.connect", refuse)
+                with pytest.raises(psycopg2.OperationalError):
+                    LocalPostgres(directory, Path(transport) / "socket", binary)
+            assert not (directory / "data/postmaster.pid").exists()
+        finally:
+            if (directory / "data/postmaster.pid").exists():
+                subprocess.run(
+                    [
+                        str(binary / "pg_ctl"),
+                        "-D",
+                        str(directory / "data"),
+                        "stop",
+                        "-m",
+                        "immediate",
+                        "-w",
+                    ],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+
+
+@pytest.mark.integration
+def test_worker_tempfiles_stay_inside_the_disposable_workspace(village, monkeypatch):
+    environment = {}
+    original = subprocess.Popen
+
+    def launch(*args, **kwargs):
+        if "sandbox_worker:application" in args[0]:
+            environment.update(kwargs["env"])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr("sandbox_runtime.subprocess.Popen", launch)
+    client = village.test_client()
+    _enter(client)
+    manager = village.extensions["villages"]
+    workspace = next(iter(manager.workspaces.values()))
+    probe = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sandbox_worker, tempfile; from pathlib import Path; assert Path(tempfile.gettempdir()) == Path.cwd(); f=tempfile.NamedTemporaryFile(prefix='sandbox-probe-',delete=False); f.write(b'synthetic artifact'); f.close(); print('workspace-tempfile=1')",
+        ],
+        cwd=workspace["directory"],
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert probe.returncode == 0
+    assert "workspace-tempfile=1" in probe.stdout
+    assert len(list(workspace["directory"].glob("sandbox-probe-*"))) == 1
+    manager.destroy(workspace["id"])
+    assert not workspace["directory"].exists()
