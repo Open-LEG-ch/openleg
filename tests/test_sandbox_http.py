@@ -563,7 +563,7 @@ def test_one_cleanup_error_does_not_skip_another_expired_village(village, monkey
     manager = village.extensions["villages"]
     first_id, second_id = list(manager.workspaces)
     for workspace in manager.workspaces.values():
-        workspace["created"] = 0
+        workspace["created"] -= manager.lifetime_seconds + 1
     original = manager.destroy
 
     def fail_first(identifier):
@@ -587,7 +587,7 @@ def test_expired_access_stays_denied_during_cleanup_failure_and_reused_pid(
     _enter(client)
     manager = village.extensions["villages"]
     workspace = next(iter(manager.workspaces.values()))
-    workspace["created"] = 0
+    workspace["created"] -= manager.lifetime_seconds + 1
     manager.postgres.close()
     assert client.get("/dashboard").status_code in (302, 303)
     process = workspace["process"]
