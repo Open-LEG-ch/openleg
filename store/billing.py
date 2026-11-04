@@ -1271,8 +1271,15 @@ def reconcile_bank_statement(
                 (community_id,),
             )
             invoices = [dict(row) for row in cur.fetchall()]
+            cur.execute(
+                """SELECT DISTINCT ON (invoice_id) invoice_id,new_state
+                   FROM invoice_lifecycle_events WHERE invoice_id=ANY(%s)
+                   ORDER BY invoice_id,id DESC""",
+                ([invoice["id"] for invoice in invoices],),
+            )
+            states = {row["invoice_id"]: row["new_state"] for row in cur.fetchall()}
             for invoice in invoices:
-                invoice["lifecycle_state"] = _current_invoice_state(cur, invoice["id"])
+                invoice["lifecycle_state"] = states.get(invoice["id"], "issued")
             for entry in entries:
                 match = payment_reconciliation.match_payment(entry, invoices)
                 invoice_id = match.invoice_id

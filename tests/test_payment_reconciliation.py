@@ -264,9 +264,10 @@ def test_duplicate_statement_replay_returns_duplicate_without_second_paid_event(
         for entry in payment_reconciliation.parse_statement(CAMT_053).entries
     ]
     cursor = _ReconcileCursor(
-        ones=[{"id": 7}, {"new_state": "delivered"}, None, {"id": 7}],
+        ones=[{"id": 7}, None, {"id": 7}],
         rows=[
             [_delivered_invoice()],
+            [{"invoice_id": 42, "new_state": "delivered"}],
             [{"match_decision": "matched"}],
             [{"match_decision": "matched"}],
         ],
@@ -300,7 +301,14 @@ def test_other_community_invoice_is_never_a_match_candidate(monkeypatch):
     import database
     from store import billing
 
-    cursor = _ReconcileCursor(ones=[{"id": 9}], rows=[[_delivered_invoice()], []])
+    cursor = _ReconcileCursor(
+        ones=[{"id": 9}],
+        rows=[
+            [_delivered_invoice()],
+            [{"invoice_id": 42, "new_state": "delivered"}],
+            [],
+        ],
+    )
     monkeypatch.setattr(database, "get_connection", _connection(cursor))
 
     result = billing.reconcile_bank_statement(
@@ -350,7 +358,14 @@ def test_camt054_reversal_parses_end_to_end_and_books_nothing(monkeypatch):
         == "reversal"
     )
 
-    cursor = _ReconcileCursor(ones=[{"id": 5}], rows=[[_delivered_invoice()], []])
+    cursor = _ReconcileCursor(
+        ones=[{"id": 5}],
+        rows=[
+            [_delivered_invoice()],
+            [{"invoice_id": 42, "new_state": "delivered"}],
+            [],
+        ],
+    )
     monkeypatch.setattr(database, "get_connection", _connection(cursor))
     result = billing.reconcile_bank_statement(
         community_id="community-a",
@@ -373,11 +388,13 @@ def test_replayed_entry_reference_does_not_append_a_second_paid_event(monkeypatc
 
     paid_invoice = {**_delivered_invoice(), "lifecycle_state": "paid"}
     cursor = _ReconcileCursor(
-        ones=[{"id": 7}, {"new_state": "delivered"}, {"id": 8}, {"new_state": "paid"}],
+        ones=[{"id": 7}, {"id": 8}],
         rows=[
             [_delivered_invoice()],
+            [{"invoice_id": 42, "new_state": "delivered"}],
             [{"match_decision": "matched"}],
             [paid_invoice],
+            [{"invoice_id": 42, "new_state": "paid"}],
             [{"match_decision": "mismatch"}],
         ],
     )
