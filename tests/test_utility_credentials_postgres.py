@@ -170,3 +170,27 @@ def test_failed_database_writes_do_not_report_success_or_change_the_key(portal, 
     else:
         assert "Der API-Schlüssel konnte nicht geändert werden." in response.text
     assert db.get_utility_client("owner") == before
+
+
+@pytest.mark.parametrize("path", ["/utility/api-key", "/utility/api-key/revoke"])
+def test_stale_account_token_cannot_modify_the_next_signed_in_client(portal, path):
+    client = _client(portal)
+    old_token = _csrf(client)
+    owner = db.get_utility_client("owner")
+    before_login = db.get_utility_client("other")
+    assert client.get("/utility/logout").status_code == 302
+    assert db.set_utility_magic_token("other", "fictional-other-login", 900)
+    login = client.get("/utility/login?token=fictional-other-login")
+    assert login.status_code == 302
+    other = db.get_utility_client("other")
+    assert other["api_key_hash"] == before_login["api_key_hash"]
+    # Do not load the new dashboard first: the old tab must already be denied.
+    assert client.post(path, data={"csrf_token": old_token}).status_code == 403
+    assert db.get_utility_client("other") == other
+    token = _csrf(client)
+    assert token != old_token
+    assert client.post(path, data={"csrf_token": old_token}).status_code == 403
+    response = client.post(path, data={"csrf_token": token})
+    assert response.status_code == (200 if path == "/utility/api-key" else 302)
+    assert db.get_utility_client("owner") == owner
+    assert db.get_utility_client("other")["api_key_hash"] != other["api_key_hash"]

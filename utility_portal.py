@@ -237,9 +237,14 @@ def dashboard():
 def _render_dashboard(client, *, credential_error=None):
     """Render private credential controls with one session-bound mutation token."""
     csrf = session.get("utility_api_csrf")
-    if not isinstance(csrf, str) or not csrf:
+    if (
+        not isinstance(csrf, str)
+        or not csrf
+        or session.get("utility_api_csrf_client_id") != client["client_id"]
+    ):
         csrf = secrets.token_urlsafe(32)
         session["utility_api_csrf"] = csrf
+        session["utility_api_csrf_client_id"] = client["client_id"]
     return render_template(
         "utility/dashboard.html",
         client=client,
@@ -257,6 +262,7 @@ def _require_credential_csrf():
     if (
         not isinstance(expected, str)
         or not expected
+        or session.get("utility_api_csrf_client_id") != g.utility_client["client_id"]
         or not hmac.compare_digest(expected.encode("utf-8"), supplied.encode("utf-8"))
     ):
         abort(403)
