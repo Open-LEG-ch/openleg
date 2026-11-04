@@ -87,9 +87,11 @@ def main():
             threaded=True,
         )
     finally:
-        if web:
-            web.extensions["villages"].close()
-        record.unlink(missing_ok=True)
+        try:
+            if web:
+                web.extensions["villages"].close()
+        finally:
+            record.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

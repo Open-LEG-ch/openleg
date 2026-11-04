@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 20:12+0000\n"
+"POT-Creation-Date: 2026-11-04 21:08+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2150,7 +2150,7 @@ msgstr ""
 msgid "Dashboard | OpenLEG Utility Portal"
 msgstr ""
 
-#: templates/dashboard.html:254 templates/sandbox/home.html:9
+#: templates/dashboard.html:254 templates/sandbox/home.html:10
 msgid "Dashboard öffnen"
 msgstr ""
 
@@ -3660,7 +3660,7 @@ msgstr ""
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr ""
 
-#: templates/sandbox/home.html:7
+#: templates/sandbox/home.html:8
 msgid "Energieprofil ändern"
 msgstr ""
 
@@ -10765,6 +10765,13 @@ msgstr ""
 msgid "Zum Schnellstart"
 msgstr ""
 
+#: templates/sandbox/home.html:6
+#, python-format
+msgid ""
+"Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen "
+"Sie ihn im Postfach dieses Übungsdorfs."
+msgstr ""
+
 #: templates/leg_billing.html:83
 msgid "Zur Freigabe vorbereiten"
 msgstr ""
@@ -11446,7 +11453,7 @@ msgid ""
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 msgstr ""
 
-#: templates/sandbox/home.html:8
+#: templates/sandbox/home.html:9
 msgid ""
 "Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen "
 "sehen Sie den neuen Wert."

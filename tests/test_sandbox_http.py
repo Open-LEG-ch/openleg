@@ -111,6 +111,7 @@ def test_access_email_is_delivered_only_to_the_visitors_simulated_inbox(village)
     first, second = village.test_client(), village.test_client()
     first_page = _enter(first)
     _enter(second)
+    assert "sonnwil-resident@example.org" in first.get("/sandbox/home").text
     assert (
         first.post(
             "/dashboard/logout", data={"csrf_token": _csrf(first_page)}
@@ -385,3 +386,16 @@ def test_shutdown_cleans_every_worker_when_scratch_postgres_is_unavailable(villa
             if process.poll() is None:
                 os.killpg(process.pid, signal.SIGKILL)
                 process.wait(timeout=5)
+
+
+@pytest.mark.integration
+def test_proxy_preserves_encoded_path_characters(village):
+    client = village.test_client()
+    _enter(client)
+    for path in (
+        "/missing%20page",
+        "/dashboard%3Fquery",
+        "/dashboard%23fragment",
+        "/%C3%BCbung",
+    ):
+        assert client.get(path).status_code == 404

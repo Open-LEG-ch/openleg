@@ -17,7 +17,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 import psycopg2
 from flask import Flask, Response, abort, redirect, render_template, request, session
@@ -344,6 +344,8 @@ class Villages:
     def get(self, identifier):
         with self.lock:
             workspace = self.workspaces.get(identifier)
+            if workspace and not workspace["ready"]:
+                return None
             if (
                 workspace
                 and time.monotonic() - workspace["created"] < self.lifetime_seconds
@@ -546,7 +548,7 @@ def create_gateway(
         headers["Cookie"] = ";".join(cookies)
         headers["Host"] = "localhost"
         headers["X-Forwarded-Proto"] = urlsplit(origin).scheme
-        target = "/" + path
+        target = "/" + quote(path, safe="/:@!$&'()*+,;=-._~")
         if request.query_string:
             target += "?" + request.query_string.decode("latin-1")
         try:

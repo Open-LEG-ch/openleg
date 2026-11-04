@@ -32,20 +32,6 @@ msgstr ""
 msgid " mit ElCom Tarifdaten und BFE Sonnendach."
 msgstr " avec les tarifs ElCom et les données OFEN Toitsolaire."
 
-#: templates/leg_billing.html:106
-msgid ""
-"Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum "
-"Modell ausgewiesen."
-msgstr ""
-"Rapprochement avec le GRD : source exacte du GRD déterminante, écart "
-"par rapport au modèle indiqué."
-
-#: billing_workspace.py:255
-msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
-msgstr ""
-"Source exacte du GRD déterminante, écart par rapport au modèle "
-"indiqué"
-
 #: templates/leg_verzeichnis/bestaetigt.html:17
 #, python-format
 msgid "\"%(entry_name)s\" bleibt als aktuell markiert im Verzeichnis."
@@ -633,6 +619,12 @@ msgstr "Rejeté"
 msgid "Abgleich mit dem VNB: Abweichung prüfen."
 msgstr "Rapprochement avec le GRD : vérifier l’écart."
 
+#: templates/leg_billing.html:106
+msgid "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
+msgstr ""
+"Rapprochement avec le GRD : source exacte du GRD déterminante, écart par rapport au modèle "
+"indiqué."
+
 #: templates/leg_billing.html:59
 msgid "Abgleich mit dem VNB: vollständig abgeglichen."
 msgstr "Rapprochement avec le GRD : entièrement concordant."
@@ -977,6 +969,7 @@ msgstr ""
 " réseau et dans la même zone de desserte, utilisent au maximum"
 
 #: templates/how-it-works.html:52
+#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -993,6 +986,14 @@ msgstr "Tous les participants signent le contrat communautaire par voie numériq
 #: templates/leg_gruenden.html:74
 msgid "Alle drei Modelle vergleichen"
 msgstr "Comparez les trois modèles"
+
+#: templates/sandbox/
+msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
+msgstr "Tous les villages d'essai sont occupés. Veuillez réessayer plus tard."
+
+#: templates/sandbox/
+msgid "Als Haushalt anmelden"
+msgstr "Se connecter comme ménage"
 
 #: templates/utility/register.html:91
 msgid "Als Netzbetreiber erhalten Sie:"
@@ -1023,6 +1024,11 @@ msgid "Amtliche Gemeindenummer (BFS), Kanton und freiwillige Angaben zu Rolle un
 msgstr ""
 "Numéro officiel de la commune (OFS), canton et informations facultatives sur le rôle et "
 "l’installation solaire"
+
+#: templates/sandbox/
+#, python-format
+msgid "An %(recipient)s"
+msgstr "À %(recipient)s"
 
 #: templates/leg_dashboard.html:275
 msgid "An VNB eskalieren"
@@ -1251,6 +1257,7 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h OApEl"
 
 #: templates/leg_kalkulator.html:267
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1272,6 +1279,7 @@ msgstr ""
 "tension."
 
 #: templates/leg_kalkulator.html:288
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -2523,6 +2531,7 @@ msgstr ""
 "une part des coûts."
 
 #: templates/gemeinde/methodik.html:95
+#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -3352,6 +3361,10 @@ msgstr "Vous gérez cette CEL ? Revendiquer la fiche"
 msgid "Diese Meldung wurde im geprüften Katalog zurückgezogen. Frühere Versionen bleiben unten erhalten."
 msgstr "Ce message a été retiré du catalogue audité. Les versions précédentes restent ci-dessous."
 
+#: templates/sandbox/
+msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
+msgstr "Ces messages restent dans votre village d'essai. Aucun e-mail n'est envoyé."
+
 #: templates/advisories.html:43
 msgid ""
 "Diese Quelle ist nicht im aktuellen Prüfumfang enthalten. Aktuelle Hinweise und Bestätigungen "
@@ -3521,6 +3534,10 @@ msgstr "L’adresse e-mail est trop longue"
 #: templates/impressum.html:36
 msgid "E-Mail:"
 msgstr "E-mail :"
+
+#: templates/sandbox/
+msgid "E-Mails, Dokumente und Zahlungen sind Simulationen."
+msgstr "Les e-mails, documents et paiements sont simulés."
 
 #: templates/leg_gruenden.html:107
 msgid "EBL"
@@ -4032,6 +4049,10 @@ msgstr ""
 "Profil énergétique et potentiel CEL de %(name)s : tarifs électriques, exploitation du potentiel "
 "solaire et score de transition énergétique."
 
+#: templates/sandbox/
+msgid "Energieprofil ändern"
+msgstr "Modifier le profil énergétique"
+
 #: templates/gemeinde/verzeichnis.html:8
 msgid ""
 "Energieprofile Schweizer Gemeinden: Stromtarife, Solarpotenzial und mögliche LEG-Ersparnis. "
@@ -4217,6 +4238,10 @@ msgstr "Il télécharge une copie superficielle du dépôt public."
 #: templates/self_host.html:45
 msgid "Es prüft den lokalen Health-Endpunkt."
 msgstr "Il vérifie le point de contrôle de santé local."
+
+#: billing_workspace.py:255
+msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+msgstr "Source exacte du GRD déterminante, écart par rapport au modèle indiqué"
 
 #: templates/utility/dashboard.html:14
 msgid "Expired"
@@ -4550,6 +4575,7 @@ msgstr ""
 "du réseau diminue de"
 
 #: templates/how-it-works.html:42
+#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -5331,6 +5357,10 @@ msgid_plural "Haushalte"
 msgstr[0] "ménage"
 msgstr[1] "ménages"
 
+#: templates/sandbox/
+msgid "Haushalt Musterweg 1"
+msgstr "Ménage Musterweg 1"
+
 #: templates/contact_requests.html:66
 msgid "Haushalte in Ihrer Gemeinde"
 msgstr "Ménages dans votre commune"
@@ -5526,6 +5556,10 @@ msgstr "Vos économies possibles"
 msgid "Ihr Stromverbrauch"
 msgstr "Votre consommation d’électricité"
 
+#: templates/sandbox/
+msgid "Ihr eigenes Übungsdorf"
+msgstr "Votre village d'essai"
+
 #: templates/index.html:408
 msgid "Ihre Adresse"
 msgstr "Votre adresse"
@@ -5654,6 +5688,11 @@ msgstr "Votre facture %(invoice_number)s"
 #: templates/index.html:458
 msgid "Ihre Rolle"
 msgstr "Votre rôle"
+
+#: templates/sandbox/
+#, python-format
+msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
+msgstr "Votre session se termine après %(minutes)s minutes."
 
 #: templates/index.html:511
 msgid ""
@@ -6939,6 +6978,10 @@ msgstr "Demander un lien"
 msgid "Link erneut anfordern"
 msgstr "Demander à nouveau le lien"
 
+#: templates/sandbox/
+msgid "Link im Übungsdorf öffnen"
+msgstr "Ouvrir le lien dans le village d'essai"
+
 #: templates/gemeinde/dashboard.html:106
 msgid "Link teilen, Interessierte sammeln"
 msgstr "Partager le lien, recueillir les manifestations d’intérêt"
@@ -7931,6 +7974,10 @@ msgstr ""
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr "Aucune facture publiée pour l'instant."
 
+#: templates/sandbox/
+msgid "Noch keine simulierten Nachrichten."
+msgstr "Aucun message simulé pour le moment."
+
 #: templates/emails/day_3_smartmeter.html:41
 msgid ""
 "Noch keinen Smart Meter? Kein Problem. Sobald Ihre Stromgemeinschaft bereit ist, stellen wir die "
@@ -8656,6 +8703,10 @@ msgstr "Poste"
 msgid "Positionen"
 msgstr "postes"
 
+#: templates/sandbox/
+msgid "Postfach"
+msgstr "Boîte de réception"
+
 #: templates/open_source.html:79
 msgid "PostgreSQL-Schema und idempotente Migrationen"
 msgstr "Schéma PostgreSQL et migrations idempotentes"
@@ -8730,6 +8781,14 @@ msgstr "Un réseau privé pour vos voisins"
 #: templates/open_source.html:85
 msgid "Privates Ops-Repo"
 msgstr "Dépôt privé d’exploitation"
+
+#: templates/sandbox/
+msgid ""
+"Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen "
+"Dorf. Sie brauchen keine persönlichen Angaben."
+msgstr ""
+"Essayez OpenLEG avec des ménages fictifs. Vos modifications restent dans votre propre village. "
+"Aucune donnée personnelle n'est nécessaire."
 
 #: templates/api_docs.html:53
 msgid "Production"
@@ -9170,6 +9229,7 @@ msgstr ""
 "d'union, commençant par une lettre ou un chiffre."
 
 #: templates/llms.txt:9
+#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -9651,6 +9711,10 @@ msgstr ""
 msgid "Sie sehen, wie viele Interessierte sich gemeldet haben."
 msgstr "vous voyez combien de personnes ont manifesté leur intérêt."
 
+#: templates/sandbox/
+msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
+msgstr "Vous êtes connecté comme ménage fictif à l'adresse Musterweg 1."
+
 #: templates/leg_dashboard.html:189
 #, python-format
 msgid "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
@@ -9660,6 +9724,10 @@ msgstr "Vous êtes invité à rejoindre « %(community)s »."
 #, python-format
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 msgstr "Vous êtes désormais enregistré comme gestionnaire de « %(entry_name)s »."
+
+#: templates/sandbox/
+msgid "Simuliertes Postfach"
+msgstr "Boîte de réception simulée"
 
 #: templates/index.html:212
 msgid "Smart Meter"
@@ -9836,6 +9904,7 @@ msgstr ""
 "par la commune."
 
 #: templates/gemeinde/rangliste.html:127
+#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
@@ -9901,6 +9970,10 @@ msgstr "Soleure"
 #: templates/api_docs.html:89
 msgid "Sonnendach solar data"
 msgstr "Données solaires Toitsolaire"
+
+#: templates/sandbox/
+msgid "Sonnwil ausprobieren"
+msgstr "Découvrir Sonnwil"
 
 #: templates/gemeinde/verzeichnis.html:44
 msgid "Sortieren nach"
@@ -11593,6 +11666,14 @@ msgstr "Vérifier le potentiel CEL"
 msgid "Zum Schnellstart"
 msgstr "Vers le guide de démarrage"
 
+#, python-format
+msgid ""
+"Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen "
+"Sie ihn im Postfach dieses Übungsdorfs."
+msgstr ""
+"Pour vous reconnecter, utilisez %(email)s. Demandez un lien d'accès avec cette adresse et ouvrez-"
+"le dans la boîte de réception de ce village d'essai."
+
 #: templates/leg_billing.html:83
 msgid "Zur Freigabe vorbereiten"
 msgstr "Préparer la validation"
@@ -12301,6 +12382,14 @@ msgstr ""
 "\n"
 "Si vous n’avez pas demandé ce lien, vous pouvez ignorer cet e-mail."
 
+#: templates/sandbox/
+msgid ""
+"Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen "
+"sehen Sie den neuen Wert."
+msgstr ""
+"Ouvrez votre tableau de bord, modifiez la consommation annuelle et enregistrez. Rechargez la page"
+" pour voir la nouvelle valeur."
+
 #: municipality.py:218
 #, python-format
 msgid ""
@@ -12355,6 +12444,10 @@ msgstr "Trop-payé"
 #: templates/leg_billing_policy.html:29
 msgid "Üblicher Bereich: zwischen"
 msgstr "Plage habituelle : entre"
+
+#: templates/sandbox/
+msgid "Übungsdorf"
+msgstr "Village d'essai"
 
 #: templates/gemeinde/profil.html:118
 msgid "öffentlich gemeldeten PV-Anlagen"
@@ -12550,77 +12643,3 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 #~ msgstr ""
 #~ "Entrez votre adresse e-mail. Si un profil existe, nous vous en enverrons un\n"
 #~ "            lien de confirmation sécurisé. Seul ce lien supprime vos données."
-
-#: templates/sandbox/
-msgid "Ihr eigenes Übungsdorf"
-msgstr "Votre village d'essai"
-
-#: templates/sandbox/
-msgid "Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen Dorf. Sie brauchen keine persönlichen Angaben."
-msgstr "Essayez OpenLEG avec des ménages fictifs. Vos modifications restent dans votre propre village. Aucune donnée personnelle n'est nécessaire."
-
-#: templates/sandbox/
-msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
-msgstr "Tous les villages d'essai sont occupés. Veuillez réessayer plus tard."
-
-#: templates/sandbox/
-msgid "Als Haushalt anmelden"
-msgstr "Se connecter comme ménage"
-
-#: templates/sandbox/
-#, python-format
-msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
-msgstr "Votre session se termine après %(minutes)s minutes."
-
-#: templates/sandbox/
-msgid "E-Mails, Dokumente und Zahlungen sind Simulationen."
-msgstr "Les e-mails, documents et paiements sont simulés."
-
-#: templates/sandbox/
-msgid "Sonnwil ausprobieren"
-msgstr "Découvrir Sonnwil"
-
-#: templates/sandbox/
-msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
-msgstr "Vous êtes connecté comme ménage fictif à l'adresse Musterweg 1."
-
-#: templates/sandbox/
-msgid "Energieprofil ändern"
-msgstr "Modifier le profil énergétique"
-
-#: templates/sandbox/
-msgid "Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen sehen Sie den neuen Wert."
-msgstr "Ouvrez votre tableau de bord, modifiez la consommation annuelle et enregistrez. Rechargez la page pour voir la nouvelle valeur."
-
-#: templates/sandbox/
-msgid "Simuliertes Postfach"
-msgstr "Boîte de réception simulée"
-
-#: templates/sandbox/
-msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
-msgstr "Ces messages restent dans votre village d'essai. Aucun e-mail n'est envoyé."
-
-#: templates/sandbox/
-#, python-format
-msgid "An %(recipient)s"
-msgstr "À %(recipient)s"
-
-#: templates/sandbox/
-msgid "Link im Übungsdorf öffnen"
-msgstr "Ouvrir le lien dans le village d'essai"
-
-#: templates/sandbox/
-msgid "Noch keine simulierten Nachrichten."
-msgstr "Aucun message simulé pour le moment."
-
-#: templates/sandbox/
-msgid "Haushalt Musterweg 1"
-msgstr "Ménage Musterweg 1"
-
-#: templates/sandbox/
-msgid "Übungsdorf"
-msgstr "Village d'essai"
-
-#: templates/sandbox/
-msgid "Postfach"
-msgstr "Boîte de réception"
