@@ -19,6 +19,7 @@ def create_worker():
     deny_internet()
 
     from flask import redirect, render_template, session
+    from werkzeug.middleware.proxy_fix import ProxyFix
 
     import database as db
     from app import create_app
@@ -33,9 +34,14 @@ def create_worker():
         {
             "SESSION_COOKIE_NAME": "openleg_product",
             "RATELIMIT_STORAGE_URI": "memory://",
-            "MAX_CONTENT_LENGTH": 2 * 1024 * 1024,
+            "MAX_CONTENT_LENGTH": int(os.environ["OPENLEG_SANDBOX_MAX_UPLOAD_BYTES"]),
         },
         load_environment=False,
+    )
+    # Only the gateway can reach this private Unix listener. It strips browser
+    # proxy headers and supplies the configured public scheme itself.
+    web.wsgi_app = ProxyFix(
+        web.wsgi_app, x_for=0, x_proto=1, x_host=0, x_port=0, x_prefix=0
     )
 
     @web.context_processor

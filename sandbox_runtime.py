@@ -23,7 +23,7 @@ from psycopg2 import sql
 from psycopg2.extensions import make_dsn
 
 import i18n
-from app_config import validated_public_site_url
+from app_config import MAX_UPLOAD_BYTES, validated_public_site_url
 
 SOURCE = Path(__file__).resolve().parent
 HOP_HEADERS = {
@@ -155,7 +155,18 @@ class UnixConnection(http.client.HTTPConnection):
 class Villages:
     """A bounded owner of scratch storage, processes and opaque workspace IDs."""
 
-    def __init__(self, directory, *, postgres_bin, max_workspaces, lifetime_seconds):
+    def __init__(
+        self,
+        directory,
+        *,
+        postgres_bin,
+        max_workspaces,
+        lifetime_seconds,
+        max_upload_bytes=2 * 1024 * 1024,
+    ):
+        self.max_upload_bytes = int(max_upload_bytes)
+        if not 65536 <= self.max_upload_bytes <= MAX_UPLOAD_BYTES:
+            raise ValueError("sandbox upload bound must be between 64 KiB and 10 MiB")
         self.directory = Path(directory).resolve()
         self.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.transport = tempfile.TemporaryDirectory(prefix="ols-")
@@ -228,6 +239,7 @@ class Villages:
                     "OPENLEG_SANDBOX_WORKER": "1",
                     "OPENLEG_SANDBOX_DIRECTORY": str(directory),
                     "OPENLEG_SANDBOX_WORKSPACE": identifier,
+                    "OPENLEG_SANDBOX_MAX_UPLOAD_BYTES": str(self.max_upload_bytes),
                     "SECRET_KEY": secrets.token_urlsafe(48),
                     "APP_BASE_URL": origin,
                     "PUBLIC_SITE_URL": origin,
@@ -268,7 +280,13 @@ class Villages:
                     if socket_path.exists():
                         try:
                             with UnixConnection(socket_path) as channel:
-                                channel.request("GET", "/livez")
+                                channel.request(
+                                    "GET",
+                                    "/livez",
+                                    headers={
+                                        "X-Forwarded-Proto": urlsplit(origin).scheme
+                                    },
+                                )
                                 if channel.getresponse().status == 200:
                                     return workspace
                         except (OSError, http.client.HTTPException):
@@ -352,6 +370,7 @@ def create_gateway(
     postgres_bin=None,
     max_workspaces=4,
     lifetime_seconds=3600,
+    max_upload_bytes=2 * 1024 * 1024,
     origin="http://localhost",
 ):
     """Create the standalone sandbox entry point, never a production app mode."""
@@ -363,6 +382,7 @@ def create_gateway(
         or os.environ.get("OPENLEG_SANDBOX_POSTGRES_BIN", "/usr/lib/postgresql/16/bin"),
         max_workspaces=max_workspaces,
         lifetime_seconds=lifetime_seconds,
+        max_upload_bytes=max_upload_bytes,
     )
     web = Flask(__name__)
     web.config.update(
@@ -371,10 +391,14 @@ def create_gateway(
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_SECURE=origin.startswith("https://"),
-        MAX_CONTENT_LENGTH=2 * 1024 * 1024,
+        MAX_CONTENT_LENGTH=villages.max_upload_bytes,
     )
     web.extensions["villages"] = villages
     i18n.init_app(web)
+
+    @web.context_processor
+    def private_templates():
+        return {"private_page": True}
 
     @web.before_request
     def csrf():
@@ -423,7 +447,10 @@ def create_gateway(
             workspace = villages.create(origin, session.get("locale", "de_CH"))
         except OverflowError:
             return render_template(
-                "sandbox/entry.html", csrf_token=session["csrf"], capacity=True
+                "sandbox/entry.html",
+                csrf_token=session["csrf"],
+                capacity=True,
+                lifetime_minutes=villages.lifetime_seconds // 60,
             ), 503
         session["workspace"] = workspace["id"]
         return redirect("/sandbox/enter")
@@ -449,6 +476,7 @@ def create_gateway(
         ]
         headers["Cookie"] = ";".join(cookies)
         headers["Host"] = "localhost"
+        headers["X-Forwarded-Proto"] = urlsplit(origin).scheme
         target = "/" + path
         if request.query_string:
             target += "?" + request.query_string.decode("latin-1")

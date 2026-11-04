@@ -31,6 +31,7 @@ def main():
     parser.add_argument("--directory", default=".scratch/sandbox")
     parser.add_argument("--port", type=int, default=5090)
     parser.add_argument("--max-workspaces", type=int, default=4)
+    parser.add_argument("--max-upload-mib", type=int, default=2)
     parser.add_argument(
         "--stop",
         action="store_true",
@@ -67,6 +68,7 @@ def main():
             directory,
             postgres_bin=args.postgres_bin,
             max_workspaces=args.max_workspaces,
+            max_upload_bytes=args.max_upload_mib * 1024 * 1024,
             lifetime_seconds=args.lifetime_seconds,
             origin=args.origin or f"http://127.0.0.1:{args.port}",
         )

@@ -13,8 +13,42 @@ PERSONAS = (
     ("sonnwil-neighbour", "Musterweg 6, Sonnwil", 4800, False),
 )
 
+FIXTURE_MANIFEST = {
+    "version": SEED_VERSION,
+    "personas": {
+        "resident": "sonnwil-resident",
+        "producer": "sonnwil-producer",
+        "founder": "sonnwil-founder",
+        "operator": "sonnwil-operator",
+        "private_household": "sonnwil-private",
+        "neighbour": "sonnwil-neighbour",
+        "municipality": "sonnwil-municipality",
+        "utility": "sonnwil-utility",
+    },
+    "reserved_states": {
+        "new_household": "unverified",
+        "sonnwil-forming-leg": "collecting_interest",
+        "sonnwil-operating-leg": "active",
+        "billing_period": "2026-09",
+        "mail": "workspace-local",
+        "webhooks": "workspace-local",
+    },
+    "available_scenarios": ["resident-profile", "access-email"],
+}
+
 
 def seed_village(db):
+    with db.get_connection() as connection, connection.cursor() as cursor:
+        cursor.execute("""CREATE TABLE IF NOT EXISTS sandbox_fixture (
+            singleton BOOLEAN PRIMARY KEY CHECK (singleton),
+            version TEXT NOT NULL, manifest JSONB NOT NULL
+        )""")
+        cursor.execute("SELECT version FROM sandbox_fixture WHERE singleton = TRUE")
+        previous = cursor.fetchone()
+        if previous:
+            if previous["version"] != SEED_VERSION:
+                raise RuntimeError("sandbox fixture version mismatch")
+            return
     for identifier, address, consumption, solar in PERSONAS:
         if not db.save_building(
             identifier,
@@ -54,4 +88,8 @@ def seed_village(db):
                     }
                 ),
             ),
+        )
+        cursor.execute(
+            "INSERT INTO sandbox_fixture (singleton, version, manifest) VALUES (TRUE, %s, %s)",
+            (SEED_VERSION, json.dumps(FIXTURE_MANIFEST)),
         )

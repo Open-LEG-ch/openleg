@@ -23,8 +23,9 @@ Open the same address in a separate browser profile for an independent village.
 Dashboard login emails appear in the simulated inbox linked in the banner.
 
 The default is four concurrent villages, a two-MiB upload limit per request and
-a one-hour maximum lifetime. Use `--max-workspaces`, `--lifetime-seconds` and
-`--port` to choose different local bounds. `--postgres-bin` selects the
+a one-hour maximum lifetime. Use `--max-workspaces`, `--max-upload-mib`,
+`--lifetime-seconds` and `--port` to choose different local bounds. Uploads can
+be bounded from one to ten MiB through the CLI. `--postgres-bin` selects the
 PostgreSQL 16 binary directory; its default is `/usr/lib/postgresql/16/bin`.
 The public origin defaults to the loopback listening URL. Set `--origin` when
 using a proxy. Other Host headers are rejected.
@@ -70,3 +71,9 @@ The HTTP tests start real PostgreSQL and independent application processes.
 They require local PostgreSQL 16 binaries. CI uses the Ubuntu 24.04 runner with
 those binaries and explicitly checks their presence before running the suite.
 The process-boundary test attempts real socket creation under the kernel filter.
+
+The first-slice validation also deliberately disabled workspace routing, unique
+session keys, private mail storage, explicit mode, Host and CSRF checks, the
+network filter and database role/connection restrictions. Each change made its
+regression fail. Restoring the guards returned the focused suite to green.
+The implementation PR records the results; this is not a suite-wide mutation score.
