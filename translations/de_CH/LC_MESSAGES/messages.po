@@ -2275,6 +2275,9 @@ msgstr ""
 msgid "Das mögliche Gebiet feststeht."
 msgstr "Das mögliche Gebiet feststeht."
 
+msgid "Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später erneut."
+msgstr "Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später erneut."
+
 #: templates/product_base.html:17
 msgid "Dashboard"
 msgstr "Übersicht"

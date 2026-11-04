@@ -173,6 +173,25 @@ class Villages:
         self.max_upload_bytes = int(max_upload_bytes)
         if not 65536 <= self.max_upload_bytes <= MAX_UPLOAD_BYTES:
             raise ValueError("sandbox upload bound must be between 64 KiB and 10 MiB")
+        # Fail before provisioning scratch services. The gateway itself must
+        # retain TCP for its public listener, so install the probe in a child.
+        try:
+            probe = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    "from sandbox_network import deny_internet; deny_internet()",
+                ],
+                cwd=SOURCE,
+                env={"PATH": os.defpath, "PYTHONPATH": str(SOURCE)},
+                capture_output=True,
+                timeout=30,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError) as error:
+            raise RuntimeError("sandbox network filter unavailable") from error
+        if probe.returncode != 0:
+            raise RuntimeError("sandbox network filter unavailable")
         self.directory = Path(directory).resolve()
         self.directory.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -523,6 +542,13 @@ def create_gateway(
                 "sandbox/entry.html",
                 csrf_token=session["csrf"],
                 capacity=True,
+                lifetime_minutes=villages.lifetime_seconds // 60,
+            ), 503
+        except (RuntimeError, OSError, psycopg2.OperationalError):
+            return render_template(
+                "sandbox/entry.html",
+                csrf_token=session["csrf"],
+                unavailable=True,
                 lifetime_minutes=villages.lifetime_seconds // 60,
             ), 503
         session["workspace"] = workspace["id"]

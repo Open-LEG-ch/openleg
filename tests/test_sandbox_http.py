@@ -498,3 +498,24 @@ def test_gateway_creates_a_private_parent_under_a_shared_umask(tmp_path):
         assert (tmp_path / ".scratch").stat().st_mode & 0o077 == 0
     finally:
         gateway.extensions["villages"].close()
+
+
+@pytest.mark.parametrize("failure", [RuntimeError, OSError, psycopg2.OperationalError])
+def test_failed_worker_provisioning_returns_an_unavailable_page_not_capacity(
+    village, monkeypatch, failure
+):
+    def fail(*args, **kwargs):
+        raise failure("synthetic private startup diagnostic")
+
+    manager = village.extensions["villages"]
+    monkeypatch.setattr(manager, "_provision", fail)
+    client = village.test_client()
+    entry = client.get("/sandbox")
+    response = client.post(
+        "/sandbox/start", data={"csrf_token": _csrf(entry), "persona": "resident"}
+    )
+    assert response.status_code == 503
+    assert "Das Übungsdorf kann gerade nicht gestartet werden." in response.text
+    assert "Alle Übungsdörfer sind gerade belegt." not in response.text
+    assert "private startup diagnostic" not in response.text
+    assert len(manager.workspaces) == 0

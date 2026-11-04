@@ -55,7 +55,9 @@ Gunicorn control socket is disabled. The kernel refuses all non-Unix sockets
 before application integrations are imported. PostgreSQL and product HTTP use
 private Unix sockets. Startup fails if the network boundary or scratch database
 cannot be established. The filter also denies the io_uring interface, which
-can otherwise create sockets without a socket syscall.
+can otherwise create sockets without a socket syscall. The runner probes the
+filter in a separate process before starting PostgreSQL. Expected worker startup
+dependency failures return a generic unavailable page without private diagnostics.
 
 Mail is captured locally. The browser's content security policy permits only
 same-origin resources and blocks external forms and frames. The sandbox uses

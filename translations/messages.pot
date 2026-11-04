@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 21:25+0000\n"
+"POT-Creation-Date: 2026-11-04 22:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -929,7 +929,7 @@ msgstr ""
 msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
 msgstr ""
 
-#: templates/sandbox/entry.html:13
+#: templates/sandbox/entry.html:14
 msgid "Als Haushalt anmelden"
 msgstr ""
 
@@ -2142,6 +2142,10 @@ msgstr ""
 msgid "Das mögliche Gebiet feststeht."
 msgstr ""
 
+#: templates/sandbox/entry.html:10
+msgid "Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später erneut."
+msgstr ""
+
 #: templates/product_base.html:18 templates/utility/settings.html:16
 msgid "Dashboard"
 msgstr ""
@@ -3194,7 +3198,7 @@ msgstr ""
 msgid "E-Mail:"
 msgstr ""
 
-#: templates/sandbox/entry.html:15
+#: templates/sandbox/entry.html:16
 msgid "E-Mails, Dokumente und Zahlungen sind Simulationen."
 msgstr ""
 
@@ -5194,7 +5198,7 @@ msgstr ""
 msgid "Ihre Rolle"
 msgstr ""
 
-#: templates/sandbox/entry.html:15
+#: templates/sandbox/entry.html:16
 #, python-format
 msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
 msgstr ""

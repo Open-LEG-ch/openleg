@@ -299,3 +299,26 @@ def test_start_and_stop_cannot_erase_an_incomplete_live_runner_record(
         finally:
             release.set()
         first.result(timeout=5)
+
+
+def test_gateway_refuses_a_failed_filter_probe_before_starting_postgres(
+    tmp_path, monkeypatch
+):
+    import sandbox_runtime
+
+    source = tmp_path / "probe-source"
+    source.mkdir()
+    (source / "sandbox_network.py").write_text(
+        "def deny_internet():\n    raise RuntimeError('synthetic unavailable filter')\n"
+    )
+    monkeypatch.setattr(sandbox_runtime, "SOURCE", source)
+    monkeypatch.setattr(
+        sandbox_runtime,
+        "LocalPostgres",
+        lambda *args, **kwargs: pytest.fail(
+            "must check filter before starting PostgreSQL"
+        ),
+    )
+    with pytest.raises(RuntimeError, match="sandbox network filter unavailable"):
+        sandbox_runtime.create_gateway(tmp_path / "scratch")
+    assert not (tmp_path / "scratch").exists()
