@@ -51,6 +51,17 @@ def deny_internet():
                 != 0
             ):
                 raise RuntimeError("sandbox network filter unavailable")
+        # io_uring can create sockets without invoking the socket syscall.
+        for syscall in (b"io_uring_setup", b"io_uring_enter", b"io_uring_register"):
+            number = library.seccomp_syscall_resolve_name(syscall)
+            if (
+                number < 0
+                or library.seccomp_rule_add_array(
+                    context, 0x00050000 | errno.EPERM, number, 0, None
+                )
+                != 0
+            ):
+                raise RuntimeError("sandbox network filter unavailable")
         if library.seccomp_load(context) != 0:
             raise RuntimeError("sandbox network filter unavailable")
     finally:

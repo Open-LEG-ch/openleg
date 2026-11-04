@@ -3,11 +3,13 @@
 """Run a bounded, disposable Sonnwil sandbox without production services."""
 
 import argparse
+import fcntl
 import json
 import logging
 import os
 import signal
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -19,13 +21,42 @@ def process_start(pid):
     return Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[19]
 
 
+def runner_identity(record):
+    """Return a live runner identity, never a reused PID or a zombie."""
+    try:
+        identity = json.loads(record.read_text())
+        pid = identity["pid"]
+        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
+        if pid > 1 and fields[19] == identity["start"] and fields[0] != "Z":
+            return identity
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return None
+
+
+@contextmanager
+def runner_lease(directory):
+    """Keep startup publication and stale-record repair exclusive."""
+    descriptor = os.open(directory / ".runner.lock", os.O_WRONLY | os.O_CREAT, 0o600)
+    with os.fdopen(descriptor, "w") as lease:
+        try:
+            fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise SystemExit(
+                "sandbox runner is already active for this directory"
+            ) from None
+        yield
+
+
 def stop(directory):
     require_private_directory(directory)
-    record = json.loads((directory / "runner.json").read_text())
-    pid = record["pid"]
-    if pid <= 1 or process_start(pid) != record["start"]:
-        raise RuntimeError("sandbox runner identity does not match")
-    os.kill(pid, signal.SIGTERM)
+    record = directory / "runner.json"
+    identity = runner_identity(record)
+    if not identity:
+        with runner_lease(directory):
+            record.unlink(missing_ok=True)
+        raise SystemExit("no active sandbox runner")
+    os.kill(identity["pid"], signal.SIGTERM)
 
 
 def main():
@@ -54,9 +85,20 @@ def main():
     if args.stop:
         stop(directory)
         return
+    directory.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     require_private_directory(directory)
+    with runner_lease(directory):
+        run(args, directory)
+
+
+def run(args, directory):
+    """Own one runner record for the full gateway lifetime."""
     record = directory / "runner.json"
+    if record.exists():
+        if runner_identity(record):
+            raise SystemExit("sandbox runner is already active for this directory")
+        record.unlink()
     descriptor = os.open(record, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w") as output:
         json.dump({"pid": os.getpid(), "start": process_start(os.getpid())}, output)

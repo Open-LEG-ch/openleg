@@ -36,7 +36,11 @@ Press Ctrl+C in the runner terminal, or run `python scripts/sandbox.py --stop`
 from another terminal, to stop the sandbox and remove its village databases,
 files and processes. The directory belongs only to this scratch
 runtime; never point it at production storage. Browser reset and unattended
-expiry recovery are tracked in #770.
+expiry recovery are tracked in #770. A stale runner record does not block a
+new start; a record identifying a live runner refuses a second start. Full crash
+resource recovery remains part of #770. Missing `.scratch` parents are created
+with private permissions, including under a shared group umask. Existing
+writable parents are rejected.
 
 ## Boundaries
 
@@ -50,7 +54,8 @@ database credential and an explicit allow-list of environment settings. Its
 Gunicorn control socket is disabled. The kernel refuses all non-Unix sockets
 before application integrations are imported. PostgreSQL and product HTTP use
 private Unix sockets. Startup fails if the network boundary or scratch database
-cannot be established.
+cannot be established. The filter also denies the io_uring interface, which
+can otherwise create sockets without a socket syscall.
 
 Mail is captured locally. The browser's content security policy permits only
 same-origin resources and blocks external forms and frames. The sandbox uses

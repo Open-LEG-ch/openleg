@@ -174,6 +174,7 @@ class Villages:
         if not 65536 <= self.max_upload_bytes <= MAX_UPLOAD_BYTES:
             raise ValueError("sandbox upload bound must be between 64 KiB and 10 MiB")
         self.directory = Path(directory).resolve()
+        self.directory.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
         require_private_directory(self.directory)
         self.transport = tempfile.TemporaryDirectory(prefix="ols-")

@@ -478,3 +478,23 @@ def test_worker_tempfiles_stay_inside_the_disposable_workspace(village, monkeypa
     assert len(list(workspace["directory"].glob("sandbox-probe-*"))) == 1
     manager.destroy(workspace["id"])
     assert not workspace["directory"].exists()
+
+
+def test_gateway_creates_a_private_parent_under_a_shared_umask(tmp_path):
+    from sandbox_runtime import create_gateway
+
+    binary = os.environ.get(
+        "OPENLEG_SANDBOX_POSTGRES_BIN", "/usr/lib/postgresql/16/bin"
+    )
+    if not (Path(binary) / "initdb").is_file():
+        pytest.skip("requires local PostgreSQL 16 binaries")
+    previous = os.umask(0o002)
+    try:
+        gateway = create_gateway(tmp_path / ".scratch" / "sandbox", postgres_bin=binary)
+    finally:
+        os.umask(previous)
+    try:
+        assert gateway.test_client().get("/sandbox").status_code == 200
+        assert (tmp_path / ".scratch").stat().st_mode & 0o077 == 0
+    finally:
+        gateway.extensions["villages"].close()
