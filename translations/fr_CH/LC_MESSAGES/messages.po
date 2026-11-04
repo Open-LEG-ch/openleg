@@ -32,20 +32,6 @@ msgstr ""
 msgid " mit ElCom Tarifdaten und BFE Sonnendach."
 msgstr " avec les tarifs ElCom et les données OFEN Toitsolaire."
 
-#: templates/leg_billing.html:106
-msgid ""
-"Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum "
-"Modell ausgewiesen."
-msgstr ""
-"Rapprochement avec le GRD : source exacte du GRD déterminante, écart "
-"par rapport au modèle indiqué."
-
-#: billing_workspace.py:255
-msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
-msgstr ""
-"Source exacte du GRD déterminante, écart par rapport au modèle "
-"indiqué"
-
 #: templates/leg_verzeichnis/bestaetigt.html:17
 #, python-format
 msgid "\"%(entry_name)s\" bleibt als aktuell markiert im Verzeichnis."
@@ -596,6 +582,12 @@ msgstr "Créer une clé API"
 msgid "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 msgstr "Clé API générée. Conservez-la en lieu sûr, elle ne s’affiche qu’une seule fois."
 
+msgid "API-Schlüssel widerrufen"
+msgstr "Révoquer la clé API"
+
+msgid "API-Schlüssel widerrufen?"
+msgstr "Révoquer la clé API ?"
+
 #: templates/utility/dashboard.html:71
 msgid "API-Zugang"
 msgstr "Accès API"
@@ -632,6 +624,12 @@ msgstr "Rejeté"
 #: templates/leg_billing.html:59
 msgid "Abgleich mit dem VNB: Abweichung prüfen."
 msgstr "Rapprochement avec le GRD : vérifier l’écart."
+
+#: templates/leg_billing.html:106
+msgid "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
+msgstr ""
+"Rapprochement avec le GRD : source exacte du GRD déterminante, écart par rapport au modèle "
+"indiqué."
 
 #: templates/leg_billing.html:59
 msgid "Abgleich mit dem VNB: vollständig abgeglichen."
@@ -977,6 +975,7 @@ msgstr ""
 " réseau et dans la même zone de desserte, utilisent au maximum"
 
 #: templates/how-it-works.html:52
+#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1251,6 +1250,7 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h OApEl"
 
 #: templates/leg_kalkulator.html:267
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1272,6 +1272,7 @@ msgstr ""
 "tension."
 
 #: templates/leg_kalkulator.html:288
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -2460,6 +2461,9 @@ msgstr "Le justificatif original se trouve dans le journal de correspondance."
 msgid "Deployment-Runbooks und Hostnamen"
 msgstr "Procédures de déploiement et noms d’hôtes"
 
+msgid "Der API-Schlüssel konnte nicht geändert werden."
+msgstr "La clé API n'a pas pu être modifiée."
+
 #: templates/how-it-works.html:10
 msgid "Der Ablauf von der Adresse bis zur aktiven Lokalen Elektrizitätsgemeinschaft."
 msgstr "Les étapes, de l’adresse à une communauté électrique locale en activité."
@@ -2523,6 +2527,7 @@ msgstr ""
 "une part des coûts."
 
 #: templates/gemeinde/methodik.html:95
+#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -4218,6 +4223,10 @@ msgstr "Il télécharge une copie superficielle du dépôt public."
 msgid "Es prüft den lokalen Health-Endpunkt."
 msgstr "Il vérifie le point de contrôle de santé local."
 
+#: billing_workspace.py:255
+msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+msgstr "Source exacte du GRD déterminante, écart par rapport au modèle indiqué"
+
 #: templates/utility/dashboard.html:14
 msgid "Expired"
 msgstr "Expiré"
@@ -4550,6 +4559,7 @@ msgstr ""
 "du réseau diminue de"
 
 #: templates/how-it-works.html:42
+#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -9170,6 +9180,7 @@ msgstr ""
 "d'union, commençant par une lettre ou un chiffre."
 
 #: templates/llms.txt:9
+#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -9836,6 +9847,7 @@ msgstr ""
 "par la commune."
 
 #: templates/gemeinde/rangliste.html:127
+#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."

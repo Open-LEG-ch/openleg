@@ -231,13 +231,41 @@ def logout():
 @utility_bp.route("/dashboard")
 @require_utility_auth
 def dashboard():
-    client = g.utility_client
+    return _render_dashboard(g.utility_client)
+
+
+def _render_dashboard(client, *, credential_error=None):
+    """Render private credential controls with one session-bound mutation token."""
+    csrf = session.get("utility_api_csrf")
+    if (
+        not isinstance(csrf, str)
+        or not csrf
+        or session.get("utility_api_csrf_client_id") != client["client_id"]
+    ):
+        csrf = secrets.token_urlsafe(32)
+        session["utility_api_csrf"] = csrf
+        session["utility_api_csrf_client_id"] = client["client_id"]
     return render_template(
         "utility/dashboard.html",
         client=client,
+        credential_csrf=csrf,
+        credential_error=credential_error,
         site_url=_site_url(),
         tenant=getattr(g, "tenant", {}),
     )
+
+
+def _require_credential_csrf():
+    """Reject credential writes without proof from this authenticated session."""
+    expected = session.get("utility_api_csrf")
+    supplied = request.headers.get("X-CSRF-Token") or request.form.get("csrf_token", "")
+    if (
+        not isinstance(expected, str)
+        or not expected
+        or session.get("utility_api_csrf_client_id") != g.utility_client["client_id"]
+        or not hmac.compare_digest(expected.encode("utf-8"), supplied.encode("utf-8"))
+    ):
+        abort(403)
 
 
 # --- API Key Management ---
@@ -247,16 +275,21 @@ def dashboard():
 @require_utility_auth
 def generate_api_key():
     """Generate a new API key for the utility client."""
+    _require_credential_csrf()
     client = g.utility_client
     raw_key = f"oleg_{secrets.token_urlsafe(32)}"
     key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
 
-    db.update_utility_client_api_key(client["client_id"], key_hash)
+    if not db.update_utility_client_api_key(client["client_id"], key_hash):
+        return (
+            jsonify(error=_("Der API-Schlüssel konnte nicht geändert werden.")),
+            503,
+        )
     db.track_event(
         "utility_api_key_generated", None, {"client_id": client["client_id"]}
     )
 
-    return jsonify(
+    response = jsonify(
         {
             "success": True,
             "api_key": raw_key,
@@ -265,6 +298,24 @@ def generate_api_key():
             ),
         }
     )
+
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@utility_bp.post("/api-key/revoke")
+@require_utility_auth
+def revoke_api_key():
+    """Revoke only the signed-in utility client's credential."""
+    _require_credential_csrf()
+    client = g.utility_client
+    if not db.update_utility_client_api_key(client["client_id"], None):
+        return _render_dashboard(
+            client,
+            credential_error=_("Der API-Schlüssel konnte nicht geändert werden."),
+        ), 503
+    db.track_event("utility_api_key_revoked", None, {"client_id": client["client_id"]})
+    return redirect(url_for("utility.dashboard"))
 
 
 # --- Settings ---

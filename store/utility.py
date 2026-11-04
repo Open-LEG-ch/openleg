@@ -230,8 +230,8 @@ def update_utility_client_status(client_id: str, status: str) -> bool:
         return False
 
 
-def update_utility_client_api_key(client_id: str, api_key_hash: str) -> bool:
-    """Set API key hash for a utility client."""
+def update_utility_client_api_key(client_id: str, api_key_hash: str | None) -> bool:
+    """Set or revoke the API key hash for the selected utility client."""
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:

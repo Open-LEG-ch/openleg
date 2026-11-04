@@ -32,18 +32,6 @@ msgstr ""
 msgid " mit ElCom Tarifdaten und BFE Sonnendach."
 msgstr " mit ElCom Tarifdaten und BFE Sonnendach."
 
-#: templates/leg_billing.html:106
-msgid ""
-"Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum "
-"Modell ausgewiesen."
-msgstr ""
-"Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum "
-"Modell ausgewiesen."
-
-#: billing_workspace.py:255
-msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
-msgstr "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
-
 #: templates/leg_verzeichnis/bestaetigt.html:17
 #, python-format
 msgid "\"%(entry_name)s\" bleibt als aktuell markiert im Verzeichnis."
@@ -584,6 +572,12 @@ msgstr "API-Schlüssel erstellen"
 msgid "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 msgstr "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 
+msgid "API-Schlüssel widerrufen"
+msgstr "API-Schlüssel widerrufen"
+
+msgid "API-Schlüssel widerrufen?"
+msgstr "API-Schlüssel widerrufen?"
+
 #: templates/utility/dashboard.html:71
 msgid "API-Zugang"
 msgstr "API-Zugang"
@@ -620,6 +614,10 @@ msgstr "Abgelehnt"
 #: templates/leg_billing.html:59
 msgid "Abgleich mit dem VNB: Abweichung prüfen."
 msgstr "Abgleich mit dem VNB: Abweichung prüfen."
+
+#: templates/leg_billing.html:106
+msgid "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
+msgstr "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
 
 #: templates/leg_billing.html:59
 msgid "Abgleich mit dem VNB: vollständig abgeglichen."
@@ -959,6 +957,7 @@ msgstr ""
 "selben Netzgebiet angeschlossen, nutzen höchstens"
 
 #: templates/how-it-works.html:52
+#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1228,6 +1227,7 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h StromVV"
 
 #: templates/leg_kalkulator.html:267
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1250,6 +1250,7 @@ msgstr ""
 "Spannungstransformation."
 
 #: templates/leg_kalkulator.html:288
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -2433,6 +2434,9 @@ msgstr "Den Originalbeleg finden Sie im Korrespondenzjournal."
 msgid "Deployment-Runbooks und Hostnamen"
 msgstr "Deployment-Runbooks und Hostnamen"
 
+msgid "Der API-Schlüssel konnte nicht geändert werden."
+msgstr "Der API-Schlüssel konnte nicht geändert werden."
+
 #: templates/how-it-works.html:10
 msgid "Der Ablauf von der Adresse bis zur aktiven Lokalen Elektrizitätsgemeinschaft."
 msgstr "Der Ablauf von der Adresse bis zur aktiven Lokalen Elektrizitätsgemeinschaft."
@@ -2494,6 +2498,7 @@ msgid "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil trage
 msgstr "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil tragen."
 
 #: templates/gemeinde/methodik.html:95
+#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -4171,6 +4176,10 @@ msgstr "Es lädt einen flachen Checkout des öffentlichen Repos."
 msgid "Es prüft den lokalen Health-Endpunkt."
 msgstr "Es prüft den lokalen Health-Endpunkt."
 
+#: billing_workspace.py:255
+msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+msgstr "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
+
 #: templates/utility/dashboard.html:14
 msgid "Expired"
 msgstr "Abgelaufen"
@@ -4502,6 +4511,7 @@ msgid "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutz
 msgstr "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um"
 
 #: templates/how-it-works.html:42
+#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -9077,6 +9087,7 @@ msgstr ""
 "Buchstabe oder Ziffer."
 
 #: templates/llms.txt:9
+#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -9731,6 +9742,7 @@ msgstr ""
 "              Die Kennzahl zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt."
 
 #: templates/gemeinde/rangliste.html:127
+#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
