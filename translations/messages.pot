@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 22:14+0000\n"
+"POT-Creation-Date: 2026-11-04 23:50+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -524,7 +524,7 @@ msgstr ""
 msgid "API Docs"
 msgstr ""
 
-#: templates/index.html:507 templates/pricing.html:88 templates/utility/dashboard.html:147
+#: templates/index.html:507 templates/pricing.html:88 templates/utility/dashboard.html:152
 msgid "API Dokumentation"
 msgstr ""
 
@@ -540,16 +540,24 @@ msgstr ""
 msgid "API-Dokumentation"
 msgstr ""
 
-#: templates/utility/dashboard.html:149
+#: templates/utility/dashboard.html:154
 msgid "API-Dokumentation öffnen"
 msgstr ""
 
-#: templates/utility/dashboard.html:80 templates/utility/dashboard.html:100
+#: templates/utility/dashboard.html:81 templates/utility/dashboard.html:105
 msgid "API-Schlüssel erstellen"
 msgstr ""
 
-#: utility_portal.py:264
+#: utility_portal.py:297
 msgid "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
+msgstr ""
+
+#: templates/utility/dashboard.html:85
+msgid "API-Schlüssel widerrufen"
+msgstr ""
+
+#: templates/utility/dashboard.html:180
+msgid "API-Schlüssel widerrufen?"
 msgstr ""
 
 #: templates/utility/dashboard.html:72
@@ -1890,7 +1898,7 @@ msgstr ""
 msgid "Bitte senden Sie ein JSON-Objekt."
 msgstr ""
 
-#: templates/utility/dashboard.html:83
+#: templates/utility/dashboard.html:88
 msgid "Bitte sicher speichern, wird nur einmal angezeigt:"
 msgstr ""
 
@@ -2306,6 +2314,10 @@ msgstr ""
 
 #: templates/open_source.html:88
 msgid "Deployment-Runbooks und Hostnamen"
+msgstr ""
+
+#: utility_portal.py:285 utility_portal.py:315
+msgid "Der API-Schlüssel konnte nicht geändert werden."
 msgstr ""
 
 #: templates/how-it-works.html:10
@@ -3164,7 +3176,7 @@ msgstr ""
 
 #: billing_policy.py:96 templates/admin/ops.html:86 templates/index.html:424 templates/index.html:450
 #: templates/leg_dashboard.html:345 templates/leg_dashboard.html:367
-#: templates/utility/dashboard.html:127
+#: templates/utility/dashboard.html:132
 msgid "E-Mail"
 msgstr ""
 
@@ -3798,7 +3810,7 @@ msgstr ""
 msgid "Erste LEG gründen"
 msgstr ""
 
-#: templates/utility/dashboard.html:108
+#: templates/utility/dashboard.html:113
 msgid "Erste LEG-Gründung starten"
 msgstr ""
 
@@ -3810,7 +3822,7 @@ msgstr ""
 msgid "Erstellt mit OpenLEG"
 msgstr ""
 
-#: templates/utility/dashboard.html:140
+#: templates/utility/dashboard.html:145
 msgid "Erster Login"
 msgstr ""
 
@@ -3919,7 +3931,7 @@ msgstr ""
 msgid "Fehler bei der Registrierung."
 msgstr ""
 
-#: templates/utility/dashboard.html:166
+#: templates/utility/dashboard.html:173
 msgid "Fehler beim Erstellen des Schlüssels."
 msgstr ""
 
@@ -3955,7 +3967,7 @@ msgstr ""
 msgid "Fingerabdruck:"
 msgstr ""
 
-#: templates/utility/dashboard.html:119
+#: templates/utility/dashboard.html:124
 msgid "Firma"
 msgstr ""
 
@@ -4830,7 +4842,7 @@ msgstr ""
 msgid "Gründungsassistent öffnen"
 msgstr ""
 
-#: utility_portal.py:341
+#: utility_portal.py:392
 #, python-format
 msgid ""
 "Guten Tag,\n"
@@ -5937,7 +5949,7 @@ msgstr ""
 msgid "Kontaktanfragen |"
 msgstr ""
 
-#: templates/utility/dashboard.html:123
+#: templates/utility/dashboard.html:128
 msgid "Kontaktperson"
 msgstr ""
 
@@ -5945,7 +5957,7 @@ msgstr ""
 msgid "Kontoauszug importieren"
 msgstr ""
 
-#: templates/utility/dashboard.html:116
+#: templates/utility/dashboard.html:121
 msgid "Kontoinformationen"
 msgstr ""
 
@@ -6391,7 +6403,7 @@ msgstr ""
 msgid "Letzter Fehler"
 msgstr ""
 
-#: templates/utility/dashboard.html:139
+#: templates/utility/dashboard.html:144
 msgid "Letzter Login"
 msgstr ""
 
@@ -6936,7 +6948,7 @@ msgstr ""
 msgid "Möglicherweise betroffen / unbekannt"
 msgstr ""
 
-#: templates/utility/dashboard.html:64 templates/utility/dashboard.html:136
+#: templates/utility/dashboard.html:64 templates/utility/dashboard.html:141
 msgid "N/A"
 msgstr ""
 
@@ -7184,7 +7196,7 @@ msgstr ""
 msgid "Netztrennung"
 msgstr ""
 
-#: templates/gemeinde/onboarding.html:168 templates/index.html:741 templates/utility/dashboard.html:169
+#: templates/gemeinde/onboarding.html:168 templates/index.html:741 templates/utility/dashboard.html:176
 #: templates/utility/login.html:76
 msgid "Netzwerkfehler."
 msgstr ""
@@ -7213,7 +7225,7 @@ msgstr ""
 msgid "Neue Version gespeichert."
 msgstr ""
 
-#: templates/utility/dashboard.html:155
+#: templates/utility/dashboard.html:160
 msgid "Neuen API-Schlüssel erstellen? Der alte wird ungültig."
 msgstr ""
 
@@ -7221,7 +7233,7 @@ msgstr ""
 msgid "Neuen Link anfordern"
 msgstr ""
 
-#: templates/utility/dashboard.html:80
+#: templates/utility/dashboard.html:81
 msgid "Neuen Schlüssel erstellen"
 msgstr ""
 
@@ -7231,7 +7243,7 @@ msgstr ""
 
 #: billing_workspace.py:261 billing_workspace.py:268 billing_workspace.py:315 billing_workspace.py:319
 #: billing_workspace.py:323 dashboard.py:498 templates/utility/dashboard.html:60
-#: templates/utility/dashboard.html:124 templates/utility/dashboard.html:132
+#: templates/utility/dashboard.html:129 templates/utility/dashboard.html:137
 msgid "Nicht angegeben"
 msgstr ""
 
@@ -7299,7 +7311,7 @@ msgstr ""
 msgid "No summary"
 msgstr ""
 
-#: templates/utility/dashboard.html:77
+#: templates/utility/dashboard.html:78
 msgid "Noch kein API-Schlüssel vorhanden."
 msgstr ""
 
@@ -7425,11 +7437,11 @@ msgstr ""
 msgid "Nur die Administration kann einladen."
 msgstr ""
 
-#: templates/utility/dashboard.html:148
+#: templates/utility/dashboard.html:153
 msgid "Nutzen Sie LEG-Daten in Ihren bestehenden Systemen."
 msgstr ""
 
-#: templates/utility/dashboard.html:75
+#: templates/utility/dashboard.html:76
 msgid "Nutzen Sie den Header"
 msgstr ""
 
@@ -7554,7 +7566,7 @@ msgid ""
 "Gemeinden."
 msgstr ""
 
-#: templates/utility/dashboard.html:90
+#: templates/utility/dashboard.html:95
 msgid "Onboarding"
 msgstr ""
 
@@ -7846,7 +7858,7 @@ msgstr ""
 msgid "OpenLEG. Kein eigener technischer Betrieb."
 msgstr ""
 
-#: utility_portal.py:339
+#: utility_portal.py:390
 msgid "OpenLEG: Ihr Login-Link"
 msgstr ""
 
@@ -8551,7 +8563,7 @@ msgid ""
 "weiterleiten kann. Kostenlos."
 msgstr ""
 
-#: templates/utility/dashboard.html:135
+#: templates/utility/dashboard.html:140
 msgid "Registriert am"
 msgstr ""
 
@@ -8559,7 +8571,7 @@ msgstr ""
 msgid "Registrierte Haushalte"
 msgstr ""
 
-#: templates/utility/dashboard.html:94
+#: templates/utility/dashboard.html:99
 msgid "Registrierung abgeschlossen"
 msgstr ""
 
@@ -9529,7 +9541,7 @@ msgstr ""
 msgid "Teilzahlung"
 msgstr ""
 
-#: templates/utility/dashboard.html:131 templates/utility/register.html:86
+#: templates/utility/dashboard.html:136 templates/utility/register.html:86
 msgid "Telefon"
 msgstr ""
 
@@ -10349,7 +10361,7 @@ msgstr ""
 msgid "Wetterprognose derzeit nicht verfügbar"
 msgstr ""
 
-#: templates/utility/dashboard.html:104
+#: templates/utility/dashboard.html:109
 msgid "White-Label Branding konfigurieren"
 msgstr ""
 
@@ -10622,7 +10634,7 @@ msgstr ""
 msgid "Wählt das Betriebsmodell."
 msgstr ""
 
-#: templates/utility/dashboard.html:75
+#: templates/utility/dashboard.html:76
 msgid "X-API-Key"
 msgstr ""
 
@@ -10979,7 +10991,7 @@ msgstr ""
 msgid "für \"%(query)s\""
 msgstr ""
 
-#: templates/utility/dashboard.html:75
+#: templates/utility/dashboard.html:76
 msgid "für B2B-API-Anfragen."
 msgstr ""
 
@@ -11537,7 +11549,7 @@ msgstr ""
 msgid "↓"
 msgstr ""
 
-#: templates/utility/dashboard.html:74
+#: templates/utility/dashboard.html:75 templates/utility/dashboard.html:171
 msgid "✓ API-Schlüssel aktiv"
 msgstr ""
 
