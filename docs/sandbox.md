@@ -40,7 +40,10 @@ expiry recovery are tracked in #770. A stale runner record does not block a
 new start; a record identifying a live runner refuses a second start. Full crash
 resource recovery remains part of #770. Missing `.scratch` parents are created
 with private permissions, including under a shared group umask. Existing
-writable parents are rejected.
+writable parents are rejected. The error names the rejected path. For an owned
+checkout created with group write permission, remove that permission with
+`chmod g-w /path/named/by/the/error` before restarting. The runner preserves
+an inherited ignored SIGHUP, so `nohup` continues to work.
 
 ## Boundaries
 

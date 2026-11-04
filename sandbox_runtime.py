@@ -45,11 +45,13 @@ HOP_HEADERS = {
 def require_private_directory(directory):
     status = directory.stat()
     if status.st_uid != os.getuid() or status.st_mode & 0o077:
-        raise RuntimeError("sandbox directory must be private and owned by the runner")
+        raise RuntimeError(
+            f"sandbox directory must be private and owned by the runner: {directory}"
+        )
     for parent in directory.parents:
         mode = parent.stat().st_mode
         if mode & 0o022 and not mode & stat.S_ISVTX:
-            raise RuntimeError("sandbox directory has a writable parent")
+            raise RuntimeError(f"sandbox directory has a writable parent: {parent}")
 
 
 class LocalPostgres:
@@ -373,14 +375,33 @@ class Villages:
             ):
                 return workspace
         if workspace:
-            self.destroy(identifier)
+            try:
+                self.destroy(identifier)
+            except Exception as error:
+                logging.getLogger(__name__).warning(
+                    "Scratch expired cleanup failed: %s", type(error).__name__
+                )
         return None
 
     def reap(self):
         with self.lock:
-            identifiers = list(self.workspaces)
+            now = time.monotonic()
+            identifiers = [
+                identifier
+                for identifier, workspace in self.workspaces.items()
+                if workspace["provisioned"].is_set()
+                and (
+                    not workspace["ready"]
+                    or now - workspace["created"] >= self.lifetime_seconds
+                )
+            ]
         for identifier in identifiers:
-            self.get(identifier)
+            try:
+                self.destroy(identifier)
+            except Exception as error:
+                logging.getLogger(__name__).warning(
+                    "Scratch workspace cleanup failed: %s", type(error).__name__
+                )
 
     def destroy(self, identifier):
         with self.lock:
@@ -392,7 +413,7 @@ class Villages:
                 if self.workspaces.get(identifier) is not workspace:
                     return
             process = workspace["process"]
-            if process:
+            if process and process.poll() is None:
                 try:
                     os.killpg(process.pid, signal.SIGTERM)
                 except ProcessLookupError:

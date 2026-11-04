@@ -107,7 +107,8 @@ def run(args, directory):
         raise SystemExit(0)
 
     signal.signal(signal.SIGTERM, shutdown)
-    signal.signal(signal.SIGHUP, shutdown)
+    if signal.getsignal(signal.SIGHUP) != signal.SIG_IGN:
+        signal.signal(signal.SIGHUP, shutdown)
     web = None
     try:
         web = create_gateway(

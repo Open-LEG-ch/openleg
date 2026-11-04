@@ -101,7 +101,10 @@ def test_captured_mail_is_published_only_when_complete(tmp_path, monkeypatch):
     assert sandbox_mail.messages()[0]["body"] == "Complete body"
 
 
-def test_runner_does_not_enable_debugger_or_load_dotenv(tmp_path, monkeypatch):
+@pytest.mark.parametrize("ignore_hangup", [False, True])
+def test_runner_does_not_enable_debugger_or_load_dotenv(
+    tmp_path, monkeypatch, ignore_hangup
+):
     from types import SimpleNamespace
 
     from flask import Flask
@@ -120,6 +123,13 @@ def test_runner_does_not_enable_debugger_or_load_dotenv(tmp_path, monkeypatch):
     )
     registered, server = {}, {}
     monkeypatch.setattr(
+        sandbox.signal,
+        "getsignal",
+        lambda _sig: (
+            sandbox.signal.SIG_IGN if ignore_hangup else sandbox.signal.SIG_DFL
+        ),
+    )
+    monkeypatch.setattr(
         sandbox.signal, "signal", lambda sig, handler: registered.update({sig: handler})
     )
     monkeypatch.setattr(
@@ -128,7 +138,7 @@ def test_runner_does_not_enable_debugger_or_load_dotenv(tmp_path, monkeypatch):
     sandbox.main()
     assert server["use_debugger"] is False
     assert "SANDBOX_DOTENV_PROBE" not in os.environ
-    assert sandbox.signal.SIGHUP in registered
+    assert (sandbox.signal.SIGHUP in registered) is (not ignore_hangup)
 
 
 def test_runner_refuses_a_writable_directory_before_reading_stop_record(

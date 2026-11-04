@@ -519,3 +519,92 @@ def test_failed_worker_provisioning_returns_an_unavailable_page_not_capacity(
     assert "Alle Übungsdörfer sind gerade belegt." not in response.text
     assert "private startup diagnostic" not in response.text
     assert len(manager.workspaces) == 0
+
+
+def test_failed_provision_cleanup_is_retried_before_refusing_capacity(
+    village, monkeypatch
+):
+    manager = village.extensions["villages"]
+    manager.max_workspaces = 1
+    first, second = village.test_client(), village.test_client()
+
+    def fail_start(*args, **kwargs):
+        raise RuntimeError("synthetic worker startup failure")
+
+    def fail_cleanup(*args, **kwargs):
+        raise psycopg2.OperationalError("synthetic cleanup failure")
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(manager, "_provision", fail_start)
+        scoped.setattr(manager, "destroy", fail_cleanup)
+        entry = first.get("/sandbox")
+        assert (
+            first.post(
+                "/sandbox/start",
+                data={"csrf_token": _csrf(entry), "persona": "resident"},
+            ).status_code
+            == 503
+        )
+    assert len(manager.workspaces) == 1
+    entry = second.get("/sandbox")
+    response = second.post(
+        "/sandbox/start", data={"csrf_token": _csrf(entry), "persona": "resident"}
+    )
+    assert response.status_code == 302
+    assert second.get(response.location, follow_redirects=True).status_code == 200
+    assert len(manager.workspaces) == 1
+    assert next(iter(manager.workspaces.values()))["ready"]
+
+
+def test_one_cleanup_error_does_not_skip_another_expired_village(village, monkeypatch):
+    first, second = village.test_client(), village.test_client()
+    _enter(first)
+    _enter(second)
+    manager = village.extensions["villages"]
+    first_id, second_id = list(manager.workspaces)
+    for workspace in manager.workspaces.values():
+        workspace["created"] = 0
+    original = manager.destroy
+
+    def fail_first(identifier):
+        if identifier == first_id:
+            raise OSError("synthetic cleanup failure")
+        return original(identifier)
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(manager, "destroy", fail_first)
+        manager.reap()
+    assert second_id not in manager.workspaces
+    assert first_id in manager.workspaces
+    manager.reap()
+    assert not manager.workspaces
+
+
+def test_expired_access_stays_denied_during_cleanup_failure_and_reused_pid(
+    village, tmp_path
+):
+    client = village.test_client()
+    _enter(client)
+    manager = village.extensions["villages"]
+    workspace = next(iter(manager.workspaces.values()))
+    workspace["created"] = 0
+    manager.postgres.close()
+    assert client.get("/dashboard").status_code in (302, 303)
+    process = workspace["process"]
+    assert process.poll() is not None
+    original_pid = process.pid
+    unrelated = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(60)"],
+        cwd=tmp_path,
+        start_new_session=True,
+    )
+    try:
+        process.pid = unrelated.pid
+        assert client.get("/dashboard").status_code in (302, 303)
+        with pytest.raises(subprocess.TimeoutExpired):
+            unrelated.wait(timeout=0.3)
+    finally:
+        process.pid = original_pid
+        if unrelated.poll() is None:
+            unrelated.terminate()
+        unrelated.wait(timeout=5)
