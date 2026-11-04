@@ -4,6 +4,7 @@
 import atexit
 import hmac
 import http.client
+import logging
 import os
 import secrets
 import shutil
@@ -136,7 +137,7 @@ class LocalPostgres:
                 ],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                check=False,
+                check=True,
             )
 
 
@@ -406,10 +407,27 @@ class Villages:
             self.closed = True
             identifiers = list(self.workspaces)
         for identifier in identifiers:
-            self.destroy(identifier)
-        self.postgres.close()
-        shutil.rmtree(self.postgres.directory)
-        self.transport.cleanup()
+            try:
+                self.destroy(identifier)
+            except Exception as error:
+                logging.getLogger(__name__).warning(
+                    "Scratch workspace cleanup failed: %s", type(error).__name__
+                )
+        try:
+            self.postgres.close()
+            for workspace in list(self.workspaces.values()):
+                process = workspace["process"]
+                if process and process.poll() is None:
+                    raise RuntimeError("scratch worker could not be stopped")
+                shutil.rmtree(workspace["directory"], ignore_errors=True)
+            self.workspaces.clear()
+            shutil.rmtree(self.postgres.directory)
+            self.transport.cleanup()
+        except BaseException:
+            # Retain identities for another shutdown attempt when teardown fails.
+            with self.lock:
+                self.closed = False
+            raise
         atexit.unregister(self.close)
 
 

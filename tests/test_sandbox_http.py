@@ -363,3 +363,25 @@ def test_duplicate_start_for_one_visitor_reserves_one_workspace(village):
     assert len(village.extensions["villages"].workspaces) == 1
     with first.session_transaction() as a, duplicate.session_transaction() as b:
         assert a["workspace"] == b["workspace"]
+
+
+@pytest.mark.integration
+def test_shutdown_cleans_every_worker_when_scratch_postgres_is_unavailable(village):
+    _enter(village.test_client())
+    _enter(village.test_client())
+    manager = village.extensions["villages"]
+    workspaces = list(manager.workspaces.values())
+    manager.postgres.close()
+    try:
+        manager.close()
+        assert all(workspace["process"].poll() is not None for workspace in workspaces)
+        assert all(not workspace["directory"].exists() for workspace in workspaces)
+        assert not manager.postgres.directory.exists()
+        manager.close()
+    finally:
+        # A failing shutdown regression must not leave test-owned children alive.
+        for workspace in workspaces:
+            process = workspace["process"]
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait(timeout=5)
