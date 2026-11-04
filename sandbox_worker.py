@@ -29,7 +29,7 @@ def create_worker():
         raise RuntimeError("sandbox PostgreSQL required")
     from sandbox_seed import seed_village
 
-    seed_village(db)
+    seed_village(db, directory)
     web = create_app(
         {
             "SESSION_COOKIE_NAME": "openleg_product",

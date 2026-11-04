@@ -4,6 +4,7 @@
 
 import argparse
 import json
+import logging
 import os
 import signal
 import sys
@@ -72,6 +73,8 @@ def main():
             lifetime_seconds=args.lifetime_seconds,
             origin=args.origin or f"http://127.0.0.1:{args.port}",
         )
+        # Access URLs can contain single-use tokens; keep them out of terminal logs.
+        logging.getLogger("werkzeug").setLevel(logging.WARNING)
         web.run(host="127.0.0.1", port=args.port, use_reloader=False, threaded=True)
     finally:
         if web:

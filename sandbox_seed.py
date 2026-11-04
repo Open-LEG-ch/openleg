@@ -2,6 +2,8 @@
 """Versioned fictional village fixtures, used only inside disposable workers."""
 
 import json
+import tempfile
+from pathlib import Path
 
 SEED_VERSION = "sonnwil/1"
 PERSONAS = (
@@ -37,18 +39,12 @@ FIXTURE_MANIFEST = {
 }
 
 
-def seed_village(db):
-    with db.get_connection() as connection, connection.cursor() as cursor:
-        cursor.execute("""CREATE TABLE IF NOT EXISTS sandbox_fixture (
-            singleton BOOLEAN PRIMARY KEY CHECK (singleton),
-            version TEXT NOT NULL, manifest JSONB NOT NULL
-        )""")
-        cursor.execute("SELECT version FROM sandbox_fixture WHERE singleton = TRUE")
-        previous = cursor.fetchone()
-        if previous:
-            if previous["version"] != SEED_VERSION:
-                raise RuntimeError("sandbox fixture version mismatch")
-            return
+def seed_village(db, directory):
+    manifest = Path(directory) / "fixture.json"
+    if manifest.exists():
+        if json.loads(manifest.read_text())["version"] != SEED_VERSION:
+            raise RuntimeError("sandbox fixture version mismatch")
+        return
     for identifier, address, consumption, solar in PERSONAS:
         if not db.save_building(
             identifier,
@@ -89,7 +85,9 @@ def seed_village(db):
                 ),
             ),
         )
-        cursor.execute(
-            "INSERT INTO sandbox_fixture (singleton, version, manifest) VALUES (TRUE, %s, %s)",
-            (SEED_VERSION, json.dumps(FIXTURE_MANIFEST)),
-        )
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=directory, prefix=".fixture-", delete=False
+    ) as output:
+        json.dump(FIXTURE_MANIFEST, output)
+        pending = Path(output.name)
+    pending.replace(manifest)
