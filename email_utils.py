@@ -19,6 +19,10 @@ SMTP_TIMEOUT_SECONDS = 10
 
 
 def send_email(to_email, subject, body, html=False, from_email=None, *, private=False):
+    if os.environ.get("OPENLEG_SANDBOX_WORKER") == "1":
+        from sandbox_mail import capture
+
+        return capture(to_email, subject, body)
     recipient_label = "[private recipient]" if private else to_email
     if not EMAIL_ENABLED:
         logger.info(f"[EMAIL] (dev) Would send to {recipient_label}: {subject}")

@@ -12437,3 +12437,77 @@ msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 #~ msgstr ""
 #~ "Tragen Sie Ihre E-Mail-Adresse ein. Falls ein Profil existiert, senden wir Ihnen einen\n"
 #~ "            sicheren Bestätigungslink. Erst dieser Link löscht Ihre Daten."
+
+#: templates/sandbox/
+msgid "Ihr eigenes Übungsdorf"
+msgstr "Ihr eigenes Übungsdorf"
+
+#: templates/sandbox/
+msgid "Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen Dorf. Sie brauchen keine persönlichen Angaben."
+msgstr "Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen Dorf. Sie brauchen keine persönlichen Angaben."
+
+#: templates/sandbox/
+msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
+msgstr "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
+
+#: templates/sandbox/
+msgid "Als Haushalt anmelden"
+msgstr "Als Haushalt anmelden"
+
+#: templates/sandbox/
+#, python-format
+msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
+msgstr "Ihre Sitzung endet nach %(minutes)s Minuten."
+
+#: templates/sandbox/
+msgid "E-Mails, Dokumente und Zahlungen sind Simulationen."
+msgstr "E-Mails, Dokumente und Zahlungen sind Simulationen."
+
+#: templates/sandbox/
+msgid "Sonnwil ausprobieren"
+msgstr "Sonnwil ausprobieren"
+
+#: templates/sandbox/
+msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
+msgstr "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
+
+#: templates/sandbox/
+msgid "Energieprofil ändern"
+msgstr "Energieprofil ändern"
+
+#: templates/sandbox/
+msgid "Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen sehen Sie den neuen Wert."
+msgstr "Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen sehen Sie den neuen Wert."
+
+#: templates/sandbox/
+msgid "Simuliertes Postfach"
+msgstr "Simuliertes Postfach"
+
+#: templates/sandbox/
+msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
+msgstr "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
+
+#: templates/sandbox/
+#, python-format
+msgid "An %(recipient)s"
+msgstr "An %(recipient)s"
+
+#: templates/sandbox/
+msgid "Link im Übungsdorf öffnen"
+msgstr "Link im Übungsdorf öffnen"
+
+#: templates/sandbox/
+msgid "Noch keine simulierten Nachrichten."
+msgstr "Noch keine simulierten Nachrichten."
+
+#: templates/sandbox/
+msgid "Haushalt Musterweg 1"
+msgstr "Haushalt Musterweg 1"
+
+#: templates/sandbox/
+msgid "Übungsdorf"
+msgstr "Übungsdorf"
+
+#: templates/sandbox/
+msgid "Postfach"
+msgstr "Postfach"

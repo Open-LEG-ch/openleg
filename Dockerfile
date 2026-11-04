@@ -11,6 +11,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     libpangocairo-1.0-0 \
     libgdk-pixbuf-2.0-0 \
     libffi-dev \
+    libseccomp2 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

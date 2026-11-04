@@ -8,6 +8,7 @@
   {% block head_extra %}{% endblock %}
 </head>
 <body class="{% block body_class %}bg-paper text-ink{% endblock %}">
+  {% include 'sandbox/banner.html' %}
   {% include 'partials/site_nav.html' %}
   <main id="main-content" tabindex="-1">
     {% block content %}{% endblock %}

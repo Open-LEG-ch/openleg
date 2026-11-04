@@ -12550,3 +12550,77 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 #~ msgstr ""
 #~ "Entrez votre adresse e-mail. Si un profil existe, nous vous en enverrons un\n"
 #~ "            lien de confirmation sécurisé. Seul ce lien supprime vos données."
+
+#: templates/sandbox/
+msgid "Ihr eigenes Übungsdorf"
+msgstr "Votre village d'essai"
+
+#: templates/sandbox/
+msgid "Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen Dorf. Sie brauchen keine persönlichen Angaben."
+msgstr "Essayez OpenLEG avec des ménages fictifs. Vos modifications restent dans votre propre village. Aucune donnée personnelle n'est nécessaire."
+
+#: templates/sandbox/
+msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
+msgstr "Tous les villages d'essai sont occupés. Veuillez réessayer plus tard."
+
+#: templates/sandbox/
+msgid "Als Haushalt anmelden"
+msgstr "Se connecter comme ménage"
+
+#: templates/sandbox/
+#, python-format
+msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
+msgstr "Votre session se termine après %(minutes)s minutes."
+
+#: templates/sandbox/
+msgid "E-Mails, Dokumente und Zahlungen sind Simulationen."
+msgstr "Les e-mails, documents et paiements sont simulés."
+
+#: templates/sandbox/
+msgid "Sonnwil ausprobieren"
+msgstr "Découvrir Sonnwil"
+
+#: templates/sandbox/
+msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
+msgstr "Vous êtes connecté comme ménage fictif à l'adresse Musterweg 1."
+
+#: templates/sandbox/
+msgid "Energieprofil ändern"
+msgstr "Modifier le profil énergétique"
+
+#: templates/sandbox/
+msgid "Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen sehen Sie den neuen Wert."
+msgstr "Ouvrez votre tableau de bord, modifiez la consommation annuelle et enregistrez. Rechargez la page pour voir la nouvelle valeur."
+
+#: templates/sandbox/
+msgid "Simuliertes Postfach"
+msgstr "Boîte de réception simulée"
+
+#: templates/sandbox/
+msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
+msgstr "Ces messages restent dans votre village d'essai. Aucun e-mail n'est envoyé."
+
+#: templates/sandbox/
+#, python-format
+msgid "An %(recipient)s"
+msgstr "À %(recipient)s"
+
+#: templates/sandbox/
+msgid "Link im Übungsdorf öffnen"
+msgstr "Ouvrir le lien dans le village d'essai"
+
+#: templates/sandbox/
+msgid "Noch keine simulierten Nachrichten."
+msgstr "Aucun message simulé pour le moment."
+
+#: templates/sandbox/
+msgid "Haushalt Musterweg 1"
+msgstr "Ménage Musterweg 1"
+
+#: templates/sandbox/
+msgid "Übungsdorf"
+msgstr "Village d'essai"
+
+#: templates/sandbox/
+msgid "Postfach"
+msgstr "Boîte de réception"

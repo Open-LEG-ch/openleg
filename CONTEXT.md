@@ -114,6 +114,11 @@ Domain logic sits above storage and stays free of SQL:
 
 ## Naming Rules
 
+- A **sandbox workspace** is one disposable copy of the fictional village. It
+  owns a dedicated product process and scratch database; it is not a Territory
+  or a LEG. `sandbox_runtime` owns its provisioning and HTTP entry point.
+  `sandbox_network` owns the worker's Unix-only socket boundary.
+
 - `building_id` identifies a registration; `metering_point_id` identifies a
   Messpunkt; `community_id` identifies a LEG. They are not interchangeable.
 - `bfs_number` is always the integer municipality key, never the name.
