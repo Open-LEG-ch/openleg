@@ -6,6 +6,7 @@ from datetime import datetime
 
 import invoice_queries
 from store.operator_api import enqueue_event
+from store.operator_operations import _remember, _replay, request_hash
 
 
 def _get_connection():
@@ -66,10 +67,11 @@ def _event(cur, query_id, actor_id, previous_status, new_status, linked_referenc
         """
             INSERT INTO invoice_query_events (
                 query_id, actor_id, previous_status, new_status, linked_reference
-            ) VALUES (%s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s) RETURNING id
         """,
         (query_id, actor_id, previous_status, new_status, linked_reference),
     )
+    return cur.fetchone()["id"]
 
 
 def record_invoice_query_linkage(cur, invoice_id, actor_id, reference):
@@ -177,37 +179,6 @@ def add_invoice_query_message(
         return True
 
 
-def transition_invoice_query(
-    query_id: int, community_id: str, actor_id: str, target_status: str
-) -> bool:
-    """Lock, validate and record an operator status transition."""
-    with _get_connection() as conn, conn.cursor() as cur:
-        cur.execute(
-            """
-                SELECT status FROM invoice_queries
-                WHERE id = %s AND community_id = %s FOR UPDATE
-            """,
-            (query_id, community_id),
-        )
-        row = cur.fetchone()
-        if not row:
-            return False
-        invoice_queries.require_transition(row["status"], target_status)
-        cur.execute(
-            "UPDATE invoice_queries SET status = %s, updated_at = NOW() WHERE id = %s",
-            (target_status, query_id),
-        )
-        _event(cur, query_id, actor_id, row["status"], target_status)
-        enqueue_event(
-            cur,
-            "invoice.case.updated",
-            str(query_id),
-            community_id,
-            {"status": target_status},
-        )
-        return True
-
-
 def due_invoice_query_reminders(now: datetime) -> list[dict]:
     """List open or acknowledged cases whose reminder deadline has passed."""
     with _get_connection() as conn, conn.cursor() as cur:
@@ -255,31 +226,73 @@ def update_invoice_query(
     """Apply an operator reply and status change in one transaction."""
     validated_message = invoice_queries.validate_message(message) if message else ""
     with _get_connection() as conn, conn.cursor() as cur:
-        cur.execute(
-            """
-                SELECT status FROM invoice_queries
-                WHERE id = %s AND community_id = %s FOR UPDATE
-            """,
-            (query_id, community_id),
-        )
-        row = cur.fetchone()
-        if not row:
-            return False
-        if target_status:
-            invoice_queries.require_transition(row["status"], target_status)
-        if validated_message:
-            _append(cur, query_id, actor_id, validated_message)
-        if target_status:
-            cur.execute(
-                "UPDATE invoice_queries SET status = %s, updated_at = NOW() WHERE id = %s",
-                (target_status, query_id),
-            )
-            _event(cur, query_id, actor_id, row["status"], target_status)
-            enqueue_event(
+        return (
+            _change(
                 cur,
-                "invoice.case.updated",
-                str(query_id),
+                query_id,
                 community_id,
-                {"status": target_status},
+                actor_id,
+                validated_message or None,
+                target_status or None,
             )
-        return True
+            is not None
+        )
+
+
+def _change(cur, query_id, community_id, actor_id, message, target_status):
+    """Own the scoped lock, optional reply, audit identity and event atomically."""
+    cur.execute(
+        "SELECT status FROM invoice_queries WHERE id=%s AND community_id=%s FOR UPDATE",
+        (query_id, community_id),
+    )
+    row = cur.fetchone()
+    if not row:
+        return None
+    if target_status is not None:
+        invoice_queries.require_transition(row["status"], target_status)
+    if message is not None:
+        _append(cur, query_id, actor_id, invoice_queries.validate_message(message))
+    event_id = None
+    if target_status is not None:
+        cur.execute(
+            "UPDATE invoice_queries SET status=%s,updated_at=NOW() WHERE id=%s",
+            (target_status, query_id),
+        )
+        transition_id = _event(cur, query_id, actor_id, row["status"], target_status)
+        event_id = enqueue_event(
+            cur,
+            "invoice.case.updated",
+            str(query_id),
+            community_id,
+            {"status": target_status},
+            event_identity=f"transition:{transition_id}",
+        )
+    return {
+        "id": query_id,
+        "status": target_status or row["status"],
+        "event_id": event_id,
+    }
+
+
+def respond_operator_invoice_case(
+    case_id, community_id, actor_id, message, status, key
+):
+    """Apply a keyed operator response and retain its request-bound replay."""
+    action = f"case.respond:{case_id}"
+    fingerprint = request_hash({"message": message, "status": status})
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s))",
+            (f"{community_id}:{action}:{key}",),
+        )
+        replay = _replay(cur, community_id, action, key, fingerprint)
+        if replay:
+            return replay
+        response = _change(
+            cur, case_id, community_id, actor_id, message or "", status or ""
+        )
+        if response is None:
+            return None
+        response["replayed"] = False
+        _remember(cur, community_id, action, key, fingerprint, response)
+        return response

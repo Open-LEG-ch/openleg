@@ -4,9 +4,6 @@
 import hashlib
 import json
 
-import invoice_queries
-from store.operator_api import enqueue_event
-
 
 def _get_connection():
     import database
@@ -220,54 +217,3 @@ def _remember(cur, community_id, action, key, fingerprint, response):
         "INSERT INTO operator_action_idempotency(community_id,action,idempotency_key,request_hash,response) VALUES (%s,%s,%s,%s,%s::jsonb)",
         (community_id, action, key, fingerprint, json.dumps(response, default=str)),
     )
-
-
-def respond_case(case_id, community_id, actor_id, message, status, key):
-    action = f"case.respond:{case_id}"
-    fingerprint = request_hash({"message": message, "status": status})
-    with _get_connection() as conn, conn.cursor() as cur:
-        cur.execute(
-            "SELECT pg_advisory_xact_lock(hashtext(%s))",
-            (f"{community_id}:{action}:{key}",),
-        )
-        replay = _replay(cur, community_id, action, key, fingerprint)
-        if replay:
-            return replay
-        cur.execute(
-            "SELECT status FROM invoice_queries WHERE id=%s AND community_id=%s FOR UPDATE",
-            (case_id, community_id),
-        )
-        row = cur.fetchone()
-        if not row:
-            return None
-        clean_message = invoice_queries.validate_message(message)
-        invoice_queries.require_transition(row["status"], status)
-        cur.execute(
-            "INSERT INTO invoice_query_messages(query_id,actor_id,message) VALUES (%s,%s,%s)",
-            (case_id, actor_id, clean_message),
-        )
-        cur.execute(
-            "UPDATE invoice_queries SET status=%s,updated_at=NOW() WHERE id=%s",
-            (status, case_id),
-        )
-        cur.execute(
-            "INSERT INTO invoice_query_events(query_id,actor_id,previous_status,new_status) VALUES (%s,%s,%s,%s) RETURNING id",
-            (case_id, actor_id, row["status"], status),
-        )
-        transition_id = cur.fetchone()["id"]
-        event_id = enqueue_event(
-            cur,
-            "invoice.case.updated",
-            str(case_id),
-            community_id,
-            {"status": status},
-            event_identity=f"transition:{transition_id}",
-        )
-        response = {
-            "id": case_id,
-            "status": status,
-            "event_id": event_id,
-            "replayed": False,
-        }
-        _remember(cur, community_id, action, key, fingerprint, response)
-        return response
