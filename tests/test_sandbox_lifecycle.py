@@ -1529,3 +1529,156 @@ def test_shutdown_retries_partial_final_removal_after_database_is_stopped(
     assert not manager.postgres.directory.exists()
     assert not (manager.directory / ".cleanup.json").exists()
     assert not manager.retiring
+
+
+@pytest.mark.parametrize("finish_first", [False, True])
+def test_duplicate_reset_does_not_replace_the_successful_resets_cookie(
+    village, monkeypatch, finish_first
+):
+    """An overlapping or late duplicate cannot erase the replacement cookie."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    first, duplicate = village.test_client(), village.test_client()
+    prefix, _ = _start(first)
+    duplicate.set_cookie("openleg_sandbox", first.get_cookie("openleg_sandbox").value)
+    page = first.get(prefix + "/sandbox/manage")
+    fields = {
+        "csrf_token": _csrf(page),
+        "confirm": "reset",
+        "seed_version": "sonnwil/1",
+    }
+    manager = village.extensions["villages"]
+    destroy, reset = manager.destroy, manager.reset
+    claimed, release, duplicate_entered, completed = Event(), Event(), Event(), Event()
+
+    def pause_before_destroy(identifier, **kwargs):
+        if identifier == prefix.rsplit("/", 1)[1]:
+            claimed.set()
+            assert release.wait(timeout=20)
+        return destroy(identifier, **kwargs)
+
+    def pause_duplicate(*args, **kwargs):
+        if claimed.is_set():
+            duplicate_entered.set()
+            if finish_first:
+                assert completed.wait(timeout=30)
+        return reset(*args, **kwargs)
+
+    monkeypatch.setattr(manager, "destroy", pause_before_destroy)
+    monkeypatch.setattr(manager, "reset", pause_duplicate)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        pending = executor.submit(first.post, prefix + "/sandbox/reset", data=fields)
+        assert claimed.wait(timeout=15)
+        repeated = executor.submit(
+            duplicate.post, prefix + "/sandbox/reset", data=fields
+        )
+        try:
+            assert duplicate_entered.wait(timeout=15)
+            if finish_first:
+                release.set()
+                replacement = pending.result(timeout=30)
+                completed.set()
+                conflict = repeated.result(timeout=15)
+            else:
+                conflict = repeated.result(timeout=15)
+                release.set()
+                replacement = pending.result(timeout=30)
+        finally:
+            release.set()
+            completed.set()
+    assert replacement.status_code == 302
+    assert conflict.status_code == 409
+    assert not conflict.headers.getlist("Set-Cookie")
+    assert first.get(replacement.location, follow_redirects=True).status_code == 200
+    assert first.get(prefix + "/dashboard").status_code == 410
+    assert len(manager.workspaces) == 1 and not manager.replacements
+
+
+def test_authorized_discard_after_reset_does_not_erase_replacement_cookie(
+    village, monkeypatch
+):
+    """A discard authorized before reset must recheck its generation afterward."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from flask import request
+
+    first, discarder = village.test_client(), village.test_client()
+    prefix, _ = _start(first)
+    discarder.set_cookie("openleg_sandbox", first.get_cookie("openleg_sandbox").value)
+    page = first.get(prefix + "/sandbox/manage")
+    fields = {"csrf_token": _csrf(page), "seed_version": "sonnwil/1"}
+    manager = village.extensions["villages"]
+    get = manager.get
+    authorized, release = Event(), Event()
+
+    def pause_owned(identifier):
+        workspace = get(identifier)
+        if workspace and request.path.endswith("/sandbox/discard"):
+            authorized.set()
+            assert release.wait(timeout=30)
+        return workspace
+
+    monkeypatch.setattr(manager, "get", pause_owned)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        pending = executor.submit(
+            discarder.post,
+            prefix + "/sandbox/discard",
+            data={**fields, "confirm": "discard"},
+        )
+        try:
+            assert authorized.wait(timeout=15)
+            replacement = first.post(
+                prefix + "/sandbox/reset", data={**fields, "confirm": "reset"}
+            )
+        finally:
+            release.set()
+        conflict = pending.result(timeout=15)
+    assert replacement.status_code == 302
+    assert conflict.status_code == 409
+    assert not conflict.headers.getlist("Set-Cookie")
+    assert first.get(replacement.location, follow_redirects=True).status_code == 200
+
+
+def test_discard_claim_prevents_an_overlapping_reset(village, monkeypatch):
+    """The first claimed lifecycle action wins without a late cookie rewrite."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from flask import request
+
+    first, resetter = village.test_client(), village.test_client()
+    prefix, _ = _start(first)
+    resetter.set_cookie("openleg_sandbox", first.get_cookie("openleg_sandbox").value)
+    page = first.get(prefix + "/sandbox/manage")
+    fields = {"csrf_token": _csrf(page), "seed_version": "sonnwil/1"}
+    manager = village.extensions["villages"]
+    destroy = manager.destroy
+    claimed, release = Event(), Event()
+
+    def pause_destroy(identifier, **kwargs):
+        if request.path.endswith("/sandbox/discard"):
+            claimed.set()
+            assert release.wait(timeout=20)
+        return destroy(identifier, **kwargs)
+
+    monkeypatch.setattr(manager, "destroy", pause_destroy)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        pending = executor.submit(
+            first.post,
+            prefix + "/sandbox/discard",
+            data={**fields, "confirm": "discard"},
+        )
+        try:
+            assert claimed.wait(timeout=15)
+            conflict = resetter.post(
+                prefix + "/sandbox/reset", data={**fields, "confirm": "reset"}
+            )
+        finally:
+            release.set()
+        discarded = pending.result(timeout=15)
+    assert discarded.status_code == 303
+    assert conflict.status_code == 409
+    assert not conflict.headers.getlist("Set-Cookie")
+    assert not manager.workspaces and not manager.retiring and not manager.replacements

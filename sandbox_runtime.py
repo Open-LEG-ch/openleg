@@ -48,6 +48,10 @@ HOP_HEADERS = {
 }
 
 
+class RetirementConflict(Exception):
+    """Another lifecycle action owns or retired this workspace generation."""
+
+
 def require_private_directory(directory):
     status = directory.stat()
     if status.st_uid != os.getuid() or status.st_mode & 0o077:
@@ -220,6 +224,7 @@ class Villages:
         self.workspaces = {}
         self.retiring = {}
         self.replacements = set()
+        self.retirement_claims = set()
         self.stop_reaper = threading.Event()
         self.closed = False
         try:
@@ -496,18 +501,36 @@ class Villages:
                 "Scratch cleanup journal failed: %s", type(error).__name__
             )
 
-    def reset(self, identifier, origin, locale, owner):
+    @contextmanager
+    def _claim_retirement(self, identifier, *, replacement=False):
+        """Claim one browser lifecycle action without blocking in-flight work."""
         with self.lock:
-            if identifier not in self.workspaces or identifier in self.replacements:
-                return None
-            self.replacements.add(identifier)
+            if (
+                identifier not in self.workspaces
+                or identifier in self.retirement_claims
+            ):
+                raise RetirementConflict(identifier)
+            self.retirement_claims.add(identifier)
+            if replacement:
+                self.replacements.add(identifier)
         try:
+            yield
+        finally:
+            with self.lock:
+                self.retirement_claims.discard(identifier)
+                if replacement:
+                    self.replacements.discard(identifier)
+
+    def reset(self, identifier, origin, locale, owner):
+        with self._claim_retirement(identifier, replacement=True):
             if not self.destroy(identifier):
                 return None
             return self.create(origin, locale, owner=owner, replacement=identifier)
-        finally:
-            with self.lock:
-                self.replacements.discard(identifier)
+
+    def discard(self, identifier):
+        """Discard once; a conflicting late response must not rewrite a cookie."""
+        with self._claim_retirement(identifier):
+            return self.destroy(identifier)
 
     def destroy(self, identifier, *, retry=False):
         with self.lock:
@@ -760,6 +783,8 @@ def create_gateway(
                 workspace = villages.reset(
                     identifier, origin, session.get("locale", "de_CH"), session["csrf"]
                 )
+            except RetirementConflict:
+                abort(409)
             except OverflowError:
                 session.pop("workspace", None)
                 return startup_unavailable(capacity=True)
@@ -771,7 +796,11 @@ def create_gateway(
                 return render_template("sandbox/expired.html", cleanup_failed=True), 503
             session["workspace"] = workspace["id"]
             return redirect("/v/" + workspace["id"] + "/sandbox/enter")
-        if not villages.destroy(identifier):
+        try:
+            discarded = villages.discard(identifier)
+        except RetirementConflict:
+            abort(409)
+        if not discarded:
             session.pop("workspace", None)
             return render_template("sandbox/expired.html", cleanup_failed=True), 503
         session.pop("workspace", None)

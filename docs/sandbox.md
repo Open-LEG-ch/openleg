@@ -64,7 +64,7 @@ persistence guarantee across restarts.
 PostgreSQL version and initialization commands have 60-second deadlines; start
 and stop commands have 120-second deadlines. Repeated shutdown signals are
 ignored while cleanup runs. Failed cleanup retains its runner record and scratch
-resources. Automatic crash-resource recovery remains tracked in #770.
+resources for the next start to reclaim.
 
 ## Boundaries
 
