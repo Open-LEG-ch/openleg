@@ -466,15 +466,30 @@ def test_intervening_asset_request_does_not_consume_the_selected_initial_account
     assert dashboard.request.path.endswith("/leg/dashboard")
 
 
-def test_copied_pre_downgrade_cookie_never_restores_admin_authority_even_after_reload(
-    village,
-):
+def _reload_worker(village, prefix):
+    """Wait for a fresh product worker using the same persisted village files."""
     import signal
     import time
     from pathlib import Path
 
-    import pytest
+    manager = village.extensions["villages"]
+    workspace = manager.workspaces[prefix.rsplit("/", 1)[1]]
+    master = workspace["process"]
+    children = Path(f"/proc/{master.pid}/task/{master.pid}/children")
+    original = set(children.read_text().split())
+    master.send_signal(signal.SIGHUP)
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        current = set(children.read_text().split())
+        if current and not current.intersection(original):
+            return
+        time.sleep(0.05)
+    pytest.fail("product worker did not restart")
 
+
+def test_copied_pre_downgrade_cookie_never_restores_admin_authority_even_after_reload(
+    village,
+):
     client = village.test_client()
     prefix, admin = _start(client, "administrator")
     cookie = client.get_cookie("openleg_product", path=prefix).value
@@ -485,20 +500,7 @@ def test_copied_pre_downgrade_cookie_never_restores_admin_authority_even_after_r
     assert client.post(policy, data={"csrf_token": _csrf(resident)}).status_code == 403
     for restart in (False, True):
         if restart:
-            manager = village.extensions["villages"]
-            workspace = manager.workspaces[prefix.rsplit("/", 1)[1]]
-            master = workspace["process"]
-            children = Path(f"/proc/{master.pid}/task/{master.pid}/children")
-            original = set(children.read_text().split())
-            master.send_signal(signal.SIGHUP)
-            deadline = time.monotonic() + 15
-            while time.monotonic() < deadline:
-                current = set(children.read_text().split())
-                if current and not current.intersection(original):
-                    break
-                time.sleep(0.05)
-            else:
-                pytest.fail("product worker did not restart")
+            _reload_worker(village, prefix)
         client.set_cookie("openleg_product", cookie, path=prefix)
         assert client.post(policy, data={"csrf_token": csrf}).status_code in (
             400,

@@ -951,7 +951,6 @@ msgstr ""
 "selben Netzgebiet angeschlossen, nutzen höchstens"
 
 #: templates/how-it-works.html:52
-#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1230,7 +1229,6 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h StromVV"
 
 #: templates/leg_kalkulator.html:267
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1253,7 +1251,6 @@ msgstr ""
 "Spannungstransformation."
 
 #: templates/leg_kalkulator.html:288
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -2535,7 +2532,6 @@ msgid "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil trage
 msgstr "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil tragen."
 
 #: templates/gemeinde/methodik.html:95
-#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -3267,7 +3263,7 @@ msgstr "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 
-#: sandbox_seed.py:45 sandbox_worker.py:75
+#: sandbox_seed.py:45 sandbox_worker.py:83
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 
@@ -4120,7 +4116,7 @@ msgstr "Energieprofil und Einwilligungen gespeichert."
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 
-#: sandbox_seed.py:27 sandbox_worker.py:69
+#: sandbox_seed.py:27 sandbox_worker.py:77
 msgid "Energieprofil ändern"
 msgstr "Energieprofil ändern"
 
@@ -4674,7 +4670,6 @@ msgid "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutz
 msgstr "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um"
 
 #: templates/how-it-works.html:42
-#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -5463,7 +5458,7 @@ msgstr "Haftungsausschluss"
 msgid "Hallo,"
 msgstr "Hallo,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:64 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:72 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
@@ -5693,7 +5688,7 @@ msgstr "Ihr eigenes Übungsdorf"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 
-#: sandbox_worker.py:70
+#: sandbox_worker.py:78
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Ihr neuer Haushalt ist bestätigt."
 
@@ -7992,7 +7987,7 @@ msgstr "Neuen Schlüssel erstellen"
 msgid "Neuenburg"
 msgstr "Neuenburg"
 
-#: sandbox_worker.py:63
+#: sandbox_worker.py:71
 msgid "Neuer Haushalt"
 msgstr "Neuer Haushalt"
 
@@ -9391,7 +9386,6 @@ msgstr ""
 "Buchstabe oder Ziffer."
 
 #: templates/llms.txt:9
-#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -10070,7 +10064,6 @@ msgstr ""
 "              Die Kennzahl zeigt, welchen Anteil des Dachpotenzials eine Gemeinde schon nutzt."
 
 #: templates/gemeinde/rangliste.html:127
-#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
@@ -12494,7 +12487,7 @@ msgstr "» weiterhin aktuell ist."
 msgid "Ändern"
 msgstr "Ändern"
 
-#: sandbox_seed.py:44 sandbox_worker.py:72
+#: sandbox_seed.py:44 sandbox_worker.py:80
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 
