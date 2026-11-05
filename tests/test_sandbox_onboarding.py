@@ -341,9 +341,9 @@ def _workspace_connection(gateway, client):
     return psycopg2.connect(make_dsn(manager.postgres.dsn, dbname=name))
 
 
-@pytest.mark.parametrize("fail_rotation", [False, True])
+@pytest.mark.parametrize("wait_for_token_lock", [False, True])
 def test_mailbox_deletion_retires_cookies_before_the_household_can_be_recreated(
-    village, fail_rotation
+    village, wait_for_token_lock
 ):
     owner, anonymous = village.test_client(), village.test_client()
     prefix, _ = _start(owner, "resident")
@@ -356,8 +356,8 @@ def test_mailbox_deletion_retires_cookies_before_the_household_can_be_recreated(
         == 200
     )
     deletion = _mail_link(owner, prefix, "/unsubscribe/")
-    if fail_rotation:
-        _delete_while_generation_becomes_read_only(village, anonymous, deletion)
+    if wait_for_token_lock:
+        _delete_after_observing_generation_rotation(village, anonymous, deletion)
     else:
         assert anonymous.post(deletion).status_code == 200
     # No authenticated read occurs between deletion and a complete new signup.
@@ -384,44 +384,84 @@ def test_mailbox_deletion_retires_cookies_before_the_household_can_be_recreated(
     assert owner.get(prefix + "/dashboard/export").status_code == 401
 
 
-def _delete_while_generation_becomes_read_only(gateway, client, deletion):
+def _delete_after_observing_generation_rotation(gateway, client, deletion):
     with client.session_transaction() as state:
         manager = gateway.extensions["villages"]
         nonce = (
             manager.workspaces[state["workspace"]]["directory"] / ".session-generation"
         )
+    previous = nonce.read_text()
+    with _workspace_connection(gateway, client) as blocker:
+        with blocker.cursor() as cursor:
+            cursor.execute(
+                "SELECT token FROM tokens WHERE token = %s FOR UPDATE",
+                (deletion.rsplit("/", 1)[1],),
+            )
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            pending = executor.submit(client.post, deletion)
+            try:
+                with _workspace_connection(gateway, client) as probe:
+                    probe.autocommit = True
+                    with probe.cursor() as cursor:
+                        deadline = time.monotonic() + 5
+                        while time.monotonic() < deadline:
+                            cursor.execute("SELECT pg_stat_clear_snapshot()")
+                            cursor.execute(
+                                "SELECT 1 FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%FROM tokens%' AND query LIKE '%FOR UPDATE%'"
+                            )
+                            if cursor.fetchone():
+                                break
+                            time.sleep(0.02)
+                        else:
+                            pytest.fail(
+                                "deletion did not reach its locked token after session validation"
+                            )
+                assert nonce.read_text() != previous
+            finally:
+                blocker.rollback()
+            response = pending.result(timeout=10)
+            assert response.status_code == 200
+
+
+def test_unavailable_login_binding_blocks_deletion_without_consuming_its_token(village):
+    """A deterministic filesystem failure refuses deletion before any commit."""
+    owner, anonymous = village.test_client(), village.test_client()
+    prefix, _ = _start(owner, "resident")
+    copied_cookie = owner.get_cookie("openleg_product", path=prefix).value
+    anonymous.set_cookie("openleg_sandbox", owner.get_cookie("openleg_sandbox").value)
+    assert (
+        owner.post(
+            prefix + "/unsubscribe", data={"email": "sonnwil-resident@example.org"}
+        ).status_code
+        == 200
+    )
+    deletion = _mail_link(owner, prefix, "/unsubscribe/")
+    with owner.session_transaction() as state:
+        workspace = village.extensions["villages"].workspaces[state["workspace"]]
+    generation = workspace["directory"] / ".session-generation"
+    backup = generation.with_suffix(".test-backup")
+    generation.rename(backup)
+    generation.mkdir(mode=0o700)
     try:
-        with _workspace_connection(gateway, client) as blocker:
-            with blocker.cursor() as cursor:
-                cursor.execute(
-                    "SELECT token FROM tokens WHERE token = %s FOR UPDATE",
-                    (deletion.rsplit("/", 1)[1],),
-                )
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                pending = executor.submit(client.post, deletion)
-                try:
-                    with _workspace_connection(gateway, client) as probe:
-                        probe.autocommit = True
-                        with probe.cursor() as cursor:
-                            deadline = time.monotonic() + 5
-                            while time.monotonic() < deadline:
-                                cursor.execute(
-                                    "SELECT 1 FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%FROM tokens%' AND query LIKE '%FOR UPDATE%'"
-                                )
-                                if cursor.fetchone():
-                                    break
-                                time.sleep(0.02)
-                            else:
-                                pytest.fail(
-                                    "deletion did not reach its locked token after session validation"
-                                )
-                    nonce.chmod(0o400)
-                finally:
-                    blocker.rollback()
-                response = pending.result(timeout=10)
-                assert response.status_code in (200, 503)
+        assert anonymous.post(deletion).status_code == 503
+        with (
+            _workspace_connection(village, owner) as connection,
+            connection.cursor() as cursor,
+        ):
+            cursor.execute(
+                "SELECT verified FROM buildings WHERE building_id='sonnwil-resident'"
+            )
+            assert cursor.fetchone() == (True,)
+            cursor.execute(
+                "SELECT token FROM tokens WHERE token=%s", (deletion.rsplit("/", 1)[1],)
+            )
+            assert cursor.fetchone() is not None
     finally:
-        nonce.chmod(0o600)
+        generation.rmdir()
+        backup.rename(generation)
+    assert anonymous.post(deletion).status_code == 200
+    owner.set_cookie("openleg_product", copied_cookie, path=prefix)
+    assert owner.get(prefix + "/dashboard/export").status_code == 401
 
 
 def test_expired_confirmation_and_access_links_require_fresh_captured_mail(village):
