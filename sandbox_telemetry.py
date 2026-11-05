@@ -38,6 +38,7 @@ ERRORS = {
 
 
 def _directory():
+    """Locate the current worker's private local-source state directory."""
     directory = Path(os.environ["OPENLEG_SANDBOX_DIRECTORY"]).resolve()
     if os.environ.get("OPENLEG_SANDBOX_WORKER") != "1" or directory != Path.cwd():
         raise RuntimeError("local telemetry requires a village worker")
@@ -47,6 +48,7 @@ def _directory():
 
 
 def _read(path):
+    """Read saved local-source state or return its initial paused flag."""
     if not path.exists():
         return {"paused": False}
     return json.loads(path.read_text())
@@ -74,6 +76,7 @@ def _source(installation):
 
 
 def _owned(actor, installation):
+    """Resolve an installation belonging to the current household."""
     row = next(
         (
             row
@@ -98,11 +101,13 @@ def _issue_display(state, installation, credential):
 
 
 def _success(result):
+    """Keep an action receipt for the next telemetry page."""
     session["sandbox_telemetry_result"] = result
     return redirect("/sandbox/telemetry", code=303)
 
 
 def _present(*, error=None, status=200):
+    """Render owned installations and consume any one-use credential display."""
     actor = _require_dashboard_session()
     rows = db.list_telemetry_installations(COMMUNITY, actor)
     credential = None
@@ -135,6 +140,7 @@ def _present(*, error=None, status=200):
 
 
 def _samples(row, fault):
+    """Build synthetic power and fault samples after the stored highwater mark."""
     observed = datetime.now(UTC).isoformat()
     samples = []
     for offset, metric in enumerate(("power", "device_fault"), 1):
@@ -169,6 +175,7 @@ def install(web):
 
     @bp.errorhandler(TelemetryError)
     def local_telemetry_error(error):
+        """Render safe telemetry errors without caching credential responses."""
         try:
             return _present(error=error.code, status=error.status)
         except TelemetryError:
@@ -176,6 +183,7 @@ def install(web):
 
     @bp.get("/sandbox/telemetry")
     def sandbox_telemetry():
+        """Show the current household's local telemetry exercise."""
         try:
             return _present()
         except DatabaseError:
@@ -183,6 +191,7 @@ def install(web):
 
     @bp.post("/sandbox/telemetry/enroll")
     def sandbox_telemetry_enroll():
+        """Enroll a confirmed local source and queue its credential display."""
         actor = _require_dashboard_session()
         _require_dashboard_csrf()
         if request.form.get("confirm") != "yes":
@@ -206,6 +215,7 @@ def install(web):
 
     @bp.post("/sandbox/telemetry/<uuid:installation>/<action>")
     def sandbox_telemetry_control(installation, action):
+        """Apply an authorized local-source action under its publication lock."""
         actor = _require_dashboard_session()
         _require_dashboard_csrf()
         installation = str(installation)

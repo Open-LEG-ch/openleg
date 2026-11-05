@@ -62,6 +62,7 @@ def _result(response):
 def test_local_source_uses_real_freshness_faults_credentials_and_billing_isolation(
     village,
 ):
+    """Local samples retain normal freshness, fault and credential behavior without billing writes."""
     client = village.test_client()
     prefix, _ = _issued(village, client)
     _switch(client, prefix, "resident")
@@ -161,6 +162,7 @@ def test_local_source_uses_real_freshness_faults_credentials_and_billing_isolati
 
 
 def test_source_and_shares_recheck_owner_consent_and_workspace(village, monkeypatch):
+    """Source controls and shares recheck ownership, consent and visitor scope."""
     client = village.test_client()
     prefix, _ = _start(client, "resident")
     path = prefix + "/sandbox/telemetry"
@@ -264,6 +266,7 @@ def test_source_and_shares_recheck_owner_consent_and_workspace(village, monkeypa
 
 
 def test_concurrent_local_publish_uses_distinct_monotonic_sequences(village):
+    """Concurrent local publications allocate distinct monotonic sequences."""
     from concurrent.futures import ThreadPoolExecutor
     from threading import Barrier
 
