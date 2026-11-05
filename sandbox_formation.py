@@ -36,8 +36,6 @@ class SimulationAdapter:
                 {
                     vnb_exchange.FORMATION_SUBMISSION,
                     vnb_exchange.PARTICIPANT_JOIN,
-                    vnb_exchange.PARTICIPANT_EXIT,
-                    vnb_exchange.PARTICIPANT_CHANGE,
                 }
             ),
         )
