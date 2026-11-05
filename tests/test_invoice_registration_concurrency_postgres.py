@@ -27,6 +27,7 @@ pytestmark = pytest.mark.integration
 def test_deletion_waits_for_the_frozen_registration_transaction(
     rounded_delivery, monkeypatch, phase
 ):
+    """Deletion waits for persistence or issuance to release its registration locks."""
     client, db, payload, source = rounded_delivery
     assert precision.e66.post_e66(client, source).status_code == 201
     start, end = (
@@ -46,12 +47,14 @@ def test_deletion_waits_for_the_frozen_registration_transaction(
     deletion_pid = []
 
     def hold_registration(*args):
+        """Pause after the real registration locks have been acquired."""
         original_lock(*args)
         locked.set()
         assert release.wait(15), "billing transaction was not released"
 
     @contextmanager
     def observe_connection():
+        """Expose the deletion backend so the test can prove it is blocked."""
         with original_connection() as connection:
             if threading.current_thread().name.startswith("registration-delete"):
                 deletion_pid.append(connection.get_backend_pid())
@@ -62,6 +65,7 @@ def test_deletion_waits_for_the_frozen_registration_transaction(
     monkeypatch.setattr(db, "get_connection", observe_connection)
 
     def bill():
+        """Run the selected persistence or issuance phase on its own connection."""
         if phase == "persistence":
             return billing_runner.run_billing_period(
                 cid, start, end, prepared_by="member"

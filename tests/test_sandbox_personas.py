@@ -254,6 +254,7 @@ def test_limited_operator_can_prepare_battery_but_not_change_access_or_foreign_l
 
 
 def test_real_foreign_invoice_equipment_attachment_and_community_stay_private(village):
+    """Changing persona does not expose another member's invoices, equipment or evidence."""
     from copy import deepcopy
 
     from psycopg2.extras import Json

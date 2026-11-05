@@ -17,6 +17,7 @@ pytestmark = pytest.mark.integration
 def test_invoice_notice_uses_member_language_and_keeps_delivery_idempotent(
     interest_database, locale
 ):
+    """Invoice notices use the original member's language and idempotent delivery."""
     db = interest_database
     for identifier, preferred in (("operator", "de_CH"), ("member", locale)):
         assert db.save_building(

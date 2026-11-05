@@ -8,6 +8,7 @@ import sandbox_mail
 
 
 def test_legacy_and_replacement_invoice_mail_stays_hidden(tmp_path, monkeypatch):
+    """Captured invoice mail requires the viewer's current original-registration proof."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("OPENLEG_SANDBOX_DIRECTORY", str(tmp_path))
     monkeypatch.setenv("OPENLEG_SANDBOX_WORKER", "1")

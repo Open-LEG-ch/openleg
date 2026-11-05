@@ -15,6 +15,7 @@ _csrf = test_sandbox_http._csrf
 
 
 def _prepared(village, client):
+    """Prepare a real September draft and switch to its administrator."""
     prefix, _ = _start(client, "operator")
     _policy(client, prefix)
     _import(client, prefix)
@@ -30,6 +31,7 @@ def _prepared(village, client):
 
 
 def _issued(village, client, *, deliver=True):
+    """Issue the fictional invoices and optionally deliver them normally."""
     prefix, period = _prepared(village, client)
     page = client.get(prefix + COMMUNITY + "/billing")
     assert (
@@ -59,6 +61,7 @@ def _issued(village, client, *, deliver=True):
 
 
 def _recreate_registration(client, prefix, replacement_email):
+    """Delete and re-register the same building through ordinary confirmation links."""
     assert (
         client.post(
             prefix + "/unsubscribe", data={"email": "sonnwil-resident@example.org"}
@@ -102,6 +105,7 @@ def _recreate_registration(client, prefix, replacement_email):
 def test_recreated_household_cannot_read_previous_registration_invoice(
     village, replacement_email
 ):
+    """A replacement registration cannot inherit retained invoices or their captured mail."""
     client = village.test_client()
     prefix, invoices = _issued(village, client)
     _switch(client, prefix, "resident")
@@ -151,6 +155,7 @@ def test_recreated_household_cannot_read_previous_registration_invoice(
 
 
 def test_legacy_unbound_invoice_stays_retained_without_member_access(village):
+    """Legacy unbound invoices stay retained for operators without member access or delivery."""
     client = village.test_client()
     prefix, invoices = _issued(village, client, deliver=False)
     invoice = invoices["sonnwil-resident"]
@@ -194,6 +199,7 @@ def test_legacy_unbound_invoice_stays_retained_without_member_access(village):
 
 
 def test_changed_draft_registration_cannot_be_approved(village):
+    """Approval refuses a draft whose original participant registration changed."""
     client = village.test_client()
     prefix, period = _prepared(village, client)
     with (
@@ -220,6 +226,7 @@ def test_changed_draft_registration_cannot_be_approved(village):
 
 
 def test_delivery_never_uses_a_replacement_registration_email(village):
+    """Delivery refuses an email belonging to a replacement registration."""
     client = village.test_client()
     prefix, invoices = _issued(village, client, deliver=False)
     invoice = invoices["sonnwil-resident"]
