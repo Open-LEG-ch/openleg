@@ -411,6 +411,10 @@ msgstr "1'000 kWh"
 msgid "1. Adresse prüfen"
 msgstr "1. Adresse prüfen"
 
+#: templates/sandbox/questions.html:9
+msgid "1. Als Lea eine Frage stellen"
+msgstr "1. Als Lea eine Frage stellen"
+
 #: templates/sandbox/billing.html:9
 msgid "1. Quelle und Richtlinie prüfen"
 msgstr "1. Quelle und Richtlinie prüfen"
@@ -443,6 +447,10 @@ msgstr "Finanzprognose über 10 Jahre"
 msgid "15'000 kWh"
 msgstr "15'000 kWh"
 
+#: templates/sandbox/questions.html:12
+msgid "2. Als Sam bestätigen und beantworten"
+msgstr "2. Als Sam bestätigen und beantworten"
+
 #: templates/sandbox/billing.html:17
 msgid "2. Entwurf vorbereiten und freigeben"
 msgstr "2. Entwurf vorbereiten und freigeben"
@@ -466,6 +474,10 @@ msgstr "2. Verteilmodell"
 #: templates/index.html:293
 msgid "2. Ziel sehen"
 msgstr "2. Ziel sehen"
+
+#: templates/sandbox/questions.html:14
+msgid "3. Als Lea die vollständige Historie lesen"
+msgstr "3. Als Lea die vollständige Historie lesen"
 
 #: templates/sandbox/payments.html:36
 msgid "3. Einträge prüfen und eine Zuordnung bestätigen"
@@ -692,6 +704,7 @@ msgstr "Abmeldung | "
 
 #: templates/sandbox/billing.html:2 templates/sandbox/billing.html:5 templates/sandbox/home.html:27
 #: templates/sandbox/home.html:29 templates/sandbox/payments.html:11
+#: templates/sandbox/questions.html:11
 msgid "Abrechnung ausprobieren"
 msgstr "Abrechnung ausprobieren"
 
@@ -1219,7 +1232,7 @@ msgid "Anteil lokal verbrauchbar:"
 msgstr "Anteil lokal verbrauchbar:"
 
 #: templates/api_docs.html:234 templates/leg_billing.html:182 templates/leg_dashboard.html:241
-#: templates/member_invoice_detail.html:213
+#: templates/member_invoice_detail.html:213 templates/sandbox/questions.html:27
 msgid "Antwort"
 msgstr "Antwort"
 
@@ -1230,6 +1243,10 @@ msgstr "Antwort auf Beitritt simulieren"
 #: dashboard.py:922
 msgid "Antwort oder Status ist erforderlich."
 msgstr "Antwort oder Status ist erforderlich."
+
+#: templates/sandbox/questions.html:30
+msgid "Antwort und Status speichern"
+msgstr "Antwort und Status speichern"
 
 #: templates/leg_dashboard.html:275
 msgid "Antwort:"
@@ -1607,7 +1624,7 @@ msgstr "Befehl kopieren"
 msgid "Befehl kopiert."
 msgstr "Befehl kopiert."
 
-#: templates/sandbox/home.html:47
+#: templates/sandbox/home.html:52
 msgid ""
 "Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
@@ -1617,7 +1634,7 @@ msgstr ""
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
 "des Netzbetreibers. Aktivieren Sie die LEG erst mit einem separaten erfundenen Startbeleg."
 
-#: templates/sandbox/home.html:39
+#: templates/sandbox/home.html:44
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
 "sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
@@ -1713,6 +1730,18 @@ msgstr ""
 "gewöhnliche Freigabe. Eine Wiederholung erstellt keine zweite Periode und keine zweiten "
 "Rechnungen. Bei geänderten Eingaben bleibt der ursprüngliche Stand erhalten."
 
+#: templates/sandbox/questions.html:10
+msgid ""
+"Bereiten Sie als Sam eine September-Abrechnung vor, geben Sie sie als Robin frei und stellen Sie "
+"Leas Rechnung zu. Wechseln Sie zu Lea, öffnen Sie die eigene Rechnung und senden Sie eine Frage. "
+"Optional können Sie die eigene SIMULATION-Rechnung als PDF herunterladen und als Beleg anhängen, "
+"höchstens 2 MB."
+msgstr ""
+"Bereiten Sie als Sam eine September-Abrechnung vor, geben Sie sie als Robin frei und stellen Sie "
+"Leas Rechnung zu. Wechseln Sie zu Lea, öffnen Sie die eigene Rechnung und senden Sie eine Frage. "
+"Optional können Sie die eigene SIMULATION-Rechnung als PDF herunterladen und als Beleg anhängen, "
+"höchstens 2 MB."
+
 #: templates/sandbox/home.html:28
 msgid ""
 "Bereiten Sie als Sam einen September-Entwurf vor, geben Sie ihn als Robin frei und prüfen Sie als"
@@ -1796,7 +1825,7 @@ msgstr ""
 msgid "Bestimmt eine Ansprechperson."
 msgstr "Bestimmt eine Ansprechperson."
 
-#: templates/leg_billing.html:183
+#: templates/leg_billing.html:183 templates/sandbox/questions.html:28
 msgid "Bestätigen"
 msgstr "Bestätigen"
 
@@ -3492,7 +3521,7 @@ msgstr "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 
-#: sandbox_seed.py:45 sandbox_worker.py:94
+#: sandbox_seed.py:45 sandbox_worker.py:97
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 
@@ -3737,6 +3766,14 @@ msgstr ""
 #: billing_lifecycle.py:43
 msgid "Dieser Statuswechsel ist nicht zulässig."
 msgstr "Dieser Statuswechsel ist nicht zulässig."
+
+#: sandbox_questions.py:130
+msgid ""
+"Dieser Statuswechsel oder diese Wiederholung ist nicht zulässig. Prüfen Sie den Fall und "
+"verwenden Sie für eine neue Antwort einen neuen Schlüssel."
+msgstr ""
+"Dieser Statuswechsel oder diese Wiederholung ist nicht zulässig. Prüfen Sie den Fall und "
+"verwenden Sie für eine neue Antwort einen neuen Schlüssel."
 
 #: templates/leg_dashboard.html:116
 msgid "Dieser Teilnehmer führt Ladung und Entladung des Speichers über seinen eigenen Messpunkt."
@@ -4447,7 +4484,7 @@ msgstr "Energieprofil und Einwilligungen gespeichert."
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 
-#: sandbox_seed.py:27 sandbox_worker.py:88
+#: sandbox_seed.py:27 sandbox_worker.py:91
 msgid "Energieprofil ändern"
 msgstr "Energieprofil ändern"
 
@@ -4556,7 +4593,7 @@ msgstr "Ergebnis zum Fernzugriff"
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Ergänzen Sie Ihren Stromverbrauch"
 
-#: templates/sandbox/home.html:40
+#: templates/sandbox/home.html:45
 msgid ""
 "Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
@@ -4566,7 +4603,7 @@ msgstr ""
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
 "Freigabe. Widerrufen Sie die Freigabe und prüfen Sie die Liste erneut."
 
-#: templates/leg_billing.html:183
+#: templates/leg_billing.html:183 templates/sandbox/questions.html:28
 msgid "Erledigen"
 msgstr "Erledigen"
 
@@ -4882,7 +4919,7 @@ msgstr "Fortschritt:"
 msgid "Frage senden"
 msgstr "Frage senden"
 
-#: templates/sandbox/home.html:41
+#: templates/sandbox/home.html:46
 msgid ""
 "Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
 "welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
@@ -5609,6 +5646,10 @@ msgstr ""
 "Gespeichert. Öffnen Sie den Bestätigungslink im Postfach. Kehren Sie danach zum Postfach zurück "
 "und fordern Sie dort den Zugangslink an."
 
+#: templates/sandbox/questions.html:35
+msgid "Gespeicherte Fallereignisse"
+msgstr "Gespeicherte Fallereignisse"
+
 #: templates/sandbox/metering.html:37 templates/sandbox/metering.html:39
 msgid "Gespeicherte Messwerte je Messpunkt"
 msgstr "Gespeicherte Messwerte je Messpunkt"
@@ -5792,7 +5833,7 @@ msgstr "Gründung"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Gründung als Arbeitsfolge"
 
-#: templates/sandbox/home.html:48
+#: templates/sandbox/home.html:53
 msgid "Gründung ausprobieren"
 msgstr "Gründung ausprobieren"
 
@@ -5913,7 +5954,7 @@ msgstr "Haftungsausschluss"
 msgid "Hallo,"
 msgstr "Hallo,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:83 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:86 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
@@ -5921,7 +5962,7 @@ msgid_plural "Haushalte"
 msgstr[0] "Haushalt"
 msgstr[1] "Haushalte"
 
-#: templates/sandbox/home.html:38 templates/sandbox/home.html:43 templates/sandbox/onboarding.html:2
+#: templates/sandbox/home.html:43 templates/sandbox/home.html:48 templates/sandbox/onboarding.html:2
 #: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
 msgid "Haushalt anmelden"
 msgstr "Haushalt anmelden"
@@ -6071,6 +6112,10 @@ msgstr "Hinweisstatus geändert"
 msgid "Häufige Fragen"
 msgstr "Häufige Fragen"
 
+#: templates/sandbox/questions.html:29
+msgid "Ich bestätige diese Antwort und den gewählten Status."
+msgstr "Ich bestätige diese Antwort und den gewählten Status."
+
 #: templates/sandbox/payments.html:49
 msgid "Ich habe Betrag, Währung, Richtung, Referenz und Rechnungsstatus geprüft."
 msgstr "Ich habe Betrag, Währung, Richtung, Referenz und Rechnungsstatus geprüft."
@@ -6167,7 +6212,7 @@ msgstr "Ihr eigenes Übungsdorf"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 
-#: sandbox_worker.py:89
+#: sandbox_worker.py:92
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Ihr neuer Haushalt ist bestätigt."
 
@@ -6339,7 +6384,7 @@ msgstr "Ihre übliche Verbrauchszeit, tagsüber oder abends"
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 
-#: templates/sandbox/home.html:42
+#: templates/sandbox/home.html:47
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
 "bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
@@ -7131,7 +7176,8 @@ msgid "Konto nicht verfügbar"
 msgstr "Konto nicht verfügbar"
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/billing.html:34 templates/sandbox/home.html:36 templates/sandbox/payments.html:61
+#: templates/sandbox/billing.html:34 templates/sandbox/home.html:41 templates/sandbox/payments.html:61
+#: templates/sandbox/questions.html:11
 msgid "Konto wechseln"
 msgstr "Konto wechseln"
 
@@ -7328,7 +7374,7 @@ msgid "LEG gesetzlich möglich"
 msgstr "LEG gesetzlich möglich"
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
-#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:46
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:51
 msgid "LEG gründen"
 msgstr "LEG gründen"
 
@@ -7945,6 +7991,7 @@ msgid "Meine Messwerte und ihre Aktualität"
 msgstr "Meine Messwerte und ihre Aktualität"
 
 #: templates/dashboard.html:229 templates/member_invoices.html:11 templates/sandbox/billing.html:34
+#: templates/sandbox/questions.html:11
 msgid "Meine Rechnungen"
 msgstr "Meine Rechnungen"
 
@@ -8623,7 +8670,7 @@ msgstr "Neuen Schlüssel erstellen"
 msgid "Neuenburg"
 msgstr "Neuenburg"
 
-#: sandbox_worker.py:82
+#: sandbox_worker.py:85
 msgid "Neuer Haushalt"
 msgstr "Neuer Haushalt"
 
@@ -8770,7 +8817,7 @@ msgstr "Noch keine Periode"
 msgid "Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen aus."
 msgstr "Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen aus."
 
-#: templates/leg_billing.html:166
+#: templates/leg_billing.html:166 templates/sandbox/questions.html:35
 msgid "Noch keine Statusänderung protokolliert."
 msgstr "Noch keine Statusänderung protokolliert."
 
@@ -8789,6 +8836,14 @@ msgstr "Noch keine angenommene Quelle. Importieren Sie den vollständigen Septem
 #: templates/leg_billing.html:195
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr "Noch keine freigegebenen Rechnungen vorhanden."
+
+#: templates/sandbox/questions.html:34
+msgid ""
+"Noch keine sichtbare Rechnungsfrage. Stellen Sie als Lea eine Frage zur eigenen zugestellten "
+"Rechnung."
+msgstr ""
+"Noch keine sichtbare Rechnungsfrage. Stellen Sie als Lea eine Frage zur eigenen zugestellten "
+"Rechnung."
 
 #: templates/sandbox/inbox.html:23
 msgid "Noch keine simulierten Nachrichten."
@@ -10051,6 +10106,7 @@ msgstr "Neueste Betriebsberichte"
 
 #: templates/documents/member_invoice.html:14 templates/member_invoice_detail.html:4
 #: templates/member_invoice_detail.html:43 templates/sandbox/payments.html:59
+#: templates/sandbox/questions.html:20
 msgid "Rechnung"
 msgstr "Rechnung"
 
@@ -10070,9 +10126,18 @@ msgstr "Rechnungen freigeben"
 msgid "Rechnungsdatum:"
 msgstr "Rechnungsdatum:"
 
+#: templates/sandbox/questions.html:19
+msgid "Rechnungsfrage"
+msgstr "Rechnungsfrage"
+
 #: templates/leg_billing.html:171
 msgid "Rechnungsfragen"
 msgstr "Rechnungsfragen"
+
+#: templates/sandbox/home.html:37 templates/sandbox/home.html:39 templates/sandbox/questions.html:2
+#: templates/sandbox/questions.html:5
+msgid "Rechnungsfragen ausprobieren"
+msgstr "Rechnungsfragen ausprobieren"
 
 #: templates/leg_billing_policy.html:81
 msgid "Rechnungspräfix"
@@ -10321,6 +10386,14 @@ msgstr ""
 "Verbindung zu einer Bank. Beträge und Referenzen beziehen sich ausschliesslich auf Rechnungen "
 "dieses Übungsdorfs."
 
+#: templates/sandbox/questions.html:6
+msgid ""
+"SIMULATION SONNWIL: Fragen, Antworten und Belege bleiben in diesem Übungsdorf. Die ausgestellte "
+"Rechnung wird dadurch nicht geändert."
+msgstr ""
+"SIMULATION SONNWIL: Fragen, Antworten und Belege bleiben in diesem Übungsdorf. Die ausgestellte "
+"Rechnung wird dadurch nicht geändert."
+
 #: sandbox_formation.py:130
 msgid "SIMULATION SONNWIL: LEG-Einladung"
 msgstr "SIMULATION SONNWIL: LEG-Einladung"
@@ -10356,6 +10429,10 @@ msgstr ""
 #: templates/api_docs.html:231
 msgid "Schema"
 msgstr "Schema"
+
+#: templates/sandbox/questions.html:26
+msgid "Schlüssel für diese Antwort"
+msgstr "Schlüssel für diese Antwort"
 
 #: email_automation.py:36
 msgid "Schnelle Frage: Haben Sie einen Smart Meter?"
@@ -11018,7 +11095,8 @@ msgstr "Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert."
 
 #: templates/admin/ops.html:90 templates/admin/ops.html:232 templates/leg_dashboard.html:156
 #: templates/leg_dashboard.html:215 templates/leg_verzeichnis/detail.html:32
-#: templates/leg_verzeichnis/eintragen.html:66 templates/utility/dashboard.html:52
+#: templates/leg_verzeichnis/eintragen.html:66 templates/sandbox/questions.html:28
+#: templates/utility/dashboard.html:52
 msgid "Status"
 msgstr "Status"
 
@@ -11043,6 +11121,14 @@ msgstr "Status:"
 #, python-format
 msgid "Steht auf Ihrer letzten Stromrechnung von %(utility)s."
 msgstr "Steht auf Ihrer letzten Stromrechnung von %(utility)s."
+
+#: templates/sandbox/home.html:38
+msgid ""
+"Stellen Sie als Lea eine Frage zur eigenen Rechnung, antworten Sie als Sam und lesen Sie als Lea "
+"die vollständige Historie."
+msgstr ""
+"Stellen Sie als Lea eine Frage zur eigenen Rechnung, antworten Sie als Sam und lesen Sie als Lea "
+"die vollständige Historie."
 
 #: templates/sandbox/billing.html:33
 msgid ""
@@ -12167,6 +12253,18 @@ msgstr ""
 "Wechseln Sie danach zum betroffenen Mitglied und prüfen Sie den Status der eigenen Rechnung. Die "
 "ausgestellten Beträge bleiben unverändert."
 
+#: templates/sandbox/questions.html:13
+msgid ""
+"Wechseln Sie zu Sam. Bestätigen Sie den Eingang und beantworten Sie danach die Frage mit dem "
+"Status erledigt. Jede angenommene Änderung erhält eine eigene Ereigniskennung. Eine unveränderte "
+"Wiederholung mit demselben Schlüssel fügt keine zweite Antwort hinzu. Ein neuer Inhalt braucht "
+"einen neuen Schlüssel. Ein erledigter Fall kann nicht erneut bestätigt werden."
+msgstr ""
+"Wechseln Sie zu Sam. Bestätigen Sie den Eingang und beantworten Sie danach die Frage mit dem "
+"Status erledigt. Jede angenommene Änderung erhält eine eigene Ereigniskennung. Eine unveränderte "
+"Wiederholung mit demselben Schlüssel fügt keine zweite Antwort hinzu. Ein neuer Inhalt braucht "
+"einen neuen Schlüssel. Ein erledigter Fall kann nicht erneut bestätigt werden."
+
 #: sandbox_formation.py:132
 msgid ""
 "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
@@ -12174,6 +12272,16 @@ msgid ""
 msgstr ""
 "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
 "Einladung ist erfunden."
+
+#: templates/sandbox/questions.html:15
+msgid ""
+"Wechseln Sie zurück zu Lea. Prüfen Sie Antworten, Status, Beleg und Historie hier und in der "
+"eigenen Rechnung. Andere Haushalte sehen diese Frage nicht. Es werden keine Nachrichten an "
+"externe Empfänger gesendet."
+msgstr ""
+"Wechseln Sie zurück zu Lea. Prüfen Sie Antworten, Status, Beleg und Historie hier und in der "
+"eigenen Rechnung. Andere Haushalte sehen diese Frage nicht. Es werden keine Nachrichten an "
+"externe Empfänger gesendet."
 
 #: templates/sandbox/formation.html:58
 msgid "Weiteren Haushalt aufnehmen"
@@ -13464,7 +13572,7 @@ msgstr "» weiterhin aktuell ist."
 msgid "Ändern"
 msgstr "Ändern"
 
-#: sandbox_seed.py:44 sandbox_worker.py:91
+#: sandbox_seed.py:44 sandbox_worker.py:94
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 
