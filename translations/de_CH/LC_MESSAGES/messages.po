@@ -419,6 +419,10 @@ msgstr "1. Quelle und Richtlinie prüfen"
 msgid "1. Rang prüfen"
 msgstr "1. Rang prüfen"
 
+#: templates/sandbox/payments.html:9
+msgid "1. Rechnungen ausstellen und zustellen"
+msgstr "1. Rechnungen ausstellen und zustellen"
+
 #: templates/documents/community_agreement.html:17
 msgid "1. Teilnehmer"
 msgstr "1. Teilnehmer"
@@ -443,6 +447,10 @@ msgstr "15'000 kWh"
 msgid "2. Entwurf vorbereiten und freigeben"
 msgstr "2. Entwurf vorbereiten und freigeben"
 
+#: templates/sandbox/payments.html:14
+msgid "2. Kontoauszüge herunterladen und importieren"
+msgstr "2. Kontoauszüge herunterladen und importieren"
+
 #: templates/index.html:401
 msgid "2. Nachbarn finden"
 msgstr "2. Nachbarn finden"
@@ -458,6 +466,10 @@ msgstr "2. Verteilmodell"
 #: templates/index.html:293
 msgid "2. Ziel sehen"
 msgstr "2. Ziel sehen"
+
+#: templates/sandbox/payments.html:36
+msgid "3. Einträge prüfen und eine Zuordnung bestätigen"
+msgstr "3. Einträge prüfen und eine Zuordnung bestätigen"
 
 #: templates/index.html:297
 msgid "3. Gemeinde anmelden"
@@ -679,7 +691,7 @@ msgid "Abmeldung | "
 msgstr "Abmeldung | "
 
 #: templates/sandbox/billing.html:2 templates/sandbox/billing.html:5 templates/sandbox/home.html:27
-#: templates/sandbox/home.html:29
+#: templates/sandbox/home.html:29 templates/sandbox/payments.html:11
 msgid "Abrechnung ausprobieren"
 msgstr "Abrechnung ausprobieren"
 
@@ -1444,6 +1456,10 @@ msgstr ""
 "Austritt mit 3 Monaten Frist auf Quartalsende. Alle offenen Abrechnungen\n"
 "werden vor Austritt abgeschlossen."
 
+#: templates/sandbox/payments.html:27
+msgid "Auszug in der Abrechnungsübersicht importieren"
+msgstr "Auszug in der Abrechnungsübersicht importieren"
+
 #: payment_reconciliation.py:19
 msgid "Automatisch verbucht"
 msgstr "Automatisch verbucht"
@@ -1533,6 +1549,11 @@ msgstr "Badge einbetten"
 msgid "Bankzahlungen abgleichen"
 msgstr "Bankzahlungen abgleichen"
 
+#: templates/sandbox/home.html:32 templates/sandbox/home.html:34 templates/sandbox/payments.html:2
+#: templates/sandbox/payments.html:5
+msgid "Bankzahlungen ausprobieren"
+msgstr "Bankzahlungen ausprobieren"
+
 #: templates/utility/register.html:50
 msgid "Basel-Landschaft"
 msgstr "Basel-Landschaft"
@@ -1586,7 +1607,7 @@ msgstr "Befehl kopieren"
 msgid "Befehl kopiert."
 msgstr "Befehl kopiert."
 
-#: templates/sandbox/home.html:42
+#: templates/sandbox/home.html:47
 msgid ""
 "Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
@@ -1596,7 +1617,7 @@ msgstr ""
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
 "des Netzbetreibers. Aktivieren Sie die LEG erst mit einem separaten erfundenen Startbeleg."
 
-#: templates/sandbox/home.html:34
+#: templates/sandbox/home.html:39
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
 "sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
@@ -1641,6 +1662,10 @@ msgstr "Beitritt"
 #: templates/sandbox/formation.html:76
 msgid "Beitritt melden oder erneut abrufen"
 msgstr "Beitritt melden oder erneut abrufen"
+
+#: sandbox_payments.py:28
+msgid "Belastung statt Gutschrift"
+msgstr "Belastung statt Gutschrift"
 
 #: templates/admin/abrechnungen.html:120
 msgid "Belastungen"
@@ -1695,6 +1720,18 @@ msgid ""
 msgstr ""
 "Bereiten Sie als Sam einen September-Entwurf vor, geben Sie ihn als Robin frei und prüfen Sie als"
 " Lea oder Noah die eigene erfundene Rechnung."
+
+#: templates/sandbox/payments.html:10
+msgid ""
+"Bereiten Sie zuerst die September-Abrechnung als Sam vor. Geben Sie die Rechnungen als Robin frei"
+" und stellen Sie mindestens zwei Rechnungen mit positivem Betrag zu. Bleiben Sie für den "
+"Zahlungsabgleich als Robin angemeldet. Eine ausgestellte, noch nicht zugestellte Rechnung ist "
+"nicht zahlungsberechtigt."
+msgstr ""
+"Bereiten Sie zuerst die September-Abrechnung als Sam vor. Geben Sie die Rechnungen als Robin frei"
+" und stellen Sie mindestens zwei Rechnungen mit positivem Betrag zu. Bleiben Sie für den "
+"Zahlungsabgleich als Robin angemeldet. Eine ausgestellte, noch nicht zugestellte Rechnung ist "
+"nicht zahlungsberechtigt."
 
 #: templates/index.html:385
 #, python-format
@@ -1967,7 +2004,7 @@ msgstr "Bewohner zur Registrierung einladen"
 msgid "Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner"
 msgstr "Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner"
 
-#: billing_lifecycle.py:17
+#: billing_lifecycle.py:17 templates/sandbox/payments.html:59
 msgid "Bezahlt"
 msgstr "Bezahlt"
 
@@ -2419,6 +2456,10 @@ msgstr "Datei hierher ziehen oder"
 #: templates/admin/ops.html:62
 msgid "Dateien"
 msgstr "Dateien"
+
+#: templates/sandbox/payments.html:20
+msgid "Dateien für diese Rechnung anzeigen"
+msgstr "Dateien für diese Rechnung anzeigen"
 
 #: i18n.py:75
 msgid "Dateiformat nicht unterstützt"
@@ -3451,7 +3492,7 @@ msgstr "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 
-#: sandbox_seed.py:45 sandbox_worker.py:91
+#: sandbox_seed.py:45 sandbox_worker.py:94
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 
@@ -3554,6 +3595,14 @@ msgstr ""
 "Diese Aufnahme stammt aus der echten Demo. Öffnen Sie den Ablauf, prüfen Sie das Verhalten und "
 "starten Sie dieselbe App danach lokal."
 
+#: sandbox_payments.py:143
+msgid ""
+"Diese Auswahl ist nicht zulässig. Nur eine passende CHF-Gutschrift für eine zugestellte Rechnung "
+"kann verbucht werden."
+msgstr ""
+"Diese Auswahl ist nicht zulässig. Nur eine passende CHF-Gutschrift für eine zugestellte Rechnung "
+"kann verbucht werden."
+
 #: templates/gemeinde/verzeichnis.html:135
 msgid "Diese Daten per API nutzen"
 msgstr "Diese Daten per API nutzen"
@@ -3648,6 +3697,10 @@ msgstr ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
 "versuchen Sie es erneut."
+
+#: sandbox_payments.py:152
+msgid "Dieser Eintrag fehlt oder kann nicht bestätigt werden. Prüfen Sie Rechnung, Status und Auszug."
+msgstr "Dieser Eintrag fehlt oder kann nicht bestätigt werden. Prüfen Sie Rechnung, Status und Auszug."
 
 #: templates/leg_billing.html:89
 msgid ""
@@ -4162,6 +4215,20 @@ msgstr "Eine gültige Ersatzrechnung ist erforderlich."
 msgid "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 msgstr "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 
+#: templates/sandbox/payments.html:37
+msgid ""
+"Eine manuelle Auswahl hebt keine Regel auf. Nur CHF-Gutschriften mit exakt passendem Betrag für "
+"zugestellte Rechnungen können verbucht werden. Prüfen Sie unbekannte Referenzen; verlangen Sie "
+"bei falschem Betrag oder Währung einen korrigierten Auszug. Belastungen und Rückbuchungen sind "
+"keine Zahlungseingänge. Wiederholen Sie eine bereits bestätigte Zuordnung unverändert, um die "
+"Wiederholungssicherheit zu prüfen."
+msgstr ""
+"Eine manuelle Auswahl hebt keine Regel auf. Nur CHF-Gutschriften mit exakt passendem Betrag für "
+"zugestellte Rechnungen können verbucht werden. Prüfen Sie unbekannte Referenzen; verlangen Sie "
+"bei falschem Betrag oder Währung einen korrigierten Auszug. Belastungen und Rückbuchungen sind "
+"keine Zahlungseingänge. Wiederholen Sie eine bereits bestätigte Zuordnung unverändert, um die "
+"Wiederholungssicherheit zu prüfen."
+
 #: sandbox_seed.py:53
 msgid "Eine neue LEG gründen"
 msgstr "Eine neue LEG gründen"
@@ -4380,7 +4447,7 @@ msgstr "Energieprofil und Einwilligungen gespeichert."
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 
-#: sandbox_seed.py:27 sandbox_worker.py:85
+#: sandbox_seed.py:27 sandbox_worker.py:88
 msgid "Energieprofil ändern"
 msgstr "Energieprofil ändern"
 
@@ -4489,7 +4556,7 @@ msgstr "Ergebnis zum Fernzugriff"
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Ergänzen Sie Ihren Stromverbrauch"
 
-#: templates/sandbox/home.html:35
+#: templates/sandbox/home.html:40
 msgid ""
 "Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
@@ -4612,6 +4679,10 @@ msgstr "Es lädt einen flachen Checkout des öffentlichen Repos."
 msgid "Es prüft den lokalen Health-Endpunkt."
 msgstr "Es prüft den lokalen Health-Endpunkt."
 
+#: sandbox_payments.py:24
+msgid "Exakte CHF-Gutschrift"
+msgstr "Exakte CHF-Gutschrift"
+
 #: billing_workspace.py:278
 msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
 msgstr "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
@@ -4674,6 +4745,14 @@ msgstr "Fallstudie: LEG-Potenzial in %(name)s"
 #, python-format
 msgid "Fallstudie: Was eine LEG in %(profile_name)s bringt"
 msgstr "Fallstudie: Was eine LEG in %(profile_name)s bringt"
+
+#: sandbox_payments.py:27
+msgid "Falsche Währung"
+msgstr "Falsche Währung"
+
+#: sandbox_payments.py:26
+msgid "Falscher Betrag"
+msgstr "Falscher Betrag"
 
 #: sandbox_metering.py:65
 msgid "Fehlende Viertelstunde"
@@ -4803,7 +4882,7 @@ msgstr "Fortschritt:"
 msgid "Frage senden"
 msgstr "Frage senden"
 
-#: templates/sandbox/home.html:36
+#: templates/sandbox/home.html:41
 msgid ""
 "Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
 "welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
@@ -4857,7 +4936,7 @@ msgstr "Freie Energieinfrastruktur, die man prüfen und selbst betreiben kann."
 msgid "Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz."
 msgstr "Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz."
 
-#: templates/sandbox/billing.html:29
+#: templates/sandbox/billing.html:29 templates/sandbox/payments.html:11
 msgid "Freigabe und Rechnungen öffnen"
 msgstr "Freigabe und Rechnungen öffnen"
 
@@ -5409,6 +5488,14 @@ msgstr "Geplanten Import ausprobieren"
 msgid "Geprüfte Modellbezeichnung"
 msgstr "Geprüfte Modellbezeichnung"
 
+#: templates/sandbox/payments.html:47
+msgid "Geprüfte Zielrechnung"
+msgstr "Geprüfte Zielrechnung"
+
+#: templates/sandbox/payments.html:50
+msgid "Geprüfte Zuordnung bestätigen"
+msgstr "Geprüfte Zuordnung bestätigen"
+
 #: templates/leg_gruenden.html:174
 msgid "Geprüfte und unterzeichnete Gründungsdokumente."
 msgstr "Geprüfte und unterzeichnete Gründungsdokumente."
@@ -5543,6 +5630,10 @@ msgstr "Gespeicherte Positionen vor Freigabe"
 msgid "Gespeicherte Quellen"
 msgstr "Gespeicherte Quellen"
 
+#: templates/sandbox/payments.html:57
+msgid "Gespeicherte Zahlungsereignisse"
+msgstr "Gespeicherte Zahlungsereignisse"
+
 #: templates/equipment_form.html:108
 msgid "Gespeicherte Übergabe herunterladen"
 msgstr "Gespeicherte Übergabe herunterladen"
@@ -5562,6 +5653,10 @@ msgid ""
 msgstr ""
 "Gewichtung: Solar 30 Prozent, Elektroautos 20 Prozent, erneuerbare Heizungen 25 Prozent, "
 "erneuerbare Produktion 25 Prozent."
+
+#: templates/sandbox/payments.html:23
+msgid "Gewählte Rechnung"
+msgstr "Gewählte Rechnung"
 
 #: templates/gemeinde/profil.html:34
 #, python-format
@@ -5697,7 +5792,7 @@ msgstr "Gründung"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Gründung als Arbeitsfolge"
 
-#: templates/sandbox/home.html:43
+#: templates/sandbox/home.html:48
 msgid "Gründung ausprobieren"
 msgstr "Gründung ausprobieren"
 
@@ -5818,7 +5913,7 @@ msgstr "Haftungsausschluss"
 msgid "Hallo,"
 msgstr "Hallo,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:80 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:83 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
@@ -5826,7 +5921,7 @@ msgid_plural "Haushalte"
 msgstr[0] "Haushalt"
 msgstr[1] "Haushalte"
 
-#: templates/sandbox/home.html:33 templates/sandbox/home.html:38 templates/sandbox/onboarding.html:2
+#: templates/sandbox/home.html:38 templates/sandbox/home.html:43 templates/sandbox/onboarding.html:2
 #: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
 msgid "Haushalt anmelden"
 msgstr "Haushalt anmelden"
@@ -5976,6 +6071,10 @@ msgstr "Hinweisstatus geändert"
 msgid "Häufige Fragen"
 msgstr "Häufige Fragen"
 
+#: templates/sandbox/payments.html:49
+msgid "Ich habe Betrag, Währung, Richtung, Referenz und Rechnungsstatus geprüft."
+msgstr "Ich habe Betrag, Währung, Richtung, Referenz und Rechnungsstatus geprüft."
+
 #: templates/leg_billing.html:72
 msgid ""
 "Ich habe Tarif, Abgleich und Quelldokumente geprüft und gebe die Rechnungen dieser Periode "
@@ -6068,7 +6167,7 @@ msgstr "Ihr eigenes Übungsdorf"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 
-#: sandbox_worker.py:86
+#: sandbox_worker.py:89
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Ihr neuer Haushalt ist bestätigt."
 
@@ -6240,7 +6339,7 @@ msgstr "Ihre übliche Verbrauchszeit, tagsüber oder abends"
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 
-#: templates/sandbox/home.html:37
+#: templates/sandbox/home.html:42
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
 "bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
@@ -6270,6 +6369,14 @@ msgstr "Im offenen Verzeichnis ist noch keine LEG aus %(profile_name)s eingetrag
 #: templates/sandbox/metering.html:67
 msgid "Import fehlgeschlagen"
 msgstr "Import fehlgeschlagen"
+
+#: templates/sandbox/home.html:33
+msgid ""
+"Importieren Sie als Robin erfundene Kontoauszüge, prüfen Sie abgelehnte Einträge und bestätigen "
+"Sie eine zulässige Zuordnung. Es wird kein Geld bewegt."
+msgstr ""
+"Importieren Sie als Robin erfundene Kontoauszüge, prüfen Sie abgelehnte Einträge und bestätigen "
+"Sie eine zulässige Zuordnung. Es wird kein Geld bewegt."
 
 #: templates/sandbox/billing.html:10
 msgid ""
@@ -7024,11 +7131,15 @@ msgid "Konto nicht verfügbar"
 msgstr "Konto nicht verfügbar"
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/billing.html:34 templates/sandbox/home.html:31
+#: templates/sandbox/billing.html:34 templates/sandbox/home.html:36 templates/sandbox/payments.html:61
 msgid "Konto wechseln"
 msgstr "Konto wechseln"
 
-#: templates/leg_billing.html:33
+#: templates/sandbox/payments.html:30
+msgid "Kontoauszug (camt.053 oder camt.054)"
+msgstr "Kontoauszug (camt.053 oder camt.054)"
+
+#: templates/leg_billing.html:33 templates/sandbox/payments.html:32
 msgid "Kontoauszug importieren"
 msgstr "Kontoauszug importieren"
 
@@ -7217,7 +7328,7 @@ msgid "LEG gesetzlich möglich"
 msgstr "LEG gesetzlich möglich"
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
-#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:41
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:46
 msgid "LEG gründen"
 msgstr "LEG gründen"
 
@@ -8512,7 +8623,7 @@ msgstr "Neuen Schlüssel erstellen"
 msgid "Neuenburg"
 msgstr "Neuenburg"
 
-#: sandbox_worker.py:79
+#: sandbox_worker.py:82
 msgid "Neuer Haushalt"
 msgstr "Neuer Haushalt"
 
@@ -8638,6 +8749,10 @@ msgstr "Noch keine Gemeinden in dieser Liga. Filter zurücksetzen oder später e
 msgid "Noch keine Interessenmeldungen"
 msgstr "Noch keine Interessenmeldungen"
 
+#: templates/sandbox/payments.html:54
+msgid "Noch keine Kontoauszüge importiert."
+msgstr "Noch keine Kontoauszüge importiert."
+
 #: templates/leg_verzeichnis/leg_check.html:61
 #, python-format
 msgid "Noch keine LEG aus %(profile_name)s eingetragen. Vielleicht gründen Sie die erste?"
@@ -8651,6 +8766,10 @@ msgstr "Noch keine Nachbarn gefunden. Sie können trotzdem starten."
 msgid "Noch keine Periode"
 msgstr "Noch keine Periode"
 
+#: templates/sandbox/payments.html:26
+msgid "Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen aus."
+msgstr "Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen aus."
+
 #: templates/leg_billing.html:166
 msgid "Noch keine Statusänderung protokolliert."
 msgstr "Noch keine Statusänderung protokolliert."
@@ -8658,6 +8777,10 @@ msgstr "Noch keine Statusänderung protokolliert."
 #: templates/leg_billing_policy.html:134
 msgid "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
 msgstr "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
+
+#: templates/sandbox/payments.html:58
+msgid "Noch keine Zahlung verbucht."
+msgstr "Noch keine Zahlung verbucht."
 
 #: templates/sandbox/metering.html:60
 msgid "Noch keine angenommene Quelle. Importieren Sie den vollständigen September."
@@ -9757,7 +9880,7 @@ msgstr "Quelldokumente"
 msgid "Quelldokumente:"
 msgstr "Quelldokumente:"
 
-#: templates/admin/ops.html:89 templates/gemeinde/methodik.html:38
+#: templates/admin/ops.html:89 templates/gemeinde/methodik.html:38 templates/sandbox/payments.html:42
 #: templates/telemetry_dashboard.html:52 templates/telemetry_dashboard.html:126
 #: templates/telemetry_shared.html:50
 msgid "Quelle"
@@ -9927,9 +10050,13 @@ msgid "Recent Ops Snapshots"
 msgstr "Neueste Betriebsberichte"
 
 #: templates/documents/member_invoice.html:14 templates/member_invoice_detail.html:4
-#: templates/member_invoice_detail.html:43
+#: templates/member_invoice_detail.html:43 templates/sandbox/payments.html:59
 msgid "Rechnung"
 msgstr "Rechnung"
+
+#: templates/sandbox/payments.html:18
+msgid "Rechnung für die Übungsdateien"
+msgstr "Rechnung für die Übungsdateien"
 
 #: dashboard.py:893
 msgid "Rechnung nicht gefunden."
@@ -10152,7 +10279,7 @@ msgstr "Rp/kWh"
 msgid "Rundungsausgleich"
 msgstr "Rundungsausgleich"
 
-#: payment_reconciliation.py:24
+#: payment_reconciliation.py:24 sandbox_payments.py:29
 msgid "Rückbuchung"
 msgstr "Rückbuchung"
 
@@ -10183,6 +10310,16 @@ msgid ""
 msgstr ""
 "SIMULATION SONNWIL - Erfundenes Dokument. Keine rechtsgültige Unterschrift, keine "
 "Zahlungsaufforderung und keine Netzbetreiber-Bewilligung."
+
+#: templates/sandbox/payments.html:6
+msgid ""
+"SIMULATION SONNWIL: Diese erfundenen Kontoauszüge lösen keine Überweisung aus. Es gibt keine "
+"Verbindung zu einer Bank. Beträge und Referenzen beziehen sich ausschliesslich auf Rechnungen "
+"dieses Übungsdorfs."
+msgstr ""
+"SIMULATION SONNWIL: Diese erfundenen Kontoauszüge lösen keine Überweisung aus. Es gibt keine "
+"Verbindung zu einer Bank. Beträge und Referenzen beziehen sich ausschliesslich auf Rechnungen "
+"dieses Übungsdorfs."
 
 #: sandbox_formation.py:130
 msgid "SIMULATION SONNWIL: LEG-Einladung"
@@ -11309,6 +11446,10 @@ msgstr "Unbekannte LEG-Rolle: %(roles)s"
 msgid "Unbekannte Netzebene."
 msgstr "Unbekannte Netzebene."
 
+#: sandbox_payments.py:25
+msgid "Unbekannte Referenz, passender Betrag"
+msgstr "Unbekannte Referenz, passender Betrag"
+
 #: templates/equipment_form.html:31
 msgid ""
 "Unbekannte Werte bleiben leer oder auf «Unbekannt». Quellen mit einer bekannten Herkunft brauchen"
@@ -12018,6 +12159,14 @@ msgstr "Website (optional)"
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr "Website-URL muss mit http:// oder https:// beginnen."
 
+#: templates/sandbox/payments.html:60
+msgid ""
+"Wechseln Sie danach zum betroffenen Mitglied und prüfen Sie den Status der eigenen Rechnung. Die "
+"ausgestellten Beträge bleiben unverändert."
+msgstr ""
+"Wechseln Sie danach zum betroffenen Mitglied und prüfen Sie den Status der eigenen Rechnung. Die "
+"ausgestellten Beträge bleiben unverändert."
+
 #: sandbox_formation.py:132
 msgid ""
 "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
@@ -12437,6 +12586,20 @@ msgstr "Wählen Sie den gewünschten Zeitraum"
 #: templates/role_access.html:20
 msgid "Wählen Sie den passenden Zugang. Danach melden Sie sich sicher per E-Mail-Link an."
 msgstr "Wählen Sie den passenden Zugang. Danach melden Sie sich sicher per E-Mail-Link an."
+
+#: templates/sandbox/payments.html:15
+msgid ""
+"Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, Belastung und "
+"Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge bleiben unverbucht. Laden "
+"Sie danach die unbekannte Referenz mit passendem Betrag und bestätigen Sie die geprüfte Zuordnung"
+" unten. Verwenden Sie für die automatische Verbuchung eine andere zugestellte Rechnung und deren "
+"exakte CHF-Gutschrift. Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen."
+msgstr ""
+"Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, Belastung und "
+"Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge bleiben unverbucht. Laden "
+"Sie danach die unbekannte Referenz mit passendem Betrag und bestätigen Sie die geprüfte Zuordnung"
+" unten. Verwenden Sie für die automatische Verbuchung eine andere zugestellte Rechnung und deren "
+"exakte CHF-Gutschrift. Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen."
 
 #: sandbox_seed.py:105
 msgid "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
@@ -13301,7 +13464,7 @@ msgstr "» weiterhin aktuell ist."
 msgid "Ändern"
 msgstr "Ändern"
 
-#: sandbox_seed.py:44 sandbox_worker.py:88
+#: sandbox_seed.py:44 sandbox_worker.py:91
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 
