@@ -21,28 +21,77 @@ def _get_connection():
     return database.get_connection()
 
 
-def _bundle(cursor, community_id, actor):
+def participant_manifest(cursor, community_id):
+    """Lock membership and profile facts used by one formation document bundle."""
+    cursor.execute(
+        """SELECT building_id FROM community_members WHERE community_id = %s
+           ORDER BY building_id FOR SHARE""",
+        (community_id,),
+    )
+    cursor.fetchall()
+    cursor.execute(
+        """SELECT cm.building_id
+           FROM community_members cm
+           JOIN buildings b ON b.building_id = cm.building_id
+           JOIN consents c ON c.building_id = cm.building_id
+           WHERE cm.community_id = %s
+           ORDER BY cm.building_id FOR SHARE OF b, c""",
+        (community_id,),
+    )
+    cursor.fetchall()
+    cursor.execute(
+        """SELECT cm.building_id, b.email, b.address, b.potential_pv_kwp
+           FROM community_members cm
+           JOIN buildings b ON b.building_id = cm.building_id
+           JOIN consents c ON c.building_id = cm.building_id
+           WHERE cm.community_id = %s AND cm.status = 'confirmed'
+             AND b.verified = TRUE AND c.share_with_neighbors = TRUE
+           ORDER BY cm.building_id""",
+        (community_id,),
+    )
+    return [
+        {
+            "building_id": row["building_id"],
+            "name": row["email"] or row["building_id"],
+            "address": row["address"] or "",
+            "role": "producer"
+            if row["potential_pv_kwp"] and float(row["potential_pv_kwp"]) > 0
+            else "consumer",
+        }
+        for row in cursor.fetchall()
+    ]
+
+
+def bundle_fingerprint(documents, signers):
+    """Identify exact stored PDF bytes and the ordered original signers."""
+    facts = {
+        "documents": [
+            {
+                "id": item["id"],
+                "sha256": hashlib.sha256(bytes(item["pdf_data"])).hexdigest(),
+            }
+            for item in documents
+        ],
+        "signers": signers,
+    }
+    return hashlib.sha256(json.dumps(facts, sort_keys=True).encode()).hexdigest()
+
+
+def locked_signature_bundle(cursor, community_id, actor):
+    """Validate the current bundle while holding its community and fact locks."""
     cursor.execute(
         "SELECT status FROM communities WHERE community_id = %s FOR UPDATE",
         (community_id,),
     )
     community = cursor.fetchone()
-    cursor.execute(
-        """SELECT cm.building_id, b.email, b.address, b.potential_pv_kwp FROM community_members cm
-           JOIN buildings b ON b.building_id = cm.building_id
-           JOIN consents c ON c.building_id = cm.building_id
-           WHERE cm.community_id = %s AND cm.status = 'confirmed'
-             AND b.verified = TRUE AND c.share_with_neighbors = TRUE
-           ORDER BY cm.building_id FOR SHARE OF cm, b, c""",
-        (community_id,),
-    )
-    participants = cursor.fetchall()
-    signers = [row["building_id"] for row in participants]
+    expected_manifest = participant_manifest(cursor, community_id)
+    signers = [row["building_id"] for row in expected_manifest]
     if not community or actor not in signers:
         raise SignatureDenied()
     cursor.execute(
         """SELECT id, doc_type, filename, pdf_data, participant_manifest FROM leg_documents
-           WHERE community_id = %s ORDER BY id FOR UPDATE""",
+           WHERE community_id = %s AND signing_status IS DISTINCT FROM 'superseded'
+           ORDER BY id FOR UPDATE""",
         (community_id,),
     )
     documents = cursor.fetchall()
@@ -59,20 +108,6 @@ def _bundle(cursor, community_id, actor):
                 "Erstellen Sie zuerst die vollständigen Vertragsentwürfe für mindestens drei bestätigte Haushalte."
             )
         )
-    expected_manifest = sorted(
-        [
-            {
-                "building_id": row["building_id"],
-                "name": row["email"] or row["building_id"],
-                "address": row["address"] or "",
-                "role": "producer"
-                if row["potential_pv_kwp"] and float(row["potential_pv_kwp"]) > 0
-                else "consumer",
-            }
-            for row in participants
-        ],
-        key=lambda item: item["building_id"],
-    )
     if (
         len(documents) != len(signers) + 1
         or sum(item["doc_type"] == "gemeinschaftsvereinbarung" for item in documents)
@@ -91,17 +126,7 @@ def _bundle(cursor, community_id, actor):
                 "Die Vertragsentwürfe enthalten nicht alle aktuellen Teilnehmenden. Erstellen Sie die Entwürfe erneut."
             )
         )
-    facts = {
-        "documents": [
-            {
-                "id": item["id"],
-                "sha256": hashlib.sha256(bytes(item["pdf_data"])).hexdigest(),
-            }
-            for item in documents
-        ],
-        "signers": signers,
-    }
-    fingerprint = hashlib.sha256(json.dumps(facts, sort_keys=True).encode()).hexdigest()
+    fingerprint = bundle_fingerprint(documents, signers)
     if community["status"] == "signatures_pending":
         cursor.execute(
             """SELECT building_id FROM leg_signature_receipts
@@ -120,7 +145,7 @@ def _bundle(cursor, community_id, actor):
 def formation_signature_bundle(community_id, actor):
     """Read the exact document and participant fingerprint awaiting signatures."""
     with _get_connection() as connection, connection.cursor() as cursor:
-        fingerprint, signers = _bundle(cursor, community_id, actor)
+        fingerprint, signers = locked_signature_bundle(cursor, community_id, actor)
         cursor.execute(
             """SELECT building_id FROM leg_signature_receipts
                WHERE community_id = %s AND bundle_fingerprint = %s
@@ -139,7 +164,7 @@ def record_formation_signature(community_id, actor, fingerprint, provider, evide
     if not provider or len(provider) > 64 or not evidence or len(evidence) > 65536:
         raise SignatureConflict(_N("Der Unterschriftsbeleg ist ungültig."))
     with _get_connection() as connection, connection.cursor() as cursor:
-        current, signers = _bundle(cursor, community_id, actor)
+        current, signers = locked_signature_bundle(cursor, community_id, actor)
         if fingerprint != current:
             raise SignatureConflict(
                 _N(
@@ -172,7 +197,8 @@ def record_formation_signature(community_id, actor, fingerprint, provider, evide
             cursor.execute(
                 """UPDATE leg_documents SET signing_status = 'completed',
                           updated_at = CURRENT_TIMESTAMP
-                   WHERE community_id = %s AND signing_status <> 'completed'""",
+                   WHERE community_id = %s
+                     AND signing_status NOT IN ('completed', 'superseded')""",
                 (community_id,),
             )
             cursor.execute(
@@ -191,4 +217,4 @@ def validate_formation_signature_receipts(community_id, actor):
             (community_id,),
         )
         if cursor.fetchone():
-            _bundle(cursor, community_id, actor)
+            locked_signature_bundle(cursor, community_id, actor)

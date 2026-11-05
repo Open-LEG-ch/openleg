@@ -24,11 +24,13 @@ class SimulationAdapter:
     """Return labelled local receipts instead of contacting a network operator."""
 
     def __init__(self, state="delivered"):
+        """Choose a local transport outcome without granting start approval."""
         if state not in {"delivered", "acknowledged", "rejected"}:
             raise ValueError("unsupported simulated outcome")
         self.state = state
 
     def contract(self):
+        """Advertise only formation submissions and dated participant joins."""
         return vnb_exchange.ExchangeContract(
             "sonnwil-simulation",
             vnb_exchange.SUPPORTED_CONTRACT_VERSION,
@@ -41,12 +43,15 @@ class SimulationAdapter:
         )
 
     def submit(self, package, *, idempotency_key):
+        """Return a local receipt for an ordinary formation package."""
         return self._outcome(idempotency_key)
 
     def submit_mutation(self, mutation, *, idempotency_key):
+        """Return a local receipt for the supported participant join."""
         return self._outcome(idempotency_key)
 
     def _outcome(self, key):
+        """Bind the simulated receipt to the ordinary delivery key."""
         return vnb_exchange.DeliveryResult(
             self.state,
             "SIMULATION-" + key[:24],
@@ -56,6 +61,7 @@ class SimulationAdapter:
 
 
 def response_evidence(state):
+    """Label local evidence explicitly as transport rather than start approval."""
     return json.dumps(
         {
             "simulation": "SIMULATION SONNWIL",
@@ -67,6 +73,7 @@ def response_evidence(state):
 
 
 def _member(community, actor):
+    """Find the actor's current membership in an authorized community view."""
     return next(
         (
             item
@@ -78,6 +85,7 @@ def _member(community, actor):
 
 
 def _authorized(cid, capability):
+    """Apply the ordinary session, CSRF and community capability checks."""
     actor = _require_dashboard_session()
     _require_dashboard_csrf()
     community = db.fetch_community_with_members(cid, actor)
@@ -133,6 +141,7 @@ def install(web):
 
     @web.get("/sandbox/formation")
     def sandbox_formation():
+        """Show the current household's formation steps and local receipts."""
         actor = _require_dashboard_session()
         cid = request.args.get("cid", "")
         community = db.fetch_community_with_members(cid, actor) if cid else None
@@ -186,6 +195,7 @@ def install(web):
 
     @web.post("/sandbox/formation/<cid>/signatures")
     def sandbox_signatures(cid):
+        """Record the household's explicit receipt for its reviewed bundle."""
         actor = _require_dashboard_session()
         _require_dashboard_csrf()
         if request.form.get("confirm") != "yes":
@@ -206,6 +216,7 @@ def install(web):
 
     @web.post("/sandbox/formation/<cid>/vnb")
     def sandbox_vnb(cid):
+        """Simulate delivery or a response for the current formation case."""
         actor, _community = _authorized(cid, community_access.MANAGE_DOCUMENTS)
         state = request.form.get("state", "")
         if state not in {"delivered", "acknowledged", "rejected"}:
@@ -230,12 +241,13 @@ def install(web):
                 )
         except vnb_exchange.FormationSubmissionForbidden:
             abort(403)
-        except (vnb_exchange.FormationSubmissionInvalid, db.VnbSubmissionConflict):
+        except (vnb_exchange.FormationSubmissionInvalid, db.VnbExchangeStoreError):
             abort(409)
         return redirect("/sandbox/formation?cid=" + cid)
 
     @web.get("/sandbox/formation/<cid>/start-evidence.pdf")
     def sandbox_start_evidence(cid):
+        """Render labelled evidence for the ordinary start-confirmation flow."""
         actor = _require_dashboard_session()
         community = db.fetch_community_with_members(cid, actor)
         member = _member(community, actor)
@@ -263,6 +275,7 @@ def install(web):
 
     @web.get("/sandbox/formation/<cid>/join-agreement.pdf")
     def sandbox_join_agreement(cid):
+        """Render the invited household's fictional participant agreement."""
         actor = _require_dashboard_session()
         community = db.fetch_community_with_members(cid, actor)
         member = _member(community, actor)
@@ -297,6 +310,7 @@ def install(web):
 
     @web.post("/sandbox/formation/<cid>/mutation-response")
     def sandbox_mutation_response(cid):
+        """Record a local join response without confirming membership."""
         _authorized(cid, community_access.MANAGE_MEMBERS)
         state = request.form.get("state", "")
         if state not in {"acknowledged", "rejected"}:

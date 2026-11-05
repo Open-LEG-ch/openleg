@@ -604,7 +604,7 @@ msgstr "Abgaben & Gebühren"
 msgid "Abgelaufen"
 msgstr "Abgelaufen"
 
-#: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:178
+#: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:187
 #: templates/contact_requests.html:32 templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 #: templates/sandbox/formation.html:37 templates/sandbox/formation.html:85
 msgid "Abgelehnt"
@@ -2662,7 +2662,7 @@ msgstr ""
 "\n"
 "%(url)s"
 
-#: store/formation_signatures.py:140
+#: store/formation_signatures.py:165
 msgid "Der Unterschriftsbeleg ist ungültig."
 msgstr "Der Unterschriftsbeleg ist ungültig."
 
@@ -2781,7 +2781,7 @@ msgstr ""
 " keine doppelte E-Mail erhält. Prüfen Sie den Versand und bestätigen Sie die Zustellung "
 "anschliessend."
 
-#: app.py:805
+#: app.py:814
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -2919,7 +2919,7 @@ msgstr ""
 "Die Demo zeigt den echten Arbeitsstand für Mitglieder, Vereinbarung, Dokumente und Anmeldung. "
 "Verwenden Sie ausschliesslich Beispieldaten."
 
-#: store/formation_signatures.py:146
+#: store/formation_signatures.py:171 store/vnb_exchange.py:334
 msgid "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
 msgstr "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
 
@@ -3263,11 +3263,11 @@ msgstr ""
 msgid "Die Tarif-ID der Richtlinie ist ungültig."
 msgstr "Die Tarif-ID der Richtlinie ist ungültig."
 
-#: store/formation_signatures.py:114
+#: store/formation_signatures.py:139
 msgid "Die Unterzeichnung passt nicht mehr zu den aktuellen Dokumenten und Teilnehmenden."
 msgstr "Die Unterzeichnung passt nicht mehr zu den aktuellen Dokumenten und Teilnehmenden."
 
-#: store/formation_signatures.py:91
+#: store/formation_signatures.py:126
 msgid ""
 "Die Vertragsentwürfe enthalten nicht alle aktuellen Teilnehmenden. Erstellen Sie die Entwürfe "
 "erneut."
@@ -4147,7 +4147,7 @@ msgstr ""
 msgid "ElCom tariffs"
 msgstr "ElCom-Tarife"
 
-#: sandbox_formation.py:177 templates/sandbox/formation.html:38 templates/sandbox/formation.html:85
+#: sandbox_formation.py:186 templates/sandbox/formation.html:38 templates/sandbox/formation.html:85
 msgid "Empfang bestätigt"
 msgstr "Empfang bestätigt"
 
@@ -4368,7 +4368,7 @@ msgstr "Erste LEG-Gründung starten"
 msgid "Erstellen Sie die rechtlichen Dokumente."
 msgstr "Erstellen Sie die rechtlichen Dokumente."
 
-#: store/formation_signatures.py:59
+#: store/formation_signatures.py:108
 msgid "Erstellen Sie zuerst die vollständigen Vertragsentwürfe für mindestens drei bestätigte Haushalte."
 msgstr "Erstellen Sie zuerst die vollständigen Vertragsentwürfe für mindestens drei bestätigte Haushalte."
 
@@ -6474,7 +6474,7 @@ msgstr "Keine Angabe"
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr "Keine Berechtigung für Mitgliedermutationen."
 
-#: dashboard.py:1106
+#: dashboard.py:1106 store/vnb_exchange.py:367
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 
@@ -8973,7 +8973,7 @@ msgstr "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgid "Partner gefunden!"
 msgstr "Partner gefunden!"
 
-#: app.py:992
+#: app.py:1001
 msgid "Period not found"
 msgstr "Period not found"
 
@@ -9771,7 +9771,7 @@ msgstr ""
 "SIMULATION SONNWIL - Erfundenes Dokument. Keine rechtsgültige Unterschrift, keine "
 "Zahlungsaufforderung und keine Netzbetreiber-Bewilligung."
 
-#: sandbox_formation.py:122
+#: sandbox_formation.py:130
 msgid "SIMULATION SONNWIL: LEG-Einladung"
 msgstr "SIMULATION SONNWIL: LEG-Einladung"
 
@@ -11495,7 +11495,7 @@ msgstr "Website (optional)"
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr "Website-URL muss mit http:// oder https:// beginnen."
 
-#: sandbox_formation.py:124
+#: sandbox_formation.py:132
 msgid ""
 "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
 "Einladung ist erfunden."
@@ -11727,7 +11727,7 @@ msgstr ""
 "Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine passende Gruppe entsteht, "
 "erhalten Sie die nächsten Schritte."
 
-#: app.py:793
+#: app.py:802
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -12043,7 +12043,7 @@ msgstr "Zugang vorhanden"
 msgid "Zugangslink anfordern"
 msgstr "Zugangslink anfordern"
 
-#: billing_lifecycle.py:16 sandbox_formation.py:176 templates/leg_dashboard.html:245
+#: billing_lifecycle.py:16 sandbox_formation.py:185 templates/leg_dashboard.html:245
 #: templates/leg_dashboard.html:274 templates/sandbox/formation.html:36
 msgid "Zugestellt"
 msgstr "Zugestellt"
@@ -12250,7 +12250,7 @@ msgstr "bis 14 Tage"
 msgid "bis 40"
 msgstr "bis 40"
 
-#: app.py:939
+#: app.py:948
 msgid "building_id required"
 msgstr "building_id required"
 
@@ -12847,11 +12847,11 @@ msgstr "Übergabepaket herunterladen"
 msgid "Übermittlung"
 msgstr "Übermittlung"
 
-#: sandbox_formation.py:180
+#: sandbox_formation.py:189
 msgid "Übermittlung fehlgeschlagen"
 msgstr "Übermittlung fehlgeschlagen"
 
-#: sandbox_formation.py:179
+#: sandbox_formation.py:188
 msgid "Übermittlung vorbereitet"
 msgstr "Übermittlung vorbereitet"
 

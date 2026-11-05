@@ -104,6 +104,7 @@ class SubmissionClaim:
     contract_version: str
     capability_snapshot: tuple[str, ...]
     payload_fingerprint: str
+    document_ids: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -538,6 +539,9 @@ def submit_package(
             contract_version=contract.contract_version,
             capability_snapshot=tuple(sorted(contract.capabilities)),
             payload_fingerprint=fingerprint,
+            document_ids=tuple(
+                sorted(document.document_id for document in package.documents)
+            ),
         )
     )
     if row["state"] != "claimed":
