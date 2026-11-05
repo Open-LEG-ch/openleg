@@ -1,0 +1,30 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _('Übungsdorf verwalten') }} · OpenLEG</title>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <p class="text-sm font-semibold text-ink-muted">Simulation · Sonnwil</p>
+  <h1 class="mt-3 text-3xl font-bold">{{ _('Übungsdorf verwalten') }}</h1>
+  <p class="mt-4">{{ _('Dieses Dorf endet nach %(idle)s ohne Aktivität, spätestens nach %(lifetime)s. Danach werden Ihre Übungsdaten gelöscht.', idle=inactivity_timeout, lifetime=maximum_lifetime) }}</p>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Neu beginnen') }}</h2>
+    <p class="mt-3">{{ _('Beim Zurücksetzen werden Ihre Änderungen, Nachrichten, Dokumente und Zugangsdaten gelöscht. Alte Tabs können das neue Dorf nicht verändern.') }}</p>
+    <form method="post" action="{{ prefix }}/sandbox/reset" class="mt-4 grid gap-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>{{ _('Vorlage') }}
+        <select name="seed_version" class="ml-2 rounded border border-line p-2"><option value="{{ seed_version }}">Sonnwil · {{ seed_version }}</option></select>
+      </label>
+      <label class="flex gap-3"><input type="checkbox" name="confirm" value="reset" required>{{ _('Ich möchte dieses Dorf löschen und mit der gewählten Vorlage neu beginnen.') }}</label>
+      <button type="submit" class="rounded-lg bg-ink px-6 py-3 font-semibold text-white">{{ _('Dorf zurücksetzen') }}</button>
+    </form>
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Dorf beenden') }}</h2>
+    <form method="post" action="{{ prefix }}/sandbox/discard" class="mt-4 grid gap-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="flex gap-3"><input type="checkbox" name="confirm" value="discard" required>{{ _('Ich möchte dieses Dorf und alle Übungsdaten löschen.') }}</label>
+      <button type="submit" class="rounded-lg border border-ink px-6 py-3 font-semibold">{{ _('Dorf löschen') }}</button>
+    </form>
+  </section>
+  <a href="{{ prefix }}/sandbox/home?lang={{ current_locale }}" class="mt-8 inline-block font-semibold underline">{{ _('Zurück zum Übungsdorf') }}</a>
+</div>
+{% endblock %}

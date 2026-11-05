@@ -1558,6 +1558,14 @@ msgstr "Beilagen"
 msgid "Beim VNB einreichen"
 msgstr "Beim VNB einreichen"
 
+#: templates/sandbox/manage.html:10
+msgid ""
+"Beim Zurücksetzen werden Ihre Änderungen, Nachrichten, Dokumente und Zugangsdaten gelöscht. Alte "
+"Tabs können das neue Dorf nicht verändern."
+msgstr ""
+"Beim Zurücksetzen werden Ihre Änderungen, Nachrichten, Dokumente und Zugangsdaten gelöscht. Alte "
+"Tabs können das neue Dorf nicht verändern."
+
 #: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Beitritt"
 msgstr "Beitritt"
@@ -2190,6 +2198,14 @@ msgstr "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vol
 #: templates/fuer_gemeinden.html:37
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
+
+#: templates/sandbox/expired.html:8
+msgid ""
+"Das Dorf ist gesperrt. Die Bereinigung wird erneut versucht. Bitte versuchen Sie den Neustart "
+"später."
+msgstr ""
+"Das Dorf ist gesperrt. Die Bereinigung wird erneut versucht. Bitte versuchen Sie den Neustart "
+"später."
 
 #: dashboard.py:1436
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
@@ -3415,6 +3431,27 @@ msgstr ""
 "Dieser alte Link zeigt Ihr Dashboard nur noch lesend. Fordern Sie für Änderungen einen neuen "
 "Zugangslink an."
 
+#: templates/sandbox/entry.html:16 templates/sandbox/manage.html:7
+#, python-format
+msgid ""
+"Dieses Dorf endet nach %(idle)s ohne Aktivität, spätestens nach %(lifetime)s. Danach werden Ihre "
+"Übungsdaten gelöscht."
+msgstr ""
+"Dieses Dorf endet nach %(idle)s ohne Aktivität, spätestens nach %(lifetime)s. Danach werden Ihre "
+"Übungsdaten gelöscht."
+
+#: templates/sandbox/expired.html:7
+msgid ""
+"Dieses Dorf wurde beendet oder zurückgesetzt. Dieser Tab kann keine Änderungen mehr speichern. "
+"Öffnen Sie Ihr aktuelles Dorf oder starten Sie neu."
+msgstr ""
+"Dieses Dorf wurde beendet oder zurückgesetzt. Dieser Tab kann keine Änderungen mehr speichern. "
+"Öffnen Sie Ihr aktuelles Dorf oder starten Sie neu."
+
+#: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
+msgid "Dieses Übungsdorf ist abgelaufen"
+msgstr "Dieses Übungsdorf ist abgelaufen"
+
 #: templates/admin/abrechnungen.html:106 templates/leg_kalkulator.html:208
 msgid "Differenz"
 msgstr "Differenz"
@@ -3451,9 +3488,25 @@ msgstr "Dokumente erstellt"
 msgid "Dokumente und Netzbetreiber-Anmeldung"
 msgstr "Dokumente und Netzbetreiber-Anmeldung"
 
+#: templates/sandbox/manage.html:21
+msgid "Dorf beenden"
+msgstr "Dorf beenden"
+
+#: templates/sandbox/manage.html:25
+msgid "Dorf löschen"
+msgstr "Dorf löschen"
+
 #: templates/index.html:103
 msgid "Dorf und Landschaft im ländlichen Raum"
 msgstr "Dorf und Landschaft im ländlichen Raum"
+
+#: templates/sandbox/banner.html:7
+msgid "Dorf verwalten"
+msgstr "Dorf verwalten"
+
+#: templates/sandbox/manage.html:17
+msgid "Dorf zurücksetzen"
+msgstr "Dorf zurücksetzen"
 
 #: templates/gemeinde/dashboard.html:87
 msgid "Drei Schritte bringen Ihre Gemeinde zur ersten LEG."
@@ -5476,6 +5529,14 @@ msgstr "Ich habe geprüft, dass der Netzbetreiber den Start der LEG zu diesem Da
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgstr "Ich möchte Updates per E-Mail erhalten. (optional)"
 
+#: templates/sandbox/manage.html:16
+msgid "Ich möchte dieses Dorf löschen und mit der gewählten Vorlage neu beginnen."
+msgstr "Ich möchte dieses Dorf löschen und mit der gewählten Vorlage neu beginnen."
+
+#: templates/sandbox/manage.html:24
+msgid "Ich möchte dieses Dorf und alle Übungsdaten löschen."
+msgstr "Ich möchte dieses Dorf und alle Übungsdaten löschen."
+
 #: dashboard_routes.py:398
 msgid "Ihr Dashboard-Zugangslink"
 msgstr "Ihr Dashboard-Zugangslink"
@@ -5632,11 +5693,6 @@ msgstr "Ihre Rechnung %(invoice_number)s"
 #: templates/index.html:458
 msgid "Ihre Rolle"
 msgstr "Ihre Rolle"
-
-#: templates/sandbox/entry.html:16
-#, python-format
-msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
-msgstr "Ihre Sitzung endet nach %(minutes)s Minuten."
 
 #: templates/index.html:511
 msgid ""
@@ -7715,6 +7771,10 @@ msgstr "Netzwerkfehler."
 #: templates/utility/register.html:153
 msgid "Netzwerkfehler. Bitte erneut versuchen."
 msgstr "Netzwerkfehler. Bitte erneut versuchen."
+
+#: templates/sandbox/manage.html:9
+msgid "Neu beginnen"
+msgstr "Neu beginnen"
 
 #: email_automation.py:100
 #, python-format
@@ -10845,6 +10905,10 @@ msgstr ""
 "Vorkonfigurierte Hardware bei Ihnen im Quartier oder ein Server in der Schweiz, nahe an Ihrer "
 "Nachbarschaft. Auf Anfrage."
 
+#: templates/sandbox/manage.html:13
+msgid "Vorlage"
+msgstr "Vorlage"
+
 #: templates/index.html:624
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
@@ -11535,6 +11599,10 @@ msgstr "Zuletzt bestätigt am"
 msgid "Zum Dashboard"
 msgstr "Zum Dashboard"
 
+#: templates/sandbox/expired.html:9
+msgid "Zum Einstieg"
+msgstr "Zum Einstieg"
+
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:19
 #: templates/leg_verzeichnis/bestaetigt.html:19
 msgid "Zum Eintrag"
@@ -11602,6 +11670,10 @@ msgstr "Zurück zum Gerät"
 #: templates/leg_billing.html:8 templates/leg_billing_policy.html:4
 msgid "Zurück zum LEG-Dashboard"
 msgstr "Zurück zum LEG-Dashboard"
+
+#: templates/sandbox/manage.html:28
+msgid "Zurück zum Übungsdorf"
+msgstr "Zurück zum Übungsdorf"
 
 #: templates/gemeinde/methodik.html:22 templates/gemeinde/vergleich.html:23
 msgid "Zurück zur Rangliste"
@@ -12322,6 +12394,10 @@ msgstr "Üblicher Bereich: zwischen"
 msgid "Übungsdorf"
 msgstr "Übungsdorf"
 
+#: templates/sandbox/manage.html:2 templates/sandbox/manage.html:6
+msgid "Übungsdorf verwalten"
+msgstr "Übungsdorf verwalten"
+
 #: templates/gemeinde/profil.html:118
 msgid "öffentlich gemeldeten PV-Anlagen"
 msgstr "öffentlich gemeldeten PV-Anlagen"
@@ -12525,6 +12601,9 @@ msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 #~ "Ihre Daten wurden nicht gelöscht. Der Link ist "
 #~ "möglicherweise abgelaufen. Fordern Sie einen neuen "
 #~ "Bestätigungslink an."
+
+#~ msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
+#~ msgstr "Ihre Sitzung endet nach %(minutes)s Minuten."
 
 #~ msgid "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 #~ msgstr "Laden Sie mindestens %(count)s weitere Nachbarn ein."

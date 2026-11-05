@@ -14,6 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from sandbox_lifecycle import ScratchOwner
 from sandbox_runtime import create_gateway, require_private_directory
 
 
@@ -71,6 +72,7 @@ def main():
         help="stop this scratch runtime and clean its villages",
     )
     parser.add_argument("--lifetime-seconds", type=int, default=3600)
+    parser.add_argument("--inactivity-seconds", type=int, default=900)
     parser.add_argument(
         "--origin", help="public origin; defaults to the local listening URL"
     )
@@ -95,13 +97,8 @@ def main():
 def run(args, directory):
     """Own one runner record for the full gateway lifetime."""
     record = directory / "runner.json"
-    if record.exists():
-        if runner_identity(record):
-            raise SystemExit("sandbox runner is already active for this directory")
-        record.unlink()
-    descriptor = os.open(record, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(descriptor, "w") as output:
-        json.dump({"pid": os.getpid(), "start": process_start(os.getpid())}, output)
+    if runner_identity(record):
+        raise SystemExit("sandbox runner is already active for this directory")
 
     stopping = False
 
@@ -125,7 +122,11 @@ def run(args, directory):
             max_workspaces=args.max_workspaces,
             max_upload_bytes=args.max_upload_mib * 1024 * 1024,
             lifetime_seconds=args.lifetime_seconds,
+            inactivity_seconds=args.inactivity_seconds,
             origin=args.origin or f"http://127.0.0.1:{args.port}",
+        )
+        ScratchOwner.write(
+            record, {"pid": os.getpid(), "start": process_start(os.getpid())}
         )
         # Access URLs can contain single-use tokens; keep them out of terminal logs.
         logging.getLogger("werkzeug").setLevel(logging.WARNING)
@@ -141,7 +142,7 @@ def run(args, directory):
         stopping = True
         if web:
             web.extensions["villages"].close()
-        record.unlink(missing_ok=True)
+            record.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

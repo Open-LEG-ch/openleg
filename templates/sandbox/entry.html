@@ -13,6 +13,6 @@
     <input type="hidden" name="persona" value="resident">
     <button type="submit" class="rounded-lg bg-ink px-6 py-3 font-semibold text-white">{{ _('Als Haushalt anmelden') }}</button>
   </form>
-  <p class="mt-6 text-sm text-ink-muted">{{ _('Ihre Sitzung endet nach %(minutes)s Minuten.', minutes=lifetime_minutes|default(60)) }} {{ _('E-Mails, Dokumente und Zahlungen sind Simulationen.') }}</p>
+  <p class="mt-6 text-sm text-ink-muted">{{ _('Dieses Dorf endet nach %(idle)s ohne Aktivität, spätestens nach %(lifetime)s. Danach werden Ihre Übungsdaten gelöscht.', idle=inactivity_timeout, lifetime=maximum_lifetime) }} {{ _('E-Mails, Dokumente und Zahlungen sind Simulationen.') }}</p>
 </div>
 {% endblock %}

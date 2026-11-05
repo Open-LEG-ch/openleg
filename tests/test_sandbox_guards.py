@@ -59,7 +59,9 @@ else:
     assert runner.returncode == 0, stderr.decode()
 
 
-@pytest.mark.parametrize("mode", ["signals", "natural-signals", "timeout"])
+@pytest.mark.parametrize(
+    "mode", ["signals", "natural-signals", "timeout", "startup-timeout"]
+)
 def test_runner_finishes_cleanup_despite_repeated_signals_and_retains_failed_state(
     tmp_path, mode
 ):
@@ -68,7 +70,7 @@ def test_runner_finishes_cleanup_despite_repeated_signals_and_retains_failed_sta
             sys.executable,
             "-c",
             """
-import os, pathlib, signal, subprocess, sys
+import json, os, pathlib, signal, subprocess, sys
 from types import SimpleNamespace
 from flask import Flask
 from scripts import sandbox
@@ -90,14 +92,22 @@ def serve(**options):
 web.extensions['villages'] = SimpleNamespace(close=close)
 web.run = serve
 sandbox.create_gateway = lambda *args, **kwargs: web
+if mode == 'startup-timeout':
+    stale = {'pid': os.getpid(), 'start': 'retired-runner'}
+    (root / 'runner.json').write_text(json.dumps(stale))
+    def failed_gateway(*args, **kwargs):
+        raise subprocess.TimeoutExpired('pg_ctl', 120)
+    sandbox.create_gateway = failed_gateway
 sys.argv = ['sandbox.py', '--directory', str(root)]
 try:
     sandbox.main()
 except subprocess.TimeoutExpired:
-    assert mode == 'timeout'
+    assert mode in ('timeout', 'startup-timeout')
 except SystemExit as error:
     assert error.code == 0
-if mode == 'timeout':
+if mode == 'startup-timeout':
+    assert json.loads((root / 'runner.json').read_text()) == stale
+elif mode == 'timeout':
     assert (root / 'runner.json').exists(), 'failed cleanup lost its runner record'
 else:
     assert finished, 'repeated signal interrupted cleanup'
@@ -404,11 +414,17 @@ def test_start_and_stop_cannot_erase_an_incomplete_live_runner_record(
         first = executor.submit(sandbox.main)
         try:
             assert publishing.wait(timeout=5)
+            records = {
+                path: path.read_bytes()
+                for path in (tmp_path / "runner.json", tmp_path / "runner.pending")
+                if path.exists()
+            }
+            assert records
             with pytest.raises(SystemExit, match="already active"):
                 sandbox.stop(tmp_path)
             with pytest.raises(SystemExit, match="already active"):
                 sandbox.main()
-            assert (tmp_path / "runner.json").exists()
+            assert {path: path.read_bytes() for path in records} == records
         finally:
             release.set()
         first.result(timeout=5)
