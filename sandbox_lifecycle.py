@@ -134,6 +134,11 @@ class ScratchOwner:
                 time.sleep(0.05)
             if self._running(pid, start):
                 send(signal.SIGKILL)
+                deadline = time.monotonic() + 5
+                while self._running(pid, start) and time.monotonic() < deadline:
+                    time.sleep(0.05)
+                if self._running(pid, start):
+                    raise RuntimeError("scratch worker could not be stopped")
 
     def recover(self):
         # These exact names belong to this runtime. Unrelated files stay intact.

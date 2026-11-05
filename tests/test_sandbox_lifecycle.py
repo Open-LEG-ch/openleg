@@ -952,6 +952,61 @@ def test_generation_routing_preserves_openapi_server_and_path_fragments(village)
     assert not any(path.startswith("/v/") for path in spec["paths"])
 
 
+def test_worker_stop_waits_for_a_killed_process_to_exit(tmp_path, monkeypatch):
+    import os
+    import signal
+    import subprocess
+    import sys
+    import time
+    from threading import Timer
+
+    import sandbox_lifecycle
+    from sandbox_lifecycle import ScratchOwner
+
+    owner = ScratchOwner(tmp_path / "villages", tmp_path)
+    directory = owner.directory / ("a" * 32)
+    directory.mkdir()
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            "import pathlib,signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); pathlib.Path('ready').touch(); time.sleep(60)",
+        ],
+        cwd=directory,
+        start_new_session=True,
+    )
+    delayed = []
+    kill = os.killpg
+
+    def asynchronous_kill(group, sig):
+        if sig == signal.SIGKILL:
+            timer = Timer(0.2, kill, (group, sig))
+            delayed.append(timer)
+            timer.start()
+        else:
+            kill(group, sig)
+
+    try:
+        deadline = time.monotonic() + 5
+        while not (directory / "ready").exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert (directory / "ready").exists()
+        owner.record_worker(directory, process)
+        monkeypatch.setattr(sandbox_lifecycle.os, "killpg", asynchronous_kill)
+        owner.stop_workspace(directory)
+        assert delayed
+        assert process.poll() is not None, (
+            "cleanup returned before the killed worker exited"
+        )
+    finally:
+        for timer in delayed:
+            timer.join(timeout=2)
+        if process.poll() is None:
+            kill(process.pid, signal.SIGKILL)
+        process.wait(timeout=5)
+        owner.close()
+
+
 def test_recovery_times_out_stalled_postgres_control_and_keeps_state_for_retry(
     tmp_path, monkeypatch
 ):
