@@ -953,6 +953,7 @@ def test_generation_routing_preserves_openapi_server_and_path_fragments(village)
 
 
 def test_worker_stop_waits_for_a_killed_process_to_exit(tmp_path, monkeypatch):
+    """Do not acknowledge cleanup until the killed worker actually exits."""
     import os
     import signal
     import subprocess
@@ -979,6 +980,7 @@ def test_worker_stop_waits_for_a_killed_process_to_exit(tmp_path, monkeypatch):
     kill = os.killpg
 
     def asynchronous_kill(group, sig):
+        """Delay KILL delivery while retaining real operating-system signals."""
         if sig == signal.SIGKILL:
             timer = Timer(0.2, kill, (group, sig))
             delayed.append(timer)
@@ -1189,3 +1191,175 @@ def test_language_selected_on_management_page_survives_return_to_worker(
     ).group(1)
     assert f'<html lang="{selected}"' in client.get(link).text
     assert f'<html lang="{selected}"' in client.get(prefix + "/dashboard").text
+
+
+def test_recovery_tolerates_an_exited_process_with_an_open_proc_stat(
+    tmp_path, monkeypatch
+):
+    """Use the kernel's real ESRCH read race while retiring a recorded child."""
+    import os
+    import signal
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    from sandbox_lifecycle import ScratchOwner
+
+    owner = ScratchOwner(tmp_path / "villages", tmp_path)
+    directory = owner.directory / ("a" * 32)
+    directory.mkdir()
+    process = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(60)"],
+        cwd=directory,
+        start_new_session=True,
+    )
+    stat_path = Path(f"/proc/{process.pid}/stat")
+    original_read = Path.read_text
+    try:
+        owner.record_worker(directory, process)
+        with stat_path.open() as opened:
+            os.kill(process.pid, signal.SIGKILL)
+            process.wait(timeout=5)
+
+            def read_after_exit(path, *args, **kwargs):
+                """Reproduce ESRCH from a real proc file opened before exit."""
+                if path == stat_path:
+                    return opened.read()
+                return original_read(path, *args, **kwargs)
+
+            monkeypatch.setattr(Path, "read_text", read_after_exit)
+            owner.recover()
+            assert not directory.exists()
+    finally:
+        if process.poll() is None:
+            process.kill()
+        process.wait(timeout=5)
+        owner.close()
+
+
+@pytest.mark.parametrize("contents", ["", "\n", "partial", "12partial\n"])
+def test_recovery_removes_a_stale_cluster_with_an_incomplete_pidfile(
+    tmp_path, contents
+):
+    """An interrupted startup must not require manual scratch-file removal."""
+    from sandbox_lifecycle import ScratchOwner
+
+    directory = tmp_path / "villages"
+    data = directory / "postgres-012345abcdef" / "data"
+    data.mkdir(parents=True)
+    (data / "postmaster.pid").write_text(contents)
+    unrelated = directory / "keep-me"
+    unrelated.write_text("unrelated")
+    owner = ScratchOwner(directory, tmp_path)
+    try:
+        assert not data.parent.exists()
+        assert unrelated.read_text() == "unrelated"
+    finally:
+        owner.close()
+
+
+@pytest.mark.parametrize("contents", ["", "partial", "12"])
+def test_recovery_stops_a_live_owned_cluster_before_removing_a_damaged_pidfile(
+    tmp_path, contents
+):
+    """A damaged journal must never turn a live cluster into orphaned files."""
+    import os
+    import signal
+    import tempfile
+    import time
+    from pathlib import Path
+
+    from sandbox_lifecycle import ScratchOwner
+    from sandbox_runtime import LocalPostgres
+
+    binary = Path(
+        os.environ.get("OPENLEG_SANDBOX_POSTGRES_BIN", "/usr/lib/postgresql/16/bin")
+    )
+    if not (binary / "initdb").is_file():
+        pytest.skip("requires local PostgreSQL 16 binaries")
+    directory = tmp_path / "villages"
+    directory.mkdir(mode=0o700)
+    stale = directory / "postgres-012345abcdef"
+    with tempfile.TemporaryDirectory(prefix="ols-damaged-") as transport:
+        postgres = LocalPostgres(stale, Path(transport) / "pg", binary)
+        pidfile = stale / "data/postmaster.pid"
+        original = pidfile.read_text()
+        pid = int(original.splitlines()[0])
+        start = ScratchOwner.start_token(pid)
+        try:
+            pidfile.write_text(contents)
+            owner = ScratchOwner(directory, binary)
+            try:
+                assert not stale.exists()
+                assert not ScratchOwner._running(pid, start)
+            finally:
+                owner.close()
+        finally:
+            if ScratchOwner._running(pid, start):
+                os.kill(pid, signal.SIGQUIT)
+                deadline = time.monotonic() + 5
+                while ScratchOwner._running(pid, start) and time.monotonic() < deadline:
+                    time.sleep(0.05)
+            if pidfile.parent.exists():
+                pidfile.write_text(original)
+            postgres.close()
+
+
+def test_damaged_pidfile_shutdown_timeout_retains_cluster_for_retry(
+    tmp_path, monkeypatch
+):
+    """A stopped real postmaster cannot make recovery discard live storage."""
+    import os
+    import signal
+    import tempfile
+    import time
+    from pathlib import Path
+
+    import sandbox_lifecycle
+    from sandbox_lifecycle import ScratchOwner
+    from sandbox_runtime import LocalPostgres
+
+    binary = Path(
+        os.environ.get("OPENLEG_SANDBOX_POSTGRES_BIN", "/usr/lib/postgresql/16/bin")
+    )
+    if not (binary / "initdb").is_file():
+        pytest.skip("requires local PostgreSQL 16 binaries")
+    directory = tmp_path / "villages"
+    directory.mkdir(mode=0o700)
+    stale = directory / "postgres-012345abcdef"
+    with tempfile.TemporaryDirectory(prefix="ols-damaged-timeout-") as transport:
+        postgres = LocalPostgres(stale, Path(transport) / "pg", binary)
+        pidfile = stale / "data/postmaster.pid"
+        original = pidfile.read_text()
+        pid = int(original.splitlines()[0])
+        start = ScratchOwner.start_token(pid)
+        try:
+            os.kill(pid, signal.SIGSTOP)
+            pidfile.write_text("")
+            with monkeypatch.context() as changed:
+                changed.setattr(
+                    sandbox_lifecycle, "POSTGRES_CONTROL_TIMEOUT_SECONDS", 0.1
+                )
+                with pytest.raises(
+                    RuntimeError, match="PostgreSQL could not be stopped"
+                ):
+                    ScratchOwner(directory, binary)
+            assert stale.exists()
+            assert ScratchOwner._running(pid, start)
+            os.kill(pid, signal.SIGCONT)
+            owner = ScratchOwner(directory, binary)
+            try:
+                assert not stale.exists()
+                assert not ScratchOwner._running(pid, start)
+            finally:
+                owner.close()
+        finally:
+            if ScratchOwner._running(pid, start):
+                os.kill(pid, signal.SIGCONT)
+                os.kill(pid, signal.SIGQUIT)
+                deadline = time.monotonic() + 5
+                while ScratchOwner._running(pid, start) and time.monotonic() < deadline:
+                    time.sleep(0.05)
+            if pidfile.parent.exists() and ScratchOwner._running(pid, start):
+                pidfile.write_text(original)
+            postgres.close()

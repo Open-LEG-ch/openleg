@@ -62,10 +62,11 @@ class ScratchOwner:
 
     @staticmethod
     def _running(pid, start):
+        """Check that the same live process still holds this PID."""
         try:
             fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
             return fields[19] == start and fields[0] != "Z"
-        except FileNotFoundError:
+        except (FileNotFoundError, ProcessLookupError):
             return False
 
     def stop_workspace(self, directory):
@@ -140,7 +141,46 @@ class ScratchOwner:
                 if self._running(pid, start):
                     raise RuntimeError("scratch worker could not be stopped")
 
+    def _postgres_identity(self, data, pid):
+        """Identify an owned postmaster by its data path, executable and start."""
+        try:
+            process = Path(f"/proc/{pid}")
+            if process.stat().st_uid != os.getuid():
+                return None
+            arguments = (process / "cmdline").read_bytes().split(b"\0")
+            if os.fsencode(data) not in arguments or b"-D" not in arguments:
+                return None
+            executable = Path(os.readlink(process / "exe")).name
+            if executable.removesuffix(" (deleted)") != "postgres":
+                return None
+            if (process / "cwd").resolve(strict=True) != data:
+                return None
+            start = self.start_token(pid)
+            return start if self._running(pid, start) else None
+        except (FileNotFoundError, ProcessLookupError):
+            return None
+
+    def _stop_unrecorded_postgres(self, data):
+        """Stop a verified live cluster before retiring a damaged PID journal."""
+        for candidate in Path("/proc").iterdir():
+            if not candidate.name.isdecimal():
+                continue
+            pid = int(candidate.name)
+            start = self._postgres_identity(data, pid)
+            if start is None or not self._running(pid, start):
+                continue
+            try:
+                os.kill(pid, signal.SIGQUIT)
+            except ProcessLookupError:
+                continue
+            deadline = time.monotonic() + POSTGRES_CONTROL_TIMEOUT_SECONDS
+            while self._running(pid, start) and time.monotonic() < deadline:
+                time.sleep(0.05)
+            if self._running(pid, start):
+                raise RuntimeError("scratch PostgreSQL could not be stopped")
+
     def recover(self):
+        """Retire owned processes and scratch storage before accepting villages."""
         # These exact names belong to this runtime. Unrelated files stay intact.
         for directory in self.directory.iterdir():
             if (
@@ -158,16 +198,17 @@ class ScratchOwner:
             ):
                 data = directory / "data"
                 pidfile = data / "postmaster.pid"
+                stopped = False
                 if pidfile.exists():
-                    pid = int(pidfile.read_text().splitlines()[0])
                     try:
-                        arguments = (
-                            Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
-                        )
-                    except FileNotFoundError:
-                        arguments = []
+                        pid = int(pidfile.read_text().splitlines()[0])
+                    except (FileNotFoundError, IndexError, ValueError):
+                        pid = None
                     # A reused PID without this data path belongs to another process.
-                    if arguments and os.fsencode(data) in arguments:
+                    start = (
+                        self._postgres_identity(data, pid) if pid and pid > 1 else None
+                    )
+                    if start is not None:
                         subprocess.run(
                             [
                                 str(self.postgres_bin / "pg_ctl"),
@@ -183,6 +224,13 @@ class ScratchOwner:
                             stderr=subprocess.DEVNULL,
                             timeout=POSTGRES_CONTROL_TIMEOUT_SECONDS,
                         )
+                        if self._running(pid, start):
+                            raise RuntimeError(
+                                "scratch PostgreSQL could not be stopped"
+                            )
+                        stopped = True
+                if not stopped:
+                    self._stop_unrecorded_postgres(data)
                 shutil.rmtree(directory)
         record = self.directory / ".runtime.json"
         if record.exists():
