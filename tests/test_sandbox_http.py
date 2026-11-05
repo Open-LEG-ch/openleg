@@ -172,7 +172,7 @@ def test_captured_login_labels_the_authenticated_household(village):
     assert client.get(link).location == "/dashboard"
     dashboard = client.get("/dashboard")
     banner = re.search(
-        r'<aside aria-label="Simulation".*?</aside>', dashboard.text, re.S
+        r'<aside aria-label="Simulation".*?</aside>', dashboard.text, re.DOTALL
     ).group(0)
     assert "Musterweg 2" in banner
     assert "sonnwil-producer@example.org" in banner
@@ -189,7 +189,7 @@ def test_captured_login_labels_the_authenticated_household(village):
     banner = re.search(
         r'<aside aria-label="Simulation".*?</aside>',
         client.get("/sandbox/home").text,
-        re.S,
+        re.DOTALL,
     ).group(0)
     assert "Musterweg 2" not in banner
     assert "sonnwil-producer@example.org" not in banner
