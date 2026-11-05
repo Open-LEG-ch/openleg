@@ -28,6 +28,7 @@ def registration_environment(interest_database):
 def test_simulated_energy_preserves_totals_without_inventing_missing_inputs(
     consumption, solar
 ):
+    """Keep worked energy totals and zero output for absent inputs."""
     profile = ml_models.generate_mock_profiles(consumption, solar)
     assert profile["consumption_kw"].sum() * 0.25 == pytest.approx(
         4500.25 if consumption is not None else 0
@@ -51,6 +52,7 @@ def test_simulated_energy_preserves_totals_without_inventing_missing_inputs(
 def test_registration_matches_real_numeric_profiles_and_remains_unconfirmed(
     registration_environment, monkeypatch, consumption, solar
 ):
+    """Register against stored Decimal/NULL profiles without confirming identity."""
     import app
 
     calculated_totals = []
