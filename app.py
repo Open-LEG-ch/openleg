@@ -775,7 +775,7 @@ def unsubscribe_token(token):
     if not token_info or token_info.get("token_type") != "unsubscribe":
         abort(404)
 
-    if request.method == "GET":
+    if request.method != "POST":
         return render_template(
             "unsubscribe.html",
             status=None,
@@ -784,7 +784,16 @@ def unsubscribe_token(token):
             confirm_deletion=True,
         )
 
-    if not db.confirm_profile_deletion(token_uuid):
+    prepare_deletion = current_app.extensions.get("before_profile_deletion_commit")
+    try:
+        deleted = (
+            db.confirm_profile_deletion(token_uuid, before_commit=prepare_deletion)
+            if prepare_deletion is not None
+            else db.confirm_profile_deletion(token_uuid)
+        )
+    except db.ProfileDeletionPreparationError:
+        abort(503)
+    if not deleted:
         return (
             render_template(
                 "unsubscribe.html",
