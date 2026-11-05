@@ -12,11 +12,11 @@ import pytest
 from tests.native_environment import isolated_environment
 
 
-@pytest.mark.parametrize("stalled_command", ["postgres", "initdb"])
+@pytest.mark.parametrize("stalled_command", ["postgres", "initdb", "pg_ctl"])
 def test_postgres_setup_aborts_a_stalled_tool(tmp_path, stalled_command):
     tools = tmp_path / "bin"
     tools.mkdir()
-    for command in ("postgres", "initdb"):
+    for command in ("postgres", "initdb", "pg_ctl"):
         program = tools / command
         program.write_text(
             f"#!{sys.executable}\n"
@@ -35,6 +35,7 @@ def test_postgres_setup_aborts_a_stalled_tool(tmp_path, stalled_command):
 import pathlib, subprocess, sys
 import sandbox_runtime
 sandbox_runtime.POSTGRES_SETUP_TIMEOUT_SECONDS = 0.1
+sandbox_runtime.POSTGRES_CONTROL_TIMEOUT_SECONDS = 0.1
 root = pathlib.Path(sys.argv[1])
 try:
     sandbox_runtime.LocalPostgres(root / 'cluster', root / 'socket', root / 'bin')
@@ -56,6 +57,61 @@ else:
         runner.communicate()
         pytest.fail("PostgreSQL setup remained blocked by a stalled tool")
     assert runner.returncode == 0, stderr.decode()
+
+
+@pytest.mark.parametrize("mode", ["signals", "natural-signals", "timeout"])
+def test_runner_finishes_cleanup_despite_repeated_signals_and_retains_failed_state(
+    tmp_path, mode
+):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import os, pathlib, signal, subprocess, sys
+from types import SimpleNamespace
+from flask import Flask
+from scripts import sandbox
+root, mode = pathlib.Path(sys.argv[1]), sys.argv[2]
+signal.signal(signal.SIGINT, signal.default_int_handler)
+signal.signal(signal.SIGHUP, signal.SIG_DFL)
+web = Flask(__name__)
+finished = []
+def close():
+    assert (root / 'runner.json').exists()
+    if mode == 'timeout':
+        raise subprocess.TimeoutExpired('pg_ctl', 120)
+    for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+        os.kill(os.getpid(), sig)
+    finished.append(True)
+def serve(**options):
+    if mode == 'signals':
+        os.kill(os.getpid(), signal.SIGTERM)
+web.extensions['villages'] = SimpleNamespace(close=close)
+web.run = serve
+sandbox.create_gateway = lambda *args, **kwargs: web
+sys.argv = ['sandbox.py', '--directory', str(root)]
+try:
+    sandbox.main()
+except subprocess.TimeoutExpired:
+    assert mode == 'timeout'
+except SystemExit as error:
+    assert error.code == 0
+if mode == 'timeout':
+    assert (root / 'runner.json').exists(), 'failed cleanup lost its runner record'
+else:
+    assert finished, 'repeated signal interrupted cleanup'
+    assert not (root / 'runner.json').exists()
+""",
+            str(tmp_path),
+            mode,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_worker_network_boundary_allows_unix_and_refuses_internet_sockets():

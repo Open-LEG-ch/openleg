@@ -103,10 +103,18 @@ def run(args, directory):
     with os.fdopen(descriptor, "w") as output:
         json.dump({"pid": os.getpid(), "start": process_start(os.getpid())}, output)
 
+    stopping = False
+
     def shutdown(_signal, _frame):
+        nonlocal stopping
+        if stopping:
+            return
+        stopping = True
         raise SystemExit(0)
 
     signal.signal(signal.SIGTERM, shutdown)
+    if signal.getsignal(signal.SIGINT) != signal.SIG_IGN:
+        signal.signal(signal.SIGINT, shutdown)
     if signal.getsignal(signal.SIGHUP) != signal.SIG_IGN:
         signal.signal(signal.SIGHUP, shutdown)
     web = None
@@ -130,11 +138,10 @@ def run(args, directory):
             threaded=True,
         )
     finally:
-        try:
-            if web:
-                web.extensions["villages"].close()
-        finally:
-            record.unlink(missing_ok=True)
+        stopping = True
+        if web:
+            web.extensions["villages"].close()
+        record.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

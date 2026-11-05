@@ -45,6 +45,11 @@ checkout created with group write permission, remove that permission with
 `chmod g-w /path/named/by/the/error` before restarting. The runner preserves
 an inherited ignored SIGHUP, so `nohup` continues to work.
 
+PostgreSQL version and initialization commands have 60-second deadlines; start
+and stop commands have 120-second deadlines. Repeated shutdown signals are
+ignored while cleanup runs. Failed cleanup retains its runner record and scratch
+resources. Automatic crash-resource recovery remains tracked in #770.
+
 ## Boundaries
 
 Each village has a dedicated application process, database owner, database,

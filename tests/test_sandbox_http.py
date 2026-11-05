@@ -196,6 +196,50 @@ def test_captured_login_labels_the_authenticated_household(village):
 
 
 @pytest.mark.integration
+def test_postgres_stop_timeout_keeps_the_cluster_available_for_cleanup_retry(
+    village, tmp_path, monkeypatch
+):
+    import sandbox_runtime
+
+    manager = village.extensions["villages"]
+    postgres = manager.postgres
+    original_bin = postgres.bin
+    fake_bin = tmp_path / "stalled-control"
+    fake_bin.mkdir()
+    command = fake_bin / "pg_ctl"
+    command.write_text(f"#!{sys.executable}\nimport time; time.sleep(60)\n")
+    command.chmod(0o700)
+    monkeypatch.setattr(
+        sandbox_runtime, "POSTGRES_CONTROL_TIMEOUT_SECONDS", 0.1, raising=False
+    )
+
+    def failed_deadline(*_args):
+        pytest.fail("scratch shutdown remained blocked by a stalled pg_ctl")
+
+    old_handler = signal.signal(signal.SIGALRM, failed_deadline)
+    signal.alarm(3)
+    try:
+        postgres.bin = fake_bin
+        with pytest.raises(subprocess.TimeoutExpired):
+            manager.close()
+        assert not manager.closed
+        assert postgres.directory.exists()
+        with (
+            psycopg2.connect(postgres.dsn) as connection,
+            connection.cursor() as cursor,
+        ):
+            cursor.execute("SELECT 1")
+            assert cursor.fetchone() == (1,)
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
+        postgres.bin = original_bin
+    monkeypatch.undo()
+    manager.close()
+    assert not postgres.directory.exists()
+
+
+@pytest.mark.integration
 def test_gateway_rejects_untrusted_host_and_cross_site_start(village):
     client = village.test_client()
     assert (

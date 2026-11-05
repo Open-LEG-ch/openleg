@@ -29,6 +29,7 @@ from app_config import MAX_UPLOAD_BYTES, validated_public_site_url
 
 SOURCE = Path(__file__).resolve().parent
 POSTGRES_SETUP_TIMEOUT_SECONDS = 60
+POSTGRES_CONTROL_TIMEOUT_SECONDS = 120
 HOP_HEADERS = {
     "connection",
     "keep-alive",
@@ -108,6 +109,7 @@ class LocalPostgres:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=True,
+                timeout=POSTGRES_CONTROL_TIMEOUT_SECONDS,
             )
             self.dsn = make_dsn(
                 dbname="postgres",
@@ -144,6 +146,7 @@ class LocalPostgres:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=True,
+                timeout=POSTGRES_CONTROL_TIMEOUT_SECONDS,
             )
 
 
