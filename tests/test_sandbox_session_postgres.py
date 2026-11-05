@@ -36,6 +36,8 @@ def test_failed_token_precheck_cannot_recover_into_an_unrevoked_deletion(
     monkeypatch.setattr(db, "get_token", transient_failure)
     assert client.post("/unsubscribe/" + token).status_code == 404
     assert calls == [token]
+    with client.session_transaction() as state:
+        assert state["dashboard_building_id"] == "founder"
     assert db.get_building("founder")["verified"] is True
     assert binding._current() == previous
     assert lookup(token) is not None
