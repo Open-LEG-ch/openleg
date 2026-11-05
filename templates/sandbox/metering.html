@@ -69,8 +69,8 @@
     <form method="post" action="/sandbox/metering/jobs" class="mt-4 grid gap-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <label><input type="checkbox" name="fail_source" value="yes"> {{ _('Abruffehler simulieren') }}</label>
-      <button type="submit" name="action" value="due" class="rounded-lg bg-brand px-4 py-3 font-semibold text-white">{{ _('Zeitplan auslösen') }}</button>
-      <button type="submit" name="action" value="retry" class="rounded-lg border border-line px-4 py-3 font-semibold">{{ _('Lauf erneut versuchen') }}</button>
+      <button type="submit" name="job_action" value="due" class="rounded-lg bg-brand px-4 py-3 font-semibold text-white">{{ _('Zeitplan auslösen') }}</button>
+      <button type="submit" name="job_action" value="retry" class="rounded-lg border border-line px-4 py-3 font-semibold">{{ _('Lauf erneut versuchen') }}</button>
     </form>
   </section>
   <section class="mt-8 rounded-lg border border-line p-6">

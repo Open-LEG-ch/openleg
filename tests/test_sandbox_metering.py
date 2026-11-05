@@ -204,25 +204,25 @@ def test_confined_scheduled_failure_can_retry_without_duplicate_delivery(village
     page = client.get(path)
     failure = client.post(
         path + "/jobs",
-        data={"csrf_token": _csrf(page), "action": "due", "fail_source": "yes"},
+        data={"csrf_token": _csrf(page), "job_action": "due", "fail_source": "yes"},
         follow_redirects=True,
     )
     assert failure.status_code == 200 and "Abruf fehlgeschlagen" in failure.text
     repeat_tick = client.post(
         path + "/jobs",
-        data={"csrf_token": _csrf(failure), "action": "due"},
+        data={"csrf_token": _csrf(failure), "job_action": "due"},
         follow_redirects=True,
     )
     assert repeat_tick.status_code == 200
     retry = client.post(
         path + "/jobs",
-        data={"csrf_token": _csrf(repeat_tick), "action": "retry"},
+        data={"csrf_token": _csrf(repeat_tick), "job_action": "retry"},
         follow_redirects=True,
     )
     assert retry.status_code == 200 and "Erfolgreich" in retry.text
     again = client.post(
         path + "/jobs",
-        data={"csrf_token": _csrf(retry), "action": "retry"},
+        data={"csrf_token": _csrf(retry), "job_action": "retry"},
         follow_redirects=True,
     )
     assert again.status_code == 200
@@ -292,7 +292,7 @@ def test_role_csrf_and_attempt_urls_cannot_cross_villages(village):
     )
     assert (
         client.post(
-            path + "/jobs", data={"csrf_token": _csrf(resident), "action": "due"}
+            path + "/jobs", data={"csrf_token": _csrf(resident), "job_action": "due"}
         ).status_code
         == 403
     )
