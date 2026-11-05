@@ -57,6 +57,7 @@ DIAGNOSTICS = {
 
 
 def _authorize(*, write=False):
+    """Require current billing preparation authority and CSRF on writes."""
     actor = _require_dashboard_session()
     if write:
         _require_dashboard_csrf()
@@ -71,6 +72,7 @@ def _authorize(*, write=False):
 
 
 def _present(error=None, status=200):
+    """Render the September policy, accepted evidence and billing draft."""
     policy = source = period = None
     if error != "billing_store_unavailable":
         try:
@@ -102,11 +104,13 @@ def _present(error=None, status=200):
 
 
 def install(web):
+    """Install fictional billing controls only in a private village worker."""
     if os.environ.get("OPENLEG_SANDBOX_WORKER") != "1":
         raise RuntimeError("billing simulation requires a village worker")
 
     @web.after_request
     def label_simulated_exports(response):
+        """Label successful profile and community JSON exports as simulations."""
         endpoint = (request.endpoint or "").rsplit(".", 1)[-1]
         if response.status_code == 200 and endpoint in {
             "dashboard_profile_export",
@@ -125,11 +129,13 @@ def install(web):
 
     @web.get("/sandbox/billing")
     def sandbox_billing():
+        """Show the billing exercise after checking preparation authority."""
         _authorize()
         return _present()
 
     @web.post("/sandbox/billing/prepare")
     def sandbox_billing_prepare():
+        """Prepare a confirmed draft through the ordinary billing runner."""
         actor = _authorize(write=True)
         if request.form.get("confirm") != "yes":
             abort(400)
@@ -143,6 +149,7 @@ def install(web):
 
     @web.get("/sandbox/billing/fixtures/unequal.xml.gz")
     def sandbox_billing_unequal_fixture():
+        """Download an unequal synthetic source for exercising allocation refusal."""
         _authorize()
         source = ET.fromstring(gzip.decompress(fixture("valid")))
         source.find(

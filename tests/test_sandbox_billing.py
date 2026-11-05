@@ -31,6 +31,7 @@ POLICY = {
 
 
 def _policy(client, prefix, **changes):
+    """Save the September policy through the ordinary billing form."""
     page = client.get(prefix + COMMUNITY + "/billing-policy")
     response = client.post(
         prefix + COMMUNITY + "/billing-policy",
@@ -40,6 +41,7 @@ def _policy(client, prefix, **changes):
 
 
 def _import(client, prefix):
+    """Import the complete synthetic September metering source."""
     path = prefix + "/sandbox/metering"
     page = client.get(path)
     delivery = client.get(path + "/fixtures/valid.xml.gz")
@@ -55,6 +57,7 @@ def _import(client, prefix):
 
 
 def _prepare(client, prefix):
+    """Confirm draft preparation using the current page's CSRF token."""
     page = client.get(prefix + "/sandbox/billing")
     assert page.status_code == 200
     return client.post(
@@ -65,6 +68,7 @@ def _prepare(client, prefix):
 
 
 def test_draft_requires_policy_and_evidence_then_issues_independent_totals(village):
+    """Billing requires evidence and policy, then preserves independently checked totals."""
     client = village.test_client()
     prefix, _ = _start(client, "operator")
     missing_policy = _prepare(client, prefix)
@@ -195,6 +199,7 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
     "fault", ["withdrawn", "replacement", "changed", "unequal", "battery", "invalid"]
 )
 def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault):
+    """The demo retains ordinary evidence, allocation and issued-draft guards."""
     client = village.test_client()
     prefix, _ = _start(client, "operator")
     _policy(client, prefix)
@@ -380,6 +385,7 @@ def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault)
 def test_billing_controls_require_current_role_and_csrf_and_stay_worker_only(
     village, monkeypatch
 ):
+    """Billing controls enforce current roles, CSRF and worker confinement."""
     client = village.test_client()
     prefix, _ = _start(client, "operator")
     path = prefix + "/sandbox/billing"
@@ -412,6 +418,7 @@ def test_billing_controls_require_current_role_and_csrf_and_stay_worker_only(
 
 
 def test_persistent_billing_read_failure_returns_retryable_unavailable_state(village):
+    """Persistent storage failure renders a retryable unavailable state."""
     client = village.test_client()
     prefix, _ = _start(client, "operator")
     path = prefix + "/sandbox/billing"
