@@ -475,5 +475,10 @@ from store.equipment import (  # noqa: F401
     update_equipment,
 )
 from store.telemetry import acknowledge_notice as acknowledge_telemetry_notice  # noqa: F401
+from store.telemetry import change as change_telemetry_installation  # noqa: F401
+from store.telemetry import charge_ingestion as charge_telemetry_ingestion  # noqa: F401
+from store.telemetry import enroll as enroll_telemetry_installation  # noqa: F401
+from store.telemetry import ingest as ingest_telemetry_samples  # noqa: F401
+from store.telemetry import list_installations as list_telemetry_installations  # noqa: F401
 from store.telemetry import owner_overview as get_owner_telemetry_overview  # noqa: F401
 from store.telemetry import shared_overview as get_shared_telemetry_overview  # noqa: F401

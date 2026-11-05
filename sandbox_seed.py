@@ -152,6 +152,7 @@ FIXTURE_MANIFEST = {
     },
     "available_scenarios": [
         "invoice-question",
+        "household-telemetry",
         "resident-profile",
         "resident-onboarding",
         "neighbour-consent",
