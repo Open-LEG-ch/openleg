@@ -22,11 +22,13 @@ class DestinationStore(community_archive.PostgresArchiveStore):
     """Use the existing restore transaction on a server-owned scratch database."""
 
     def __init__(self, villages, destination):
+        """Bind the restore store to the gateway-owned destination database."""
         self.dsn = villages.postgres.dsn
         self.database = destination["name"]
 
     @contextmanager
     def _connection(self):
+        """Open and close a transaction against the scratch destination."""
         connection = psycopg2.connect(
             self.dsn, dbname=self.database, cursor_factory=RealDictCursor
         )
@@ -38,6 +40,7 @@ class DestinationStore(community_archive.PostgresArchiveStore):
 
 
 def _snapshot(workspace, payload):
+    """Atomically save an archive candidate inside its source workspace."""
     descriptor, temporary = tempfile.mkstemp(
         dir=workspace["directory"], suffix=".pending"
     )
@@ -54,6 +57,7 @@ def install(web, villages, origin, proxy, expired):
 
     @contextmanager
     def source(identifier):
+        """Lease the visitor-owned source workspace for one archive operation."""
         if session.get("workspace") != identifier:
             abort(410)
         with villages.use(identifier) as workspace:
@@ -62,12 +66,14 @@ def install(web, villages, origin, proxy, expired):
             yield workspace
 
     def authorize(workspace, body):
+        """Ask the source worker to verify the current archive command."""
         response = proxy(workspace, "sandbox/archive/authorize", body)
         if response.status_code != 200:
             abort(response.status_code)
         return response.get_json()
 
     def current_destination(workspace):
+        """Resolve only a live destination linked to this source."""
         state = workspace.get("archive", {})
         destination = villages.get(state.get("destination"))
         if destination and destination.get("restore_parent") == workspace["id"]:
@@ -75,6 +81,7 @@ def install(web, villages, origin, proxy, expired):
         return None
 
     def target(workspace, identity):
+        """Allocate or reuse a destination after checking community and parent lifetime."""
         state = workspace.get("archive", {})
         if state and state["community_id"] != identity["community_id"]:
             abort(409)
@@ -100,6 +107,7 @@ def install(web, villages, origin, proxy, expired):
         return destination
 
     def run(workspace, destination, *, dry_run):
+        """Validate or restore the saved archive through the ordinary transaction."""
         payload = (workspace["directory"] / "archive-candidate.json").read_bytes()
         if len(payload) > MAX_ARCHIVE_BYTES:
             abort(413)
@@ -120,6 +128,7 @@ def install(web, villages, origin, proxy, expired):
 
     @web.get("/v/<identifier>/sandbox/archive")
     def archive_guide(identifier):
+        """Render archive guidance from the source worker's authorized context."""
         with source(identifier) as workspace:
             response = proxy(workspace, "sandbox/archive/context", b"", method="GET")
             if response.status_code != 200:
@@ -140,6 +149,7 @@ def install(web, villages, origin, proxy, expired):
 
     @web.post("/v/<identifier>/sandbox/archive/prepare")
     def archive_prepare(identifier):
+        """Save and validate the selected export in an isolated scratch destination."""
         body = request.get_data()
         with source(identifier) as workspace:
             identity = authorize(workspace, body)
@@ -168,6 +178,7 @@ def install(web, villages, origin, proxy, expired):
 
     @web.post("/v/<identifier>/sandbox/archive/restore")
     def archive_restore(identifier):
+        """Restore a confirmed candidate after rechecking source authority."""
         body = request.get_data()
         with source(identifier) as workspace:
             identity = authorize(workspace, body)
@@ -185,6 +196,7 @@ def install(web, villages, origin, proxy, expired):
 
     @web.post("/v/<identifier>/sandbox/archive/open")
     def archive_open(identifier):
+        """Grant one destination login for the restored source administrator."""
         body = request.get_data()
         with source(identifier) as workspace:
             identity = authorize(workspace, body)
@@ -203,6 +215,7 @@ def install(web, villages, origin, proxy, expired):
 
     @web.post("/v/<identifier>/sandbox/archive/discard")
     def archive_discard(identifier):
+        """Remove the confirmed destination and its saved candidate."""
         body = request.get_data()
         with source(identifier) as workspace:
             identity = authorize(workspace, body)

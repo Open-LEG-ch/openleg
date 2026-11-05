@@ -21,6 +21,7 @@ def install(web, logins, active_account):
 
     @web.get("/sandbox/archive/context")
     def archive_context():
+        """List communities the current member may administer for an archive exercise."""
         actor = _require_dashboard_session()
         communities = [
             row
@@ -41,6 +42,7 @@ def install(web, logins, active_account):
 
     @web.post("/sandbox/archive/authorize")
     def archive_authorize():
+        """Recheck source administrator authority and CSRF before archive actions."""
         actor = _require_dashboard_session()
         _require_dashboard_csrf()
         community_id = request.form.get("community_id", "")
@@ -50,6 +52,7 @@ def install(web, logins, active_account):
 
     @web.get("/sandbox/archive/enter")
     def archive_enter():
+        """Sign in a verified restored administrator using gateway-supplied identity."""
         actor = request.headers.get("X-OpenLEG-Restore-Actor")
         community_id = request.headers.get("X-OpenLEG-Restore-Community")
         profile = db.get_building(actor) if actor else None
@@ -65,6 +68,7 @@ def install(web, logins, active_account):
 
     @web.after_request
     def label_archive(response):
+        """Give successful community exports an explicit simulation filename."""
         if (request.endpoint or "").rsplit(".", 1)[
             -1
         ] == "leg_community_archive_export" and response.status_code == 200:

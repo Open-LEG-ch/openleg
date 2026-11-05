@@ -262,6 +262,7 @@ class Villages:
         # Child allocation runs under its source's reentrant operation lock.
         # Reaping here could synchronously retire that source before linking
         # the child. The reaper owns expiry; reject stale parents atomically.
+        """Allocate a bounded workspace while preserving owner and restore-parent lifetime."""
         if not restore_parent:
             self.reap()
         with self.lock:
@@ -338,6 +339,7 @@ class Villages:
             workspace["provisioned"].set()
 
     def _provision(self, workspace, origin, locale):
+        """Create a private database and confined worker without inherited service credentials."""
         identifier, name = workspace["id"], workspace["name"]
         directory, socket_path = workspace["directory"], workspace["socket"]
         password = secrets.token_urlsafe(32)
@@ -575,6 +577,7 @@ class Villages:
             return self.destroy(identifier)
 
     def destroy(self, identifier, *, retry=False):
+        """Retire a workspace and its restore children with bounded cleanup retries."""
         with self.lock:
             workspace = self.workspaces.pop(identifier, None) or self.retiring.get(
                 identifier
@@ -814,6 +817,7 @@ def create_gateway(
         return render_template("sandbox/expired.html"), 410
 
     def owned(identifier):
+        """Resolve the visitor's primary workspace or its linked restore destination."""
         primary_id = session.get("workspace")
         primary = villages.get(primary_id)
         if not primary:
@@ -828,6 +832,7 @@ def create_gateway(
 
     @web.get("/v/<identifier>/sandbox/manage")
     def manage(identifier):
+        """Show lifecycle controls appropriate to the owned source or destination."""
         workspace = owned(identifier)
         if not workspace:
             return expired()
@@ -855,6 +860,7 @@ def create_gateway(
     @web.post("/v/<identifier>/sandbox/reset")
     @web.post("/v/<identifier>/sandbox/discard")
     def retire(identifier):
+        """Confirm and serialize source reset or discard without changing a destination cookie."""
         workspace = owned(identifier)
         if not workspace:
             return expired()
@@ -912,6 +918,7 @@ def create_gateway(
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
     )
     def product(identifier, path):
+        """Proxy an owned request after reading its body and rechecking workspace lifetime."""
         if not owned(identifier):
             return expired()
         # Reading an incomplete upload must not hold the village's retirement
@@ -923,6 +930,7 @@ def create_gateway(
             return proxy(workspace, path, body)
 
     def proxy(workspace, path, body, *, method=None):
+        """Forward through the private socket and scope response URLs to the workspace."""
         method = method or request.method
         prefix = "/v/" + workspace["id"]
         headers = {
