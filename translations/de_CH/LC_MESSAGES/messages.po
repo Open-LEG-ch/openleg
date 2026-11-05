@@ -3307,7 +3307,7 @@ msgstr "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 
-#: sandbox_seed.py:45 sandbox_worker.py:83
+#: sandbox_seed.py:45 sandbox_worker.py:84
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 
@@ -4188,7 +4188,7 @@ msgstr "Energieprofil und Einwilligungen gespeichert."
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 
-#: sandbox_seed.py:27 sandbox_worker.py:77
+#: sandbox_seed.py:27 sandbox_worker.py:78
 msgid "Energieprofil ändern"
 msgstr "Energieprofil ändern"
 
@@ -5558,7 +5558,7 @@ msgstr "Haftungsausschluss"
 msgid "Hallo,"
 msgstr "Hallo,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:72 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:73 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
@@ -5792,7 +5792,7 @@ msgstr "Ihr eigenes Übungsdorf"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 
-#: sandbox_worker.py:78
+#: sandbox_worker.py:79
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Ihr neuer Haushalt ist bestätigt."
 
@@ -8144,7 +8144,7 @@ msgstr "Neuen Schlüssel erstellen"
 msgid "Neuenburg"
 msgstr "Neuenburg"
 
-#: sandbox_worker.py:71
+#: sandbox_worker.py:72
 msgid "Neuer Haushalt"
 msgstr "Neuer Haushalt"
 
@@ -12733,7 +12733,7 @@ msgstr "» weiterhin aktuell ist."
 msgid "Ändern"
 msgstr "Ändern"
 
-#: sandbox_seed.py:44 sandbox_worker.py:80
+#: sandbox_seed.py:44 sandbox_worker.py:81
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 
