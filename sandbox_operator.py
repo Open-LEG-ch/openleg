@@ -22,6 +22,7 @@ from sandbox_metering_fixtures import COMMUNITY
 
 
 def _authorize():
+    """Require current confirmed administrator authority in this village."""
     actor = _require_dashboard_session()
     community = db.fetch_community_with_members(COMMUNITY, actor)
     member = next(
@@ -42,6 +43,7 @@ def _authorize():
 
 
 def _directory():
+    """Locate the current worker's private webhook capture directory."""
     root = Path(os.environ["OPENLEG_SANDBOX_DIRECTORY"]).resolve()
     if os.environ.get("OPENLEG_SANDBOX_WORKER") != "1" or root != Path.cwd():
         raise RuntimeError("local webhook capture requires a village worker")
@@ -51,6 +53,7 @@ def _directory():
 
 
 def _captures():
+    """Read the most recent local webhook receipts."""
     paths = sorted(
         _directory().glob("*.json"), key=lambda path: path.stat().st_mtime, reverse=True
     )[:100]
@@ -58,7 +61,10 @@ def _captures():
 
 
 def _transport(mode):
+    """Build a local receiver that verifies signatures and records simulated responses."""
+
     def capture(url, body, headers, _timeout):
+        """Verify one scoped delivery and atomically save its local receipt."""
         if url != operator_api.SANDBOX_WEBHOOK_URL or len(body) > 65536:
             return 400
         try:
@@ -107,6 +113,7 @@ def install(web):
 
     @web.get("/sandbox/operator")
     def sandbox_operator():
+        """Show safe credentials, scoped deliveries and local capture receipts."""
         _authorize()
         try:
             credentials = [
@@ -130,11 +137,13 @@ def install(web):
 
     @web.get("/sandbox/operator/captures")
     def sandbox_operator_captures():
+        """Return capture receipts after checking administrator authority."""
         _authorize()
         return {"captures": _captures()}
 
     @web.post("/sandbox/operator/dispatch")
     def sandbox_operator_dispatch():
+        """Dispatch one confirmed local delivery through normal outbox commands."""
         _authorize()
         _require_dashboard_csrf()
         mode = request.form.get("mode")

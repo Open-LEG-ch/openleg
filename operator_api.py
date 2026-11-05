@@ -639,6 +639,7 @@ def _public_webhook_addresses(url):
 
 
 def _is_public_webhook_url(url):
+    """Validate a public destination or the confined worker's exact local sink."""
     if current_app.config.get("SANDBOX_SIMULATION"):
         return (
             os.environ.get("OPENLEG_SANDBOX_WORKER") == "1"
@@ -689,6 +690,7 @@ def dispatch_pending_webhooks(
     signing_key=None,
     community_id=None,
 ):
+    """Claim scoped deliveries, sign payloads and record retryable transport results."""
     transport = transport or _default_transport
     batch_size = max(1, min(int(batch_size), MAX_WEBHOOK_BATCH_SIZE))
     totals = {"attempted": 0, "delivered": 0, "failed": 0}

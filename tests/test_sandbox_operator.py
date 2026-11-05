@@ -50,6 +50,7 @@ def _dispatch(client, prefix, mode):
 
 
 def _foreign_pending(village, prefix):
+    """Prepare a pending webhook outside the exercise community."""
     client, event, delivery = (str(uuid4()) for _ in range(3))
     with (
         _workspace_connection(village, prefix) as connection,
@@ -75,6 +76,7 @@ def _foreign_pending(village, prefix):
 
 
 def test_real_operator_requests_replay_and_signed_capture_retry(village):
+    """Real operator requests retain keyed replay and signed webhook retry behavior."""
     client = village.test_client()
     prefix, _ = _start(client, "administrator")
     assert client.get(prefix + "/sandbox/operator").status_code == 200
@@ -205,6 +207,7 @@ def test_real_operator_requests_replay_and_signed_capture_retry(village):
 def test_console_and_local_sink_recheck_role_csrf_scope_and_callback(
     village, monkeypatch
 ):
+    """Console and sink enforce role, CSRF, community and callback boundaries."""
     client = village.test_client()
     prefix, _ = _start(client, "administrator")
     path = prefix + "/sandbox/operator"
