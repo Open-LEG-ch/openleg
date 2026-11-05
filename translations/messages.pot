@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 11:10+0000\n"
+"POT-Creation-Date: 2026-11-05 11:52+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3165,7 +3165,7 @@ msgstr ""
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr ""
 
-#: sandbox_seed.py:45 sandbox_worker.py:90
+#: sandbox_seed.py:45 sandbox_worker.py:91
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr ""
 
@@ -3998,7 +3998,7 @@ msgstr ""
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr ""
 
-#: sandbox_seed.py:27 sandbox_worker.py:84
+#: sandbox_seed.py:27 sandbox_worker.py:85
 msgid "Energieprofil ändern"
 msgstr ""
 
@@ -5354,7 +5354,7 @@ msgstr ""
 msgid "Hallo,"
 msgstr ""
 
-#: sandbox_seed.py:23 sandbox_worker.py:79 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:80 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
@@ -5586,7 +5586,7 @@ msgstr ""
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr ""
 
-#: sandbox_worker.py:85
+#: sandbox_worker.py:86
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr ""
 
@@ -7906,7 +7906,7 @@ msgstr ""
 msgid "Neuenburg"
 msgstr ""
 
-#: sandbox_worker.py:78
+#: sandbox_worker.py:79
 msgid "Neuer Haushalt"
 msgstr ""
 
@@ -12383,7 +12383,7 @@ msgstr ""
 msgid "Ändern"
 msgstr ""
 
-#: sandbox_seed.py:44 sandbox_worker.py:87
+#: sandbox_seed.py:44 sandbox_worker.py:88
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr ""
 
