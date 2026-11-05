@@ -280,3 +280,23 @@ Native regressions cover automatic and reviewed payments, statement replay,
 concurrent same-entry and competing-entry confirmations, changed retry targets,
 issued/cancelled invoices, CSRF, roles and existing foreign-community resources.
 A second visitor's village has independent statement and invoice identities.
+
+## Invoice questions
+
+Open the invoice-question guide from the village home. Prepare September as
+Sam, approve and deliver Lea's invoice as Robin, then switch to Lea. The normal
+invoice form opens a question with an optional PDF of at most two MiB. The
+fictional invoice's own PDF is suitable sample evidence.
+
+Sam can acknowledge and resolve the case in the guide or use the ordinary
+billing workspace. The guide calls the same request-bound keyed command as the
+operator API. Repeat an unchanged key to inspect a replay; a changed request
+with the same key or an invalid transition returns 409 and keeps the history.
+A new answer uses a new key. Each accepted transition displays its real audit
+identity and captured canonical invoice.case.updated event, without a remote
+receiver. Switch back to Lea to read the replies and complete history.
+
+The guide and PDF downloads recheck current invoice-owner or billing-preparer
+scope. Other residents and operators lacking that capability cannot see the
+case, messages or evidence. Workspaces remain independent. No case action
+changes an issued invoice snapshot or sends external notifications.

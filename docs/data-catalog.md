@@ -339,7 +339,9 @@ it.
 - **Holds:** an invoice-scoped question category and status, private messages,
   optional PDF evidence, and append-only status events with actor and time.
 - **Purpose:** let a member question an immutable invoice and follow the
-  operator's response without changing the invoice snapshot.
+  operator's response without changing the invoice snapshot. Attachment reads
+  join the message to its case and require the owner or the authorized
+  operator's community scope.
 - **Owner:** the invoiced member and the issuing LEG.
 - **Sensitivity:** financial correspondence and optional personal evidence.
 - **Resident-visible:** only to the invoice participant; operators are scoped

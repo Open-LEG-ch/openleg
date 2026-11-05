@@ -1,0 +1,37 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _('Rechnungsfragen ausprobieren') }} · OpenLEG</title>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ _('Rechnungsfragen ausprobieren') }}</h1>
+  <p class="mt-4">{{ _('SIMULATION SONNWIL: Fragen, Antworten und Belege bleiben in diesem Übungsdorf. Die ausgestellte Rechnung wird dadurch nicht geändert.') }}</p>
+  {% if error %}<p role="alert" class="mt-6 rounded-lg border border-accent p-4">{{ _(error) }}</p>{% endif %}
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('1. Als Lea eine Frage stellen') }}</h2>
+    <p class="mt-3">{{ _('Bereiten Sie als Sam eine September-Abrechnung vor, geben Sie sie als Robin frei und stellen Sie Leas Rechnung zu. Wechseln Sie zu Lea, öffnen Sie die eigene Rechnung und senden Sie eine Frage. Optional können Sie die eigene SIMULATION-Rechnung als PDF herunterladen und als Beleg anhängen, höchstens 2 MB.') }}</p>
+    <div class="mt-4 flex flex-wrap gap-4"><a class="font-semibold underline" href="/sandbox/billing">{{ _('Abrechnung ausprobieren') }}</a><a class="font-semibold underline" href="/sandbox/accounts">{{ _('Konto wechseln') }}</a><a class="font-semibold underline" href="/dashboard/invoices">{{ _('Meine Rechnungen') }}</a></div>
+    <h2 class="mt-6 text-xl font-semibold">{{ _('2. Als Sam bestätigen und beantworten') }}</h2>
+    <p class="mt-3">{{ _('Wechseln Sie zu Sam. Bestätigen Sie den Eingang und beantworten Sie danach die Frage mit dem Status erledigt. Jede angenommene Änderung erhält eine eigene Ereigniskennung. Eine unveränderte Wiederholung mit demselben Schlüssel fügt keine zweite Antwort hinzu. Ein neuer Inhalt braucht einen neuen Schlüssel. Ein erledigter Fall kann nicht erneut bestätigt werden.') }}</p>
+    <h2 class="mt-6 text-xl font-semibold">{{ _('3. Als Lea die vollständige Historie lesen') }}</h2>
+    <p class="mt-3">{{ _('Wechseln Sie zurück zu Lea. Prüfen Sie Antworten, Status, Beleg und Historie hier und in der eigenen Rechnung. Andere Haushalte sehen diese Frage nicht. Es werden keine Nachrichten an externe Empfänger gesendet.') }}</p>
+  </section>
+  {% for case in cases %}
+  <article class="mt-8 rounded-lg border border-line p-6" id="case-{{ case.id }}">
+    <h2 class="text-xl font-semibold">{{ _('Rechnungsfrage') }} {{ case.id }}</h2>
+    <p class="mt-3">{{ _('Rechnung') }} {{ case.invoice_id }} · {{ _(case.category) }} · {{ _(case.status) }}</p>
+    {% for message in case.messages %}<div class="mt-4 break-words"><p>{{ message.actor_id }} · {{ message.created_at }}</p><p class="mt-1 whitespace-pre-wrap">{{ message.message }}</p>{% if message.attachment_filename %}<a class="mt-2 inline-block font-semibold underline break-all" href="/sandbox/questions/attachments/{{ message.id }}">{{ message.attachment_filename }}</a>{% endif %}</div>{% endfor %}
+    <ol class="mt-6 space-y-2">{% for event in case.events %}<li>{{ event.id }} · {{ _(event.previous_status or 'open') }} → {{ _(event.new_status) }} · {{ event.actor_id }}</li>{% endfor %}</ol>
+    {% if operator %}
+    <form method="post" action="/sandbox/questions/{{ case.id }}/respond" class="mt-6 grid gap-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="key-{{ case.id }}">{{ _('Schlüssel für diese Antwort') }}</label><input id="key-{{ case.id }}" name="key" value="{{ key }}" required maxlength="128" class="min-w-0 rounded-lg border px-3 py-2">
+      <label for="message-{{ case.id }}">{{ _('Antwort') }}</label><textarea id="message-{{ case.id }}" name="message" maxlength="4000" class="rounded-lg border px-3 py-2"></textarea>
+      <label for="status-{{ case.id }}">{{ _('Status') }}</label><select id="status-{{ case.id }}" name="status" class="rounded-lg border px-3 py-2"><option value="acknowledged">{{ _('Bestätigen') }}</option><option value="resolved">{{ _('Erledigen') }}</option></select>
+      <label class="flex gap-2"><input name="confirm" value="yes" type="checkbox" required><span>{{ _('Ich bestätige diese Antwort und den gewählten Status.') }}</span></label>
+      <button class="rounded-lg bg-brand px-4 py-2 font-semibold text-white">{{ _('Antwort und Status speichern') }}</button>
+    </form>
+    {% endif %}
+  </article>
+  {% else %}<p class="mt-8">{{ _('Noch keine sichtbare Rechnungsfrage. Stellen Sie als Lea eine Frage zur eigenen zugestellten Rechnung.') }}</p>{% endfor %}
+  <section class="mt-8 rounded-lg border border-line p-6"><h2 class="text-xl font-semibold">{{ _('Gespeicherte Fallereignisse') }}</h2>{% for event in events %}<p class="mt-3 break-all">{{ event.event_type }} · {{ event.event_id }} · {{ event.aggregate_id }}</p>{% else %}<p class="mt-3">{{ _('Noch keine Statusänderung protokolliert.') }}</p>{% endfor %}</section>
+</div>
+{% endblock %}
