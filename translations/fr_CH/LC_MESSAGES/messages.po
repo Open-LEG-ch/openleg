@@ -614,7 +614,7 @@ msgstr "Taxes et redevances"
 msgid "Abgelaufen"
 msgstr "Expiré"
 
-#: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:178
+#: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:187
 #: templates/contact_requests.html:32 templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 #: templates/sandbox/formation.html:37 templates/sandbox/formation.html:85
 msgid "Abgelehnt"
@@ -2692,7 +2692,7 @@ msgstr ""
 "\n"
 "%(url)s"
 
-#: store/formation_signatures.py:140
+#: store/formation_signatures.py:165
 msgid "Der Unterschriftsbeleg ist ungültig."
 msgstr "Le justificatif de signature est invalide."
 
@@ -2812,7 +2812,7 @@ msgstr ""
 "que le membre ne reçoive pas d'e-mail en double. Vérifiez l'expédition puis confirmez la "
 "livraison."
 
-#: app.py:805
+#: app.py:814
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -2946,7 +2946,7 @@ msgstr ""
 "La démo montre le statut de travail réel des membres, l'accord, les documents et l'inscription. "
 "Utilisez uniquement des exemples de données."
 
-#: store/formation_signatures.py:146
+#: store/formation_signatures.py:171 store/vnb_exchange.py:334
 msgid "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
 msgstr "Les documents ou les participants ont changé. Examinez le projet actuel."
 
@@ -3298,11 +3298,11 @@ msgstr ""
 msgid "Die Tarif-ID der Richtlinie ist ungültig."
 msgstr "L'ID de taux de la politique n'est pas valide."
 
-#: store/formation_signatures.py:114
+#: store/formation_signatures.py:139
 msgid "Die Unterzeichnung passt nicht mehr zu den aktuellen Dokumenten und Teilnehmenden."
 msgstr "Les signatures ne correspondent plus aux documents et aux participants actuels."
 
-#: store/formation_signatures.py:91
+#: store/formation_signatures.py:126
 msgid ""
 "Die Vertragsentwürfe enthalten nicht alle aktuellen Teilnehmenden. Erstellen Sie die Entwürfe "
 "erneut."
@@ -4195,7 +4195,7 @@ msgstr ""
 msgid "ElCom tariffs"
 msgstr "Tarifs ElCom"
 
-#: sandbox_formation.py:177 templates/sandbox/formation.html:38 templates/sandbox/formation.html:85
+#: sandbox_formation.py:186 templates/sandbox/formation.html:38 templates/sandbox/formation.html:85
 msgid "Empfang bestätigt"
 msgstr "Réception confirmée"
 
@@ -4418,7 +4418,7 @@ msgstr "Créer la première CEL"
 msgid "Erstellen Sie die rechtlichen Dokumente."
 msgstr "Préparez les documents juridiques."
 
-#: store/formation_signatures.py:59
+#: store/formation_signatures.py:108
 msgid "Erstellen Sie zuerst die vollständigen Vertragsentwürfe für mindestens drei bestätigte Haushalte."
 msgstr "Générez d'abord les projets de contrats complets pour au moins trois ménages confirmés."
 
@@ -6538,7 +6538,7 @@ msgstr "Sans indication"
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr "Aucune autorisation pour les mutations de membres."
 
-#: dashboard.py:1106
+#: dashboard.py:1106 store/vnb_exchange.py:367
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr "Aucune autorisation pour l'enregistrement de l'opérateur de réseau."
 
@@ -9066,7 +9066,7 @@ msgstr "Erreur de lecture avec le séparateur « %(delimiter)s »."
 msgid "Partner gefunden!"
 msgstr "Des partenaires ont été trouvés !"
 
-#: app.py:992
+#: app.py:1001
 msgid "Period not found"
 msgstr "Période introuvable"
 
@@ -9870,7 +9870,7 @@ msgstr ""
 "SIMULATION SONNWIL - Document fictif. Aucune signature juridiquement valable, aucune demande de "
 "paiement et aucune autorisation du gestionnaire de réseau."
 
-#: sandbox_formation.py:122
+#: sandbox_formation.py:130
 msgid "SIMULATION SONNWIL: LEG-Einladung"
 msgstr "SIMULATION SONNWIL : invitation à une CEL"
 
@@ -11608,7 +11608,7 @@ msgstr "Site web (facultatif)"
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr "L’adresse du site doit commencer par http:// ou https://."
 
-#: sandbox_formation.py:124
+#: sandbox_formation.py:132
 msgid ""
 "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
 "Einladung ist erfunden."
@@ -11835,7 +11835,7 @@ msgstr ""
 "Nous ne communiquons aucun nom, adresse ou coordonnée. Vous recevrez les prochaines étapes dès "
 "qu’un groupe adapté se formera."
 
-#: app.py:793
+#: app.py:802
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -12152,7 +12152,7 @@ msgstr "Accès disponible"
 msgid "Zugangslink anfordern"
 msgstr "Demander un lien d’accès"
 
-#: billing_lifecycle.py:16 sandbox_formation.py:176 templates/leg_dashboard.html:245
+#: billing_lifecycle.py:16 sandbox_formation.py:185 templates/leg_dashboard.html:245
 #: templates/leg_dashboard.html:274 templates/sandbox/formation.html:36
 msgid "Zugestellt"
 msgstr "Livré"
@@ -12359,7 +12359,7 @@ msgstr "jusqu'à 14 jours"
 msgid "bis 40"
 msgstr "jusqu’à 40"
 
-#: app.py:939
+#: app.py:948
 msgid "building_id required"
 msgstr "building_id est obligatoire"
 
@@ -12961,11 +12961,11 @@ msgstr "Télécharger le package de transfert"
 msgid "Übermittlung"
 msgstr "Transmission"
 
-#: sandbox_formation.py:180
+#: sandbox_formation.py:189
 msgid "Übermittlung fehlgeschlagen"
 msgstr "Échec de la transmission"
 
-#: sandbox_formation.py:179
+#: sandbox_formation.py:188
 msgid "Übermittlung vorbereitet"
 msgstr "Transmission préparée"
 

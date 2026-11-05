@@ -378,7 +378,8 @@ it.
 
 - **Tables:** `leg_documents`, `community_documents`
 - **Holds:** generated formation documents and signing status
-  (`deepsign` references).
+  (`deepsign` references). Superseded local bundles retain their signed PDFs and
+  manifests as history; current-bundle listing, signing and VNB packaging exclude them.
 - **Purpose:** the LEG's founding and membership paperwork.
 - **Owner:** the LEG.
 - **Sensitivity:** legal/personal (member names in documents).
@@ -420,7 +421,10 @@ it.
 - **Tables:** none of its own (writes `leg_documents` atomically).
 - **Holds:** one LEG's generated document bundle and rendered participant
   manifest (see store/document).
-- **Purpose:** atomic multi-document persistence during formation.
+- **Purpose:** atomic multi-document persistence during formation. A completed
+  local simulation bundle can be superseded only when its participant manifest
+  changed, every original local receipt is present, and no submission exists.
+  Replacement preserves old evidence and requires fresh participant signatures.
 - **Owner:** the LEG.
 - **Sensitivity:** legal/personal.
 - **Resident-visible:** own community.

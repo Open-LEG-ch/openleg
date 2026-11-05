@@ -73,7 +73,7 @@ def get_leg_document(doc_id: int) -> dict | None:
 
 
 def list_leg_documents(community_id: str) -> list[dict]:
-    """List all documents for a community."""
+    """List the current bundle; superseded evidence remains stored and exportable."""
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
@@ -84,7 +84,9 @@ def list_leg_documents(community_id: str) -> list[dict]:
                                SELECT 1 FROM leg_signature_receipts receipts
                                WHERE receipts.community_id = leg_documents.community_id
                            ) AS has_participant_receipts
-                    FROM leg_documents WHERE community_id = %s ORDER BY created_at DESC
+                    FROM leg_documents WHERE community_id = %s
+                      AND signing_status IS DISTINCT FROM 'superseded'
+                    ORDER BY created_at DESC
                 """,
                     (community_id,),
                 )

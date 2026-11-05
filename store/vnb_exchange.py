@@ -9,7 +9,9 @@ from typing import TYPE_CHECKING
 from psycopg2.errors import UniqueViolation
 from psycopg2.extras import Json
 
+import community_access
 from store.operator_api import enqueue_event
+from translation_markers import gettext_noop as _N
 
 if TYPE_CHECKING:
     from vnb_exchange import (
@@ -313,11 +315,96 @@ def _get_connection():
     return database.get_connection()
 
 
+def _guard_current_formation_bundle(cursor, submission):
+    """Serialize a new package claim with document replacement before delivery."""
+    if not submission.document_ids:
+        return None
+    cursor.execute(
+        """SELECT 1 FROM vnb_submission_cases WHERE community_id = %s
+           AND contract_version = %s AND payload_fingerprint = %s""",
+        (
+            submission.community_id,
+            submission.contract_version,
+            submission.payload_fingerprint,
+        ),
+    )
+    if cursor.fetchone():
+        return None
+    changed = _N(
+        "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
+    )
+    cursor.execute(
+        "SELECT status FROM communities WHERE community_id = %s FOR UPDATE",
+        (submission.community_id,),
+    )
+    community = cursor.fetchone()
+    cursor.execute(
+        "SELECT * FROM vnb_submission_cases WHERE community_id = %s LIMIT 1",
+        (submission.community_id,),
+    )
+    existing = cursor.fetchone()
+    if existing:
+        if (
+            existing["contract_version"] == submission.contract_version
+            and existing["payload_fingerprint"] == submission.payload_fingerprint
+        ):
+            return dict(existing)
+        raise VnbSubmissionConflict(changed)
+    if not community or community["status"] != "signatures_pending":
+        raise VnbSubmissionConflict(changed)
+    cursor.execute(
+        """SELECT role, access_roles, status FROM community_members
+           WHERE community_id = %s AND building_id = %s FOR SHARE""",
+        (submission.community_id, submission.actor_building_id),
+    )
+    actor = cursor.fetchone()
+    if (
+        not actor
+        or actor["status"] != "confirmed"
+        or not community_access.allows(actor, community_access.MANAGE_DOCUMENTS)
+    ):
+        raise VnbSubmissionConflict(
+            _N("Keine Berechtigung für die Netzbetreiber-Anmeldung.")
+        )
+    cursor.execute(
+        """SELECT id, signing_status FROM leg_documents
+           WHERE community_id = %s AND signing_status IS DISTINCT FROM 'superseded'
+           ORDER BY id FOR SHARE""",
+        (submission.community_id,),
+    )
+    documents = cursor.fetchall()
+    if tuple(item["id"] for item in documents) != submission.document_ids or any(
+        item["signing_status"] != "completed" for item in documents
+    ):
+        raise VnbSubmissionConflict(changed)
+    cursor.execute(
+        "SELECT 1 FROM leg_signature_receipts WHERE community_id = %s LIMIT 1",
+        (submission.community_id,),
+    )
+    if cursor.fetchone():
+        from store.formation_signatures import (
+            SignatureConflict,
+            SignatureDenied,
+            locked_signature_bundle,
+        )
+
+        try:
+            locked_signature_bundle(
+                cursor, submission.community_id, submission.actor_building_id
+            )
+        except (SignatureConflict, SignatureDenied) as error:
+            raise VnbSubmissionConflict(changed) from error
+    return None
+
+
 def claim(submission: SubmissionClaim) -> dict:
     """Claim one stable formation submission or return its existing case."""
     case_id = str(uuid.uuid4())
     try:
         with _get_connection() as conn, conn.cursor() as cur:
+            existing = _guard_current_formation_bundle(cur, submission)
+            if existing is not None:
+                return existing
             cur.execute(
                 """
                 INSERT INTO vnb_submission_cases (
