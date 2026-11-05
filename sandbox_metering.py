@@ -287,7 +287,7 @@ def install(web):
     @web.post("/sandbox/metering/jobs")
     def sandbox_metering_jobs():
         _authorize(write=True)
-        action = request.form.get("action")
+        action = request.form.get("job_action")
         if action not in {"due", "retry"}:
             abort(400)
         schedule = next(
