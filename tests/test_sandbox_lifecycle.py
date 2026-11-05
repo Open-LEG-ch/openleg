@@ -1365,9 +1365,9 @@ def test_damaged_pidfile_shutdown_timeout_retains_cluster_for_retry(
             postgres.close()
 
 
-@pytest.mark.parametrize("timeout", [4, 1])
+@pytest.mark.parametrize("stop_on_wait", [True, False])
 def test_recovery_waits_for_postmaster_exit_after_control_returns(
-    tmp_path, monkeypatch, timeout
+    tmp_path, monkeypatch, stop_on_wait
 ):
     """A completed control command alone cannot prove the real process exited."""
     import os
@@ -1376,7 +1376,6 @@ def test_recovery_waits_for_postmaster_exit_after_control_returns(
     import tempfile
     import time
     from pathlib import Path
-    from threading import Event, Thread
 
     import sandbox_lifecycle
     from sandbox_lifecycle import ScratchOwner
@@ -1410,26 +1409,25 @@ def test_recovery_waits_for_postmaster_exit_after_control_returns(
         original = pidfile.read_text()
         pid = int(original.splitlines()[0])
         start = ScratchOwner.start_token(pid)
-        finished = Event()
+        original_wait = ScratchOwner._wait_postgres
 
-        def finish_postmaster():
-            """Keep the owned postmaster alive briefly after its journal vanishes."""
-            while not ready.exists():
-                if finished.wait(0.01):
-                    return
-            time.sleep(2)
-            if ScratchOwner._running(pid, start):
+        def observed_wait(owner, waiting_pid, waiting_start):
+            """Reach the real exit check with the owned postmaster still alive."""
+            assert ready.exists() and stale.exists()
+            assert (waiting_pid, waiting_start) == (pid, start)
+            assert ScratchOwner._running(pid, start)
+            if stop_on_wait:
                 os.kill(pid, signal.SIGQUIT)
                 os.kill(pid, signal.SIGCONT)
+            return original_wait(owner, waiting_pid, waiting_start)
 
-        thread = Thread(target=finish_postmaster)
         try:
             os.kill(pid, signal.SIGSTOP)
-            thread.start()
             monkeypatch.setattr(
-                sandbox_lifecycle, "POSTGRES_CONTROL_TIMEOUT_SECONDS", timeout
+                sandbox_lifecycle, "POSTGRES_CONTROL_TIMEOUT_SECONDS", 4
             )
-            if timeout < 2:
+            monkeypatch.setattr(ScratchOwner, "_wait_postgres", observed_wait)
+            if not stop_on_wait:
                 with pytest.raises(
                     RuntimeError, match="PostgreSQL could not be stopped"
                 ):
@@ -1443,8 +1441,6 @@ def test_recovery_waits_for_postmaster_exit_after_control_returns(
                 finally:
                     owner.close()
         finally:
-            finished.set()
-            thread.join(timeout=5)
             if ScratchOwner._running(pid, start):
                 os.kill(pid, signal.SIGCONT)
                 os.kill(pid, signal.SIGQUIT)
@@ -1454,3 +1450,82 @@ def test_recovery_waits_for_postmaster_exit_after_control_returns(
             if pidfile.parent.exists() and ScratchOwner._running(pid, start):
                 pidfile.write_text(original)
             postgres.close()
+
+
+def test_shutdown_preserves_private_files_and_recovery_record_when_removal_fails(
+    village, monkeypatch
+):
+    """A final failed removal remains recoverable and must not report success."""
+    import sandbox_runtime
+
+    client = village.test_client()
+    prefix, _ = _start(client)
+    manager = village.extensions["villages"]
+    identifier = prefix.rsplit("/", 1)[1]
+    workspace = manager.workspaces[identifier]
+    artifact = workspace["directory"] / "synthetic-private.txt"
+    artifact.write_text("SIMULATION private artifact")
+    original = sandbox_runtime.shutil.rmtree
+
+    def failed_removal(path, *args, **kwargs):
+        if path == workspace["directory"]:
+            if kwargs.get("ignore_errors"):
+                return
+            raise PermissionError("synthetic removal failure")
+        return original(path, *args, **kwargs)
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(sandbox_runtime.shutil, "rmtree", failed_removal)
+        with pytest.raises(PermissionError, match="synthetic removal failure"):
+            manager.close()
+        assert not manager.closed
+        assert identifier in manager.retiring
+        assert (manager.directory / ".cleanup.json").exists()
+        assert manager.postgres.directory.exists()
+        assert artifact.exists()
+        assert workspace["process"].poll() is not None
+    manager.close()
+    assert not artifact.exists()
+    assert not manager.postgres.directory.exists()
+    assert not (manager.directory / ".cleanup.json").exists()
+    assert not manager.retiring
+
+
+def test_shutdown_retries_partial_final_removal_after_database_is_stopped(
+    village, monkeypatch
+):
+    """A removed first workspace must not prevent retrying a failed second one."""
+    import sandbox_runtime
+
+    first, second = village.test_client(), village.test_client()
+    first_prefix, _ = _start(first)
+    second_prefix, _ = _start(second)
+    manager = village.extensions["villages"]
+    first_id = first_prefix.rsplit("/", 1)[1]
+    second_id = second_prefix.rsplit("/", 1)[1]
+    first_dir = manager.workspaces[first_id]["directory"]
+    second_dir = manager.workspaces[second_id]["directory"]
+    artifact = second_dir / "synthetic-private.txt"
+    artifact.write_text("SIMULATION private artifact")
+    original = sandbox_runtime.shutil.rmtree
+
+    def failed_second_removal(path, *args, **kwargs):
+        if path == second_dir:
+            raise PermissionError("synthetic second removal failure")
+        return original(path, *args, **kwargs)
+
+    manager.postgres.close()
+    with monkeypatch.context() as scoped:
+        scoped.setattr(sandbox_runtime.shutil, "rmtree", failed_second_removal)
+        with pytest.raises(PermissionError, match="synthetic second removal failure"):
+            manager.close()
+        assert not manager.closed
+        assert not first_dir.exists() and artifact.exists()
+        assert {first_id, second_id} <= manager.retiring.keys()
+        assert manager.postgres.directory.exists()
+        assert (manager.directory / ".cleanup.json").exists()
+    manager.close()
+    assert not artifact.exists()
+    assert not manager.postgres.directory.exists()
+    assert not (manager.directory / ".cleanup.json").exists()
+    assert not manager.retiring

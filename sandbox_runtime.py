@@ -595,9 +595,10 @@ class Villages:
                 if process and process.poll() is None:
                     process.wait(timeout=5)
             self.postgres.close()
-            shutil.rmtree(self.postgres.directory)
             for workspace in self.retiring.values():
-                shutil.rmtree(workspace["directory"], ignore_errors=True)
+                if workspace["directory"].exists():
+                    shutil.rmtree(workspace["directory"])
+            shutil.rmtree(self.postgres.directory)
             self.workspaces.clear()
             self.retiring.clear()
             self.transport.cleanup()
