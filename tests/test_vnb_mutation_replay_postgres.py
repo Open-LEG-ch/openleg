@@ -204,8 +204,9 @@ def test_http_join_replay_preserves_original_facts_and_does_not_redeliver(
 
 
 @pytest.mark.parametrize("input_date", ["2026-12-01", "20261201"])
+@pytest.mark.parametrize("legacy_writer", [False, True])
 def test_claimed_join_resumes_from_recorded_facts_after_confirmation(
-    founder, monkeypatch, input_date
+    founder, monkeypatch, input_date, legacy_writer
 ):
     """Recover a committed claim whose first delivery was interrupted."""
     client, db = founder
@@ -251,7 +252,38 @@ def test_claimed_join_resumes_from_recorded_facts_after_confirmation(
     }
     path = f"/leg/community/{cid}/vnb-mutations"
     with pytest.raises(KeyboardInterrupt, match="before external"):
-        client.post(path, data=fields)
+        if legacy_writer:
+            # Before date normalization, the trusted delivery seam fingerprinted
+            # the raw compact date while PostgreSQL stored an ISO DATE.
+            from store import vnb_exchange as mutation_cases
+
+            participant = next(
+                member
+                for member in db.fetch_community_with_members(cid)["members"]
+                if member["building_id"] == "participant"
+            )
+            before = {
+                key: participant[key]
+                for key in ("building_id", "status", "role", "access_roles")
+                if key in participant
+            }
+            vnb_exchange.submit_participant_mutation(
+                vnb_exchange.ParticipantMutation(
+                    mutation_id=fields["mutation_id"],
+                    community_id=cid,
+                    participant_id="participant",
+                    mutation_type="join",
+                    effective_date=input_date,
+                    source_agreement_id=fields["source_agreement_id"],
+                    before=before,
+                    after={**before, "status": "confirmed"},
+                ),
+                "founder",
+                adapter,
+                mutation_cases,
+            )
+        else:
+            client.post(path, data=fields)
     first = db.list_vnb_mutations(cid)[0]
     assert first["state"] == "claimed"
     _set_session(client, "participant")
