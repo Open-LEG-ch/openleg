@@ -10,6 +10,7 @@ from sandbox_network import deny_internet
 
 
 def create_worker():
+    """Build the confined product app and install private village exercises."""
     if os.environ.get("OPENLEG_SANDBOX_WORKER") != "1":
         raise RuntimeError("sandbox worker must be explicitly enabled")
     directory = Path(os.environ["OPENLEG_SANDBOX_DIRECTORY"]).resolve()

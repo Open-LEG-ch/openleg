@@ -21,6 +21,7 @@ pytestmark = pytest.mark.integration
 
 @contextmanager
 def _workspace_connection(village, prefix):
+    """Connect to the database owned by the selected visitor workspace."""
     manager = village.extensions["villages"]
     workspace = manager.workspaces[prefix.rsplit("/", 1)[1]]
     with psycopg2.connect(
@@ -30,6 +31,7 @@ def _workspace_connection(village, prefix):
 
 
 def test_operator_imports_a_complete_month_and_replay_preserves_evidence(village):
+    """A repeated complete source preserves its evidence and reading totals."""
     client = village.test_client()
     prefix, _ = _start(client, "operator")
     path = prefix + "/sandbox/metering"
@@ -84,6 +86,7 @@ def test_operator_imports_a_complete_month_and_replay_preserves_evidence(village
 
 
 def _upload(client, path, page, payload, filename="simulation-sonnwil.xml.gz"):
+    """Upload evidence using the current page's CSRF token."""
     return client.post(
         path + "/import",
         data={"csrf_token": _csrf(page), "delivery": (io.BytesIO(payload), filename)},
@@ -93,6 +96,7 @@ def _upload(client, path, page, payload, filename="simulation-sonnwil.xml.gz"):
 
 
 def test_refused_sources_never_create_readings_or_accepted_evidence(village):
+    """Missing, unmapped and overprecise sources leave accepted storage empty."""
     client = village.test_client()
     prefix, _ = _start(client, "operator")
     path = prefix + "/sandbox/metering"
@@ -121,6 +125,7 @@ def test_refused_sources_never_create_readings_or_accepted_evidence(village):
 
 
 def test_correction_requires_explicit_withdrawal_and_preserves_original(village):
+    """Correction retains the withdrawn source and replaces reading totals once."""
     client = village.test_client()
     prefix, _ = _start(client, "operator")
     path = prefix + "/sandbox/metering"
@@ -198,6 +203,7 @@ def test_correction_requires_explicit_withdrawal_and_preserves_original(village)
 
 
 def test_confined_scheduled_failure_can_retry_without_duplicate_delivery(village):
+    """A failed local job retries through normal scheduling without duplicate data."""
     client = village.test_client()
     prefix, _ = _start(client, "operator")
     path = prefix + "/sandbox/metering"
@@ -247,6 +253,7 @@ def test_confined_scheduled_failure_can_retry_without_duplicate_delivery(village
 
 
 def test_role_csrf_and_attempt_urls_cannot_cross_villages(village):
+    """Writes and saved diagnostics enforce role, CSRF and visitor scope."""
     from tests.test_sandbox_personas import _switch
 
     client, other = village.test_client(), village.test_client()
@@ -318,6 +325,7 @@ def test_role_csrf_and_attempt_urls_cannot_cross_villages(village):
 
 
 def test_malformed_oversized_and_foreign_sources_stay_refused(village):
+    """Unsafe or foreign evidence never bypasses the ordinary intake guards."""
     client = village.test_client()
     prefix, _ = _start(client, "operator")
     path = prefix + "/sandbox/metering"
@@ -352,6 +360,7 @@ def test_malformed_oversized_and_foreign_sources_stay_refused(village):
 
 
 def test_metering_simulation_is_unavailable_outside_a_worker(monkeypatch):
+    """The normal application cannot install private metering controls."""
     from flask import Flask
 
     import sandbox_metering

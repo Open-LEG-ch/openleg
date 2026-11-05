@@ -69,6 +69,7 @@ FIXTURE_LABELS = {
 
 
 def _authorize(*, write=False):
+    """Require the current village's metering role and CSRF on writes."""
     actor = _require_dashboard_session()
     if write:
         _require_dashboard_csrf()
@@ -91,6 +92,7 @@ def _intake(evidence):
 
 
 def _expand(data):
+    """Expand optional gzip evidence within the XML size limit."""
     if data.startswith(b"\x1f\x8b"):
         with gzip.GzipFile(fileobj=io.BytesIO(data)) as source:
             data = source.read(MAX_XML_BYTES + 1)
@@ -100,6 +102,7 @@ def _expand(data):
 
 
 def _attempts():
+    """Return this worker's private directory for import diagnostics."""
     directory = Path.cwd() / "metering-attempts"
     directory.mkdir(mode=0o700, exist_ok=True)
     return directory
@@ -134,6 +137,7 @@ def _run_local(territory, schedule, fail_source=False):
     """Use the ordinary scheduler, lock, retry and report with a local transport."""
 
     def fetch(directory):
+        """Stage the local fixture only inside the configured territory directory."""
         if fail_source:
             raise sdat_ingestion.IngestionError("fetch_failed")
         target = Path(directory).resolve()
@@ -153,6 +157,7 @@ def _run_local(territory, schedule, fail_source=False):
         }
 
     def ingest(directory):
+        """Import the staged fixture and report accepted or replayed counts."""
         source = Path(directory) / "simulation-sonnwil-valid.xml.gz"
         result = _intake(_expand(source.read_bytes()))
         if result["status"] != "accepted":
@@ -168,6 +173,7 @@ def _run_local(territory, schedule, fail_source=False):
 
 
 def _present(selected=None, status=200):
+    """Render scoped deliveries, readings, schedules and saved diagnostics."""
     attempts = [
         json.loads(path.read_text())
         for path in sorted(
@@ -219,11 +225,13 @@ def install(web):
 
     @web.get("/sandbox/metering")
     def sandbox_metering():
+        """Show the current operator's metering exercise."""
         _authorize()
         return _present(request.args.get("attempt"))
 
     @web.get("/sandbox/metering/fixtures/<kind>.xml.gz")
     def sandbox_metering_fixture(kind):
+        """Download a named synthetic source after checking metering authority."""
         _authorize()
         if kind not in KINDS:
             abort(404)
@@ -236,6 +244,7 @@ def install(web):
 
     @web.post("/sandbox/metering/import")
     def sandbox_metering_import():
+        """Import evidence through normal validation and retain diagnostics."""
         _authorize(write=True)
         upload = request.files.get("delivery")
         if not upload or not upload.filename:
@@ -256,6 +265,7 @@ def install(web):
 
     @web.post("/sandbox/metering/withdraw/<int:delivery_id>")
     def sandbox_metering_withdraw(delivery_id):
+        """Withdraw a confirmed delivery belonging to this village."""
         _authorize(write=True)
         if request.form.get("confirm") != "yes":
             abort(400)
@@ -286,6 +296,7 @@ def install(web):
 
     @web.post("/sandbox/metering/jobs")
     def sandbox_metering_jobs():
+        """Run or retry the ordinary ingestion scheduler with a local source."""
         _authorize(write=True)
         action = request.form.get("job_action")
         if action not in {"due", "retry"}:

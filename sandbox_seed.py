@@ -177,6 +177,7 @@ FIXTURE_MANIFEST = {
 
 
 def seed_village(db, directory):
+    """Seed fictional accounts and metering assignments, then save registration proofs."""
     manifest = Path(directory) / "fixture.json"
     if manifest.exists():
         fixture = json.loads(manifest.read_text())
