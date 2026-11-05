@@ -1013,6 +1013,7 @@ class _SnapshotCursor:
         fail_at=None,
         registrations=None,
     ):
+        """Set the fake snapshot's points, readings, registrations and failure position."""
         self._points = points or []
         self._readings = readings or []
         self._unassigned = unassigned or []
@@ -1026,6 +1027,7 @@ class _SnapshotCursor:
         self.executed.append((query, params))
 
     def fetchall(self):
+        """Return the configured rows for each billable snapshot query."""
         normalized = " ".join(self.executed[-1][0].split()).lower()
         if "from buildings" in normalized:
             return self._registrations

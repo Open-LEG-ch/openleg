@@ -1342,6 +1342,7 @@ def test_store_refuses_to_stamp_without_an_actor():
 
 
 def test_saved_periods_carry_a_default_system_preparer(monkeypatch):
+    """Saved drafts preserve the default system preparer and frozen evidence."""
     import database
     from store import billing
 

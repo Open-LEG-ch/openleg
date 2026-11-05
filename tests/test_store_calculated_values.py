@@ -26,6 +26,7 @@ class Cursor:
         return next(self.rows)
 
     def fetchall(self):
+        """Return fake stored rows or participant registration proofs for the last query."""
         if "FROM buildings" in self.executed[-1][0]:
             return [
                 {"building_id": "building-a", "referral_code": "original-registration"}

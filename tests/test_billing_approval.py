@@ -38,6 +38,7 @@ def _policy(**overrides):
 
 
 def _draft(**overrides):
+    """Build a complete draft with frozen registration and reconciliation evidence."""
     period = {
         "id": 42,
         "community_id": COMMUNITY,
@@ -378,6 +379,7 @@ def test_billing_approval_fails_closed_on_storage_error(app_module, monkeypatch)
 
 @pytest.mark.integration
 def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
+    """Native approval preserves atomicity, idempotency and rollback on partial writes."""
     if not os.environ.get("DATABASE_URL"):
         pytest.skip("needs a live database")
 
@@ -391,6 +393,7 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
         period_start="2026-01-01 00:00:00+01",
         period_end="2026-02-01 00:00:00+01",
     ):
+        """Insert a draft with registration proofs for each synthetic participant."""
         consumer = participants[0]
         producer = participants[1] if len(participants) > 1 else participants[0]
         cur.execute(
@@ -867,6 +870,7 @@ class _ApprovalCursor:
         return None
 
     def fetchall(self):
+        """Return the fake registration, line-item or invoice rows for the last query."""
         if "FROM buildings" in self._last_query:
             return [
                 {"building_id": key, "referral_code": value}

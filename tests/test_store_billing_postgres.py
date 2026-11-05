@@ -60,6 +60,7 @@ def billing_database(monkeypatch):
 
 
 def _insert_issued_invoice(invoice_number, *, participant_id=MEMBER):
+    """Insert a synthetic issued invoice bound to its participant registration."""
     if not db.get_building(participant_id):
         assert db.save_building(
             participant_id,

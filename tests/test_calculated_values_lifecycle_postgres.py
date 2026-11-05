@@ -162,6 +162,7 @@ def test_withdrawal_preserves_source_and_allows_a_corrected_delivery(calculated_
 
 
 def test_withdrawn_draft_keeps_its_inputs_and_allows_a_new_version(calculated_client):
+    """Withdrawing a source preserves old draft inputs and permits a new version."""
     client, db, payload = calculated_client
     headers = {"X-Admin-Token": "synthetic-admin"}
     endpoint = "/admin/vnb-calculated-values/dietikon"
@@ -235,6 +236,7 @@ def test_withdrawn_draft_keeps_its_inputs_and_allows_a_new_version(calculated_cl
 
 
 def _invoice_evidence(calculated_client):
+    """Prepare native invoice evidence with distinct participant registrations."""
     client, db, payload = calculated_client
     cid = payload["community_id"]
     with db.get_connection() as conn, conn.cursor() as cur:
@@ -339,6 +341,7 @@ def test_a_late_draft_cannot_approve_with_withdrawn_evidence(
 
 
 def test_late_draft_preserves_history_and_leaves_room_for_correction(calculated_client):
+    """A late draft retains invalidated draft history and allows a later correction."""
     client, db, payload = calculated_client
     endpoint = "/admin/vnb-calculated-values/dietikon"
     headers = {"X-Admin-Token": "synthetic-admin"}
@@ -589,6 +592,7 @@ def test_withdrawal_replay_conflicts_and_original_replay_cannot_reactivate(
 def test_late_storage_failure_rolls_back_withdrawal_and_draft_invalidation(
     calculated_client, caplog
 ):
+    """A late storage error rolls back both withdrawal and draft invalidation."""
     client, db, payload = calculated_client
     headers = {"X-Admin-Token": "synthetic-admin"}
     endpoint = "/admin/vnb-calculated-values/dietikon"

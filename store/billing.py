@@ -748,6 +748,7 @@ def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | Non
 
 
 def _locked_invoice(cur, invoice_id, community_id):
+    """Lock a community-scoped invoice and resolve its original registration's recipient."""
     cur.execute(
         f"""
         SELECT i.*, b.email AS recipient_email, b.preferred_locale AS recipient_locale

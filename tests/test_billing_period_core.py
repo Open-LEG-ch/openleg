@@ -51,6 +51,7 @@ class _Cursor:
         return {"id": 42}
 
     def fetchall(self):
+        """Return synthetic registration proofs for the draft participants."""
         return [
             {"building_id": key, "referral_code": "registration-" + key}
             for key in self.executed[-1][1][0]
@@ -270,6 +271,7 @@ def test_network_discount_uses_half_up_rounding():
 
 
 def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch):
+    """Saving a period retains draft status, prices, registration proofs and signed items."""
     cursor = _Cursor()
     monkeypatch.setattr(database, "get_connection", _connection_factory(cursor))
     summary = {
