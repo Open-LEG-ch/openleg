@@ -20,6 +20,7 @@ pytestmark = pytest.mark.integration
 def test_failed_replacement_rolls_back_history_and_partial_inserts(
     village, monkeypatch
 ):
+    """Roll back superseding and the first insert when a later insert fails."""
     import database
     from store.formation_signatures import participant_manifest
 
@@ -58,6 +59,7 @@ def test_failed_replacement_rolls_back_history_and_partial_inserts(
 def test_replacement_rejects_an_incoming_manifest_rendered_before_confirmation(
     village, monkeypatch
 ):
+    """Reject rendered documents that omit a newly confirmed participant."""
     import database
 
     client = village.test_client()
@@ -78,6 +80,7 @@ def test_replacement_rejects_an_incoming_manifest_rendered_before_confirmation(
 
 
 def test_prepared_manual_submission_protects_its_signed_bundle(village, monkeypatch):
+    """Keep a prepared manual package bound to its original signed documents."""
     import database
     import vnb_exchange
 
