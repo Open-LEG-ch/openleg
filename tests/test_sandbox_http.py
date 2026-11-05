@@ -727,7 +727,12 @@ def test_expired_access_stays_denied_during_cleanup_failure_and_reused_pid(
     manager.postgres.close()
     assert client.get(_path(client, "/dashboard")).status_code == 410
     process = workspace["process"]
-    assert process.poll() is not None
+    # Expired access can be denied while the background retirement still runs.
+    # Finish that attempt before substituting a reused Popen identity below.
+    process.wait(timeout=10)
+    with workspace["operation"]:
+        assert process.poll() is not None
+        assert workspace["worker_stopped"] is True
     original_pid = process.pid
     unrelated = subprocess.Popen(
         [sys.executable, "-c", "import time; time.sleep(60)"],
