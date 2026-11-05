@@ -171,10 +171,12 @@ def get_invoice_query_attachment(message_id, *, participant_id=None, community_i
         else ("community_id", community_id)
     )
     with _get_connection() as conn, conn.cursor() as cur:
+        registration_filter = _MEMBER_REGISTRATION_SQL if participant_id else ""
         cur.execute(
             f"""SELECT m.attachment_filename,m.attachment_data
                 FROM invoice_query_messages m JOIN invoice_queries q ON q.id=m.query_id
-                WHERE m.id=%s AND q.{field}=%s AND m.attachment_data IS NOT NULL""",
+                WHERE m.id=%s AND q.{field}=%s AND m.attachment_data IS NOT NULL
+                  {registration_filter}""",
             (message_id, value),
         )
         row = cur.fetchone()
