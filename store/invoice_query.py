@@ -161,6 +161,26 @@ def list_invoice_queries(
         return cases
 
 
+def get_invoice_query_attachment(message_id, *, participant_id=None, community_id=None):
+    """Read one attachment only through its case owner or operator scope."""
+    if bool(participant_id) == bool(community_id):
+        raise ValueError("Exactly one invoice-query scope is required.")
+    field, value = (
+        ("participant_id", participant_id)
+        if participant_id
+        else ("community_id", community_id)
+    )
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            f"""SELECT m.attachment_filename,m.attachment_data
+                FROM invoice_query_messages m JOIN invoice_queries q ON q.id=m.query_id
+                WHERE m.id=%s AND q.{field}=%s AND m.attachment_data IS NOT NULL""",
+            (message_id, value),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def add_invoice_query_message(
     query_id: int,
     actor_id: str,

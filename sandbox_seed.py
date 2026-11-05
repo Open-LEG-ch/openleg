@@ -151,6 +151,7 @@ FIXTURE_MANIFEST = {
         "webhooks": "workspace-local",
     },
     "available_scenarios": [
+        "invoice-question",
         "resident-profile",
         "resident-onboarding",
         "neighbour-consent",
