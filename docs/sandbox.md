@@ -40,6 +40,30 @@ existing village opens its account chooser; switching still requires the
 worker-side form. The ordinary product permission rules still decide
 which records and actions each account can use.
 
+The village page also links to "Haushalt anmelden". Its editable address,
+email and energy defaults are fictional offline fixtures. No geocoder or
+address-enrichment service is called. The fixture coordinates meet the ordinary
+Swiss input bounds; Sonnwil, its street names and BFS number remain fictional.
+
+Register a household, open its confirmation link in the captured inbox, then
+return to that message and request an access link. Open the new access message
+to enter the confirmed household. Registration, confirmation, expiry and login
+use the normal product routes, even when another demo account was signed in.
+
+Save its energy inputs and use the dashboard savings button to inspect the
+shared calculation and assumptions. Grant neighbour visibility, switch to Lea
+and compare the nearby count and contact candidates. Revoke visibility and read
+them again. Contact requests require an explicit field choice on both sides.
+Use the inbox notification to identify the recipient's fictional account, then
+accept, decline or revoke through its ordinary contact page. The private seed
+household remains absent from discovery.
+
+Profile downloads identify their synthetic origin in the filename and JSON.
+Deletion requires a captured confirmation and removes the profile and consents;
+ordinary billing-retention rules still apply. Old sessions and pending access
+links stop working. A deleted seeded account cannot bypass confirmation through
+the demo picker. Reset the village to restore its original accounts.
+
 The defaults are four concurrent villages, a two-MiB upload limit per request,
 a 15-minute inactivity timeout, and a one-hour maximum lifetime. A background
 cleanup task retires expired villages and returns their capacity. Use

@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from flask import abort, g, request, session
 
+import database as db
 from dashboard_routes import _clear_dashboard_session, _set_dashboard_session
 
 _IDENTITIES = ("dashboard_building_id", "municipality_id", "utility_client_id")
@@ -110,8 +111,25 @@ class VillageSessions:
                 abort(503)
             if session.get("sandbox_generation") != generation:
                 _clear_dashboard_session()
+            if (
+                request.endpoint == "main.unsubscribe_token"
+                and request.method == "POST"
+            ):
+                # Revoke before the ordinary deletion transaction can commit.
+                # Failure leaves the profile intact and blocks the mutation.
+                try:
+                    generation = self._rotate()
+                except (OSError, RuntimeError):
+                    _clear_dashboard_session()
+                    abort(503)
+                _clear_dashboard_session()
             g.sandbox_generation = generation
             g.sandbox_identity = self._identity()
+            building_id = session.get("dashboard_building_id")
+            if building_id:
+                profile = db.get_building(building_id)
+                if not profile or not profile.get("verified"):
+                    _clear_dashboard_session()
 
         @web.after_request
         def remember_village_login(response):

@@ -1,0 +1,29 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _('Haushalt anmelden') }} · Sonnwil</title>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ _('Haushalt anmelden') }}</h1>
+  <p class="mt-4">{{ _('Offline-Beispiele: Alle Adressen und Energiewerte sind erfunden. Verwenden Sie eine erfundene E-Mail-Adresse. Es wird keine Nachricht versendet.') }}</p>
+  <form id="onboarding" class="mt-6 grid gap-4" data-building-id="{{ building_id }}" data-success="{{ _('Gespeichert. Öffnen Sie den Bestätigungslink im Postfach. Kehren Sie danach zum Postfach zurück und fordern Sie dort den Zugangslink an.') }}" data-error="{{ _('Die Anmeldung ist fehlgeschlagen. Prüfen Sie Ihre Angaben und versuchen Sie es erneut.') }}">
+    <label class="grid gap-2">{{ _('Offline-Adresse auswählen') }}
+      <select name="fixture" class="rounded-lg border border-line px-3 py-2">
+        <option value="7">Musterweg 7, Sonnwil</option>
+        <option value="8">Musterweg 8, Sonnwil</option>
+      </select>
+    </label>
+    <label class="grid gap-2">{{ _('Adresse') }}<input name="address" value="Musterweg 7, Sonnwil" required maxlength="200" class="rounded-lg border border-line px-3 py-2"></label>
+    <label class="grid gap-2">{{ _('E-Mail-Adresse') }}<input name="email" type="email" value="sonnwil-new@example.org" required class="rounded-lg border border-line px-3 py-2"></label>
+    <label class="grid gap-2">{{ _('Jahresverbrauch (kWh)') }}<input name="annual_consumption_kwh" type="number" value="4200" min="1" max="1000000" required class="rounded-lg border border-line px-3 py-2"></label>
+    <label class="grid gap-2">{{ _('PV-Leistung (kWp)') }}<input name="potential_pv_kwp" type="number" value="0" min="0" max="10000" step="0.1" class="rounded-lg border border-line px-3 py-2"></label>
+    <label class="flex gap-2"><input name="share_with_neighbors" type="checkbox">{{ _('Mein Interesse darf passenden Haushalten in der Nachbarschaft angezeigt werden. Meine Kontaktdaten bleiben privat.') }}</label>
+    <button type="submit" disabled class="rounded-lg bg-brand px-4 py-3 font-semibold text-white">{{ _('Haushalt anmelden') }}</button>
+  </form>
+  <noscript><p class="mt-4">{{ _('Für diese Anmeldung muss JavaScript aktiviert sein.') }}</p></noscript>
+  <p id="onboarding-result" role="status" class="mt-4"></p>
+  <div class="mt-6 flex flex-wrap gap-4">
+    <a href="/sandbox/inbox" class="font-semibold underline">{{ _('Postfach') }}</a>
+    <a href="/sandbox/home" class="font-semibold underline">{{ _('Übungsdorf') }}</a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/sandbox_onboarding.js" defer></script>{% endblock %}

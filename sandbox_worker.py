@@ -30,6 +30,7 @@ def create_worker():
     if not db.init_db():
         raise RuntimeError("sandbox PostgreSQL required")
     from sandbox_seed import ACCOUNTS, seed_village
+    from translation_markers import gettext_noop as _N
 
     seed_village(db, directory)
     web = create_app(
@@ -52,9 +53,27 @@ def create_worker():
 
     def active_account():
         building = _dashboard_session_building_id()
-        for key, account in ACCOUNTS.items():
-            if building and account.get("building_id") == building:
-                return key, account
+        profile = db.get_building(building) if building else None
+        if profile and profile.get("verified"):
+            for key, account in ACCOUNTS.items():
+                if account.get("building_id") == building:
+                    return key, account
+            return None, {
+                "name": profile.get("address") or _N("Neuer Haushalt"),
+                "role": _N("Haushalt"),
+                "scope": "Sonnwil",
+                "building_id": building,
+                "email": profile["email"],
+                "destination": "/dashboard",
+                "scenario": _N("Energieprofil ändern"),
+                "starting_state": _N("Ihr neuer Haushalt ist bestätigt."),
+                "instructions": _N(
+                    "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
+                ),
+                "expected": _N(
+                    "Die gespeicherten Angaben erscheinen nach dem Neuladen."
+                ),
+            }
         if session.get("utility_client_id") == "sonnwil-utility":
             return "utility", ACCOUNTS["utility"]
         if session.get("municipality_id"):
@@ -66,6 +85,13 @@ def create_worker():
     def sign_in(key):
         account = ACCOUNTS[key]
         if account.get("building_id"):
+            profile = db.get_building(account["building_id"])
+            if not profile or not profile.get("verified"):
+                abort(
+                    web.make_response(
+                        (render_template("sandbox/account_unavailable.html"), 410)
+                    )
+                )
             logins.sign_in("dashboard_building_id", account["building_id"])
         elif key == "utility":
             logins.sign_in("utility_client_id", "sonnwil-utility")
@@ -124,9 +150,25 @@ def create_worker():
 
         return render_template("sandbox/inbox.html", messages=messages())
 
+    @web.get("/sandbox/onboarding")
+    def onboarding():
+        return render_template(
+            "sandbox/onboarding.html", building_id="sonnwil-new-" + secrets.token_hex(8)
+        )
+
     @web.after_request
     def label_simulation(response):
         response.headers["X-OpenLEG-Simulation"] = "Sonnwil"
+        if request.path == "/dashboard/export" and response.status_code == 200:
+            response.direct_passthrough = False
+            payload = response.get_json()
+            payload["_simulation"] = {"village": "Sonnwil", "synthetic": True}
+            response.set_data(web.json.dumps(payload))
+            response.headers.set(
+                "Content-Disposition",
+                "attachment",
+                filename="simulation-sonnwil-profil.json",
+            )
         return response
 
     return web
