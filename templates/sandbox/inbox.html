@@ -1,0 +1,16 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _('Postfach') }} · OpenLEG</title>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ _('Simuliertes Postfach') }}</h1>
+  <p class="mt-4">{{ _('Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet.') }}</p>
+  {% for message in messages %}
+  <article class="mt-6 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ message.subject }}</h2>
+    <p class="mt-2 text-sm">{{ _('An %(recipient)s', recipient=message.recipient) }}</p>
+    <pre class="mt-4 whitespace-pre-wrap break-words font-sans">{{ message.body }}</pre>
+    {% for link in message.links %}<p class="mt-4"><a href="{{ link }}" class="font-semibold underline">{{ _('Link im Übungsdorf öffnen') }}</a></p>{% endfor %}
+  </article>
+  {% else %}<p class="mt-6">{{ _('Noch keine simulierten Nachrichten.') }}</p>{% endfor %}
+</div>
+{% endblock %}

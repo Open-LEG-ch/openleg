@@ -162,6 +162,7 @@ also_copy = [
     "sdat_datahub.py",
     "sdat_ingestion.py",
     "sdat_e66.py",
+    "sandbox_mail.py",
     "security_extensions.py",
     "security_utils.py",
     "self_host.py",

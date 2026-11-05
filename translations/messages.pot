@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 22:08+0000\n"
+"POT-Creation-Date: 2026-11-05 00:04+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -548,7 +548,7 @@ msgstr ""
 msgid "API-Schlüssel erstellen"
 msgstr ""
 
-#: utility_portal.py:291
+#: utility_portal.py:297
 msgid "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 msgstr ""
 
@@ -933,6 +933,14 @@ msgstr ""
 msgid "Alle drei Modelle vergleichen"
 msgstr ""
 
+#: templates/sandbox/entry.html:9
+msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
+msgstr ""
+
+#: templates/sandbox/entry.html:14
+msgid "Als Haushalt anmelden"
+msgstr ""
+
 #: templates/utility/register.html:91
 msgid "Als Netzbetreiber erhalten Sie:"
 msgstr ""
@@ -959,6 +967,11 @@ msgstr ""
 
 #: templates/datenschutz.html:37
 msgid "Amtliche Gemeindenummer (BFS), Kanton und freiwillige Angaben zu Rolle und Solaranlage"
+msgstr ""
+
+#: templates/sandbox/inbox.html:10
+#, python-format
+msgid "An %(recipient)s"
 msgstr ""
 
 #: templates/leg_dashboard.html:276
@@ -2137,7 +2150,11 @@ msgstr ""
 msgid "Das mögliche Gebiet feststeht."
 msgstr ""
 
-#: templates/product_base.html:17 templates/utility/settings.html:16
+#: templates/sandbox/entry.html:10
+msgid "Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später erneut."
+msgstr ""
+
+#: templates/product_base.html:18 templates/utility/settings.html:16
 msgid "Dashboard"
 msgstr ""
 
@@ -2145,7 +2162,7 @@ msgstr ""
 msgid "Dashboard | OpenLEG Utility Portal"
 msgstr ""
 
-#: templates/dashboard.html:254
+#: templates/dashboard.html:254 templates/sandbox/home.html:15
 msgid "Dashboard öffnen"
 msgstr ""
 
@@ -2299,7 +2316,7 @@ msgstr ""
 msgid "Deployment-Runbooks und Hostnamen"
 msgstr ""
 
-#: utility_portal.py:279 utility_portal.py:309
+#: utility_portal.py:285 utility_portal.py:315
 msgid "Der API-Schlüssel konnte nicht geändert werden."
 msgstr ""
 
@@ -3036,6 +3053,10 @@ msgstr ""
 msgid "Diese Meldung wurde im geprüften Katalog zurückgezogen. Frühere Versionen bleiben unten erhalten."
 msgstr ""
 
+#: templates/sandbox/inbox.html:6
+msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
+msgstr ""
+
 #: templates/advisories.html:43
 msgid ""
 "Diese Quelle ist nicht im aktuellen Prüfumfang enthalten. Aktuelle Hinweise und Bestätigungen "
@@ -3187,6 +3208,10 @@ msgstr ""
 
 #: templates/impressum.html:36
 msgid "E-Mail:"
+msgstr ""
+
+#: templates/sandbox/entry.html:16
+msgid "E-Mails, Dokumente und Zahlungen sind Simulationen."
 msgstr ""
 
 #: templates/leg_gruenden.html:107
@@ -3649,6 +3674,10 @@ msgstr ""
 #: templates/gemeinde/profil.html:10
 #, python-format
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
+msgstr ""
+
+#: templates/sandbox/home.html:13
+msgid "Energieprofil ändern"
 msgstr ""
 
 #: templates/gemeinde/verzeichnis.html:8
@@ -4813,7 +4842,7 @@ msgstr ""
 msgid "Gründungsassistent öffnen"
 msgstr ""
 
-#: utility_portal.py:386
+#: utility_portal.py:392
 #, python-format
 msgid ""
 "Guten Tag,\n"
@@ -4881,6 +4910,11 @@ msgid "Haushalt"
 msgid_plural "Haushalte"
 msgstr[0] ""
 msgstr[1] ""
+
+#: templates/sandbox/banner.html:4
+#, python-format
+msgid "Haushalt %(address)s"
+msgstr ""
 
 #: templates/contact_requests.html:66
 msgid "Haushalte in Ihrer Gemeinde"
@@ -5059,6 +5093,10 @@ msgstr ""
 msgid "Ihr Stromverbrauch"
 msgstr ""
 
+#: templates/sandbox/entry.html:3 templates/sandbox/entry.html:7
+msgid "Ihr eigenes Übungsdorf"
+msgstr ""
+
 #: templates/index.html:408
 msgid "Ihre Adresse"
 msgstr ""
@@ -5171,6 +5209,11 @@ msgstr ""
 
 #: templates/index.html:458
 msgid "Ihre Rolle"
+msgstr ""
+
+#: templates/sandbox/entry.html:16
+#, python-format
+msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
 msgstr ""
 
 #: templates/index.html:511
@@ -6381,6 +6424,10 @@ msgstr ""
 msgid "Link erneut anfordern"
 msgstr ""
 
+#: templates/sandbox/inbox.html:12
+msgid "Link im Übungsdorf öffnen"
+msgstr ""
+
 #: templates/gemeinde/dashboard.html:106
 msgid "Link teilen, Interessierte sammeln"
 msgstr ""
@@ -7320,6 +7367,10 @@ msgstr ""
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr ""
 
+#: templates/sandbox/inbox.html:14
+msgid "Noch keine simulierten Nachrichten."
+msgstr ""
+
 #: templates/emails/day_3_smartmeter.html:41
 msgid ""
 "Noch keinen Smart Meter? Kein Problem. Sobald Ihre Stromgemeinschaft bereit ist, stellen wir die "
@@ -7808,7 +7859,7 @@ msgstr ""
 msgid "OpenLEG. Kein eigener technischer Betrieb."
 msgstr ""
 
-#: utility_portal.py:384
+#: utility_portal.py:390
 msgid "OpenLEG: Ihr Login-Link"
 msgstr ""
 
@@ -7952,6 +8003,10 @@ msgstr ""
 msgid "Positionen"
 msgstr ""
 
+#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2
+msgid "Postfach"
+msgstr ""
+
 #: templates/open_source.html:79
 msgid "PostgreSQL-Schema und idempotente Migrationen"
 msgstr ""
@@ -8022,6 +8077,12 @@ msgstr ""
 
 #: templates/open_source.html:85
 msgid "Privates Ops-Repo"
+msgstr ""
+
+#: templates/sandbox/entry.html:8
+msgid ""
+"Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen "
+"Dorf. Sie brauchen keine persönlichen Angaben."
 msgstr ""
 
 #: templates/api_docs.html:53
@@ -8882,6 +8943,15 @@ msgstr ""
 msgid "Sie sehen, wie viele Interessierte sich gemeldet haben."
 msgstr ""
 
+#: templates/sandbox/home.html:9
+msgid "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
+msgstr ""
+
+#: templates/sandbox/home.html:7
+#, python-format
+msgid "Sie sind als erfundener Haushalt für %(address)s angemeldet."
+msgstr ""
+
 #: templates/leg_dashboard.html:190
 #, python-format
 msgid "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
@@ -8890,6 +8960,10 @@ msgstr ""
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:17
 #, python-format
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
+msgstr ""
+
+#: templates/sandbox/inbox.html:5
+msgid "Simuliertes Postfach"
 msgstr ""
 
 #: templates/index.html:212
@@ -9108,6 +9182,10 @@ msgstr ""
 
 #: templates/api_docs.html:89
 msgid "Sonnendach solar data"
+msgstr ""
+
+#: templates/sandbox/home.html:2 templates/sandbox/home.html:5
+msgid "Sonnwil ausprobieren"
 msgstr ""
 
 #: templates/gemeinde/verzeichnis.html:44
@@ -10709,6 +10787,13 @@ msgstr ""
 msgid "Zum Schnellstart"
 msgstr ""
 
+#: templates/sandbox/home.html:11
+#, python-format
+msgid ""
+"Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen "
+"Sie ihn im Postfach dieses Übungsdorfs."
+msgstr ""
+
 #: templates/leg_billing.html:83
 msgid "Zur Freigabe vorbereiten"
 msgstr ""
@@ -11390,6 +11475,12 @@ msgid ""
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 msgstr ""
 
+#: templates/sandbox/home.html:14
+msgid ""
+"Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen "
+"sehen Sie den neuen Wert."
+msgstr ""
+
 #: municipality.py:218
 #, python-format
 msgid ""
@@ -11434,6 +11525,10 @@ msgstr ""
 
 #: templates/leg_billing_policy.html:29
 msgid "Üblicher Bereich: zwischen"
+msgstr ""
+
+#: templates/sandbox/banner.html:5
+msgid "Übungsdorf"
 msgstr ""
 
 #: templates/gemeinde/profil.html:118

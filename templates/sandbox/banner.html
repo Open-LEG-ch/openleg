@@ -1,0 +1,8 @@
+{% if sandbox_mode %}
+<aside aria-label="Simulation" class="border-b border-line bg-white px-4 py-3 text-center text-sm">
+  <strong>Simulation · Sonnwil</strong> ·
+  {% if sandbox_household %}{{ _('Haushalt %(address)s', address=sandbox_household.address) }} · {{ sandbox_household.email }} ·{% endif %}
+  <a href="/sandbox/home" class="font-semibold underline">{{ _('Übungsdorf') }}</a> ·
+  <a href="/sandbox/inbox" class="font-semibold underline">{{ _('Postfach') }}</a>
+</aside>
+{% endif %}
