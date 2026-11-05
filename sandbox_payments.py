@@ -31,6 +31,7 @@ LABELS = {
 
 
 def _authorize(*, write=False):
+    """Require confirmed administrator membership and CSRF on writes."""
     actor = _require_dashboard_session()
     if write:
         _require_dashboard_csrf()
@@ -49,6 +50,7 @@ def _authorize(*, write=False):
 
 
 def _positive_invoices():
+    """List this village's invoices with finite positive CHF totals."""
     return [
         row
         for row in db.list_community_invoices(COMMUNITY)
@@ -59,6 +61,7 @@ def _positive_invoices():
 
 
 def _present(error=None, status=200):
+    """Render scoped invoices, imported entries and payment audit events."""
     try:
         invoices = _positive_invoices()
         selected = request.args.get("invoice", type=int)
@@ -101,11 +104,13 @@ def install(web):
 
     @web.get("/sandbox/payments")
     def sandbox_payments():
+        """Show the current administrator's payment exercise."""
         _authorize()
         return _present()
 
     @web.get("/sandbox/payments/fixtures/<int:invoice_id>/<kind>/<message>.xml")
     def sandbox_payment_fixture(invoice_id, kind, message):
+        """Download a named synthetic statement for a scoped positive invoice."""
         _authorize()
         if kind not in KINDS or message not in {"053", "054"}:
             abort(404)
@@ -123,6 +128,7 @@ def install(web):
 
     @web.post("/sandbox/payments/confirm/<int:entry_id>")
     def sandbox_payment_confirm(entry_id):
+        """Confirm a reviewed payment through the ordinary idempotent command."""
         actor = _authorize(write=True)
         invoice_id = request.form.get("invoice_id", type=int)
         if request.form.get("confirm") != "yes" or not invoice_id or invoice_id < 1:
