@@ -20,6 +20,7 @@ from translation_markers import gettext_noop as _N
 
 
 def _scope():
+    """Resolve the current member and their billing response authority."""
     actor = _require_dashboard_session()
     try:
         community = db.fetch_community_with_members(COMMUNITY, actor)
@@ -37,12 +38,14 @@ def _scope():
 
 
 def _cases(actor, operator):
+    """List cases within the member or operator's current scope."""
     return db.list_invoice_queries(
         None, **({"community_id": COMMUNITY} if operator else {"participant_id": actor})
     )
 
 
 def _present(error=None, status=200):
+    """Render scoped question histories and their operator events."""
     actor, operator = _scope()
     try:
         cases = _cases(actor, operator)
@@ -73,10 +76,12 @@ def install(web):
 
     @web.get("/sandbox/questions")
     def sandbox_questions():
+        """Show question guidance for the current member or operator."""
         return _present()
 
     @web.get("/sandbox/questions/attachments/<int:message_id>")
     def sandbox_question_attachment(message_id):
+        """Download an attachment only within the current case scope."""
         actor, operator = _scope()
         try:
             attachment = db.get_invoice_query_attachment(
@@ -102,6 +107,7 @@ def install(web):
 
     @web.post("/sandbox/questions/<int:case_id>/respond")
     def sandbox_question_respond(case_id):
+        """Apply a confirmed, keyed operator response through ordinary commands."""
         actor, operator = _scope()
         _require_dashboard_csrf()
         if not operator:

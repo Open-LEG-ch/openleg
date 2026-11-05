@@ -16,6 +16,7 @@ pytestmark = pytest.mark.integration
 
 
 def test_question_history_uses_ordinary_transitions_and_keyed_replay(village):
+    """Question histories retain normal state transitions and keyed replay."""
     client = village.test_client()
     prefix, invoices = _issued(village, client)
     path = prefix + "/sandbox/questions"
@@ -115,6 +116,7 @@ def test_question_history_uses_ordinary_transitions_and_keyed_replay(village):
 def test_question_attachment_and_reply_scope_follow_current_authority(
     village, monkeypatch
 ):
+    """Attachments and responses recheck current member and operator authority."""
     client = village.test_client()
     prefix, invoices = _issued(village, client)
     path = prefix + "/sandbox/questions"
@@ -228,6 +230,7 @@ def test_question_attachment_and_reply_scope_follow_current_authority(
 
 
 def test_foreign_community_case_messages_evidence_and_events_are_not_exposed(village):
+    """Foreign case messages, evidence and events stay outside this village."""
     from uuid import uuid4
 
     client = village.test_client()
