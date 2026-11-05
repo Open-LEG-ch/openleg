@@ -225,6 +225,7 @@ def _signed(client):
 
 def test_vnb_receipt_never_authorizes_start_and_response_replays_are_safe(village):
     from tests.test_sandbox_onboarding import _workspace_connection
+    from tests.test_sandbox_personas import _switch
 
     client = village.test_client()
     prefix, cid = _signed(client)
@@ -241,6 +242,16 @@ def test_vnb_receipt_never_authorizes_start_and_response_replays_are_safe(villag
             "SELECT case_id FROM vnb_submission_cases WHERE community_id=%s", (cid,)
         )
         case = cursor.fetchone()[0]
+    page = _switch(client, prefix, "resident")
+    assert (
+        client.post(
+            path,
+            data={"csrf_token": _csrf(page), "state": "acknowledged", "case_id": case},
+        ).status_code
+        == 403
+    )
+    _switch(client, prefix, "founder")
+    fields["csrf_token"] = _csrf(client.get(guide))
     assert (
         client.post(
             path, data={**fields, "state": "acknowledged", "case_id": case}
@@ -341,11 +352,17 @@ def test_rejection_is_final_audited_and_keeps_formation_inactive(village):
 
 
 def test_roles_and_private_documents_keep_ordinary_authority(village):
+    import re
+
     from tests.test_sandbox_onboarding import _workspace_connection
     from tests.test_sandbox_personas import _switch
 
     client = village.test_client()
     prefix, cid = _signed(client)
+    signature_bundle = re.search(
+        r'name="bundle" value="([a-f0-9]{64})"',
+        client.get(prefix + "/sandbox/formation?cid=" + cid).text,
+    ).group(1)
     page = client.get(prefix + "/leg/dashboard?cid=" + cid)
     fields = {"csrf_token": _csrf(page)}
     roles = prefix + f"/leg/community/{cid}/members/sonnwil-resident/roles"
@@ -395,7 +412,11 @@ def test_roles_and_private_documents_keep_ordinary_authority(village):
     assert (
         client.post(
             prefix + f"/sandbox/formation/{cid}/signatures",
-            data={"csrf_token": _csrf(page), "bundle": "0" * 64, "confirm": "yes"},
+            data={
+                "csrf_token": _csrf(page),
+                "bundle": signature_bundle,
+                "confirm": "yes",
+            },
         ).status_code
         == 403
     )

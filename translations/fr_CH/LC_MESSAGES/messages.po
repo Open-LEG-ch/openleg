@@ -1567,9 +1567,9 @@ msgid ""
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
 "des Netzbetreibers. Aktivieren Sie die LEG erst mit einem separaten erfundenen Startbeleg."
 msgstr ""
-"En tant que fondatrice, créez une nouvelle LEG. Invitez deux ménages, confirmez leur "
+"En tant que fondatrice, créez une nouvelle CEL. Invitez deux ménages, confirmez leur "
 "participation et examinez les projets de contrats. Simulez les signatures et la réponse du "
-"gestionnaire de réseau. Activez la LEG uniquement avec un justificatif de démarrage fictif "
+"gestionnaire de réseau. Activez la CEL uniquement avec un justificatif de démarrage fictif "
 "distinct."
 
 #: templates/sandbox/home.html:24
@@ -3384,7 +3384,7 @@ msgid ""
 "Die simulierte Anmeldung wurde abgelehnt. Sie bleibt mit ihrem Beleg erhalten. Beginnen Sie mit "
 "einer neuen LEG oder setzen Sie das Dorf zurück, um einen erfolgreichen Ablauf auszuprobieren."
 msgstr ""
-"L'annonce simulée a été refusée. Elle est conservée avec son justificatif. Créez une nouvelle LEG"
+"L'annonce simulée a été refusée. Elle est conservée avec son justificatif. Créez une nouvelle CEL"
 " ou réinitialisez le village pour essayer un parcours réussi."
 
 #: i18n.py:80
@@ -5500,7 +5500,7 @@ msgstr "Les étapes de création"
 
 #: templates/sandbox/home.html:33
 msgid "Gründung ausprobieren"
-msgstr "Essayer la création d'une LEG"
+msgstr "Essayer la création d'une CEL"
 
 #: templates/emails/formation_nudge.html:40
 msgid "Gründung fortsetzen"
@@ -7061,7 +7061,7 @@ msgstr "Tableau de bord de la CEL | OpenLEG"
 
 #: templates/sandbox/formation.html:14
 msgid "LEG-Dashboard öffnen"
-msgstr "Ouvrir le tableau de bord de la LEG"
+msgstr "Ouvrir le tableau de bord de la CEL"
 
 #: templates/registry_verify.html:10
 msgid "LEG-Eintrag bestätigen"
@@ -7155,7 +7155,7 @@ msgid ""
 "Teilnehmervertrag herunter und erfassen Sie ihn dort als ausgehenden PDF-Beleg im "
 "Korrespondenzjournal. Kehren Sie danach hierher zurück."
 msgstr ""
-"Invitez Sam avec sonnwil-operator@example.org dans le tableau de bord de la LEG. Téléchargez le "
+"Invitez Sam avec sonnwil-operator@example.org dans le tableau de bord de la CEL. Téléchargez le "
 "contrat de participation fictif et enregistrez-le comme PDF sortant dans le journal de "
 "correspondance. Revenez ensuite ici."
 
@@ -7169,7 +7169,7 @@ msgid ""
 "im Korrespondenzjournal als Eingang mit PDF-Anhang. Wählen Sie danach diesen Beleg unter "
 "Betriebsstart aus."
 msgstr ""
-"Téléchargez le justificatif de démarrage fictif. Ouvrez le tableau de bord de la LEG et "
+"Téléchargez le justificatif de démarrage fictif. Ouvrez le tableau de bord de la CEL et "
 "enregistrez-le dans le journal de correspondance comme entrée avec un PDF joint. Sélectionnez "
 "ensuite ce justificatif dans la rubrique de mise en service."
 
@@ -7612,7 +7612,7 @@ msgid ""
 msgstr ""
 "Annoncez l'adhésion datée avec ce contrat au gestionnaire de réseau simulé. Simulez un accusé de "
 "réception ou un refus. L'adhésion reste inchangée. Passez ensuite au compte de Sam pour confirmer"
-" séparément sa participation dans le tableau de bord de la LEG."
+" séparément sa participation dans le tableau de bord de la CEL."
 
 #: templates/leg_gruenden.html:186
 msgid ""
@@ -7911,7 +7911,7 @@ msgid ""
 "Dashboard und erstellen Sie die Vertragsentwürfe. Kehren Sie danach zu dieser Anleitung zurück."
 msgstr ""
 "Après les trois confirmations de participation, passez au compte de Mira. Lancez la création dans"
-" le tableau de bord de la LEG et générez les projets de contrats. Revenez ensuite à ce guide."
+" le tableau de bord de la CEL et générez les projets de contrats. Revenez ensuite à ce guide."
 
 #: templates/sandbox/inbox.html:15
 msgid "Nach der Bestätigung kehren Sie hierher zurück und fordern den Zugangslink für diesen Haushalt an."
@@ -8186,7 +8186,7 @@ msgstr "Recommencer"
 
 #: templates/sandbox/formation.html:10
 msgid "Neue LEG erstellen"
-msgstr "Créer une nouvelle LEG"
+msgstr "Créer une nouvelle CEL"
 
 #: email_automation.py:100
 #, python-format
@@ -9321,8 +9321,8 @@ msgid ""
 "Prüfen Sie alle Dokumente im LEG-Dashboard. Bestätigen Sie danach als jeder der drei Haushalte "
 "die simulierte Unterschrift. Erst alle Unterschriften geben die Netzbetreiber-Anmeldung frei."
 msgstr ""
-"Examinez tous les documents dans le tableau de bord de la LEG. Confirmez ensuite la signature "
-"simulée de chacun des trois ménages. Toutes les signatures sont nécessaires pour annoncer la LEG "
+"Examinez tous les documents dans le tableau de bord de la CEL. Confirmez ensuite la signature "
+"simulée de chacun des trois ménages. Toutes les signatures sont nécessaires pour annoncer la CEL "
 "au gestionnaire de réseau."
 
 #: templates/gemeinde/profil.html:134
@@ -9872,7 +9872,7 @@ msgstr ""
 
 #: sandbox_formation.py:124
 msgid "SIMULATION SONNWIL: LEG-Einladung"
-msgstr "SIMULATION SONNWIL : invitation à une LEG"
+msgstr "SIMULATION SONNWIL : invitation à une CEL"
 
 #: templates/leg_gruenden.html:147
 msgid "Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten Anlagen."
@@ -10445,7 +10445,7 @@ msgid ""
 "Sonnwil Energie bestätigt nur innerhalb dieses Übungsdorfs den simulierten Start der erfundenen "
 "LEG. Es wurde kein realer Netzbetreiber kontaktiert."
 msgstr ""
-"Sonnwil Energie confirme le démarrage simulé de cette LEG fictive uniquement dans ce village "
+"Sonnwil Energie confirme le démarrage simulé de cette CEL fictive uniquement dans ce village "
 "d'essai. Aucun gestionnaire de réseau réel n'a été contacté."
 
 #: templates/sandbox/home.html:2 templates/sandbox/home.html:5
@@ -11312,7 +11312,7 @@ msgid ""
 "ausdrücklich. Erst danach können Sie die LEG aktivieren."
 msgstr ""
 "Utilisez la date %(date)s et la référence %(reference)s. Confirmez explicitement le justificatif "
-"de démarrage. Vous pourrez ensuite activer la LEG."
+"de démarrage. Vous pourrez ensuite activer la CEL."
 
 #: templates/api_docs.html:241
 msgid "Verzeichniseintrag nicht gefunden."
@@ -11613,7 +11613,7 @@ msgid ""
 "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
 "Einladung ist erfunden."
 msgstr ""
-"Passez au compte invité et confirmez la participation dans le tableau de bord de la LEG. Cette "
+"Passez au compte invité et confirmez la participation dans le tableau de bord de la CEL. Cette "
 "invitation est fictive."
 
 #: templates/sandbox/formation.html:58
@@ -12000,9 +12000,9 @@ msgid ""
 "folgenden erfundenen Adressen ein. Wechseln Sie jeweils zum eingeladenen Konto und bestätigen Sie"
 " die Teilnahme im LEG-Dashboard."
 msgstr ""
-"Choisissez Mira comme fondatrice et créez une nouvelle LEG. Invitez Lea et Noah avec les adresses"
+"Choisissez Mira comme fondatrice et créez une nouvelle CEL. Invitez Lea et Noah avec les adresses"
 " fictives ci-dessous. Passez à chaque compte invité pour confirmer sa participation dans le "
-"tableau de bord de la LEG."
+"tableau de bord de la CEL."
 
 #: templates/meter_upload.html:54
 msgid "Wählen Sie den gewünschten Zeitraum"
