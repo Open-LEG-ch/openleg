@@ -121,6 +121,7 @@ def tagged_data():
 
 
 def test_representative_archive_round_trip_preserves_records_and_identifiers():
+    """A representative restore preserves records and their original identifiers."""
     source = MemoryArchiveStore({"leg-1": representative_data()})
 
     archive = community_archive.export_community_archive("leg-1", store=source)

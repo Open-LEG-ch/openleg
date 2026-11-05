@@ -61,6 +61,7 @@ def test_administrator_can_open_the_self_guided_archive_journey(village):
 def test_parent_retirement_during_child_provisioning_keeps_proofs_and_cleans_both(
     village, monkeypatch
 ):
+    """Retiring a source during child provisioning preserves proofs and cleans both workers."""
     client = village.test_client()
     prefix, _ = _start(client, "administrator")
     manager = village.extensions["villages"]
@@ -69,6 +70,7 @@ def test_parent_retirement_during_child_provisioning_keeps_proofs_and_cleans_bot
     provision = manager._provision
 
     def pause_child(workspace, *args):
+        """Hold child provisioning while the source retirement races it."""
         if workspace.get("restore_parent"):
             entered.set()
             assert release.wait(timeout=20)
@@ -121,6 +123,7 @@ def test_empty_restore_destination_with_lost_fixture_never_seeds_on_reload(villa
 
 
 def test_real_archive_round_trip_rollback_replay_conflict_and_private_discard(village):
+    """Real archive commands preserve rollback, replay, conflict and private discard behavior."""
     village.extensions["villages"].max_workspaces = 4
     client = village.test_client()
     prefix, invoices = _issued(village, client)
@@ -256,6 +259,7 @@ def test_real_archive_round_trip_rollback_replay_conflict_and_private_discard(vi
 def test_archive_commands_recheck_role_csrf_and_do_not_grant_platform_authority(
     village,
 ):
+    """Archive controls recheck role and CSRF without granting platform authority."""
     client = village.test_client()
     prefix, _ = _start(client, "administrator")
     path = prefix + "/sandbox/archive"
@@ -302,6 +306,7 @@ def test_archive_commands_recheck_role_csrf_and_do_not_grant_platform_authority(
 def test_source_retirement_removes_its_destination_and_leaves_another_visitor(
     village, retirement
 ):
+    """Source retirement cleans its destination while another visitor remains usable."""
     manager = village.extensions["villages"]
     manager.max_workspaces = 4
     client, other = village.test_client(), village.test_client()
@@ -347,6 +352,7 @@ def test_source_retirement_removes_its_destination_and_leaves_another_visitor(
 def test_source_expiring_during_export_cannot_allocate_an_orphan_destination(
     village, monkeypatch
 ):
+    """Expiry during export refuses allocation of an orphan destination."""
     manager = village.extensions["villages"]
     client = village.test_client()
     prefix, _ = _start(client, "administrator")
@@ -367,6 +373,7 @@ def test_source_expiring_during_export_cannot_allocate_an_orphan_destination(
 
 
 def test_signed_formation_receipts_and_original_documents_survive_real_restore(village):
+    """Real restore preserves original signed documents and their local receipts."""
     from tests.test_sandbox_formation import _create_ready
 
     client = village.test_client()

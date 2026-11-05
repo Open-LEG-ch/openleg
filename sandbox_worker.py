@@ -119,6 +119,7 @@ def create_worker():
         return None, None
 
     def sign_in(key):
+        """Sign in an available fictional account using current registration proofs."""
         account = ACCOUNTS[key]
         if account.get("building_id"):
             profile = db.get_building(account["building_id"])
@@ -160,6 +161,7 @@ def create_worker():
 
     @web.get("/sandbox/accounts")
     def accounts():
+        """List available fictional accounts, omitting staff roles in restored workers."""
         session.setdefault("sandbox_csrf", secrets.token_urlsafe(32))
         available = {
             key: account
