@@ -377,6 +377,7 @@ from store.tenant import (  # noqa: F401
     upsert_tenant,
 )
 from store.token import (  # noqa: F401
+    ProfileDeletionPreparationError,
     VerificationConflict,
     confirm_building_interest,
     confirm_profile_deletion,

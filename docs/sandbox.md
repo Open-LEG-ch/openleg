@@ -61,7 +61,10 @@ household remains absent from discovery.
 Profile downloads identify their synthetic origin in the filename and JSON.
 Deletion requires a captured confirmation and removes the profile and consents;
 ordinary billing-retention rules still apply. Old sessions and pending access
-links stop working. The private fixture manifest records each original demo
+links stop working. GET and HEAD only display confirmation. POST rotates the
+village login after successful deletion, before the database transaction commits.
+A failed login-generation write rolls back the deletion and returns HTTP 503.
+The private fixture manifest records each original demo
 household's server-generated registration identity. The picker checks that
 identity as well as verification status. Deleting and recreating a building ID
 does not recreate its original demo persona. The replacement uses its own

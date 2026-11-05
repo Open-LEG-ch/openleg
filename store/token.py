@@ -10,6 +10,7 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 
 import logging
 import uuid
+from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,10 @@ class VerificationConflict(Exception):
     loudly and rolls back; an invalid or stale token only ever yields
     ``None`` from :func:`confirm_building_interest`.
     """
+
+
+class ProfileDeletionPreparationError(Exception):
+    """A required pre-commit action failed; profile deletion was rolled back."""
 
 
 def _get_connection():
@@ -161,8 +166,14 @@ def get_deletion_recipient_locale(token: str, email: str) -> str | None:
         return None
 
 
-def confirm_profile_deletion(token: str) -> bool:
-    """Delete the profile for a valid unsubscribe token in one transaction."""
+def confirm_profile_deletion(
+    token: str, *, before_commit: Callable[[], None] | None = None
+) -> bool:
+    """Delete a valid token's profile, then run preparation before commit.
+
+    Preparation failure raises ProfileDeletionPreparationError and rolls back
+    the profile and token changes. Invalid tokens never run preparation.
+    """
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
@@ -191,7 +202,15 @@ def confirm_profile_deletion(token: str) -> bool:
                     "DELETE FROM buildings WHERE building_id = %s",
                     (row["building_id"],),
                 )
-            return cur.rowcount > 0
+            deleted = cur.rowcount > 0
+            if deleted and before_commit is not None:
+                try:
+                    before_commit()
+                except Exception as error:
+                    raise ProfileDeletionPreparationError() from error
+            return deleted
+    except ProfileDeletionPreparationError:
+        raise
     except Exception:
         logger.exception("[DB] Error confirming profile deletion")
         return False

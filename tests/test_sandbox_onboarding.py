@@ -446,7 +446,7 @@ def test_mailbox_deletion_retires_cookies_before_the_household_can_be_recreated(
     )
     deletion = _mail_link(owner, prefix, "/unsubscribe/")
     if wait_for_token_lock:
-        _delete_after_observing_generation_rotation(village, anonymous, deletion)
+        _delete_while_token_is_locked(village, anonymous, deletion)
     else:
         assert anonymous.post(deletion).status_code == 200
     # No authenticated read occurs between deletion and a complete new signup.
@@ -522,7 +522,7 @@ def test_mailbox_deletion_retires_cookies_before_the_household_can_be_recreated(
     )
 
 
-def _delete_after_observing_generation_rotation(gateway, client, deletion):
+def _delete_while_token_is_locked(gateway, client, deletion):
     with client.session_transaction() as state:
         manager = gateway.extensions["villages"]
         nonce = (
@@ -554,11 +554,12 @@ def _delete_after_observing_generation_rotation(gateway, client, deletion):
                             pytest.fail(
                                 "deletion did not reach its locked token after session validation"
                             )
-                assert nonce.read_text() != previous
+                assert nonce.read_text() == previous
             finally:
                 blocker.rollback()
             response = pending.result(timeout=10)
             assert response.status_code == 200
+            assert nonce.read_text() != previous
 
 
 def test_unavailable_login_binding_blocks_deletion_without_consuming_its_token(village):
