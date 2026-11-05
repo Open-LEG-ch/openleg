@@ -64,7 +64,7 @@ msgid_plural "%(count)s Sekunden"
 msgstr[0] "%(count)s Sekunde"
 msgstr[1] "%(count)s Sekunden"
 
-#: templates/documents/member_invoice.html:19
+#: templates/documents/member_invoice.html:20
 #, python-format
 msgid "%(count)s Tag"
 msgid_plural "%(count)s Tage"
@@ -415,7 +415,7 @@ msgstr "1. Adresse prüfen"
 msgid "1. Rang prüfen"
 msgstr "1. Rang prüfen"
 
-#: templates/documents/community_agreement.html:16
+#: templates/documents/community_agreement.html:17
 msgid "1. Teilnehmer"
 msgstr "1. Teilnehmer"
 
@@ -443,7 +443,7 @@ msgstr "2. Nachbarn finden"
 msgid "2. Verarbeitete Daten"
 msgstr "2. Verarbeitete Daten"
 
-#: templates/documents/community_agreement.html:19
+#: templates/documents/community_agreement.html:20
 msgid "2. Verteilmodell"
 msgstr "2. Verteilmodell"
 
@@ -459,7 +459,7 @@ msgstr "3. Gemeinde anmelden"
 msgid "3. LEG starten"
 msgstr "3. LEG starten"
 
-#: templates/documents/community_agreement.html:23
+#: templates/documents/community_agreement.html:24
 msgid "3. Rechtsgrundlage"
 msgstr "3. Rechtsgrundlage"
 
@@ -467,7 +467,7 @@ msgstr "3. Rechtsgrundlage"
 msgid "3. Zweck der Verarbeitung"
 msgstr "3. Zweck der Verarbeitung"
 
-#: templates/documents/community_agreement.html:26
+#: templates/documents/community_agreement.html:27
 msgid "4. Interne Preisgestaltung"
 msgstr "4. Interne Preisgestaltung"
 
@@ -475,7 +475,7 @@ msgstr "4. Interne Preisgestaltung"
 msgid "4. Rechtsgrundlagen"
 msgstr "4. Rechtsgrundlagen"
 
-#: templates/documents/community_agreement.html:29
+#: templates/documents/community_agreement.html:30
 msgid "5. Ein- und Austritt"
 msgstr "5. Ein- und Austritt"
 
@@ -487,7 +487,7 @@ msgstr "5. Weitergabe"
 msgid "6. Speicherdauer"
 msgstr "6. Speicherdauer"
 
-#: templates/documents/community_agreement.html:32
+#: templates/documents/community_agreement.html:33
 msgid "6. Vertretung"
 msgstr "6. Vertretung"
 
@@ -495,7 +495,7 @@ msgstr "6. Vertretung"
 msgid "7. Sicherheit"
 msgstr "7. Sicherheit"
 
-#: templates/documents/community_agreement.html:35
+#: templates/documents/community_agreement.html:36
 msgid "7. Unterschriften"
 msgstr "7. Unterschriften"
 
@@ -604,8 +604,9 @@ msgstr "Abgaben & Gebühren"
 msgid "Abgelaufen"
 msgstr "Abgelaufen"
 
-#: formation_wizard.py:58 formation_wizard.py:75 templates/contact_requests.html:32
-#: templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
+#: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:180
+#: templates/contact_requests.html:32 templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
+#: templates/sandbox/formation.html:37 templates/sandbox/formation.html:85
 msgid "Abgelehnt"
 msgstr "Abgelehnt"
 
@@ -761,7 +762,7 @@ msgstr "Adressvorschläge"
 msgid "Administration"
 msgstr "Administration"
 
-#: templates/documents/community_agreement.html:17 templates/documents/dso_registration.html:22
+#: templates/documents/community_agreement.html:18 templates/documents/dso_registration.html:23
 #: templates/leg_dashboard.html:154 templates/sandbox/onboarding.html:14
 msgid "Adresse"
 msgstr "Adresse"
@@ -834,7 +835,7 @@ msgstr ""
 "Adresse prüfen, Nachbarn finden, LEG starten: Bis 40% weniger Netznutzungsentgelt für lokalen "
 "Solarstrom."
 
-#: templates/documents/participant_contract.html:15
+#: templates/documents/participant_contract.html:16
 msgid "Adresse:"
 msgstr "Adresse:"
 
@@ -1009,7 +1010,7 @@ msgstr "An %(recipient)s"
 msgid "An VNB eskalieren"
 msgstr "An VNB eskalieren"
 
-#: templates/documents/dso_registration.html:13
+#: templates/documents/dso_registration.html:14
 msgid "An:"
 msgstr "An:"
 
@@ -1093,7 +1094,7 @@ msgstr "Anmeldepaket herunterladen"
 msgid "Anmeldepaket vorbereiten"
 msgstr "Anmeldepaket vorbereiten"
 
-#: formation_wizard.py:144 templates/documents/dso_registration.html:12
+#: formation_wizard.py:144 templates/documents/dso_registration.html:13
 msgid "Anmeldung Lokale Elektrizitätsgemeinschaft"
 msgstr "Anmeldung Lokale Elektrizitätsgemeinschaft"
 
@@ -1175,6 +1176,10 @@ msgstr "Anteil lokal verbrauchbar:"
 #: templates/member_invoice_detail.html:212
 msgid "Antwort"
 msgstr "Antwort"
+
+#: templates/sandbox/formation.html:86
+msgid "Antwort auf Beitritt simulieren"
+msgstr "Antwort auf Beitritt simulieren"
 
 #: dashboard.py:922
 msgid "Antwort oder Status ist erforderlich."
@@ -1377,7 +1382,7 @@ msgstr "Ausserhalb dieses Firmwarebereichs"
 msgid "Ausstehende LEG-Einträge"
 msgstr "Ausstehende LEG-Einträge"
 
-#: templates/documents/member_invoice.html:14 templates/member_invoice_detail.html:44
+#: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:44
 msgid "Aussteller:"
 msgstr "Aussteller:"
 
@@ -1385,7 +1390,7 @@ msgstr "Aussteller:"
 msgid "Austritt"
 msgstr "Austritt"
 
-#: templates/documents/participant_contract.html:28
+#: templates/documents/participant_contract.html:29
 msgid ""
 "Austritt mit 3 Monaten Frist auf Quartalsende. Alle offenen Abrechnungen\n"
 "werden vor Austritt abgeschlossen."
@@ -1535,6 +1540,16 @@ msgstr "Befehl kopieren"
 msgid "Befehl kopiert."
 msgstr "Befehl kopiert."
 
+#: templates/sandbox/home.html:32
+msgid ""
+"Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
+"Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
+"des Netzbetreibers. Aktivieren Sie die LEG erst mit einem separaten erfundenen Startbeleg."
+msgstr ""
+"Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
+"Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
+"des Netzbetreibers. Aktivieren Sie die LEG erst mit einem separaten erfundenen Startbeleg."
+
 #: templates/sandbox/home.html:24
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
@@ -1557,7 +1572,7 @@ msgstr ""
 "Beide Modelle nutzen dieselbe Open-Source-Software. Wählen Sie nach Verantwortung, Datenhaltung "
 "und internem Aufwand."
 
-#: templates/documents/dso_registration.html:24
+#: templates/documents/dso_registration.html:25
 msgid "Beilagen"
 msgstr "Beilagen"
 
@@ -1576,6 +1591,10 @@ msgstr ""
 #: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Beitritt"
 msgstr "Beitritt"
+
+#: templates/sandbox/formation.html:76
+msgid "Beitritt melden oder erneut abrufen"
+msgstr "Beitritt melden oder erneut abrufen"
 
 #: templates/admin/abrechnungen.html:120
 msgid "Belastungen"
@@ -1632,7 +1651,7 @@ msgstr "Bereitschaft"
 msgid "Bereitschaft, Checkliste und Ersparnis."
 msgstr "Bereitschaft, Checkliste und Ersparnis."
 
-#: templates/documents/participant_contract.html:23
+#: templates/documents/participant_contract.html:24
 msgid "Bereitstellung der 15-Minuten-Messdaten an die Gemeinschaft"
 msgstr "Bereitstellung der 15-Minuten-Messdaten an die Gemeinschaft"
 
@@ -1801,7 +1820,7 @@ msgstr "Bestätigungslink senden"
 msgid "Betrag"
 msgstr "Betrag"
 
-#: templates/documents/member_invoice.html:22 templates/documents/member_invoice.html:31
+#: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
 #: templates/member_invoice_detail.html:67 templates/member_invoice_detail.html:96
 #: templates/member_invoice_detail.html:123 templates/member_invoice_detail.html:151
 msgid "Betrag (CHF)"
@@ -1847,6 +1866,10 @@ msgstr "Betriebsmodelle"
 #: templates/leg_dashboard.html:300
 msgid "Betriebsstart"
 msgstr "Betriebsstart"
+
+#: templates/sandbox/formation.html:49
+msgid "Betriebsstart ausprobieren"
+msgstr "Betriebsstart ausprobieren"
 
 #: templates/index.html:58
 msgid "Bewohner"
@@ -2433,13 +2456,14 @@ msgstr "Datenverarbeitungsvertrag unterzeichnen"
 msgid "Datenzugriff"
 msgstr "Datenzugriff"
 
-#: templates/documents/community_agreement.html:36 templates/leg_dashboard.html:338
+#: templates/documents/community_agreement.html:37 templates/leg_dashboard.html:338
+#: templates/sandbox/start_evidence.html:6
 msgid "Datum"
 msgstr "Datum"
 
-#: templates/documents/community_agreement.html:14 templates/documents/dso_registration.html:14
-#: templates/documents/participant_contract.html:11 templates/documents/participant_contract.html:33
-#: templates/documents/participant_contract.html:35 templates/leg_billing.html:161
+#: templates/documents/community_agreement.html:15 templates/documents/dso_registration.html:15
+#: templates/documents/participant_contract.html:12 templates/documents/participant_contract.html:34
+#: templates/documents/participant_contract.html:36 templates/leg_billing.html:161
 msgid "Datum:"
 msgstr "Datum:"
 
@@ -2638,6 +2662,10 @@ msgstr ""
 "\n"
 "%(url)s"
 
+#: store/formation_signatures.py:140
+msgid "Der Unterschriftsbeleg ist ungültig."
+msgstr "Der Unterschriftsbeleg ist ungültig."
+
 #: templates/leg_gruenden.html:71
 msgid ""
 "Der VNB liefert die Messdaten und rechnet den Netzbezug gegenüber dem vZEV ab. Die interne "
@@ -2735,7 +2763,7 @@ msgstr "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr "Der Zugangslink ist ungültig oder bereits verwendet."
 
-#: templates/documents/community_agreement.html:27
+#: templates/documents/community_agreement.html:28
 msgid ""
 "Der interne Strompreis wird durch die Gemeinschaft festgelegt und darf den lokalen\n"
 "Standardtarif des Verteilnetzbetreibers nicht übersteigen."
@@ -2891,6 +2919,10 @@ msgstr ""
 "Die Demo zeigt den echten Arbeitsstand für Mitglieder, Vereinbarung, Dokumente und Anmeldung. "
 "Verwenden Sie ausschliesslich Beispieldaten."
 
+#: store/formation_signatures.py:146
+msgid "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
+msgstr "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
+
 #: templates/leg_gruenden.html:110
 msgid ""
 "Die EBL übernimmt keine interne Abrechnung. Dafür ist die LEG-Vertretung oder ein beauftragter "
@@ -2919,7 +2951,7 @@ msgstr "Die Gemeinden sind nach Namen sortiert."
 msgid "Die Gemeinschaft beim Verteilnetzbetreiber anmelden."
 msgstr "Die Gemeinschaft beim Verteilnetzbetreiber anmelden."
 
-#: templates/documents/community_agreement.html:33
+#: templates/documents/community_agreement.html:34
 msgid ""
 "Die Gemeinschaft wird gegenüber dem Verteilnetzbetreiber durch den Vertreter vertreten,\n"
 "der gemäss separater Vollmacht bestimmt wird."
@@ -3231,6 +3263,18 @@ msgstr ""
 msgid "Die Tarif-ID der Richtlinie ist ungültig."
 msgstr "Die Tarif-ID der Richtlinie ist ungültig."
 
+#: store/formation_signatures.py:114
+msgid "Die Unterzeichnung passt nicht mehr zu den aktuellen Dokumenten und Teilnehmenden."
+msgstr "Die Unterzeichnung passt nicht mehr zu den aktuellen Dokumenten und Teilnehmenden."
+
+#: store/formation_signatures.py:91
+msgid ""
+"Die Vertragsentwürfe enthalten nicht alle aktuellen Teilnehmenden. Erstellen Sie die Entwürfe "
+"erneut."
+msgstr ""
+"Die Vertragsentwürfe enthalten nicht alle aktuellen Teilnehmenden. Erstellen Sie die Entwürfe "
+"erneut."
+
 #: billing_policy.py:230
 msgid "Die Zahlungsfrist der Richtlinie ist ungültig."
 msgstr "Die Zahlungsfrist der Richtlinie ist ungültig."
@@ -3275,7 +3319,7 @@ msgstr "Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, J
 msgid "Die gewählte Freigaberegel bleibt nach dem Neuladen erhalten."
 msgstr "Die gewählte Freigaberegel bleibt nach dem Neuladen erhalten."
 
-#: templates/documents/community_agreement.html:21
+#: templates/documents/community_agreement.html:22
 msgid ""
 "Die intern produzierte Energie wird gemäss dem gewählten Modell auf alle Teilnehmer verteilt.\n"
 "Die Abrechnung erfolgt auf Basis von 15-Minuten-Messintervallen."
@@ -3294,6 +3338,14 @@ msgstr "Die letzte Quellenprüfung ist fehlgeschlagen. Frühere Quellen bleiben 
 #: sandbox_seed.py:60
 msgid "Die neue LEG erscheint in Ihrem LEG-Dashboard."
 msgstr "Die neue LEG erscheint in Ihrem LEG-Dashboard."
+
+#: templates/sandbox/formation.html:43
+msgid ""
+"Die simulierte Anmeldung wurde abgelehnt. Sie bleibt mit ihrem Beleg erhalten. Beginnen Sie mit "
+"einer neuen LEG oder setzen Sie das Dorf zurück, um einen erfolgreichen Ablauf auszuprobieren."
+msgstr ""
+"Die simulierte Anmeldung wurde abgelehnt. Sie bleibt mit ihrem Beleg erhalten. Beginnen Sie mit "
+"einer neuen LEG oder setzen Sie das Dorf zurück, um einen erfolgreichen Ablauf auszuprobieren."
 
 #: i18n.py:80
 msgid "Dienst vorübergehend nicht verfügbar"
@@ -3395,7 +3447,7 @@ msgstr ""
 "Diese Quelle ist nicht im aktuellen Prüfumfang enthalten. Aktuelle Hinweise und Bestätigungen "
 "bleiben für diese Meldung ausgeschaltet."
 
-#: templates/documents/community_agreement.html:24
+#: templates/documents/community_agreement.html:25
 msgid ""
 "Diese Vereinbarung stützt sich auf Art. 17d und 17e des Stromversorgungsgesetzes (StromVG)\n"
 "sowie Art. 19e bis 19h der Stromversorgungsverordnung (StromVV)."
@@ -3840,9 +3892,25 @@ msgstr ""
 msgid "Ein von der Gruppe geprüfter Vereinbarungsentwurf."
 msgstr "Ein von der Gruppe geprüfter Vereinbarungsentwurf."
 
+#: templates/sandbox/formation.html:52
+msgid ""
+"Ein zukünftiges Startdatum verhindert die Aktivierung bis zu diesem Datum. Eine "
+"Empfangsbestätigung oder ein fehlender Anhang genügt nicht."
+msgstr ""
+"Ein zukünftiges Startdatum verhindert die Aktivierung bis zu diesem Datum. Eine "
+"Empfangsbestätigung oder ein fehlender Anhang genügt nicht."
+
 #: templates/telemetry_dashboard.html:56
 msgid "Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt sichtbar."
 msgstr "Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt sichtbar."
+
+#: templates/sandbox/formation.html:29
+msgid ""
+"Eine Empfangsbestätigung bestätigt nur den Empfang. Sie erlaubt keinen Betriebsstart. Für die "
+"Aktivierung braucht es einen separaten Startbeleg, ein gültiges Datum und die Administration."
+msgstr ""
+"Eine Empfangsbestätigung bestätigt nur den Empfang. Sie erlaubt keinen Betriebsstart. Für die "
+"Aktivierung braucht es einen separaten Startbeleg, ein gültiges Datum und die Administration."
 
 #: templates/leg_gruenden.html:135
 msgid ""
@@ -3932,7 +4000,7 @@ msgstr "Eingehende Anfrage vom %(date)s UTC"
 msgid "Eingeladen"
 msgstr "Eingeladen"
 
-#: templates/documents/participant_contract.html:24
+#: templates/documents/participant_contract.html:25
 msgid "Einhaltung der Gemeinschaftsvereinbarung"
 msgstr "Einhaltung der Gemeinschaftsvereinbarung"
 
@@ -4079,6 +4147,10 @@ msgstr ""
 msgid "ElCom tariffs"
 msgstr "ElCom-Tarife"
 
+#: sandbox_formation.py:179 templates/sandbox/formation.html:38 templates/sandbox/formation.html:85
+msgid "Empfang bestätigt"
+msgstr "Empfang bestätigt"
+
 #: templates/gemeinde/profil.html:75
 msgid "Energie"
 msgstr "Energie"
@@ -4193,6 +4265,26 @@ msgstr ""
 "Erfassen Sie zuerst die tatsächliche Startbestätigung als Eingang mit Anhang im "
 "Korrespondenzjournal. Wählen Sie danach diesen Beleg aus."
 
+#: templates/sandbox/start_evidence.html:4
+msgid ""
+"Erfundene Startbestätigung. Dieser Beleg bewilligt keinen realen Betriebsstart und hat keine "
+"rechtliche Wirkung."
+msgstr ""
+"Erfundene Startbestätigung. Dieser Beleg bewilligt keinen realen Betriebsstart und hat keine "
+"rechtliche Wirkung."
+
+#: templates/sandbox/formation.html:61
+msgid "Erfundenen Beitrittsvertrag herunterladen"
+msgstr "Erfundenen Beitrittsvertrag herunterladen"
+
+#: templates/sandbox/formation.html:53
+msgid "Erfundenen Startbeleg herunterladen"
+msgstr "Erfundenen Startbeleg herunterladen"
+
+#: templates/sandbox/formation.html:40
+msgid "Ergebnis simulieren"
+msgstr "Ergebnis simulieren"
+
 #: templates/equipment_form.html:76
 msgid "Ergebnis zum Fernzugriff"
 msgstr "Ergebnis zum Fernzugriff"
@@ -4276,7 +4368,11 @@ msgstr "Erste LEG-Gründung starten"
 msgid "Erstellen Sie die rechtlichen Dokumente."
 msgstr "Erstellen Sie die rechtlichen Dokumente."
 
-#: templates/documents/member_invoice.html:45
+#: store/formation_signatures.py:59
+msgid "Erstellen Sie zuerst die vollständigen Vertragsentwürfe für mindestens drei bestätigte Haushalte."
+msgstr "Erstellen Sie zuerst die vollständigen Vertragsentwürfe für mindestens drei bestätigte Haushalte."
+
+#: templates/documents/member_invoice.html:46
 msgid "Erstellt mit OpenLEG"
 msgstr "Erstellt mit OpenLEG"
 
@@ -4605,7 +4701,7 @@ msgstr "Funktion nicht verfügbar"
 msgid "Fällig am"
 msgstr "Fällig am"
 
-#: templates/documents/member_invoice.html:17 templates/member_invoice_detail.html:47
+#: templates/documents/member_invoice.html:18 templates/member_invoice_detail.html:47
 msgid "Fällig am:"
 msgstr "Fällig am:"
 
@@ -4969,7 +5065,7 @@ msgstr "Gemeinde-Dashboard öffnen"
 msgid "Gemeinde/Organisation"
 msgstr "Gemeinde/Organisation"
 
-#: templates/documents/community_agreement.html:14
+#: templates/documents/community_agreement.html:15
 msgid "Gemeinde:"
 msgstr "Gemeinde:"
 
@@ -5018,7 +5114,7 @@ msgstr ""
 "Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem "
 "Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist."
 
-#: templates/documents/dso_registration.html:16
+#: templates/documents/dso_registration.html:17
 msgid "Gemeinschaft"
 msgstr "Gemeinschaft"
 
@@ -5030,11 +5126,11 @@ msgstr "Gemeinschaft anlegen"
 msgid "Gemeinschaft bilden"
 msgstr "Gemeinschaft bilden"
 
-#: templates/documents/community_agreement.html:12
+#: templates/documents/community_agreement.html:13
 msgid "Gemeinschaftsvereinbarung"
 msgstr "Gemeinschaftsvereinbarung"
 
-#: templates/documents/dso_registration.html:26
+#: templates/documents/dso_registration.html:27
 msgid "Gemeinschaftsvereinbarung (unterzeichnet)"
 msgstr "Gemeinschaftsvereinbarung (unterzeichnet)"
 
@@ -5058,8 +5154,8 @@ msgstr "Gemessene und amtlich ausgewiesene Werte"
 msgid "Genaues Modell"
 msgstr "Genaues Modell"
 
-#: templates/documents/community_agreement.html:40 templates/documents/dso_registration.html:35
-#: templates/documents/participant_contract.html:38
+#: templates/documents/community_agreement.html:41 templates/documents/dso_registration.html:36
+#: templates/documents/participant_contract.html:39
 msgid "Generiert durch OpenLEG Platform, openleg.ch"
 msgstr "Generiert durch OpenLEG Platform, openleg.ch"
 
@@ -5135,7 +5231,7 @@ msgstr "Gerätestatus"
 msgid "Gerätezugang |"
 msgstr "Gerätezugang |"
 
-#: templates/documents/member_invoice.html:42 templates/member_invoice_detail.html:173
+#: templates/documents/member_invoice.html:43 templates/member_invoice_detail.html:173
 msgid "Gesamtbetrag"
 msgstr "Gesamtbetrag"
 
@@ -5143,7 +5239,7 @@ msgstr "Gesamtbetrag"
 msgid "Gesamtbetrag unlesbar"
 msgstr "Gesamtbetrag unlesbar"
 
-#: templates/documents/dso_registration.html:19
+#: templates/documents/dso_registration.html:20
 msgid "Gesamte PV-Leistung:"
 msgstr "Gesamte PV-Leistung:"
 
@@ -5346,6 +5442,10 @@ msgstr "Gründung"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Gründung als Arbeitsfolge"
 
+#: templates/sandbox/home.html:33
+msgid "Gründung ausprobieren"
+msgstr "Gründung ausprobieren"
+
 #: templates/emails/formation_nudge.html:40
 msgid "Gründung fortsetzen"
 msgstr "Gründung fortsetzen"
@@ -5414,7 +5514,7 @@ msgstr ""
 msgid "Gutschriften"
 msgstr "Gutschriften"
 
-#: templates/documents/member_invoice.html:30 templates/member_invoice_detail.html:140
+#: templates/documents/member_invoice.html:31 templates/member_invoice_detail.html:140
 msgid "Gutschriften und Ausgleich"
 msgstr "Gutschriften und Ausgleich"
 
@@ -5627,6 +5727,10 @@ msgstr ""
 #: templates/leg_billing.html:81
 msgid "Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Entwurf zur Freigabe vor."
 msgstr "Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Entwurf zur Freigabe vor."
+
+#: templates/sandbox/formation.html:22
+msgid "Ich habe die Entwürfe geprüft und simuliere die Unterschrift meines aktuellen Haushalts."
+msgstr "Ich habe die Entwürfe geprüft und simuliere die Unterschrift meines aktuellen Haushalts."
 
 #: templates/advisories.html:57
 msgid "Ich habe diese Version des Hinweises gelesen."
@@ -5976,7 +6080,7 @@ msgstr "Installateur beauftragen"
 msgid "Installateurzugang"
 msgstr "Installateurzugang"
 
-#: templates/documents/participant_contract.html:22
+#: templates/documents/participant_contract.html:23
 msgid "Installation eines kommunikativen Smart Meters (Frist: 3 Monate nach Beitritt)"
 msgstr "Installation eines kommunikativen Smart Meters (Frist: 3 Monate nach Beitritt)"
 
@@ -6067,7 +6171,7 @@ msgstr "Interner Preis (Rp./kWh)"
 msgid "Interner Preis in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
 msgstr "Interner Preis in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
 
-#: templates/documents/member_invoice.html:18 templates/member_invoice_detail.html:49
+#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:49
 msgid "Interner Preis:"
 msgstr "Interner Preis:"
 
@@ -6123,7 +6227,7 @@ msgstr "Jahreskosten:"
 msgid "Jahresverbrauch (kWh)"
 msgstr "Jahresverbrauch (kWh)"
 
-#: templates/documents/participant_contract.html:17
+#: templates/documents/participant_contract.html:18
 msgid "Jahresverbrauch:"
 msgstr "Jahresverbrauch:"
 
@@ -6575,12 +6679,12 @@ msgstr "Klären Sie Mitglieder, Verträge, Netzbetreiber und Abrechnung."
 msgid "Konkrete Massnahmen"
 msgstr "Konkrete Massnahmen"
 
-#: document_generator.py:107 document_generator.py:152
+#: document_generator.py:110 document_generator.py:155
 msgid "Konsument"
 msgstr "Konsument"
 
 #: templates/admin/ops.html:122 templates/dashboard.html:232
-#: templates/documents/dso_registration.html:31 templates/impressum.html:34
+#: templates/documents/dso_registration.html:32 templates/impressum.html:34
 #: templates/partials/site_footer.html:9
 msgid "Kontakt"
 msgstr "Kontakt"
@@ -6734,7 +6838,7 @@ msgstr "Kurz gesagt"
 msgid "Kurzbeschreibung (optional)"
 msgstr "Kurzbeschreibung (optional)"
 
-#: templates/documents/participant_contract.html:27
+#: templates/documents/participant_contract.html:28
 msgid "Kündigung"
 msgstr "Kündigung"
 
@@ -6804,6 +6908,7 @@ msgid "LEG gesetzlich möglich"
 msgstr "LEG gesetzlich möglich"
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:31
 msgid "LEG gründen"
 msgstr "LEG gründen"
 
@@ -6883,6 +6988,10 @@ msgstr "LEG-Dashboard"
 msgid "LEG-Dashboard | OpenLEG"
 msgstr "LEG-Dashboard | OpenLEG"
 
+#: templates/sandbox/formation.html:14
+msgid "LEG-Dashboard öffnen"
+msgstr "LEG-Dashboard öffnen"
+
 #: templates/registry_verify.html:10
 msgid "LEG-Eintrag bestätigen"
 msgstr "LEG-Eintrag bestätigen"
@@ -6941,7 +7050,7 @@ msgstr "LEG-Verzeichnis: Lokale Elektrizitätsgemeinschaften in der Schweiz | Op
 msgid "LEG-Vorgang"
 msgstr "LEG-Vorgang"
 
-#: templates/documents/participant_contract.html:10
+#: templates/documents/participant_contract.html:11
 msgid "LEG:"
 msgstr "LEG:"
 
@@ -6969,9 +7078,29 @@ msgstr ""
 "Laden Sie Ihren EKZ-CSV-Export hoch. OpenLEG speichert die Daten verschlüsselt und nutzt sie nur "
 "gemäss Ihrer Einwilligung."
 
+#: templates/sandbox/formation.html:59
+msgid ""
+"Laden Sie Sam mit sonnwil-operator@example.org im LEG-Dashboard ein. Laden Sie den erfundenen "
+"Teilnehmervertrag herunter und erfassen Sie ihn dort als ausgehenden PDF-Beleg im "
+"Korrespondenzjournal. Kehren Sie danach hierher zurück."
+msgstr ""
+"Laden Sie Sam mit sonnwil-operator@example.org im LEG-Dashboard ein. Laden Sie den erfundenen "
+"Teilnehmervertrag herunter und erfassen Sie ihn dort als ausgehenden PDF-Beleg im "
+"Korrespondenzjournal. Kehren Sie danach hierher zurück."
+
 #: templates/partials/install_console.html:27
 msgid "Laden Sie das Skript zuerst herunter, lesen Sie es und starten Sie es danach selbst."
 msgstr "Laden Sie das Skript zuerst herunter, lesen Sie es und starten Sie es danach selbst."
+
+#: templates/sandbox/formation.html:50
+msgid ""
+"Laden Sie den erfundenen Startbeleg herunter. Öffnen Sie das LEG-Dashboard und erfassen Sie ihn "
+"im Korrespondenzjournal als Eingang mit PDF-Anhang. Wählen Sie danach diesen Beleg unter "
+"Betriebsstart aus."
+msgstr ""
+"Laden Sie den erfundenen Startbeleg herunter. Öffnen Sie das LEG-Dashboard und erfassen Sie ihn "
+"im Korrespondenzjournal als Eingang mit PDF-Anhang. Wählen Sie danach diesen Beleg unter "
+"Betriebsstart aus."
 
 #: templates/meter_upload.html:56
 msgid "Laden Sie die Datei hier hoch"
@@ -7189,7 +7318,7 @@ msgstr "Lokale Elektrizitätsgemeinschaft - Gemeinschaftsvereinbarung"
 msgid "Lokale Elektrizitätsgemeinschaft gründen | OpenLEG"
 msgstr "Lokale Elektrizitätsgemeinschaft gründen | OpenLEG"
 
-#: templates/documents/community_agreement.html:13
+#: templates/documents/community_agreement.html:14
 msgid "Lokale Elektrizitätsgemeinschaft:"
 msgstr "Lokale Elektrizitätsgemeinschaft:"
 
@@ -7306,7 +7435,7 @@ msgstr "Mehrere mögliche Rechnungen"
 msgid "Mehrfaktor-Anmeldung"
 msgstr "Mehrfaktor-Anmeldung"
 
-#: templates/documents/member_invoice.html:35 templates/documents/member_invoice.html:41
+#: templates/documents/member_invoice.html:36 templates/documents/member_invoice.html:42
 #: templates/leg_billing_policy.html:62 templates/member_invoice_detail.html:172
 msgid "Mehrwertsteuer"
 msgstr "Mehrwertsteuer"
@@ -7396,6 +7525,18 @@ msgstr ""
 "Melden Sie Ihre Gemeinde an und schaffen Sie einen einfachen Einstieg für lokale "
 "Stromgemeinschaften. Kostenlos, ohne eigenes IT-Projekt."
 
+#: templates/sandbox/formation.html:63
+msgid ""
+"Melden Sie den datierten Beitritt mit diesem Vertragsbeleg beim simulierten Netzbetreiber an. "
+"Simulieren Sie eine Empfangsbestätigung oder Ablehnung. Die Mitgliedschaft bleibt davon "
+"unverändert. Wechseln Sie danach zu Sam und bestätigen Sie die Teilnahme separat im LEG-"
+"Dashboard."
+msgstr ""
+"Melden Sie den datierten Beitritt mit diesem Vertragsbeleg beim simulierten Netzbetreiber an. "
+"Simulieren Sie eine Empfangsbestätigung oder Ablehnung. Die Mitgliedschaft bleibt davon "
+"unverändert. Wechseln Sie danach zu Sam und bestätigen Sie die Teilnahme separat im LEG-"
+"Dashboard."
+
 #: templates/leg_gruenden.html:186
 msgid ""
 "Melden Sie die Bildung der LEG dem zuständigen Verteilnetzbetreiber drei Monate im Voraus auf ein"
@@ -7420,7 +7561,7 @@ msgstr "Melden Sie sich im EKZ-Kundenportal an"
 msgid "Menge"
 msgstr "Menge"
 
-#: templates/documents/member_invoice.html:22 templates/documents/member_invoice.html:31
+#: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
 #: templates/member_invoice_detail.html:65 templates/member_invoice_detail.html:94
 #: templates/member_invoice_detail.html:121 templates/member_invoice_detail.html:149
 msgid "Menge (kWh)"
@@ -7438,7 +7579,7 @@ msgstr "Menschen und öffentlicher Verkehr in einer Schweizer Stadt"
 msgid "Messdaten"
 msgstr "Messdaten"
 
-#: templates/documents/dso_registration.html:22
+#: templates/documents/dso_registration.html:23
 msgid "Messpunkt-ID"
 msgstr "Messpunkt-ID"
 
@@ -7685,6 +7826,14 @@ msgstr "Nach Verbrauch und Erzeugung"
 msgid "Nach dem Neuladen ist Ihr gespeicherter Jahresverbrauch weiterhin sichtbar."
 msgstr "Nach dem Neuladen ist Ihr gespeicherter Jahresverbrauch weiterhin sichtbar."
 
+#: templates/sandbox/formation.html:9
+msgid ""
+"Nach den drei Teilnahmebestätigungen wechseln Sie zu Mira. Starten Sie die Gründung im LEG-"
+"Dashboard und erstellen Sie die Vertragsentwürfe. Kehren Sie danach zu dieser Anleitung zurück."
+msgstr ""
+"Nach den drei Teilnahmebestätigungen wechseln Sie zu Mira. Starten Sie die Gründung im LEG-"
+"Dashboard und erstellen Sie die Vertragsentwürfe. Kehren Sie danach zu dieser Anleitung zurück."
+
 #: templates/sandbox/inbox.html:15
 msgid "Nach der Bestätigung kehren Sie hierher zurück und fordern den Zugangslink für diesen Haushalt an."
 msgstr "Nach der Bestätigung kehren Sie hierher zurück und fordern den Zugangslink für diesen Haushalt an."
@@ -7738,12 +7887,12 @@ msgstr "Nachvollziehbare Daten"
 msgid "Nachweis"
 msgstr "Nachweis"
 
-#: templates/documents/dso_registration.html:28
+#: templates/documents/dso_registration.html:29
 msgid "Nachweis PV-Anlage(n)"
 msgstr "Nachweis PV-Anlage(n)"
 
-#: templates/admin/ops.html:120 templates/documents/community_agreement.html:17
-#: templates/documents/community_agreement.html:36 templates/documents/dso_registration.html:22
+#: templates/admin/ops.html:120 templates/documents/community_agreement.html:18
+#: templates/documents/community_agreement.html:37 templates/documents/dso_registration.html:23
 #: templates/gemeinde/verzeichnis.html:51
 msgid "Name"
 msgstr "Name"
@@ -7772,7 +7921,7 @@ msgstr "Name und Kontakt-E-Mail sind erforderlich."
 msgid "Name und Profil sind erforderlich."
 msgstr "Name und Profil sind erforderlich."
 
-#: templates/documents/dso_registration.html:17 templates/documents/participant_contract.html:14
+#: templates/documents/dso_registration.html:18 templates/documents/participant_contract.html:15
 msgid "Name:"
 msgstr "Name:"
 
@@ -7806,7 +7955,7 @@ msgstr ""
 "Fehlende erforderliche Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
 "Regulierte Messtarife können weiterhin anfallen."
 
-#: templates/documents/member_invoice.html:40 templates/member_invoice_detail.html:171
+#: templates/documents/member_invoice.html:41 templates/member_invoice_detail.html:171
 msgid "Nettobetrag"
 msgstr "Nettobetrag"
 
@@ -7841,6 +7990,10 @@ msgstr "Netzbetreiber laut ElCom"
 #: templates/gemeinde/dashboard.html:19
 msgid "Netzbetreiber noch nicht hinterlegt"
 msgstr "Netzbetreiber noch nicht hinterlegt"
+
+#: templates/sandbox/formation.html:28
+msgid "Netzbetreiber simulieren"
+msgstr "Netzbetreiber simulieren"
 
 #: templates/gemeinde/profil.html:36
 msgid "Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden."
@@ -7880,7 +8033,7 @@ msgstr "Netzbezugspreis"
 msgid "Netzebene"
 msgstr "Netzebene"
 
-#: templates/documents/dso_registration.html:18
+#: templates/documents/dso_registration.html:19
 msgid "Netzebene:"
 msgstr "Netzebene:"
 
@@ -7950,12 +8103,16 @@ msgstr "Netzwerkfehler. Bitte erneut versuchen."
 msgid "Neu beginnen"
 msgstr "Neu beginnen"
 
+#: templates/sandbox/formation.html:10
+msgid "Neue LEG erstellen"
+msgstr "Neue LEG erstellen"
+
 #: email_automation.py:100
 #, python-format
 msgid "Neue LEG-Interessenmeldung in %(municipality_name)s"
 msgstr "Neue LEG-Interessenmeldung in %(municipality_name)s"
 
-#: templates/documents/community_agreement.html:30
+#: templates/documents/community_agreement.html:31
 msgid ""
 "Neue Teilnehmer können mit Zustimmung der bestehenden Mitglieder beitreten.\n"
 "Der Austritt ist mit einer Frist von 3 Monaten auf Quartalsende möglich."
@@ -8824,7 +8981,7 @@ msgstr "Period not found"
 msgid "Periode"
 msgstr "Periode"
 
-#: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:45
+#: templates/documents/member_invoice.html:16 templates/member_invoice_detail.html:45
 msgid "Periode:"
 msgstr "Periode:"
 
@@ -8836,7 +8993,7 @@ msgstr "Perioden"
 msgid "Person"
 msgstr "Person"
 
-#: templates/documents/participant_contract.html:20
+#: templates/documents/participant_contract.html:21
 msgid "Pflichten"
 msgstr "Pflichten"
 
@@ -8848,8 +9005,8 @@ msgstr "Pilotgemeinde"
 msgid "Plattform"
 msgstr "Plattform"
 
-#: templates/admin/abrechnungen.html:129 templates/documents/member_invoice.html:22
-#: templates/documents/member_invoice.html:31 templates/leg_kalkulator.html:205
+#: templates/admin/abrechnungen.html:129 templates/documents/member_invoice.html:23
+#: templates/documents/member_invoice.html:32 templates/leg_kalkulator.html:205
 #: templates/member_invoice_detail.html:64 templates/member_invoice_detail.html:93
 #: templates/member_invoice_detail.html:120 templates/member_invoice_detail.html:148
 msgid "Position"
@@ -8875,7 +9032,7 @@ msgstr "Potenzial klären"
 msgid "Preis"
 msgstr "Preis"
 
-#: templates/documents/member_invoice.html:22 templates/documents/member_invoice.html:31
+#: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
 #: templates/member_invoice_detail.html:66 templates/member_invoice_detail.html:95
 #: templates/member_invoice_detail.html:122 templates/member_invoice_detail.html:150
 msgid "Preis (Rp./kWh)"
@@ -8965,7 +9122,7 @@ msgstr ""
 "Produktionsbetrieb, Host-Inventar, Secrets, Incident-Notizen und interne Strategie bleiben "
 "privat. So bleibt der App-Code offen, ohne produktive Infrastruktur offenzulegen."
 
-#: document_generator.py:107 document_generator.py:152
+#: document_generator.py:110 document_generator.py:155
 msgid "Produzent"
 msgstr "Produzent"
 
@@ -9064,6 +9221,14 @@ msgstr ""
 #: templates/leg_dashboard.html:24
 msgid "Prüfen Sie Ihren Zugangslink oder öffnen Sie die"
 msgstr "Prüfen Sie Ihren Zugangslink oder öffnen Sie die"
+
+#: templates/sandbox/formation.html:17
+msgid ""
+"Prüfen Sie alle Dokumente im LEG-Dashboard. Bestätigen Sie danach als jeder der drei Haushalte "
+"die simulierte Unterschrift. Erst alle Unterschriften geben die Netzbetreiber-Anmeldung frei."
+msgstr ""
+"Prüfen Sie alle Dokumente im LEG-Dashboard. Bestätigen Sie danach als jeder der drei Haushalte "
+"die simulierte Unterschrift. Erst alle Unterschriften geben die Netzbetreiber-Anmeldung frei."
 
 #: templates/gemeinde/profil.html:134
 msgid "Prüfen Sie das Potenzial für eine lokale Stromgemeinschaft."
@@ -9288,7 +9453,7 @@ msgstr "Quellenversion"
 msgid "Quelloffene Infrastruktur für Lokale Elektrizitätsgemeinschaften"
 msgstr "Quelloffene Infrastruktur für Lokale Elektrizitätsgemeinschaften"
 
-#: templates/leg_dashboard.html:260
+#: templates/leg_dashboard.html:260 templates/sandbox/formation.html:74
 msgid "Quellvertrag"
 msgstr "Quellvertrag"
 
@@ -9352,7 +9517,7 @@ msgstr "Neueste LEA-Berichte"
 msgid "Recent Ops Snapshots"
 msgstr "Neueste Betriebsberichte"
 
-#: templates/documents/member_invoice.html:13 templates/member_invoice_detail.html:4
+#: templates/documents/member_invoice.html:14 templates/member_invoice_detail.html:4
 #: templates/member_invoice_detail.html:42
 msgid "Rechnung"
 msgstr "Rechnung"
@@ -9365,7 +9530,7 @@ msgstr "Rechnung nicht gefunden."
 msgid "Rechnungen freigeben"
 msgstr "Rechnungen freigeben"
 
-#: templates/documents/member_invoice.html:16 templates/member_invoice_detail.html:46
+#: templates/documents/member_invoice.html:17 templates/member_invoice_detail.html:46
 msgid "Rechnungsdatum:"
 msgstr "Rechnungsdatum:"
 
@@ -9426,6 +9591,10 @@ msgstr "Rechtsstand"
 #: templates/leg_kalkulator.html:191
 msgid "Reduktion der Netzkosten"
 msgstr "Reduktion der Netzkosten"
+
+#: templates/sandbox/start_evidence.html:7
+msgid "Referenz"
+msgstr "Referenz"
 
 #: templates/leg_dashboard.html:319
 msgid "Referenz des Netzbetreibers"
@@ -9514,7 +9683,7 @@ msgstr "Richtwert aus Verbrauchsprofil und LEG-Annahmen."
 msgid "Richtwerte Schweiz: 1 Person ca. 1'500 kWh, 2 Personen ca. 2'500 kWh, 4 Personen ca. 4'500 kWh."
 msgstr "Richtwerte Schweiz: 1 Person ca. 1'500 kWh, 2 Personen ca. 2'500 kWh, 4 Personen ca. 4'500 kWh."
 
-#: templates/documents/community_agreement.html:17 templates/leg_dashboard.html:155
+#: templates/documents/community_agreement.html:18 templates/leg_dashboard.html:155
 msgid "Rolle"
 msgstr "Rolle"
 
@@ -9522,7 +9691,7 @@ msgstr "Rolle"
 msgid "Rolle wird geprüft"
 msgstr "Rolle wird geprüft"
 
-#: templates/documents/participant_contract.html:16
+#: templates/documents/participant_contract.html:17
 msgid "Rolle:"
 msgstr "Rolle:"
 
@@ -9543,7 +9712,7 @@ msgid "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 msgstr "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 
 #: i18n.py:123 templates/admin/abrechnungen.html:135 templates/admin/abrechnungen.html:138
-#: templates/documents/member_invoice.html:18 templates/member_invoice_detail.html:49
+#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:49
 #: templates/member_invoice_detail.html:50
 msgid "Rp./kWh"
 msgstr "Rp./kWh"
@@ -9589,6 +9758,22 @@ msgstr "SDAT-Import"
 #: meter_data.py:276
 msgid "SDAT-Startzeit fehlt"
 msgstr "SDAT-Startzeit fehlt"
+
+#: templates/sandbox/start_evidence.html:3
+msgid "SIMULATION SONNWIL"
+msgstr "SIMULATION SONNWIL"
+
+#: templates/documents/simulation.html:1
+msgid ""
+"SIMULATION SONNWIL - Erfundenes Dokument. Keine rechtsgültige Unterschrift, keine "
+"Zahlungsaufforderung und keine Netzbetreiber-Bewilligung."
+msgstr ""
+"SIMULATION SONNWIL - Erfundenes Dokument. Keine rechtsgültige Unterschrift, keine "
+"Zahlungsaufforderung und keine Netzbetreiber-Bewilligung."
+
+#: sandbox_formation.py:124
+msgid "SIMULATION SONNWIL: LEG-Einladung"
+msgstr "SIMULATION SONNWIL: LEG-Einladung"
 
 #: templates/leg_gruenden.html:147
 msgid "Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten Anlagen."
@@ -9890,6 +10075,23 @@ msgstr "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 msgstr "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 
+#: templates/sandbox/formation.html:6
+msgid ""
+"Simulation: Alle Unterschriften und Netzbetreiber-Belege sind erfunden. Es wird nichts "
+"übermittelt und keine rechtsgültige Unterschrift erstellt."
+msgstr ""
+"Simulation: Alle Unterschriften und Netzbetreiber-Belege sind erfunden. Es wird nichts "
+"übermittelt und keine rechtsgültige Unterschrift erstellt."
+
+#: templates/sandbox/formation.html:18
+#, python-format
+msgid "Simulierte Unterschriften: %(signed)s von %(required)s."
+msgstr "Simulierte Unterschriften: %(signed)s von %(required)s."
+
+#: templates/sandbox/formation.html:35 templates/sandbox/formation.html:85
+msgid "Simuliertes Ergebnis"
+msgstr "Simuliertes Ergebnis"
+
 #: templates/sandbox/inbox.html:5
 msgid "Simuliertes Postfach"
 msgstr "Simuliertes Postfach"
@@ -10128,6 +10330,14 @@ msgstr "Solothurn"
 #: templates/api_docs.html:89
 msgid "Sonnendach solar data"
 msgstr "Solardaten von Sonnendach"
+
+#: templates/sandbox/start_evidence.html:8
+msgid ""
+"Sonnwil Energie bestätigt nur innerhalb dieses Übungsdorfs den simulierten Start der erfundenen "
+"LEG. Es wurde kein realer Netzbetreiber kontaktiert."
+msgstr ""
+"Sonnwil Energie bestätigt nur innerhalb dieses Übungsdorfs den simulierten Start der erfundenen "
+"LEG. Es wurde kein realer Netzbetreiber kontaktiert."
 
 #: templates/sandbox/home.html:2 templates/sandbox/home.html:5
 msgid "Sonnwil ausprobieren"
@@ -10465,11 +10675,11 @@ msgid "Teilnehmende und Anlagen erfassen"
 msgstr "Teilnehmende und Anlagen erfassen"
 
 #: templates/admin/abrechnungen.html:112 templates/admin/abrechnungen.html:134
-#: templates/documents/participant_contract.html:13 templates/leg_dashboard.html:92
+#: templates/documents/participant_contract.html:14 templates/leg_dashboard.html:92
 msgid "Teilnehmer"
 msgstr "Teilnehmer"
 
-#: templates/documents/dso_registration.html:21
+#: templates/documents/dso_registration.html:22
 msgid "Teilnehmer und Messpunkte"
 msgstr "Teilnehmer und Messpunkte"
 
@@ -10481,7 +10691,7 @@ msgstr "Teilnehmer-ID"
 msgid "Teilnehmer:"
 msgstr "Teilnehmer:"
 
-#: templates/documents/participant_contract.html:9
+#: templates/documents/participant_contract.html:10
 msgid "Teilnehmervertrag"
 msgstr "Teilnehmervertrag"
 
@@ -10489,7 +10699,7 @@ msgstr "Teilnehmervertrag"
 msgid "Teilnehmervertrag LEG"
 msgstr "Teilnehmervertrag LEG"
 
-#: templates/documents/dso_registration.html:27
+#: templates/documents/dso_registration.html:28
 msgid "Teilnehmerverträge (unterzeichnet)"
 msgstr "Teilnehmerverträge (unterzeichnet)"
 
@@ -10545,7 +10755,7 @@ msgstr "Tipp:"
 msgid "Token ist erforderlich"
 msgstr "Token ist erforderlich"
 
-#: templates/documents/member_invoice.html:38 templates/gemeinde/profil.html:75
+#: templates/documents/member_invoice.html:39 templates/gemeinde/profil.html:75
 #: templates/leg_kalkulator.html:231
 msgid "Total"
 msgstr "Total"
@@ -10698,13 +10908,17 @@ msgstr "Ungültiges Token-Format"
 msgid "Unterschiedliche Netzebenen"
 msgstr "Unterschiedliche Netzebenen"
 
-#: templates/documents/community_agreement.html:36 templates/documents/participant_contract.html:30
+#: templates/documents/community_agreement.html:37 templates/documents/participant_contract.html:31
 msgid "Unterschrift"
 msgstr "Unterschrift"
 
 #: templates/leg_dashboard.html:206
 msgid "Unterschrift abgelehnt"
 msgstr "Unterschrift abgelehnt"
+
+#: templates/sandbox/formation.html:23
+msgid "Unterschrift simulieren"
+msgstr "Unterschrift simulieren"
 
 #: templates/leg_dashboard.html:217
 msgid "Unterschriften abschliessen"
@@ -10831,7 +11045,7 @@ msgstr "Verbrauchsdaten ergänzen"
 msgid "Verbrauchsdaten hinterlegt"
 msgstr "Verbrauchsdaten hinterlegt"
 
-#: member_invoices.py:36 templates/documents/member_invoice.html:21
+#: member_invoices.py:36 templates/documents/member_invoice.html:22
 #: templates/member_invoice_detail.html:57
 msgid "Verbrauchskosten"
 msgstr "Verbrauchskosten"
@@ -10954,11 +11168,11 @@ msgstr "Vertrag unterzeichnen"
 msgid "Vertragsentwürfe erstellen"
 msgstr "Vertragsentwürfe erstellen"
 
-#: templates/documents/participant_contract.html:35
+#: templates/documents/participant_contract.html:36
 msgid "Vertreter"
 msgstr "Vertreter"
 
-#: templates/documents/dso_registration.html:32
+#: templates/documents/dso_registration.html:33
 msgid "Vertreter der Gemeinschaft:"
 msgstr "Vertreter der Gemeinschaft:"
 
@@ -10977,6 +11191,15 @@ msgstr "Vervollständigen Sie im Assistenten Gemeinschaftsvereinbarung und Teiln
 #: formation_wizard.py:68
 msgid "Verwaltung"
 msgstr "Verwaltung"
+
+#: templates/sandbox/formation.html:51
+#, python-format
+msgid ""
+"Verwenden Sie das Datum %(date)s und die Referenz %(reference)s. Bestätigen Sie den Startbeleg "
+"ausdrücklich. Erst danach können Sie die LEG aktivieren."
+msgstr ""
+"Verwenden Sie das Datum %(date)s und die Referenz %(reference)s. Bestätigen Sie den Startbeleg "
+"ausdrücklich. Erst danach können Sie die LEG aktivieren."
 
 #: templates/api_docs.html:241
 msgid "Verzeichniseintrag nicht gefunden."
@@ -11271,6 +11494,18 @@ msgstr "Website (optional)"
 #: registry_intake.py:78
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr "Website-URL muss mit http:// oder https:// beginnen."
+
+#: sandbox_formation.py:126
+msgid ""
+"Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
+"Einladung ist erfunden."
+msgstr ""
+"Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
+"Einladung ist erfunden."
+
+#: templates/sandbox/formation.html:58
+msgid "Weiteren Haushalt aufnehmen"
+msgstr "Weiteren Haushalt aufnehmen"
 
 #: templates/datenschutz.html:12
 #, python-format
@@ -11635,7 +11870,7 @@ msgstr "Wird vorbereitet"
 msgid "Wirksam"
 msgstr "Wirksam"
 
-#: templates/leg_dashboard.html:259
+#: templates/leg_dashboard.html:259 templates/sandbox/formation.html:72
 msgid "Wirksamkeitsdatum"
 msgstr "Wirksamkeitsdatum"
 
@@ -11651,6 +11886,16 @@ msgstr "Wohnen Sie in %(profile_name)s?"
 #: templates/index.html:100
 msgid "Wohnquartier in der Schweizer Agglomeration"
 msgstr "Wohnquartier in der Schweizer Agglomeration"
+
+#: templates/sandbox/formation.html:7
+msgid ""
+"Wählen Sie Mira als Gründerin und erstellen Sie eine neue LEG. Laden Sie Lea und Noah mit den "
+"folgenden erfundenen Adressen ein. Wechseln Sie jeweils zum eingeladenen Konto und bestätigen Sie"
+" die Teilnahme im LEG-Dashboard."
+msgstr ""
+"Wählen Sie Mira als Gründerin und erstellen Sie eine neue LEG. Laden Sie Lea und Noah mit den "
+"folgenden erfundenen Adressen ein. Wechseln Sie jeweils zum eingeladenen Konto und bestätigen Sie"
+" die Teilnahme im LEG-Dashboard."
 
 #: templates/meter_upload.html:54
 msgid "Wählen Sie den gewünschten Zeitraum"
@@ -11713,7 +11958,7 @@ msgstr "Zahlungsfrist (Tage)"
 msgid "Zahlungsfrist in ganzen Tagen, zwischen %(minimum)s und %(maximum)s."
 msgstr "Zahlungsfrist in ganzen Tagen, zwischen %(minimum)s und %(maximum)s."
 
-#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:51
+#: templates/documents/member_invoice.html:20 templates/member_invoice_detail.html:51
 msgid "Zahlungsfrist:"
 msgstr "Zahlungsfrist:"
 
@@ -11798,7 +12043,8 @@ msgstr "Zugang vorhanden"
 msgid "Zugangslink anfordern"
 msgstr "Zugangslink anfordern"
 
-#: billing_lifecycle.py:16 templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
+#: billing_lifecycle.py:16 sandbox_formation.py:178 templates/leg_dashboard.html:245
+#: templates/leg_dashboard.html:274 templates/sandbox/formation.html:36
 msgid "Zugestellt"
 msgstr "Zugestellt"
 
@@ -11942,7 +12188,7 @@ msgstr "Zählerstand"
 msgid "Zürich"
 msgstr "Zürich"
 
-#: templates/documents/dso_registration.html:33
+#: templates/documents/dso_registration.html:34
 msgid "[Name, Adresse, Telefon, E-Mail]"
 msgstr "[Name, Adresse, Telefon, E-Mail]"
 
@@ -12596,6 +12842,18 @@ msgstr "Übergabe an Ihren Installateur"
 #: templates/leg_dashboard.html:250
 msgid "Übergabepaket herunterladen"
 msgstr "Übergabepaket herunterladen"
+
+#: templates/sandbox/formation.html:30
+msgid "Übermittlung"
+msgstr "Übermittlung"
+
+#: sandbox_formation.py:182
+msgid "Übermittlung fehlgeschlagen"
+msgstr "Übermittlung fehlgeschlagen"
+
+#: sandbox_formation.py:181
+msgid "Übermittlung vorbereitet"
+msgstr "Übermittlung vorbereitet"
 
 #: templates/admin/abrechnungen.html:60
 msgid "Überschuss"

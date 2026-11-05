@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Capture simulated mail inside the current disposable village."""
 
+import hashlib
 import json
 import os
 import re
@@ -16,16 +17,26 @@ def mailbox():
     return directory / "mail"
 
 
-def capture(recipient, subject, body):
+def capture(recipient, subject, body, *, event_key=None):
+    """Capture mail locally; an optional event key suppresses repeated delivery."""
     directory = mailbox()
     directory.mkdir(mode=0o700, exist_ok=True)
     payload = {"recipient": recipient, "subject": subject, "body": body}
-    target = directory / (secrets.token_hex(16) + ".json")
-    temporary = target.with_suffix(".pending")
+    name = (
+        hashlib.sha256(event_key.encode()).hexdigest()
+        if event_key is not None
+        else secrets.token_hex(16)
+    )
+    target = directory / (name + ".json")
+    temporary = directory / (secrets.token_hex(16) + ".pending")
     try:
         with temporary.open("x", encoding="utf-8") as output:
             json.dump(payload, output, ensure_ascii=False)
-        temporary.replace(target)
+        try:
+            os.link(temporary, target)
+        except FileExistsError:
+            if event_key is None:
+                raise
     finally:
         temporary.unlink(missing_ok=True)
     return True

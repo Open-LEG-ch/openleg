@@ -270,7 +270,7 @@ def record_mutation_response(
         cur.execute(
             """INSERT INTO vnb_mutation_events
                    (case_id, state, external_request_id, response_status, evidence)
-               SELECT id, %s, %s, %s, %s FROM vnb_mutation_cases
+               SELECT case_id, %s, %s, %s, %s FROM vnb_mutation_cases
                WHERE community_id = %s AND case_id = %s
                ON CONFLICT (case_id, state, external_request_id, response_status)
                DO NOTHING RETURNING id""",

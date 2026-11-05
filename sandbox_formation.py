@@ -4,7 +4,7 @@
 import io
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from flask import abort, redirect, render_template, request, send_file
@@ -17,6 +17,7 @@ from dashboard_routes import (
     _require_dashboard_csrf,
     _require_dashboard_session,
 )
+from i18n import gettext as _
 
 
 class SimulationAdapter:
@@ -67,11 +68,8 @@ def response_evidence(state):
     ).encode()
 
 
-def _authorized(cid, capability):
-    actor = _require_dashboard_session()
-    _require_dashboard_csrf()
-    community = db.fetch_community_with_members(cid, actor)
-    member = next(
+def _member(community, actor):
+    return next(
         (
             item
             for item in (community or {}).get("members", [])
@@ -79,6 +77,13 @@ def _authorized(cid, capability):
         ),
         None,
     )
+
+
+def _authorized(cid, capability):
+    actor = _require_dashboard_session()
+    _require_dashboard_csrf()
+    community = db.fetch_community_with_members(cid, actor)
+    member = _member(community, actor)
     if not community_access.allows(member, capability):
         abort(403)
     return actor, community
@@ -93,6 +98,41 @@ def install(web):
     vnb_exchange.ADAPTERS["manual-handover"] = SimulationAdapter()
     vnb_exchange.ADAPTERS["sonnwil-simulation"] = SimulationAdapter()
 
+    @web.after_request
+    def capture_invitation(response):
+        """Capture an ordinary successful invitation without delivering mail."""
+        if (
+            request.method != "POST"
+            or response.status_code != 302
+            or not (request.endpoint or "").endswith(".leg_community_invite")
+        ):
+            return response
+        from dashboard_routes import _dashboard_session_building_id
+        from sandbox_mail import capture
+
+        cid = request.view_args["community_id"]
+        actor = _dashboard_session_building_id()
+        community = db.fetch_community_with_members(cid, actor) or {}
+        email = request.form.get("invite_email", "").strip().lower()
+        for member in community.get("members", []):
+            if (
+                member["status"] == "invited"
+                and (member.get("email") or "").lower() == email
+            ):
+                capture(
+                    email,
+                    _("SIMULATION SONNWIL: LEG-Einladung"),
+                    _(
+                        "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese Einladung ist erfunden."
+                    )
+                    + "\n"
+                    + os.environ["APP_BASE_URL"].rstrip("/")
+                    + "/leg/dashboard?cid="
+                    + cid,
+                    event_key="formation-invite:" + cid + ":" + member["building_id"],
+                )
+        return response
+
     @web.get("/sandbox/formation")
     def sandbox_formation():
         actor = _require_dashboard_session()
@@ -102,13 +142,18 @@ def install(web):
             abort(404)
         bundle = None
         signature_notice = None
-        if community:
+        if community and community["status"] in {
+            "documents_generated",
+            "signatures_pending",
+        }:
             try:
                 bundle = db.formation_signature_bundle(cid, actor)
             except db.SignatureConflict as error:
                 signature_notice = str(error)
             except db.SignatureDenied:
                 pass
+        member = _member(community, actor)
+        today = datetime.now(ZoneInfo("Europe/Zurich")).date()
         return render_template(
             "sandbox/formation.html",
             community=community,
@@ -116,29 +161,28 @@ def install(web):
             signature_notice=signature_notice,
             cases=db.list_vnb_submission_cases(cid) if community else [],
             can_manage_documents=community_access.allows(
-                next(
-                    (
-                        item
-                        for item in (community or {}).get("members", [])
-                        if item["building_id"] == actor
-                    ),
-                    None,
-                ),
+                member,
                 community_access.MANAGE_DOCUMENTS,
             ),
+            can_manage_members=community_access.allows(
+                member, community_access.MANAGE_MEMBERS
+            ),
+            join_target=_member(community, "sonnwil-operator"),
+            mutations=db.list_vnb_mutations(cid) if community else [],
+            correspondence=db.list_correspondence(cid) if community else [],
+            join_date=(today + timedelta(days=7)).isoformat(),
             communities=db.fetch_user_communities(actor) or [],
             csrf_token=_dashboard_csrf_token(),
-            today=datetime.now(ZoneInfo("Europe/Zurich")).date().isoformat(),
+            today=today.isoformat(),
+            state_labels={
+                "delivered": _("Zugestellt"),
+                "acknowledged": _("Empfang bestätigt"),
+                "rejected": _("Abgelehnt"),
+                "claimed": _("Übermittlung vorbereitet"),
+                "failed": _("Übermittlung fehlgeschlagen"),
+            },
             is_admin=community_access.is_administrator(
-                next(
-                    (
-                        item
-                        for item in (community or {}).get("members", [])
-                        if item["building_id"] == actor
-                        and item["status"] == "confirmed"
-                    ),
-                    None,
-                )
+                member if member and member["status"] == "confirmed" else None
             ),
         )
 
@@ -196,14 +240,7 @@ def install(web):
     def sandbox_start_evidence(cid):
         actor = _require_dashboard_session()
         community = db.fetch_community_with_members(cid, actor)
-        member = next(
-            (
-                item
-                for item in (community or {}).get("members", [])
-                if item["building_id"] == actor
-            ),
-            None,
-        )
+        member = _member(community, actor)
         if (
             not member
             or member["status"] != "confirmed"
@@ -225,3 +262,58 @@ def install(web):
             as_attachment=True,
             download_name="simulation-sonnwil-start.pdf",
         )
+
+    @web.get("/sandbox/formation/<cid>/join-agreement.pdf")
+    def sandbox_join_agreement(cid):
+        actor = _require_dashboard_session()
+        community = db.fetch_community_with_members(cid, actor)
+        member = _member(community, actor)
+        target = _member(community, request.args.get("participant", ""))
+        if not target or (
+            actor != target["building_id"]
+            and not community_access.allows(member, community_access.MANAGE_MEMBERS)
+        ):
+            abort(404)
+        if community["status"] != "active" or target["status"] not in {
+            "invited",
+            "confirmed",
+        }:
+            abort(409)
+        profile = db.get_building_for_dashboard(target["building_id"]) or {}
+        import document_generator
+
+        pdf = document_generator.generate_teilnehmervertrag(
+            target.get("email") or target["building_id"],
+            target.get("address") or "",
+            community["name"],
+            "producer" if (profile.get("potential_pv_kwp") or 0) > 0 else "consumer",
+            pv_kwp=profile.get("potential_pv_kwp") or 0,
+            annual_consumption_kwh=profile.get("annual_consumption_kwh") or 0,
+        )
+        return send_file(
+            io.BytesIO(pdf),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name="simulation-sonnwil-join.pdf",
+        )
+
+    @web.post("/sandbox/formation/<cid>/mutation-response")
+    def sandbox_mutation_response(cid):
+        _authorized(cid, community_access.MANAGE_MEMBERS)
+        state = request.form.get("state", "")
+        if state not in {"acknowledged", "rejected"}:
+            abort(400)
+        case = db.get_vnb_mutation(cid, request.form.get("mutation_id", ""))
+        if not case or case["adapter_key"] != "sonnwil-simulation":
+            abort(404)
+        if case["state"] not in {"delivered", state}:
+            abort(409)
+        db.record_vnb_mutation_response(
+            cid,
+            case["case_id"],
+            state,
+            case["external_request_id"],
+            state,
+            response_evidence(state),
+        )
+        return redirect("/sandbox/formation?cid=" + cid)
