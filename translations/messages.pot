@@ -425,6 +425,10 @@ msgstr ""
 msgid "1. Teilnehmer"
 msgstr ""
 
+#: templates/sandbox/archive.html:8
+msgid "1. Umfang prüfen und herunterladen"
+msgstr ""
+
 #: templates/datenschutz.html:27
 msgid "1. Verantwortliche Stelle"
 msgstr ""
@@ -465,6 +469,10 @@ msgstr ""
 msgid "2. Nachbarn finden"
 msgstr ""
 
+#: templates/sandbox/archive.html:14
+msgid "2. Neues Ziel prüfen und wiederherstellen"
+msgstr ""
+
 #: templates/datenschutz.html:33
 msgid "2. Verarbeitete Daten"
 msgstr ""
@@ -503,6 +511,10 @@ msgstr ""
 
 #: templates/sandbox/operator.html:29
 msgid "3. Signierte Zustellung und Wiederholung prüfen"
+msgstr ""
+
+#: templates/sandbox/archive.html:40
+msgid "3. Wiederholung und Ablehnung vergleichen"
 msgstr ""
 
 #: templates/sandbox/billing.html:32
@@ -1283,6 +1295,10 @@ msgstr ""
 msgid "Architektur, Datenpipeline, Repo-Grenzen und Selbsthosting der freien OpenLEG-Infrastruktur."
 msgstr ""
 
+#: templates/sandbox/archive.html:27
+msgid "Archiv abgelehnt. Es wurden keine Datensätze importiert."
+msgstr ""
+
 #: templates/fuer_gemeinden.html:77 templates/leg_gruenden.html:212
 msgid "Art. 17d und 17e StromVG"
 msgstr ""
@@ -1597,14 +1613,14 @@ msgstr ""
 msgid "Befehl kopiert."
 msgstr ""
 
-#: templates/sandbox/home.html:62
+#: templates/sandbox/home.html:67
 msgid ""
 "Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
 "des Netzbetreibers. Aktivieren Sie die LEG erst mit einem separaten erfundenen Startbeleg."
 msgstr ""
 
-#: templates/sandbox/home.html:54
+#: templates/sandbox/home.html:59
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
 "sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
@@ -1761,6 +1777,10 @@ msgstr ""
 
 #: templates/datenschutz.html:73
 msgid "Beschwerderecht bei einer Aufsichtsbehörde"
+msgstr ""
+
+#: templates/sandbox/archive.html:20
+msgid "Beschädigtes Manifest simulieren"
 msgstr ""
 
 #: templates/gemeinde/profil.html:132
@@ -2282,6 +2302,15 @@ msgstr ""
 msgid "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind."
 msgstr ""
 
+#: templates/sandbox/archive.html:9
+msgid ""
+"Das Archiv umfasst die deklarierten LEG-Datensätze: Mitgliedschaft, Dokumente und "
+"Unterschriftsbelege, Mess- und Quellenbelege, Rechnungen, Zahlungen, Fragen und Prüfverlauf. "
+"Live-Zugangsschlüssel, ausstehende Webhook-Zustellungen, private Geräte und Telemetrie sowie "
+"Betriebseinstellungen bleiben ausgeschlossen. Die Wiederherstellung sendet keine historischen "
+"E-Mails oder Webhooks und überträgt keine vollständige Installation."
+msgstr ""
+
 #: templates/fuer_gemeinden.html:37
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr ""
@@ -2334,6 +2363,10 @@ msgstr ""
 
 #: dashboard.py:1046
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
+msgstr ""
+
+#: templates/sandbox/archive.html:35
+msgid "Das Ziel ist abgelaufen. Nehmen Sie den Export für ein neues Ziel erneut auf."
 msgstr ""
 
 #: store/formation_activation.py:161
@@ -2765,6 +2798,10 @@ msgstr ""
 
 #: municipality.py:167
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
+msgstr ""
+
+#: templates/sandbox/archive.html:25
+msgid "Der gespeicherte Stand ist im privaten Ziel wiederhergestellt."
 msgstr ""
 
 #: sandbox_billing.py:57
@@ -3251,6 +3288,14 @@ msgid ""
 "erneut."
 msgstr ""
 
+#: templates/sandbox/archive.html:15
+msgid ""
+"Die Vorprüfung nimmt einen neuen Export direkt aus Ihrem Quelldorf. Die folgende "
+"Wiederherstellung verwendet genau diesen gespeicherten Stand. Ihre Browser-Anmeldung und die "
+"normale LEG-Administration werden bei jedem Befehl erneut geprüft. Es wird kein Plattform-"
+"Schlüssel angezeigt."
+msgstr ""
+
 #: billing_policy.py:230
 msgid "Die Zahlungsfrist der Richtlinie ist ungültig."
 msgstr ""
@@ -3296,7 +3341,7 @@ msgstr ""
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr ""
 
-#: sandbox_seed.py:45 sandbox_worker.py:103
+#: sandbox_seed.py:45 sandbox_worker.py:110
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr ""
 
@@ -3539,6 +3584,12 @@ msgstr ""
 msgid ""
 "Dieses Dorf wurde beendet oder zurückgesetzt. Dieser Tab kann keine Änderungen mehr speichern. "
 "Öffnen Sie Ihr aktuelles Dorf oder starten Sie neu."
+msgstr ""
+
+#: templates/sandbox/archive_destination.html:5
+msgid ""
+"Dieses Ziel gehört zu Ihrem Quelldorf. Dort können Sie es verwerfen oder einen neuen Export "
+"prüfen. Ein Reset oder das Ablaufen des Quelldorfs entfernt beide Kopien."
 msgstr ""
 
 #: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
@@ -4182,7 +4233,7 @@ msgstr ""
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr ""
 
-#: sandbox_seed.py:27 sandbox_worker.py:97
+#: sandbox_seed.py:27 sandbox_worker.py:104
 msgid "Energieprofil ändern"
 msgstr ""
 
@@ -4277,6 +4328,10 @@ msgstr ""
 msgid "Erfundenen Startbeleg herunterladen"
 msgstr ""
 
+#: templates/sandbox/archive.html:11 templates/sandbox/archive_destination.html:6
+msgid "Erfundenes LEG-Archiv herunterladen"
+msgstr ""
+
 #: templates/sandbox/formation.html:40
 msgid "Ergebnis simulieren"
 msgstr ""
@@ -4289,7 +4344,7 @@ msgstr ""
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr ""
 
-#: templates/sandbox/home.html:55
+#: templates/sandbox/home.html:60
 msgid ""
 "Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
@@ -4425,6 +4480,17 @@ msgstr ""
 
 #: templates/utility/dashboard.html:15
 msgid "Expired"
+msgstr ""
+
+#: templates/sandbox/archive.html:21
+msgid "Export aufnehmen und Ziel vorprüfen"
+msgstr ""
+
+#: templates/sandbox/home.html:53
+msgid ""
+"Exportieren Sie als Robin die Betriebs-LEG oder als Mira die selbst gegründete LEG. Prüfen Sie "
+"eine neue private Kopie, stellen Sie das Archiv wieder her und vergleichen Sie Wiederholung, "
+"Konflikt und beschädigtes Manifest."
 msgstr ""
 
 #: templates/index.html:302
@@ -4617,7 +4683,7 @@ msgstr ""
 msgid "Frage senden"
 msgstr ""
 
-#: templates/sandbox/home.html:56
+#: templates/sandbox/home.html:61
 msgid ""
 "Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
 "welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
@@ -4785,6 +4851,13 @@ msgstr ""
 
 #: templates/index.html:190
 msgid "Für Netzbetreiber und Integrationspartner"
+msgstr ""
+
+#: templates/sandbox/archive.html:10
+msgid ""
+"Für Rechnungen und Quellenbelege führen Sie zuerst die Messdaten- und Abrechnungsübung durch. Für"
+" Gründungsbelege wählen Sie danach die selbst gegründete LEG. Das Archiv zeigt nur tatsächlich "
+"vorhandene Datensätze."
 msgstr ""
 
 #: templates/how-it-works.html:120
@@ -5379,6 +5452,10 @@ msgstr ""
 msgid "Gespeicherte Übergabe herunterladen"
 msgstr ""
 
+#: templates/sandbox/archive.html:33
+msgid "Gespeicherten Stand wiederherstellen"
+msgstr ""
+
 #: templates/advisories.html:70
 msgid "Gespeicherter Stand:"
 msgstr ""
@@ -5527,7 +5604,7 @@ msgstr ""
 msgid "Gründung als Arbeitsfolge"
 msgstr ""
 
-#: templates/sandbox/home.html:63
+#: templates/sandbox/home.html:68
 msgid "Gründung ausprobieren"
 msgstr ""
 
@@ -5641,7 +5718,7 @@ msgstr ""
 msgid "Hallo,"
 msgstr ""
 
-#: sandbox_seed.py:23 sandbox_worker.py:92 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:99 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40 templates/sandbox/telemetry.html:25
 msgid "Haushalt"
@@ -5649,7 +5726,7 @@ msgid_plural "Haushalte"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/sandbox/home.html:53 templates/sandbox/home.html:58 templates/sandbox/onboarding.html:2
+#: templates/sandbox/home.html:58 templates/sandbox/home.html:63 templates/sandbox/onboarding.html:2
 #: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
 msgid "Haushalt anmelden"
 msgstr ""
@@ -5833,6 +5910,14 @@ msgstr ""
 msgid "Ich möchte dieses Dorf und alle Übungsdaten löschen."
 msgstr ""
 
+#: templates/sandbox/archive.html:33
+msgid "Ich stelle diesen geprüften Stand im privaten Ziel wieder her."
+msgstr ""
+
+#: templates/sandbox/archive.html:36
+msgid "Ich verwerfe das private Ziel und seinen gespeicherten Export."
+msgstr ""
+
 #: templates/sandbox/metering.html:55
 msgid "Ich ziehe diese Quelle ausdrücklich zurück, bevor ich die Korrektur importiere."
 msgstr ""
@@ -5881,7 +5966,7 @@ msgstr ""
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr ""
 
-#: sandbox_worker.py:98
+#: sandbox_worker.py:105
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr ""
 
@@ -6040,7 +6125,7 @@ msgstr ""
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr ""
 
-#: templates/sandbox/home.html:57
+#: templates/sandbox/home.html:62
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
 "bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
@@ -6748,6 +6833,10 @@ msgstr ""
 msgid "Klären Sie Mitglieder, Verträge, Netzbetreiber und Abrechnung."
 msgstr ""
 
+#: templates/sandbox/archive.html:26
+msgid "Konflikt: Der vorhandene Zielstand wurde nicht überschrieben."
+msgstr ""
+
 #: templates/gemeinde/profil.html:122
 msgid "Konkrete Massnahmen"
 msgstr ""
@@ -6796,7 +6885,7 @@ msgid "Konto nicht verfügbar"
 msgstr ""
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/billing.html:34 templates/sandbox/home.html:51 templates/sandbox/payments.html:61
+#: templates/sandbox/billing.html:34 templates/sandbox/home.html:56 templates/sandbox/payments.html:61
 #: templates/sandbox/questions.html:11 templates/sandbox/telemetry.html:20
 msgid "Konto wechseln"
 msgstr ""
@@ -6991,7 +7080,7 @@ msgid "LEG gesetzlich möglich"
 msgstr ""
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
-#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:61
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:66
 msgid "LEG gründen"
 msgstr ""
 
@@ -7049,6 +7138,11 @@ msgstr ""
 
 #: templates/leg_gruenden.html:103
 msgid "LEG-Angaben von Primeo Energie"
+msgstr ""
+
+#: templates/sandbox/archive.html:2 templates/sandbox/archive.html:5 templates/sandbox/home.html:52
+#: templates/sandbox/home.html:54
+msgid "LEG-Archiv ausprobieren"
 msgstr ""
 
 #: templates/index.html:160
@@ -8256,7 +8350,7 @@ msgstr ""
 msgid "Neuenburg"
 msgstr ""
 
-#: sandbox_worker.py:91
+#: sandbox_worker.py:98
 msgid "Neuer Haushalt"
 msgstr ""
 
@@ -9163,6 +9257,14 @@ msgstr ""
 msgid "Privates Ops-Repo"
 msgstr ""
 
+#: templates/sandbox/archive_destination.html:4
+msgid "Privates Wiederherstellungsziel"
+msgstr ""
+
+#: templates/sandbox/archive.html:32
+msgid "Privates Ziel"
+msgstr ""
+
 #: templates/sandbox/entry.html:8
 msgid ""
 "Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen "
@@ -9253,6 +9355,10 @@ msgstr ""
 
 #: templates/leg_billing_policy.html:112
 msgid "Präfix"
+msgstr ""
+
+#: templates/sandbox/archive.html:20
+msgid "Prüfdatei"
 msgstr ""
 
 #: templates/advisories.html:64
@@ -9406,6 +9512,10 @@ msgstr ""
 msgid "Quartierakku-Anteil"
 msgstr ""
 
+#: templates/sandbox/archive.html:18
+msgid "Quell-LEG"
+msgstr ""
+
 #: templates/self_host.html:80
 msgid "Quellcode auf GitHub"
 msgstr ""
@@ -9416,6 +9526,10 @@ msgstr ""
 
 #: templates/leg_billing.html:60
 msgid "Quelldokumente:"
+msgstr ""
+
+#: templates/sandbox/archive_destination.html:8
+msgid "Quelldorf verwalten"
 msgstr ""
 
 #: templates/admin/ops.html:89 templates/gemeinde/methodik.html:38 templates/sandbox/payments.html:42
@@ -9892,6 +10006,13 @@ msgstr ""
 msgid ""
 "SIMULATION SONNWIL: September 2026, ohne Akku. Alle Preise, Messwerte und Rechnungen sind "
 "erfunden. Es ist nichts zu bezahlen."
+msgstr ""
+
+#: templates/sandbox/archive.html:6
+msgid ""
+"SIMULATION SONNWIL: Sie exportieren nur erfundene Daten Ihrer LEG. Die Wiederherstellung "
+"verwendet eine neue Datenbank mit eigenem Produktprozess. Sie benötigt einen freien Dorfplatz und"
+" bleibt an dieses Quelldorf gebunden."
 msgstr ""
 
 #: templates/leg_gruenden.html:147
@@ -11072,6 +11193,10 @@ msgstr ""
 msgid "Unterzeichnet"
 msgstr ""
 
+#: templates/sandbox/archive.html:20
+msgid "Unveränderter Export"
+msgstr ""
+
 #: dashboard.py:266 dashboard.py:267
 msgid "Unvollständig"
 msgstr ""
@@ -11516,6 +11641,10 @@ msgstr ""
 msgid "Vorlage"
 msgstr ""
 
+#: templates/sandbox/archive.html:28
+msgid "Vorprüfung erfolgreich. Das Ziel wurde noch nicht verändert."
+msgstr ""
+
 #: templates/index.html:624
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr ""
@@ -11842,6 +11971,18 @@ msgstr ""
 msgid "Wie wir diesen Wert herleiten"
 msgstr ""
 
+#: templates/sandbox/archive.html:34
+msgid "Wiederhergestellte LEG öffnen"
+msgstr ""
+
+#: templates/sandbox/archive.html:41
+msgid ""
+"Wiederholen Sie die Wiederherstellung unverändert: Es entstehen keine doppelten Datensätze. "
+"Öffnen Sie dann das Ziel und ändern Sie im eigenen Energieprofil den Jahresverbrauch. Kehren Sie "
+"über «Zum Quelldorf» zurück und stellen Sie denselben gespeicherten Stand erneut her. Die "
+"Vorprüfung zeigt den Konflikt, ohne ihn zu überschreiben. Die Quelle bleibt unverändert."
+msgstr ""
+
 #: templates/emails/day_0_welcome.html:6 templates/emails/day_0_welcome.html:33
 #, python-format
 msgid "Willkommen bei %(platform_name)s"
@@ -12036,6 +12177,14 @@ msgid ""
 "auch einen fehlgeschlagenen geplanten Abruf und seinen Wiederholungsversuch aus."
 msgstr ""
 
+#: templates/sandbox/archive.html:42
+msgid ""
+"Wählen Sie anschliessend das beschädigte Manifest und nehmen Sie den Export erneut auf. Die "
+"Prüfung und Wiederherstellung lehnen den falschen Hash ab. Verwerfen Sie das Ziel und beginnen "
+"Sie mit einem unveränderten Export neu. Verwerfen, Zurücksetzen oder Ablaufen des Quelldorfs "
+"entfernt auch das Ziel und alle Archivdateien."
+msgstr ""
+
 #: templates/meter_upload.html:54
 msgid "Wählen Sie den gewünschten Zeitraum"
 msgstr ""
@@ -12172,6 +12321,10 @@ msgid ""
 "Korrektur."
 msgstr ""
 
+#: templates/sandbox/archive.html:36
+msgid "Ziel verwerfen"
+msgstr ""
+
 #: templates/gemeinde/profil.html:122
 msgid "Ziel:"
 msgstr ""
@@ -12245,6 +12398,10 @@ msgstr ""
 
 #: templates/gemeinde/profil.html:132
 msgid "Zum LEG-Check"
+msgstr ""
+
+#: templates/sandbox/archive_destination.html:7 templates/sandbox/banner.html:8
+msgid "Zum Quelldorf"
 msgstr ""
 
 #: templates/pricing.html:126
@@ -12909,7 +13066,7 @@ msgstr ""
 msgid "Ändern"
 msgstr ""
 
-#: sandbox_seed.py:44 sandbox_worker.py:100
+#: sandbox_seed.py:44 sandbox_worker.py:107
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr ""
 
