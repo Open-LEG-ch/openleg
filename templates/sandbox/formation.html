@@ -1,0 +1,57 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _('LEG gründen') }} · Sonnwil</title>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ _('LEG gründen') }}</h1>
+  <p class="mt-4">{{ _('Simulation: Alle Unterschriften und Netzbetreiber-Belege sind erfunden. Es wird nichts übermittelt und keine rechtsgültige Unterschrift erstellt.') }}</p>
+  <p class="mt-4">{{ _('Wählen Sie Mira als Gründerin und erstellen Sie eine neue LEG. Laden Sie Lea und Noah mit den folgenden erfundenen Adressen ein. Wechseln Sie jeweils zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard.') }}</p>
+  <ul class="mt-4 list-disc pl-6"><li>sonnwil-resident@example.org</li><li>sonnwil-producer@example.org</li></ul>
+  <a href="/leg/community/create" class="mt-4 inline-block font-semibold underline">{{ _('Neue LEG erstellen') }}</a>
+  {% for item in communities %}<p class="mt-4"><a href="/sandbox/formation?cid={{ item.community_id }}" class="font-semibold underline">{{ item.name }}</a></p>{% endfor %}
+  {% if community %}
+  <h2 class="mt-8 text-xl font-semibold">{{ community.name }}</h2>
+  <a href="/leg/dashboard?cid={{ community.community_id }}" class="mt-4 inline-block font-semibold underline">{{ _('LEG-Dashboard öffnen') }}</a>
+  {% if signature_notice %}<p class="mt-4" role="status">{{ _(signature_notice) }}</p>{% endif %}
+  {% if bundle %}
+  <p class="mt-4">{{ _('Prüfen Sie alle Dokumente im LEG-Dashboard. Bestätigen Sie danach als jeder der drei Haushalte die simulierte Unterschrift. Erst alle Unterschriften geben die Netzbetreiber-Anmeldung frei.') }}</p>
+  <p class="mt-4">{{ _('Simulierte Unterschriften: %(signed)s von %(required)s.', signed=bundle.signed|length, required=bundle.required|length) }}</p>
+  <form method="post" action="/sandbox/formation/{{ community.community_id }}/signatures" class="mt-4 grid gap-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="bundle" value="{{ bundle.fingerprint }}">
+    <label><input type="checkbox" name="confirm" value="yes" required> {{ _('Ich habe die Entwürfe geprüft und simuliere die Unterschrift meines aktuellen Haushalts.') }}</label>
+    <button type="submit" class="rounded-lg bg-brand px-4 py-3 font-semibold text-white">{{ _('Unterschrift simulieren') }}</button>
+  </form>
+  {% endif %}
+  {% if can_manage_documents %}
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Netzbetreiber simulieren') }}</h2>
+    <p class="mt-4">{{ _('Eine Empfangsbestätigung bestätigt nur den Empfang. Sie erlaubt keinen Betriebsstart. Für die Aktivierung braucht es einen separaten Startbeleg, ein gültiges Datum und die Administration.') }}</p>
+    {% for case in cases %}<p class="mt-4">{{ _('Übermittlung') }}: {{ case.state }}</p>{% endfor %}
+    {% if not cases or cases[0].state == 'delivered' %}
+    <form method="post" action="/sandbox/formation/{{ community.community_id }}/vnb" class="mt-4 grid gap-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if cases %}<input type="hidden" name="case_id" value="{{ cases[0].case_id }}">{% endif %}
+      <label>{{ _('Simuliertes Ergebnis') }}<select name="state" class="mt-2 w-full rounded-lg border border-line px-3 py-2">
+        {% if not cases %}<option value="delivered">{{ _('Zugestellt') }}</option>{% endif %}
+        <option value="rejected">{{ _('Abgelehnt') }}</option>
+        <option value="acknowledged">{{ _('Empfang bestätigt') }}</option>
+      </select></label>
+      <button type="submit" class="rounded-lg bg-brand px-4 py-3 font-semibold text-white">{{ _('Ergebnis simulieren') }}</button>
+    </form>
+    {% elif cases[0].state == 'rejected' %}
+    <p class="mt-4">{{ _('Die simulierte Anmeldung wurde abgelehnt. Sie bleibt mit ihrem Beleg erhalten. Beginnen Sie mit einer neuen LEG oder setzen Sie das Dorf zurück, um einen erfolgreichen Ablauf auszuprobieren.') }}</p>
+    {% endif %}
+  </section>
+  {% endif %}
+  {% if is_admin and community.status in ['dso_submitted', 'dso_approved', 'active'] %}
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Betriebsstart ausprobieren') }}</h2>
+    <p class="mt-4">{{ _('Laden Sie den erfundenen Startbeleg herunter. Öffnen Sie das LEG-Dashboard und erfassen Sie ihn im Korrespondenzjournal als Eingang mit PDF-Anhang. Wählen Sie danach diesen Beleg unter Betriebsstart aus.') }}</p>
+    <p class="mt-4">{{ _('Verwenden Sie das Datum %(date)s und die Referenz %(reference)s. Bestätigen Sie den Startbeleg ausdrücklich. Erst danach können Sie die LEG aktivieren.', date=today, reference='SIMULATION-START-' + community.community_id) }}</p>
+    <p class="mt-4">{{ _('Ein zukünftiges Startdatum verhindert die Aktivierung bis zu diesem Datum. Eine Empfangsbestätigung oder ein fehlender Anhang genügt nicht.') }}</p>
+    <a href="/sandbox/formation/{{ community.community_id }}/start-evidence.pdf" class="mt-4 inline-block font-semibold underline">{{ _('Erfundenen Startbeleg herunterladen') }}</a>
+  </section>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

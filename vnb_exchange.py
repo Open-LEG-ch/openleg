@@ -632,6 +632,15 @@ def submit_formation(
             raise FormationSubmissionInvalid(
                 "Configured VNB adapter is unavailable"
             ) from error
+    if any(item.get("has_participant_receipts") for item in metadata):
+        try:
+            db.validate_formation_signature_receipts(
+                command.community_id, command.actor_building_id
+            )
+        except db.SignatureDenied as error:
+            raise FormationSubmissionForbidden from error
+        except db.SignatureConflict as error:
+            raise FormationSubmissionInvalid(str(error)) from error
     documents = []
     for item in metadata:
         stored = db.get_leg_document(item["id"])

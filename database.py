@@ -265,6 +265,13 @@ from store.formation_activation import (  # noqa: F401
     record_vnb_start_confirmation,
 )
 from store.formation_documents import replace_leg_document_bundle  # noqa: F401
+from store.formation_signatures import (  # noqa: F401
+    SignatureConflict,
+    SignatureDenied,
+    formation_signature_bundle,
+    record_formation_signature,
+    validate_formation_signature_receipts,
+)
 from store.interest import (  # noqa: F401
     InterestReadUnavailable,
     cleanup_expired_interest,
@@ -426,6 +433,7 @@ list_vnb_submission_cases = _vnb_exchange.list_cases
 mark_vnb_manual_delivered = _vnb_exchange.mark_manual_delivered
 record_vnb_submission_outcome = _vnb_exchange.record_outcome
 get_vnb_mutation = _vnb_exchange.get_mutation
+record_vnb_submission_response = _vnb_exchange.record_submission_response
 claim_vnb_mutation = _vnb_exchange.claim_mutation
 record_vnb_mutation_outcome = _vnb_exchange.record_mutation_outcome
 list_vnb_mutations = _vnb_exchange.list_mutations

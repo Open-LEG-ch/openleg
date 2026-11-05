@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Atomic persistence for a LEG's generated document bundle."""
 
+from psycopg2.extras import Json
+
 
 def _get_connection():
     import database
@@ -41,14 +43,15 @@ def replace_leg_document_bundle(community_id: str, documents: list[dict]) -> int
             cur.execute(
                 """
                     INSERT INTO leg_documents (
-                        community_id, doc_type, filename, pdf_data
-                    ) VALUES (%s, %s, %s, %s)
+                        community_id, doc_type, filename, pdf_data, participant_manifest
+                    ) VALUES (%s, %s, %s, %s, %s)
                     """,
                 (
                     community_id,
                     document["doc_type"],
                     document["filename"],
                     document["pdf_data"],
+                    Json(document.get("participant_manifest")),
                 ),
             )
 

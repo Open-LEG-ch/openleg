@@ -1288,6 +1288,22 @@ def create_tables():
                 )
             """)
 
+            cur.execute(
+                "ALTER TABLE leg_documents ADD COLUMN IF NOT EXISTS participant_manifest JSONB"
+            )
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS leg_signature_receipts (
+                    community_id VARCHAR(64) NOT NULL REFERENCES communities(community_id) ON DELETE CASCADE,
+                    bundle_fingerprint CHAR(64) NOT NULL,
+                    building_id VARCHAR(64) NOT NULL REFERENCES buildings(building_id) ON DELETE CASCADE,
+                    provider VARCHAR(64) NOT NULL,
+                    evidence BYTEA NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (community_id, bundle_fingerprint, building_id)
+                )
+            """)
+
             # Migration: align community_id columns with communities.community_id
             # (VARCHAR(64) UUID strings). billing_periods, invoices and
             # leg_documents historically declared INTEGER, making the join to

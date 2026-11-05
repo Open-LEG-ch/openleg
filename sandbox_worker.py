@@ -36,6 +36,7 @@ def create_worker():
     web = create_app(
         {
             "SESSION_COOKIE_NAME": "openleg_product",
+            "SANDBOX_SIMULATION": True,
             "SESSION_COOKIE_PATH": os.environ.get("OPENLEG_SANDBOX_PREFIX", "/"),
             "RATELIMIT_STORAGE_URI": "memory://",
             "MAX_CONTENT_LENGTH": int(os.environ["OPENLEG_SANDBOX_MAX_UPLOAD_BYTES"]),
@@ -185,6 +186,9 @@ def create_worker():
             )
         return response
 
+    from sandbox_formation import install
+
+    install(web)
     return web
 
 
