@@ -165,6 +165,9 @@ FIXTURE_MANIFEST = {
         "vnb-formation-response",
         "confirmed-operating-start",
         "dated-participant-join",
+        "metering-intake",
+        "metering-correction-withdrawal",
+        "scheduled-metering-retry",
         "municipality-demand",
         "display-language",
         "utility-preferences",
@@ -234,6 +237,9 @@ def seed_village(db, directory):
             ),
         )
     seed_accounts(db)
+    from sandbox_metering_fixtures import seed_metering
+
+    seed_metering(db)
     identities = {
         identifier: db.get_building(identifier)["referral_code"]
         for identifier, *_ in PERSONAS

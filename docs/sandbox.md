@@ -26,6 +26,43 @@ then simulate its VNB response. Separately switch to Sam to confirm membership.
 VNB processing does not change community-controlled membership. Repeating the
 same proposal retains its original facts and evidence.
 
+Sam and Robin can open the metering exercise without first forming a LEG. Five
+dated synthetic metering assignments belong to the seeded active community.
+The downloads contain a complete September 2026 in gzip-wrapped E66 XML. The
+browser upload expands at most eight MiB and uses the normal E66 parser and
+atomic evidence, physical-readings and import-ledger command.
+
+The half-open Europe/Zurich period runs from September 1 at 00:00 to October 1
+at 00:00, or August 31 at 22:00Z to September 30 at 22:00Z. Its 2880 intervals
+each contain four consumption series of 0.250 kWh and one production series of
+0.500 kWh. For every consumer the source split is 0.125 kWh community and
+0.125 kWh grid. Production is entirely local. The no-battery monthly totals are
+2880 kWh consumption, 1440 kWh production, 1440 kWh local consumption and
+1440 kWh grid consumption. These deliberately flat profiles are invented
+arithmetic fixtures, not real readings or solar forecasts.
+
+Each source carries total, community and grid channels, sender/receiver IDs,
+creation time, an external community ID and dated point bindings. Duplicate
+downloads contain identical source bytes and replay the existing delivery.
+Missing intervals, unmapped points and unsupported precision remain refused.
+The interface explains each repair; it never substitutes physical telemetry.
+Safe attempt receipts are private village files and do not count as accepted
+billing evidence.
+
+The correction changes production to 0.600 kWh per interval, with 0.150 kWh
+local and 0.100 kWh grid consumption per household. Its monthly totals are
+1728 kWh production/local consumption and 1152 kWh grid consumption. Import
+requires explicit withdrawal of the original accepted source. Withdrawal
+retains original bytes, identity and audit history; replay cannot reactivate
+it. The normal replacement command retains the withdrawal lineage.
+
+The scheduled exercise uses the ordinary due-date check, advisory lock, bounded
+retry and PostgreSQL report. Its injected transport reads only a generated
+source under this worker's data directory, and its importer uses the same strict
+E66 evidence command. No FTPS credentials are needed. Trigger a failed fetch,
+then explicitly retry without failure. A second same-day scheduled tick does
+not rerun the job; explicit retries preserve delivery and reading identities.
+
 ## Run locally
 
 Use Linux, PostgreSQL 16 binaries, `libseccomp.so.2` and the normal Python
