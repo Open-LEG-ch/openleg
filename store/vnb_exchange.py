@@ -28,12 +28,21 @@ class VnbSubmissionConflict(VnbExchangeStoreError):
     """Another active submission prevents this formation attempt."""
 
 
+_MUTATION_SELECT = """
+    SELECT c.*, (
+        SELECT e.event_id FROM operator_events e
+        WHERE e.community_id=c.community_id AND e.aggregate_id=c.case_id
+          AND e.event_type='membership.mutation.' || c.state
+        ORDER BY e.occurred_at,e.event_id LIMIT 1
+    ) AS event_id FROM vnb_mutation_cases c
+"""
+
+
 def get_mutation(community_id: str, mutation_id: str) -> dict | None:
     """Read one immutable command identity within its authorized community."""
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """SELECT * FROM vnb_mutation_cases
-               WHERE community_id = %s AND mutation_id = %s""",
+            _MUTATION_SELECT + "WHERE c.community_id = %s AND c.mutation_id = %s",
             (community_id, mutation_id),
         )
         row = cur.fetchone()
@@ -56,6 +65,16 @@ def claim_mutation(submission: MutationClaim) -> dict:
                 raise VnbSubmissionConflict(
                     "Diese Mutations-ID bezeichnet bereits einen anderen Inhalt."
                 )
+            if existing["state"] != "claimed":
+                # A locking SELECT can wait for a newer case version while its
+                # statement snapshot still predates the event. Read again only
+                # after holding the case lock, with a fresh READ COMMITTED snapshot.
+                cur.execute(
+                    _MUTATION_SELECT
+                    + "WHERE c.community_id = %s AND c.mutation_id = %s",
+                    (submission.community_id, submission.mutation_id),
+                )
+                return dict(cur.fetchone())
             return existing
         cur.execute(
             """SELECT mutation_id FROM vnb_mutation_cases
