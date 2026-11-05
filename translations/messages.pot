@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 11:57+0000\n"
+"POT-Creation-Date: 2026-11-05 11:59+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -397,6 +397,10 @@ msgstr ""
 msgid "1. Adresse prüfen"
 msgstr ""
 
+#: templates/sandbox/telemetry.html:11
+msgid "1. Als Lea ein erfundenes Gerät erfassen"
+msgstr ""
+
 #: templates/sandbox/questions.html:9
 msgid "1. Als Lea eine Frage stellen"
 msgstr ""
@@ -433,6 +437,10 @@ msgstr ""
 msgid "15'000 kWh"
 msgstr ""
 
+#: templates/sandbox/telemetry.html:15
+msgid "2. Aktualität, Störung und Schlüssel prüfen"
+msgstr ""
+
 #: templates/sandbox/questions.html:12
 msgid "2. Als Sam bestätigen und beantworten"
 msgstr ""
@@ -467,6 +475,10 @@ msgstr ""
 
 #: templates/sandbox/payments.html:36
 msgid "3. Einträge prüfen und eine Zuordnung bestätigen"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:18
+msgid "3. Für Noah freigeben und wieder entziehen"
 msgstr ""
 
 #: templates/index.html:297
@@ -1017,6 +1029,10 @@ msgstr ""
 msgid "Als erledigt angegeben"
 msgstr ""
 
+#: templates/sandbox/telemetry.html:22
+msgid "Alten Geräteschlüssel prüfen"
+msgstr ""
+
 #: templates/telemetry_dashboard.html:109 templates/telemetry_shared.html:59
 msgid "Alter beim Laden"
 msgstr ""
@@ -1557,14 +1573,14 @@ msgstr ""
 msgid "Befehl kopiert."
 msgstr ""
 
-#: templates/sandbox/home.html:52
+#: templates/sandbox/home.html:57
 msgid ""
 "Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
 "des Netzbetreibers. Aktivieren Sie die LEG erst mit einem separaten erfundenen Startbeleg."
 msgstr ""
 
-#: templates/sandbox/home.html:44
+#: templates/sandbox/home.html:49
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
 "sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
@@ -2330,6 +2346,10 @@ msgstr ""
 msgid "Dashboard-Zugang"
 msgstr ""
 
+#: templates/sandbox/telemetry.html:22
+msgid "Dasselbe Muster wiederholen"
+msgstr ""
+
 #: templates/partials/form_validation.html:13
 msgid "Datei auswählen"
 msgstr ""
@@ -2517,6 +2537,10 @@ msgstr ""
 msgid ""
 "Der Fortschritt misst die Veränderung des Scores im letzten vollen Jahr, in Prozentpunkten.\n"
 "        Er stammt nur aus dem Panel und wird nie mit dem Snapshot vermischt."
+msgstr ""
+
+#: sandbox_telemetry.py:35
+msgid "Der Geräteschlüssel ist widerrufen oder nicht mehr gültig. Erneuern Sie ihn als Eigentümer."
 msgstr ""
 
 #: templates/self_host.html:20
@@ -2777,6 +2801,10 @@ msgstr ""
 
 #: dashboard_routes.py:979
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
+msgstr ""
+
+#: sandbox_telemetry.py:131
+msgid "Die Aktion wurde abgelehnt. Prüfen Sie Anmeldung, Eigentum, Freigabe und Geräteschlüssel."
 msgstr ""
 
 #: templates/index.html:501
@@ -3227,7 +3255,7 @@ msgstr ""
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr ""
 
-#: sandbox_seed.py:45 sandbox_worker.py:97
+#: sandbox_seed.py:45 sandbox_worker.py:100
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr ""
 
@@ -3257,6 +3285,18 @@ msgstr ""
 
 #: templates/advisories.html:29
 msgid "Die letzte Quellenprüfung ist fehlgeschlagen. Frühere Quellen bleiben unten dokumentiert."
+msgstr ""
+
+#: templates/sandbox/telemetry.html:8
+msgid ""
+"Die lokale Musterquelle bewahrt diesen Schlüssel nur in Ihrem Übungsdorf auf. Nach dem Neuladen "
+"wird er nicht erneut angezeigt. Erneuern oder widerrufen Sie ihn unten."
+msgstr ""
+
+#: sandbox_telemetry.py:29
+msgid ""
+"Die lokale Quelle ist pausiert oder hat keinen gültigen Schlüssel. Setzen Sie sie fort oder "
+"erneuern Sie den Schlüssel."
 msgstr ""
 
 #: sandbox_seed.py:60
@@ -3949,6 +3989,10 @@ msgstr ""
 msgid "Einstellung speichern"
 msgstr ""
 
+#: templates/sandbox/telemetry.html:20
+msgid "Einstellungen"
+msgstr ""
+
 #: templates/fuer_gemeinden.html:98 templates/utility/dashboard.html:18
 msgid "Einstieg"
 msgstr ""
@@ -4085,7 +4129,7 @@ msgstr ""
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr ""
 
-#: sandbox_seed.py:27 sandbox_worker.py:91
+#: sandbox_seed.py:27 sandbox_worker.py:94
 msgid "Energieprofil ändern"
 msgstr ""
 
@@ -4122,6 +4166,10 @@ msgstr ""
 
 #: templates/how-it-works.html:100
 msgid "Entscheiden und gründen"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:22
+msgid "Entwarnung senden"
 msgstr ""
 
 #: templates/index.html:178
@@ -4188,7 +4236,7 @@ msgstr ""
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr ""
 
-#: templates/sandbox/home.html:45
+#: templates/sandbox/home.html:50
 msgid ""
 "Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
@@ -4502,7 +4550,7 @@ msgstr ""
 msgid "Frage senden"
 msgstr ""
 
-#: templates/sandbox/home.html:46
+#: templates/sandbox/home.html:51
 msgid ""
 "Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
 "welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
@@ -4553,12 +4601,20 @@ msgstr ""
 msgid "Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz."
 msgstr ""
 
+#: templates/sandbox/telemetry.html:25
+msgid "Freigabe entziehen"
+msgstr ""
+
 #: templates/sandbox/billing.html:29 templates/sandbox/payments.html:11
 msgid "Freigabe und Rechnungen öffnen"
 msgstr ""
 
 #: templates/contact_requests.html:58
 msgid "Freigabe widerrufen"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:25
+msgid "Freigeben"
 msgstr ""
 
 #: billing_lifecycle.py:15
@@ -4802,6 +4858,14 @@ msgid ""
 " nicht an, ob bereits ein Profil existiert."
 msgstr ""
 
+#: templates/sandbox/telemetry.html:19
+msgid ""
+"Geben Sie die Quelle für Noah frei. Die Nachbarschaftsfreigabe in Leas gewöhnlichen Einstellungen"
+" muss ebenfalls aktiv sein. Wechseln Sie zu Noah und öffnen Sie die gemeinsamen Messwerte. Kehren"
+" Sie zu Lea zurück und entziehen Sie die Freigabe. Noah sieht die Quelle beim nächsten Lesen "
+"nicht mehr. Private Geräteangaben und Anlagenhinweise bleiben beim Eigentümer."
+msgstr ""
+
 #: store/formation_activation.py:90
 msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
 msgstr ""
@@ -4988,6 +5052,10 @@ msgstr ""
 msgid "Gemeinsam gründen Sie Ihre LEG und sparen je nach Situation mehrere hundert Franken pro Jahr."
 msgstr ""
 
+#: templates/sandbox/telemetry.html:20
+msgid "Gemeinsame Messwerte"
+msgstr ""
+
 #: templates/leg_dashboard.html:328
 msgid ""
 "Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem "
@@ -5079,7 +5147,7 @@ msgstr ""
 msgid "Gerät"
 msgstr ""
 
-#: templates/equipment_index.html:9
+#: templates/equipment_index.html:9 templates/sandbox/telemetry.html:13
 msgid "Gerät erfassen"
 msgstr ""
 
@@ -5113,6 +5181,23 @@ msgstr ""
 
 #: templates/telemetry_dashboard.html:102
 msgid "Gerätemeldung"
+msgstr ""
+
+#: templates/sandbox/home.html:42 templates/sandbox/home.html:44 templates/sandbox/telemetry.html:2
+#: templates/sandbox/telemetry.html:5
+msgid "Gerätemesswerte ausprobieren"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:22
+msgid "Geräteschlüssel erneuern"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:22
+msgid "Geräteschlüssel widerrufen"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:8
+msgid "Geräteschlüssel, einmalig angezeigt"
 msgstr ""
 
 #: templates/telemetry_dashboard.html:14
@@ -5363,7 +5448,7 @@ msgstr ""
 msgid "Gründung als Arbeitsfolge"
 msgstr ""
 
-#: templates/sandbox/home.html:53
+#: templates/sandbox/home.html:58
 msgid "Gründung ausprobieren"
 msgstr ""
 
@@ -5473,15 +5558,15 @@ msgstr ""
 msgid "Hallo,"
 msgstr ""
 
-#: sandbox_seed.py:23 sandbox_worker.py:86 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:89 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
-#: templates/gemeinde/dashboard.html:40
+#: templates/gemeinde/dashboard.html:40 templates/sandbox/telemetry.html:25
 msgid "Haushalt"
 msgid_plural "Haushalte"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/sandbox/home.html:43 templates/sandbox/home.html:48 templates/sandbox/onboarding.html:2
+#: templates/sandbox/home.html:48 templates/sandbox/home.html:53 templates/sandbox/onboarding.html:2
 #: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
 msgid "Haushalt anmelden"
 msgstr ""
@@ -5713,7 +5798,7 @@ msgstr ""
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr ""
 
-#: sandbox_worker.py:92
+#: sandbox_worker.py:95
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr ""
 
@@ -5872,7 +5957,7 @@ msgstr ""
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr ""
 
-#: templates/sandbox/home.html:47
+#: templates/sandbox/home.html:52
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
 "bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
@@ -6620,8 +6705,8 @@ msgid "Konto nicht verfügbar"
 msgstr ""
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/billing.html:34 templates/sandbox/home.html:41 templates/sandbox/payments.html:61
-#: templates/sandbox/questions.html:11
+#: templates/sandbox/billing.html:34 templates/sandbox/home.html:46 templates/sandbox/payments.html:61
+#: templates/sandbox/questions.html:11 templates/sandbox/telemetry.html:20
 msgid "Konto wechseln"
 msgstr ""
 
@@ -6811,7 +6896,7 @@ msgid "LEG gesetzlich möglich"
 msgstr ""
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
-#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:51
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:56
 msgid "LEG gründen"
 msgstr ""
 
@@ -7380,7 +7465,8 @@ msgstr ""
 msgid "Meine E-Mail-Adresse"
 msgstr ""
 
-#: templates/telemetry_dashboard.html:4 templates/telemetry_dashboard.html:39
+#: templates/sandbox/telemetry.html:20 templates/telemetry_dashboard.html:4
+#: templates/telemetry_dashboard.html:39
 msgid "Meine Messwerte"
 msgstr ""
 
@@ -7696,6 +7782,14 @@ msgstr ""
 
 #: templates/api_docs.html:74
 msgid "Municipality profile"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:22
+msgid "Muster veröffentlichen"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:14
+msgid "Musterquelle anmelden"
 msgstr ""
 
 #: templates/leg_billing_policy.html:110
@@ -8045,7 +8139,7 @@ msgstr ""
 msgid "Neuenburg"
 msgstr ""
 
-#: sandbox_worker.py:85
+#: sandbox_worker.py:88
 msgid "Neuer Haushalt"
 msgstr ""
 
@@ -9204,8 +9298,24 @@ msgstr ""
 msgid "Quelle Ihrer Angabe"
 msgstr ""
 
+#: templates/sandbox/telemetry.html:23
+msgid "Quelle bereit für einzelne Muster"
+msgstr ""
+
 #: templates/equipment_form.html:19
 msgid "Quelle der Angabe"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:22
+msgid "Quelle fortsetzen"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:22
+msgid "Quelle pausieren"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:23
+msgid "Quelle pausiert"
 msgstr ""
 
 #: templates/sandbox/metering.html:24
@@ -9624,6 +9734,13 @@ msgid ""
 "dieses Übungsdorfs."
 msgstr ""
 
+#: templates/sandbox/telemetry.html:6
+msgid ""
+"SIMULATION SONNWIL: Diese lokale Musterquelle verbindet sich mit keinem Gerät, Heimnetz oder "
+"MQTT-Broker. Sie belegt keine Gerätekompatibilität. Betriebsdaten ersetzen keine validierten VNB-"
+"Messdaten für die Abrechnung."
+msgstr ""
+
 #: templates/sandbox/questions.html:6
 msgid ""
 "SIMULATION SONNWIL: Fragen, Antworten und Belege bleiben in diesem Übungsdorf. Die ausgestellte "
@@ -9810,6 +9927,14 @@ msgstr ""
 
 #: templates/self_host.html:6
 msgid "Selbst betreiben | OpenLEG"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:17
+msgid ""
+"Senden Sie danach eine Störungsmeldung, bestätigen Sie den Hinweis in den eigenen Messwerten und "
+"senden Sie die Entwarnung. Das ist eine Meldung der erfundenen Quelle, keine Diagnose. Erneuern "
+"Sie den Geräteschlüssel und prüfen Sie, dass der alte Schlüssel abgelehnt wird. Nach dem Widerruf"
+" bleibt auch die lokale Lieferung abgelehnt, bis Sie einen neuen Schlüssel ausstellen."
 msgstr ""
 
 #: templates/sandbox/billing.html:24
@@ -10445,6 +10570,10 @@ msgstr ""
 msgid "Störungsmeldung"
 msgstr ""
 
+#: templates/sandbox/telemetry.html:22
+msgid "Störungsmeldung senden"
+msgstr ""
+
 #: templates/gemeinde/onboarding.html:112
 msgid "Suche aktuell nicht verfügbar."
 msgstr ""
@@ -11071,6 +11200,25 @@ msgstr ""
 
 #: templates/api_docs.html:241
 msgid "Verzeichniseintrag nicht gefunden."
+msgstr ""
+
+#: templates/sandbox/home.html:43
+msgid ""
+"Veröffentlichen Sie als Lea lokale Muster, prüfen Sie veraltete Werte und Störungsmeldungen und "
+"geben Sie Noah den Einblick vorübergehend frei."
+msgstr ""
+
+#: templates/sandbox/telemetry.html:16
+msgid ""
+"Veröffentlichen Sie ein Muster mit 2500 W und öffnen Sie die gewöhnlichen Messwerte. Wiederholen "
+"Sie dasselbe Muster: Es wird nicht doppelt gespeichert. Pausieren Sie die Quelle und warten Sie "
+"mindestens 61 Sekunden, ohne neue Muster zu senden. Die gespeicherten Zeitstempel werden dann als"
+" veraltet angezeigt. Die Uhr und Ihre Anmeldung bleiben unverändert. Setzen Sie die Quelle fort "
+"und veröffentlichen Sie ein neues Muster."
+msgstr ""
+
+#: sandbox_telemetry.py:32
+msgid "Veröffentlichen Sie zuerst ein Muster, bevor Sie es wiederholen."
 msgstr ""
 
 #: templates/advisories.html:8
@@ -12612,7 +12760,7 @@ msgstr ""
 msgid "Ändern"
 msgstr ""
 
-#: sandbox_seed.py:44 sandbox_worker.py:94
+#: sandbox_seed.py:44 sandbox_worker.py:97
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr ""
 
@@ -12698,6 +12846,13 @@ msgstr ""
 msgid ""
 "Öffnen Sie den Eintrag mit Ihrem bestätigten Eigentümerzugang. Prüfen Sie bei Änderungen den "
 "Zugangslink und laden Sie das Formular erneut."
+msgstr ""
+
+#: templates/sandbox/telemetry.html:12
+msgid ""
+"Öffnen Sie die gewöhnliche Geräteliste. Erfassen Sie Hersteller SIMULATION und Modell SONNWIL, "
+"ohne echte Seriennummer oder Netzwerkangaben. Melden Sie danach hier eine getrennte Musterquelle "
+"an. Geräteangaben und Messwerte sind keine Installateurprüfung."
 msgstr ""
 
 #: templates/equipment_form.html:104
