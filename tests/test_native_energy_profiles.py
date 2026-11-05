@@ -53,6 +53,15 @@ def test_registration_matches_real_numeric_profiles_and_remains_unconfirmed(
 ):
     import app
 
+    calculated_totals = []
+    calculate = ml_models.calculate_community_autarky
+
+    def observe_calculation(*args, **kwargs):
+        result = calculate(*args, **kwargs)
+        calculated_totals.append(result[1])
+        return result
+
+    monkeypatch.setattr(ml_models, "calculate_community_autarky", observe_calculation)
     assert db.save_building(
         "existing-household",
         "existing@example.org",
@@ -106,6 +115,9 @@ def test_registration_matches_real_numeric_profiles_and_remains_unconfirmed(
     assert response.json["cluster_info"]["num_members"] == 2
     score = response.json["cluster_info"]["autarky_percent"]
     assert math.isfinite(score) and 0 <= score <= 100
+    assert calculated_totals == pytest.approx(
+        [8700.25 if consumption is not None else 4200]
+    )
     if solar is None:
         assert score == 0
     profile = db.get_building("new-household")
