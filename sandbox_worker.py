@@ -33,6 +33,7 @@ def create_worker():
     web = create_app(
         {
             "SESSION_COOKIE_NAME": "openleg_product",
+            "SESSION_COOKIE_PATH": os.environ.get("OPENLEG_SANDBOX_PREFIX", "/"),
             "RATELIMIT_STORAGE_URI": "memory://",
             "MAX_CONTENT_LENGTH": int(os.environ["OPENLEG_SANDBOX_MAX_UPLOAD_BYTES"]),
         },
@@ -41,7 +42,7 @@ def create_worker():
     # Only the gateway can reach this private Unix listener. It strips browser
     # proxy headers and supplies the configured public scheme itself.
     web.wsgi_app = ProxyFix(
-        web.wsgi_app, x_for=0, x_proto=1, x_host=0, x_port=0, x_prefix=0
+        web.wsgi_app, x_for=0, x_proto=1, x_host=0, x_port=0, x_prefix=1
     )
 
     @web.context_processor

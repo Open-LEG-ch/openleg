@@ -22,10 +22,10 @@ annual consumption on the dashboard and save. Refresh to see the stored value.
 Open the same address in a separate browser profile for an independent village.
 Dashboard login emails appear in the simulated inbox linked in the banner.
 
-The default is four concurrent villages, a two-MiB upload limit per request and
-a one-hour session lifetime. Expiry is checked on access or when another village
-is created; an idle village can remain running longer. Automatic cleanup and
-inactivity limits are tracked in #770. Use `--max-workspaces`, `--max-upload-mib`,
+The defaults are four concurrent villages, a two-MiB upload limit per request,
+a 15-minute inactivity timeout, and a one-hour maximum lifetime. A background
+cleanup task retires expired villages and returns their capacity. Use
+`--max-workspaces`, `--max-upload-mib`, `--inactivity-seconds`,
 `--lifetime-seconds` and `--port` to choose different local bounds. Uploads can
 be bounded from one to ten MiB through the CLI. `--postgres-bin` selects the
 PostgreSQL 16 binary directory; its default is `/usr/lib/postgresql/16/bin`.
@@ -35,20 +35,36 @@ using a proxy. Other Host headers are rejected.
 Press Ctrl+C in the runner terminal, or run `python scripts/sandbox.py --stop`
 from another terminal, to stop the sandbox and remove its village databases,
 files and processes. The directory belongs only to this scratch
-runtime; never point it at production storage. Browser reset and unattended
-expiry recovery are tracked in #770. A stale runner record does not block a
-new start; a record identifying a live runner refuses a second start. Full crash
-resource recovery remains part of #770. Missing `.scratch` parents are created
-with private permissions, including under a shared group umask. Existing
-writable parents are rejected. The error names the rejected path. For an owned
-checkout created with group write permission, remove that permission with
-`chmod g-w /path/named/by/the/error` before restarting. The runner preserves
-an inherited ignored SIGHUP, so `nohup` continues to work.
+runtime; never point it at production storage. It must be private and owned by
+the runner. Missing `.scratch` parents are created with private permissions,
+including under a shared group umask. Existing writable parents are rejected.
+The error names the rejected path. For a shared checkout created with group
+write permission, remove that permission with `chmod g-w /path/named/by/the/error`
+before restarting. The runner preserves an inherited ignored SIGHUP, so `nohup`
+continues to work.
+A filesystem lease prevents two gateways from using the same root. A stale
+runner record does not block a new start; a live record refuses a second start.
+
+## Reset and expiry
+
+Use “Dorf verwalten” in the banner to reset with a deliberate confirmation or
+discard the village. Reset creates a fresh copy of the selected seed version;
+discard creates no replacement. Every product URL includes its generation.
+Old tabs receive HTTP 410 and cannot write into the replacement, even if the
+browser now holds its new cookies.
+
+Retirement waits for an in-flight request before stopping its worker and
+removing its database, role and working directory. Mail, uploads, documents,
+webhook captures, caches and restore destinations belong under that directory.
+Failed cleanup stays inactive, reserves its capacity and records a bounded
+three-attempt retry. Restarting the gateway reclaims its old processes and
+scratch storage. It never resumes old sessions. This prototype provides no
+persistence guarantee across restarts.
 
 PostgreSQL version and initialization commands have 60-second deadlines; start
 and stop commands have 120-second deadlines. Repeated shutdown signals are
 ignored while cleanup runs. Failed cleanup retains its runner record and scratch
-resources. Automatic crash-resource recovery remains tracked in #770.
+resources for the next start to reclaim.
 
 ## Boundaries
 
@@ -87,7 +103,7 @@ it supplies no real VNB, hardware, accounting or legal acceptance.
 ## Verification
 
 ```sh
-pytest tests/test_sandbox_http.py tests/test_sandbox_guards.py -q
+pytest tests/test_sandbox_http.py tests/test_sandbox_guards.py tests/test_sandbox_lifecycle.py -q
 scripts/tdd_cycle.sh gate
 ```
 

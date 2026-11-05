@@ -1579,6 +1579,14 @@ msgstr "Pièces jointes"
 msgid "Beim VNB einreichen"
 msgstr "Soumettre au GRD"
 
+#: templates/sandbox/manage.html:10
+msgid ""
+"Beim Zurücksetzen werden Ihre Änderungen, Nachrichten, Dokumente und Zugangsdaten gelöscht. Alte "
+"Tabs können das neue Dorf nicht verändern."
+msgstr ""
+"La réinitialisation supprime vos modifications, messages, documents et identifiants. Les anciens "
+"onglets ne peuvent pas modifier le nouveau village."
+
 #: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Beitritt"
 msgstr "Adhésion"
@@ -2217,6 +2225,12 @@ msgstr "Le dossier d’inscription peut être préparé une fois que toutes les 
 #: templates/fuer_gemeinden.html:37
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr "le tableau de bord indique ce qui manque encore pour l’activation."
+
+#: templates/sandbox/expired.html:8
+msgid ""
+"Das Dorf ist gesperrt. Die Bereinigung wird erneut versucht. Bitte versuchen Sie den Neustart "
+"später."
+msgstr "Le village est bloqué. Le nettoyage sera réessayé. Veuillez réessayer de démarrer plus tard."
 
 #: dashboard.py:1436
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
@@ -3454,6 +3468,27 @@ msgstr ""
 "Cet ancien lien affiche votre tableau de bord en lecture seule. Pour apporter des modifications, "
 "demandez un nouveau lien d'accès."
 
+#: templates/sandbox/entry.html:16 templates/sandbox/manage.html:7
+#, python-format
+msgid ""
+"Dieses Dorf endet nach %(idle)s ohne Aktivität, spätestens nach %(lifetime)s. Danach werden Ihre "
+"Übungsdaten gelöscht."
+msgstr ""
+"Ce village se ferme après %(idle)s sans activité, au plus tard après %(lifetime)s. Vos données "
+"d'essai sont ensuite supprimées."
+
+#: templates/sandbox/expired.html:7
+msgid ""
+"Dieses Dorf wurde beendet oder zurückgesetzt. Dieser Tab kann keine Änderungen mehr speichern. "
+"Öffnen Sie Ihr aktuelles Dorf oder starten Sie neu."
+msgstr ""
+"Ce village a été fermé ou réinitialisé. Cet onglet ne peut plus enregistrer de modifications. "
+"Ouvrez votre village actuel ou recommencez."
+
+#: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
+msgid "Dieses Übungsdorf ist abgelaufen"
+msgstr "Ce village d'essai a expiré"
+
 #: templates/admin/abrechnungen.html:106 templates/leg_kalkulator.html:208
 msgid "Differenz"
 msgstr "différence"
@@ -3490,9 +3525,25 @@ msgstr "Documents créés"
 msgid "Dokumente und Netzbetreiber-Anmeldung"
 msgstr "Documents et annonce au gestionnaire de réseau"
 
+#: templates/sandbox/manage.html:21
+msgid "Dorf beenden"
+msgstr "Fermer le village"
+
+#: templates/sandbox/manage.html:25
+msgid "Dorf löschen"
+msgstr "Supprimer le village"
+
 #: templates/index.html:103
 msgid "Dorf und Landschaft im ländlichen Raum"
 msgstr "Village et paysage rural"
+
+#: templates/sandbox/banner.html:7
+msgid "Dorf verwalten"
+msgstr "Gérer le village"
+
+#: templates/sandbox/manage.html:17
+msgid "Dorf zurücksetzen"
+msgstr "Réinitialiser le village"
 
 #: templates/gemeinde/dashboard.html:87
 msgid "Drei Schritte bringen Ihre Gemeinde zur ersten LEG."
@@ -5532,6 +5583,14 @@ msgstr "J’ai vérifié que le gestionnaire de réseau confirme la mise en serv
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgstr "Je souhaite recevoir des nouvelles par e-mail. (facultatif)"
 
+#: templates/sandbox/manage.html:16
+msgid "Ich möchte dieses Dorf löschen und mit der gewählten Vorlage neu beginnen."
+msgstr "Je souhaite supprimer ce village et recommencer avec le modèle choisi."
+
+#: templates/sandbox/manage.html:24
+msgid "Ich möchte dieses Dorf und alle Übungsdaten löschen."
+msgstr "Je souhaite supprimer ce village et toutes ses données d'essai."
+
 #: dashboard_routes.py:398
 msgid "Ihr Dashboard-Zugangslink"
 msgstr "Votre lien d’accès au tableau de bord"
@@ -5688,11 +5747,6 @@ msgstr "Votre facture %(invoice_number)s"
 #: templates/index.html:458
 msgid "Ihre Rolle"
 msgstr "Votre rôle"
-
-#: templates/sandbox/entry.html:16
-#, python-format
-msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
-msgstr "Votre session se termine après %(minutes)s minutes."
 
 #: templates/index.html:511
 msgid ""
@@ -7794,6 +7848,10 @@ msgstr "Erreur réseau."
 #: templates/utility/register.html:153
 msgid "Netzwerkfehler. Bitte erneut versuchen."
 msgstr "Erreur réseau. Veuillez réessayer."
+
+#: templates/sandbox/manage.html:9
+msgid "Neu beginnen"
+msgstr "Recommencer"
 
 #: email_automation.py:100
 #, python-format
@@ -10955,6 +11013,10 @@ msgstr ""
 "Du matériel préconfiguré dans votre quartier ou un serveur en Suisse, proche de vos voisins. Sur "
 "demande."
 
+#: templates/sandbox/manage.html:13
+msgid "Vorlage"
+msgstr "Modèle"
+
 #: templates/index.html:624
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr "Les suggestions ne sont pas disponibles. Vous pouvez quand même vérifier l’adresse."
@@ -11641,6 +11703,10 @@ msgstr "Dernière confirmation le"
 msgid "Zum Dashboard"
 msgstr "Vers le tableau de bord"
 
+#: templates/sandbox/expired.html:9
+msgid "Zum Einstieg"
+msgstr "À l'accueil"
+
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:19
 #: templates/leg_verzeichnis/bestaetigt.html:19
 msgid "Zum Eintrag"
@@ -11708,6 +11774,10 @@ msgstr "Retour à l'appareil"
 #: templates/leg_billing.html:8 templates/leg_billing_policy.html:4
 msgid "Zurück zum LEG-Dashboard"
 msgstr "Retour au tableau de bord de la CEL"
+
+#: templates/sandbox/manage.html:28
+msgid "Zurück zum Übungsdorf"
+msgstr "Retour au village d'essai"
 
 #: templates/gemeinde/methodik.html:22 templates/gemeinde/vergleich.html:23
 msgid "Zurück zur Rangliste"
@@ -12433,6 +12503,10 @@ msgstr "Plage habituelle : entre"
 msgid "Übungsdorf"
 msgstr "Village d'essai"
 
+#: templates/sandbox/manage.html:2 templates/sandbox/manage.html:6
+msgid "Übungsdorf verwalten"
+msgstr "Gérer le village d'essai"
+
 #: templates/gemeinde/profil.html:118
 msgid "öffentlich gemeldeten PV-Anlagen"
 msgstr "installations photovoltaïques déclarées publiquement"
@@ -12638,6 +12712,9 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 #~ "Vos données n’ont pas été supprimées. Le lien "
 #~ "a peut-être expiré. Demandez un nouveau lien "
 #~ "de confirmation."
+
+#~ msgid "Ihre Sitzung endet nach %(minutes)s Minuten."
+#~ msgstr "Votre session se termine après %(minutes)s minutes."
 
 #~ msgid "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 #~ msgstr "Invitez au moins %(count)s voisins supplémentaires."

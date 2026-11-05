@@ -44,6 +44,11 @@ def _csrf(response):
     return re.search(r'name="csrf_token" value="([^"]+)"', response.text).group(1)
 
 
+def _path(client, path):
+    """Use the generation URL received from entry, as a browser link would."""
+    return client.village_prefix + path
+
+
 def _enter(client):
     page = client.get("/sandbox")
     assert page.status_code == 200
@@ -52,6 +57,8 @@ def _enter(client):
         "/sandbox/start", data={"csrf_token": _csrf(page), "persona": "resident"}
     )
     assert response.status_code == 302
+    client.village_prefix = response.location.removesuffix("/sandbox/enter")
+    assert re.fullmatch(r"/v/[a-f0-9]{32}", client.village_prefix)
     dashboard = client.get(response.location, follow_redirects=True)
     assert dashboard.status_code == 200
     assert "Sonnwil" in dashboard.text
@@ -69,7 +76,7 @@ def test_two_visitors_get_independent_writable_villages(village):
     def save(client, page, consumption):
         simultaneous.wait(timeout=5)
         return client.post(
-            "/dashboard/profile",
+            _path(client, "/dashboard/profile"),
             data={
                 "csrf_token": _csrf(page),
                 "annual_consumption_kwh": consumption,
@@ -84,16 +91,22 @@ def test_two_visitors_get_independent_writable_villages(village):
             executor.submit(save, second, second_page, "5800"),
         ]
         assert [write.result(timeout=10) for write in writes] == [302, 302]
-    assert first.get("/dashboard/export").json["annual_consumption_kwh"] == 7200
-    assert second.get("/dashboard/export").json["annual_consumption_kwh"] == 5800
-    assert "7200" in first.get("/dashboard").text
-    assert first.get("/dashboard").headers["Cache-Control"] == "no-store"
+    assert (
+        first.get(_path(first, "/dashboard/export")).json["annual_consumption_kwh"]
+        == 7200
+    )
+    assert (
+        second.get(_path(second, "/dashboard/export")).json["annual_consumption_kwh"]
+        == 5800
+    )
+    assert "7200" in first.get(_path(first, "/dashboard")).text
+    assert first.get(_path(first, "/dashboard")).headers["Cache-Control"] == "no-store"
 
     # The worker cookie alone cannot authenticate in a different village.
-    cookie = first.get_cookie("openleg_product")
+    cookie = first.get_cookie("openleg_product", path=first.village_prefix)
     assert cookie is not None
-    second.set_cookie("openleg_product", cookie.value)
-    assert second.get("/dashboard/export").status_code == 401
+    second.set_cookie("openleg_product", cookie.value, path=second.village_prefix)
+    assert second.get(_path(second, "/dashboard/export")).status_code == 401
 
     # Capacity is bounded and an unowned worker path is never an alternate login.
     third = village.test_client()
@@ -112,30 +125,41 @@ def test_access_email_is_delivered_only_to_the_visitors_simulated_inbox(village)
     first, second = village.test_client(), village.test_client()
     first_page = _enter(first)
     _enter(second)
-    assert "sonnwil-resident@example.org" in first.get("/sandbox/home").text
+    assert (
+        "sonnwil-resident@example.org" in first.get(_path(first, "/sandbox/home")).text
+    )
     assert (
         first.post(
-            "/dashboard/logout", data={"csrf_token": _csrf(first_page)}
+            _path(first, "/dashboard/logout"), data={"csrf_token": _csrf(first_page)}
         ).status_code
         == 302
     )
-    home = first.get("/sandbox/home")
+    home = first.get(_path(first, "/sandbox/home"))
     assert "Sie sind als erfundener Haushalt" not in home.text
     assert "abgemeldet" in home.text
     assert re.search(r"<title>[^<]+</title>", home.text)
     response = first.post(
-        "/dashboard/access/request", data={"email": "sonnwil-resident@example.org"}
+        _path(first, "/dashboard/access/request"),
+        data={"email": "sonnwil-resident@example.org"},
     )
     assert response.status_code == 200
-    inbox = first.get("/sandbox/inbox")
+    inbox = first.get(_path(first, "/sandbox/inbox"))
     assert inbox.status_code == 200
     assert "sonnwil-resident@example.org" in inbox.text
-    link = re.search(r'href="(/dashboard/access/[^"?]+)', inbox.text).group(1)
-    assert link not in second.get("/sandbox/inbox").text
-    assert second.get(link).location.endswith("access=invalid")
-    assert first.get("/dashboard/export").status_code == 401
-    assert first.get(link).location == "/dashboard"
-    assert first.get("/dashboard/export").json["building_id"] == "sonnwil-resident"
+    link = re.search(
+        r'href="(' + first.village_prefix + r'/dashboard/access/[^"?]+)', inbox.text
+    ).group(1)
+    assert link not in second.get(_path(second, "/sandbox/inbox")).text
+    assert second.get(link).status_code == 410
+    assert second.get(
+        link.replace(first.village_prefix, second.village_prefix)
+    ).location.endswith("access=invalid")
+    assert first.get(_path(first, "/dashboard/export")).status_code == 401
+    assert first.get(link).location == _path(first, "/dashboard")
+    assert (
+        first.get(_path(first, "/dashboard/export")).json["building_id"]
+        == "sonnwil-resident"
+    )
     assert first.get(link).location.endswith("access=invalid")
 
 
@@ -144,7 +168,7 @@ def test_gateway_preserves_raw_query_bytes_and_existing_percent_escapes(village)
     client = village.test_client()
     _enter(client)
     response = client.get(
-        "/dashboard",
+        _path(client, "/dashboard"),
         environ_overrides={"QUERY_STRING": "q=Caf\xc3\xa9&escaped=%C3%A9&lang=de-CH"},
     )
     assert response.status_code == 200
@@ -158,37 +182,42 @@ def test_captured_login_labels_the_authenticated_household(village):
     client = village.test_client()
     page = _enter(client)
     assert (
-        client.post("/dashboard/logout", data={"csrf_token": _csrf(page)}).status_code
+        client.post(
+            _path(client, "/dashboard/logout"), data={"csrf_token": _csrf(page)}
+        ).status_code
         == 302
     )
     assert (
         client.post(
-            "/dashboard/access/request", data={"email": "sonnwil-producer@example.org"}
+            _path(client, "/dashboard/access/request"),
+            data={"email": "sonnwil-producer@example.org"},
         ).status_code
         == 200
     )
-    inbox = client.get("/sandbox/inbox")
-    link = re.search(r'href="(/dashboard/access/[^"?]+)', inbox.text).group(1)
-    assert client.get(link).location == "/dashboard"
-    dashboard = client.get("/dashboard")
+    inbox = client.get(_path(client, "/sandbox/inbox"))
+    link = re.search(
+        r'href="(' + client.village_prefix + r'/dashboard/access/[^"?]+)', inbox.text
+    ).group(1)
+    assert client.get(link).location == _path(client, "/dashboard")
+    dashboard = client.get(_path(client, "/dashboard"))
     banner = re.search(
         r'<aside aria-label="Simulation".*?</aside>', dashboard.text, re.DOTALL
     ).group(0)
     assert "Musterweg 2" in banner
     assert "sonnwil-producer@example.org" in banner
     assert "Musterweg 1" not in banner
-    home = client.get("/sandbox/home")
+    home = client.get(_path(client, "/sandbox/home"))
     assert "Musterweg 2" in home.text
     assert "sonnwil-resident@example.org" not in home.text
     assert (
         client.post(
-            "/dashboard/logout", data={"csrf_token": _csrf(dashboard)}
+            _path(client, "/dashboard/logout"), data={"csrf_token": _csrf(dashboard)}
         ).status_code
         == 302
     )
     banner = re.search(
         r'<aside aria-label="Simulation".*?</aside>',
-        client.get("/sandbox/home").text,
+        client.get(_path(client, "/sandbox/home")).text,
         re.DOTALL,
     ).group(0)
     assert "Musterweg 2" not in banner
@@ -282,7 +311,11 @@ def test_https_gateway_enters_a_village_without_internal_redirects(village):
     )
     assert response.status_code == 200
     assert "Simulation · Sonnwil" in response.text
-    assert client.get_cookie("openleg_product", domain="sandbox.example.org").secure
+    assert client.get_cookie(
+        "openleg_product",
+        domain="sandbox.example.org",
+        path="/v/" + response.request.path.split("/")[2],
+    ).secure
 
 
 @pytest.mark.integration
@@ -290,7 +323,7 @@ def test_restarting_a_product_worker_keeps_the_visitors_consent_choices(village)
     client = village.test_client()
     page = _enter(client)
     response = client.post(
-        "/dashboard/profile",
+        _path(client, "/dashboard/profile"),
         data={
             "csrf_token": _csrf(page),
             "annual_consumption_kwh": "7200",
@@ -312,7 +345,7 @@ def test_restarting_a_product_worker_keeps_the_visitors_consent_choices(village)
         time.sleep(0.05)
     else:
         pytest.fail("product worker did not restart")
-    profile = client.get("/dashboard/export").json
+    profile = client.get(_path(client, "/dashboard/export")).json
     assert profile["annual_consumption_kwh"] == 7200
     assert profile["share_with_neighbors"] is False
     assert profile["share_with_utility"] is True
@@ -323,9 +356,12 @@ def test_restarting_a_product_worker_keeps_the_visitors_consent_choices(village)
 def test_configured_upload_bound_is_enforced_before_forwarding_to_a_worker(village):
     client = village.test_client()
     _enter(client)
-    response = client.post("/dashboard/profile", data=b"x" * 65537)
+    response = client.post(_path(client, "/dashboard/profile"), data=b"x" * 65537)
     assert response.status_code == 413
-    assert client.get("/dashboard/export").json["annual_consumption_kwh"] == 4500
+    assert (
+        client.get(_path(client, "/dashboard/export")).json["annual_consumption_kwh"]
+        == 4500
+    )
 
 
 @pytest.mark.integration
@@ -441,7 +477,7 @@ def test_provisioning_a_new_village_does_not_block_active_visitors(
         )
         try:
             assert provisioning.wait(timeout=10)
-            active = executor.submit(first.get, "/dashboard/export")
+            active = executor.submit(first.get, _path(first, "/dashboard/export"))
             assert active.result(timeout=2).json["annual_consumption_kwh"] == 4500
         finally:
             release.set()
@@ -503,7 +539,7 @@ def test_proxy_preserves_encoded_path_characters(village):
         "/dashboard%23fragment",
         "/%C3%BCbung",
     ):
-        assert client.get(path).status_code == 404
+        assert client.get(_path(client, path)).status_code == 404
 
 
 @pytest.mark.integration
@@ -666,10 +702,10 @@ def test_one_cleanup_error_does_not_skip_another_expired_village(village, monkey
         workspace["created"] -= manager.lifetime_seconds + 1
     original = manager.destroy
 
-    def fail_first(identifier):
+    def fail_first(identifier, **options):
         if identifier == first_id:
             raise OSError("synthetic cleanup failure")
-        return original(identifier)
+        return original(identifier, **options)
 
     with monkeypatch.context() as scoped:
         scoped.setattr(manager, "destroy", fail_first)
@@ -689,9 +725,14 @@ def test_expired_access_stays_denied_during_cleanup_failure_and_reused_pid(
     workspace = next(iter(manager.workspaces.values()))
     workspace["created"] -= manager.lifetime_seconds + 1
     manager.postgres.close()
-    assert client.get("/dashboard").status_code in (302, 303)
+    assert client.get(_path(client, "/dashboard")).status_code == 410
     process = workspace["process"]
-    assert process.poll() is not None
+    # Expired access can be denied while the background retirement still runs.
+    # Finish that attempt before substituting a reused Popen identity below.
+    process.wait(timeout=10)
+    with workspace["operation"]:
+        assert process.poll() is not None
+        assert workspace["worker_stopped"] is True
     original_pid = process.pid
     unrelated = subprocess.Popen(
         [sys.executable, "-c", "import time; time.sleep(60)"],
@@ -700,7 +741,9 @@ def test_expired_access_stays_denied_during_cleanup_failure_and_reused_pid(
     )
     try:
         process.pid = unrelated.pid
-        assert client.get("/dashboard").status_code in (302, 303)
+        assert client.get(_path(client, "/dashboard")).status_code == 410
+        workspace["retry_at"] = 0
+        assert manager.destroy(workspace["id"], retry=True) is False
         with pytest.raises(subprocess.TimeoutExpired):
             unrelated.wait(timeout=0.3)
     finally:
