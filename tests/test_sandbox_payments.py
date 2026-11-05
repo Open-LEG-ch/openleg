@@ -18,6 +18,7 @@ pytestmark = pytest.mark.integration
 
 
 def _issued(village, client):
+    """Prepare, approve and deliver the fictional household invoices."""
     prefix, _ = _start(client, "operator")
     _policy(client, prefix)
     _import(client, prefix)
@@ -56,6 +57,7 @@ def _issued(village, client):
 
 
 def _statement(client, prefix, fixture):
+    """Upload a synthetic statement through the ordinary billing form."""
     page = client.get(prefix + COMMUNITY + "/billing")
     return client.post(
         prefix + COMMUNITY + "/billing/statements",
@@ -68,6 +70,7 @@ def _statement(client, prefix, fixture):
 
 
 def test_exact_import_and_reviewed_unknown_reference_share_payment_guards(village):
+    """Automatic and reviewed matches retain ordinary statement and invoice guards."""
     client = village.test_client()
     prefix, invoices = _issued(village, client)
     path = prefix + "/sandbox/payments"
@@ -134,6 +137,7 @@ def test_exact_import_and_reviewed_unknown_reference_share_payment_guards(villag
 
 @pytest.mark.parametrize("same_entry", [True, False])
 def test_concurrent_confirmation_creates_one_paid_transition(village, same_entry):
+    """Concurrent confirmations produce exactly one paid transition."""
     client = village.test_client()
     prefix, invoices = _issued(village, client)
     path = prefix + "/sandbox/payments"
@@ -162,6 +166,7 @@ def test_concurrent_confirmation_creates_one_paid_transition(village, same_entry
     barrier = Barrier(2)
 
     def confirm(item):
+        """Race one review confirmation against another client."""
         clone, entry = item
         barrier.wait(timeout=15)
         return clone.post(
@@ -188,6 +193,7 @@ def test_concurrent_confirmation_creates_one_paid_transition(village, same_entry
 
 
 def test_payment_review_rejects_issued_and_cancelled_invoices(village):
+    """Review cannot pay an undelivered or cancelled invoice."""
     client = village.test_client()
     prefix, invoices = _issued(village, client)
     path = prefix + "/sandbox/payments"
@@ -235,6 +241,7 @@ def test_payment_review_rejects_issued_and_cancelled_invoices(village):
 
 
 def test_payment_controls_are_private_scoped_and_csrf_protected(village, monkeypatch):
+    """Payment controls enforce visitor scope, role and CSRF."""
     from uuid import uuid4
 
     client = village.test_client()
