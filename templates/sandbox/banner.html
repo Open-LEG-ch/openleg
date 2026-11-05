@@ -1,8 +1,8 @@
 {% if sandbox_mode %}
 <aside aria-label="Simulation" class="border-b border-line bg-white px-4 py-3 text-center text-sm">
-  <strong>Simulation · Sonnwil</strong> ·
-  {% if sandbox_household %}{{ _('Haushalt %(address)s', address=sandbox_household.address) }} · {{ sandbox_household.email }} ·{% endif %}
+  <strong>Simulation · Sonnwil</strong> · {% if sandbox_account %}{{ sandbox_account.name }} · {{ _(sandbox_account.role) }} · {{ sandbox_account.scope }} · {{ sandbox_account.email }} ·{% else %}{{ _('Abgemeldet') }} ·{% endif %}
   <a href="/sandbox/home" class="font-semibold underline">{{ _('Übungsdorf') }}</a> ·
+  <a href="/sandbox/accounts" class="font-semibold underline">{{ _('Konto wechseln') }}</a> ·
   <a href="/sandbox/inbox" class="font-semibold underline">{{ _('Postfach') }}</a> ·
   <a href="/sandbox/manage" class="font-semibold underline">{{ _('Dorf verwalten') }}</a>
 </aside>

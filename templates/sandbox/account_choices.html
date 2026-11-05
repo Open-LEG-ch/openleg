@@ -1,0 +1,9 @@
+    <fieldset class="mb-6 space-y-3">
+      <legend class="mb-3 text-xl font-semibold">{{ _('Fiktives Konto wählen') }}</legend>
+      {% for key, account in accounts.items() %}
+      <label class="flex gap-3 rounded-lg border border-line bg-white p-4">
+        <input type="radio" name="persona" value="{{ key }}" {% if key == (sandbox_account_key or 'resident') %}checked{% endif %} required>
+        <span><strong>{{ account.name }}</strong> · {{ _(account.role) }}<br><span>{{ account.scope }}</span><br><span class="text-sm text-ink-muted">{{ _(account.scenario) }}</span></span>
+      </label>
+      {% endfor %}
+    </fieldset>

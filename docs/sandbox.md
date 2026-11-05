@@ -2,8 +2,10 @@
 
 Sonnwil is a disposable, fictional village. Visitors choose a demo account and
 change the real product's state in a private village copy. No personal signup
-is required. The prototype currently supports the resident energy-profile
-journey and a simulated inbox. The remaining journeys are tracked in #768.
+is required. Household profiles, fictional role switching, community creation,
+LEG access controls, municipality demand, utility preferences and API credentials
+are available. The simulated inbox and village reset keep these exercises local.
+The remaining journeys are tracked in #768.
 
 ## Run locally
 
@@ -21,6 +23,22 @@ Open `http://127.0.0.1:5090/sandbox`, choose the household account, change the
 annual consumption on the dashboard and save. Refresh to see the stored value.
 Open the same address in a separate browser profile for an independent village.
 Dashboard login emails appear in the simulated inbox linked in the banner.
+
+Use “Konto wechseln” in the banner to choose another fictional account. Lea and
+Noah have household profiles, Mira can create a LEG, Robin administers LEG
+Sonnwil, and Sam has metering and billing-preparation roles without administration.
+Jules sees aggregate municipality demand and can change the display language.
+Kim can save the utility's email language and create or revoke demo API keys.
+Each account's village page explains its starting state, action and expected result.
+
+Changing accounts preserves village data and replaces the login context. Earlier
+login cookies and stale privileged forms lose authority. This revocation survives
+a product-worker reload. A successful ordinary magic-link login also renews
+the binding and CSRF tokens when the selected account is unchanged. Rejected
+links leave the current login intact. Returning to the entry form with an
+existing village opens its account chooser; switching still requires the
+worker-side form. The ordinary product permission rules still decide
+which records and actions each account can use.
 
 The defaults are four concurrent villages, a two-MiB upload limit per request,
 a 15-minute inactivity timeout, and a one-hour maximum lifetime. A background
