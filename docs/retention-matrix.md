@@ -37,6 +37,7 @@ history or retention period. Scheduled email delivery reads the current choice.
 
 | Domain (catalog) | Retention horizon | Deletion trigger | What deletion reaches | What it deliberately keeps |
 |---|---|---|---|---|
+| sandbox_seed | Life of the disposable village | Village reset, discard, expiry or scratch shutdown | Private fixture metadata and original demo-registration identity references | Individual profile deletion keeps the original reference until village retirement, preventing a recreated ID from inheriting a persona |
 | store/building | Life of the registration | Profile deletion (unsubscribe confirmation) | The `buildings` row; CASCADE removes consents, tokens, access tokens, queue rows, cluster assignments, memberships, meter CSV readings; `referrer_id` edges become `SET NULL` | Nothing - the registration is the data |
 | store/interest | Unverified: `UNVERIFIED_INTEREST_RETENTION_DAYS = 30` from the latest registration (legacy buildings fall back to original creation); verified unresolved request: `VERIFIED_COVERAGE_RETENTION_MONTHS = 12` | Scheduled `cleanup_expired_interest`; email-confirmed unsubscribe | Expired `coverage_requests` and unverified `buildings`; unsubscribe deletes its bound building or coverage record and its tokens | Other registrations, including later submissions with the same email, need their own deletion confirmation |
 | store/consent | Life of the registration | Profile deletion (CASCADE) | Both `consents` and `data_consents` rows | Revocation alone keeps the rows (visibility change, not deletion) |

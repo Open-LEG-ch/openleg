@@ -61,8 +61,13 @@ household remains absent from discovery.
 Profile downloads identify their synthetic origin in the filename and JSON.
 Deletion requires a captured confirmation and removes the profile and consents;
 ordinary billing-retention rules still apply. Old sessions and pending access
-links stop working. A deleted seeded account cannot bypass confirmation through
-the demo picker. Reset the village to restore its original accounts.
+links stop working. The private fixture manifest records each original demo
+household's server-generated registration identity. The picker checks that
+identity as well as verification status. Deleting and recreating a building ID
+does not recreate its original demo persona. The replacement uses its own
+captured access link and appears as an additional household. The manifest stays
+unchanged across worker reloads and is removed with the village. Reset the
+village to restore its original accounts.
 
 The defaults are four concurrent villages, a two-MiB upload limit per request,
 a 15-minute inactivity timeout, and a one-hour maximum lifetime. A background

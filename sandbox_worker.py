@@ -32,7 +32,7 @@ def create_worker():
     from sandbox_seed import ACCOUNTS, seed_village
     from translation_markers import gettext_noop as _N
 
-    seed_village(db, directory)
+    seed_identities = seed_village(db, directory)
     web = create_app(
         {
             "SESSION_COOKIE_NAME": "openleg_product",
@@ -51,12 +51,21 @@ def create_worker():
     logins = VillageSessions(directory)
     logins.install(web)
 
+    def seeded_household(profile):
+        """A reused building ID cannot adopt the original demo registration."""
+        proof = seed_identities.get(profile["building_id"]) if profile else None
+        return bool(
+            proof
+            and profile.get("verified")
+            and hmac.compare_digest(proof, profile.get("referral_code") or "")
+        )
+
     def active_account():
         building = _dashboard_session_building_id()
         profile = db.get_building(building) if building else None
         if profile and profile.get("verified"):
             for key, account in ACCOUNTS.items():
-                if account.get("building_id") == building:
+                if account.get("building_id") == building and seeded_household(profile):
                     return key, account
             return None, {
                 "name": profile.get("address") or _N("Neuer Haushalt"),
@@ -86,7 +95,7 @@ def create_worker():
         account = ACCOUNTS[key]
         if account.get("building_id"):
             profile = db.get_building(account["building_id"])
-            if not profile or not profile.get("verified"):
+            if not seeded_household(profile):
                 abort(
                     web.make_response(
                         (render_template("sandbox/account_unavailable.html"), 410)
@@ -123,7 +132,12 @@ def create_worker():
         session.setdefault("sandbox_csrf", secrets.token_urlsafe(32))
         return render_template(
             "sandbox/accounts.html",
-            accounts=ACCOUNTS,
+            accounts={
+                key: account
+                for key, account in ACCOUNTS.items()
+                if not account.get("building_id")
+                or seeded_household(db.get_building(account["building_id"]))
+            },
             csrf_token=session["sandbox_csrf"],
         )
 

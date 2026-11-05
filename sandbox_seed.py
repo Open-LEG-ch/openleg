@@ -171,9 +171,10 @@ FIXTURE_MANIFEST = {
 def seed_village(db, directory):
     manifest = Path(directory) / "fixture.json"
     if manifest.exists():
-        if json.loads(manifest.read_text())["version"] != SEED_VERSION:
+        fixture = json.loads(manifest.read_text())
+        if fixture["version"] != SEED_VERSION:
             raise RuntimeError("sandbox fixture version mismatch")
-        return
+        return fixture.get("household_identities", {})
     for index, (identifier, address, consumption, solar) in enumerate(PERSONAS, 1):
         if not db.save_building(
             identifier,
@@ -215,12 +216,17 @@ def seed_village(db, directory):
             ),
         )
     seed_accounts(db)
+    identities = {
+        identifier: db.get_building(identifier)["referral_code"]
+        for identifier, *_ in PERSONAS
+    }
     with tempfile.NamedTemporaryFile(
         mode="w", encoding="utf-8", dir=directory, prefix=".fixture-", delete=False
     ) as output:
-        json.dump(FIXTURE_MANIFEST, output)
+        json.dump({**FIXTURE_MANIFEST, "household_identities": identities}, output)
         pending = Path(output.name)
     pending.replace(manifest)
+    return identities
 
 
 def seed_accounts(db):

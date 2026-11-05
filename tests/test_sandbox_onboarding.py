@@ -13,7 +13,7 @@ import pytest
 from psycopg2.extensions import make_dsn
 
 from tests import test_sandbox_http
-from tests.test_sandbox_personas import _start, _switch
+from tests.test_sandbox_personas import _reload_worker, _start, _switch
 
 village = test_sandbox_http.village
 _csrf = test_sandbox_http._csrf
@@ -413,6 +413,55 @@ def test_mailbox_deletion_retires_cookies_before_the_household_can_be_recreated(
     assert anonymous.get(_mail_link(anonymous, prefix, "/confirm/")).status_code == 200
     owner.set_cookie("openleg_product", copied_cookie, path=prefix)
     assert owner.get(prefix + "/dashboard/export").status_code == 401
+
+    accounts = anonymous.get(prefix + "/sandbox/accounts")
+    assert (
+        anonymous.post(
+            prefix + "/sandbox/persona",
+            data={"csrf_token": _csrf(accounts), "persona": "resident"},
+        ).status_code
+        == 410
+    )
+    assert 'name="persona" value="resident"' not in accounts.text
+    assert anonymous.get(prefix + "/dashboard/export").status_code == 401
+
+    # The replacement can still use its own ordinary access link. It must not
+    # inherit the original fictional persona merely because its ID was reused.
+    assert (
+        anonymous.post(
+            prefix + "/dashboard/access/request",
+            data={"email": "replacement@example.org"},
+        ).status_code
+        == 200
+    )
+    assert (
+        anonymous.get(
+            _mail_link(anonymous, prefix, "/dashboard/access/"), follow_redirects=True
+        ).status_code
+        == 200
+    )
+    home = anonymous.get(prefix + "/sandbox/home")
+    assert "replacement@example.org" in home.text
+    assert "Ihr neuer Haushalt ist bestätigt." in home.text
+    assert "Lea Muster" not in home.text
+    _reload_worker(village, prefix)
+    accounts = anonymous.get(prefix + "/sandbox/accounts")
+    assert 'name="persona" value="resident"' not in accounts.text
+    assert (
+        anonymous.post(
+            prefix + "/sandbox/persona",
+            data={"csrf_token": _csrf(accounts), "persona": "resident"},
+        ).status_code
+        == 410
+    )
+    assert (
+        anonymous.get(prefix + "/dashboard/export").json["email"]
+        == "replacement@example.org"
+    )
+    assert (
+        "Ihr neuer Haushalt ist bestätigt."
+        in anonymous.get(prefix + "/sandbox/home").text
+    )
 
 
 def _delete_after_observing_generation_rotation(gateway, client, deletion):

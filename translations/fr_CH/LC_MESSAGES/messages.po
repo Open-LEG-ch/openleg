@@ -969,7 +969,6 @@ msgstr ""
 " réseau et dans la même zone de desserte, utilisent au maximum"
 
 #: templates/how-it-works.html:52
-#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1253,7 +1252,6 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h OApEl"
 
 #: templates/leg_kalkulator.html:267
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1275,7 +1273,6 @@ msgstr ""
 "tension."
 
 #: templates/leg_kalkulator.html:288
-#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -2562,7 +2559,6 @@ msgstr ""
 "une part des coûts."
 
 #: templates/gemeinde/methodik.html:95
-#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -3303,7 +3299,7 @@ msgstr ""
 "La langue des e-mails et l'état de la clé enregistrés sont conservés lorsque vous changez de "
 "compte."
 
-#: sandbox_seed.py:45 sandbox_worker.py:75
+#: sandbox_seed.py:45 sandbox_worker.py:83
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Les informations enregistrées apparaissent après le rechargement."
 
@@ -4169,7 +4165,7 @@ msgstr ""
 "Profil énergétique et potentiel CEL de %(name)s : tarifs électriques, exploitation du potentiel "
 "solaire et score de transition énergétique."
 
-#: sandbox_seed.py:27 sandbox_worker.py:69
+#: sandbox_seed.py:27 sandbox_worker.py:77
 msgid "Energieprofil ändern"
 msgstr "Modifier le profil énergétique"
 
@@ -4723,7 +4719,6 @@ msgstr ""
 "du réseau diminue de"
 
 #: templates/how-it-works.html:42
-#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -5518,7 +5513,7 @@ msgstr "Exclusion de responsabilité"
 msgid "Hallo,"
 msgstr "Bonjour,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:64 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:72 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
@@ -5750,7 +5745,7 @@ msgstr "Votre village d'essai"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Votre gestionnaire de réseau fictif est actif et n'a pas encore de clé API."
 
-#: sandbox_worker.py:70
+#: sandbox_worker.py:78
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Votre nouveau ménage est confirmé."
 
@@ -8073,7 +8068,7 @@ msgstr "Créer une nouvelle clé"
 msgid "Neuenburg"
 msgstr "Neuchâtel"
 
-#: sandbox_worker.py:63
+#: sandbox_worker.py:71
 msgid "Neuer Haushalt"
 msgstr "Nouveau ménage"
 
@@ -9486,7 +9481,6 @@ msgstr ""
 "d'union, commençant par une lettre ou un chiffre."
 
 #: templates/llms.txt:9
-#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -10177,7 +10171,6 @@ msgstr ""
 "par la commune."
 
 #: templates/gemeinde/rangliste.html:127
-#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
@@ -12605,7 +12598,7 @@ msgstr "» est toujours d'actualité."
 msgid "Ändern"
 msgstr "Modifier"
 
-#: sandbox_seed.py:44 sandbox_worker.py:72
+#: sandbox_seed.py:44 sandbox_worker.py:80
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Modifiez la consommation ou la puissance photovoltaïque dans le profil énergétique."
 

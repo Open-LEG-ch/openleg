@@ -635,3 +635,14 @@ it.
 - Deletion: equipment/profile deletion cascades to all private owner action
   rows. Public source revisions, approvals and source-review history remain
   independent of registration deletion. Catalog/audit expiry is not implemented.
+
+## sandbox_seed
+
+- File: each private village's `fixture.json`.
+- Holds: fictional scenario metadata and the original demo households' generated
+  registration identities. These are opaque references, not login credentials.
+- Purpose: bind demo persona shortcuts to the original registrations, so a
+  deleted and recreated building ID cannot inherit a persona.
+- Access: private worker/gateway files only; never accepted from a browser.
+- Retention: unchanged through worker reloads and individual profile deletion;
+  removed with the village on reset, discard, expiry or scratch shutdown.
