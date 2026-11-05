@@ -2,6 +2,7 @@
 """Original persona identity cannot be reconstructed from replacement rows."""
 
 import json
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -35,10 +36,20 @@ def test_existing_fixture_keeps_original_proof_without_reading_current_rows(tmp_
 
 
 def test_lost_fixture_cannot_adopt_an_existing_household(tmp_path):
-    class ExistingHousehold:
-        def get_building(self, identifier):
-            return {"building_id": identifier, "referral_code": "replacement"}
-
+    db = MagicMock()
+    cursor = db.get_connection.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value
+    cursor.fetchone.return_value = {"has_buildings": True}
     with pytest.raises(RuntimeError, match="reset"):
-        seed_village(ExistingHousehold(), tmp_path)
+        seed_village(db, tmp_path)
+    db.save_building.assert_not_called()
+    assert not (tmp_path / "fixture.json").exists()
+
+
+def test_lost_fixture_database_failure_cannot_start_seeding(tmp_path):
+    db = MagicMock()
+    cursor = db.get_connection.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value
+    cursor.execute.side_effect = RuntimeError("database unavailable")
+    with pytest.raises(RuntimeError, match="database unavailable"):
+        seed_village(db, tmp_path)
+    db.save_building.assert_not_called()
     assert not (tmp_path / "fixture.json").exists()

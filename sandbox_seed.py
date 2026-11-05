@@ -184,8 +184,10 @@ def seed_village(db, directory):
         ):
             raise RuntimeError("sandbox fixture identity unavailable; reset required")
         return identities
-    if any(db.get_building(identifier) for identifier, *_ in PERSONAS):
-        raise RuntimeError("sandbox fixture identity unavailable; reset required")
+    with db.get_connection() as connection, connection.cursor() as cursor:
+        cursor.execute("SELECT EXISTS (SELECT 1 FROM buildings) AS has_buildings")
+        if cursor.fetchone()["has_buildings"]:
+            raise RuntimeError("sandbox fixture identity unavailable; reset required")
     for index, (identifier, address, consumption, solar) in enumerate(PERSONAS, 1):
         if not db.save_building(
             identifier,
