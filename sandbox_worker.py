@@ -51,6 +51,9 @@ def create_worker():
 
     logins = VillageSessions(directory)
     logins.install(web)
+    from sandbox_metering import install as install_metering
+
+    install_metering(web)
 
     def seeded_household(profile):
         """A reused building ID cannot adopt the original demo registration."""

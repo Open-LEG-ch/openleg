@@ -1,0 +1,81 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _('Messdaten importieren') }} · Sonnwil</title>{% endblock %}
+{% macro outcome(item) -%}
+  {% if item.replayed %}{{ _('Bereits importiert') }}{% elif item.status == 'accepted' %}{{ _('Angenommen') }}{% else %}{{ _('Abgelehnt') }}{% endif %}
+{%- endmacro %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ _('Messdaten importieren') }}</h1>
+  <p class="mt-4">{{ _('Simulation Sonnwil: Alle Messpunkte, Quellen und Werte sind erfunden. Die aktive LEG ist vorbereitet. Es gibt keine Verbindung zu einem realen Netzbetreiber.') }}</p>
+  <p class="mt-4">{{ _('Zeitraum: September 2026, Europe/Zurich, vom 1. September 00:00 bis 1. Oktober 00:00. Das sind 2880 Viertelstunden. Die XML-Zeitstempel bezeichnen den Intervallanfang in UTC: 31. August 22:00 bis 30. September 22:00.') }}</p>
+  <p class="mt-4">{{ _('Vier Haushalte verbrauchen je 0.250 kWh pro Intervall. Ein Produktionspunkt liefert 0.500 kWh. Ohne Batterie beziehen alle Haushalte je 0.125 kWh aus der LEG und 0.125 kWh aus dem Netz. Diese flachen Übungsprofile sind keine Prognose.') }}</p>
+  <p class="mt-4">{{ _('Unabhängige Monatssummen: Verbrauch 2880 kWh, Produktion 1440 kWh, LEG-Bezug 1440 kWh, Netzbezug 1440 kWh. Die Produktion wird vollständig in der LEG genutzt. Alle Quellwerte verwenden kWh.') }}</p>
+  <p class="mt-4">{{ _('Die E66-Kanäle total, community und grid stammen gemeinsam aus derselben Quelle. Kein fehlender oder abgelehnter Wert wird aus Gerätemessungen ergänzt. Die Korrektur erhöht die Produktion auf 1728 kWh und senkt den Netzbezug auf 1152 kWh.') }}</p>
+  <details class="mt-4"><summary class="cursor-pointer font-semibold">{{ _('Datierte Messpunktzuordnungen') }}</summary>
+    <ul class="mt-3 grid gap-3">{% for point in points %}<li><span class="break-words">{{ point.metering_point_id }} · {{ point.building_id or _('Nicht zugeordnet') }}</span><br>{% if point.assignment_effective_from and point.assignment_effective_until %}{{ _('Gültig von %(start)s bis %(end)s (Europe/Zurich).', start=point.assignment_effective_from.astimezone(zurich).strftime('%d.%m.%Y %H:%M'), end=point.assignment_effective_until.astimezone(zurich).strftime('%d.%m.%Y %H:%M')) }}<br>{{ point.assignment_reference }}{% else %}{{ _('Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und den Zeitraum.') }}{% endif %}</li>{% endfor %}</ul>
+  </details>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Übungsdateien') }}</h2>
+    <p class="mt-4">{{ _('Laden Sie zuerst den vollständigen September herunter und importieren Sie ihn. Wiederholen Sie dieselbe Lieferung. Probieren Sie danach die abgelehnten Varianten und die Korrektur aus. Gzip verpackt die unveränderte XML-Quelle; höchstens 8 MiB werden entpackt.') }}</p>
+    <ul class="mt-4 grid gap-3">{% for key, label in fixture_labels.items() %}<li><a href="/sandbox/metering/fixtures/{{ key }}.xml.gz" class="font-semibold underline">{{ _(label) }} (.xml.gz)</a></li>{% endfor %}</ul>
+    <form method="post" enctype="multipart/form-data" action="/sandbox/metering/import" class="mt-6 grid gap-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>{{ _('E66-Übungsdatei') }}<input type="file" name="delivery" accept=".xml,.gz,application/xml,application/gzip" required class="mt-2 block w-full"></label>
+      <button type="submit" class="rounded-lg bg-brand px-4 py-3 font-semibold text-white">{{ _('Quelle prüfen und importieren') }}</button>
+    </form>
+  </section>
+  {% if result %}
+  <section class="mt-8 rounded-lg border border-line p-6" role="status">
+    <h2 class="text-xl font-semibold">{{ outcome(result) }}</h2>
+    <p class="mt-4">{{ result.name }}</p>
+    {% if result.status == 'accepted' %}<p class="mt-4">{{ _('Die gewöhnliche Belegablage und die physischen Messreihen sind gespeichert. Eine identische Wiederholung erzeugt keine zweite Lieferung.') }}</p><p class="mt-4">{{ _('Gespeicherte Messwerte: %(count)s.', count=result.record_count|numberlabel) }}</p>{% endif %}
+    {% for error in result.diagnostics %}<p class="mt-4">{{ _(diagnostics.get(error.code, diagnostics.invalid_e66)) }}</p>{% endfor %}
+    <p class="mt-4 break-words text-sm">{{ _('Quellprüfsumme') }}: {{ result.evidence_sha256 }}</p>
+  </section>
+  {% endif %}
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Gespeicherte Messwerte je Messpunkt') }}</h2>
+    <p class="mt-4">{{ _('Diese Werte stammen aus der aktuellen Messwertablage. Ein Rückzug entfernt sie nicht; für eine Abrechnung ist zusätzlich eine aktuelle angenommene Quelle erforderlich.') }}</p>
+    <div class="mt-4 overflow-x-auto"><table class="w-full text-sm"><caption class="sr-only">{{ _('Gespeicherte Messwerte je Messpunkt') }}</caption>
+      <thead><tr><th scope="col" class="p-2 text-left">{{ _('Messpunkt') }}</th><th scope="col" class="p-2 text-left">{{ _('Richtung') }}</th><th scope="col" class="p-2 text-right">{{ _('Messwerte') }}</th><th scope="col" class="p-2 text-right">{{ _('Total (kWh)') }}</th><th scope="col" class="p-2 text-right">{{ _('LEG (kWh)') }}</th><th scope="col" class="p-2 text-right">{{ _('Netz (kWh)') }}</th></tr></thead>
+      <tbody>{% for point in points %}<tr><th scope="row" class="p-2 text-left">{{ point.metering_point_id }}</th>{% if point.readings %}<td class="p-2">{{ _('Produktion') if 'production' in (point.expected_directions or []) else _('Verbrauch') }}</td><td class="p-2 text-right">{{ point.readings.total_readings|numberlabel }}</td><td class="p-2 text-right">{{ (point.readings.total_kwh or 0)|numberlabel }}</td><td class="p-2 text-right">{{ (point.readings.community_kwh or 0)|numberlabel }}</td><td class="p-2 text-right">{{ (point.readings.grid_kwh or 0)|numberlabel }}</td>{% else %}<td colspan="5" class="p-2">{{ _('Messwertablage nicht verfügbar') }}</td>{% endif %}</tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Gespeicherte Quellen') }}</h2>
+    {% for delivery in deliveries %}
+    <article class="mt-4 border-t border-line pt-4">
+      <p>{{ delivery.vnb_case_id }} · {{ outcome(delivery) }}{% if delivery.lifecycle_state == 'withdrawn' %} · {{ _('Zurückgezogen') }}{% endif %}</p>
+      <p class="mt-2 break-words text-sm">{{ _('Quellprüfsumme') }}: {{ delivery.evidence_sha256 }}</p>
+      {% if delivery.status == 'accepted' and delivery.lifecycle_state == 'current' %}
+      <p class="mt-2">{{ _('Vor einer Ersatzlieferung muss die aktuelle Quelle zurückgezogen werden. Der ursprüngliche Beleg und die Messdaten bleiben nachvollziehbar erhalten.') }}</p>
+      <form method="post" action="/sandbox/metering/withdraw/{{ delivery.id }}" class="mt-4 grid gap-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>{{ _('Grund des Rückzugs') }}<input name="reason" required maxlength="1000" value="SIMULATION SONNWIL: Ersatzquelle" class="mt-2 w-full rounded-lg border border-line px-3 py-2"></label>
+        <label><input type="checkbox" name="confirm" value="yes" required> {{ _('Ich ziehe diese Quelle ausdrücklich zurück, bevor ich die Korrektur importiere.') }}</label>
+        <button type="submit" class="rounded-lg border border-line px-4 py-3 font-semibold">{{ _('Quelle zurückziehen') }}</button>
+      </form>
+      {% endif %}
+    </article>
+    {% else %}<p class="mt-4">{{ _('Noch keine angenommene Quelle. Importieren Sie den vollständigen September.') }}</p>{% endfor %}
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Geplanten Import ausprobieren') }}</h2>
+    <p class="mt-4">{{ _('Der tägliche Zeitplan läuft um 00:00 Europe/Zurich. Sie lösen hier den gewöhnlichen Fälligkeitstest aus. Die Quelle liegt nur in Ihrem Dorf; es gibt keine FTPS-Zugangsdaten. Nach einem Lauf am selben Tag benutzen Sie den ausdrücklichen Wiederholungsversuch.') }}</p>
+    <p class="mt-4">{{ _('Lösen Sie zuerst einen Abruffehler aus. Starten Sie danach den Wiederholungsversuch ohne Fehler. Die vorhandene Quelle und ihre Messreihen werden beim erneuten Abruf wiedererkannt.') }}</p>
+    {% for schedule in schedules %}{% if schedule.last_status %}
+    <p class="mt-4" role="status">{% if schedule.last_status == 'success' %}{{ _('Erfolgreich') }}{% elif schedule.error_code == 'fetch_failed' %}{{ _('Abruf fehlgeschlagen') }}{% else %}{{ _('Import fehlgeschlagen') }}{% endif %}{% if schedule.imported_readings is not none %} · {{ _('Neue Messwerte') }}: {{ schedule.imported_readings }}{% endif %}</p>
+    {% endif %}{% endfor %}
+    <form method="post" action="/sandbox/metering/jobs" class="mt-4 grid gap-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label><input type="checkbox" name="fail_source" value="yes"> {{ _('Abruffehler simulieren') }}</label>
+      <button type="submit" name="action" value="due" class="rounded-lg bg-brand px-4 py-3 font-semibold text-white">{{ _('Zeitplan auslösen') }}</button>
+      <button type="submit" name="action" value="retry" class="rounded-lg border border-line px-4 py-3 font-semibold">{{ _('Lauf erneut versuchen') }}</button>
+    </form>
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Letzte Importversuche') }}</h2>
+    {% for attempt in attempts %}<article class="mt-4"><p>{{ attempt.name }} · {{ outcome(attempt) }}</p>{% for error in attempt.diagnostics %}<p class="mt-2">{{ _(diagnostics.get(error.code, diagnostics.invalid_e66)) }}</p>{% endfor %}</article>{% endfor %}
+  </section>
+</div>
+{% endblock %}
