@@ -58,6 +58,9 @@ def create_worker():
     from sandbox_billing import install as install_billing
 
     install_billing(web)
+    from sandbox_payments import install as install_payments
+
+    install_payments(web)
 
     def seeded_household(profile):
         """A reused building ID cannot adopt the original demo registration."""
