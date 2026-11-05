@@ -161,7 +161,7 @@ msgid_plural "%(num)s Nachbarn sind über Ihren Link beigetreten."
 msgstr[0] "%(num)s Nachbar ist über Ihren Link beigetreten."
 msgstr[1] "%(num)s Nachbarn sind über Ihren Link beigetreten."
 
-#: templates/leg_billing_policy.html:126 templates/member_invoice_detail.html:51
+#: templates/leg_billing_policy.html:126 templates/member_invoice_detail.html:52
 #, python-format
 msgid "%(num)s Tag"
 msgid_plural "%(num)s Tage"
@@ -411,6 +411,10 @@ msgstr "1'000 kWh"
 msgid "1. Adresse prüfen"
 msgstr "1. Adresse prüfen"
 
+#: templates/sandbox/billing.html:9
+msgid "1. Quelle und Richtlinie prüfen"
+msgstr "1. Quelle und Richtlinie prüfen"
+
 #: templates/index.html:289
 msgid "1. Rang prüfen"
 msgstr "1. Rang prüfen"
@@ -434,6 +438,10 @@ msgstr "Finanzprognose über 10 Jahre"
 #: templates/leg_kalkulator.html:117
 msgid "15'000 kWh"
 msgstr "15'000 kWh"
+
+#: templates/sandbox/billing.html:17
+msgid "2. Entwurf vorbereiten und freigeben"
+msgstr "2. Entwurf vorbereiten und freigeben"
 
 #: templates/index.html:401
 msgid "2. Nachbarn finden"
@@ -462,6 +470,10 @@ msgstr "3. LEG starten"
 #: templates/documents/community_agreement.html:24
 msgid "3. Rechtsgrundlage"
 msgstr "3. Rechtsgrundlage"
+
+#: templates/sandbox/billing.html:32
+msgid "3. Zustellen und als Mitglied prüfen"
+msgstr "3. Zustellen und als Mitglied prüfen"
 
 #: templates/datenschutz.html:41
 msgid "3. Zweck der Verarbeitung"
@@ -611,6 +623,10 @@ msgstr "Abgelaufen"
 msgid "Abgelehnt"
 msgstr "Abgelehnt"
 
+#: templates/sandbox/billing.html:37
+msgid "Abgelehnte Abrechnungen ausprobieren"
+msgstr "Abgelehnte Abrechnungen ausprobieren"
+
 #: templates/sandbox/banner.html:3
 msgid "Abgemeldet"
 msgstr "Abgemeldet"
@@ -662,6 +678,11 @@ msgstr "Abmelden"
 msgid "Abmeldung | "
 msgstr "Abmeldung | "
 
+#: templates/sandbox/billing.html:2 templates/sandbox/billing.html:5 templates/sandbox/home.html:27
+#: templates/sandbox/home.html:29
+msgid "Abrechnung ausprobieren"
+msgstr "Abrechnung ausprobieren"
+
 #: community_access.py:65
 msgid "Abrechnung freigeben"
 msgstr "Abrechnung freigeben"
@@ -695,7 +716,7 @@ msgid "Abrechnungs-Richtlinie"
 msgstr "Abrechnungs-Richtlinie"
 
 #: member_invoices.py:39 templates/admin/abrechnungen.html:121 templates/leg_billing_policy.html:107
-#: templates/member_invoice_detail.html:87
+#: templates/member_invoice_detail.html:88
 msgid "Abrechnungsentgelt"
 msgstr "Abrechnungsentgelt"
 
@@ -703,7 +724,7 @@ msgstr "Abrechnungsentgelt"
 msgid "Abrechnungsentgelt (Rp./kWh)"
 msgstr "Abrechnungsentgelt (Rp./kWh)"
 
-#: templates/member_invoice_detail.html:90
+#: templates/member_invoice_detail.html:91
 msgid "Abrechnungsentgelt dieser Rechnung"
 msgstr "Abrechnungsentgelt dieser Rechnung"
 
@@ -912,6 +933,10 @@ msgstr ""
 "Aktuelle Hinweise und neue Bestätigungen sind pausiert. Dokumentierte Zuordnungen sind keine "
 "aktuelle Quellenprüfung."
 
+#: templates/sandbox/billing.html:14
+msgid "Aktuelle angenommene Quelle"
+msgstr "Aktuelle angenommene Quelle"
+
 #: templates/gemeinde/methodik.html:75
 msgid "Aktueller Snapshot:"
 msgstr "Aktueller Snapshot:"
@@ -1023,7 +1048,7 @@ msgstr "An VNB eskalieren"
 msgid "An:"
 msgstr "An:"
 
-#: templates/member_invoice_detail.html:223
+#: templates/member_invoice_detail.html:224
 msgid "Anderes"
 msgstr "Anderes"
 
@@ -1164,7 +1189,7 @@ msgstr "Ansprechperson"
 msgid "Anteil"
 msgstr "Anteil"
 
-#: templates/member_invoice_detail.html:117
+#: templates/member_invoice_detail.html:118
 msgid "Anteil am Quartierakku dieser Rechnung"
 msgstr "Anteil am Quartierakku dieser Rechnung"
 
@@ -1182,7 +1207,7 @@ msgid "Anteil lokal verbrauchbar:"
 msgstr "Anteil lokal verbrauchbar:"
 
 #: templates/api_docs.html:234 templates/leg_billing.html:182 templates/leg_dashboard.html:241
-#: templates/member_invoice_detail.html:212
+#: templates/member_invoice_detail.html:213
 msgid "Antwort"
 msgstr "Antwort"
 
@@ -1198,7 +1223,7 @@ msgstr "Antwort oder Status ist erforderlich."
 msgid "Antwort:"
 msgstr "Antwort:"
 
-#: templates/api_docs.html:235 templates/member_invoice_detail.html:214
+#: templates/api_docs.html:235 templates/member_invoice_detail.html:215
 msgid "Antworten"
 msgstr "Antworten"
 
@@ -1285,6 +1310,18 @@ msgstr "Art. 8a decies Abs. 6 StromVV"
 msgid "Auch der unbequeme Teil"
 msgstr "Auch der unbequeme Teil"
 
+#: templates/sandbox/billing.html:40
+msgid ""
+"Auch ein Akku ohne vollständige passende Messreihen ergibt keine freigegebene Rechnung. Erfassen "
+"Sie beispielsweise im gewöhnlichen LEG-Dashboard den Speicher sonnwil-unmapped-battery mit 20 "
+"kWh, CHF 100 Jahreskosten und je 25% Kostenanteil für die vier bestätigten Mitglieder. Der "
+"Abrechnungslauf bleibt abgelehnt. Setzen Sie danach das Übungsdorf zurück."
+msgstr ""
+"Auch ein Akku ohne vollständige passende Messreihen ergibt keine freigegebene Rechnung. Erfassen "
+"Sie beispielsweise im gewöhnlichen LEG-Dashboard den Speicher sonnwil-unmapped-battery mit 20 "
+"kWh, CHF 100 Jahreskosten und je 25% Kostenanteil für die vier bestätigten Mitglieder. Der "
+"Abrechnungslauf bleibt abgelehnt. Setzen Sie danach das Übungsdorf zurück."
+
 #: templates/index.html:449
 msgid ""
 "Auch ohne eindeutigen Adresstreffer können wir Nachfrage sammeln. Der Eintrag wird nicht als "
@@ -1333,7 +1370,7 @@ msgstr "Aufwand"
 msgid "Aus Messwerten berechnet"
 msgstr "Aus Messwerten berechnet"
 
-#: templates/member_invoice_detail.html:195
+#: templates/member_invoice_detail.html:196
 msgid "Aus dem Speicher"
 msgstr "Aus dem Speicher"
 
@@ -1391,7 +1428,7 @@ msgstr "Ausserhalb dieses Firmwarebereichs"
 msgid "Ausstehende LEG-Einträge"
 msgstr "Ausstehende LEG-Einträge"
 
-#: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:44
+#: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:45
 msgid "Aussteller:"
 msgstr "Aussteller:"
 
@@ -1549,7 +1586,7 @@ msgstr "Befehl kopieren"
 msgid "Befehl kopiert."
 msgstr "Befehl kopiert."
 
-#: templates/sandbox/home.html:37
+#: templates/sandbox/home.html:42
 msgid ""
 "Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
@@ -1559,7 +1596,7 @@ msgstr ""
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
 "des Netzbetreibers. Aktivieren Sie die LEG erst mit einem separaten erfundenen Startbeleg."
 
-#: templates/sandbox/home.html:29
+#: templates/sandbox/home.html:34
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
 "sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
@@ -1640,6 +1677,24 @@ msgstr "Berechnet aus der OpenLEG Rangliste"
 #: templates/advisories.html:13
 msgid "Bereich laut Quelle"
 msgstr "Bereich laut Quelle"
+
+#: templates/sandbox/billing.html:19
+msgid ""
+"Bereiten Sie als Sam den Entwurf vor. Wechseln Sie anschliessend zu Robin und prüfen Sie die "
+"gewöhnliche Freigabe. Eine Wiederholung erstellt keine zweite Periode und keine zweiten "
+"Rechnungen. Bei geänderten Eingaben bleibt der ursprüngliche Stand erhalten."
+msgstr ""
+"Bereiten Sie als Sam den Entwurf vor. Wechseln Sie anschliessend zu Robin und prüfen Sie die "
+"gewöhnliche Freigabe. Eine Wiederholung erstellt keine zweite Periode und keine zweiten "
+"Rechnungen. Bei geänderten Eingaben bleibt der ursprüngliche Stand erhalten."
+
+#: templates/sandbox/home.html:28
+msgid ""
+"Bereiten Sie als Sam einen September-Entwurf vor, geben Sie ihn als Robin frei und prüfen Sie als"
+" Lea oder Noah die eigene erfundene Rechnung."
+msgstr ""
+"Bereiten Sie als Sam einen September-Entwurf vor, geben Sie ihn als Robin frei und prüfen Sie als"
+" Lea oder Noah die eigene erfundene Rechnung."
 
 #: templates/index.html:385
 #, python-format
@@ -1829,13 +1884,13 @@ msgstr "Bestätigungslink erneut senden"
 msgid "Bestätigungslink senden"
 msgstr "Bestätigungslink senden"
 
-#: templates/admin/abrechnungen.html:134 templates/member_invoice_detail.html:223
+#: templates/admin/abrechnungen.html:134 templates/member_invoice_detail.html:224
 msgid "Betrag"
 msgstr "Betrag"
 
 #: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
-#: templates/member_invoice_detail.html:67 templates/member_invoice_detail.html:96
-#: templates/member_invoice_detail.html:123 templates/member_invoice_detail.html:151
+#: templates/member_invoice_detail.html:68 templates/member_invoice_detail.html:97
+#: templates/member_invoice_detail.html:124 templates/member_invoice_detail.html:152
 msgid "Betrag (CHF)"
 msgstr "Betrag (CHF)"
 
@@ -2500,6 +2555,10 @@ msgstr "Demo-Dashboard öffnen"
 msgid "Den Ablauf zuerst selbst prüfen"
 msgstr "Den Ablauf zuerst selbst prüfen"
 
+#: sandbox_billing.py:51
+msgid "Den Messwerten fehlt ein nachvollziehbarer Importbeleg."
+msgstr "Den Messwerten fehlt ein nachvollziehbarer Importbeleg."
+
 #: templates/leg_dashboard.html:305
 msgid "Den Originalbeleg finden Sie im Korrespondenzjournal."
 msgstr "Den Originalbeleg finden Sie im Korrespondenzjournal."
@@ -2780,6 +2839,10 @@ msgstr "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr "Der Zugangslink ist ungültig oder bereits verwendet."
 
+#: sandbox_billing.py:54
+msgid "Der gewöhnliche Abrechnungslauf hat diesen Entwurf abgelehnt. Prüfen Sie Richtlinie und Quelle."
+msgstr "Der gewöhnliche Abrechnungslauf hat diesen Entwurf abgelehnt. Prüfen Sie Richtlinie und Quelle."
+
 #: templates/documents/community_agreement.html:28
 msgid ""
 "Der interne Strompreis wird durch die Gemeinschaft festgelegt und darf den lokalen\n"
@@ -2836,6 +2899,10 @@ msgstr ""
 "Die Abläufe der Netzbetreiber können sich ändern. Prüfen Sie deshalb vor der Anmeldung die "
 "verlinkten Angaben des zuständigen VNB."
 
+#: sandbox_billing.py:48
+msgid "Die Abrechnungsablage ist nicht verfügbar. Versuchen Sie es später erneut."
+msgstr "Die Abrechnungsablage ist nicht verfügbar. Versuchen Sie es später erneut."
+
 #: quartierakku.py:243 quartierakku.py:249 quartierakku.py:254
 msgid "Die Abrechnungsperiode ist ungültig."
 msgstr "Die Abrechnungsperiode ist ungültig."
@@ -2843,6 +2910,10 @@ msgstr "Die Abrechnungsperiode ist ungültig."
 #: templates/api_docs.html:252
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr "Die Adresse konnte nicht analysiert werden."
+
+#: sandbox_billing.py:45
+msgid "Die Akku-Konfiguration ist unvollständig oder passt nicht zu den abgerechneten Mitgliedern."
+msgstr "Die Akku-Konfiguration ist unvollständig oder passt nicht zu den abgerechneten Mitgliedern."
 
 #: dashboard_routes.py:979
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
@@ -2975,6 +3046,14 @@ msgid ""
 msgstr ""
 "Die EBL übernimmt keine interne Abrechnung. Dafür ist die LEG-Vertretung oder ein beauftragter "
 "Dienstleister zuständig."
+
+#: sandbox_billing.py:36
+msgid ""
+"Die Eingaben dieses Entwurfs wurden verändert. Der vorhandene Entwurf und ausgestellte Rechnungen"
+" werden nicht überschrieben."
+msgstr ""
+"Die Eingaben dieses Entwurfs wurden verändert. Der vorhandene Entwurf und ausgestellte Rechnungen"
+" werden nicht überschrieben."
 
 #: templates/gemeinde/pilotgemeinde.html:40
 msgid "Die ElCom ist die zuständige Aufsichts- und Schlichtungsstelle für Streitfälle im Strommarkt."
@@ -3216,6 +3295,14 @@ msgstr ""
 "Die Quelle enthält feinere Werte als das unterstützte E66-Profil. Verwenden Sie die gültige Datei"
 " ohne Rundung."
 
+#: sandbox_billing.py:39
+msgid ""
+"Die Quelle und die unterstützte Verteilung stimmen nicht überein. Für diesen Fall gibt es keine "
+"Freigabe-Umgehung."
+msgstr ""
+"Die Quelle und die unterstützte Verteilung stimmen nicht überein. Für diesen Fall gibt es keine "
+"Freigabe-Umgehung."
+
 #: templates/index.html:286
 msgid ""
 "Die Rangliste zeigt, wie viel Dachpotenzial Ihre Gemeinde nutzt, wer im Vergleich weiter ist und "
@@ -3364,7 +3451,7 @@ msgstr "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 
-#: sandbox_seed.py:45 sandbox_worker.py:87
+#: sandbox_seed.py:45 sandbox_worker.py:90
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 
@@ -4285,7 +4372,7 @@ msgstr "Energieprofil und Einwilligungen gespeichert."
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 
-#: sandbox_seed.py:27 sandbox_worker.py:81
+#: sandbox_seed.py:27 sandbox_worker.py:84
 msgid "Energieprofil ändern"
 msgstr "Energieprofil ändern"
 
@@ -4394,7 +4481,7 @@ msgstr "Ergebnis zum Fernzugriff"
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Ergänzen Sie Ihren Stromverbrauch"
 
-#: templates/sandbox/home.html:30
+#: templates/sandbox/home.html:35
 msgid ""
 "Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
@@ -4445,7 +4532,7 @@ msgstr "Ersetzte Katalogversionen"
 msgid "Ersparnis berechnen"
 msgstr "Ersparnis berechnen"
 
-#: templates/member_invoice_detail.html:183
+#: templates/member_invoice_detail.html:184
 msgid "Ersparnis durch reduziertes Netzentgelt:"
 msgstr "Ersparnis durch reduziertes Netzentgelt:"
 
@@ -4704,11 +4791,11 @@ msgstr ""
 msgid "Fortschritt:"
 msgstr "Fortschritt:"
 
-#: templates/member_invoice_detail.html:229
+#: templates/member_invoice_detail.html:230
 msgid "Frage senden"
 msgstr "Frage senden"
 
-#: templates/sandbox/home.html:31
+#: templates/sandbox/home.html:36
 msgid ""
 "Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
 "welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
@@ -4726,7 +4813,7 @@ msgstr "Fragen ausserhalb der Gründungsschritte"
 msgid "Fragen zu Betrieb, Finanzierung oder Self-Hosting?"
 msgstr "Fragen zu Betrieb, Finanzierung oder Self-Hosting?"
 
-#: templates/member_invoice_detail.html:201
+#: templates/member_invoice_detail.html:202
 msgid "Fragen zu dieser Rechnung"
 msgstr "Fragen zu dieser Rechnung"
 
@@ -4761,6 +4848,10 @@ msgstr "Freie Energieinfrastruktur, die man prüfen und selbst betreiben kann."
 #: templates/partials/site_footer.html:5
 msgid "Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz."
 msgstr "Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz."
+
+#: templates/sandbox/billing.html:29
+msgid "Freigabe und Rechnungen öffnen"
+msgstr "Freigabe und Rechnungen öffnen"
 
 #: templates/contact_requests.html:58
 msgid "Freigabe widerrufen"
@@ -4806,7 +4897,7 @@ msgstr "Funktion nicht verfügbar"
 msgid "Fällig am"
 msgstr "Fällig am"
 
-#: templates/documents/member_invoice.html:18 templates/member_invoice_detail.html:47
+#: templates/documents/member_invoice.html:18 templates/member_invoice_detail.html:48
 msgid "Fällig am:"
 msgstr "Fällig am:"
 
@@ -4945,6 +5036,20 @@ msgstr ""
 #: templates/leg_verzeichnis/leg_check.html:72
 msgid "Für direkt benachbarte Häuser kommt je nach Anschluss auch ein vZEV infrage."
 msgstr "Für direkt benachbarte Häuser kommt je nach Anschluss auch ein vZEV infrage."
+
+#: templates/sandbox/billing.html:20
+msgid ""
+"Für eine Korrektur vor der Freigabe ziehen Sie die Originalquelle in den Messdaten zurück und "
+"importieren Sie die Korrektur. Der alte Entwurf bleibt ungültig und kann nicht freigegeben "
+"werden. Ein neuer Lauf erstellt einen neuen Entwurf: je Haushalt 432 kWh LEG-Bezug und CHF 51.84 "
+"Belastung; Noah erhält CHF 207.36 Gutschrift und bezahlt netto CHF -155.52. Bereits ausgestellte "
+"Rechnungen werden durch eine Ersatzquelle nicht geändert."
+msgstr ""
+"Für eine Korrektur vor der Freigabe ziehen Sie die Originalquelle in den Messdaten zurück und "
+"importieren Sie die Korrektur. Der alte Entwurf bleibt ungültig und kann nicht freigegeben "
+"werden. Ein neuer Lauf erstellt einen neuen Entwurf: je Haushalt 432 kWh LEG-Bezug und CHF 51.84 "
+"Belastung; Noah erhält CHF 207.36 Gutschrift und bezahlt netto CHF -155.52. Bereits ausgestellte "
+"Rechnungen werden durch eine Ersatzquelle nicht geändert."
 
 #: templates/gemeinde/methodik.html:96
 msgid ""
@@ -5255,7 +5360,7 @@ msgstr "Gemeldete Angaben bestätigt am"
 msgid "Gemessen"
 msgstr "Gemessen"
 
-#: templates/member_invoice_detail.html:179
+#: templates/member_invoice_detail.html:180
 msgid "Gemessene Werte der Periode"
 msgstr "Gemessene Werte der Periode"
 
@@ -5348,7 +5453,7 @@ msgstr "Gerätestatus"
 msgid "Gerätezugang |"
 msgstr "Gerätezugang |"
 
-#: templates/documents/member_invoice.html:43 templates/member_invoice_detail.html:173
+#: templates/documents/member_invoice.html:43 templates/member_invoice_detail.html:174
 msgid "Gesamtbetrag"
 msgstr "Gesamtbetrag"
 
@@ -5417,6 +5522,14 @@ msgstr "Gespeicherte Messwerte je Messpunkt"
 #, python-format
 msgid "Gespeicherte Messwerte: %(count)s."
 msgstr "Gespeicherte Messwerte: %(count)s."
+
+#: templates/sandbox/billing.html:26
+msgid "Gespeicherte Periode"
+msgstr "Gespeicherte Periode"
+
+#: templates/sandbox/billing.html:27
+msgid "Gespeicherte Positionen vor Freigabe"
+msgstr "Gespeicherte Positionen vor Freigabe"
 
 #: templates/sandbox/metering.html:45
 msgid "Gespeicherte Quellen"
@@ -5511,7 +5624,7 @@ msgstr "Grosse Chance"
 msgid "Grosse Gemeinden"
 msgstr "Grosse Gemeinden"
 
-#: templates/member_invoice_detail.html:221
+#: templates/member_invoice_detail.html:222
 msgid "Grund"
 msgstr "Grund"
 
@@ -5576,7 +5689,7 @@ msgstr "Gründung"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Gründung als Arbeitsfolge"
 
-#: templates/sandbox/home.html:38
+#: templates/sandbox/home.html:43
 msgid "Gründung ausprobieren"
 msgstr "Gründung ausprobieren"
 
@@ -5648,11 +5761,11 @@ msgstr ""
 msgid "Gutschriften"
 msgstr "Gutschriften"
 
-#: templates/documents/member_invoice.html:31 templates/member_invoice_detail.html:140
+#: templates/documents/member_invoice.html:31 templates/member_invoice_detail.html:141
 msgid "Gutschriften und Ausgleich"
 msgstr "Gutschriften und Ausgleich"
 
-#: templates/member_invoice_detail.html:145
+#: templates/member_invoice_detail.html:146
 msgid "Gutschriften und Rundungsausgleich dieser Rechnung"
 msgstr "Gutschriften und Rundungsausgleich dieser Rechnung"
 
@@ -5697,7 +5810,7 @@ msgstr "Haftungsausschluss"
 msgid "Hallo,"
 msgstr "Hallo,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:76 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:79 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
@@ -5705,7 +5818,7 @@ msgid_plural "Haushalte"
 msgstr[0] "Haushalt"
 msgstr[1] "Haushalte"
 
-#: templates/sandbox/home.html:28 templates/sandbox/home.html:33 templates/sandbox/onboarding.html:2
+#: templates/sandbox/home.html:33 templates/sandbox/home.html:38 templates/sandbox/onboarding.html:2
 #: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
 msgid "Haushalt anmelden"
 msgstr "Haushalt anmelden"
@@ -5871,6 +5984,14 @@ msgstr "Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Ent
 msgid "Ich habe die Entwürfe geprüft und simuliere die Unterschrift meines aktuellen Haushalts."
 msgstr "Ich habe die Entwürfe geprüft und simuliere die Unterschrift meines aktuellen Haushalts."
 
+#: templates/sandbox/billing.html:23
+msgid ""
+"Ich habe die Quelle und die gespeicherte Richtlinie geprüft und starte den gewöhnlichen "
+"Abrechnungslauf."
+msgstr ""
+"Ich habe die Quelle und die gespeicherte Richtlinie geprüft und starte den gewöhnlichen "
+"Abrechnungslauf."
+
 #: templates/advisories.html:57
 msgid "Ich habe diese Version des Hinweises gelesen."
 msgstr "Ich habe diese Version des Hinweises gelesen."
@@ -5939,7 +6060,7 @@ msgstr "Ihr eigenes Übungsdorf"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 
-#: sandbox_worker.py:82
+#: sandbox_worker.py:85
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Ihr neuer Haushalt ist bestätigt."
 
@@ -6111,7 +6232,7 @@ msgstr "Ihre übliche Verbrauchszeit, tagsüber oder abends"
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 
-#: templates/sandbox/home.html:32
+#: templates/sandbox/home.html:37
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
 "bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
@@ -6141,6 +6262,22 @@ msgstr "Im offenen Verzeichnis ist noch keine LEG aus %(profile_name)s eingetrag
 #: templates/sandbox/metering.html:67
 msgid "Import fehlgeschlagen"
 msgstr "Import fehlgeschlagen"
+
+#: templates/sandbox/billing.html:10
+msgid ""
+"Importieren Sie als Sam zuerst den vollständigen September. Speichern Sie danach die gewöhnliche "
+"Richtlinie: gültig ab 01.09.2026, intern 12 Rp./kWh, Netz 8 Rp./kWh, Abrechnungsentgelt 0, "
+"gleiche Netzebene, proportional, keine Mehrwertsteuer (Satzfeld leer lassen), 30 Tage, Präfix "
+"SIMULATION, Zustellung per E-Mail."
+msgstr ""
+"Importieren Sie als Sam zuerst den vollständigen September. Speichern Sie danach die gewöhnliche "
+"Richtlinie: gültig ab 01.09.2026, intern 12 Rp./kWh, Netz 8 Rp./kWh, Abrechnungsentgelt 0, "
+"gleiche Netzebene, proportional, keine Mehrwertsteuer (Satzfeld leer lassen), 30 Tage, Präfix "
+"SIMULATION, Zustellung per E-Mail."
+
+#: sandbox_billing.py:33
+msgid "Importieren Sie die vollständige gültige Septemberquelle. Eine zurückgezogene Quelle genügt nicht."
+msgstr "Importieren Sie die vollständige gültige Septemberquelle. Eine zurückgezogene Quelle genügt nicht."
 
 #: templates/impressum.html:21 templates/partials/site_footer.html:11
 msgid "Impressum"
@@ -6187,7 +6324,7 @@ msgstr "In Prüfung"
 msgid "In Vorbereitung"
 msgstr "In Vorbereitung"
 
-#: templates/member_invoice_detail.html:193
+#: templates/member_invoice_detail.html:194
 msgid "In dieser Abrechnungsperiode deckte der gemeinsame Speicher einen Teil Ihres lokalen Verbrauchs."
 msgstr "In dieser Abrechnungsperiode deckte der gemeinsame Speicher einen Teil Ihres lokalen Verbrauchs."
 
@@ -6322,7 +6459,8 @@ msgstr "Interner Preis (Rp./kWh)"
 msgid "Interner Preis in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
 msgstr "Interner Preis in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
 
-#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:49
+#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:50
+#: templates/sandbox/billing.html:13
 msgid "Interner Preis:"
 msgstr "Interner Preis:"
 
@@ -6686,7 +6824,7 @@ msgstr "Keine Gemeinden gefunden"
 msgid "Keine Gutschriften"
 msgstr "Keine Gutschriften"
 
-#: templates/member_invoice_detail.html:167
+#: templates/member_invoice_detail.html:168
 msgid "Keine Gutschriften."
 msgstr "Keine Gutschriften."
 
@@ -6746,9 +6884,13 @@ msgstr "Keine Tarifdaten für diese Gemeinde verfügbar."
 msgid "Keine Verbrauchskosten"
 msgstr "Keine Verbrauchskosten"
 
-#: templates/member_invoice_detail.html:83
+#: templates/member_invoice_detail.html:84
 msgid "Keine Verbrauchskosten."
 msgstr "Keine Verbrauchskosten."
+
+#: templates/sandbox/billing.html:14
+msgid "Keine aktuelle angenommene Septemberquelle."
+msgstr "Keine aktuelle angenommene Septemberquelle."
 
 #: templates/admin/ops.html:154
 msgid "Keine ausstehenden Einträge"
@@ -6874,7 +7016,7 @@ msgid "Konto nicht verfügbar"
 msgstr "Konto nicht verfügbar"
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/home.html:26
+#: templates/sandbox/billing.html:34 templates/sandbox/home.html:31
 msgid "Konto wechseln"
 msgstr "Konto wechseln"
 
@@ -6903,7 +7045,7 @@ msgstr "Korrektur nach Rückzug"
 msgid "Korrektur verknüpfen"
 msgstr "Korrektur verknüpfen"
 
-#: templates/member_invoice_detail.html:53
+#: templates/member_invoice_detail.html:54
 msgid "Korrektur zu:"
 msgstr "Korrektur zu:"
 
@@ -6923,7 +7065,7 @@ msgstr "Korrespondenzjournal dieser Stromgemeinschaft"
 msgid "Korrigiert"
 msgstr "Korrigiert"
 
-#: templates/member_invoice_detail.html:54
+#: templates/member_invoice_detail.html:55
 msgid "Korrigiert durch:"
 msgstr "Korrigiert durch:"
 
@@ -7067,7 +7209,7 @@ msgid "LEG gesetzlich möglich"
 msgstr "LEG gesetzlich möglich"
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
-#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:36
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:41
 msgid "LEG gründen"
 msgstr "LEG gründen"
 
@@ -7130,6 +7272,10 @@ msgstr "LEG-Angaben von Primeo Energie"
 #: templates/index.html:160
 msgid "LEG-Betreiber"
 msgstr "LEG-Betreiber"
+
+#: templates/sandbox/billing.html:18
+msgid "LEG-Bezug (kWh)"
+msgstr "LEG-Bezug (kWh)"
 
 #: templates/leg_verzeichnis/leg_check.html:17
 msgid "LEG-Check"
@@ -7475,7 +7621,7 @@ msgstr "Login-Link per E-Mail gesendet."
 msgid "Login-Link senden"
 msgstr "Login-Link senden"
 
-#: templates/member_invoice_detail.html:182
+#: templates/member_invoice_detail.html:183
 msgid "Lokal gedeckt:"
 msgstr "Lokal gedeckt:"
 
@@ -7621,7 +7767,8 @@ msgid "Mehrfaktor-Anmeldung"
 msgstr "Mehrfaktor-Anmeldung"
 
 #: templates/documents/member_invoice.html:36 templates/documents/member_invoice.html:42
-#: templates/leg_billing_policy.html:62 templates/member_invoice_detail.html:172
+#: templates/leg_billing_policy.html:62 templates/member_invoice_detail.html:173
+#: templates/sandbox/billing.html:13
 msgid "Mehrwertsteuer"
 msgstr "Mehrwertsteuer"
 
@@ -7629,7 +7776,7 @@ msgstr "Mehrwertsteuer"
 msgid "Mehrwertsteuer ausweisen"
 msgstr "Mehrwertsteuer ausweisen"
 
-#: templates/member_invoice_detail.html:48
+#: templates/member_invoice_detail.html:49
 msgid "Mehrwertsteuer:"
 msgstr "Mehrwertsteuer:"
 
@@ -7678,7 +7825,7 @@ msgstr "Meine Messwerte"
 msgid "Meine Messwerte und ihre Aktualität"
 msgstr "Meine Messwerte und ihre Aktualität"
 
-#: templates/dashboard.html:229 templates/member_invoices.html:11
+#: templates/dashboard.html:229 templates/member_invoices.html:11 templates/sandbox/billing.html:34
 msgid "Meine Rechnungen"
 msgstr "Meine Rechnungen"
 
@@ -7747,8 +7894,8 @@ msgid "Menge"
 msgstr "Menge"
 
 #: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
-#: templates/member_invoice_detail.html:65 templates/member_invoice_detail.html:94
-#: templates/member_invoice_detail.html:121 templates/member_invoice_detail.html:149
+#: templates/member_invoice_detail.html:66 templates/member_invoice_detail.html:95
+#: templates/member_invoice_detail.html:122 templates/member_invoice_detail.html:150
 msgid "Menge (kWh)"
 msgstr "Menge (kWh)"
 
@@ -7760,11 +7907,11 @@ msgstr "Menschen in einem Schweizer Stadtquartier"
 msgid "Menschen und öffentlicher Verkehr in einer Schweizer Stadt"
 msgstr "Menschen und öffentlicher Verkehr in einer Schweizer Stadt"
 
-#: community_access.py:63 templates/member_invoice_detail.html:223
+#: community_access.py:63 templates/member_invoice_detail.html:224
 msgid "Messdaten"
 msgstr "Messdaten"
 
-#: templates/sandbox/home.html:24
+#: templates/sandbox/billing.html:12 templates/sandbox/home.html:24
 msgid "Messdaten ausprobieren"
 msgstr "Messdaten ausprobieren"
 
@@ -8075,7 +8222,7 @@ msgstr "Nachbarschaft in einer Schweizer Agglomeration"
 msgid "Nachbarschafts-Matching"
 msgstr "Nachbarschafts-Matching"
 
-#: templates/member_invoice_detail.html:225
+#: templates/member_invoice_detail.html:226
 msgid "Nachricht"
 msgstr "Nachricht"
 
@@ -8156,7 +8303,7 @@ msgstr ""
 "Fehlende erforderliche Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
 "Regulierte Messtarife können weiterhin anfallen."
 
-#: templates/documents/member_invoice.html:41 templates/member_invoice_detail.html:171
+#: templates/documents/member_invoice.html:41 templates/member_invoice_detail.html:172
 msgid "Nettobetrag"
 msgstr "Nettobetrag"
 
@@ -8229,6 +8376,10 @@ msgstr "Netzbetreiber: %(municipality_dso_name)s"
 msgid "Netzbezug"
 msgstr "Netzbezug"
 
+#: templates/sandbox/billing.html:18
+msgid "Netzbezug (kWh)"
+msgstr "Netzbezug (kWh)"
+
 #: templates/dashboard.html:213
 msgid "Netzbezugspreis"
 msgstr "Netzbezugspreis"
@@ -8258,11 +8409,11 @@ msgstr "Netzentgelt (Rp./kWh)"
 msgid "Netzentgelt in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
 msgstr "Netzentgelt in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
 
-#: templates/member_invoice_detail.html:184
+#: templates/member_invoice_detail.html:185
 msgid "Netzentgelt-Tarif:"
 msgstr "Netzentgelt-Tarif:"
 
-#: templates/member_invoice_detail.html:50
+#: templates/member_invoice_detail.html:51 templates/sandbox/billing.html:13
 msgid "Netzentgelt:"
 msgstr "Netzentgelt:"
 
@@ -8353,7 +8504,7 @@ msgstr "Neuen Schlüssel erstellen"
 msgid "Neuenburg"
 msgstr "Neuenburg"
 
-#: sandbox_worker.py:75
+#: sandbox_worker.py:78
 msgid "Neuer Haushalt"
 msgstr "Neuer Haushalt"
 
@@ -8511,6 +8662,10 @@ msgstr "Noch keine freigegebenen Rechnungen vorhanden."
 #: templates/sandbox/inbox.html:23
 msgid "Noch keine simulierten Nachrichten."
 msgstr "Noch keine simulierten Nachrichten."
+
+#: templates/sandbox/billing.html:13
+msgid "Noch keine vollständige September-Richtlinie."
+msgstr "Noch keine vollständige September-Richtlinie."
 
 #: templates/emails/day_3_smartmeter.html:41
 msgid ""
@@ -9134,7 +9289,7 @@ msgstr "PDF öffnen"
 msgid "PDF-Anhang"
 msgstr "PDF-Anhang"
 
-#: templates/member_invoice_detail.html:227
+#: templates/member_invoice_detail.html:228
 msgid "PDF-Beleg, optional, höchstens 2 MB"
 msgstr "PDF-Beleg, optional, höchstens 2 MB"
 
@@ -9206,7 +9361,7 @@ msgstr "Period not found"
 msgid "Periode"
 msgstr "Periode"
 
-#: templates/documents/member_invoice.html:16 templates/member_invoice_detail.html:45
+#: templates/documents/member_invoice.html:16 templates/member_invoice_detail.html:46
 msgid "Periode:"
 msgstr "Periode:"
 
@@ -9232,8 +9387,8 @@ msgstr "Plattform"
 
 #: templates/admin/abrechnungen.html:129 templates/documents/member_invoice.html:23
 #: templates/documents/member_invoice.html:32 templates/leg_kalkulator.html:205
-#: templates/member_invoice_detail.html:64 templates/member_invoice_detail.html:93
-#: templates/member_invoice_detail.html:120 templates/member_invoice_detail.html:148
+#: templates/member_invoice_detail.html:65 templates/member_invoice_detail.html:94
+#: templates/member_invoice_detail.html:121 templates/member_invoice_detail.html:149
 msgid "Position"
 msgstr "Position"
 
@@ -9241,7 +9396,8 @@ msgstr "Position"
 msgid "Positionen"
 msgstr "Positionen"
 
-#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2 templates/sandbox/onboarding.html:24
+#: templates/sandbox/banner.html:6 templates/sandbox/billing.html:34 templates/sandbox/inbox.html:2
+#: templates/sandbox/onboarding.html:24
 msgid "Postfach"
 msgstr "Postfach"
 
@@ -9258,8 +9414,8 @@ msgid "Preis"
 msgstr "Preis"
 
 #: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
-#: templates/member_invoice_detail.html:66 templates/member_invoice_detail.html:95
-#: templates/member_invoice_detail.html:122 templates/member_invoice_detail.html:150
+#: templates/member_invoice_detail.html:67 templates/member_invoice_detail.html:96
+#: templates/member_invoice_detail.html:123 templates/member_invoice_detail.html:151
 msgid "Preis (Rp./kWh)"
 msgstr "Preis (Rp./kWh)"
 
@@ -9338,6 +9494,10 @@ msgstr "Produkt-Demo öffnen"
 #: templates/admin/abrechnungen.html:58 templates/sandbox/metering.html:41
 msgid "Produktion"
 msgstr "Produktion"
+
+#: templates/sandbox/billing.html:18
+msgid "Produktion (kWh)"
+msgstr "Produktion (kWh)"
 
 #: templates/open_source.html:86
 msgid ""
@@ -9511,6 +9671,10 @@ msgstr "Prüfen Sie die Teilnehmerverträge."
 msgid "Prüfen Sie die Vorgaben für Ihren Fall bei den zuständigen Stellen:"
 msgstr "Prüfen Sie die Vorgaben für Ihren Fall bei den zuständigen Stellen:"
 
+#: sandbox_billing.py:42
+msgid "Prüfen Sie die vollständigen datierten Messwerte und die aktuelle Mitgliedschaft."
+msgstr "Prüfen Sie die vollständigen datierten Messwerte und die aktuelle Mitgliedschaft."
+
 #: templates/fuer_bewohner.html:8
 msgid ""
 "Prüfen Sie kostenlos, ob sich eine Lokale Elektrizitätsgemeinschaft (LEG) an Ihrer Adresse lohnt:"
@@ -9569,7 +9733,7 @@ msgstr "Quartierakku erfassen"
 msgid "Quartierakku speichern"
 msgstr "Quartierakku speichern"
 
-#: member_invoices.py:40 templates/admin/abrechnungen.html:122 templates/member_invoice_detail.html:114
+#: member_invoices.py:40 templates/admin/abrechnungen.html:122 templates/member_invoice_detail.html:115
 msgid "Quartierakku-Anteil"
 msgstr "Quartierakku-Anteil"
 
@@ -9742,7 +9906,7 @@ msgstr "Rangliste"
 msgid "Ranked municipalities"
 msgstr "Gemeinden nach Rang"
 
-#: templates/member_invoice_detail.html:177
+#: templates/member_invoice_detail.html:178
 msgid "Realisierte Ersparnis"
 msgstr "Realisierte Ersparnis"
 
@@ -9755,7 +9919,7 @@ msgid "Recent Ops Snapshots"
 msgstr "Neueste Betriebsberichte"
 
 #: templates/documents/member_invoice.html:14 templates/member_invoice_detail.html:4
-#: templates/member_invoice_detail.html:42
+#: templates/member_invoice_detail.html:43
 msgid "Rechnung"
 msgstr "Rechnung"
 
@@ -9767,7 +9931,7 @@ msgstr "Rechnung nicht gefunden."
 msgid "Rechnungen freigeben"
 msgstr "Rechnungen freigeben"
 
-#: templates/documents/member_invoice.html:17 templates/member_invoice_detail.html:46
+#: templates/documents/member_invoice.html:17 templates/member_invoice_detail.html:47
 msgid "Rechnungsdatum:"
 msgstr "Rechnungsdatum:"
 
@@ -9904,6 +10068,10 @@ msgstr "Repository öffnen"
 msgid "Richten Sie die Abrechnung ein."
 msgstr "Richten Sie die Abrechnung ein."
 
+#: templates/sandbox/billing.html:12
+msgid "Richtlinie bearbeiten"
+msgstr "Richtlinie bearbeiten"
+
 #: templates/leg_dashboard.html:416
 msgid "Richtlinie verwalten"
 msgstr "Richtlinie verwalten"
@@ -9949,12 +10117,12 @@ msgid "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 msgstr "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 
 #: i18n.py:123 templates/admin/abrechnungen.html:135 templates/admin/abrechnungen.html:138
-#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:49
-#: templates/member_invoice_detail.html:50
+#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:50
+#: templates/member_invoice_detail.html:51
 msgid "Rp./kWh"
 msgstr "Rp./kWh"
 
-#: templates/member_invoice_detail.html:184
+#: templates/member_invoice_detail.html:185
 msgid "Rp./kWh,"
 msgstr "Rp./kWh,"
 
@@ -10011,6 +10179,14 @@ msgstr ""
 #: sandbox_formation.py:130
 msgid "SIMULATION SONNWIL: LEG-Einladung"
 msgstr "SIMULATION SONNWIL: LEG-Einladung"
+
+#: templates/sandbox/billing.html:6
+msgid ""
+"SIMULATION SONNWIL: September 2026, ohne Akku. Alle Preise, Messwerte und Rechnungen sind "
+"erfunden. Es ist nichts zu bezahlen."
+msgstr ""
+"SIMULATION SONNWIL: September 2026, ohne Akku. Alle Preise, Messwerte und Rechnungen sind "
+"erfunden. Es ist nichts zu bezahlen."
 
 #: templates/leg_gruenden.html:147
 msgid "Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten Anlagen."
@@ -10195,6 +10371,10 @@ msgstr "Selbst betreiben"
 #: templates/self_host.html:6
 msgid "Selbst betreiben | OpenLEG"
 msgstr "Selbst betreiben | OpenLEG"
+
+#: templates/sandbox/billing.html:24
+msgid "September-Entwurf vorbereiten"
+msgstr "September-Entwurf vorbereiten"
 
 #: templates/equipment_form.html:90
 msgid "Seriennummer (optional)"
@@ -10616,6 +10796,10 @@ msgstr "Speicherkapazität:"
 msgid "Speichern"
 msgstr "Speichern"
 
+#: sandbox_billing.py:30
+msgid "Speichern Sie zuerst eine vollständige Richtlinie für September."
+msgstr "Speichern Sie zuerst eine vollständige Richtlinie für September."
+
 #: templates/http_error.html:10 templates/partials/language_switcher.html:1
 msgid "Sprache"
 msgstr "Sprache"
@@ -10706,7 +10890,7 @@ msgid "Status wird geprüft"
 msgstr "Status wird geprüft"
 
 #: templates/leg_billing.html:57 templates/leg_dashboard.html:30 templates/leg_dashboard.html:274
-#: templates/member_invoice_detail.html:52
+#: templates/member_invoice_detail.html:53
 msgid "Status:"
 msgstr "Status:"
 
@@ -10714,6 +10898,20 @@ msgstr "Status:"
 #, python-format
 msgid "Steht auf Ihrer letzten Stromrechnung von %(utility)s."
 msgstr "Steht auf Ihrer letzten Stromrechnung von %(utility)s."
+
+#: templates/sandbox/billing.html:33
+msgid ""
+"Stellen Sie die freigegebenen Rechnungen in der Abrechnungsübersicht zu. Wechseln Sie zu Lea oder"
+" Noah und öffnen Sie deren Postfach und Rechnung als PDF. Nur das berechtigte Mitglied sieht "
+"seine Rechnungsnachricht und Rechnung. Probieren Sie als Robin auch eine Stornierung mit "
+"Begründung. Die ausgestellten Zahlen und die Historie bleiben erhalten, auch wenn Sie später "
+"einen anderen Tarif speichern."
+msgstr ""
+"Stellen Sie die freigegebenen Rechnungen in der Abrechnungsübersicht zu. Wechseln Sie zu Lea oder"
+" Noah und öffnen Sie deren Postfach und Rechnung als PDF. Nur das berechtigte Mitglied sieht "
+"seine Rechnungsnachricht und Rechnung. Probieren Sie als Robin auch eine Stornierung mit "
+"Begründung. Die ausgestellten Zahlen und die Historie bleiben erhalten, auch wenn Sie später "
+"einen anderen Tarif speichern."
 
 #: templates/gemeinde/vergleich.html:20
 msgid "Stellen Sie zwei Gemeinden nebeneinander. Wer nutzt mehr vom eigenen Dachpotenzial?"
@@ -10743,7 +10941,7 @@ msgstr "Stornierungsgrund"
 msgid "Strasse, PLZ Ort"
 msgstr "Strasse, PLZ Ort"
 
-#: templates/member_invoice_detail.html:192
+#: templates/member_invoice_detail.html:193
 msgid "Strom aus dem Quartierakku"
 msgstr "Strom aus dem Quartierakku"
 
@@ -11057,6 +11255,20 @@ msgstr ""
 "Anschlussleistung aller teilnehmenden Endverbraucher erreichen. Ob die nötige Netztopologie "
 "vorliegt, bestätigt der zuständige Verteilnetzbetreiber."
 
+#: templates/sandbox/billing.html:11
+msgid ""
+"Unabhängige Erwartungen für die Originalquelle: Verbrauch 2880 kWh, Produktion und LEG-Bezug je "
+"1440 kWh, Netzbezug 1440 kWh. Jeder der vier Haushalte bezieht 360 kWh aus der LEG und bezahlt "
+"dafür CHF 43.20. Noah erhält für 1440 kWh CHF 172.80 gutgeschrieben; sein Rechnungsbetrag ist CHF"
+" -129.60. Die Summe der vier Rechnungen ist CHF 0.00. Diese LEG-Rechnung ersetzt keine "
+"Netzrechnung."
+msgstr ""
+"Unabhängige Erwartungen für die Originalquelle: Verbrauch 2880 kWh, Produktion und LEG-Bezug je "
+"1440 kWh, Netzbezug 1440 kWh. Jeder der vier Haushalte bezieht 360 kWh aus der LEG und bezahlt "
+"dafür CHF 43.20. Noah erhält für 1440 kWh CHF 172.80 gutgeschrieben; sein Rechnungsbetrag ist CHF"
+" -129.60. Die Summe der vier Rechnungen ist CHF 0.00. Diese LEG-Rechnung ersetzt keine "
+"Netzrechnung."
+
 #: templates/sandbox/metering.html:12
 msgid ""
 "Unabhängige Monatssummen: Verbrauch 2880 kWh, Produktion 1440 kWh, LEG-Bezug 1440 kWh, Netzbezug "
@@ -11128,6 +11340,10 @@ msgstr "Ungenutztes Potenzial"
 #: templates/gemeinde/methodik.html:77
 msgid "Ungenutztes Potenzial:"
 msgstr "Ungenutztes Potenzial:"
+
+#: templates/sandbox/billing.html:39
+msgid "Ungleiche Summen herunterladen"
+msgstr "Ungleiche Summen herunterladen"
 
 #: i18n.py:65
 msgid "Ungültige Anfrage"
@@ -11286,6 +11502,10 @@ msgstr "Verantwortung wählen"
 msgid "Verbrauch"
 msgstr "Verbrauch"
 
+#: templates/sandbox/billing.html:18
+msgid "Verbrauch (kWh)"
+msgstr "Verbrauch (kWh)"
+
 #: templates/emails/day_7_consumption.html:6
 msgid "Verbrauch ergänzen"
 msgstr "Verbrauch ergänzen"
@@ -11294,7 +11514,7 @@ msgstr "Verbrauch ergänzen"
 msgid "Verbrauch und Solaranlage ansehen"
 msgstr "Verbrauch und Solaranlage ansehen"
 
-#: templates/member_invoice_detail.html:181
+#: templates/member_invoice_detail.html:182
 msgid "Verbrauch:"
 msgstr "Verbrauch:"
 
@@ -11307,11 +11527,11 @@ msgid "Verbrauchsdaten hinterlegt"
 msgstr "Verbrauchsdaten hinterlegt"
 
 #: member_invoices.py:36 templates/documents/member_invoice.html:22
-#: templates/member_invoice_detail.html:57
+#: templates/member_invoice_detail.html:58
 msgid "Verbrauchskosten"
 msgstr "Verbrauchskosten"
 
-#: templates/member_invoice_detail.html:61
+#: templates/member_invoice_detail.html:62
 msgid "Verbrauchskosten dieser Rechnung"
 msgstr "Verbrauchskosten dieser Rechnung"
 
@@ -11387,7 +11607,7 @@ msgstr "Verifiziert"
 msgid "Verkleinern"
 msgstr "Verkleinern"
 
-#: templates/leg_billing.html:176 templates/member_invoice_detail.html:207
+#: templates/leg_billing.html:176 templates/member_invoice_detail.html:208
 msgid "Verknüpft mit Korrektur:"
 msgstr "Verknüpft mit Korrektur:"
 
@@ -11400,7 +11620,7 @@ msgid "Versorgte Einwohner"
 msgstr "Versorgte Einwohner"
 
 #: templates/leg_billing_policy.html:53 templates/leg_billing_policy.html:109
-#: templates/leg_community_create.html:20
+#: templates/leg_community_create.html:20 templates/sandbox/billing.html:13
 msgid "Verteilmodell"
 msgstr "Verteilmodell"
 
@@ -11452,6 +11672,18 @@ msgstr "Vervollständigen Sie im Assistenten Gemeinschaftsvereinbarung und Teiln
 #: formation_wizard.py:68
 msgid "Verwaltung"
 msgstr "Verwaltung"
+
+#: templates/sandbox/billing.html:38
+msgid ""
+"Verwenden Sie dafür ein frisches Übungsdorf. Speichern Sie dieselbe Richtlinie und importieren "
+"Sie statt der gültigen Quelle die Datei mit ungleichen LEG-Summen: Bezug 1440 kWh, Produktion für"
+" die LEG 1152 kWh. Der gewöhnliche Abrechnungslauf muss sie ablehnen. Es gibt keinen Schalter zum"
+" Übergehen dieser Prüfung."
+msgstr ""
+"Verwenden Sie dafür ein frisches Übungsdorf. Speichern Sie dieselbe Richtlinie und importieren "
+"Sie statt der gültigen Quelle die Datei mit ungleichen LEG-Summen: Bezug 1440 kWh, Produktion für"
+" die LEG 1152 kWh. Der gewöhnliche Abrechnungslauf muss sie ablehnen. Es gibt keinen Schalter zum"
+" Übergehen dieser Prüfung."
 
 #: templates/sandbox/formation.html:51
 #, python-format
@@ -11869,7 +12101,7 @@ msgstr "Werkzeuge und Betrieb"
 msgid "Wert"
 msgstr "Wert"
 
-#: templates/member_invoice_detail.html:196
+#: templates/member_invoice_detail.html:197
 msgid "Wert zum internen Preis"
 msgstr "Wert zum internen Preis"
 
@@ -12226,7 +12458,7 @@ msgstr "Wählt das Betriebsmodell."
 msgid "X-API-Key"
 msgstr "X-API-Key"
 
-#: templates/member_invoice_detail.html:223
+#: templates/member_invoice_detail.html:224
 msgid "Zahlung"
 msgstr "Zahlung"
 
@@ -12251,7 +12483,8 @@ msgstr "Zahlungsfrist (Tage)"
 msgid "Zahlungsfrist in ganzen Tagen, zwischen %(minimum)s und %(maximum)s."
 msgstr "Zahlungsfrist in ganzen Tagen, zwischen %(minimum)s und %(maximum)s."
 
-#: templates/documents/member_invoice.html:20 templates/member_invoice_detail.html:51
+#: templates/documents/member_invoice.html:20 templates/member_invoice_detail.html:52
+#: templates/sandbox/billing.html:13
 msgid "Zahlungsfrist:"
 msgstr "Zahlungsfrist:"
 
@@ -12471,6 +12704,10 @@ msgstr "Zurückgezogen"
 msgid "Zurücksetzen"
 msgstr "Zurücksetzen"
 
+#: templates/sandbox/billing.html:13
+msgid "Zustellart"
+msgstr "Zustellart"
+
 #: templates/leg_billing.html:113
 msgid "Zustellen"
 msgstr "Zustellen"
@@ -12657,7 +12894,7 @@ msgstr "k. A."
 msgid "kW"
 msgstr "kW"
 
-#: templates/member_invoice_detail.html:182
+#: templates/member_invoice_detail.html:183
 msgid "kWh ("
 msgstr "kWh ("
 
@@ -12987,7 +13224,7 @@ msgstr "· %(format_b_population_int_replace)s Einwohner"
 msgid "· Akteur:"
 msgstr "· Akteur:"
 
-#: templates/leg_billing.html:174 templates/member_invoice_detail.html:204
+#: templates/leg_billing.html:174 templates/member_invoice_detail.html:205
 msgid "· Antwort bis"
 msgstr "· Antwort bis"
 
@@ -13056,7 +13293,7 @@ msgstr "» weiterhin aktuell ist."
 msgid "Ändern"
 msgstr "Ändern"
 
-#: sandbox_seed.py:44 sandbox_worker.py:84
+#: sandbox_seed.py:44 sandbox_worker.py:87
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 
