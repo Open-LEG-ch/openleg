@@ -231,3 +231,26 @@ session keys, private mail storage, explicit mode, Host and CSRF checks, the
 network filter and database role/connection restrictions. Each change made its
 regression fail. Restoring the guards returned the focused suite to green.
 The implementation PR records the results; this is not a suite-wide mutation score.
+
+## Fictional billing
+
+Choose Sam and open `/sandbox/billing`. Import the complete September metering
+fixture, then save the fully specified policy through the normal policy form.
+The guide records independent expectations alongside actual source quantities
+and saved draft positions. Sam runs the ordinary billing runner; Robin approves
+through the normal guarded workspace. Repeated runs and approvals reuse the
+stored period and invoices.
+
+Before approval, withdrawing a source invalidates its draft. Importing the
+correction and running again creates a new draft while preserving the invalid
+one. The guide includes an unequal-total source and an unsupported battery
+example to exercise normal refusal. There is no demo approval override.
+
+Deliver issued invoices through the normal delivery command. Invoice mail stays
+in this workspace and is visible only to its participant, including after a
+persona switch. Other captured registration/access messages keep their existing
+workspace scope. Members use the ordinary invoice pages and real PDF renderer.
+HTML, PDF and JSON exports carry simulation labels. There is no payable QR or
+bank destination in the fictional invoice. The ordinary cancellation command
+retains invoice snapshots and lifecycle history; later tariffs do not rewrite
+issued prices or quantities.

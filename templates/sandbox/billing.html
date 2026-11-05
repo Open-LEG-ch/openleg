@@ -1,0 +1,43 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _('Abrechnung ausprobieren') }} · OpenLEG</title>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ _('Abrechnung ausprobieren') }}</h1>
+  <p class="mt-4">{{ _('SIMULATION SONNWIL: September 2026, ohne Akku. Alle Preise, Messwerte und Rechnungen sind erfunden. Es ist nichts zu bezahlen.') }}</p>
+  {% if error %}<div role="alert" class="mt-6 rounded-lg border border-accent p-4"><p>{{ _(diagnostic) }}</p><p class="mt-2 text-sm">{{ error }}</p></div>{% endif %}
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('1. Quelle und Richtlinie prüfen') }}</h2>
+    <p class="mt-3">{{ _('Importieren Sie als Sam zuerst den vollständigen September. Speichern Sie danach die gewöhnliche Richtlinie: gültig ab 01.09.2026, intern 12 Rp./kWh, Netz 8 Rp./kWh, Abrechnungsentgelt 0, gleiche Netzebene, proportional, keine Mehrwertsteuer (Satzfeld leer lassen), 30 Tage, Präfix SIMULATION, Zustellung per E-Mail.') }}</p>
+    <p class="mt-3">{{ _('Unabhängige Erwartungen für die Originalquelle: Verbrauch 2880 kWh, Produktion und LEG-Bezug je 1440 kWh, Netzbezug 1440 kWh. Jeder der vier Haushalte bezieht 360 kWh aus der LEG und bezahlt dafür CHF 43.20. Noah erhält für 1440 kWh CHF 172.80 gutgeschrieben; sein Rechnungsbetrag ist CHF -129.60. Die Summe der vier Rechnungen ist CHF 0.00. Diese LEG-Rechnung ersetzt keine Netzrechnung.') }}</p>
+    <div class="mt-4 flex flex-wrap gap-4"><a href="/sandbox/metering" class="font-semibold underline">{{ _('Messdaten ausprobieren') }}</a><a href="/leg/community/{{ community_id }}/billing-policy" class="font-semibold underline">{{ _('Richtlinie bearbeiten') }}</a></div>
+    {% if policy %}<dl class="mt-4 grid grid-cols-2 gap-2 break-words"><dt>{{ _('Interner Preis:') }}</dt><dd>{{ policy.internal_price_chf_per_kwh }} CHF/kWh</dd><dt>{{ _('Netzentgelt:') }}</dt><dd>{{ policy.grid_fee_chf_per_kwh }} CHF/kWh</dd><dt>{{ _('Verteilmodell') }}</dt><dd>{{ policy.distribution_model }}</dd><dt>{{ _('Mehrwertsteuer') }}</dt><dd>{{ policy.vat_mode }} · {{ policy.vat_rate_pct }}%</dd><dt>{{ _('Zahlungsfrist:') }}</dt><dd>{{ policy.payment_days }}</dd><dt>{{ _('Zustellart') }}</dt><dd>{{ policy.delivery_method }} · {{ policy.invoice_prefix }}</dd></dl>{% else %}<p class="mt-4 font-semibold">{{ _('Noch keine vollständige September-Richtlinie.') }}</p>{% endif %}
+    {% if source %}<p class="mt-4">{{ _('Aktuelle angenommene Quelle') }}: {{ source.id }}</p><p class="mt-2 break-all text-sm">{{ source.fingerprint }}</p>{% else %}<p class="mt-4 font-semibold">{{ _('Keine aktuelle angenommene Septemberquelle.') }}</p>{% endif %}
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('2. Entwurf vorbereiten und freigeben') }}</h2>
+    {% if source %}<dl class="mt-4 grid grid-cols-2 gap-2"><dt>{{ _('Verbrauch (kWh)') }}</dt><dd>{{ quantities.consumption.total_kwh }}</dd><dt>{{ _('Produktion (kWh)') }}</dt><dd>{{ quantities.production.total_kwh }}</dd><dt>{{ _('LEG-Bezug (kWh)') }}</dt><dd>{{ quantities.consumption.community_kwh }}</dd><dt>{{ _('Netzbezug (kWh)') }}</dt><dd>{{ quantities.consumption.grid_kwh }}</dd></dl>{% endif %}
+    <p class="mt-3">{{ _('Bereiten Sie als Sam den Entwurf vor. Wechseln Sie anschliessend zu Robin und prüfen Sie die gewöhnliche Freigabe. Eine Wiederholung erstellt keine zweite Periode und keine zweiten Rechnungen. Bei geänderten Eingaben bleibt der ursprüngliche Stand erhalten.') }}</p>
+    <p class="mt-3">{{ _('Für eine Korrektur vor der Freigabe ziehen Sie die Originalquelle in den Messdaten zurück und importieren Sie die Korrektur. Der alte Entwurf bleibt ungültig und kann nicht freigegeben werden. Ein neuer Lauf erstellt einen neuen Entwurf: je Haushalt 432 kWh LEG-Bezug und CHF 51.84 Belastung; Noah erhält CHF 207.36 Gutschrift und bezahlt netto CHF -155.52. Bereits ausgestellte Rechnungen werden durch eine Ersatzquelle nicht geändert.') }}</p>
+    <form method="post" action="/sandbox/billing/prepare" class="mt-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="flex gap-2"><input type="checkbox" name="confirm" value="yes" required><span>{{ _('Ich habe die Quelle und die gespeicherte Richtlinie geprüft und starte den gewöhnlichen Abrechnungslauf.') }}</span></label>
+      <button class="mt-4 rounded-lg bg-brand px-4 py-2 font-semibold text-white">{{ _('September-Entwurf vorbereiten') }}</button>
+    </form>
+    {% if period %}<p class="mt-4">{{ _('Gespeicherte Periode') }}: {{ period.id }} · {{ period.status }}</p><p class="mt-2 break-all text-sm">{{ period.input_fingerprint }}</p>
+    <h3 class="mt-4 font-semibold">{{ _('Gespeicherte Positionen vor Freigabe') }}</h3>
+    <div class="mt-3 space-y-3">{% for item in period.line_items %}<dl class="rounded-lg border border-line p-3 break-words"><dt>{{ item.participant_id }} · {{ item.item_type }}</dt><dd>{{ item.quantity_kwh }} kWh · {{ item.unit_price_chf_per_kwh }} CHF/kWh · {{ item.amount_chf }} CHF</dd></dl>{% endfor %}</div>{% endif %}
+    <a href="/leg/community/{{ community_id }}/billing" class="mt-4 inline-block font-semibold underline">{{ _('Freigabe und Rechnungen öffnen') }}</a>
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('3. Zustellen und als Mitglied prüfen') }}</h2>
+    <p class="mt-3">{{ _('Stellen Sie die freigegebenen Rechnungen in der Abrechnungsübersicht zu. Wechseln Sie zu Lea oder Noah und öffnen Sie deren Postfach und Rechnung als PDF. Nur das berechtigte Mitglied sieht seine Rechnungsnachricht und Rechnung. Probieren Sie als Robin auch eine Stornierung mit Begründung. Die ausgestellten Zahlen und die Historie bleiben erhalten, auch wenn Sie später einen anderen Tarif speichern.') }}</p>
+    <div class="mt-4 flex flex-wrap gap-4"><a href="/sandbox/accounts" class="font-semibold underline">{{ _('Konto wechseln') }}</a><a href="/sandbox/inbox" class="font-semibold underline">{{ _('Postfach') }}</a><a href="/dashboard/invoices" class="font-semibold underline">{{ _('Meine Rechnungen') }}</a></div>
+  </section>
+  <details class="mt-8 rounded-lg border border-line p-6">
+    <summary class="cursor-pointer font-semibold">{{ _('Abgelehnte Abrechnungen ausprobieren') }}</summary>
+    <p class="mt-3">{{ _('Verwenden Sie dafür ein frisches Übungsdorf. Speichern Sie dieselbe Richtlinie und importieren Sie statt der gültigen Quelle die Datei mit ungleichen LEG-Summen: Bezug 1440 kWh, Produktion für die LEG 1152 kWh. Der gewöhnliche Abrechnungslauf muss sie ablehnen. Es gibt keinen Schalter zum Übergehen dieser Prüfung.') }}</p>
+    <a href="/sandbox/billing/fixtures/unequal.xml.gz" class="mt-3 inline-block font-semibold underline">{{ _('Ungleiche Summen herunterladen') }}</a>
+    <p class="mt-3">{{ _('Auch ein Akku ohne vollständige passende Messreihen ergibt keine freigegebene Rechnung. Erfassen Sie beispielsweise im gewöhnlichen LEG-Dashboard den Speicher sonnwil-unmapped-battery mit 20 kWh, CHF 100 Jahreskosten und je 25% Kostenanteil für die vier bestätigten Mitglieder. Der Abrechnungslauf bleibt abgelehnt. Setzen Sie danach das Übungsdorf zurück.') }}</p>
+  </details>
+</div>
+{% endblock %}

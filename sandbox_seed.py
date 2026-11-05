@@ -168,6 +168,7 @@ FIXTURE_MANIFEST = {
         "metering-intake",
         "metering-correction-withdrawal",
         "scheduled-metering-retry",
+        "billing-immutable-invoices",
         "municipality-demand",
         "display-language",
         "utility-preferences",
