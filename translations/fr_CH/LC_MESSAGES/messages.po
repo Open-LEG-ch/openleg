@@ -429,6 +429,10 @@ msgstr "1. Enregistrer un appareil fictif en tant que Lea"
 msgid "1. Als Lea eine Frage stellen"
 msgstr "1. Poser une question en tant que Lea"
 
+#: templates/sandbox/operator.html:8
+msgid "1. Einen API-Schlüssel ausstellen"
+msgstr "1. Émettre une clé API"
+
 #: templates/sandbox/billing.html:9
 msgid "1. Quelle und Richtlinie prüfen"
 msgstr "1. Vérifier la source et la politique"
@@ -468,6 +472,10 @@ msgstr "2. Vérifier la fraîcheur, les défauts et les clés"
 #: templates/sandbox/questions.html:12
 msgid "2. Als Sam bestätigen und beantworten"
 msgstr "2. Accuser réception et répondre en tant que Sam"
+
+#: templates/sandbox/operator.html:22
+msgid "2. Anfragen bearbeiten und ausführen"
+msgstr "2. Modifier et exécuter des requêtes"
 
 #: templates/sandbox/billing.html:17
 msgid "2. Entwurf vorbereiten und freigeben"
@@ -516,6 +524,10 @@ msgstr "3. Lancer une CEL"
 #: templates/documents/community_agreement.html:24
 msgid "3. Rechtsgrundlage"
 msgstr "3. Base légale"
+
+#: templates/sandbox/operator.html:29
+msgid "3. Signierte Zustellung und Wiederholung prüfen"
+msgstr "3. Vérifier la livraison signée et sa reprise"
 
 #: templates/sandbox/billing.html:32
 msgid "3. Zustellen und als Mitglied prüfen"
@@ -618,15 +630,27 @@ msgstr "Documentation de l’API"
 msgid "API-Dokumentation öffnen"
 msgstr "Ouvrir la documentation de l’API"
 
+#: templates/sandbox/operator.html:14
+msgid "API-Schlüssel ausstellen"
+msgstr "Émettre une clé API"
+
+#: templates/sandbox/operator.html:18
+msgid "API-Schlüssel erneuern"
+msgstr "Renouveler la clé API"
+
 #: templates/utility/dashboard.html:82 templates/utility/dashboard.html:106
 msgid "API-Schlüssel erstellen"
 msgstr "Créer une clé API"
+
+#: templates/sandbox/operator.html:16
+msgid "API-Schlüssel für diese Seite"
+msgstr "Clé API pour cette page"
 
 #: utility_portal.py:297
 msgid "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 msgstr "Clé API générée. Conservez-la en lieu sûr, elle ne s’affiche qu’une seule fois."
 
-#: templates/utility/dashboard.html:86
+#: templates/sandbox/operator.html:18 templates/utility/dashboard.html:86
 msgid "API-Schlüssel widerrufen"
 msgstr "Révoquer la clé API"
 
@@ -1113,7 +1137,7 @@ msgstr "À :"
 msgid "Anderes"
 msgstr "Autre"
 
-#: templates/api_docs.html:233
+#: templates/api_docs.html:233 templates/sandbox/operator.html:25
 msgid "Anfrage ausführen"
 msgstr "Exécuter la requête"
 
@@ -1662,7 +1686,7 @@ msgstr "Copier la commande"
 msgid "Befehl kopiert."
 msgstr "Commande copiée."
 
-#: templates/sandbox/home.html:57
+#: templates/sandbox/home.html:62
 msgid ""
 "Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
@@ -1673,7 +1697,7 @@ msgstr ""
 "gestionnaire de réseau. Activez la CEL uniquement avec un justificatif de démarrage fictif "
 "distinct."
 
-#: templates/sandbox/home.html:49
+#: templates/sandbox/home.html:54
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
 "sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
@@ -1718,6 +1742,18 @@ msgstr "Adhésion"
 #: templates/sandbox/formation.html:76
 msgid "Beitritt melden oder erneut abrufen"
 msgstr "Annoncer l'adhésion ou retrouver son annonce"
+
+#: templates/sandbox/operator.html:9
+msgid ""
+"Belassen Sie die drei gewählten Fähigkeiten. Schlüssel und Signiergeheimnis erscheinen nur bei "
+"der Ausstellung oder Erneuerung. Diese Seite speichert sie nicht im Browser-Speicher. Nach einem "
+"Seitenwechsel können Sie den kopierten Schlüssel einfügen oder einen neuen ausstellen. Eine "
+"fremde Callback-Adresse wird abgelehnt."
+msgstr ""
+"Conservez les trois capacités sélectionnées. La clé et le secret de signature apparaissent "
+"uniquement à l’émission ou au renouvellement. Cette page ne les conserve pas dans le stockage du "
+"navigateur. Après une navigation, collez la clé copiée ou émettez-en une nouvelle. Toute autre "
+"adresse de rappel est refusée."
 
 #: sandbox_payments.py:28
 msgid "Belastung statt Gutschrift"
@@ -3556,6 +3592,19 @@ msgstr "Les conditions de paiement de la règle de facturation sont invalides."
 msgid "Die Zustellmethode der Richtlinie ist ungültig."
 msgstr "La méthode de livraison de la règle de facturation n’est pas valide."
 
+#: templates/sandbox/operator.html:30
+msgid ""
+"Die angenommene Mitgliedschaftsanfrage erzeugt ein echtes Outbox-Ereignis. Simulieren Sie zuerst "
+"eine fehlgeschlagene Zustellung. Der lokale Empfänger prüft die Signatur, antwortet aber mit 503."
+" Setzen Sie die fehlgeschlagene Zustellung über den gewöhnlichen Wiederholungsbefehl erneut an "
+"und stellen Sie danach erfolgreich zu. Pro Klick wird höchstens eine Zustellung bearbeitet. "
+"Historische Ereignisse werden nicht neu erzeugt."
+msgstr ""
+"La demande d’adhésion acceptée crée un véritable événement dans la file d’envoi. Simulez d’abord "
+"un échec de livraison. Le récepteur local vérifie la signature, mais répond avec 503. Réarmez la "
+"livraison échouée avec la commande habituelle de reprise, puis livrez-la avec succès. Chaque clic"
+" traite au maximum une livraison. Les événements historiques ne sont pas recréés."
+
 #: templates/leg_gruenden.html:187
 msgid "Die eingereichte Anmeldung und die Korrespondenz mit dem Netzbetreiber."
 msgstr "L'enregistrement soumis et la correspondance avec l'opérateur de réseau."
@@ -3586,7 +3635,7 @@ msgstr ""
 "La langue des e-mails et l'état de la clé enregistrés sont conservés lorsque vous changez de "
 "compte."
 
-#: sandbox_seed.py:45 sandbox_worker.py:100
+#: sandbox_seed.py:45 sandbox_worker.py:103
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Les informations enregistrées apparaissent après le rechargement."
 
@@ -4328,6 +4377,10 @@ msgstr ""
 msgid "Eine Zahlungsreferenz ist erforderlich."
 msgstr "Une référence de paiement est requise."
 
+#: templates/sandbox/operator.html:32
+msgid "Eine Zustellung erfolgreich ausführen"
+msgstr "Effectuer une livraison réussie"
+
 #: templates/leg_gruenden.html:148
 msgid "Eine abgestimmte Teilnehmenden- und Anlagenliste."
 msgstr "Une liste coordonnée des participants et des installations."
@@ -4425,6 +4478,10 @@ msgstr "Initiation à nouveau possible"
 #: templates/utility/register.html:111
 msgid "Einloggen"
 msgstr "Se connecter"
+
+#: templates/sandbox/operator.html:17
+msgid "Einmaliges Signiergeheimnis"
+msgstr "Secret de signature affiché une seule fois"
 
 #: templates/gemeinde/profil.html:87 templates/gemeinde/rangliste.html:87
 msgid "Einordnung"
@@ -4543,6 +4600,10 @@ msgstr "Tarifs ElCom"
 msgid "Empfang bestätigt"
 msgstr "Réception confirmée"
 
+#: templates/sandbox/operator.html:34
+msgid "Empfangene Signatur prüfen"
+msgstr "Vérifier la signature reçue"
+
 #: templates/gemeinde/profil.html:75
 msgid "Energie"
 msgstr "Énergie"
@@ -4582,7 +4643,7 @@ msgstr ""
 "Profil énergétique et potentiel CEL de %(name)s : tarifs électriques, exploitation du potentiel "
 "solaire et score de transition énergétique."
 
-#: sandbox_seed.py:27 sandbox_worker.py:94
+#: sandbox_seed.py:27 sandbox_worker.py:97
 msgid "Energieprofil ändern"
 msgstr "Modifier le profil énergétique"
 
@@ -4695,7 +4756,7 @@ msgstr "Résultat de l'accès à distance"
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Complétez votre consommation électrique"
 
-#: templates/sandbox/home.html:50
+#: templates/sandbox/home.html:55
 msgid ""
 "Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
@@ -4765,6 +4826,14 @@ msgstr "Créer la première CEL"
 #: templates/utility/dashboard.html:114
 msgid "Erste LEG-Gründung starten"
 msgstr "Créer la première CEL"
+
+#: templates/sandbox/home.html:48
+msgid ""
+"Erstellen Sie als Robin einen beschränkten API-Schlüssel, bearbeiten Sie echte Anfragen und "
+"prüfen Sie eine signierte Zustellung mit fehlgeschlagenem und erfolgreichem Versuch."
+msgstr ""
+"En tant que Robin, créez une clé API limitée, modifiez de vraies requêtes et vérifiez une "
+"livraison signée après un échec puis une réussite."
 
 #: formation_wizard.py:358
 msgid "Erstellen Sie die rechtlichen Dokumente."
@@ -4891,6 +4960,10 @@ msgstr "Devise erronée"
 msgid "Falscher Betrag"
 msgstr "Montant erroné"
 
+#: templates/sandbox/operator.html:24
+msgid "Fehlende Fähigkeit prüfen"
+msgstr "Tester une capacité manquante"
+
 #: sandbox_metering.py:65
 msgid "Fehlende Viertelstunde"
 msgstr "Quart d'heure manquant"
@@ -4922,6 +4995,10 @@ msgstr "Erreur:"
 #: templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 msgid "Fehlgeschlagen"
 msgstr "Échoué"
+
+#: templates/sandbox/operator.html:33
+msgid "Fehlgeschlagene Zustellung erneut ansetzen"
+msgstr "Réarmer la livraison échouée"
 
 #: templates/leg_verzeichnis/liste.html:85
 msgid "Fehlt Ihre LEG?"
@@ -5020,7 +5097,7 @@ msgstr "Progression :"
 msgid "Frage senden"
 msgstr "Envoyer une question"
 
-#: templates/sandbox/home.html:51
+#: templates/sandbox/home.html:56
 msgid ""
 "Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
 "welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
@@ -5113,6 +5190,10 @@ msgstr ""
 msgid "Freischalten"
 msgstr "Publier"
 
+#: templates/sandbox/operator.html:24
+msgid "Fremde LEG prüfen"
+msgstr "Tester une autre CEL"
+
 #: templates/index.html:214
 msgid "Frist für den Netzbetreiber, das Messsystem zu installieren."
 msgstr "Délai dont dispose le gestionnaire de réseau pour installer le système de mesure."
@@ -5124,6 +5205,10 @@ msgstr "Confirmations précédentes et détails de l'appareil"
 #: i18n.py:78
 msgid "Funktion nicht verfügbar"
 msgstr "Fonction non disponible"
+
+#: templates/sandbox/operator.html:12
+msgid "Fähigkeiten"
+msgstr "Capacités"
 
 #: templates/member_invoices.html:24
 msgid "Fällig am"
@@ -5809,6 +5894,10 @@ msgstr "Mesures enregistrées par point de mesure"
 msgid "Gespeicherte Messwerte: %(count)s."
 msgstr "Mesures enregistrées : %(count)s."
 
+#: templates/sandbox/operator.html:24
+msgid "Gespeicherte Mutationen lesen"
+msgstr "Lire les mutations enregistrées"
+
 #: templates/sandbox/billing.html:26
 msgid "Gespeicherte Periode"
 msgstr "Période enregistrée"
@@ -5982,7 +6071,7 @@ msgstr "Création"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Les étapes de création"
 
-#: templates/sandbox/home.html:58
+#: templates/sandbox/home.html:63
 msgid "Gründung ausprobieren"
 msgstr "Essayer la création d'une CEL"
 
@@ -6026,6 +6115,10 @@ msgstr "Afficher l'assistant de démarrage et les modèles"
 #: templates/leg_gruenden.html:62
 msgid "Gründungsassistent öffnen"
 msgstr "Ouvrir l’assistant de création"
+
+#: templates/sandbox/operator.html:24
+msgid "Gründungsstand lesen"
+msgstr "Lire l’état de constitution"
 
 #: utility_portal.py:392
 #, python-format
@@ -6103,7 +6196,7 @@ msgstr "Exclusion de responsabilité"
 msgid "Hallo,"
 msgstr "Bonjour,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:89 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:92 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40 templates/sandbox/telemetry.html:25
 msgid "Haushalt"
@@ -6111,7 +6204,7 @@ msgid_plural "Haushalte"
 msgstr[0] "ménage"
 msgstr[1] "ménages"
 
-#: templates/sandbox/home.html:48 templates/sandbox/home.html:53 templates/sandbox/onboarding.html:2
+#: templates/sandbox/home.html:53 templates/sandbox/home.html:58 templates/sandbox/onboarding.html:2
 #: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
 msgid "Haushalt anmelden"
 msgstr "Inscrire un ménage"
@@ -6363,7 +6456,7 @@ msgstr "Votre village d'essai"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Votre gestionnaire de réseau fictif est actif et n'a pas encore de clé API."
 
-#: sandbox_worker.py:95
+#: sandbox_worker.py:98
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Votre nouveau ménage est confirmé."
 
@@ -6537,7 +6630,7 @@ msgstr "Vos habitudes de consommation, en journée ou en soirée"
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr "Votre consommation annuelle approximative en kWh (indiquée sur la facture d’électricité)"
 
-#: templates/sandbox/home.html:52
+#: templates/sandbox/home.html:57
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
 "bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
@@ -6712,6 +6805,10 @@ msgstr ""
 msgid "Installierte PV-Leistung"
 msgstr "Puissance photovoltaïque installée"
 
+#: templates/sandbox/operator.html:18
+msgid "Integrationskonto"
+msgstr "Compte d’intégration"
+
 #: templates/gemeinde/dashboard.html:65
 msgid "Interesse an einer LEG"
 msgstr "Intérêt pour une CEL"
@@ -6801,6 +6898,10 @@ msgstr "OpenLEG est-il lié à un gestionnaire de réseau particulier ?"
 #: templates/leg_kalkulator.html:292
 msgid "Ist die Berechnung genau?"
 msgstr "Le calcul est-il précis ?"
+
+#: templates/sandbox/operator.html:25
+msgid "JSON-Inhalt"
+msgstr "Contenu JSON"
 
 #: templates/dashboard.html:167 templates/index.html:439 templates/index.html:461
 msgid "Ja"
@@ -7337,7 +7438,7 @@ msgid "Konto nicht verfügbar"
 msgstr "Compte indisponible"
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/billing.html:34 templates/sandbox/home.html:46 templates/sandbox/payments.html:61
+#: templates/sandbox/billing.html:34 templates/sandbox/home.html:51 templates/sandbox/payments.html:61
 #: templates/sandbox/questions.html:11 templates/sandbox/telemetry.html:20
 msgid "Konto wechseln"
 msgstr "Changer de compte"
@@ -7358,6 +7459,10 @@ msgstr "Informations du compte"
 #: templates/gemeinde/dashboard.html:182
 msgid "Kopieren"
 msgstr "Copier"
+
+#: templates/sandbox/operator.html:4
+msgid "Kopieren Sie zuerst den aktuellen Schlüssel und erneuern Sie ihn."
+msgstr "Copiez d’abord la clé actuelle, puis renouvelez-la."
 
 #: templates/dashboard.html:291 templates/gemeinde/dashboard.html:180
 msgid "Kopiert"
@@ -7536,7 +7641,7 @@ msgid "LEG gesetzlich möglich"
 msgstr "Les CEL sont autorisées par la loi"
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
-#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:56
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:61
 msgid "LEG gründen"
 msgstr "Créer une CEL"
 
@@ -7851,6 +7956,22 @@ msgstr "Puissance de votre système en kWc"
 msgid "Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst."
 msgstr "Consultez le code, utilisez l’API ou hébergez OpenLEG vous-même."
 
+#: templates/sandbox/operator.html:23
+msgid ""
+"Lesen Sie zuerst den Gründungsstand. Die Mitgliedschaftsanfrage bereitet eine manuelle VNB-"
+"Mutation vor; sie ändert die tatsächliche Teilnahme noch nicht. Die mutation_id ist der "
+"gewöhnliche Wiederholungsschlüssel. Wiederholen Sie denselben Inhalt und ändern Sie danach bei "
+"gleicher ID access_roles zu documents: Die Änderung wird mit 409 abgelehnt. Eine "
+"Gründungseinreichung ohne formation.mutate ergibt 403, eine fremde LEG ergibt 404. Nach dem "
+"Widerruf ergibt derselbe Schlüssel 401."
+msgstr ""
+"Lisez d’abord l’état de constitution. La demande d’adhésion prépare une mutation manuelle pour le"
+" GRD ; elle ne modifie pas encore la participation réelle. Le champ mutation_id est la clé "
+"habituelle de répétition. Renvoyez le même contenu, puis remplacez access_roles par documents "
+"avec la même ID : la modification est refusée avec 409. Un dépôt de constitution sans "
+"formation.mutate renvoie 403 et une autre CEL renvoie 404. Après révocation, la même clé renvoie "
+"401."
+
 #: templates/telemetry_dashboard.html:96
 msgid "Letzte Gerätemeldung: Störung"
 msgstr "Dernier état signalé par l’appareil : défaut"
@@ -7963,6 +8084,10 @@ msgstr "Distribué localement"
 #: templates/admin/abrechnungen.html:107
 msgid "Lokal zugeteilt"
 msgstr "Attribué localement"
+
+#: templates/sandbox/operator.html:13
+msgid "Lokale Callback-Adresse"
+msgstr "Adresse de rappel locale"
 
 #: formation_wizard.py:115
 msgid "Lokale Elektrizitätsgemeinschaft - Gemeinschaftsvereinbarung"
@@ -8314,6 +8439,10 @@ msgstr "Heure de mesure inconnue"
 msgid "Messzeiten der geeigneten Werte"
 msgstr "Instants des valeurs utilisables"
 
+#: templates/sandbox/operator.html:25
+msgid "Methode"
+msgstr "Méthode"
+
 #: i18n.py:69
 msgid "Methode nicht erlaubt"
 msgstr "Méthode non autorisée"
@@ -8417,6 +8546,10 @@ msgstr "Nombre de membres (estimation, facultatif)"
 #: templates/leg_dashboard.html:235
 msgid "Mitgliedschaft: LEG und VNB"
 msgstr "Adhésion : CEL et GRD"
+
+#: templates/sandbox/operator.html:24
+msgid "Mitgliedschaftsanfrage vorbereiten"
+msgstr "Préparer une demande d’adhésion"
 
 #: rangliste.py:32
 msgid "Mittel (< 1000)"
@@ -8588,7 +8721,7 @@ msgstr "Justificatif de l’installation ou des installations photovoltaïques"
 
 #: templates/admin/ops.html:120 templates/documents/community_agreement.html:18
 #: templates/documents/community_agreement.html:37 templates/documents/dso_registration.html:23
-#: templates/gemeinde/verzeichnis.html:51
+#: templates/gemeinde/verzeichnis.html:51 templates/sandbox/operator.html:11
 msgid "Name"
 msgstr "Nom"
 
@@ -8853,7 +8986,7 @@ msgstr "Créer une nouvelle clé"
 msgid "Neuenburg"
 msgstr "Neuchâtel"
 
-#: sandbox_worker.py:88
+#: sandbox_worker.py:91
 msgid "Neuer Haushalt"
 msgstr "Nouveau ménage"
 
@@ -9110,6 +9243,10 @@ msgstr "Seule l’administration peut démarrer la création."
 #: dashboard.py:976 dashboard.py:994
 msgid "Nur die Administration kann einladen."
 msgstr "Seule l'administration peut inviter."
+
+#: templates/sandbox/operator.html:4
+msgid "Nur die gezeigten Operator-Pfade innerhalb dieses Übungsdorfs sind zulässig."
+msgstr "Seuls les chemins opérateur proposés dans ce village d’essai sont autorisés."
 
 #: templates/utility/dashboard.html:154
 msgid "Nutzen Sie LEG-Daten in Ihren bestehenden Systemen."
@@ -9640,6 +9777,11 @@ msgstr "OpenLEG : confirmer la suppression"
 msgid "OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos."
 msgstr "Le logiciel d'OpenLEG pour la facturation, les documents et la gestion des adhésions est gratuit."
 
+#: templates/sandbox/home.html:47 templates/sandbox/home.html:49 templates/sandbox/operator.html:2
+#: templates/sandbox/operator.html:5
+msgid "Operator-API ausprobieren"
+msgstr "Essayer l’API opérateur"
+
 #: templates/admin/ops.html:12
 msgid "Ops Dashboard"
 msgstr "Tableau de bord des opérations"
@@ -9751,6 +9893,10 @@ msgstr "Périodes"
 #: templates/leg_dashboard.html:241
 msgid "Person"
 msgstr "personne"
+
+#: templates/sandbox/operator.html:25
+msgid "Pfad innerhalb dieses Übungsdorfs"
+msgstr "Chemin dans ce village d’essai"
 
 #: templates/documents/participant_contract.html:21
 msgid "Pflichten"
@@ -10611,6 +10757,16 @@ msgstr ""
 "courtier MQTT. Elle ne prouve aucune compatibilité matérielle. Les données de fonctionnement ne "
 "remplacent pas les mesures validées du GRD pour la facturation."
 
+#: templates/sandbox/operator.html:6
+msgid ""
+"SIMULATION SONNWIL: Erstellen Sie als Robin ein beschränktes Integrationskonto. Alle Anfragen "
+"bleiben in Ihrem Übungsdorf. Die Callback-Adresse bezeichnet nur den lokalen Empfänger; es wird "
+"keine HTTPS-Verbindung aufgebaut."
+msgstr ""
+"SIMULATION SONNWIL : en tant que Robin, créez un compte d’intégration limité. Toutes les requêtes"
+" restent dans votre village d’essai. L’adresse de rappel désigne uniquement le récepteur local ; "
+"aucune connexion HTTPS n’est établie."
+
 #: templates/sandbox/questions.html:6
 msgid ""
 "SIMULATION SONNWIL: Fragen, Antworten und Belege bleiben in diesem Übungsdorf. Die ausgestellte "
@@ -10954,6 +11110,10 @@ msgstr "Vous êtes invité à rejoindre « %(community)s »."
 #, python-format
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 msgstr "Vous êtes désormais enregistré comme gestionnaire de « %(entry_name)s »."
+
+#: templates/sandbox/operator.html:34
+msgid "Signatur gültig"
+msgstr "Signature valide"
 
 #: templates/sandbox/metering.html:9
 msgid ""
@@ -12361,6 +12521,10 @@ msgstr "Clarifier la procédure"
 msgid "Vorher prüfen"
 msgstr "Vérifier d’abord"
 
+#: templates/sandbox/operator.html:19
+msgid "Vorherigen API-Schlüssel testen"
+msgstr "Tester l’ancienne clé API"
+
 #: templates/pricing.html:140
 msgid ""
 "Vorkonfigurierte Hardware bei Ihnen im Quartier oder ein Server in der Schweiz, nahe an Ihrer "
@@ -13277,6 +13441,10 @@ msgstr "Confirmer la livraison comme effectuée"
 msgid "Zustellung bestätigen"
 msgstr "Confirmer la livraison"
 
+#: templates/sandbox/operator.html:32
+msgid "Zustellung mit Fehler simulieren"
+msgstr "Simuler un échec de livraison"
+
 #: templates/gemeinde/rangliste.html:23
 msgid "Zwei Gemeinden vergleichen"
 msgstr "Comparer deux communes"
@@ -13849,7 +14017,7 @@ msgstr "» est toujours d'actualité."
 msgid "Ändern"
 msgstr "Modifier"
 
-#: sandbox_seed.py:44 sandbox_worker.py:97
+#: sandbox_seed.py:44 sandbox_worker.py:100
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Modifiez la consommation ou la puissance photovoltaïque dans le profil énergétique."
 
