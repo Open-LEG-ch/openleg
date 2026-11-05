@@ -1,0 +1,64 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _('Bankzahlungen ausprobieren') }} · OpenLEG</title>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ _('Bankzahlungen ausprobieren') }}</h1>
+  <p class="mt-4">{{ _('SIMULATION SONNWIL: Diese erfundenen Kontoauszüge lösen keine Überweisung aus. Es gibt keine Verbindung zu einer Bank. Beträge und Referenzen beziehen sich ausschliesslich auf Rechnungen dieses Übungsdorfs.') }}</p>
+  {% if error %}<p role="alert" class="mt-6 rounded-lg border border-accent p-4">{{ _(error) }}</p>{% endif %}
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('1. Rechnungen ausstellen und zustellen') }}</h2>
+    <p class="mt-3">{{ _('Bereiten Sie zuerst die September-Abrechnung als Sam vor. Geben Sie die Rechnungen als Robin frei und stellen Sie mindestens zwei Rechnungen mit positivem Betrag zu. Bleiben Sie für den Zahlungsabgleich als Robin angemeldet. Eine ausgestellte, noch nicht zugestellte Rechnung ist nicht zahlungsberechtigt.') }}</p>
+    <div class="mt-4 flex flex-wrap gap-4"><a href="/sandbox/billing" class="font-semibold underline">{{ _('Abrechnung ausprobieren') }}</a><a href="/leg/community/{{ community_id }}/billing" class="font-semibold underline">{{ _('Freigabe und Rechnungen öffnen') }}</a></div>
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('2. Kontoauszüge herunterladen und importieren') }}</h2>
+    <p class="mt-3">{{ _('Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, Belastung und Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge bleiben unverbucht. Laden Sie danach die unbekannte Referenz mit passendem Betrag und bestätigen Sie die geprüfte Zuordnung unten. Verwenden Sie für die automatische Verbuchung eine andere zugestellte Rechnung und deren exakte CHF-Gutschrift. Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen.') }}</p>
+    {% if invoices %}
+    <form method="get" action="/sandbox/payments" class="mt-4">
+      <label for="payment-invoice" class="block font-semibold">{{ _('Rechnung für die Übungsdateien') }}</label>
+      <select id="payment-invoice" name="invoice" class="mt-2 w-full rounded-lg border p-2">{% for item in invoices %}<option value="{{ item.id }}"{% if invoice and item.id == invoice.id %} selected{% endif %}>{{ item.invoice_number }} · {{ item.participant_id }} · {{ item.gross_chf }} CHF</option>{% endfor %}</select>
+      <button type="submit" class="mt-3 rounded-lg bg-brand px-4 py-2 font-semibold text-white">{{ _('Dateien für diese Rechnung anzeigen') }}</button>
+    </form>
+    {% if invoice %}
+    <p class="mt-4">{{ _('Gewählte Rechnung') }}: {{ invoice.invoice_number }} · {{ invoice.gross_chf }} CHF</p>
+    <ul class="mt-4 space-y-3">{% for kind, label in labels.items() %}<li><span class="font-semibold">{{ _(label) }}</span><div class="mt-1 flex flex-wrap gap-4">{% for message in ('053','054') %}<a class="underline" href="/sandbox/payments/fixtures/{{ invoice.id }}/{{ kind }}/{{ message }}.xml">camt.{{ message }}</a>{% endfor %}</div></li>{% endfor %}</ul>
+    {% endif %}
+    {% else %}<p class="mt-4">{{ _('Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen aus.') }}</p>{% endif %}
+    <a href="/leg/community/{{ community_id }}/billing" class="mt-4 inline-block font-semibold underline">{{ _('Auszug in der Abrechnungsübersicht importieren') }}</a>
+    <form method="post" enctype="multipart/form-data" action="/leg/community/{{ community_id }}/billing/statements" class="mt-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="simulation-statement" class="block font-semibold">{{ _('Kontoauszug (camt.053 oder camt.054)') }}</label>
+      <input id="simulation-statement" type="file" name="statement" accept=".xml,application/xml,text/xml" required class="mt-2 block w-full rounded-lg border p-2">
+      <button type="submit" class="mt-3 rounded-lg bg-brand px-4 py-2 font-semibold text-white">{{ _('Kontoauszug importieren') }}</button>
+    </form>
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('3. Einträge prüfen und eine Zuordnung bestätigen') }}</h2>
+    <p class="mt-3">{{ _('Eine manuelle Auswahl hebt keine Regel auf. Nur CHF-Gutschriften mit exakt passendem Betrag für zugestellte Rechnungen können verbucht werden. Prüfen Sie unbekannte Referenzen; verlangen Sie bei falschem Betrag oder Währung einen korrigierten Auszug. Belastungen und Rückbuchungen sind keine Zahlungseingänge. Wiederholen Sie eine bereits bestätigte Zuordnung unverändert, um die Wiederholungssicherheit zu prüfen.') }}</p>
+    {% for entry in entries %}
+    <article class="mt-4 rounded-lg border border-line p-4 break-words">
+      <h3 class="font-semibold">{{ entry.payment_reference }} · {{ entry.amount }} {{ entry.currency }}</h3>
+      <p class="mt-2">{{ _(decisions.get(entry.match_decision, entry.match_decision)) }} · {{ entry.credit_debit_indicator }}</p>
+      <p class="mt-2 text-sm">{{ _('Quelle') }}: {{ entry.source_name }} · camt.{{ entry.message_type.split('.')[-1] }} · {{ entry.imported_at }}</p>
+      <p class="mt-2 break-all text-sm">{{ entry.fingerprint }}</p>
+      {% if entry.match_decision in ('unmatched','ambiguous','mismatch','matched') %}
+      <form method="post" action="/sandbox/payments/confirm/{{ entry.id }}" class="mt-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="match-{{ entry.id }}" class="block font-semibold">{{ _('Geprüfte Zielrechnung') }}</label>
+        <select id="match-{{ entry.id }}" name="invoice_id" required class="mt-2 w-full rounded-lg border p-2">{% for item in invoices %}<option value="{{ item.id }}"{% if item.id == entry.invoice_id %} selected{% endif %}>{{ item.invoice_number }} · {{ item.gross_chf }} CHF</option>{% endfor %}</select>
+        <label class="mt-3 flex gap-2"><input type="checkbox" name="confirm" value="yes" required><span>{{ _('Ich habe Betrag, Währung, Richtung, Referenz und Rechnungsstatus geprüft.') }}</span></label>
+        <button type="submit" class="mt-3 rounded-lg bg-brand px-4 py-2 font-semibold text-white">{{ _('Geprüfte Zuordnung bestätigen') }}</button>
+      </form>
+      {% endif %}
+    </article>
+    {% else %}<p class="mt-4">{{ _('Noch keine Kontoauszüge importiert.') }}</p>{% endfor %}
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Gespeicherte Zahlungsereignisse') }}</h2>
+    {% for event in events %}<p class="mt-3 break-all text-sm">{{ event.event_type }} · {{ event.event_id }} · {{ event.occurred_at }}</p>{% else %}<p class="mt-3">{{ _('Noch keine Zahlung verbucht.') }}</p>{% endfor %}
+    {% for event in audit if event.new_state == 'paid' %}<p class="mt-3 text-sm break-words">{{ _('Rechnung') }} {{ event.invoice_id }} · {{ _('Bezahlt') }} · {{ event.actor_id }} · {{ event.reference }} · {{ event.effective_date }}</p>{% endfor %}
+    <p class="mt-4">{{ _('Wechseln Sie danach zum betroffenen Mitglied und prüfen Sie den Status der eigenen Rechnung. Die ausgestellten Beträge bleiben unverändert.') }}</p>
+    <a href="/sandbox/accounts" class="mt-3 inline-block font-semibold underline">{{ _('Konto wechseln') }}</a>
+  </section>
+</div>
+{% endblock %}

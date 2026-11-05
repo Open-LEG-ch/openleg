@@ -258,3 +258,25 @@ HTML, PDF and JSON exports carry simulation labels. There is no payable QR or
 bank destination in the fictional invoice. The ordinary cancellation command
 retains invoice snapshots and lifecycle history; later tariffs do not rewrite
 issued prices or quantities.
+
+## Fictional bank reconciliation
+
+After issuing the September invoices, choose Robin and open `/sandbox/payments`.
+Deliver at least two positive invoices through the ordinary billing workspace.
+The guide provides deterministic camt.053 and camt.054 statements for a selected
+invoice: exact CHF credit, unknown reference, wrong amount/currency, debit and
+reversal. The statement account identifier is `SIMULATION-SONNWIL-NO-BANK`.
+
+The upload form uses the normal statement-import endpoint. For reviewed matches,
+the sandbox control requires a confirmed administrator and CSRF proof, then calls
+the same atomic command as the operator API. Its stable per-entry key keeps
+retries bound to the selected invoice. Selecting an invoice cannot waive amount,
+currency, credit/reversal or delivered-state eligibility. The ordinary invoice
+lifecycle and operator outbox record successful payments; the guide reads those
+scoped records without creating synthetic success events. An outbox receiver is
+not required, and no bank connection or transfer is initiated.
+
+Native regressions cover automatic and reviewed payments, statement replay,
+concurrent same-entry and competing-entry confirmations, changed retry targets,
+issued/cancelled invoices, CSRF, roles and existing foreign-community resources.
+A second visitor's village has independent statement and invoice identities.

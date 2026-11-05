@@ -239,6 +239,18 @@ def list_deliveries(community_id, limit=100):
         return [dict(row) for row in cur.fetchall()]
 
 
+def list_events(community_id, limit=100):
+    """Read scoped event identities even when no webhook receiver is configured."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT event_id,event_type,aggregate_id,occurred_at
+               FROM operator_events WHERE community_id=%s
+               ORDER BY occurred_at DESC,event_id LIMIT %s""",
+            (community_id, max(1, min(int(limit), 100))),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
 def retry_delivery(community_id, delivery_id):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(

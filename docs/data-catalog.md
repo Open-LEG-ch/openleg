@@ -578,7 +578,8 @@ it.
 - **Holds:** community-scoped hashed API tokens, explicit capabilities,
   endpoint usage, lifecycle-event payloads and delivery outcomes.
 - **Purpose:** private operator integration with bounded, observable webhook
-  delivery.
+  delivery. Scoped outbox reads expose event identities even when no webhook
+  receiver is configured.
 - **Owner:** the LEG administration that created the credential.
 - **Sensitivity:** credentials and private LEG workflow facts. API tokens are
   hashed and never returned after creation or rotation.
