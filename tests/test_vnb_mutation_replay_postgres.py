@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Replay immutable membership commands after separately confirming a join."""
 
+import json
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -346,6 +347,13 @@ def test_changed_roles_do_not_resnapshot_a_recorded_change_proposal(
         == 302
     )
     assert client.post(path, data=fields).status_code == 302
+    equivalent = {"access_roles": ["auditor"], "role": first["before_facts"]["role"]}
+    assert (
+        client.post(
+            path, data={**fields, "after_facts": json.dumps(equivalent)}
+        ).status_code
+        == 302
+    )
     assert (
         client.post(
             path, data={**fields, "after_facts": '{"access_roles":["documents"]}'}
@@ -426,3 +434,42 @@ def test_operator_replay_retains_the_actual_recorded_event_reference(
             (cid, first.json["event_id"]),
         )
         assert cur.fetchone()["count"] == 1
+
+
+@pytest.mark.parametrize(
+    "field,original,replacement", [("role", 1, True), ("access_roles", [1], [True])]
+)
+def test_replay_preserves_json_value_types(
+    founder, monkeypatch, field, original, replacement
+):
+    """Accepted JSON values must not alias through Python numeric equality."""
+    client, db = founder
+    with db.get_connection() as connection, connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE consents SET share_with_neighbors=TRUE WHERE building_id='founder'"
+        )
+    cid = db.create_community_record("Synthetic typed replay", "founder", "simple", "")
+    adapter = MutationAdapter(frozenset({vnb_exchange.PARTICIPANT_CHANGE}))
+    monkeypatch.setitem(vnb_exchange.ADAPTERS, "manual-handover", adapter)
+    _set_session(client, "founder")
+    fields = {
+        "csrf_token": "csrf-secret",
+        "mutation_id": "typed-replay",
+        "participant_id": "founder",
+        "mutation_type": "change",
+        "effective_date": "2026-12-01",
+        "source_agreement_id": "synthetic-types",
+        "after_facts": json.dumps({field: original}),
+    }
+    path = f"/leg/community/{cid}/vnb-mutations"
+    assert client.post(path, data=fields).status_code == 302
+    first = db.list_vnb_mutations(cid)
+    assert client.post(path, data=fields).status_code == 302
+    assert (
+        client.post(
+            path, data={**fields, "after_facts": json.dumps({field: replacement})}
+        ).status_code
+        == 409
+    )
+    assert db.list_vnb_mutations(cid) == first
+    assert adapter.calls == 1
