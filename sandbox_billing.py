@@ -50,6 +50,9 @@ DIAGNOSTICS = {
     "billing_provenance_missing": _N(
         "Den Messwerten fehlt ein nachvollziehbarer Importbeleg."
     ),
+    "participant_registration_changed": _N(
+        "Eine ursprüngliche Teilnehmerregistrierung fehlt oder wurde ersetzt. Klären Sie die Zuordnung vor einer neuen Abrechnung."
+    ),
     "billing_run_failed": _N(
         "Der gewöhnliche Abrechnungslauf hat diesen Entwurf abgelehnt. Prüfen Sie Richtlinie und Quelle."
     ),

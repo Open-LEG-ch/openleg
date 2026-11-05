@@ -19,6 +19,11 @@ import billing_policy
 import payment_reconciliation
 from store import invoice_query as invoice_query_store
 from store import operator_operations
+from store.invoice_identity import (
+    REGISTRATION_MATCH_SQL,
+    InvoiceRegistrationMismatch,
+    lock_original_registrations,
+)
 from store.operator_api import enqueue_event
 
 logger = logging.getLogger(__name__)
@@ -66,6 +71,15 @@ def save_billing_period(
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
+                lock_original_registrations(
+                    cur,
+                    summary.get("reconciliation", {}).get("participant_registrations"),
+                    (
+                        {item["participant_id"] for item in summary["line_items"]}
+                        if summary.get("line_items")
+                        else {item["id"] for item in summary.get("participants", [])}
+                    ),
+                )
                 status = "draft"
                 if summary.get("calculated_values_fingerprint"):
                     # A preparation may finish after its source was withdrawn.
@@ -472,6 +486,11 @@ def approve_billing_period(
                 (period_id,),
             )
             period["line_items"] = [dict(item) for item in cur.fetchall()]
+            lock_original_registrations(
+                cur,
+                period["reconciliation"].get("participant_registrations"),
+                {item["participant_id"] for item in period["line_items"]},
+            )
             snapshots = billing_approval.prepare_invoice_snapshots(
                 period, issue_date=issue_date, calculated_values=calculated_values
             )
@@ -523,6 +542,8 @@ def approve_billing_period(
                 (period_id,),
             )
             return _period_invoices(cur, period_id)
+    except InvoiceRegistrationMismatch as exc:
+        raise billing_approval.BillingApprovalError(str(exc)) from exc
     except billing_approval.BillingApprovalError:
         raise
     except BillingStoreError:
@@ -652,7 +673,7 @@ def get_invoices_for_participant(building_id: str) -> list[dict]:
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
-                """
+                f"""
                 SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
                        i.policy_snapshot, i.provenance_snapshot,
                        i.line_items_snapshot, i.net_chf, i.vat_rate_pct, i.vat_chf,
@@ -664,6 +685,7 @@ def get_invoices_for_participant(building_id: str) -> list[dict]:
                        original.invoice_number AS corrects_invoice_number,
                        replacement.invoice_number AS corrected_by_invoice_number
                 FROM invoices i
+                JOIN buildings b ON b.building_id=i.participant_id
                 LEFT JOIN invoice_corrections correction
                   ON correction.corrected_invoice_id = i.id
                 LEFT JOIN invoices original
@@ -673,6 +695,7 @@ def get_invoices_for_participant(building_id: str) -> list[dict]:
                 LEFT JOIN invoices replacement
                   ON replacement.id = reverse_correction.corrected_invoice_id
                 WHERE i.participant_id = %s AND i.status = 'issued'
+                  AND {REGISTRATION_MATCH_SQL}
                 ORDER BY i.issue_date DESC, i.id DESC
                 """,
                 (building_id,),
@@ -694,7 +717,7 @@ def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | Non
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
-                """
+                f"""
                 SELECT i.*,
                        COALESCE((
                            SELECT e.new_state FROM invoice_lifecycle_events e
@@ -703,6 +726,7 @@ def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | Non
                        original.invoice_number AS corrects_invoice_number,
                        replacement.invoice_number AS corrected_by_invoice_number
                 FROM invoices i
+                JOIN buildings b ON b.building_id=i.participant_id
                 LEFT JOIN invoice_corrections correction
                   ON correction.corrected_invoice_id = i.id
                 LEFT JOIN invoices original
@@ -712,6 +736,7 @@ def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | Non
                 LEFT JOIN invoices replacement
                   ON replacement.id = reverse_correction.corrected_invoice_id
                 WHERE i.id = %s AND i.participant_id = %s AND i.status = 'issued'
+                  AND {REGISTRATION_MATCH_SQL}
                 """,
                 (invoice_id, building_id),
             )
@@ -724,10 +749,11 @@ def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | Non
 
 def _locked_invoice(cur, invoice_id, community_id):
     cur.execute(
-        """
+        f"""
         SELECT i.*, b.email AS recipient_email, b.preferred_locale AS recipient_locale
         FROM invoices i
         LEFT JOIN buildings b ON b.building_id = i.participant_id
+          AND {REGISTRATION_MATCH_SQL}
         WHERE i.id = %s AND i.community_id = %s AND i.status = 'issued'
         FOR UPDATE OF i
         """,
@@ -822,6 +848,8 @@ def list_community_invoices(community_id: str) -> list[dict]:
                 """
                 SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
                        i.gross_chf, i.issue_date, i.due_date, i.policy_snapshot,
+                       i.provenance_snapshot->>'participant_registration_id'
+                           AS participant_registration_id,
                        COALESCE((
                            SELECT e.new_state FROM invoice_lifecycle_events e
                            WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1

@@ -21,6 +21,7 @@ POINT = "CH000000000000000000000000000001"
 MEASURED_AT = datetime(2026, 1, 5, 23, 0, tzinfo=UTC)
 
 METERING_SCHEMA = """
+    CREATE TABLE buildings (building_id VARCHAR(64) PRIMARY KEY, referral_code TEXT);
     CREATE TABLE metering_points (
         metering_point_id VARCHAR(64) PRIMARY KEY,
         vnb_community_id VARCHAR(64),

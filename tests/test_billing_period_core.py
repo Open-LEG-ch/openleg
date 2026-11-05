@@ -50,6 +50,12 @@ class _Cursor:
     def fetchone(self):
         return {"id": 42}
 
+    def fetchall(self):
+        return [
+            {"building_id": key, "referral_code": "registration-" + key}
+            for key in self.executed[-1][1][0]
+        ]
+
     def __enter__(self):
         return self
 
@@ -310,15 +316,20 @@ def test_saved_period_is_draft_with_price_snapshot_and_signed_items(monkeypatch)
         ],
     }
 
+    summary["reconciliation"] = {
+        "participant_registrations": {
+            key: "registration-" + key for key in ("consumer-a",)
+        }
+    }
     period_id = billing.save_billing_period("community-a", "start", "end", summary)
 
     assert period_id == 42
-    period_query, period_params = cursor.executed[0]
+    period_query, period_params = cursor.executed[1]
     assert "internal_price_chf_per_kwh" in period_query
     assert "grid_fee_chf_per_kwh" in period_query
     assert period_params[-1] == "draft"
     assert period_params[9:11] == (0.15, 0.10)
-    item_queries = cursor.executed[1:]
+    item_queries = cursor.executed[2:]
     assert len(item_queries) == 3
     assert all("item_type" in query for query, _ in item_queries)
     assert "network_discount_chf" in item_queries[0][0]
@@ -347,10 +358,13 @@ def test_legacy_summary_still_saves_without_price_snapshot(monkeypatch):
         ],
     }
 
+    summary["reconciliation"] = {
+        "participant_registrations": {"consumer-a": "registration-consumer-a"}
+    }
     assert billing.save_billing_period("community-a", "start", "end", summary) == 42
-    assert cursor.executed[0][1][9:11] == (None, None)
-    assert len(cursor.executed) == 2
-    assert "consumption_kwh" in cursor.executed[1][0]
+    assert cursor.executed[1][1][9:11] == (None, None)
+    assert len(cursor.executed) == 3
+    assert "consumption_kwh" in cursor.executed[2][0]
 
 
 def test_schema_keeps_prices_and_signed_line_items_with_the_period():

@@ -638,7 +638,8 @@ def test_equivalent_billing_inputs_keep_a_stable_fingerprint(monkeypatch):
 def test_public_billing_fingerprint_matches_the_contract_vector(monkeypatch):
     """The vector moves only when the billed inputs themselves move.
 
-    It last moved when billing switched to the VNB's own split: the summary
+    Registration identity now also enters reconciliation, binding a draft to
+    its original participants. It previously moved with the VNB's own split: the summary
     now carries the engine's proportional result as an audit block and the
     reconciliation the delivered imbalance, so the same readings fingerprint
     differently than they did before.
@@ -646,8 +647,20 @@ def test_public_billing_fingerprint_matches_the_contract_vector(monkeypatch):
     fingerprint = _fingerprint_through_runner(monkeypatch, _fingerprint_case())
 
     assert fingerprint == (
-        "f219d7a1ad8f20c86e65db1acdc341f5073facf1a178bc99ffc0a7dae2c53e9b"
+        "17106ea1da342b9ebe486ba35a1edf767be7c3a1a8483daf6542896b21823e86"
     )
+
+
+def test_registration_identity_changes_the_public_run_fingerprint(monkeypatch):
+    case = _fingerprint_case()
+    case["frames"].provenance["participant_registrations"] = {
+        "building-a": "original-registration"
+    }
+    original = _fingerprint_through_runner(monkeypatch, case)
+    case["frames"].provenance["participant_registrations"]["building-a"] = (
+        "replacement-registration"
+    )
+    assert _fingerprint_through_runner(monkeypatch, case) != original
 
 
 def test_calculated_values_evidence_changes_the_public_run_fingerprint(monkeypatch):

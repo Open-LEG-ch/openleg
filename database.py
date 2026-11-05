@@ -285,6 +285,7 @@ from store.interest import (  # noqa: F401
     save_coverage_request,
     verify_coverage_request,
 )
+from store.invoice_identity import InvoiceRegistrationMismatch  # noqa: F401
 from store.invoice_query import (  # noqa: F401
     add_invoice_query_message,
     list_invoice_queries,

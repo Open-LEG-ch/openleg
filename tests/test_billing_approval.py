@@ -47,6 +47,10 @@ def _draft(**overrides):
         "input_fingerprint": "a" * 64,
         "source_document_ids": ["swisseldex-bkw-2026-01"],
         "reconciliation": {
+            "participant_registrations": {
+                key: "registration-" + key
+                for key in ("building-a", "building-b", "building-c")
+            },
             "vnb_allocated_kwh": 13.366670,
             "engine_allocated_kwh": 13.366670,
             "difference_kwh": 0,
@@ -407,6 +411,9 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
                 psycopg2.extras.Json(["DOC-1"]),
                 psycopg2.extras.Json(
                     {
+                        "participant_registrations": {
+                            key: "registration-" + key for key in participants
+                        },
                         "vnb_allocated_kwh": 10,
                         "engine_allocated_kwh": 10,
                         "difference_kwh": 0,
@@ -472,6 +479,9 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
                 VALUES (%s, 'LEG Musterweg', 'active')
                 """,
                 (COMMUNITY,),
+            )
+            cur.execute(
+                "UPDATE buildings SET referral_code='registration-' || building_id"
             )
             period_id = seed_period(cur, participants=("building-a", "building-b"))
 
@@ -857,6 +867,13 @@ class _ApprovalCursor:
         return None
 
     def fetchall(self):
+        if "FROM buildings" in self._last_query:
+            return [
+                {"building_id": key, "referral_code": value}
+                for key, value in self._period["reconciliation"][
+                    "participant_registrations"
+                ].items()
+            ]
         if "FROM billing_line_items" in self._last_query:
             return self._line_items
         if "FROM invoices" in self._last_query:

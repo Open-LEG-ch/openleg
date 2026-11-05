@@ -2871,7 +2871,7 @@ msgstr "L'entrée de paiement ne contient pas de montant valide."
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr "Le lien d’accès est invalide ou a déjà été utilisé."
 
-#: sandbox_billing.py:54
+#: sandbox_billing.py:57
 msgid "Der gewöhnliche Abrechnungslauf hat diesen Entwurf abgelehnt. Prüfen Sie Richtlinie und Quelle."
 msgstr "Le traitement habituel de facturation a refusé ce projet. Vérifiez la politique et la source."
 
@@ -4214,6 +4214,14 @@ msgstr "Un aperçu orienté vers l'action, de la vérification de l'adresse à l
 #: sandbox_seed.py:53
 msgid "Eine neue LEG gründen"
 msgstr "Créer une nouvelle CEL"
+
+#: sandbox_billing.py:54
+msgid ""
+"Eine ursprüngliche Teilnehmerregistrierung fehlt oder wurde ersetzt. Klären Sie die Zuordnung vor"
+" einer neuen Abrechnung."
+msgstr ""
+"Une inscription initiale de participant est manquante ou a été remplacée. Clarifiez l’attribution"
+" avant d’établir un nouveau décompte."
 
 #: billing_policy.py:89 billing_workspace.py:257 billing_workspace.py:258
 #: templates/leg_community_create.html:22

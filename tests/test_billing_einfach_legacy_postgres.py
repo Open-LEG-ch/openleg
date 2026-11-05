@@ -79,6 +79,9 @@ def legacy_summary(db, community_id, start, end):
         settlement_fee_per_kwh=policy["settlement_fee_chf_per_kwh"],
     )
     reconciliation = billing_readings.reconcile_with_vnb(frames, summary)
+    reconciliation["participant_registrations"] = frames.provenance[
+        "participant_registrations"
+    ]
     summary.update(
         input_fingerprint=billing_runner._fingerprint(
             frames, policy, summary, reconciliation

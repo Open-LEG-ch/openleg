@@ -31,6 +31,7 @@ class BillingRunError(ValueError):
             "battery_configuration_invalid",
             "billing_store_unavailable",
             "billing_provenance_missing",
+            "participant_registration_changed",
         }
     )
 
@@ -434,6 +435,9 @@ def run_billing_period(
                 code="vnb_allocation_mismatch",
             )
 
+        reconciliation["participant_registrations"] = frames.provenance.get(
+            "participant_registrations", {}
+        )
         fingerprint = _fingerprint(frames, policy, summary, reconciliation)
         if existing:
             matches_main = (
@@ -492,6 +496,10 @@ def run_billing_period(
                 reason="vnb_balancing_policy_required",
             ) from exc
         raise BillingRunError(str(exc), code="metering_readings_invalid") from exc
+    except db.InvoiceRegistrationMismatch as exc:
+        raise BillingRunError(
+            str(exc), code="participant_registration_changed"
+        ) from exc
     except (db.BillingStoreError, DatabaseError) as exc:
         raise BillingRunError(str(exc), code="billing_store_unavailable") from exc
     except (KeyError, ValueError) as exc:

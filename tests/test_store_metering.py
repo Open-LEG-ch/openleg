@@ -1005,10 +1005,18 @@ def test_import_index_is_empty_when_the_ledger_cannot_be_read(monkeypatch):
 class _SnapshotCursor:
     """Dispatches rows per query so the snapshot's three reads differ."""
 
-    def __init__(self, points=None, readings=None, unassigned=None, fail_at=None):
+    def __init__(
+        self,
+        points=None,
+        readings=None,
+        unassigned=None,
+        fail_at=None,
+        registrations=None,
+    ):
         self._points = points or []
         self._readings = readings or []
         self._unassigned = unassigned or []
+        self._registrations = registrations or []
         self._fail_at = fail_at
         self.executed = []
 
@@ -1019,6 +1027,8 @@ class _SnapshotCursor:
 
     def fetchall(self):
         normalized = " ".join(self.executed[-1][0].split()).lower()
+        if "from buildings" in normalized:
+            return self._registrations
         if "left join community_members" in normalized:
             return self._points
         if "select distinct mp.metering_point_id" in normalized:
@@ -1089,7 +1099,7 @@ def test_snapshot_runs_every_read_on_one_connection_and_cursor(monkeypatch):
         "connections could never share a stable snapshot"
     )
     assert connection.cursor_calls == 1
-    assert len(cur.executed) == 4, "isolation setup plus exactly three reads"
+    assert len(cur.executed) == 5, "isolation setup plus exactly four reads"
 
 
 def test_snapshot_reads_use_the_half_open_period(monkeypatch):
@@ -1133,6 +1143,9 @@ def test_snapshot_returns_the_full_aggregate(monkeypatch):
         points=points,
         readings=[_row(total="0.250")],
         unassigned=[{"metering_point_id": "point-unassigned"}],
+        registrations=[
+            {"building_id": "BLD-A", "referral_code": "original-registration"}
+        ],
     )
     _snapshot_conn(monkeypatch, cur)
 
@@ -1144,6 +1157,7 @@ def test_snapshot_returns_the_full_aggregate(monkeypatch):
         "points": points,
         "readings": [metering._floatify(_row(total="0.250"))],
         "unassigned_point_ids": ["point-unassigned"],
+        "participant_registrations": {"BLD-A": "original-registration"},
     }
     assert isinstance(snapshot["readings"][0]["total_kwh"], float)
 
@@ -1166,7 +1180,7 @@ def test_snapshot_propagates_a_connection_failure(monkeypatch):
         metering.get_billable_period_snapshot("COMM-1", SNAPSHOT_START, SNAPSHOT_END)
 
 
-@pytest.mark.parametrize("fail_at", [0, 1, 2, 3])
+@pytest.mark.parametrize("fail_at", [0, 1, 2, 3, 4])
 def test_snapshot_propagates_a_failure_mid_transaction(monkeypatch, fail_at):
     """A failed read must not be swallowed into an empty or partial result."""
     cur = _SnapshotCursor(fail_at=fail_at)

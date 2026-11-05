@@ -839,7 +839,13 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
     provenance = {
         "input_fingerprint": period["input_fingerprint"],
         "source_document_ids": _json_safe(list(source_document_ids)),
-        "reconciliation": _json_safe(reconciliation),
+        "reconciliation": _json_safe(
+            {
+                key: value
+                for key, value in reconciliation.items()
+                if key != "participant_registrations"
+            }
+        ),
         "period_start": _json_safe(period.get("period_start")),
         "period_end": _json_safe(period.get("period_end")),
     }
@@ -854,6 +860,9 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
             None,
         )
         participant_provenance = dict(provenance)
+        participant_provenance["participant_registration_id"] = reconciliation.get(
+            "participant_registrations", {}
+        ).get(participant_id)
         if vnb_basis:
             participant_provenance["reconciliation"] = {
                 **provenance["reconciliation"],

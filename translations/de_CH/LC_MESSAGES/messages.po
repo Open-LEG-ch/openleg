@@ -2839,7 +2839,7 @@ msgstr "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr "Der Zugangslink ist ungültig oder bereits verwendet."
 
-#: sandbox_billing.py:54
+#: sandbox_billing.py:57
 msgid "Der gewöhnliche Abrechnungslauf hat diesen Entwurf abgelehnt. Prüfen Sie Richtlinie und Quelle."
 msgstr "Der gewöhnliche Abrechnungslauf hat diesen Entwurf abgelehnt. Prüfen Sie Richtlinie und Quelle."
 
@@ -4165,6 +4165,14 @@ msgstr "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betr
 #: sandbox_seed.py:53
 msgid "Eine neue LEG gründen"
 msgstr "Eine neue LEG gründen"
+
+#: sandbox_billing.py:54
+msgid ""
+"Eine ursprüngliche Teilnehmerregistrierung fehlt oder wurde ersetzt. Klären Sie die Zuordnung vor"
+" einer neuen Abrechnung."
+msgstr ""
+"Eine ursprüngliche Teilnehmerregistrierung fehlt oder wurde ersetzt. Klären Sie die Zuordnung vor"
+" einer neuen Abrechnung."
 
 #: billing_policy.py:89 billing_workspace.py:257 billing_workspace.py:258
 #: templates/leg_community_create.html:22
