@@ -10,8 +10,8 @@
   {% if unavailable %}<p role="alert" class="mt-4">{{ _('Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später erneut.') }}</p>{% endif %}
   <form method="post" action="/sandbox/start" class="mt-8">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <input type="hidden" name="persona" value="resident">
-    <button type="submit" class="rounded-lg bg-ink px-6 py-3 font-semibold text-white">{{ _('Als Haushalt anmelden') }}</button>
+    {% include 'sandbox/account_choices.html' %}
+    <button type="submit" class="rounded-lg bg-ink px-6 py-3 font-semibold text-white">{{ _('Mit diesem Konto anmelden') }}</button>
   </form>
   <p class="mt-6 text-sm text-ink-muted">{{ _('Dieses Dorf endet nach %(idle)s ohne Aktivität, spätestens nach %(lifetime)s. Danach werden Ihre Übungsdaten gelöscht.', idle=inactivity_timeout, lifetime=maximum_lifetime) }} {{ _('E-Mails, Dokumente und Zahlungen sind Simulationen.') }}</p>
 </div>

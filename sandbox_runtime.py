@@ -29,7 +29,7 @@ from psycopg2.extensions import make_dsn
 import i18n
 from app_config import MAX_UPLOAD_BYTES, validated_public_site_url
 from sandbox_lifecycle import POSTGRES_CONTROL_TIMEOUT_SECONDS, ScratchOwner
-from sandbox_seed import SEED_VERSION
+from sandbox_seed import ACCOUNTS, SEED_VERSION
 from sandbox_urls import scope_page, scope_url
 
 SOURCE = Path(__file__).resolve().parent
@@ -45,6 +45,7 @@ HOP_HEADERS = {
     "upgrade",
     "host",
     "content-length",
+    "x-openleg-initial-persona",
 }
 
 
@@ -246,7 +247,15 @@ class Villages:
         )
         self.reaper.start()
 
-    def create(self, origin, locale="de_CH", *, owner=None, replacement=None):
+    def create(
+        self,
+        origin,
+        locale="de_CH",
+        *,
+        owner=None,
+        replacement=None,
+        initial_persona="resident",
+    ):
         self.reap()
         with self.lock:
             if self.closed:
@@ -282,6 +291,7 @@ class Villages:
                     "provisioned": threading.Event(),
                     "ready": False,
                     "owner": owner,
+                    "initial_persona": initial_persona,
                 }
                 self.workspaces[identifier] = workspace
                 # The new in-progress workspace now owns this allocation.
@@ -680,6 +690,7 @@ def create_gateway(
 
         return {
             "private_page": True,
+            "accounts": ACCOUNTS,
             "inactivity_timeout": duration(villages.inactivity_seconds),
             "maximum_lifetime": duration(villages.lifetime_seconds),
         }
@@ -734,13 +745,17 @@ def create_gateway(
 
     @web.post("/sandbox/start")
     def start():
-        if request.form.get("persona") != "resident":
+        selected_persona = request.form.get("persona")
+        if selected_persona not in ACCOUNTS:
             abort(400)
         if villages.get(session.get("workspace")):
             return redirect("/v/" + session["workspace"] + "/sandbox/home")
         try:
             workspace = villages.create(
-                origin, session.get("locale", "de_CH"), owner=session["csrf"]
+                origin,
+                session.get("locale", "de_CH"),
+                owner=session["csrf"],
+                initial_persona=selected_persona,
             )
         except OverflowError:
             return startup_unavailable(capacity=True)
@@ -852,6 +867,12 @@ def create_gateway(
         headers["Host"] = "localhost"
         headers["X-Forwarded-Proto"] = urlsplit(origin).scheme
         headers["X-Forwarded-Prefix"] = prefix
+        # Only the gateway's explicit start POST grants one initial login.
+        # A stale enter URL or a browser-supplied header cannot restore a role.
+        if request.method == "GET" and path == "sandbox/enter":
+            initial_persona = workspace.pop("initial_persona", None)
+            if initial_persona:
+                headers["X-OpenLEG-Initial-Persona"] = initial_persona
         target = "/" + quote(path, safe="/:@!$&'()*+,;=-._~")
         if request.query_string:
             target += "?" + quote(request.query_string, safe="%&=+;:@/?!$'()*,-._~[]")

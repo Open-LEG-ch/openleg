@@ -540,7 +540,7 @@ msgstr "AGPL-3.0-or-later Lizenz"
 msgid "API Docs"
 msgstr "API Docs"
 
-#: templates/index.html:507 templates/pricing.html:88 templates/utility/dashboard.html:152
+#: templates/index.html:507 templates/pricing.html:88 templates/utility/dashboard.html:153
 msgid "API Dokumentation"
 msgstr "API Dokumentation"
 
@@ -556,11 +556,11 @@ msgstr "API nutzen"
 msgid "API-Dokumentation"
 msgstr "API-Dokumentation"
 
-#: templates/utility/dashboard.html:154
+#: templates/utility/dashboard.html:155
 msgid "API-Dokumentation öffnen"
 msgstr "API-Dokumentation öffnen"
 
-#: templates/utility/dashboard.html:81 templates/utility/dashboard.html:105
+#: templates/utility/dashboard.html:82 templates/utility/dashboard.html:106
 msgid "API-Schlüssel erstellen"
 msgstr "API-Schlüssel erstellen"
 
@@ -568,19 +568,19 @@ msgstr "API-Schlüssel erstellen"
 msgid "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 msgstr "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 
-#: templates/utility/dashboard.html:85
+#: templates/utility/dashboard.html:86
 msgid "API-Schlüssel widerrufen"
 msgstr "API-Schlüssel widerrufen"
 
-#: templates/utility/dashboard.html:180
+#: templates/utility/dashboard.html:181
 msgid "API-Schlüssel widerrufen?"
 msgstr "API-Schlüssel widerrufen?"
 
-#: templates/utility/dashboard.html:72
+#: templates/utility/dashboard.html:73
 msgid "API-Zugang"
 msgstr "API-Zugang"
 
-#: templates/utility/register.html:45
+#: templates/utility/register.html:46
 msgid "Aargau"
 msgstr "Aargau"
 
@@ -608,6 +608,10 @@ msgstr "Abgelaufen"
 #: templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 msgid "Abgelehnt"
 msgstr "Abgelehnt"
+
+#: templates/sandbox/banner.html:3
+msgid "Abgemeldet"
+msgstr "Abgemeldet"
 
 #: templates/leg_billing.html:59
 msgid "Abgleich mit dem VNB: Abweichung prüfen."
@@ -641,7 +645,7 @@ msgstr "Ablehnen"
 msgid "Ablehnung prüfen"
 msgstr "Ablehnung prüfen"
 
-#: templates/dashboard.html:37 templates/gemeinde/dashboard.html:29 templates/utility/dashboard.html:29
+#: templates/dashboard.html:37 templates/gemeinde/dashboard.html:29 templates/utility/dashboard.html:30
 msgid "Abmelden"
 msgstr "Abmelden"
 
@@ -729,7 +733,7 @@ msgstr "Abweichung prüfen"
 msgid "Abweichung von ElCom"
 msgstr "Abweichung von ElCom"
 
-#: templates/utility/dashboard.html:12
+#: templates/utility/dashboard.html:13
 msgid "Active"
 msgstr "Aktiv"
 
@@ -969,11 +973,7 @@ msgstr "Alle drei Modelle vergleichen"
 msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
 msgstr "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
 
-#: templates/sandbox/entry.html:14
-msgid "Als Haushalt anmelden"
-msgstr "Als Haushalt anmelden"
-
-#: templates/utility/register.html:91
+#: templates/utility/register.html:92
 msgid "Als Netzbetreiber erhalten Sie:"
 msgstr "Als Netzbetreiber erhalten Sie:"
 
@@ -1147,7 +1147,7 @@ msgstr "Anonymisiert für Forschung freigeben"
 msgid "Anonymisierte Kartendarstellung nur mit Ihrer freiwilligen Einwilligung"
 msgstr "Anonymisierte Kartendarstellung nur mit Ihrer freiwilligen Einwilligung"
 
-#: templates/gemeinde/onboarding.html:36 templates/utility/register.html:78
+#: templates/gemeinde/onboarding.html:36 templates/utility/register.html:79
 msgid "Ansprechperson"
 msgstr "Ansprechperson"
 
@@ -1193,11 +1193,11 @@ msgstr "Antworten"
 msgid "Anwendbarkeit für dieses Modell"
 msgstr "Anwendbarkeit für dieses Modell"
 
-#: templates/utility/register.html:61
+#: templates/utility/register.html:62
 msgid "Appenzell A.Rh."
 msgstr "Appenzell A.Rh."
 
-#: templates/utility/register.html:62
+#: templates/utility/register.html:63
 msgid "Appenzell I.Rh."
 msgstr "Appenzell I.Rh."
 
@@ -1485,11 +1485,11 @@ msgstr "Badge einbetten"
 msgid "Bankzahlungen abgleichen"
 msgstr "Bankzahlungen abgleichen"
 
-#: templates/utility/register.html:49
+#: templates/utility/register.html:50
 msgid "Basel-Landschaft"
 msgstr "Basel-Landschaft"
 
-#: templates/utility/register.html:48
+#: templates/utility/register.html:49
 msgid "Basel-Stadt"
 msgstr "Basel-Stadt"
 
@@ -1613,7 +1613,7 @@ msgid_plural "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalte regi
 msgstr[0] "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalt registriert"
 msgstr[1] "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalte registriert"
 
-#: templates/utility/register.html:110
+#: templates/utility/register.html:111
 msgid "Bereits registriert?"
 msgstr "Bereits registriert?"
 
@@ -1629,13 +1629,17 @@ msgstr "Bereitschaft, Checkliste und Ersparnis."
 msgid "Bereitstellung der 15-Minuten-Messdaten an die Gemeinschaft"
 msgstr "Bereitstellung der 15-Minuten-Messdaten an die Gemeinschaft"
 
-#: templates/utility/register.html:44
+#: templates/utility/register.html:45
 msgid "Bern"
 msgstr "Bern"
 
 #: templates/leg_kalkulator.html:304
 msgid "Berücksichtigt der Rechner Investitionskosten?"
 msgstr "Berücksichtigt der Rechner Investitionskosten?"
+
+#: sandbox_seed.py:79
+msgid "Beschränkter LEG-Betrieb"
+msgstr "Beschränkter LEG-Betrieb"
 
 #: templates/datenschutz.html:73
 msgid "Beschwerderecht bei einer Aufsichtsbehörde"
@@ -2011,7 +2015,7 @@ msgstr "Bitte registrieren Sie zuerst Ihre Gemeinde."
 msgid "Bitte senden Sie ein JSON-Objekt."
 msgstr "Bitte senden Sie ein JSON-Objekt."
 
-#: templates/utility/dashboard.html:88
+#: templates/utility/dashboard.html:89
 msgid "Bitte sicher speichern, wird nur einmal angezeigt:"
 msgstr "Bitte sicher speichern, wird nur einmal angezeigt:"
 
@@ -2107,7 +2111,7 @@ msgstr "Cache und kurzfristige technische Zustände."
 msgid "Calculate LEG value gap"
 msgstr "LEG-Sparpotenzial berechnen"
 
-#: templates/utility/dashboard.html:14
+#: templates/utility/dashboard.html:15
 msgid "Cancelled"
 msgstr "Gekündigt"
 
@@ -2298,7 +2302,7 @@ msgstr "Übersicht"
 msgid "Dashboard | OpenLEG Utility Portal"
 msgstr "Übersicht | OpenLEG-Netzbetreiberportal"
 
-#: templates/dashboard.html:254 templates/sandbox/home.html:15
+#: templates/dashboard.html:254 templates/sandbox/home.html:13
 msgid "Dashboard öffnen"
 msgstr "Dashboard öffnen"
 
@@ -2574,6 +2578,10 @@ msgstr "Der PDF-Anhang darf höchstens 2 MB gross sein."
 #: templates/telemetry_dashboard.html:142
 msgid "Der Prognosestand ist veraltet. Bitte prüfen Sie die Wetterprognose später erneut."
 msgstr "Der Prognosestand ist veraltet. Bitte prüfen Sie die Wetterprognose später erneut."
+
+#: sandbox_seed.py:91
+msgid "Der Quartierakku bleibt gespeichert. Die Freigaberegel können Sie mit diesem Konto nicht ändern."
+msgstr "Der Quartierakku bleibt gespeichert. Die Freigaberegel können Sie mit diesem Konto nicht ändern."
 
 #: quartierakku.py:81
 msgid "Der Quartierakku hat keine gültigen Angaben."
@@ -2933,6 +2941,10 @@ msgstr "Die Kontoauszugsdatei ist kein gültiges XML."
 msgid "Die Kontoauszugsdatei ist leer."
 msgstr "Die Kontoauszugsdatei ist leer."
 
+#: sandbox_seed.py:70
+msgid "Die LEG Sonnwil ist aktiv. Sie verwalten die Gemeinschaft."
+msgstr "Die LEG Sonnwil ist aktiv. Sie verwalten die Gemeinschaft."
+
 #: templates/how-it-works.html:132
 msgid ""
 "Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die "
@@ -3189,6 +3201,10 @@ msgstr ""
 msgid "Die Solarnutzung beruht auf"
 msgstr "Die Solarnutzung beruht auf"
 
+#: sandbox_seed.py:107
+msgid "Die Sprache bleibt bis zur nächsten Auswahl erhalten."
+msgstr "Die Sprache bleibt bis zur nächsten Auswahl erhalten."
+
 #: templates/api_docs.html:245
 msgid "Die Suchanfrage muss mindestens 2 Zeichen enthalten."
 msgstr "Die Suchanfrage muss mindestens 2 Zeichen enthalten."
@@ -3233,9 +3249,21 @@ msgstr "Die erfasste Firmware liegt im veröffentlichten Bereich."
 msgid "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein."
 msgstr "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein."
 
+#: sandbox_seed.py:123
+msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
+msgstr "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
+
+#: sandbox_seed.py:45
+msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
+msgstr "Die gespeicherten Angaben erscheinen nach dem Neuladen."
+
 #: templates/leg_dashboard.html:72
 msgid "Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, Jahreskosten und Anteile."
 msgstr "Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, Jahreskosten und Anteile."
+
+#: sandbox_seed.py:75
+msgid "Die gewählte Freigaberegel bleibt nach dem Neuladen erhalten."
+msgstr "Die gewählte Freigaberegel bleibt nach dem Neuladen erhalten."
 
 #: templates/documents/community_agreement.html:21
 msgid ""
@@ -3252,6 +3280,10 @@ msgstr "Die künftigen Teilnehmenden bekannt sind."
 #: templates/advisories.html:29
 msgid "Die letzte Quellenprüfung ist fehlgeschlagen. Frühere Quellen bleiben unten dokumentiert."
 msgstr "Die letzte Quellenprüfung ist fehlgeschlagen. Frühere Quellen bleiben unten dokumentiert."
+
+#: sandbox_seed.py:60
+msgid "Die neue LEG erscheint in Ihrem LEG-Dashboard."
+msgstr "Die neue LEG erscheint in Ihrem LEG-Dashboard."
 
 #: i18n.py:80
 msgid "Dienst vorübergehend nicht verfügbar"
@@ -3518,7 +3550,7 @@ msgstr "Drucken"
 
 #: billing_policy.py:96 templates/admin/ops.html:86 templates/index.html:424 templates/index.html:450
 #: templates/leg_dashboard.html:345 templates/leg_dashboard.html:367
-#: templates/utility/dashboard.html:132
+#: templates/utility/dashboard.html:133
 msgid "E-Mail"
 msgstr "E-Mail"
 
@@ -3547,6 +3579,10 @@ msgstr "E-Mail-Adresse ist erforderlich"
 #: security_utils.py:79
 msgid "E-Mail-Adresse ist zu lang"
 msgstr "E-Mail-Adresse ist zu lang"
+
+#: sandbox_seed.py:115
+msgid "E-Mail-Sprache und API-Zugang verwalten"
+msgstr "E-Mail-Sprache und API-Zugang verwalten"
 
 #: templates/impressum.html:36
 msgid "E-Mail:"
@@ -3588,7 +3624,7 @@ msgstr "EKZ: ZEV, vZEV und LEG"
 msgid "EVU Login"
 msgstr "EVU Login"
 
-#: templates/utility/register.html:24
+#: templates/utility/register.html:25
 msgid "EVU Registrierung"
 msgstr "EVU Registrierung"
 
@@ -3856,6 +3892,10 @@ msgstr "Eine gültige Ersatzrechnung ist erforderlich."
 msgid "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 msgstr "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 
+#: sandbox_seed.py:53
+msgid "Eine neue LEG gründen"
+msgstr "Eine neue LEG gründen"
+
 #: billing_policy.py:89 billing_workspace.py:257 billing_workspace.py:258
 #: templates/leg_community_create.html:22
 msgid "Einfach"
@@ -3908,7 +3948,7 @@ msgstr "Einladungslink kopiert"
 msgid "Einleitung erneut möglich"
 msgstr "Einleitung erneut möglich"
 
-#: templates/utility/register.html:110
+#: templates/utility/register.html:111
 msgid "Einloggen"
 msgstr "Einloggen"
 
@@ -3924,7 +3964,7 @@ msgstr "Einspeisevergütung"
 msgid "Einstellung speichern"
 msgstr "Einstellung speichern"
 
-#: templates/fuer_gemeinden.html:98 templates/utility/dashboard.html:17
+#: templates/fuer_gemeinden.html:98 templates/utility/dashboard.html:18
 msgid "Einstieg"
 msgstr "Einstieg"
 
@@ -3981,7 +4021,7 @@ msgid "Einwilligungen"
 msgstr "Einwilligungen"
 
 #: templates/gemeinde/profil.html:26 templates/gemeinde/verzeichnis.html:49
-#: templates/utility/dashboard.html:63
+#: templates/utility/dashboard.html:64
 msgid "Einwohner"
 msgstr "Einwohner"
 
@@ -4058,7 +4098,7 @@ msgstr "Energieprofil und Einwilligungen gespeichert."
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 
-#: templates/sandbox/home.html:13
+#: sandbox_seed.py:27
 msgid "Energieprofil ändern"
 msgstr "Energieprofil ändern"
 
@@ -4118,6 +4158,10 @@ msgstr "Entwurf prüfen"
 #: billing_workspace.py:141 dashboard.py:379
 msgid "Entwurf ungültig"
 msgstr "Entwurf ungültig"
+
+#: sandbox_seed.py:88
+msgid "Erfassen Sie einen Quartierakku mit Kapazität, Jahreskosten und Kostenanteilen."
+msgstr "Erfassen Sie einen Quartierakku mit Kapazität, Jahreskosten und Kostenanteilen."
 
 #: store/formation_activation.py:150
 msgid "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
@@ -4196,7 +4240,7 @@ msgstr "Erst ein vZEV oder gleich eine LEG?"
 msgid "Erste LEG gründen"
 msgstr "Erste LEG gründen"
 
-#: templates/utility/dashboard.html:113
+#: templates/utility/dashboard.html:114
 msgid "Erste LEG-Gründung starten"
 msgstr "Erste LEG-Gründung starten"
 
@@ -4208,7 +4252,7 @@ msgstr "Erstellen Sie die rechtlichen Dokumente."
 msgid "Erstellt mit OpenLEG"
 msgstr "Erstellt mit OpenLEG"
 
-#: templates/utility/dashboard.html:145
+#: templates/utility/dashboard.html:146
 msgid "Erster Login"
 msgstr "Erster Login"
 
@@ -4252,7 +4296,7 @@ msgstr "Es prüft den lokalen Health-Endpunkt."
 msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
 msgstr "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
 
-#: templates/utility/dashboard.html:14
+#: templates/utility/dashboard.html:15
 msgid "Expired"
 msgstr "Abgelaufen"
 
@@ -4319,11 +4363,11 @@ msgstr "Fehler bei der Berechnung. Bitte versuchen Sie es erneut."
 msgid "Fehler bei der Registrierung."
 msgstr "Fehler bei der Registrierung."
 
-#: templates/utility/dashboard.html:173
+#: templates/utility/dashboard.html:174
 msgid "Fehler beim Erstellen des Schlüssels."
 msgstr "Fehler beim Erstellen des Schlüssels."
 
-#: templates/utility/login.html:72
+#: templates/utility/login.html:73
 msgid "Fehler beim Login."
 msgstr "Fehler beim Login."
 
@@ -4347,6 +4391,11 @@ msgstr "Fehlt Ihre LEG?"
 msgid "Fernzugriff möglich"
 msgstr "Fernzugriff möglich"
 
+#: templates/sandbox/account_choices.html:2 templates/sandbox/accounts.html:2
+#: templates/sandbox/accounts.html:5
+msgid "Fiktives Konto wählen"
+msgstr "Fiktives Konto wählen"
+
 #: templates/api_docs.html:200
 msgid "Financial projections"
 msgstr "Finanzprognosen"
@@ -4355,15 +4404,15 @@ msgstr "Finanzprognosen"
 msgid "Fingerabdruck:"
 msgstr "Fingerabdruck:"
 
-#: templates/utility/dashboard.html:124
+#: templates/utility/dashboard.html:125
 msgid "Firma"
 msgstr "Firma"
 
-#: templates/utility/register.html:31
+#: templates/utility/register.html:32
 msgid "Firmenname *"
 msgstr "Firmenname *"
 
-#: templates/utility/register.html:132
+#: templates/utility/register.html:133
 msgid "Firmenname und E-Mail sind Pflichtfelder."
 msgstr "Firmenname und E-Mail sind Pflichtfelder."
 
@@ -4450,7 +4499,7 @@ msgstr "Fragen zum Betrieb?"
 msgid "Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns:"
 msgstr "Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns:"
 
-#: templates/utility/register.html:57
+#: templates/utility/register.html:58
 msgid "Freiburg"
 msgstr "Freiburg"
 
@@ -4716,6 +4765,10 @@ msgstr ""
 "Geben Sie Ihre Adresse ein. OpenLEG prüft das Solarpotenzial mit BFE Sonnendach und zeigt, ob in "
 "Ihrer Nähe schon Nachbarn Interesse angemeldet haben. Die Karte bleibt anonymisiert."
 
+#: sandbox_seed.py:58
+msgid "Geben Sie Ihrer neuen LEG einen Namen und wählen Sie ein Verteilmodell."
+msgstr "Geben Sie Ihrer neuen LEG einen Namen und wählen Sie ein Verteilmodell."
+
 #: templates/leg_kalkulator.html:85
 msgid "Geben Sie den Namen Ihrer Gemeinde ein."
 msgstr "Geben Sie den Namen Ihrer Gemeinde ein."
@@ -4899,6 +4952,10 @@ msgstr "Gemeinden vergleichen"
 msgid "Gemeindestatistik"
 msgstr "Gemeindestatistik"
 
+#: sandbox_seed.py:96
+msgid "Gemeindeverwaltung"
+msgstr "Gemeindeverwaltung"
+
 #: municipality_profile.py:244 templates/gemeinde/profil.html:24 templates/gemeinde/verzeichnis.html:17
 #: templates/leg_verzeichnis/leg_check.html:90
 msgid "Gemeindeverzeichnis"
@@ -4965,7 +5022,7 @@ msgstr "Genaues Modell"
 msgid "Generiert durch OpenLEG Platform, openleg.ch"
 msgstr "Generiert durch OpenLEG Platform, openleg.ch"
 
-#: templates/utility/register.html:55
+#: templates/utility/register.html:56
 msgid "Genf"
 msgstr "Genf"
 
@@ -5053,11 +5110,11 @@ msgstr "Gesamte PV-Leistung:"
 msgid "Gesamter Code auf GitHub, AGPL-3.0-or-later"
 msgstr "Gesamter Code auf GitHub, AGPL-3.0-or-later"
 
-#: templates/utility/login.html:38
+#: templates/utility/login.html:39
 msgid "Geschäftliche E-Mail"
 msgstr "Geschäftliche E-Mail"
 
-#: templates/utility/register.html:82
+#: templates/utility/register.html:83
 msgid "Geschäftliche E-Mail *"
 msgstr "Geschäftliche E-Mail *"
 
@@ -5139,7 +5196,7 @@ msgstr "GitHub ansehen"
 msgid "GitHub öffnen"
 msgstr "GitHub öffnen"
 
-#: templates/utility/register.html:63
+#: templates/utility/register.html:64
 msgid "Glarus"
 msgstr "Glarus"
 
@@ -5159,7 +5216,7 @@ msgstr "Gleichverteilt"
 msgid "Globalstrahlung, Stundenmittel"
 msgstr "Globalstrahlung, Stundenmittel"
 
-#: templates/utility/register.html:52
+#: templates/utility/register.html:53
 msgid "Graubünden"
 msgstr "Graubünden"
 
@@ -5352,17 +5409,16 @@ msgstr "Haftungsausschluss"
 msgid "Hallo,"
 msgstr "Hallo,"
 
-#: templates/contact_requests.html:70 templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
-#: templates/gemeinde/dashboard.html:40
+#: sandbox_seed.py:23 templates/contact_requests.html:70 templates/dashboard.html:83
+#: templates/gemeinde/dashboard.html:36 templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
 msgid_plural "Haushalte"
 msgstr[0] "Haushalt"
 msgstr[1] "Haushalte"
 
-#: templates/sandbox/banner.html:4
-#, python-format
-msgid "Haushalt %(address)s"
-msgstr "Haushalt %(address)s"
+#: sandbox_seed.py:38
+msgid "Haushalt mit Solaranlage"
+msgstr "Haushalt mit Solaranlage"
 
 #: templates/contact_requests.html:66
 msgid "Haushalte in Ihrer Gemeinde"
@@ -5545,6 +5601,10 @@ msgstr "Ihr Dashboard-Zugangslink"
 msgid "Ihr Gemeinde-Dashboard-Zugangslink"
 msgstr "Ihr Gemeinde-Dashboard-Zugangslink"
 
+#: sandbox_seed.py:43
+msgid "Ihr Haushalt am Musterweg 2 hat eine Solaranlage."
+msgstr "Ihr Haushalt am Musterweg 2 hat eine Solaranlage."
+
 #: templates/leg_verzeichnis/bestaetigt.html:7
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
 msgstr "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
@@ -5568,6 +5628,10 @@ msgstr "Ihr Stromverbrauch"
 #: templates/sandbox/entry.html:3 templates/sandbox/entry.html:7
 msgid "Ihr eigenes Übungsdorf"
 msgstr "Ihr eigenes Übungsdorf"
+
+#: sandbox_seed.py:117
+msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
+msgstr "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 
 #: templates/index.html:408
 msgid "Ihre Adresse"
@@ -5725,6 +5789,10 @@ msgstr "Ihre letzte Stromrechnung von %(utility_name)s enthält die nötigen Ang
 msgid "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar: %(invoice_url)s"
 msgstr "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar: %(invoice_url)s"
 
+#: templates/sandbox/accounts.html:6
+msgid "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
+msgstr "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
+
 #: templates/emails/day_7_consumption.html:43
 msgid "Ihre übliche Verbrauchszeit, tagsüber oder abends"
 msgstr "Ihre übliche Verbrauchszeit, tagsüber oder abends"
@@ -5807,7 +5875,7 @@ msgstr "In einer Zeile selbst installieren, auf einem Raspberry Pi oder Mini-PC"
 msgid "In wenigen Tagen live."
 msgstr "In wenigen Tagen live."
 
-#: templates/utility/dashboard.html:13
+#: templates/utility/dashboard.html:14
 msgid "Inactive"
 msgstr "Inaktiv"
 
@@ -5872,6 +5940,10 @@ msgstr "Interesse an einer LEG"
 #: templates/index.html:445 templates/index.html:462
 msgid "Interesse anmelden"
 msgstr "Interesse anmelden"
+
+#: sandbox_seed.py:100
+msgid "Interesse ansehen und Oberflächensprache ändern"
+msgstr "Interesse ansehen und Oberflächensprache ändern"
 
 #: templates/interest_confirmed.html:6
 msgid "Interesse bestätigt"
@@ -6063,7 +6135,7 @@ msgstr "Jetzt hinterlegen"
 msgid "Job"
 msgstr "Auftrag"
 
-#: templates/utility/register.html:59
+#: templates/utility/register.html:60
 msgid "Jura"
 msgstr "Jura"
 
@@ -6093,7 +6165,7 @@ msgstr "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 
 #: templates/gemeinde/rangliste.html:45 templates/gemeinde/rangliste.html:85
 #: templates/gemeinde/rangliste_fortschritte.html:49 templates/leg_verzeichnis/eintragen.html:58
-#: templates/leg_verzeichnis/liste.html:52 templates/utility/register.html:40
+#: templates/leg_verzeichnis/liste.html:52 templates/utility/register.html:41
 msgid "Kanton"
 msgstr "Kanton"
 
@@ -6465,15 +6537,19 @@ msgstr "Kontaktanfragen"
 msgid "Kontaktanfragen |"
 msgstr "Kontaktanfragen |"
 
-#: templates/utility/dashboard.html:128
+#: templates/utility/dashboard.html:129
 msgid "Kontaktperson"
 msgstr "Kontaktperson"
+
+#: templates/sandbox/banner.html:5 templates/sandbox/home.html:21
+msgid "Konto wechseln"
+msgstr "Konto wechseln"
 
 #: templates/leg_billing.html:33
 msgid "Kontoauszug importieren"
 msgstr "Kontoauszug importieren"
 
-#: templates/utility/dashboard.html:121
+#: templates/utility/dashboard.html:122
 msgid "Kontoinformationen"
 msgstr "Kontoinformationen"
 
@@ -6526,7 +6602,7 @@ msgstr "Kostenanteil pro Jahr"
 msgid "Kostenanteile am Quartierakku"
 msgstr "Kostenanteile am Quartierakku"
 
-#: templates/index.html:218 templates/utility/register.html:101
+#: templates/index.html:218 templates/utility/register.html:102
 msgid "Kostenlos"
 msgstr "Kostenlos"
 
@@ -6649,7 +6725,7 @@ msgstr "Werkzeuge zur LEG-Gründung: Sparpotenzial, Gruppierung und Finanzmodell
 msgid "LEG gesetzlich möglich"
 msgstr "LEG gesetzlich möglich"
 
-#: templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
+#: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
 msgid "LEG gründen"
 msgstr "LEG gründen"
 
@@ -6693,7 +6769,7 @@ msgstr "LEG nicht gefunden."
 msgid "LEG value-gap analysis"
 msgstr "Analyse des LEG-Sparpotenzials"
 
-#: templates/leg_dashboard.html:216
+#: sandbox_seed.py:64 templates/leg_dashboard.html:216
 msgid "LEG-Administration"
 msgstr "LEG-Administration"
 
@@ -6942,7 +7018,7 @@ msgstr "Letzter Erfolg"
 msgid "Letzter Fehler"
 msgstr "Letzter Fehler"
 
-#: templates/utility/dashboard.html:144
+#: templates/utility/dashboard.html:145
 msgid "Letzter Login"
 msgstr "Letzter Login"
 
@@ -6999,7 +7075,7 @@ msgstr "Lizenz: AGPL-3.0-or-later"
 msgid "Logger / Gateway"
 msgstr "Logger / Gateway"
 
-#: templates/utility/login.html:21 templates/utility/register.html:17
+#: templates/utility/login.html:22 templates/utility/register.html:18
 msgid "Login"
 msgstr "Anmelden"
 
@@ -7011,7 +7087,7 @@ msgstr "Anmelden | OpenLEG-Netzbetreiberportal"
 msgid "Login-Link per E-Mail gesendet."
 msgstr "Login-Link per E-Mail gesendet."
 
-#: templates/utility/login.html:41
+#: templates/utility/login.html:42
 msgid "Login-Link senden"
 msgstr "Login-Link senden"
 
@@ -7088,7 +7164,7 @@ msgstr "Lokale Stromgemeinschaften seit dem 1. Januar erlaubt."
 msgid "Lokales Unternehmen"
 msgstr "Lokales Unternehmen"
 
-#: templates/utility/register.html:46
+#: templates/utility/register.html:47
 msgid "Luzern"
 msgstr "Luzern"
 
@@ -7377,6 +7453,10 @@ msgstr "Mit LEG"
 msgid "Mit Spannungstransformation"
 msgstr "Mit Spannungstransformation"
 
+#: templates/sandbox/accounts.html:10 templates/sandbox/entry.html:14
+msgid "Mit diesem Konto anmelden"
+msgstr "Mit diesem Konto anmelden"
+
 #: templates/emails/day_7_consumption.html:32
 msgid ""
 "Mit ein paar Angaben zu Ihrem Stromverbrauch kann OpenLEG besser einschätzen, welche Nachbarn gut"
@@ -7411,6 +7491,10 @@ msgstr "Mitglieder (geschätzt)"
 #: templates/leg_dashboard.html:151
 msgid "Mitglieder dieser Stromgemeinschaft"
 msgstr "Mitglieder dieser Stromgemeinschaft"
+
+#: sandbox_seed.py:68
+msgid "Mitglieder und LEG-Einstellungen verwalten"
+msgstr "Mitglieder und LEG-Einstellungen verwalten"
 
 #: templates/leg_dashboard.html:240
 msgid "Mitgliedermutationen und deren VNB-Verarbeitungsstatus"
@@ -7507,7 +7591,7 @@ msgstr "MwSt-Satz (%)"
 msgid "Möglicherweise betroffen / unbekannt"
 msgstr "Möglicherweise betroffen / unbekannt"
 
-#: templates/utility/dashboard.html:64 templates/utility/dashboard.html:141
+#: templates/utility/dashboard.html:65 templates/utility/dashboard.html:142
 msgid "N/A"
 msgstr "Keine Angabe"
 
@@ -7518,6 +7602,10 @@ msgstr "Nach Kanton springen"
 #: formation_wizard.py:63
 msgid "Nach Verbrauch und Erzeugung"
 msgstr "Nach Verbrauch und Erzeugung"
+
+#: sandbox_seed.py:33
+msgid "Nach dem Neuladen ist Ihr gespeicherter Jahresverbrauch weiterhin sichtbar."
+msgstr "Nach dem Neuladen ist Ihr gespeicherter Jahresverbrauch weiterhin sichtbar."
 
 #: templates/emails/day_14_formation.html:65
 msgid "Nach der Genehmigung teilen Sie den lokalen Strom innerhalb der LEG."
@@ -7586,7 +7674,7 @@ msgstr "Name der Gemeinschaft"
 msgid "Name der LEG *"
 msgstr "Name der LEG *"
 
-#: templates/utility/register.html:35
+#: templates/utility/register.html:36
 msgid "Name des Netzbetreibers"
 msgstr "Name des Netzbetreibers"
 
@@ -7644,6 +7732,10 @@ msgstr "Nettobetrag"
 msgid "Netz"
 msgstr "Netz"
 
+#: sandbox_seed.py:111
+msgid "Netzbetreiber"
+msgstr "Netzbetreiber"
+
 #: templates/leg_verzeichnis/detail.html:44
 msgid "Netzbetreiber (Selbstauskunft)"
 msgstr "Netzbetreiber (Selbstauskunft)"
@@ -7676,11 +7768,11 @@ msgstr "Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werd
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 msgstr "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 
-#: templates/utility/register.html:16
+#: templates/utility/register.html:17
 msgid "Netzbetreiber-Portal"
 msgstr "Netzbetreiber-Portal"
 
-#: templates/utility/register.html:26
+#: templates/utility/register.html:27
 msgid "Netzbetreiber-Zugang"
 msgstr "Netzbetreiber-Zugang"
 
@@ -7762,13 +7854,13 @@ msgstr "Netznutzungsrabatt"
 msgid "Netztrennung"
 msgstr "Netztrennung"
 
-#: templates/gemeinde/onboarding.html:168 templates/index.html:741 templates/utility/dashboard.html:176
-#: templates/utility/login.html:76
+#: templates/gemeinde/onboarding.html:168 templates/index.html:741 templates/utility/dashboard.html:177
+#: templates/utility/login.html:77
 msgid "Netzwerkfehler."
 msgstr "Netzwerkfehler."
 
 #: templates/api_docs.html:238 templates/index.html:687 templates/index.html:691
-#: templates/utility/register.html:153
+#: templates/utility/register.html:154
 msgid "Netzwerkfehler. Bitte erneut versuchen."
 msgstr "Netzwerkfehler. Bitte erneut versuchen."
 
@@ -7797,7 +7889,7 @@ msgstr "Neue Version erfassen"
 msgid "Neue Version gespeichert."
 msgstr "Neue Version gespeichert."
 
-#: templates/utility/dashboard.html:160
+#: templates/utility/dashboard.html:161
 msgid "Neuen API-Schlüssel erstellen? Der alte wird ungültig."
 msgstr "Neuen API-Schlüssel erstellen? Der alte wird ungültig."
 
@@ -7805,17 +7897,17 @@ msgstr "Neuen API-Schlüssel erstellen? Der alte wird ungültig."
 msgid "Neuen Link anfordern"
 msgstr "Neuen Link anfordern"
 
-#: templates/utility/dashboard.html:81
+#: templates/utility/dashboard.html:82
 msgid "Neuen Schlüssel erstellen"
 msgstr "Neuen Schlüssel erstellen"
 
-#: templates/utility/register.html:58
+#: templates/utility/register.html:59
 msgid "Neuenburg"
 msgstr "Neuenburg"
 
 #: billing_workspace.py:261 billing_workspace.py:268 billing_workspace.py:315 billing_workspace.py:319
-#: billing_workspace.py:323 dashboard.py:498 templates/utility/dashboard.html:60
-#: templates/utility/dashboard.html:129 templates/utility/dashboard.html:137
+#: billing_workspace.py:323 dashboard.py:498 templates/utility/dashboard.html:61
+#: templates/utility/dashboard.html:130 templates/utility/dashboard.html:138
 msgid "Nicht angegeben"
 msgstr "Nicht angegeben"
 
@@ -7871,7 +7963,7 @@ msgstr ""
 "Nichts. Adresse prüfen, Nachbarn finden und die Gründungsdokumente sind kostenlos. Der Code steht"
 " unter AGPL-3.0-or-later auf GitHub."
 
-#: templates/utility/register.html:66
+#: templates/utility/register.html:67
 msgid "Nidwalden"
 msgstr "Nidwalden"
 
@@ -7891,11 +7983,11 @@ msgstr "Noch kein Statusbericht gespeichert."
 msgid "No summary"
 msgstr "Keine Zusammenfassung"
 
-#: templates/utility/dashboard.html:78
+#: templates/utility/dashboard.html:79
 msgid "Noch kein API-Schlüssel vorhanden."
 msgstr "Noch kein API-Schlüssel vorhanden."
 
-#: templates/utility/login.html:46
+#: templates/utility/login.html:47
 msgid "Noch kein Konto?"
 msgstr "Noch kein Konto?"
 
@@ -8025,11 +8117,11 @@ msgstr "Nur die Administration kann die Gründung starten."
 msgid "Nur die Administration kann einladen."
 msgstr "Nur die Administration kann einladen."
 
-#: templates/utility/dashboard.html:153
+#: templates/utility/dashboard.html:154
 msgid "Nutzen Sie LEG-Daten in Ihren bestehenden Systemen."
 msgstr "Nutzen Sie LEG-Daten in Ihren bestehenden Systemen."
 
-#: templates/utility/dashboard.html:76
+#: templates/utility/dashboard.html:77
 msgid "Nutzen Sie den Header"
 msgstr "Nutzen Sie den Header"
 
@@ -8072,7 +8164,7 @@ msgstr "Ob Sie eine Solaranlage haben (oder planen)"
 msgid "Ob eine LEG technisch möglich ist, bestätigt später der zuständige Netzbetreiber."
 msgstr "Ob eine LEG technisch möglich ist, bestätigt später der zuständige Netzbetreiber."
 
-#: templates/utility/register.html:67
+#: templates/utility/register.html:68
 msgid "Obwalden"
 msgstr "Obwalden"
 
@@ -8164,7 +8256,7 @@ msgstr ""
 "Ohne eigenen Betrieb, wir übernehmen Wartung und Verfügbarkeit. Kostenlos für Bewohner und "
 "Gemeinden."
 
-#: templates/utility/dashboard.html:95
+#: templates/utility/dashboard.html:96
 msgid "Onboarding"
 msgstr "Einrichtung"
 
@@ -8325,7 +8417,7 @@ msgstr ""
 msgid "OpenLEG installieren"
 msgstr "OpenLEG installieren"
 
-#: templates/utility/register.html:102
+#: templates/utility/register.html:103
 msgid "OpenLEG ist Open Source und kostenlos. Kein Abo, keine versteckten Kosten."
 msgstr "OpenLEG ist Open Source und kostenlos. Kein Abo, keine versteckten Kosten."
 
@@ -8779,7 +8871,7 @@ msgstr "Produzent"
 msgid "Produzentengutschrift"
 msgstr "Produzentengutschrift"
 
-#: templates/utility/dashboard.html:17
+#: templates/utility/dashboard.html:18
 msgid "Professionell"
 msgstr "Professionell"
 
@@ -8976,6 +9068,10 @@ msgstr "Qualität unbekannt"
 #: templates/leg_dashboard.html:64 templates/leg_dashboard.html:69
 msgid "Quartierakku"
 msgstr "Quartierakku"
+
+#: sandbox_seed.py:83
+msgid "Quartierakku erfassen"
+msgstr "Quartierakku erfassen"
 
 #: templates/leg_dashboard.html:138
 msgid "Quartierakku speichern"
@@ -9238,7 +9334,7 @@ msgstr "Referenz des Netzbetreibers"
 msgid "Referenz:"
 msgstr "Referenz:"
 
-#: templates/utility/login.html:46 templates/utility/register.html:105
+#: templates/utility/login.html:47 templates/utility/register.html:106
 msgid "Registrieren"
 msgstr "Registrieren"
 
@@ -9252,7 +9348,7 @@ msgstr ""
 " politischen Gemeinde. Sobald weitere Interessierte dazukommen, erhalten Sie eine Nachricht. "
 "Netzbetreiber und Netzebenen werden vor einer Gründung separat geprüft."
 
-#: templates/utility/register.html:27
+#: templates/utility/register.html:28
 msgid ""
 "Registrieren Sie sich, damit OpenLEG LEG-Anmeldungen aus Ihrem Versorgungsgebiet an Sie "
 "weiterleiten kann. Kostenlos."
@@ -9260,7 +9356,7 @@ msgstr ""
 "Registrieren Sie sich, damit OpenLEG LEG-Anmeldungen aus Ihrem Versorgungsgebiet an Sie "
 "weiterleiten kann. Kostenlos."
 
-#: templates/utility/dashboard.html:140
+#: templates/utility/dashboard.html:141
 msgid "Registriert am"
 msgstr "Registriert am"
 
@@ -9268,7 +9364,7 @@ msgstr "Registriert am"
 msgid "Registrierte Haushalte"
 msgstr "Registrierte Haushalte"
 
-#: templates/utility/dashboard.html:99
+#: templates/utility/dashboard.html:100
 msgid "Registrierung abgeschlossen"
 msgstr "Registrierung abgeschlossen"
 
@@ -9281,11 +9377,11 @@ msgstr "Registrierung erfolgreich! Ihre Instanz: %(subdomain)s.openleg.ch"
 msgid "Registrierung erfolgreich. Login-Link per E-Mail gesendet."
 msgstr "Registrierung erfolgreich. Login-Link per E-Mail gesendet."
 
-#: templates/utility/login.html:26
+#: templates/utility/login.html:27
 msgid "Registrierung erfolgreich. Prüfen Sie Ihre E-Mail für den Login-Link."
 msgstr "Registrierung erfolgreich. Prüfen Sie Ihre E-Mail für den Login-Link."
 
-#: municipality.py:97 templates/utility/register.html:149
+#: municipality.py:97 templates/utility/register.html:150
 msgid "Registrierung fehlgeschlagen."
 msgstr "Registrierung fehlgeschlagen."
 
@@ -9401,7 +9497,7 @@ msgstr "Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten 
 msgid "Sammeln Sie die Unterschriften aller Mitglieder."
 msgstr "Sammeln Sie die Unterschriften aller Mitglieder."
 
-#: templates/utility/register.html:60
+#: templates/utility/register.html:61
 msgid "Schaffhausen"
 msgstr "Schaffhausen"
 
@@ -9453,7 +9549,7 @@ msgstr "Schweizer Gemeinde"
 msgid "Schweizer Hosting"
 msgstr "Schweizer Hosting"
 
-#: templates/utility/register.html:65
+#: templates/utility/register.html:66
 msgid "Schwyz"
 msgstr "Schwyz"
 
@@ -9504,6 +9600,10 @@ msgstr "Suchbegriff (mindestens 2 Zeichen)"
 #: templates/api_docs.html:141
 msgid "Search results"
 msgstr "Suchergebnisse"
+
+#: sandbox_seed.py:102
+msgid "Sechs bestätigte Haushalte interessieren sich für eine LEG."
+msgstr "Sechs bestätigte Haushalte interessieren sich für eine LEG."
 
 #: templates/open_source.html:89
 msgid "Secret-Handling und Rotation"
@@ -9623,6 +9723,14 @@ msgstr ""
 msgid "Sie die Adressen der interessierten Anschlüsse kennen."
 msgstr "Sie die Adressen der interessierten Anschlüsse kennen."
 
+#: sandbox_seed.py:85
+msgid "Sie dürfen Abrechnungen vorbereiten. Die Administration bleibt einem anderen Konto vorbehalten."
+msgstr "Sie dürfen Abrechnungen vorbereiten. Die Administration bleibt einem anderen Konto vorbehalten."
+
+#: sandbox_seed.py:55
+msgid "Sie haben ein bestätigtes Profil und noch keine eigene LEG."
+msgstr "Sie haben ein bestätigtes Profil und noch keine eigene LEG."
+
 #: templates/telemetry_dashboard.html:117
 msgid "Sie haben keine angemeldeten Anlagen in einer bestätigten LEG-Mitgliedschaft."
 msgstr "Sie haben keine angemeldeten Anlagen in einer bestätigten LEG-Mitgliedschaft."
@@ -9663,14 +9771,13 @@ msgstr ""
 msgid "Sie sehen, wie viele Interessierte sich gemeldet haben."
 msgstr "Sie sehen, wie viele Interessierte sich gemeldet haben."
 
-#: templates/sandbox/home.html:9
+#: templates/sandbox/home.html:16
 msgid "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
 msgstr "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
 
-#: templates/sandbox/home.html:7
-#, python-format
-msgid "Sie sind als erfundener Haushalt für %(address)s angemeldet."
-msgstr "Sie sind als erfundener Haushalt für %(address)s angemeldet."
+#: sandbox_seed.py:28
+msgid "Sie sind als Haushalt am Musterweg 1 angemeldet."
+msgstr "Sie sind als Haushalt am Musterweg 1 angemeldet."
 
 #: templates/leg_dashboard.html:190
 #, python-format
@@ -9914,7 +10021,7 @@ msgstr ""
 "LEG prüfen. Das ist seit 2026 auch über Parzellengrenzen hinweg möglich. Ein Wechsel erfolgt "
 "nicht automatisch: Die LEG muss ihre Voraussetzungen erfüllen und beim VNB angemeldet werden."
 
-#: templates/utility/register.html:50
+#: templates/utility/register.html:51
 msgid "Solothurn"
 msgstr "Solothurn"
 
@@ -9958,7 +10065,7 @@ msgstr "Speichern"
 msgid "Sprache"
 msgstr "Sprache"
 
-#: templates/dashboard.html:198 templates/utility/dashboard.html:28 templates/utility/settings.html:4
+#: templates/dashboard.html:198 templates/utility/dashboard.html:29 templates/utility/settings.html:4
 #: templates/utility/settings.html:8
 msgid "Sprache für E-Mails"
 msgstr "Sprache für E-Mails"
@@ -9967,7 +10074,7 @@ msgstr "Sprache für E-Mails"
 msgid "Sprache speichern"
 msgstr "Sprache speichern"
 
-#: templates/utility/register.html:47
+#: templates/utility/register.html:48
 msgid "St. Gallen"
 msgstr "St. Gallen"
 
@@ -10027,7 +10134,7 @@ msgstr "Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert."
 
 #: templates/admin/ops.html:90 templates/admin/ops.html:232 templates/leg_dashboard.html:156
 #: templates/leg_dashboard.html:215 templates/leg_verzeichnis/detail.html:32
-#: templates/leg_verzeichnis/eintragen.html:66 templates/utility/dashboard.html:51
+#: templates/leg_verzeichnis/eintragen.html:66 templates/utility/dashboard.html:52
 msgid "Status"
 msgstr "Status"
 
@@ -10193,7 +10300,7 @@ msgstr "Zusammenfassung"
 msgid "Summen nach Messkanal"
 msgstr "Summen nach Messkanal"
 
-#: templates/utility/dashboard.html:13
+#: templates/utility/dashboard.html:14
 msgid "Suspended"
 msgstr "Gesperrt"
 
@@ -10290,7 +10397,7 @@ msgstr "Teilnehmerverträge (unterzeichnet)"
 msgid "Teilzahlung"
 msgstr "Teilzahlung"
 
-#: templates/utility/dashboard.html:136 templates/utility/register.html:86
+#: templates/utility/dashboard.html:137 templates/utility/register.html:87
 msgid "Telefon"
 msgstr "Telefon"
 
@@ -10310,7 +10417,7 @@ msgstr "Templates, statische Assets und Tests"
 msgid "Tenant"
 msgstr "Mandant"
 
-#: templates/utility/register.html:56
+#: templates/utility/register.html:57
 msgid "Tessin"
 msgstr "Tessin"
 
@@ -10322,11 +10429,11 @@ msgstr "Tests liegen in"
 msgid "Tests und Beiträge"
 msgstr "Tests und Beiträge"
 
-#: templates/utility/register.html:51
+#: templates/utility/register.html:52
 msgid "Thurgau"
 msgstr "Thurgau"
 
-#: templates/utility/dashboard.html:55
+#: templates/utility/dashboard.html:56
 msgid "Tier"
 msgstr "Tarifstufe"
 
@@ -10357,7 +10464,7 @@ msgstr ""
 msgid "Trennung vom privaten Netz mit dem Betreiber prüfen."
 msgstr "Trennung vom privaten Netz mit dem Betreiber prüfen."
 
-#: templates/utility/dashboard.html:12
+#: templates/utility/dashboard.html:13
 msgid "Trial"
 msgstr "Testphase"
 
@@ -10535,19 +10642,19 @@ msgstr "Upload fehlgeschlagen."
 msgid "Urheberrecht"
 msgstr "Urheberrecht"
 
-#: templates/utility/register.html:68
+#: templates/utility/register.html:69
 msgid "Uri"
 msgstr "Uri"
 
-#: templates/utility/dashboard.html:37
+#: templates/utility/dashboard.html:38
 msgid "Utility Dashboard"
 msgstr "Netzbetreiber-Übersicht"
 
-#: templates/utility/login.html:15
+#: templates/utility/login.html:16
 msgid "Utility Portal"
 msgstr "Netzbetreiberportal"
 
-#: templates/dashboard.html:9 templates/utility/dashboard.html:59
+#: templates/dashboard.html:9 templates/utility/dashboard.html:60
 msgid "VNB"
 msgstr "VNB"
 
@@ -10607,6 +10714,10 @@ msgstr "Verantwortung wählen"
 #: templates/emails/day_7_consumption.html:6
 msgid "Verbrauch ergänzen"
 msgstr "Verbrauch ergänzen"
+
+#: sandbox_seed.py:42
+msgid "Verbrauch und Solaranlage ansehen"
+msgstr "Verbrauch und Solaranlage ansehen"
 
 #: templates/member_invoice_detail.html:181
 msgid "Verbrauch:"
@@ -10709,7 +10820,7 @@ msgstr "Verknüpft mit Korrektur:"
 msgid "Version speichern"
 msgstr "Version speichern"
 
-#: templates/utility/register.html:72
+#: templates/utility/register.html:73
 msgid "Versorgte Einwohner"
 msgstr "Versorgte Einwohner"
 
@@ -10852,7 +10963,7 @@ msgstr ""
 "Stufe, und Sie wechseln jederzeit. Wir verkaufen Komfort, Hardware und Betrieb, niemals Ihre "
 "Daten."
 
-#: templates/gemeinde/onboarding.html:37 templates/utility/register.html:79
+#: templates/gemeinde/onboarding.html:37 templates/utility/register.html:80
 msgid "Vor- und Nachname"
 msgstr "Vor- und Nachname"
 
@@ -10921,11 +11032,11 @@ msgstr ""
 "Vorträge, Workshops und Projektunterstützung bieten wir nach vorgängiger Vereinbarung gegen "
 "Honorar an."
 
-#: templates/utility/register.html:54
+#: templates/utility/register.html:55
 msgid "Waadt"
 msgstr "Waadt"
 
-#: templates/utility/register.html:53
+#: templates/utility/register.html:54
 msgid "Wallis"
 msgstr "Wallis"
 
@@ -11152,7 +11263,7 @@ msgstr "Wetterprognose"
 msgid "Wetterprognose derzeit nicht verfügbar"
 msgstr "Wetterprognose derzeit nicht verfügbar"
 
-#: templates/utility/dashboard.html:109
+#: templates/utility/dashboard.html:110
 msgid "White-Label Branding konfigurieren"
 msgstr "White-Label Branding konfigurieren"
 
@@ -11367,7 +11478,7 @@ msgstr "Wir senden Ihnen bei Bedarf einen neuen Zugangslink per E-Mail."
 msgid "Wir senden Ihnen die Vorlage per E-Mail"
 msgstr "Wir senden Ihnen die Vorlage per E-Mail"
 
-#: templates/utility/login.html:22
+#: templates/utility/login.html:23
 msgid "Wir senden Ihnen einen sicheren Login-Link per E-Mail."
 msgstr "Wir senden Ihnen einen sicheren Login-Link per E-Mail."
 
@@ -11449,6 +11560,10 @@ msgstr "Wählen Sie den gewünschten Zeitraum"
 msgid "Wählen Sie den passenden Zugang. Danach melden Sie sich sicher per E-Mail-Link an."
 msgstr "Wählen Sie den passenden Zugang. Danach melden Sie sich sicher per E-Mail-Link an."
 
+#: sandbox_seed.py:105
+msgid "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
+msgstr "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
+
 #: store/formation_activation.py:65
 msgid "Wählen Sie einen eingehenden Beleg mit Anhang aus dem Korrespondenzjournal."
 msgstr "Wählen Sie einen eingehenden Beleg mit Anhang aus dem Korrespondenzjournal."
@@ -11461,7 +11576,7 @@ msgstr "Wählen Sie mindestens eine Angabe. Die Auswahl gilt nur für diese Anfr
 msgid "Wählen Sie zwei Gemeinden, um sie zu vergleichen."
 msgstr "Wählen Sie zwei Gemeinden, um sie zu vergleichen."
 
-#: templates/utility/register.html:42
+#: templates/utility/register.html:43
 msgid "Wählen..."
 msgstr "Wählen..."
 
@@ -11469,7 +11584,7 @@ msgstr "Wählen..."
 msgid "Wählt das Betriebsmodell."
 msgstr "Wählt das Betriebsmodell."
 
-#: templates/utility/dashboard.html:76
+#: templates/utility/dashboard.html:77
 msgid "X-API-Key"
 msgstr "X-API-Key"
 
@@ -11566,7 +11681,7 @@ msgstr "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es ern
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute."
 msgstr "Zu viele Anfragen. Bitte warten Sie eine Minute."
 
-#: templates/utility/register.html:64
+#: templates/utility/register.html:65
 msgid "Zug"
 msgstr "Zug"
 
@@ -11624,7 +11739,7 @@ msgstr "Zum LEG-Check"
 msgid "Zum Schnellstart"
 msgstr "Zum Schnellstart"
 
-#: templates/sandbox/home.html:11
+#: templates/sandbox/home.html:19
 #, python-format
 msgid ""
 "Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen "
@@ -11723,7 +11838,7 @@ msgstr "Zählen, wie viele Dächer bis zum oberen Viertel fehlen."
 msgid "Zählerstand"
 msgstr "Zählerstand"
 
-#: templates/utility/register.html:43
+#: templates/utility/register.html:44
 msgid "Zürich"
 msgstr "Zürich"
 
@@ -11763,7 +11878,7 @@ msgstr "auf lokale Netznutzung"
 msgid "auswählen"
 msgstr "auswählen"
 
-#: templates/utility/dashboard.html:18
+#: templates/utility/dashboard.html:19
 msgid "basic"
 msgstr "Basis"
 
@@ -11810,7 +11925,7 @@ msgstr "ca. %(entry_member_count_estimate)s"
 msgid "der Anlagen; der Rest bleibt wegen ungelöster Orts- oder Fusionsnamen ungematcht."
 msgstr "der Anlagen; der Rest bleibt wegen ungelöster Orts- oder Fusionsnamen ungematcht."
 
-#: templates/utility/dashboard.html:19
+#: templates/utility/dashboard.html:20
 msgid "enterprise"
 msgstr "Unternehmen"
 
@@ -11822,7 +11937,7 @@ msgstr "enthält Startbefehle, Repo-Grenzen und Links zur Architektur."
 msgid "erneuerbare Anschlussleistung."
 msgstr "erneuerbare Anschlussleistung."
 
-#: templates/utility/dashboard.html:18
+#: templates/utility/dashboard.html:19
 msgid "free"
 msgstr "kostenlos"
 
@@ -11836,7 +11951,7 @@ msgstr "für \"%(q)s\""
 msgid "für \"%(query)s\""
 msgstr "für \"%(query)s\""
 
-#: templates/utility/dashboard.html:76
+#: templates/utility/dashboard.html:77
 msgid "für B2B-API-Anfragen."
 msgstr "für B2B-API-Anfragen."
 
@@ -12019,11 +12134,11 @@ msgstr "planung"
 msgid "plausibel"
 msgstr "plausibel"
 
-#: templates/utility/dashboard.html:19
+#: templates/utility/dashboard.html:20
 msgid "premium"
 msgstr "premium"
 
-#: templates/utility/dashboard.html:18
+#: templates/utility/dashboard.html:19
 msgid "pro"
 msgstr "pro"
 
@@ -12143,7 +12258,7 @@ msgstr "z. B. batterie-1"
 msgid "z. B. mitglied-2026-001"
 msgstr "z. B. mitglied-2026-001"
 
-#: templates/utility/register.html:73
+#: templates/utility/register.html:74
 msgid "z.B. 50000"
 msgstr "z.B. 50000"
 
@@ -12151,11 +12266,11 @@ msgstr "z.B. 50000"
 msgid "z.B. Baden, Zürich, Bern"
 msgstr "z.B. Baden, Zürich, Bern"
 
-#: templates/utility/register.html:32
+#: templates/utility/register.html:33
 msgid "z.B. Regionalwerke AG Baden"
 msgstr "z.B. Regionalwerke AG Baden"
 
-#: templates/utility/register.html:36
+#: templates/utility/register.html:37
 msgid "z.B. Regionalwerke AG Baden Verteilnetz"
 msgstr "z.B. Regionalwerke AG Baden Verteilnetz"
 
@@ -12272,6 +12387,22 @@ msgstr "» weiterhin aktuell ist."
 msgid "Ändern"
 msgstr "Ändern"
 
+#: sandbox_seed.py:44
+msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
+msgstr "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
+
+#: sandbox_seed.py:30
+msgid "Ändern Sie den Jahresverbrauch im Energieprofil und speichern Sie."
+msgstr "Ändern Sie den Jahresverbrauch im Energieprofil und speichern Sie."
+
+#: sandbox_seed.py:120
+msgid "Ändern Sie die E-Mail-Sprache oder erstellen und widerrufen Sie einen API-Schlüssel."
+msgstr "Ändern Sie die E-Mail-Sprache oder erstellen und widerrufen Sie einen API-Schlüssel."
+
+#: sandbox_seed.py:73
+msgid "Ändern Sie die Regel für die gemeinsame Freigabe von Abrechnungen."
+msgstr "Ändern Sie die Regel für die gemeinsame Freigabe von Abrechnungen."
+
 #: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Änderung"
 msgstr "Änderung"
@@ -12326,14 +12457,6 @@ msgstr ""
 "%(url)s\n"
 "\n"
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
-
-#: templates/sandbox/home.html:14
-msgid ""
-"Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen "
-"sehen Sie den neuen Wert."
-msgstr ""
-"Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen "
-"sehen Sie den neuen Wert."
 
 #: municipality.py:218
 #, python-format
@@ -12390,7 +12513,7 @@ msgstr "Überzahlung"
 msgid "Üblicher Bereich: zwischen"
 msgstr "Üblicher Bereich: zwischen"
 
-#: templates/sandbox/banner.html:5
+#: templates/sandbox/banner.html:4
 msgid "Übungsdorf"
 msgstr "Übungsdorf"
 
@@ -12418,11 +12541,11 @@ msgstr "→"
 msgid "↓"
 msgstr "↓"
 
-#: templates/utility/dashboard.html:75 templates/utility/dashboard.html:171
+#: templates/utility/dashboard.html:76 templates/utility/dashboard.html:172
 msgid "✓ API-Schlüssel aktiv"
 msgstr "✓ API-Schlüssel aktiv"
 
-#: templates/utility/register.html:96
+#: templates/utility/register.html:97
 msgid "✓ API-Zugang für Ihre bestehenden Systeme"
 msgstr "✓ API-Zugang für Ihre bestehenden Systeme"
 
@@ -12438,7 +12561,7 @@ msgstr "✓ Alle Dokumente inklusive (Vereinbarung, Verträge, DSO-Anmeldung)"
 msgid "✓ Daten bleiben bei Ihnen"
 msgstr "✓ Daten bleiben bei Ihnen"
 
-#: templates/utility/register.html:95
+#: templates/utility/register.html:96
 msgid "✓ Dokumente für Gemeinschaftsvereinbarung, Teilnehmervertrag und DSO-Anmeldung"
 msgstr "✓ Dokumente für Gemeinschaftsvereinbarung, Teilnehmervertrag und DSO-Anmeldung"
 
@@ -12462,7 +12585,7 @@ msgstr "✓ ElCom Tarife für alle Gemeinden"
 msgid "✓ Energie Reporter Gemeinde-Daten"
 msgstr "✓ Energie Reporter Gemeinde-Daten"
 
-#: templates/utility/register.html:94
+#: templates/utility/register.html:95
 msgid "✓ Formationsstatus verfolgen"
 msgstr "✓ Formationsstatus verfolgen"
 
@@ -12502,7 +12625,7 @@ msgstr "✓ Kostenlos nutzbar"
 msgid "✓ LEG Value-Gap Rechner"
 msgstr "✓ LEG Value-Gap Rechner"
 
-#: templates/utility/register.html:93
+#: templates/utility/register.html:94
 msgid "✓ LEG-Anmeldungen aus Ihrem Gebiet empfangen"
 msgstr "✓ LEG-Anmeldungen aus Ihrem Gebiet empfangen"
 
@@ -12578,6 +12701,9 @@ msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 #~ " Nähe registriert. Je vollständiger die Angaben sind,"
 #~ " desto besser lässt sich die Gruppe planen."
 
+#~ msgid "Als Haushalt anmelden"
+#~ msgstr "Als Haushalt anmelden"
+
 #~ msgid "Dieser Schritt löscht Ihr Profil und Ihre zugehörigen Daten endgültig."
 #~ msgstr "Dieser Schritt löscht Ihr Profil und Ihre zugehörigen Daten endgültig."
 
@@ -12608,6 +12734,9 @@ msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 #~ msgid "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 #~ msgstr "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 
+#~ msgid "Messdaten verwalten und Abrechnungen vorbereiten"
+#~ msgstr "Messdaten verwalten und Abrechnungen vorbereiten"
+
 #~ msgid "PV-Anlage:"
 #~ msgstr "PV-Anlage:"
 
@@ -12635,3 +12764,12 @@ msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 #~ "ist jetzt bestätigt.\n"
 #~ "      Wir benachrichtigen Sie, wenn weitere bestätigte "
 #~ "Interessierte aus derselben Gemeinde dazukommen."
+
+#~ msgid ""
+#~ "Öffnen Sie Ihr Dashboard, ändern Sie den "
+#~ "Jahresverbrauch und speichern Sie. Nach dem Neuladen "
+#~ "sehen Sie den neuen Wert."
+#~ msgstr ""
+#~ "Öffnen Sie Ihr Dashboard, ändern Sie den "
+#~ "Jahresverbrauch und speichern Sie. Nach dem Neuladen "
+#~ "sehen Sie den neuen Wert."

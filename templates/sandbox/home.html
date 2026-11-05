@@ -3,16 +3,21 @@
 {% block content %}
 <div class="mx-auto max-w-3xl px-4 py-12">
   <h1 class="text-3xl font-bold">{{ _('Sonnwil ausprobieren') }}</h1>
-  {% if sandbox_household %}
-  <p class="mt-4">{{ _('Sie sind als erfundener Haushalt für %(address)s angemeldet.', address=sandbox_household.address) }}</p>
+  {% if sandbox_account %}
+  <p class="mt-4">{{ sandbox_account.name }} · {{ _(sandbox_account.role) }} · {{ sandbox_account.scope }}</p>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _(sandbox_account.scenario) }}</h2>
+    <p class="mt-3">{{ _(sandbox_account.starting_state) }}</p>
+    <p class="mt-3">{{ _(sandbox_account.instructions) }}</p>
+    <p class="mt-3 text-sm text-ink-muted">{{ _(sandbox_account.expected) }}</p>
+    <a href="{{ sandbox_account.destination }}" class="mt-4 inline-block font-semibold underline">{{ _('Dashboard öffnen') }}</a>
+  </section>
   {% else %}
   <p class="mt-4">{{ _('Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an.') }}</p>
   {% endif %}
-  <p class="mt-4">{{ _('Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen Sie ihn im Postfach dieses Übungsdorfs.', email=sandbox_household.email if sandbox_household else 'sonnwil-resident@example.org') }}</p>
-  <section class="mt-8 rounded-lg border border-line p-6">
-    <h2 class="text-xl font-semibold">{{ _('Energieprofil ändern') }}</h2>
-    <p class="mt-3">{{ _('Öffnen Sie Ihr Dashboard, ändern Sie den Jahresverbrauch und speichern Sie. Nach dem Neuladen sehen Sie den neuen Wert.') }}</p>
-    <a href="/dashboard" class="mt-4 inline-block font-semibold underline">{{ _('Dashboard öffnen') }}</a>
-  </section>
+  {% if not sandbox_account or sandbox_account.building_id %}
+  <p class="mt-4">{{ _('Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen Sie ihn im Postfach dieses Übungsdorfs.', email=sandbox_account.email if sandbox_account else 'sonnwil-resident@example.org') }}</p>
+  {% endif %}
+  <a href="/sandbox/accounts" class="mt-6 inline-block font-semibold underline">{{ _('Konto wechseln') }}</a>
 </div>
 {% endblock %}
