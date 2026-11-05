@@ -23,12 +23,20 @@
         return originalFetch.call(globalThis, input, options);
     };
     // Product scripts can also add links and forms after initial rendering.
-    document.addEventListener("click", event => {
+    function scopeLink(event) {
         const link = event.target.closest?.("a[href]");
         if (link) link.href = scoped(link.href);
-    }, true);
+    }
+    document.addEventListener("click", scopeLink, true);
+    document.addEventListener("auxclick", scopeLink, true);
     document.addEventListener("submit", event => {
         const form = event.target;
-        if (form.tagName === "FORM") form.action = scoped(form.action);
+        if (form.tagName !== "FORM") return;
+        form.setAttribute("action", scoped(form.getAttribute("action") || location.href));
+        const submitter = event.submitter;
+        const override = submitter?.getAttribute("formaction");
+        if (override != null) {
+            submitter.setAttribute("formaction", scoped(override || location.href));
+        }
     }, true);
 })();

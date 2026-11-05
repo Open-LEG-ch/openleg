@@ -45,9 +45,9 @@ test('dynamic links and forms bind at browser activation', () => {
     const link = {href: origin + '/how-it-works#interner-strompreis'};
     listeners.click({target: {closest() {return link;}}});
     assert.equal(link.href, origin + prefix + '/how-it-works#interner-strompreis');
-    const form = {tagName: 'FORM', action: origin + '/gemeinde/register'};
+    const form = formElement('/gemeinde/register');
     listeners.submit({target: form});
-    assert.equal(form.action, origin + prefix + '/gemeinde/register');
+    assert.equal(form.getAttribute('action'), origin + prefix + '/gemeinde/register');
 });
 test('OpenAPI server and path concatenate into one scoped request', async () => {
     const {context, requests} = browser();
@@ -59,4 +59,36 @@ test('OpenAPI server and path concatenate into one scoped request', async () => 
 });
 test('malformed generation configuration fails before request hooks install', () => {
     assert.throws(() => browser('/v/../../other'), /Invalid village generation/);
+});
+
+function formElement(action) {
+    const attributes = {action};
+    return {tagName: 'FORM', action: {name: 'action'},
+        getAttribute(name) {return attributes[name] ?? null;},
+        setAttribute(name, value) {attributes[name] = value;}};
+}
+test('middle-click scopes a dynamic link before opening another tab', () => {
+    const {listeners} = browser();
+    const link = {href: origin + '/dashboard/invoices'};
+    assert.equal(typeof listeners.auxclick, 'function');
+    listeners.auxclick({target: {closest() {return link;}}});
+    assert.equal(link.href, origin + prefix + '/dashboard/invoices');
+});
+test('submit scopes the action attribute and the submitter override', () => {
+    const {listeners} = browser();
+    const form = formElement('/dashboard/profile');
+    const submitter = formElement('/dashboard/export');
+    submitter.setAttribute('formaction', '/dashboard/export');
+    listeners.submit({target: form, submitter});
+    assert.equal(form.getAttribute('action'), origin + prefix + '/dashboard/profile');
+    assert.equal(submitter.getAttribute('formaction'), origin + prefix + '/dashboard/export');
+    assert.equal(form.action.name, 'action');
+});
+test('a submitter without an override keeps the form destination', () => {
+    const {listeners} = browser();
+    const form = formElement('/dashboard/profile');
+    const submitter = formElement(null);
+    listeners.submit({target: form, submitter});
+    assert.equal(form.getAttribute('action'), origin + prefix + '/dashboard/profile');
+    assert.equal(submitter.getAttribute('formaction'), null);
 });

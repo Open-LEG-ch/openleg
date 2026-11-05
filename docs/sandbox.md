@@ -22,8 +22,8 @@ annual consumption on the dashboard and save. Refresh to see the stored value.
 Open the same address in a separate browser profile for an independent village.
 Dashboard login emails appear in the simulated inbox linked in the banner.
 
-The default is four concurrent villages, a two-MiB upload limit per request and
-15 minutes without requests and a one-hour maximum lifetime. A background
+The defaults are four concurrent villages, a two-MiB upload limit per request,
+a 15-minute inactivity timeout, and a one-hour maximum lifetime. A background
 cleanup task retires expired villages and returns their capacity. Use
 `--max-workspaces`, `--max-upload-mib`, `--inactivity-seconds`,
 `--lifetime-seconds` and `--port` to choose different local bounds. Uploads can
