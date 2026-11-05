@@ -63,6 +63,24 @@ E66 evidence command. No FTPS credentials are needed. Trigger a failed fetch,
 then explicitly retry without failure. A second same-day scheduled tick does
 not rerun the job; explicit retries preserve delivery and reading identities.
 
+Robin can open the operator API exercise, issue a capability-scoped credential
+through the ordinary product command and run editable formation/membership
+requests. A prepared membership mutation records a proposal without changing
+actual membership. Its mutation ID identifies identical replay; changed content
+is refused. The console also demonstrates missing capability, foreign community,
+rotated key and revoked key responses.
+
+The reserved callback `https://sonnwil-simulation.invalid/webhook` names a local
+in-process receiver. Sandbox credentials reject every other callback before DNS
+lookup. Dispatch claims at most one delivery in Sonnwil's community, serializes
+the ordinary event and verifies its real signature. The failed attempt returns
+503; the ordinary retry command rearms it for a successful 204 attempt. Captures
+contain the actual body, signature, verification and delivery result, with no
+recoverable key. They are private workspace files removed by reset and expiry.
+Issued keys and signing secrets appear once in the page, remain out of shared
+logs and browser storage, and disappear on navigation. The console never sends
+requests to an arbitrary URL. Production webhook validation remains unchanged.
+
 ## Run locally
 
 Use Linux, PostgreSQL 16 binaries, `libseccomp.so.2` and the normal Python

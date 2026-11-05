@@ -67,6 +67,9 @@ def create_worker():
     from sandbox_telemetry import install as install_telemetry
 
     install_telemetry(web)
+    from sandbox_operator import install as install_operator
+
+    install_operator(web)
 
     def seeded_household(profile):
         """A reused building ID cannot adopt the original demo registration."""

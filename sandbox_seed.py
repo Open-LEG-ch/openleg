@@ -152,6 +152,7 @@ FIXTURE_MANIFEST = {
     },
     "available_scenarios": [
         "invoice-question",
+        "operator-api-signed-local-delivery",
         "household-telemetry",
         "resident-profile",
         "resident-onboarding",
