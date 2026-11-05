@@ -594,6 +594,14 @@ it.
   confirmed LEG administrator.
 - **Consent gate:** none; tenant scope and explicit capabilities are mandatory.
 
+In the disposable village only, `sandbox_operator` records the actual signed
+delivery body, signature, verification and simulated HTTP result in private
+`operator-captures` files. Only the current community administrator can read
+them. The receiver verifies delivery ownership through the ordinary store seam;
+the dispatcher claims only that community's outbox. Credentials remain under
+the ordinary one-time disclosure contract and are absent from capture files.
+Reset, discard and expiry remove the entire capture directory and database.
+
 ## store/registry
 
 - **Tables:** `leg_registry`

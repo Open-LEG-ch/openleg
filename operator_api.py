@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import http.client
 import json
+import os
 import secrets
 import socket
 import ssl
@@ -27,6 +28,7 @@ import vnb_exchange
 API_SCHEMA_VERSION = "operator-api/1"
 EVENT_SCHEMA_VERSION = "operator-event/1"
 MAX_WEBHOOK_BATCH_SIZE = 100
+SANDBOX_WEBHOOK_URL = "https://sonnwil-simulation.invalid/webhook"
 CAPABILITIES = frozenset(
     {
         "formation.read",
@@ -637,6 +639,11 @@ def _public_webhook_addresses(url):
 
 
 def _is_public_webhook_url(url):
+    if current_app.config.get("SANDBOX_SIMULATION"):
+        return (
+            os.environ.get("OPENLEG_SANDBOX_WORKER") == "1"
+            and url == SANDBOX_WEBHOOK_URL
+        )
     return bool(_public_webhook_addresses(url))
 
 
@@ -675,14 +682,20 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
 
 
 def dispatch_pending_webhooks(
-    *, transport=None, max_attempts=5, batch_size=50, signing_key=None
+    *,
+    transport=None,
+    max_attempts=5,
+    batch_size=50,
+    signing_key=None,
+    community_id=None,
 ):
     transport = transport or _default_transport
     batch_size = max(1, min(int(batch_size), MAX_WEBHOOK_BATCH_SIZE))
     totals = {"attempted": 0, "delivered": 0, "failed": 0}
-    for row in db.get_pending_webhook_deliveries(
-        max_attempts=max_attempts, limit=batch_size
-    ):
+    claim = {"max_attempts": max_attempts, "limit": batch_size}
+    if community_id is not None:
+        claim["community_id"] = community_id
+    for row in db.get_pending_webhook_deliveries(**claim):
         totals["attempted"] += 1
         if (
             row.get("status") != "processing"

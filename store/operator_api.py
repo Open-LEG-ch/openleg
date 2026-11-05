@@ -179,12 +179,17 @@ def create_event(event_type, aggregate_id, community_id, payload):
         }
 
 
-def get_pending_deliveries(max_attempts=5, limit=100):
+def get_pending_deliveries(max_attempts=5, limit=100, *, community_id=None):
     """Atomically claim a bounded delivery batch for one worker."""
     safe_limit = max(1, min(int(limit), 100))
+    scope = " AND e.community_id=%s" if community_id is not None else ""
+    parameters = (max_attempts,)
+    if community_id is not None:
+        parameters += (community_id,)
+    parameters += (safe_limit,)
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """WITH candidates AS (
+            f"""WITH candidates AS (
                    SELECT d.delivery_id
                      FROM operator_webhook_deliveries d
                      JOIN operator_events e ON e.event_id=d.event_id
@@ -194,6 +199,7 @@ def get_pending_deliveries(max_attempts=5, limit=100):
                       AND d.attempt_count<%s AND c.active=TRUE
                       AND d.next_attempt_at<=CURRENT_TIMESTAMP
                       AND e.schema_version='operator-event/1'
+                      {scope}
                     ORDER BY e.occurred_at LIMIT %s FOR UPDATE OF d SKIP LOCKED
                ), claimed AS (
                    UPDATE operator_webhook_deliveries d
@@ -208,9 +214,24 @@ def get_pending_deliveries(max_attempts=5, limit=100):
                FROM claimed JOIN operator_events e ON e.event_id=claimed.event_id
                JOIN operator_api_clients c ON c.id=claimed.client_id
                ORDER BY e.occurred_at""",
-            (max_attempts, safe_limit),
+            parameters,
         )
         return [dict(row) for row in cur.fetchall()]
+
+
+def delivery_context(community_id, delivery_id):
+    """Read the scoped recipient's identity and current signature version."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT d.client_id,d.attempt_count,c.webhook_secret_version
+               FROM operator_webhook_deliveries d
+               JOIN operator_api_clients c ON c.id=d.client_id
+               JOIN operator_events e ON e.event_id=d.event_id
+               WHERE d.delivery_id=%s AND e.community_id=%s AND c.community_id=%s""",
+            (delivery_id, community_id, community_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
 
 
 def record_attempt(delivery_id, *, claim_id, status, response_status, retryable):
