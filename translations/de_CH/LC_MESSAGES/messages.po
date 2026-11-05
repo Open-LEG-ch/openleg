@@ -604,7 +604,7 @@ msgstr "Abgaben & Gebühren"
 msgid "Abgelaufen"
 msgstr "Abgelaufen"
 
-#: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:180
+#: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:178
 #: templates/contact_requests.html:32 templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 #: templates/sandbox/formation.html:37 templates/sandbox/formation.html:85
 msgid "Abgelehnt"
@@ -4147,7 +4147,7 @@ msgstr ""
 msgid "ElCom tariffs"
 msgstr "ElCom-Tarife"
 
-#: sandbox_formation.py:179 templates/sandbox/formation.html:38 templates/sandbox/formation.html:85
+#: sandbox_formation.py:177 templates/sandbox/formation.html:38 templates/sandbox/formation.html:85
 msgid "Empfang bestätigt"
 msgstr "Empfang bestätigt"
 
@@ -9771,7 +9771,7 @@ msgstr ""
 "SIMULATION SONNWIL - Erfundenes Dokument. Keine rechtsgültige Unterschrift, keine "
 "Zahlungsaufforderung und keine Netzbetreiber-Bewilligung."
 
-#: sandbox_formation.py:124
+#: sandbox_formation.py:122
 msgid "SIMULATION SONNWIL: LEG-Einladung"
 msgstr "SIMULATION SONNWIL: LEG-Einladung"
 
@@ -11495,7 +11495,7 @@ msgstr "Website (optional)"
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr "Website-URL muss mit http:// oder https:// beginnen."
 
-#: sandbox_formation.py:126
+#: sandbox_formation.py:124
 msgid ""
 "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
 "Einladung ist erfunden."
@@ -12043,7 +12043,7 @@ msgstr "Zugang vorhanden"
 msgid "Zugangslink anfordern"
 msgstr "Zugangslink anfordern"
 
-#: billing_lifecycle.py:16 sandbox_formation.py:178 templates/leg_dashboard.html:245
+#: billing_lifecycle.py:16 sandbox_formation.py:176 templates/leg_dashboard.html:245
 #: templates/leg_dashboard.html:274 templates/sandbox/formation.html:36
 msgid "Zugestellt"
 msgstr "Zugestellt"
@@ -12847,11 +12847,11 @@ msgstr "Übergabepaket herunterladen"
 msgid "Übermittlung"
 msgstr "Übermittlung"
 
-#: sandbox_formation.py:182
+#: sandbox_formation.py:180
 msgid "Übermittlung fehlgeschlagen"
 msgstr "Übermittlung fehlgeschlagen"
 
-#: sandbox_formation.py:181
+#: sandbox_formation.py:179
 msgid "Übermittlung vorbereitet"
 msgstr "Übermittlung vorbereitet"
 
