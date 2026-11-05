@@ -417,13 +417,34 @@ it.
 
 ## store/formation_documents
 
-- **Tables:** none of its own (writes `community_documents` atomically).
-- **Holds:** one LEG's generated document bundle (see store/document).
+- **Tables:** none of its own (writes `leg_documents` atomically).
+- **Holds:** one LEG's generated document bundle and rendered participant
+  manifest (see store/document).
 - **Purpose:** atomic multi-document persistence during formation.
 - **Owner:** the LEG.
 - **Sensitivity:** legal/personal.
 - **Resident-visible:** own community.
 - **Consent gate:** membership-gated.
+
+## store/formation_signatures
+
+- Tables: `leg_signature_receipts`; reads `leg_documents`, including its
+  `participant_manifest`, and the current community membership and consent rows.
+- Holds: community and participant IDs, the exact PDF-bundle fingerprint,
+  provider name, receipt evidence and creation time. Each document's manifest
+  retains the names, addresses, roles and building IDs rendered in that draft.
+- Purpose: bind one signature receipt to the reviewed documents and participant
+  set. Completion requires every current confirmed, verified, consenting signer.
+  Changed participants require new drafts. Sandbox receipts are explicitly
+  synthetic and have no legal effect.
+- Owner and access: the LEG. Only a current eligible participant can read the
+  bundle or record their own receipt. Document downloads use ordinary membership
+  checks; a neighbour-discovery grant alone gives no document access.
+- Sensitivity: private identity and contract evidence. It stays within each LEG,
+  is never sold and is never aggregated for third parties.
+- Retention: community or participant deletion cascades receipt rows. Scratch
+  village reset and expiry remove the entire private database and documents.
+  Existing contract and audit retention rules otherwise remain unchanged.
 
 ## store/correspondence
 
