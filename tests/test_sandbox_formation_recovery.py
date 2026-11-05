@@ -27,6 +27,7 @@ def _native_factory(village, prefix):
 
     @contextmanager
     def connect():
+        """Commit or roll back an owned native connection and always close it."""
         connection = psycopg2.connect(native_dsn, cursor_factory=RealDictCursor)
         try:
             with connection:
@@ -76,6 +77,7 @@ def _documents(village, client, cid):
 
 @pytest.mark.parametrize("state", ["acknowledged", "rejected"])
 def test_stale_delivered_form_after_response_returns_conflict(village, state):
+    """Refuse stale delivery choices without overwriting the recorded response."""
     client = village.test_client()
     prefix, cid = _signed(client)
     guide = prefix + "/sandbox/formation?cid=" + cid
@@ -107,6 +109,7 @@ def test_stale_delivered_form_after_response_returns_conflict(village, state):
 
 
 def test_completed_local_bundle_can_be_replaced_only_after_manifest_changes(village):
+    """Retain signed PDFs and require every participant to sign the new bundle."""
     client = village.test_client()
     prefix, cid = _signed(client)
     guide = prefix + "/sandbox/formation?cid=" + cid
@@ -205,17 +208,20 @@ def test_submission_cannot_deliver_a_bundle_replaced_after_its_initial_read(
 
     class WaitingCases:
         def claim(self, submission):
+            """Pause the real claim while a replacement bundle is generated and signed."""
             entered.set()
             assert resume.wait(90), "the replacement must release the paused claim"
             return repository.claim(submission)
 
         def record_outcome(self, case_id, outcome):
+            """Persist delivery results through the ordinary native repository."""
             return repository.record_outcome(case_id, outcome)
 
     class CountingAdapter(sandbox_formation.SimulationAdapter):
         calls = 0
 
         def submit(self, package, *, idempotency_key):
+            """Count adapter deliveries before returning a local receipt."""
             self.calls += 1
             return super().submit(package, idempotency_key=idempotency_key)
 
@@ -276,6 +282,7 @@ def test_submission_cannot_deliver_a_bundle_replaced_after_its_initial_read(
 def test_regeneration_preserves_provider_legacy_and_submitted_evidence(
     village, protection
 ):
+    """Protect external, unbound and already submitted contract evidence."""
     client = village.test_client()
     prefix, cid = _signed(client)
     if protection == "submission":
