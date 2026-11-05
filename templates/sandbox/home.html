@@ -19,5 +19,13 @@
   <p class="mt-4">{{ _('Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen Sie ihn im Postfach dieses Übungsdorfs.', email=sandbox_account.email if sandbox_account else 'sonnwil-resident@example.org') }}</p>
   {% endif %}
   <a href="/sandbox/accounts" class="mt-6 inline-block font-semibold underline">{{ _('Konto wechseln') }}</a>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Haushalt anmelden') }}</h2>
+    <p class="mt-3">{{ _('Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die Ersparnis mit den angezeigten Annahmen.') }}</p>
+    <p class="mt-3">{{ _('Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger Freigabe. Widerrufen Sie die Freigabe und prüfen Sie die Liste erneut.') }}</p>
+    <p class="mt-3">{{ _('Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an oder lehnen Sie sie ab.') }}</p>
+    <p class="mt-3">{{ _('Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren keinen Zugriff mehr. Ein Dorf-Reset stellt die Ausgangsdaten wieder her.') }}</p>
+    <a href="/sandbox/onboarding" class="mt-4 inline-block font-semibold underline">{{ _('Haushalt anmelden') }}</a>
+  </section>
 </div>
 {% endblock %}

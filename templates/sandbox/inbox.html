@@ -9,7 +9,16 @@
     <h2 class="text-xl font-semibold">{{ message.subject }}</h2>
     <p class="mt-2 text-sm">{{ _('An %(recipient)s', recipient=message.recipient) }}</p>
     <pre class="mt-4 whitespace-pre-wrap break-words font-sans">{{ message.body }}</pre>
-    {% for link in message.links %}<p class="mt-4"><a href="{{ link }}" class="font-semibold underline">{{ _('Link im Übungsdorf öffnen') }}</a></p>{% endfor %}
+    {% for link in message.links %}
+    <p class="mt-4"><a href="{{ link }}" class="font-semibold underline">{{ _('Link im Übungsdorf öffnen') }}</a></p>
+    {% if '/confirm/' in link %}
+    <p class="mt-4">{{ _('Nach der Bestätigung kehren Sie hierher zurück und fordern den Zugangslink für diesen Haushalt an.') }}</p>
+    <form method="post" action="/dashboard/access/request" class="mt-4">
+      <input type="hidden" name="email" value="{{ message.recipient }}">
+      <button type="submit" class="rounded-lg border border-line px-4 py-2 font-semibold">{{ _('Zugangslink anfordern') }}</button>
+    </form>
+    {% endif %}
+    {% endfor %}
   </article>
   {% else %}<p class="mt-6">{{ _('Noch keine simulierten Nachrichten.') }}</p>{% endfor %}
 </div>

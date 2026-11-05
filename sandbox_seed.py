@@ -152,6 +152,10 @@ FIXTURE_MANIFEST = {
     },
     "available_scenarios": [
         "resident-profile",
+        "resident-onboarding",
+        "neighbour-consent",
+        "neighbour-contact",
+        "profile-export-deletion",
         "access-email",
         "persona-switch",
         "role-scope",
@@ -170,15 +174,15 @@ def seed_village(db, directory):
         if json.loads(manifest.read_text())["version"] != SEED_VERSION:
             raise RuntimeError("sandbox fixture version mismatch")
         return
-    for identifier, address, consumption, solar in PERSONAS:
+    for index, (identifier, address, consumption, solar) in enumerate(PERSONAS, 1):
         if not db.save_building(
             identifier,
             identifier + "@example.org",
             {
                 "address": address,
                 "annual_consumption_kwh": consumption,
-                "lat": 0.01,
-                "lon": 0.01,
+                "lat": 47.1 + index / 10000,
+                "lon": 8.1 + index / 10000,
                 "potential_pv_kwp": 8 if solar else None,
                 "municipality_name": "Sonnwil (fiktiv)",
                 "bfs_number": 999999,

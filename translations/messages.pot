@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 00:14+0000\n"
+"POT-Creation-Date: 2026-11-05 00:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -746,7 +746,7 @@ msgid "Administration"
 msgstr ""
 
 #: templates/documents/community_agreement.html:17 templates/documents/dso_registration.html:22
-#: templates/leg_dashboard.html:154
+#: templates/leg_dashboard.html:154 templates/sandbox/onboarding.html:14
 msgid "Adresse"
 msgstr ""
 
@@ -1470,6 +1470,13 @@ msgstr ""
 
 #: templates/partials/install_console.html:1
 msgid "Befehl kopiert."
+msgstr ""
+
+#: templates/sandbox/home.html:24
+msgid ""
+"Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
+"sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
+"Ersparnis mit den angezeigten Annahmen."
 msgstr ""
 
 #: templates/emails/formation_nudge.html:43
@@ -2605,6 +2612,10 @@ msgid ""
 "Netzwerk."
 msgstr ""
 
+#: templates/sandbox/onboarding.html:7
+msgid "Die Anmeldung ist fehlgeschlagen. Prüfen Sie Ihre Angaben und versuchen Sie es erneut."
+msgstr ""
+
 #: templates/leg_gruenden.html:101
 msgid ""
 "Die Anmeldung läuft über das myPrimeo-Kundenportal. Fehlende Smart Meter baut Primeo Energie "
@@ -2994,7 +3005,7 @@ msgstr ""
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr ""
 
-#: sandbox_seed.py:45
+#: sandbox_seed.py:45 sandbox_worker.py:75
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr ""
 
@@ -3142,6 +3153,12 @@ msgid ""
 "Freigabe ist erst nach einem vollständigen Abgleich möglich."
 msgstr ""
 
+#: templates/sandbox/account_unavailable.html:6
+msgid ""
+"Dieser Haushalt ist gelöscht oder noch nicht bestätigt. Wählen Sie ein anderes Konto oder setzen "
+"Sie Ihr Übungsdorf zurück, um die Ausgangsdaten wiederherzustellen."
+msgstr ""
+
 #: templates/leg_billing.html:24
 msgid "Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht."
 msgstr ""
@@ -3235,7 +3252,7 @@ msgstr ""
 msgid "Dorf und Landschaft im ländlichen Raum"
 msgstr ""
 
-#: templates/sandbox/banner.html:7
+#: templates/sandbox/account_unavailable.html:9 templates/sandbox/banner.html:7
 msgid "Dorf verwalten"
 msgstr ""
 
@@ -3267,7 +3284,7 @@ msgstr ""
 
 #: templates/contact_requests.html:40 templates/dashboard.html:20 templates/dashboard.html:60
 #: templates/dashboard.html:257 templates/gemeinde/dashboard.html:151 templates/leg_dashboard.html:392
-#: templates/unsubscribe.html:48
+#: templates/sandbox/onboarding.html:15 templates/unsubscribe.html:48
 msgid "E-Mail-Adresse"
 msgstr ""
 
@@ -3761,7 +3778,7 @@ msgstr ""
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr ""
 
-#: sandbox_seed.py:27
+#: sandbox_seed.py:27 sandbox_worker.py:69
 msgid "Energieprofil ändern"
 msgstr ""
 
@@ -3840,6 +3857,13 @@ msgstr ""
 
 #: templates/emails/day_7_consumption.html:31
 msgid "Ergänzen Sie Ihren Stromverbrauch"
+msgstr ""
+
+#: templates/sandbox/home.html:25
+msgid ""
+"Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
+"vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
+"Freigabe. Widerrufen Sie die Freigabe und prüfen Sie die Liste erneut."
 msgstr ""
 
 #: templates/leg_billing.html:183
@@ -4129,6 +4153,13 @@ msgstr ""
 msgid "Frage senden"
 msgstr ""
 
+#: templates/sandbox/home.html:26
+msgid ""
+"Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
+"welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
+" oder lehnen Sie sie ab."
+msgstr ""
+
 #: templates/leg_gruenden.html:239
 msgid "Fragen ausserhalb der Gründungsschritte"
 msgstr ""
@@ -4298,6 +4329,10 @@ msgid ""
 "Die Teilnehmenden müssen keinen separaten LEG-Zähler kaufen. Nach einem gültigen Antrag "
 "installiert der Verteilnetzbetreiber fehlende erforderliche Smart Meter. Die regulierten "
 "Messtarife können weiterhin anfallen."
+msgstr ""
+
+#: templates/sandbox/onboarding.html:21
+msgid "Für diese Anmeldung muss JavaScript aktiviert sein."
 msgstr ""
 
 #: member_savings.py:46
@@ -4761,6 +4796,12 @@ msgstr ""
 msgid "Gespeichert. Mindestens eine E-Mail konnte nicht gesendet werden. Der Stand ist hier sichtbar."
 msgstr ""
 
+#: templates/sandbox/onboarding.html:7
+msgid ""
+"Gespeichert. Öffnen Sie den Bestätigungslink im Postfach. Kehren Sie danach zum Postfach zurück "
+"und fordern Sie dort den Zugangslink an."
+msgstr ""
+
 #: templates/equipment_form.html:108
 msgid "Gespeicherte Übergabe herunterladen"
 msgstr ""
@@ -5006,12 +5047,18 @@ msgstr ""
 msgid "Hallo,"
 msgstr ""
 
-#: sandbox_seed.py:23 templates/contact_requests.html:70 templates/dashboard.html:83
-#: templates/gemeinde/dashboard.html:36 templates/gemeinde/dashboard.html:40
+#: sandbox_seed.py:23 sandbox_worker.py:64 templates/contact_requests.html:70
+#: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
+#: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
 msgid_plural "Haushalte"
 msgstr[0] ""
 msgstr[1] ""
+
+#: templates/sandbox/home.html:23 templates/sandbox/home.html:28 templates/sandbox/onboarding.html:2
+#: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
+msgid "Haushalt anmelden"
+msgstr ""
 
 #: sandbox_seed.py:38
 msgid "Haushalt mit Solaranlage"
@@ -5214,6 +5261,10 @@ msgstr ""
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr ""
 
+#: sandbox_worker.py:70
+msgid "Ihr neuer Haushalt ist bestätigt."
+msgstr ""
+
 #: templates/index.html:408
 msgid "Ihre Adresse"
 msgstr ""
@@ -5367,6 +5418,13 @@ msgstr ""
 
 #: templates/emails/day_7_consumption.html:41
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
+msgstr ""
+
+#: templates/sandbox/home.html:27
+msgid ""
+"Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
+"bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
+"keinen Zugriff mehr. Ein Dorf-Reset stellt die Ausgangsdaten wieder her."
 msgstr ""
 
 #: templates/leg_dashboard.html:378
@@ -5602,6 +5660,10 @@ msgstr ""
 
 #: templates/leg_dashboard.html:77
 msgid "Jahreskosten:"
+msgstr ""
+
+#: templates/sandbox/onboarding.html:16
+msgid "Jahresverbrauch (kWh)"
 msgstr ""
 
 #: templates/documents/participant_contract.html:17
@@ -6074,7 +6136,12 @@ msgstr ""
 msgid "Kontaktperson"
 msgstr ""
 
-#: templates/sandbox/banner.html:5 templates/sandbox/home.html:21
+#: templates/sandbox/account_unavailable.html:2 templates/sandbox/account_unavailable.html:5
+msgid "Konto nicht verfügbar"
+msgstr ""
+
+#: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
+#: templates/sandbox/home.html:21
 msgid "Konto wechseln"
 msgstr ""
 
@@ -6548,7 +6615,7 @@ msgstr ""
 msgid "Link erneut anfordern"
 msgstr ""
 
-#: templates/sandbox/inbox.html:12
+#: templates/sandbox/inbox.html:13
 msgid "Link im Übungsdorf öffnen"
 msgstr ""
 
@@ -6762,7 +6829,7 @@ msgstr ""
 msgid "Mein Energieprofil darf für die LEG-Abklärung an %(utility)s weitergegeben werden."
 msgstr ""
 
-#: templates/dashboard.html:184
+#: templates/dashboard.html:184 templates/sandbox/onboarding.html:18
 msgid ""
 "Mein Interesse darf passenden Haushalten in der Nachbarschaft angezeigt werden. Meine "
 "Kontaktdaten bleiben privat."
@@ -7097,6 +7164,10 @@ msgstr ""
 msgid "Nach dem Neuladen ist Ihr gespeicherter Jahresverbrauch weiterhin sichtbar."
 msgstr ""
 
+#: templates/sandbox/inbox.html:15
+msgid "Nach der Bestätigung kehren Sie hierher zurück und fordern den Zugangslink für diesen Haushalt an."
+msgstr ""
+
 #: templates/emails/day_14_formation.html:65
 msgid "Nach der Genehmigung teilen Sie den lokalen Strom innerhalb der LEG."
 msgstr ""
@@ -7386,6 +7457,10 @@ msgstr ""
 msgid "Neuenburg"
 msgstr ""
 
+#: sandbox_worker.py:63
+msgid "Neuer Haushalt"
+msgstr ""
+
 #: billing_workspace.py:261 billing_workspace.py:268 billing_workspace.py:315 billing_workspace.py:319
 #: billing_workspace.py:323 dashboard.py:498 templates/utility/dashboard.html:61
 #: templates/utility/dashboard.html:130 templates/utility/dashboard.html:138
@@ -7511,7 +7586,7 @@ msgstr ""
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr ""
 
-#: templates/sandbox/inbox.html:14
+#: templates/sandbox/inbox.html:23
 msgid "Noch keine simulierten Nachrichten."
 msgstr ""
 
@@ -7687,6 +7762,16 @@ msgstr ""
 msgid ""
 "Offenes Verzeichnis Schweizer Lokaler Elektrizitätsgemeinschaften (LEG), unabhängig davon, welche"
 " Plattform bei der Gründung half. Selbst eintragen oder nach Kanton und PLZ suchen."
+msgstr ""
+
+#: templates/sandbox/onboarding.html:8
+msgid "Offline-Adresse auswählen"
+msgstr ""
+
+#: templates/sandbox/onboarding.html:6
+msgid ""
+"Offline-Beispiele: Alle Adressen und Energiewerte sind erfunden. Verwenden Sie eine erfundene E"
+"-Mail-Adresse. Es wird keine Nachricht versendet."
 msgstr ""
 
 #: templates/leg_kalkulator.html:206
@@ -8076,6 +8161,10 @@ msgstr ""
 msgid "PV-Erzeugung"
 msgstr ""
 
+#: templates/sandbox/onboarding.html:17
+msgid "PV-Leistung (kWp)"
+msgstr ""
+
 #: templates/equipment_form.html:82
 msgid ""
 "PV-Module oder eine Batterie belegen keine Ersatzstromfähigkeit. Lassen Sie Umschaltung, "
@@ -8147,7 +8236,7 @@ msgstr ""
 msgid "Positionen"
 msgstr ""
 
-#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2
+#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2 templates/sandbox/onboarding.html:24
 msgid "Postfach"
 msgstr ""
 
@@ -10917,7 +11006,7 @@ msgid "Zugang vorhanden"
 msgstr ""
 
 #: templates/dashboard.html:17 templates/dashboard.html:56 templates/dashboard.html:251
-#: templates/gemeinde/dashboard.html:153
+#: templates/gemeinde/dashboard.html:153 templates/sandbox/inbox.html:18
 msgid "Zugangslink anfordern"
 msgstr ""
 
@@ -11604,7 +11693,7 @@ msgstr ""
 msgid "Ändern"
 msgstr ""
 
-#: sandbox_seed.py:44
+#: sandbox_seed.py:44 sandbox_worker.py:72
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr ""
 
@@ -11716,7 +11805,7 @@ msgstr ""
 msgid "Üblicher Bereich: zwischen"
 msgstr ""
 
-#: templates/sandbox/banner.html:4
+#: templates/sandbox/banner.html:4 templates/sandbox/onboarding.html:25
 msgid "Übungsdorf"
 msgstr ""
 

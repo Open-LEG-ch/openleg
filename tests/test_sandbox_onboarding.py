@@ -1,0 +1,493 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""A fictional registration through the ordinary product and captured inbox."""
+
+import html
+import re
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+import psycopg2
+import pytest
+from psycopg2.extensions import make_dsn
+
+from tests import test_sandbox_http
+from tests.test_sandbox_personas import _start, _switch
+
+village = test_sandbox_http.village
+_csrf = test_sandbox_http._csrf
+pytestmark = pytest.mark.integration
+
+
+def _mail_link(client, prefix, path):
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        inbox = client.get(prefix + "/sandbox/inbox")
+        match = re.search(r'href="(' + prefix + path + r'[^"?]+)', inbox.text)
+        if match:
+            return html.unescape(match.group(1))
+        time.sleep(0.05)
+    pytest.fail("the captured inbox did not receive the expected link")
+
+
+def test_new_household_uses_offline_defaults_and_normal_confirmation_login(village):
+    first, other = village.test_client(), village.test_client()
+    prefix, resident = _start(first, "resident")
+    other_prefix, _ = _start(other, "resident")
+    form = first.get(prefix + "/sandbox/onboarding")
+    assert form.status_code == 200
+    assert 'name="email"' in form.text
+    assert 'value="sonnwil-new@example.org"' in form.text
+    assert "Musterweg 7" in form.text
+    assert "Offline" in form.text
+    assert "onboarding.js" in form.text
+    registration_id = re.search(
+        r'data-building-id="(sonnwil-new-[a-f0-9]{16})"', form.text
+    ).group(1)
+    assert (
+        first.post(
+            prefix + "/dashboard/logout", data={"csrf_token": _csrf(resident)}
+        ).status_code
+        == 302
+    )
+    response = first.post(
+        prefix + "/api/register_full",
+        json={
+            "email": "sonnwil-new@example.org",
+            "profile": {
+                "building_id": registration_id,
+                "address": "Musterweg 7, Sonnwil",
+                "annual_consumption_kwh": 4200,
+                "lat": 47.1007,
+                "lon": 8.1007,
+                "bfs_number": 999999,
+                "municipality_name": "Sonnwil (fiktiv)",
+                "plz": "0000",
+                "canton": "ZH",
+            },
+            "consents": {"share_with_neighbors": False},
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert response.json["verification_email_sent"] is True
+    confirmation = _mail_link(first, prefix, "/confirm/")
+    inbox = first.get(prefix + "/sandbox/inbox")
+    assert 'action="' + prefix + '/dashboard/access/request"' in inbox.text
+    assert 'name="email" value="sonnwil-new@example.org"' in inbox.text
+    assert confirmation not in other.get(other_prefix + "/sandbox/inbox").text
+    assert other.get(confirmation.replace(prefix, other_prefix)).status_code == 404
+    assert first.get(prefix + "/dashboard/export").status_code == 401
+    assert first.get(confirmation).status_code == 200
+    assert first.get(confirmation).status_code == 404
+    assert first.get(prefix + "/dashboard/export").status_code == 401
+    assert (
+        first.post(
+            prefix + "/dashboard/access/request",
+            data={"email": "sonnwil-new@example.org"},
+        ).status_code
+        == 200
+    )
+    access = _mail_link(first, prefix, "/dashboard/access/")
+    assert other.get(access.replace(prefix, other_prefix)).location.endswith(
+        "access=invalid"
+    )
+    assert first.get(access).location == prefix + "/dashboard"
+    assert first.get(access).location.endswith("access=invalid")
+    profile = first.get(prefix + "/dashboard/export")
+    assert profile.json["building_id"] == registration_id
+    assert profile.json["annual_consumption_kwh"] == 4200
+    assert profile.json["share_with_neighbors"] is False
+    home = first.get(prefix + "/sandbox/home")
+    assert "Musterweg 7" in home.text
+    assert "sonnwil-new@example.org" in home.text
+    assert "abgemeldet" not in home.text
+
+    dashboard = first.get(prefix + "/dashboard")
+    assert (
+        first.post(
+            prefix + "/dashboard/profile",
+            data={
+                "csrf_token": _csrf(dashboard),
+                "annual_consumption_kwh": "7200",
+                "potential_pv_kwp": "8",
+                "share_with_neighbors": "on",
+            },
+        ).status_code
+        == 302
+    )
+    saved = first.get(prefix + "/dashboard/export").json
+    assert saved["annual_consumption_kwh"] == 7200
+    assert saved["share_with_neighbors"] is True
+    calculation = first.post(
+        prefix + "/api/calculate_savings",
+        json={
+            "consumption_kwh": saved["annual_consumption_kwh"],
+            "has_solar": True,
+            "pv_kwp": 8,
+        },
+    )
+    assert calculation.status_code == 200
+    assert calculation.json["annual_savings_chf"] >= 0
+    assert calculation.json["assumptions"]["community_size"] == 5
+    contacts = first.get(prefix + "/dashboard/contacts")
+    candidates = re.findall(r'name="candidate" value="([^"]+)"', contacts.text)
+    assert len(candidates) == 5  # Five opted-in seeds; the private seed is absent.
+    stale_candidate = candidates[0]
+    resident = _switch(first, prefix, "resident")
+    assert _neighbor_count(resident) == 6
+    assert (
+        len(
+            re.findall(
+                r'name="candidate"', first.get(prefix + "/dashboard/contacts").text
+            )
+        )
+        == 5
+    )
+
+    assert (
+        first.post(
+            prefix + "/dashboard/access/request",
+            data={"email": "sonnwil-new@example.org"},
+        ).status_code
+        == 200
+    )
+    assert (
+        first.get(_mail_link(first, prefix, "/dashboard/access/")).location
+        == prefix + "/dashboard"
+    )
+    dashboard = first.get(prefix + "/dashboard")
+    assert (
+        first.post(
+            prefix + "/dashboard/profile",
+            data={
+                "csrf_token": _csrf(dashboard),
+                "annual_consumption_kwh": "7200",
+                "potential_pv_kwp": "8",
+            },
+        ).status_code
+        == 302
+    )
+    dashboard = first.get(prefix + "/dashboard")
+    assert (
+        first.post(
+            prefix + "/dashboard/contacts",
+            data={
+                "csrf_token": _csrf(dashboard),
+                "candidate": stale_candidate,
+                "share_email": "yes",
+            },
+        ).status_code
+        == 403
+    )
+    resident = _switch(first, prefix, "resident")
+    assert _neighbor_count(resident) == 5
+    assert (
+        len(
+            re.findall(
+                r'name="candidate"', first.get(prefix + "/dashboard/contacts").text
+            )
+        )
+        == 4
+    )
+    assert _neighbor_count(other.get(other_prefix + "/dashboard")) == 5
+
+
+def _neighbor_count(page):
+    return int(re.search(r"<strong data-statistic[^>]*>(\d+) ", page.text).group(1))
+
+
+def _request_contact(client, prefix):
+    page = client.get(prefix + "/dashboard/contacts")
+    candidate = re.search(r'name="candidate" value="([^"]+)"', page.text).group(1)
+    data = {"csrf_token": _csrf(page), "candidate": candidate}
+    assert client.post(prefix + "/dashboard/contacts", data=data).status_code == 403
+    assert (
+        client.post(
+            prefix + "/dashboard/contacts", data={**data, "share_email": "yes"}
+        ).status_code
+        == 302
+    )
+    page = client.get(prefix + "/dashboard/contacts")
+    request_id = re.search(r"/contacts/([a-f0-9-]+)/revoke", page.text).group(1)
+    return request_id, page
+
+
+def _find_incoming(client, prefix, request_id):
+    accounts = {
+        "producer": "sonnwil-producer@example.org",
+        "founder": "sonnwil-founder@example.org",
+        "administrator": "sonnwil-neighbour@example.org",
+        "operator": "sonnwil-operator@example.org",
+    }
+    for role, email in accounts.items():
+        _switch(client, prefix, role)
+        page = client.get(prefix + "/dashboard/contacts")
+        if f"/contacts/{request_id}/accept" in page.text:
+            return role, email, page
+    pytest.fail("no consenting fictional household received the contact request")
+
+
+def test_contact_details_require_both_grants_and_can_be_revoked_or_declined(village):
+    client = village.test_client()
+    prefix, _ = _start(client, "resident")
+    request_id, owner_page = _request_contact(client, prefix)
+    path = prefix + f"/dashboard/contacts/{request_id}"
+    assert (
+        client.post(
+            path + "/accept",
+            data={"csrf_token": _csrf(owner_page), "share_email": "yes"},
+        ).status_code
+        == 403
+    )
+    role, peer_email, incoming = _find_incoming(client, prefix, request_id)
+    assert peer_email not in owner_page.text
+    assert "sonnwil-resident@example.org" not in incoming.text
+    assert (
+        client.post(path + "/accept", data={"csrf_token": _csrf(incoming)}).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            path + "/accept", data={"csrf_token": _csrf(incoming), "share_email": "yes"}
+        ).status_code
+        == 302
+    )
+    assert (
+        "sonnwil-resident@example.org"
+        in client.get(prefix + "/dashboard/contacts").text
+    )
+    _switch(client, prefix, "resident")
+    shared = client.get(prefix + "/dashboard/contacts")
+    assert peer_email in shared.text
+    assert (
+        client.post(path + "/revoke", data={"csrf_token": _csrf(shared)}).status_code
+        == 302
+    )
+    assert peer_email not in client.get(prefix + "/dashboard/contacts").text
+    _switch(client, prefix, role)
+    assert (
+        "sonnwil-resident@example.org"
+        not in client.get(prefix + "/dashboard/contacts").text
+    )
+
+    _switch(client, prefix, "resident")
+    declined_id, owner_page = _request_contact(client, prefix)
+    assert declined_id != request_id
+    _role, peer_email, incoming = _find_incoming(client, prefix, declined_id)
+    path = prefix + f"/dashboard/contacts/{declined_id}"
+    assert (
+        client.post(path + "/decline", data={"csrf_token": _csrf(incoming)}).status_code
+        == 302
+    )
+    declined = client.get(prefix + "/dashboard/contacts")
+    assert "Abgelehnt" in declined.text
+    assert "sonnwil-resident@example.org" not in declined.text
+    assert (
+        client.post(
+            path + "/accept", data={"csrf_token": _csrf(declined), "share_email": "yes"}
+        ).status_code
+        == 403
+    )
+    _switch(client, prefix, "resident")
+    assert peer_email not in client.get(prefix + "/dashboard/contacts").text
+
+
+def test_profile_deletion_retires_copied_sessions_pending_links_and_demo_login(village):
+    client = village.test_client()
+    prefix, _ = _start(client, "resident")
+    exported = client.get(prefix + "/dashboard/export")
+    assert exported.status_code == 200
+    old_cookie = client.get_cookie("openleg_product", path=prefix).value
+    assert (
+        client.post(
+            prefix + "/dashboard/access/request",
+            data={"email": "sonnwil-resident@example.org"},
+        ).status_code
+        == 200
+    )
+    pending_access = _mail_link(client, prefix, "/dashboard/access/")
+    assert (
+        client.post(
+            prefix + "/unsubscribe", data={"email": "sonnwil-resident@example.org"}
+        ).status_code
+        == 200
+    )
+    deletion = _mail_link(client, prefix, "/unsubscribe/")
+    assert client.get(deletion).status_code == 200
+    assert client.get(prefix + "/dashboard/export").status_code == 200
+    deleted = client.post(deletion)
+    assert deleted.status_code == 200
+    assert "erfolgreich gelöscht" in deleted.text
+    assert client.get(prefix + "/dashboard/export").status_code == 401
+    client.set_cookie("openleg_product", old_cookie, path=prefix)
+    assert client.get(prefix + "/dashboard/export").status_code == 401
+    assert client.get(pending_access).location.endswith("access=invalid")
+    assert client.post(deletion).status_code == 404
+    chooser = client.get(prefix + "/sandbox/accounts")
+    assert (
+        client.post(
+            prefix + "/sandbox/persona",
+            data={"csrf_token": _csrf(chooser), "persona": "resident"},
+        ).status_code
+        == 410
+    )
+    assert exported.json["_simulation"] == {"village": "Sonnwil", "synthetic": True}
+    assert "simulation-sonnwil" in exported.headers["Content-Disposition"]
+
+
+def _workspace_connection(gateway, client):
+    with client.session_transaction() as state:
+        manager = gateway.extensions["villages"]
+        name = manager.workspaces[state["workspace"]]["name"]
+    return psycopg2.connect(make_dsn(manager.postgres.dsn, dbname=name))
+
+
+@pytest.mark.parametrize("fail_rotation", [False, True])
+def test_mailbox_deletion_retires_cookies_before_the_household_can_be_recreated(
+    village, fail_rotation
+):
+    owner, anonymous = village.test_client(), village.test_client()
+    prefix, _ = _start(owner, "resident")
+    copied_cookie = owner.get_cookie("openleg_product", path=prefix).value
+    anonymous.set_cookie("openleg_sandbox", owner.get_cookie("openleg_sandbox").value)
+    assert (
+        owner.post(
+            prefix + "/unsubscribe", data={"email": "sonnwil-resident@example.org"}
+        ).status_code
+        == 200
+    )
+    deletion = _mail_link(owner, prefix, "/unsubscribe/")
+    if fail_rotation:
+        _delete_while_generation_becomes_read_only(village, anonymous, deletion)
+    else:
+        assert anonymous.post(deletion).status_code == 200
+    # No authenticated read occurs between deletion and a complete new signup.
+    assert (
+        anonymous.post(
+            prefix + "/api/register_full",
+            json={
+                "email": "replacement@example.org",
+                "profile": {
+                    "building_id": "sonnwil-resident",
+                    "address": "Musterweg 9, Sonnwil",
+                    "lat": 47.1009,
+                    "lon": 8.1009,
+                    "annual_consumption_kwh": 9000,
+                    "potential_pv_kwp": 0,
+                    "bfs_number": 999999,
+                },
+            },
+        ).status_code
+        == 200
+    )
+    assert anonymous.get(_mail_link(anonymous, prefix, "/confirm/")).status_code == 200
+    owner.set_cookie("openleg_product", copied_cookie, path=prefix)
+    assert owner.get(prefix + "/dashboard/export").status_code == 401
+
+
+def _delete_while_generation_becomes_read_only(gateway, client, deletion):
+    with client.session_transaction() as state:
+        manager = gateway.extensions["villages"]
+        nonce = (
+            manager.workspaces[state["workspace"]]["directory"] / ".session-generation"
+        )
+    try:
+        with _workspace_connection(gateway, client) as blocker:
+            with blocker.cursor() as cursor:
+                cursor.execute(
+                    "SELECT token FROM tokens WHERE token = %s FOR UPDATE",
+                    (deletion.rsplit("/", 1)[1],),
+                )
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                pending = executor.submit(client.post, deletion)
+                try:
+                    with _workspace_connection(gateway, client) as probe:
+                        probe.autocommit = True
+                        with probe.cursor() as cursor:
+                            deadline = time.monotonic() + 5
+                            while time.monotonic() < deadline:
+                                cursor.execute(
+                                    "SELECT 1 FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%FROM tokens%' AND query LIKE '%FOR UPDATE%'"
+                                )
+                                if cursor.fetchone():
+                                    break
+                                time.sleep(0.02)
+                            else:
+                                pytest.fail(
+                                    "deletion did not reach its locked token after session validation"
+                                )
+                    nonce.chmod(0o400)
+                finally:
+                    blocker.rollback()
+                response = pending.result(timeout=10)
+                assert response.status_code in (200, 503)
+    finally:
+        nonce.chmod(0o600)
+
+
+def test_expired_confirmation_and_access_links_require_fresh_captured_mail(village):
+    client = village.test_client()
+    prefix, resident = _start(client, "resident")
+    assert (
+        client.post(
+            prefix + "/dashboard/logout", data={"csrf_token": _csrf(resident)}
+        ).status_code
+        == 302
+    )
+    payload = {
+        "email": "sonnwil-expiring@example.org",
+        "profile": {
+            "building_id": "sonnwil-expiring",
+            "address": "Musterweg 8, Sonnwil",
+            "lat": 47.1008,
+            "lon": 8.1008,
+            "annual_consumption_kwh": 4000,
+            "potential_pv_kwp": 0,
+            "bfs_number": 999999,
+        },
+    }
+    assert client.post(prefix + "/api/register_full", json=payload).status_code == 200
+    expired = _mail_link(client, prefix, "/confirm/")
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "UPDATE tokens SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 second' WHERE token = %s",
+            (expired.rsplit("/", 1)[1],),
+        )
+    assert client.get(expired).status_code == 404
+    assert client.get(prefix + "/dashboard/export").status_code == 401
+    assert client.post(prefix + "/api/register_full", json=payload).status_code == 200
+    fresh = _mail_link(client, prefix, "/confirm/")
+    assert fresh != expired
+    assert client.get(fresh).status_code == 200
+    assert (
+        client.post(
+            prefix + "/dashboard/access/request", data={"email": payload["email"]}
+        ).status_code
+        == 200
+    )
+    expired_access = _mail_link(client, prefix, "/dashboard/access/")
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "UPDATE dashboard_access_tokens SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 second' WHERE building_id = %s",
+            (payload["profile"]["building_id"],),
+        )
+    assert client.get(expired_access).location.endswith("access=invalid")
+    assert client.get(prefix + "/dashboard/export").status_code == 401
+    assert (
+        client.post(
+            prefix + "/dashboard/access/request", data={"email": payload["email"]}
+        ).status_code
+        == 200
+    )
+    fresh_access = _mail_link(client, prefix, "/dashboard/access/")
+    assert fresh_access != expired_access
+    assert client.get(fresh_access).location == prefix + "/dashboard"
+    assert (
+        client.get(prefix + "/dashboard/export").json["building_id"]
+        == "sonnwil-expiring"
+    )

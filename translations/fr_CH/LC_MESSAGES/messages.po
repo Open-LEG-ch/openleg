@@ -776,7 +776,7 @@ msgid "Administration"
 msgstr "Administration"
 
 #: templates/documents/community_agreement.html:17 templates/documents/dso_registration.html:22
-#: templates/leg_dashboard.html:154
+#: templates/leg_dashboard.html:154 templates/sandbox/onboarding.html:14
 msgid "Adresse"
 msgstr "Adresse"
 
@@ -1558,6 +1558,16 @@ msgstr "Copier la commande"
 #: templates/partials/install_console.html:1
 msgid "Befehl kopiert."
 msgstr "Commande copiée."
+
+#: templates/sandbox/home.html:24
+msgid ""
+"Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
+"sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
+"Ersparnis mit den angezeigten Annahmen."
+msgstr ""
+"Créez un nouveau ménage fictif. Confirmez-le dans la boîte de réception et connectez-vous avec un"
+" lien d'accès. Modifiez ensuite le profil énergétique et calculez les économies avec les "
+"hypothèses affichées."
 
 #: templates/emails/formation_nudge.html:43
 msgid "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
@@ -2821,6 +2831,10 @@ msgid ""
 "Netzwerk."
 msgstr "Le guide couvre l’installation, les mises à jour, les sauvegardes et l’accès par un réseau privé."
 
+#: templates/sandbox/onboarding.html:7
+msgid "Die Anmeldung ist fehlgeschlagen. Prüfen Sie Ihre Angaben und versuchen Sie es erneut."
+msgstr "L'inscription a échoué. Vérifiez vos données et réessayez."
+
 #: templates/leg_gruenden.html:101
 msgid ""
 "Die Anmeldung läuft über das myPrimeo-Kundenportal. Fehlende Smart Meter baut Primeo Energie "
@@ -3289,7 +3303,7 @@ msgstr ""
 "La langue des e-mails et l'état de la clé enregistrés sont conservés lorsque vous changez de "
 "compte."
 
-#: sandbox_seed.py:45
+#: sandbox_seed.py:45 sandbox_worker.py:75
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Les informations enregistrées apparaissent après le rechargement."
 
@@ -3472,6 +3486,14 @@ msgstr ""
 "Ce projet ne peut pas être validé : le rapprochement présente des écarts ou des documents sources"
 " manquent. La validation exige un rapprochement entièrement concordant."
 
+#: templates/sandbox/account_unavailable.html:6
+msgid ""
+"Dieser Haushalt ist gelöscht oder noch nicht bestätigt. Wählen Sie ein anderes Konto oder setzen "
+"Sie Ihr Übungsdorf zurück, um die Ausgangsdaten wiederherzustellen."
+msgstr ""
+"Ce ménage a été supprimé ou n'est pas encore confirmé. Choisissez un autre compte ou "
+"réinitialisez votre village d'essai pour retrouver les données de départ."
+
 #: templates/leg_billing.html:24
 msgid "Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht."
 msgstr "Ce relevé bancaire a déjà été importé. Aucun paiement n'a été enregistré deux fois."
@@ -3573,7 +3595,7 @@ msgstr "Supprimer le village"
 msgid "Dorf und Landschaft im ländlichen Raum"
 msgstr "Village et paysage rural"
 
-#: templates/sandbox/banner.html:7
+#: templates/sandbox/account_unavailable.html:9 templates/sandbox/banner.html:7
 msgid "Dorf verwalten"
 msgstr "Gérer le village"
 
@@ -3605,7 +3627,7 @@ msgstr "E-mail envoyé"
 
 #: templates/contact_requests.html:40 templates/dashboard.html:20 templates/dashboard.html:60
 #: templates/dashboard.html:257 templates/gemeinde/dashboard.html:151 templates/leg_dashboard.html:392
-#: templates/unsubscribe.html:48
+#: templates/sandbox/onboarding.html:15 templates/unsubscribe.html:48
 msgid "E-Mail-Adresse"
 msgstr "Adresse e-mail"
 
@@ -4147,7 +4169,7 @@ msgstr ""
 "Profil énergétique et potentiel CEL de %(name)s : tarifs électriques, exploitation du potentiel "
 "solaire et score de transition énergétique."
 
-#: sandbox_seed.py:27
+#: sandbox_seed.py:27 sandbox_worker.py:69
 msgid "Energieprofil ändern"
 msgstr "Modifier le profil énergétique"
 
@@ -4231,6 +4253,16 @@ msgstr "Résultat de l'accès à distance"
 #: templates/emails/day_7_consumption.html:31
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Complétez votre consommation électrique"
+
+#: templates/sandbox/home.html:25
+msgid ""
+"Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
+"vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
+"Freigabe. Widerrufen Sie die Freigabe und prüfen Sie die Liste erneut."
+msgstr ""
+"Autorisez l'affichage dans le voisinage. Passez à un autre ménage et comparez le nombre de "
+"ménages et la liste de contacts. Les coordonnées apparaissent après l'accord des deux parties. "
+"Révoquez votre accord et vérifiez à nouveau la liste."
 
 #: templates/leg_billing.html:183
 msgid "Erledigen"
@@ -4527,6 +4559,15 @@ msgstr "Progression :"
 msgid "Frage senden"
 msgstr "Envoyer une question"
 
+#: templates/sandbox/home.html:26
+msgid ""
+"Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
+"welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
+" oder lehnen Sie sie ab."
+msgstr ""
+"Demandez un contact et choisissez les coordonnées à partager. La boîte de réception indique quel "
+"ménage a été averti. Passez à son compte pour accepter ou refuser la demande."
+
 #: templates/leg_gruenden.html:239
 msgid "Fragen ausserhalb der Gründungsschritte"
 msgstr "Des questions en dehors des étapes fondatrices"
@@ -4714,6 +4755,10 @@ msgstr ""
 "participants n’ont pas à acheter de compteur CEL séparé. Après une demande valable, le GRD "
 "installe les compteurs intelligents nécessaires qui manquent. Les tarifs de mesure réglementés "
 "peuvent continuer à s’appliquer."
+
+#: templates/sandbox/onboarding.html:21
+msgid "Für diese Anmeldung muss JavaScript aktiviert sein."
+msgstr "JavaScript doit être activé pour cette inscription."
 
 #: member_savings.py:46
 msgid ""
@@ -5204,6 +5249,14 @@ msgstr "Enregistré. Les deux personnes ont été prévenues."
 msgid "Gespeichert. Mindestens eine E-Mail konnte nicht gesendet werden. Der Stand ist hier sichtbar."
 msgstr "Enregistré. Au moins un e-mail n’a pas pu être envoyé. L’état actuel est visible ici."
 
+#: templates/sandbox/onboarding.html:7
+msgid ""
+"Gespeichert. Öffnen Sie den Bestätigungslink im Postfach. Kehren Sie danach zum Postfach zurück "
+"und fordern Sie dort den Zugangslink an."
+msgstr ""
+"Enregistré. Ouvrez le lien de confirmation dans la boîte de réception. Revenez ensuite dans la "
+"boîte de réception pour demander le lien d'accès."
+
 #: templates/equipment_form.html:108
 msgid "Gespeicherte Übergabe herunterladen"
 msgstr "Télécharger le transfert enregistré"
@@ -5465,12 +5518,18 @@ msgstr "Exclusion de responsabilité"
 msgid "Hallo,"
 msgstr "Bonjour,"
 
-#: sandbox_seed.py:23 templates/contact_requests.html:70 templates/dashboard.html:83
-#: templates/gemeinde/dashboard.html:36 templates/gemeinde/dashboard.html:40
+#: sandbox_seed.py:23 sandbox_worker.py:64 templates/contact_requests.html:70
+#: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
+#: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
 msgid_plural "Haushalte"
 msgstr[0] "ménage"
 msgstr[1] "ménages"
+
+#: templates/sandbox/home.html:23 templates/sandbox/home.html:28 templates/sandbox/onboarding.html:2
+#: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
+msgid "Haushalt anmelden"
+msgstr "Inscrire un ménage"
 
 #: sandbox_seed.py:38
 msgid "Haushalt mit Solaranlage"
@@ -5691,6 +5750,10 @@ msgstr "Votre village d'essai"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Votre gestionnaire de réseau fictif est actif et n'a pas encore de clé API."
 
+#: sandbox_worker.py:70
+msgid "Ihr neuer Haushalt ist bestätigt."
+msgstr "Votre nouveau ménage est confirmé."
+
 #: templates/index.html:408
 msgid "Ihre Adresse"
 msgstr "Votre adresse"
@@ -5860,6 +5923,17 @@ msgstr "Vos habitudes de consommation, en journée ou en soirée"
 #: templates/emails/day_7_consumption.html:41
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr "Votre consommation annuelle approximative en kWh (indiquée sur la facture d’électricité)"
+
+#: templates/sandbox/home.html:27
+msgid ""
+"Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
+"bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
+"keinen Zugriff mehr. Ein Dorf-Reset stellt die Ausgangsdaten wieder her."
+msgstr ""
+"Dans le tableau de bord, téléchargez votre profil fictif ou confirmez sa suppression dans la "
+"boîte de réception. Le profil et ses autorisations sont alors supprimés. Les anciens liens "
+"d'accès ne permettent plus de se connecter. Une réinitialisation du village rétablit les données "
+"de départ."
 
 #: templates/leg_dashboard.html:378
 msgid "Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern."
@@ -6113,6 +6187,10 @@ msgstr "Coût annuel en CHF, entre 0 et 100000, avec au plus 2 décimales."
 #: templates/leg_dashboard.html:77
 msgid "Jahreskosten:"
 msgstr "Coûts annuels :"
+
+#: templates/sandbox/onboarding.html:16
+msgid "Jahresverbrauch (kWh)"
+msgstr "Consommation annuelle (kWh)"
 
 #: templates/documents/participant_contract.html:17
 msgid "Jahresverbrauch:"
@@ -6608,7 +6686,12 @@ msgstr "Demandes de contact |"
 msgid "Kontaktperson"
 msgstr "Personne de contact"
 
-#: templates/sandbox/banner.html:5 templates/sandbox/home.html:21
+#: templates/sandbox/account_unavailable.html:2 templates/sandbox/account_unavailable.html:5
+msgid "Konto nicht verfügbar"
+msgstr "Compte indisponible"
+
+#: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
+#: templates/sandbox/home.html:21
 msgid "Konto wechseln"
 msgstr "Changer de compte"
 
@@ -7110,7 +7193,7 @@ msgstr "Demander un lien"
 msgid "Link erneut anfordern"
 msgstr "Demander à nouveau le lien"
 
-#: templates/sandbox/inbox.html:12
+#: templates/sandbox/inbox.html:13
 msgid "Link im Übungsdorf öffnen"
 msgstr "Ouvrir le lien dans le village d'essai"
 
@@ -7337,7 +7420,7 @@ msgstr "Ouvrir mon tableau de bord"
 msgid "Mein Energieprofil darf für die LEG-Abklärung an %(utility)s weitergegeben werden."
 msgstr "J’autorise la transmission de mon profil énergétique à %(utility)s pour l’étude de la CEL."
 
-#: templates/dashboard.html:184
+#: templates/dashboard.html:184 templates/sandbox/onboarding.html:18
 msgid ""
 "Mein Interesse darf passenden Haushalten in der Nachbarschaft angezeigt werden. Meine "
 "Kontaktdaten bleiben privat."
@@ -7686,6 +7769,10 @@ msgstr "Selon la consommation et la production"
 msgid "Nach dem Neuladen ist Ihr gespeicherter Jahresverbrauch weiterhin sichtbar."
 msgstr "Votre consommation annuelle enregistrée reste visible après le rechargement."
 
+#: templates/sandbox/inbox.html:15
+msgid "Nach der Bestätigung kehren Sie hierher zurück und fordern den Zugangslink für diesen Haushalt an."
+msgstr "Après confirmation, revenez ici et demandez le lien d'accès pour ce ménage."
+
 #: templates/emails/day_14_formation.html:65
 msgid "Nach der Genehmigung teilen Sie den lokalen Strom innerhalb der LEG."
 msgstr "Après autorisation, vous partagez l’électricité locale au sein de la CEL."
@@ -7986,6 +8073,10 @@ msgstr "Créer une nouvelle clé"
 msgid "Neuenburg"
 msgstr "Neuchâtel"
 
+#: sandbox_worker.py:63
+msgid "Neuer Haushalt"
+msgstr "Nouveau ménage"
+
 #: billing_workspace.py:261 billing_workspace.py:268 billing_workspace.py:315 billing_workspace.py:319
 #: billing_workspace.py:323 dashboard.py:498 templates/utility/dashboard.html:61
 #: templates/utility/dashboard.html:130 templates/utility/dashboard.html:138
@@ -8125,7 +8216,7 @@ msgstr ""
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr "Aucune facture publiée pour l'instant."
 
-#: templates/sandbox/inbox.html:14
+#: templates/sandbox/inbox.html:23
 msgid "Noch keine simulierten Nachrichten."
 msgstr "Aucun message simulé pour le moment."
 
@@ -8318,6 +8409,18 @@ msgid ""
 msgstr ""
 "Répertoire ouvert des communautés électriques locales (CEL) en Suisse, indépendant de la "
 "plateforme de création. Inscrivez votre CEL ou recherchez par canton et NPA."
+
+#: templates/sandbox/onboarding.html:8
+msgid "Offline-Adresse auswählen"
+msgstr "Choisir une adresse hors ligne"
+
+#: templates/sandbox/onboarding.html:6
+msgid ""
+"Offline-Beispiele: Alle Adressen und Energiewerte sind erfunden. Verwenden Sie eine erfundene E"
+"-Mail-Adresse. Es wird keine Nachricht versendet."
+msgstr ""
+"Exemples hors ligne : toutes les adresses et valeurs énergétiques sont fictives. Utilisez une "
+"adresse électronique fictive. Aucun message n'est envoyé."
 
 #: templates/leg_kalkulator.html:206
 msgid "Ohne LEG"
@@ -8776,6 +8879,10 @@ msgstr "Rendement photovoltaïque par kWc"
 msgid "PV-Erzeugung"
 msgstr "Production photovoltaïque"
 
+#: templates/sandbox/onboarding.html:17
+msgid "PV-Leistung (kWp)"
+msgstr "Puissance photovoltaïque (kWp)"
+
 #: templates/equipment_form.html:82
 msgid ""
 "PV-Module oder eine Batterie belegen keine Ersatzstromfähigkeit. Lassen Sie Umschaltung, "
@@ -8850,7 +8957,7 @@ msgstr "Poste"
 msgid "Positionen"
 msgstr "postes"
 
-#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2
+#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2 templates/sandbox/onboarding.html:24
 msgid "Postfach"
 msgstr "Boîte de réception"
 
@@ -11802,7 +11909,7 @@ msgid "Zugang vorhanden"
 msgstr "Accès disponible"
 
 #: templates/dashboard.html:17 templates/dashboard.html:56 templates/dashboard.html:251
-#: templates/gemeinde/dashboard.html:153
+#: templates/gemeinde/dashboard.html:153 templates/sandbox/inbox.html:18
 msgid "Zugangslink anfordern"
 msgstr "Demander un lien d’accès"
 
@@ -12498,7 +12605,7 @@ msgstr "» est toujours d'actualité."
 msgid "Ändern"
 msgstr "Modifier"
 
-#: sandbox_seed.py:44
+#: sandbox_seed.py:44 sandbox_worker.py:72
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Modifiez la consommation ou la puissance photovoltaïque dans le profil énergétique."
 
@@ -12626,7 +12733,7 @@ msgstr "Trop-payé"
 msgid "Üblicher Bereich: zwischen"
 msgstr "Plage habituelle : entre"
 
-#: templates/sandbox/banner.html:4
+#: templates/sandbox/banner.html:4 templates/sandbox/onboarding.html:25
 msgid "Übungsdorf"
 msgstr "Village d'essai"
 
@@ -12824,6 +12931,16 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 
 #~ msgid "Fordern Sie einen sicheren Bestätigungslink an, um Ihr Profil bei %(platform)s zu löschen."
 #~ msgstr "Demandez un lien de confirmation sécurisé pour supprimer votre profil sur %(platform)s."
+
+#~ msgid ""
+#~ "Gespeichert. Öffnen Sie den Bestätigungslink im Postfach."
+#~ " Fordern Sie danach im Dashboard einen Zugangslink "
+#~ "für Ihre erfundene E-Mail-Adresse an."
+#~ msgstr ""
+#~ "Enregistré. Ouvrez le lien de confirmation dans la"
+#~ " boîte de réception. Demandez ensuite un lien "
+#~ "d'accès dans le tableau de bord avec votre "
+#~ "adresse électronique fictive."
 
 #~ msgid "Haushalt Musterweg 1"
 #~ msgstr "Ménage Musterweg 1"
