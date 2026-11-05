@@ -174,7 +174,18 @@ def seed_village(db, directory):
         fixture = json.loads(manifest.read_text())
         if fixture["version"] != SEED_VERSION:
             raise RuntimeError("sandbox fixture version mismatch")
-        return fixture.get("household_identities", {})
+        identities = fixture.get("household_identities")
+        if (
+            not isinstance(identities, dict)
+            or set(identities) != {identifier for identifier, *_ in PERSONAS}
+            or any(
+                not isinstance(proof, str) or not proof for proof in identities.values()
+            )
+        ):
+            raise RuntimeError("sandbox fixture identity unavailable; reset required")
+        return identities
+    if any(db.get_building(identifier) for identifier, *_ in PERSONAS):
+        raise RuntimeError("sandbox fixture identity unavailable; reset required")
     for index, (identifier, address, consumption, solar) in enumerate(PERSONAS, 1):
         if not db.save_building(
             identifier,

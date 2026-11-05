@@ -2,7 +2,9 @@
 """A fictional registration through the ordinary product and captured inbox."""
 
 import html
+import json
 import re
+import signal
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -12,12 +14,68 @@ import psycopg2
 import pytest
 from psycopg2.extensions import make_dsn
 
+from sandbox_seed import SEED_VERSION
 from tests import test_sandbox_http
 from tests.test_sandbox_personas import _reload_worker, _start, _switch
 
 village = test_sandbox_http.village
 _csrf = test_sandbox_http._csrf
 pytestmark = pytest.mark.integration
+
+
+@pytest.mark.parametrize("missing_fixture", [False, True])
+def test_missing_original_identity_proofs_can_be_recovered_only_by_gateway_reset(
+    village, missing_fixture
+):
+    client = village.test_client()
+    prefix, _ = _start(client, "resident")
+    manager = village.extensions["villages"]
+    workspace = manager.workspaces[prefix.rsplit("/", 1)[1]]
+    manifest = workspace["directory"] / "fixture.json"
+    if missing_fixture:
+        manifest.unlink()
+    else:
+        fixture = json.loads(manifest.read_text())
+        del fixture["household_identities"]
+        manifest.write_text(json.dumps(fixture))
+    workspace["process"].send_signal(signal.SIGHUP)
+    assert workspace["process"].wait(timeout=20) != 0
+    if missing_fixture:
+        assert not manifest.exists()
+    else:
+        assert "household_identities" not in json.loads(manifest.read_text())
+
+    management = client.get(prefix + "/sandbox/manage")
+    assert management.status_code == 200
+    reset = client.post(
+        prefix + "/sandbox/reset",
+        data={
+            "csrf_token": _csrf(management),
+            "confirm": "reset",
+            "seed_version": SEED_VERSION,
+        },
+    )
+    assert reset.status_code == 302
+    fresh = reset.location.removesuffix("/sandbox/enter")
+    assert fresh != prefix
+    assert client.get(reset.location, follow_redirects=True).status_code == 200
+    profile = client.get(fresh + "/dashboard/export").json
+    assert profile["building_id"] == "sonnwil-resident"
+    fresh_workspace = manager.workspaces[fresh.rsplit("/", 1)[1]]
+    identities = json.loads(
+        (fresh_workspace["directory"] / "fixture.json").read_text()
+    )["household_identities"]
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cur,
+    ):
+        cur.execute(
+            "SELECT referral_code FROM buildings WHERE building_id=%s",
+            (profile["building_id"],),
+        )
+        assert identities[profile["building_id"]] == cur.fetchone()[0]
+    assert client.get(prefix + "/dashboard/export").status_code == 410
+    assert not workspace["directory"].exists()
 
 
 def _mail_link(client, prefix, path):

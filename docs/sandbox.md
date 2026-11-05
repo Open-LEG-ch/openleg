@@ -100,6 +100,11 @@ discard creates no replacement. Every product URL includes its generation.
 Old tabs receive HTTP 410 and cannot write into the replacement, even if the
 browser now holds its new cookies.
 
+An older, incomplete or lost fixture without its original household identity
+proofs cannot resume a product worker. Use the gateway's village management page to
+reset it. Reset creates new proofs with the new accounts; current database rows
+are never adopted as proof of the original fictional accounts.
+
 Retirement waits for an in-flight request before stopping its worker and
 removing its database, role and working directory. Mail, uploads, documents,
 webhook captures, caches and restore destinations belong under that directory.
