@@ -39,6 +39,9 @@ def render_document_template(name, **values):
             if has_app_context() and "babel" in current_app.extensions
             else "de-CH"
         ),
+        sandbox_mode=(
+            has_app_context() and current_app.config.get("SANDBOX_SIMULATION", False)
+        ),
         **values,
     )
 

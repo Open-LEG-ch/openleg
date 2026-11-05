@@ -79,7 +79,11 @@ def list_leg_documents(community_id: str) -> list[dict]:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT id, doc_type, filename, signing_status, deepsign_document_id, created_at
+                    SELECT id, doc_type, filename, signing_status, deepsign_document_id, created_at,
+                           EXISTS (
+                               SELECT 1 FROM leg_signature_receipts receipts
+                               WHERE receipts.community_id = leg_documents.community_id
+                           ) AS has_participant_receipts
                     FROM leg_documents WHERE community_id = %s ORDER BY created_at DESC
                 """,
                     (community_id,),

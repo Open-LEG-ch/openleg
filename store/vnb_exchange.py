@@ -551,3 +551,54 @@ def list_cases(community_id: str, limit: int = 20) -> list[dict]:
             (community_id, max(1, min(int(limit), 100))),
         )
         return [dict(row) for row in cur.fetchall()]
+
+
+def record_submission_response(community_id, case_id, state, evidence):
+    """Accept one final response to a delivered package without approving start."""
+    if state not in {"acknowledged", "rejected"} or not evidence:
+        raise VnbExchangeStoreError("Invalid formation response")
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT * FROM vnb_submission_cases
+               WHERE community_id = %s AND case_id = %s FOR UPDATE""",
+            (community_id, case_id),
+        )
+        previous = cur.fetchone()
+        if not previous:
+            raise VnbExchangeStoreError("Formation submission was not found")
+        if previous["state"] in {"acknowledged", "rejected"}:
+            if (
+                previous["state"] != state
+                or not previous["response_evidence"]
+                or bytes(previous["response_evidence"]) != evidence
+            ):
+                raise VnbSubmissionConflict("The formation response is final")
+            return dict(previous)
+        if previous["state"] != "delivered":
+            raise VnbSubmissionConflict("Deliver the formation package first")
+        cur.execute(
+            """UPDATE vnb_submission_cases SET state = %s, response_status = %s,
+                      response_evidence = %s, next_action = %s,
+                      acknowledged_at = CASE WHEN %s = 'acknowledged'
+                          THEN CURRENT_TIMESTAMP ELSE acknowledged_at END,
+                      updated_at = CURRENT_TIMESTAMP
+               WHERE community_id = %s AND case_id = %s RETURNING *""",
+            (
+                state,
+                state,
+                evidence,
+                "none" if state == "acknowledged" else "review_rejection",
+                state,
+                community_id,
+                case_id,
+            ),
+        )
+        result = dict(cur.fetchone())
+        result["event_id"] = enqueue_event(
+            cur,
+            "formation.submission." + state,
+            case_id,
+            community_id,
+            {"case_id": case_id, "state": state},
+        )
+        return result

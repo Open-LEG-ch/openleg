@@ -10,6 +10,7 @@ td, th { border: 1px solid #333; padding: 4px 7px; text-align: left; font-size: 
 th { background: #f0f0f0; }
 .footer { margin-top: 1.5em; font-size: 9pt; color: #666; }
 </style></head><body>
+{% include "documents/simulation.html" %}
 <h1>{{ _('Rechnung') }} {{ invoice_number }}</h1>
 <p><strong>{{ _('Aussteller:') }}</strong> {{ issuer_name }}<br>
 <strong>{{ _('Periode:') }}</strong> {{ period_label }}<br>
