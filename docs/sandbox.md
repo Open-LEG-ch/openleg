@@ -33,7 +33,11 @@ Each account's village page explains its starting state, action and expected res
 
 Changing accounts preserves village data and replaces the login context. Earlier
 login cookies and stale privileged forms lose authority. This revocation survives
-a product-worker reload. The ordinary product permission rules still decide
+a product-worker reload. A successful ordinary magic-link login also renews
+the binding and CSRF tokens when the selected account is unchanged. Rejected
+links leave the current login intact. Returning to the entry form with an
+existing village opens its account chooser; switching still requires the
+worker-side form. The ordinary product permission rules still decide
 which records and actions each account can use.
 
 The defaults are four concurrent villages, a two-MiB upload limit per request,

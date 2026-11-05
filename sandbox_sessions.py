@@ -7,12 +7,18 @@ import re
 import secrets
 from contextlib import contextmanager
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
-from flask import abort, g, session
+from flask import abort, g, request, session
 
 from dashboard_routes import _clear_dashboard_session, _set_dashboard_session
 
 _IDENTITIES = ("dashboard_building_id", "municipality_id", "utility_client_id")
+_EXCHANGES = {
+    "main.dashboard_access_exchange": ("dashboard_building_id", "/dashboard"),
+    "municipality.access_exchange": ("municipality_id", "/gemeinde/dashboard"),
+    "utility.login_page": ("utility_client_id", "/utility/dashboard"),
+}
 
 
 class VillageSessions:
@@ -75,6 +81,24 @@ class VillageSessions:
         self._set_identity(field, identifier)
         g.sandbox_new_login = True
 
+    @staticmethod
+    def _successful_exchange(response, current):
+        """Recognize the ordinary auth handlers' successful redirect contract."""
+        exchange = _EXCHANGES.get(request.endpoint)
+        if not exchange or request.method not in {"GET", "HEAD"}:
+            return None
+        field, target = exchange
+        location = urlsplit(response.headers.get("Location", ""))
+        if (
+            response.status_code == 302
+            and current.get(field)
+            and not location.netloc
+            and location.path.removeprefix(request.script_root) == target
+            and "access" not in parse_qs(location.query)
+        ):
+            return field
+        return None
+
     def install(self, web):
         @web.before_request
         def bind_village_login():
@@ -97,16 +121,19 @@ class VillageSessions:
             current = self._identity()
             previous = g.sandbox_identity
             explicit = g.get("sandbox_new_login", False)
-            if explicit or current != previous:
-                # Ordinary magic links and logout also change identity. Utility
-                # login retains old session fields, so clear those at this seam.
+            login_field = self._successful_exchange(response, current)
+            if explicit or login_field or current != previous:
+                # Every accepted magic link retires copied cookies, including
+                # a new login to the same identity. Rejected links do not.
                 if not explicit:
                     changed = {
                         key: value
                         for key, value in current.items()
                         if previous.get(key) != value
                     }
-                    if len(current) > 1 or "utility_client_id" in changed:
+                    if login_field:
+                        self._set_identity(login_field, current[login_field])
+                    elif len(current) > 1 or "utility_client_id" in changed:
                         if len(changed) != 1:
                             _clear_dashboard_session()
                             return web.make_response(("", 503))

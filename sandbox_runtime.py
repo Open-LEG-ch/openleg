@@ -749,7 +749,7 @@ def create_gateway(
         if selected_persona not in ACCOUNTS:
             abort(400)
         if villages.get(session.get("workspace")):
-            return redirect("/v/" + session["workspace"] + "/sandbox/home")
+            return redirect("/v/" + session["workspace"] + "/sandbox/accounts")
         try:
             workspace = villages.create(
                 origin,

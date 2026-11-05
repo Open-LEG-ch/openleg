@@ -3,6 +3,8 @@
 
 import re
 
+import pytest
+
 from tests import test_sandbox_http
 
 village = test_sandbox_http.village
@@ -560,3 +562,92 @@ def test_missing_server_binding_refuses_writes_without_changing_community(villag
             "SELECT require_dual_control FROM communities WHERE community_id='sonnwil-operating-leg'"
         )
         assert cursor.fetchone()[0] is False
+
+
+@pytest.mark.parametrize("method", ["get", "head"])
+@pytest.mark.parametrize(
+    "persona,request_path,email,link_path,name",
+    [
+        (
+            "resident",
+            "/dashboard/access/request",
+            "sonnwil-resident@example.org",
+            "/dashboard/access/",
+            "Lea Muster",
+        ),
+        (
+            "utility",
+            "/utility/login",
+            "sonnwil-utility@example.org",
+            "/utility/login?",
+            "Kim Muster",
+        ),
+        (
+            "municipality",
+            "/gemeinde/access/request",
+            "sonnwil-municipality@example.org",
+            "/gemeinde/access/",
+            "Jules Beispiel",
+        ),
+    ],
+)
+def test_same_account_magic_login_retires_copied_cookie_and_stale_csrf(
+    village, persona, request_path, email, link_path, name, method
+):
+    from html import unescape
+
+    client = village.test_client()
+    prefix, _ = _start(client, persona)
+    chooser = client.get(prefix + "/sandbox/accounts")
+    old_csrf = _csrf(chooser)
+    invalid = link_path + ("token=invalid" if "?" in link_path else "invalid")
+    client.get(prefix + invalid)
+    assert _csrf(client.get(prefix + "/sandbox/accounts")) == old_csrf
+    payload = {"json" if persona == "utility" else "data": {"email": email}}
+    assert client.post(prefix + request_path, **payload).status_code == 200
+    inbox = client.get(prefix + "/sandbox/inbox")
+    links = [unescape(link) for link in re.findall(r'href="([^"]+)"', inbox.text)]
+    link = next(link for link in links if link.startswith(prefix + link_path))
+    old_cookie = client.get_cookie("openleg_product", path=prefix).value
+    logged_in = getattr(client, method)(link, follow_redirects=True)
+    assert logged_in.status_code == 200
+    assert name in client.get(prefix + "/sandbox/home").text
+    current_cookie = client.get_cookie("openleg_product", path=prefix).value
+    assert (
+        client.post(
+            prefix + "/sandbox/persona",
+            data={"csrf_token": old_csrf, "persona": persona},
+        ).status_code
+        == 400
+    )
+    client.set_cookie("openleg_product", old_cookie, path=prefix)
+    assert name not in client.get(prefix + "/sandbox/home").text
+    assert (
+        client.post(
+            prefix + "/sandbox/persona",
+            data={"csrf_token": old_csrf, "persona": persona},
+        ).status_code
+        == 400
+    )
+    client.set_cookie("openleg_product", current_cookie, path=prefix)
+    assert name in client.get(prefix + "/sandbox/home").text
+
+
+def test_returning_entry_selection_opens_existing_village_account_chooser(village):
+    client = village.test_client()
+    prefix, _ = _start(client, "administrator")
+    entry = client.get("/sandbox")
+    response = client.post(
+        "/sandbox/start", data={"csrf_token": _csrf(entry), "persona": "resident"}
+    )
+    assert response.status_code == 302
+    assert response.location == prefix + "/sandbox/accounts"
+    chooser = client.get(response.location)
+    assert chooser.status_code == 200 and "Robin Muster" in chooser.text
+    assert len(village.extensions["villages"].workspaces) == 1
+    switched = client.post(
+        prefix + "/sandbox/persona",
+        data={"csrf_token": _csrf(chooser), "persona": "resident"},
+        follow_redirects=True,
+    )
+    assert switched.status_code == 200 and "Lea Muster" in switched.text
