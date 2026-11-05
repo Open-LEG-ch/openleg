@@ -28,6 +28,7 @@ import i18n
 from app_config import MAX_UPLOAD_BYTES, validated_public_site_url
 
 SOURCE = Path(__file__).resolve().parent
+POSTGRES_SETUP_TIMEOUT_SECONDS = 60
 HOP_HEADERS = {
     "connection",
     "keep-alive",
@@ -62,7 +63,9 @@ class LocalPostgres:
         self.socket_directory = Path(socket_directory)
         self.bin = Path(postgres_bin)
         version = subprocess.check_output(
-            [str(self.bin / "postgres"), "--version"], text=True
+            [str(self.bin / "postgres"), "--version"],
+            text=True,
+            timeout=POSTGRES_SETUP_TIMEOUT_SECONDS,
         )
         if not version.startswith("postgres (PostgreSQL) 16."):
             raise ValueError("the sandbox requires PostgreSQL 16")
@@ -87,6 +90,7 @@ class LocalPostgres:
                 stdout=output,
                 stderr=subprocess.STDOUT,
                 check=True,
+                timeout=POSTGRES_SETUP_TIMEOUT_SECONDS,
             )
         try:
             subprocess.run(
@@ -599,7 +603,7 @@ def create_gateway(
         headers["X-Forwarded-Proto"] = urlsplit(origin).scheme
         target = "/" + quote(path, safe="/:@!$&'()*+,;=-._~")
         if request.query_string:
-            target += "?" + request.query_string.decode("latin-1")
+            target += "?" + quote(request.query_string, safe="%&=+;:@/?!$'()*,-._~[]")
         try:
             with UnixConnection(workspace["socket"]) as channel:
                 channel.request(

@@ -5306,9 +5306,10 @@ msgid_plural "Haushalte"
 msgstr[0] "Haushalt"
 msgstr[1] "Haushalte"
 
-#: templates/sandbox/banner.html:3
-msgid "Haushalt Musterweg 1"
-msgstr "Haushalt Musterweg 1"
+#: templates/sandbox/banner.html:4
+#, python-format
+msgid "Haushalt %(address)s"
+msgstr "Haushalt %(address)s"
 
 #: templates/contact_requests.html:66
 msgid "Haushalte in Ihrer Gemeinde"
@@ -8604,7 +8605,7 @@ msgstr "Position"
 msgid "Positionen"
 msgstr "Positionen"
 
-#: templates/sandbox/banner.html:5 templates/sandbox/inbox.html:2
+#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2
 msgid "Postfach"
 msgstr "Postfach"
 
@@ -9607,8 +9608,9 @@ msgid "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
 msgstr "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
 
 #: templates/sandbox/home.html:7
-msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
-msgstr "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
+#, python-format
+msgid "Sie sind als erfundener Haushalt für %(address)s angemeldet."
+msgstr "Sie sind als erfundener Haushalt für %(address)s angemeldet."
 
 #: templates/leg_dashboard.html:190
 #, python-format
@@ -12316,7 +12318,7 @@ msgstr "Überzahlung"
 msgid "Üblicher Bereich: zwischen"
 msgstr "Üblicher Bereich: zwischen"
 
-#: templates/sandbox/banner.html:4
+#: templates/sandbox/banner.html:5
 msgid "Übungsdorf"
 msgstr "Übungsdorf"
 
@@ -12506,6 +12508,9 @@ msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 #~ msgid "Fordern Sie einen sicheren Bestätigungslink an, um Ihr Profil bei %(platform)s zu löschen."
 #~ msgstr "Fordern Sie einen sicheren Bestätigungslink an, um Ihr Profil bei %(platform)s zu löschen."
 
+#~ msgid "Haushalt Musterweg 1"
+#~ msgstr "Haushalt Musterweg 1"
+
 #~ msgid "Ihre Anmeldung"
 #~ msgstr "Ihre Anmeldung"
 
@@ -12526,6 +12531,9 @@ msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 
 #~ msgid "PV-Anlage:"
 #~ msgstr "PV-Anlage:"
+
+#~ msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
+#~ msgstr "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
 
 #~ msgid "Tage"
 #~ msgstr "Tage"

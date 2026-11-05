@@ -140,6 +140,62 @@ def test_access_email_is_delivered_only_to_the_visitors_simulated_inbox(village)
 
 
 @pytest.mark.integration
+def test_gateway_preserves_raw_query_bytes_and_existing_percent_escapes(village):
+    client = village.test_client()
+    _enter(client)
+    response = client.get(
+        "/dashboard",
+        environ_overrides={"QUERY_STRING": "q=Caf\xc3\xa9&escaped=%C3%A9&lang=de-CH"},
+    )
+    assert response.status_code == 200
+    assert "q=Caf%C3%A9" in response.text
+    assert "escaped=%C3%A9" in response.text
+    assert "%25C3" not in response.text
+
+
+@pytest.mark.integration
+def test_captured_login_labels_the_authenticated_household(village):
+    client = village.test_client()
+    page = _enter(client)
+    assert (
+        client.post("/dashboard/logout", data={"csrf_token": _csrf(page)}).status_code
+        == 302
+    )
+    assert (
+        client.post(
+            "/dashboard/access/request", data={"email": "sonnwil-producer@example.org"}
+        ).status_code
+        == 200
+    )
+    inbox = client.get("/sandbox/inbox")
+    link = re.search(r'href="(/dashboard/access/[^"?]+)', inbox.text).group(1)
+    assert client.get(link).location == "/dashboard"
+    dashboard = client.get("/dashboard")
+    banner = re.search(
+        r'<aside aria-label="Simulation".*?</aside>', dashboard.text, re.S
+    ).group(0)
+    assert "Musterweg 2" in banner
+    assert "sonnwil-producer@example.org" in banner
+    assert "Musterweg 1" not in banner
+    home = client.get("/sandbox/home")
+    assert "Musterweg 2" in home.text
+    assert "sonnwil-resident@example.org" not in home.text
+    assert (
+        client.post(
+            "/dashboard/logout", data={"csrf_token": _csrf(dashboard)}
+        ).status_code
+        == 302
+    )
+    banner = re.search(
+        r'<aside aria-label="Simulation".*?</aside>',
+        client.get("/sandbox/home").text,
+        re.S,
+    ).group(0)
+    assert "Musterweg 2" not in banner
+    assert "sonnwil-producer@example.org" not in banner
+
+
+@pytest.mark.integration
 def test_gateway_rejects_untrusted_host_and_cross_site_start(village):
     client = village.test_client()
     assert (

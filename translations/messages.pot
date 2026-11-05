@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 23:50+0000\n"
+"POT-Creation-Date: 2026-11-05 00:04+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4911,8 +4911,9 @@ msgid_plural "Haushalte"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/sandbox/banner.html:3
-msgid "Haushalt Musterweg 1"
+#: templates/sandbox/banner.html:4
+#, python-format
+msgid "Haushalt %(address)s"
 msgstr ""
 
 #: templates/contact_requests.html:66
@@ -8002,7 +8003,7 @@ msgstr ""
 msgid "Positionen"
 msgstr ""
 
-#: templates/sandbox/banner.html:5 templates/sandbox/inbox.html:2
+#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2
 msgid "Postfach"
 msgstr ""
 
@@ -8947,7 +8948,8 @@ msgid "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
 msgstr ""
 
 #: templates/sandbox/home.html:7
-msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
+#, python-format
+msgid "Sie sind als erfundener Haushalt für %(address)s angemeldet."
 msgstr ""
 
 #: templates/leg_dashboard.html:190
@@ -11525,7 +11527,7 @@ msgstr ""
 msgid "Üblicher Bereich: zwischen"
 msgstr ""
 
-#: templates/sandbox/banner.html:4
+#: templates/sandbox/banner.html:5
 msgid "Übungsdorf"
 msgstr ""
 

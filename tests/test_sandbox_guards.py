@@ -2,6 +2,7 @@
 """Verify the sandbox's process boundary and normal product HTTP behavior."""
 
 import os
+import signal
 import subprocess
 import sys
 from unittest.mock import patch
@@ -9,6 +10,52 @@ from unittest.mock import patch
 import pytest
 
 from tests.native_environment import isolated_environment
+
+
+@pytest.mark.parametrize("stalled_command", ["postgres", "initdb"])
+def test_postgres_setup_aborts_a_stalled_tool(tmp_path, stalled_command):
+    tools = tmp_path / "bin"
+    tools.mkdir()
+    for command in ("postgres", "initdb"):
+        program = tools / command
+        program.write_text(
+            f"#!{sys.executable}\n"
+            + (
+                "import time; time.sleep(60)\n"
+                if command == stalled_command
+                else "print('postgres (PostgreSQL) 16.1')\n"
+            )
+        )
+        program.chmod(0o700)
+    runner = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            """
+import pathlib, subprocess, sys
+import sandbox_runtime
+sandbox_runtime.POSTGRES_SETUP_TIMEOUT_SECONDS = 0.1
+root = pathlib.Path(sys.argv[1])
+try:
+    sandbox_runtime.LocalPostgres(root / 'cluster', root / 'socket', root / 'bin')
+except subprocess.TimeoutExpired:
+    pass
+else:
+    raise AssertionError('stalled setup did not time out')
+""",
+            str(tmp_path),
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+    )
+    try:
+        _stdout, stderr = runner.communicate(timeout=5)
+    except subprocess.TimeoutExpired:
+        os.killpg(runner.pid, signal.SIGKILL)
+        runner.communicate()
+        pytest.fail("PostgreSQL setup remained blocked by a stalled tool")
+    assert runner.returncode == 0, stderr.decode()
 
 
 def test_worker_network_boundary_allows_unix_and_refuses_internet_sockets():

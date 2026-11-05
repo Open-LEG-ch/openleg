@@ -46,7 +46,12 @@ def create_worker():
 
     @web.context_processor
     def simulation():
-        return {"sandbox_mode": True, "private_page": True}
+        building_id = _dashboard_session_building_id()
+        return {
+            "sandbox_mode": True,
+            "private_page": True,
+            "sandbox_household": db.get_building(building_id) if building_id else None,
+        }
 
     @web.get("/sandbox/enter")
     def enter():
@@ -59,7 +64,6 @@ def create_worker():
         return render_template(
             "sandbox/home.html",
             csrf_token=session["sandbox_csrf"],
-            signed_in=bool(_dashboard_session_building_id()),
         )
 
     @web.get("/sandbox/inbox")

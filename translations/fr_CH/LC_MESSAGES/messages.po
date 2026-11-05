@@ -5360,9 +5360,10 @@ msgid_plural "Haushalte"
 msgstr[0] "ménage"
 msgstr[1] "ménages"
 
-#: templates/sandbox/banner.html:3
-msgid "Haushalt Musterweg 1"
-msgstr "Ménage Musterweg 1"
+#: templates/sandbox/banner.html:4
+#, python-format
+msgid "Haushalt %(address)s"
+msgstr "Ménage %(address)s"
 
 #: templates/contact_requests.html:66
 msgid "Haushalte in Ihrer Gemeinde"
@@ -8695,7 +8696,7 @@ msgstr "Poste"
 msgid "Positionen"
 msgstr "postes"
 
-#: templates/sandbox/banner.html:5 templates/sandbox/inbox.html:2
+#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2
 msgid "Postfach"
 msgstr "Boîte de réception"
 
@@ -9707,8 +9708,9 @@ msgid "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an."
 msgstr "Vous êtes déconnecté. Reconnectez-vous avec le compte fictif."
 
 #: templates/sandbox/home.html:7
-msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
-msgstr "Vous êtes connecté comme ménage fictif à l'adresse Musterweg 1."
+#, python-format
+msgid "Sie sind als erfundener Haushalt für %(address)s angemeldet."
+msgstr "Vous êtes connecté au ménage fictif de %(address)s."
 
 #: templates/leg_dashboard.html:190
 #, python-format
@@ -12427,7 +12429,7 @@ msgstr "Trop-payé"
 msgid "Üblicher Bereich: zwischen"
 msgstr "Plage habituelle : entre"
 
-#: templates/sandbox/banner.html:4
+#: templates/sandbox/banner.html:5
 msgid "Übungsdorf"
 msgstr "Village d'essai"
 
@@ -12619,6 +12621,9 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 #~ msgid "Fordern Sie einen sicheren Bestätigungslink an, um Ihr Profil bei %(platform)s zu löschen."
 #~ msgstr "Demandez un lien de confirmation sécurisé pour supprimer votre profil sur %(platform)s."
 
+#~ msgid "Haushalt Musterweg 1"
+#~ msgstr "Ménage Musterweg 1"
+
 #~ msgid "Ihre Anmeldung"
 #~ msgstr "Votre inscription"
 
@@ -12639,6 +12644,9 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 
 #~ msgid "PV-Anlage:"
 #~ msgstr "Installation photovoltaïque :"
+
+#~ msgid "Sie sind als erfundener Haushalt am Musterweg 1 angemeldet."
+#~ msgstr "Vous êtes connecté comme ménage fictif à l'adresse Musterweg 1."
 
 #~ msgid "Tage"
 #~ msgstr "jours"
