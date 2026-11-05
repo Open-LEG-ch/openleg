@@ -20,9 +20,10 @@ Open-source infrastructure for Swiss Local Electricity Communities. Offene Infra
 
 Try the [fictional village sandbox](docs/sandbox.md) locally with
 `python scripts/sandbox.py`. Each visitor gets a disposable village with demo
-accounts and simulated delivery. Register and confirm a fictional household,
-edit its energy profile, try neighbour consent and contacts, then export or delete
-the profile. The linked guide explains each journey.
+accounts, captured mail and local signature and VNB simulations. Try household
+registration, energy profiles, neighbour consent, contacts and profile export or
+deletion. Form a LEG, confirm activation and complete a dated participant join.
+The linked guide explains each journey and the sandbox boundaries.
 
 OpenLEG is the public website, product application, and API for founding and operating a Swiss Local Electricity Community, known as a LEG. The private `openleg-ops` repository owns production deployment, not the public site runtime or assets.
 

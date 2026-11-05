@@ -6,6 +6,7 @@
   <p class="mt-4">{{ _('Simulation: Alle Unterschriften und Netzbetreiber-Belege sind erfunden. Es wird nichts übermittelt und keine rechtsgültige Unterschrift erstellt.') }}</p>
   <p class="mt-4">{{ _('Wählen Sie Mira als Gründerin und erstellen Sie eine neue LEG. Laden Sie Lea und Noah mit den folgenden erfundenen Adressen ein. Wechseln Sie jeweils zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard.') }}</p>
   <ul class="mt-4 list-disc pl-6"><li>sonnwil-resident@example.org</li><li>sonnwil-producer@example.org</li></ul>
+  <p class="mt-4">{{ _('Nach den drei Teilnahmebestätigungen wechseln Sie zu Mira. Starten Sie die Gründung im LEG-Dashboard und erstellen Sie die Vertragsentwürfe. Kehren Sie danach zu dieser Anleitung zurück.') }}</p>
   <a href="/leg/community/create" class="mt-4 inline-block font-semibold underline">{{ _('Neue LEG erstellen') }}</a>
   {% for item in communities %}<p class="mt-4"><a href="/sandbox/formation?cid={{ item.community_id }}" class="font-semibold underline">{{ item.name }}</a></p>{% endfor %}
   {% if community %}
@@ -26,7 +27,7 @@
   <section class="mt-8 rounded-lg border border-line p-6">
     <h2 class="text-xl font-semibold">{{ _('Netzbetreiber simulieren') }}</h2>
     <p class="mt-4">{{ _('Eine Empfangsbestätigung bestätigt nur den Empfang. Sie erlaubt keinen Betriebsstart. Für die Aktivierung braucht es einen separaten Startbeleg, ein gültiges Datum und die Administration.') }}</p>
-    {% for case in cases %}<p class="mt-4">{{ _('Übermittlung') }}: {{ case.state }}</p>{% endfor %}
+    {% for case in cases %}<p class="mt-4">{{ _('Übermittlung') }}: {{ state_labels.get(case.state, case.state) }}</p>{% endfor %}
     {% if not cases or cases[0].state == 'delivered' %}
     <form method="post" action="/sandbox/formation/{{ community.community_id }}/vnb" class="mt-4 grid gap-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -50,6 +51,42 @@
     <p class="mt-4">{{ _('Verwenden Sie das Datum %(date)s und die Referenz %(reference)s. Bestätigen Sie den Startbeleg ausdrücklich. Erst danach können Sie die LEG aktivieren.', date=today, reference='SIMULATION-START-' + community.community_id) }}</p>
     <p class="mt-4">{{ _('Ein zukünftiges Startdatum verhindert die Aktivierung bis zu diesem Datum. Eine Empfangsbestätigung oder ein fehlender Anhang genügt nicht.') }}</p>
     <a href="/sandbox/formation/{{ community.community_id }}/start-evidence.pdf" class="mt-4 inline-block font-semibold underline">{{ _('Erfundenen Startbeleg herunterladen') }}</a>
+  </section>
+  {% endif %}
+  {% if community.status == 'active' %}
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('Weiteren Haushalt aufnehmen') }}</h2>
+    <p class="mt-4">{{ _('Laden Sie Sam mit sonnwil-operator@example.org im LEG-Dashboard ein. Laden Sie den erfundenen Teilnehmervertrag herunter und erfassen Sie ihn dort als ausgehenden PDF-Beleg im Korrespondenzjournal. Kehren Sie danach hierher zurück.') }}</p>
+    {% if join_target %}
+    <a href="/sandbox/formation/{{ community.community_id }}/join-agreement.pdf?participant=sonnwil-operator" class="mt-4 inline-block font-semibold underline">{{ _('Erfundenen Beitrittsvertrag herunterladen') }}</a>
+    {% endif %}
+    <p class="mt-4">{{ _('Melden Sie den datierten Beitritt mit diesem Vertragsbeleg beim simulierten Netzbetreiber an. Simulieren Sie eine Empfangsbestätigung oder Ablehnung. Die Mitgliedschaft bleibt davon unverändert. Wechseln Sie danach zu Sam und bestätigen Sie die Teilnahme separat im LEG-Dashboard.') }}</p>
+    {% set agreements = correspondence|selectattr('attachment_filename', 'equalto', 'simulation-sonnwil-join.pdf')|list %}
+    {% set join_cases = mutations|selectattr('mutation_id', 'equalto', 'SIMULATION-JOIN-' + community.community_id)|list %}
+    {% if can_manage_members and join_target and (agreements or join_cases) %}
+    <form method="post" action="/leg/community/{{ community.community_id }}/vnb-mutations" class="mt-4 grid gap-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="mutation_id" value="SIMULATION-JOIN-{{ community.community_id }}">
+      <input type="hidden" name="participant_id" value="sonnwil-operator">
+      <input type="hidden" name="mutation_type" value="join">
+      <label>{{ _('Wirksamkeitsdatum') }}<input type="date" required name="effective_date" value="{{ join_cases[0].effective_date if join_cases else join_date }}" class="mt-2 w-full rounded-lg border border-line px-3 py-2"></label>
+      {% if join_cases %}<input type="hidden" name="source_agreement_id" value="{{ join_cases[0].source_agreement_id }}">{% else %}
+      <label>{{ _('Quellvertrag') }}<select name="source_agreement_id" required class="mt-2 w-full rounded-lg border border-line px-3 py-2">{% for agreement in agreements %}<option value="correspondence:{{ agreement.id }}">{{ agreement.subject }}</option>{% endfor %}</select></label>
+      {% endif %}
+      <button type="submit" class="rounded-lg bg-brand px-4 py-3 font-semibold text-white">{{ _('Beitritt melden oder erneut abrufen') }}</button>
+    </form>
+    {% endif %}
+    {% for mutation in mutations %}
+    <p class="mt-4">{{ mutation.participant_id }} · {{ mutation.effective_date }} · {{ state_labels.get(mutation.state, mutation.state) }}</p>
+    {% if can_manage_members and mutation.state == 'delivered' %}
+    <form method="post" action="/sandbox/formation/{{ community.community_id }}/mutation-response" class="mt-4 grid gap-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="mutation_id" value="{{ mutation.mutation_id }}">
+      <label>{{ _('Simuliertes Ergebnis') }}<select name="state" class="mt-2 w-full rounded-lg border border-line px-3 py-2"><option value="acknowledged">{{ _('Empfang bestätigt') }}</option><option value="rejected">{{ _('Abgelehnt') }}</option></select></label>
+      <button type="submit" class="rounded-lg bg-brand px-4 py-3 font-semibold text-white">{{ _('Antwort auf Beitritt simulieren') }}</button>
+    </form>
+    {% endif %}
+    {% endfor %}
   </section>
   {% endif %}
   {% endif %}

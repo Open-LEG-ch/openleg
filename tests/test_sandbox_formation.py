@@ -80,6 +80,37 @@ def _create_ready(client):
     return prefix, cid
 
 
+def test_ordinary_invitations_are_captured_once_inside_the_village(village):
+    client = village.test_client()
+    prefix, cid = _create_ready(client)
+    inbox = client.get(prefix + "/sandbox/inbox")
+    assert inbox.text.count("SIMULATION SONNWIL: LEG-Einladung") == 2
+    assert "sonnwil-resident@example.org" in inbox.text
+    assert "sonnwil-producer@example.org" in inbox.text
+    assert prefix + "/leg/dashboard?cid=" + cid in inbox.text
+    page = client.get(prefix + "/leg/dashboard?cid=" + cid)
+    for email in ("sonnwil-resident@example.org", "nobody@example.org"):
+        assert (
+            client.post(
+                prefix + f"/leg/community/{cid}/invite",
+                data={"csrf_token": _csrf(page), "invite_email": email},
+            ).status_code
+            == 302
+        )
+    assert (
+        client.get(prefix + "/sandbox/inbox").text.count(
+            "SIMULATION SONNWIL: LEG-Einladung"
+        )
+        == 2
+    )
+    other = village.test_client()
+    other_prefix, _ = _start(other, "founder")
+    assert (
+        "SIMULATION SONNWIL: LEG-Einladung"
+        not in other.get(other_prefix + "/sandbox/inbox").text
+    )
+
+
 def test_only_complete_participant_signatures_unlock_vnb_submission(village):
     import re
 
@@ -252,6 +283,161 @@ def test_vnb_receipt_never_authorizes_start_and_response_replays_are_safe(villag
     assert "Empfang" in client.get(guide).text
 
 
+def test_rejection_is_final_audited_and_keeps_formation_inactive(village):
+    from tests.test_sandbox_onboarding import _workspace_connection
+
+    client = village.test_client()
+    prefix, cid = _signed(client)
+    page = client.get(prefix + "/sandbox/formation?cid=" + cid)
+    path = prefix + f"/sandbox/formation/{cid}/vnb"
+    fields = {"csrf_token": _csrf(page), "state": "delivered"}
+    assert client.post(path, data=fields).status_code == 302
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT case_id FROM vnb_submission_cases WHERE community_id=%s", (cid,)
+        )
+        case = cursor.fetchone()[0]
+    rejected = {**fields, "state": "rejected", "case_id": case}
+    assert client.post(path, data=rejected).status_code == 302
+    assert client.post(path, data=rejected).status_code == 302
+    assert (
+        client.post(path, data={**rejected, "state": "acknowledged"}).status_code == 409
+    )
+    assert (
+        client.post(prefix + f"/leg/community/{cid}/activate", data=fields).status_code
+        == 409
+    )
+    assert (
+        "Beginnen Sie mit einer neuen LEG"
+        in client.get(prefix + "/sandbox/formation?cid=" + cid).text
+    )
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT state, response_evidence, next_action FROM vnb_submission_cases WHERE case_id=%s",
+            (case,),
+        )
+        state, evidence, action = cursor.fetchone()
+        assert (
+            state == "rejected"
+            and b"SIMULATION" in bytes(evidence)
+            and action == "review_rejection"
+        )
+        cursor.execute(
+            "SELECT COUNT(*) FROM operator_events WHERE community_id=%s AND event_type='formation.submission.rejected'",
+            (cid,),
+        )
+        assert cursor.fetchone()[0] == 1
+        cursor.execute(
+            "SELECT activated_at, vnb_start_confirmation FROM communities WHERE community_id=%s",
+            (cid,),
+        )
+        assert cursor.fetchone() == (None, None)
+
+
+def test_roles_and_private_documents_keep_ordinary_authority(village):
+    from tests.test_sandbox_onboarding import _workspace_connection
+    from tests.test_sandbox_personas import _switch
+
+    client = village.test_client()
+    prefix, cid = _signed(client)
+    page = client.get(prefix + "/leg/dashboard?cid=" + cid)
+    fields = {"csrf_token": _csrf(page)}
+    roles = prefix + f"/leg/community/{cid}/members/sonnwil-resident/roles"
+    assert (
+        client.post(
+            roles, data={**fields, "roles": ["metering", "billing_preparer"]}
+        ).status_code
+        == 302
+    )
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT id FROM leg_documents WHERE community_id=%s ORDER BY id", (cid,)
+        )
+        documents = [row[0] for row in cursor.fetchall()]
+        cursor.execute(
+            "SELECT access_roles FROM community_members WHERE community_id=%s AND building_id='sonnwil-resident'",
+            (cid,),
+        )
+        assert set(cursor.fetchone()[0]) == {"metering", "billing_preparer"}
+    for doc in documents:
+        response = client.get(prefix + f"/leg/document/{doc}")
+        assert response.status_code == 200 and response.data.startswith(b"%PDF")
+    _switch(client, prefix, "resident")
+    page = client.get(prefix + "/sandbox/formation?cid=" + cid)
+    fields = {"csrf_token": _csrf(page)}
+    assert client.post(roles, data={**fields, "roles": ["admin"]}).status_code == 400
+    assert (
+        client.post(
+            prefix + f"/sandbox/formation/{cid}/vnb",
+            data={**fields, "state": "acknowledged"},
+        ).status_code
+        == 403
+    )
+    assert (
+        client.get(prefix + f"/sandbox/formation/{cid}/start-evidence.pdf").status_code
+        == 403
+    )
+    assert (
+        client.post(prefix + f"/leg/community/{cid}/activate", data=fields).status_code
+        == 403
+    )
+    page = _switch(client, prefix, "operator")
+    assert client.get(prefix + "/sandbox/formation?cid=" + cid).status_code == 404
+    assert (
+        client.post(
+            prefix + f"/sandbox/formation/{cid}/signatures",
+            data={"csrf_token": _csrf(page), "bundle": "0" * 64, "confirm": "yes"},
+        ).status_code
+        == 403
+    )
+    for doc in documents:
+        assert client.get(prefix + f"/leg/document/{doc}").status_code == 404
+    other = village.test_client()
+    other_prefix, _ = _start(other, "founder")
+    assert other.get(other_prefix + "/sandbox/formation?cid=" + cid).status_code == 404
+    for doc in documents:
+        assert other.get(other_prefix + f"/leg/document/{doc}").status_code == 404
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT COUNT(*) FROM vnb_submission_cases WHERE community_id=%s", (cid,)
+        )
+        assert cursor.fetchone()[0] == 0
+        cursor.execute(
+            "SELECT access_roles FROM community_members WHERE community_id=%s AND building_id='sonnwil-resident'",
+            (cid,),
+        )
+        assert set(cursor.fetchone()[0]) == {"metering", "billing_preparer"}
+
+
+def test_external_simulation_adapters_are_not_installed_outside_a_worker(monkeypatch):
+    from flask import Flask
+
+    import sandbox_formation
+    import vnb_exchange
+
+    monkeypatch.delenv("OPENLEG_SANDBOX_WORKER", raising=False)
+    before = dict(vnb_exchange.ADAPTERS)
+    web = Flask(__name__)
+    with pytest.raises(RuntimeError, match="requires a village worker"):
+        sandbox_formation.install(web)
+    assert vnb_exchange.ADAPTERS == before
+    assert not any(
+        rule.rule.startswith("/sandbox/") for rule in web.url_map.iter_rules()
+    )
+
+
 def _activate(village, client):
     import io
     from datetime import datetime
@@ -419,8 +605,10 @@ def test_new_participant_requires_new_drafts_before_any_signature(village):
 
 
 def test_join_proposal_replays_after_separate_membership_confirmation(village):
+    import io
     from datetime import datetime, timedelta
     from zoneinfo import ZoneInfo
+
     from tests.test_sandbox_onboarding import _workspace_connection
     from tests.test_sandbox_personas import _switch
 
@@ -438,16 +626,82 @@ def test_join_proposal_replays_after_separate_membership_confirmation(village):
     date = (
         datetime.now(ZoneInfo("Europe/Zurich")).date() + timedelta(days=7)
     ).isoformat()
+    agreement = client.get(
+        prefix
+        + f"/sandbox/formation/{cid}/join-agreement.pdf?participant=sonnwil-operator"
+    )
+    assert agreement.status_code == 200 and agreement.data.startswith(b"%PDF")
+    assert "simulation-sonnwil" in agreement.headers["Content-Disposition"]
+    assert (
+        client.post(
+            prefix + f"/leg/community/{cid}/correspondence",
+            data={
+                **fields,
+                "direction": "out",
+                "channel": "email",
+                "counterparty": "Sam (Simulation)",
+                "subject": "SIMULATION Teilnehmervertrag",
+                "notes": "Erfundener Beitrittsvertrag",
+                "attachment": (
+                    io.BytesIO(agreement.data),
+                    "simulation-sonnwil-join.pdf",
+                ),
+            },
+            content_type="multipart/form-data",
+        ).status_code
+        == 302
+    )
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT id FROM correspondence_log WHERE community_id=%s ORDER BY id DESC LIMIT 1",
+            (cid,),
+        )
+        agreement_id = cursor.fetchone()[0]
     proposal = {
         **fields,
         "mutation_id": "SIMULATION-JOIN-" + cid,
         "participant_id": "sonnwil-operator",
         "mutation_type": "join",
         "effective_date": date,
-        "source_agreement_id": "SIMULATION-AGREEMENT-" + cid,
+        "source_agreement_id": "correspondence:" + str(agreement_id),
     }
     path = prefix + f"/leg/community/{cid}/vnb-mutations"
     assert client.post(path, data=proposal).status_code == 302
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT status FROM community_members WHERE community_id=%s AND building_id='sonnwil-operator'",
+            (cid,),
+        )
+        assert cursor.fetchone()[0] == "invited"
+    with (
+        _workspace_connection(village, client) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT mutation_id FROM vnb_mutation_cases WHERE community_id=%s", (cid,)
+        )
+        mutation_id = cursor.fetchone()[0]
+    response_path = prefix + f"/sandbox/formation/{cid}/mutation-response"
+    assert (
+        client.post(
+            response_path,
+            data={**fields, "mutation_id": mutation_id, "state": "acknowledged"},
+        ).status_code
+        == 302
+    )
+    assert (
+        client.post(
+            response_path,
+            data={**fields, "mutation_id": mutation_id, "state": "acknowledged"},
+        ).status_code
+        == 302
+    )
     with (
         _workspace_connection(village, client) as connection,
         connection.cursor() as cursor,

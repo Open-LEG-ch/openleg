@@ -7,6 +7,25 @@ LEG access controls, municipality demand, utility preferences and API credential
 are available. The simulated inbox and village reset keep these exercises local.
 The remaining journeys are tracked in #768.
 
+The formation guide lets Mira create a LEG, invite Lea and Noah, and confirm
+each household through the ordinary dashboard. Invitations appear once in the
+captured inbox. Review the generated PDFs, then simulate each household's
+signature on that exact document bundle. Changed participants require new drafts.
+Every downloaded formation document carries a simulation marker.
+
+Simulate delivery, rejection or receipt acknowledgement from the guide. These
+actions store normal VNB evidence and audit records; acknowledgement does not
+authorize operation. Download the fictional start PDF, attach it to an incoming
+correspondence entry, then confirm its reference and effective date through the
+ordinary start controls. Only an administrator can activate on or after that date.
+A rejected submission stays rejected and offers a fresh LEG or village reset.
+
+After activation, invite Sam, download the fictional join agreement and upload
+it as outgoing correspondence. Submit the dated join with that source agreement,
+then simulate its VNB response. Separately switch to Sam to confirm membership.
+VNB processing does not change community-controlled membership. Repeating the
+same proposal retains its original facts and evidence.
+
 ## Run locally
 
 Use Linux, PostgreSQL 16 binaries, `libseccomp.so.2` and the normal Python
@@ -119,7 +138,9 @@ persistence guarantee across restarts.
 PostgreSQL version and initialization commands have 60-second deadlines; start
 and stop commands have 120-second deadlines. Repeated shutdown signals are
 ignored while cleanup runs. Failed cleanup retains its runner record and scratch
-resources for the next start to reclaim.
+resources for the next start to reclaim. Crash recovery validates process
+ownership before reclaiming scratch
+resources, including clusters with incomplete PostgreSQL PID files.
 
 ## Boundaries
 
@@ -147,9 +168,10 @@ dependency failures return a generic unavailable page without private diagnostic
 
 Mail is captured locally. The browser's content security policy permits only
 same-origin resources and blocks external forms and frames. The sandbox uses
-local assets and no analytics. External signatures, VNB submissions, bank
-operations and device services are unavailable. Later scenario adapters must
-preserve that boundary and use the ordinary product domain operations.
+local assets and no analytics. Signatures and VNB responses use local synthetic
+adapters installed only in village workers. Bank operations and device services
+are unavailable. Scenario adapters preserve that boundary and use the ordinary
+product domain operations.
 
 The gateway is a separate entry point. The normal product application does not
 install demo authentication routes. This prototype verifies synthetic behavior;
