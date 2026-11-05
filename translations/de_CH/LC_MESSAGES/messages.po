@@ -607,6 +607,7 @@ msgstr "Abgelaufen"
 #: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:187
 #: templates/contact_requests.html:32 templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 #: templates/sandbox/formation.html:37 templates/sandbox/formation.html:85
+#: templates/sandbox/metering.html:4
 msgid "Abgelehnt"
 msgstr "Abgelehnt"
 
@@ -725,6 +726,14 @@ msgstr "Abrechnungsperioden"
 #: templates/leg_dashboard.html:404
 msgid "Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr "Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
+
+#: templates/sandbox/metering.html:67
+msgid "Abruf fehlgeschlagen"
+msgstr "Abruf fehlgeschlagen"
+
+#: templates/sandbox/metering.html:71
+msgid "Abruffehler simulieren"
+msgstr "Abruffehler simulieren"
 
 #: billing_workspace.py:275
 msgid "Abweichung prüfen"
@@ -1062,7 +1071,7 @@ msgstr "Angaben können nicht verarbeitet werden"
 msgid "Angaben stimmen nicht überein"
 msgstr "Angaben stimmen nicht überein"
 
-#: templates/contact_requests.html:32
+#: templates/contact_requests.html:32 templates/sandbox/metering.html:4
 msgid "Angenommen"
 msgstr "Angenommen"
 
@@ -1540,7 +1549,7 @@ msgstr "Befehl kopieren"
 msgid "Befehl kopiert."
 msgstr "Befehl kopiert."
 
-#: templates/sandbox/home.html:32
+#: templates/sandbox/home.html:37
 msgid ""
 "Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
@@ -1550,7 +1559,7 @@ msgstr ""
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
 "des Netzbetreibers. Aktivieren Sie die LEG erst mit einem separaten erfundenen Startbeleg."
 
-#: templates/sandbox/home.html:24
+#: templates/sandbox/home.html:29
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
 "sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
@@ -1638,6 +1647,10 @@ msgid "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalt registriert"
 msgid_plural "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalte registriert"
 msgstr[0] "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalt registriert"
 msgstr[1] "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalte registriert"
+
+#: templates/sandbox/metering.html:4
+msgid "Bereits importiert"
+msgstr "Bereits importiert"
 
 #: templates/utility/register.html:111
 msgid "Bereits registriert?"
@@ -2456,6 +2469,10 @@ msgstr "Datenverarbeitungsvertrag unterzeichnen"
 msgid "Datenzugriff"
 msgstr "Datenzugriff"
 
+#: templates/sandbox/metering.html:14
+msgid "Datierte Messpunktzuordnungen"
+msgstr "Datierte Messpunktzuordnungen"
+
 #: templates/documents/community_agreement.html:37 templates/leg_dashboard.html:338
 #: templates/sandbox/start_evidence.html:6
 msgid "Datum"
@@ -2789,6 +2806,16 @@ msgstr ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
 
+#: templates/sandbox/metering.html:64
+msgid ""
+"Der tägliche Zeitplan läuft um 00:00 Europe/Zurich. Sie lösen hier den gewöhnlichen "
+"Fälligkeitstest aus. Die Quelle liegt nur in Ihrem Dorf; es gibt keine FTPS-Zugangsdaten. Nach "
+"einem Lauf am selben Tag benutzen Sie den ausdrücklichen Wiederholungsversuch."
+msgstr ""
+"Der tägliche Zeitplan läuft um 00:00 Europe/Zurich. Sie lösen hier den gewöhnlichen "
+"Fälligkeitstest aus. Die Quelle liegt nur in Ihrem Dorf; es gibt keine FTPS-Zugangsdaten. Nach "
+"einem Lauf am selben Tag benutzen Sie den ausdrücklichen Wiederholungsversuch."
+
 #: pv_ranking.py:29
 msgid "Dicht"
 msgstr "Dicht"
@@ -2895,6 +2922,14 @@ msgstr ""
 " Gebietsanfrage. Bereits ausgestellte Rechnungen, abrechnungsrelevante Messdaten und "
 "Nutzungsereignisse bleiben erhalten."
 
+#: sandbox_metering.py:54
+msgid ""
+"Die Datei ist kein unterstützter vollständiger E66-Beleg. Verwenden Sie eine der bereitgestellten"
+" Übungsdateien."
+msgstr ""
+"Die Datei ist kein unterstützter vollständiger E66-Beleg. Verwenden Sie eine der bereitgestellten"
+" Übungsdateien."
+
 #: templates/dashboard.html:149
 msgid "Die Daten aus Ihrer letzten Stromrechnung reichen."
 msgstr "Die Daten aus Ihrer letzten Stromrechnung reichen."
@@ -2922,6 +2957,16 @@ msgstr ""
 #: store/formation_signatures.py:171 store/vnb_exchange.py:334
 msgid "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
 msgstr "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
+
+#: templates/sandbox/metering.html:13
+msgid ""
+"Die E66-Kanäle total, community und grid stammen gemeinsam aus derselben Quelle. Kein fehlender "
+"oder abgelehnter Wert wird aus Gerätemessungen ergänzt. Die Korrektur erhöht die Produktion auf "
+"1728 kWh und senkt den Netzbezug auf 1152 kWh."
+msgstr ""
+"Die E66-Kanäle total, community und grid stammen gemeinsam aus derselben Quelle. Kein fehlender "
+"oder abgelehnter Wert wird aus Gerätemessungen ergänzt. Die Korrektur erhöht die Produktion auf "
+"1728 kWh und senkt den Netzbezug auf 1152 kWh."
 
 #: templates/leg_gruenden.html:110
 msgid ""
@@ -3163,6 +3208,14 @@ msgstr "Die Prognose berechnet keine Anlagenleistung oder Überschüsse."
 msgid "Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut."
 msgstr "Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut."
 
+#: sandbox_metering.py:45
+msgid ""
+"Die Quelle enthält feinere Werte als das unterstützte E66-Profil. Verwenden Sie die gültige Datei"
+" ohne Rundung."
+msgstr ""
+"Die Quelle enthält feinere Werte als das unterstützte E66-Profil. Verwenden Sie die gültige Datei"
+" ohne Rundung."
+
 #: templates/index.html:286
 msgid ""
 "Die Rangliste zeigt, wie viel Dachpotenzial Ihre Gemeinde nutzt, wer im Vergleich weiter ist und "
@@ -3291,6 +3344,10 @@ msgstr "Die eingereichte Anmeldung und die Korrespondenz mit dem Netzbetreiber."
 msgid "Die englische und deutsche Übersicht im"
 msgstr "Die englische und deutsche Übersicht im"
 
+#: sandbox_metering.py:59
+msgid "Die entpackte Datei überschreitet das Limit von 8 MiB."
+msgstr "Die entpackte Datei überschreitet das Limit von 8 MiB."
+
 #: advisories.py:29
 msgid "Die erfasste Firmware liegt ausserhalb des Bereichs dieser Meldung."
 msgstr "Die erfasste Firmware liegt ausserhalb des Bereichs dieser Meldung."
@@ -3307,7 +3364,7 @@ msgstr "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein
 msgid "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 msgstr "Die gespeicherte E-Mail-Sprache und der Schlüsselstatus bleiben beim Kontowechsel erhalten."
 
-#: sandbox_seed.py:45 sandbox_worker.py:84
+#: sandbox_seed.py:45 sandbox_worker.py:87
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 
@@ -3318,6 +3375,14 @@ msgstr "Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, J
 #: sandbox_seed.py:75
 msgid "Die gewählte Freigaberegel bleibt nach dem Neuladen erhalten."
 msgstr "Die gewählte Freigaberegel bleibt nach dem Neuladen erhalten."
+
+#: templates/sandbox/metering.html:31
+msgid ""
+"Die gewöhnliche Belegablage und die physischen Messreihen sind gespeichert. Eine identische "
+"Wiederholung erzeugt keine zweite Lieferung."
+msgstr ""
+"Die gewöhnliche Belegablage und die physischen Messreihen sind gespeichert. Eine identische "
+"Wiederholung erzeugt keine zweite Lieferung."
 
 #: templates/documents/community_agreement.html:22
 msgid ""
@@ -3439,6 +3504,10 @@ msgstr "Diese Meldung wurde im geprüften Katalog zurückgezogen. Frühere Versi
 msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
 msgstr "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
 
+#: sandbox_metering.py:57
+msgid "Diese Quelle gehört nicht zur vorbereiteten LEG Sonnwil."
+msgstr "Diese Quelle gehört nicht zur vorbereiteten LEG Sonnwil."
+
 #: templates/advisories.html:43
 msgid ""
 "Diese Quelle ist nicht im aktuellen Prüfumfang enthalten. Aktuelle Hinweise und Bestätigungen "
@@ -3466,6 +3535,14 @@ msgid ""
 msgstr ""
 "Diese Vorlagen sind automatisch erstellte Entwürfe und keine Rechtsberatung. Lassen Sie die "
 "Dokumente vor der Unterzeichnung juristisch prüfen."
+
+#: templates/sandbox/metering.html:38
+msgid ""
+"Diese Werte stammen aus der aktuellen Messwertablage. Ein Rückzug entfernt sie nicht; für eine "
+"Abrechnung ist zusätzlich eine aktuelle angenommene Quelle erforderlich."
+msgstr ""
+"Diese Werte stammen aus der aktuellen Messwertablage. Ein Rückzug entfernt sie nicht; für eine "
+"Abrechnung ist zusätzlich eine aktuelle angenommene Quelle erforderlich."
 
 #: billing_workspace.py:233
 msgid ""
@@ -3662,6 +3739,10 @@ msgstr "E-Mail:"
 msgid "E-Mails, Dokumente und Zahlungen sind Simulationen."
 msgstr "E-Mails, Dokumente und Zahlungen sind Simulationen."
 
+#: templates/sandbox/metering.html:23
+msgid "E66-Übungsdatei"
+msgstr "E66-Übungsdatei"
+
 #: templates/leg_gruenden.html:107
 msgid "EBL"
 msgstr "EBL"
@@ -3822,9 +3903,25 @@ msgstr ""
 msgid "Ein Grund ist erforderlich."
 msgstr "Ein Grund ist erforderlich."
 
+#: sandbox_metering.py:42
+msgid ""
+"Ein Messpunkt ist nicht zugeordnet. Prüfen Sie die datierte Zuordnung; die Lieferung bleibt "
+"abgelehnt."
+msgstr ""
+"Ein Messpunkt ist nicht zugeordnet. Prüfen Sie die datierte Zuordnung; die Lieferung bleibt "
+"abgelehnt."
+
 #: member_savings.py:194 member_savings.py:197 member_savings.py:267
 msgid "Ein Messwert dieser Periode ist ungültig."
 msgstr "Ein Messwert dieser Periode ist ungültig."
+
+#: sandbox_metering.py:39
+msgid ""
+"Ein Viertelstundenwert fehlt. Laden Sie die vollständige gültige Lieferung, statt Werte zu "
+"ergänzen."
+msgstr ""
+"Ein Viertelstundenwert fehlt. Laden Sie die vollständige gültige Lieferung, statt Werte zu "
+"ergänzen."
 
 #: templates/how-it-works.html:33 templates/how-it-works.html:111
 msgid ""
@@ -4188,7 +4285,7 @@ msgstr "Energieprofil und Einwilligungen gespeichert."
 msgid "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 msgstr "Energieprofil und LEG-Potenzial für %(name)s: Stromtarife, Solarnutzung, Energiewende-Score."
 
-#: sandbox_seed.py:27 sandbox_worker.py:78
+#: sandbox_seed.py:27 sandbox_worker.py:81
 msgid "Energieprofil ändern"
 msgstr "Energieprofil ändern"
 
@@ -4265,6 +4362,10 @@ msgstr ""
 "Erfassen Sie zuerst die tatsächliche Startbestätigung als Eingang mit Anhang im "
 "Korrespondenzjournal. Wählen Sie danach diesen Beleg aus."
 
+#: templates/sandbox/metering.html:67
+msgid "Erfolgreich"
+msgstr "Erfolgreich"
+
 #: templates/sandbox/start_evidence.html:4
 msgid ""
 "Erfundene Startbestätigung. Dieser Beleg bewilligt keinen realen Betriebsstart und hat keine "
@@ -4293,7 +4394,7 @@ msgstr "Ergebnis zum Fernzugriff"
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Ergänzen Sie Ihren Stromverbrauch"
 
-#: templates/sandbox/home.html:25
+#: templates/sandbox/home.html:30
 msgid ""
 "Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
@@ -4479,6 +4580,10 @@ msgstr "Fallstudie: LEG-Potenzial in %(name)s"
 msgid "Fallstudie: Was eine LEG in %(profile_name)s bringt"
 msgstr "Fallstudie: Was eine LEG in %(profile_name)s bringt"
 
+#: sandbox_metering.py:65
+msgid "Fehlende Viertelstunde"
+msgstr "Fehlende Viertelstunde"
+
 #: templates/leg_kalkulator.html:507
 msgid "Fehler bei der Berechnung. Bitte versuchen Sie es erneut."
 msgstr "Fehler bei der Berechnung. Bitte versuchen Sie es erneut."
@@ -4603,7 +4708,7 @@ msgstr "Fortschritt:"
 msgid "Frage senden"
 msgstr "Frage senden"
 
-#: templates/sandbox/home.html:26
+#: templates/sandbox/home.html:31
 msgid ""
 "Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
 "welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
@@ -4828,6 +4933,14 @@ msgstr "Für dieses Modell anwendbar"
 #: equipment.py:28
 msgid "Für dieses Modell und das zugehörige Cloud-Konto klären, ob MFA unterstützt wird."
 msgstr "Für dieses Modell und das zugehörige Cloud-Konto klären, ob MFA unterstützt wird."
+
+#: sandbox_metering.py:51
+msgid ""
+"Für dieses Zeitfenster liegt bereits eine Quelle vor. Prüfen Sie das Original und ziehen Sie es "
+"vor einer Korrektur zurück."
+msgstr ""
+"Für dieses Zeitfenster liegt bereits eine Quelle vor. Prüfen Sie das Original und ziehen Sie es "
+"vor einer Korrektur zurück."
 
 #: templates/leg_verzeichnis/leg_check.html:72
 msgid "Für direkt benachbarte Häuser kommt je nach Anschluss auch ein vZEV infrage."
@@ -5175,6 +5288,10 @@ msgstr "Genügend Speicher für PostgreSQL-Daten und Backups"
 msgid "Geplant"
 msgstr "Geplant"
 
+#: templates/sandbox/metering.html:63
+msgid "Geplanten Import ausprobieren"
+msgstr "Geplanten Import ausprobieren"
+
 #: templates/advisories.html:12
 msgid "Geprüfte Modellbezeichnung"
 msgstr "Geprüfte Modellbezeichnung"
@@ -5292,6 +5409,19 @@ msgstr ""
 "Gespeichert. Öffnen Sie den Bestätigungslink im Postfach. Kehren Sie danach zum Postfach zurück "
 "und fordern Sie dort den Zugangslink an."
 
+#: templates/sandbox/metering.html:37 templates/sandbox/metering.html:39
+msgid "Gespeicherte Messwerte je Messpunkt"
+msgstr "Gespeicherte Messwerte je Messpunkt"
+
+#: templates/sandbox/metering.html:31
+#, python-format
+msgid "Gespeicherte Messwerte: %(count)s."
+msgstr "Gespeicherte Messwerte: %(count)s."
+
+#: templates/sandbox/metering.html:45
+msgid "Gespeicherte Quellen"
+msgstr "Gespeicherte Quellen"
+
 #: templates/equipment_form.html:108
 msgid "Gespeicherte Übergabe herunterladen"
 msgstr "Gespeicherte Übergabe herunterladen"
@@ -5389,6 +5519,10 @@ msgstr "Grund"
 msgid "Grund der Zuordnung"
 msgstr "Grund der Zuordnung"
 
+#: templates/sandbox/metering.html:54
+msgid "Grund des Rückzugs"
+msgstr "Grund des Rückzugs"
+
 #: templates/leg_billing.html:159
 msgid "Grund:"
 msgstr "Grund:"
@@ -5442,7 +5576,7 @@ msgstr "Gründung"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Gründung als Arbeitsfolge"
 
-#: templates/sandbox/home.html:33
+#: templates/sandbox/home.html:38
 msgid "Gründung ausprobieren"
 msgstr "Gründung ausprobieren"
 
@@ -5530,6 +5664,11 @@ msgstr "Gültig ab"
 msgid "Gültig bis"
 msgstr "Gültig bis"
 
+#: templates/sandbox/metering.html:15
+#, python-format
+msgid "Gültig von %(start)s bis %(end)s (Europe/Zurich)."
+msgstr "Gültig von %(start)s bis %(end)s (Europe/Zurich)."
+
 #: billing_policy.py:440
 msgid "Gültig-ab-Datum im Format JJJJ-MM-TT eingeben."
 msgstr "Gültig-ab-Datum im Format JJJJ-MM-TT eingeben."
@@ -5558,7 +5697,7 @@ msgstr "Haftungsausschluss"
 msgid "Hallo,"
 msgstr "Hallo,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:73 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:76 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
@@ -5566,7 +5705,7 @@ msgid_plural "Haushalte"
 msgstr[0] "Haushalt"
 msgstr[1] "Haushalte"
 
-#: templates/sandbox/home.html:23 templates/sandbox/home.html:28 templates/sandbox/onboarding.html:2
+#: templates/sandbox/home.html:28 templates/sandbox/home.html:33 templates/sandbox/onboarding.html:2
 #: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
 msgid "Haushalt anmelden"
 msgstr "Haushalt anmelden"
@@ -5752,6 +5891,14 @@ msgstr "Ich möchte dieses Dorf löschen und mit der gewählten Vorlage neu begi
 msgid "Ich möchte dieses Dorf und alle Übungsdaten löschen."
 msgstr "Ich möchte dieses Dorf und alle Übungsdaten löschen."
 
+#: templates/sandbox/metering.html:55
+msgid "Ich ziehe diese Quelle ausdrücklich zurück, bevor ich die Korrektur importiere."
+msgstr "Ich ziehe diese Quelle ausdrücklich zurück, bevor ich die Korrektur importiere."
+
+#: sandbox_metering.py:63
+msgid "Identische Wiederholung"
+msgstr "Identische Wiederholung"
+
 #: dashboard_routes.py:398
 msgid "Ihr Dashboard-Zugangslink"
 msgstr "Ihr Dashboard-Zugangslink"
@@ -5792,7 +5939,7 @@ msgstr "Ihr eigenes Übungsdorf"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 
-#: sandbox_worker.py:79
+#: sandbox_worker.py:82
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Ihr neuer Haushalt ist bestätigt."
 
@@ -5964,7 +6111,7 @@ msgstr "Ihre übliche Verbrauchszeit, tagsüber oder abends"
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 
-#: templates/sandbox/home.html:27
+#: templates/sandbox/home.html:32
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
 "bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
@@ -5990,6 +6137,10 @@ msgstr "Im betroffenen Firmwarebereich"
 #, python-format
 msgid "Im offenen Verzeichnis ist noch keine LEG aus %(profile_name)s eingetragen."
 msgstr "Im offenen Verzeichnis ist noch keine LEG aus %(profile_name)s eingetragen."
+
+#: templates/sandbox/metering.html:67
+msgid "Import fehlgeschlagen"
+msgstr "Import fehlgeschlagen"
 
 #: templates/impressum.html:21 templates/partials/site_footer.html:11
 msgid "Impressum"
@@ -6723,7 +6874,7 @@ msgid "Konto nicht verfügbar"
 msgstr "Konto nicht verfügbar"
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/home.html:21
+#: templates/sandbox/home.html:26
 msgid "Konto wechseln"
 msgstr "Konto wechseln"
 
@@ -6743,6 +6894,10 @@ msgstr "Kopieren"
 #: templates/dashboard.html:291 templates/gemeinde/dashboard.html:180
 msgid "Kopiert"
 msgstr "Kopiert"
+
+#: sandbox_metering.py:64
+msgid "Korrektur nach Rückzug"
+msgstr "Korrektur nach Rückzug"
 
 #: templates/leg_billing.html:148
 msgid "Korrektur verknüpfen"
@@ -6850,6 +7005,10 @@ msgstr "LEA-Posteingang"
 msgid "LEG"
 msgstr "LEG"
 
+#: templates/sandbox/metering.html:40
+msgid "LEG (kWh)"
+msgstr "LEG (kWh)"
+
 #: templates/leg_kalkulator.html:13
 msgid ""
 "LEG Rechner, Stromgemeinschaft Kalkulator, LEG Sparpotenzial, Netzkosten Rechner, Stromkosten "
@@ -6908,7 +7067,7 @@ msgid "LEG gesetzlich möglich"
 msgstr "LEG gesetzlich möglich"
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
-#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:31
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:36
 msgid "LEG gründen"
 msgstr "LEG gründen"
 
@@ -7133,6 +7292,16 @@ msgid_plural "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 msgstr[0] "Laden Sie mindestens %(count)s weiteren Nachbarn ein."
 msgstr[1] "Laden Sie mindestens %(count)s weitere Nachbarn ein."
 
+#: templates/sandbox/metering.html:19
+msgid ""
+"Laden Sie zuerst den vollständigen September herunter und importieren Sie ihn. Wiederholen Sie "
+"dieselbe Lieferung. Probieren Sie danach die abgelehnten Varianten und die Korrektur aus. Gzip "
+"verpackt die unveränderte XML-Quelle; höchstens 8 MiB werden entpackt."
+msgstr ""
+"Laden Sie zuerst den vollständigen September herunter und importieren Sie ihn. Wiederholen Sie "
+"dieselbe Lieferung. Probieren Sie danach die abgelehnten Varianten und die Korrektur aus. Gzip "
+"verpackt die unveränderte XML-Quelle; höchstens 8 MiB werden entpackt."
+
 #: templates/telemetry_dashboard.html:16
 msgid "Ladezustand"
 msgstr "Ladezustand"
@@ -7152,6 +7321,10 @@ msgid ""
 msgstr ""
 "Lassen sich Verbrauchsdaten einer bestimmten oder bestimmbaren natürlichen Person zuordnen, sind "
 "sie Personendaten. Ihre Bearbeitung richtet sich nach dem Schweizer Datenschutzgesetz (DSG)."
+
+#: templates/sandbox/metering.html:73
+msgid "Lauf erneut versuchen"
+msgstr "Lauf erneut versuchen"
 
 #: templates/open_source.html:53
 msgid "Laufende Anwendung"
@@ -7208,6 +7381,10 @@ msgstr "Letzte Gerätemeldung: Störung"
 #: templates/telemetry_dashboard.html:96
 msgid "Letzte Gerätemeldung: keine Störung"
 msgstr "Letzte Gerätemeldung: keine Störung"
+
+#: templates/sandbox/metering.html:77
+msgid "Letzte Importversuche"
+msgstr "Letzte Importversuche"
 
 #: advisories.py:56
 msgid "Letzte Quellenprüfung fehlgeschlagen"
@@ -7403,6 +7580,14 @@ msgstr ""
 msgid "Löschung bestätigen"
 msgstr "Löschung bestätigen"
 
+#: templates/sandbox/metering.html:65
+msgid ""
+"Lösen Sie zuerst einen Abruffehler aus. Starten Sie danach den Wiederholungsversuch ohne Fehler. "
+"Die vorhandene Quelle und ihre Messreihen werden beim erneuten Abruf wiedererkannt."
+msgstr ""
+"Lösen Sie zuerst einen Abruffehler aus. Starten Sie danach den Wiederholungsversuch ohne Fehler. "
+"Die vorhandene Quelle und ihre Messreihen werden beim erneuten Abruf wiedererkannt."
+
 #: equipment.py:75
 msgid "Manuell geprüft"
 msgstr "Manuell geprüft"
@@ -7579,6 +7764,18 @@ msgstr "Menschen und öffentlicher Verkehr in einer Schweizer Stadt"
 msgid "Messdaten"
 msgstr "Messdaten"
 
+#: templates/sandbox/home.html:24
+msgid "Messdaten ausprobieren"
+msgstr "Messdaten ausprobieren"
+
+#: templates/sandbox/home.html:22 templates/sandbox/metering.html:2 templates/sandbox/metering.html:8
+msgid "Messdaten importieren"
+msgstr "Messdaten importieren"
+
+#: templates/sandbox/metering.html:40
+msgid "Messpunkt"
+msgstr "Messpunkt"
+
 #: templates/documents/dso_registration.html:23
 msgid "Messpunkt-ID"
 msgstr "Messpunkt-ID"
@@ -7599,7 +7796,11 @@ msgstr "Messquelle liefert ältere Werte. Prüfen Sie Messquelle und Gerätezeit
 msgid "Messung klären und Betrieb aufnehmen"
 msgstr "Messung klären und Betrieb aufnehmen"
 
-#: templates/admin/ops.html:62 templates/gemeinde/profil.html:42
+#: templates/sandbox/metering.html:41
+msgid "Messwertablage nicht verfügbar"
+msgstr "Messwertablage nicht verfügbar"
+
+#: templates/admin/ops.html:62 templates/gemeinde/profil.html:42 templates/sandbox/metering.html:40
 msgid "Messwerte"
 msgstr "Messwerte"
 
@@ -7963,6 +8164,10 @@ msgstr "Nettobetrag"
 msgid "Netz"
 msgstr "Netz"
 
+#: templates/sandbox/metering.html:40
+msgid "Netz (kWh)"
+msgstr "Netz (kWh)"
+
 #: sandbox_seed.py:111
 msgid "Netzbetreiber"
 msgstr "Netzbetreiber"
@@ -8112,6 +8317,10 @@ msgstr "Neue LEG erstellen"
 msgid "Neue LEG-Interessenmeldung in %(municipality_name)s"
 msgstr "Neue LEG-Interessenmeldung in %(municipality_name)s"
 
+#: templates/sandbox/metering.html:67
+msgid "Neue Messwerte"
+msgstr "Neue Messwerte"
+
 #: templates/documents/community_agreement.html:31
 msgid ""
 "Neue Teilnehmer können mit Zustimmung der bestehenden Mitglieder beitreten.\n"
@@ -8144,7 +8353,7 @@ msgstr "Neuen Schlüssel erstellen"
 msgid "Neuenburg"
 msgstr "Neuenburg"
 
-#: sandbox_worker.py:72
+#: sandbox_worker.py:75
 msgid "Neuer Haushalt"
 msgstr "Neuer Haushalt"
 
@@ -8190,9 +8399,21 @@ msgstr ""
 msgid "Nicht mehr benötigte Zugänge"
 msgstr "Nicht mehr benötigte Zugänge"
 
+#: sandbox_metering.py:67
+msgid "Nicht unterstützte Genauigkeit"
+msgstr "Nicht unterstützte Genauigkeit"
+
 #: municipality.py:366 templates/admin/ops.html:44 templates/admin/ops.html:48
 msgid "Nicht verfügbar"
 msgstr "Nicht verfügbar"
+
+#: templates/sandbox/metering.html:15
+msgid "Nicht zugeordnet"
+msgstr "Nicht zugeordnet"
+
+#: sandbox_metering.py:66
+msgid "Nicht zugeordneter Messpunkt"
+msgstr "Nicht zugeordneter Messpunkt"
 
 #: templates/admin/abrechnungen.html:108
 msgid "Nicht zugeteilt"
@@ -8278,6 +8499,10 @@ msgstr "Noch keine Statusänderung protokolliert."
 #: templates/leg_billing_policy.html:134
 msgid "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
 msgstr "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
+
+#: templates/sandbox/metering.html:60
+msgid "Noch keine angenommene Quelle. Importieren Sie den vollständigen September."
+msgstr "Noch keine angenommene Quelle. Importieren Sie den vollständigen September."
 
 #: templates/leg_billing.html:195
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
@@ -9110,7 +9335,7 @@ msgstr "Produktivbetrieb"
 msgid "Produkt-Demo öffnen"
 msgstr "Produkt-Demo öffnen"
 
-#: templates/admin/abrechnungen.html:58
+#: templates/admin/abrechnungen.html:58 templates/sandbox/metering.html:41
 msgid "Produktion"
 msgstr "Produktion"
 
@@ -9374,9 +9599,17 @@ msgstr "Quelle Ihrer Angabe"
 msgid "Quelle der Angabe"
 msgstr "Quelle der Angabe"
 
+#: templates/sandbox/metering.html:24
+msgid "Quelle prüfen und importieren"
+msgstr "Quelle prüfen und importieren"
+
 #: templates/leg_kalkulator.html:121
 msgid "Quelle und Annahmen"
 msgstr "Quelle und Annahmen"
+
+#: templates/sandbox/metering.html:56
+msgid "Quelle zurückziehen"
+msgstr "Quelle zurückziehen"
 
 #: templates/fuer_bewohner.html:100
 msgid "Quelle: Art. 19h StromVV"
@@ -9452,6 +9685,10 @@ msgstr "Quellenversion"
 #: templates/impressum.html:24
 msgid "Quelloffene Infrastruktur für Lokale Elektrizitätsgemeinschaften"
 msgstr "Quelloffene Infrastruktur für Lokale Elektrizitätsgemeinschaften"
+
+#: templates/sandbox/metering.html:33 templates/sandbox/metering.html:49
+msgid "Quellprüfsumme"
+msgstr "Quellprüfsumme"
 
 #: templates/leg_dashboard.html:260 templates/sandbox/formation.html:74
 msgid "Quellvertrag"
@@ -9671,7 +9908,7 @@ msgstr "Richten Sie die Abrechnung ein."
 msgid "Richtlinie verwalten"
 msgstr "Richtlinie verwalten"
 
-#: templates/leg_dashboard.html:334 templates/leg_dashboard.html:362
+#: templates/leg_dashboard.html:334 templates/leg_dashboard.html:362 templates/sandbox/metering.html:40
 msgid "Richtung"
 msgstr "Richtung"
 
@@ -10074,6 +10311,14 @@ msgstr "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
 #, python-format
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 msgstr "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
+
+#: templates/sandbox/metering.html:9
+msgid ""
+"Simulation Sonnwil: Alle Messpunkte, Quellen und Werte sind erfunden. Die aktive LEG ist "
+"vorbereitet. Es gibt keine Verbindung zu einem realen Netzbetreiber."
+msgstr ""
+"Simulation Sonnwil: Alle Messpunkte, Quellen und Werte sind erfunden. Die aktive LEG ist "
+"vorbereitet. Es gibt keine Verbindung zu einem realen Netzbetreiber."
 
 #: templates/sandbox/formation.html:6
 msgid ""
@@ -10760,6 +11005,10 @@ msgstr "Token ist erforderlich"
 msgid "Total"
 msgstr "Total"
 
+#: templates/sandbox/metering.html:40
+msgid "Total (kWh)"
+msgstr "Total (kWh)"
+
 #: templates/unsubscribe.html:24
 msgid ""
 "Tragen Sie Ihre E-Mail-Adresse ein. Für jedes hinterlegte Adressprofil und jede offene "
@@ -10807,6 +11056,14 @@ msgstr ""
 "eingebrachten Anlagen für erneuerbare Energie müssen zusammen mindestens 5 Prozent der "
 "Anschlussleistung aller teilnehmenden Endverbraucher erreichen. Ob die nötige Netztopologie "
 "vorliegt, bestätigt der zuständige Verteilnetzbetreiber."
+
+#: templates/sandbox/metering.html:12
+msgid ""
+"Unabhängige Monatssummen: Verbrauch 2880 kWh, Produktion 1440 kWh, LEG-Bezug 1440 kWh, Netzbezug "
+"1440 kWh. Die Produktion wird vollständig in der LEG genutzt. Alle Quellwerte verwenden kWh."
+msgstr ""
+"Unabhängige Monatssummen: Verbrauch 2880 kWh, Produktion 1440 kWh, LEG-Bezug 1440 kWh, Netzbezug "
+"1440 kWh. Die Produktion wird vollständig in der LEG genutzt. Alle Quellwerte verwenden kWh."
 
 #: advisories.py:43 advisories.py:48 equipment.py:15 equipment.py:49 equipment.py:55 equipment.py:61
 #: equipment.py:67 equipment.py:73 equipment.py:78 equipment.py:84 templates/advisories.html:23
@@ -11025,6 +11282,10 @@ msgstr "Verantwortlichkeiten im Detail"
 msgid "Verantwortung wählen"
 msgstr "Verantwortung wählen"
 
+#: templates/sandbox/metering.html:41
+msgid "Verbrauch"
+msgstr "Verbrauch"
+
 #: templates/emails/day_7_consumption.html:6
 msgid "Verbrauch ergänzen"
 msgstr "Verbrauch ergänzen"
@@ -11217,6 +11478,16 @@ msgstr "Veröffentlichte Quelle und Versionsbereich"
 msgid "Veröffentlichte Sicherheitshinweise für dieses Gerät prüfen"
 msgstr "Veröffentlichte Sicherheitshinweise für dieses Gerät prüfen"
 
+#: templates/sandbox/metering.html:11
+msgid ""
+"Vier Haushalte verbrauchen je 0.250 kWh pro Intervall. Ein Produktionspunkt liefert 0.500 kWh. "
+"Ohne Batterie beziehen alle Haushalte je 0.125 kWh aus der LEG und 0.125 kWh aus dem Netz. Diese "
+"flachen Übungsprofile sind keine Prognose."
+msgstr ""
+"Vier Haushalte verbrauchen je 0.250 kWh pro Intervall. Ein Produktionspunkt liefert 0.500 kWh. "
+"Ohne Batterie beziehen alle Haushalte je 0.125 kWh aus der LEG und 0.125 kWh aus dem Netz. Diese "
+"flachen Übungsprofile sind keine Prognose."
+
 #: templates/dashboard.html:106
 msgid "Vier Punkte entscheiden, ob die Anmeldung starten kann."
 msgstr "Vier Punkte entscheiden, ob die Anmeldung starten kann."
@@ -11228,6 +11499,10 @@ msgstr "Vier-Augen-Prinzip"
 #: billing_workspace.py:281
 msgid "Vollständig abgeglichen"
 msgstr "Vollständig abgeglichen"
+
+#: sandbox_metering.py:62
+msgid "Vollständiger September"
+msgstr "Vollständiger September"
 
 #: templates/leg_dashboard.html:379 templates/leg_dashboard.html:435
 msgid "Vollzugriff im persönlichen Dashboard anfordern"
@@ -11285,6 +11560,14 @@ msgstr ""
 "Von voller Datenhoheit bis ohne eigenen Aufwand. Dieselbe Open-Source-Software läuft auf jeder "
 "Stufe, und Sie wechseln jederzeit. Wir verkaufen Komfort, Hardware und Betrieb, niemals Ihre "
 "Daten."
+
+#: templates/sandbox/metering.html:51
+msgid ""
+"Vor einer Ersatzlieferung muss die aktuelle Quelle zurückgezogen werden. Der ursprüngliche Beleg "
+"und die Messdaten bleiben nachvollziehbar erhalten."
+msgstr ""
+"Vor einer Ersatzlieferung muss die aktuelle Quelle zurückgezogen werden. Der ursprüngliche Beleg "
+"und die Messdaten bleiben nachvollziehbar erhalten."
 
 #: templates/gemeinde/onboarding.html:37 templates/utility/register.html:80
 msgid "Vor- und Nachname"
@@ -11897,6 +12180,16 @@ msgstr ""
 "folgenden erfundenen Adressen ein. Wechseln Sie jeweils zum eingeladenen Konto und bestätigen Sie"
 " die Teilnahme im LEG-Dashboard."
 
+#: templates/sandbox/home.html:23
+msgid ""
+"Wählen Sie Sam oder Robin. Importieren Sie einen vollständigen erfundenen September, prüfen Sie "
+"abgelehnte Dateien und ziehen Sie die Originalquelle vor einer Korrektur zurück. Probieren Sie "
+"auch einen fehlgeschlagenen geplanten Abruf und seinen Wiederholungsversuch aus."
+msgstr ""
+"Wählen Sie Sam oder Robin. Importieren Sie einen vollständigen erfundenen September, prüfen Sie "
+"abgelehnte Dateien und ziehen Sie die Originalquelle vor einer Korrektur zurück. Probieren Sie "
+"auch einen fehlgeschlagenen geplanten Abruf und seinen Wiederholungsversuch aus."
+
 #: templates/meter_upload.html:54
 msgid "Wählen Sie den gewünschten Zeitraum"
 msgstr "Wählen Sie den gewünschten Zeitraum"
@@ -11990,6 +12283,10 @@ msgstr "Zeitangabe prüfen"
 msgid "Zeitplan"
 msgstr "Zeitplan"
 
+#: templates/sandbox/metering.html:72
+msgid "Zeitplan auslösen"
+msgstr "Zeitplan auslösen"
+
 #: templates/admin/ops.html:55
 msgid "Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in der Betriebsdokumentation."
 msgstr "Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in der Betriebsdokumentation."
@@ -11998,6 +12295,16 @@ msgstr "Zeitplan und letzter Lauf pro Tenant. Hinweise zu Fehlercodes stehen in 
 msgid "Zeitraum"
 msgstr "Zeitraum"
 
+#: templates/sandbox/metering.html:10
+msgid ""
+"Zeitraum: September 2026, Europe/Zurich, vom 1. September 00:00 bis 1. Oktober 00:00. Das sind "
+"2880 Viertelstunden. Die XML-Zeitstempel bezeichnen den Intervallanfang in UTC: 31. August 22:00 "
+"bis 30. September 22:00."
+msgstr ""
+"Zeitraum: September 2026, Europe/Zurich, vom 1. September 00:00 bis 1. Oktober 00:00. Das sind "
+"2880 Viertelstunden. Die XML-Zeitstempel bezeichnen den Intervallanfang in UTC: 31. August 22:00 "
+"bis 30. September 22:00."
+
 #: i18n.py:81
 msgid "Zeitüberschreitung beim vorgelagerten Dienst"
 msgstr "Zeitüberschreitung beim vorgelagerten Dienst"
@@ -12005,6 +12312,14 @@ msgstr "Zeitüberschreitung beim vorgelagerten Dienst"
 #: i18n.py:71
 msgid "Zeitüberschreitung der Anfrage"
 msgstr "Zeitüberschreitung der Anfrage"
+
+#: sandbox_metering.py:48
+msgid ""
+"Ziehen Sie zuerst die angenommene Originalquelle ausdrücklich zurück. Importieren Sie danach die "
+"Korrektur."
+msgstr ""
+"Ziehen Sie zuerst die angenommene Originalquelle ausdrücklich zurück. Importieren Sie danach die "
+"Korrektur."
 
 #: templates/gemeinde/profil.html:122
 msgid "Ziel:"
@@ -12094,6 +12409,10 @@ msgstr ""
 "Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen "
 "Sie ihn im Postfach dieses Übungsdorfs."
 
+#: templates/sandbox/metering.html:15
+msgid "Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und den Zeitraum."
+msgstr "Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und den Zeitraum."
+
 #: templates/leg_billing.html:83
 msgid "Zur Freigabe vorbereiten"
 msgstr "Zur Freigabe vorbereiten"
@@ -12143,6 +12462,10 @@ msgstr "Zurück zur Rangliste"
 #: templates/datenschutz.html:81 templates/impressum.html:54 templates/unsubscribe.html:69
 msgid "Zurück zur Startseite"
 msgstr "Zurück zur Startseite"
+
+#: templates/sandbox/metering.html:48
+msgid "Zurückgezogen"
+msgstr "Zurückgezogen"
 
 #: templates/gemeinde/rangliste.html:70 templates/gemeinde/rangliste_fortschritte.html:74
 msgid "Zurücksetzen"
@@ -12733,7 +13056,7 @@ msgstr "» weiterhin aktuell ist."
 msgid "Ändern"
 msgstr "Ändern"
 
-#: sandbox_seed.py:44 sandbox_worker.py:81
+#: sandbox_seed.py:44 sandbox_worker.py:84
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 
@@ -12870,6 +13193,10 @@ msgstr "Überzahlung"
 #: templates/leg_billing_policy.html:29
 msgid "Üblicher Bereich: zwischen"
 msgstr "Üblicher Bereich: zwischen"
+
+#: templates/sandbox/metering.html:18
+msgid "Übungsdateien"
+msgstr "Übungsdateien"
 
 #: templates/sandbox/banner.html:4 templates/sandbox/onboarding.html:25
 msgid "Übungsdorf"
