@@ -32,6 +32,7 @@ def test_founder_can_begin_the_self_guided_formation_scenario(village):
 
 
 def _create_ready(client):
+    """Create a three-household LEG and render its unsigned contracts normally."""
     from tests.test_sandbox_personas import _switch
 
     prefix, _ = _start(client, "founder")
@@ -81,6 +82,7 @@ def _create_ready(client):
 
 
 def test_ordinary_invitations_are_captured_once_inside_the_village(village):
+    """Keep captured invitations idempotent and private to their source village."""
     client = village.test_client()
     prefix, cid = _create_ready(client)
     inbox = client.get(prefix + "/sandbox/inbox")
@@ -112,6 +114,7 @@ def test_ordinary_invitations_are_captured_once_inside_the_village(village):
 
 
 def test_only_complete_participant_signatures_unlock_vnb_submission(village):
+    """Require explicit consent and all current receipts before VNB submission."""
     import re
 
     from tests.test_sandbox_onboarding import _workspace_connection
@@ -203,6 +206,7 @@ def test_simulation_marker_is_explicit_and_absent_from_ordinary_documents():
 
 
 def _signed(client):
+    """Collect all three local receipts and return the founder session."""
     import re
 
     from tests.test_sandbox_personas import _switch
@@ -460,6 +464,7 @@ def test_external_simulation_adapters_are_not_installed_outside_a_worker(monkeyp
 
 
 def _activate(village, client):
+    """Record local start evidence through the ordinary confirmation controls."""
     import io
     from datetime import datetime
     from zoneinfo import ZoneInfo
