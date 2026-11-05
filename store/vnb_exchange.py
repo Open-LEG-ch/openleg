@@ -28,6 +28,18 @@ class VnbSubmissionConflict(VnbExchangeStoreError):
     """Another active submission prevents this formation attempt."""
 
 
+def get_mutation(community_id: str, mutation_id: str) -> dict | None:
+    """Read one immutable command identity within its authorized community."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT * FROM vnb_mutation_cases
+               WHERE community_id = %s AND mutation_id = %s""",
+            (community_id, mutation_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def claim_mutation(submission: MutationClaim) -> dict:
     """Claim a stable mutation, rejecting re-use and participant conflicts."""
     case_id = str(uuid.uuid4())

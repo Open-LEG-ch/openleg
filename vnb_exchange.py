@@ -375,6 +375,28 @@ def submit_participant_mutation(
     )
 
 
+def _mutation_after(before, command):
+    """Apply the requested mutation to either current or recorded facts."""
+    after = dict(before)
+    if command.mutation_type == "join":
+        after["status"] = "confirmed"
+    elif command.mutation_type == "exit":
+        after["status"] = "exited"
+    elif command.mutation_type == "change":
+        if not command.after:
+            raise ParticipantMutationInvalid("Änderungsdaten fehlen.")
+        unknown = set(command.after) - {"status", "role", "access_roles"}
+        if unknown:
+            raise ParticipantMutationInvalid(
+                "Änderungsdaten enthalten unbekannte Felder: "
+                + ", ".join(sorted(unknown))
+            )
+        after.update(command.after)
+    else:
+        raise ParticipantMutationInvalid("Mutationstyp ist unbekannt.")
+    return after
+
+
 def submit_membership_mutation(
     command: ParticipantMutationSubmission,
     adapter: VnbAdapter | None = None,
@@ -394,57 +416,79 @@ def submit_membership_mutation(
     )
     if not community_access.allows(actor, community_access.MANAGE_MEMBERS):
         raise FormationSubmissionForbidden
-    participant = next(
-        (
-            member
-            for member in community.get("members") or []
-            if member.get("building_id") == command.participant_id
-        ),
-        None,
-    )
-    if not participant:
-        raise ParticipantMutationInvalid(
-            "Teilnehmende Person gehört nicht zu dieser LEG."
-        )
     try:
-        date.fromisoformat(command.effective_date)
+        effective_date = date.fromisoformat(command.effective_date)
     except ValueError as error:
         raise ParticipantMutationInvalid("Wirksamkeitsdatum ist ungültig.") from error
-    if command.mutation_type == "join" and participant.get("status") != "invited":
-        raise ParticipantMutationInvalid("Beitritt setzt eine offene Einladung voraus.")
-    if command.mutation_type == "exit" and participant.get("status") != "confirmed":
-        raise ParticipantMutationInvalid(
-            "Austritt setzt eine bestätigte Teilnahme voraus."
-        )
-    before = {
-        key: participant.get(key)
-        for key in ("building_id", "status", "role", "access_roles")
-        if key in participant
-    }
-    after = dict(before)
-    if command.mutation_type == "join":
-        after["status"] = "confirmed"
-    elif command.mutation_type == "exit":
-        after["status"] = "exited"
-    elif command.mutation_type == "change":
-        if not command.after:
-            raise ParticipantMutationInvalid("Änderungsdaten fehlen.")
-        unknown = set(command.after) - {"status", "role", "access_roles"}
-        if unknown:
-            raise ParticipantMutationInvalid(
-                "Änderungsdaten enthalten unbekannte Felder: "
-                + ", ".join(sorted(unknown))
+    # Reject malformed requested changes before reading a stored command.
+    _mutation_after({}, command)
+    previous = (
+        cases.get_mutation(command.community_id, command.mutation_id)
+        if cases is not None
+        else db.get_vnb_mutation(command.community_id, command.mutation_id)
+    )
+    if previous:
+        if (
+            previous["participant_id"] != command.participant_id
+            or previous["mutation_type"] != command.mutation_type
+            or str(previous["effective_date"]) != effective_date.isoformat()
+            or previous["source_agreement_id"] != command.source_agreement_id
+            or _mutation_after(previous["before_facts"], command)
+            != previous["after_facts"]
+        ):
+            raise db.VnbSubmissionConflict(
+                "Diese Mutations-ID bezeichnet bereits einen anderen Inhalt."
             )
-        after.update(command.after)
+        if previous["state"] != "claimed":
+            return _mutation_outcome_from_row(previous)
+        before = previous["before_facts"]
+        after = previous["after_facts"]
     else:
-        raise ParticipantMutationInvalid("Mutationstyp ist unbekannt.")
+        participant = next(
+            (
+                member
+                for member in community.get("members") or []
+                if member.get("building_id") == command.participant_id
+            ),
+            None,
+        )
+        if not participant:
+            raise ParticipantMutationInvalid(
+                "Teilnehmende Person gehört nicht zu dieser LEG."
+            )
+        if command.mutation_type == "join" and participant.get("status") != "invited":
+            raise ParticipantMutationInvalid(
+                "Beitritt setzt eine offene Einladung voraus."
+            )
+        if command.mutation_type == "exit" and participant.get("status") != "confirmed":
+            raise ParticipantMutationInvalid(
+                "Austritt setzt eine bestätigte Teilnahme voraus."
+            )
+        before = {
+            key: participant.get(key)
+            for key in ("building_id", "status", "role", "access_roles")
+            if key in participant
+        }
+        after = _mutation_after(before, command)
     if adapter is None:
         try:
-            adapter = adapter_for(community.get("vnb_adapter_key"))
+            adapter = adapter_for(
+                previous["adapter_key"]
+                if previous
+                else community.get("vnb_adapter_key")
+            )
         except KeyError as error:
             raise ParticipantMutationInvalid(
                 "Konfigurierter VNB-Adapter fehlt."
             ) from error
+    if previous:
+        contract = adapter.contract()
+        if contract.adapter_key != previous["adapter_key"] or set(
+            contract.capabilities
+        ) != set(previous["capability_snapshot"]):
+            raise ParticipantMutationInvalid(
+                "Der ursprüngliche VNB-Adapter ist für die Wiederholung nicht verfügbar."
+            )
     if cases is None:
         from store import vnb_exchange as cases
     return submit_participant_mutation(
@@ -453,7 +497,7 @@ def submit_membership_mutation(
             community_id=command.community_id,
             participant_id=command.participant_id,
             mutation_type=command.mutation_type,
-            effective_date=command.effective_date,
+            effective_date=effective_date.isoformat(),
             source_agreement_id=command.source_agreement_id,
             before=before,
             after=after,

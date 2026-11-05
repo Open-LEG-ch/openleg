@@ -282,6 +282,13 @@ class MutationCases:
     def __init__(self):
         self.rows = {}
 
+    def get_mutation(self, community_id, mutation_id):
+        """Expose the recorded command without projecting later member facts."""
+        row = self.rows.get((community_id, mutation_id))
+        if row is None:
+            return None
+        return {**row, "before_facts": row["before"], "after_facts": row["after"]}
+
     def claim_mutation(self, claim):
         key = (claim.community_id, claim.mutation_id)
         if key not in self.rows:

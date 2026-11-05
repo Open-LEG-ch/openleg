@@ -425,6 +425,7 @@ get_vnb_manual_package = _vnb_exchange.get_manual_package
 list_vnb_submission_cases = _vnb_exchange.list_cases
 mark_vnb_manual_delivered = _vnb_exchange.mark_manual_delivered
 record_vnb_submission_outcome = _vnb_exchange.record_outcome
+get_vnb_mutation = _vnb_exchange.get_mutation
 claim_vnb_mutation = _vnb_exchange.claim_mutation
 record_vnb_mutation_outcome = _vnb_exchange.record_mutation_outcome
 list_vnb_mutations = _vnb_exchange.list_mutations
