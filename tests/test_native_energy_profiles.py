@@ -9,9 +9,16 @@ import pytest
 
 import database as db
 import ml_models
+from tests.test_i18n import _synthetic_environment
 from tests.test_interest_postgres import interest_database
 
 __all__ = ["interest_database"]
+
+
+@pytest.fixture
+def registration_environment(interest_database):
+    with _synthetic_environment():
+        yield
 
 
 @pytest.mark.parametrize(
@@ -42,7 +49,7 @@ def test_simulated_energy_preserves_totals_without_inventing_missing_inputs(
     ],
 )
 def test_registration_matches_real_numeric_profiles_and_remains_unconfirmed(
-    interest_database, monkeypatch, consumption, solar
+    registration_environment, monkeypatch, consumption, solar
 ):
     import app
 
